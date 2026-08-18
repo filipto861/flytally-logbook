@@ -38,7 +38,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.13"
+APP_VERSION = "v0.14"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -279,7 +279,22 @@ def github_backup_config() -> dict[str, str]:
     token = _get_secret("github", "token", "") or _get_secret("github_sync", "token", "")
     repo = _get_secret("github", "repo", "") or _get_secret("github_sync", "repo", "filipto861/Logbook")
     db_path = _get_secret("github", "db_path", "") or _get_secret("github_sync", "db_path", "data/logbook.sqlite")
-    return {"token": token, "repo": repo, "db_path": db_path}
+    branch = _get_secret("github", "branch", "") or _get_secret("github_sync", "branch", "main")
+    auto_backup = _get_secret("github", "auto_backup", "") or _get_secret("github_sync", "auto_backup", "true")
+    return {"token": token, "repo": repo, "db_path": db_path, "branch": branch, "auto_backup": str(auto_backup)}
+
+
+def github_auto_backup_enabled() -> bool:
+    cfg = github_backup_config()
+    return github_backup_configured() and str(cfg.get("auto_backup", "true")).strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _record_audit_clean(con: sqlite3.Connection, action: str, object_type: str | None = None, object_id: Any = None, detail: Any = None) -> None:
+    """Audit entry that does not mark the database dirty. Used by backup itself."""
+    con.execute(
+        "INSERT INTO audit_log (created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?)",
+        (_now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, json.dumps(detail, ensure_ascii=False, default=str) if detail is not None else None),
+    )
 
 
 def checkpoint_database() -> None:
@@ -294,33 +309,73 @@ def backup_database_to_github(commit_message: str | None = None) -> str:
     cfg = github_backup_config()
     if not cfg["token"]:
         raise RuntimeError("Chybí GitHub token ve Streamlit secrets.")
-    checkpoint_database()
     if not DB_PATH.exists():
         raise RuntimeError("Databázový soubor neexistuje.")
+
     api_url = f"https://api.github.com/repos/{cfg['repo']}/contents/{cfg['db_path']}"
     headers = {"Authorization": f"Bearer {cfg['token']}", "Accept": "application/vnd.github+json"}
-    sha = None
-    get_resp = requests.get(api_url, headers=headers, timeout=30)
-    if get_resp.status_code == 200:
-        sha = get_resp.json().get("sha")
-    elif get_resp.status_code not in (404,):
-        raise RuntimeError(f"GitHub GET selhal: {get_resp.status_code} {get_resp.text[:300]}")
-    content_b64 = base64.b64encode(DB_PATH.read_bytes()).decode("ascii")
-    payload = {
-        "message": commit_message or f"Backup logbook database {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M')}",
-        "content": content_b64,
-    }
-    if sha:
-        payload["sha"] = sha
-    put_resp = requests.put(api_url, headers=headers, json=payload, timeout=60)
-    if put_resp.status_code not in (200, 201):
-        raise RuntimeError(f"GitHub PUT selhal: {put_resp.status_code} {put_resp.text[:500]}")
+    branch = cfg.get("branch") or "main"
+    backup_at = _now_iso()
+
+    # Make the database file itself contain the fact that it is backed up. If the
+    # remote upload fails, the dirty flag is restored below.
     with connect() as con:
-        _set_meta(con, "last_github_backup_at", _now_iso())
+        _set_meta(con, "last_github_backup_at", backup_at)
+        _set_meta(con, "last_github_backup_error", "")
         _set_meta(con, "dirty", "0")
-        record_audit(con, "github_backup", "database", cfg["db_path"], {"repo": cfg["repo"]})
+        _record_audit_clean(con, "github_backup", "database", cfg["db_path"], {"repo": cfg["repo"], "branch": branch})
         con.commit()
-    return put_resp.json().get("commit", {}).get("html_url", "")
+
+    try:
+        checkpoint_database()
+        sha = None
+        get_resp = requests.get(api_url, headers=headers, params={"ref": branch}, timeout=30)
+        if get_resp.status_code == 200:
+            sha = get_resp.json().get("sha")
+        elif get_resp.status_code not in (404,):
+            raise RuntimeError(f"GitHub GET selhal: {get_resp.status_code} {get_resp.text[:300]}")
+        content_b64 = base64.b64encode(DB_PATH.read_bytes()).decode("ascii")
+        payload = {
+            "message": commit_message or f"Backup logbook database {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M')}",
+            "content": content_b64,
+            "branch": branch,
+        }
+        if sha:
+            payload["sha"] = sha
+        put_resp = requests.put(api_url, headers=headers, json=payload, timeout=90)
+        if put_resp.status_code not in (200, 201):
+            raise RuntimeError(f"GitHub PUT selhal: {put_resp.status_code} {put_resp.text[:500]}")
+        return put_resp.json().get("commit", {}).get("html_url", "")
+    except Exception as exc:
+        with connect() as con:
+            _set_meta(con, "dirty", "1")
+            _set_meta(con, "last_github_backup_error", str(exc)[:500])
+            con.commit()
+        raise
+
+
+def auto_backup_after_change(reason: str) -> None:
+    """Automatically persist the current SQLite database to GitHub after a confirmed write.
+
+    Streamlit Community Cloud does not preserve local SQLite changes across every
+    restart/redeploy. This makes GitHub the versioned persistent backup for the
+    single-user online deployment.
+    """
+    if not github_auto_backup_enabled():
+        st.session_state["last_auto_backup_status"] = "not_configured"
+        return
+    try:
+        with st.spinner("Ukládám databázi na GitHub…"):
+            url = backup_database_to_github(
+                f"Auto backup after {reason} {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M')}"
+            )
+        st.session_state["last_auto_backup_status"] = "ok"
+        st.session_state["last_auto_backup_url"] = url
+        st.session_state.pop("last_auto_backup_error", None)
+    except Exception as exc:
+        st.session_state["last_auto_backup_status"] = "error"
+        st.session_state["last_auto_backup_error"] = str(exc)
+
 
 
 def restore_database_from_upload(uploaded_file) -> None:
@@ -577,16 +632,20 @@ def import_ourairports_to_database() -> int:
         count = import_airports_dataframe(con, df, default_source="OurAirports", replace_existing=True)
         _seed_airports_from_overrides(con)
         _set_meta(con, "ourairports_url", OURAIRPORTS_AIRPORTS_URL)
+        record_audit(con, "import_ourairports", "airports", None, {"rows": count})
         con.commit()
-        return count
+    auto_backup_after_change("import_ourairports")
+    return count
 
 
 def import_airport_csv_upload(uploaded_file) -> int:
     df = pd.read_csv(uploaded_file)
     with connect() as con:
         count = import_airports_dataframe(con, df, default_source="user_csv", replace_existing=True)
+        record_audit(con, "import_airport_csv", "airports", None, {"rows": count, "file": getattr(uploaded_file, "name", None)})
         con.commit()
-        return count
+    auto_backup_after_change("import_airport_csv")
+    return count
 
 
 def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]]) -> None:
@@ -1254,9 +1313,10 @@ def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], rep
         insert_track_points(con, track_id, points)
         record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
         con.commit()
+    auto_backup_after_change("save_track")
 
 
-def create_flight(data: dict[str, Any]) -> int:
+def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
     fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","note"]
     values = []
     for f in fields:
@@ -1286,7 +1346,9 @@ def create_flight(data: dict[str, Any]) -> int:
         flight_id = int(cur.lastrowid)
         record_audit(con, "create_flight", "flights", flight_id, data)
         con.commit()
-        return flight_id
+    if auto_backup:
+        auto_backup_after_change("create_flight")
+    return flight_id
 
 
 def update_flight(flight_id: int, data: dict[str, Any]) -> None:
@@ -1312,6 +1374,7 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
         con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=?", [*values, flight_id])
         record_audit(con, "update_flight", "flights", flight_id, data)
         con.commit()
+    auto_backup_after_change("update_flight")
 
 
 def delete_track(track_id: int) -> None:
@@ -1319,6 +1382,7 @@ def delete_track(track_id: int) -> None:
         con.execute("DELETE FROM flight_tracks WHERE id = ?", (track_id,))
         record_audit(con, "delete_track", "flight_tracks", track_id, None)
         con.commit()
+    auto_backup_after_change("delete_track")
 
 
 def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> list[dict[str, Any]]:
@@ -1389,14 +1453,38 @@ def render_track_profile(points: list[dict[str, Any]]) -> None:
         return
     x = prof["time_local"] if prof["time_local"].notna().any() else prof["distance_km"]
     x_title = "Čas" if prof["time_local"].notna().any() else "Vzdálenost km"
-    fig_alt = go.Figure()
-    fig_alt.add_trace(go.Scatter(x=x, y=prof["alt_ft"], mode="lines", name="Altitude ft"))
-    fig_alt.update_layout(title="Vertikální profil", xaxis_title=x_title, yaxis_title="Altitude ft")
-    st.plotly_chart(plotly_layout(fig_alt), use_container_width=True)
-    fig_spd = go.Figure()
-    fig_spd.add_trace(go.Scatter(x=x, y=prof["speed_smooth"], mode="lines", name="GPS speed km/h"))
-    fig_spd.update_layout(title="Rychlostní profil", xaxis_title=x_title, yaxis_title="GPS speed km/h")
-    st.plotly_chart(plotly_layout(fig_spd), use_container_width=True)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=prof["alt_ft"],
+            mode="lines",
+            name="Altitude ft",
+            line=dict(color="#38bdf8", width=2.4),
+            hovertemplate="%{x}<br>Altitude: %{y:.0f} ft<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=prof["speed_smooth"],
+            mode="lines",
+            name="GPS speed km/h",
+            yaxis="y2",
+            line=dict(color="#f59e0b", width=2.2),
+            hovertemplate="%{x}<br>Speed: %{y:.0f} km/h<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title="Profil letu",
+        xaxis_title=x_title,
+        yaxis=dict(title="Altitude ft", rangemode="tozero"),
+        yaxis2=dict(title="GPS speed km/h", overlaying="y", side="right", rangemode="tozero"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    st.plotly_chart(plotly_layout(fig), use_container_width=True)
+
 
 # -----------------------------------------------------------------------------
 # Pages
@@ -1526,6 +1614,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         if not flight_tracks.empty:
             joined = read_tracks_joined()
             st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True)
+            st.caption("Styl čáry: plná čára = běžný let, čárkovaná čára = Safety Pilot. Není to podle typu letadla.")
             first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
             render_track_profile(first_points)
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
@@ -1587,9 +1676,9 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
 
     controls = st.columns([1.0, 2.4, 1.0, 1.0])
     with controls[0]:
-        page_size_choice = st.selectbox("Řádků", [25, 50, 100, "Vše"], index=0, key="flight_page_size_v13")
+        page_size_choice = st.selectbox("Řádků", [25, 50, 100, "Vše"], index=0, key="flight_page_size_v14")
     with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v13")
+        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v14")
 
     if quick_filter.strip():
         q = quick_filter.strip().lower()
@@ -1611,9 +1700,9 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     with controls[2]:
         if show_all_rows:
             page = 1
-            st.text_input("Stránka", value="Vše", disabled=True, key="flight_page_all_v13")
+            st.text_input("Stránka", value="Vše", disabled=True, key="flight_page_all_v14")
         else:
-            page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v13", page_count)), page_count), step=1, key="flight_page_v13")
+            page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v14", page_count)), page_count), step=1, key="flight_page_v14")
     with controls[3]:
         st.markdown(f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>', unsafe_allow_html=True)
 
@@ -1714,7 +1803,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
                     render_track_profile(points)
                 saved = flight_form("new_from_track", defaults, rates, "Uložit nový let včetně tracku")
                 if saved is not None:
-                    flight_id = create_flight(saved)
+                    flight_id = create_flight(saved, auto_backup=False)
                     save_track(flight_id, uploaded.name, points, replace_existing=True)
                     st.success(f"Let uložen jako ID {flight_id}.")
                     st.rerun()
@@ -1774,6 +1863,7 @@ def save_rates_editor(edited: pd.DataFrame) -> None:
             )
         record_audit(con, "save_rates", "rates", None, {"rows": len(edited)})
         con.commit()
+    auto_backup_after_change("save_rates")
 
 
 def save_aircraft_editor(edited: pd.DataFrame) -> None:
@@ -1793,6 +1883,7 @@ def save_aircraft_editor(edited: pd.DataFrame) -> None:
             )
         record_audit(con, "save_aircraft", "aircraft", None, {"rows": len(edited)})
         con.commit()
+    auto_backup_after_change("save_aircraft")
 
 
 def upsert_airport_form(data: dict[str, Any]) -> None:
@@ -1852,6 +1943,7 @@ def upsert_airport_form(data: dict[str, Any]) -> None:
         )
         record_audit(con, "upsert_airport", "airports", ident, data)
         con.commit()
+    auto_backup_after_change("upsert_airport")
 
 
 def page_database():
@@ -1976,6 +2068,16 @@ def page_database():
         with b1: metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
         with b2: metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
         with b3: metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
+        if github_auto_backup_enabled():
+            st.success("Automatická GitHub záloha je zapnutá. Po každé potvrzené změně se databáze uloží do repozitáře.")
+        elif github_backup_configured():
+            st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá. Zapni github.auto_backup = true v Secrets.")
+        else:
+            st.warning("Automatická GitHub záloha není nastavená. Změny ve Streamlit Cloud mohou po restartu zmizet.")
+        if st.session_state.get("last_auto_backup_status") == "ok":
+            st.caption("Poslední automatická záloha proběhla úspěšně." + (f" Commit: {st.session_state.get('last_auto_backup_url')}" if st.session_state.get('last_auto_backup_url') else ""))
+        elif st.session_state.get("last_auto_backup_status") == "error":
+            st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
         with open(DB_PATH, "rb") as f:
             st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
         if github_backup_configured():

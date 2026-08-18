@@ -1,31 +1,34 @@
-# Letový zápisník v0.13
+# Letový zápisník v0.14
 
 Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KML/GPS tracky, databázová správa a admin režim.
 
-## Co je důležité
+## Základní pravidlo
 
 - Hlavní databáze je `data/logbook.sqlite`.
-- Tuto databázi po ostrém provozu nemažte ani nepřepisujte bez zálohy.
-- Kód aplikace se může aktualizovat, databáze zůstává datovým úložištěm.
-- v0.13 přidává čistší navigaci, skryté filtry a detail letu v modálním okně po kliknutí na řádek.
+- Kód aplikace se může aktualizovat, databázi po ostrém provozu nepřepisovat bez zálohy.
+- Na Streamlit Community Cloud se lokální SQLite změny po restartu nemusí zachovat, proto v0.14 přidává automatickou zálohu databáze na GitHub.
 
 ## Streamlit Secrets
 
-V nastavení Streamlit Cloud nastavte alespoň admin heslo:
+V nastavení Streamlit Cloud nastavte admin heslo:
 
 ```toml
 [auth]
 admin_password = "tvoje_silne_heslo"
 ```
 
-Volitelně pro ruční zálohu databáze na GitHub:
+Pro automatickou GitHub zálohu databáze nastavte také:
 
 ```toml
 [github]
 token = "github_pat_xxx"
 repo = "filipto861/Logbook"
 db_path = "data/logbook.sqlite"
+branch = "main"
+auto_backup = true
 ```
+
+GitHub token musí mít oprávnění pro zápis do obsahu repozitáře. Token nikdy neukládejte do GitHubu ani do kódu aplikace.
 
 ## Spuštění lokálně
 
@@ -48,16 +51,16 @@ Nepřepisovat bez zálohy:
 
 - `data/logbook.sqlite`
 
+## v0.14
+
+- Automatická GitHub záloha SQLite databáze po každé potvrzené změně.
+- Stav zálohy je vidět v `Databáze -> Záloha`.
+- Po selhání automatické zálohy aplikace ponechá změnu lokálně a ukáže chybu.
+- Altitude a speed profil KML tracku jsou sloučeny do jednoho grafu se dvěma osami.
+- Popisek mapy vysvětluje význam plné a čárkované čáry.
 
 ## v0.13
 
-- Detail letu se otevírá přímo v modálním okně aplikace.
-- Odstraněno otevírání detailu přes odkaz do nového okna.
-- Seznam letů používá vlastní řádkový přehled s tlačítkem Detail.
-
-
-## v0.13
-- Návrat ke stabilní nativní tabulce Streamlit.
-- Detail letu se otevírá spolehlivě v modálním okně v aplikaci.
-- Zachovány detailní sloupce letového seznamu.
-- Přidán fallback výběru letu podle ID.
+- Funkční seznam letů s tlačítkem Detail u konkrétního letu.
+- Výchozí stránka seznamu je poslední stránka s nejnovějšími lety.
+- Přidaná možnost zobrazit všechny řádky na jedné stránce.
