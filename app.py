@@ -39,7 +39,7 @@ DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.16"
+APP_VERSION = "v0.18"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -55,7 +55,6 @@ NAV_ITEMS = [
     ("Mapa", "Mapa"),
     ("Ceník", "Ceník"),
     ("Databáze", "Databáze"),
-    ("Kontrola", "Kontrola"),
     ("Export", "Export"),
 ]
 
@@ -1982,7 +1981,7 @@ def page_database():
     with c3: metric_card("Tracky", str(len(tracks)), "KML soubory")
     with c4: metric_card("GPS body", f"{len(points):,}".replace(",", " "), "normalizováno")
 
-    tab_airports, tab_aircraft, tab_import, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Import", "Záloha", "Meta"])
+    tab_airports, tab_aircraft, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Záloha", "Meta"])
     with tab_airports:
         col1, col2, col3 = st.columns([1,1,2])
         with col1:
@@ -2007,6 +2006,7 @@ def page_database():
         cols = ["ident","name","airport_type","iso_country","municipality","latitude_deg","longitude_deg","source","data_quality","active","closed"]
         st.dataframe(view[[c for c in cols if c in view.columns]].head(1000), hide_index=True, use_container_width=True, height=430)
         st.download_button("Export letišť CSV", data=airports.to_csv(index=False).encode("utf-8"), file_name="airports_export.csv", mime="text/csv", use_container_width=True)
+        st.caption("Světová letištní databáze je už uložená v SQLite. V běžném provozu se zde jen vyhledává, exportuje a ručně doplňují/opravuji letiště nebo UL plochy.")
         st.markdown("### Přidat / upravit letiště")
         if not is_admin():
             st.info("Ruční editace letišť je dostupná jen pro admina.")
@@ -2047,37 +2047,8 @@ def page_database():
                 save_aircraft_editor(edited)
                 st.success("Letadla uložena."); st.rerun()
 
-    with tab_import:
-        st.markdown("### Aktualizace letišť")
-        if AIRPORTS_CSV_PATH.exists():
-            st.info(f"Součástí aplikace je lokální airports.csv: {AIRPORTS_CSV_PATH.name}. Import proběhne z tohoto souboru; není potřeba nic stahovat z internetu.")
-        else:
-            st.info("Lokální airports.csv není v repozitáři, použije se veřejný OurAirports CSV export z internetu.")
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("Importovat světovou databázi letišť", type="primary", use_container_width=True, disabled=not is_admin()):
-                if require_admin():
-                    with st.spinner("Importuji světovou databázi letišť…"):
-                        try:
-                            count = import_ourairports_to_database()
-                            st.success(f"Import hotový: {count:,} řádků.".replace(",", " "))
-                            st.rerun()
-                        except Exception as exc:
-                            st.error(f"Import se nepodařil: {exc}")
-        with c2:
-            custom = st.file_uploader("Import vlastní CSV letišť / UL ploch", type=["csv"], key="airport_csv_upload")
-            if custom is not None and st.button("Nahrát CSV do databáze", use_container_width=True, disabled=not is_admin()):
-                if require_admin():
-                    try:
-                        count = import_airport_csv_upload(custom)
-                        st.success(f"Importováno: {count:,} řádků.".replace(",", " "))
-                        st.rerun()
-                    except Exception as exc:
-                        st.error(f"Import CSV se nepodařil: {exc}")
-        sample = pd.DataFrame([
-            {"ident":"ULXXXX","name":"Název plochy","airport_type":"ultralight_field","iso_country":"CZ","municipality":"Obec","latitude_deg":50.0,"longitude_deg":14.0,"source":"manual_ul","active":1,"closed":0}
-        ])
-        st.dataframe(sample, hide_index=True, use_container_width=True)
+    # Import světové databáze byl odstraněn z běžného UI po prvotním naplnění tabulky airports.
+    # Importní funkce zůstávají v kódu pro případ budoucí servisní migrace, ale nejsou vystavené v aplikaci.
 
     with tab_backup:
         st.markdown("### SQLite + GitHub backup")
@@ -2213,7 +2184,8 @@ def main():
     with st.sidebar:
         st.markdown("## Letový zápisník")
         st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
-        dark_mode = st.toggle("Tmavý režim", value=True)
+        # Aplikace běží trvale v tmavém režimu; přepínač je z finálního UI odstraněn.
+        dark_mode = True
         render_sidebar_nav()
         render_auth_sidebar()
     apply_ui_theme(dark_mode)
@@ -2229,7 +2201,10 @@ def main():
     elif page == "Mapa": page_maps(flights, dark_mode)
     elif page == "Ceník": page_rates(rates)
     elif page == "Databáze": page_database()
-    elif page == "Kontrola": page_control(flights)
+    elif page == "Kontrola":
+        # Legacy route: stránka kontroly už není v navigaci, ale starý stav relace může existovat.
+        st.session_state["page"] = "Dashboard"
+        st.rerun()
     elif page == "Export": page_export(flights)
 
 if __name__ == "__main__":

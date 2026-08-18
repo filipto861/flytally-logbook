@@ -1,4 +1,4 @@
-# Letový zápisník v0.16
+# Letový zápisník v0.18
 
 Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KML/GPS tracky, databázová správa a admin režim.
 
@@ -6,7 +6,7 @@ Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KM
 
 - Hlavní databáze je `data/logbook.sqlite`.
 - Kód aplikace se může aktualizovat, databázi po ostrém provozu nepřepisovat bez zálohy.
-- Na Streamlit Community Cloud se lokální SQLite změny po restartu nemusí zachovat, proto v0.16 přidává automatickou zálohu databáze na GitHub.
+- Na Streamlit Community Cloud se lokální SQLite změny po restartu nemusí zachovat, proto v0.18 přidává automatickou zálohu databáze na GitHub.
 
 ## Streamlit Secrets
 
@@ -51,7 +51,7 @@ Nepřepisovat bez zálohy:
 
 - `data/logbook.sqlite`
 
-## v0.16
+## v0.18
 
 - Automatická GitHub záloha SQLite databáze po každé potvrzené změně.
 - Stav zálohy je vidět v `Databáze -> Záloha`.
@@ -66,15 +66,28 @@ Nepřepisovat bez zálohy:
 - Přidaná možnost zobrazit všechny řádky na jedné stránce.
 
 
-## v0.16
+## v0.18
 
 - Opravuje falešnou chybu při nahrávání KML tracku, kdy se při současném zobrazení existující mapy a náhledu nahrávaného tracku vytvořily duplicitní Streamlit klíče.
 - Přidává unikátní klíče pro všechny mapové komponenty.
 
 
-## v0.16
+## v0.18
 
 - Přidán lokální soubor `data/airports.csv` pro import světové databáze letišť do SQLite.
 - Import letišť probíhá databázově do tabulky `airports`, ne z pevného seznamu v kódu.
 - Mapa všech letů používá tenčí plné čáry bez rozlišování stylu podle funkce letu.
 - Databázi `data/logbook.sqlite` při updatech nepřepisuj, pokud nechceš obnovit zálohu.
+
+
+## v0.18
+
+- Odstraněna běžná záložka Import letišť po prvotním importu světové databáze.
+- Letiště se nyní spravují v databázové tabulce: vyhledání, export a ruční doplnění/opravování ploch.
+- Databáze `data/logbook.sqlite` se při aktualizaci aplikace nepřepisuje.
+
+
+## Změny v0.18
+
+- Aplikace je trvale v tmavém režimu.
+- Stránka Kontrola je skrytá z navigace; validace zůstávají přímo u formulářů a databázových pravidel.
