@@ -38,7 +38,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.12"
+APP_VERSION = "v0.13"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -219,6 +219,14 @@ def actor_name() -> str:
     return "admin" if is_admin() else "viewer"
 
 
+def invalidate_cached_data() -> None:
+    """Clear cached database reads after any write operation."""
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
+
+
 def render_auth_sidebar() -> None:
     admin_password = _get_secret("auth", "admin_password", "")
     st.divider()
@@ -258,6 +266,7 @@ def record_audit(con: sqlite3.Connection, action: str, object_type: str | None =
         )
         _set_meta(con, "last_change_at", _now_iso())
         _set_meta(con, "dirty", "1")
+        invalidate_cached_data()
     except Exception:
         pass
 
@@ -430,6 +439,7 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
         insert_track_points(con, int(tr["id"]), points)
 
 
+@st.cache_data(show_spinner=False, ttl=30)
 def read_table(table: str) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
@@ -551,6 +561,7 @@ def import_airports_dataframe(
     return count
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def read_airports(active_only: bool = True) -> pd.DataFrame:
     query = "SELECT * FROM airports"
     if active_only:
@@ -610,6 +621,7 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
         rows,
     )
 
+@st.cache_data(show_spinner=False, ttl=30)
 def read_track_counts() -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
@@ -621,6 +633,7 @@ def read_track_counts() -> pd.DataFrame:
         )
 
 
+@st.cache_data(show_spinner=False, ttl=30)
 def read_flights() -> pd.DataFrame:
     flights = read_table("flights")
     flights = compute_metrics(flights)
@@ -635,6 +648,7 @@ def read_flights() -> pd.DataFrame:
     return flights
 
 
+@st.cache_data(show_spinner=False, ttl=60)
 def read_tracks_joined() -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
@@ -650,6 +664,7 @@ def read_tracks_joined() -> pd.DataFrame:
         )
 
 
+@st.cache_data(show_spinner=False, ttl=60)
 def read_tracks_for_flight(flight_id: int) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query("SELECT * FROM flight_tracks WHERE flight_id = ? ORDER BY id", con, params=(flight_id,))
@@ -796,18 +811,20 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .flight-help {{color:var(--muted);font-size:.86rem;margin:.25rem 0 .75rem 0;}}
 
     .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
-    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.15rem .15rem .22rem .15rem;border-bottom:1px solid var(--border);}}
-    .flight-cell {{font-size:.80rem;line-height:1.08;padding:.12rem .15rem;color:var(--text);}}
+    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.10rem .15rem .20rem .15rem;border-bottom:1px solid var(--border);height:1.35rem;display:flex;align-items:flex-end;}}
+    .flight-cell {{font-size:.78rem;line-height:1.05;padding:.06rem .15rem;color:var(--text);min-height:1.78rem;display:flex;flex-direction:column;justify-content:flex-start;}}
     .flight-cell-main {{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-cell-sub {{font-size:.70rem;color:var(--muted);margin-top:.14rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.10rem 0 .10rem 0;}}
+    .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.10rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.04rem 0 .04rem 0;}}
     .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
     .selected-flight-box {{border:1px solid var(--border); border-radius:14px; padding:.65rem .85rem; background:rgba(56,189,248,.07); margin:.5rem 0 .75rem 0;}}
     .selected-flight-title {{font-weight:850;color:var(--text);}}
     .selected-flight-sub {{font-size:.82rem;color:var(--muted);margin-top:.1rem;}}
     .stTabs [data-baseweb="tab-list"] {{gap:.45rem;}}
     .stTabs [data-baseweb="tab"] {{border-radius:999px;padding:.45rem .9rem;background:var(--panel2);}}
-    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.15rem; padding:.28rem .62rem !important;}}
+    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.05rem; padding:.22rem .60rem !important;}}
+    .stButton {{margin-top:0 !important;}}
+    [data-testid="column"] .stButton > button {{min-height:1.72rem !important;padding:.08rem .42rem !important;border-radius:11px !important;font-size:.78rem !important;}}
     div.stButton > button[kind="primary"] {{box-shadow:0 10px 22px rgba(56,189,248,.18) !important;}}
     div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
     div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
@@ -1472,32 +1489,29 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
 def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
     row = pd.Series(row_data)
     st.markdown(f"### {flight_label(row_data)}")
-    tabs = st.tabs(["Přehled", "Editace", "Track"])
-    with tabs[0]:
+    detail_section = st.radio(
+        "Sekce detailu",
+        ["Přehled", "Editace", "Track"],
+        horizontal=True,
+        key=f"detail_section_{selected_id}",
+        label_visibility="collapsed",
+    )
+    if detail_section == "Přehled":
         c1, c2, c3, c4 = st.columns(4)
-        with c1: metric_card("Block", row.get("block_time") or "", f"Air {row.get('air_time') or ''}")
-        with c2: metric_card("Trasa", f"{row.get('departure') or ''}–{row.get('arrival') or ''}", row.get("registration") or "")
-        with c3: metric_card("Funkce", row.get("role") or "", row.get("evidence") or "")
-        with c4: metric_card("Cena", row.get("cost_label") or "", f"GPS {int(row.get('track_count') or 0)}")
-        st.write("")
-        info = {
-            "Datum": row.get("date"),
-            "Imatrikulace": row.get("registration"),
-            "Typ": row.get("aircraft_type"),
-            "Třída": row.get("aircraft_class"),
-            "Odlet": row.get("departure"),
-            "Přílet": row.get("arrival"),
-            "Off Block": row.get("off_block"),
-            "Takeoff": row.get("takeoff"),
-            "Landing": row.get("landing"),
-            "On Block": row.get("on_block"),
-            "Velitel": row.get("commander"),
-            "Instruktor": row.get("instructor"),
-            "Úloha": row.get("task"),
-            "Poznámka": row.get("note"),
-        }
-        st.dataframe(pd.DataFrame([info]).T.rename(columns={0: "Hodnota"}), use_container_width=True, height=455)
-    with tabs[1]:
+        with c1: metric_card("Block", row.get("block_time"), f"Air {row.get('air_time')}")
+        with c2: metric_card("Trasa", f"{row.get('departure')}–{row.get('arrival')}", row.get("registration"))
+        with c3: metric_card("Funkce", row.get("role"), row.get("evidence"))
+        with c4: metric_card("Cena", row.get("cost_label"), f"GPS {int(row.get('track_count') or 0)}")
+        details = pd.DataFrame([{
+            "Datum": row.get("date"), "Evidence": row.get("evidence"), "Imatrikulace": row.get("registration"),
+            "Typ": row.get("aircraft_type"), "Třída": row.get("aircraft_class"), "Odlet": row.get("departure"),
+            "Přílet": row.get("arrival"), "Off block": row.get("off_block"), "Takeoff": row.get("takeoff"),
+            "Landing": row.get("landing"), "On block": row.get("on_block"), "Starty": row.get("starts"),
+            "Velitel": row.get("commander"), "Instruktor": row.get("instructor"), "Funkce": row.get("role"),
+            "Úloha": row.get("task"), "Kč/h": row.get("price_per_hour"), "Poznámka": row.get("note"),
+        }])
+        st.dataframe(details, hide_index=True, use_container_width=True)
+    elif detail_section == "Editace":
         if not is_admin():
             st.info("Editace je dostupná jen po přihlášení jako admin.")
         else:
@@ -1507,7 +1521,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 st.success("Změny uloženy.")
                 clear_open_flight_dialog()
                 st.rerun()
-    with tabs[2]:
+    elif detail_section == "Track":
         flight_tracks = read_tracks_for_flight(int(selected_id))
         if not flight_tracks.empty:
             joined = read_tracks_joined()
@@ -1573,9 +1587,9 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
 
     controls = st.columns([1.0, 2.4, 1.0, 1.0])
     with controls[0]:
-        page_size_choice = st.selectbox("Řádků", [25, 50, 100], index=0, key="flight_page_size_v12")
+        page_size_choice = st.selectbox("Řádků", [25, 50, 100, "Vše"], index=0, key="flight_page_size_v13")
     with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v12")
+        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v13")
 
     if quick_filter.strip():
         q = quick_filter.strip().lower()
@@ -1590,15 +1604,21 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     shown_table = shown_table.reset_index(drop=True)
 
     total_rows = len(shown_table)
-    page_size = int(page_size_choice)
+    show_all_rows = page_size_choice == "Vše"
+    page_size = total_rows if show_all_rows else int(page_size_choice)
+    page_size = max(1, page_size)
     page_count = max(1, math.ceil(total_rows / page_size))
     with controls[2]:
-        page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v12", page_count)), page_count), step=1, key="flight_page_v12")
+        if show_all_rows:
+            page = 1
+            st.text_input("Stránka", value="Vše", disabled=True, key="flight_page_all_v13")
+        else:
+            page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v13", page_count)), page_count), step=1, key="flight_page_v13")
     with controls[3]:
         st.markdown(f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>', unsafe_allow_html=True)
 
-    start = (int(page) - 1) * page_size
-    end = start + page_size
+    start = 0 if show_all_rows else (int(page) - 1) * page_size
+    end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
     st.markdown(
@@ -1607,14 +1627,14 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     )
 
     widths = [0.72, 0.48, 0.88, 0.62, 1.25, 1.02, 1.05, 0.82, 0.52, 0.92, 1.22, 0.92, 0.78, 0.50]
-    headers = ["", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
-    hcols = st.columns(widths, gap="small")
+    headers = ["Detail", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
 
     for _, row in page_rows.iterrows():
         flight_id = int(row.get("id"))
-        cols = st.columns(widths, gap="small")
+        cols = st.columns(widths, gap="small", vertical_alignment="top")
         with cols[0]:
             if st.button("Detail", key=f"flight_detail_btn_{flight_id}", use_container_width=True):
                 st.session_state["open_flight_dialog_id"] = flight_id
