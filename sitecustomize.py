@@ -1,8 +1,9 @@
 """Runtime compatibility patches for Streamlit Cloud SQLite deployments.
 
 This file is imported automatically by Python when present on sys.path. It keeps
-older logbook.sqlite schemas compatible with the current app code and contains a
-small UI/runtime patch for the Streamlit deployment.
+older logbook.sqlite schemas compatible with the current app code, seeds the full
+airport database from data/airports.csv when needed, and replaces the Streamlit
+sidebar collapse control with one CSS-only smooth toggle.
 """
 from __future__ import annotations
 
@@ -17,11 +18,16 @@ from typing import Any
 _ORIGINAL_CONNECT = sqlite3.connect
 _AIRPORTS_SEED_CHECKED = False
 _AIRPORTS_BACKUP_CHECKED = False
-_CSS = """
+
+SIDEBAR_WIDTH = "16.4rem"
+APP_DISPLAY_VERSION = "v0.29"
+
+_CSS_AND_TOGGLE = f"""
 <style id="logbook-sidebar-toggle-fix">
-/* Hide Streamlit's own sidebar collapse/open control. We use our own small
-   arrow button because the native Streamlit control conflicts with the hidden
-   Cloud toolbar and causes duplicate arrows. */
+:root {{ --lb-sidebar-width: {SIDEBAR_WIDTH}; }}
+
+/* Hide every Streamlit-native sidebar arrow. The app uses exactly one custom
+   CSS-only toggle below. */
 [data-testid="stSidebarCollapseButton"],
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"],
@@ -31,7 +37,7 @@ section[data-testid="stSidebar"] button[kind="headerNoPadding"],
 section[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"],
 section[data-testid="stSidebar"] button[data-testid="baseButton-header"],
 header[data-testid="stHeader"] button[kind="headerNoPadding"],
-header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"] {
+header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"] {{
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
@@ -42,14 +48,96 @@ header[data-testid="stHeader"] button[data-testid="baseButton-headerNoPadding"] 
     padding: 0 !important;
     margin: 0 !important;
     overflow: hidden !important;
-}
-/* Keep normal application buttons, including our custom menu arrow, visible. */
-section[data-testid="stSidebar"] div.stButton > button,
-div.stButton > button {
-    visibility: visible !important;
-    pointer-events: auto !important;
-}
+}}
+
+/* Hide the old Python/rerun menu arrows rendered by app.py. */
+button[aria-label="Skrýt menu"],
+button[title="Skrýt menu"],
+button[aria-label="Zobrazit menu"],
+button[title="Zobrazit menu"] {{
+    display: none !important;
+}}
+
+section[data-testid="stSidebar"],
+[data-testid="stSidebar"] {{
+    transition: margin-left .24s cubic-bezier(.22,.61,.36,1),
+                opacity .18s ease !important;
+    will-change: margin-left;
+}}
+
+[data-testid="stAppViewContainer"] > .main,
+[data-testid="stAppViewContainer"] .main,
+[data-testid="stAppViewContainer"] .block-container {{
+    transition: margin-left .24s cubic-bezier(.22,.61,.36,1),
+                padding-left .24s cubic-bezier(.22,.61,.36,1) !important;
+}}
+
+#logbook-nav-toggle {{
+    position: fixed;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}}
+
+label.logbook-nav-toggle {{
+    position: fixed;
+    top: 5.35rem;
+    left: calc(var(--lb-sidebar-width) - 2.65rem);
+    z-index: 1000001;
+    width: 1.86rem;
+    height: 1.86rem;
+    border-radius: .58rem;
+    border: 1px solid rgba(148, 163, 184, .28);
+    background: rgba(15, 31, 52, .94);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dbeafe;
+    font-weight: 900;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: left .24s cubic-bezier(.22,.61,.36,1),
+                background .14s ease,
+                border-color .14s ease,
+                transform .14s ease;
+}}
+
+label.logbook-nav-toggle:hover {{
+    background: rgba(20, 43, 72, .98);
+    border-color: rgba(56, 189, 248, .45);
+}}
+
+label.logbook-nav-toggle::before {{ content: "‹"; }}
+
+body:has(#logbook-nav-toggle:checked) label.logbook-nav-toggle {{
+    left: .7rem;
+}}
+body:has(#logbook-nav-toggle:checked) label.logbook-nav-toggle::before {{ content: "›"; }}
+
+body:has(#logbook-nav-toggle:checked) section[data-testid="stSidebar"],
+body:has(#logbook-nav-toggle:checked) [data-testid="stSidebar"] {{
+    margin-left: calc(-1 * var(--lb-sidebar-width)) !important;
+    opacity: .98 !important;
+}}
+
+@media (max-width: 760px) {{
+    label.logbook-nav-toggle {{
+        top: 4.6rem;
+        left: calc(var(--lb-sidebar-width) - 2.45rem);
+        width: 1.72rem;
+        height: 1.72rem;
+    }}
+    body:has(#logbook-nav-toggle:checked) label.logbook-nav-toggle {{
+        left: .45rem;
+    }}
+}}
 </style>
+<input id="logbook-nav-toggle" type="checkbox" aria-label="Skrýt nebo zobrazit menu" />
+<label class="logbook-nav-toggle" for="logbook-nav-toggle" title="Skrýt / zobrazit menu"></label>
 """
 
 
@@ -130,7 +218,6 @@ def _ensure_audit_schema(conn: sqlite3.Connection) -> None:
 
 
 def _ensure_airports_schema(conn: sqlite3.Connection) -> None:
-    """Create/upgrade the airports table before the app tries to use it."""
     try:
         conn.execute(
             """
@@ -159,24 +246,15 @@ def _ensure_airports_schema(conn: sqlite3.Connection) -> None:
             """
         )
         for column, ddl in [
-            ("name", "name TEXT"),
-            ("airport_type", "airport_type TEXT"),
-            ("iso_country", "iso_country TEXT"),
-            ("iso_region", "iso_region TEXT"),
-            ("municipality", "municipality TEXT"),
-            ("latitude_deg", "latitude_deg REAL"),
-            ("longitude_deg", "longitude_deg REAL"),
-            ("elevation_ft", "elevation_ft REAL"),
-            ("gps_code", "gps_code TEXT"),
-            ("iata_code", "iata_code TEXT"),
-            ("local_code", "local_code TEXT"),
-            ("source", "source TEXT"),
-            ("active", "active INTEGER DEFAULT 1"),
-            ("closed", "closed INTEGER DEFAULT 0"),
-            ("data_quality", "data_quality TEXT"),
-            ("imported_at", "imported_at TEXT"),
-            ("updated_at", "updated_at TEXT"),
-            ("raw_json", "raw_json TEXT"),
+            ("name", "name TEXT"), ("airport_type", "airport_type TEXT"),
+            ("iso_country", "iso_country TEXT"), ("iso_region", "iso_region TEXT"),
+            ("municipality", "municipality TEXT"), ("latitude_deg", "latitude_deg REAL"),
+            ("longitude_deg", "longitude_deg REAL"), ("elevation_ft", "elevation_ft REAL"),
+            ("gps_code", "gps_code TEXT"), ("iata_code", "iata_code TEXT"),
+            ("local_code", "local_code TEXT"), ("source", "source TEXT"),
+            ("active", "active INTEGER DEFAULT 1"), ("closed", "closed INTEGER DEFAULT 0"),
+            ("data_quality", "data_quality TEXT"), ("imported_at", "imported_at TEXT"),
+            ("updated_at", "updated_at TEXT"), ("raw_json", "raw_json TEXT"),
         ]:
             _add_column_if_missing(conn, "airports", column, ddl)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_airports_ident ON airports(ident)")
@@ -189,24 +267,25 @@ def _ensure_airports_schema(conn: sqlite3.Connection) -> None:
 def _float_or_none(value: Any) -> float | None:
     try:
         text = str(value or "").strip()
-        if not text:
-            return None
-        return float(text)
+        return float(text) if text else None
     except Exception:
         return None
 
 
-def _seed_airports_from_csv(conn: sqlite3.Connection) -> None:
-    """Restore the full OurAirports table when the DB only has manual overrides.
+def _clear_streamlit_cache() -> None:
+    try:
+        import streamlit as st
+        st.cache_data.clear()
+    except Exception:
+        pass
 
-    This makes data/logbook.sqlite self-healing on Streamlit Cloud. If GitHub
-    contains an older DB with only a handful of airport rows, the app imports the
-    bundled data/airports.csv at startup and marks the DB for automatic GitHub
-    backup, so the fixed DB becomes persistent.
-    """
+
+def _seed_airports_from_csv(conn: sqlite3.Connection) -> None:
+    """Import bundled data/airports.csv into SQLite if only manual rows exist."""
     global _AIRPORTS_SEED_CHECKED
     if _AIRPORTS_SEED_CHECKED:
         return
+
     _ensure_app_meta_schema(conn)
     _ensure_airports_schema(conn)
 
@@ -222,13 +301,14 @@ def _seed_airports_from_csv(conn: sqlite3.Connection) -> None:
     csv_path = Path(__file__).resolve().parent / "data" / "airports.csv"
     if not csv_path.exists():
         _set_meta(conn, "airports_auto_seed_error", "data/airports.csv not found")
+        conn.commit()
         return
 
-    imported = 0
+    now = _now_iso()
+    rows: list[tuple[Any, ...]] = []
     try:
         with csv_path.open("r", encoding="utf-8-sig", newline="") as fh:
             reader = csv.DictReader(fh)
-            rows = []
             for row in reader:
                 ident = (row.get("ident") or "").strip().upper()
                 if not ident:
@@ -240,29 +320,16 @@ def _seed_airports_from_csv(conn: sqlite3.Connection) -> None:
                 airport_type = (row.get("type") or row.get("airport_type") or "").strip()
                 closed = 1 if airport_type == "closed" else 0
                 active = 0 if closed else 1
-                rows.append(
-                    (
-                        ident,
-                        row.get("name"),
-                        airport_type,
-                        row.get("iso_country"),
-                        row.get("iso_region"),
-                        row.get("municipality"),
-                        lat,
-                        lon,
-                        _float_or_none(row.get("elevation_ft")),
-                        row.get("gps_code") or row.get("icao_code"),
-                        row.get("iata_code"),
-                        row.get("local_code") or ident,
-                        "ourairports_csv",
-                        active,
-                        closed,
-                        "ourairports_public_domain",
-                        _now_iso(),
-                        _now_iso(),
-                        json.dumps(row, ensure_ascii=False),
-                    )
-                )
+                # Keep raw_json small; the CSV remains in the repository for full source data.
+                rows.append((
+                    ident, row.get("name"), airport_type, row.get("iso_country"),
+                    row.get("iso_region"), row.get("municipality"), lat, lon,
+                    _float_or_none(row.get("elevation_ft")), row.get("gps_code"),
+                    row.get("iata_code"), row.get("local_code") or ident,
+                    "ourairports_csv", active, closed, "ourairports_public_domain",
+                    now, now, None,
+                ))
+
         conn.executemany(
             """
             INSERT OR IGNORE INTO airports
@@ -274,21 +341,18 @@ def _seed_airports_from_csv(conn: sqlite3.Connection) -> None:
             """,
             rows,
         )
-        imported = len(rows)
         final_count = int(conn.execute("SELECT COUNT(*) FROM airports").fetchone()[0])
         _set_meta(conn, "airports_auto_seeded", "1")
-        _set_meta(conn, "airports_auto_seeded_rows", str(imported))
+        _set_meta(conn, "airports_auto_seeded_rows", str(len(rows)))
         _set_meta(conn, "airports_count_after_seed", str(final_count))
         _set_meta(conn, "airports_seed_needs_github_backup", "1")
         _set_meta(conn, "dirty", "1")
         conn.commit()
         _AIRPORTS_SEED_CHECKED = True
+        _clear_streamlit_cache()
     except Exception as exc:
         try:
             conn.rollback()
-        except Exception:
-            pass
-        try:
             _set_meta(conn, "airports_auto_seed_error", str(exc)[:500])
             conn.commit()
         except Exception:
@@ -304,6 +368,15 @@ class PatchedConnection(sqlite3.Connection):
                 _ensure_audit_schema(self)
                 return super().execute(sql, parameters)
             raise
+
+    def executescript(self, sql_script: str, /):  # type: ignore[override]
+        result = super().executescript(sql_script)
+        if isinstance(sql_script, str) and "CREATE TABLE IF NOT EXISTS airports" in sql_script:
+            try:
+                _seed_airports_from_csv(self)
+            except Exception:
+                pass
+        return result
 
 
 def connect(*args, **kwargs):
@@ -321,7 +394,7 @@ sqlite3.connect = connect
 
 
 # -----------------------------------------------------------------------------
-# GitHub backup for auto-seeded airports
+# GitHub backup for auto-seeded airport DB
 # -----------------------------------------------------------------------------
 
 def _secret(section: str, key: str, default: str = "") -> str:
@@ -380,7 +453,7 @@ def _backup_pending_airport_seed() -> None:
         }
         if sha:
             payload["sha"] = sha
-        put_resp = requests.put(api_url, headers=headers, json=payload, timeout=120)
+        put_resp = requests.put(api_url, headers=headers, json=payload, timeout=180)
         if put_resp.status_code not in (200, 201):
             raise RuntimeError(f"GitHub PUT {put_resp.status_code}: {put_resp.text[:500]}")
         with _ORIGINAL_CONNECT(db_path) as conn:
@@ -399,15 +472,21 @@ def _backup_pending_airport_seed() -> None:
 
 
 # -----------------------------------------------------------------------------
-# Small UI compatibility patch
+# Streamlit UI patch
 # -----------------------------------------------------------------------------
 
 def _patch_streamlit_ui() -> None:
-    """Use compact menu arrows and hide the duplicate native sidebar toggle."""
     try:
         import streamlit as st
     except Exception:
         return
+
+    try:
+        # The app.py session-state sidebar toggle used reruns. We keep it off and
+        # use the CSS-only toggle above for smooth client-side animation.
+        st.session_state["sidebar_hidden"] = False
+    except Exception:
+        pass
 
     if getattr(st, "_logbook_ui_patch_applied", False):
         return
@@ -415,40 +494,30 @@ def _patch_streamlit_ui() -> None:
     original_button = st.button
     original_markdown = st.markdown
 
-    def inject_css() -> None:
-        try:
-            original_markdown(_CSS, unsafe_allow_html=True)
-        except Exception:
-            pass
-
-    def compact_button(label, *args, **kwargs):
-        if label == "Menu":
-            label = "›"
-            kwargs["help"] = kwargs.get("help") or "Zobrazit menu"
-            kwargs["type"] = "secondary"
-            kwargs["use_container_width"] = False
-        elif label == "Skrýt menu":
-            label = "‹"
-            kwargs["help"] = kwargs.get("help") or "Skrýt menu"
-            kwargs["type"] = "secondary"
-            kwargs["use_container_width"] = False
+    def patched_button(label, *args, **kwargs):
+        key = kwargs.get("key")
+        # Suppress the old app.py Python/rerun sidebar buttons completely.
+        if key in {"hide_manual_sidebar", "show_manual_sidebar"}:
+            return False
+        if label in {"Skrýt menu", "Menu"}:
+            return False
         return original_button(label, *args, **kwargs)
 
     def patched_markdown(body, *args, **kwargs):
-        result = original_markdown(body, *args, **kwargs)
-        # Inject after Streamlit/app styles as well, so our CSS wins in cascade.
-        try:
-            if isinstance(body, str) and ("<style" in body or not getattr(st, "_logbook_sidebar_css_once", False)):
-                st._logbook_sidebar_css_once = True
-                inject_css()
-                _backup_pending_airport_seed()
-        except Exception:
-            pass
-        return result
+        if not getattr(st, "_logbook_sidebar_css_injected", False):
+            st._logbook_sidebar_css_injected = True
+            original_markdown(_CSS_AND_TOGGLE, unsafe_allow_html=True)
+        if isinstance(body, str):
+            body = body.replace("v0.28", APP_DISPLAY_VERSION)
+        return original_markdown(body, *args, **kwargs)
 
-    st.button = compact_button
+    st.button = patched_button
     st.markdown = patched_markdown
     st._logbook_ui_patch_applied = True
+    try:
+        _backup_pending_airport_seed()
+    except Exception:
+        pass
 
 
 _patch_streamlit_ui()
