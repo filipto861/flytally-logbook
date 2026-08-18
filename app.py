@@ -29,7 +29,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.8"
+APP_VERSION = "v0.9"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1522,6 +1522,100 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         st.rerun()
 
 
+def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
+    """Professional flight list with explicit in-app Detail buttons.
+
+    Native st.dataframe row selection uses checkbox-like selectors and LinkColumn opens a
+    browser navigation. For the logbook UX we instead render a compact paginated list
+    and open the existing Streamlit modal directly from a button.
+    """
+    if table_df.empty:
+        st.info("Filtr nevrátil žádné lety.")
+        return
+
+    total_rows = len(table_df)
+    controls = st.columns([1.2, 1.2, 2.4])
+    with controls[0]:
+        page_size_label = st.selectbox("Počet řádků", ["25", "50", "100", "Vše"], index=1, key="flight_page_size")
+    page_size = total_rows if page_size_label == "Vše" else int(page_size_label)
+    pages = max(1, math.ceil(total_rows / page_size))
+    current_page = min(int(st.session_state.get("flight_page", 1)), pages)
+    with controls[1]:
+        current_page = st.number_input("Stránka", min_value=1, max_value=pages, value=current_page, step=1, key="flight_page_input")
+    st.session_state["flight_page"] = int(current_page)
+    with controls[2]:
+        search = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_quick_search")
+
+    view = table_df.copy()
+    if search.strip():
+        q = search.strip().upper()
+        hay = (
+            view["registration"].fillna("") + " " +
+            view["aircraft_type"].fillna("") + " " +
+            view["departure"].fillna("") + " " +
+            view["arrival"].fillna("") + " " +
+            view["role"].fillna("") + " " +
+            view["evidence"].fillna("") + " " +
+            view["date"].fillna("")
+        ).str.upper()
+        view = view[hay.str.contains(q, regex=False)]
+        total_rows = len(view)
+        pages = max(1, math.ceil(total_rows / page_size)) if page_size else 1
+        current_page = min(int(current_page), pages)
+
+    start_idx = (int(current_page) - 1) * page_size
+    end_idx = start_idx + page_size
+    page_df = view.iloc[start_idx:end_idx]
+
+    st.caption(f"Zobrazeno {len(page_df)} z {len(view)} letů. Detail se otevírá přímo v aplikaci, ne v novém okně.")
+
+    st.markdown("""
+    <div class="flight-list-head">
+      <div></div><div>ID</div><div>Datum</div><div>Letadlo</div><div>Trasa</div><div>Časy</div><div>Funkce</div><div>Block</div><div>Cena</div><div>GPS</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    for _, row in page_df.iterrows():
+        fid = int(row["id"])
+        cols = st.columns([0.9, 0.55, 1.0, 1.45, 1.35, 1.65, 1.05, 0.85, 1.0, 0.65], gap="small")
+        with cols[0]:
+            if st.button("Detail", key=f"open_flight_{fid}", use_container_width=True):
+                st.session_state["open_flight_dialog_id"] = fid
+                st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
+        with cols[1]:
+            st.markdown(f"<div class='flight-cell muted'>{fid}</div>", unsafe_allow_html=True)
+        with cols[2]:
+            st.markdown(f"<div class='flight-cell strong'>{row.get('date') or ''}</div>", unsafe_allow_html=True)
+        with cols[3]:
+            reg = row.get("registration") or ""
+            typ = row.get("aircraft_type") or ""
+            ev = row.get("evidence") or ""
+            st.markdown(f"<div class='flight-cell strong'>{reg}</div><div class='flight-sub'>{typ} · {ev}</div>", unsafe_allow_html=True)
+        with cols[4]:
+            st.markdown(f"<div class='flight-cell strong'>{row.get('departure') or ''}–{row.get('arrival') or ''}</div>", unsafe_allow_html=True)
+        with cols[5]:
+            times = f"{row.get('off_block') or ''}–{row.get('on_block') or ''}"
+            air = row.get("air_time") or ""
+            st.markdown(f"<div class='flight-cell'>{times}</div><div class='flight-sub'>Air {air}</div>", unsafe_allow_html=True)
+        with cols[6]:
+            st.markdown(f"<div class='flight-cell'>{row.get('role') or ''}</div>", unsafe_allow_html=True)
+        with cols[7]:
+            st.markdown(f"<div class='flight-cell strong'>{row.get('block_time') or ''}</div>", unsafe_allow_html=True)
+        with cols[8]:
+            st.markdown(f"<div class='flight-cell'>{row.get('cost_label') or ''}</div>", unsafe_allow_html=True)
+        with cols[9]:
+            gps = int(row.get("track_count") or 0)
+            st.markdown(f"<div class='flight-cell'>{gps}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='flight-row-line'></div>", unsafe_allow_html=True)
+
+    open_id = st.session_state.get("open_flight_dialog_id")
+    valid_ids = set(table_df["id"].astype(int).tolist())
+    if open_id is not None and int(open_id) in valid_ids:
+        dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
+        flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
+
+
 def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Lety")
     filtered = apply_filters(df, "logbook")
@@ -1537,35 +1631,7 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         return
 
     table_df = filtered.sort_values(["date_dt", "off_block", "id"], na_position="last").reset_index(drop=True)
-    display_df = flight_display_df(table_df)
-    display_df.insert(0, "Detail", [detail_link(int(x)) for x in table_df["id"]])
-    st.caption("Detail otevřeš přes sloupec Detail. V admin režimu můžeš let rovnou upravit nebo připojit KML track.")
-    st.dataframe(
-        display_df,
-        hide_index=True,
-        use_container_width=True,
-        height=560,
-        key="flight_table",
-        column_config={
-            "Detail": st.column_config.LinkColumn("Detail", display_text="Otevřít", width="small"),
-        },
-        column_order=["Detail"] + [c for c in display_df.columns if c != "Detail"],
-    )
-
-    requested_id = _query_param_value("flight_id")
-    if requested_id:
-        try:
-            requested_int = int(requested_id)
-        except ValueError:
-            requested_int = None
-        if requested_int is not None and requested_int in set(table_df["id"].astype(int).tolist()):
-            st.session_state["open_flight_dialog_id"] = requested_int
-            st.session_state.pop("dismissed_flight_id", None)
-
-    open_id = st.session_state.get("open_flight_dialog_id")
-    if open_id is not None and int(open_id) in set(table_df["id"].astype(int).tolist()):
-        dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
-        flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
+    render_flight_list(table_df, rates, dark_mode)
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
