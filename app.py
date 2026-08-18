@@ -29,7 +29,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.6"
+APP_VERSION = "v0.7"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -37,6 +37,17 @@ _DB_READY = False
 EVIDENCE_OPTIONS = ["ULL", "EASA"]
 CLASS_OPTIONS = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"]
 ROLE_OPTIONS = ["PIC", "DUAL", "INSTRUKTOR", "SAFETY PILOT", "CO-PILOT", "PAX", "OBSERVER"]
+
+NAV_ITEMS = [
+    ("Dashboard", "📊 Souhrn"),
+    ("Lety", "🧾 Lety"),
+    ("Nový let", "➕ Přidat let"),
+    ("Mapa", "🗺️ Mapa"),
+    ("Ceník", "💰 Ceník"),
+    ("Databáze", "🗄️ Databáze"),
+    ("Kontrola", "✅ Kontrola"),
+    ("Export", "📤 Export"),
+]
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -774,6 +785,10 @@ def apply_ui_theme(dark_mode: bool) -> None:
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
     .stTabs [data-baseweb="tab-list"] {{gap:.45rem;}}
     .stTabs [data-baseweb="tab"] {{border-radius:999px;padding:.45rem .9rem;background:var(--panel2);}}
+    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.65rem;}}
+    div.stButton > button[kind="primary"] {{box-shadow:0 10px 22px rgba(56,189,248,.18) !important;}}
+    div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
+    div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
     button[kind="primary"] {{border-radius:12px;}}
     @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}}}}
     </style>
@@ -795,6 +810,52 @@ def metric_card(label: str, value: str, sub: str = "") -> None:
     """, unsafe_allow_html=True)
 
 
+def go_to_page(page: str) -> None:
+    st.session_state["page"] = page
+    st.rerun()
+
+
+def render_nav_button(page_name: str, label: str, key: str) -> None:
+    current = st.session_state.get("page", "Dashboard") == page_name
+    if st.button(label, key=key, use_container_width=True, type="primary" if current else "secondary"):
+        go_to_page(page_name)
+
+
+def render_top_nav() -> None:
+    quick = [("Dashboard", "📊 Souhrn"), ("Lety", "🧾 Lety"), ("Nový let", "➕ Přidat let"), ("Databáze", "🗄️ Databáze"), ("Mapa", "🗺️ Mapa"), ("Export", "📤 Export")]
+    cols = st.columns(len(quick))
+    for col, (page_name, label) in zip(cols, quick):
+        with col:
+            render_nav_button(page_name, label, f"top_nav_{page_name}")
+    st.write("")
+
+
+def render_sidebar_nav() -> None:
+    st.markdown("### Menu")
+    for page_name, label in NAV_ITEMS:
+        render_nav_button(page_name, label, f"side_nav_{page_name}")
+
+
+def get_selected_dataframe_rows(event: Any) -> list[int]:
+    if event is None:
+        return []
+    try:
+        return list(event.selection.rows)
+    except Exception:
+        pass
+    try:
+        return list(event["selection"]["rows"])
+    except Exception:
+        return []
+
+
+def clear_open_flight_dialog() -> None:
+    current = st.session_state.get("open_flight_dialog_id")
+    if current is not None:
+        st.session_state["dismissed_flight_id"] = current
+    st.session_state.pop("open_flight_dialog_id", None)
+
+
 def plotly_layout(fig):
     fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#e5edf7"), margin=dict(l=10, r=10, t=45, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     fig.update_xaxes(gridcolor="rgba(148,163,184,.18)")
@@ -812,12 +873,19 @@ def apply_filters(df: pd.DataFrame, key_prefix: str = "") -> pd.DataFrame:
     years = sorted(int(y) for y in work["year"].dropna().unique())
     registrations = sorted(r for r in work["registration"].dropna().unique() if r)
     roles = sorted(r for r in work["role"].dropna().unique() if r)
-    with st.sidebar:
-        st.markdown("### Filtry")
-        selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
-        selected_evidence = st.multiselect("Evidence", EVIDENCE_OPTIONS, default=EVIDENCE_OPTIONS, key=f"{key_prefix}_ev")
-        selected_roles = st.multiselect("Funkce", roles, default=roles, key=f"{key_prefix}_roles")
-        selected_regs = st.multiselect("Imatrikulace", registrations, default=[], key=f"{key_prefix}_regs")
+
+    with st.expander("🔎 Filtry", expanded=False):
+        st.caption("Filtry jsou schované, aby nepřekážely. Výchozí stav zobrazuje vše.")
+        f1, f2, f3, f4 = st.columns(4)
+        with f1:
+            selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
+        with f2:
+            selected_evidence = st.multiselect("Evidence", EVIDENCE_OPTIONS, default=EVIDENCE_OPTIONS, key=f"{key_prefix}_ev")
+        with f3:
+            selected_roles = st.multiselect("Funkce", roles, default=roles, key=f"{key_prefix}_roles")
+        with f4:
+            selected_regs = st.multiselect("Imatrikulace", registrations, default=[], key=f"{key_prefix}_regs")
+
     if selected_years:
         work = work[work["year"].isin(selected_years)]
     if selected_evidence:
@@ -1360,24 +1428,11 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
     return None
 
 
-def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
-    st.markdown("## Lety")
-    filtered = apply_filters(df, "logbook")
-    s = build_summary(filtered)
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Zobrazeno", str(s["flights"]), "letů")
-    with c2: metric_card("Celkem", fmt_minutes(s["total"]), "block time")
-    with c3: metric_card("PIC", fmt_minutes(s["pic"]), "z filtrovaných letů")
-    with c4: metric_card("GPS", str(s["tracks"]), f"{s['gps_km']:.0f} km")
-    st.dataframe(flight_display_df(filtered.sort_values(["date_dt","off_block","id"], na_position="last")), hide_index=True, use_container_width=True, height=420)
 
-    if filtered.empty:
-        return
-    st.markdown("### Detail letu")
-    option_rows = {int(row["id"]): row for _, row in filtered.sort_values(["date_dt", "off_block", "id"], ascending=False).iterrows()}
-    option_ids = list(option_rows.keys())
-    selected_id = st.selectbox("Otevřít let", option_ids, format_func=lambda x: flight_label(option_rows[x]), key="selected_flight_detail")
-    row = option_rows[selected_id]
+@st.dialog("Detail letu", width="large", dismissible=True, on_dismiss=clear_open_flight_dialog)
+def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
+    row = pd.Series(row_data)
+    st.markdown(f"### {flight_label(row_data)}")
     tabs = st.tabs(["Přehled", "Editace", "Track"])
     with tabs[0]:
         c1, c2, c3, c4 = st.columns(4)
@@ -1385,6 +1440,24 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         with c2: metric_card("Trasa", f"{row.get('departure') or ''}–{row.get('arrival') or ''}", row.get("registration") or "")
         with c3: metric_card("Funkce", row.get("role") or "", row.get("evidence") or "")
         with c4: metric_card("Cena", row.get("cost_label") or "", f"GPS {int(row.get('track_count') or 0)}")
+        st.write("")
+        info = {
+            "Datum": row.get("date"),
+            "Imatrikulace": row.get("registration"),
+            "Typ": row.get("aircraft_type"),
+            "Třída": row.get("aircraft_class"),
+            "Odlet": row.get("departure"),
+            "Přílet": row.get("arrival"),
+            "Off Block": row.get("off_block"),
+            "Takeoff": row.get("takeoff"),
+            "Landing": row.get("landing"),
+            "On Block": row.get("on_block"),
+            "Velitel": row.get("commander"),
+            "Instruktor": row.get("instructor"),
+            "Úloha": row.get("task"),
+            "Poznámka": row.get("note"),
+        }
+        st.dataframe(pd.DataFrame([info]).T.rename(columns={0: "Hodnota"}), use_container_width=True, height=455)
     with tabs[1]:
         if not is_admin():
             st.info("Editace je dostupná jen po přihlášení jako admin.")
@@ -1393,17 +1466,19 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
             if saved is not None:
                 update_flight(int(selected_id), saved)
                 st.success("Změny uloženy.")
+                clear_open_flight_dialog()
                 st.rerun()
     with tabs[2]:
         flight_tracks = read_tracks_for_flight(int(selected_id))
         if not flight_tracks.empty:
-            st_folium(make_map(read_tracks_joined()[read_tracks_joined()["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True)
+            joined = read_tracks_joined()
+            st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True)
             first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
             render_track_profile(first_points)
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
             st.dataframe(show, hide_index=True, use_container_width=True)
             del_id = st.selectbox("Smazat track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}")
-            if st.button("Smazat vybraný track", type="secondary", disabled=not is_admin()):
+            if st.button("Smazat vybraný track", type="secondary", disabled=not is_admin(), use_container_width=True):
                 if require_admin():
                     delete_track(int(del_id)); st.success("Track smazán."); st.rerun()
         else:
@@ -1416,7 +1491,7 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
                     preview = pd.DataFrame([{"id": -1,"flight_id": selected_id,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": track_stats(points)["distance_km"],"date": row.get("date"),"registration": row.get("registration"),"departure": row.get("departure"),"arrival": row.get("arrival"),"role": row.get("role"),"evidence": row.get("evidence")}])
                     st_folium(make_map(preview, dark_mode), height=360, use_container_width=True)
                     replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True)
-                    if st.button("Uložit track k letu", type="primary", disabled=not is_admin()):
+                    if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
                         if require_admin():
                             save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
                             st.success("Track uložen."); st.rerun()
@@ -1424,6 +1499,62 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
                     st.error("V KML nejsou použitelné body.")
             except Exception as exc:
                 st.error(f"KML se nepodařilo načíst: {exc}")
+    if st.button("Zavřít detail", use_container_width=True):
+        clear_open_flight_dialog()
+        st.rerun()
+
+
+def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
+    st.markdown("## Lety")
+    filtered = apply_filters(df, "logbook")
+    s = build_summary(filtered)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: metric_card("Zobrazeno", str(s["flights"]), "letů")
+    with c2: metric_card("Celkem", fmt_minutes(s["total"]), "block time")
+    with c3: metric_card("PIC", fmt_minutes(s["pic"]), "z filtrovaných letů")
+    with c4: metric_card("GPS", str(s["tracks"]), f"{s['gps_km']:.0f} km")
+
+    if filtered.empty:
+        st.info("Filtr nevrátil žádné lety.")
+        return
+
+    st.caption("Klikni na řádek letu. Detail se otevře v modálním okně; v admin režimu ho můžeš rovnou upravit nebo připojit KML track.")
+    table_df = filtered.sort_values(["date_dt", "off_block", "id"], na_position="last").reset_index(drop=True)
+    display_df = flight_display_df(table_df)
+    event = st.dataframe(
+        display_df,
+        hide_index=True,
+        use_container_width=True,
+        height=520,
+        key="flight_table_selection",
+        on_select="rerun",
+        selection_mode="single-row",
+    )
+
+    selected_rows = get_selected_dataframe_rows(event)
+    if selected_rows:
+        selected_pos = selected_rows[0]
+        if 0 <= selected_pos < len(table_df):
+            selected_id = int(table_df.iloc[selected_pos]["id"])
+            st.session_state["selected_flight_id"] = selected_id
+            if selected_id != st.session_state.get("dismissed_flight_id"):
+                st.session_state["open_flight_dialog_id"] = selected_id
+
+    selected_id = st.session_state.get("selected_flight_id")
+    if selected_id is not None and int(selected_id) in set(table_df["id"].astype(int).tolist()):
+        selected_row = table_df[table_df["id"].astype(int).eq(int(selected_id))].iloc[0]
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            st.caption(f"Vybraný let: {flight_label(selected_row)}")
+        with c2:
+            if st.button("Otevřít detail vybraného letu", type="primary", use_container_width=True):
+                st.session_state.pop("dismissed_flight_id", None)
+                st.session_state["open_flight_dialog_id"] = int(selected_id)
+
+    open_id = st.session_state.get("open_flight_dialog_id")
+    if open_id is not None and int(open_id) in set(table_df["id"].astype(int).tolist()):
+        dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
+        flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
 
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
@@ -1824,13 +1955,17 @@ def page_export(df: pd.DataFrame):
 def main():
     st.set_page_config(page_title="Letový zápisník", page_icon="✈️", layout="wide", initial_sidebar_state="expanded")
     with connect(): pass
+    if "page" not in st.session_state:
+        st.session_state["page"] = "Dashboard"
     with st.sidebar:
         st.markdown("## ✈️ Logbook")
         dark_mode = st.toggle("Dark mode", value=True)
         render_auth_sidebar()
-        page = st.radio("Sekce", ["Dashboard", "Lety", "Nový let", "Mapa", "Ceník", "Databáze", "Kontrola", "Export"], index=0)
+        render_sidebar_nav()
     apply_ui_theme(dark_mode)
     app_header()
+    render_top_nav()
+    page = st.session_state.get("page", "Dashboard")
     flights = read_flights()
     rates = read_table("rates")
     if not rates.empty:
