@@ -37,8 +37,9 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
+AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.14"
+APP_VERSION = "v0.16"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -548,7 +549,7 @@ def import_airports_dataframe(
         if not ident or lat is None or lon is None:
             continue
         airport_type = normalize_text(val(row, "airport_type", "type", default="small_airport"))
-        closed = 1 if str(airport_type or "").lower() == "closed_airport" else int(_to_float(val(row, "closed", default=0)) or 0)
+        closed = 1 if str(airport_type or "").lower() in {"closed", "closed_airport"} else int(_to_float(val(row, "closed", default=0)) or 0)
         active = 0 if closed else int(_to_float(val(row, "active", default=1)) or 1)
         source = normalize_text(val(row, "source")) or default_source
         raw = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
@@ -627,12 +628,27 @@ def read_airports(active_only: bool = True) -> pd.DataFrame:
 
 
 def import_ourairports_to_database() -> int:
-    df = pd.read_csv(OURAIRPORTS_AIRPORTS_URL)
+    """Import world airport database into SQLite.
+
+    Prefer bundled data/airports.csv when present. If it is not present,
+    fall back to the public OurAirports CSV URL. The application never
+    keeps the world airport list hard-coded in Python.
+    """
+    if AIRPORTS_CSV_PATH.exists():
+        df = pd.read_csv(AIRPORTS_CSV_PATH)
+        source_label = "OurAirports bundled CSV"
+        source_ref = str(AIRPORTS_CSV_PATH.name)
+    else:
+        df = pd.read_csv(OURAIRPORTS_AIRPORTS_URL)
+        source_label = "OurAirports URL"
+        source_ref = OURAIRPORTS_AIRPORTS_URL
     with connect() as con:
-        count = import_airports_dataframe(con, df, default_source="OurAirports", replace_existing=True)
+        count = import_airports_dataframe(con, df, default_source=source_label, replace_existing=True)
         _seed_airports_from_overrides(con)
-        _set_meta(con, "ourairports_url", OURAIRPORTS_AIRPORTS_URL)
-        record_audit(con, "import_ourairports", "airports", None, {"rows": count})
+        _set_meta(con, "ourairports_source", source_ref)
+        _set_meta(con, "ourairports_rows", count)
+        _set_meta(con, "ourairports_imported_at", _now_iso())
+        record_audit(con, "import_ourairports", "airports", None, {"rows": count, "source": source_ref})
         con.commit()
     auto_backup_after_change("import_ourairports")
     return count
@@ -1414,7 +1430,13 @@ def map_center_from_tracks(tracks: pd.DataFrame) -> tuple[list[float], int]:
     return center, zoom
 
 
-def make_map(tracks: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
+def make_map(
+    tracks: pd.DataFrame,
+    dark_mode: bool = True,
+    line_weight: float = 4,
+    line_opacity: float = 0.78,
+    show_endpoints: bool = True,
+) -> folium.Map:
     center, zoom = map_center_from_tracks(tracks)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
     m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
@@ -1428,10 +1450,8 @@ def make_map(tracks: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
         if len(points) < 2:
             continue
         latlon = [(float(p["lat"]), float(p["lon"])) for p in points]
-        evidence = str(row.get("evidence") or "").upper(); role = str(row.get("role") or "").upper()
+        evidence = str(row.get("evidence") or "").upper()
         color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
-        weight = 5 if role == "PIC" else 3
-        dash = "8, 7" if role == "SAFETY PILOT" else None
         popup = folium.Popup(f"""
             <b>{row.get('date') or ''} • {row.get('registration') or ''}</b><br>
             {row.get('departure') or ''}–{row.get('arrival') or ''}<br>
@@ -1439,9 +1459,10 @@ def make_map(tracks: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
             GPS: {float(row.get('distance_km') or 0):.1f} km<br>
             Track: {row.get('file_name') or ''}
             """, max_width=330)
-        folium.PolyLine(latlon, color=color, weight=weight, opacity=.84, popup=popup, dash_array=dash).add_to(m)
-        folium.CircleMarker(latlon[0], radius=4, color="#22c55e", fill=True, fill_opacity=.9, tooltip="Start").add_to(m)
-        folium.CircleMarker(latlon[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.9, tooltip="End").add_to(m)
+        folium.PolyLine(latlon, color=color, weight=line_weight, opacity=line_opacity, popup=popup).add_to(m)
+        if show_endpoints:
+            folium.CircleMarker(latlon[0], radius=4, color="#22c55e", fill=True, fill_opacity=.9, tooltip="Start").add_to(m)
+            folium.CircleMarker(latlon[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.9, tooltip="End").add_to(m)
     folium.LayerControl().add_to(m)
     return m
 
@@ -1613,8 +1634,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         flight_tracks = read_tracks_for_flight(int(selected_id))
         if not flight_tracks.empty:
             joined = read_tracks_joined()
-            st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True)
-            st.caption("Styl čáry: plná čára = běžný let, čárkovaná čára = Safety Pilot. Není to podle typu letadla.")
+            st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
             first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
             render_track_profile(first_points)
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
@@ -1631,8 +1651,8 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 points = parse_kml_bytes(uploaded.read())
                 if len(points) >= 2:
                     preview = pd.DataFrame([{"id": -1,"flight_id": selected_id,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": track_stats(points)["distance_km"],"date": row.get("date"),"registration": row.get("registration"),"departure": row.get("departure"),"arrival": row.get("arrival"),"role": row.get("role"),"evidence": row.get("evidence")}])
-                    st_folium(make_map(preview, dark_mode), height=360, use_container_width=True)
-                    replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True)
+                    st_folium(make_map(preview, dark_mode), height=360, use_container_width=True, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
+                    replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
                     if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
                         if require_admin():
                             save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
@@ -1640,7 +1660,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 else:
                     st.error("V KML nejsou použitelné body.")
             except Exception as exc:
-                st.error(f"KML se nepodařilo načíst: {exc}")
+                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
     if st.button("Zavřít detail", use_container_width=True):
         clear_open_flight_dialog()
         st.rerun()
@@ -1787,7 +1807,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             try:
                 points = parse_kml_bytes(raw)
             except Exception as exc:
-                st.error(f"KML se nepodařilo načíst: {exc}")
+                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
                 points = []
             if len(points) >= 2:
                 defaults = infer_from_track(points, uploaded.name, rates)
@@ -1798,7 +1818,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
                 with c3: metric_card("Start UTC", (stats["start_utc"] or "—")[:16], "")
                 with c4: metric_card("Max alt", f"{(stats['max_alt_m'] or 0)*3.28084:.0f} ft" if stats.get("max_alt_m") else "—", "")
                 preview_df = pd.DataFrame([{"id": -1,"flight_id": -1,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": stats["distance_km"],"date": defaults.get("date"),"registration": defaults.get("registration"),"departure": defaults.get("departure"),"arrival": defaults.get("arrival"),"role": defaults.get("role"),"evidence": defaults.get("evidence")}])
-                st_folium(make_map(preview_df, dark_mode), height=420, use_container_width=True)
+                st_folium(make_map(preview_df, dark_mode), height=420, use_container_width=True, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
                 with st.expander("Profil tracku", expanded=True):
                     render_track_profile(points)
                 saved = flight_form("new_from_track", defaults, rates, "Uložit nový let včetně tracku")
@@ -1833,7 +1853,8 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
     with c1: metric_card("Tracky", str(len(tracks)), "z aktuálního filtru")
     with c2: metric_card("GPS vzdálenost", f"{tracks['distance_km'].fillna(0).sum():.1f} km", "")
     with c3: metric_card("Letů ve filtru", str(len(filtered)), "")
-    st_folium(make_map(tracks, dark_mode=dark_mode), height=680, use_container_width=True)
+    st.caption("Mapa všech letů používá tenčí plné čáry bez rozlišení PIC/DUAL/Safety Pilot, aby zůstala čitelná i při větším počtu tracků.")
+    st_folium(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False), height=680, use_container_width=True, key=f"all_tracks_map_{len(tracks)}")
     st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
 
 
@@ -2028,11 +2049,15 @@ def page_database():
 
     with tab_import:
         st.markdown("### Aktualizace letišť")
+        if AIRPORTS_CSV_PATH.exists():
+            st.info(f"Součástí aplikace je lokální airports.csv: {AIRPORTS_CSV_PATH.name}. Import proběhne z tohoto souboru; není potřeba nic stahovat z internetu.")
+        else:
+            st.info("Lokální airports.csv není v repozitáři, použije se veřejný OurAirports CSV export z internetu.")
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("Stáhnout / aktualizovat OurAirports", type="primary", use_container_width=True, disabled=not is_admin()):
+            if st.button("Importovat světovou databázi letišť", type="primary", use_container_width=True, disabled=not is_admin()):
                 if require_admin():
-                    with st.spinner("Stahuji a importuji OurAirports…"):
+                    with st.spinner("Importuji světovou databázi letišť…"):
                         try:
                             count = import_ourairports_to_database()
                             st.success(f"Import hotový: {count:,} řádků.".replace(",", " "))
