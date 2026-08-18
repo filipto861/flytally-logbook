@@ -1,4 +1,4 @@
-# Letový zápisník v0.18
+# Letový zápisník v0.20
 
 Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KML/GPS tracky, databázová správa a admin režim.
 
@@ -6,7 +6,7 @@ Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KM
 
 - Hlavní databáze je `data/logbook.sqlite`.
 - Kód aplikace se může aktualizovat, databázi po ostrém provozu nepřepisovat bez zálohy.
-- Na Streamlit Community Cloud se lokální SQLite změny po restartu nemusí zachovat, proto v0.18 přidává automatickou zálohu databáze na GitHub.
+- Na Streamlit Community Cloud se lokální SQLite změny po restartu nemusí zachovat, proto aplikace používá automatickou zálohu databáze na GitHub.
 
 ## Streamlit Secrets
 
@@ -51,6 +51,15 @@ Nepřepisovat bez zálohy:
 
 - `data/logbook.sqlite`
 
+## v0.20
+
+- Import nového letu z KML automaticky detekuje takeoff a landing z GPS rychlosti.
+- Pokud není dostupná rychlost, používá se záložní detekce podle výšky.
+- `Off Block` se předvyplní jako takeoff minus 5 minut.
+- `On Block` se předvyplní jako landing plus 5 minut.
+- Aplikace nově podporuje i KML, kde jsou body uložené jako jednotlivé Placemark/Point záznamy s TimeStamp.
+- Pokud KML neobsahuje časové značky, aplikace to jasně oznámí a časy nechá k ručnímu doplnění.
+
 ## v0.18
 
 - Automatická GitHub záloha SQLite databáze po každé potvrzené změně.
@@ -91,3 +100,10 @@ Nepřepisovat bez zálohy:
 
 - Aplikace je trvale v tmavém režimu.
 - Stránka Kontrola je skrytá z navigace; validace zůstávají přímo u formulářů a databázových pravidel.
+
+
+## v0.20
+
+- Oprava pádu seznamu letů při nově přidaném letu s prázdným nebo nečíselným polem.
+- Robustnější formátování prázdných hodnot v seznamu letů.
+- Databáze se nemění; nahrává se pouze kód aplikace.
