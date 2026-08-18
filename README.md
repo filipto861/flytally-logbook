@@ -107,3 +107,13 @@ Nepřepisovat bez zálohy:
 - Oprava pádu seznamu letů při nově přidaném letu s prázdným nebo nečíselným polem.
 - Robustnější formátování prázdných hodnot v seznamu letů.
 - Databáze se nemění; nahrává se pouze kód aplikace.
+
+
+## v0.24
+
+Oprava zobrazení sidebaru po jeho skrytí. Nativní ovládací tlačítko Streamlit sidebaru zůstává viditelné i při sbaleném sidebaru.
+
+
+## v0.24
+- Horní Streamlit lišta je znovu skrytá.
+- Sidebar je vynuceně viditelný, aby nezmizel bez možnosti návratu.

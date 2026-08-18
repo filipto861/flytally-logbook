@@ -43,7 +43,6 @@ def _ensure_audit_schema(conn: sqlite3.Connection) -> None:
         _add_column_if_missing(conn, "audit_log", "object_type", "object_type TEXT")
         _add_column_if_missing(conn, "audit_log", "object_id", "object_id TEXT")
         _add_column_if_missing(conn, "audit_log", "detail_json", "detail_json TEXT")
-        # Columns used by earlier development builds. Keeping them is harmless.
         _add_column_if_missing(conn, "audit_log", "user", "user TEXT")
         _add_column_if_missing(conn, "audit_log", "entity", "entity TEXT")
         _add_column_if_missing(conn, "audit_log", "entity_id", "entity_id TEXT")
