@@ -2,7 +2,9 @@
 
 This file is intentionally small and is imported automatically by Python when
 present on sys.path. It keeps older logbook.sqlite schemas compatible with the
-current app code, mainly older audit_log tables.
+current app code, mainly older audit_log tables. It also applies a tiny UI patch
+for the Streamlit menu toggle buttons so the app can use a discreet arrow
+instead of full text labels.
 """
 from __future__ import annotations
 
@@ -73,3 +75,44 @@ def connect(*args, **kwargs):
 
 
 sqlite3.connect = connect
+
+
+# -----------------------------------------------------------------------------
+# Small UI compatibility patch
+# -----------------------------------------------------------------------------
+
+def _patch_streamlit_buttons() -> None:
+    """Replace the two menu-toggle text buttons with compact arrows.
+
+    The app code keeps readable labels for maintainability. At runtime, this
+    patch turns only these two exact labels into small, unobtrusive arrow
+    buttons and leaves all other Streamlit buttons unchanged.
+    """
+    try:
+        import streamlit as st  # Imported lazily enough for Streamlit Cloud.
+    except Exception:
+        return
+
+    if getattr(st, "_logbook_button_patch_applied", False):
+        return
+
+    original_button = st.button
+
+    def compact_button(label, *args, **kwargs):
+        if label == "Menu":
+            label = "›"
+            kwargs["help"] = kwargs.get("help") or "Zobrazit menu"
+            kwargs["type"] = "secondary"
+            kwargs["use_container_width"] = False
+        elif label == "Skrýt menu":
+            label = "‹"
+            kwargs["help"] = kwargs.get("help") or "Skrýt menu"
+            kwargs["type"] = "secondary"
+            kwargs["use_container_width"] = False
+        return original_button(label, *args, **kwargs)
+
+    st.button = compact_button
+    st._logbook_button_patch_applied = True
+
+
+_patch_streamlit_buttons()
