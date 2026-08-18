@@ -38,7 +38,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.10"
+APP_VERSION = "v0.11"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1537,139 +1537,112 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
 
 
 def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
-    """Compact, fast flight list.
+    """Reliable compact flight list based on native Streamlit selection.
 
-    v0.9 rendered one Streamlit button per row. That works, but it is slow and wastes
-    vertical space. v0.10 uses AgGrid when available: one compact grid, row click to
-    select, and one clear button to open the in-app modal.
+    v0.10 AgGrid selection was visually nice but unreliable on Streamlit Cloud.
+    v0.11 returns to native st.dataframe selection, preserves the detailed columns,
+    and adds a direct ID fallback so opening a flight never depends on a custom grid.
     """
     if table_df.empty:
         st.info("Filtr nevrátil žádné lety.")
         return
 
-    st.markdown('<div class="flight-help">Vyber řádek letu a otevři detail tlačítkem pod tabulkou. Detail se otevře přímo v aplikaci, ne v novém okně.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="flight-help">Vyber řádek v tabulce. Potom otevři detail tlačítkem pod tabulkou. Detail se otevře přímo v aplikaci.</div>',
+        unsafe_allow_html=True,
+    )
 
-    grid_source = table_df.copy()
-    grid_source["Trasa"] = grid_source["departure"].fillna("") + "–" + grid_source["arrival"].fillna("")
-    grid_source["Časy"] = grid_source["off_block"].fillna("") + "–" + grid_source["on_block"].fillna("")
-    grid_source["Letadlo"] = grid_source["registration"].fillna("") + " / " + grid_source["aircraft_type"].fillna("")
-    grid_source["GPS"] = grid_source["track_count"].fillna(0).astype(int)
-    grid_source["GPS km"] = grid_source["gps_km"].fillna(0).round(1)
+    display_df = flight_display_df(table_df).copy()
 
-    grid = grid_source[[
-        "id", "date", "evidence", "registration", "aircraft_type", "aircraft_class",
-        "Trasa", "Časy", "block_time", "air_time", "starts", "role", "commander",
-        "price_per_hour", "cost_label", "GPS", "GPS km"
-    ]].rename(columns={
-        "id": "ID",
-        "date": "Datum",
-        "evidence": "Evidence",
-        "registration": "Imatrikulace",
-        "aircraft_type": "Typ",
-        "aircraft_class": "Třída",
-        "block_time": "Block",
-        "air_time": "Air",
-        "starts": "Starty",
-        "role": "Funkce",
-        "commander": "Velitel",
-        "price_per_hour": "Kč/h",
-        "cost_label": "Cena",
-    })
-
-    controls = st.columns([1.2, 3.0, 1.2])
+    controls = st.columns([1.0, 2.4, 1.4])
     with controls[0]:
-        page_size = st.selectbox("Řádků", [25, 50, 100, 200], index=1, key="flight_grid_page_size")
+        table_height = st.selectbox("Velikost tabulky", [420, 520, 620], index=1, format_func=lambda x: {420:"Kompaktní",520:"Střední",620:"Velká"}[x], key="flight_table_height")
     with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_grid_quick_filter")
+        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter")
     with controls[2]:
         st.write("")
-        st.write(f"{len(grid)} letů")
+        st.write(f"{len(display_df)} letů")
+
+    if quick_filter.strip():
+        q = quick_filter.strip().lower()
+        mask = display_df.astype(str).apply(lambda col: col.str.lower().str.contains(q, na=False)).any(axis=1)
+        shown_df = display_df[mask].copy()
+        shown_table_df = table_df.loc[shown_df.index].copy()
+    else:
+        shown_df = display_df.copy()
+        shown_table_df = table_df.copy()
+
+    # Keep row mapping robust even after quick filtering.
+    shown_df = shown_df.reset_index(drop=True)
+    shown_table_df = shown_table_df.reset_index(drop=True)
+
+    column_config = {
+        "ID": st.column_config.NumberColumn("ID", width="small"),
+        "Datum": st.column_config.TextColumn("Datum", width="small"),
+        "Evidence": st.column_config.TextColumn("Evidence", width="small"),
+        "Imatrikulace": st.column_config.TextColumn("Imatrikulace", width="medium"),
+        "Typ": st.column_config.TextColumn("Typ", width="medium"),
+        "Třída": st.column_config.TextColumn("Třída", width="small"),
+        "Odlet": st.column_config.TextColumn("Odlet", width="small"),
+        "Přílet": st.column_config.TextColumn("Přílet", width="small"),
+        "Off Block": st.column_config.TextColumn("Off Block", width="small"),
+        "Takeoff": st.column_config.TextColumn("Takeoff", width="small"),
+        "Landing": st.column_config.TextColumn("Landing", width="small"),
+        "On Block": st.column_config.TextColumn("On Block", width="small"),
+        "Block": st.column_config.TextColumn("Block", width="small"),
+        "Air": st.column_config.TextColumn("Air", width="small"),
+        "Starty": st.column_config.NumberColumn("Starty", width="small"),
+        "Velitel": st.column_config.TextColumn("Velitel", width="medium"),
+        "Instruktor": st.column_config.TextColumn("Instruktor", width="medium"),
+        "Funkce": st.column_config.TextColumn("Funkce", width="medium"),
+        "Úloha": st.column_config.TextColumn("Úloha", width="small"),
+        "Kč/h": st.column_config.NumberColumn("Kč/h", width="small"),
+        "Cena": st.column_config.TextColumn("Cena", width="small"),
+        "GPS": st.column_config.NumberColumn("GPS", width="small"),
+        "GPS km": st.column_config.NumberColumn("GPS km", width="small"),
+        "Poznámka": st.column_config.TextColumn("Poznámka", width="large"),
+    }
+
+    event = st.dataframe(
+        shown_df,
+        hide_index=True,
+        use_container_width=True,
+        height=int(table_height),
+        key="flight_table_selection_v11",
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config=column_config,
+    )
 
     selected_id: int | None = None
+    selected_rows = get_selected_dataframe_rows(event)
+    if selected_rows:
+        pos = int(selected_rows[0])
+        if 0 <= pos < len(shown_table_df):
+            selected_id = int(shown_table_df.iloc[pos]["id"])
+            st.session_state["selected_flight_id"] = selected_id
 
-    if HAS_AGGRID:
-        gb = GridOptionsBuilder.from_dataframe(grid)
-        gb.configure_default_column(
-            sortable=True,
-            filter=True,
-            resizable=True,
-            editable=False,
-            minWidth=74,
-        )
-        gb.configure_selection(selection_mode="single", use_checkbox=False)
-        gb.configure_column("ID", width=70, pinned="left")
-        gb.configure_column("Datum", width=105, pinned="left")
-        gb.configure_column("Evidence", width=90)
-        gb.configure_column("Imatrikulace", width=115)
-        gb.configure_column("Typ", width=110)
-        gb.configure_column("Třída", width=80)
-        gb.configure_column("Trasa", width=120)
-        gb.configure_column("Časy", width=125)
-        gb.configure_column("Block", width=80)
-        gb.configure_column("Air", width=70)
-        gb.configure_column("Starty", width=75)
-        gb.configure_column("Funkce", width=120)
-        gb.configure_column("Velitel", width=150)
-        gb.configure_column("Kč/h", width=90, type=["numericColumn"])
-        gb.configure_column("Cena", width=100)
-        gb.configure_column("GPS", width=70)
-        gb.configure_column("GPS km", width=85)
-        gb.configure_grid_options(
-            rowHeight=30,
-            headerHeight=34,
-            pagination=True,
-            paginationPageSize=int(page_size),
-            suppressCellFocus=True,
-            suppressRowClickSelection=False,
-            quickFilterText=quick_filter,
-            animateRows=False,
-        )
-        grid_options = gb.build()
-        custom_css = {
-            ".ag-root-wrapper": {"border": "1px solid rgba(125,211,252,.18)", "border-radius": "14px", "overflow": "hidden"},
-            ".ag-header": {"background-color": "#0b182a", "color": "#e6f0fb", "font-weight": "700"},
-            ".ag-row": {"background-color": "#06101d", "color": "#e6f0fb", "font-size": "12px"},
-            ".ag-row-odd": {"background-color": "#071525"},
-            ".ag-row-hover": {"background-color": "rgba(56,189,248,.12) !important"},
-            ".ag-row-selected": {"background-color": "rgba(56,189,248,.24) !important"},
-            ".ag-cell": {"padding-left": "8px !important", "padding-right": "8px !important", "line-height": "30px !important"},
-            ".ag-header-cell-label": {"font-size": "12px"},
-        }
-        response = AgGrid(
-            grid,
-            gridOptions=grid_options,
-            height=560,
-            theme="balham-dark" if dark_mode else "balham",
-            fit_columns_on_grid_load=False,
-            update_mode=GridUpdateMode.SELECTION_CHANGED,
-            data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-            allow_unsafe_jscode=False,
-            custom_css=custom_css,
-            key="flights_aggrid",
-        )
-        selected_rows = response.get("selected_rows") if isinstance(response, dict) else None
-        if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
-            selected_id = int(selected_rows.iloc[0]["ID"])
-        elif isinstance(selected_rows, list) and selected_rows:
-            selected_id = int(selected_rows[0].get("ID"))
-    else:
-        # Fallback if streamlit-aggrid is not installed. Streamlit still shows a selector,
-        # but the layout stays compact and functional.
-        event = st.dataframe(
-            grid,
-            hide_index=True,
-            use_container_width=True,
-            height=560,
-            selection_mode="single-row",
-            on_select="rerun",
-        )
-        rows = get_selected_dataframe_rows(event)
-        if rows:
-            selected_id = int(grid.iloc[rows[0]]["ID"])
-        st.warning("Balíček streamlit-aggrid není nainstalovaný, proto je použit záložní režim tabulky.")
+    if selected_id is None:
+        remembered = st.session_state.get("selected_flight_id")
+        valid_ids = set(shown_table_df["id"].astype(int).tolist())
+        if remembered is not None and int(remembered) in valid_ids:
+            selected_id = int(remembered)
+
+    # Fallback direct selector: robust even if browser/table selection misbehaves.
+    with st.expander("Otevřít let podle ID", expanded=False):
+        labels = [flight_label(row) for _, row in shown_table_df.iterrows()]
+        ids = shown_table_df["id"].astype(int).tolist()
+        if ids:
+            current_index = ids.index(selected_id) if selected_id in ids else max(0, len(ids)-1)
+            picked = st.selectbox("Let", ids, index=current_index, format_func=lambda x: labels[ids.index(int(x))], key="flight_id_fallback_select")
+            if st.button("Otevřít vybraný let", type="primary", use_container_width=True, key="open_fallback_flight"):
+                st.session_state["selected_flight_id"] = int(picked)
+                st.session_state["open_flight_dialog_id"] = int(picked)
+                st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
 
     if selected_id is not None:
-        selected_row = table_df[table_df["id"].astype(int).eq(int(selected_id))].iloc[0]
+        selected_row = shown_table_df[shown_table_df["id"].astype(int).eq(int(selected_id))].iloc[0]
         st.markdown(
             f"""
             <div class="selected-flight-box">
@@ -1679,7 +1652,7 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
             """,
             unsafe_allow_html=True,
         )
-        if st.button("Otevřít detail vybraného letu", type="primary", use_container_width=True):
+        if st.button("Otevřít detail vybraného letu", type="primary", use_container_width=True, key="open_selected_flight_detail"):
             st.session_state["open_flight_dialog_id"] = int(selected_id)
             st.session_state.pop("dismissed_flight_id", None)
             st.rerun()
@@ -1689,6 +1662,7 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     if open_id is not None and int(open_id) in valid_ids:
         dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
+
 
 
 def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
