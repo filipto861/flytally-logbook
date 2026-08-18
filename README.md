@@ -117,3 +117,9 @@ Oprava zobrazení sidebaru po jeho skrytí. Nativní ovládací tlačítko Strea
 ## v0.24
 - Horní Streamlit lišta je znovu skrytá.
 - Sidebar je vynuceně viditelný, aby nezmizel bez možnosti návratu.
+
+
+## v0.27
+
+- Přidáno vlastní skrývání levého menu bez závislosti na nativní horní liště Streamlitu.
+- Po skrytí menu se v hlavním obsahu zobrazí tlačítko `Menu` pro obnovení.

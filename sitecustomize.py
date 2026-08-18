@@ -2,9 +2,7 @@
 
 This file is intentionally small and is imported automatically by Python when
 present on sys.path. It keeps older logbook.sqlite schemas compatible with the
-current app code, mainly older audit_log tables. It also applies a tiny UI patch
-for the Streamlit menu toggle buttons so the app can use a discreet arrow
-instead of full text labels.
+current app code, mainly older audit_log tables.
 """
 from __future__ import annotations
 
@@ -82,14 +80,9 @@ sqlite3.connect = connect
 # -----------------------------------------------------------------------------
 
 def _patch_streamlit_buttons() -> None:
-    """Replace the two menu-toggle text buttons with compact arrows.
-
-    The app code keeps readable labels for maintainability. At runtime, this
-    patch turns only these two exact labels into small, unobtrusive arrow
-    buttons and leaves all other Streamlit buttons unchanged.
-    """
+    """Replace the two menu-toggle text buttons with compact arrows."""
     try:
-        import streamlit as st  # Imported lazily enough for Streamlit Cloud.
+        import streamlit as st
     except Exception:
         return
 
