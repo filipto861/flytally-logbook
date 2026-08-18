@@ -1,4 +1,4 @@
-# Letový zápisník v0.7
+# Letový zápisník v0.8
 
 Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KML/GPS tracky, databázová správa a admin režim.
 
@@ -7,7 +7,7 @@ Streamlit aplikace pro osobní pilotní logbook: ULL/EASA, nálety, náklady, KM
 - Hlavní databáze je `data/logbook.sqlite`.
 - Tuto databázi po ostrém provozu nemažte ani nepřepisujte bez zálohy.
 - Kód aplikace se může aktualizovat, databáze zůstává datovým úložištěm.
-- v0.7 přidává čistší navigaci, skryté filtry a detail letu v modálním okně po kliknutí na řádek.
+- v0.8 přidává čistší navigaci, skryté filtry a detail letu v modálním okně po kliknutí na řádek.
 
 ## Streamlit Secrets
 

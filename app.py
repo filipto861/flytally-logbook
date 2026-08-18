@@ -29,7 +29,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.7"
+APP_VERSION = "v0.8"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -39,14 +39,14 @@ CLASS_OPTIONS = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"]
 ROLE_OPTIONS = ["PIC", "DUAL", "INSTRUKTOR", "SAFETY PILOT", "CO-PILOT", "PAX", "OBSERVER"]
 
 NAV_ITEMS = [
-    ("Dashboard", "📊 Souhrn"),
-    ("Lety", "🧾 Lety"),
-    ("Nový let", "➕ Přidat let"),
-    ("Mapa", "🗺️ Mapa"),
-    ("Ceník", "💰 Ceník"),
-    ("Databáze", "🗄️ Databáze"),
-    ("Kontrola", "✅ Kontrola"),
-    ("Export", "📤 Export"),
+    ("Dashboard", "Souhrn"),
+    ("Lety", "Lety"),
+    ("Nový let", "Přidat let"),
+    ("Mapa", "Mapa"),
+    ("Ceník", "Ceník"),
+    ("Databáze", "Databáze"),
+    ("Kontrola", "Kontrola"),
+    ("Export", "Export"),
 ]
 
 SCHEMA = """
@@ -212,17 +212,17 @@ def actor_name() -> str:
 
 def render_auth_sidebar() -> None:
     admin_password = _get_secret("auth", "admin_password", "")
-    with st.sidebar:
-        st.markdown("### Přístup")
+    st.divider()
+    with st.expander("Správa aplikace", expanded=is_admin()):
         if admin_password:
             if is_admin():
-                st.success("Admin")
+                st.caption("Přihlášeno jako správce.")
                 if st.button("Odhlásit", use_container_width=True):
                     st.session_state.pop("auth_role", None)
                     st.rerun()
             else:
                 with st.form("admin_login_form"):
-                    pwd = st.text_input("Admin heslo", type="password")
+                    pwd = st.text_input("Heslo správce", type="password")
                     submitted = st.form_submit_button("Přihlásit", use_container_width=True)
                 if submitted:
                     if pwd == admin_password:
@@ -231,7 +231,7 @@ def render_auth_sidebar() -> None:
                     else:
                         st.error("Nesprávné heslo")
         else:
-            st.info("Read-only. Admin heslo není nastavené.")
+            st.caption("Správcovské heslo zatím není nastavené. Aplikace běží jen pro čtení.")
 
 
 def require_admin() -> bool:
@@ -775,6 +775,7 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .app-title {{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.05rem 1.25rem;border:1px solid var(--border);background:linear-gradient(135deg,rgba(56,189,248,.14),rgba(15,23,42,.04)),var(--panel);border-radius:20px;box-shadow:0 16px 38px var(--shadow);margin-bottom:1rem;}}
     .app-title-main {{font-size:1.55rem;font-weight:850;color:var(--text);line-height:1.1;}}
     .app-title-sub {{font-size:.86rem;color:var(--muted);margin-top:.18rem;}}
+    .sidebar-version {{color:var(--muted);font-size:.78rem;margin-top:-.4rem;margin-bottom:1rem;}}
     .app-badge {{font-size:.78rem;font-weight:800;color:#031421;background:linear-gradient(135deg,var(--accent),#a7f3d0);border-radius:999px;padding:.38rem .72rem;white-space:nowrap;}}
     .metric-card {{border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--panel);box-shadow:0 12px 30px var(--shadow);min-height:108px;}}
     .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
@@ -798,7 +799,7 @@ def apply_ui_theme(dark_mode: bool) -> None:
 def app_header(subtitle: str = "Lokální pilotní evidence • ULL / EASA • náklady • GPS tracky") -> None:
     st.markdown(f"""
     <div class="app-title">
-      <div><div class="app-title-main">✈️ Letový zápisník</div><div class="app-title-sub">{subtitle}</div></div>
+      <div><div class="app-title-main">Letový zápisník</div><div class="app-title-sub">{subtitle}</div></div>
       <div class="app-badge">{APP_VERSION}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -821,17 +822,8 @@ def render_nav_button(page_name: str, label: str, key: str) -> None:
         go_to_page(page_name)
 
 
-def render_top_nav() -> None:
-    quick = [("Dashboard", "📊 Souhrn"), ("Lety", "🧾 Lety"), ("Nový let", "➕ Přidat let"), ("Databáze", "🗄️ Databáze"), ("Mapa", "🗺️ Mapa"), ("Export", "📤 Export")]
-    cols = st.columns(len(quick))
-    for col, (page_name, label) in zip(cols, quick):
-        with col:
-            render_nav_button(page_name, label, f"top_nav_{page_name}")
-    st.write("")
-
-
 def render_sidebar_nav() -> None:
-    st.markdown("### Menu")
+    st.markdown("### Navigace")
     for page_name, label in NAV_ITEMS:
         render_nav_button(page_name, label, f"side_nav_{page_name}")
 
@@ -854,6 +846,32 @@ def clear_open_flight_dialog() -> None:
     if current is not None:
         st.session_state["dismissed_flight_id"] = current
     st.session_state.pop("open_flight_dialog_id", None)
+    try:
+        if "flight_id" in st.query_params:
+            del st.query_params["flight_id"]
+    except Exception:
+        pass
+
+
+def _query_param_value(name: str) -> str | None:
+    try:
+        value = st.query_params.get(name)
+        if isinstance(value, list):
+            return value[0] if value else None
+        return value
+    except Exception:
+        return None
+
+
+def detail_link(flight_id: int) -> str:
+    try:
+        current_url = str(getattr(st.context, "url", "") or "")
+        if current_url.startswith(("http://", "https://")):
+            base = current_url.split("?")[0].split("#")[0]
+            return f"{base}?flight_id={int(flight_id)}"
+    except Exception:
+        pass
+    return f"?flight_id={int(flight_id)}"
 
 
 def plotly_layout(fig):
@@ -874,8 +892,8 @@ def apply_filters(df: pd.DataFrame, key_prefix: str = "") -> pd.DataFrame:
     registrations = sorted(r for r in work["registration"].dropna().unique() if r)
     roles = sorted(r for r in work["role"].dropna().unique() if r)
 
-    with st.expander("🔎 Filtry", expanded=False):
-        st.caption("Filtry jsou schované, aby nepřekážely. Výchozí stav zobrazuje vše.")
+    with st.expander("Filtry", expanded=False):
+        st.caption("Výchozí stav zobrazuje všechny lety. Filtry rozbal jen při hledání konkrétního období, letadla nebo funkce.")
         f1, f2, f3, f4 = st.columns(4)
         with f1:
             selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
@@ -1518,44 +1536,36 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         st.info("Filtr nevrátil žádné lety.")
         return
 
-    st.caption("Klikni na řádek letu. Detail se otevře v modálním okně; v admin režimu ho můžeš rovnou upravit nebo připojit KML track.")
     table_df = filtered.sort_values(["date_dt", "off_block", "id"], na_position="last").reset_index(drop=True)
     display_df = flight_display_df(table_df)
-    event = st.dataframe(
+    display_df.insert(0, "Detail", [detail_link(int(x)) for x in table_df["id"]])
+    st.caption("Detail otevřeš přes sloupec Detail. V admin režimu můžeš let rovnou upravit nebo připojit KML track.")
+    st.dataframe(
         display_df,
         hide_index=True,
         use_container_width=True,
-        height=520,
-        key="flight_table_selection",
-        on_select="rerun",
-        selection_mode="single-row",
+        height=560,
+        key="flight_table",
+        column_config={
+            "Detail": st.column_config.LinkColumn("Detail", display_text="Otevřít", width="small"),
+        },
+        column_order=["Detail"] + [c for c in display_df.columns if c != "Detail"],
     )
 
-    selected_rows = get_selected_dataframe_rows(event)
-    if selected_rows:
-        selected_pos = selected_rows[0]
-        if 0 <= selected_pos < len(table_df):
-            selected_id = int(table_df.iloc[selected_pos]["id"])
-            st.session_state["selected_flight_id"] = selected_id
-            if selected_id != st.session_state.get("dismissed_flight_id"):
-                st.session_state["open_flight_dialog_id"] = selected_id
-
-    selected_id = st.session_state.get("selected_flight_id")
-    if selected_id is not None and int(selected_id) in set(table_df["id"].astype(int).tolist()):
-        selected_row = table_df[table_df["id"].astype(int).eq(int(selected_id))].iloc[0]
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            st.caption(f"Vybraný let: {flight_label(selected_row)}")
-        with c2:
-            if st.button("Otevřít detail vybraného letu", type="primary", use_container_width=True):
-                st.session_state.pop("dismissed_flight_id", None)
-                st.session_state["open_flight_dialog_id"] = int(selected_id)
+    requested_id = _query_param_value("flight_id")
+    if requested_id:
+        try:
+            requested_int = int(requested_id)
+        except ValueError:
+            requested_int = None
+        if requested_int is not None and requested_int in set(table_df["id"].astype(int).tolist()):
+            st.session_state["open_flight_dialog_id"] = requested_int
+            st.session_state.pop("dismissed_flight_id", None)
 
     open_id = st.session_state.get("open_flight_dialog_id")
     if open_id is not None and int(open_id) in set(table_df["id"].astype(int).tolist()):
         dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
-
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
@@ -1953,18 +1963,18 @@ def page_export(df: pd.DataFrame):
 # -----------------------------------------------------------------------------
 
 def main():
-    st.set_page_config(page_title="Letový zápisník", page_icon="✈️", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="Letový zápisník", layout="wide", initial_sidebar_state="expanded")
     with connect(): pass
     if "page" not in st.session_state:
         st.session_state["page"] = "Dashboard"
     with st.sidebar:
-        st.markdown("## ✈️ Logbook")
-        dark_mode = st.toggle("Dark mode", value=True)
-        render_auth_sidebar()
+        st.markdown("## Letový zápisník")
+        st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
+        dark_mode = st.toggle("Tmavý režim", value=True)
         render_sidebar_nav()
+        render_auth_sidebar()
     apply_ui_theme(dark_mode)
     app_header()
-    render_top_nav()
     page = st.session_state.get("page", "Dashboard")
     flights = read_flights()
     rates = read_table("rates")
