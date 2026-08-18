@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.29"
+APP_VERSION = "v0.30"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1248,6 +1248,48 @@ def normalize_track_points(points: list[dict[str, Any]]) -> list[dict[str, Any]]
         return [dict(pt) for _, _, pt in indexed]
     return [dict(pt) for pt in points]
 
+def _coord_tokens_to_points(coord_text: str) -> list[dict[str, Any]]:
+    parsed: list[dict[str, Any]] = []
+    for token in coord_text.replace("\n", " ").replace("\t", " ").split():
+        parts = token.split(",")
+        if len(parts) < 2:
+            continue
+        try:
+            lon = float(parts[0])
+            lat = float(parts[1])
+            alt = float(parts[2]) if len(parts) >= 3 and parts[2] else None
+        except ValueError:
+            continue
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            parsed.append({"lat": lat, "lon": lon, "alt": alt, "time": None})
+    return parsed
+
+
+def _placemark_text(placemark: ET.Element, element_name: str) -> str | None:
+    for elem in placemark.iter():
+        if local_name(elem.tag) == element_name and (elem.text or "").strip():
+            return (elem.text or "").strip()
+    return None
+
+
+def _parse_fr24_description_times(text: str | None) -> list[str]:
+    """Return UTC ISO strings found in a Flightradar24 Placemark description/name."""
+    if not text:
+        return []
+    found = re.findall(r"(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})\s*UTC", text)
+    return [f"{date}T{clock}+00:00" for date, clock in found]
+
+
+def _append_point_unique(points: list[dict[str, Any]], point: dict[str, Any]) -> None:
+    if points:
+        prev = points[-1]
+        same_pos = abs(float(prev.get("lat", 999)) - float(point.get("lat", -999))) < 1e-7 and abs(float(prev.get("lon", 999)) - float(point.get("lon", -999))) < 1e-7
+        same_time = (prev.get("time") or None) == (point.get("time") or None)
+        if same_pos and same_time:
+            return
+    points.append(point)
+
+
 def parse_kml_bytes(data: bytes) -> list[dict[str, Any]]:
     root = ET.fromstring(data)
     points: list[dict[str, Any]] = []
@@ -1277,49 +1319,81 @@ def parse_kml_bytes(data: bytes) -> list[dict[str, Any]]:
     if points:
         return normalize_track_points(points)
 
-    # Some exports store one Point in each Placemark with a TimeStamp.
-    # This keeps the clock-time inference working for more KML sources.
+    # Flightradar24 usually exports two parallel datasets in one KML:
+    # 1) timestamped Point Placemarks,
+    # 2) visual LineString segments named P-1, P-2, ...
+    # Older parser mixed both together, which produced an artificial line from
+    # the last real point back to the first segment. Therefore Point Placemarks
+    # are parsed first and, when they contain usable times, the LineStrings are
+    # intentionally ignored.
+    point_points: list[dict[str, Any]] = []
+    line_segment_points: list[dict[str, Any]] = []
+
     for placemark in root.iter():
         if local_name(placemark.tag) != "Placemark":
             continue
-        when = None
-        coord_text = None
-        for elem in placemark.iter():
-            lname = local_name(elem.tag)
-            if lname in {"when", "begin"} and (elem.text or "").strip():
-                when = (elem.text or "").strip()
-            elif lname == "coordinates" and (elem.text or "").strip() and coord_text is None:
-                coord_text = (elem.text or "").strip()
-        if not coord_text:
-            continue
-        first_token = coord_text.replace("\n", " ").replace("\t", " ").split()[0]
-        parts = first_token.split(",")
-        if len(parts) < 2:
-            continue
-        try:
-            lon = float(parts[0]); lat = float(parts[1]); alt = float(parts[2]) if len(parts) >= 3 and parts[2] else None
-        except ValueError:
-            continue
-        if -90 <= lat <= 90 and -180 <= lon <= 180:
-            points.append({"lat": lat, "lon": lon, "alt": alt, "time": when})
-    if points:
-        return normalize_track_points(points)
 
-    # Fallback: plain LineString coordinates usually do not contain per-point times.
+        pm_name = _placemark_text(placemark, "name") or ""
+        pm_desc = _placemark_text(placemark, "description") or ""
+        when = _placemark_text(placemark, "when") or _placemark_text(placemark, "begin")
+
+        # Point-only placemarks: FR24 exports one of these for every recorded fix.
+        for point_elem in placemark.iter():
+            if local_name(point_elem.tag) != "Point":
+                continue
+            coord_text = None
+            for elem in point_elem.iter():
+                if local_name(elem.tag) == "coordinates" and (elem.text or "").strip():
+                    coord_text = (elem.text or "").strip()
+                    break
+            if not coord_text:
+                continue
+            parsed = _coord_tokens_to_points(coord_text)
+            if not parsed:
+                continue
+            pt = parsed[0]
+            # Some FR24 files put the timestamp in the Placemark name instead of <when>.
+            time_from_name = _parse_fr24_description_times(pm_name)
+            pt["time"] = when or (time_from_name[0] if time_from_name else None)
+            _append_point_unique(point_points, pt)
+
+        # LineString segments: keep them only as a fallback when no timestamped
+        # Point stream exists. Parse the two timestamps from the description.
+        for line_elem in placemark.iter():
+            if local_name(line_elem.tag) != "LineString":
+                continue
+            coord_text = None
+            for elem in line_elem.iter():
+                if local_name(elem.tag) == "coordinates" and (elem.text or "").strip():
+                    coord_text = (elem.text or "").strip()
+                    break
+            if not coord_text:
+                continue
+            parsed = _coord_tokens_to_points(coord_text)
+            if not parsed:
+                continue
+            times = _parse_fr24_description_times(pm_desc)
+            for idx, pt in enumerate(parsed):
+                if idx < len(times):
+                    pt["time"] = times[idx]
+                _append_point_unique(line_segment_points, pt)
+
+    timed_points = [p for p in point_points if p.get("time")]
+    if len(timed_points) >= 2:
+        return normalize_track_points(point_points)
+    if len(line_segment_points) >= 2:
+        return normalize_track_points(line_segment_points)
+    if point_points:
+        return normalize_track_points(point_points)
+
+    # Fallback: plain coordinates. This is intentionally only reached when no
+    # usable Point/LineString track was parsed above.
     for elem in root.iter():
         if local_name(elem.tag) != "coordinates":
             continue
         text = (elem.text or "").strip()
-        for token in text.replace("\n", " ").replace("\t", " ").split():
-            parts = token.split(",")
-            if len(parts) < 2:
-                continue
-            try:
-                lon = float(parts[0]); lat = float(parts[1]); alt = float(parts[2]) if len(parts) >= 3 and parts[2] else None
-            except ValueError:
-                continue
-            if -90 <= lat <= 90 and -180 <= lon <= 180:
-                points.append({"lat": lat, "lon": lon, "alt": alt, "time": None})
+        for pt in _coord_tokens_to_points(text):
+            _append_point_unique(points, pt)
     return normalize_track_points(points)
 
 
