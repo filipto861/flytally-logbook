@@ -5,7 +5,6 @@ on:
   push:
     paths:
       - "data/airports.csv"
-      - "data/logbook.sqlite"
       - "scripts/seed_airports_full.py"
       - ".github/workflows/seed-airports.yml"
 
@@ -26,17 +25,17 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Import full airport database into SQLite
+      - name: Build fixed airport SQLite database
         run: python scripts/seed_airports_full.py
 
-      - name: Commit updated SQLite database
+      - name: Commit updated airport database
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/logbook.sqlite
+          git add data/airports_full.sqlite
           if git diff --cached --quiet; then
-            echo "No database changes to commit."
+            echo "No airport database changes to commit."
           else
-            git commit -m "Persist full airport database"
+            git commit -m "Persist fixed airport database"
             git push
           fi
