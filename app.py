@@ -38,7 +38,7 @@ DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.11"
+APP_VERSION = "v0.12"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -794,12 +794,20 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .pill {{display:inline-block;border:1px solid var(--border);border-radius:999px;background:var(--panel2);padding:.25rem .62rem;margin:.1rem .18rem;font-size:.82rem;color:var(--text);}}
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
     .flight-help {{color:var(--muted);font-size:.86rem;margin:.25rem 0 .75rem 0;}}
+
+    .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
+    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.15rem .15rem .22rem .15rem;border-bottom:1px solid var(--border);}}
+    .flight-cell {{font-size:.80rem;line-height:1.08;padding:.12rem .15rem;color:var(--text);}}
+    .flight-cell-main {{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    .flight-cell-sub {{font-size:.70rem;color:var(--muted);margin-top:.14rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.10rem 0 .10rem 0;}}
+    .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
     .selected-flight-box {{border:1px solid var(--border); border-radius:14px; padding:.65rem .85rem; background:rgba(56,189,248,.07); margin:.5rem 0 .75rem 0;}}
     .selected-flight-title {{font-weight:850;color:var(--text);}}
     .selected-flight-sub {{font-size:.82rem;color:var(--muted);margin-top:.1rem;}}
     .stTabs [data-baseweb="tab-list"] {{gap:.45rem;}}
     .stTabs [data-baseweb="tab"] {{border-radius:999px;padding:.45rem .9rem;background:var(--panel2);}}
-    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.65rem;}}
+    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.15rem; padding:.28rem .62rem !important;}}
     div.stButton > button[kind="primary"] {{box-shadow:0 10px 22px rgba(56,189,248,.18) !important;}}
     div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
     div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
@@ -1536,133 +1544,106 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
 
 
 
-def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
-    """Reliable compact flight list based on native Streamlit selection.
+def _safe_text(value: Any) -> str:
+    if value is None or pd.isna(value):
+        return ""
+    text = str(value)
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-    v0.10 AgGrid selection was visually nice but unreliable on Streamlit Cloud.
-    v0.11 returns to native st.dataframe selection, preserves the detailed columns,
-    and adds a direct ID fallback so opening a flight never depends on a custom grid.
+
+def _cell(main: Any, sub: Any = "") -> str:
+    main_txt = _safe_text(main)
+    sub_txt = _safe_text(sub)
+    if sub_txt:
+        return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div><div class="flight-cell-sub">{sub_txt}</div></div>'
+    return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div></div>'
+
+
+def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
+    """Compact paginated flight list with one real Detail button per visible row.
+
+    This avoids unreliable table selection and avoids opening browser links. Only the
+    visible page gets buttons, so it stays responsive on Streamlit Cloud.
     """
     if table_df.empty:
         st.info("Filtr nevrátil žádné lety.")
         return
 
-    st.markdown(
-        '<div class="flight-help">Vyber řádek v tabulce. Potom otevři detail tlačítkem pod tabulkou. Detail se otevře přímo v aplikaci.</div>',
-        unsafe_allow_html=True,
-    )
-
     display_df = flight_display_df(table_df).copy()
 
-    controls = st.columns([1.0, 2.4, 1.4])
+    controls = st.columns([1.0, 2.4, 1.0, 1.0])
     with controls[0]:
-        table_height = st.selectbox("Velikost tabulky", [420, 520, 620], index=1, format_func=lambda x: {420:"Kompaktní",520:"Střední",620:"Velká"}[x], key="flight_table_height")
+        page_size_choice = st.selectbox("Řádků", [25, 50, 100], index=0, key="flight_page_size_v12")
     with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter")
-    with controls[2]:
-        st.write("")
-        st.write(f"{len(display_df)} letů")
+        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v12")
 
     if quick_filter.strip():
         q = quick_filter.strip().lower()
         mask = display_df.astype(str).apply(lambda col: col.str.lower().str.contains(q, na=False)).any(axis=1)
-        shown_df = display_df[mask].copy()
-        shown_table_df = table_df.loc[shown_df.index].copy()
+        shown_display = display_df[mask].copy()
+        shown_table = table_df.loc[shown_display.index].copy()
     else:
-        shown_df = display_df.copy()
-        shown_table_df = table_df.copy()
+        shown_display = display_df.copy()
+        shown_table = table_df.copy()
 
-    # Keep row mapping robust even after quick filtering.
-    shown_df = shown_df.reset_index(drop=True)
-    shown_table_df = shown_table_df.reset_index(drop=True)
+    shown_display = shown_display.reset_index(drop=True)
+    shown_table = shown_table.reset_index(drop=True)
 
-    column_config = {
-        "ID": st.column_config.NumberColumn("ID", width="small"),
-        "Datum": st.column_config.TextColumn("Datum", width="small"),
-        "Evidence": st.column_config.TextColumn("Evidence", width="small"),
-        "Imatrikulace": st.column_config.TextColumn("Imatrikulace", width="medium"),
-        "Typ": st.column_config.TextColumn("Typ", width="medium"),
-        "Třída": st.column_config.TextColumn("Třída", width="small"),
-        "Odlet": st.column_config.TextColumn("Odlet", width="small"),
-        "Přílet": st.column_config.TextColumn("Přílet", width="small"),
-        "Off Block": st.column_config.TextColumn("Off Block", width="small"),
-        "Takeoff": st.column_config.TextColumn("Takeoff", width="small"),
-        "Landing": st.column_config.TextColumn("Landing", width="small"),
-        "On Block": st.column_config.TextColumn("On Block", width="small"),
-        "Block": st.column_config.TextColumn("Block", width="small"),
-        "Air": st.column_config.TextColumn("Air", width="small"),
-        "Starty": st.column_config.NumberColumn("Starty", width="small"),
-        "Velitel": st.column_config.TextColumn("Velitel", width="medium"),
-        "Instruktor": st.column_config.TextColumn("Instruktor", width="medium"),
-        "Funkce": st.column_config.TextColumn("Funkce", width="medium"),
-        "Úloha": st.column_config.TextColumn("Úloha", width="small"),
-        "Kč/h": st.column_config.NumberColumn("Kč/h", width="small"),
-        "Cena": st.column_config.TextColumn("Cena", width="small"),
-        "GPS": st.column_config.NumberColumn("GPS", width="small"),
-        "GPS km": st.column_config.NumberColumn("GPS km", width="small"),
-        "Poznámka": st.column_config.TextColumn("Poznámka", width="large"),
-    }
+    total_rows = len(shown_table)
+    page_size = int(page_size_choice)
+    page_count = max(1, math.ceil(total_rows / page_size))
+    with controls[2]:
+        page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v12", page_count)), page_count), step=1, key="flight_page_v12")
+    with controls[3]:
+        st.markdown(f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>', unsafe_allow_html=True)
 
-    event = st.dataframe(
-        shown_df,
-        hide_index=True,
-        use_container_width=True,
-        height=int(table_height),
-        key="flight_table_selection_v11",
-        on_select="rerun",
-        selection_mode="single-row",
-        column_config=column_config,
+    start = (int(page) - 1) * page_size
+    end = start + page_size
+    page_rows = shown_table.iloc[start:end].copy()
+
+    st.markdown(
+        '<div class="flight-list-note">Detail otevřeš přímo tlačítkem u konkrétního letu. Neotvírá se nové okno prohlížeče.</div>',
+        unsafe_allow_html=True,
     )
 
-    selected_id: int | None = None
-    selected_rows = get_selected_dataframe_rows(event)
-    if selected_rows:
-        pos = int(selected_rows[0])
-        if 0 <= pos < len(shown_table_df):
-            selected_id = int(shown_table_df.iloc[pos]["id"])
-            st.session_state["selected_flight_id"] = selected_id
+    widths = [0.72, 0.48, 0.88, 0.62, 1.25, 1.02, 1.05, 0.82, 0.52, 0.92, 1.22, 0.92, 0.78, 0.50]
+    headers = ["", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    hcols = st.columns(widths, gap="small")
+    for col, header in zip(hcols, headers):
+        col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
 
-    if selected_id is None:
-        remembered = st.session_state.get("selected_flight_id")
-        valid_ids = set(shown_table_df["id"].astype(int).tolist())
-        if remembered is not None and int(remembered) in valid_ids:
-            selected_id = int(remembered)
-
-    # Fallback direct selector: robust even if browser/table selection misbehaves.
-    with st.expander("Otevřít let podle ID", expanded=False):
-        labels = [flight_label(row) for _, row in shown_table_df.iterrows()]
-        ids = shown_table_df["id"].astype(int).tolist()
-        if ids:
-            current_index = ids.index(selected_id) if selected_id in ids else max(0, len(ids)-1)
-            picked = st.selectbox("Let", ids, index=current_index, format_func=lambda x: labels[ids.index(int(x))], key="flight_id_fallback_select")
-            if st.button("Otevřít vybraný let", type="primary", use_container_width=True, key="open_fallback_flight"):
-                st.session_state["selected_flight_id"] = int(picked)
-                st.session_state["open_flight_dialog_id"] = int(picked)
+    for _, row in page_rows.iterrows():
+        flight_id = int(row.get("id"))
+        cols = st.columns(widths, gap="small")
+        with cols[0]:
+            if st.button("Detail", key=f"flight_detail_btn_{flight_id}", use_container_width=True):
+                st.session_state["open_flight_dialog_id"] = flight_id
+                st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
-                st.rerun()
-
-    if selected_id is not None:
-        selected_row = shown_table_df[shown_table_df["id"].astype(int).eq(int(selected_id))].iloc[0]
-        st.markdown(
-            f"""
-            <div class="selected-flight-box">
-              <div class="selected-flight-title">Vybraný let: ID {int(selected_id)} • {selected_row.get('date') or ''} • {selected_row.get('registration') or ''}</div>
-              <div class="selected-flight-sub">{selected_row.get('departure') or ''}–{selected_row.get('arrival') or ''} • {selected_row.get('off_block') or ''}–{selected_row.get('on_block') or ''} • {selected_row.get('role') or ''}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Otevřít detail vybraného letu", type="primary", use_container_width=True, key="open_selected_flight_detail"):
-            st.session_state["open_flight_dialog_id"] = int(selected_id)
-            st.session_state.pop("dismissed_flight_id", None)
-            st.rerun()
+        cols[1].markdown(_cell(flight_id), unsafe_allow_html=True)
+        cols[2].markdown(_cell(row.get("date")), unsafe_allow_html=True)
+        cols[3].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
+        aircraft_sub = " • ".join([x for x in [row.get("aircraft_type"), row.get("aircraft_class")] if x])
+        cols[4].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
+        cols[5].markdown(_cell(f"{row.get('departure') or ''}–{row.get('arrival') or ''}"), unsafe_allow_html=True)
+        time_main = f"{row.get('off_block') or ''}–{row.get('on_block') or ''}"
+        time_sub = f"Air {row.get('takeoff') or ''}–{row.get('landing') or ''}"
+        cols[6].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
+        cols[7].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
+        cols[8].markdown(_cell(row.get("starts")), unsafe_allow_html=True)
+        cols[9].markdown(_cell(row.get("role")), unsafe_allow_html=True)
+        cols[10].markdown(_cell(row.get("commander"), row.get("instructor") if row.get("instructor") not in [None, "", "None"] else ""), unsafe_allow_html=True)
+        cols[11].markdown(_cell(row.get("task")), unsafe_allow_html=True)
+        cols[12].markdown(_cell(row.get("cost_label"), f"{row.get('price_per_hour') or 0:.0f} Kč/h" if pd.notna(row.get('price_per_hour')) else ""), unsafe_allow_html=True)
+        gps_km = float(row.get("gps_km") or 0)
+        cols[13].markdown(_cell(int(row.get("track_count") or 0), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
     valid_ids = set(table_df["id"].astype(int).tolist())
     if open_id is not None and int(open_id) in valid_ids:
         dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
-
 
 
 def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
