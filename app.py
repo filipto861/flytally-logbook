@@ -39,7 +39,7 @@ DB_PATH = DATA_DIR / "logbook.sqlite"
 AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.26"
+APP_VERSION = "v0.25"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -926,22 +926,23 @@ def apply_ui_theme(dark_mode: bool) -> None:
     st.markdown(f"""
     <style>
     :root {{--bg:{bg};--panel:{panel};--panel2:{panel2};--text:{text};--muted:{muted};--border:{border};--accent:{accent};--good:{good};--warn:{warn};--shadow:{shadow};}}
-    /* Streamlit chrome: hide native header/sidebar. Navigation is rendered
-       as our own in-app panel, so it cannot disappear behind the Streamlit
-       collapsed-sidebar control. */
-    header[data-testid="stHeader"] {{display:none !important; height:0 !important; min-height:0 !important; visibility:hidden !important;}}
+    /* Streamlit chrome: hide the top header completely. Do NOT rely on the
+       native collapsed sidebar button; on Streamlit Cloud it is not rendered
+       consistently when the header is hidden. Instead we force the sidebar to
+       stay visible and accessible. */
+    header[data-testid="stHeader"] {{display:block !important; visibility:visible !important; height:0 !important; min-height:0 !important; background:transparent !important; pointer-events:none !important; z-index:999998 !important; overflow:visible !important;}}
+    header[data-testid="stHeader"] * {{pointer-events:none !important;}}
     div[data-testid="stToolbar"], div[data-testid="stDecoration"], div[data-testid="stStatusWidget"], #MainMenu, footer {{display:none !important; visibility:hidden !important; height:0 !important;}}
     .stDeployButton {{display:none !important;}}
-    section[data-testid="stSidebar"], [data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"] {{display:none !important; visibility:hidden !important; width:0 !important; min-width:0 !important; max-width:0 !important;}}
-    [data-testid="stAppViewContainer"] > .main {{padding-top:0 !important; margin-left:0 !important;}}
-    [data-testid="stAppViewContainer"] .main .block-container {{padding-top:0 !important; margin-top:0 !important; max-width:1600px;}}
+    [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"] {{display:none !important; visibility:hidden !important;}}
+    section[data-testid="stSidebar"], [data-testid="stSidebar"] {{display:block !important; visibility:visible !important; opacity:1 !important; transform:translateX(0) !important; min-width:16.4rem !important; max-width:16.4rem !important; width:16.4rem !important; left:0 !important;}}
+    [data-testid="stSidebarContent"] {{display:block !important; visibility:visible !important; opacity:1 !important; transform:translateX(0) !important;}}
+    [data-testid="stAppViewContainer"] > .main {{padding-top:0 !important;}}
+    [data-testid="stAppViewContainer"] .main .block-container {{padding-top:0 !important; margin-top:0 !important;}}
     .stApp {{background: radial-gradient(circle at 16% 10%, rgba(56,189,248,.16), transparent 24%), radial-gradient(circle at 88% 3%, rgba(34,197,94,.08), transparent 26%), var(--bg); color:var(--text);}}
-    .custom-sidebar-panel {{background:linear-gradient(180deg,rgba(11,24,42,.98),rgba(6,16,29,.98));border:1px solid var(--border);border-radius:18px;padding:1rem;box-shadow:0 14px 32px var(--shadow);position:sticky;top:.75rem;min-height:calc(100vh - 1.5rem);}}
-    .custom-sidebar-rail {{background:linear-gradient(180deg,rgba(11,24,42,.98),rgba(6,16,29,.98));border:1px solid var(--border);border-radius:18px;padding:.55rem;box-shadow:0 14px 32px var(--shadow);position:sticky;top:.75rem;min-height:calc(100vh - 1.5rem);}}
-    .custom-sidebar-title {{font-size:1.08rem;font-weight:850;color:var(--text);margin-bottom:.10rem;}}
-    .custom-sidebar-label {{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:850;margin:.85rem 0 .45rem;}}
-    .custom-sidebar-panel hr, .custom-sidebar-rail hr {{border-color:var(--border);}}
-    .block-container {{padding-top:0 !important; padding-bottom:3rem; max-width:1600px;}}
+    [data-testid="stSidebar"] {{background: linear-gradient(180deg, rgba(11,24,42,.98), rgba(6,16,29,.98)); border-right:1px solid var(--border);}}
+    [data-testid="stSidebar"] * {{color:#e6f0fb;}}
+    .block-container {{padding-top:0 !important; padding-bottom:3rem; max-width:1500px;}}
     h1,h2,h3 {{letter-spacing:-.025em;}}
     .app-title {{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.05rem 1.25rem;border:1px solid var(--border);background:linear-gradient(135deg,rgba(56,189,248,.14),rgba(15,23,42,.04)),var(--panel);border-radius:20px;box-shadow:0 16px 38px var(--shadow);margin-bottom:1rem;}}
     .app-title-main {{font-size:1.55rem;font-weight:850;color:var(--text);line-height:1.1;}}
@@ -2513,84 +2514,36 @@ def page_export(df: pd.DataFrame):
 # Main
 # -----------------------------------------------------------------------------
 
-def render_custom_sidebar() -> None:
-    """Render in-app navigation instead of Streamlit native sidebar.
-
-    The native sidebar is unreliable here because hiding the Streamlit header
-    also hides the only official control that can reopen a collapsed sidebar.
-    This panel is just normal app content, so it cannot get permanently hidden.
-    """
-    collapsed = bool(st.session_state.get("custom_sidebar_collapsed", False))
-    if collapsed:
-        st.markdown('<div class="custom-sidebar-rail">', unsafe_allow_html=True)
-        if st.button("Menu", key="show_custom_sidebar", use_container_width=True):
-            st.session_state["custom_sidebar_collapsed"] = False
-            st.rerun()
-        st.markdown(f'<div class="sidebar-version" style="text-align:center;margin-top:.65rem;">{APP_VERSION}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        return
-
-    st.markdown('<div class="custom-sidebar-panel">', unsafe_allow_html=True)
-    c1, c2 = st.columns([1, .55])
-    with c1:
-        st.markdown('<div class="custom-sidebar-title">Letový zápisník</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
-    with c2:
-        if st.button("Skrýt", key="hide_custom_sidebar", use_container_width=True):
-            st.session_state["custom_sidebar_collapsed"] = True
-            st.rerun()
-    st.markdown('<div class="custom-sidebar-label">Navigace</div>', unsafe_allow_html=True)
-    render_sidebar_nav()
-    render_auth_sidebar()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-def render_current_page(page: str, flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
-    app_header()
-    if page == "Dashboard":
-        page_dashboard(flights)
-    elif page == "Lety":
-        page_logbook(flights, rates, dark_mode)
-    elif page == "Nový let":
-        page_new_flight(rates, dark_mode)
-    elif page == "Mapa":
-        page_maps(flights, dark_mode)
-    elif page == "Ceník":
-        page_rates(rates)
-    elif page == "Databáze":
-        page_database()
-    elif page == "Kontrola":
-        st.session_state["page"] = "Dashboard"
-        st.rerun()
-    elif page == "Export":
-        page_export(flights)
-
-
 def main():
-    st.set_page_config(page_title="Letový zápisník", layout="wide", initial_sidebar_state="collapsed")
-    dark_mode = True
-    apply_ui_theme(dark_mode)
-    with connect():
-        pass
+    st.set_page_config(page_title="Letový zápisník", layout="wide", initial_sidebar_state="expanded")
+    with connect(): pass
     if "page" not in st.session_state:
         st.session_state["page"] = "Dashboard"
-    if "custom_sidebar_collapsed" not in st.session_state:
-        st.session_state["custom_sidebar_collapsed"] = False
-
+    with st.sidebar:
+        st.markdown("## Letový zápisník")
+        st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
+        # Aplikace běží trvale v tmavém režimu; přepínač je z finálního UI odstraněn.
+        dark_mode = True
+        render_sidebar_nav()
+        render_auth_sidebar()
+    apply_ui_theme(dark_mode)
+    app_header()
     page = st.session_state.get("page", "Dashboard")
     flights = read_flights()
     rates = read_table("rates")
     if not rates.empty:
         rates["registration"] = rates["registration"].fillna("").str.upper()
-
-    collapsed = bool(st.session_state.get("custom_sidebar_collapsed", False))
-    nav_width = 0.075 if collapsed else 0.19
-    content_width = 1 - nav_width
-    nav_col, content_col = st.columns([nav_width, content_width], gap="large")
-    with nav_col:
-        render_custom_sidebar()
-    with content_col:
-        render_current_page(page, flights, rates, dark_mode)
+    if page == "Dashboard": page_dashboard(flights)
+    elif page == "Lety": page_logbook(flights, rates, dark_mode)
+    elif page == "Nový let": page_new_flight(rates, dark_mode)
+    elif page == "Mapa": page_maps(flights, dark_mode)
+    elif page == "Ceník": page_rates(rates)
+    elif page == "Databáze": page_database()
+    elif page == "Kontrola":
+        # Legacy route: stránka kontroly už není v navigaci, ale starý stav relace může existovat.
+        st.session_state["page"] = "Dashboard"
+        st.rerun()
+    elif page == "Export": page_export(flights)
 
 if __name__ == "__main__":
     main()
