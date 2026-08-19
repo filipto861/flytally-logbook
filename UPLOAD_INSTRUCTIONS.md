@@ -1,8 +1,10 @@
-# Upload v0.51
+# Upload v0.52
 
 Nahrát minimálně:
 
 - `app.py`
+- `sitecustomize.py`
+- `requirements.txt`
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
@@ -16,6 +18,7 @@ Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. Ctrl + F5
-3. Ověřit, že nahoře běží v0.51
-4. Otevřít let s GPS trackem → Track → Použít GPS časy v editaci
-5. Zkontrolovat, že se návrh pouze předvyplní a uloží se až po kliknutí na `Uložit změny`
+3. Ověřit, že nahoře běží v0.52
+4. Projít Souhrn, Lety, Databáze a Export
+5. Ověřit Detail → Track a Smooth Track Player
+6. Ověřit přidání/editaci letu a automatickou GitHub zálohu

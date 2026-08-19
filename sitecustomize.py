@@ -1,11 +1,16 @@
-"""Runtime SQLite compatibility patches for the logbook app.
+"""Minimal SQLite compatibility shim for the logbook runtime.
 
-This module is imported automatically by Python when present on sys.path.  It is
-kept intentionally small: it only protects older deployed databases from schema
-mismatches. UI behaviour is implemented in app.py, not here.
+Only the live ``logbook.sqlite`` connection is wrapped.  The previous shim
+inspected/modified every SQLite database opened by the process, including the
+large read-only airport catalogue.  That added avoidable work to many reruns.
+
+The current app performs normal schema migration in ``app.py``.  This module is
+kept only as a last-resort repair path for an older ``audit_log`` schema if an
+audit statement fails at runtime.
 """
 from __future__ import annotations
 
+import os
 import sqlite3
 
 _ORIGINAL_CONNECT = sqlite3.connect
@@ -31,7 +36,7 @@ def _ensure_audit_schema(conn: sqlite3.Connection) -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at TEXT NOT NULL,
                 actor TEXT,
-                action TEXT,
+                action TEXT NOT NULL,
                 object_type TEXT,
                 object_id TEXT,
                 detail_json TEXT
@@ -43,11 +48,6 @@ def _ensure_audit_schema(conn: sqlite3.Connection) -> None:
         _add_column_if_missing(conn, "audit_log", "object_type", "object_type TEXT")
         _add_column_if_missing(conn, "audit_log", "object_id", "object_id TEXT")
         _add_column_if_missing(conn, "audit_log", "detail_json", "detail_json TEXT")
-        # Compatibility with one intermediate version that used these names.
-        _add_column_if_missing(conn, "audit_log", "user", "user TEXT")
-        _add_column_if_missing(conn, "audit_log", "entity", "entity TEXT")
-        _add_column_if_missing(conn, "audit_log", "entity_id", "entity_id TEXT")
-        _add_column_if_missing(conn, "audit_log", "detail", "detail TEXT")
     except Exception:
         pass
 
@@ -63,14 +63,21 @@ class PatchedConnection(sqlite3.Connection):
             raise
 
 
-def connect(*args, **kwargs):
-    kwargs.setdefault("factory", PatchedConnection)
-    conn = _ORIGINAL_CONNECT(*args, **kwargs)
+def _is_logbook_database(database) -> bool:
     try:
-        _ensure_audit_schema(conn)
+        text = os.fspath(database)
     except Exception:
-        pass
-    return conn
+        text = str(database or "")
+    # Covers a normal path as well as a SQLite URI such as file:/.../logbook.sqlite.
+    return "logbook.sqlite" in text.replace("\\", "/").lower()
+
+
+def connect(*args, **kwargs):
+    database = args[0] if args else kwargs.get("database")
+    if not _is_logbook_database(database):
+        return _ORIGINAL_CONNECT(*args, **kwargs)
+    kwargs.setdefault("factory", PatchedConnection)
+    return _ORIGINAL_CONNECT(*args, **kwargs)
 
 
 sqlite3.connect = connect
