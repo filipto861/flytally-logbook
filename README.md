@@ -1,25 +1,14 @@
-# Letový zápisník
+# Letový zápisník v0.33.1
 
-Aktuální checkpoint: **v0.33 – Smooth navigation & map performance**.
+UX polish navazující na v0.33.
 
-## Hlavní změny v0.33
+## Změny
 
-- Plynulejší přechod mezi stránkami přes front-end loader.
-- Přechod z `Lety` do `Mapa` už nemá vizuálně rozpadat starý obsah po částech.
-- Mapa už nevykresluje GPS tracky a orientační direct mapu současně.
-- Na stránce `Mapa` se nejdřív vybere typ mapy a generuje se jen aktivní vrstva.
-- Mapové HTML je cachované podle aktuálních dat a filtru.
-- Přímá mapa letišť používá rychlejší lookup souřadnic pouze z nutných sloupců letišť.
-- Zachováno: sidebar, letištní databáze, ADSBexchange/FR24 KML, doplnění GPS tracku k letišti.
+- Zachována rychlejší navigace a rychlejší mapy z v0.33.
+- Loading mezi stránkami je nově jen decentní točící se letadýlko, bez rušivého panelu a textu.
+- Sidebar toggle je znovu více uhlazený: větší kulaté tlačítko, lepší hover a lepší poloha při zavřeném menu.
+- Cílem loaderu je pouze krátký přechod, ne maskování pomalosti. Další velký milník zůstává skutečná optimalizace architektury.
 
 ## Bezpečnost dat
 
-Nikdy ručně nepřepisovat:
-
-- `data/logbook.sqlite`
-
-Tento soubor obsahuje živé lety, tracky, ruční letiště, ceník a audit.
-
-Pevná světová letištní databáze je odděleně v:
-
-- `data/airports_full.sqlite`
+ZIP neobsahuje `data/logbook.sqlite`. Tento soubor nepřepisovat ručně, protože obsahuje živé lety, tracky a ruční data.

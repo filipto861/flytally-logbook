@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.33"
+APP_VERSION = "v0.33.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -976,19 +976,19 @@ def apply_ui_theme(dark_mode: bool) -> None:
     [data-testid="stAppViewContainer"] > .main {transition:margin-left 320ms cubic-bezier(.22,.61,.36,1) !important;}
     [data-testid="stAppViewContainer"] .main .block-container {max-width:1500px !important;}
     #lb-sidebar-toggle {
-        position:fixed; top:5.35rem; left:calc(var(--lb-sidebar-width) - 2.55rem);
-        z-index:2147483647; width:1.72rem; height:1.72rem; border-radius:.52rem;
-        border:1px solid rgba(148,163,184,.35); background:rgba(15,31,52,.96); color:#dbeafe;
-        font-weight:900; font-size:1.05rem; line-height:1; cursor:pointer;
+        position:fixed; top:5.20rem; left:calc(var(--lb-sidebar-width) - 2.36rem);
+        z-index:2147483647; width:1.92rem; height:1.92rem; border-radius:999px;
+        border:1px solid rgba(56,189,248,.38); background:linear-gradient(135deg,rgba(20,43,72,.98),rgba(9,22,39,.98)); color:#dbeafe;
+        font-weight:900; font-size:1.02rem; line-height:1; cursor:pointer;
         display:flex; align-items:center; justify-content:center;
-        box-shadow:0 8px 22px rgba(0,0,0,.28);
-        transition:left 320ms cubic-bezier(.22,.61,.36,1), background 140ms ease, border-color 140ms ease;
+        box-shadow:0 10px 28px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.06);
+        transition:left 320ms cubic-bezier(.22,.61,.36,1), transform 130ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     }
-    #lb-sidebar-toggle:hover {background:rgba(20,43,72,.99); border-color:rgba(56,189,248,.55);}
-    body.lb-sidebar-hidden #lb-sidebar-toggle {left:.32rem;}
+    #lb-sidebar-toggle:hover {background:linear-gradient(135deg,rgba(31,64,105,.99),rgba(12,29,50,.99)); border-color:rgba(56,189,248,.68); transform:translateY(-1px); box-shadow:0 12px 32px rgba(0,0,0,.34),0 0 0 3px rgba(56,189,248,.06);}
+    body.lb-sidebar-hidden #lb-sidebar-toggle {left:.50rem;}
     @media (max-width: 760px) {
-        #lb-sidebar-toggle {top:4.35rem; left:calc(var(--lb-sidebar-width) - 2.45rem);}
-        body.lb-sidebar-hidden #lb-sidebar-toggle {left:.25rem;}
+        #lb-sidebar-toggle {top:4.35rem; left:calc(var(--lb-sidebar-width) - 2.35rem);}
+        body.lb-sidebar-hidden #lb-sidebar-toggle {left:.42rem;}
     }
     """
     st.markdown(f"""
@@ -1027,14 +1027,12 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
     .metric-value {{color:var(--text);font-size:1.72rem;line-height:1.25;font-weight:850;margin-top:.25rem;}}
     .metric-sub {{color:var(--muted);font-size:.82rem;margin-top:.28rem;}}
-    #lb-page-loader {{position:fixed;left:var(--lb-sidebar-width);right:0;top:0;bottom:0;z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding-top:7.2rem;background:linear-gradient(180deg,rgba(6,16,29,.90),rgba(6,16,29,.72));backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 160ms ease;}}
+    #lb-page-loader {{position:fixed;left:var(--lb-sidebar-width);right:0;top:0;bottom:0;z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding-top:5.8rem;background:rgba(6,16,29,.10);opacity:0;pointer-events:none;transition:opacity 120ms ease;}}
     body.lb-sidebar-hidden #lb-page-loader {{left:0;}}
-    body.lb-page-loading #lb-page-loader {{opacity:1;pointer-events:all;}}
-    .lb-loader-card {{border:1px solid rgba(56,189,248,.22);background:linear-gradient(135deg,rgba(15,35,58,.96),rgba(7,19,34,.96));border-radius:18px;padding:1rem 1.15rem;min-width:230px;box-shadow:0 24px 70px rgba(0,0,0,.42);color:var(--text);}}
-    .lb-loader-title {{font-weight:850;font-size:1rem;margin-bottom:.25rem;}}
-    .lb-loader-sub {{color:var(--muted);font-size:.84rem;}}
-    .lb-loader-line {{height:3px;border-radius:999px;margin-top:.75rem;background:linear-gradient(90deg,rgba(56,189,248,.08),var(--accent),rgba(34,197,94,.78),rgba(56,189,248,.08));background-size:240% 100%;animation:lbLoader 1.05s linear infinite;}}
-    @keyframes lbLoader {{from {{background-position:240% 0;}} to {{background-position:0 0;}}}}
+    body.lb-page-loading #lb-page-loader {{opacity:1;}}
+    .lb-plane-spinner {{width:2.25rem;height:2.25rem;border-radius:999px;border:1px solid rgba(56,189,248,.30);background:rgba(9,22,39,.82);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 0 4px rgba(56,189,248,.045);color:#a7f3ff;}}
+    .lb-plane-spinner span {{display:block;font-size:1.20rem;line-height:1;animation:lbPlaneSpin .78s linear infinite;transform-origin:center center;}}
+    @keyframes lbPlaneSpin {{from {{transform:rotate(0deg);}} to {{transform:rotate(360deg);}}}}
     .map-mode-row {{margin:.35rem 0 .65rem 0;}}
 
     .performance-note {{border:1px solid rgba(34,197,94,.28);background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.04));border-radius:16px;padding:.75rem .9rem;color:var(--muted);font-size:.86rem;margin:.35rem 0 .85rem 0;}}
@@ -2613,7 +2611,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
 def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
     st.markdown(
-        '<div class="performance-note"><b>v0.33 optimalizace:</b> mapa se nevykresluje ve dvou záložkách najednou. Nejdřív vybereš typ mapy, potom se načte jen ta jedna aktivní vrstva. Přechod mezi stránkami kryje jemný loader, aby se obsah vizuálně nerozpadal.</div>',
+        '<div class="performance-note"><b>v0.33 optimalizace:</b> mapa se nevykresluje ve dvou záložkách najednou. Nejdřív vybereš typ mapy, potom se načte jen ta jedna aktivní vrstva. Přechod mezi stránkami kryje jen malé letadýlko, bez rušivého overlay panelu.</div>',
         unsafe_allow_html=True,
     )
     filtered = apply_filters(flights, "map")
@@ -3102,7 +3100,7 @@ def render_page_transition_runtime() -> None:
             if (!el) {
               el = doc.createElement('div');
               el.id = overlayId;
-              el.innerHTML = '<div class="lb-loader-card"><div class="lb-loader-title">Načítám stránku…</div><div class="lb-loader-sub">Připravuji data a mapové vrstvy.</div><div class="lb-loader-line"></div></div>';
+              el.innerHTML = '<div class="lb-plane-spinner" title="Načítám"><span>✈</span></div>';
               doc.body.appendChild(el);
             }
             return el;
