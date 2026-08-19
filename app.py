@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.2"
+APP_VERSION = "v0.35.3"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2084,12 +2084,16 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
         evidence = str(row.get("evidence") or "").upper()
         color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
         flight_id = int(row.get("id"))
+        route_query = f"?map_route={dep_id}__{arr_id}"
+        detail_query = f"?flight_id={flight_id}"
         popup = folium.Popup(f"""
             <b>ID {flight_id} • {row.get('date') or ''}</b><br>
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
-            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}
-            <span style="display:none">LOGBOOK_ROUTE:{dep_id}__{arr_id}</span>
+            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
+            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{detail_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{detail_query}';}}return false;">Detail</a>
+            &nbsp;·&nbsp;
+            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{route_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{route_query}';}}return false;">Trasa</a>
             """, max_width=320)
         folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
 
@@ -2097,13 +2101,14 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
         tooltip = f"{ident} • {ap.get('name') or ''}"
         visits = int(ap.get("visits") or 0)
         radius = min(11, 4.5 + visits ** 0.5)
+        airport_query = f"?map_airport={ident}"
         popup = folium.Popup(f"""
             <b>{ident}</b><br>
             {ap.get('name') or ''}<br>
             Návštěvy: {visits}<br>
             Odlety: {int(ap.get('departures') or 0)} • Přílety: {int(ap.get('arrivals') or 0)}<br>
-            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}
-            <span style="display:none">LOGBOOK_AIRPORT:{ident}</span>
+            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}<br>
+            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{airport_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{airport_query}';}}return false;">Zobrazit lety</a>
             """, max_width=300)
         folium.CircleMarker((float(ap["lat"]), float(ap["lon"])), radius=radius, color="#22c55e", fill=True, fill_opacity=.92, tooltip=tooltip, popup=popup).add_to(m)
 
@@ -2947,8 +2952,6 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
     with c3: metric_card("GPS vzdálenost", f"{base_gps_km:.1f} km", "")
     with c4: metric_card("Direct trasy", str(known_routes) if known_routes is not None else "—", "")
 
-    render_map_selection(filtered, rates, dark_mode)
-
     if map_mode == "GPS tracky":
         tracks = read_tracks_joined()
         if not tracks.empty:
@@ -2970,14 +2973,12 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0352")
-            handle_route_map_interaction(map_event)
-            render_lazy_table(
-                "Tabulka direct tras",
-                filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
-                .rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","block_time":"Block"}),
-                height=360,
+            records_json = _df_to_records_json(
+                filtered,
+                ["id", "date", "registration", "departure", "arrival", "role", "evidence", "off_block", "on_block", "block_time"],
             )
+            render_map_html(cached_route_overview_map_html(records_json, bool(dark_mode)), height=680)
+            render_map_selection(filtered, rates, dark_mode)
 
 
 def page_rates(rates: pd.DataFrame):

@@ -1,13 +1,15 @@
-# Letový zápisník
+# Letový zápisník v0.35.3
 
-Aktuální checkpoint: v0.35.2.
+Stabilní vývojová verze se zaměřením na rychlou mapu a funkční přechod z mapy do výběru letů.
 
-## Změny v0.35.2
+## Změny v0.35.3
 
-- Opravena navigace z orientační mapy bez nefunkčních popup odkazů.
-- Klik na letiště nebo trasu v mapě vybere příslušné lety v panelu aplikace.
-- Vybrané lety mají tlačítka Detail a Track přímo v aplikaci.
-- Zachována rychlá mapa a čisté UI z v0.34/v0.35.
+- Orientační mapa zůstává rychlá jako HTML mapa.
+- Popup letiště obsahuje akci `Zobrazit lety`.
+- Popup trasy obsahuje akce `Detail` a `Trasa`.
+- Akce z popupu přepínají celou aplikaci přes query parametry, ne přes nespolehlivý iframe event.
+- Pod mapou se zobrazí výběr letů jen po konkrétní volbě letiště nebo trasy.
+- Běžná tabulka direct tras byla odstraněna z hlavního zobrazení mapy.
 
 ## Bezpečnost dat
 
