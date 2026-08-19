@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.48.1"
+APP_VERSION = "v0.49"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -1348,6 +1348,13 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.10rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
     .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.04rem 0 .04rem 0;}}
     .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
+    .flight-status {{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--border);padding:.10rem .42rem;font-size:.66rem;font-weight:900;line-height:1;white-space:nowrap;max-width:100%;}}
+    .flight-status-ok {{color:#a7f3d0;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.32);}}
+    .flight-status-warn {{color:#fde68a;background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.34);}}
+    .flight-status-error {{color:#fecaca;background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.36);}}
+    .flight-filter-bar {{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent),var(--panel);padding:.85rem 1rem;margin:.4rem 0 1rem 0;box-shadow:0 10px 24px var(--shadow);}}
+    .flight-filter-meta {{display:flex;gap:.42rem;flex-wrap:wrap;margin:.4rem 0 .2rem 0;color:var(--muted);font-size:.78rem;}}
+    .flight-filter-meta span {{border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.03);padding:.14rem .45rem;}}
     .selected-flight-box {{border:1px solid var(--border); border-radius:14px; padding:.65rem .85rem; background:rgba(56,189,248,.07); margin:.5rem 0 .75rem 0;}}
     .selected-flight-title {{font-weight:850;color:var(--text);}}
     .selected-flight-sub {{font-size:.82rem;color:var(--muted);margin-top:.1rem;}}
@@ -3657,6 +3664,132 @@ def _cell(main: Any, sub: Any = "") -> str:
     return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div></div>'
 
 
+def _flight_validation_status(row: pd.Series | dict[str, Any]) -> tuple[str, str, str]:
+    data = row.to_dict() if isinstance(row, pd.Series) else dict(row)
+    errors, warnings = validate_flight_data(data)
+    if errors:
+        return "Chyba", "flight-status-error", "; ".join(errors[:3])
+    if warnings:
+        return "Pozor", "flight-status-warn", "; ".join(warnings[:3])
+    return "OK", "flight-status-ok", ""
+
+
+def _status_badge(label: Any, css_class: str = "") -> str:
+    label_txt = _safe_text(label)
+    class_txt = _safe_text(css_class or "flight-status-ok")
+    return f'<div class="flight-cell"><span class="flight-status {class_txt}">{label_txt}</span></div>'
+
+
+def annotate_flight_overview(df: pd.DataFrame) -> pd.DataFrame:
+    """Add lightweight list/search/status columns for the flight overview."""
+    if df.empty:
+        return df.copy()
+    work = df.copy()
+    dep = work.get("departure", pd.Series(index=work.index, dtype=str)).fillna("").astype(str).str.upper().str.strip()
+    arr = work.get("arrival", pd.Series(index=work.index, dtype=str)).fillna("").astype(str).str.upper().str.strip()
+    work["route_key"] = dep + "__" + arr
+    work.loc[dep.eq("") | arr.eq(""), "route_key"] = ""
+    work["route_label"] = dep + "-" + arr
+    work.loc[dep.eq("") | arr.eq(""), "route_label"] = ""
+    work["airport_search"] = (dep + " " + arr).str.strip()
+    work["has_gps"] = pd.to_numeric(work.get("track_count", 0), errors="coerce").fillna(0).astype(int).gt(0)
+
+    status_rows = [_flight_validation_status(row) for _, row in work.iterrows()]
+    work["status_label"] = [item[0] for item in status_rows]
+    work["status_class"] = [item[1] for item in status_rows]
+    work["status_note"] = [item[2] for item in status_rows]
+    return work
+
+
+def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
+    """Focused filters for everyday logbook work."""
+    if df.empty:
+        return df.copy()
+    work = annotate_flight_overview(df)
+
+    years = sorted(int(y) for y in work["year"].dropna().unique()) if "year" in work else []
+    registrations = sorted(r for r in work["registration"].dropna().astype(str).unique() if r)
+    roles = sorted(r for r in work["role"].dropna().astype(str).unique() if r)
+    classes = sorted(r for r in work["aircraft_class"].dropna().astype(str).unique() if r)
+    dep = work.get("departure", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
+    arr = work.get("arrival", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
+    airports = sorted(set(dep[dep.ne("")].tolist()) | set(arr[arr.ne("")].tolist()))
+    routes = sorted(r for r in work.get("route_label", pd.Series(dtype=str)).dropna().astype(str).unique() if r)
+
+    with st.expander("Filtry a řazení", expanded=False):
+        r1 = st.columns([1.05, 1.05, 1.25, 1.25])
+        with r1[0]:
+            selected_years = st.multiselect("Rok", years, default=years, key="logbook_v2_years")
+        with r1[1]:
+            selected_evidence = st.multiselect("Evidence", EVIDENCE_OPTIONS, default=EVIDENCE_OPTIONS, key="logbook_v2_evidence")
+        with r1[2]:
+            selected_regs = st.multiselect("Imatrikulace", registrations, default=[], key="logbook_v2_regs")
+        with r1[3]:
+            selected_airports = st.multiselect("Letiště", airports, default=[], key="logbook_v2_airports")
+
+        r2 = st.columns([1.15, 1.15, 1.0, 1.0, 1.3])
+        with r2[0]:
+            selected_roles = st.multiselect("Funkce", roles, default=roles, key="logbook_v2_roles")
+        with r2[1]:
+            selected_classes = st.multiselect("Třída", classes, default=[], key="logbook_v2_classes")
+        with r2[2]:
+            gps_filter = st.selectbox("GPS", ["Vše", "Pouze s GPS", "Pouze bez GPS"], key="logbook_v2_gps")
+        with r2[3]:
+            status_filter = st.selectbox("Stav", ["Vše", "OK", "Pozor", "Chyba"], key="logbook_v2_status")
+        with r2[4]:
+            sort_mode = st.selectbox(
+                "Řazení",
+                ["Nejnovější", "Nejstarší", "ID sestupně", "Block nejdelší", "Náklady nejvyšší"],
+                key="logbook_v2_sort",
+            )
+
+        route_search = st.multiselect("Trasa", routes, default=[], key="logbook_v2_routes")
+
+    if selected_years:
+        work = work[work["year"].isin(selected_years)]
+    if selected_evidence:
+        work = work[work["evidence"].isin(selected_evidence)]
+    if selected_regs:
+        work = work[work["registration"].isin(selected_regs)]
+    if selected_airports:
+        selected_set = set(selected_airports)
+        work = work[work.get("departure", "").isin(selected_set) | work.get("arrival", "").isin(selected_set)]
+    if selected_roles:
+        work = work[work["role"].isin(selected_roles)]
+    if selected_classes:
+        work = work[work["aircraft_class"].isin(selected_classes)]
+    if route_search:
+        work = work[work["route_label"].isin(route_search)]
+    if gps_filter == "Pouze s GPS":
+        work = work[work["has_gps"]]
+    elif gps_filter == "Pouze bez GPS":
+        work = work[~work["has_gps"]]
+    if status_filter != "Vše":
+        work = work[work["status_label"].eq(status_filter)]
+
+    if sort_mode == "Nejstarší":
+        work = work.sort_values(["date_dt", "off_block", "id"], ascending=[True, True, True], na_position="last")
+    elif sort_mode == "ID sestupně":
+        work = work.sort_values(["id"], ascending=[False], na_position="last")
+    elif sort_mode == "Block nejdelší":
+        work = work.sort_values(["block_minutes", "date_dt", "id"], ascending=[False, False, False], na_position="last")
+    elif sort_mode == "Náklady nejvyšší":
+        work = work.sort_values(["cost", "date_dt", "id"], ascending=[False, False, False], na_position="last")
+    else:
+        work = work.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last")
+
+    if not work.empty:
+        ok_count = int(work["status_label"].eq("OK").sum())
+        warn_count = int(work["status_label"].eq("Pozor").sum())
+        error_count = int(work["status_label"].eq("Chyba").sum())
+        gps_count = int(work["has_gps"].sum())
+        st.markdown(
+            f'<div class="flight-filter-meta"><span>{len(work)} letů</span><span>{gps_count} GPS</span><span>{ok_count} OK</span><span>{warn_count} pozor</span><span>{error_count} chyby</span></div>',
+            unsafe_allow_html=True,
+        )
+    return work.reset_index(drop=True)
+
+
 def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
     """Compact paginated flight list with one real Detail button per visible row.
 
@@ -3705,8 +3838,8 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.82, 0.72, 0.76, 0.42, 0.78, 0.48, 1.10, 0.86, 0.92, 0.66, 0.42, 0.76, 0.98, 0.72, 0.66, 0.40]
-    headers = ["Detail", "Edit", "GPS", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.78, 0.70, 0.64, 0.66, 0.40, 0.76, 0.46, 1.06, 0.84, 0.90, 0.64, 0.40, 0.72, 0.94, 0.64, 0.58, 0.40]
+    headers = ["Detail", "Edit", "GPS", "Stav", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
@@ -3736,24 +3869,27 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
-        cols[3].markdown(_cell(flight_id), unsafe_allow_html=True)
-        cols[4].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[5].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
+        status_label = row.get("status_label") or "OK"
+        status_class = row.get("status_class") or "flight-status-ok"
+        cols[3].markdown(_status_badge(status_label, status_class), unsafe_allow_html=True)
+        cols[4].markdown(_cell(flight_id), unsafe_allow_html=True)
+        cols[5].markdown(_cell(row.get("date")), unsafe_allow_html=True)
+        cols[6].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
         aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[6].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[7].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
+        cols[7].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
+        cols[8].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
         time_main = _range_text(row.get("off_block"), row.get("on_block"))
         air_range = _range_text(row.get("takeoff"), row.get("landing"))
         time_sub = f"Air {air_range}" if air_range else ""
-        cols[8].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[9].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[10].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[11].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[13].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[14].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
+        cols[9].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
+        cols[10].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
+        cols[11].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
+        cols[12].markdown(_cell(row.get("role")), unsafe_allow_html=True)
+        cols[13].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
+        cols[14].markdown(_cell(row.get("task")), unsafe_allow_html=True)
+        cols[15].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
         gps_km = _safe_float(row.get("gps_km"))
-        cols[15].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        cols[16].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
         st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
@@ -3765,7 +3901,7 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
 
 def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Lety")
-    filtered = apply_filters(df, "logbook")
+    filtered = apply_logbook_filters_v2(df)
     s = build_summary(filtered)
     c1, c2, c3, c4 = st.columns(4)
     with c1: metric_card("Zobrazeno", str(s["flights"]), "letů")
@@ -3777,8 +3913,7 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         st.info("Filtr nevrátil žádné lety.")
         return
 
-    table_df = filtered.sort_values(["date_dt", "off_block", "id"], na_position="last").reset_index(drop=True)
-    render_flight_list(table_df, rates, dark_mode)
+    render_flight_list(filtered.reset_index(drop=True), rates, dark_mode)
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
