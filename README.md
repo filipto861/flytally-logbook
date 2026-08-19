@@ -1,19 +1,18 @@
 # Letový zápisník Streamlit
 
-Verze: v0.47
+Verze: v0.48
 
-## v0.47 – Stabilita / kontrola dat / servisní nástroje
+## v0.48 – Funkční kompletace / Logbook workflow 1.0
 
-- Nová záložka `Databáze → Kontrola`.
-- Ruční hloubková kontrola databáze bez zbytečného zpomalování běžného otevření stránky.
-- Kontrola SQLite integrity a foreign keys.
-- Detekce podezřelých duplicit letů.
-- Detekce chybějících základních údajů, sazeb a časových anomálií.
-- Kontrola registrací bez profilu letadla.
-- Kontrola neznámých letišť / ploch proti lokální i světové databázi.
-- Diagnostika GPS tracků: tracky bez bodů, nesoulad `point_count`, neplatné GPS body, osiřelé body, neplatný JSON.
-- Admin servisní akce: bezpečná normalizace registrací/letišť, doplnění startů, doplnění účtování, doplnění letadel z existujících letů a backfill `track_points`.
-- Samostatné `SQLite optimize` pro lehkou údržbu databáze.
+- Editace letu je praktičtější přímo ze seznamu letů.
+- V seznamu letů jsou rychlé akce `Detail`, `Edit` a `Track`.
+- `Edit` otevře rovnou editační část detailu letu.
+- `Track` otevře rovnou část s GPS trackem, pokud ho let má.
+- Přidání i editace letu mají kontrolu logbookových pravidel před uložením.
+- Kritické chyby blokují uložení.
+- Varování upozorní na podezřelé údaje, ale neblokuje uložení starších nebo záměrně neúplných záznamů.
+- Kontrola řeší zejména povinné údaje, neplatné časy, Air Time delší než Block Time, logické pořadí časů, nulové starty, nulovou cenu a Safety Pilot.
+- Detail letu ukazuje varování/kritické chyby i u existujících záznamů.
 
 ## Důležité
 

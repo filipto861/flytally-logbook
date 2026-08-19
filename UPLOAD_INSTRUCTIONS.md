@@ -1,4 +1,4 @@
-# Upload v0.47
+# Upload v0.48
 
 Nahraj minimálně:
 
@@ -16,5 +16,5 @@ Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. V prohlížeči Ctrl + F5
-3. Ověřit, že nahoře běží v0.47
-4. Databáze → Kontrola → Spustit kontrolu
+3. Ověřit, že nahoře běží v0.48
+4. Otestovat: Lety → Detail / Edit / Track a Přidat let → kontrola časů

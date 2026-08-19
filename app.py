@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.47"
+APP_VERSION = "v0.48"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -3203,6 +3203,156 @@ def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.Data
     if inferred_reg in aircraft_by_reg and f"{prefix}_reg" not in st.session_state:
         _apply_aircraft_to_form(prefix, inferred_reg, aircraft_by_reg.get(inferred_reg, {}), rates)
 
+
+def _nonempty_text(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except Exception:
+        pass
+    text = str(value).strip()
+    return "" if text.lower() in {"nan", "none", "nat", "<na>"} else text
+
+
+def validate_flight_data(data: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """Validate core logbook logic before create/update.
+
+    Errors block saving. Warnings are shown to the user but the record can still
+    be saved, because older real logbook entries may be intentionally incomplete.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    date_value = normalize_date(data.get("date"))
+    registration = _nonempty_text(data.get("registration")).upper()
+    departure = _nonempty_text(data.get("departure")).upper()
+    arrival = _nonempty_text(data.get("arrival")).upper()
+    evidence = _nonempty_text(data.get("evidence")).upper()
+    role = _nonempty_text(data.get("role")).upper()
+    aircraft_class = _nonempty_text(data.get("aircraft_class")).upper()
+    billing_basis = _normalize_billing_basis(data.get("billing_basis"))
+
+    if not date_value:
+        errors.append("chybí datum")
+    if not registration:
+        errors.append("chybí imatrikulace")
+    if evidence and evidence not in EVIDENCE_OPTIONS:
+        errors.append("neplatná evidence")
+    if role and role not in ROLE_OPTIONS:
+        errors.append("neplatná funkce")
+    if aircraft_class and aircraft_class not in CLASS_OPTIONS:
+        warnings.append("neznámá třída letadla")
+    if not departure:
+        warnings.append("chybí odlet")
+    if not arrival:
+        warnings.append("chybí přílet")
+    if departure and arrival and departure == arrival:
+        warnings.append("odlet a přílet jsou stejné")
+
+    time_fields = {
+        "Off Block": data.get("off_block"),
+        "Takeoff": data.get("takeoff"),
+        "Landing": data.get("landing"),
+        "On Block": data.get("on_block"),
+    }
+    parsed_times: dict[str, int | None] = {}
+    for label, value in time_fields.items():
+        text = _nonempty_text(value)
+        parsed = parse_time_to_minutes(value)
+        parsed_times[label] = parsed
+        if text and parsed is None:
+            errors.append(f"neplatný čas {label}")
+
+    off_block = data.get("off_block")
+    takeoff = data.get("takeoff")
+    landing = data.get("landing")
+    on_block = data.get("on_block")
+    block = minutes_diff(off_block, on_block)
+    air = minutes_diff(takeoff, landing)
+
+    if _nonempty_text(off_block) and not _nonempty_text(on_block):
+        warnings.append("chybí On Block")
+    if _nonempty_text(on_block) and not _nonempty_text(off_block):
+        warnings.append("chybí Off Block")
+    if _nonempty_text(takeoff) and not _nonempty_text(landing):
+        warnings.append("chybí Landing")
+    if _nonempty_text(landing) and not _nonempty_text(takeoff):
+        warnings.append("chybí Takeoff")
+
+    if block is not None:
+        if block <= 0:
+            warnings.append("Block Time je nulový")
+        elif block > 12 * 60:
+            warnings.append("Block Time je neobvykle dlouhý")
+    if air is not None:
+        if air <= 0:
+            warnings.append("Air Time je nulový")
+        elif air > 12 * 60:
+            warnings.append("Air Time je neobvykle dlouhý")
+
+    if block is not None and air is not None:
+        if air > block + 1:
+            errors.append("Air Time je delší než Block Time")
+        elif block - air > 60:
+            warnings.append("pojíždění / rozdíl Block-Air je větší než 60 min")
+
+    if all(parsed_times.get(k) is not None for k in ("Off Block", "Takeoff", "Landing", "On Block")):
+        taxi_out = minutes_diff(off_block, takeoff)
+        airborne = minutes_diff(takeoff, landing)
+        taxi_in = minutes_diff(landing, on_block)
+        block_full = minutes_diff(off_block, on_block)
+        if None not in (taxi_out, airborne, taxi_in, block_full):
+            if taxi_out is not None and block_full is not None and taxi_out > block_full:
+                errors.append("Takeoff není uvnitř Block Time")
+            if taxi_in is not None and block_full is not None and taxi_in > block_full:
+                errors.append("Landing není uvnitř Block Time")
+            total_seq = int(taxi_out or 0) + int(airborne or 0) + int(taxi_in or 0)
+            if block_full is not None and abs(total_seq - int(block_full)) > 1:
+                errors.append("časy nejsou v logickém pořadí")
+
+    try:
+        starts = int(data.get("starts") or 0)
+        if starts < 0:
+            errors.append("počet startů nesmí být záporný")
+        elif starts == 0:
+            warnings.append("počet startů je 0")
+    except Exception:
+        errors.append("neplatný počet startů")
+
+    try:
+        price = float(data.get("price_per_hour") or 0)
+        if price < 0:
+            errors.append("cena nesmí být záporná")
+        elif price == 0:
+            warnings.append("cena letu je 0 Kč/h")
+    except Exception:
+        errors.append("neplatná cena")
+
+    if billing_basis == "AIR" and air is None:
+        warnings.append("účtování podle Air Time bez Air Time")
+    if billing_basis == "BLOCK" and block is None:
+        warnings.append("účtování podle Block Time bez Block Time")
+    if role == "SAFETY PILOT":
+        warnings.append("Safety pilot se nezapočítává do PIC")
+
+    # Remove duplicates while preserving order.
+    errors = list(dict.fromkeys(errors))
+    warnings = [w for w in dict.fromkeys(warnings) if w not in errors]
+    return errors, warnings
+
+
+def render_flight_validation(data: dict[str, Any], *, compact: bool = False) -> tuple[list[str], list[str]]:
+    errors, warnings = validate_flight_data(data)
+    if errors:
+        st.error("Kontrola: " + " • ".join(errors[:6]))
+    elif warnings and not compact:
+        st.warning("Kontrola: " + " • ".join(warnings[:6]))
+    elif not compact:
+        st.success("Kontrola: OK")
+    return errors, warnings
+
 def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str, *, quick_tools: bool = True) -> dict[str, Any] | None:
     if quick_tools:
         render_quick_flight_tools(prefix, defaults, rates)
@@ -3245,15 +3395,24 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             )
             task = st.text_input("Úloha", value=str(defaults.get("task") or ""), key=f"{prefix}_task")
             note = st.text_input("Poznámka", value=str(defaults.get("note") or ""), key=f"{prefix}_note")
+        form_data = {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "billing_basis": billing_basis, "note": note}
         block = minutes_diff(off_block, on_block); air = minutes_diff(takeoff, landing)
         c1, c2, c3 = st.columns(3)
         with c1: metric_card("Block Time", fmt_minutes(block), "")
         with c2: metric_card("Air Time", fmt_minutes(air), "")
         bill_minutes = air if billing_basis == "AIR" else block
         with c3: metric_card("Cena letu", fmt_money((bill_minutes or 0)/60*price), _billing_basis_label(billing_basis))
+        preview_errors, preview_warnings = validate_flight_data(form_data)
+        if preview_errors:
+            st.error("Kontrola: " + " • ".join(preview_errors[:5]))
+        elif preview_warnings:
+            st.warning("Kontrola: " + " • ".join(preview_warnings[:5]))
         submitted = st.form_submit_button(submit_label, type="primary", use_container_width=True)
     if submitted:
-        return {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "billing_basis": billing_basis, "note": note}
+        errors, _warnings = validate_flight_data(form_data)
+        if errors:
+            return None
+        return form_data
     return None
 
 
@@ -3338,6 +3497,11 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         note_text = _safe_text(row.get("note"))
         if note_text:
             st.markdown(f'<div class="detail-kv"><div class="detail-kv-title">Poznámka</div>{note_text}</div>', unsafe_allow_html=True)
+        detail_errors, detail_warnings = validate_flight_data(row_data)
+        if detail_errors:
+            st.error("Kontrola letu: " + " • ".join(detail_errors[:5]))
+        elif detail_warnings:
+            st.warning("Kontrola letu: " + " • ".join(detail_warnings[:5]))
     elif detail_section == "Editace":
         if not is_admin():
             st.info("Pouze admin.")
@@ -3540,8 +3704,8 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.72, 0.48, 0.88, 0.62, 1.25, 1.02, 1.05, 0.82, 0.52, 0.92, 1.22, 0.92, 0.78, 0.50]
-    headers = ["Detail", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.62, 0.52, 0.52, 0.48, 0.86, 0.54, 1.18, 0.96, 0.98, 0.74, 0.48, 0.84, 1.08, 0.84, 0.72, 0.46]
+    headers = ["Detail", "Edit", "Track", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
@@ -3551,27 +3715,44 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
         cols = st.columns(widths, gap="small", vertical_alignment="top")
         with cols[0]:
             if st.button("Detail", key=f"flight_detail_btn_{flight_id}", use_container_width=True):
+                st.session_state[f"detail_section_{flight_id}"] = "Přehled"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
-        cols[1].markdown(_cell(flight_id), unsafe_allow_html=True)
-        cols[2].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[3].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
+                st.rerun()
+        with cols[1]:
+            if st.button("Edit", key=f"flight_edit_btn_{flight_id}", use_container_width=True):
+                st.session_state[f"detail_section_{flight_id}"] = "Editace"
+                st.session_state["open_flight_dialog_id"] = flight_id
+                st.session_state["selected_flight_id"] = flight_id
+                st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
+        with cols[2]:
+            track_count = _safe_int(row.get("track_count"))
+            if st.button("Track", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, use_container_width=True):
+                st.session_state[f"detail_section_{flight_id}"] = "Track"
+                st.session_state["open_flight_dialog_id"] = flight_id
+                st.session_state["selected_flight_id"] = flight_id
+                st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
+        cols[3].markdown(_cell(flight_id), unsafe_allow_html=True)
+        cols[4].markdown(_cell(row.get("date")), unsafe_allow_html=True)
+        cols[5].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
         aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[4].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[5].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
+        cols[6].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
+        cols[7].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
         time_main = _range_text(row.get("off_block"), row.get("on_block"))
         air_range = _range_text(row.get("takeoff"), row.get("landing"))
         time_sub = f"Air {air_range}" if air_range else ""
-        cols[6].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[7].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[8].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[9].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[10].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[11].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
+        cols[8].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
+        cols[9].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
+        cols[10].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
+        cols[11].markdown(_cell(row.get("role")), unsafe_allow_html=True)
+        cols[12].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
+        cols[13].markdown(_cell(row.get("task")), unsafe_allow_html=True)
+        cols[14].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
         gps_km = _safe_float(row.get("gps_km"))
-        cols[13].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        cols[15].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
         st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
