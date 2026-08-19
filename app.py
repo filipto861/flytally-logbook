@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.49"
+APP_VERSION = "v0.49.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -3256,9 +3256,6 @@ def validate_flight_data(data: dict[str, Any]) -> tuple[list[str], list[str]]:
         warnings.append("chybí odlet")
     if not arrival:
         warnings.append("chybí přílet")
-    if departure and arrival and departure == arrival:
-        warnings.append("odlet a přílet jsou stejné")
-
     time_fields = {
         "Off Block": data.get("off_block"),
         "Takeoff": data.get("takeoff"),
@@ -3694,10 +3691,8 @@ def annotate_flight_overview(df: pd.DataFrame) -> pd.DataFrame:
     work["airport_search"] = (dep + " " + arr).str.strip()
     work["has_gps"] = pd.to_numeric(work.get("track_count", 0), errors="coerce").fillna(0).astype(int).gt(0)
 
-    status_rows = [_flight_validation_status(row) for _, row in work.iterrows()]
-    work["status_label"] = [item[0] for item in status_rows]
-    work["status_class"] = [item[1] for item in status_rows]
-    work["status_note"] = [item[2] for item in status_rows]
+    # Flight validation remains available in add/edit and database checks.
+    # The main list stays clean and does not compute/show status for every row.
     return work
 
 
@@ -3727,7 +3722,7 @@ def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
         with r1[3]:
             selected_airports = st.multiselect("Letiště", airports, default=[], key="logbook_v2_airports")
 
-        r2 = st.columns([1.15, 1.15, 1.0, 1.0, 1.3])
+        r2 = st.columns([1.15, 1.15, 1.0, 1.3])
         with r2[0]:
             selected_roles = st.multiselect("Funkce", roles, default=roles, key="logbook_v2_roles")
         with r2[1]:
@@ -3735,8 +3730,6 @@ def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
         with r2[2]:
             gps_filter = st.selectbox("GPS", ["Vše", "Pouze s GPS", "Pouze bez GPS"], key="logbook_v2_gps")
         with r2[3]:
-            status_filter = st.selectbox("Stav", ["Vše", "OK", "Pozor", "Chyba"], key="logbook_v2_status")
-        with r2[4]:
             sort_mode = st.selectbox(
                 "Řazení",
                 ["Nejnovější", "Nejstarší", "ID sestupně", "Block nejdelší", "Náklady nejvyšší"],
@@ -3764,9 +3757,6 @@ def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
         work = work[work["has_gps"]]
     elif gps_filter == "Pouze bez GPS":
         work = work[~work["has_gps"]]
-    if status_filter != "Vše":
-        work = work[work["status_label"].eq(status_filter)]
-
     if sort_mode == "Nejstarší":
         work = work.sort_values(["date_dt", "off_block", "id"], ascending=[True, True, True], na_position="last")
     elif sort_mode == "ID sestupně":
@@ -3779,12 +3769,9 @@ def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
         work = work.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last")
 
     if not work.empty:
-        ok_count = int(work["status_label"].eq("OK").sum())
-        warn_count = int(work["status_label"].eq("Pozor").sum())
-        error_count = int(work["status_label"].eq("Chyba").sum())
         gps_count = int(work["has_gps"].sum())
         st.markdown(
-            f'<div class="flight-filter-meta"><span>{len(work)} letů</span><span>{gps_count} GPS</span><span>{ok_count} OK</span><span>{warn_count} pozor</span><span>{error_count} chyby</span></div>',
+            f'<div class="flight-filter-meta"><span>{len(work)} letů</span><span>{gps_count} GPS</span></div>',
             unsafe_allow_html=True,
         )
     return work.reset_index(drop=True)
@@ -3838,8 +3825,8 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.78, 0.70, 0.64, 0.66, 0.40, 0.76, 0.46, 1.06, 0.84, 0.90, 0.64, 0.40, 0.72, 0.94, 0.64, 0.58, 0.40]
-    headers = ["Detail", "Edit", "GPS", "Stav", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.78, 0.70, 0.64, 0.40, 0.76, 0.46, 1.12, 0.94, 0.98, 0.66, 0.40, 0.76, 0.98, 0.68, 0.62, 0.42]
+    headers = ["Detail", "Edit", "GPS", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
@@ -3869,27 +3856,24 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
-        status_label = row.get("status_label") or "OK"
-        status_class = row.get("status_class") or "flight-status-ok"
-        cols[3].markdown(_status_badge(status_label, status_class), unsafe_allow_html=True)
-        cols[4].markdown(_cell(flight_id), unsafe_allow_html=True)
-        cols[5].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[6].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
+        cols[3].markdown(_cell(flight_id), unsafe_allow_html=True)
+        cols[4].markdown(_cell(row.get("date")), unsafe_allow_html=True)
+        cols[5].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
         aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[7].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[8].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
+        cols[6].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
+        cols[7].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
         time_main = _range_text(row.get("off_block"), row.get("on_block"))
         air_range = _range_text(row.get("takeoff"), row.get("landing"))
         time_sub = f"Air {air_range}" if air_range else ""
-        cols[9].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[10].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[11].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[13].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[14].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[15].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
+        cols[8].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
+        cols[9].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
+        cols[10].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
+        cols[11].markdown(_cell(row.get("role")), unsafe_allow_html=True)
+        cols[12].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
+        cols[13].markdown(_cell(row.get("task")), unsafe_allow_html=True)
+        cols[14].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
         gps_km = _safe_float(row.get("gps_km"))
-        cols[16].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        cols[15].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
         st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
