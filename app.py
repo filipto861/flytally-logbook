@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.32"
+APP_VERSION = "v0.33"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1027,6 +1027,15 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
     .metric-value {{color:var(--text);font-size:1.72rem;line-height:1.25;font-weight:850;margin-top:.25rem;}}
     .metric-sub {{color:var(--muted);font-size:.82rem;margin-top:.28rem;}}
+    #lb-page-loader {{position:fixed;left:var(--lb-sidebar-width);right:0;top:0;bottom:0;z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding-top:7.2rem;background:linear-gradient(180deg,rgba(6,16,29,.90),rgba(6,16,29,.72));backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 160ms ease;}}
+    body.lb-sidebar-hidden #lb-page-loader {{left:0;}}
+    body.lb-page-loading #lb-page-loader {{opacity:1;pointer-events:all;}}
+    .lb-loader-card {{border:1px solid rgba(56,189,248,.22);background:linear-gradient(135deg,rgba(15,35,58,.96),rgba(7,19,34,.96));border-radius:18px;padding:1rem 1.15rem;min-width:230px;box-shadow:0 24px 70px rgba(0,0,0,.42);color:var(--text);}}
+    .lb-loader-title {{font-weight:850;font-size:1rem;margin-bottom:.25rem;}}
+    .lb-loader-sub {{color:var(--muted);font-size:.84rem;}}
+    .lb-loader-line {{height:3px;border-radius:999px;margin-top:.75rem;background:linear-gradient(90deg,rgba(56,189,248,.08),var(--accent),rgba(34,197,94,.78),rgba(56,189,248,.08));background-size:240% 100%;animation:lbLoader 1.05s linear infinite;}}
+    @keyframes lbLoader {{from {{background-position:240% 0;}} to {{background-position:0 0;}}}}
+    .map-mode-row {{margin:.35rem 0 .65rem 0;}}
 
     .performance-note {{border:1px solid rgba(34,197,94,.28);background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.04));border-radius:16px;padding:.75rem .9rem;color:var(--muted);font-size:.86rem;margin:.35rem 0 .85rem 0;}}
     .flight-detail-hero {{border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(15,23,42,.02)),var(--panel);padding:1rem 1.1rem;margin:.15rem 0 1rem 0;box-shadow:0 12px 28px var(--shadow);}}
@@ -1804,30 +1813,57 @@ def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> l
     return sampled
 
 
-@st.cache_data(show_spinner=False, ttl=300)
+@st.cache_data(show_spinner=False, ttl=600)
 def airport_coord_lookup() -> dict[str, dict[str, Any]]:
-    airports = read_airports(active_only=False)
+    """Fast airport coordinate lookup used by maps and track extensions.
+
+    This intentionally reads only the five columns needed for drawing maps. The
+    full airport registry has tens of thousands of rows and many columns; loading
+    it here would make every first map render noticeably slower.
+    """
+    query = """
+        SELECT ident, name, latitude_deg, longitude_deg, source
+        FROM airports
+        WHERE latitude_deg IS NOT NULL AND longitude_deg IS NOT NULL
+    """
+    frames: list[pd.DataFrame] = []
+    if AIRPORTS_DB_PATH.exists():
+        try:
+            with sqlite3.connect(AIRPORTS_DB_PATH) as airport_con:
+                frames.append(pd.read_sql_query(query, airport_con))
+        except Exception:
+            pass
+    try:
+        with connect() as con:
+            frames.append(pd.read_sql_query(query, con))
+    except Exception:
+        pass
+    if not frames:
+        return {}
+    airports = pd.concat(frames, ignore_index=True, sort=False)
     if airports.empty or "ident" not in airports.columns:
         return {}
+    airports["ident"] = airports["ident"].fillna("").astype(str).str.upper().str.strip()
+    airports = airports[airports["ident"] != ""]
+    airports["latitude_deg"] = pd.to_numeric(airports["latitude_deg"], errors="coerce")
+    airports["longitude_deg"] = pd.to_numeric(airports["longitude_deg"], errors="coerce")
+    airports = airports.dropna(subset=["latitude_deg", "longitude_deg"])
+    airports = airports[
+        airports["latitude_deg"].between(-90, 90)
+        & airports["longitude_deg"].between(-180, 180)
+    ]
+    airports = airports.drop_duplicates(subset=["ident"], keep="last")
     lookup: dict[str, dict[str, Any]] = {}
-    for _, row in airports.iterrows():
-        ident = normalize_text(row.get("ident"))
+    for row in airports.itertuples(index=False):
+        ident = str(getattr(row, "ident", "") or "").upper()
         if not ident:
             continue
-        try:
-            lat = float(row.get("latitude_deg"))
-            lon = float(row.get("longitude_deg"))
-        except (TypeError, ValueError):
-            continue
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            continue
-        ident = ident.upper()
         lookup[ident] = {
             "ident": ident,
-            "name": normalize_text(row.get("name")) or ident,
-            "lat": lat,
-            "lon": lon,
-            "source": normalize_text(row.get("source")) or "",
+            "name": normalize_text(getattr(row, "name", "")) or ident,
+            "lat": float(getattr(row, "latitude_deg")),
+            "lon": float(getattr(row, "longitude_deg")),
+            "source": normalize_text(getattr(row, "source", "")) or "",
         }
     return lookup
 
@@ -2038,6 +2074,41 @@ def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None 
             st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
         except TypeError:
             st_folium(m, height=height, use_container_width=True, key=key)
+
+
+
+
+def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
+    """Stable compact JSON for cached map rendering."""
+    if df.empty:
+        return "[]"
+    use_cols = [c for c in columns if c in df.columns]
+    return df[use_cols].fillna("").to_json(orient="records", force_ascii=False, date_format="iso")
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_track_map_html(records_json: str, dark_mode: bool) -> str:
+    df = pd.read_json(BytesIO(records_json.encode("utf-8")), orient="records") if records_json and records_json != "[]" else pd.DataFrame()
+    if df.empty:
+        return ""
+    m = make_map(df, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True)
+    return m.get_root().render()
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def cached_route_overview_map_html(records_json: str, dark_mode: bool) -> str:
+    df = pd.read_json(BytesIO(records_json.encode("utf-8")), orient="records") if records_json and records_json != "[]" else pd.DataFrame()
+    if df.empty:
+        return ""
+    m = make_route_overview_map(df, dark_mode=dark_mode)
+    return m.get_root().render()
+
+
+def render_map_html(html: str, *, height: int = 680) -> None:
+    if not html:
+        st.info("Mapa nemá data k zobrazení.")
+        return
+    components.html(html, height=height, scrolling=False)
 
 
 def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expanded: bool = False) -> None:
@@ -2542,55 +2613,70 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
 def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
     st.markdown(
-        '<div class="performance-note"><b>v0.32 optimalizace:</b> mapy se renderují jako klientské HTML, takže posun a zoom už nespouští celé překreslení stránky. Těžké tabulky jsou schované v rozbalovacích sekcích.</div>',
+        '<div class="performance-note"><b>v0.33 optimalizace:</b> mapa se nevykresluje ve dvou záložkách najednou. Nejdřív vybereš typ mapy, potom se načte jen ta jedna aktivní vrstva. Přechod mezi stránkami kryje jemný loader, aby se obsah vizuálně nerozpadal.</div>',
         unsafe_allow_html=True,
     )
     filtered = apply_filters(flights, "map")
-    tracks = read_tracks_joined()
-    if not tracks.empty:
-        tracks = tracks[tracks["flight_id"].isin(filtered["id"].tolist())].copy()
+    st.markdown('<div class="map-mode-row">', unsafe_allow_html=True)
+    map_mode = st.radio(
+        "Typ mapy",
+        ["Orientační mapa letišť", "GPS tracky"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="map_mode_v033",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    known_routes = 0
-    lookup = airport_coord_lookup()
-    if not filtered.empty:
-        for _, row in filtered.iterrows():
-            dep = normalize_text(row.get("departure"))
-            arr = normalize_text(row.get("arrival"))
-            if dep and arr and dep.upper() in lookup and arr.upper() in lookup:
-                known_routes += 1
+    base_track_count = int(filtered.get("track_count", pd.Series(dtype=float)).fillna(0).sum()) if not filtered.empty else 0
+    base_gps_km = float(filtered.get("gps_km", pd.Series(dtype=float)).fillna(0).sum()) if not filtered.empty else 0.0
+    known_routes: int | None = None
+
+    if map_mode == "Orientační mapa letišť":
+        lookup = airport_coord_lookup()
+        known_routes = 0
+        if not filtered.empty:
+            for _, row in filtered.iterrows():
+                dep = normalize_text(row.get("departure"))
+                arr = normalize_text(row.get("arrival"))
+                if dep and arr and dep.upper() in lookup and arr.upper() in lookup:
+                    known_routes += 1
 
     c1, c2, c3, c4 = st.columns(4)
     with c1: metric_card("Letů ve filtru", str(len(filtered)), "")
-    with c2: metric_card("Tracky", str(len(tracks)), "GPS záznamy")
-    with c3: metric_card("GPS vzdálenost", f"{tracks['distance_km'].fillna(0).sum():.1f} km" if not tracks.empty else "0.0 km", "")
-    with c4: metric_card("Direct trasy", str(known_routes), "podle letišť")
+    with c2: metric_card("Tracky", str(base_track_count), "GPS záznamy")
+    with c3: metric_card("GPS vzdálenost", f"{base_gps_km:.1f} km", "")
+    with c4: metric_card("Direct trasy", str(known_routes) if known_routes is not None else "—", "počítá se v orientační mapě")
 
-    tab_tracks, tab_overview = st.tabs(["GPS tracky", "Orientační mapa letišť"])
-    with tab_tracks:
+    if map_mode == "GPS tracky":
+        tracks = read_tracks_joined()
+        if not tracks.empty:
+            tracks = tracks[tracks["flight_id"].isin(filtered["id"].tolist())].copy()
         if tracks.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
             st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
-            render_folium_readonly(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, key=f"all_tracks_map_v032_{len(tracks)}")
+            st.markdown('<div class="map-perf-toolbar"><div><strong>GPS vrstva</strong><br>Načtená je pouze aktivní mapa, ne obě mapové záložky najednou.</div><div>cache 5 min</div></div>', unsafe_allow_html=True)
+            records_json = _df_to_records_json(
+                tracks,
+                ["flight_id", "id", "date", "registration", "departure", "arrival", "role", "evidence", "file_name", "point_count", "distance_km", "coordinates_json"],
+            )
+            render_map_html(cached_track_map_html(records_json, bool(dark_mode)), height=680)
             render_lazy_table(
                 "Tabulka GPS tracků",
                 tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}),
                 height=320,
             )
-    with tab_overview:
-        if filtered.empty or known_routes == 0:
+    else:
+        if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            visited = set()
-            for _, row in filtered.iterrows():
-                dep = normalize_text(row.get("departure"))
-                arr = normalize_text(row.get("arrival"))
-                if dep and dep.upper() in lookup:
-                    visited.add(dep.upper())
-                if arr and arr.upper() in lookup:
-                    visited.add(arr.upper())
             st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
-            render_folium_readonly(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, key=f"route_overview_map_v032_{len(filtered)}_{known_routes}")
+            st.markdown('<div class="map-perf-toolbar"><div><strong>Direct vrstva</strong><br>Zobrazuje jen navštívená letiště a přímé spojnice, proto je výrazně lehčí než GPS tracky.</div><div>cache 5 min</div></div>', unsafe_allow_html=True)
+            records_json = _df_to_records_json(
+                filtered,
+                ["id", "date", "registration", "departure", "arrival", "role", "evidence", "off_block", "on_block", "block_time"],
+            )
+            render_map_html(cached_route_overview_map_html(records_json, bool(dark_mode)), height=680)
             render_lazy_table(
                 "Tabulka direct tras",
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
@@ -2996,6 +3082,86 @@ def render_sidebar_toggle() -> None:
     )
 
 
+def render_page_transition_runtime() -> None:
+    """Install a tiny front-end page loader.
+
+    Streamlit reruns the Python script after every sidebar button click. Without a
+    front-end transition, the previous page visually disappears piece by piece
+    while the new page is being generated. This overlay hides that intermediate
+    state and makes navigation feel much closer to a normal web app.
+    """
+    components.html(
+        """
+        <script>
+        (function() {
+          const doc = window.parent.document;
+          const overlayId = 'lb-page-loader';
+
+          function ensureOverlay() {
+            let el = doc.getElementById(overlayId);
+            if (!el) {
+              el = doc.createElement('div');
+              el.id = overlayId;
+              el.innerHTML = '<div class="lb-loader-card"><div class="lb-loader-title">Načítám stránku…</div><div class="lb-loader-sub">Připravuji data a mapové vrstvy.</div><div class="lb-loader-line"></div></div>';
+              doc.body.appendChild(el);
+            }
+            return el;
+          }
+          function showLoader() {
+            ensureOverlay();
+            doc.body.classList.add('lb-page-loading');
+          }
+          function hideLoader() {
+            ensureOverlay();
+            doc.body.classList.remove('lb-page-loading');
+          }
+
+          if (!window.parent.__lbPageLoaderInstalled) {
+            doc.addEventListener('click', function(ev) {
+              const target = ev.target;
+              if (!target) return;
+              const btn = target.closest && target.closest('button');
+              const link = target.closest && target.closest('a');
+              if (btn && btn.id !== 'lb-sidebar-toggle') {
+                const inSidebar = btn.closest('section[data-testid="stSidebar"]');
+                const txt = (btn.innerText || btn.textContent || '').trim();
+                if (inSidebar && txt && txt !== 'Odhlásit') showLoader();
+              }
+              if (link && link.href && link.href.indexOf('flight_id=') !== -1) {
+                showLoader();
+              }
+            }, true);
+            window.parent.__lbPageLoaderInstalled = true;
+          }
+          // The new page has reached the browser once this component runs.
+          setTimeout(hideLoader, 120);
+          setTimeout(hideLoader, 800);
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
+def render_page_loaded_signal() -> None:
+    """Hide the front-end loader after the current Streamlit page has rendered."""
+    components.html(
+        """
+        <script>
+        (function() {
+          const doc = window.parent.document;
+          function hideLoader() { doc.body.classList.remove('lb-page-loading'); }
+          setTimeout(hideLoader, 80);
+          setTimeout(hideLoader, 450);
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
@@ -3021,6 +3187,7 @@ def main():
         render_auth_sidebar()
     apply_ui_theme(dark_mode)
     render_sidebar_toggle()
+    render_page_transition_runtime()
     app_header()
     page = st.session_state.get("page", "Dashboard")
     flights = read_flights()
@@ -3038,6 +3205,7 @@ def main():
         st.session_state["page"] = "Dashboard"
         st.rerun()
     elif page == "Export": page_export(flights)
+    render_page_loaded_signal()
 
 if __name__ == "__main__":
     main()

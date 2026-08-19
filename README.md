@@ -1,23 +1,25 @@
-# Letový zápisník v0.31.2
+# Letový zápisník
 
-Hotfix výkonu map.
+Aktuální checkpoint: **v0.33 – Smooth navigation & map performance**.
 
-## Změny
+## Hlavní změny v0.33
 
-- Mapy jsou nově vykreslené jako read-only komponenty bez vracení pan/zoom/click stavu zpět do Streamlitu.
-- Pohyb mapou už nemá spouštět zbytečný rerun celé stránky.
-- Tím mizí šedé/zatmavené překrytí a mapa je při posunu/zoomování výrazně plynulejší.
-- Zachována orientační mapa letišť z v0.31 i doplnění GPS tracku k letištím.
-- Zachována kompatibilita ADSBexchange i Flightradar24 KML.
+- Plynulejší přechod mezi stránkami přes front-end loader.
+- Přechod z `Lety` do `Mapa` už nemá vizuálně rozpadat starý obsah po částech.
+- Mapa už nevykresluje GPS tracky a orientační direct mapu současně.
+- Na stránce `Mapa` se nejdřív vybere typ mapy a generuje se jen aktivní vrstva.
+- Mapové HTML je cachované podle aktuálních dat a filtru.
+- Přímá mapa letišť používá rychlejší lookup souřadnic pouze z nutných sloupců letišť.
+- Zachováno: sidebar, letištní databáze, ADSBexchange/FR24 KML, doplnění GPS tracku k letišti.
 
 ## Bezpečnost dat
 
-Balíček záměrně neobsahuje `data/logbook.sqlite`, aby nedošlo k přepsání živé databáze letů.
+Nikdy ručně nepřepisovat:
 
+- `data/logbook.sqlite`
 
-## v0.32
+Tento soubor obsahuje živé lety, tracky, ruční letiště, ceník a audit.
 
-- Mapy se renderují jako klientské HTML bez Streamlit rerunu při posunu/zoomu.
-- Tabulky pod mapou jsou schované v rozbalovacích sekcích, aby mapa zůstala plynulá.
-- Detail letu má přehlednější hlavičku s trasou, datem, letadlem, funkcí a evidencí.
-- Dashboard umí dočasně skrýt grafy kvůli rychlejšímu načtení.
+Pevná světová letištní databáze je odděleně v:
+
+- `data/airports_full.sqlite`

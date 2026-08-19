@@ -1,33 +1,19 @@
-# Letový zápisník v0.32 – rychlost a přehlednost
+# Upload v0.33
 
-## Co nahrát
-
-Nejdůležitější soubory:
+Nahraj do GitHub repozitáře hlavně:
 
 - `app.py`
 - `sitecustomize.py`
 - `README.md`
+- `UPLOAD_INSTRUCTIONS.md`
 
-Celý ZIP je bezpečný k nahrání, protože neobsahuje `data/logbook.sqlite`.
+Volitelně můžeš nahrát celý ZIP, ale nepřepisuj `data/logbook.sqlite`.
 
-## Co nepřepisovat
-
-Nikdy ručně nepřepisovat:
-
-- `data/logbook.sqlite`
-
-Ten soubor obsahuje tvoje živé lety, tracky, ruční letiště a nastavení.
-
-## Po nahrání
+Po nahrání:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. V prohlížeči Ctrl + F5
-3. Zkontrolovat verzi `v0.32`
+3. Zkontrolovat, že nahoře svítí `v0.33`
+4. Otestovat přechod Lety → Mapa a pohyb v mapě
 
-## Hlavní změny
-
-- mapy se renderují jako klientské HTML, bez rerunu při posunu a zoomu,
-- tabulky pod mapami jsou v rozbalovacích sekcích,
-- detail letu má přehlednější hlavičku,
-- dashboard umí dočasně skrýt grafy pro rychlejší načtení,
-- stabilní funkce v0.31.2 zůstávají zachované.
+`data/logbook.sqlite` není v ZIPu záměrně.
