@@ -1,4 +1,4 @@
-# Upload v0.49.2
+# Upload v0.50
 
 Nahraj minimálně:
 
@@ -16,5 +16,5 @@ Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. V prohlížeči Ctrl + F5
-3. Ověřit, že nahoře běží v0.49.2
-4. Otestovat: Lety → filtry, řazení, rychlé hledání, Detail / Edit / GPS
+3. Ověřit, že nahoře běží v0.50
+4. Otestovat: Lety → Detail → Track → posuvník pozice na tracku

@@ -1,16 +1,16 @@
 # Letový zápisník Streamlit
 
-Verze: v0.49.2
+Verze: v0.50
 
-## v0.49.2 – Přehled letů polish
+## v0.50 – Detail letu / Track playback
 
-- Odstraněný viditelný sloupec `ID` ze seznamu letů.
-- Upravené šířky sloupců po odstranění ID.
-- Přidaná mezera mezi hlavičkou tabulky a prvním řádkem.
-- Jemně upravený vertikální rytmus řádků v seznamu letů.
-- Tlačítka v seznamu se nemají lámat pod sebe.
-- Zachované rychlé akce v seznamu: `Detail`, `Edit`, `GPS`.
-- Zachované filtry, řazení a rychlé hledání z v0.49.1.
+- Přidaný posuvník v detailu letu v části `Track`.
+- Posuvník mění aktuální pozici na GPS tracku.
+- Na mapě se zobrazuje aktuální poloha letadla.
+- V profilu letu se zobrazuje aktuální pozice na výšce i rychlosti.
+- Přibyl rychlý přehled bodu: čas, altitude, GPS speed, vzdálenost.
+- Plný GPS track zůstává uložený beze změny.
+- Přehledová mapa GPS zůstává v roadmapě jako samostatný budoucí projekt `GPS Map Engine 2.0`.
 
 ## Důležité
 

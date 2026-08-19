@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.49.2"
+APP_VERSION = "v0.50"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -2714,7 +2714,7 @@ def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expa
             st.dataframe(data, hide_index=True, use_container_width=True, height=height)
 
 
-def render_track_profile(points: list[dict[str, Any]]) -> None:
+def render_track_profile(points: list[dict[str, Any]], selected_idx: int | None = None) -> None:
     prof = profile_from_points(points)
     if prof.empty:
         st.info("Track nemá data pro profil.")
@@ -2747,6 +2747,40 @@ def render_track_profile(points: list[dict[str, Any]]) -> None:
                 hovertemplate="%{x}<br>Speed: %{y:.0f} km/h<extra></extra>",
             )
         )
+
+    if selected_idx is not None and len(prof) > 0:
+        idx = max(0, min(int(selected_idx), len(prof) - 1))
+        sx = x.iloc[idx] if hasattr(x, "iloc") else x[idx]
+        alt_y = prof["alt_ft"].iloc[idx]
+        fig.add_trace(
+            go.Scatter(
+                x=[sx],
+                y=[alt_y],
+                mode="markers",
+                name="Pozice",
+                marker=dict(size=12, color="#22c55e", line=dict(color="#e5edf7", width=1)),
+                hovertemplate="Pozice<br>%{x}<br>Altitude: %{y:.0f} ft<extra></extra>",
+            )
+        )
+        if has_speed:
+            spd_y = speed_values.iloc[idx] if idx < len(speed_values) else None
+            if pd.notna(spd_y):
+                fig.add_trace(
+                    go.Scatter(
+                        x=[sx],
+                        y=[spd_y],
+                        mode="markers",
+                        name="Rychlost v pozici",
+                        yaxis="y2",
+                        marker=dict(size=10, color="#f59e0b", line=dict(color="#e5edf7", width=1)),
+                        hovertemplate="Pozice<br>%{x}<br>Speed: %{y:.0f} km/h<extra></extra>",
+                    )
+                )
+        try:
+            fig.add_vline(x=sx, line_width=1.4, line_dash="dot", line_color="#e5edf7", opacity=0.68)
+        except Exception:
+            pass
+
     fig.update_layout(
         title="Profil letu",
         xaxis_title=x_title,
@@ -2755,6 +2789,116 @@ def render_track_profile(points: list[dict[str, Any]]) -> None:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     st.plotly_chart(plotly_layout(fig), use_container_width=True)
+
+
+def _track_playback_default_idx(points: list[dict[str, Any]]) -> int:
+    try:
+        detected = detect_takeoff_landing(points)
+        idx = int(detected.get("takeoff_idx", 0) or 0)
+        return max(0, min(idx, max(0, len(points) - 1)))
+    except Exception:
+        return 0
+
+
+def _format_track_point_value(value: Any, suffix: str = "") -> str:
+    try:
+        if value is None or pd.isna(value):
+            return "—"
+        return f"{float(value):.0f}{suffix}"
+    except Exception:
+        return "—"
+
+
+def make_track_playback_map(points: list[dict[str, Any]], selected_idx: int, dark_mode: bool = True) -> folium.Map:
+    points = normalize_track_points(points)
+    if not points:
+        return folium.Map(location=[49.8, 15.5], zoom_start=7, tiles="CartoDB dark_matter" if dark_mode else "OpenStreetMap", control_scale=True)
+
+    selected_idx = max(0, min(int(selected_idx), len(points) - 1))
+    line_points = downsample_points(points, max_points=850)
+    progress_points = downsample_points(points[: selected_idx + 1], max_points=450) if selected_idx >= 1 else points[:1]
+
+    coords = [(float(p["lat"]), float(p["lon"])) for p in line_points if p.get("lat") is not None and p.get("lon") is not None]
+    progress_coords = [(float(p["lat"]), float(p["lon"])) for p in progress_points if p.get("lat") is not None and p.get("lon") is not None]
+    selected = points[selected_idx]
+    selected_ll = (float(selected["lat"]), float(selected["lon"]))
+
+    center = [selected_ll[0], selected_ll[1]]
+    zoom = 10
+    if coords:
+        min_lat = min(c[0] for c in coords); max_lat = max(c[0] for c in coords)
+        min_lon = min(c[1] for c in coords); max_lon = max(c[1] for c in coords)
+        center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
+        spread = max(max_lat - min_lat, max_lon - min_lon)
+        zoom = 12 if spread < .08 else 10 if spread < .25 else 8 if spread < 1 else 7 if spread < 3 else 6 if spread < 8 else 5
+
+    tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
+    if coords and len(coords) >= 2:
+        folium.PolyLine(coords, color="#64748b", weight=3, opacity=0.55, tooltip="Celý GPS track").add_to(m)
+    if progress_coords and len(progress_coords) >= 2:
+        folium.PolyLine(progress_coords, color="#38bdf8", weight=4, opacity=0.95, tooltip="Proletěná část").add_to(m)
+    if coords:
+        folium.CircleMarker(coords[0], radius=4, color="#22c55e", fill=True, fill_opacity=.95, tooltip="Start tracku").add_to(m)
+        folium.CircleMarker(coords[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.95, tooltip="Konec tracku").add_to(m)
+
+    dt = parse_iso(selected.get("time"))
+    time_txt = dt.astimezone(LOCAL_TZ).strftime("%H:%M:%S") if dt else "—"
+    alt_txt = _format_track_point_value((float(selected.get("alt")) * 3.28084 if selected.get("alt") is not None else None), " ft")
+    popup = folium.Popup(f"<b>Pozice tracku</b><br>Čas: {time_txt}<br>Alt: {alt_txt}<br>Bod: {selected_idx + 1}/{len(points)}", max_width=260)
+    folium.Marker(
+        selected_ll,
+        tooltip="Aktuální pozice",
+        popup=popup,
+        icon=folium.DivIcon(
+            html='<div style="font-size:28px;line-height:28px;color:#38bdf8;text-shadow:0 0 8px #000;transform:translate(-12px,-12px);">✈</div>'
+        ),
+    ).add_to(m)
+    try:
+        if coords:
+            m.fit_bounds([[min(c[0] for c in coords), min(c[1] for c in coords)], [max(c[0] for c in coords), max(c[1] for c in coords)]], padding=(22, 22))
+    except Exception:
+        pass
+    return m
+
+
+def render_track_playback(points: list[dict[str, Any]], flight_id: int, dark_mode: bool) -> None:
+    points = normalize_track_points(points)
+    if len(points) < 2:
+        st.info("Track nemá dostatek bodů pro přehrávání.")
+        return
+
+    prof = profile_from_points(points)
+    max_idx = len(points) - 1
+    default_idx = _track_playback_default_idx(points)
+    key = f"track_playback_idx_{flight_id}_{len(points)}"
+    selected_idx = st.slider(
+        "Pozice na tracku",
+        min_value=0,
+        max_value=max_idx,
+        value=min(default_idx, max_idx),
+        step=1,
+        key=key,
+    )
+    selected_idx = max(0, min(int(selected_idx), max_idx))
+    row = prof.iloc[selected_idx] if not prof.empty and selected_idx < len(prof) else None
+
+    c1, c2, c3, c4 = st.columns(4)
+    if row is not None:
+        dt = row.get("time_local")
+        time_txt = dt.strftime("%H:%M:%S") if pd.notna(dt) and hasattr(dt, "strftime") else "—"
+        alt_txt = _format_track_point_value(row.get("alt_ft"), " ft")
+        speed_txt = _format_track_point_value(row.get("speed_smooth"), " km/h")
+        dist_txt = f"{float(row.get('distance_km') or 0):.1f} km"
+    else:
+        time_txt = alt_txt = speed_txt = dist_txt = "—"
+    c1.metric("Čas", time_txt)
+    c2.metric("Altitude", alt_txt)
+    c3.metric("GPS speed", speed_txt)
+    c4.metric("Vzdálenost", dist_txt)
+
+    render_folium_readonly(make_track_playback_map(points, selected_idx, dark_mode), height=390, key=f"track_playback_map_{flight_id}_{selected_idx}")
+    render_track_profile(points, selected_idx=selected_idx)
 
 
 # -----------------------------------------------------------------------------
@@ -3522,10 +3666,8 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
     elif detail_section == "Track":
         flight_tracks = read_tracks_for_flight(int(selected_id))
         if not flight_tracks.empty:
-            joined = read_tracks_joined()
-            render_folium_readonly(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
             first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
-            render_track_profile(first_points)
+            render_track_playback(first_points, int(selected_id), dark_mode)
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
             st.dataframe(show, hide_index=True, use_container_width=True)
             del_id = st.selectbox("Smazat track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}")
