@@ -1,12 +1,12 @@
-# Nahrání verze v0.35.5
+# Upload v0.35.6
 
-Nahraj do GitHub repozitáře hlavně:
+Nahraj minimálně:
 
 - `app.py`
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
-Nepřepisuj:
+Nepřepisovat:
 
 - `data/logbook.sqlite`
 

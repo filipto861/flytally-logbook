@@ -1,15 +1,19 @@
 # Letový zápisník
 
-Aktuální checkpoint: v0.35.5
+Aktuální checkpoint: v0.35.6.
 
-## v0.35.5
+## Stav
 
-- Oprava navigace z orientační mapy bez iframe odkazů.
-- Klik na letiště nebo trasu v mapě předává výběr přes streamlit-folium event.
-- Výběr letů se zobrazuje pod mapou se skutečnými Streamlit tlačítky Detail / Track.
-- Odstraněná zbytečná tabulka direct tras z hlavní mapové stránky.
-- Zachovaná čistá UI vrstva a rychlejší GPS mapa.
+- Plynulé menu a rychlejší mapa.
+- Čisté UI bez vysvětlujících popisků.
+- Detail letu 2.0.
+- Mapa umožňuje vybrat letiště nebo trasu přes kliknutí v mapě nebo přes výběr nad mapou.
+- Výběr letů se zobrazuje pod mapou a používá skutečná Streamlit tlačítka Detail / Track.
 
-## Data
+## Bezpečnost dat
 
-Nepřepisovat `data/logbook.sqlite`, pokud nechceš obnovit databázi ze zálohy.
+Nikdy ručně nepřepisovat:
+
+- `data/logbook.sqlite`
+
+Tento soubor obsahuje živé lety, tracky a ruční data.
