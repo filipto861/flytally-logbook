@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.46"
+APP_VERSION = "v0.47"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -4163,7 +4163,7 @@ def page_database():
     with c3: metric_card("Tracky", str(track_count_total), "KML soubory")
     with c4: metric_card("GPS body", f"{point_count_total:,}".replace(",", " "), "normalizováno")
 
-    tab_airports, tab_aircraft, tab_rates, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Ceník", "Záloha", "Meta"])
+    tab_airports, tab_aircraft, tab_rates, tab_control, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Ceník", "Kontrola", "Záloha", "Meta"])
     with tab_airports:
         col1, col2, col3 = st.columns([1,1,2])
         with col1:
@@ -4332,6 +4332,9 @@ def page_database():
     # Import světové databáze byl odstraněn z běžného UI po prvotním naplnění tabulky airports.
     # Importní funkce zůstávají v kódu pro případ budoucí servisní migrace, ale nejsou vystavené v aplikaci.
 
+    with tab_control:
+        render_database_control_panel()
+
     with tab_backup:
         st.markdown("### SQLite + GitHub backup")
         dirty = ""
@@ -4390,6 +4393,466 @@ def page_database():
         else:
             st.dataframe(audits.sort_values("id", ascending=False).head(500), hide_index=True, use_container_width=True, height=360)
 
+
+
+# -----------------------------------------------------------------------------
+# Stability / database control tools
+# -----------------------------------------------------------------------------
+
+def _safe_count_query(con: sqlite3.Connection, table: str) -> int:
+    try:
+        row = con.execute(f"SELECT COUNT(*) AS n FROM {table}").fetchone()
+        return int(row["n"] if isinstance(row, sqlite3.Row) else row[0]) if row else 0
+    except sqlite3.DatabaseError:
+        return 0
+
+
+def _safe_df_query(con: sqlite3.Connection, query: str, params: tuple[Any, ...] = ()) -> pd.DataFrame:
+    try:
+        return pd.read_sql_query(query, con, params=params)
+    except Exception:
+        return pd.DataFrame()
+
+
+def _attach_world_airports(con: sqlite3.Connection) -> bool:
+    if not AIRPORTS_DB_PATH.exists():
+        return False
+    try:
+        existing = [str(row[1]) for row in con.execute("PRAGMA database_list").fetchall()]
+        if "world_airports" not in existing:
+            con.execute("ATTACH DATABASE ? AS world_airports", (str(AIRPORTS_DB_PATH),))
+        return True
+    except sqlite3.DatabaseError:
+        return False
+
+
+def _health_table_preview(df: pd.DataFrame, limit: int = 200) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame()
+    return df.head(limit).copy()
+
+
+@st.cache_data(show_spinner=False, ttl=120)
+def build_database_health_report() -> dict[str, Any]:
+    """Run a non-destructive database health check.
+
+    The check is intentionally explicit and conservative. It reports suspicious
+    data but does not change anything. Repair actions are handled separately and
+    require admin confirmation.
+    """
+    report: dict[str, Any] = {
+        "generated_at": datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+        "counts": {},
+        "checks": {},
+        "tables": {},
+        "issue_count": 0,
+    }
+    with connect() as con:
+        tables = ["flights", "aircraft", "rates", "flight_tracks", "track_points", "airports", "audit_log", "app_meta"]
+        report["counts"] = {table: _safe_count_query(con, table) for table in tables}
+        try:
+            row = con.execute("PRAGMA integrity_check").fetchone()
+            report["checks"]["integrity_check"] = str(row[0] if row else "unknown")
+        except sqlite3.DatabaseError as exc:
+            report["checks"]["integrity_check"] = f"error: {exc}"
+        try:
+            fk_rows = con.execute("PRAGMA foreign_key_check").fetchall()
+            if fk_rows:
+                report["tables"]["foreign_key_check"] = pd.DataFrame([dict(r) for r in fk_rows])
+            report["checks"]["foreign_key_check"] = "OK" if not fk_rows else f"{len(fk_rows)} problémů"
+        except sqlite3.DatabaseError as exc:
+            report["checks"]["foreign_key_check"] = f"error: {exc}"
+
+        duplicate_flights = _safe_df_query(con, """
+            SELECT date, UPPER(TRIM(COALESCE(registration,''))) AS registration,
+                   UPPER(TRIM(COALESCE(departure,''))) AS departure,
+                   UPPER(TRIM(COALESCE(arrival,''))) AS arrival,
+                   COALESCE(takeoff,'') AS takeoff, COALESCE(landing,'') AS landing,
+                   COUNT(*) AS pocet, GROUP_CONCAT(id) AS ids
+            FROM flights
+            GROUP BY date, UPPER(TRIM(COALESCE(registration,''))), UPPER(TRIM(COALESCE(departure,''))),
+                     UPPER(TRIM(COALESCE(arrival,''))), COALESCE(takeoff,''), COALESCE(landing,'')
+            HAVING COUNT(*) > 1
+            ORDER BY date DESC
+            LIMIT 200
+        """)
+        if not duplicate_flights.empty:
+            report["tables"]["duplicate_flights"] = duplicate_flights
+
+        missing_core = _safe_df_query(con, """
+            SELECT id, date, registration, aircraft_type, aircraft_class, evidence,
+                   departure, arrival, off_block, takeoff, landing, on_block, role, starts, price_per_hour
+            FROM flights
+            WHERE TRIM(COALESCE(date,'')) = ''
+               OR TRIM(COALESCE(registration,'')) = ''
+               OR TRIM(COALESCE(evidence,'')) = ''
+               OR TRIM(COALESCE(role,'')) = ''
+               OR TRIM(COALESCE(departure,'')) = ''
+               OR TRIM(COALESCE(arrival,'')) = ''
+               OR starts IS NULL OR starts <= 0
+            ORDER BY date DESC, id DESC
+            LIMIT 250
+        """)
+        if not missing_core.empty:
+            report["tables"]["missing_core"] = missing_core
+
+        missing_price = _safe_df_query(con, """
+            SELECT id, date, registration, aircraft_type, departure, arrival, role, price_per_hour
+            FROM flights
+            WHERE price_per_hour IS NULL OR price_per_hour <= 0
+            ORDER BY date DESC, id DESC
+            LIMIT 250
+        """)
+        if not missing_price.empty:
+            report["tables"]["missing_price"] = missing_price
+
+        missing_aircraft = _safe_df_query(con, """
+            SELECT DISTINCT UPPER(TRIM(f.registration)) AS registration, COUNT(*) AS flights
+            FROM flights f
+            LEFT JOIN aircraft a ON UPPER(TRIM(a.registration)) = UPPER(TRIM(f.registration))
+            WHERE TRIM(COALESCE(f.registration,'')) <> '' AND a.id IS NULL
+            GROUP BY UPPER(TRIM(f.registration))
+            ORDER BY flights DESC, registration
+            LIMIT 250
+        """)
+        if not missing_aircraft.empty:
+            report["tables"]["missing_aircraft"] = missing_aircraft
+
+        world_ok = _attach_world_airports(con)
+        if world_ok:
+            unknown_airports_query = """
+                WITH used AS (
+                    SELECT id AS flight_id, 'Odlet' AS field, UPPER(TRIM(departure)) AS ident FROM flights WHERE TRIM(COALESCE(departure,'')) <> ''
+                    UNION ALL
+                    SELECT id AS flight_id, 'Přílet' AS field, UPPER(TRIM(arrival)) AS ident FROM flights WHERE TRIM(COALESCE(arrival,'')) <> ''
+                )
+                SELECT u.field, u.ident, COUNT(*) AS flights, GROUP_CONCAT(u.flight_id) AS flight_ids
+                FROM used u
+                LEFT JOIN airports a ON UPPER(TRIM(a.ident)) = u.ident
+                LEFT JOIN world_airports.airports wa ON UPPER(TRIM(wa.ident)) = u.ident
+                WHERE a.id IS NULL AND wa.id IS NULL
+                GROUP BY u.field, u.ident
+                ORDER BY flights DESC, u.ident
+                LIMIT 250
+            """
+        else:
+            unknown_airports_query = """
+                WITH used AS (
+                    SELECT id AS flight_id, 'Odlet' AS field, UPPER(TRIM(departure)) AS ident FROM flights WHERE TRIM(COALESCE(departure,'')) <> ''
+                    UNION ALL
+                    SELECT id AS flight_id, 'Přílet' AS field, UPPER(TRIM(arrival)) AS ident FROM flights WHERE TRIM(COALESCE(arrival,'')) <> ''
+                )
+                SELECT u.field, u.ident, COUNT(*) AS flights, GROUP_CONCAT(u.flight_id) AS flight_ids
+                FROM used u
+                LEFT JOIN airports a ON UPPER(TRIM(a.ident)) = u.ident
+                WHERE a.id IS NULL
+                GROUP BY u.field, u.ident
+                ORDER BY flights DESC, u.ident
+                LIMIT 250
+            """
+        unknown_airports = _safe_df_query(con, unknown_airports_query)
+        if not unknown_airports.empty:
+            report["tables"]["unknown_airports"] = unknown_airports
+
+        orphan_tracks = _safe_df_query(con, """
+            SELECT t.id AS track_id, t.flight_id, t.file_name, t.imported_at, t.point_count, t.distance_km
+            FROM flight_tracks t
+            LEFT JOIN flights f ON f.id = t.flight_id
+            WHERE f.id IS NULL
+            ORDER BY t.id DESC
+            LIMIT 250
+        """)
+        if not orphan_tracks.empty:
+            report["tables"]["orphan_tracks"] = orphan_tracks
+
+        tracks_without_points = _safe_df_query(con, """
+            SELECT t.id AS track_id, t.flight_id, f.date, f.registration, t.file_name, t.point_count, t.distance_km
+            FROM flight_tracks t
+            LEFT JOIN flights f ON f.id = t.flight_id
+            LEFT JOIN track_points p ON p.track_id = t.id
+            GROUP BY t.id
+            HAVING COUNT(p.id) = 0
+            ORDER BY t.id DESC
+            LIMIT 250
+        """)
+        if not tracks_without_points.empty:
+            report["tables"]["tracks_without_points"] = tracks_without_points
+
+        track_point_mismatch = _safe_df_query(con, """
+            SELECT t.id AS track_id, t.flight_id, f.date, f.registration, t.file_name,
+                   COALESCE(t.point_count, 0) AS stored_points, COUNT(p.id) AS normalized_points
+            FROM flight_tracks t
+            LEFT JOIN flights f ON f.id = t.flight_id
+            LEFT JOIN track_points p ON p.track_id = t.id
+            GROUP BY t.id
+            HAVING normalized_points > 0 AND stored_points > 0 AND ABS(stored_points - normalized_points) > 5
+            ORDER BY ABS(stored_points - normalized_points) DESC
+            LIMIT 250
+        """)
+        if not track_point_mismatch.empty:
+            report["tables"]["track_point_mismatch"] = track_point_mismatch
+
+        invalid_points = _safe_df_query(con, """
+            SELECT track_id, COUNT(*) AS bad_points
+            FROM track_points
+            WHERE latitude_deg < -90 OR latitude_deg > 90 OR longitude_deg < -180 OR longitude_deg > 180
+            GROUP BY track_id
+            ORDER BY bad_points DESC
+            LIMIT 250
+        """)
+        if not invalid_points.empty:
+            report["tables"]["invalid_points"] = invalid_points
+
+        orphan_points = _safe_df_query(con, """
+            SELECT p.track_id, COUNT(*) AS points
+            FROM track_points p
+            LEFT JOIN flight_tracks t ON t.id = p.track_id
+            WHERE t.id IS NULL
+            GROUP BY p.track_id
+            ORDER BY points DESC
+            LIMIT 250
+        """)
+        if not orphan_points.empty:
+            report["tables"]["orphan_points"] = orphan_points
+
+        # Decode only track headers/JSON validity here; keep this diagnostic bounded.
+        invalid_json_rows: list[dict[str, Any]] = []
+        try:
+            rows = con.execute("SELECT id, flight_id, file_name, coordinates_json FROM flight_tracks ORDER BY id DESC").fetchall()
+            for row in rows:
+                try:
+                    points = json.loads(row["coordinates_json"] or "[]")
+                    if not isinstance(points, list) or len(points) < 2:
+                        invalid_json_rows.append({"track_id": row["id"], "flight_id": row["flight_id"], "file_name": row["file_name"], "problem": "málo bodů / špatná struktura"})
+                except Exception as exc:
+                    invalid_json_rows.append({"track_id": row["id"], "flight_id": row["flight_id"], "file_name": row["file_name"], "problem": str(exc)[:120]})
+                if len(invalid_json_rows) >= 250:
+                    break
+        except sqlite3.DatabaseError:
+            pass
+        if invalid_json_rows:
+            report["tables"]["invalid_track_json"] = pd.DataFrame(invalid_json_rows)
+
+    # Time anomalies are easier and safer to evaluate with the existing Python duration logic.
+    flights = read_flights()
+    time_rows: list[dict[str, Any]] = []
+    if not flights.empty:
+        for _, r in flights.iterrows():
+            block = r.get("block_minutes")
+            air = r.get("air_minutes")
+            problems: list[str] = []
+            if block is None or pd.isna(block):
+                problems.append("chybí block")
+            elif float(block) <= 0:
+                problems.append("block <= 0")
+            elif float(block) > 720:
+                problems.append("block > 12 h")
+            if air is None or pd.isna(air):
+                problems.append("chybí air")
+            elif float(air) <= 0:
+                problems.append("air <= 0")
+            elif float(air) > 720:
+                problems.append("air > 12 h")
+            if pd.notna(block) and pd.notna(air) and float(air) > float(block):
+                problems.append("air > block")
+            if problems:
+                time_rows.append({
+                    "ID": r.get("id"),
+                    "Datum": r.get("date"),
+                    "Imatrikulace": r.get("registration"),
+                    "Trasa": f"{r.get('departure') or ''}–{r.get('arrival') or ''}",
+                    "Block": fmt_minutes(block),
+                    "Air": fmt_minutes(air),
+                    "Problém": ", ".join(problems),
+                })
+    if time_rows:
+        report["tables"]["time_anomalies"] = pd.DataFrame(time_rows).head(250)
+
+    issue_count = 0
+    for key, value in report.get("tables", {}).items():
+        if isinstance(value, pd.DataFrame):
+            issue_count += len(value)
+    if str(report.get("checks", {}).get("integrity_check", "")).upper() != "OK":
+        issue_count += 1
+    if str(report.get("checks", {}).get("foreign_key_check", "")).upper() != "OK":
+        issue_count += 1
+    report["issue_count"] = issue_count
+    return report
+
+
+def _render_issue_table(title: str, df: pd.DataFrame, empty_text: str = "OK") -> None:
+    with st.expander(f"{title} ({0 if df is None or df.empty else len(df)})", expanded=False):
+        if df is None or df.empty:
+            st.success(empty_text)
+        else:
+            st.dataframe(_health_table_preview(df), hide_index=True, use_container_width=True, height=260)
+
+
+def run_safe_database_service() -> dict[str, Any]:
+    """Apply non-destructive repairs and normalization."""
+    result: dict[str, Any] = {"changed": 0, "actions": []}
+    with connect() as con:
+        before = con.total_changes
+        def step(label: str, sql: str, params: tuple[Any, ...] = ()) -> None:
+            prev = con.total_changes
+            con.execute(sql, params)
+            changed = con.total_changes - prev
+            result["actions"].append({"Akce": label, "Změny": int(changed)})
+
+        step("Normalizace imatrikulací v letech", """
+            UPDATE flights SET registration = UPPER(TRIM(registration))
+            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
+        """)
+        step("Normalizace letišť v letech", """
+            UPDATE flights SET departure = UPPER(TRIM(departure)), arrival = UPPER(TRIM(arrival))
+            WHERE (departure IS NOT NULL AND departure <> UPPER(TRIM(departure)))
+               OR (arrival IS NOT NULL AND arrival <> UPPER(TRIM(arrival)))
+        """)
+        step("Normalizace evidence/třídy/role", """
+            UPDATE flights SET
+                evidence = UPPER(TRIM(evidence)),
+                aircraft_class = UPPER(TRIM(aircraft_class)),
+                role = UPPER(TRIM(role))
+            WHERE (evidence IS NOT NULL AND evidence <> UPPER(TRIM(evidence)))
+               OR (aircraft_class IS NOT NULL AND aircraft_class <> UPPER(TRIM(aircraft_class)))
+               OR (role IS NOT NULL AND role <> UPPER(TRIM(role)))
+        """)
+        step("Doplnění startů", "UPDATE flights SET starts = 1 WHERE starts IS NULL OR starts <= 0")
+        step("Doplnění účtování", """
+            UPDATE flights SET billing_basis = 'BLOCK'
+            WHERE UPPER(TRIM(COALESCE(billing_basis,''))) NOT IN ('BLOCK','AIR')
+        """)
+        step("Normalizace imatrikulací v letadlech", """
+            UPDATE aircraft SET registration = UPPER(TRIM(registration))
+            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
+        """)
+        step("Normalizace imatrikulací v ceníku", """
+            UPDATE rates SET registration = UPPER(TRIM(registration))
+            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
+        """)
+        step("Odstranění osiřelých GPS bodů", """
+            DELETE FROM track_points
+            WHERE track_id NOT IN (SELECT id FROM flight_tracks)
+        """)
+        prev = con.total_changes
+        _seed_aircraft_from_existing_data(con)
+        result["actions"].append({"Akce": "Doplnění letadel z existujících letů", "Změny": int(con.total_changes - prev)})
+        prev = con.total_changes
+        _backfill_track_points(con)
+        result["actions"].append({"Akce": "Doplnění normalizovaných GPS bodů", "Změny": int(con.total_changes - prev)})
+        step("Doplnění point_count z track_points", """
+            UPDATE flight_tracks
+            SET point_count = COALESCE((SELECT COUNT(*) FROM track_points p WHERE p.track_id = flight_tracks.id), point_count)
+            WHERE EXISTS (SELECT 1 FROM track_points p WHERE p.track_id = flight_tracks.id)
+        """)
+        try:
+            optimize_sqlite(con)
+        except Exception:
+            pass
+        result["changed"] = int(con.total_changes - before)
+        record_audit(con, "safe_database_service", "database", None, result)
+        con.commit()
+    build_database_health_report.clear()
+    invalidate_cached_data()
+    auto_backup_after_change("safe_database_service")
+    return result
+
+
+def run_sqlite_service() -> dict[str, Any]:
+    result = {"Akce": [], "Stav": "OK"}
+    with connect() as con:
+        try:
+            con.execute("PRAGMA optimize")
+            result["Akce"].append("PRAGMA optimize")
+        except sqlite3.DatabaseError as exc:
+            result["Akce"].append(f"PRAGMA optimize selhalo: {exc}")
+        try:
+            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            result["Akce"].append("WAL checkpoint")
+        except sqlite3.DatabaseError as exc:
+            result["Akce"].append(f"WAL checkpoint selhal: {exc}")
+        record_audit(con, "sqlite_service", "database", None, result)
+        con.commit()
+    invalidate_cached_data()
+    return result
+
+
+def render_database_control_panel() -> None:
+    st.markdown("### Kontrola a servis")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("Spustit kontrolu", type="primary", use_container_width=True, key="run_db_health_v047"):
+            with st.spinner("Kontroluji databázi…"):
+                st.session_state["db_health_report_v047"] = build_database_health_report()
+    with c2:
+        if st.button("Bezpečný servis", use_container_width=True, disabled=not is_admin(), key="run_safe_service_v047"):
+            if require_admin():
+                with st.spinner("Provádím bezpečný servis…"):
+                    try:
+                        st.session_state["safe_service_result_v047"] = run_safe_database_service()
+                        st.session_state["db_health_report_v047"] = build_database_health_report()
+                        st.success("Bezpečný servis dokončen.")
+                    except Exception as exc:
+                        st.error(f"Servis selhal: {exc}")
+    with c3:
+        if st.button("SQLite optimize", use_container_width=True, disabled=not is_admin(), key="run_sqlite_service_v047"):
+            if require_admin():
+                try:
+                    st.session_state["sqlite_service_result_v047"] = run_sqlite_service()
+                    st.success("SQLite optimalizace dokončena.")
+                except Exception as exc:
+                    st.error(f"SQLite optimalizace selhala: {exc}")
+
+    if not is_admin():
+        st.caption("Servisní opravy jsou dostupné jen po přihlášení jako admin.")
+
+    result = st.session_state.get("safe_service_result_v047")
+    if result:
+        with st.expander("Poslední bezpečný servis", expanded=False):
+            st.metric("Změny", int(result.get("changed", 0)))
+            actions = pd.DataFrame(result.get("actions", []))
+            if not actions.empty:
+                st.dataframe(actions, hide_index=True, use_container_width=True)
+
+    sqlite_result = st.session_state.get("sqlite_service_result_v047")
+    if sqlite_result:
+        with st.expander("Poslední SQLite optimize", expanded=False):
+            st.write(" • ".join(sqlite_result.get("Akce", [])))
+
+    report = st.session_state.get("db_health_report_v047")
+    if not report:
+        st.info("Kontrola se spouští ručně, aby stránka Databáze zbytečně nezpomalovala.")
+        return
+
+    counts = report.get("counts", {})
+    checks = report.get("checks", {})
+    issue_count = int(report.get("issue_count", 0) or 0)
+    m1, m2, m3, m4 = st.columns(4)
+    with m1: metric_card("Stav", "OK" if issue_count == 0 else str(issue_count), "nálezy")
+    with m2: metric_card("Lety", str(counts.get("flights", 0)), "záznamy")
+    with m3: metric_card("Tracky", str(counts.get("flight_tracks", 0)), "KML")
+    with m4: metric_card("GPS body", f"{int(counts.get('track_points', 0)):,}".replace(",", " "), "normalizace")
+    st.caption(f"Kontrola: {report.get('generated_at', '')}")
+
+    if str(checks.get("integrity_check", "")).upper() == "OK" and str(checks.get("foreign_key_check", "")).upper() == "OK":
+        st.success("SQLite integrita a foreign key check: OK")
+    else:
+        st.error(f"SQLite kontrola: integrity={checks.get('integrity_check')} • foreign_keys={checks.get('foreign_key_check')}")
+
+    tables = report.get("tables", {})
+    _render_issue_table("Foreign key check", tables.get("foreign_key_check", pd.DataFrame()))
+    _render_issue_table("Podezřelé duplicity letů", tables.get("duplicate_flights", pd.DataFrame()))
+    _render_issue_table("Chybějící základní údaje", tables.get("missing_core", pd.DataFrame()))
+    _render_issue_table("Časové anomálie", tables.get("time_anomalies", pd.DataFrame()))
+    _render_issue_table("Lety bez sazby", tables.get("missing_price", pd.DataFrame()))
+    _render_issue_table("Registrace bez profilu letadla", tables.get("missing_aircraft", pd.DataFrame()))
+    _render_issue_table("Neznámá letiště / plochy", tables.get("unknown_airports", pd.DataFrame()))
+    _render_issue_table("Tracky bez GPS bodů", tables.get("tracks_without_points", pd.DataFrame()))
+    _render_issue_table("Nesoulad point_count / track_points", tables.get("track_point_mismatch", pd.DataFrame()))
+    _render_issue_table("Neplatné GPS body", tables.get("invalid_points", pd.DataFrame()))
+    _render_issue_table("Osiřelé tracky", tables.get("orphan_tracks", pd.DataFrame()))
+    _render_issue_table("Osiřelé GPS body", tables.get("orphan_points", pd.DataFrame()))
+    _render_issue_table("Neplatný JSON tracku", tables.get("invalid_track_json", pd.DataFrame()))
 
 def make_control_df(df: pd.DataFrame) -> pd.DataFrame:
     rows = []

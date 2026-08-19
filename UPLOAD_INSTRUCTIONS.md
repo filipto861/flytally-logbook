@@ -1,4 +1,4 @@
-# Upload v0.46
+# Upload v0.47
 
 Nahraj minimálně:
 
@@ -16,4 +16,5 @@ Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. V prohlížeči Ctrl + F5
-3. Ověřit, že nahoře běží v0.46
+3. Ověřit, že nahoře běží v0.47
+4. Databáze → Kontrola → Spustit kontrolu

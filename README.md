@@ -1,16 +1,19 @@
 # Letový zápisník Streamlit
 
-Verze: v0.46
+Verze: v0.47
 
-## v0.46 – Hloubková optimalizace a stabilita
+## v0.47 – Stabilita / kontrola dat / servisní nástroje
 
-- GPS přehledová mapa už pro běžné vykreslení nenačítá plné `coordinates_json` všech tracků.
-- Pro mapu se načítají nejdříve pouze metadata tracků a až potom vzorkované body z normalizované tabulky `track_points`.
-- Režim `Rychlá` je nově agresivnější: méně tracků a méně bodů pro rychlejší otevření mapy.
-- Režim `Střední` zůstává jako praktičtější kompromis pro širší přehled.
-- Režim `Vše` zůstává dostupný, ale stále je určený pro situace, kdy je opravdu potřeba vykreslit celý filtr.
-- Doplněna migrace chybějících `track_points` pro starší/importované KML tracky.
-- Uložené KML soubory a detail jednotlivého letu zůstávají beze změny.
+- Nová záložka `Databáze → Kontrola`.
+- Ruční hloubková kontrola databáze bez zbytečného zpomalování běžného otevření stránky.
+- Kontrola SQLite integrity a foreign keys.
+- Detekce podezřelých duplicit letů.
+- Detekce chybějících základních údajů, sazeb a časových anomálií.
+- Kontrola registrací bez profilu letadla.
+- Kontrola neznámých letišť / ploch proti lokální i světové databázi.
+- Diagnostika GPS tracků: tracky bez bodů, nesoulad `point_count`, neplatné GPS body, osiřelé body, neplatný JSON.
+- Admin servisní akce: bezpečná normalizace registrací/letišť, doplnění startů, doplnění účtování, doplnění letadel z existujících letů a backfill `track_points`.
+- Samostatné `SQLite optimize` pro lehkou údržbu databáze.
 
 ## Důležité
 
