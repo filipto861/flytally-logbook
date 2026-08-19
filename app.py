@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.33.1"
+APP_VERSION = "v0.34"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -235,7 +235,6 @@ def render_auth_sidebar() -> None:
     with st.expander("Správa aplikace", expanded=is_admin()):
         if admin_password:
             if is_admin():
-                st.caption("Přihlášeno jako správce.")
                 if st.button("Odhlásit", use_container_width=True):
                     st.session_state.pop("auth_role", None)
                     st.rerun()
@@ -250,7 +249,7 @@ def render_auth_sidebar() -> None:
                     else:
                         st.error("Nesprávné heslo")
         else:
-            st.caption("Správcovské heslo zatím není nastavené. Aplikace běží jen pro čtení.")
+            pass
 
 
 def require_admin() -> bool:
@@ -1035,13 +1034,22 @@ def apply_ui_theme(dark_mode: bool) -> None:
     @keyframes lbPlaneSpin {{from {{transform:rotate(0deg);}} to {{transform:rotate(360deg);}}}}
     .map-mode-row {{margin:.35rem 0 .65rem 0;}}
 
-    .performance-note {{border:1px solid rgba(34,197,94,.28);background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.04));border-radius:16px;padding:.75rem .9rem;color:var(--muted);font-size:.86rem;margin:.35rem 0 .85rem 0;}}
     .flight-detail-hero {{border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(15,23,42,.02)),var(--panel);padding:1rem 1.1rem;margin:.15rem 0 1rem 0;box-shadow:0 12px 28px var(--shadow);}}
     .flight-detail-route {{font-size:1.35rem;font-weight:900;color:var(--text);line-height:1.15;letter-spacing:-.025em;}}
     .flight-detail-meta {{color:var(--muted);font-size:.86rem;margin-top:.35rem;display:flex;gap:.55rem;flex-wrap:wrap;}}
     .flight-detail-meta span {{border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.035);padding:.18rem .50rem;}}
-    .map-perf-toolbar {{display:flex;justify-content:space-between;align-items:center;gap:.75rem;border:1px solid var(--border);background:rgba(255,255,255,.025);border-radius:16px;padding:.65rem .80rem;margin:.35rem 0 .75rem 0;color:var(--muted);font-size:.85rem;}}
-    .map-perf-toolbar strong {{color:var(--text);}}
+    .detail-grid {{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin:.8rem 0;}}
+    .detail-card {{border:1px solid var(--border);border-radius:16px;background:var(--panel);padding:.78rem .85rem;box-shadow:0 10px 24px var(--shadow);min-height:5.4rem;}}
+    .detail-card-label {{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:850;margin-bottom:.32rem;}}
+    .detail-card-value {{font-size:1.08rem;color:var(--text);font-weight:900;line-height:1.1;}}
+    .detail-card-sub {{font-size:.78rem;color:var(--muted);margin-top:.25rem;line-height:1.25;}}
+    .detail-split {{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.55rem 0 .9rem 0;}}
+    .detail-kv {{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.025);padding:.8rem .9rem;}}
+    .detail-kv-title {{font-weight:900;color:var(--text);margin-bottom:.45rem;}}
+    .detail-kv-row {{display:flex;justify-content:space-between;gap:1rem;border-top:1px solid rgba(148,163,184,.12);padding:.42rem 0;font-size:.88rem;}}
+    .detail-kv-row:first-of-type {{border-top:0;}}
+    .detail-kv-row span:first-child {{color:var(--muted);}}
+    .detail-kv-row span:last-child {{color:var(--text);font-weight:750;text-align:right;}}
     .section-card {{border:1px solid var(--border);border-radius:18px;padding:1rem;background:var(--panel);box-shadow:0 10px 28px var(--shadow);}}
     .pill {{display:inline-block;border:1px solid var(--border);border-radius:999px;background:var(--panel2);padding:.25rem .62rem;margin:.1rem .18rem;font-size:.82rem;color:var(--text);}}
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
@@ -1066,12 +1074,13 @@ def apply_ui_theme(dark_mode: bool) -> None:
     div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
     div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
     button[kind="primary"] {{border-radius:12px;}}
-    @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}}}}
+    @media (max-width: 980px) {{.detail-grid {{grid-template-columns:repeat(2,minmax(0,1fr));}} .detail-split {{grid-template-columns:1fr;}}}}
+    @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}} .detail-grid {{grid-template-columns:1fr;}}}}
     </style>
     """, unsafe_allow_html=True)
 
 
-def app_header(subtitle: str = "Lokální pilotní evidence • ULL / EASA • náklady • GPS tracky") -> None:
+def app_header(subtitle: str = "Osobní letový zápisník") -> None:
     st.markdown(f"""
     <div class="app-title">
       <div><div class="app-title-main">Letový zápisník</div><div class="app-title-sub">{subtitle}</div></div>
@@ -1168,7 +1177,6 @@ def apply_filters(df: pd.DataFrame, key_prefix: str = "") -> pd.DataFrame:
     roles = sorted(r for r in work["role"].dropna().unique() if r)
 
     with st.expander("Filtry", expanded=False):
-        st.caption("Výchozí stav zobrazuje všechny lety. Filtry rozbal jen při hledání konkrétního období, letadla nebo funkce.")
         f1, f2, f3, f4 = st.columns(4)
         with f1:
             selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
@@ -2159,8 +2167,6 @@ def render_track_profile(points: list[dict[str, Any]]) -> None:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     st.plotly_chart(plotly_layout(fig), use_container_width=True)
-    if not has_speed:
-        st.caption("GPS speed nelze pro tento track spočítat, protože KML nemá použitelné časové značky mezi body nebo jsou všechny rychlosti odfiltrované jako neplatné.")
 
 
 # -----------------------------------------------------------------------------
@@ -2178,7 +2184,6 @@ def page_dashboard(df: pd.DataFrame):
     with c4: metric_card("Náklady", fmt_money(s["cost"]), f"GPS {s['tracks']} tracků • {s['gps_km']:.0f} km")
     show_charts = st.toggle("Zobrazit grafy dashboardu", value=st.session_state.get("show_dashboard_charts", True), key="show_dashboard_charts")
     if not show_charts:
-        st.info("Grafy jsou skryté kvůli rychlosti. Souhrnné karty zůstávají načtené okamžitě.")
         return
     st.write("")
     chart_df = filtered.dropna(subset=["year"]).copy()
@@ -2281,23 +2286,62 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         label_visibility="collapsed",
     )
     if detail_section == "Přehled":
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: metric_card("Block", row.get("block_time"), f"Air {row.get('air_time')}")
-        with c2: metric_card("Trasa", f"{row.get('departure')}–{row.get('arrival')}", row.get("registration"))
-        with c3: metric_card("Funkce", row.get("role"), row.get("evidence"))
-        with c4: metric_card("Cena", row.get("cost_label"), f"GPS {int(row.get('track_count') or 0)}")
-        details = pd.DataFrame([{
-            "Datum": row.get("date"), "Evidence": row.get("evidence"), "Imatrikulace": row.get("registration"),
-            "Typ": row.get("aircraft_type"), "Třída": row.get("aircraft_class"), "Odlet": row.get("departure"),
-            "Přílet": row.get("arrival"), "Off block": row.get("off_block"), "Takeoff": row.get("takeoff"),
-            "Landing": row.get("landing"), "On block": row.get("on_block"), "Starty": row.get("starts"),
-            "Velitel": row.get("commander"), "Instruktor": row.get("instructor"), "Funkce": row.get("role"),
-            "Úloha": row.get("task"), "Kč/h": row.get("price_per_hour"), "Poznámka": row.get("note"),
-        }])
-        st.dataframe(details, hide_index=True, use_container_width=True)
+        block_text = _safe_text(row.get("block_time")) or "—"
+        air_text = _safe_text(row.get("air_time")) or "—"
+        price_text = _safe_text(row.get("cost_label")) or "—"
+        gps_count = int(_safe_float(row.get("track_count"), 0))
+        gps_km = _safe_float(row.get("gps_km"), 0)
+        st.markdown(
+            f"""
+            <div class="detail-grid">
+              <div class="detail-card">
+                <div class="detail-card-label">Čas letu</div>
+                <div class="detail-card-value">{block_text}</div>
+                <div class="detail-card-sub">Air {air_text}</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-card-label">Letadlo</div>
+                <div class="detail-card-value">{_safe_text(row.get('registration')) or '—'}</div>
+                <div class="detail-card-sub">{_safe_text(row.get('aircraft_type')) or '—'} · {_safe_text(row.get('aircraft_class')) or '—'}</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-card-label">Cena</div>
+                <div class="detail-card-value">{price_text}</div>
+                <div class="detail-card-sub">{_safe_text(row.get('price_per_hour')) or '—'} Kč/h</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-card-label">GPS</div>
+                <div class="detail-card-value">{gps_count}</div>
+                <div class="detail-card-sub">{gps_km:.1f} km</div>
+              </div>
+            </div>
+            <div class="detail-split">
+              <div class="detail-kv">
+                <div class="detail-kv-title">Let</div>
+                <div class="detail-kv-row"><span>Datum</span><span>{_safe_text(row.get('date')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Trasa</span><span>{_safe_text(row.get('departure')) or '—'} → {_safe_text(row.get('arrival')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Evidence</span><span>{_safe_text(row.get('evidence')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Funkce</span><span>{_safe_text(row.get('role')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Starty</span><span>{_safe_text(row.get('starts')) or '—'}</span></div>
+              </div>
+              <div class="detail-kv">
+                <div class="detail-kv-title">Časy a posádka</div>
+                <div class="detail-kv-row"><span>Block</span><span>{_safe_text(row.get('off_block')) or '—'} – {_safe_text(row.get('on_block')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Air</span><span>{_safe_text(row.get('takeoff')) or '—'} – {_safe_text(row.get('landing')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Velitel</span><span>{_safe_text(row.get('commander')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Instruktor</span><span>{_safe_text(row.get('instructor')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Úloha</span><span>{_safe_text(row.get('task')) or '—'}</span></div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        note_text = _safe_text(row.get("note"))
+        if note_text:
+            st.markdown(f'<div class="detail-kv"><div class="detail-kv-title">Poznámka</div>{note_text}</div>', unsafe_allow_html=True)
     elif detail_section == "Editace":
         if not is_admin():
-            st.info("Editace je dostupná jen po přihlášení jako admin.")
+            st.info("Pouze admin.")
         else:
             saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny")
             if saved is not None:
@@ -2338,7 +2382,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
     elif detail_section == "Smazání":
         if not is_admin():
-            st.info("Mazání letu je dostupné jen po přihlášení jako admin.")
+            st.info("Pouze admin.")
         else:
             st.markdown(
                 f"""
@@ -2559,14 +2603,12 @@ def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
     if not is_admin():
-        st.info("Přidání letu je dostupné jen po přihlášení jako admin.")
+        st.info("Pouze admin.")
         return
     tab_track, tab_manual = st.tabs(["Z tracku", "Ručně"])
     with tab_track:
         uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml")
-        if uploaded is None:
-            st.info("Nahraj KML a aplikace z něj navrhne nový záznam letu.")
-        else:
+        if uploaded is not None:
             raw = uploaded.read()
             try:
                 points = parse_kml_bytes(raw)
@@ -2583,10 +2625,8 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
                 with c2: metric_card("GPS délka", f"{stats['distance_km']:.1f} km", "")
                 with c3: metric_card("Časy", f"{defaults.get('takeoff') or '—'}–{defaults.get('landing') or '—'}", "Takeoff / landing")
                 with c4: metric_card("Block", f"{defaults.get('off_block') or '—'}–{defaults.get('on_block') or '—'}", "automaticky ±5 min")
-                if has_clock:
-                    st.caption(f"Detekce z KML: takeoff index {detect_idx.get('takeoff_idx', '—')}, landing index {detect_idx.get('landing_idx', '—')}. Block time je předvyplněný jako takeoff −5 min a landing +5 min. Před uložením zkontroluj.")
-                else:
-                    st.warning("KML neobsahuje časové značky u bodů. Trasu a letiště lze odhadnout, ale časy musíš doplnit ručně.")
+                if not has_clock:
+                    st.warning("KML neobsahuje časové značky u bodů. Časy doplň ručně.")
                 preview_df = pd.DataFrame([{"id": -1,"flight_id": -1,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": stats["distance_km"],"date": defaults.get("date"),"registration": defaults.get("registration"),"departure": defaults.get("departure"),"arrival": defaults.get("arrival"),"role": defaults.get("role"),"evidence": defaults.get("evidence")}])
                 render_folium_readonly(make_map(preview_df, dark_mode), height=420, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
                 with st.expander("Profil tracku", expanded=True):
@@ -2610,10 +2650,6 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
 
 def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
-    st.markdown(
-        '<div class="performance-note"><b>v0.33 optimalizace:</b> mapa se nevykresluje ve dvou záložkách najednou. Nejdřív vybereš typ mapy, potom se načte jen ta jedna aktivní vrstva. Přechod mezi stránkami kryje jen malé letadýlko, bez rušivého overlay panelu.</div>',
-        unsafe_allow_html=True,
-    )
     filtered = apply_filters(flights, "map")
     st.markdown('<div class="map-mode-row">', unsafe_allow_html=True)
     map_mode = st.radio(
@@ -2652,8 +2688,6 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
         if tracks.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
-            st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
-            st.markdown('<div class="map-perf-toolbar"><div><strong>GPS vrstva</strong><br>Načtená je pouze aktivní mapa, ne obě mapové záložky najednou.</div><div>cache 5 min</div></div>', unsafe_allow_html=True)
             records_json = _df_to_records_json(
                 tracks,
                 ["flight_id", "id", "date", "registration", "departure", "arrival", "role", "evidence", "file_name", "point_count", "distance_km", "coordinates_json"],
@@ -2668,8 +2702,6 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
-            st.markdown('<div class="map-perf-toolbar"><div><strong>Direct vrstva</strong><br>Zobrazuje jen navštívená letiště a přímé spojnice, proto je výrazně lehčí než GPS tracky.</div><div>cache 5 min</div></div>', unsafe_allow_html=True)
             records_json = _df_to_records_json(
                 filtered,
                 ["id", "date", "registration", "departure", "arrival", "role", "evidence", "off_block", "on_block", "block_time"],
@@ -2832,7 +2864,6 @@ def page_database():
         cols = ["ident","name","airport_type","iso_country","municipality","latitude_deg","longitude_deg","source","data_quality","active","closed"]
         st.dataframe(view[[c for c in cols if c in view.columns]].head(1000), hide_index=True, use_container_width=True, height=430)
         st.download_button("Export letišť CSV", data=airports.to_csv(index=False).encode("utf-8"), file_name="airports_export.csv", mime="text/csv", use_container_width=True)
-        st.caption("Světová letištní databáze je už uložená v SQLite. V běžném provozu se zde jen vyhledává, exportuje a ručně doplňují/opravuji letiště nebo UL plochy.")
         st.markdown("### Přidat / upravit letiště")
         if not is_admin():
             st.info("Ruční editace letišť je dostupná jen pro admina.")
@@ -2897,7 +2928,7 @@ def page_database():
         else:
             st.warning("Automatická GitHub záloha není nastavená. Změny ve Streamlit Cloud mohou po restartu zmizet.")
         if st.session_state.get("last_auto_backup_status") == "ok":
-            st.caption("Poslední automatická záloha proběhla úspěšně." + (f" Commit: {st.session_state.get('last_auto_backup_url')}" if st.session_state.get('last_auto_backup_url') else ""))
+            pass
         elif st.session_state.get("last_auto_backup_status") == "error":
             st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
         with open(DB_PATH, "rb") as f:

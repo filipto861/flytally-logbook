@@ -1,14 +1,20 @@
-# Letový zápisník v0.33.1
+# Letový zápisník
 
-UX polish navazující na v0.33.
+Aktuální verze: v0.34
 
-## Změny
+## Stav
 
-- Zachována rychlejší navigace a rychlejší mapy z v0.33.
-- Loading mezi stránkami je nově jen decentní točící se letadýlko, bez rušivého panelu a textu.
-- Sidebar toggle je znovu více uhlazený: větší kulaté tlačítko, lepší hover a lepší poloha při zavřeném menu.
-- Cílem loaderu je pouze krátký přechod, ne maskování pomalosti. Další velký milník zůstává skutečná optimalizace architektury.
+- rychlejší navigace z v0.33
+- minimalistický loading s letadýlkem
+- čistší UI bez vysvětlujících popisků v běžném provozu
+- detail letu 2.0 s kartami a přehledným rozdělením údajů
+- GPS / FR24 / ADSBexchange import zachován
+- mapa letišť a direct spojnic zachována
 
 ## Bezpečnost dat
 
-ZIP neobsahuje `data/logbook.sqlite`. Tento soubor nepřepisovat ručně, protože obsahuje živé lety, tracky a ruční data.
+Nepřepisovat ručně:
+
+- `data/logbook.sqlite`
+
+Tento soubor obsahuje živé lety, tracky a ruční data.
