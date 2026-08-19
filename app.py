@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.42"
+APP_VERSION = "v0.43"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 4
 _DB_READY = False
@@ -587,6 +587,23 @@ def read_table(table: str) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
 
+
+@st.cache_data(show_spinner=False, ttl=30)
+def read_rates() -> pd.DataFrame:
+    rates = read_table("rates")
+    if not rates.empty and "registration" in rates.columns:
+        rates = rates.copy()
+        rates["registration"] = rates["registration"].fillna("").astype(str).str.upper()
+    return rates
+
+@st.cache_data(show_spinner=False, ttl=30)
+def read_table_count(table: str) -> int:
+    try:
+        with connect() as con:
+            row = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+            return int(row[0]) if row else 0
+    except sqlite3.DatabaseError:
+        return 0
 
 
 def _clean_ident(value: Any) -> str:
@@ -3863,16 +3880,16 @@ def page_database():
     airports = read_airports(active_only=False)
     aircraft = read_table("aircraft")
     rates = read_table("rates")
-    tracks = read_table("flight_tracks")
-    points = read_table("track_points")
+    track_count_total = read_table_count("flight_tracks")
+    point_count_total = read_table_count("track_points")
     metas = read_table("app_meta")
     audits = read_table("audit_log") if "audit_log" else pd.DataFrame()
 
     c1, c2, c3, c4 = st.columns(4)
     with c1: metric_card("Letiště / plochy", str(len(airports)), "databázová tabulka")
     with c2: metric_card("Letadla", str(len(aircraft)), "registrace")
-    with c3: metric_card("Tracky", str(len(tracks)), "KML soubory")
-    with c4: metric_card("GPS body", f"{len(points):,}".replace(",", " "), "normalizováno")
+    with c3: metric_card("Tracky", str(track_count_total), "KML soubory")
+    with c4: metric_card("GPS body", f"{point_count_total:,}".replace(",", " "), "normalizováno")
 
     tab_airports, tab_aircraft, tab_rates, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Ceník", "Záloha", "Meta"])
     with tab_airports:
@@ -4167,6 +4184,7 @@ def _money_number(value: Any) -> float:
     return round(float(value), 0)
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def make_logbook_export_df(df: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "Datum", "Evidence", "Imatrikulace", "Typ", "Třída", "Odlet", "Přílet",
@@ -4216,6 +4234,7 @@ def _minutes_for_role(df: pd.DataFrame, role: str) -> int:
     return int(df["block_minutes"].where(df["role"].eq(role), 0).fillna(0).sum())
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def make_summary_table(df: pd.DataFrame) -> pd.DataFrame:
     s = build_summary(df)
     rows = [
@@ -4237,6 +4256,7 @@ def make_summary_table(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["Metrika", "Hodnota"])
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def make_group_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     base_cols = group_cols + ["Lety", "Starty", "Block", "Air", "PIC", "DUAL", "Safety", "GPS km", "Náklady Kč"]
     if df.empty:
@@ -4273,6 +4293,7 @@ def make_group_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     return grouped[base_cols]
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def make_route_summary(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"])
@@ -4295,6 +4316,7 @@ def make_route_summary(df: pd.DataFrame) -> pd.DataFrame:
     return grouped[["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"]]
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def make_airport_summary(df: pd.DataFrame) -> pd.DataFrame:
     columns = ["Letiště", "Návštěvy", "Odlety", "Přílety", "První let", "Poslední let"]
     if df.empty:
@@ -4369,6 +4391,7 @@ def _style_export_sheet(ws, title: str | None = None) -> None:
     ws.sheet_properties.pageSetUpPr.fitToPage = True
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def export_excel(df: pd.DataFrame) -> bytes:
     wb = Workbook()
     ws = wb.active
@@ -4397,6 +4420,7 @@ def export_excel(df: pd.DataFrame) -> bytes:
     return out.getvalue()
 
 
+@st.cache_data(show_spinner=False, ttl=300)
 def build_print_html(df: pd.DataFrame, title: str = "Letový zápisník") -> str:
     summary = build_summary(df)
     detail = make_logbook_export_df(df)
@@ -4787,21 +4811,28 @@ def main():
     render_page_transition_runtime()
     app_header()
     page = st.session_state.get("page", "Dashboard")
-    flights = read_flights()
-    rates = read_table("rates")
-    if not rates.empty:
-        rates["registration"] = rates["registration"].fillna("").str.upper()
-    if page == "Dashboard": page_dashboard(flights)
-    elif page == "Lety": page_logbook(flights, rates, dark_mode)
-    elif page == "Nový let": page_new_flight(rates, dark_mode)
-    elif page == "Mapa": page_maps(flights, rates, dark_mode)
-    elif page == "Ceník": page_rates(rates)
-    elif page == "Databáze": page_database()
+
+    # v0.43: data se načítají až pro aktivní stránku. Dříve se flights + rates
+    # načítaly při každém rerunu, i když uživatel byl jen v databázi, ceníku
+    # nebo exportu. To zbytečně zpomalovalo hlavně klikání v mapě a formuláře.
+    if page == "Dashboard":
+        page_dashboard(read_flights())
+    elif page == "Lety":
+        page_logbook(read_flights(), read_rates(), dark_mode)
+    elif page == "Nový let":
+        page_new_flight(read_rates(), dark_mode)
+    elif page == "Mapa":
+        page_maps(read_flights(), read_rates(), dark_mode)
+    elif page == "Ceník":
+        page_rates(read_rates())
+    elif page == "Databáze":
+        page_database()
     elif page == "Kontrola":
         # Legacy route: stránka kontroly už není v navigaci, ale starý stav relace může existovat.
         st.session_state["page"] = "Dashboard"
         st.rerun()
-    elif page == "Export": page_export(flights)
+    elif page == "Export":
+        page_export(read_flights())
     render_page_loaded_signal()
 
 if __name__ == "__main__":

@@ -1,27 +1,16 @@
-# Letový zápisník
+# Letový zápisník Streamlit
 
-Aktuální checkpoint: **v0.42 – Export / tisk logbooku 2.0**.
+Verze: v0.43
 
-## Změny v0.42
+## v0.43 – Optimalizace II
 
-- Přepracovaná část **Export**.
-- Přidány filtry exportu podle období, evidence, funkce, imatrikulace, třídy a GPS tracku.
-- Nový Excel export s listy:
-  - `Zápisník`
-  - `Souhrn`
-  - `Letadla`
-  - `Funkce`
-  - `Trasy`
-  - `Letiště`
-- Přidán CSV export filtrovaných letů.
-- Přidána tisková HTML verze, kterou lze otevřít v prohlížeči a uložit jako PDF.
-- Export ukazuje souhrn filtrovaných dat ještě před stažením.
-- SQLite databáze zůstává dostupná samostatně jako bezpečnostní záloha.
+- data se načítají až podle aktivní stránky
+- Dashboard, Export, Mapa, Lety a Nový let už zbytečně nenačítají stejné tabulky mimo svoji stránku
+- ceník má samostatnou cache a normalizaci registrací
+- databázové počty GPS bodů a tracků se načítají přes rychlý COUNT místo celé tabulky
+- Excel, HTML tisk a exportní souhrny jsou cachované
+- zachována kompatibilita s `logbook_core/`, ale aplikace má fallback i při chybějícím modulu
 
-## Bezpečnost dat
+## Důležité
 
-Nikdy ručně nepřepisovat:
-
-- `data/logbook.sqlite`
-
-Tento soubor obsahuje živé lety, tracky a ruční data.
+Nepřepisovat produkční databázi `data/logbook.sqlite`.

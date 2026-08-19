@@ -1,4 +1,4 @@
-# Upload instructions – v0.42
+# Upload v0.43
 
 Nahraj minimálně:
 
@@ -6,12 +6,14 @@ Nahraj minimálně:
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
-Složka `logbook_core/` může zůstat v repozitáři. Pokud už tam je, není nutné ji znovu řešit.
+Složku `logbook_core/` nech v repozitáři tak, jak už je.
 
-NEPŘEPISOVAT:
+Nepřepisovat:
 
 - `data/logbook.sqlite`
 
-Po uploadu proveď ve Streamlit Cloud:
+Po uploadu:
 
-`Manage app → Reboot app`
+1. Streamlit Cloud → Manage app → Reboot app
+2. V prohlížeči Ctrl + F5
+3. Ověřit, že nahoře běží v0.43
