@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.3"
+APP_VERSION = "v0.35.4"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2091,9 +2091,9 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
             {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
-            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{detail_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{detail_query}';}}return false;">Detail</a>
+            <a href="{detail_query}" target="_top" rel="noopener">Detail</a>
             &nbsp;·&nbsp;
-            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{route_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{route_query}';}}return false;">Trasa</a>
+            <a href="{route_query}" target="_top" rel="noopener">Trasa</a>
             """, max_width=320)
         folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
 
@@ -2108,7 +2108,7 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
             Návštěvy: {visits}<br>
             Odlety: {int(ap.get('departures') or 0)} • Přílety: {int(ap.get('arrivals') or 0)}<br>
             První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}<br>
-            <a href="#" onclick="try{{const u=new URL(window.parent.location.href);u.search='{airport_query}';window.parent.location.href=u.toString();}}catch(e){{window.top.location.href='{airport_query}';}}return false;">Zobrazit lety</a>
+            <a href="{airport_query}" target="_top" rel="noopener">Zobrazit lety</a>
             """, max_width=300)
         folium.CircleMarker((float(ap["lat"]), float(ap["lon"])), radius=radius, color="#22c55e", fill=True, fill_opacity=.92, tooltip=tooltip, popup=popup).add_to(m)
 
