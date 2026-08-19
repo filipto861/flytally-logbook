@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35"
+APP_VERSION = "v0.35.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2115,14 +2115,6 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
 
 
 def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
-    """Render a Folium map as static HTML with client-side interactivity only.
-
-    This is faster than streamlit-folium for read-only maps because pan/zoom/click
-    no longer sends viewport state back to Streamlit. The map still moves and
-    popups still work in the browser, but the Python app is not rerun while the
-    user explores the map. That removes the grey overlay and makes map movement
-    feel immediate.
-    """
     try:
         html = m.get_root().render()
         components.html(html, height=height, scrolling=False)
@@ -2131,6 +2123,13 @@ def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None 
             st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
         except TypeError:
             st_folium(m, height=height, use_container_width=True, key=key)
+
+
+def render_folium_navigable(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
+    try:
+        st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
+    except TypeError:
+        st_folium(m, height=height, use_container_width=True, key=key)
 
 
 
@@ -2824,6 +2823,7 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
         cols[1].markdown(f'<div class="map-mini-cell">{flight_id}</div>', unsafe_allow_html=True)
         cols[2].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("date"))}</div>', unsafe_allow_html=True)
         cols[3].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("registration"))}<div class="map-mini-sub">{_safe_text(row.get("aircraft_type"))}</div></div>', unsafe_allow_html=True)
@@ -2913,11 +2913,7 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            records_json = _df_to_records_json(
-                filtered,
-                ["id", "date", "registration", "departure", "arrival", "role", "evidence", "off_block", "on_block", "block_time"],
-            )
-            render_map_html(cached_route_overview_map_html(records_json, bool(dark_mode)), height=680)
+            render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0351")
             render_lazy_table(
                 "Tabulka direct tras",
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]

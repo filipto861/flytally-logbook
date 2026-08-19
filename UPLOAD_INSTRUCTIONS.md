@@ -1,18 +1,5 @@
-# Upload v0.35
+Nahraj minimálně `app.py`, `README.md` a `UPLOAD_INSTRUCTIONS.md`.
 
-Nahraj do GitHub repozitáře obsah ZIPu.
+Nepřepisuj `data/logbook.sqlite`.
 
-Minimálně:
-
-- `app.py`
-- `README.md`
-- `UPLOAD_INSTRUCTIONS.md`
-
-Nepřepisovat:
-
-- `data/logbook.sqlite`
-
-Po nahrání:
-
-1. Streamlit Cloud → Manage app → Reboot app
-2. Ctrl + F5 v prohlížeči
+Po nahrání proveď reboot aplikace ve Streamlit Cloud a Ctrl+F5 v prohlížeči.
