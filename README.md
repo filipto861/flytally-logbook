@@ -1,8 +1,8 @@
 # Letový zápisník Streamlit
 
-Verze: v0.43
+Verze: v0.43.1
 
-## v0.43 – Optimalizace II
+## v0.43.1 – Optimalizace II
 
 - data se načítají až podle aktivní stránky
 - Dashboard, Export, Mapa, Lety a Nový let už zbytečně nenačítají stejné tabulky mimo svoji stránku

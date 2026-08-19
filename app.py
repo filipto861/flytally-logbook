@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.43"
+APP_VERSION = "v0.43.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 4
 _DB_READY = False
@@ -4344,12 +4344,27 @@ def make_airport_summary(df: pd.DataFrame) -> pd.DataFrame:
     return grouped[columns]
 
 
+def _excel_safe_value(value: Any) -> Any:
+    # OpenPyXL cannot reliably style/save NaN, ±Inf or pandas missing values.
+    # Export should never fail because one optional numeric field is empty.
+    try:
+        if value is None or pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, pd.Timestamp):
+        return value.to_pydatetime()
+    return value
+
+
 def _append_dataframe(ws, df: pd.DataFrame, start_row: int = 1) -> None:
     for col_idx, col in enumerate(df.columns, start=1):
         ws.cell(start_row, col_idx, col)
     for row_idx, row in enumerate(df.itertuples(index=False), start=start_row + 1):
         for col_idx, value in enumerate(row, start=1):
-            ws.cell(row_idx, col_idx, value)
+            ws.cell(row_idx, col_idx, _excel_safe_value(value))
 
 
 def _style_export_sheet(ws, title: str | None = None) -> None:
@@ -4378,8 +4393,13 @@ def _style_export_sheet(ws, title: str | None = None) -> None:
         for cell in row:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.border = Border(bottom=Side(style="hair", color="E5E7EB"))
-            if isinstance(cell.value, (int, float)):
-                cell.number_format = '#,##0.00' if isinstance(cell.value, float) and abs(cell.value - int(cell.value)) > 0.001 else '#,##0'
+            if isinstance(cell.value, (int, float)) and not isinstance(cell.value, bool):
+                try:
+                    numeric_value = float(cell.value)
+                    if math.isfinite(numeric_value):
+                        cell.number_format = '#,##0.00' if abs(numeric_value - int(numeric_value)) > 0.001 else '#,##0'
+                except (TypeError, ValueError, OverflowError):
+                    pass
     for col in range(1, ws.max_column + 1):
         letter = get_column_letter(col)
         max_len = max(len(str(ws.cell(row, col).value or "")) for row in range(1, min(ws.max_row, 300) + 1))
@@ -4719,6 +4739,15 @@ def render_page_transition_runtime() -> None:
           function showLoader() {
             ensureOverlay();
             doc.body.classList.add('lb-page-loading');
+            // Safety timeout: the loader is only a visual transition. It must never
+            // stay visible if Streamlit finishes rendering or if an error interrupts
+            // the normal page-loaded signal.
+            clearTimeout(window.parent.__lbLoaderSafety1);
+            clearTimeout(window.parent.__lbLoaderSafety2);
+            clearTimeout(window.parent.__lbLoaderSafety3);
+            window.parent.__lbLoaderSafety1 = setTimeout(hideLoader, 1800);
+            window.parent.__lbLoaderSafety2 = setTimeout(hideLoader, 4000);
+            window.parent.__lbLoaderSafety3 = setTimeout(hideLoader, 9000);
           }
           function hideLoader() {
             ensureOverlay();
@@ -4745,6 +4774,8 @@ def render_page_transition_runtime() -> None:
           // The new page has reached the browser once this component runs.
           setTimeout(hideLoader, 120);
           setTimeout(hideLoader, 800);
+          setTimeout(hideLoader, 1800);
+          setTimeout(hideLoader, 4000);
         })();
         </script>
         """,
@@ -4761,8 +4792,11 @@ def render_page_loaded_signal() -> None:
         (function() {
           const doc = window.parent.document;
           function hideLoader() { doc.body.classList.remove('lb-page-loading'); }
-          setTimeout(hideLoader, 80);
-          setTimeout(hideLoader, 450);
+          setTimeout(hideLoader, 40);
+          setTimeout(hideLoader, 180);
+          setTimeout(hideLoader, 650);
+          setTimeout(hideLoader, 1500);
+          setTimeout(hideLoader, 4000);
         })();
         </script>
         """,
