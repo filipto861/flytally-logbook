@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.7"
+APP_VERSION = "v0.36"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1084,7 +1084,9 @@ def apply_ui_theme(dark_mode: bool) -> None:
     button[kind="primary"] {{border-radius:12px;}}
     @media (max-width: 980px) {{.detail-grid {{grid-template-columns:repeat(2,minmax(0,1fr));}} .detail-split {{grid-template-columns:1fr;}}}}
     @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}} .detail-grid {{grid-template-columns:1fr;}}}}
-    </style>
+    
+        .compact-import-hero{margin:1rem 0 1rem 0;padding:1rem 1.15rem;}
+        </style>
     """, unsafe_allow_html=True)
 
 
@@ -1668,6 +1670,81 @@ def extract_registration_from_filename(name: str) -> str:
         val = m.group(0).replace("OK", "OK-").replace("OK--", "OK-")
         return val if val.startswith("OK-") else "OK-" + val[2:]
     return ""
+
+def detect_kml_source(raw: bytes, file_name: str = "") -> str:
+    name = (file_name or "").lower()
+    try:
+        text = raw[:500000].decode("utf-8", errors="ignore").lower()
+    except Exception:
+        text = ""
+    if "flightradar24" in text or "fr24" in name or "flight radar" in text:
+        return "Flightradar24"
+    if "adsbexchange" in text or "ads-b exchange" in text or "adsb" in name:
+        return "ADSBexchange"
+    if "<gx:track" in text or "gx:coord" in text:
+        return "GPS track"
+    if "<linestring" in text:
+        return "KML LineString"
+    return "KML"
+
+
+def _local_time_label(iso_text: Any) -> str:
+    dt = parse_iso(str(iso_text)) if iso_text else None
+    if not dt:
+        return "—"
+    return dt.astimezone(LOCAL_TZ).strftime("%H:%M")
+
+
+def _kml_range_label(stats: dict[str, Any]) -> str:
+    start = _local_time_label(stats.get("start_utc"))
+    end = _local_time_label(stats.get("end_utc"))
+    if start == "—" and end == "—":
+        return "—"
+    return f"{start}–{end}"
+
+
+def _kml_quality(defaults: dict[str, Any], stats: dict[str, Any], has_clock: bool) -> str:
+    score = 0
+    if int(stats.get("point_count") or 0) >= 2:
+        score += 1
+    if has_clock:
+        score += 1
+    if normalize_text(defaults.get("departure")) and normalize_text(defaults.get("arrival")):
+        score += 1
+    if score >= 3:
+        return "Vysoká"
+    if score == 2:
+        return "Střední"
+    return "Nízká"
+
+
+def render_kml_import_header(raw: bytes, file_name: str, defaults: dict[str, Any], stats: dict[str, Any], has_clock: bool) -> None:
+    source = detect_kml_source(raw, file_name)
+    route = f"{normalize_text(defaults.get('departure')) or '—'} → {normalize_text(defaults.get('arrival')) or '—'}"
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        metric_card("Zdroj", source, "")
+    with c2:
+        metric_card("Body", str(int(stats.get("point_count") or 0)), "")
+    with c3:
+        metric_card("GPS", f"{float(stats.get('distance_km') or 0):.1f} km", "")
+    with c4:
+        metric_card("Čas", _kml_range_label(stats), "")
+    with c5:
+        metric_card("Detekce", _kml_quality(defaults, stats, has_clock), "")
+    st.markdown(
+        f"""
+        <div class="flight-detail-hero compact-import-hero">
+            <div class="flight-detail-route">{_safe_text(route)}</div>
+            <div class="flight-detail-meta">
+                <span>{_safe_text(file_name)}</span>
+                <span>{_safe_text(str(defaults.get('date') or '—'))}</span>
+                <span>{_safe_text(str(defaults.get('registration') or '—'))}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def evidence_from_registration(reg: str) -> str:
@@ -2690,46 +2767,84 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     if not is_admin():
         st.info("Pouze admin.")
         return
-    tab_track, tab_manual = st.tabs(["Z tracku", "Ručně"])
-    with tab_track:
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml")
-        if uploaded is not None:
-            raw = uploaded.read()
-            try:
-                points = parse_kml_bytes(raw)
-            except Exception as exc:
-                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
-                points = []
-            if len(points) >= 2:
-                defaults = infer_from_track(points, uploaded.name, rates)
-                stats = defaults.pop("stats")
-                detect_idx = defaults.pop("detect_idx", {})
-                has_clock = defaults.pop("has_clock", False)
-                c1, c2, c3, c4 = st.columns(4)
-                with c1: metric_card("Body", str(stats["point_count"]), uploaded.name)
-                with c2: metric_card("GPS délka", f"{stats['distance_km']:.1f} km", "")
-                with c3: metric_card("Časy", f"{defaults.get('takeoff') or '—'}–{defaults.get('landing') or '—'}", "Takeoff / landing")
-                with c4: metric_card("Block", f"{defaults.get('off_block') or '—'}–{defaults.get('on_block') or '—'}", "automaticky ±5 min")
-                if not has_clock:
-                    st.warning("KML neobsahuje časové značky u bodů. Časy doplň ručně.")
-                preview_df = pd.DataFrame([{"id": -1,"flight_id": -1,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": stats["distance_km"],"date": defaults.get("date"),"registration": defaults.get("registration"),"departure": defaults.get("departure"),"arrival": defaults.get("arrival"),"role": defaults.get("role"),"evidence": defaults.get("evidence")}])
-                render_folium_readonly(make_map(preview_df, dark_mode), height=420, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
-                with st.expander("Profil tracku", expanded=True):
-                    render_track_profile(points)
-                saved = flight_form("new_from_track", defaults, rates, "Uložit nový let včetně tracku")
-                if saved is not None:
-                    flight_id = create_flight(saved, auto_backup=False)
-                    save_track(flight_id, uploaded.name, points, replace_existing=True)
-                    st.success(f"Let uložen jako ID {flight_id}.")
-                    st.rerun()
-            elif uploaded is not None:
-                st.error("V KML nejsou použitelné body trasy.")
-    with tab_manual:
+
+    mode = st.radio(
+        "Způsob přidání",
+        ["KML import", "Ručně"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="new_flight_mode_v036",
+    )
+
+    if mode == "KML import":
+        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v036")
+        if uploaded is None:
+            return
+
+        raw = uploaded.getvalue()
+        try:
+            points = parse_kml_bytes(raw)
+        except Exception as exc:
+            st.error(f"KML se nepodařilo zpracovat: {exc}")
+            points = []
+
+        if len(points) < 2:
+            st.error("V KML nejsou použitelné body trasy.")
+            return
+
+        defaults = infer_from_track(points, uploaded.name, rates)
+        stats = defaults.pop("stats")
+        defaults.pop("detect_idx", None)
+        has_clock = defaults.pop("has_clock", False)
+
+        render_kml_import_header(raw, uploaded.name, defaults, stats, has_clock)
+
+        preview_df = pd.DataFrame([{
+            "id": -1,
+            "flight_id": -1,
+            "coordinates_json": json.dumps(points),
+            "file_name": uploaded.name,
+            "distance_km": stats["distance_km"],
+            "date": defaults.get("date"),
+            "registration": defaults.get("registration"),
+            "departure": defaults.get("departure"),
+            "arrival": defaults.get("arrival"),
+            "role": defaults.get("role"),
+            "evidence": defaults.get("evidence"),
+        }])
+        render_folium_readonly(
+            make_map(preview_df, dark_mode),
+            height=420,
+            key=f"new_flight_preview_map_v036_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
+        )
+
+        if not has_clock:
+            st.warning("Doplň časy ručně.")
+
+        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v036_{uploaded.name}_{len(points)}")
+        if show_profile:
+            render_track_profile(points)
+
+        saved = flight_form("new_from_track_v036", defaults, rates, "Uložit let")
+        if saved is not None:
+            flight_id = create_flight(saved, auto_backup=False)
+            save_track(flight_id, uploaded.name, points, replace_existing=True)
+            st.session_state["page"] = "Lety"
+            st.session_state["open_flight_dialog_id"] = flight_id
+            st.session_state["selected_flight_id"] = flight_id
+            st.session_state.pop("dismissed_flight_id", None)
+            st.success(f"Uloženo ID {flight_id}.")
+            st.rerun()
+    else:
         defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": "Točík Filip", "role": "PIC"}
-        saved = flight_form("new_manual", defaults, rates, "Přidat let")
+        saved = flight_form("new_manual_v036", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
-            st.success(f"Let uložen jako ID {flight_id}.")
+            st.session_state["page"] = "Lety"
+            st.session_state["open_flight_dialog_id"] = flight_id
+            st.session_state["selected_flight_id"] = flight_id
+            st.session_state.pop("dismissed_flight_id", None)
+            st.success(f"Uloženo ID {flight_id}.")
             st.rerun()
 
 
