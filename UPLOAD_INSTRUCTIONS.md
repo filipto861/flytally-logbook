@@ -1,17 +1,17 @@
-# Nahrání v0.35.3
+# Nahrání verze v0.35.5
 
-Nahraj minimálně:
+Nahraj do GitHub repozitáře hlavně:
 
 - `app.py`
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
-Nepřepisovat:
+Nepřepisuj:
 
 - `data/logbook.sqlite`
 
-Po nahrání:
+Po nahrání proveď ve Streamlit Cloud:
 
-1. Streamlit Cloud → Manage app → Reboot app
-2. V prohlížeči Ctrl + F5
-3. Ověřit, že nahoře v aplikaci je `v0.35.3`
+1. Manage app
+2. Reboot app
+3. Ctrl + F5 v prohlížeči

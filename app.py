@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.4"
+APP_VERSION = "v0.35.5"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2084,37 +2084,30 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
         evidence = str(row.get("evidence") or "").upper()
         color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
         flight_id = int(row.get("id"))
-        route_query = f"?map_route={dep_id}__{arr_id}"
-        detail_query = f"?flight_id={flight_id}"
         popup = folium.Popup(f"""
             <b>ID {flight_id} • {row.get('date') or ''}</b><br>
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
-            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
-            <a href="{detail_query}" target="_top" rel="noopener">Detail</a>
-            &nbsp;·&nbsp;
-            <a href="{route_query}" target="_top" rel="noopener">Trasa</a>
+            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}
             """, max_width=320)
-        folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
+        tooltip = f"{dep_id}–{arr_id}"
+        folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.8, opacity=0.62, popup=popup, tooltip=tooltip).add_to(m)
 
     for ident, ap in visited.items():
-        tooltip = f"{ident} • {ap.get('name') or ''}"
         visits = int(ap.get("visits") or 0)
         radius = min(11, 4.5 + visits ** 0.5)
-        airport_query = f"?map_airport={ident}"
+        tooltip = f"{ident} • {ap.get('name') or ''}"
         popup = folium.Popup(f"""
             <b>{ident}</b><br>
             {ap.get('name') or ''}<br>
             Návštěvy: {visits}<br>
             Odlety: {int(ap.get('departures') or 0)} • Přílety: {int(ap.get('arrivals') or 0)}<br>
-            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}<br>
-            <a href="{airport_query}" target="_top" rel="noopener">Zobrazit lety</a>
+            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}
             """, max_width=300)
         folium.CircleMarker((float(ap["lat"]), float(ap["lon"])), radius=radius, color="#22c55e", fill=True, fill_opacity=.92, tooltip=tooltip, popup=popup).add_to(m)
 
     folium.LayerControl().add_to(m)
     return m
-
 
 
 def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
@@ -2152,38 +2145,39 @@ def handle_route_map_interaction(value: Any) -> None:
     text = _stringify_map_event(value)
     if not text:
         return
-    airport_match = re.search(r"LOGBOOK_AIRPORT:([A-Z0-9_\-]+)", text)
-    route_match = re.search(r"LOGBOOK_ROUTE:([A-Z0-9_\-]+)__([A-Z0-9_\-]+)", text)
-    action = None
-    if airport_match:
-        ident = airport_match.group(1).upper().strip()
-        action = f"airport:{ident}"
-        if st.session_state.get("_last_map_action") == action:
-            return
-        st.session_state["_last_map_action"] = action
-        st.session_state["page"] = "Mapa"
-        st.session_state["map_airport"] = ident
-        st.session_state["map_airport_picker_v035"] = ident
-        st.session_state["map_route_picker_v035"] = ""
-        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
-        st.session_state.pop("map_route", None)
-        st.rerun()
+
+    route_match = re.search(r"([A-Z0-9]{3,5})\s*[–-]\s*([A-Z0-9]{3,5})", text)
+    airport_match = re.search(r"\b([A-Z]{2}[A-Z0-9]{2,3}|[A-Z0-9]{3,5})\s*•", text)
+
     if route_match:
         dep = route_match.group(1).upper().strip()
         arr = route_match.group(2).upper().strip()
-        route = f"{dep}__{arr}"
-        action = f"route:{route}"
-        if st.session_state.get("_last_map_action") == action:
-            return
-        st.session_state["_last_map_action"] = action
-        st.session_state["page"] = "Mapa"
-        st.session_state["map_route"] = route
-        st.session_state["map_route_picker_v035"] = route
-        st.session_state["map_airport_picker_v035"] = ""
-        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
-        st.session_state.pop("map_airport", None)
-        st.rerun()
+        if dep and arr and dep != arr:
+            route = f"{dep}__{arr}"
+            action = f"route:{route}"
+            if st.session_state.get("_last_map_action") == action:
+                return
+            st.session_state["_last_map_action"] = action
+            st.session_state["map_route"] = route
+            st.session_state["map_route_picker_v035"] = route
+            st.session_state["map_airport_picker_v035"] = ""
+            st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+            st.session_state.pop("map_airport", None)
+            st.rerun()
 
+    if airport_match:
+        ident = airport_match.group(1).upper().strip()
+        if ident:
+            action = f"airport:{ident}"
+            if st.session_state.get("_last_map_action") == action:
+                return
+            st.session_state["_last_map_action"] = action
+            st.session_state["map_airport"] = ident
+            st.session_state["map_airport_picker_v035"] = ident
+            st.session_state["map_route_picker_v035"] = ""
+            st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+            st.session_state.pop("map_route", None)
+            st.rerun()
 
 
 def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
@@ -2938,13 +2932,13 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
     known_routes: int | None = None
     if map_mode == "Orientační mapa letišť":
         _, _, known_routes = map_navigation_options(filtered)
+        render_map_navigation_controls(filtered)
         if st.session_state.get("map_airport") or st.session_state.get("map_route"):
-            _, clear_col = st.columns([1, .18])
+            _, clear_col = st.columns([1, .16])
             with clear_col:
                 if st.button("Zrušit", key="map_selection_clear", use_container_width=True):
                     _clear_map_selection()
                     st.rerun()
-        render_map_navigation_controls(filtered)
 
     c1, c2, c3, c4 = st.columns(4)
     with c1: metric_card("Letů ve filtru", str(len(filtered)), "")
@@ -2973,11 +2967,8 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            records_json = _df_to_records_json(
-                filtered,
-                ["id", "date", "registration", "departure", "arrival", "role", "evidence", "off_block", "on_block", "block_time"],
-            )
-            render_map_html(cached_route_overview_map_html(records_json, bool(dark_mode)), height=680)
+            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0355")
+            handle_route_map_interaction(map_event)
             render_map_selection(filtered, rates, dark_mode)
 
 
