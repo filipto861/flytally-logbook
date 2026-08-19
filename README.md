@@ -1,15 +1,17 @@
 # Letový zápisník
 
-Aktuální verze: v0.34
+Aktuální verze: v0.35
 
 ## Stav
 
-- rychlejší navigace z v0.33
-- minimalistický loading s letadýlkem
-- čistší UI bez vysvětlujících popisků v běžném provozu
-- detail letu 2.0 s kartami a přehledným rozdělením údajů
+- rychlá navigace a minimalistický loading
+- čisté UI bez provozních vysvětlivek
+- detail letu 2.0
+- mapa letišť jako navigace v logbooku
+- výběr letiště nebo trasy přímo na stránce Mapa
+- popup letiště ukazuje návštěvy, odlety, přílety, první a poslední let
+- popup trasy nabízí detail letu i výběr celé trasy
 - GPS / FR24 / ADSBexchange import zachován
-- mapa letišť a direct spojnic zachována
 
 ## Bezpečnost dat
 
