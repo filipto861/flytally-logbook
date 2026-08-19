@@ -1,8 +1,8 @@
 # Letový zápisník Streamlit
 
-Verze: v0.43.1
+Verze: v0.44
 
-## v0.43.1 – Optimalizace II
+## v0.44 – Optimalizace II
 
 - data se načítají až podle aktivní stránky
 - Dashboard, Export, Mapa, Lety a Nový let už zbytečně nenačítají stejné tabulky mimo svoji stránku
@@ -14,3 +14,11 @@ Verze: v0.43.1
 ## Důležité
 
 Nepřepisovat produkční databázi `data/logbook.sqlite`.
+
+
+## v0.44 – Optimalizace III
+
+- GPS mapa načítá z databáze jen tracky pro aktuální filtr.
+- Exportní soubory se generují až po stisku tlačítka.
+- Mapová stránka nenačítá ceník, dokud není potřeba detail výběru.
+- Loader má kratší bezpečnostní vypnutí a spouští se jen při změně hlavní navigace.

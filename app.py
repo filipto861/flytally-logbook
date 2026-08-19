@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.43.1"
+APP_VERSION = "v0.44"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 4
 _DB_READY = False
@@ -875,6 +875,33 @@ def read_tracks_joined() -> pd.DataFrame:
             """,
             con,
         )
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def read_tracks_joined_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
+    """Return only tracks needed by the active map filter.
+
+    The older GPS map path loaded every stored KML track including full
+    coordinates_json and then filtered in pandas. With longer history this is one
+    of the most expensive operations in the app. This query keeps the heavy JSON
+    payload limited to the flights that are actually visible in the current map
+    filter.
+    """
+    ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
+    if not ids:
+        return pd.DataFrame()
+    placeholders = ",".join("?" for _ in ids)
+    query = f"""
+        SELECT t.*, f.date, f.evidence, f.registration, f.aircraft_type, f.aircraft_class,
+               f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
+               f.role, f.starts, f.task, f.commander
+        FROM flight_tracks t
+        JOIN flights f ON f.id = t.flight_id
+        WHERE t.flight_id IN ({placeholders})
+        ORDER BY f.date, f.off_block, t.id
+    """
+    with connect() as con:
+        return pd.read_sql_query(query, con, params=ids)
 
 
 @st.cache_data(show_spinner=False, ttl=60)
@@ -2415,6 +2442,13 @@ def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
     return compact_records_json(df, columns)
 
 
+def _flight_id_tuple(df: pd.DataFrame) -> tuple[int, ...]:
+    if df.empty or "id" not in df.columns:
+        return ()
+    values = pd.to_numeric(df["id"], errors="coerce").dropna().astype(int).tolist()
+    return tuple(sorted(set(values)))
+
+
 @st.cache_data(show_spinner=False, ttl=300)
 def cached_track_map_html(records_json: str, dark_mode: bool) -> str:
     df = pd.read_json(BytesIO(records_json.encode("utf-8")), orient="records") if records_json and records_json != "[]" else pd.DataFrame()
@@ -3603,7 +3637,7 @@ def render_map_selection(filtered: pd.DataFrame, rates: pd.DataFrame, dark_mode:
         selected = _route_selection(filtered, dep, arr)
         render_map_selection_panel(selected, f"Trasa {dep}–{arr}", rates, dark_mode)
 
-def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
+def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
     filtered = apply_filters(flights, "map")
     st.markdown('<div class="map-mode-row">', unsafe_allow_html=True)
@@ -3636,9 +3670,7 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
     with c4: metric_card("Direct trasy", str(known_routes) if known_routes is not None else "—", "")
 
     if map_mode == "GPS tracky":
-        tracks = read_tracks_joined()
-        if not tracks.empty:
-            tracks = tracks[tracks["flight_id"].isin(filtered["id"].tolist())].copy()
+        tracks = read_tracks_joined_for_flights(_flight_id_tuple(filtered))
         if tracks.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
@@ -3656,9 +3688,12 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v039")
+            # The orientation map remains interactive, but rates are loaded only
+            # after a route/airport selection actually needs the detail panel.
+            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v044")
             handle_route_map_interaction(map_event)
-            render_map_selection(filtered, rates, dark_mode)
+            if st.session_state.get("map_airport") or st.session_state.get("map_route"):
+                render_map_selection(filtered, read_rates(), dark_mode)
 
 
 def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> None:
@@ -4574,29 +4609,43 @@ def page_export(df: pd.DataFrame):
 
     tabs = st.tabs(["Soubory", "Tisk", "Náhled dat"])
     prefix = _export_prefix(filtered, "letovy_zapisnik")
-    detail = make_logbook_export_df(filtered)
+    export_signature = _flight_id_tuple(filtered)
+    if st.session_state.get("export_signature_v044") != export_signature:
+        st.session_state["export_signature_v044"] = export_signature
+        st.session_state.pop("export_files_ready_v044", None)
+        st.session_state.pop("export_print_ready_v044", None)
 
     with tabs[0]:
-        xlsx = export_excel(filtered)
-        csv = detail.to_csv(index=False).encode("utf-8-sig")
-        html_doc = build_print_html(filtered)
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.download_button(
-                "Excel logbook",
-                data=xlsx,
-                file_name=f"{prefix}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                type="primary",
-                use_container_width=True,
-            )
-        with c2:
-            st.download_button("CSV", data=csv, file_name=f"{prefix}.csv", mime="text/csv", use_container_width=True)
-        with c3:
-            st.download_button("Tisk HTML", data=html_doc.encode("utf-8"), file_name=f"{prefix}_tisk.html", mime="text/html", use_container_width=True)
-        with c4:
+        st.markdown("### Soubory")
+        cprep, cdb = st.columns([1, 1])
+        with cprep:
+            prepare_files = st.button("Připravit exportní soubory", type="primary", use_container_width=True, key="export_prepare_files_v044")
+        with cdb:
             with open(DB_PATH, "rb") as f:
                 st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", use_container_width=True)
+
+        if prepare_files or st.session_state.get("export_files_ready_v044"):
+            st.session_state["export_files_ready_v044"] = True
+            detail = make_logbook_export_df(filtered)
+            xlsx = export_excel(filtered)
+            csv = detail.to_csv(index=False).encode("utf-8-sig")
+            html_doc = build_print_html(filtered)
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.download_button(
+                    "Excel logbook",
+                    data=xlsx,
+                    file_name=f"{prefix}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="primary",
+                    use_container_width=True,
+                )
+            with c2:
+                st.download_button("CSV", data=csv, file_name=f"{prefix}.csv", mime="text/csv", use_container_width=True)
+            with c3:
+                st.download_button("Tisk HTML", data=html_doc.encode("utf-8"), file_name=f"{prefix}_tisk.html", mime="text/html", use_container_width=True)
+        else:
+            st.caption("Excel/CSV/HTML se připraví až po stisku tlačítka, aby stránka Export nenabíhala zbytečně pomalu.")
 
         st.markdown("### Obsah Excelu")
         st.dataframe(
@@ -4614,9 +4663,14 @@ def page_export(df: pd.DataFrame):
 
     with tabs[1]:
         st.markdown("### Tiskový přehled")
-        components.html(build_print_html(filtered), height=620, scrolling=True)
+        if st.button("Vygenerovat tiskový náhled", use_container_width=True, key="export_print_preview_v044") or st.session_state.get("export_print_ready_v044"):
+            st.session_state["export_print_ready_v044"] = True
+            components.html(build_print_html(filtered), height=620, scrolling=True)
+        else:
+            st.caption("Tiskový náhled se vygeneruje až na vyžádání.")
 
     with tabs[2]:
+        detail = make_logbook_export_df(filtered)
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("### Lety")
@@ -4745,9 +4799,11 @@ def render_page_transition_runtime() -> None:
             clearTimeout(window.parent.__lbLoaderSafety1);
             clearTimeout(window.parent.__lbLoaderSafety2);
             clearTimeout(window.parent.__lbLoaderSafety3);
-            window.parent.__lbLoaderSafety1 = setTimeout(hideLoader, 1800);
-            window.parent.__lbLoaderSafety2 = setTimeout(hideLoader, 4000);
-            window.parent.__lbLoaderSafety3 = setTimeout(hideLoader, 9000);
+            clearTimeout(window.parent.__lbLoaderSafety4);
+            window.parent.__lbLoaderSafety1 = setTimeout(hideLoader, 900);
+            window.parent.__lbLoaderSafety2 = setTimeout(hideLoader, 1800);
+            window.parent.__lbLoaderSafety3 = setTimeout(hideLoader, 4000);
+            window.parent.__lbLoaderSafety4 = setTimeout(hideLoader, 7000);
           }
           function hideLoader() {
             ensureOverlay();
@@ -4763,7 +4819,8 @@ def render_page_transition_runtime() -> None:
               if (btn && btn.id !== 'lb-sidebar-toggle') {
                 const inSidebar = btn.closest('section[data-testid="stSidebar"]');
                 const txt = (btn.innerText || btn.textContent || '').trim();
-                if (inSidebar && txt && txt !== 'Odhlásit') showLoader();
+                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Ceník','Databáze','Export'];
+                if (inSidebar && navLabels.indexOf(txt) !== -1) showLoader();
               }
               if (link && link.href && link.href.indexOf('flight_id=') !== -1) {
                 showLoader();
@@ -4856,7 +4913,7 @@ def main():
     elif page == "Nový let":
         page_new_flight(read_rates(), dark_mode)
     elif page == "Mapa":
-        page_maps(read_flights(), read_rates(), dark_mode)
+        page_maps(read_flights(), dark_mode)
     elif page == "Ceník":
         page_rates(read_rates())
     elif page == "Databáze":
