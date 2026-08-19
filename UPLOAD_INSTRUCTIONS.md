@@ -1,4 +1,4 @@
-# Upload v0.50.2
+# Upload v0.51
 
 Nahrát minimálně:
 
@@ -16,4 +16,6 @@ Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
 2. Ctrl + F5
-3. Ověřit, že nahoře běží v0.50.2
+3. Ověřit, že nahoře běží v0.51
+4. Otevřít let s GPS trackem → Track → Použít GPS časy v editaci
+5. Zkontrolovat, že se návrh pouze předvyplní a uloží se až po kliknutí na `Uložit změny`

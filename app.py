@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.50.2"
+APP_VERSION = "v0.51"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -2151,6 +2151,7 @@ def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], rep
         insert_track_points(con, track_id, points)
         record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
         con.commit()
+    invalidate_cached_data()
     auto_backup_after_change("save_track")
 
 
@@ -2184,6 +2185,7 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
         flight_id = int(cur.lastrowid)
         record_audit(con, "create_flight", "flights", flight_id, data)
         con.commit()
+    invalidate_cached_data()
     if auto_backup:
         auto_backup_after_change("create_flight")
     return flight_id
@@ -2212,6 +2214,7 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
         con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=?", [*values, flight_id])
         record_audit(con, "update_flight", "flights", flight_id, data)
         con.commit()
+    invalidate_cached_data()
     auto_backup_after_change("update_flight")
 
 
@@ -2220,6 +2223,7 @@ def delete_track(track_id: int) -> None:
         con.execute("DELETE FROM flight_tracks WHERE id = ?", (track_id,))
         record_audit(con, "delete_track", "flight_tracks", track_id, None)
         con.commit()
+    invalidate_cached_data()
     auto_backup_after_change("delete_track")
 
 
@@ -2244,6 +2248,7 @@ def delete_flight(flight_id: int) -> None:
         con.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
         record_audit(con, "delete_flight", "flights", flight_id, audit_detail)
         con.commit()
+    invalidate_cached_data()
     auto_backup_after_change("delete_flight")
 
 
@@ -3819,6 +3824,76 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
 
 
 
+def _track_time_proposal(points: list[dict[str, Any]], padding_minutes: int = 5) -> dict[str, Any]:
+    """Create a conservative takeoff/landing proposal from one GPS track.
+
+    The detector never writes to the flight automatically. It only prepares values
+    that the user can explicitly copy into the edit form.
+    """
+    normalized = normalize_track_points(points)
+    if len(normalized) < 2:
+        return {}
+    idx = detect_takeoff_landing(normalized)
+    if not idx:
+        return {}
+    times = inferred_clock_times(normalized, idx, block_padding_minutes=padding_minutes)
+    if not times.get("takeoff") or not times.get("landing"):
+        return {}
+    air_minutes = minutes_diff(times.get("takeoff"), times.get("landing"))
+    block_minutes = minutes_diff(times.get("off_block"), times.get("on_block"))
+    return {
+        **times,
+        "air_minutes": air_minutes,
+        "block_minutes": block_minutes,
+        "takeoff_idx": int(idx.get("takeoff_idx", 0)),
+        "landing_idx": int(idx.get("landing_idx", len(normalized) - 1)),
+    }
+
+
+def _set_edit_times_from_gps(flight_id: int, proposal: dict[str, Any], *, air_only: bool = False) -> None:
+    prefix = f"edit_flight_{int(flight_id)}"
+    if not proposal:
+        return
+    if not air_only:
+        if proposal.get("off_block"):
+            st.session_state[f"{prefix}_off"] = proposal["off_block"]
+        if proposal.get("on_block"):
+            st.session_state[f"{prefix}_on"] = proposal["on_block"]
+    if proposal.get("takeoff"):
+        st.session_state[f"{prefix}_to"] = proposal["takeoff"]
+    if proposal.get("landing"):
+        st.session_state[f"{prefix}_ldg"] = proposal["landing"]
+
+
+def _gps_proposal_from_tracks(tracks: pd.DataFrame) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
+    if tracks.empty:
+        return {}, [], {}
+    try:
+        work = tracks.sort_values("id", ascending=False) if "id" in tracks.columns else tracks
+        track_row = work.iloc[0].to_dict()
+        points = json.loads(track_row.get("coordinates_json") or "[]")
+        points = normalize_track_points(points)
+        return _track_time_proposal(points), points, track_row
+    except Exception:
+        return {}, [], {}
+
+
+def _render_gps_time_proposal(proposal: dict[str, Any], *, compact: bool = False) -> None:
+    if not proposal:
+        return
+    cols = st.columns(4)
+    with cols[0]:
+        metric_card("GPS Takeoff", str(proposal.get("takeoff") or "—"), "")
+    with cols[1]:
+        metric_card("GPS Landing", str(proposal.get("landing") or "—"), "")
+    with cols[2]:
+        metric_card("Air", fmt_minutes(proposal.get("air_minutes")), "GPS návrh")
+    with cols[3]:
+        metric_card("Block", fmt_minutes(proposal.get("block_minutes")), "+5 min na obou stranách")
+    if not compact:
+        st.caption("GPS časy jsou pouze návrh. Do záznamu se zapíšou až po potvrzení a uložení editace.")
+
+
 @st.dialog("Detail letu", width="large", dismissible=True, on_dismiss=clear_open_flight_dialog)
 def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
     row = pd.Series(row_data)
@@ -3838,6 +3913,15 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         """,
         unsafe_allow_html=True,
     )
+    pending_section_key = f"_detail_pending_section_{selected_id}"
+    pending_section = st.session_state.pop(pending_section_key, None)
+    if pending_section:
+        st.session_state[f"detail_section_{selected_id}"] = pending_section
+    flash_key = f"_detail_flash_{selected_id}"
+    flash_message = st.session_state.pop(flash_key, None)
+    if flash_message:
+        st.success(str(flash_message))
+
     detail_section = st.radio(
         "Sekce detailu",
         ["Přehled", "Editace", "Track", "Smazání"],
@@ -3908,25 +3992,52 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         if not is_admin():
             st.info("Pouze admin.")
         else:
-            saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny")
+            edit_tracks = read_tracks_for_flight(int(selected_id))
+            gps_proposal, _gps_points, _gps_track_row = _gps_proposal_from_tracks(edit_tracks)
+            if gps_proposal:
+                with st.expander("GPS návrh časů", expanded=False):
+                    _render_gps_time_proposal(gps_proposal, compact=True)
+                    g1, g2 = st.columns(2)
+                    with g1:
+                        if st.button("Použít GPS Block + Air", key=f"edit_apply_gps_all_{selected_id}", use_container_width=True):
+                            _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
+                            st.toast("GPS časy byly vloženy do editace.")
+                    with g2:
+                        if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", use_container_width=True):
+                            _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=True)
+                            st.toast("GPS Air časy byly vloženy do editace.")
+            saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False)
             if saved is not None:
                 update_flight(int(selected_id), saved)
-                st.success("Změny uloženy.")
-                clear_open_flight_dialog()
+                st.session_state[f"_detail_pending_section_{selected_id}"] = "Přehled"
+                st.session_state[f"_detail_flash_{selected_id}"] = "Změny uloženy."
                 st.rerun()
     elif detail_section == "Track":
         flight_tracks = read_tracks_for_flight(int(selected_id))
-        if not flight_tracks.empty:
-            first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
+        gps_proposal, first_points, selected_track_row = _gps_proposal_from_tracks(flight_tracks)
+        if not flight_tracks.empty and first_points:
             render_track_playback(first_points, int(selected_id), dark_mode)
+            if gps_proposal:
+                _render_gps_time_proposal(gps_proposal, compact=True)
+                if st.button("Použít GPS časy v editaci", key=f"track_to_edit_gps_{selected_id}", type="secondary", use_container_width=True):
+                    _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
+                    st.session_state[f"_detail_pending_section_{selected_id}"] = "Editace"
+                    st.session_state[f"_detail_flash_{selected_id}"] = "GPS návrh byl vložen do editace. Zkontroluj časy a ulož změny."
+                    st.rerun()
+
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
-            st.dataframe(show, hide_index=True, use_container_width=True)
-            del_id = st.selectbox("Smazat track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}")
-            if st.button("Smazat vybraný track", type="secondary", disabled=not is_admin(), use_container_width=True):
-                if require_admin():
-                    delete_track(int(del_id)); st.success("Track smazán."); st.rerun()
+            with st.expander("GPS soubory", expanded=False):
+                st.dataframe(show, hide_index=True, use_container_width=True)
+                del_id = st.selectbox("Track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}", key=f"delete_track_select_{selected_id}")
+                confirm_track_delete = st.checkbox("Potvrzuji smazání vybraného tracku", value=False, key=f"confirm_track_delete_{selected_id}")
+                if st.button("Smazat vybraný track", type="secondary", disabled=(not is_admin()) or (not confirm_track_delete), use_container_width=True, key=f"delete_track_btn_{selected_id}"):
+                    if require_admin():
+                        delete_track(int(del_id))
+                        st.session_state[f"_detail_flash_{selected_id}"] = "Track smazán."
+                        st.rerun()
         else:
             st.info("K letu zatím není připojený track.")
+
         uploaded = st.file_uploader("Přidat / nahradit KML track", type=["kml"], key=f"attach_track_{selected_id}")
         if uploaded is not None:
             try:
@@ -3942,11 +4053,12 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                     if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
                         if require_admin():
                             save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
-                            st.success("Track uložen."); st.rerun()
+                            st.session_state[f"_detail_flash_{selected_id}"] = "Track uložen."
+                            st.rerun()
                 else:
                     st.error("V KML nejsou použitelné body.")
             except Exception as exc:
-                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
+                st.error(f"KML se nepodařilo zpracovat: {exc}")
     elif detail_section == "Smazání":
         if not is_admin():
             st.info("Pouze admin.")
