@@ -93,9 +93,9 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.45.1"
+APP_VERSION = "v0.46"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
-DB_SCHEMA_VERSION = 4
+DB_SCHEMA_VERSION = 5
 _DB_READY = False
 
 EVIDENCE_OPTIONS = ["ULL", "EASA"]
@@ -570,9 +570,26 @@ def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
 
 
 def _backfill_track_points(con: sqlite3.Connection) -> None:
-    existing = con.execute("SELECT COUNT(*) FROM track_points").fetchone()[0]
-    tracks = con.execute("SELECT id, coordinates_json FROM flight_tracks").fetchall()
-    if existing > 0 or not tracks:
+    """Create normalized track_points rows for tracks that do not have them yet.
+
+    Older versions only backfilled when the whole track_points table was empty.
+    That was safe for a first migration, but later imports could leave a mixed
+    database. GPS-map optimization now reads sampled points from track_points,
+    therefore each stored KML track needs at least its normalized point rows.
+    """
+    try:
+        tracks = con.execute(
+            """
+            SELECT t.id, t.coordinates_json
+            FROM flight_tracks t
+            LEFT JOIN track_points p ON p.track_id = t.id
+            GROUP BY t.id
+            HAVING COUNT(p.id) = 0
+            """
+        ).fetchall()
+    except sqlite3.DatabaseError:
+        return
+    if not tracks:
         return
     for tr in tracks:
         try:
@@ -902,6 +919,154 @@ def read_tracks_joined_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
     """
     with connect() as con:
         return pd.read_sql_query(query, con, params=ids)
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def read_track_metadata_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
+    """Return GPS track metadata without the heavy coordinates_json payload."""
+    ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
+    if not ids:
+        return pd.DataFrame()
+    placeholders = ",".join("?" for _ in ids)
+    query = f"""
+        SELECT t.id, t.flight_id, t.file_name, t.imported_at, t.point_count, t.distance_km,
+               t.start_utc, t.end_utc, t.min_alt_m, t.max_alt_m,
+               f.date, f.evidence, f.registration, f.aircraft_type, f.aircraft_class,
+               f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
+               f.role, f.starts, f.task, f.commander
+        FROM flight_tracks t
+        JOIN flights f ON f.id = t.flight_id
+        WHERE t.flight_id IN ({placeholders})
+        ORDER BY f.date DESC, f.off_block DESC, t.id DESC
+    """
+    with connect() as con:
+        return pd.read_sql_query(query, con, params=ids)
+
+
+def _gps_map_limits(mode: str) -> tuple[int | None, int]:
+    mode_text = str(mode or "Rychlá")
+    if mode_text == "Rychlá":
+        return 40, 90
+    if mode_text == "Střední":
+        return 120, 140
+    return None, 180
+
+
+def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
+    if metadata.empty or "id" not in metadata.columns:
+        return ()
+    work = metadata.copy()
+    sort_cols = [c for c in ["date", "off_block", "id"] if c in work.columns]
+    if sort_cols:
+        work = work.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
+    limit, _ = _gps_map_limits(mode)
+    if limit is not None:
+        work = work.head(limit)
+    return tuple(int(x) for x in pd.to_numeric(work["id"], errors="coerce").dropna().astype(int).tolist())
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int) -> pd.DataFrame:
+    """Read only a sampled subset of normalized GPS points for map rendering.
+
+    This avoids loading and decoding the full coordinates_json for every visible
+    track. Stored data remains unchanged; only the browser map receives the
+    reduced point set.
+    """
+    ids = tuple(sorted({int(x) for x in track_ids if x is not None}))
+    if not ids:
+        return pd.DataFrame(columns=["track_id", "seq", "lat", "lon", "alt", "time"])
+    max_points = max(2, int(max_points or 120))
+    placeholders = ",".join("?" for _ in ids)
+    query = f"""
+        WITH ranked AS (
+            SELECT
+                track_id,
+                seq,
+                latitude_deg AS lat,
+                longitude_deg AS lon,
+                altitude_m AS alt,
+                time_utc AS time,
+                ROW_NUMBER() OVER (PARTITION BY track_id ORDER BY seq) AS rn,
+                COUNT(*) OVER (PARTITION BY track_id) AS n
+            FROM track_points
+            WHERE track_id IN ({placeholders})
+        )
+        SELECT track_id, seq, lat, lon, alt, time
+        FROM ranked
+        WHERE rn = 1
+           OR rn = n
+           OR ((rn - 1) % MAX(1, CAST((n + ? - 1) / ? AS INTEGER)) = 0)
+        ORDER BY track_id, seq
+    """
+    with connect() as con:
+        return pd.read_sql_query(query, con, params=(*ids, max_points, max_points))
+
+
+def _points_dataframe_to_json(points: pd.DataFrame) -> dict[int, str]:
+    if points.empty:
+        return {}
+    out: dict[int, str] = {}
+    for track_id, group in points.groupby("track_id", sort=False):
+        items: list[dict[str, Any]] = []
+        for row in group.itertuples(index=False):
+            try:
+                lat = round(float(row.lat), 6)
+                lon = round(float(row.lon), 6)
+            except Exception:
+                continue
+            item: dict[str, Any] = {"lat": lat, "lon": lon}
+            alt = getattr(row, "alt", None)
+            if alt is not None and not pd.isna(alt):
+                try:
+                    item["alt"] = round(float(alt), 1)
+                except Exception:
+                    pass
+            time_value = getattr(row, "time", None)
+            if time_value is not None and not pd.isna(time_value) and str(time_value).strip():
+                item["time"] = str(time_value)
+            items.append(item)
+        if len(items) >= 2:
+            out[int(track_id)] = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
+    return out
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -> pd.DataFrame:
+    """Return lightweight track records ready for the GPS overview map."""
+    metadata = read_track_metadata_for_flights(flight_ids)
+    if metadata.empty:
+        return metadata
+    track_ids = _track_ids_for_map(metadata, mode)
+    if not track_ids:
+        return metadata.iloc[0:0].copy()
+    _, max_points = _gps_map_limits(mode)
+    selected = metadata[metadata["id"].astype(int).isin(track_ids)].copy()
+    sort_cols = [c for c in ["date", "off_block", "id"] if c in selected.columns]
+    if sort_cols:
+        selected = selected.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
+    points = read_sampled_track_points(track_ids, max_points)
+    coord_map = _points_dataframe_to_json(points)
+
+    missing = [tid for tid in track_ids if tid not in coord_map]
+    if missing:
+        # Fallback for older or partially migrated databases. This path only reads
+        # full JSON for the few tracks that do not have normalized points yet.
+        placeholders = ",".join("?" for _ in missing)
+        try:
+            with connect() as con:
+                rows = con.execute(
+                    f"SELECT id, coordinates_json FROM flight_tracks WHERE id IN ({placeholders})",
+                    tuple(missing),
+                ).fetchall()
+            for row in rows:
+                coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=max_points)
+        except Exception:
+            pass
+
+    selected["coordinates_json"] = selected["id"].astype(int).map(coord_map).fillna("[]")
+    selected = selected[selected["coordinates_json"].astype(str).str.len() > 2]
+    return selected.reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False, ttl=60)
@@ -2474,24 +2639,20 @@ def _decode_points_for_map(value: Any, max_points: int = 160) -> str:
 
 
 def prepare_tracks_for_map(tracks: pd.DataFrame, *, mode: str = "Rychlá", max_fast_tracks: int = 60) -> pd.DataFrame:
-    """Prepare a lightweight GPS-track dataframe for Folium/Leaflet.
+    """Compatibility wrapper for already-loaded track data.
 
-    Rendering many dense KML tracks is expensive mainly in the browser. The app
-    therefore uses a fast default view and leaves the stored/raw tracks intact.
+    The main GPS overview map now uses read_track_map_records_for_flights(),
+    which avoids loading full coordinates_json at all. This helper remains for
+    older call sites and detail views.
     """
     if tracks.empty:
         return tracks.copy()
     work = tracks.copy()
     if "date" in work.columns:
         work = work.sort_values(["date", "id"], ascending=[False, False], na_position="last")
-    mode_text = str(mode or "Rychlá")
-    if mode_text == "Rychlá":
-        work = work.head(max_fast_tracks)
-        max_points = 130
-    elif mode_text == "Střední":
-        max_points = 220
-    else:
-        max_points = 320
+    limit, max_points = _gps_map_limits(mode)
+    if limit is not None:
+        work = work.head(min(int(limit), int(max_fast_tracks or limit)))
     if "coordinates_json" in work.columns:
         work["coordinates_json"] = work["coordinates_json"].apply(lambda x: _decode_points_for_map(x, max_points=max_points))
     return work
@@ -3734,8 +3895,9 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
     with c4: metric_card("Direct trasy", str(known_routes) if known_routes is not None else "—", "")
 
     if map_mode == "GPS tracky":
-        tracks = read_tracks_joined_for_flights(_flight_id_tuple(filtered))
-        if tracks.empty:
+        flight_ids = _flight_id_tuple(filtered)
+        tracks_meta = read_track_metadata_for_flights(flight_ids)
+        if tracks_meta.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
             col_mode, col_count = st.columns([1, 2])
@@ -3744,11 +3906,11 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                     "Rozsah mapy",
                     ["Rychlá", "Střední", "Vše"],
                     index=0,
-                    key="gps_track_map_scope_v045",
+                    key="gps_track_map_scope_v046",
                 )
-            tracks_for_map = prepare_tracks_for_map(tracks, mode=gps_map_mode, max_fast_tracks=60)
+            tracks_for_map = read_track_map_records_for_flights(flight_ids, gps_map_mode)
             with col_count:
-                metric_card("Vykresleno", f"{len(tracks_for_map)} / {len(tracks)}", "GPS tracků")
+                metric_card("Vykresleno", f"{len(tracks_for_map)} / {len(tracks_meta)}", "GPS tracků")
             records_json = _df_to_records_json(
                 tracks_for_map,
                 ["flight_id", "id", "date", "registration", "departure", "arrival", "role", "evidence", "file_name", "point_count", "distance_km", "coordinates_json"],
@@ -3756,7 +3918,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
             render_map_html(cached_track_map_html(records_json, bool(dark_mode)), height=680)
             render_lazy_table(
                 "Tabulka GPS tracků",
-                tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}),
+                tracks_meta[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}),
                 height=320,
             )
     else:
@@ -4978,9 +5140,9 @@ def main():
     app_header()
     page = st.session_state.get("page", "Dashboard")
 
-    # v0.43: data se načítají až pro aktivní stránku. Dříve se flights + rates
-    # načítaly při každém rerunu, i když uživatel byl jen v databázi, ceníku
-    # nebo exportu. To zbytečně zpomalovalo hlavně klikání v mapě a formuláře.
+    # Data se načítají až pro aktivní stránku. GPS mapy ve v0.46 navíc
+    # pracují s lehkými metadaty a vzorkovanými body z track_points místo
+    # plného coordinates_json pro každý track.
     if page == "Dashboard":
         page_dashboard(read_flights())
     elif page == "Lety":
