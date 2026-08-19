@@ -92,7 +92,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.39.1"
+APP_VERSION = "v0.40"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1113,6 +1113,10 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .pill {{display:inline-block;border:1px solid var(--border);border-radius:999px;background:var(--panel2);padding:.25rem .62rem;margin:.1rem .18rem;font-size:.82rem;color:var(--text);}}
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
     .flight-help {{color:var(--muted);font-size:.86rem;margin:.25rem 0 .75rem 0;}}
+    .quick-form-panel {{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent),var(--panel);padding:.85rem 1rem;margin:.55rem 0 1rem 0;box-shadow:0 10px 24px var(--shadow);}}
+    .quick-form-title {{font-size:1rem;font-weight:900;color:var(--text);letter-spacing:-.015em;margin-bottom:.42rem;}}
+    .quick-form-meta {{display:flex;gap:.4rem;flex-wrap:wrap;color:var(--muted);font-size:.78rem;margin:.2rem 0 .6rem 0;}}
+    .quick-form-meta span {{border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.03);padding:.14rem .45rem;}}
 
     .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
     .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.10rem .15rem .20rem .15rem;border-bottom:1px solid var(--border);height:1.35rem;display:flex;align-items:flex-end;}}
@@ -2632,6 +2636,175 @@ def flight_display_df(df: pd.DataFrame) -> pd.DataFrame:
     return df[use].rename(columns=rename)
 
 
+
+def add_minutes_to_time(value: Any, minutes: int | float) -> str:
+    base = parse_time_to_minutes(value)
+    if base is None:
+        return ""
+    total = (base + int(round(float(minutes or 0)))) % (24 * 60)
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+FORM_KEY_MAP = {
+    "date": "date",
+    "evidence": "ev",
+    "registration": "reg",
+    "aircraft_type": "type",
+    "aircraft_class": "class",
+    "departure": "dep",
+    "arrival": "arr",
+    "off_block": "off",
+    "takeoff": "to",
+    "landing": "ldg",
+    "on_block": "on",
+    "starts": "starts",
+    "commander": "cmd",
+    "instructor": "instr",
+    "role": "role",
+    "task": "task",
+    "price_per_hour": "price",
+    "note": "note",
+}
+
+
+def _state_key(prefix: str, field: str) -> str:
+    return f"{prefix}_{FORM_KEY_MAP[field]}"
+
+
+def _clean_form_value(field: str, value: Any) -> Any:
+    if value is None or (not isinstance(value, (date, datetime, time)) and pd.isna(value)):
+        return ""
+    if field == "date":
+        try:
+            return pd.to_datetime(value).date()
+        except Exception:
+            return date.today()
+    if field in {"off_block", "takeoff", "landing", "on_block"}:
+        return normalize_time(value) or ""
+    if field in {"registration", "departure", "arrival", "evidence", "aircraft_class", "role"}:
+        return str(value or "").upper().strip()
+    if field == "starts":
+        try:
+            return int(value or 0)
+        except Exception:
+            return 1
+    if field == "price_per_hour":
+        try:
+            return float(value or 0)
+        except Exception:
+            return 0.0
+    return str(value or "").strip()
+
+
+def set_form_values(prefix: str, values: dict[str, Any], *, include_times: bool = True, include_date: bool = False) -> None:
+    for field, key_suffix in FORM_KEY_MAP.items():
+        if field not in values:
+            continue
+        if field == "date" and not include_date:
+            continue
+        if field in {"off_block", "takeoff", "landing", "on_block"} and not include_times:
+            continue
+        st.session_state[f"{prefix}_{key_suffix}"] = _clean_form_value(field, values.get(field))
+
+
+def recent_flights_for_templates(limit: int = 25) -> pd.DataFrame:
+    try:
+        flights = read_table("flights")
+    except Exception:
+        return pd.DataFrame()
+    if flights.empty:
+        return flights
+    work = flights.copy()
+    work["date_dt"] = pd.to_datetime(work.get("date"), errors="coerce")
+    if "id" not in work.columns:
+        return work.tail(limit)
+    return work.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(limit)
+
+
+def recent_routes_for_picker(limit: int = 18) -> list[tuple[str, str]]:
+    try:
+        flights = read_table("flights")
+    except Exception:
+        return []
+    if flights.empty or "departure" not in flights.columns or "arrival" not in flights.columns:
+        return []
+    work = flights.copy()
+    work["departure"] = work["departure"].fillna("").astype(str).str.upper().str.strip()
+    work["arrival"] = work["arrival"].fillna("").astype(str).str.upper().str.strip()
+    work = work[work["departure"].ne("") & work["arrival"].ne("")]
+    if work.empty:
+        return []
+    counts = work.groupby(["departure", "arrival"], as_index=False).size().sort_values("size", ascending=False)
+    out: list[tuple[str, str]] = []
+    for _, row in counts.head(limit).iterrows():
+        dep = str(row.get("departure") or "")
+        arr = str(row.get("arrival") or "")
+        count = int(row.get("size") or 0)
+        out.append((f"{dep}__{arr}", f"{dep}–{arr} ({count})"))
+    return out
+
+
+def _template_label(row: pd.Series | dict[str, Any]) -> str:
+    r = row if isinstance(row, dict) else row.to_dict()
+    return f"ID {int(r.get('id') or 0)} • {r.get('date') or ''} • {r.get('registration') or ''} • {r.get('departure') or ''}–{r.get('arrival') or ''} • {r.get('role') or ''}"
+
+
+def render_quick_flight_tools(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
+    recent = recent_flights_for_templates()
+    routes = recent_routes_for_picker()
+    st.markdown(
+        '<div class="quick-form-panel"><div class="quick-form-title">Rychlý zápis</div><div class="quick-form-meta"><span>šablona</span><span>trasa</span><span>časy</span></div></div>',
+        unsafe_allow_html=True,
+    )
+
+    if not recent.empty:
+        records = recent.to_dict(orient="records")
+        labels = ["—"] + [_template_label(r) for r in records]
+        picked = st.selectbox("Šablona z posledních letů", list(range(len(labels))), format_func=lambda i: labels[int(i)], key=f"{prefix}_template_pick_v040")
+        c1, c2, c3 = st.columns(3)
+        if picked and int(picked) > 0:
+            tpl = records[int(picked) - 1]
+            if c1.button("Použít šablonu", key=f"{prefix}_apply_template_v040", use_container_width=True):
+                set_form_values(prefix, tpl, include_times=False, include_date=False)
+            if c2.button("Použít i časy", key=f"{prefix}_apply_template_times_v040", use_container_width=True):
+                set_form_values(prefix, tpl, include_times=True, include_date=False)
+            if c3.button("Otočit trasu", key=f"{prefix}_reverse_template_route_v040", use_container_width=True):
+                rev = dict(tpl)
+                rev["departure"], rev["arrival"] = tpl.get("arrival"), tpl.get("departure")
+                set_form_values(prefix, rev, include_times=False, include_date=False)
+    if routes:
+        route_values = [""] + [r[0] for r in routes]
+        route_labels = {r[0]: r[1] for r in routes}
+        picked_route = st.selectbox("Trasa", route_values, format_func=lambda v: "—" if not v else route_labels.get(v, v.replace("__", "–")), key=f"{prefix}_route_pick_v040")
+        r1, r2 = st.columns(2)
+        if picked_route:
+            dep, arr = str(picked_route).split("__", 1)
+            if r1.button("Použít trasu", key=f"{prefix}_apply_route_v040", use_container_width=True):
+                st.session_state[f"{prefix}_dep"] = dep
+                st.session_state[f"{prefix}_arr"] = arr
+            if r2.button("Otočit trasu", key=f"{prefix}_reverse_route_v040", use_container_width=True):
+                st.session_state[f"{prefix}_dep"] = arr
+                st.session_state[f"{prefix}_arr"] = dep
+
+    t1, t2, t3, t4 = st.columns([1, 1, 1, .85])
+    quick_takeoff_default = st.session_state.get(f"{prefix}_to", defaults.get("takeoff") or "")
+    quick_air_default = minutes_diff(defaults.get("takeoff"), defaults.get("landing")) or 30
+    with t1:
+        q_takeoff = st.text_input("Vzlet", value=str(quick_takeoff_default or ""), key=f"{prefix}_quick_takeoff_v040")
+    with t2:
+        q_air = st.number_input("Air min", min_value=0, max_value=1440, step=5, value=int(quick_air_default), key=f"{prefix}_quick_air_v040")
+    with t3:
+        q_pad = st.number_input("Rezerva min", min_value=0, max_value=60, step=1, value=5, key=f"{prefix}_quick_pad_v040")
+    with t4:
+        st.write("")
+        if st.button("Doplnit časy", key=f"{prefix}_apply_times_v040", use_container_width=True):
+            takeoff = normalize_time(q_takeoff) or ""
+            if takeoff:
+                st.session_state[f"{prefix}_to"] = takeoff
+                st.session_state[f"{prefix}_ldg"] = add_minutes_to_time(takeoff, int(q_air))
+                st.session_state[f"{prefix}_off"] = add_minutes_to_time(takeoff, -int(q_pad))
+                st.session_state[f"{prefix}_on"] = add_minutes_to_time(takeoff, int(q_air) + int(q_pad))
+
 def read_aircraft_catalog() -> pd.DataFrame:
     try:
         aircraft = read_table("aircraft")
@@ -2698,7 +2871,7 @@ def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.Data
     if not regs:
         return
     options = [""] + regs
-    inferred_reg = str(defaults.get("registration") or "").upper().strip()
+    inferred_reg = str(st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")).upper().strip()
     default_index = options.index(inferred_reg) if inferred_reg in options else 0
     pick_key = f"{prefix}_aircraft_pick"
 
@@ -2719,7 +2892,9 @@ def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.Data
     if inferred_reg in aircraft_by_reg and f"{prefix}_reg" not in st.session_state:
         _apply_aircraft_to_form(prefix, inferred_reg, aircraft_by_reg.get(inferred_reg, {}), rates)
 
-def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str) -> dict[str, Any] | None:
+def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str, *, quick_tools: bool = True) -> dict[str, Any] | None:
+    if quick_tools:
+        render_quick_flight_tools(prefix, defaults, rates)
     render_aircraft_picker(prefix, defaults, rates)
     reg = str(st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")).upper()
     rate = lookup_latest_rate(rates, reg)
@@ -3110,11 +3285,11 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         ["KML import", "Ručně"],
         horizontal=True,
         label_visibility="collapsed",
-        key="new_flight_mode_v037",
+        key="new_flight_mode_v040",
     )
 
     if mode == "KML import":
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v037")
+        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v040")
         if uploaded is None:
             return
 
@@ -3152,17 +3327,17 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         render_folium_readonly(
             make_map(preview_df, dark_mode),
             height=420,
-            key=f"new_flight_preview_map_v037_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
+            key=f"new_flight_preview_map_v040_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
         )
 
         if not has_clock:
             st.warning("Doplň časy ručně.")
 
-        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v037_{uploaded.name}_{len(points)}")
+        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v040_{uploaded.name}_{len(points)}")
         if show_profile:
             render_track_profile(points)
 
-        saved = flight_form("new_from_track_v037", defaults, rates, "Uložit let")
+        saved = flight_form("new_from_track_v040", defaults, rates, "Uložit let")
         if saved is not None:
             flight_id = create_flight(saved, auto_backup=False)
             save_track(flight_id, uploaded.name, points, replace_existing=True)
@@ -3174,7 +3349,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.rerun()
     else:
         defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": "Točík Filip", "role": "PIC"}
-        saved = flight_form("new_manual_v037", defaults, rates, "Přidat let")
+        saved = flight_form("new_manual_v040", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
             st.session_state["page"] = "Lety"
