@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.48"
+APP_VERSION = "v0.48.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -1355,7 +1355,8 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .stTabs [data-baseweb="tab"] {{border-radius:999px;padding:.45rem .9rem;background:var(--panel2);}}
     div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.05rem; padding:.22rem .60rem !important;}}
     .stButton {{margin-top:0 !important;}}
-    [data-testid="column"] .stButton > button {{min-height:1.72rem !important;padding:.08rem .42rem !important;border-radius:11px !important;font-size:.78rem !important;}}
+    [data-testid="column"] .stButton > button {{min-height:1.72rem !important;padding:.08rem .32rem !important;border-radius:11px !important;font-size:.74rem !important;white-space:nowrap !important;line-height:1 !important;overflow:hidden !important;}}
+    [data-testid="column"] .stButton > button p {{white-space:nowrap !important;line-height:1 !important;margin:0 !important;}}
     div.stButton > button[kind="primary"] {{box-shadow:0 10px 22px rgba(56,189,248,.18) !important;}}
     div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
     div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
@@ -3704,8 +3705,8 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.62, 0.52, 0.52, 0.48, 0.86, 0.54, 1.18, 0.96, 0.98, 0.74, 0.48, 0.84, 1.08, 0.84, 0.72, 0.46]
-    headers = ["Detail", "Edit", "Track", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.82, 0.72, 0.76, 0.42, 0.78, 0.48, 1.10, 0.86, 0.92, 0.66, 0.42, 0.76, 0.98, 0.72, 0.66, 0.40]
+    headers = ["Detail", "Edit", "GPS", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
@@ -3729,7 +3730,7 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
                 st.rerun()
         with cols[2]:
             track_count = _safe_int(row.get("track_count"))
-            if st.button("Track", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, use_container_width=True):
+            if st.button("GPS", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, use_container_width=True):
                 st.session_state[f"detail_section_{flight_id}"] = "Track"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id

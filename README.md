@@ -1,9 +1,13 @@
 # Letový zápisník Streamlit
 
-Verze: v0.48
+Verze: v0.48.1
 
-## v0.48 – Funkční kompletace / Logbook workflow 1.0
+## v0.48.1 – Hotfix seznamu letů
 
+
+- Opraveno formátování tlačítek v seznamu letů.
+- Text tlačítek se už nemá lámat pod sebe.
+- Akce v seznamu jsou šířkově upravené: Detail / Edit / GPS.
 - Editace letu je praktičtější přímo ze seznamu letů.
 - V seznamu letů jsou rychlé akce `Detail`, `Edit` a `Track`.
 - `Edit` otevře rovnou editační část detailu letu.
