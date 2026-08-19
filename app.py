@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.37"
+APP_VERSION = "v0.38"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2389,33 +2389,161 @@ def page_dashboard(df: pd.DataFrame):
     st.markdown("## Dashboard")
     filtered = apply_filters(df, "dash")
     s = build_summary(filtered)
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Celkový nálet", fmt_minutes(s["total"]), f"{s['flights']} letů")
-    with c2: metric_card("PIC", fmt_minutes(s["pic"]), f"ULL {fmt_minutes(s['pic_ull'])} • EASA {fmt_minutes(s['pic_easa'])}")
-    with c3: metric_card("DUAL / Safety", f"{fmt_minutes(s['dual'])} / {fmt_minutes(s['safety'])}", f"Starty {s['starts']}")
-    with c4: metric_card("Náklady", fmt_money(s["cost"]), f"GPS {s['tracks']} tracků • {s['gps_km']:.0f} km")
-    show_charts = st.toggle("Zobrazit grafy dashboardu", value=st.session_state.get("show_dashboard_charts", True), key="show_dashboard_charts")
-    if not show_charts:
-        return
-    st.write("")
-    chart_df = filtered.dropna(subset=["year"]).copy()
-    if chart_df.empty:
-        st.info("Žádná data pro grafy.")
-        return
-    yearly = chart_df.groupby("year", as_index=False).agg(Celkem=("block_hours", "sum"), Starty=("starts", "sum"), Naklady=("cost", "sum"))
-    role_year = chart_df.pivot_table(index="year", columns="role", values="block_hours", aggfunc="sum", fill_value=0).reset_index()
-    fig = px.bar(role_year, x="year", y=[c for c in ["PIC", "DUAL", "SAFETY PILOT", "INSTRUKTOR"] if c in role_year.columns], barmode="stack", title="Nálet podle roku a funkce")
-    st.plotly_chart(plotly_layout(fig), use_container_width=True)
-    left, right = st.columns(2)
-    with left:
-        by_aircraft = filtered.groupby("registration", as_index=False)["block_hours"].sum().sort_values("block_hours", ascending=False).head(12)
-        fig2 = px.bar(by_aircraft, x="registration", y="block_hours", title="TOP letadla podle block time")
-        st.plotly_chart(plotly_layout(fig2), use_container_width=True)
-    with right:
-        by_ev = filtered.groupby("evidence", as_index=False)["block_hours"].sum().sort_values("block_hours", ascending=False)
-        fig3 = px.pie(by_ev, names="evidence", values="block_hours", title="ULL / EASA", hole=.45)
-        st.plotly_chart(plotly_layout(fig3), use_container_width=True)
 
+    current_year = datetime.now(LOCAL_TZ).year
+    this_year = filtered[filtered.get("year", pd.Series(dtype=float)).eq(current_year)].copy() if not filtered.empty else pd.DataFrame()
+    sy = build_summary(this_year)
+
+    last_flight = filtered.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(1) if not filtered.empty else pd.DataFrame()
+    last_text = "—"
+    last_sub = ""
+    days_since = None
+    if not last_flight.empty:
+        lr = last_flight.iloc[0]
+        last_text = f"{lr.get('date') or '—'}"
+        last_sub = f"{lr.get('registration') or ''} • {lr.get('departure') or ''}-{lr.get('arrival') or ''}"
+        if pd.notna(lr.get("date_dt")):
+            days_since = (datetime.now(LOCAL_TZ).date() - lr.get("date_dt").date()).days
+
+    unique_aircraft = int(filtered.get("registration", pd.Series(dtype=str)).replace("", pd.NA).dropna().nunique()) if not filtered.empty else 0
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Celkový nálet", fmt_minutes(s["total"]), f"{s['flights']} letů • {s['starts']} startů")
+    with c2:
+        metric_card(f"Rok {current_year}", fmt_minutes(sy["total"]), f"{sy['flights']} letů • {fmt_money(sy['cost'])}")
+    with c3:
+        metric_card("Poslední let", last_text, last_sub if days_since is None else f"{last_sub} • před {days_since} dny")
+    with c4:
+        metric_card("Letadla / GPS", f"{unique_aircraft} / {s['tracks']}", f"{s['gps_km']:.0f} km GPS")
+
+    quick = st.columns(4)
+    with quick[0]:
+        metric_card("PIC", fmt_minutes(s["pic"]), f"ULL {fmt_minutes(s['pic_ull'])} • EASA {fmt_minutes(s['pic_easa'])}")
+    with quick[1]:
+        metric_card("Air Time", fmt_minutes(s["air"]), f"Block {fmt_minutes(s['total'])}")
+    with quick[2]:
+        metric_card("DUAL / Safety", f"{fmt_minutes(s['dual'])} / {fmt_minutes(s['safety'])}", "")
+    with quick[3]:
+        metric_card("Náklady", fmt_money(s["cost"]), f"Průměr {fmt_money((s['cost'] / max(s['flights'], 1)) if s['flights'] else 0)} / let")
+
+    if filtered.empty:
+        st.info("Žádná data.")
+        return
+
+    tabs = st.tabs(["Přehled", "Letadla", "Letiště a trasy", "Náklady", "Poslední lety"])
+
+    chart_df = filtered.dropna(subset=["year"]).copy()
+    with tabs[0]:
+        show_charts = st.toggle("Grafy", value=st.session_state.get("show_dashboard_charts", True), key="show_dashboard_charts")
+        if show_charts and not chart_df.empty:
+            monthly = chart_df.copy()
+            monthly["month"] = monthly["date_dt"].dt.to_period("M").astype(str)
+            month_summary = monthly.groupby("month", as_index=False).agg(
+                Hodiny=("block_hours", "sum"),
+                Lety=("id", "count"),
+                Náklady=("cost", "sum"),
+            ).tail(24)
+            fig_month = px.bar(month_summary, x="month", y="Hodiny", title="Nálet po měsících")
+            st.plotly_chart(plotly_layout(fig_month), use_container_width=True)
+
+            role_year = chart_df.pivot_table(index="year", columns="role", values="block_hours", aggfunc="sum", fill_value=0).reset_index()
+            role_cols = [c for c in ["PIC", "DUAL", "SAFETY PILOT", "INSTRUKTOR"] if c in role_year.columns]
+            if role_cols:
+                fig_role = px.bar(role_year, x="year", y=role_cols, barmode="stack", title="Nálet podle roku a funkce")
+                st.plotly_chart(plotly_layout(fig_role), use_container_width=True)
+        else:
+            summary_rows = pd.DataFrame([
+                {"Metrika": "Lety", "Hodnota": s["flights"]},
+                {"Metrika": "Starty", "Hodnota": s["starts"]},
+                {"Metrika": "Block", "Hodnota": fmt_minutes(s["total"])},
+                {"Metrika": "Air", "Hodnota": fmt_minutes(s["air"])},
+                {"Metrika": "PIC", "Hodnota": fmt_minutes(s["pic"])},
+                {"Metrika": "Náklady", "Hodnota": fmt_money(s["cost"])},
+                {"Metrika": "GPS", "Hodnota": f"{s['tracks']} tracků / {s['gps_km']:.0f} km"},
+            ])
+            st.dataframe(summary_rows, hide_index=True, use_container_width=True, height=280)
+
+    with tabs[1]:
+        by_aircraft = (
+            filtered.assign(registration=filtered.get("registration", pd.Series(dtype=str)).replace("", pd.NA))
+            .dropna(subset=["registration"])
+            .groupby("registration", as_index=False)
+            .agg(
+                Lety=("id", "count"),
+                Block_h=("block_hours", "sum"),
+                Air_h=("air_hours", "sum"),
+                Starty=("starts", "sum"),
+                Náklady=("cost", "sum"),
+                GPS_km=("gps_km", "sum"),
+            )
+            .sort_values("Block_h", ascending=False)
+        )
+        if by_aircraft.empty:
+            st.info("Žádná letadla.")
+        else:
+            fig_aircraft = px.bar(by_aircraft.head(12), x="registration", y="Block_h", title="TOP letadla podle block time")
+            st.plotly_chart(plotly_layout(fig_aircraft), use_container_width=True)
+            table = by_aircraft.copy()
+            table["Block"] = table["Block_h"].mul(60).apply(fmt_minutes)
+            table["Air"] = table["Air_h"].mul(60).apply(fmt_minutes)
+            table["Náklady"] = table["Náklady"].apply(fmt_money)
+            table["GPS km"] = table["GPS_km"].round(0).astype(int)
+            st.dataframe(table[["registration", "Lety", "Block", "Air", "Starty", "Náklady", "GPS km"]].rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=380)
+
+    with tabs[2]:
+        dep = filtered.get("departure", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
+        arr = filtered.get("arrival", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
+        airport_visits = pd.concat([dep[dep.ne("")], arr[arr.ne("")]], ignore_index=True).value_counts().reset_index()
+        airport_visits.columns = ["Letiště", "Návštěvy"]
+        routes = filtered.copy()
+        routes["Trasa"] = dep + "-" + arr
+        routes = routes[(dep.ne("")) & (arr.ne(""))]
+        route_summary = routes.groupby("Trasa", as_index=False).agg(
+            Lety=("id", "count"),
+            Block_h=("block_hours", "sum"),
+            GPS_km=("gps_km", "sum"),
+        ).sort_values(["Lety", "Block_h"], ascending=[False, False])
+        left, right = st.columns(2)
+        with left:
+            if not airport_visits.empty:
+                fig_airports = px.bar(airport_visits.head(15), x="Letiště", y="Návštěvy", title="Nejčastější letiště")
+                st.plotly_chart(plotly_layout(fig_airports), use_container_width=True)
+                st.dataframe(airport_visits.head(30), hide_index=True, use_container_width=True, height=360)
+            else:
+                st.info("Žádná letiště.")
+        with right:
+            if not route_summary.empty:
+                fig_routes = px.bar(route_summary.head(15), x="Trasa", y="Lety", title="Nejčastější trasy")
+                st.plotly_chart(plotly_layout(fig_routes), use_container_width=True)
+                table = route_summary.copy()
+                table["Block"] = table["Block_h"].mul(60).apply(fmt_minutes)
+                table["GPS km"] = table["GPS_km"].round(0).astype(int)
+                st.dataframe(table[["Trasa", "Lety", "Block", "GPS km"]].head(30), hide_index=True, use_container_width=True, height=360)
+            else:
+                st.info("Žádné trasy.")
+
+    with tabs[3]:
+        cost_df = filtered[pd.to_numeric(filtered.get("cost", pd.Series(dtype=float)), errors="coerce").fillna(0).gt(0)].copy()
+        if cost_df.empty:
+            st.info("Žádná nákladová data.")
+        else:
+            by_cost_aircraft = cost_df.groupby("registration", as_index=False).agg(Náklady=("cost", "sum"), Hodiny=("block_hours", "sum"), Lety=("id", "count")).sort_values("Náklady", ascending=False)
+            by_cost_aircraft["Kč/h"] = (by_cost_aircraft["Náklady"] / by_cost_aircraft["Hodiny"].replace(0, pd.NA)).fillna(0)
+            fig_cost = px.bar(by_cost_aircraft.head(12), x="registration", y="Náklady", title="Náklady podle letadla")
+            st.plotly_chart(plotly_layout(fig_cost), use_container_width=True)
+            table = by_cost_aircraft.copy()
+            table["Náklady"] = table["Náklady"].apply(fmt_money)
+            table["Hodiny"] = table["Hodiny"].mul(60).apply(fmt_minutes)
+            table["Kč/h"] = table["Kč/h"].apply(fmt_money)
+            st.dataframe(table.rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=360)
+
+    with tabs[4]:
+        recent = filtered.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(20).copy()
+        if recent.empty:
+            st.info("Žádné lety.")
+        else:
+            recent_table = recent[["id", "date", "registration", "departure", "arrival", "off_block", "on_block", "block_time", "role", "cost_label", "track_count"]].rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","off_block":"Off","on_block":"On","block_time":"Block","role":"Role","cost_label":"Cena","track_count":"GPS"})
+            st.dataframe(recent_table, hide_index=True, use_container_width=True, height=520)
 
 def flight_label(row: pd.Series | dict[str, Any]) -> str:
     return f"ID {int(row['id'])} • {row.get('date') or ''} • {row.get('registration') or ''} • {row.get('departure') or ''}-{row.get('arrival') or ''} • {row.get('off_block') or ''}-{row.get('on_block') or ''} • {row.get('role') or ''}"

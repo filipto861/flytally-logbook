@@ -1,13 +1,17 @@
-# Upload v0.37
+# Upload v0.38
 
 Nahraj minimálně:
 
-- app.py
-- README.md
-- UPLOAD_INSTRUCTIONS.md
+- `app.py`
+- `README.md`
+- `UPLOAD_INSTRUCTIONS.md`
 
 Nepřepisovat:
 
-- data/logbook.sqlite
+- `data/logbook.sqlite`
 
-Po nahrání proveď reboot aplikace ve Streamlit Cloud a obnov stránku přes Ctrl + F5.
+Po nahrání:
+
+1. Streamlit Cloud → Manage app → Reboot app
+2. V prohlížeči Ctrl + F5
+3. Zkontrolovat, že aplikace ukazuje v0.38
