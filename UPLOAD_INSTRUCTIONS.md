@@ -1,12 +1,12 @@
-# Upload v0.50
+# Upload v0.50.1
 
-Nahraj minimálně:
+Nahrát minimálně:
 
 - `app.py`
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
-Složku `logbook_core/` nech v repozitáři tak, jak už je.
+Složku `logbook_core/` ponechat tak, jak už je v repozitáři.
 
 Nepřepisovat:
 
@@ -15,6 +15,5 @@ Nepřepisovat:
 Po uploadu:
 
 1. Streamlit Cloud → Manage app → Reboot app
-2. V prohlížeči Ctrl + F5
-3. Ověřit, že nahoře běží v0.50
-4. Otestovat: Lety → Detail → Track → posuvník pozice na tracku
+2. Ctrl + F5
+3. Ověřit, že nahoře běží v0.50.1

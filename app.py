@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.50"
+APP_VERSION = "v0.50.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -2862,43 +2862,294 @@ def make_track_playback_map(points: list[dict[str, Any]], selected_idx: int, dar
     return m
 
 
+
+def _track_bearing_deg(a: dict[str, Any], b: dict[str, Any]) -> float:
+    try:
+        lat1 = math.radians(float(a["lat"]))
+        lat2 = math.radians(float(b["lat"]))
+        dlon = math.radians(float(b["lon"]) - float(a["lon"]))
+        y = math.sin(dlon) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        deg = (math.degrees(math.atan2(y, x)) + 360.0) % 360.0
+        if not math.isfinite(deg):
+            return 0.0
+        return deg
+    except Exception:
+        return 0.0
+
+
+def _track_bearing_at(points: list[dict[str, Any]], idx: int) -> float:
+    if not points:
+        return 0.0
+    idx = max(0, min(int(idx), len(points) - 1))
+    current = points[idx]
+    for j in range(idx + 1, len(points)):
+        try:
+            if haversine_km(current, points[j]) > 0.015:
+                return _track_bearing_deg(current, points[j])
+        except Exception:
+            pass
+    for j in range(idx - 1, -1, -1):
+        try:
+            if haversine_km(points[j], current) > 0.015:
+                return _track_bearing_deg(points[j], current)
+        except Exception:
+            pass
+    return 0.0
+
+
+def _json_safe_float(value: Any, digits: int | None = None) -> float | None:
+    try:
+        if value is None or pd.isna(value):
+            return None
+        f = float(value)
+        if not math.isfinite(f):
+            return None
+        return round(f, digits) if digits is not None else f
+    except Exception:
+        return None
+
+
+def _prepare_track_player_points(points: list[dict[str, Any]], max_points: int = 3200) -> tuple[list[dict[str, Any]], int, int]:
+    source_points = normalize_track_points(points)
+    original_count = len(source_points)
+    if original_count > max_points:
+        playback_points = downsample_points(source_points, max_points=max_points)
+    else:
+        playback_points = source_points
+
+    prof = profile_from_points(playback_points)
+    if prof.empty:
+        return [], 0, original_count
+
+    data: list[dict[str, Any]] = []
+    for i, row in prof.iterrows():
+        dt = row.get("time_local")
+        time_txt = dt.strftime("%H:%M:%S") if pd.notna(dt) and hasattr(dt, "strftime") else "—"
+        data.append({
+            "lat": _json_safe_float(row.get("lat"), 7),
+            "lon": _json_safe_float(row.get("lon"), 7),
+            "alt_ft": _json_safe_float(row.get("alt_ft"), 0),
+            "speed_kmh": _json_safe_float(row.get("speed_smooth"), 0),
+            "distance_km": _json_safe_float(row.get("distance_km"), 2),
+            "time": time_txt,
+            "bearing": round(_track_bearing_at(playback_points, int(i)), 1),
+        })
+    data = [d for d in data if d.get("lat") is not None and d.get("lon") is not None]
+    default_idx = _track_playback_default_idx(playback_points) if playback_points else 0
+    default_idx = max(0, min(default_idx, max(0, len(data) - 1)))
+    return data, default_idx, original_count
+
+
+def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark_mode: bool, original_count: int) -> str:
+    points_json = json.dumps(points_data, ensure_ascii=False, separators=(",", ":"))
+    tile_url = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" if dark_mode else "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    tile_attrib = "&copy; OpenStreetMap &copy; CARTO" if dark_mode else "&copy; OpenStreetMap contributors"
+    replacements = {
+        "__DATA__": html.escape(points_json, quote=False),
+        "__DEFAULT__": str(int(default_idx)),
+        "__ORIGINAL_COUNT__": str(int(original_count)),
+        "__TILE_URL__": json.dumps(tile_url),
+        "__TILE_ATTRIB__": json.dumps(tile_attrib),
+        "__BG__": "#07111f" if dark_mode else "#ffffff",
+        "__PANEL_BG__": "rgba(7,17,31,.92)" if dark_mode else "rgba(255,255,255,.95)",
+        "__FG__": "#e5edf7" if dark_mode else "#0f172a",
+        "__MUTED__": "#8aa4bd" if dark_mode else "#475569",
+        "__BORDER__": "rgba(56,189,248,.24)" if dark_mode else "rgba(14,165,233,.24)",
+    }
+    template = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body { margin:0; padding:0; background:__BG__; color:__FG__; font-family: Inter, Segoe UI, Arial, sans-serif; }
+  .track-player { border:1px solid __BORDER__; border-radius:16px; overflow:hidden; background:__PANEL_BG__; box-shadow: 0 18px 44px rgba(0,0,0,.22); }
+  #map { height:360px; width:100%; background:#0b1220; }
+  .hud { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:10px; padding:12px 14px 6px 14px; }
+  .metric { border:1px solid __BORDER__; border-radius:13px; padding:10px 12px; background:rgba(15,23,42,.42); min-width:0; }
+  .label { color:__MUTED__; font-size:11px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .value { color:__FG__; font-size:21px; font-weight:760; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chart-wrap { padding:8px 14px 0 14px; }
+  #profile { width:100%; height:190px; display:block; border:1px solid __BORDER__; border-radius:14px; background:rgba(2,8,23,.44); }
+  .controls { display:grid; grid-template-columns: 54px 1fr 54px 78px; gap:10px; align-items:center; padding:12px 14px 14px 14px; }
+  .btn { height:40px; border:1px solid rgba(56,189,248,.36); border-radius:12px; background:#0ea5e9; color:white; font-weight:800; cursor:pointer; }
+  .btn.secondary { background:rgba(15,23,42,.62); color:__FG__; }
+  #idx { width:100%; accent-color:#38bdf8; cursor:pointer; }
+  .counter { color:__MUTED__; font-size:12px; text-align:right; white-space:nowrap; }
+  .source-note { color:__MUTED__; font-size:11px; padding:0 14px 12px 14px; }
+  .plane-wrap { width:34px; height:34px; margin-left:-17px; margin-top:-17px; display:flex; align-items:center; justify-content:center; filter: drop-shadow(0 0 7px rgba(0,0,0,.85)); }
+  .plane-svg { width:30px; height:30px; transform-origin:50% 50%; }
+  .leaflet-control-attribution { font-size:10px; background:rgba(0,0,0,.36) !important; color:#b8c7d8 !important; }
+  .leaflet-control-attribution a { color:#7dd3fc !important; }
+  @media (max-width: 760px) {
+    .hud { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .controls { grid-template-columns: 48px 1fr 48px; }
+    .counter { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="track-player">
+  <div id="map"></div>
+  <div class="hud">
+    <div class="metric"><div class="label">Čas</div><div class="value" id="v-time">—</div></div>
+    <div class="metric"><div class="label">Altitude</div><div class="value" id="v-alt">—</div></div>
+    <div class="metric"><div class="label">GPS speed</div><div class="value" id="v-speed">—</div></div>
+    <div class="metric"><div class="label">Vzdálenost</div><div class="value" id="v-dist">—</div></div>
+  </div>
+  <div class="chart-wrap">
+    <svg id="profile" viewBox="0 0 1000 220" preserveAspectRatio="none">
+      <line x1="52" y1="178" x2="970" y2="178" stroke="rgba(148,163,184,.24)" stroke-width="1" />
+      <line x1="52" y1="42" x2="52" y2="178" stroke="rgba(148,163,184,.24)" stroke-width="1" />
+      <g id="grid"></g>
+      <polyline id="alt-line" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+      <polyline id="speed-line" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity=".94" />
+      <line id="cursor" x1="52" y1="30" x2="52" y2="187" stroke="#e5edf7" stroke-width="1.4" stroke-dasharray="5 5" opacity=".78" />
+      <circle id="alt-dot" r="6" fill="#22c55e" stroke="#e5edf7" stroke-width="1.4" />
+      <circle id="speed-dot" r="5" fill="#f59e0b" stroke="#e5edf7" stroke-width="1.2" />
+      <text x="56" y="27" fill="#38bdf8" font-size="13" font-weight="700">Altitude ft</text>
+      <text x="880" y="27" fill="#f59e0b" font-size="13" font-weight="700">Speed km/h</text>
+    </svg>
+  </div>
+  <div class="controls">
+    <button class="btn" id="play">▶</button>
+    <input id="idx" type="range" min="0" max="0" value="0" step="1" />
+    <button class="btn secondary" id="reset">↺</button>
+    <div class="counter" id="counter">—</div>
+  </div>
+  <div class="source-note" id="source-note"></div>
+</div>
+<script id="track-data" type="application/json">__DATA__</script>
+<script>
+(function() {
+  const points = JSON.parse(document.getElementById('track-data').textContent || '[]');
+  const defaultIdx = Math.max(0, Math.min(__DEFAULT__, points.length - 1));
+  const originalCount = __ORIGINAL_COUNT__;
+  const tileUrl = __TILE_URL__;
+  const tileAttrib = __TILE_ATTRIB__;
+  const slider = document.getElementById('idx');
+  const playBtn = document.getElementById('play');
+  const resetBtn = document.getElementById('reset');
+  let timer = null;
+
+  if (!points.length) {
+    document.getElementById('map').innerHTML = '<div style="padding:20px;color:__MUTED__;">Track nemá data pro přehrávání.</div>';
+    return;
+  }
+
+  const route = points.map(p => [p.lat, p.lon]);
+  const map = L.map('map', { preferCanvas:true, zoomControl:true, attributionControl:true });
+  L.tileLayer(tileUrl, { maxZoom: 18, attribution: tileAttrib }).addTo(map);
+  const whole = L.polyline(route, { color:'#64748b', weight:3, opacity:.55 }).addTo(map);
+  const progress = L.polyline(route.slice(0, defaultIdx + 1), { color:'#38bdf8', weight:4, opacity:.96 }).addTo(map);
+  if (route.length > 1) { map.fitBounds(whole.getBounds(), { padding:[18,18] }); } else { map.setView(route[0], 11); }
+
+  function planeHtml(bearing) {
+    const rot = Number.isFinite(Number(bearing)) ? Number(bearing) : 0;
+    return `<div class="plane-wrap"><svg class="plane-svg" style="transform:rotate(${rot}deg)" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C35 3 37 6 37 10 L37 26 L59 40 L59 47 L37 40 L37 53 L46 59 L46 63 L32 58 L18 63 L18 59 L27 53 L27 40 L5 47 L5 40 L27 26 L27 10 C27 6 29 3 32 3 Z" fill="#38bdf8" stroke="#e5edf7" stroke-width="2" /></svg></div>`;
+  }
+  const planeIcon = (bearing) => L.divIcon({ className:'', html:planeHtml(bearing), iconSize:[34,34], iconAnchor:[17,17] });
+  const plane = L.marker(route[defaultIdx], { icon: planeIcon(points[defaultIdx].bearing), zIndexOffset:1000 }).addTo(map);
+
+  function fmt(v, suffix, decimals=0) {
+    if (v === null || v === undefined || Number.isNaN(Number(v))) return '—';
+    return `${Number(v).toFixed(decimals)}${suffix || ''}`;
+  }
+
+  const altLine = document.getElementById('alt-line');
+  const speedLine = document.getElementById('speed-line');
+  const cursor = document.getElementById('cursor');
+  const altDot = document.getElementById('alt-dot');
+  const speedDot = document.getElementById('speed-dot');
+  const grid = document.getElementById('grid');
+  const L0 = 52, R0 = 970, T0 = 42, B0 = 178;
+  const altVals = points.map(p => Number(p.alt_ft)).filter(Number.isFinite);
+  const spdVals = points.map(p => Number(p.speed_kmh)).filter(Number.isFinite);
+  const altMax = Math.max(500, ...(altVals.length ? altVals : [0]));
+  const spdMax = Math.max(80, ...(spdVals.length ? spdVals : [0]));
+  function x(i) { return L0 + (R0 - L0) * (points.length <= 1 ? 0 : i / (points.length - 1)); }
+  function yAlt(v) { const n = Number.isFinite(Number(v)) ? Number(v) : 0; return B0 - (B0 - T0) * Math.max(0, Math.min(1, n / altMax)); }
+  function ySpd(v) { const n = Number.isFinite(Number(v)) ? Number(v) : 0; return B0 - (B0 - T0) * Math.max(0, Math.min(1, n / spdMax)); }
+  function poly(vals, yfn) { return vals.map((v,i) => `${x(i).toFixed(1)},${yfn(v).toFixed(1)}`).join(' '); }
+  grid.innerHTML = '';
+  for (let g=1; g<=3; g++) {
+    const y = T0 + (B0-T0)*g/4;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', L0); line.setAttribute('x2', R0); line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'rgba(148,163,184,.16)'); line.setAttribute('stroke-width', '1');
+    grid.appendChild(line);
+  }
+  altLine.setAttribute('points', poly(points.map(p => p.alt_ft), yAlt));
+  speedLine.setAttribute('points', poly(points.map(p => p.speed_kmh), ySpd));
+
+  function update(idx) {
+    idx = Math.max(0, Math.min(points.length - 1, Number(idx) || 0));
+    const p = points[idx];
+    slider.value = String(idx);
+    plane.setLatLng([p.lat, p.lon]);
+    plane.setIcon(planeIcon(p.bearing));
+    progress.setLatLngs(route.slice(0, idx + 1));
+    document.getElementById('v-time').textContent = p.time || '—';
+    document.getElementById('v-alt').textContent = fmt(p.alt_ft, ' ft', 0);
+    document.getElementById('v-speed').textContent = fmt(p.speed_kmh, ' km/h', 0);
+    document.getElementById('v-dist').textContent = fmt(p.distance_km, ' km', 1);
+    document.getElementById('counter').textContent = `${idx + 1} / ${points.length}`;
+    const cx = x(idx);
+    cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
+    altDot.setAttribute('cx', cx); altDot.setAttribute('cy', yAlt(p.alt_ft));
+    speedDot.setAttribute('cx', cx); speedDot.setAttribute('cy', ySpd(p.speed_kmh));
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    playBtn.textContent = '▶';
+  }
+  function play() {
+    if (timer) { stop(); return; }
+    playBtn.textContent = 'Ⅱ';
+    timer = setInterval(() => {
+      let i = Number(slider.value) || 0;
+      if (i >= points.length - 1) { stop(); return; }
+      update(i + 1);
+    }, 95);
+  }
+  slider.max = String(points.length - 1);
+  slider.value = String(defaultIdx);
+  slider.addEventListener('input', e => update(e.target.value));
+  slider.addEventListener('pointerdown', stop);
+  playBtn.addEventListener('click', play);
+  resetBtn.addEventListener('click', () => { stop(); update(defaultIdx); });
+  document.getElementById('source-note').textContent = originalCount > points.length ? `Přehrávač používá ${points.length} zjednodušených bodů z původních ${originalCount}. Plný KML zůstává uložený.` : `${points.length} bodů v přehrávači.`;
+  setTimeout(() => map.invalidateSize(), 120);
+  update(defaultIdx);
+})();
+</script>
+</body>
+</html>
+"""
+    for key, value in replacements.items():
+        template = template.replace(key, value)
+    return template
+
+
 def render_track_playback(points: list[dict[str, Any]], flight_id: int, dark_mode: bool) -> None:
     points = normalize_track_points(points)
     if len(points) < 2:
         st.info("Track nemá dostatek bodů pro přehrávání.")
         return
 
-    prof = profile_from_points(points)
-    max_idx = len(points) - 1
-    default_idx = _track_playback_default_idx(points)
-    key = f"track_playback_idx_{flight_id}_{len(points)}"
-    selected_idx = st.slider(
-        "Pozice na tracku",
-        min_value=0,
-        max_value=max_idx,
-        value=min(default_idx, max_idx),
-        step=1,
-        key=key,
-    )
-    selected_idx = max(0, min(int(selected_idx), max_idx))
-    row = prof.iloc[selected_idx] if not prof.empty and selected_idx < len(prof) else None
+    player_points, default_idx, original_count = _prepare_track_player_points(points)
+    if len(player_points) < 2:
+        st.info("Track nemá dostatek bodů pro přehrávání.")
+        return
 
-    c1, c2, c3, c4 = st.columns(4)
-    if row is not None:
-        dt = row.get("time_local")
-        time_txt = dt.strftime("%H:%M:%S") if pd.notna(dt) and hasattr(dt, "strftime") else "—"
-        alt_txt = _format_track_point_value(row.get("alt_ft"), " ft")
-        speed_txt = _format_track_point_value(row.get("speed_smooth"), " km/h")
-        dist_txt = f"{float(row.get('distance_km') or 0):.1f} km"
-    else:
-        time_txt = alt_txt = speed_txt = dist_txt = "—"
-    c1.metric("Čas", time_txt)
-    c2.metric("Altitude", alt_txt)
-    c3.metric("GPS speed", speed_txt)
-    c4.metric("Vzdálenost", dist_txt)
+    html_doc = _track_player_html(player_points, default_idx, dark_mode, original_count)
+    components.html(html_doc, height=710, scrolling=False)
 
-    render_folium_readonly(make_track_playback_map(points, selected_idx, dark_mode), height=390, key=f"track_playback_map_{flight_id}_{selected_idx}")
-    render_track_profile(points, selected_idx=selected_idx)
 
 
 # -----------------------------------------------------------------------------

@@ -1,17 +1,15 @@
-# Letový zápisník Streamlit
+# Letový zápisník
 
-Verze: v0.50
+Verze: v0.50.1
 
-## v0.50 – Detail letu / Track playback
+## v0.50.1 – Track playback hotfix
 
-- Přidaný posuvník v detailu letu v části `Track`.
-- Posuvník mění aktuální pozici na GPS tracku.
-- Na mapě se zobrazuje aktuální poloha letadla.
-- V profilu letu se zobrazuje aktuální pozice na výšce i rychlosti.
-- Přibyl rychlý přehled bodu: čas, altitude, GPS speed, vzdálenost.
-- Plný GPS track zůstává uložený beze změny.
-- Přehledová mapa GPS zůstává v roadmapě jako samostatný budoucí projekt `GPS Map Engine 2.0`.
+- plynulejší posuvník tracku bez Streamlit rerunu při každém pohybu
+- mapa a profil se aktualizují přímo v prohlížeči při tažení posuvníku
+- ikona letadla se otáčí podle směru letu
+- přidané tlačítko přehrávání / pauza
+- plný KML track zůstává uložený beze změny
 
-## Důležité
+## Upload
 
-Nepřepisovat produkční databázi `data/logbook.sqlite`.
+Nepřepisovat `data/logbook.sqlite`.
