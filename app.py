@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.1"
+APP_VERSION = "v0.35.2"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2084,14 +2084,12 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
         evidence = str(row.get("evidence") or "").upper()
         color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
         flight_id = int(row.get("id"))
-        link = detail_link(flight_id)
-        rlink = route_link(dep_id, arr_id)
         popup = folium.Popup(f"""
             <b>ID {flight_id} • {row.get('date') or ''}</b><br>
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
-            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
-            <a href="{link}" target="_top" rel="noopener">Detail</a> &nbsp; <a href="{rlink}" target="_top" rel="noopener">Trasa</a>
+            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}
+            <span style="display:none">LOGBOOK_ROUTE:{dep_id}__{arr_id}</span>
             """, max_width=320)
         folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
 
@@ -2104,8 +2102,8 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
             {ap.get('name') or ''}<br>
             Návštěvy: {visits}<br>
             Odlety: {int(ap.get('departures') or 0)} • Přílety: {int(ap.get('arrivals') or 0)}<br>
-            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}<br>
-            <a href="{airport_link(ident)}" target="_top" rel="noopener">Lety</a>
+            První: {ap.get('first_date') or '—'} • Poslední: {ap.get('last_date') or '—'}
+            <span style="display:none">LOGBOOK_AIRPORT:{ident}</span>
             """, max_width=300)
         folium.CircleMarker((float(ap["lat"]), float(ap["lon"])), radius=radius, color="#22c55e", fill=True, fill_opacity=.92, tooltip=tooltip, popup=popup).add_to(m)
 
@@ -2125,12 +2123,61 @@ def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None 
             st_folium(m, height=height, use_container_width=True, key=key)
 
 
-def render_folium_navigable(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
+def render_folium_navigable(m: folium.Map, *, height: int = 680, key: str | None = None) -> Any:
     try:
-        st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
+        return st_folium(
+            m,
+            height=height,
+            use_container_width=True,
+            key=key,
+            returned_objects=["last_object_clicked", "last_object_clicked_tooltip", "last_object_clicked_popup"],
+        )
     except TypeError:
-        st_folium(m, height=height, use_container_width=True, key=key)
+        return st_folium(m, height=height, use_container_width=True, key=key)
 
+
+def _stringify_map_event(value: Any) -> str:
+    try:
+        return json.dumps(value, ensure_ascii=False, default=str)
+    except Exception:
+        return str(value or "")
+
+
+def handle_route_map_interaction(value: Any) -> None:
+    text = _stringify_map_event(value)
+    if not text:
+        return
+    airport_match = re.search(r"LOGBOOK_AIRPORT:([A-Z0-9_\-]+)", text)
+    route_match = re.search(r"LOGBOOK_ROUTE:([A-Z0-9_\-]+)__([A-Z0-9_\-]+)", text)
+    action = None
+    if airport_match:
+        ident = airport_match.group(1).upper().strip()
+        action = f"airport:{ident}"
+        if st.session_state.get("_last_map_action") == action:
+            return
+        st.session_state["_last_map_action"] = action
+        st.session_state["page"] = "Mapa"
+        st.session_state["map_airport"] = ident
+        st.session_state["map_airport_picker_v035"] = ident
+        st.session_state["map_route_picker_v035"] = ""
+        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+        st.session_state.pop("map_route", None)
+        st.rerun()
+    if route_match:
+        dep = route_match.group(1).upper().strip()
+        arr = route_match.group(2).upper().strip()
+        route = f"{dep}__{arr}"
+        action = f"route:{route}"
+        if st.session_state.get("_last_map_action") == action:
+            return
+        st.session_state["_last_map_action"] = action
+        st.session_state["page"] = "Mapa"
+        st.session_state["map_route"] = route
+        st.session_state["map_route_picker_v035"] = route
+        st.session_state["map_airport_picker_v035"] = ""
+        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+        st.session_state.pop("map_airport", None)
+        st.rerun()
 
 
 
@@ -2783,6 +2830,7 @@ def _route_selection(df: pd.DataFrame, dep: str, arr: str) -> pd.DataFrame:
 def _clear_map_selection() -> None:
     st.session_state.pop("map_airport", None)
     st.session_state.pop("map_route", None)
+    st.session_state.pop("_last_map_action", None)
     st.session_state["map_airport_picker_v035"] = ""
     st.session_state["map_route_picker_v035"] = ""
     try:
@@ -2810,27 +2858,36 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
         </div>""",
         unsafe_allow_html=True,
     )
-    top = st.columns([.62,.55,.86,1.1,1.05,.86,.72,.75], gap="small")
-    headers = ["Detail", "ID", "Datum", "Letadlo", "Trasa", "Časy", "Block", "Role"]
+    top = st.columns([.62,.58,.55,.86,1.1,1.05,.86,.72,.75], gap="small")
+    headers = ["Detail", "Track", "ID", "Datum", "Letadlo", "Trasa", "Časy", "Block", "Role"]
     for c, h in zip(top, headers):
         c.markdown(f'<div class="map-mini-head">{h}</div>', unsafe_allow_html=True)
     limit = min(24, len(work))
     for _, row in work.head(limit).iterrows():
         flight_id = int(row.get("id"))
-        cols = st.columns([.62,.55,.86,1.1,1.05,.86,.72,.75], gap="small", vertical_alignment="top")
+        cols = st.columns([.62,.58,.55,.86,1.1,1.05,.86,.72,.75], gap="small", vertical_alignment="top")
         with cols[0]:
             if st.button("Detail", key=f"map_selection_detail_{flight_id}", use_container_width=True):
+                st.session_state[f"detail_section_{flight_id}"] = "Přehled"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
-        cols[1].markdown(f'<div class="map-mini-cell">{flight_id}</div>', unsafe_allow_html=True)
-        cols[2].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("date"))}</div>', unsafe_allow_html=True)
-        cols[3].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("registration"))}<div class="map-mini-sub">{_safe_text(row.get("aircraft_type"))}</div></div>', unsafe_allow_html=True)
-        cols[4].markdown(f'<div class="map-mini-cell">{_range_text(row.get("departure"), row.get("arrival"))}<div class="map-mini-sub">{_safe_text(row.get("evidence"))}</div></div>', unsafe_allow_html=True)
-        cols[5].markdown(f'<div class="map-mini-cell">{_range_text(row.get("off_block"), row.get("on_block"))}</div>', unsafe_allow_html=True)
-        cols[6].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("block_time"))}</div>', unsafe_allow_html=True)
-        cols[7].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("role"))}</div>', unsafe_allow_html=True)
+        with cols[1]:
+            track_count = int(_safe_float(row.get("track_count"), 0))
+            if st.button("Track", key=f"map_selection_track_{flight_id}", disabled=track_count <= 0, use_container_width=True):
+                st.session_state[f"detail_section_{flight_id}"] = "Track"
+                st.session_state["open_flight_dialog_id"] = flight_id
+                st.session_state["selected_flight_id"] = flight_id
+                st.session_state.pop("dismissed_flight_id", None)
+                st.rerun()
+        cols[2].markdown(f'<div class="map-mini-cell">{flight_id}</div>', unsafe_allow_html=True)
+        cols[3].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("date"))}</div>', unsafe_allow_html=True)
+        cols[4].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("registration"))}<div class="map-mini-sub">{_safe_text(row.get("aircraft_type"))}</div></div>', unsafe_allow_html=True)
+        cols[5].markdown(f'<div class="map-mini-cell">{_range_text(row.get("departure"), row.get("arrival"))}<div class="map-mini-sub">{_safe_text(row.get("evidence"))}</div></div>', unsafe_allow_html=True)
+        cols[6].markdown(f'<div class="map-mini-cell">{_range_text(row.get("off_block"), row.get("on_block"))}</div>', unsafe_allow_html=True)
+        cols[7].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("block_time"))}</div>', unsafe_allow_html=True)
+        cols[8].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("role"))}</div>', unsafe_allow_html=True)
     if len(work) > limit:
         render_lazy_table(
             "Všechny vybrané lety",
@@ -2913,7 +2970,8 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0351")
+            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0352")
+            handle_route_map_interaction(map_event)
             render_lazy_table(
                 "Tabulka direct tras",
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]

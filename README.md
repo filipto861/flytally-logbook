@@ -1,9 +1,18 @@
-# Letový zápisník v0.35.1
+# Letový zápisník
 
-Hotfix pro navigaci z mapy.
+Aktuální checkpoint: v0.35.2.
 
-- oprava odkazů v popupu letiště/trasy
-- oprava otevření detailu ze seznamu vybraných letů
-- zachovaná optimalizace map a čisté UI
+## Změny v0.35.2
 
-Nepřepisovat `data/logbook.sqlite`.
+- Opravena navigace z orientační mapy bez nefunkčních popup odkazů.
+- Klik na letiště nebo trasu v mapě vybere příslušné lety v panelu aplikace.
+- Vybrané lety mají tlačítka Detail a Track přímo v aplikaci.
+- Zachována rychlá mapa a čisté UI z v0.34/v0.35.
+
+## Bezpečnost dat
+
+Nikdy ručně nepřepisovat:
+
+- `data/logbook.sqlite`
+
+Tento soubor obsahuje živé lety, tracky a ruční data.
