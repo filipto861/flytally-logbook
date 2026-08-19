@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.31"
+APP_VERSION = "v0.31.2"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -416,20 +416,62 @@ def restore_database_from_upload(uploaded_file) -> None:
         checkpoint_database()
         backup_path.write_bytes(DB_PATH.read_bytes())
     DB_PATH.write_bytes(raw)
-    global _DB_READY
-    _DB_READY = False
     with connect() as con:
-        record_audit(con, "restore_database", "database", None, {"file": uploaded_file.name})
+        initialize_database(con)
+        record_audit(con, "restore_database", "database", uploaded_file.name, {"backup_created": str(backup_path)})
         con.commit()
+    invalidate_cached_data()
+    auto_backup_after_change("database restore")
+
+
+def show_backup_status() -> None:
+    status = st.session_state.get("last_auto_backup_status")
+    if status == "ok":
+        st.success("Databáze byla automaticky uložena na GitHub.")
+    elif status == "not_configured":
+        st.info("Změna je uložena v běžící aplikaci. Pro trvalé uložení po restartu nastav GitHub token v secrets nebo stáhni zálohu databáze.")
+    elif status == "error":
+        st.warning(f"Změna je uložená lokálně, ale automatická GitHub záloha selhala: {st.session_state.get('last_auto_backup_error')}")
+
+
+def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
+    def cols(table: str) -> set[str]:
+        return {row[1] for row in con.execute(f"PRAGMA table_info({table})").fetchall()}
+    fcols = cols("flights")
+    for name, ddl in [("price_per_hour", "price_per_hour REAL"), ("note", "note TEXT"), ("takeoff", "takeoff TEXT"), ("landing", "landing TEXT")]:
+        if name not in fcols:
+            con.execute(f"ALTER TABLE flights ADD COLUMN {ddl}")
+    acols = cols("aircraft")
+    for name, ddl in [("icao_type", "icao_type TEXT"), ("created_at", "created_at TEXT"), ("updated_at", "updated_at TEXT")]:
+        if name not in acols:
+            con.execute(f"ALTER TABLE aircraft ADD COLUMN {ddl}")
+    track_cols = cols("flight_tracks")
+    for name, ddl in [("start_utc", "start_utc TEXT"), ("end_utc", "end_utc TEXT"), ("min_alt_m", "min_alt_m REAL"), ("max_alt_m", "max_alt_m REAL")]:
+        if name not in track_cols:
+            con.execute(f"ALTER TABLE flight_tracks ADD COLUMN {ddl}")
+    point_cols = cols("track_points")
+    for name, ddl in [("time_utc", "time_utc TEXT"), ("altitude_m", "altitude_m REAL"), ("segment_km", "segment_km REAL"), ("distance_km", "distance_km REAL"), ("speed_kmh", "speed_kmh REAL"), ("speed_kt", "speed_kt REAL"), ("source", "source TEXT")]:
+        if name not in point_cols:
+            con.execute(f"ALTER TABLE track_points ADD COLUMN {ddl}")
+    audit_cols = cols("audit_log")
+    for name, ddl in [("actor", "actor TEXT"), ("action", "action TEXT"), ("object_type", "object_type TEXT"), ("object_id", "object_id TEXT"), ("detail_json", "detail_json TEXT")]:
+        if name not in audit_cols:
+            con.execute(f"ALTER TABLE audit_log ADD COLUMN {ddl}")
+
+
+def connect() -> sqlite3.Connection:
+    DATA_DIR.mkdir(exist_ok=True)
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    con.execute("PRAGMA foreign_keys = ON")
+    con.execute("PRAGMA busy_timeout = 5000")
+    return con
 
 
 def initialize_database(con: sqlite3.Connection) -> None:
-    """Idempotent DB bootstrap/migration.
-
-    The application schema lives in SQLite, not in Excel. Existing v0.4 databases are
-    upgraded in place: flights/rates/tracks stay untouched, while airport/aircraft
-    registries and normalized track_points are added.
-    """
+    global _DB_READY
+    if _DB_READY:
+        return
     con.execute("PRAGMA foreign_keys = ON")
     con.execute("PRAGMA busy_timeout = 5000")
     try:
@@ -443,1350 +485,181 @@ def initialize_database(con: sqlite3.Connection) -> None:
     _seed_aircraft_from_existing_data(con)
     _backfill_track_points(con)
     con.commit()
+    _DB_READY = True
 
 
-def connect() -> sqlite3.Connection:
-    global _DB_READY
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    if not _DB_READY:
-        initialize_database(con)
-        _DB_READY = True
-    else:
-        con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA busy_timeout = 5000")
-    return con
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+def normalize_text(value: Any) -> str:
+    return "" if value is None else str(value).strip()
 
 
-def _seed_airports_from_overrides(con: sqlite3.Connection) -> None:
-    if not AIRPORT_OVERRIDES_PATH.exists():
-        return
-    try:
-        df = pd.read_csv(AIRPORT_OVERRIDES_PATH)
-    except Exception:
-        return
-    if df.empty:
-        return
-    import_airports_dataframe(con, df, default_source="manual_override", replace_existing=True)
-
-
-def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
-    rows = con.execute(
-        """
-        SELECT registration,
-               MAX(aircraft_type) AS aircraft_type,
-               MAX(aircraft_class) AS aircraft_class,
-               MAX(evidence) AS evidence,
-               MAX(price_per_hour) AS price_per_hour
-        FROM flights
-        WHERE registration IS NOT NULL AND TRIM(registration) <> ''
-        GROUP BY registration
-        """
-    ).fetchall()
-    now = _now_iso()
-    for row in rows:
-        con.execute(
-            """
-            INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
-            ON CONFLICT(registration) DO UPDATE SET
-                aircraft_type=COALESCE(excluded.aircraft_type, aircraft.aircraft_type),
-                icao_type=COALESCE(excluded.icao_type, aircraft.icao_type),
-                aircraft_class=COALESCE(excluded.aircraft_class, aircraft.aircraft_class),
-                evidence=COALESCE(excluded.evidence, aircraft.evidence),
-                default_price_per_hour=COALESCE(excluded.default_price_per_hour, aircraft.default_price_per_hour),
-                updated_at=excluded.updated_at
-            """,
-            (
-                (row["registration"] or "").upper(),
-                row["aircraft_type"],
-                row["aircraft_type"],
-                row["aircraft_class"],
-                row["evidence"],
-                row["price_per_hour"],
-                now,
-                now,
-            ),
-        )
-
-
-def _backfill_track_points(con: sqlite3.Connection) -> None:
-    existing = con.execute("SELECT COUNT(*) FROM track_points").fetchone()[0]
-    tracks = con.execute("SELECT id, coordinates_json FROM flight_tracks").fetchall()
-    if existing > 0 or not tracks:
-        return
-    for tr in tracks:
-        try:
-            points = json.loads(tr["coordinates_json"] or "[]")
-        except Exception:
-            points = []
-        insert_track_points(con, int(tr["id"]), points)
-
-
-@st.cache_data(show_spinner=False, ttl=30)
-def read_table(table: str) -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query(f"SELECT * FROM {table}", con)
-
-
-
-def _clean_ident(value: Any) -> str:
+def parse_hhmm(value: Any) -> time | None:
     text = normalize_text(value)
-    return (text or "").upper()
-
-
-def _to_float(value: Any) -> float | None:
-    if value is None or pd.isna(value):
-        return None
-    try:
-        text = str(value).strip().replace(",", ".")
-        return float(text) if text else None
-    except ValueError:
-        return None
-
-
-def import_airports_dataframe(
-    con: sqlite3.Connection,
-    df: pd.DataFrame,
-    default_source: str,
-    replace_existing: bool = True,
-) -> int:
-    """Import airport-like rows into the airports registry.
-
-    Supported input columns include both OurAirports names and our local override
-    names: ident/name/type/airport_type/latitude_deg/lat/longitude_deg/lon.
-    """
-    if df.empty:
-        return 0
-    normalized_cols = {str(c).strip().lower(): c for c in df.columns}
-
-    def val(row, *names, default=None):
-        for name in names:
-            col = normalized_cols.get(name.lower())
-            if col is not None:
-                return row.get(col)
-        return default
-
-    now = _now_iso()
-    count = 0
-    for _, row in df.iterrows():
-        ident = _clean_ident(val(row, "ident", "code", "local_code", "gps_code"))
-        name = normalize_text(val(row, "name", "airport_name"))
-        lat = _to_float(val(row, "latitude_deg", "lat", "latitude"))
-        lon = _to_float(val(row, "longitude_deg", "lon", "longitude"))
-        if not ident or lat is None or lon is None:
-            continue
-        airport_type = normalize_text(val(row, "airport_type", "type", default="small_airport"))
-        closed = 1 if str(airport_type or "").lower() in {"closed", "closed_airport"} else int(_to_float(val(row, "closed", default=0)) or 0)
-        active = 0 if closed else int(_to_float(val(row, "active", default=1)) or 1)
-        source = normalize_text(val(row, "source")) or default_source
-        raw = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
-        params = (
-            ident,
-            name,
-            airport_type,
-            normalize_text(val(row, "iso_country")),
-            normalize_text(val(row, "iso_region")),
-            normalize_text(val(row, "municipality")),
-            lat,
-            lon,
-            _to_float(val(row, "elevation_ft")),
-            normalize_text(val(row, "gps_code")),
-            normalize_text(val(row, "iata_code")),
-            normalize_text(val(row, "local_code")) or ident,
-            source,
-            active,
-            closed,
-            normalize_text(val(row, "data_quality")) or "imported",
-            now,
-            now,
-            json.dumps(raw, ensure_ascii=False),
-        )
-        if replace_existing:
-            con.execute(
-                """
-                INSERT INTO airports (ident, name, airport_type, iso_country, iso_region, municipality,
-                    latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code,
-                    source, active, closed, data_quality, imported_at, updated_at, raw_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(ident) DO UPDATE SET
-                    name=excluded.name,
-                    airport_type=excluded.airport_type,
-                    iso_country=excluded.iso_country,
-                    iso_region=excluded.iso_region,
-                    municipality=excluded.municipality,
-                    latitude_deg=excluded.latitude_deg,
-                    longitude_deg=excluded.longitude_deg,
-                    elevation_ft=excluded.elevation_ft,
-                    gps_code=excluded.gps_code,
-                    iata_code=excluded.iata_code,
-                    local_code=excluded.local_code,
-                    source=excluded.source,
-                    active=excluded.active,
-                    closed=excluded.closed,
-                    data_quality=excluded.data_quality,
-                    updated_at=excluded.updated_at,
-                    raw_json=excluded.raw_json
-                """,
-                params,
-            )
-        else:
-            con.execute(
-                """
-                INSERT OR IGNORE INTO airports (ident, name, airport_type, iso_country, iso_region, municipality,
-                    latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code,
-                    source, active, closed, data_quality, imported_at, updated_at, raw_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                params,
-            )
-        count += 1
-    _set_meta(con, f"airport_import_{default_source}", f"{count} rows")
-    return count
-
-
-def _airport_query(active_only: bool) -> str:
-    query = "SELECT * FROM airports"
-    if active_only:
-        query += " WHERE active = 1 AND closed = 0 AND latitude_deg IS NOT NULL AND longitude_deg IS NOT NULL"
-    query += " ORDER BY ident"
-    return query
-
-
-@st.cache_data(show_spinner=False, ttl=300)
-def read_airports(active_only: bool = True) -> pd.DataFrame:
-    """Return airport registry from the fixed world DB plus local overrides.
-
-    data/airports_full.sqlite is the stable world airport database. The main
-    logbook.sqlite keeps only manual overrides/additions, so flights and KML
-    tracks are not overwritten when the airport registry is refreshed. When the
-    same ident exists in both databases, the local logbook row wins.
-    """
-    frames: list[pd.DataFrame] = []
-    query = _airport_query(active_only)
-
-    if AIRPORTS_DB_PATH.exists():
-        try:
-            with sqlite3.connect(AIRPORTS_DB_PATH) as airport_con:
-                frames.append(pd.read_sql_query(query, airport_con))
-        except Exception:
-            pass
-
-    try:
-        with connect() as con:
-            frames.append(pd.read_sql_query(query, con))
-    except Exception:
-        pass
-
-    if not frames:
-        return pd.DataFrame()
-    out = pd.concat(frames, ignore_index=True, sort=False)
-    if "ident" in out.columns:
-        out["ident"] = out["ident"].fillna("").astype(str).str.upper().str.strip()
-        out = out[out["ident"] != ""]
-        out = out.drop_duplicates(subset=["ident"], keep="last")
-        out = out.sort_values("ident")
-    return out.reset_index(drop=True)
-
-
-def import_ourairports_to_database() -> int:
-    """Import world airport database into SQLite.
-
-    Prefer bundled data/airports.csv when present. If it is not present,
-    fall back to the public OurAirports CSV URL. The application never
-    keeps the world airport list hard-coded in Python.
-    """
-    if AIRPORTS_CSV_PATH.exists():
-        df = pd.read_csv(AIRPORTS_CSV_PATH)
-        source_label = "OurAirports bundled CSV"
-        source_ref = str(AIRPORTS_CSV_PATH.name)
-    else:
-        df = pd.read_csv(OURAIRPORTS_AIRPORTS_URL)
-        source_label = "OurAirports URL"
-        source_ref = OURAIRPORTS_AIRPORTS_URL
-    with connect() as con:
-        count = import_airports_dataframe(con, df, default_source=source_label, replace_existing=True)
-        _seed_airports_from_overrides(con)
-        _set_meta(con, "ourairports_source", source_ref)
-        _set_meta(con, "ourairports_rows", count)
-        _set_meta(con, "ourairports_imported_at", _now_iso())
-        record_audit(con, "import_ourairports", "airports", None, {"rows": count, "source": source_ref})
-        con.commit()
-    auto_backup_after_change("import_ourairports")
-    return count
-
-
-def import_airport_csv_upload(uploaded_file) -> int:
-    df = pd.read_csv(uploaded_file)
-    with connect() as con:
-        count = import_airports_dataframe(con, df, default_source="user_csv", replace_existing=True)
-        record_audit(con, "import_airport_csv", "airports", None, {"rows": count, "file": getattr(uploaded_file, "name", None)})
-        con.commit()
-    auto_backup_after_change("import_airport_csv")
-    return count
-
-
-def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]]) -> None:
-    if not points:
-        return
-    profile = profile_from_points(points)
-    if profile.empty:
-        return
-    rows = []
-    for _, p in profile.iterrows():
-        speed_kmh = None if pd.isna(p.get("speed_kmh")) else float(p.get("speed_kmh"))
-        rows.append((
-            track_id,
-            int(p["idx"]),
-            p["time_utc"].isoformat() if pd.notna(p.get("time_utc")) else None,
-            float(p["lat"]),
-            float(p["lon"]),
-            None if pd.isna(p.get("alt_m")) else float(p.get("alt_m")),
-            float(p.get("seg_km") or 0),
-            float(p.get("distance_km") or 0),
-            speed_kmh,
-            speed_kmh * 0.539957 if speed_kmh is not None else None,
-            "kml",
-        ))
-    con.executemany(
-        """
-        INSERT OR REPLACE INTO track_points
-        (track_id, seq, time_utc, latitude_deg, longitude_deg, altitude_m,
-         segment_km, distance_km, speed_kmh, speed_kt, source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        rows,
-    )
-
-@st.cache_data(show_spinner=False, ttl=30)
-def read_track_counts() -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query(
-            """
-            SELECT flight_id, COUNT(*) AS track_count, COALESCE(SUM(distance_km), 0) AS gps_km
-            FROM flight_tracks GROUP BY flight_id
-            """,
-            con,
-        )
-
-
-@st.cache_data(show_spinner=False, ttl=30)
-def read_flights() -> pd.DataFrame:
-    flights = read_table("flights")
-    flights = compute_metrics(flights)
-    tracks = read_track_counts()
-    if tracks.empty:
-        flights["track_count"] = 0
-        flights["gps_km"] = 0.0
-    else:
-        flights = flights.merge(tracks, how="left", left_on="id", right_on="flight_id")
-        flights["track_count"] = flights["track_count"].fillna(0).astype(int)
-        flights["gps_km"] = flights["gps_km"].fillna(0.0)
-    return flights
-
-
-@st.cache_data(show_spinner=False, ttl=60)
-def read_tracks_joined() -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query(
-            """
-            SELECT t.*, f.date, f.evidence, f.registration, f.aircraft_type, f.aircraft_class,
-                   f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
-                   f.role, f.starts, f.task, f.commander
-            FROM flight_tracks t
-            JOIN flights f ON f.id = t.flight_id
-            ORDER BY f.date, f.off_block, t.id
-            """,
-            con,
-        )
-
-
-@st.cache_data(show_spinner=False, ttl=60)
-def read_tracks_for_flight(flight_id: int) -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE flight_id = ? ORDER BY id", con, params=(flight_id,))
-
-
-def normalize_text(value: Any) -> str | None:
-    if value is None or pd.isna(value):
-        return None
-    text = str(value).strip()
-    return text if text else None
-
-
-def _columns_for_table(con: sqlite3.Connection, table: str) -> set[str]:
-    try:
-        return {row[1] for row in con.execute(f"PRAGMA table_info({table})").fetchall()}
-    except sqlite3.DatabaseError:
-        return set()
-
-
-def _add_column_if_missing(con: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
-    if column not in _columns_for_table(con, table):
-        con.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
-
-
-def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
-    """Upgrade older SQLite files without losing data.
-
-    CREATE TABLE IF NOT EXISTS does not add new columns to an already existing
-    table. Some earlier online databases had an older audit_log shape
-    (user/entity/detail). Deleting a flight must not fail just because the audit
-    table is old, so we add all columns used by the current application.
-    """
-    try:
-        _add_column_if_missing(con, "audit_log", "actor", "actor TEXT")
-        _add_column_if_missing(con, "audit_log", "object_type", "object_type TEXT")
-        _add_column_if_missing(con, "audit_log", "object_id", "object_id TEXT")
-        _add_column_if_missing(con, "audit_log", "detail_json", "detail_json TEXT")
-        _add_column_if_missing(con, "audit_log", "user", "user TEXT")
-        _add_column_if_missing(con, "audit_log", "entity", "entity TEXT")
-        _add_column_if_missing(con, "audit_log", "entity_id", "entity_id TEXT")
-        _add_column_if_missing(con, "audit_log", "detail", "detail TEXT")
-    except sqlite3.DatabaseError:
-        pass
-    try:
-        _add_column_if_missing(con, "flight_tracks", "min_alt_m", "min_alt_m REAL")
-        _add_column_if_missing(con, "flight_tracks", "max_alt_m", "max_alt_m REAL")
-        _add_column_if_missing(con, "flights", "note", "note TEXT")
-    except sqlite3.DatabaseError:
-        pass
-
-
-def normalize_date(value: Any) -> str | None:
-    if value is None or pd.isna(value):
-        return None
-    if isinstance(value, pd.Timestamp):
-        return value.date().isoformat()
-    if isinstance(value, datetime):
-        return value.date().isoformat()
-    if isinstance(value, date):
-        return value.isoformat()
-    text = str(value).strip()
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%y"):
-        try:
-            return datetime.strptime(text, fmt).date().isoformat()
-        except ValueError:
-            pass
-    return text or None
-
-
-def normalize_time(value: Any) -> str | None:
-    if value is None or pd.isna(value):
+    if not text or text.lower() == "nan":
         return None
     if isinstance(value, time):
-        return value.strftime("%H:%M")
-    if isinstance(value, datetime):
-        return value.strftime("%H:%M")
-    text = str(value).strip()
-    if not text:
-        return None
-    for fmt in ("%H:%M", "%H:%M:%S"):
+        return value
+    text = text.replace(".", ":")
+    for fmt in ("%H:%M:%S", "%H:%M"):
         try:
-            return datetime.strptime(text, fmt).strftime("%H:%M")
-        except ValueError:
-            pass
-    return text
-
-
-def parse_time_to_minutes(value: Any) -> int | None:
-    if value is None:
-        return None
-    if isinstance(value, time):
-        return value.hour * 60 + value.minute
-    text = str(value).strip()
-    if not text or text.lower() in {"nan", "none", "nat"}:
-        return None
-    for fmt in ("%H:%M", "%H:%M:%S"):
-        try:
-            t = datetime.strptime(text, fmt).time()
-            return t.hour * 60 + t.minute
+            return datetime.strptime(text, fmt).time()
         except ValueError:
             pass
     return None
 
 
-def minutes_diff(start_value: Any, end_value: Any) -> int | None:
-    start = parse_time_to_minutes(start_value)
-    end = parse_time_to_minutes(end_value)
-    if start is None or end is None:
+def time_to_minutes(value: Any) -> int | None:
+    t = parse_hhmm(value)
+    if not t:
         return None
-    return (end - start) % (24 * 60)
+    return t.hour * 60 + t.minute
 
 
-def fmt_minutes(minutes: int | float | None) -> str:
+def minutes_between(start: Any, end: Any) -> int:
+    s = time_to_minutes(start)
+    e = time_to_minutes(end)
+    if s is None or e is None:
+        return 0
+    diff = e - s
+    if diff < 0:
+        diff += 24 * 60
+    return max(0, diff)
+
+
+def minutes_to_hhmm(minutes: int | float | None) -> str:
     if minutes is None or pd.isna(minutes):
-        return ""
+        minutes = 0
     minutes = int(round(float(minutes)))
     return f"{minutes // 60}:{minutes % 60:02d}"
 
 
-def fmt_money(value: float | int | None) -> str:
+def parse_duration_to_minutes(value: Any) -> int:
     if value is None or pd.isna(value):
-        return ""
-    return f"{float(value):,.0f} Kč".replace(",", " ")
-
-
-def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return df.copy()
-    out = df.copy()
-    out["date_dt"] = pd.to_datetime(out["date"], errors="coerce")
-    out["year"] = out["date_dt"].dt.year
-    out["block_minutes"] = [minutes_diff(a, b) for a, b in zip(out["off_block"], out["on_block"])]
-    out["air_minutes"] = [minutes_diff(a, b) for a, b in zip(out["takeoff"], out["landing"])]
-    out["block_hours"] = out["block_minutes"].fillna(0) / 60.0
-    out["air_hours"] = out["air_minutes"].fillna(0) / 60.0
-    out["price_per_hour"] = pd.to_numeric(out["price_per_hour"], errors="coerce")
-    out["cost"] = out["block_hours"] * out["price_per_hour"].fillna(0)
-    out["role"] = out["role"].fillna("").str.upper().str.strip()
-    out["evidence"] = out["evidence"].fillna("").str.upper().str.strip()
-    out["registration"] = out["registration"].fillna("").str.upper().str.strip()
-    out["aircraft_class"] = out["aircraft_class"].fillna("").str.upper().str.strip()
-    out["starts"] = pd.to_numeric(out["starts"], errors="coerce").fillna(0).astype(int)
-    out["block_time"] = out["block_minutes"].apply(fmt_minutes)
-    out["air_time"] = out["air_minutes"].apply(fmt_minutes)
-    out["cost_label"] = out["cost"].apply(fmt_money)
-    return out
-
-# -----------------------------------------------------------------------------
-# UI
-# -----------------------------------------------------------------------------
-
-def apply_ui_theme(dark_mode: bool) -> None:
-    if dark_mode:
-        bg = "#06101d"; panel = "#0b182a"; panel2 = "#10233a"; text = "#e6f0fb"; muted = "#92a8c0"; border = "rgba(125,211,252,.18)"; accent = "#38bdf8"; good = "#22c55e"; warn = "#f59e0b"; shadow = "rgba(0,0,0,.40)"
-    else:
-        bg = "#f5f8fc"; panel = "#ffffff"; panel2 = "#eaf3ff"; text = "#0f172a"; muted = "#475569"; border = "rgba(15,23,42,.12)"; accent = "#0284c7"; good = "#16a34a"; warn = "#d97706"; shadow = "rgba(15,23,42,.10)"
-    sidebar_css = """
-    :root {--lb-sidebar-width:16.4rem;}
-    section[data-testid="stSidebar"], [data-testid="stSidebar"] {
-        display:block !important; visibility:visible !important; opacity:1 !important;
-        width:var(--lb-sidebar-width) !important; min-width:var(--lb-sidebar-width) !important; max-width:var(--lb-sidebar-width) !important;
-        transform:translateX(0) !important; margin-left:0 !important;
-        transition:margin-left 320ms cubic-bezier(.22,.61,.36,1), opacity 220ms ease !important;
-        will-change:margin-left; z-index:1000 !important;
-    }
-    [data-testid="stSidebarContent"] {display:block !important; visibility:visible !important; opacity:1 !important;}
-    body.lb-sidebar-hidden section[data-testid="stSidebar"],
-    body.lb-sidebar-hidden [data-testid="stSidebar"] {
-        margin-left:calc(-1 * var(--lb-sidebar-width)) !important;
-    }
-    [data-testid="stAppViewContainer"] > .main {transition:margin-left 320ms cubic-bezier(.22,.61,.36,1) !important;}
-    [data-testid="stAppViewContainer"] .main .block-container {max-width:1500px !important;}
-    #lb-sidebar-toggle {
-        position:fixed; top:5.35rem; left:calc(var(--lb-sidebar-width) - 2.55rem);
-        z-index:2147483647; width:1.72rem; height:1.72rem; border-radius:.52rem;
-        border:1px solid rgba(148,163,184,.35); background:rgba(15,31,52,.96); color:#dbeafe;
-        font-weight:900; font-size:1.05rem; line-height:1; cursor:pointer;
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:0 8px 22px rgba(0,0,0,.28);
-        transition:left 320ms cubic-bezier(.22,.61,.36,1), background 140ms ease, border-color 140ms ease;
-    }
-    #lb-sidebar-toggle:hover {background:rgba(20,43,72,.99); border-color:rgba(56,189,248,.55);}
-    body.lb-sidebar-hidden #lb-sidebar-toggle {left:.32rem;}
-    @media (max-width: 760px) {
-        #lb-sidebar-toggle {top:4.35rem; left:calc(var(--lb-sidebar-width) - 2.45rem);}
-        body.lb-sidebar-hidden #lb-sidebar-toggle {left:.25rem;}
-    }
-    """
-    st.markdown(f"""
-    <style>
-    :root {{--bg:{bg};--panel:{panel};--panel2:{panel2};--text:{text};--muted:{muted};--border:{border};--accent:{accent};--good:{good};--warn:{warn};--shadow:{shadow};}}
-    /* Streamlit chrome: hide the top header completely. Do NOT rely on the
-       native collapsed sidebar button; on Streamlit Cloud it is not rendered
-       consistently when the header is hidden. Instead we force the sidebar to
-       stay visible and accessible. */
-    header[data-testid="stHeader"] {{display:block !important; visibility:visible !important; height:0 !important; min-height:0 !important; background:transparent !important; pointer-events:none !important; z-index:999998 !important; overflow:visible !important;}}
-    header[data-testid="stHeader"] * {{pointer-events:none !important;}}
-    div[data-testid="stToolbar"], div[data-testid="stDecoration"], div[data-testid="stStatusWidget"], #MainMenu, footer {{display:none !important; visibility:hidden !important; height:0 !important;}}
-    .stDeployButton {{display:none !important;}}
-    [data-testid="stSidebarHeader"], [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] button,
-    section[data-testid="stSidebar"] button[kind="headerNoPadding"],
-    section[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"],
-    button[title*="sidebar" i], button[aria-label*="sidebar" i],
-    button[title*="Collapse" i], button[aria-label*="Collapse" i],
-    button[title*="Close" i], button[aria-label*="Close" i] {{display:none !important; visibility:hidden !important; pointer-events:none !important; width:0 !important; height:0 !important; padding:0 !important; margin:0 !important;}}
-    {sidebar_css}
-    [data-testid="stAppViewContainer"] > .main {{padding-top:0 !important;}}
-    [data-testid="stAppViewContainer"] .main .block-container {{padding-top:0 !important; margin-top:0 !important;}}
-    .stApp {{background: radial-gradient(circle at 16% 10%, rgba(56,189,248,.16), transparent 24%), radial-gradient(circle at 88% 3%, rgba(34,197,94,.08), transparent 26%), var(--bg); color:var(--text);}}
-    [data-testid="stSidebar"] {{background: linear-gradient(180deg, rgba(11,24,42,.98), rgba(6,16,29,.98)); border-right:1px solid var(--border);}}
-    [data-testid="stSidebar"] * {{color:#e6f0fb;}}
-    .block-container {{padding-top:0 !important; padding-bottom:3rem; max-width:1500px;}}
-    h1,h2,h3 {{letter-spacing:-.025em;}}
-    .app-title {{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.05rem 1.25rem;border:1px solid var(--border);background:linear-gradient(135deg,rgba(56,189,248,.14),rgba(15,23,42,.04)),var(--panel);border-radius:20px;box-shadow:0 16px 38px var(--shadow);margin-bottom:1rem;}}
-    .app-title-main {{font-size:1.55rem;font-weight:850;color:var(--text);line-height:1.1;}}
-    .app-title-sub {{font-size:.86rem;color:var(--muted);margin-top:.18rem;}}
-    .sidebar-version {{color:var(--muted);font-size:.78rem;margin-top:-.4rem;margin-bottom:1rem;}}
-    .app-badge {{font-size:.78rem;font-weight:800;color:#031421;background:linear-gradient(135deg,var(--accent),#a7f3d0);border-radius:999px;padding:.38rem .72rem;white-space:nowrap;}}
-    .metric-card {{border:1px solid var(--border);border-radius:18px;padding:1rem 1.05rem;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent),var(--panel);box-shadow:0 12px 30px var(--shadow);min-height:108px;}}
-    .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
-    .metric-value {{color:var(--text);font-size:1.72rem;line-height:1.25;font-weight:850;margin-top:.25rem;}}
-    .metric-sub {{color:var(--muted);font-size:.82rem;margin-top:.28rem;}}
-    .section-card {{border:1px solid var(--border);border-radius:18px;padding:1rem;background:var(--panel);box-shadow:0 10px 28px var(--shadow);}}
-    .pill {{display:inline-block;border:1px solid var(--border);border-radius:999px;background:var(--panel2);padding:.25rem .62rem;margin:.1rem .18rem;font-size:.82rem;color:var(--text);}}
-    div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
-    .flight-help {{color:var(--muted);font-size:.86rem;margin:.25rem 0 .75rem 0;}}
-
-    .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
-    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.10rem .15rem .20rem .15rem;border-bottom:1px solid var(--border);height:1.35rem;display:flex;align-items:flex-end;}}
-    .flight-cell {{font-size:.78rem;line-height:1.05;padding:.06rem .15rem;color:var(--text);min-height:1.78rem;display:flex;flex-direction:column;justify-content:flex-start;}}
-    .flight-cell-main {{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.10rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.04rem 0 .04rem 0;}}
-    .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
-    .selected-flight-box {{border:1px solid var(--border); border-radius:14px; padding:.65rem .85rem; background:rgba(56,189,248,.07); margin:.5rem 0 .75rem 0;}}
-    .selected-flight-title {{font-weight:850;color:var(--text);}}
-    .selected-flight-sub {{font-size:.82rem;color:var(--muted);margin-top:.1rem;}}
-    .stTabs [data-baseweb="tab-list"] {{gap:.45rem;}}
-    .stTabs [data-baseweb="tab"] {{border-radius:999px;padding:.45rem .9rem;background:var(--panel2);}}
-    div.stButton > button {{border-radius:14px !important; font-weight:800 !important; border:1px solid var(--border) !important; min-height:2.05rem; padding:.22rem .60rem !important;}}
-    .stButton {{margin-top:0 !important;}}
-    [data-testid="column"] .stButton > button {{min-height:1.72rem !important;padding:.08rem .42rem !important;border-radius:11px !important;font-size:.78rem !important;}}
-    div.stButton > button[kind="primary"] {{box-shadow:0 10px 22px rgba(56,189,248,.18) !important;}}
-    div[data-testid="stExpander"] {{border:1px solid var(--border); border-radius:16px; background:rgba(255,255,255,.025);}}
-    div[data-testid="stDialog"] div[role="dialog"] {{border:1px solid var(--border); border-radius:22px;}}
-    button[kind="primary"] {{border-radius:12px;}}
-    @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}}}}
-    </style>
-    """, unsafe_allow_html=True)
-
-
-def app_header(subtitle: str = "Lokální pilotní evidence • ULL / EASA • náklady • GPS tracky") -> None:
-    st.markdown(f"""
-    <div class="app-title">
-      <div><div class="app-title-main">Letový zápisník</div><div class="app-title-sub">{subtitle}</div></div>
-      <div class="app-badge">{APP_VERSION}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-def metric_card(label: str, value: str, sub: str = "") -> None:
-    st.markdown(f"""
-    <div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div><div class="metric-sub">{sub}</div></div>
-    """, unsafe_allow_html=True)
-
-
-def go_to_page(page: str) -> None:
-    st.session_state["page"] = page
-    st.rerun()
-
-
-def render_nav_button(page_name: str, label: str, key: str) -> None:
-    current = st.session_state.get("page", "Dashboard") == page_name
-    if st.button(label, key=key, use_container_width=True, type="primary" if current else "secondary"):
-        go_to_page(page_name)
-
-
-def render_sidebar_nav() -> None:
-    st.markdown("### Navigace")
-    for page_name, label in NAV_ITEMS:
-        render_nav_button(page_name, label, f"side_nav_{page_name}")
-
-
-def get_selected_dataframe_rows(event: Any) -> list[int]:
-    if event is None:
-        return []
-    try:
-        return list(event.selection.rows)
-    except Exception:
-        pass
-    try:
-        return list(event["selection"]["rows"])
-    except Exception:
-        return []
-
-
-def clear_open_flight_dialog() -> None:
-    current = st.session_state.get("open_flight_dialog_id")
-    if current is not None:
-        st.session_state["dismissed_flight_id"] = current
-    st.session_state.pop("open_flight_dialog_id", None)
-    try:
-        if "flight_id" in st.query_params:
-            del st.query_params["flight_id"]
-    except Exception:
-        pass
-
-
-def _query_param_value(name: str) -> str | None:
-    try:
-        value = st.query_params.get(name)
-        if isinstance(value, list):
-            return value[0] if value else None
-        return value
-    except Exception:
-        return None
-
-
-def detail_link(flight_id: int) -> str:
-    try:
-        current_url = str(getattr(st.context, "url", "") or "")
-        if current_url.startswith(("http://", "https://")):
-            base = current_url.split("?")[0].split("#")[0]
-            return f"{base}?flight_id={int(flight_id)}"
-    except Exception:
-        pass
-    return f"?flight_id={int(flight_id)}"
-
-
-def plotly_layout(fig):
-    fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#e5edf7"), margin=dict(l=10, r=10, t=45, b=10), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-    fig.update_xaxes(gridcolor="rgba(148,163,184,.18)")
-    fig.update_yaxes(gridcolor="rgba(148,163,184,.18)")
-    return fig
-
-# -----------------------------------------------------------------------------
-# Filters and summaries
-# -----------------------------------------------------------------------------
-
-def apply_filters(df: pd.DataFrame, key_prefix: str = "") -> pd.DataFrame:
-    if df.empty:
-        return df
-    work = df.copy()
-    years = sorted(int(y) for y in work["year"].dropna().unique())
-    registrations = sorted(r for r in work["registration"].dropna().unique() if r)
-    roles = sorted(r for r in work["role"].dropna().unique() if r)
-
-    with st.expander("Filtry", expanded=False):
-        st.caption("Výchozí stav zobrazuje všechny lety. Filtry rozbal jen při hledání konkrétního období, letadla nebo funkce.")
-        f1, f2, f3, f4 = st.columns(4)
-        with f1:
-            selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
-        with f2:
-            selected_evidence = st.multiselect("Evidence", EVIDENCE_OPTIONS, default=EVIDENCE_OPTIONS, key=f"{key_prefix}_ev")
-        with f3:
-            selected_roles = st.multiselect("Funkce", roles, default=roles, key=f"{key_prefix}_roles")
-        with f4:
-            selected_regs = st.multiselect("Imatrikulace", registrations, default=[], key=f"{key_prefix}_regs")
-
-    if selected_years:
-        work = work[work["year"].isin(selected_years)]
-    if selected_evidence:
-        work = work[work["evidence"].isin(selected_evidence)]
-    if selected_roles:
-        work = work[work["role"].isin(selected_roles)]
-    if selected_regs:
-        work = work[work["registration"].isin(selected_regs)]
-    return work
-
-
-def stat_minutes(df: pd.DataFrame, mask=None) -> int:
-    if df.empty:
         return 0
-    series = df["block_minutes"].fillna(0)
-    if mask is not None:
-        series = series[mask]
-    return int(series.sum())
-
-
-def build_summary(df: pd.DataFrame) -> dict[str, int | float]:
-    if df.empty:
-        return {"flights":0,"starts":0,"total":0,"air":0,"pic":0,"pic_ull":0,"pic_easa":0,"dual":0,"safety":0,"ull":0,"easa":0,"cost":0.0,"tracks":0,"gps_km":0.0}
-    return {
-        "flights": int(len(df)),
-        "starts": int(df["starts"].sum()),
-        "total": int(df["block_minutes"].fillna(0).sum()),
-        "air": int(df["air_minutes"].fillna(0).sum()),
-        "pic": stat_minutes(df, df["role"].eq("PIC")),
-        "pic_ull": stat_minutes(df, df["role"].eq("PIC") & df["evidence"].eq("ULL")),
-        "pic_easa": stat_minutes(df, df["role"].eq("PIC") & df["evidence"].eq("EASA")),
-        "dual": stat_minutes(df, df["role"].eq("DUAL")),
-        "safety": stat_minutes(df, df["role"].eq("SAFETY PILOT")),
-        "ull": stat_minutes(df, df["evidence"].eq("ULL")),
-        "easa": stat_minutes(df, df["evidence"].eq("EASA")),
-        "cost": float(df["cost"].fillna(0).sum()),
-        "tracks": int(df.get("track_count", pd.Series(dtype=int)).fillna(0).sum()) if "track_count" in df else 0,
-        "gps_km": float(df.get("gps_km", pd.Series(dtype=float)).fillna(0).sum()) if "gps_km" in df else 0.0,
-    }
-
-# -----------------------------------------------------------------------------
-# KML/GPS
-# -----------------------------------------------------------------------------
-
-def local_name(tag: str) -> str:
-    return tag.split("}", 1)[-1] if "}" in tag else tag
-
-
-def parse_iso(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    text = value.strip().replace("Z", "+00:00")
+    if isinstance(value, (int, float)):
+        return int(round(float(value) * 60)) if 0 < float(value) < 24 else int(round(float(value)))
+    text = str(value).strip()
+    if not text:
+        return 0
+    if ":" in text:
+        parts = text.split(":")
+        try:
+            return int(parts[0]) * 60 + int(parts[1])
+        except Exception:
+            return 0
     try:
-        dt = datetime.fromisoformat(text)
+        val = float(text.replace(",", "."))
+        return int(round(val * 60)) if 0 < val < 24 else int(round(val))
+    except Exception:
+        return 0
+
+
+def combine_local_datetime(d: date | str | None, t: time | None) -> datetime | None:
+    if not d or not t:
+        return None
+    if isinstance(d, str):
+        try:
+            d = datetime.strptime(d[:10], "%Y-%m-%d").date()
+        except Exception:
+            return None
+    return datetime.combine(d, t, tzinfo=LOCAL_TZ)
+
+
+def iso_to_local_time(iso_value: str | None) -> str:
+    if not iso_value:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(iso_value).replace("Z", "+00:00"))
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except ValueError:
+        return dt.astimezone(LOCAL_TZ).strftime("%H:%M")
+    except Exception:
+        return ""
+
+
+def float_or_none(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        if isinstance(value, str) and not value.strip():
+            return None
+        return float(value)
+    except Exception:
         return None
-
-
-
-def normalize_track_points(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return points in a safe chronological order when timestamps are available.
-
-    Some KML exports store points newest-first. That breaks computed GPS speed
-    because time deltas become negative. We keep non-timed tracks in original
-    order, but for timed tracks we sort by timestamp and remove clearly invalid
-    duplicate coordinates/timestamps only where needed for calculations.
-    """
-    if not points:
-        return []
-    indexed = []
-    timed_count = 0
-    for i, pt in enumerate(points):
-        dt = parse_iso(pt.get("time"))
-        if dt is not None:
-            timed_count += 1
-        indexed.append((i, dt, pt))
-    if timed_count >= 2:
-        indexed.sort(key=lambda item: (item[1] is None, item[1] or datetime.max.replace(tzinfo=timezone.utc), item[0]))
-        return [dict(pt) for _, _, pt in indexed]
-    return [dict(pt) for pt in points]
-
-def _coord_tokens_to_points(coord_text: str) -> list[dict[str, Any]]:
-    parsed: list[dict[str, Any]] = []
-    for token in coord_text.replace("\n", " ").replace("\t", " ").split():
-        parts = token.split(",")
-        if len(parts) < 2:
-            continue
-        try:
-            lon = float(parts[0])
-            lat = float(parts[1])
-            alt = float(parts[2]) if len(parts) >= 3 and parts[2] else None
-        except ValueError:
-            continue
-        if -90 <= lat <= 90 and -180 <= lon <= 180:
-            parsed.append({"lat": lat, "lon": lon, "alt": alt, "time": None})
-    return parsed
-
-
-def _placemark_text(placemark: ET.Element, element_name: str) -> str | None:
-    for elem in placemark.iter():
-        if local_name(elem.tag) == element_name and (elem.text or "").strip():
-            return (elem.text or "").strip()
-    return None
-
-
-def _parse_fr24_description_times(text: str | None) -> list[str]:
-    """Return UTC ISO strings found in a Flightradar24 Placemark description/name."""
-    if not text:
-        return []
-    found = re.findall(r"(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})\s*UTC", text)
-    return [f"{date}T{clock}+00:00" for date, clock in found]
-
-
-def _append_point_unique(points: list[dict[str, Any]], point: dict[str, Any]) -> None:
-    if points:
-        prev = points[-1]
-        same_pos = abs(float(prev.get("lat", 999)) - float(point.get("lat", -999))) < 1e-7 and abs(float(prev.get("lon", 999)) - float(point.get("lon", -999))) < 1e-7
-        same_time = (prev.get("time") or None) == (point.get("time") or None)
-        if same_pos and same_time:
-            return
-    points.append(point)
-
-
-def parse_kml_bytes(data: bytes) -> list[dict[str, Any]]:
-    root = ET.fromstring(data)
-    points: list[dict[str, Any]] = []
-
-    # Preferred format: gx:Track / Track with <when> + <gx:coord>.
-    for track in root.iter():
-        if local_name(track.tag) != "Track":
-            continue
-        whens: list[str | None] = []
-        coords: list[str] = []
-        for child in list(track):
-            lname = local_name(child.tag)
-            if lname == "when":
-                whens.append((child.text or "").strip() or None)
-            elif lname == "coord":
-                coords.append((child.text or "").strip())
-        for idx, coord in enumerate(coords):
-            parts = coord.replace(",", " ").split()
-            if len(parts) < 2:
-                continue
-            try:
-                lon = float(parts[0]); lat = float(parts[1]); alt = float(parts[2]) if len(parts) >= 3 else None
-            except ValueError:
-                continue
-            if -90 <= lat <= 90 and -180 <= lon <= 180:
-                points.append({"lat": lat, "lon": lon, "alt": alt, "time": whens[idx] if idx < len(whens) else None})
-    if points:
-        return normalize_track_points(points)
-
-    # Flightradar24 usually exports two parallel datasets in one KML:
-    # 1) timestamped Point Placemarks,
-    # 2) visual LineString segments named P-1, P-2, ...
-    # Older parser mixed both together, which produced an artificial line from
-    # the last real point back to the first segment. Therefore Point Placemarks
-    # are parsed first and, when they contain usable times, the LineStrings are
-    # intentionally ignored.
-    point_points: list[dict[str, Any]] = []
-    line_segment_points: list[dict[str, Any]] = []
-
-    for placemark in root.iter():
-        if local_name(placemark.tag) != "Placemark":
-            continue
-
-        pm_name = _placemark_text(placemark, "name") or ""
-        pm_desc = _placemark_text(placemark, "description") or ""
-        when = _placemark_text(placemark, "when") or _placemark_text(placemark, "begin")
-
-        # Point-only placemarks: FR24 exports one of these for every recorded fix.
-        for point_elem in placemark.iter():
-            if local_name(point_elem.tag) != "Point":
-                continue
-            coord_text = None
-            for elem in point_elem.iter():
-                if local_name(elem.tag) == "coordinates" and (elem.text or "").strip():
-                    coord_text = (elem.text or "").strip()
-                    break
-            if not coord_text:
-                continue
-            parsed = _coord_tokens_to_points(coord_text)
-            if not parsed:
-                continue
-            pt = parsed[0]
-            # Some FR24 files put the timestamp in the Placemark name instead of <when>.
-            time_from_name = _parse_fr24_description_times(pm_name)
-            pt["time"] = when or (time_from_name[0] if time_from_name else None)
-            _append_point_unique(point_points, pt)
-
-        # LineString segments: keep them only as a fallback when no timestamped
-        # Point stream exists. Parse the two timestamps from the description.
-        for line_elem in placemark.iter():
-            if local_name(line_elem.tag) != "LineString":
-                continue
-            coord_text = None
-            for elem in line_elem.iter():
-                if local_name(elem.tag) == "coordinates" and (elem.text or "").strip():
-                    coord_text = (elem.text or "").strip()
-                    break
-            if not coord_text:
-                continue
-            parsed = _coord_tokens_to_points(coord_text)
-            if not parsed:
-                continue
-            times = _parse_fr24_description_times(pm_desc)
-            for idx, pt in enumerate(parsed):
-                if idx < len(times):
-                    pt["time"] = times[idx]
-                _append_point_unique(line_segment_points, pt)
-
-    timed_points = [p for p in point_points if p.get("time")]
-    if len(timed_points) >= 2:
-        return normalize_track_points(point_points)
-    if len(line_segment_points) >= 2:
-        return normalize_track_points(line_segment_points)
-    if point_points:
-        return normalize_track_points(point_points)
-
-    # Fallback: plain coordinates. This is intentionally only reached when no
-    # usable Point/LineString track was parsed above.
-    for elem in root.iter():
-        if local_name(elem.tag) != "coordinates":
-            continue
-        text = (elem.text or "").strip()
-        for pt in _coord_tokens_to_points(text):
-            _append_point_unique(points, pt)
-    return normalize_track_points(points)
 
 
 def haversine_km(a: dict[str, Any], b: dict[str, Any]) -> float:
-    r = 6371.0088
-    lat1 = math.radians(float(a["lat"])); lat2 = math.radians(float(b["lat"]))
-    dlat = lat2 - lat1; dlon = math.radians(float(b["lon"]) - float(a["lon"]))
-    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    return 2 * r * math.asin(math.sqrt(h))
+    lat1 = math.radians(float(a["lat"])); lon1 = math.radians(float(a["lon"]))
+    lat2 = math.radians(float(b["lat"])); lon2 = math.radians(float(b["lon"]))
+    dlat = lat2 - lat1; dlon = lon2 - lon1
+    h = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    return 6371.0 * 2 * math.atan2(math.sqrt(h), math.sqrt(1-h))
 
 
-def track_distance_km(points: list[dict[str, Any]]) -> float:
+def compute_track_metrics(points: list[dict[str, Any]]) -> dict[str, Any]:
     if len(points) < 2:
-        return 0.0
-    return sum(haversine_km(a, b) for a, b in zip(points[:-1], points[1:]))
-
-
-def track_stats(points: list[dict[str, Any]]) -> dict[str, Any]:
-    times = [p.get("time") for p in points if p.get("time")]
-    alts = [float(p["alt"]) for p in points if p.get("alt") is not None and float(p.get("alt") or 0) != 0]
+        return {"distance_km": 0.0, "start_utc": None, "end_utc": None, "min_alt_m": None, "max_alt_m": None}
+    dist = 0.0
+    for i in range(1, len(points)):
+        dist += haversine_km(points[i-1], points[i])
+    times = [p.get("time_utc") for p in points if p.get("time_utc")]
+    alts = [float(p["alt_m"]) for p in points if p.get("alt_m") is not None]
     return {
-        "point_count": len(points),
-        "distance_km": track_distance_km(points),
-        "start_utc": times[0] if times else None,
-        "end_utc": times[-1] if times else None,
+        "distance_km": dist,
+        "start_utc": min(times) if times else None,
+        "end_utc": max(times) if times else None,
         "min_alt_m": min(alts) if alts else None,
         "max_alt_m": max(alts) if alts else None,
     }
 
 
-def profile_from_points(points: list[dict[str, Any]], tz: ZoneInfo = LOCAL_TZ) -> pd.DataFrame:
-    points = normalize_track_points(points)
-    rows = []
-    cum = 0.0
-    prev = None
-    prev_dt = None
-    for i, p in enumerate(points):
-        dt_utc = parse_iso(p.get("time"))
-        dt_local = dt_utc.astimezone(tz) if dt_utc else None
-        seg_km = haversine_km(prev, p) if prev is not None else 0.0
-        cum += seg_km
-
-        # Prefer speed already present in a future/imported JSON, otherwise compute
-        # groundspeed from distance and timestamps. This keeps old and new tracks
-        # compatible and fixes KML files exported in reverse chronological order.
-        speed = None
-        for key in ("speed_kmh", "gps_speed_kmh", "speed"):
-            raw = p.get(key)
-            if raw is not None:
-                try:
-                    speed = float(raw)
-                    break
-                except (TypeError, ValueError):
-                    pass
-        if speed is None and prev is not None and dt_utc is not None and prev_dt is not None:
-            seconds = (dt_utc - prev_dt).total_seconds()
-            if seconds > 0:
-                speed = seg_km / (seconds / 3600)
-                # Reject impossible spikes from malformed KML/timestamp jumps.
-                if speed > 900:
-                    speed = None
-
-        alt_m = None if p.get("alt") is None else float(p.get("alt"))
-        rows.append({
-            "idx": i,
-            "time_utc": dt_utc,
-            "time_local": dt_local,
-            "lat": float(p["lat"]),
-            "lon": float(p["lon"]),
-            "alt_m": alt_m,
-            "alt_ft": alt_m * 3.28084 if alt_m is not None else None,
-            "seg_km": seg_km,
-            "distance_km": cum,
-            "speed_kmh": speed,
-        })
-        prev = p
-        prev_dt = dt_utc
-    df = pd.DataFrame(rows)
-    if not df.empty:
-        speed_series = pd.to_numeric(df["speed_kmh"], errors="coerce")
-        if speed_series.notna().any():
-            df["speed_smooth"] = speed_series.interpolate(limit_direction="both").rolling(5, min_periods=1, center=True).median()
-        else:
-            df["speed_smooth"] = pd.NA
-    return df
-
-
-def _longest_true_segment(mask: pd.Series, min_len: int = 1) -> tuple[int, int] | None:
-    best: tuple[int, int] | None = None
-    best_len = 0
-    start: int | None = None
-    values = [bool(v) for v in mask.fillna(False).tolist()]
-    for i, val in enumerate(values + [False]):
-        if val and start is None:
-            start = i
-        elif not val and start is not None:
-            end = i - 1
-            length = end - start + 1
-            if length >= min_len and length > best_len:
-                best = (start, end)
-                best_len = length
-            start = None
-    return best
-
-
-def detect_takeoff_landing(points: list[dict[str, Any]]) -> dict[str, Any]:
-    prof = profile_from_points(points)
-    n = len(prof)
-    if n == 0:
-        return {}
-
-    speed = prof.get("speed_smooth", pd.Series(dtype=float)).fillna(0)
-    moving = speed.gt(12)
-
-    # Primary logic: airborne segment by GPS groundspeed.
-    # Use the longest continuous segment so short GPS spikes do not become takeoff/landing.
-    airborne = speed.gt(55)
-    segment = _longest_true_segment(airborne, min_len=3)
-
-    # Fallback when speed cannot be calculated: use altitude above the lowest recorded level.
-    if segment is None and "alt_m" in prof and prof["alt_m"].notna().any():
-        alt = prof["alt_m"]
-        base_alt = float(alt.dropna().quantile(0.05))
-        airborne_alt = alt.gt(base_alt + 35)
-        segment = _longest_true_segment(airborne_alt, min_len=3)
-
-    # Final fallback: treat the useful moving part as the flight.
-    if segment is None:
-        segment = _longest_true_segment(moving, min_len=1)
-
-    first_move = int(moving.idxmax()) if moving.any() else 0
-    last_move = int(moving[moving].index[-1]) if moving.any() else n - 1
-
-    if segment is None:
-        takeoff, landing = 0, n - 1
-    else:
-        takeoff, landing = segment
-
-    if landing < takeoff:
-        takeoff, landing = 0, n - 1
-
-    return {"off_idx": first_move, "takeoff_idx": int(takeoff), "landing_idx": int(landing), "on_idx": last_move}
-
-
-def point_local_dt(points: list[dict[str, Any]], idx: int) -> datetime | None:
+def enrich_points(points: list[dict[str, Any]], source: str = "kml") -> list[dict[str, Any]]:
     if not points:
-        return None
-    idx = max(0, min(idx, len(points) - 1))
-    dt = parse_iso(points[idx].get("time"))
-    return dt.astimezone(LOCAL_TZ) if dt else None
-
-
-def dt_hhmm(dt: datetime | None) -> str | None:
-    return dt.strftime("%H:%M") if dt else None
-
-
-def point_local_hhmm(points: list[dict[str, Any]], idx: int) -> str | None:
-    return dt_hhmm(point_local_dt(points, idx))
-
-
-def inferred_clock_times(points: list[dict[str, Any]], idx: dict[str, Any], block_padding_minutes: int = 5) -> dict[str, str | None]:
-    takeoff_dt = point_local_dt(points, idx.get("takeoff_idx", 0))
-    landing_dt = point_local_dt(points, idx.get("landing_idx", len(points) - 1))
-    off_dt = takeoff_dt - timedelta(minutes=block_padding_minutes) if takeoff_dt else None
-    on_dt = landing_dt + timedelta(minutes=block_padding_minutes) if landing_dt else None
-    return {
-        "off_block": dt_hhmm(off_dt),
-        "takeoff": dt_hhmm(takeoff_dt),
-        "landing": dt_hhmm(landing_dt),
-        "on_block": dt_hhmm(on_dt),
-    }
-
-
-def point_local_date(points: list[dict[str, Any]]) -> date:
-    for p in points:
-        dt = parse_iso(p.get("time"))
-        if dt:
-            return dt.astimezone(LOCAL_TZ).date()
-    return date.today()
-
-
-def nearest_airport(point: dict[str, Any] | None, max_km: float = 18.0) -> str:
-    if not point:
-        return ""
-    airports = read_airports(active_only=True)
-    if airports.empty:
-        return ""
-    p_lat = float(point["lat"])
-    p_lon = float(point["lon"])
-    lat = pd.to_numeric(airports["latitude_deg"], errors="coerce")
-    lon = pd.to_numeric(airports["longitude_deg"], errors="coerce")
-    valid = lat.notna() & lon.notna()
-    if not valid.any():
-        return ""
-    work = airports.loc[valid].copy()
-    lat = lat.loc[valid]
-    lon = lon.loc[valid]
-    # Vectorized haversine. Fast enough for full OurAirports database.
-    r = 6371.0088
-    lat1 = math.radians(p_lat)
-    lat2 = lat.apply(math.radians)
-    dlat = lat2 - lat1
-    dlon = (lon - p_lon).apply(math.radians)
-    h = (dlat / 2).apply(math.sin).pow(2) + math.cos(lat1) * lat2.apply(math.cos) * (dlon / 2).apply(math.sin).pow(2)
-    dist = 2 * r * h.apply(lambda x: math.asin(math.sqrt(min(max(float(x), 0.0), 1.0))))
-    best_pos = int(dist.idxmin())
-    best_dist = float(dist.loc[best_pos])
-    if best_dist <= max_km:
-        return str(work.loc[best_pos, "ident"]).upper()
-    return ""
-
-
-def extract_registration_from_filename(name: str) -> str:
-    text = name.upper().replace("_", "-").replace(" ", "-")
-    m = re.search(r"OK-?[A-Z]{3}\d{2}", text)
-    if m:
-        val = m.group(0).replace("OK", "OK-").replace("OK--", "OK-")
-        return val if val.startswith("OK-") else "OK-" + val[2:]
-    m = re.search(r"OK-?[A-Z]{3}(?!\d)", text)
-    if m:
-        val = m.group(0).replace("OK", "OK-").replace("OK--", "OK-")
-        return val if val.startswith("OK-") else "OK-" + val[2:]
-    return ""
-
-
-def evidence_from_registration(reg: str) -> str:
-    return "ULL" if re.fullmatch(r"OK-[A-Z]{3}\d{2}", (reg or "").upper()) else "EASA"
-
-
-def default_class_for(evidence: str) -> str:
-    return "ULL" if evidence == "ULL" else "SEP"
-
-
-def lookup_latest_rate(rates: pd.DataFrame, registration: str) -> dict[str, Any]:
-    if rates.empty or not registration:
-        return {}
-    reg = registration.strip().upper()
-    sub = rates[rates["registration"].fillna("").str.upper().eq(reg)].copy()
-    if sub.empty:
-        return {}
-    sub["valid_from_dt"] = pd.to_datetime(sub["valid_from"], errors="coerce")
-    row = sub.sort_values("valid_from_dt").iloc[-1]
-    return {"aircraft_type": row.get("aircraft_type"), "price_per_hour": row.get("price_per_hour")}
-
-
-def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.DataFrame) -> dict[str, Any]:
-    idx = detect_takeoff_landing(points)
-    stats = track_stats(points)
-    reg = extract_registration_from_filename(file_name)
-    evidence = evidence_from_registration(reg) if reg else "ULL"
-    rate = lookup_latest_rate(rates, reg)
-    clock = inferred_clock_times(points, idx, block_padding_minutes=5)
-    has_clock = any(p.get("time") for p in points)
-    note = "" if has_clock else "KML neobsahovalo časové značky, časy je nutné doplnit ručně."
-    return {
-        "date": point_local_date(points),
-        "registration": reg,
-        "evidence": evidence,
-        "aircraft_type": normalize_text(rate.get("aircraft_type")) or "",
-        "aircraft_class": default_class_for(evidence),
-        "departure": nearest_airport(points[idx.get("takeoff_idx", idx.get("off_idx", 0))] if points else None),
-        "arrival": nearest_airport(points[idx.get("landing_idx", idx.get("on_idx", len(points)-1))] if points else None),
-        "off_block": clock.get("off_block"),
-        "takeoff": clock.get("takeoff"),
-        "landing": clock.get("landing"),
-        "on_block": clock.get("on_block"),
-        "starts": 1,
-        "commander": "Točík Filip",
-        "instructor": "",
-        "role": "PIC",
-        "task": "",
-        "price_per_hour": float(rate.get("price_per_hour")) if rate and pd.notna(rate.get("price_per_hour")) else 0.0,
-        "note": note,
-        "stats": stats,
-        "detect_idx": idx,
-        "has_clock": has_clock,
-    }
-
-
-def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], replace_existing: bool = False) -> None:
-    points = normalize_track_points(points)
-    stats = track_stats(points)
-    with connect() as con:
-        if replace_existing:
-            con.execute("DELETE FROM flight_tracks WHERE flight_id = ?", (flight_id,))
-        cur = con.execute(
-            """
-            INSERT INTO flight_tracks (flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False)),
-        )
-        track_id = int(cur.lastrowid)
-        insert_track_points(con, track_id, points)
-        record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
-        con.commit()
-    auto_backup_after_change("save_track")
-
-
-def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
-    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","note"]
-    values = []
-    for f in fields:
-        v = data.get(f)
-        if f == "date":
-            v = normalize_date(v)
-        elif f in {"off_block", "takeoff", "landing", "on_block"}:
-            v = normalize_time(v)
-        elif f == "starts":
-            v = int(v or 0)
-        elif f == "price_per_hour":
-            v = float(v or 0)
-        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role"}:
-            v = normalize_text(v)
-            v = v.upper() if v else None
+        return []
+    def parse_dt(v):
+        if not v:
+            return None
+        try:
+            dt = datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+    indexed = list(enumerate(points))
+    indexed.sort(key=lambda pair: (parse_dt(pair[1].get("time_utc")) or datetime.min.replace(tzinfo=timezone.utc), pair[0])) if any(p.get("time_utc") for p in points) else indexed
+    enriched = []
+    total = 0.0
+    prev = None
+    for _, p in indexed:
+        q = dict(p)
+        q.setdefault("source", source)
+        if prev is None:
+            q["segment_km"] = 0.0
+            q["distance_km"] = 0.0
+            q["speed_kmh"] = q.get("speed_kmh")
+            q["speed_kt"] = q.get("speed_kt")
         else:
-            v = normalize_text(v)
-        values.append(v)
-    with connect() as con:
-        cur = con.execute(
-            """
-            INSERT INTO flights (date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            values,
-        )
-        flight_id = int(cur.lastrowid)
-        record_audit(con, "create_flight", "flights", flight_id, data)
-        con.commit()
-    if auto_backup:
-        auto_backup_after_change("create_flight")
-    return flight_id
+            seg = haversine_km(prev, q)
+            total += seg
+            q["segment_km"] = seg
+            q["distance_km"] = total
+            if q.get("speed_kmh") is None:
+                t1 = parse_dt(prev.get("time_utc")); t2 = parse_dt(q.get("time_utc"))
+                if t1 and t2:
+                    hours = (t2 - t1).total_seconds() / 3600
+                    if hours > 0:
+                        q["speed_kmh"] = seg / hours
+                        q["speed_kt"] = q["speed_kmh"] / 1.852
+        enriched.append(q)
+        prev = q
+    return enriched
 
 
-def update_flight(flight_id: int, data: dict[str, Any]) -> None:
-    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","note"]
-    values = []
-    for f in fields:
-        v = data.get(f)
-        if f == "date":
-            v = normalize_date(v)
-        elif f in {"off_block", "takeoff", "landing", "on_block"}:
-            v = normalize_time(v)
-        elif f == "starts":
-            v = int(v or 0)
-        elif f == "price_per_hour":
-            v = float(v or 0)
-        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role"}:
-            v = normalize_text(v)
-            v = v.upper() if v else None
-        else:
-            v = normalize_text(v)
-        values.append(v)
-    with connect() as con:
-        con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=?", [*values, flight_id])
-        record_audit(con, "update_flight", "flights", flight_id, data)
-        con.commit()
-    auto_backup_after_change("update_flight")
-
-
-def delete_track(track_id: int) -> None:
-    with connect() as con:
-        con.execute("DELETE FROM flight_tracks WHERE id = ?", (track_id,))
-        record_audit(con, "delete_track", "flight_tracks", track_id, None)
-        con.commit()
-    auto_backup_after_change("delete_track")
-
-
-def delete_flight(flight_id: int) -> None:
-    """Delete one flight and all related KML/GPS data from SQLite."""
-    with connect() as con:
-        ensure_schema_compatibility(con)
-        row = con.execute("SELECT * FROM flights WHERE id = ?", (flight_id,)).fetchone()
-        if row is None:
-            return
-        track_rows = con.execute("SELECT id FROM flight_tracks WHERE flight_id = ?", (flight_id,)).fetchall()
-        track_ids = [int(r["id"]) for r in track_rows]
-        audit_detail = {
-            "date": row["date"],
-            "registration": row["registration"],
-            "route": f"{row['departure'] or ''}-{row['arrival'] or ''}",
-            "tracks_deleted": len(track_ids),
-        }
-        for track_id in track_ids:
-            con.execute("DELETE FROM track_points WHERE track_id = ?", (track_id,))
-        con.execute("DELETE FROM flight_tracks WHERE flight_id = ?", (flight_id,))
-        con.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
-        record_audit(con, "delete_flight", "flights", flight_id, audit_detail)
-        con.commit()
-    auto_backup_after_change("delete_flight")
-
-
-def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> list[dict[str, Any]]:
+def downsample_points(points: list[dict[str, Any]], max_points: int = 650) -> list[dict[str, Any]]:
     if len(points) <= max_points:
         return points
     step = max(1, math.ceil(len(points) / max_points))
@@ -1796,66 +669,1007 @@ def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> l
     return sampled
 
 
-@st.cache_data(show_spinner=False, ttl=300)
-def airport_coord_lookup() -> dict[str, dict[str, Any]]:
-    airports = read_airports(active_only=False)
-    if airports.empty or "ident" not in airports.columns:
-        return {}
-    lookup: dict[str, dict[str, Any]] = {}
-    for _, row in airports.iterrows():
-        ident = normalize_text(row.get("ident"))
-        if not ident:
+def profile_from_points(points: list[dict[str, Any]]) -> pd.DataFrame:
+    rows = []
+    for p in points:
+        rows.append({
+            "time_utc": p.get("time_utc"),
+            "distance_km": p.get("distance_km"),
+            "alt_m": p.get("alt_m"),
+            "speed_kmh": p.get("speed_kmh"),
+            "speed_kt": p.get("speed_kt"),
+        })
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    if "time_utc" in df:
+        df["time_local"] = pd.to_datetime(df["time_utc"], errors="coerce", utc=True).dt.tz_convert(str(LOCAL_TZ))
+    return df
+
+
+def parse_kml_points(raw: bytes) -> tuple[list[dict[str, Any]], str]:
+    """Parse KML exports from ADSBExchange and Flightradar24.
+
+    FR24 KML often contains both the real time-stamped Point placemarks and a set
+    of visual LineString segments named P-1, P-2...  Mixing those together creates
+    a false line from the end of the flight back to the first visual segment.  If
+    time-stamped points exist, they are the source of truth and LineStrings are
+    deliberately ignored.
+    """
+    root = ET.fromstring(raw)
+    ns = {"kml": "http://www.opengis.net/kml/2.2", "gx": "http://www.google.com/kml/ext/2.2"}
+
+    def text_of(elem, path: str) -> str | None:
+        child = elem.find(path, ns)
+        if child is not None and child.text:
+            return child.text.strip()
+        return None
+
+    def parse_coord_text(coord_text: str | None) -> list[tuple[float, float, float | None]]:
+        coords: list[tuple[float, float, float | None]] = []
+        if not coord_text:
+            return coords
+        for chunk in coord_text.replace("\n", " ").split():
+            parts = chunk.split(",")
+            if len(parts) >= 2:
+                try:
+                    lon = float(parts[0])
+                    lat = float(parts[1])
+                    alt = float(parts[2]) if len(parts) >= 3 and parts[2] not in ("", None) else None
+                    coords.append((lat, lon, alt))
+                except Exception:
+                    continue
+        return coords
+
+    def parse_speed_from_description(text: str | None) -> tuple[float | None, float | None]:
+        if not text:
+            return None, None
+        clean = re.sub(r"<[^>]+>", " ", text)
+        m = re.search(r"(?:speed|gs|groundspeed)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(kt|kts|knots|km/h|kph)", clean, flags=re.I)
+        if not m:
+            return None, None
+        val = float(m.group(1))
+        unit = m.group(2).lower()
+        if unit in {"kt", "kts", "knots"}:
+            return val * 1.852, val
+        return val, val / 1.852
+
+    timed_points: list[dict[str, Any]] = []
+    untimed_points: list[dict[str, Any]] = []
+    linestring_points: list[dict[str, Any]] = []
+
+    for pm in root.findall(".//kml:Placemark", ns):
+        name = text_of(pm, "kml:name") or ""
+        description = text_of(pm, "kml:description")
+        when = text_of(pm, "kml:TimeStamp/kml:when") or text_of(pm, "kml:TimeSpan/kml:begin")
+        speed_kmh, speed_kt = parse_speed_from_description(description)
+
+        point_coords = parse_coord_text(text_of(pm, "kml:Point/kml:coordinates"))
+        for lat, lon, alt in point_coords:
+            point = {"lat": lat, "lon": lon, "alt_m": alt, "time_utc": when, "speed_kmh": speed_kmh, "speed_kt": speed_kt, "source": "kml_point"}
+            if when:
+                timed_points.append(point)
+            else:
+                untimed_points.append(point)
+
+        # FR24 visual segments are commonly named P-1, P-2... and must not be
+        # merged with real point placemarks when time-stamped points are present.
+        is_fr24_visual_segment = bool(re.fullmatch(r"P-?\d+", name.strip(), flags=re.I))
+        for coord_node in pm.findall(".//kml:LineString/kml:coordinates", ns):
+            for lat, lon, alt in parse_coord_text(coord_node.text):
+                linestring_points.append({
+                    "lat": lat,
+                    "lon": lon,
+                    "alt_m": alt,
+                    "time_utc": None,
+                    "speed_kmh": None,
+                    "speed_kt": None,
+                    "source": "fr24_segment" if is_fr24_visual_segment else "kml_linestring",
+                })
+
+    # gx:Track files usually contain paired when/coord arrays.
+    gx_points: list[dict[str, Any]] = []
+    for trk in root.findall(".//gx:Track", ns):
+        whens = [w.text.strip() for w in trk.findall("kml:when", ns) if w.text]
+        coords = []
+        for c in trk.findall("gx:coord", ns):
+            if c.text:
+                parts = c.text.split()
+                if len(parts) >= 2:
+                    try:
+                        lon = float(parts[0]); lat = float(parts[1]); alt = float(parts[2]) if len(parts) >= 3 else None
+                        coords.append((lat, lon, alt))
+                    except Exception:
+                        pass
+        for i, (lat, lon, alt) in enumerate(coords):
+            gx_points.append({"lat": lat, "lon": lon, "alt_m": alt, "time_utc": whens[i] if i < len(whens) else None, "speed_kmh": None, "speed_kt": None, "source": "gx_track"})
+
+    if gx_points:
+        source = "gx_track"
+        return enrich_points(gx_points, source), source
+    if timed_points:
+        source = "fr24_points" if any(p.get("source") == "fr24_segment" for p in linestring_points) else "kml_points"
+        return enrich_points(timed_points, source), source
+    if linestring_points:
+        return enrich_points(linestring_points, "kml_linestring"), "kml_linestring"
+    if untimed_points:
+        return enrich_points(untimed_points, "kml_points"), "kml_points"
+    return [], "unknown"
+
+
+# -----------------------------------------------------------------------------
+# Data seeding
+# -----------------------------------------------------------------------------
+
+AIRPORT_OVERRIDES_CSV = """ident,name,airport_type,iso_country,municipality,latitude_deg,longitude_deg,elevation_ft,gps_code,local_code,source,active,closed,data_quality
+LKSZ,Sazená,small_airport,CZ,Sazená,50.324699,14.258900,761,LKSZ,LKSZ,manual,1,0,verified
+LKLT,Letňany,small_airport,CZ,Praha,50.131401,14.525600,912,LKLT,LKLT,manual,1,0,verified
+LKPR,Václav Havel Airport Prague,large_airport,CZ,Praha,50.100800,14.260000,1247,LKPR,LKPR,manual,1,0,verified
+LKVO,Vodochody,medium_airport,CZ,Vodochody,50.216599,14.395800,919,LKVO,LKVO,manual,1,0,verified
+LKRO,Roudnice,small_airport,CZ,Roudnice nad Labem,50.410599,14.226100,725,LKRO,LKRO,manual,1,0,verified
+LKBE,Benešov,small_airport,CZ,Benešov,49.740799,14.644700,1322,LKBE,LKBE,manual,1,0,verified
+LKMB,Mladá Boleslav,small_airport,CZ,Mladá Boleslav,50.398300,14.898100,760,LKMB,LKMB,manual,1,0,verified
+LKHK,Hradec Králové,medium_airport,CZ,Hradec Králové,50.253201,15.845200,791,LKHK,LKHK,manual,1,0,verified
+LKKV,Karlovy Vary,medium_airport,CZ,Karlovy Vary,50.202999,12.914700,1989,LKKV,LKKV,manual,1,0,verified
+LKTB,Brno Tuřany,medium_airport,CZ,Brno,49.151299,16.694401,778,LKTB,LKTB,manual,1,0,verified
+LKMT,Ostrava Mošnov,large_airport,CZ,Ostrava,49.696300,18.111099,844,LKMT,LKMT,manual,1,0,verified
+LDPM,Medulin,small_airport,HR,Medulin,44.817299,13.922200,164,LDPM,LDPM,manual,1,0,verified
+VFR,VFR / místní let,other,CZ,,49.8,15.5,,VFR,VFR,manual,1,0,virtual
+"""
+
+
+def _seed_airports_from_overrides(con: sqlite3.Connection) -> None:
+    import csv
+    from io import StringIO
+    rows = []
+    if AIRPORT_OVERRIDES_PATH.exists():
+        content = AIRPORT_OVERRIDES_PATH.read_text(encoding="utf-8")
+    else:
+        content = AIRPORT_OVERRIDES_CSV
+    reader = csv.DictReader(StringIO(content))
+    for row in reader:
+        rows.append(row)
+    now = _now_iso()
+    for r in rows:
+        con.execute(
+            """
+            INSERT OR REPLACE INTO airports
+            (ident, name, airport_type, iso_country, municipality, latitude_deg, longitude_deg, elevation_ft,
+             gps_code, local_code, source, active, closed, data_quality, imported_at, updated_at, raw_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT imported_at FROM airports WHERE ident=?), ?), ?, ?)
+            """,
+            (
+                r.get("ident"), r.get("name"), r.get("airport_type"), r.get("iso_country"), r.get("municipality"),
+                float_or_none(r.get("latitude_deg")), float_or_none(r.get("longitude_deg")), float_or_none(r.get("elevation_ft")),
+                r.get("gps_code"), r.get("local_code"), r.get("source"), int(r.get("active") or 1), int(r.get("closed") or 0),
+                r.get("data_quality"), r.get("ident"), now, now, json.dumps(r, ensure_ascii=False),
+            ),
+        )
+
+
+def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
+    rows = con.execute(
+        "SELECT registration, aircraft_type, aircraft_class, evidence, price_per_hour FROM flights WHERE COALESCE(registration,'') <> ''"
+    ).fetchall()
+    now = _now_iso()
+    for r in rows:
+        con.execute(
+            """
+            INSERT OR IGNORE INTO aircraft
+            (registration, aircraft_type, aircraft_class, evidence, default_price_per_hour, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+            """,
+            (r["registration"], r["aircraft_type"], r["aircraft_class"], r["evidence"], r["price_per_hour"], now, now),
+        )
+
+
+def _backfill_track_points(con: sqlite3.Connection) -> None:
+    tracks = con.execute("SELECT id, coordinates_json FROM flight_tracks").fetchall()
+    for tr in tracks:
+        count = con.execute("SELECT COUNT(*) FROM track_points WHERE track_id=?", (tr["id"],)).fetchone()[0]
+        if count:
             continue
         try:
-            lat = float(row.get("latitude_deg"))
-            lon = float(row.get("longitude_deg"))
-        except (TypeError, ValueError):
+            points = enrich_points(json.loads(tr["coordinates_json"]), "legacy")
+            insert_track_points(con, tr["id"], points)
+        except Exception:
+            pass
+
+
+# -----------------------------------------------------------------------------
+# Read data
+# -----------------------------------------------------------------------------
+
+def add_computed_columns(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    df["block_minutes"] = [minutes_between(a, b) for a, b in zip(df["off_block"], df["on_block"])]
+    df["air_minutes"] = [minutes_between(a, b) for a, b in zip(df.get("takeoff", ""), df.get("landing", ""))]
+    df["block_time"] = df["block_minutes"].map(minutes_to_hhmm)
+    df["air_time"] = df["air_minutes"].map(minutes_to_hhmm)
+    df["starts"] = pd.to_numeric(df.get("starts", 1), errors="coerce").fillna(1).astype(int)
+    df["price_per_hour"] = pd.to_numeric(df.get("price_per_hour", 0), errors="coerce").fillna(0)
+    df["cost"] = df["block_minutes"] / 60 * df["price_per_hour"]
+    role = df["role"].fillna("").str.upper()
+    df["pic_minutes"] = df["block_minutes"].where(role.eq("PIC"), 0)
+    df["dual_minutes"] = df["block_minutes"].where(role.eq("DUAL"), 0)
+    df["safety_minutes"] = df["block_minutes"].where(role.eq("SAFETY PILOT"), 0)
+    return df
+
+
+@st.cache_data(show_spinner=False)
+def load_flights() -> pd.DataFrame:
+    with connect() as con:
+        initialize_database(con)
+        df = pd.read_sql_query("SELECT * FROM flights ORDER BY date, off_block, id", con)
+    return add_computed_columns(df)
+
+
+@st.cache_data(show_spinner=False)
+def load_aircraft() -> pd.DataFrame:
+    with connect() as con:
+        initialize_database(con)
+        return pd.read_sql_query("SELECT * FROM aircraft ORDER BY active DESC, registration", con)
+
+
+@st.cache_data(show_spinner=False)
+def load_rates() -> pd.DataFrame:
+    with connect() as con:
+        initialize_database(con)
+        return pd.read_sql_query("SELECT * FROM rates ORDER BY registration, valid_from", con)
+
+
+@st.cache_data(show_spinner=False)
+def load_airports(limit: int | None = None) -> pd.DataFrame:
+    query = "SELECT * FROM airports ORDER BY ident"
+    params: tuple[Any, ...] = ()
+    if limit:
+        query += " LIMIT ?"
+        params = (limit,)
+    with connect() as con:
+        initialize_database(con)
+        manual = pd.read_sql_query(query, con, params=params)
+
+    if AIRPORTS_DB_PATH.exists():
+        try:
+            with sqlite3.connect(AIRPORTS_DB_PATH) as acon:
+                acon.row_factory = sqlite3.Row
+                full_query = "SELECT * FROM airports ORDER BY ident"
+                full_params: tuple[Any, ...] = ()
+                if limit:
+                    full_query += " LIMIT ?"
+                    full_params = (limit,)
+                full = pd.read_sql_query(full_query, acon, params=full_params)
+            if not manual.empty:
+                # Manual rows from logbook.sqlite have priority over fixed world DB.
+                full = full[~full["ident"].astype(str).str.upper().isin(manual["ident"].astype(str).str.upper())]
+                return pd.concat([manual, full], ignore_index=True).sort_values("ident")
+            return full
+        except Exception:
+            pass
+    return manual
+
+
+@st.cache_data(show_spinner=False)
+def airport_coord_lookup() -> dict[str, dict[str, Any]]:
+    df = load_airports()
+    out: dict[str, dict[str, Any]] = {}
+    for _, row in df.iterrows():
+        lat = float_or_none(row.get("latitude_deg"))
+        lon = float_or_none(row.get("longitude_deg"))
+        if lat is None or lon is None:
             continue
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            continue
-        ident = ident.upper()
-        lookup[ident] = {
-            "ident": ident,
-            "name": normalize_text(row.get("name")) or ident,
-            "lat": lat,
-            "lon": lon,
-            "source": normalize_text(row.get("source")) or "",
+        keys = {normalize_text(row.get("ident")), normalize_text(row.get("gps_code")), normalize_text(row.get("iata_code")), normalize_text(row.get("local_code"))}
+        for key in keys:
+            if key:
+                out[key.upper()] = {"lat": lat, "lon": lon, "ident": normalize_text(row.get("ident")), "name": row.get("name")}
+    return out
+
+
+def read_track_points(track_id: int) -> list[dict[str, Any]]:
+    with connect() as con:
+        initialize_database(con)
+        rows = con.execute("SELECT * FROM track_points WHERE track_id=? ORDER BY seq", (track_id,)).fetchall()
+    points = []
+    for r in rows:
+        points.append({
+            "lat": r["latitude_deg"],
+            "lon": r["longitude_deg"],
+            "alt_m": r["altitude_m"],
+            "time_utc": r["time_utc"],
+            "segment_km": r["segment_km"],
+            "distance_km": r["distance_km"],
+            "speed_kmh": r["speed_kmh"],
+            "speed_kt": r["speed_kt"],
+            "source": r["source"],
+        })
+    return points
+
+
+@st.cache_data(show_spinner=False)
+def read_tracks_joined() -> pd.DataFrame:
+    with connect() as con:
+        initialize_database(con)
+        return pd.read_sql_query(
+            """
+            SELECT ft.*, f.date, f.registration, f.departure, f.arrival, f.role, f.evidence
+            FROM flight_tracks ft
+            JOIN flights f ON f.id = ft.flight_id
+            ORDER BY f.date, ft.id
+            """,
+            con,
+        )
+
+
+@st.cache_data(show_spinner=False)
+def read_audit_log(limit: int = 200) -> pd.DataFrame:
+    with connect() as con:
+        initialize_database(con)
+        return pd.read_sql_query("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", con, params=(limit,))
+
+
+# -----------------------------------------------------------------------------
+# Writes
+# -----------------------------------------------------------------------------
+
+def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]]) -> None:
+    con.execute("DELETE FROM track_points WHERE track_id=?", (track_id,))
+    for i, p in enumerate(points):
+        con.execute(
+            """
+            INSERT INTO track_points
+            (track_id, seq, time_utc, latitude_deg, longitude_deg, altitude_m, segment_km, distance_km, speed_kmh, speed_kt, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                track_id, i, p.get("time_utc"), p.get("lat"), p.get("lon"), p.get("alt_m"),
+                p.get("segment_km"), p.get("distance_km"), p.get("speed_kmh"), p.get("speed_kt"), p.get("source"),
+            ),
+        )
+
+
+def save_track_for_flight(flight_id: int, file_name: str, points: list[dict[str, Any]]) -> int:
+    points = enrich_points(points, points[0].get("source", "kml") if points else "kml")
+    metrics = compute_track_metrics(points)
+    with connect() as con:
+        initialize_database(con)
+        con.execute(
+            """
+            INSERT INTO flight_tracks
+            (flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                flight_id, file_name, _now_iso(), len(points), metrics["distance_km"], metrics["start_utc"], metrics["end_utc"],
+                metrics["min_alt_m"], metrics["max_alt_m"], json.dumps(points),
+            ),
+        )
+        track_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+        insert_track_points(con, track_id, points)
+        record_audit(con, "add_track", "flight", flight_id, {"file": file_name, "points": len(points), "distance_km": metrics["distance_km"]})
+        con.commit()
+    invalidate_cached_data()
+    auto_backup_after_change("track import")
+    return track_id
+
+
+def create_flight(payload: dict[str, Any]) -> int:
+    with connect() as con:
+        initialize_database(con)
+        con.execute(
+            """
+            INSERT INTO flights
+            (date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block,
+             starts, commander, instructor, role, task, price_per_hour, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload["date"], payload["evidence"], payload["registration"], payload["aircraft_type"], payload["aircraft_class"],
+                payload["departure"], payload["arrival"], payload["off_block"], payload.get("takeoff"), payload.get("landing"), payload["on_block"],
+                payload["starts"], payload["commander"], payload.get("instructor"), payload["role"], payload.get("task"),
+                payload.get("price_per_hour"), payload.get("note"),
+            ),
+        )
+        fid = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+        record_audit(con, "create_flight", "flight", fid, payload)
+        con.commit()
+    invalidate_cached_data()
+    if payload.get("track_points"):
+        save_track_for_flight(fid, payload.get("track_file_name") or "track.kml", payload["track_points"])
+    else:
+        auto_backup_after_change("flight create")
+    return fid
+
+
+def update_flight(flight_id: int, payload: dict[str, Any]) -> None:
+    with connect() as con:
+        initialize_database(con)
+        con.execute(
+            """
+            UPDATE flights SET
+                date=?, evidence=?, registration=?, aircraft_type=?, aircraft_class=?, departure=?, arrival=?, off_block=?, takeoff=?, landing=?, on_block=?,
+                starts=?, commander=?, instructor=?, role=?, task=?, price_per_hour=?, note=?
+            WHERE id=?
+            """,
+            (
+                payload["date"], payload["evidence"], payload["registration"], payload["aircraft_type"], payload["aircraft_class"],
+                payload["departure"], payload["arrival"], payload["off_block"], payload.get("takeoff"), payload.get("landing"), payload["on_block"],
+                payload["starts"], payload["commander"], payload.get("instructor"), payload["role"], payload.get("task"), payload.get("price_per_hour"), payload.get("note"), flight_id,
+            ),
+        )
+        record_audit(con, "update_flight", "flight", flight_id, payload)
+        con.commit()
+    invalidate_cached_data()
+    auto_backup_after_change("flight update")
+
+
+def delete_track(track_id: int, flight_id: int | None = None) -> None:
+    with connect() as con:
+        initialize_database(con)
+        con.execute("DELETE FROM flight_tracks WHERE id=?", (track_id,))
+        record_audit(con, "delete_track", "track", track_id, {"flight_id": flight_id})
+        con.commit()
+    invalidate_cached_data()
+    auto_backup_after_change("track delete")
+
+
+def delete_flight(flight_id: int) -> None:
+    with connect() as con:
+        initialize_database(con)
+        row = con.execute("SELECT * FROM flights WHERE id=?", (flight_id,)).fetchone()
+        if row is None:
+            raise RuntimeError(f"Let ID {flight_id} neexistuje.")
+        snapshot = dict(row)
+        track_count = con.execute("SELECT COUNT(*) FROM flight_tracks WHERE flight_id=?", (flight_id,)).fetchone()[0]
+        con.execute("DELETE FROM flights WHERE id=?", (flight_id,))
+        record_audit(con, "delete_flight", "flight", flight_id, {"flight": snapshot, "deleted_tracks": track_count})
+        con.commit()
+    invalidate_cached_data()
+    auto_backup_after_change("flight delete")
+
+
+# -----------------------------------------------------------------------------
+# Filters and metrics
+# -----------------------------------------------------------------------------
+
+def apply_filters(df: pd.DataFrame, key_prefix: str = "main") -> pd.DataFrame:
+    if df.empty:
+        return df
+    with st.expander("Filtry", expanded=False):
+        years = sorted(df["date"].astype(str).str[:4].dropna().unique().tolist())
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            selected_years = st.multiselect("Rok", years, default=years, key=f"{key_prefix}_years")
+        with c2:
+            evidence = st.multiselect("Evidence", sorted(df["evidence"].dropna().unique()), default=sorted(df["evidence"].dropna().unique()), key=f"{key_prefix}_evidence")
+        with c3:
+            roles = st.multiselect("Funkce", sorted(df["role"].dropna().unique()), default=sorted(df["role"].dropna().unique()), key=f"{key_prefix}_roles")
+        with c4:
+            regs = st.multiselect("Letadlo", sorted(df["registration"].dropna().unique()), default=sorted(df["registration"].dropna().unique()), key=f"{key_prefix}_regs")
+        text = st.text_input("Hledat", key=f"{key_prefix}_text")
+    out = df.copy()
+    if selected_years:
+        out = out[out["date"].astype(str).str[:4].isin(selected_years)]
+    if evidence:
+        out = out[out["evidence"].isin(evidence)]
+    if roles:
+        out = out[out["role"].isin(roles)]
+    if regs:
+        out = out[out["registration"].isin(regs)]
+    if text:
+        t = text.lower()
+        searchable = out[["registration", "aircraft_type", "departure", "arrival", "commander", "task", "note"]].fillna("").agg(" ".join, axis=1).str.lower()
+        out = out[searchable.str.contains(t, regex=False)]
+    return out
+
+
+def metric_card(title: str, value: str, sub: str = "") -> None:
+    st.markdown(
+        f"""
+        <div class=\"metric-card\">
+          <div class=\"metric-title\">{title}</div>
+          <div class=\"metric-value\">{value}</div>
+          <div class=\"metric-sub\">{sub}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def detail_link(flight_id: int) -> str:
+    return f"?page=detail&flight_id={int(flight_id)}"
+
+
+# -----------------------------------------------------------------------------
+# Styling
+# -----------------------------------------------------------------------------
+
+def apply_ui_theme(dark_mode: bool = True) -> None:
+    if not dark_mode:
+        return
+    st.markdown(
+        """
+        <style>
+        :root {
+            --bg: #07111f;
+            --panel: #0d1b2e;
+            --panel2: #10243d;
+            --border: #294967;
+            --text: #f8fbff;
+            --muted: #8fb3d9;
+            --accent: #38bdf8;
+            --accent2: #22d3ee;
+            --good: #22c55e;
+            --warn: #f59e0b;
+            --bad: #ef4444;
         }
-    return lookup
+        .stApp {
+            background:
+                radial-gradient(circle at top left, rgba(56,189,248,.12), transparent 26rem),
+                linear-gradient(115deg, #07111f 0%, #07111f 42%, #08262f 100%);
+            color: var(--text);
+        }
+        header[data-testid="stHeader"] { background: rgba(7,17,31,.0); }
+        [data-testid="stSidebar"] { background: linear-gradient(180deg, #0a1930 0%, #07111f 100%); border-right: 1px solid rgba(148,163,184,.18); }
+        [data-testid="stSidebar"] * { color: #f8fbff !important; }
+        .main .block-container { max-width: 1240px; padding-top: 2rem; padding-bottom: 3rem; }
+        .hero {
+            padding: 1.5rem 1.75rem;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(16,36,61,.95), rgba(13,27,46,.72));
+            box-shadow: 0 18px 45px rgba(0,0,0,.28);
+            margin-bottom: 1.6rem;
+        }
+        .hero h1 { margin:0; font-size:1.5rem; }
+        .hero p { margin:.25rem 0 0 0; color:var(--muted); }
+        .version-badge { float:right; padding:.45rem .75rem; background: #67e8f9; color:#06202b !important; border-radius: 999px; font-weight: 800; font-size: .78rem; }
+        .sidebar-version { color:#8fb3d9 !important; font-size:.78rem; margin-top:-.8rem; margin-bottom:1.2rem; }
+        .metric-card {
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(16,36,61,.92), rgba(13,27,46,.92));
+            border-radius: .95rem;
+            padding: 1rem 1.1rem;
+            min-height: 6.2rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,.22);
+        }
+        .metric-title { color:#93c5fd; font-size:.72rem; text-transform:uppercase; font-weight:800; letter-spacing:.08em; }
+        .metric-value { color:#f8fbff; font-size:1.62rem; font-weight:900; margin-top:.35rem; }
+        .metric-sub { color:var(--muted); font-size:.82rem; margin-top:.25rem; }
+        .stButton > button, .stDownloadButton > button {
+            border-radius:.65rem !important; border:1px solid var(--border) !important; background:#10243d !important; color:#f8fbff !important; font-weight:800 !important;
+        }
+        .stButton > button:hover, .stDownloadButton > button:hover { border-color:var(--accent) !important; color:#e0f7ff !important; }
+        div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] { border:1px solid rgba(148,163,184,.18); border-radius:.8rem; overflow:hidden; }
+        .flight-row {
+            display:grid;
+            grid-template-columns: 4.7rem 6rem 4.8rem 6.7rem 5.1rem 5.1rem 3.2rem 6rem 1fr 5.3rem 4.5rem;
+            gap:.45rem; align-items:center;
+            padding:.7rem .65rem; border-bottom:1px solid rgba(148,163,184,.13);
+            font-size:.86rem;
+        }
+        .flight-row:hover { background:rgba(56,189,248,.055); }
+        .flight-head { color:#93c5fd; font-size:.72rem; text-transform:uppercase; font-weight:900; letter-spacing:.05em; }
+        .pill { display:inline-block; padding:.16rem .45rem; border-radius:999px; border:1px solid rgba(148,163,184,.24); background:rgba(15,23,42,.5); font-size:.75rem; color:#dbeafe; }
+        .small-muted { color:var(--muted); font-size:.76rem; }
+        .danger-zone { border:1px solid rgba(239,68,68,.45); border-radius:.9rem; padding:1rem; background:rgba(127,29,29,.18); }
+        div[data-testid="stForm"] { border: 1px solid rgba(148,163,184,.16); border-radius: 1rem; padding: 1rem; background: rgba(13,27,46,.45); }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-def airport_coord(ident: Any) -> dict[str, Any] | None:
-    text = normalize_text(ident)
-    if not text:
-        return None
-    return airport_coord_lookup().get(text.upper())
+def render_hero() -> None:
+    st.markdown(
+        f"""
+        <div class=\"hero\">
+          <span class=\"version-badge\">{APP_VERSION}</span>
+          <h1>Letový zápisník</h1>
+          <p>Lokální pilotní evidence • ULL / EASA • náklady • GPS tracky</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
+
+# -----------------------------------------------------------------------------
+# Forms
+# -----------------------------------------------------------------------------
+
+def registration_options() -> list[str]:
+    aircraft = load_aircraft()
+    opts = aircraft[aircraft["active"].fillna(1).astype(int).eq(1)]["registration"].dropna().astype(str).tolist() if not aircraft.empty else []
+    return sorted(set(opts))
+
+
+def airport_options() -> list[str]:
+    df = load_airports()
+    if df.empty:
+        return ["LKSZ", "LKLT", "LKPR", "VFR"]
+    return sorted(df["ident"].dropna().astype(str).unique().tolist())
+
+
+def airport_label_map() -> dict[str, str]:
+    df = load_airports()
+    labels = {}
+    for _, r in df.iterrows():
+        ident = normalize_text(r.get("ident"))
+        if ident:
+            labels[ident] = f"{ident} • {r.get('name') or ''}"
+    return labels
+
+
+def default_aircraft_payload(registration: str) -> dict[str, Any]:
+    aircraft = load_aircraft()
+    row = aircraft[aircraft["registration"].eq(registration)].head(1)
+    if row.empty:
+        return {}
+    return row.iloc[0].to_dict()
+
+
+def flight_form(defaults: dict[str, Any] | None = None, key_prefix: str = "flight") -> dict[str, Any] | None:
+    defaults = defaults or {}
+    regs = registration_options()
+    airports = airport_options()
+    labels = airport_label_map()
+    reg_default = defaults.get("registration") or (regs[0] if regs else "")
+    with st.form(f"{key_prefix}_form"):
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            d = st.date_input("Datum", value=pd.to_datetime(defaults.get("date") or date.today()).date(), key=f"{key_prefix}_date")
+        with c2:
+            evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(defaults.get("evidence")) if defaults.get("evidence") in EVIDENCE_OPTIONS else 0, key=f"{key_prefix}_evidence")
+        with c3:
+            role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(defaults.get("role")) if defaults.get("role") in ROLE_OPTIONS else 0, key=f"{key_prefix}_role")
+        with c4:
+            starts = st.number_input("Starty", min_value=0, max_value=50, value=int(defaults.get("starts") or 1), step=1, key=f"{key_prefix}_starts")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            registration = st.selectbox("Imatrikulace", options=regs or [reg_default], index=(regs.index(reg_default) if reg_default in regs else 0), key=f"{key_prefix}_registration")
+        ac = default_aircraft_payload(registration)
+        with c2:
+            aircraft_type = st.text_input("Typ", value=defaults.get("aircraft_type") or ac.get("aircraft_type") or "", key=f"{key_prefix}_type")
+        with c3:
+            aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(defaults.get("aircraft_class") or ac.get("aircraft_class")) if (defaults.get("aircraft_class") or ac.get("aircraft_class")) in CLASS_OPTIONS else 0, key=f"{key_prefix}_class")
+        with c4:
+            price = st.number_input("Cena Kč/h", min_value=0.0, value=float(defaults.get("price_per_hour") or ac.get("default_price_per_hour") or 0), step=50.0, key=f"{key_prefix}_price")
+        c1, c2, c3, c4 = st.columns(4)
+        dep_default = defaults.get("departure") or "LKSZ"
+        arr_default = defaults.get("arrival") or dep_default
+        with c1:
+            dep = st.selectbox("Odlet", airports or [dep_default], index=(airports.index(dep_default) if dep_default in airports else 0), format_func=lambda x: labels.get(x, x), key=f"{key_prefix}_dep")
+        with c2:
+            arr = st.selectbox("Přílet", airports or [arr_default], index=(airports.index(arr_default) if arr_default in airports else 0), format_func=lambda x: labels.get(x, x), key=f"{key_prefix}_arr")
+        with c3:
+            off_block = st.text_input("Off-block", value=defaults.get("off_block") or "", placeholder="HH:MM", key=f"{key_prefix}_off")
+        with c4:
+            on_block = st.text_input("On-block", value=defaults.get("on_block") or "", placeholder="HH:MM", key=f"{key_prefix}_on")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            takeoff = st.text_input("Take-off", value=defaults.get("takeoff") or "", placeholder="volitelné", key=f"{key_prefix}_to")
+        with c2:
+            landing = st.text_input("Landing", value=defaults.get("landing") or "", placeholder="volitelné", key=f"{key_prefix}_ldg")
+        with c3:
+            commander = st.text_input("Velitel", value=defaults.get("commander") or "Točík Filip", key=f"{key_prefix}_cmd")
+        instructor = st.text_input("Instruktor / safety pilot", value=defaults.get("instructor") or "", key=f"{key_prefix}_instr")
+        task = st.text_input("Úloha / trať", value=defaults.get("task") or "", key=f"{key_prefix}_task")
+        note = st.text_area("Poznámka", value=defaults.get("note") or "", key=f"{key_prefix}_note", height=90)
+        submitted = st.form_submit_button("Uložit", type="primary", disabled=not is_admin())
+    if submitted:
+        if not require_admin():
+            return None
+        if not parse_hhmm(off_block) or not parse_hhmm(on_block):
+            st.error("Off-block a on-block musí být ve formátu HH:MM.")
+            return None
+        return {
+            "date": d.isoformat(), "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type,
+            "aircraft_class": aircraft_class, "departure": dep, "arrival": arr, "off_block": off_block, "takeoff": takeoff,
+            "landing": landing, "on_block": on_block, "starts": starts, "commander": commander, "instructor": instructor,
+            "role": role, "task": task, "price_per_hour": price, "note": note,
+        }
+    return None
+
+
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
+
+def build_excel_export(flights: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Lety"
+    headers = ["Datum", "Evidence", "Imatrikulace", "Typ", "Třída", "Odlet", "Přílet", "Off-block", "Take-off", "Landing", "On-block", "Block", "Air", "Starty", "Velitel", "Instruktor", "Funkce", "Úloha", "Cena Kč/h", "Náklad", "Poznámka"]
+    ws.append(headers)
+    for _, r in flights.iterrows():
+        ws.append([
+            r.get("date"), r.get("evidence"), r.get("registration"), r.get("aircraft_type"), r.get("aircraft_class"), r.get("departure"), r.get("arrival"),
+            r.get("off_block"), r.get("takeoff"), r.get("landing"), r.get("on_block"), r.get("block_time"), r.get("air_time"), r.get("starts"),
+            r.get("commander"), r.get("instructor"), r.get("role"), r.get("task"), r.get("price_per_hour"), r.get("cost"), r.get("note"),
+        ])
+    fill = PatternFill("solid", fgColor="0F2740")
+    font = Font(color="FFFFFF", bold=True)
+    side = Side(style="thin", color="B7C9D9")
+    for cell in ws[1]:
+        cell.fill = fill; cell.font = font; cell.alignment = Alignment(horizontal="center"); cell.border = Border(bottom=side)
+    ws.auto_filter.ref = ws.dimensions
+    ws.freeze_panes = "A2"
+    for col in range(1, ws.max_column + 1):
+        letter = get_column_letter(col)
+        max_len = max(len(str(ws.cell(row=r, column=col).value or "")) for r in range(1, min(ws.max_row, 1000) + 1))
+        ws.column_dimensions[letter].width = min(max(max_len + 2, 10), 26)
+    bio = BytesIO(); wb.save(bio); return bio.getvalue()
+
+
+def build_backup_zip() -> bytes:
+    import zipfile
+    checkpoint_database()
+    bio = BytesIO()
+    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as z:
+        if DB_PATH.exists():
+            z.write(DB_PATH, "logbook.sqlite")
+        if AIRPORTS_DB_PATH.exists():
+            z.write(AIRPORTS_DB_PATH, "airports_full.sqlite")
+        z.writestr("README.txt", "Záloha letového zápisníku. logbook.sqlite obsahuje živá data letů a tracků.\n")
+    return bio.getvalue()
+
+
+# -----------------------------------------------------------------------------
+# Pages
+# -----------------------------------------------------------------------------
+
+def page_dashboard(flights: pd.DataFrame):
+    st.markdown("## Dashboard")
+    filtered = apply_filters(flights, "dash")
+    c1, c2, c3, c4 = st.columns(4)
+    total_min = int(filtered["block_minutes"].sum()) if not filtered.empty else 0
+    pic_min = int(filtered["pic_minutes"].sum()) if not filtered.empty else 0
+    dual_min = int(filtered["dual_minutes"].sum()) if not filtered.empty else 0
+    safety_min = int(filtered["safety_minutes"].sum()) if not filtered.empty else 0
+    total_cost = float(filtered["cost"].sum()) if not filtered.empty else 0
+    with c1: metric_card("Celkový nálet", minutes_to_hhmm(total_min), f"{len(filtered)} letů")
+    with c2:
+        ull_pic = int(filtered.loc[filtered["evidence"].eq("ULL"), "pic_minutes"].sum()) if not filtered.empty else 0
+        easa_pic = int(filtered.loc[filtered["evidence"].eq("EASA"), "pic_minutes"].sum()) if not filtered.empty else 0
+        metric_card("PIC", minutes_to_hhmm(pic_min), f"ULL {minutes_to_hhmm(ull_pic)} • EASA {minutes_to_hhmm(easa_pic)}")
+    with c3: metric_card("Dual / Safety", f"{minutes_to_hhmm(dual_min)} / {minutes_to_hhmm(safety_min)}", f"Starty {int(filtered['starts'].sum()) if not filtered.empty else 0}")
+    tracks = read_tracks_joined()
+    gps_km = tracks[tracks["flight_id"].isin(filtered["id"].tolist())]["distance_km"].fillna(0).sum() if not tracks.empty and not filtered.empty else 0
+    with c4: metric_card("Náklady", f"{total_cost:,.0f} Kč".replace(",", " "), f"GPS {len(tracks)} tracků • {gps_km:.0f} km")
+    if filtered.empty:
+        st.info("Filtr neobsahuje žádné lety.")
+        return
+    yearly = filtered.copy()
+    yearly["year"] = yearly["date"].astype(str).str[:4]
+    yr = yearly.groupby("year", as_index=False)[["pic_minutes", "dual_minutes", "safety_minutes"]].sum()
+    yr_long = yr.melt("year", var_name="variable", value_name="minutes")
+    yr_long["value"] = yr_long["minutes"] / 60
+    yr_long["variable"] = yr_long["variable"].map({"pic_minutes":"PIC", "dual_minutes":"DUAL", "safety_minutes":"SAFETY PILOT"})
+    fig = px.bar(yr_long, x="year", y="value", color="variable", title="Nálet podle roku a funkce", barmode="stack")
+    fig.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=390)
+    st.plotly_chart(fig, use_container_width=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        top = filtered.groupby("registration", as_index=False)["block_minutes"].sum().sort_values("block_minutes", ascending=False).head(10)
+        top["hours"] = top["block_minutes"] / 60
+        fig2 = px.bar(top, x="registration", y="hours", title="TOP letadla podle block time")
+        fig2.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350)
+        st.plotly_chart(fig2, use_container_width=True)
+    with c2:
+        ev = filtered.groupby("evidence", as_index=False)["block_minutes"].sum()
+        ev["hours"] = ev["block_minutes"] / 60
+        fig3 = px.pie(ev, values="hours", names="evidence", title="ULL / EASA", hole=.45)
+        fig3.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", height=350)
+        st.plotly_chart(fig3, use_container_width=True)
+
+
+def render_flight_list(filtered: pd.DataFrame) -> None:
+    if filtered.empty:
+        st.info("Žádné lety pro aktuální filtr.")
+        return
+    per_page_options = [15, 25, 50, 100, "vše"]
+    c1, c2 = st.columns([1, 3])
+    with c1:
+        per_page = st.selectbox("Řádků", per_page_options, index=1, key="flights_per_page")
+    rows_per_page = len(filtered) if per_page == "vše" else int(per_page)
+    total_pages = max(1, math.ceil(len(filtered) / rows_per_page))
+    if "flights_page" not in st.session_state or st.session_state["flights_page"] > total_pages:
+        st.session_state["flights_page"] = total_pages
+    with c2:
+        page = st.number_input("Strana", min_value=1, max_value=total_pages, value=int(st.session_state["flights_page"]), step=1, key="flights_page_input")
+        st.session_state["flights_page"] = int(page)
+    start = (int(page) - 1) * rows_per_page
+    data = filtered.sort_values(["date", "off_block", "id"], ascending=[True, True, True]).iloc[start:start + rows_per_page]
+    st.caption(f"Zobrazeno {start + 1}–{min(start + rows_per_page, len(filtered))} z {len(filtered)} letů")
+    header = ["Detail", "ID", "Datum", "Evidence", "Letadlo", "Odlet", "Přílet", "Block", "Starty", "Funkce", "Velitel", "Cena", "GPS"]
+    st.markdown('<div class="flight-row flight-head">' + ''.join(f'<div>{h}</div>' for h in header[:11]) + '</div>', unsafe_allow_html=True)
+    for _, r in data.iterrows():
+        c = st.columns([.85, .7, 1.1, .9, 1.3, 1, 1, .8, .7, 1.25, 1.4, 1, .7])
+        with c[0]:
+            if st.button("Detail", key=f"detail_{int(r['id'])}"):
+                st.query_params["page"] = "detail"
+                st.query_params["flight_id"] = str(int(r["id"]))
+                st.rerun()
+        values = [int(r["id"]), r["date"], r["evidence"], r["registration"], r["departure"], r["arrival"], r["block_time"], int(r["starts"]), r["role"], r["commander"], f"{r['cost']:.0f}"]
+        for col, val in zip(c[1:12], values):
+            with col:
+                st.markdown(f"<span class='small-muted'>{val}</span>", unsafe_allow_html=True)
+        with c[12]:
+            st.markdown("✓" if int(r.get("id")) in set(read_tracks_joined()["flight_id"].tolist()) else "", unsafe_allow_html=True)
+
+
+def page_flights(flights: pd.DataFrame):
+    st.markdown("## Lety")
+    filtered = apply_filters(flights, "flights")
+    render_flight_list(filtered)
+
+
+def render_flight_detail(flight_id: int, flights: pd.DataFrame, dark_mode: bool):
+    match = flights[flights["id"].eq(flight_id)]
+    if match.empty:
+        st.error("Let nebyl nalezen.")
+        if st.button("Zpět na lety"):
+            st.query_params["page"] = "Lety"
+            st.rerun()
+        return
+    r = match.iloc[0]
+    st.markdown(f"## Detail letu #{flight_id}")
+    if st.button("← Zpět na seznam letů"):
+        st.query_params["page"] = "Lety"
+        st.query_params.pop("flight_id", None)
+        st.rerun()
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: metric_card("Datum", str(r["date"]), str(r["evidence"]))
+    with c2: metric_card("Letadlo", str(r["registration"]), str(r["aircraft_type"]))
+    with c3: metric_card("Trať", f"{r['departure']} → {r['arrival']}", f"{r['off_block']}–{r['on_block']}")
+    with c4: metric_card("Block / Air", f"{r['block_time']} / {r['air_time']}", f"{r['role']} • starty {r['starts']}")
+    tab1, tab2, tab3, tab4 = st.tabs(["Přehled", "Editace", "Track", "Smazání"])
+    with tab1:
+        st.write({
+            "Velitel": r.get("commander"), "Instruktor": r.get("instructor"), "Úloha": r.get("task"),
+            "Cena Kč/h": r.get("price_per_hour"), "Náklad": r.get("cost"), "Poznámka": r.get("note"),
+        })
+    with tab2:
+        payload = flight_form(r.to_dict(), key_prefix=f"edit_{flight_id}")
+        if payload:
+            update_flight(flight_id, payload)
+            st.success("Let uložen.")
+            st.rerun()
+    with tab3:
+        flight_tracks = read_tracks_joined()
+        flight_tracks = flight_tracks[flight_tracks["flight_id"].eq(flight_id)] if not flight_tracks.empty else pd.DataFrame()
+        if not flight_tracks.empty:
+            st.subheader("Uložené tracky")
+            joined = flight_tracks.copy()
+            for _, tr in joined.iterrows():
+                cols = st.columns([2, 1, 1, 1])
+                cols[0].write(f"{tr['file_name']} • {tr['point_count']} bodů")
+                cols[1].write(f"{float(tr['distance_km'] or 0):.1f} km")
+                cols[2].write(f"{iso_to_local_time(tr['start_utc'])}–{iso_to_local_time(tr['end_utc'])}")
+                with cols[3]:
+                    if st.button("Smazat track", key=f"deltrack_{int(tr['id'])}", disabled=not is_admin()):
+                        if require_admin():
+                            delete_track(int(tr["id"]), flight_id)
+                            st.success("Track smazán.")
+                            st.rerun()
+            render_folium_readonly(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
+            first_track_id = int(joined.iloc[0]["id"])
+            points = read_track_points(first_track_id)
+            render_track_profile(points)
+        uploaded = st.file_uploader("Nahrát KML track k tomuto letu", type=["kml"], key=f"track_upload_{flight_id}")
+        if uploaded is not None:
+            try:
+                points, source = parse_kml_points(uploaded.read())
+                if len(points) < 2:
+                    st.error("KML neobsahuje dostatek bodů.")
+                else:
+                    preview = pd.DataFrame([{"coordinates_json": json.dumps(points), "flight_id": flight_id, "date": r["date"], "registration": r["registration"], "departure": r["departure"], "arrival": r["arrival"], "role": r["role"], "evidence": r["evidence"], "distance_km": compute_track_metrics(points)["distance_km"], "file_name": uploaded.name}])
+                    st.success(f"Detekován zdroj: {source}. Načteno {len(points)} bodů, vzdálenost {compute_track_metrics(points)['distance_km']:.1f} km.")
+                    render_folium_readonly(make_map(preview, dark_mode), height=360, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
+                    if st.button("Uložit track", type="primary", key=f"save_track_{flight_id}", disabled=not is_admin()):
+                        if require_admin():
+                            save_track_for_flight(flight_id, uploaded.name, points)
+                            st.success("Track uložen.")
+                            st.rerun()
+            except Exception as exc:
+                st.error(f"KML se nepodařilo načíst: {exc}")
+    with tab4:
+        st.markdown("<div class='danger-zone'>", unsafe_allow_html=True)
+        st.subheader("Smazat celý let")
+        st.warning("Smazání je trvalé. Odstraní se let i všechny připojené GPS tracky.")
+        confirm = st.text_input(f"Pro potvrzení napiš ID letu: {flight_id}", key=f"delete_confirm_{flight_id}")
+        if st.button("Trvale smazat let", type="primary", disabled=not is_admin(), key=f"delete_flight_{flight_id}"):
+            if require_admin():
+                if confirm.strip() == str(flight_id):
+                    delete_flight(flight_id)
+                    st.success(f"Let #{flight_id} byl smazán.")
+                    st.query_params["page"] = "Lety"
+                    st.query_params.pop("flight_id", None)
+                    st.rerun()
+                else:
+                    st.error("Potvrzení nesouhlasí s ID letu.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def page_add_flight(dark_mode: bool):
+    st.markdown("## Přidat let")
+    method = st.radio("Způsob zadání", ["Ručně", "Z KML"], horizontal=True)
+    if method == "Ručně":
+        payload = flight_form(key_prefix="new_manual")
+        if payload:
+            fid = create_flight(payload)
+            st.success(f"Let uložen jako ID {fid}.")
+            st.rerun()
+    else:
+        uploaded = st.file_uploader("KML z ADSBExchange / Flightradar24", type=["kml"])
+        if uploaded is None:
+            st.info("Nahraj KML soubor. Aplikace z něj zkusí odhadnout časy a track.")
+            return
+        try:
+            raw = uploaded.read()
+            points, source = parse_kml_points(raw)
+        except Exception as exc:
+            st.error(f"KML se nepodařilo načíst: {exc}")
+            return
+        if len(points) < 2:
+            st.error("KML neobsahuje dostatek bodů.")
+            return
+        metrics = compute_track_metrics(points)
+        st.success(f"Detekován zdroj: {source}. Načteno {len(points)} bodů, GPS vzdálenost {metrics['distance_km']:.1f} km.")
+        start_local = iso_to_local_time(metrics.get("start_utc"))
+        end_local = iso_to_local_time(metrics.get("end_utc"))
+        defaults = {
+            "date": datetime.now(LOCAL_TZ).date().isoformat(), "departure": "LKSZ", "arrival": "LKSZ", "off_block": start_local, "takeoff": start_local,
+            "landing": end_local, "on_block": end_local, "registration": registration_options()[0] if registration_options() else "",
+            "evidence": "ULL", "role": "PIC", "starts": 1,
+        }
+        st.caption("Zkontroluj návrh před uložením. Časy z FR24 mohou odpovídat prvnímu a poslednímu dostupnému bodu, ne vždy skutečnému off/on-block.")
+        payload = flight_form(defaults, key_prefix="new_kml")
+        preview_df = pd.DataFrame([{"coordinates_json": json.dumps(points), "flight_id": 0, "date": defaults["date"], "registration": defaults["registration"], "departure": defaults["departure"], "arrival": defaults["arrival"], "role": defaults["role"], "evidence": defaults["evidence"], "distance_km": metrics["distance_km"], "file_name": uploaded.name}])
+        render_folium_readonly(make_map(preview_df, dark_mode), height=420, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
+        render_track_profile(points)
+        if payload:
+            payload["track_points"] = points
+            payload["track_file_name"] = uploaded.name
+            fid = create_flight(payload)
+            st.success(f"Let uložen jako ID {fid} včetně tracku.")
+            st.rerun()
+
+
+# -----------------------------------------------------------------------------
+# Maps
+# -----------------------------------------------------------------------------
 
 def _coord_dict_from_airport(ap: dict[str, Any] | None) -> dict[str, Any] | None:
     if not ap:
         return None
-    return {"lat": float(ap["lat"]), "lon": float(ap["lon"]), "alt": None, "time": None}
+    try:
+        return {"lat": float(ap["lat"]), "lon": float(ap["lon"]), "alt_m": None, "time_utc": None, "source": "airport_extension"}
+    except Exception:
+        return None
 
 
 def track_latlon_with_airport_extensions(
     row: pd.Series | dict[str, Any],
     points: list[dict[str, Any]],
-    min_gap_km: float = 0.35,
+    min_gap_km: float = 0.65,
 ) -> tuple[list[tuple[float, float]], list[dict[str, Any]]]:
-    """Return a visual route extended to manually/automatically selected airports.
+    """Return visual track coordinates extended by direct airport connectors.
 
-    KML from phones/trackers sometimes starts after departure or ends before
-    arrival. We do not alter the stored GPS points or calculated GPS distance;
-    only the map display gets a direct connector from/to known airports.
+    The returned airport connectors are only for visual map continuity. They are
+    not written back into GPS points and they do not affect stored GPS distance.
     """
     if not points:
         return [], []
+    lookup = airport_coord_lookup()
+    dep = normalize_text(row.get("departure")) if hasattr(row, "get") else ""
+    arr = normalize_text(row.get("arrival")) if hasattr(row, "get") else ""
+    dep_ap = lookup.get(dep.upper()) if dep else None
+    arr_ap = lookup.get(arr.upper()) if arr else None
 
     visual_points = [dict(p) for p in points]
     extensions: list[dict[str, Any]] = []
-
-    dep_ap = airport_coord(row.get("departure") if hasattr(row, "get") else None)
-    arr_ap = airport_coord(row.get("arrival") if hasattr(row, "get") else None)
 
     if dep_ap and visual_points:
         dep_pt = _coord_dict_from_airport(dep_ap)
@@ -1999,7 +1813,7 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
             {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
-            <a href="{link}" target="_self">Otevřít detail letu</a>
+            <a href="{link}" target="_top" rel="noopener">Otevřít detail letu</a>
             """, max_width=320)
         folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
 
@@ -2011,6 +1825,28 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
     folium.LayerControl().add_to(m)
     return m
 
+
+def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
+    """Render a Folium map without returning pan/zoom/click state to Streamlit.
+
+    streamlit-folium normally sends viewport changes back to Python. That is useful
+    for editable maps, but here the maps are read-only. Returning viewport changes
+    causes a full Streamlit rerun while the user drags/zooms the map, which makes
+    the page look dark/disabled and feels slow.  returned_objects=[] keeps the map
+    fully interactive in the browser but prevents those unnecessary reruns.
+    """
+    try:
+        st_folium(
+            m,
+            height=height,
+            use_container_width=True,
+            key=key,
+            returned_objects=[],
+        )
+    except TypeError:
+        # Fallback for older streamlit-folium versions. It is still read-only and
+        # avoids returning map state to Streamlit.
+        components.html(m.get_root().render(), height=height, scrolling=False)
 
 def render_track_profile(points: list[dict[str, Any]]) -> None:
     prof = profile_from_points(points)
@@ -2024,463 +1860,35 @@ def render_track_profile(points: list[dict[str, Any]]) -> None:
     fig.add_trace(
         go.Scatter(
             x=x,
-            y=prof["alt_ft"],
+            y=prof["alt_m"],
+            name="Výška m",
             mode="lines",
-            name="Altitude ft",
-            line=dict(color="#38bdf8", width=2.4),
-            hovertemplate="%{x}<br>Altitude: %{y:.0f} ft<extra></extra>",
+            line=dict(width=2),
+            yaxis="y1",
         )
     )
-    speed_values = pd.to_numeric(prof.get("speed_smooth"), errors="coerce") if "speed_smooth" in prof else pd.Series(dtype=float)
-    has_speed = speed_values.notna().any()
-    if has_speed:
+    if "speed_kt" in prof and prof["speed_kt"].notna().any():
         fig.add_trace(
             go.Scatter(
                 x=x,
-                y=speed_values,
+                y=prof["speed_kt"],
+                name="GS kt",
                 mode="lines",
-                name="GPS speed km/h",
+                line=dict(width=2, dash="dot"),
                 yaxis="y2",
-                line=dict(color="#f59e0b", width=2.2),
-                hovertemplate="%{x}<br>Speed: %{y:.0f} km/h<extra></extra>",
             )
         )
     fig.update_layout(
-        title="Profil letu",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=360,
         xaxis_title=x_title,
-        yaxis=dict(title="Altitude ft", rangemode="tozero"),
-        yaxis2=dict(title="GPS speed km/h", overlaying="y", side="right", rangemode="tozero"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis=dict(title="Výška m", side="left"),
+        yaxis2=dict(title="GS kt", overlaying="y", side="right", showgrid=False),
+        legend=dict(orientation="h"),
     )
-    st.plotly_chart(plotly_layout(fig), use_container_width=True)
-    if not has_speed:
-        st.caption("GPS speed nelze pro tento track spočítat, protože KML nemá použitelné časové značky mezi body nebo jsou všechny rychlosti odfiltrované jako neplatné.")
-
-
-# -----------------------------------------------------------------------------
-# Pages
-# -----------------------------------------------------------------------------
-
-def page_dashboard(df: pd.DataFrame):
-    st.markdown("## Dashboard")
-    filtered = apply_filters(df, "dash")
-    s = build_summary(filtered)
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Celkový nálet", fmt_minutes(s["total"]), f"{s['flights']} letů")
-    with c2: metric_card("PIC", fmt_minutes(s["pic"]), f"ULL {fmt_minutes(s['pic_ull'])} • EASA {fmt_minutes(s['pic_easa'])}")
-    with c3: metric_card("DUAL / Safety", f"{fmt_minutes(s['dual'])} / {fmt_minutes(s['safety'])}", f"Starty {s['starts']}")
-    with c4: metric_card("Náklady", fmt_money(s["cost"]), f"GPS {s['tracks']} tracků • {s['gps_km']:.0f} km")
-    st.write("")
-    chart_df = filtered.dropna(subset=["year"]).copy()
-    if chart_df.empty:
-        st.info("Žádná data pro grafy.")
-        return
-    yearly = chart_df.groupby("year", as_index=False).agg(Celkem=("block_hours", "sum"), Starty=("starts", "sum"), Naklady=("cost", "sum"))
-    role_year = chart_df.pivot_table(index="year", columns="role", values="block_hours", aggfunc="sum", fill_value=0).reset_index()
-    fig = px.bar(role_year, x="year", y=[c for c in ["PIC", "DUAL", "SAFETY PILOT", "INSTRUKTOR"] if c in role_year.columns], barmode="stack", title="Nálet podle roku a funkce")
-    st.plotly_chart(plotly_layout(fig), use_container_width=True)
-    left, right = st.columns(2)
-    with left:
-        by_aircraft = filtered.groupby("registration", as_index=False)["block_hours"].sum().sort_values("block_hours", ascending=False).head(12)
-        fig2 = px.bar(by_aircraft, x="registration", y="block_hours", title="TOP letadla podle block time")
-        st.plotly_chart(plotly_layout(fig2), use_container_width=True)
-    with right:
-        by_ev = filtered.groupby("evidence", as_index=False)["block_hours"].sum().sort_values("block_hours", ascending=False)
-        fig3 = px.pie(by_ev, names="evidence", values="block_hours", title="ULL / EASA", hole=.45)
-        st.plotly_chart(plotly_layout(fig3), use_container_width=True)
-
-
-def flight_label(row: pd.Series | dict[str, Any]) -> str:
-    return f"ID {int(row['id'])} • {row.get('date') or ''} • {row.get('registration') or ''} • {row.get('departure') or ''}-{row.get('arrival') or ''} • {row.get('off_block') or ''}-{row.get('on_block') or ''} • {row.get('role') or ''}"
-
-
-def flight_display_df(df: pd.DataFrame) -> pd.DataFrame:
-    cols = ["id","date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","block_time","air_time","starts","commander","instructor","role","task","price_per_hour","cost_label","track_count","gps_km","note"]
-    rename = {"id":"ID","date":"Datum","evidence":"Evidence","registration":"Imatrikulace","aircraft_type":"Typ","aircraft_class":"Třída","departure":"Odlet","arrival":"Přílet","off_block":"Off Block","takeoff":"Takeoff","landing":"Landing","on_block":"On Block","block_time":"Block","air_time":"Air","starts":"Starty","commander":"Velitel","instructor":"Instruktor","role":"Funkce","task":"Úloha","price_per_hour":"Kč/h","cost_label":"Cena","track_count":"GPS","gps_km":"GPS km","note":"Poznámka"}
-    use = [c for c in cols if c in df.columns]
-    return df[use].rename(columns=rename)
-
-
-def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str) -> dict[str, Any] | None:
-    reg = str(defaults.get("registration") or "").upper()
-    rate = lookup_latest_rate(rates, reg)
-    default_price = defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0
-    default_type = defaults.get("aircraft_type") or rate.get("aircraft_type") or ""
-    with st.form(prefix):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            flight_date = st.date_input("Datum", value=defaults.get("date") if isinstance(defaults.get("date"), date) else pd.to_datetime(defaults.get("date") or date.today()).date(), key=f"{prefix}_date")
-            registration = st.text_input("Imatrikulace", value=reg, key=f"{prefix}_reg").upper()
-            ev_def = defaults.get("evidence") or evidence_from_registration(reg)
-            evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0, key=f"{prefix}_ev")
-            aircraft_type = st.text_input("Typ", value=str(default_type or ""), key=f"{prefix}_type")
-            cls_def = defaults.get("aircraft_class") or default_class_for(evidence)
-            aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(cls_def) if cls_def in CLASS_OPTIONS else 0, key=f"{prefix}_class")
-        with col2:
-            departure = st.text_input("Odlet", value=str(defaults.get("departure") or ""), key=f"{prefix}_dep").upper()
-            arrival = st.text_input("Přílet", value=str(defaults.get("arrival") or ""), key=f"{prefix}_arr").upper()
-            off_block = st.text_input("Off Block", value=str(defaults.get("off_block") or ""), key=f"{prefix}_off")
-            takeoff = st.text_input("Takeoff", value=str(defaults.get("takeoff") or ""), key=f"{prefix}_to")
-            landing = st.text_input("Landing", value=str(defaults.get("landing") or ""), key=f"{prefix}_ldg")
-            on_block = st.text_input("On Block", value=str(defaults.get("on_block") or ""), key=f"{prefix}_on")
-        with col3:
-            starts = st.number_input("Starty", min_value=0, step=1, value=int(defaults.get("starts") or 1), key=f"{prefix}_starts")
-            commander = st.text_input("Velitel", value=str(defaults.get("commander") or "Točík Filip"), key=f"{prefix}_cmd")
-            instructor = st.text_input("Instruktor", value=str(defaults.get("instructor") or ""), key=f"{prefix}_instr")
-            role_def = defaults.get("role") or "PIC"
-            role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0, key=f"{prefix}_role")
-            price = st.number_input("Cena Kč/h", min_value=0.0, step=50.0, value=float(default_price or 0), key=f"{prefix}_price")
-            task = st.text_input("Úloha", value=str(defaults.get("task") or ""), key=f"{prefix}_task")
-            note = st.text_input("Poznámka", value=str(defaults.get("note") or ""), key=f"{prefix}_note")
-        block = minutes_diff(off_block, on_block); air = minutes_diff(takeoff, landing)
-        c1, c2, c3 = st.columns(3)
-        with c1: metric_card("Block Time", fmt_minutes(block), "")
-        with c2: metric_card("Air Time", fmt_minutes(air), "")
-        with c3: metric_card("Cena letu", fmt_money((block or 0)/60*price), "")
-        submitted = st.form_submit_button(submit_label, type="primary", use_container_width=True)
-    if submitted:
-        return {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "note": note}
-    return None
-
-
-
-@st.dialog("Detail letu", width="large", dismissible=True, on_dismiss=clear_open_flight_dialog)
-def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
-    row = pd.Series(row_data)
-    st.markdown(f"### {flight_label(row_data)}")
-    detail_section = st.radio(
-        "Sekce detailu",
-        ["Přehled", "Editace", "Track", "Smazání"],
-        horizontal=True,
-        key=f"detail_section_{selected_id}",
-        label_visibility="collapsed",
-    )
-    if detail_section == "Přehled":
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: metric_card("Block", row.get("block_time"), f"Air {row.get('air_time')}")
-        with c2: metric_card("Trasa", f"{row.get('departure')}–{row.get('arrival')}", row.get("registration"))
-        with c3: metric_card("Funkce", row.get("role"), row.get("evidence"))
-        with c4: metric_card("Cena", row.get("cost_label"), f"GPS {int(row.get('track_count') or 0)}")
-        details = pd.DataFrame([{
-            "Datum": row.get("date"), "Evidence": row.get("evidence"), "Imatrikulace": row.get("registration"),
-            "Typ": row.get("aircraft_type"), "Třída": row.get("aircraft_class"), "Odlet": row.get("departure"),
-            "Přílet": row.get("arrival"), "Off block": row.get("off_block"), "Takeoff": row.get("takeoff"),
-            "Landing": row.get("landing"), "On block": row.get("on_block"), "Starty": row.get("starts"),
-            "Velitel": row.get("commander"), "Instruktor": row.get("instructor"), "Funkce": row.get("role"),
-            "Úloha": row.get("task"), "Kč/h": row.get("price_per_hour"), "Poznámka": row.get("note"),
-        }])
-        st.dataframe(details, hide_index=True, use_container_width=True)
-    elif detail_section == "Editace":
-        if not is_admin():
-            st.info("Editace je dostupná jen po přihlášení jako admin.")
-        else:
-            saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny")
-            if saved is not None:
-                update_flight(int(selected_id), saved)
-                st.success("Změny uloženy.")
-                clear_open_flight_dialog()
-                st.rerun()
-    elif detail_section == "Track":
-        flight_tracks = read_tracks_for_flight(int(selected_id))
-        if not flight_tracks.empty:
-            joined = read_tracks_joined()
-            st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
-            first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
-            render_track_profile(first_points)
-            show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
-            st.dataframe(show, hide_index=True, use_container_width=True)
-            del_id = st.selectbox("Smazat track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}")
-            if st.button("Smazat vybraný track", type="secondary", disabled=not is_admin(), use_container_width=True):
-                if require_admin():
-                    delete_track(int(del_id)); st.success("Track smazán."); st.rerun()
-        else:
-            st.info("K letu zatím není připojený track.")
-        uploaded = st.file_uploader("Přidat / nahradit KML track", type=["kml"], key=f"attach_track_{selected_id}")
-        if uploaded is not None:
-            try:
-                points = parse_kml_bytes(uploaded.read())
-                if len(points) >= 2:
-                    preview = pd.DataFrame([{"id": -1,"flight_id": selected_id,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": track_stats(points)["distance_km"],"date": row.get("date"),"registration": row.get("registration"),"departure": row.get("departure"),"arrival": row.get("arrival"),"role": row.get("role"),"evidence": row.get("evidence")}])
-                    st_folium(make_map(preview, dark_mode), height=360, use_container_width=True, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
-                    replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
-                    if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
-                        if require_admin():
-                            save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
-                            st.success("Track uložen."); st.rerun()
-                else:
-                    st.error("V KML nejsou použitelné body.")
-            except Exception as exc:
-                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
-    elif detail_section == "Smazání":
-        if not is_admin():
-            st.info("Mazání letu je dostupné jen po přihlášení jako admin.")
-        else:
-            st.markdown(
-                f"""
-                <div class="danger-box">
-                    <div class="danger-title">Trvalé smazání letu</div>
-                    <div class="danger-text">Tato akce smaže let ID {selected_id} ze zápisníku, včetně všech připojených KML tracků a GPS bodů. Po uložení se změna automaticky zazálohuje na GitHub, pokud je záloha zapnutá.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            confirm = st.text_input(
-                f"Pro potvrzení napiš ID letu: {selected_id}",
-                value="",
-                key=f"delete_flight_confirm_{selected_id}",
-            )
-            c_del, c_cancel = st.columns([1, 1])
-            with c_del:
-                if st.button("Trvale smazat let", type="primary", use_container_width=True, key=f"delete_flight_btn_{selected_id}"):
-                    if confirm.strip() == str(selected_id):
-                        delete_flight(int(selected_id))
-                        st.success(f"Let ID {selected_id} byl smazán.")
-                        clear_open_flight_dialog()
-                        st.rerun()
-                    else:
-                        st.error("Potvrzení nesouhlasí. Napiš přesné ID letu.")
-            with c_cancel:
-                if st.button("Nemazat", use_container_width=True, key=f"delete_flight_cancel_{selected_id}"):
-                    clear_open_flight_dialog()
-                    st.rerun()
-    if st.button("Zavřít detail", use_container_width=True):
-        clear_open_flight_dialog()
-        st.rerun()
-
-
-
-def _is_blank(value: Any) -> bool:
-    """Return True for None, NaN/NaT/pd.NA and textual empty markers.
-
-    User-added flights may have optional fields blank. The list view must never crash
-    on missing aircraft type/class, route, task, price, etc.
-    """
-    if value is None:
-        return True
-    try:
-        if pd.isna(value):
-            return True
-    except Exception:
-        pass
-    text = str(value).strip()
-    return text == "" or text.lower() in {"none", "nan", "nat", "<na>"}
-
-
-def _clean_text(value: Any) -> str:
-    return "" if _is_blank(value) else str(value).strip()
-
-
-def _safe_text(value: Any) -> str:
-    text = _clean_text(value)
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _join_nonblank(values: list[Any] | tuple[Any, ...], sep: str = " • ") -> str:
-    return sep.join(_clean_text(v) for v in values if not _is_blank(v))
-
-
-def _range_text(start: Any, end: Any, sep: str = "–") -> str:
-    left = _clean_text(start)
-    right = _clean_text(end)
-    if left and right:
-        return f"{left}{sep}{right}"
-    return left or right
-
-
-def _safe_float(value: Any, default: float = 0.0) -> float:
-    if _is_blank(value):
-        return default
-    try:
-        number = float(value)
-        if math.isnan(number) or math.isinf(number):
-            return default
-        return number
-    except Exception:
-        return default
-
-
-def _safe_int(value: Any, default: int = 0) -> int:
-    try:
-        return int(round(_safe_float(value, float(default))))
-    except Exception:
-        return default
-
-
-def _price_rate_label(value: Any) -> str:
-    if _is_blank(value):
-        return ""
-    return f"{_safe_float(value):.0f} Kč/h"
-
-
-def _cell(main: Any, sub: Any = "") -> str:
-    main_txt = _safe_text(main)
-    sub_txt = _safe_text(sub)
-    if sub_txt:
-        return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div><div class="flight-cell-sub">{sub_txt}</div></div>'
-    return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div></div>'
-
-
-def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool) -> None:
-    """Compact paginated flight list with one real Detail button per visible row.
-
-    This avoids unreliable table selection and avoids opening browser links. Only the
-    visible page gets buttons, so it stays responsive on Streamlit Cloud.
-    """
-    if table_df.empty:
-        st.info("Filtr nevrátil žádné lety.")
-        return
-
-    display_df = flight_display_df(table_df).copy()
-
-    controls = st.columns([1.0, 2.4, 1.0, 1.0])
-    with controls[0]:
-        page_size_choice = st.selectbox("Řádků", [25, 50, 100, "Vše"], index=0, key="flight_page_size_v14")
-    with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v14")
-
-    if quick_filter.strip():
-        q = quick_filter.strip().lower()
-        mask = display_df.astype(str).apply(lambda col: col.str.lower().str.contains(q, na=False)).any(axis=1)
-        shown_display = display_df[mask].copy()
-        shown_table = table_df.loc[shown_display.index].copy()
-    else:
-        shown_display = display_df.copy()
-        shown_table = table_df.copy()
-
-    shown_display = shown_display.reset_index(drop=True)
-    shown_table = shown_table.reset_index(drop=True)
-
-    total_rows = len(shown_table)
-    show_all_rows = page_size_choice == "Vše"
-    page_size = total_rows if show_all_rows else int(page_size_choice)
-    page_size = max(1, page_size)
-    page_count = max(1, math.ceil(total_rows / page_size))
-    with controls[2]:
-        if show_all_rows:
-            page = 1
-            st.text_input("Stránka", value="Vše", disabled=True, key="flight_page_all_v14")
-        else:
-            page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(int(st.session_state.get("flight_page_v14", page_count)), page_count), step=1, key="flight_page_v14")
-    with controls[3]:
-        st.markdown(f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>', unsafe_allow_html=True)
-
-    start = 0 if show_all_rows else (int(page) - 1) * page_size
-    end = total_rows if show_all_rows else start + page_size
-    page_rows = shown_table.iloc[start:end].copy()
-
-    st.markdown(
-        '<div class="flight-list-note">Detail otevřeš přímo tlačítkem u konkrétního letu. Neotvírá se nové okno prohlížeče.</div>',
-        unsafe_allow_html=True,
-    )
-
-    widths = [0.72, 0.48, 0.88, 0.62, 1.25, 1.02, 1.05, 0.82, 0.52, 0.92, 1.22, 0.92, 0.78, 0.50]
-    headers = ["Detail", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
-    hcols = st.columns(widths, gap="small", vertical_alignment="top")
-    for col, header in zip(hcols, headers):
-        col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
-
-    for _, row in page_rows.iterrows():
-        flight_id = int(row.get("id"))
-        cols = st.columns(widths, gap="small", vertical_alignment="top")
-        with cols[0]:
-            if st.button("Detail", key=f"flight_detail_btn_{flight_id}", use_container_width=True):
-                st.session_state["open_flight_dialog_id"] = flight_id
-                st.session_state["selected_flight_id"] = flight_id
-                st.session_state.pop("dismissed_flight_id", None)
-        cols[1].markdown(_cell(flight_id), unsafe_allow_html=True)
-        cols[2].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[3].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
-        aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[4].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[5].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
-        time_main = _range_text(row.get("off_block"), row.get("on_block"))
-        air_range = _range_text(row.get("takeoff"), row.get("landing"))
-        time_sub = f"Air {air_range}" if air_range else ""
-        cols[6].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[7].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[8].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[9].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[10].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[11].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
-        gps_km = _safe_float(row.get("gps_km"))
-        cols[13].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
-        st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
-
-    open_id = st.session_state.get("open_flight_dialog_id")
-    valid_ids = set(table_df["id"].astype(int).tolist())
-    if open_id is not None and int(open_id) in valid_ids:
-        dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
-        flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
-
-
-def page_logbook(df: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
-    st.markdown("## Lety")
-    filtered = apply_filters(df, "logbook")
-    s = build_summary(filtered)
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Zobrazeno", str(s["flights"]), "letů")
-    with c2: metric_card("Celkem", fmt_minutes(s["total"]), "block time")
-    with c3: metric_card("PIC", fmt_minutes(s["pic"]), "z filtrovaných letů")
-    with c4: metric_card("GPS", str(s["tracks"]), f"{s['gps_km']:.0f} km")
-
-    if filtered.empty:
-        st.info("Filtr nevrátil žádné lety.")
-        return
-
-    table_df = filtered.sort_values(["date_dt", "off_block", "id"], na_position="last").reset_index(drop=True)
-    render_flight_list(table_df, rates, dark_mode)
-
-def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
-    st.markdown("## Nový let")
-    if not is_admin():
-        st.info("Přidání letu je dostupné jen po přihlášení jako admin.")
-        return
-    tab_track, tab_manual = st.tabs(["Z tracku", "Ručně"])
-    with tab_track:
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml")
-        if uploaded is None:
-            st.info("Nahraj KML a aplikace z něj navrhne nový záznam letu.")
-        else:
-            raw = uploaded.read()
-            try:
-                points = parse_kml_bytes(raw)
-            except Exception as exc:
-                st.error(f"KML / náhled se nepodařilo zpracovat: {exc}")
-                points = []
-            if len(points) >= 2:
-                defaults = infer_from_track(points, uploaded.name, rates)
-                stats = defaults.pop("stats")
-                detect_idx = defaults.pop("detect_idx", {})
-                has_clock = defaults.pop("has_clock", False)
-                c1, c2, c3, c4 = st.columns(4)
-                with c1: metric_card("Body", str(stats["point_count"]), uploaded.name)
-                with c2: metric_card("GPS délka", f"{stats['distance_km']:.1f} km", "")
-                with c3: metric_card("Časy", f"{defaults.get('takeoff') or '—'}–{defaults.get('landing') or '—'}", "Takeoff / landing")
-                with c4: metric_card("Block", f"{defaults.get('off_block') or '—'}–{defaults.get('on_block') or '—'}", "automaticky ±5 min")
-                if has_clock:
-                    st.caption(f"Detekce z KML: takeoff index {detect_idx.get('takeoff_idx', '—')}, landing index {detect_idx.get('landing_idx', '—')}. Block time je předvyplněný jako takeoff −5 min a landing +5 min. Před uložením zkontroluj.")
-                else:
-                    st.warning("KML neobsahuje časové značky u bodů. Trasu a letiště lze odhadnout, ale časy musíš doplnit ručně.")
-                preview_df = pd.DataFrame([{"id": -1,"flight_id": -1,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": stats["distance_km"],"date": defaults.get("date"),"registration": defaults.get("registration"),"departure": defaults.get("departure"),"arrival": defaults.get("arrival"),"role": defaults.get("role"),"evidence": defaults.get("evidence")}])
-                st_folium(make_map(preview_df, dark_mode), height=420, use_container_width=True, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
-                with st.expander("Profil tracku", expanded=True):
-                    render_track_profile(points)
-                saved = flight_form("new_from_track", defaults, rates, "Uložit nový let včetně tracku")
-                if saved is not None:
-                    flight_id = create_flight(saved, auto_backup=False)
-                    save_track(flight_id, uploaded.name, points, replace_existing=True)
-                    st.success(f"Let uložen jako ID {flight_id}.")
-                    st.rerun()
-            elif uploaded is not None:
-                st.error("V KML nejsou použitelné body trasy.")
-    with tab_manual:
-        defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": "Točík Filip", "role": "PIC"}
-        saved = flight_form("new_manual", defaults, rates, "Přidat let")
-        if saved is not None:
-            flight_id = create_flight(saved)
-            st.success(f"Let uložen jako ID {flight_id}.")
-            st.rerun()
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def page_maps(flights: pd.DataFrame, dark_mode: bool):
@@ -2511,7 +1919,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
             st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
-            st_folium(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, use_container_width=True, key=f"all_tracks_map_v031_{len(tracks)}")
+            render_folium_readonly(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, key=f"all_tracks_map_v0312_{len(tracks)}")
             st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
     with tab_overview:
         if filtered.empty or known_routes == 0:
@@ -2526,7 +1934,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                 if arr and arr.upper() in lookup:
                     visited.add(arr.upper())
             st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
-            st_folium(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, use_container_width=True, key=f"route_overview_map_v031_{len(filtered)}_{known_routes}")
+            render_folium_readonly(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, key=f"route_overview_map_v0312_{len(filtered)}_{known_routes}")
             st.dataframe(
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
                 .rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","block_time":"Block"}),
@@ -2543,437 +1951,142 @@ def page_rates(rates: pd.DataFrame):
     edited = st.data_editor(display, hide_index=True, use_container_width=True, num_rows="dynamic", disabled=["ID"] if is_admin() else display.columns.tolist(), height=640, column_config={"Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč"), "Suchá hodina Kč/h": st.column_config.NumberColumn(format="%.0f Kč")})
     if st.button("Uložit ceník", type="primary", disabled=not is_admin()):
         if require_admin():
-            save_rates_editor(edited)
-            st.success("Ceník uložen."); st.rerun()
-
-
-
-def save_rates_editor(edited: pd.DataFrame) -> None:
-    with connect() as con:
-        con.execute("DELETE FROM rates")
-        for _, row in edited.iterrows():
-            reg = normalize_text(row.get("Imatrikulace"))
-            if not reg:
-                continue
-            con.execute(
-                "INSERT INTO rates (registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source) VALUES (?, ?, ?, ?, ?, ?)",
-                (reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("Od data")), float(row.get("Cena Kč/h") or 0), float(row.get("Suchá hodina Kč/h") or 0), normalize_text(row.get("Zdroj"))),
-            )
-        record_audit(con, "save_rates", "rates", None, {"rows": len(edited)})
-        con.commit()
-    auto_backup_after_change("save_rates")
-
-
-def save_aircraft_editor(edited: pd.DataFrame) -> None:
-    with connect() as con:
-        con.execute("DELETE FROM aircraft")
-        now = _now_iso()
-        for _, row in edited.iterrows():
-            reg = normalize_text(row.get("Imatrikulace"))
-            if not reg:
-                continue
-            con.execute(
-                """
-                INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, active, note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("ICAO typ")), normalize_text(row.get("Třída")), normalize_text(row.get("Evidence")), float(row.get("Výchozí Kč/h") or 0), int(row.get("Aktivní") or 0), normalize_text(row.get("Poznámka")), now, now),
-            )
-        record_audit(con, "save_aircraft", "aircraft", None, {"rows": len(edited)})
-        con.commit()
-    auto_backup_after_change("save_aircraft")
-
-
-def upsert_airport_form(data: dict[str, Any]) -> None:
-    ident = _clean_ident(data.get("ident"))
-    if not ident:
-        raise ValueError("Ident letiště je povinný.")
-    lat = _to_float(data.get("latitude_deg"))
-    lon = _to_float(data.get("longitude_deg"))
-    if lat is None or lon is None:
-        raise ValueError("Latitude a longitude jsou povinné.")
-    now = _now_iso()
-    with connect() as con:
-        con.execute(
-            """
-            INSERT INTO airports (ident, name, airport_type, iso_country, iso_region, municipality, latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code, source, active, closed, data_quality, imported_at, updated_at, raw_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(ident) DO UPDATE SET
-                name=excluded.name,
-                airport_type=excluded.airport_type,
-                iso_country=excluded.iso_country,
-                iso_region=excluded.iso_region,
-                municipality=excluded.municipality,
-                latitude_deg=excluded.latitude_deg,
-                longitude_deg=excluded.longitude_deg,
-                elevation_ft=excluded.elevation_ft,
-                gps_code=excluded.gps_code,
-                iata_code=excluded.iata_code,
-                local_code=excluded.local_code,
-                source=excluded.source,
-                active=excluded.active,
-                closed=excluded.closed,
-                data_quality=excluded.data_quality,
-                updated_at=excluded.updated_at,
-                raw_json=excluded.raw_json
-            """,
-            (
-                ident,
-                normalize_text(data.get("name")),
-                normalize_text(data.get("airport_type")) or "manual_field",
-                normalize_text(data.get("iso_country")) or "CZ",
-                normalize_text(data.get("iso_region")),
-                normalize_text(data.get("municipality")),
-                lat,
-                lon,
-                _to_float(data.get("elevation_ft")),
-                normalize_text(data.get("gps_code")),
-                normalize_text(data.get("iata_code")),
-                normalize_text(data.get("local_code")),
-                normalize_text(data.get("source")) or "manual",
-                int(bool(data.get("active", True))),
-                int(bool(data.get("closed", False))),
-                normalize_text(data.get("data_quality")) or "manual",
-                now,
-                now,
-                json.dumps(data, ensure_ascii=False, default=str),
-            ),
-        )
-        record_audit(con, "upsert_airport", "airports", ident, data)
-        con.commit()
-    auto_backup_after_change("upsert_airport")
+            with connect() as con:
+                initialize_database(con)
+                con.execute("DELETE FROM rates")
+                for _, r in edited.iterrows():
+                    if normalize_text(r.get("Imatrikulace")):
+                        con.execute("INSERT INTO rates (id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source) VALUES (?, ?, ?, ?, ?, ?, ?)", (r.get("ID") if pd.notna(r.get("ID")) else None, r.get("Imatrikulace"), r.get("Typ"), r.get("Od data"), float_or_none(r.get("Cena Kč/h")), float_or_none(r.get("Suchá hodina Kč/h")), r.get("Zdroj")))
+                record_audit(con, "save_rates", "rates", None, {"rows": len(edited)})
+                con.commit()
+            invalidate_cached_data()
+            auto_backup_after_change("rates update")
+            st.success("Ceník uložen.")
+            st.rerun()
 
 
 def page_database():
     st.markdown("## Databáze")
-    airports = read_airports(active_only=False)
-    aircraft = read_table("aircraft")
-    tracks = read_table("flight_tracks")
-    points = read_table("track_points")
-    metas = read_table("app_meta")
-    audits = read_table("audit_log") if "audit_log" else pd.DataFrame()
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Letiště / plochy", str(len(airports)), "databázová tabulka")
-    with c2: metric_card("Letadla", str(len(aircraft)), "registrace")
-    with c3: metric_card("Tracky", str(len(tracks)), "KML soubory")
-    with c4: metric_card("GPS body", f"{len(points):,}".replace(",", " "), "normalizováno")
-
-    tab_airports, tab_aircraft, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Záloha", "Meta"])
-    with tab_airports:
-        col1, col2, col3 = st.columns([1,1,2])
-        with col1:
-            country = st.selectbox("Země", ["Vše"] + sorted([x for x in airports.get("iso_country", pd.Series(dtype=str)).dropna().unique() if x]), index=0)
-        with col2:
-            source = st.selectbox("Zdroj", ["Vše"] + sorted([x for x in airports.get("source", pd.Series(dtype=str)).dropna().unique() if x]), index=0)
-        with col3:
-            q = st.text_input("Hledat", value="")
-        view = airports.copy()
-        if country != "Vše":
-            view = view[view["iso_country"].eq(country)]
-        if source != "Vše":
-            view = view[view["source"].eq(source)]
-        if q.strip():
-            ql = q.strip().lower()
-            mask = (
-                view["ident"].fillna("").str.lower().str.contains(ql)
-                | view["name"].fillna("").str.lower().str.contains(ql)
-                | view["municipality"].fillna("").str.lower().str.contains(ql)
-            )
-            view = view[mask]
-        cols = ["ident","name","airport_type","iso_country","municipality","latitude_deg","longitude_deg","source","data_quality","active","closed"]
-        st.dataframe(view[[c for c in cols if c in view.columns]].head(1000), hide_index=True, use_container_width=True, height=430)
-        st.download_button("Export letišť CSV", data=airports.to_csv(index=False).encode("utf-8"), file_name="airports_export.csv", mime="text/csv", use_container_width=True)
-        st.caption("Světová letištní databáze je už uložená v SQLite. V běžném provozu se zde jen vyhledává, exportuje a ručně doplňují/opravuji letiště nebo UL plochy.")
-        st.markdown("### Přidat / upravit letiště")
-        if not is_admin():
-            st.info("Ruční editace letišť je dostupná jen pro admina.")
-        else:
-            with st.form("airport_upsert_form"):
-                a1, a2, a3 = st.columns(3)
-                with a1:
-                    ident = st.text_input("Ident", value="").upper()
-                    name = st.text_input("Název", value="")
-                    airport_type = st.selectbox("Typ", ["ultralight_field", "small_airport", "medium_airport", "large_airport", "heliport", "closed", "manual_field"], index=0)
-                with a2:
-                    iso_country = st.text_input("Země", value="CZ").upper()
-                    iso_region = st.text_input("Region", value="")
-                    municipality = st.text_input("Obec", value="")
-                with a3:
-                    latitude_deg = st.number_input("Latitude", value=50.0, format="%.6f")
-                    longitude_deg = st.number_input("Longitude", value=14.0, format="%.6f")
-                    elevation_ft = st.number_input("Elevation ft", value=0.0, format="%.0f")
-                active = st.checkbox("Aktivní", value=True)
-                closed = st.checkbox("Uzavřené", value=False)
-                submitted = st.form_submit_button("Uložit letiště / plochu", type="primary")
-            if submitted:
-                try:
-                    upsert_airport_form({"ident": ident, "name": name, "airport_type": airport_type, "iso_country": iso_country, "iso_region": iso_region, "municipality": municipality, "latitude_deg": latitude_deg, "longitude_deg": longitude_deg, "elevation_ft": elevation_ft, "source": "manual", "active": active, "closed": closed, "data_quality": "manual"})
-                    st.success("Letiště uloženo."); st.rerun()
-                except Exception as exc:
-                    st.error(str(exc))
-
+    tab_aircraft, tab_airports, tab_audit = st.tabs(["Letadla", "Letiště", "Audit"])
     with tab_aircraft:
-        if aircraft.empty:
-            aircraft = pd.DataFrame(columns=["id","registration","aircraft_type","icao_type","aircraft_class","evidence","default_price_per_hour","active","note"])
-        display = aircraft.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","icao_type":"ICAO typ","aircraft_class":"Třída","evidence":"Evidence","default_price_per_hour":"Výchozí Kč/h","active":"Aktivní","note":"Poznámka"})
-        cols = ["ID","Imatrikulace","Typ","ICAO typ","Třída","Evidence","Výchozí Kč/h","Aktivní","Poznámka"]
-        display = display[[c for c in cols if c in display.columns]]
-        edited = st.data_editor(display.sort_values("Imatrikulace") if not display.empty else display, hide_index=True, use_container_width=True, num_rows="dynamic", disabled=["ID"] if is_admin() else display.columns.tolist(), height=560, column_config={"Výchozí Kč/h": st.column_config.NumberColumn(format="%.0f Kč"), "Aktivní": st.column_config.CheckboxColumn()})
+        aircraft = load_aircraft()
+        edited = st.data_editor(aircraft, hide_index=True, use_container_width=True, num_rows="dynamic", disabled=["id"] if is_admin() else aircraft.columns.tolist(), height=560)
         if st.button("Uložit letadla", type="primary", disabled=not is_admin()):
             if require_admin():
-                save_aircraft_editor(edited)
-                st.success("Letadla uložena."); st.rerun()
+                with connect() as con:
+                    initialize_database(con)
+                    con.execute("DELETE FROM aircraft")
+                    for _, r in edited.iterrows():
+                        if normalize_text(r.get("registration")):
+                            con.execute("""INSERT INTO aircraft (id, registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, active, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (r.get("id") if pd.notna(r.get("id")) else None, r.get("registration"), r.get("aircraft_type"), r.get("icao_type"), r.get("aircraft_class"), r.get("evidence"), float_or_none(r.get("default_price_per_hour")), int(r.get("active") or 0), r.get("note"), r.get("created_at") or _now_iso(), _now_iso()))
+                    record_audit(con, "save_aircraft", "aircraft", None, {"rows": len(edited)})
+                    con.commit()
+                invalidate_cached_data()
+                auto_backup_after_change("aircraft update")
+                st.success("Letadla uložena.")
+                st.rerun()
+    with tab_airports:
+        airports = load_airports()
+        q = st.text_input("Hledat letiště", key="airport_search")
+        show = airports
+        if q:
+            mask = show[["ident", "name", "municipality", "iso_country"]].fillna("").agg(" ".join, axis=1).str.lower().str.contains(q.lower(), regex=False)
+            show = show[mask]
+        st.caption(f"Zobrazeno {len(show)} / {len(airports)} letišť. Ruční záznamy v logbook.sqlite mají prioritu před pevnou světovou databází airports_full.sqlite.")
+        st.dataframe(show.head(2000), hide_index=True, use_container_width=True, height=560)
+    with tab_audit:
+        st.dataframe(read_audit_log(), hide_index=True, use_container_width=True, height=560)
 
-    # Import světové databáze byl odstraněn z běžného UI po prvotním naplnění tabulky airports.
-    # Importní funkce zůstávají v kódu pro případ budoucí servisní migrace, ale nejsou vystavené v aplikaci.
 
-    with tab_backup:
-        st.markdown("### SQLite + GitHub backup")
-        dirty = ""
-        last_change = ""
-        last_backup = ""
-        if not metas.empty:
-            md = dict(zip(metas["key"], metas["value"]))
-            dirty = md.get("dirty", "")
-            last_change = md.get("last_change_at", "")
-            last_backup = md.get("last_github_backup_at", "")
-        b1, b2, b3 = st.columns(3)
-        with b1: metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
-        with b2: metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
-        with b3: metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
-        if github_auto_backup_enabled():
-            st.success("Automatická GitHub záloha je zapnutá. Po každé potvrzené změně se databáze uloží do repozitáře.")
-        elif github_backup_configured():
-            st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá. Zapni github.auto_backup = true v Secrets.")
-        else:
-            st.warning("Automatická GitHub záloha není nastavená. Změny ve Streamlit Cloud mohou po restartu zmizet.")
-        if st.session_state.get("last_auto_backup_status") == "ok":
-            st.caption("Poslední automatická záloha proběhla úspěšně." + (f" Commit: {st.session_state.get('last_auto_backup_url')}" if st.session_state.get('last_auto_backup_url') else ""))
-        elif st.session_state.get("last_auto_backup_status") == "error":
-            st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
-        with open(DB_PATH, "rb") as f:
-            st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
-        if github_backup_configured():
-            if st.button("Uložit aktuální databázi na GitHub", type="primary", disabled=not is_admin(), use_container_width=True):
-                if require_admin():
-                    try:
-                        url = backup_database_to_github()
-                        st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
-                    except Exception as exc:
-                        st.error(f"Backup selhal: {exc}")
-        else:
-            st.info("GitHub backup není nakonfigurovaný ve Streamlit Secrets. Stále můžeš ručně stahovat SQLite soubor.")
-        restore = st.file_uploader("Obnovit SQLite databázi ze souboru", type=["sqlite", "db"], key="restore_db_upload")
-        confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="")
-        if restore is not None and st.button("Obnovit databázi", disabled=not is_admin() or confirm != "OBNOVIT", use_container_width=True):
+def page_export(flights: pd.DataFrame):
+    st.markdown("## Export a zálohy")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.download_button("Stáhnout Excel", data=build_excel_export(flights), file_name=f"letovy_zapisnik_{date.today().isoformat()}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+        st.download_button("Stáhnout zálohu SQLite ZIP", data=build_backup_zip(), file_name=f"logbook_backup_{date.today().isoformat()}.zip", mime="application/zip", use_container_width=True)
+    with c2:
+        st.subheader("GitHub záloha")
+        cfg = github_backup_config()
+        st.write({"repo": cfg.get("repo"), "db_path": cfg.get("db_path"), "branch": cfg.get("branch"), "configured": github_backup_configured()})
+        if st.button("Uložit databázi na GitHub teď", disabled=not is_admin()):
             if require_admin():
                 try:
-                    restore_database_from_upload(restore)
-                    st.success("Databáze obnovena."); st.rerun()
+                    url = backup_database_to_github()
+                    st.success("Uloženo na GitHub.")
+                    if url:
+                        st.link_button("Otevřít commit", url)
                 except Exception as exc:
-                    st.error(f"Obnova selhala: {exc}")
-
-    with tab_meta:
-        st.markdown("### Metadata")
-        if metas.empty:
-            st.info("Žádná metadata.")
-        else:
-            st.dataframe(metas.sort_values("key"), hide_index=True, use_container_width=True)
-        st.markdown("### Audit log")
-        if audits.empty:
-            st.info("Žádný audit log.")
-        else:
-            st.dataframe(audits.sort_values("id", ascending=False).head(500), hide_index=True, use_container_width=True, height=360)
-
-
-def make_control_df(df: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    for _, r in df.iterrows():
-        issues = []
-        if pd.isna(r.get("date_dt")): issues.append("datum")
-        else:
-            y = int(r["date_dt"].year)
-            if y < 2000 or y > 2035: issues.append("rok")
-        for col, label in [("evidence","evidence"),("registration","imatrikulace"),("role","funkce")]:
-            if not str(r.get(col) or "").strip(): issues.append(label)
-        if r.get("starts", 0) <= 0: issues.append("starty")
-        if r.get("block_minutes") is None or pd.isna(r.get("block_minutes")): issues.append("block time")
-        if r.get("air_minutes") is None or pd.isna(r.get("air_minutes")): issues.append("air time")
-        if pd.notna(r.get("air_minutes")) and pd.notna(r.get("block_minutes")) and r["air_minutes"] > r["block_minutes"]: issues.append("air > block")
-        if pd.isna(r.get("price_per_hour")) or float(r.get("price_per_hour") or 0) <= 0: issues.append("sazba")
-        if issues:
-            rows.append({"ID": r.get("id"), "Datum": r.get("date"), "Imatrikulace": r.get("registration"), "Problém": ", ".join(issues)})
-    return pd.DataFrame(rows)
-
-
-def page_control(df: pd.DataFrame):
-    st.markdown("## Kontrola")
-    control = make_control_df(df)
-    if control.empty:
-        st.success("OK")
-    else:
-        st.dataframe(control, hide_index=True, use_container_width=True)
-
-
-def export_excel(df: pd.DataFrame) -> bytes:
-    wb = Workbook(); ws = wb.active; ws.title = "Zápisník letů"
-    headers = ["Datum","Evidence","Imatrikulace","Typ","Třída","Odlet","Přílet","Off Block","Takeoff","Landing","On Block","Block Time","Air Time","Starty","Velitel","Instruktor","Funkce","Úloha","Cena Kč/h","Cena letu Kč","GPS tracky","GPS km","Poznámka"]
-    ws.append(headers)
-    work = df.sort_values(["date_dt","id"]).copy()
-    for _, r in work.iterrows():
-        ws.append([r.get("date"), r.get("evidence"), r.get("registration"), r.get("aircraft_type"), r.get("aircraft_class"), r.get("departure"), r.get("arrival"), r.get("off_block"), r.get("takeoff"), r.get("landing"), r.get("on_block"), fmt_minutes(r.get("block_minutes")), fmt_minutes(r.get("air_minutes")), int(r.get("starts") or 0), r.get("commander"), r.get("instructor"), r.get("role"), r.get("task"), float(r.get("price_per_hour") or 0), float(r.get("cost") or 0), int(r.get("track_count") or 0), float(r.get("gps_km") or 0), r.get("note")])
-    style_worksheet(ws)
-    ws2 = wb.create_sheet("Souhrny")
-    summary = build_summary(df)
-    rows = [["Metrika","Hodnota"],["Celkový nálet",fmt_minutes(summary["total"])],["Air Time",fmt_minutes(summary["air"])],["PIC celkem",fmt_minutes(summary["pic"])],["PIC ULL",fmt_minutes(summary["pic_ull"])],["PIC EASA",fmt_minutes(summary["pic_easa"])],["DUAL",fmt_minutes(summary["dual"])],["Safety Pilot",fmt_minutes(summary["safety"])],["ULL celkem",fmt_minutes(summary["ull"])],["EASA celkem",fmt_minutes(summary["easa"])],["Starty",summary["starts"]],["GPS tracky",summary["tracks"]],["GPS km",summary["gps_km"]],["Náklady",summary["cost"]]]
-    for row in rows: ws2.append(row)
-    style_worksheet(ws2)
-    out = BytesIO(); wb.save(out); return out.getvalue()
-
-
-def style_worksheet(ws):
-    header_fill = PatternFill("solid", fgColor="0F172A"); header_font = Font(color="FFFFFF", bold=True); thin = Side(style="thin", color="D1D5DB")
-    for cell in ws[1]:
-        cell.fill = header_fill; cell.font = header_font; cell.alignment = Alignment(horizontal="center", vertical="center"); cell.border = Border(bottom=thin)
-    ws.freeze_panes = "A2"; ws.auto_filter.ref = ws.dimensions
-    for col in range(1, ws.max_column + 1):
-        letter = get_column_letter(col); max_len = max(len(str(ws.cell(row, col).value or "")) for row in range(1, min(ws.max_row, 200) + 1)); ws.column_dimensions[letter].width = min(max(max_len + 2, 10), 26)
-
-
-def page_export(df: pd.DataFrame):
-    st.markdown("## Export")
-    output = export_excel(df)
-    c1, c2 = st.columns(2)
-    with c1: st.download_button("Stáhnout Excel export", data=output, file_name="export_letovy_zapisnik.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", type="primary", use_container_width=True)
-    with c2:
-        with open(DB_PATH, "rb") as f:
-            st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
-
-def render_sidebar_toggle() -> None:
-    """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""
-    components.html(
-        """
-        <script>
-        (function() {
-          const doc = window.parent.document;
-          const btnId = 'lb-sidebar-toggle';
-          const storageKey = 'lb_sidebar_hidden_v3';
-
-          function hideNativeButtons() {
-            const selectors = [
-              '[data-testid="stSidebarHeader"]',
-              '[data-testid="stSidebarCollapseButton"]',
-              '[data-testid="stSidebarCollapsedControl"]',
-              '[data-testid="collapsedControl"]',
-              'section[data-testid="stSidebar"] button[kind="headerNoPadding"]',
-              'section[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"]',
-              'button[title*="sidebar" i]',
-              'button[aria-label*="sidebar" i]',
-              'button[title*="Collapse" i]',
-              'button[aria-label*="Collapse" i]',
-              'button[title*="Close" i]',
-              'button[aria-label*="Close" i]'
-            ];
-            selectors.forEach(sel => {
-              try {
-                doc.querySelectorAll(sel).forEach(el => {
-                  if (el.id !== btnId) {
-                    el.style.setProperty('display', 'none', 'important');
-                    el.style.setProperty('visibility', 'hidden', 'important');
-                    el.style.setProperty('pointer-events', 'none', 'important');
-                  }
-                });
-              } catch(e) {}
-            });
-          }
-
-          function ensureButton() {
-            let btn = doc.getElementById(btnId);
-            if (!btn) {
-              btn = doc.createElement('button');
-              btn.id = btnId;
-              btn.type = 'button';
-              btn.setAttribute('aria-label', 'Skrýt nebo zobrazit menu');
-              btn.title = 'Skrýt / zobrazit menu';
-              doc.body.appendChild(btn);
-              btn.addEventListener('click', function(ev) {
-                ev.preventDefault();
-                setHidden(!doc.body.classList.contains('lb-sidebar-hidden'));
-              });
-            }
-            return btn;
-          }
-
-          function setHidden(hidden) {
-            doc.body.classList.toggle('lb-sidebar-hidden', hidden);
-            try { window.parent.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
-            const btn = ensureButton();
-            btn.textContent = hidden ? '›' : '‹';
-          }
-
-          hideNativeButtons();
-          const saved = (function() {
-            try { return window.parent.localStorage.getItem(storageKey) === '1'; }
-            catch(e) { return false; }
-          })();
-          setHidden(saved);
-          if (!window.parent.__lbSidebarObserver) {
-            window.parent.__lbSidebarObserver = new MutationObserver(hideNativeButtons);
-            window.parent.__lbSidebarObserver.observe(doc.body, {childList: true, subtree: true});
-          }
-          setTimeout(hideNativeButtons, 250);
-          setTimeout(hideNativeButtons, 1000);
-        })();
-        </script>
-        """,
-        height=0,
-        width=0,
-    )
+                    st.error(str(exc))
+        uploaded = st.file_uploader("Obnovit databázi ze SQLite souboru", type=["sqlite", "db"])
+        if uploaded and st.button("Obnovit databázi", type="primary", disabled=not is_admin()):
+            if require_admin():
+                try:
+                    restore_database_from_upload(uploaded)
+                    st.success("Databáze obnovena.")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+    show_backup_status()
 
 
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 
-def main():
+def render_sidebar_nav() -> str:
+    page = st.session_state.get("page", "Souhrn")
+    for label, target in NAV_ITEMS:
+        if st.button(label, key=f"nav_{target}", use_container_width=True, type="primary" if page == target else "secondary"):
+            st.session_state["page"] = target
+            st.query_params["page"] = target
+            st.query_params.pop("flight_id", None)
+            st.rerun()
+    return page
+
+
+def main() -> None:
     st.set_page_config(page_title="Letový zápisník", layout="wide", initial_sidebar_state="expanded")
-    with connect(): pass
-    if "page" not in st.session_state:
-        st.session_state["page"] = "Dashboard"
-    q_flight_id = _query_param_value("flight_id")
-    if q_flight_id and str(q_flight_id).isdigit():
-        qid = int(q_flight_id)
-        if st.session_state.get("dismissed_flight_id") != qid:
-            st.session_state["page"] = "Lety"
-            st.session_state["open_flight_dialog_id"] = qid
-            st.session_state["selected_flight_id"] = qid
+    with connect() as con:
+        initialize_database(con)
+    params = st.query_params
+    page_param = params.get("page", None)
+    flight_id_param = params.get("flight_id", None)
+    if page_param == "detail" and flight_id_param:
+        st.session_state["page"] = "detail"
+        st.session_state["flight_id"] = int(flight_id_param)
+    elif page_param and page_param in [x[1] for x in NAV_ITEMS]:
+        st.session_state["page"] = page_param
+    elif "page" not in st.session_state:
+        st.session_state["page"] = "Souhrn"
+
+    dark_mode = True
     with st.sidebar:
-        # Aplikace běží trvale v tmavém režimu; přepínač je z finálního UI odstraněn.
-        dark_mode = True
         st.markdown("## Letový zápisník")
-        st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
+        st.markdown(f"<div class='sidebar-version'>{APP_VERSION}</div>", unsafe_allow_html=True)
+        st.markdown("### Navigace")
         render_sidebar_nav()
         render_auth_sidebar()
     apply_ui_theme(dark_mode)
-    render_sidebar_toggle()
-    app_header()
-    page = st.session_state.get("page", "Dashboard")
-    flights = read_flights()
-    rates = read_table("rates")
-    if not rates.empty:
-        rates["registration"] = rates["registration"].fillna("").str.upper()
-    if page == "Dashboard": page_dashboard(flights)
-    elif page == "Lety": page_logbook(flights, rates, dark_mode)
-    elif page == "Nový let": page_new_flight(rates, dark_mode)
-    elif page == "Mapa": page_maps(flights, dark_mode)
-    elif page == "Ceník": page_rates(rates)
-    elif page == "Databáze": page_database()
-    elif page == "Kontrola":
-        # Legacy route: stránka kontroly už není v navigaci, ale starý stav relace může existovat.
-        st.session_state["page"] = "Dashboard"
-        st.rerun()
-    elif page == "Export": page_export(flights)
+    render_hero()
+    flights = load_flights()
+    page = st.session_state.get("page", "Souhrn")
+    if page == "detail":
+        render_flight_detail(int(st.session_state.get("flight_id") or flight_id_param), flights, dark_mode)
+    elif page == "Souhrn":
+        page_dashboard(flights)
+    elif page == "Lety":
+        page_flights(flights)
+    elif page == "Přidat let":
+        page_add_flight(dark_mode)
+    elif page == "Mapa":
+        page_maps(flights, dark_mode)
+    elif page == "Ceník":
+        page_rates(load_rates())
+    elif page == "Databáze":
+        page_database()
+    elif page == "Export":
+        page_export(flights)
+
 
 if __name__ == "__main__":
     main()
