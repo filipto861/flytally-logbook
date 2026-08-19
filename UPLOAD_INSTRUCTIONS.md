@@ -1,18 +1,13 @@
-# Nahrání v0.39
+# Upload instructions – v0.39.1 hotfix
 
-Nahrát minimálně:
+Nahraj minimálně:
+- app.py
+- README.md
+- UPLOAD_INSTRUCTIONS.md
 
-- `app.py`
-- `README.md`
-- `UPLOAD_INSTRUCTIONS.md`
-- složku `logbook_core/`
+Složka `logbook_core/` může zůstat v repozitáři, ale aplikace už nespadne ani tehdy, když tam není.
 
-Nepřepisovat:
+NEPŘEPISOVAT:
+- data/logbook.sqlite
 
-- `data/logbook.sqlite`
-
-Po nahrání:
-
-1. Streamlit Cloud → Manage app → Reboot app
-2. V prohlížeči Ctrl + F5
-3. Zkontrolovat, že aplikace ukazuje `v0.39`
+Po uploadu proveď ve Streamlit Cloud: Manage app → Reboot app.

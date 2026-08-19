@@ -35,12 +35,55 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from streamlit_folium import st_folium
 
-from logbook_core.performance import (
-    apply_sqlite_pragmas,
-    compact_records_json,
-    downsample_track_points,
-    optimize_sqlite,
-)
+try:
+    from logbook_core.performance import (
+        apply_sqlite_pragmas,
+        compact_records_json,
+        downsample_track_points,
+        optimize_sqlite,
+    )
+except ModuleNotFoundError:
+    # Fallback for deployments where only app.py was uploaded.
+    def apply_sqlite_pragmas(con: sqlite3.Connection, *, initial: bool = False) -> None:
+        read_pragmas = (
+            "PRAGMA foreign_keys = ON",
+            "PRAGMA busy_timeout = 5000",
+            "PRAGMA temp_store = MEMORY",
+            "PRAGMA cache_size = -32768",
+        )
+        init_pragmas = read_pragmas + (
+            "PRAGMA journal_mode = WAL",
+            "PRAGMA synchronous = NORMAL",
+        )
+        for pragma in init_pragmas if initial else read_pragmas:
+            try:
+                con.execute(pragma)
+            except sqlite3.DatabaseError:
+                pass
+
+    def optimize_sqlite(con: sqlite3.Connection) -> None:
+        try:
+            con.execute("PRAGMA optimize")
+        except sqlite3.DatabaseError:
+            pass
+
+    def compact_records_json(df: pd.DataFrame, columns: list[str]) -> str:
+        if df.empty:
+            return "[]"
+        use_cols = [c for c in columns if c in df.columns]
+        if not use_cols:
+            return "[]"
+        records = df[use_cols].fillna("").to_dict(orient="records")
+        return json.dumps(records, ensure_ascii=False, separators=(",", ":"), default=str)
+
+    def downsample_track_points(points: list[dict[str, Any]], max_points: int = 900) -> list[dict[str, Any]]:
+        if len(points) <= max_points:
+            return points
+        step = max(1, math.ceil(len(points) / max_points))
+        sampled = points[::step]
+        if sampled and sampled[-1] != points[-1]:
+            sampled.append(points[-1])
+        return sampled
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -49,7 +92,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.39"
+APP_VERSION = "v0.39.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False

@@ -1,8 +1,8 @@
 # Letový zápisník
 
-Aktuální checkpoint: **v0.39 – core optimization**.
+Aktuální checkpoint: **v0.39.1 – core optimization**.
 
-## Změny v0.39
+## Změny v0.39.1
 
 - Přidán samostatný modul `logbook_core/performance.py` pro bezpečné výkonnostní pomocné funkce.
 - SQLite spojení používají sjednocené performance PRAGMA hodnoty.
