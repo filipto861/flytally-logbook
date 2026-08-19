@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.30"
+APP_VERSION = "v0.31"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1796,14 +1796,91 @@ def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> l
     return sampled
 
 
+@st.cache_data(show_spinner=False, ttl=300)
+def airport_coord_lookup() -> dict[str, dict[str, Any]]:
+    airports = read_airports(active_only=False)
+    if airports.empty or "ident" not in airports.columns:
+        return {}
+    lookup: dict[str, dict[str, Any]] = {}
+    for _, row in airports.iterrows():
+        ident = normalize_text(row.get("ident"))
+        if not ident:
+            continue
+        try:
+            lat = float(row.get("latitude_deg"))
+            lon = float(row.get("longitude_deg"))
+        except (TypeError, ValueError):
+            continue
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            continue
+        ident = ident.upper()
+        lookup[ident] = {
+            "ident": ident,
+            "name": normalize_text(row.get("name")) or ident,
+            "lat": lat,
+            "lon": lon,
+            "source": normalize_text(row.get("source")) or "",
+        }
+    return lookup
+
+
+def airport_coord(ident: Any) -> dict[str, Any] | None:
+    text = normalize_text(ident)
+    if not text:
+        return None
+    return airport_coord_lookup().get(text.upper())
+
+
+def _coord_dict_from_airport(ap: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not ap:
+        return None
+    return {"lat": float(ap["lat"]), "lon": float(ap["lon"]), "alt": None, "time": None}
+
+
+def track_latlon_with_airport_extensions(
+    row: pd.Series | dict[str, Any],
+    points: list[dict[str, Any]],
+    min_gap_km: float = 0.35,
+) -> tuple[list[tuple[float, float]], list[dict[str, Any]]]:
+    """Return a visual route extended to manually/automatically selected airports.
+
+    KML from phones/trackers sometimes starts after departure or ends before
+    arrival. We do not alter the stored GPS points or calculated GPS distance;
+    only the map display gets a direct connector from/to known airports.
+    """
+    if not points:
+        return [], []
+
+    visual_points = [dict(p) for p in points]
+    extensions: list[dict[str, Any]] = []
+
+    dep_ap = airport_coord(row.get("departure") if hasattr(row, "get") else None)
+    arr_ap = airport_coord(row.get("arrival") if hasattr(row, "get") else None)
+
+    if dep_ap and visual_points:
+        dep_pt = _coord_dict_from_airport(dep_ap)
+        if dep_pt and haversine_km(dep_pt, visual_points[0]) > min_gap_km:
+            visual_points.insert(0, dep_pt)
+            extensions.append({"kind": "departure", "airport": dep_ap, "to": points[0]})
+
+    if arr_ap and visual_points:
+        arr_pt = _coord_dict_from_airport(arr_ap)
+        if arr_pt and haversine_km(visual_points[-1], arr_pt) > min_gap_km:
+            visual_points.append(arr_pt)
+            extensions.append({"kind": "arrival", "airport": arr_ap, "from": points[-1]})
+
+    latlon = [(float(p["lat"]), float(p["lon"])) for p in visual_points]
+    return latlon, extensions
+
+
 def map_center_from_tracks(tracks: pd.DataFrame) -> tuple[list[float], int]:
     coords: list[tuple[float, float]] = []
     for _, row in tracks.iterrows():
         try:
-            points = json.loads(row["coordinates_json"])
-            stride = max(1, len(points) // 50 or 1)
-            for p in points[::stride]:
-                coords.append((float(p["lat"]), float(p["lon"])))
+            points = downsample_points(json.loads(row["coordinates_json"]), max_points=300)
+            latlon, _ = track_latlon_with_airport_extensions(row, points)
+            stride = max(1, len(latlon) // 50 or 1)
+            coords.extend(latlon[::stride])
         except Exception:
             continue
     if not coords:
@@ -1821,6 +1898,7 @@ def make_map(
     line_weight: float = 4,
     line_opacity: float = 0.78,
     show_endpoints: bool = True,
+    extend_to_airports: bool = True,
 ) -> folium.Map:
     center, zoom = map_center_from_tracks(tracks)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
@@ -1834,20 +1912,102 @@ def make_map(
             continue
         if len(points) < 2:
             continue
-        latlon = [(float(p["lat"]), float(p["lon"])) for p in points]
+        gps_latlon = [(float(p["lat"]), float(p["lon"])) for p in points]
+        latlon, extensions = track_latlon_with_airport_extensions(row, points) if extend_to_airports else (gps_latlon, [])
         evidence = str(row.get("evidence") or "").upper()
         color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
+        ext_note = "<br><span style='color:#94a3b8'>Mapa doplnila přímku k letišti.</span>" if extensions else ""
         popup = folium.Popup(f"""
             <b>{row.get('date') or ''} • {row.get('registration') or ''}</b><br>
             {row.get('departure') or ''}–{row.get('arrival') or ''}<br>
             {row.get('role') or ''} • {row.get('evidence') or ''}<br>
             GPS: {float(row.get('distance_km') or 0):.1f} km<br>
-            Track: {row.get('file_name') or ''}
-            """, max_width=330)
+            Track: {row.get('file_name') or ''}{ext_note}
+            """, max_width=360)
         folium.PolyLine(latlon, color=color, weight=line_weight, opacity=line_opacity, popup=popup).add_to(m)
+
+        for ext in extensions:
+            if ext["kind"] == "departure":
+                seg = [(float(ext["airport"]["lat"]), float(ext["airport"]["lon"])), (float(ext["to"]["lat"]), float(ext["to"]["lon"]))]
+                tooltip = f"Doplněno od letiště {ext['airport']['ident']} k prvnímu GPS bodu"
+            else:
+                seg = [(float(ext["from"]["lat"]), float(ext["from"]["lon"])), (float(ext["airport"]["lat"]), float(ext["airport"]["lon"]))]
+                tooltip = f"Doplněno od posledního GPS bodu k letišti {ext['airport']['ident']}"
+            folium.PolyLine(seg, color="#94a3b8", weight=max(1.2, line_weight - 0.6), opacity=0.72, dash_array="7,7", tooltip=tooltip).add_to(m)
+
         if show_endpoints:
-            folium.CircleMarker(latlon[0], radius=4, color="#22c55e", fill=True, fill_opacity=.9, tooltip="Start").add_to(m)
-            folium.CircleMarker(latlon[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.9, tooltip="End").add_to(m)
+            start = latlon[0] if latlon else gps_latlon[0]
+            end = latlon[-1] if latlon else gps_latlon[-1]
+            folium.CircleMarker(start, radius=4, color="#22c55e", fill=True, fill_opacity=.9, tooltip="Start / odlet").add_to(m)
+            folium.CircleMarker(end, radius=4, color="#ef4444", fill=True, fill_opacity=.9, tooltip="End / přílet").add_to(m)
+    folium.LayerControl().add_to(m)
+    return m
+
+
+def map_center_from_airport_coords(coords: list[tuple[float, float]]) -> tuple[list[float], int]:
+    if not coords:
+        return [49.8, 15.5], 7
+    min_lat = min(c[0] for c in coords); max_lat = max(c[0] for c in coords); min_lon = min(c[1] for c in coords); max_lon = max(c[1] for c in coords)
+    center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
+    spread = max(max_lat - min_lat, max_lon - min_lon)
+    zoom = 11 if spread < .15 else 9 if spread < .6 else 8 if spread < 1.8 else 7 if spread < 5 else 6 if spread < 10 else 5
+    return center, zoom
+
+
+def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
+    lookup = airport_coord_lookup()
+    coords: list[tuple[float, float]] = []
+    routes: list[dict[str, Any]] = []
+    visited: dict[str, dict[str, Any]] = {}
+
+    for _, row in flights.iterrows():
+        dep = normalize_text(row.get("departure"))
+        arr = normalize_text(row.get("arrival"))
+        if not dep or not arr:
+            continue
+        dep_ap = lookup.get(dep.upper())
+        arr_ap = lookup.get(arr.upper())
+        if not dep_ap or not arr_ap:
+            continue
+        dep_ll = (float(dep_ap["lat"]), float(dep_ap["lon"]))
+        arr_ll = (float(arr_ap["lat"]), float(arr_ap["lon"]))
+        coords.extend([dep_ll, arr_ll])
+        visited[dep_ap["ident"]] = dep_ap
+        visited[arr_ap["ident"]] = arr_ap
+        routes.append({"row": row, "dep": dep_ap, "arr": arr_ap, "dep_ll": dep_ll, "arr_ll": arr_ll})
+
+    center, zoom = map_center_from_airport_coords(coords)
+    tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
+
+    route_counts: dict[tuple[str, str], int] = {}
+    for route in routes:
+        row = route["row"]
+        dep_id = route["dep"]["ident"]
+        arr_id = route["arr"]["ident"]
+        key = tuple(sorted([dep_id, arr_id]))
+        route_counts[key] = route_counts.get(key, 0) + 1
+        offset = min(route_counts[key] - 1, 8) * 0.0009
+        dep_ll = (route["dep_ll"][0] + offset, route["dep_ll"][1] + offset)
+        arr_ll = (route["arr_ll"][0] + offset, route["arr_ll"][1] + offset)
+        evidence = str(row.get("evidence") or "").upper()
+        color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
+        flight_id = int(row.get("id"))
+        link = detail_link(flight_id)
+        popup = folium.Popup(f"""
+            <b>ID {flight_id} • {row.get('date') or ''}</b><br>
+            {row.get('registration') or ''}<br>
+            {dep_id}–{arr_id}<br>
+            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
+            <a href="{link}" target="_self">Otevřít detail letu</a>
+            """, max_width=320)
+        folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
+
+    for ident, ap in visited.items():
+        tooltip = f"{ident} • {ap.get('name') or ''}"
+        popup = folium.Popup(f"<b>{ident}</b><br>{ap.get('name') or ''}", max_width=260)
+        folium.CircleMarker((float(ap["lat"]), float(ap["lon"])), radius=5, color="#22c55e", fill=True, fill_opacity=.92, tooltip=tooltip, popup=popup).add_to(m)
+
     folium.LayerControl().add_to(m)
     return m
 
@@ -2327,20 +2487,52 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
     filtered = apply_filters(flights, "map")
     tracks = read_tracks_joined()
-    if tracks.empty:
-        st.info("Zatím není nahraný žádný KML track.")
-        return
-    tracks = tracks[tracks["flight_id"].isin(filtered["id"].tolist())].copy()
-    if tracks.empty:
-        st.info("Pro aktuální filtr není dostupný žádný track.")
-        return
-    c1, c2, c3 = st.columns(3)
-    with c1: metric_card("Tracky", str(len(tracks)), "z aktuálního filtru")
-    with c2: metric_card("GPS vzdálenost", f"{tracks['distance_km'].fillna(0).sum():.1f} km", "")
-    with c3: metric_card("Letů ve filtru", str(len(filtered)), "")
-    st.caption("Mapa všech letů používá tenčí plné čáry bez rozlišení PIC/DUAL/Safety Pilot, aby zůstala čitelná i při větším počtu tracků.")
-    st_folium(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False), height=680, use_container_width=True, key=f"all_tracks_map_{len(tracks)}")
-    st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
+    if not tracks.empty:
+        tracks = tracks[tracks["flight_id"].isin(filtered["id"].tolist())].copy()
+
+    known_routes = 0
+    lookup = airport_coord_lookup()
+    if not filtered.empty:
+        for _, row in filtered.iterrows():
+            dep = normalize_text(row.get("departure"))
+            arr = normalize_text(row.get("arrival"))
+            if dep and arr and dep.upper() in lookup and arr.upper() in lookup:
+                known_routes += 1
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1: metric_card("Letů ve filtru", str(len(filtered)), "")
+    with c2: metric_card("Tracky", str(len(tracks)), "GPS záznamy")
+    with c3: metric_card("GPS vzdálenost", f"{tracks['distance_km'].fillna(0).sum():.1f} km" if not tracks.empty else "0.0 km", "")
+    with c4: metric_card("Direct trasy", str(known_routes), "podle letišť")
+
+    tab_tracks, tab_overview = st.tabs(["GPS tracky", "Orientační mapa letišť"])
+    with tab_tracks:
+        if tracks.empty:
+            st.info("Pro aktuální filtr není dostupný žádný KML track.")
+        else:
+            st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
+            st_folium(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, use_container_width=True, key=f"all_tracks_map_v031_{len(tracks)}")
+            st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
+    with tab_overview:
+        if filtered.empty or known_routes == 0:
+            st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
+        else:
+            visited = set()
+            for _, row in filtered.iterrows():
+                dep = normalize_text(row.get("departure"))
+                arr = normalize_text(row.get("arrival"))
+                if dep and dep.upper() in lookup:
+                    visited.add(dep.upper())
+                if arr and arr.upper() in lookup:
+                    visited.add(arr.upper())
+            st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
+            st_folium(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, use_container_width=True, key=f"route_overview_map_v031_{len(filtered)}_{known_routes}")
+            st.dataframe(
+                filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
+                .rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","block_time":"Block"}),
+                hide_index=True,
+                use_container_width=True,
+            )
 
 
 def page_rates(rates: pd.DataFrame):
@@ -2749,6 +2941,13 @@ def main():
     with connect(): pass
     if "page" not in st.session_state:
         st.session_state["page"] = "Dashboard"
+    q_flight_id = _query_param_value("flight_id")
+    if q_flight_id and str(q_flight_id).isdigit():
+        qid = int(q_flight_id)
+        if st.session_state.get("dismissed_flight_id") != qid:
+            st.session_state["page"] = "Lety"
+            st.session_state["open_flight_dialog_id"] = qid
+            st.session_state["selected_flight_id"] = qid
     with st.sidebar:
         # Aplikace běží trvale v tmavém režimu; přepínač je z finálního UI odstraněn.
         dark_mode = True
