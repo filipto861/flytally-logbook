@@ -92,14 +92,15 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.40"
+APP_VERSION = "v0.41"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
-DB_SCHEMA_VERSION = 3
+DB_SCHEMA_VERSION = 4
 _DB_READY = False
 
 EVIDENCE_OPTIONS = ["ULL", "EASA"]
 CLASS_OPTIONS = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"]
 ROLE_OPTIONS = ["PIC", "DUAL", "INSTRUKTOR", "SAFETY PILOT", "CO-PILOT", "PAX", "OBSERVER"]
+BILLING_BASIS_OPTIONS = ["BLOCK", "AIR"]
 
 NAV_ITEMS = [
     ("Dashboard", "Souhrn"),
@@ -137,6 +138,7 @@ CREATE TABLE IF NOT EXISTS flights (
     role TEXT,
     task TEXT,
     price_per_hour REAL,
+    billing_basis TEXT DEFAULT 'BLOCK',
     note TEXT
 );
 CREATE TABLE IF NOT EXISTS aircraft (
@@ -147,6 +149,8 @@ CREATE TABLE IF NOT EXISTS aircraft (
     aircraft_class TEXT,
     evidence TEXT,
     default_price_per_hour REAL,
+    default_role TEXT DEFAULT 'PIC',
+    billing_basis TEXT DEFAULT 'BLOCK',
     active INTEGER DEFAULT 1,
     note TEXT,
     created_at TEXT,
@@ -539,14 +543,16 @@ def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
     for row in rows:
         con.execute(
             """
-            INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+            INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'PIC', 'BLOCK', 1, ?, ?)
             ON CONFLICT(registration) DO UPDATE SET
                 aircraft_type=COALESCE(excluded.aircraft_type, aircraft.aircraft_type),
                 icao_type=COALESCE(excluded.icao_type, aircraft.icao_type),
                 aircraft_class=COALESCE(excluded.aircraft_class, aircraft.aircraft_class),
                 evidence=COALESCE(excluded.evidence, aircraft.evidence),
                 default_price_per_hour=COALESCE(excluded.default_price_per_hour, aircraft.default_price_per_hour),
+                default_role=COALESCE(aircraft.default_role, excluded.default_role),
+                billing_basis=COALESCE(aircraft.billing_basis, excluded.billing_basis),
                 updated_at=excluded.updated_at
             """,
             (
@@ -901,6 +907,9 @@ def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
         _add_column_if_missing(con, "flight_tracks", "min_alt_m", "min_alt_m REAL")
         _add_column_if_missing(con, "flight_tracks", "max_alt_m", "max_alt_m REAL")
         _add_column_if_missing(con, "flights", "note", "note TEXT")
+        _add_column_if_missing(con, "flights", "billing_basis", "billing_basis TEXT DEFAULT 'BLOCK'")
+        _add_column_if_missing(con, "aircraft", "default_role", "default_role TEXT DEFAULT 'PIC'")
+        _add_column_if_missing(con, "aircraft", "billing_basis", "billing_basis TEXT DEFAULT 'BLOCK'")
     except sqlite3.DatabaseError:
         pass
 
@@ -990,7 +999,11 @@ def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
     out["block_hours"] = out["block_minutes"].fillna(0) / 60.0
     out["air_hours"] = out["air_minutes"].fillna(0) / 60.0
     out["price_per_hour"] = pd.to_numeric(out["price_per_hour"], errors="coerce")
-    out["cost"] = out["block_hours"] * out["price_per_hour"].fillna(0)
+    if "billing_basis" not in out.columns:
+        out["billing_basis"] = "BLOCK"
+    out["billing_basis"] = out["billing_basis"].fillna("BLOCK").astype(str).str.upper().str.strip()
+    bill_hours = out["block_hours"].where(out["billing_basis"].ne("AIR"), out["air_hours"])
+    out["cost"] = bill_hours.fillna(0) * out["price_per_hour"].fillna(0)
     out["role"] = out["role"].fillna("").str.upper().str.strip()
     out["evidence"] = out["evidence"].fillna("").str.upper().str.strip()
     out["registration"] = out["registration"].fillna("").str.upper().str.strip()
@@ -1922,7 +1935,7 @@ def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], rep
 
 
 def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
-    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","note"]
+    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","billing_basis","note"]
     values = []
     for f in fields:
         v = data.get(f)
@@ -1934,7 +1947,7 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
             v = int(v or 0)
         elif f == "price_per_hour":
             v = float(v or 0)
-        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role"}:
+        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role", "billing_basis"}:
             v = normalize_text(v)
             v = v.upper() if v else None
         else:
@@ -1943,8 +1956,8 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
     with connect() as con:
         cur = con.execute(
             """
-            INSERT INTO flights (date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flights (date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, billing_basis, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             values,
         )
@@ -1957,7 +1970,7 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
 
 
 def update_flight(flight_id: int, data: dict[str, Any]) -> None:
-    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","note"]
+    fields = ["date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","starts","commander","instructor","role","task","price_per_hour","billing_basis","note"]
     values = []
     for f in fields:
         v = data.get(f)
@@ -1969,7 +1982,7 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
             v = int(v or 0)
         elif f == "price_per_hour":
             v = float(v or 0)
-        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role"}:
+        elif f in {"evidence", "registration", "aircraft_class", "departure", "arrival", "role", "billing_basis"}:
             v = normalize_text(v)
             v = v.upper() if v else None
         else:
@@ -2750,62 +2763,73 @@ def _template_label(row: pd.Series | dict[str, Any]) -> str:
 
 
 def render_quick_flight_tools(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
-    recent = recent_flights_for_templates()
+    """Compact optional helpers for manual entry.
+
+    v0.40.1 removes the previous recent-flight templates because they made the
+    add-flight page visually heavy. The helpers stay tucked away and only fill
+    route/times when explicitly used.
+    """
     routes = recent_routes_for_picker()
-    st.markdown(
-        '<div class="quick-form-panel"><div class="quick-form-title">Rychlý zápis</div><div class="quick-form-meta"><span>šablona</span><span>trasa</span><span>časy</span></div></div>',
-        unsafe_allow_html=True,
-    )
 
-    if not recent.empty:
-        records = recent.to_dict(orient="records")
-        labels = ["—"] + [_template_label(r) for r in records]
-        picked = st.selectbox("Šablona z posledních letů", list(range(len(labels))), format_func=lambda i: labels[int(i)], key=f"{prefix}_template_pick_v040")
-        c1, c2, c3 = st.columns(3)
-        if picked and int(picked) > 0:
-            tpl = records[int(picked) - 1]
-            if c1.button("Použít šablonu", key=f"{prefix}_apply_template_v040", use_container_width=True):
-                set_form_values(prefix, tpl, include_times=False, include_date=False)
-            if c2.button("Použít i časy", key=f"{prefix}_apply_template_times_v040", use_container_width=True):
-                set_form_values(prefix, tpl, include_times=True, include_date=False)
-            if c3.button("Otočit trasu", key=f"{prefix}_reverse_template_route_v040", use_container_width=True):
-                rev = dict(tpl)
-                rev["departure"], rev["arrival"] = tpl.get("arrival"), tpl.get("departure")
-                set_form_values(prefix, rev, include_times=False, include_date=False)
-    if routes:
-        route_values = [""] + [r[0] for r in routes]
-        route_labels = {r[0]: r[1] for r in routes}
-        picked_route = st.selectbox("Trasa", route_values, format_func=lambda v: "—" if not v else route_labels.get(v, v.replace("__", "–")), key=f"{prefix}_route_pick_v040")
-        r1, r2 = st.columns(2)
-        if picked_route:
-            dep, arr = str(picked_route).split("__", 1)
-            if r1.button("Použít trasu", key=f"{prefix}_apply_route_v040", use_container_width=True):
-                st.session_state[f"{prefix}_dep"] = dep
-                st.session_state[f"{prefix}_arr"] = arr
-            if r2.button("Otočit trasu", key=f"{prefix}_reverse_route_v040", use_container_width=True):
-                st.session_state[f"{prefix}_dep"] = arr
-                st.session_state[f"{prefix}_arr"] = dep
+    with st.expander("Rychlé doplnění", expanded=False):
+        if routes:
+            route_values = [""] + [r[0] for r in routes]
+            route_labels = {r[0]: r[1] for r in routes}
+            picked_route = st.selectbox(
+                "Trasa z historie",
+                route_values,
+                format_func=lambda v: "—" if not v else route_labels.get(v, v.replace("__", "–")),
+                key=f"{prefix}_route_pick_v0401",
+            )
+            r1, r2 = st.columns(2)
+            if picked_route:
+                dep, arr = str(picked_route).split("__", 1)
+                if r1.button("Použít trasu", key=f"{prefix}_apply_route_v0401", use_container_width=True):
+                    st.session_state[f"{prefix}_dep"] = dep
+                    st.session_state[f"{prefix}_arr"] = arr
+                if r2.button("Otočit trasu", key=f"{prefix}_reverse_route_v0401", use_container_width=True):
+                    st.session_state[f"{prefix}_dep"] = arr
+                    st.session_state[f"{prefix}_arr"] = dep
 
-    t1, t2, t3, t4 = st.columns([1, 1, 1, .85])
-    quick_takeoff_default = st.session_state.get(f"{prefix}_to", defaults.get("takeoff") or "")
-    quick_air_default = minutes_diff(defaults.get("takeoff"), defaults.get("landing")) or 30
-    with t1:
-        q_takeoff = st.text_input("Vzlet", value=str(quick_takeoff_default or ""), key=f"{prefix}_quick_takeoff_v040")
-    with t2:
-        q_air = st.number_input("Air min", min_value=0, max_value=1440, step=5, value=int(quick_air_default), key=f"{prefix}_quick_air_v040")
-    with t3:
-        q_pad = st.number_input("Rezerva min", min_value=0, max_value=60, step=1, value=5, key=f"{prefix}_quick_pad_v040")
-    with t4:
-        st.write("")
-        if st.button("Doplnit časy", key=f"{prefix}_apply_times_v040", use_container_width=True):
-            takeoff = normalize_time(q_takeoff) or ""
-            if takeoff:
-                st.session_state[f"{prefix}_to"] = takeoff
-                st.session_state[f"{prefix}_ldg"] = add_minutes_to_time(takeoff, int(q_air))
-                st.session_state[f"{prefix}_off"] = add_minutes_to_time(takeoff, -int(q_pad))
-                st.session_state[f"{prefix}_on"] = add_minutes_to_time(takeoff, int(q_air) + int(q_pad))
+        t1, t2, t3, t4 = st.columns([1, 1, 1, .85])
+        quick_takeoff_default = st.session_state.get(f"{prefix}_to", defaults.get("takeoff") or "")
+        quick_air_default = minutes_diff(defaults.get("takeoff"), defaults.get("landing")) or 30
+        with t1:
+            q_takeoff = st.text_input("Vzlet", value=str(quick_takeoff_default or ""), key=f"{prefix}_quick_takeoff_v0401")
+        with t2:
+            q_air = st.number_input("Air min", min_value=0, max_value=1440, step=5, value=int(quick_air_default), key=f"{prefix}_quick_air_v0401")
+        with t3:
+            q_pad = st.number_input("Rezerva min", min_value=0, max_value=60, step=1, value=5, key=f"{prefix}_quick_pad_v0401")
+        with t4:
+            st.write("")
+            if st.button("Doplnit časy", key=f"{prefix}_apply_times_v0401", use_container_width=True):
+                takeoff = normalize_time(q_takeoff) or ""
+                if takeoff:
+                    st.session_state[f"{prefix}_to"] = takeoff
+                    st.session_state[f"{prefix}_ldg"] = add_minutes_to_time(takeoff, int(q_air))
+                    st.session_state[f"{prefix}_off"] = add_minutes_to_time(takeoff, -int(q_pad))
+                    st.session_state[f"{prefix}_on"] = add_minutes_to_time(takeoff, int(q_air) + int(q_pad))
 
-def read_aircraft_catalog() -> pd.DataFrame:
+def _as_positive_float(value: Any) -> float | None:
+    try:
+        if value is None or pd.isna(value):
+            return None
+        value = float(value)
+        return value if value > 0 else None
+    except Exception:
+        return None
+
+
+def _normalize_billing_basis(value: Any) -> str:
+    text = str(value or "BLOCK").upper().strip()
+    return "AIR" if text == "AIR" else "BLOCK"
+
+
+def _billing_basis_label(value: Any) -> str:
+    return "Air Time" if _normalize_billing_basis(value) == "AIR" else "Block Time"
+
+
+def read_aircraft_catalog(active_only: bool = True) -> pd.DataFrame:
     try:
         aircraft = read_table("aircraft")
     except Exception:
@@ -2815,28 +2839,43 @@ def read_aircraft_catalog() -> pd.DataFrame:
     aircraft = aircraft.copy()
     aircraft["registration"] = aircraft["registration"].fillna("").astype(str).str.upper().str.strip()
     aircraft = aircraft[aircraft["registration"].ne("")]
-    if "active" in aircraft.columns:
+    if "default_role" not in aircraft.columns:
+        aircraft["default_role"] = "PIC"
+    if "billing_basis" not in aircraft.columns:
+        aircraft["billing_basis"] = "BLOCK"
+    aircraft["default_role"] = aircraft["default_role"].fillna("PIC").astype(str).str.upper().str.strip()
+    aircraft["billing_basis"] = aircraft["billing_basis"].fillna("BLOCK").astype(str).str.upper().str.strip()
+    if active_only and "active" in aircraft.columns:
         aircraft = aircraft[pd.to_numeric(aircraft["active"], errors="coerce").fillna(1).astype(int).eq(1)]
     return aircraft.sort_values("registration")
+
+
+def _aircraft_price(row: dict[str, Any], rates: pd.DataFrame, reg: str) -> float:
+    price = _as_positive_float(row.get("default_price_per_hour"))
+    if price is None:
+        rate = lookup_latest_rate(rates, reg)
+        price = _as_positive_float(rate.get("price_per_hour"))
+    return float(price or 0.0)
+
+
+def _aircraft_type(row: dict[str, Any], rates: pd.DataFrame, reg: str) -> str:
+    rate = lookup_latest_rate(rates, reg)
+    return normalize_text(row.get("aircraft_type")) or normalize_text(rate.get("aircraft_type")) or ""
 
 
 def _aircraft_label(reg: str, aircraft_by_reg: dict[str, dict[str, Any]], rates: pd.DataFrame) -> str:
     if not reg:
         return "Ručně"
     row = aircraft_by_reg.get(reg, {})
-    rate = lookup_latest_rate(rates, reg)
     parts = [reg]
-    typ = normalize_text(row.get("aircraft_type")) or normalize_text(rate.get("aircraft_type"))
+    typ = _aircraft_type(row, rates, reg)
     if typ:
         parts.append(typ)
-    price = rate.get("price_per_hour")
-    if price is None or (isinstance(price, float) and pd.isna(price)):
-        price = row.get("default_price_per_hour")
-    try:
-        if price is not None and float(price or 0) > 0:
-            parts.append(f"{float(price):.0f} Kč/h")
-    except Exception:
-        pass
+    price = _aircraft_price(row, rates, reg)
+    if price > 0:
+        parts.append(f"{price:.0f} Kč/h")
+    basis = _normalize_billing_basis(row.get("billing_basis"))
+    parts.append("AIR" if basis == "AIR" else "BLOCK")
     return " • ".join(parts)
 
 
@@ -2844,26 +2883,25 @@ def _apply_aircraft_to_form(prefix: str, reg: str, row: dict[str, Any], rates: p
     reg = str(reg or "").upper().strip()
     if not reg:
         return
-    rate = lookup_latest_rate(rates, reg)
     evidence = normalize_text(row.get("evidence")) or evidence_from_registration(reg)
     aircraft_class = normalize_text(row.get("aircraft_class")) or default_class_for(evidence)
-    aircraft_type = normalize_text(row.get("aircraft_type")) or normalize_text(rate.get("aircraft_type")) or ""
-    price = rate.get("price_per_hour")
-    if price is None or (isinstance(price, float) and pd.isna(price)):
-        price = row.get("default_price_per_hour")
-    try:
-        price = float(price or 0)
-    except Exception:
-        price = 0.0
+    aircraft_type = _aircraft_type(row, rates, reg)
+    price = _aircraft_price(row, rates, reg)
+    default_role = normalize_text(row.get("default_role")) or "PIC"
+    billing_basis = _normalize_billing_basis(row.get("billing_basis"))
+
     st.session_state[f"{prefix}_reg"] = reg
     st.session_state[f"{prefix}_type"] = aircraft_type
     st.session_state[f"{prefix}_ev"] = evidence if evidence in EVIDENCE_OPTIONS else evidence_from_registration(reg)
     st.session_state[f"{prefix}_class"] = aircraft_class if aircraft_class in CLASS_OPTIONS else default_class_for(st.session_state[f"{prefix}_ev"])
     st.session_state[f"{prefix}_price"] = price
+    if default_role in ROLE_OPTIONS:
+        st.session_state[f"{prefix}_role"] = default_role
+    st.session_state[f"{prefix}_billing_basis"] = billing_basis
 
 
 def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
-    aircraft = read_aircraft_catalog()
+    aircraft = read_aircraft_catalog(active_only=True)
     if aircraft.empty:
         return
     aircraft_by_reg = {str(row.get("registration") or "").upper(): dict(row) for _, row in aircraft.iterrows()}
@@ -2900,6 +2938,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
     rate = lookup_latest_rate(rates, reg)
     default_price = st.session_state.get(f"{prefix}_price", defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0)
     default_type = st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type") or rate.get("aircraft_type") or "")
+    default_billing_basis = _normalize_billing_basis(st.session_state.get(f"{prefix}_billing_basis", defaults.get("billing_basis") or "BLOCK"))
     with st.form(prefix):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -2924,16 +2963,24 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             role_def = defaults.get("role") or "PIC"
             role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0, key=f"{prefix}_role")
             price = st.number_input("Cena Kč/h", min_value=0.0, step=50.0, value=float(default_price or 0), key=f"{prefix}_price")
+            billing_basis = st.selectbox(
+                "Účtovat podle",
+                BILLING_BASIS_OPTIONS,
+                index=BILLING_BASIS_OPTIONS.index(default_billing_basis) if default_billing_basis in BILLING_BASIS_OPTIONS else 0,
+                key=f"{prefix}_billing_basis",
+                format_func=_billing_basis_label,
+            )
             task = st.text_input("Úloha", value=str(defaults.get("task") or ""), key=f"{prefix}_task")
             note = st.text_input("Poznámka", value=str(defaults.get("note") or ""), key=f"{prefix}_note")
         block = minutes_diff(off_block, on_block); air = minutes_diff(takeoff, landing)
         c1, c2, c3 = st.columns(3)
         with c1: metric_card("Block Time", fmt_minutes(block), "")
         with c2: metric_card("Air Time", fmt_minutes(air), "")
-        with c3: metric_card("Cena letu", fmt_money((block or 0)/60*price), "")
+        bill_minutes = air if billing_basis == "AIR" else block
+        with c3: metric_card("Cena letu", fmt_money((bill_minutes or 0)/60*price), _billing_basis_label(billing_basis))
         submitted = st.form_submit_button(submit_label, type="primary", use_container_width=True)
     if submitted:
-        return {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "note": note}
+        return {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "billing_basis": billing_basis, "note": note}
     return None
 
 
@@ -3596,16 +3643,34 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
             render_map_selection(filtered, rates, dark_mode)
 
 
-def page_rates(rates: pd.DataFrame):
-    st.markdown("## Ceník")
+def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> None:
     if rates.empty:
         rates = pd.DataFrame(columns=["id", "registration", "aircraft_type", "valid_from", "price_per_hour", "dry_price_per_hour", "source"])
     display = rates.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","valid_from":"Od data","price_per_hour":"Cena Kč/h","dry_price_per_hour":"Suchá hodina Kč/h","source":"Zdroj"})
-    edited = st.data_editor(display, hide_index=True, use_container_width=True, num_rows="dynamic", disabled=["ID"] if is_admin() else display.columns.tolist(), height=640, column_config={"Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč"), "Suchá hodina Kč/h": st.column_config.NumberColumn(format="%.0f Kč")})
-    if st.button("Uložit ceník", type="primary", disabled=not is_admin()):
+    display = display[[c for c in ["ID","Imatrikulace","Typ","Od data","Cena Kč/h","Suchá hodina Kč/h","Zdroj"] if c in display.columns]]
+    edited = st.data_editor(
+        display,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="dynamic",
+        disabled=["ID"] if is_admin() else display.columns.tolist(),
+        height=520,
+        key=f"{key_prefix}_editor_v041",
+        column_config={
+            "Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
+            "Suchá hodina Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
+            "Od data": st.column_config.TextColumn(help=None),
+        },
+    )
+    if st.button("Uložit ceník", type="primary", disabled=not is_admin(), key=f"{key_prefix}_save_v041"):
         if require_admin():
             save_rates_editor(edited)
             st.success("Ceník uložen."); st.rerun()
+
+
+def page_rates(rates: pd.DataFrame):
+    st.markdown("## Ceník")
+    render_rates_editor(rates, key_prefix="page_rates")
 
 
 
@@ -3625,6 +3690,24 @@ def save_rates_editor(edited: pd.DataFrame) -> None:
     auto_backup_after_change("save_rates")
 
 
+def _bool_to_int(value: Any, default: int = 1) -> int:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return default
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in {"1", "true", "ano", "yes", "aktivní", "active"}:
+            return 1
+        if text in {"0", "false", "ne", "no", "neaktivní", "inactive"}:
+            return 0
+    return 1 if bool(value) else 0
+
+
+def _clean_role(value: Any) -> str:
+    text = normalize_text(value) or "PIC"
+    text = text.upper()
+    return text if text in ROLE_OPTIONS else "PIC"
+
+
 def save_aircraft_editor(edited: pd.DataFrame) -> None:
     with connect() as con:
         con.execute("DELETE FROM aircraft")
@@ -3635,14 +3718,83 @@ def save_aircraft_editor(edited: pd.DataFrame) -> None:
                 continue
             con.execute(
                 """
-                INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, active, note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("ICAO typ")), normalize_text(row.get("Třída")), normalize_text(row.get("Evidence")), float(row.get("Výchozí Kč/h") or 0), int(row.get("Aktivní") or 0), normalize_text(row.get("Poznámka")), now, now),
+                (
+                    reg.upper(),
+                    normalize_text(row.get("Typ")),
+                    normalize_text(row.get("ICAO typ")),
+                    normalize_text(row.get("Třída")),
+                    normalize_text(row.get("Evidence")),
+                    float(row.get("Výchozí Kč/h") or 0),
+                    _clean_role(row.get("Výchozí role")),
+                    _normalize_billing_basis(row.get("Účtovat podle")),
+                    _bool_to_int(row.get("Aktivní"), 1),
+                    normalize_text(row.get("Poznámka")),
+                    now,
+                    now,
+                ),
             )
         record_audit(con, "save_aircraft", "aircraft", None, {"rows": len(edited)})
         con.commit()
     auto_backup_after_change("save_aircraft")
+
+
+def upsert_aircraft_profile(data: dict[str, Any]) -> None:
+    reg = normalize_text(data.get("registration"))
+    if not reg:
+        raise ValueError("Imatrikulace je povinná.")
+    now = _now_iso()
+    price = float(data.get("default_price_per_hour") or 0)
+    with connect() as con:
+        con.execute(
+            """
+            INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(registration) DO UPDATE SET
+                aircraft_type=excluded.aircraft_type,
+                icao_type=excluded.icao_type,
+                aircraft_class=excluded.aircraft_class,
+                evidence=excluded.evidence,
+                default_price_per_hour=excluded.default_price_per_hour,
+                default_role=excluded.default_role,
+                billing_basis=excluded.billing_basis,
+                active=excluded.active,
+                note=excluded.note,
+                updated_at=excluded.updated_at
+            """,
+            (
+                reg.upper(),
+                normalize_text(data.get("aircraft_type")),
+                normalize_text(data.get("icao_type")),
+                normalize_text(data.get("aircraft_class")),
+                normalize_text(data.get("evidence")),
+                price,
+                _clean_role(data.get("default_role")),
+                _normalize_billing_basis(data.get("billing_basis")),
+                _bool_to_int(data.get("active"), 1),
+                normalize_text(data.get("note")),
+                now,
+                now,
+            ),
+        )
+        if price > 0 and bool(data.get("sync_rate", False)):
+            today = date.today().isoformat()
+            con.execute(
+                """
+                INSERT INTO rates (registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(registration, valid_from) DO UPDATE SET
+                    aircraft_type=excluded.aircraft_type,
+                    price_per_hour=excluded.price_per_hour,
+                    source=excluded.source
+                """,
+                (reg.upper(), normalize_text(data.get("aircraft_type")), today, price, 0.0, "aircraft_default"),
+            )
+        record_audit(con, "upsert_aircraft", "aircraft", reg.upper(), data)
+        con.commit()
+    auto_backup_after_change("upsert_aircraft")
 
 
 def upsert_airport_form(data: dict[str, Any]) -> None:
@@ -3709,6 +3861,7 @@ def page_database():
     st.markdown("## Databáze")
     airports = read_airports(active_only=False)
     aircraft = read_table("aircraft")
+    rates = read_table("rates")
     tracks = read_table("flight_tracks")
     points = read_table("track_points")
     metas = read_table("app_meta")
@@ -3720,7 +3873,7 @@ def page_database():
     with c3: metric_card("Tracky", str(len(tracks)), "KML soubory")
     with c4: metric_card("GPS body", f"{len(points):,}".replace(",", " "), "normalizováno")
 
-    tab_airports, tab_aircraft, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Záloha", "Meta"])
+    tab_airports, tab_aircraft, tab_rates, tab_backup, tab_meta = st.tabs(["Letiště", "Letadla", "Ceník", "Záloha", "Meta"])
     with tab_airports:
         col1, col2, col3 = st.columns([1,1,2])
         with col1:
@@ -3775,15 +3928,116 @@ def page_database():
 
     with tab_aircraft:
         if aircraft.empty:
-            aircraft = pd.DataFrame(columns=["id","registration","aircraft_type","icao_type","aircraft_class","evidence","default_price_per_hour","active","note"])
-        display = aircraft.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","icao_type":"ICAO typ","aircraft_class":"Třída","evidence":"Evidence","default_price_per_hour":"Výchozí Kč/h","active":"Aktivní","note":"Poznámka"})
-        cols = ["ID","Imatrikulace","Typ","ICAO typ","Třída","Evidence","Výchozí Kč/h","Aktivní","Poznámka"]
+            aircraft = pd.DataFrame(columns=["id","registration","aircraft_type","icao_type","aircraft_class","evidence","default_price_per_hour","default_role","billing_basis","active","note"])
+        aircraft_view = aircraft.copy()
+        for col, default in [("default_role", "PIC"), ("billing_basis", "BLOCK"), ("active", 1)]:
+            if col not in aircraft_view.columns:
+                aircraft_view[col] = default
+        aircraft_view["registration"] = aircraft_view.get("registration", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
+        aircraft_view["active"] = pd.to_numeric(aircraft_view.get("active", 1), errors="coerce").fillna(1).astype(int)
+
+        a1, a2, a3, a4 = st.columns(4)
+        with a1: metric_card("Aktivní", str(int(aircraft_view["active"].eq(1).sum())) if not aircraft_view.empty else "0", "letadla")
+        with a2: metric_card("Neaktivní", str(int(aircraft_view["active"].eq(0).sum())) if not aircraft_view.empty else "0", "archiv")
+        with a3:
+            avg_price = pd.to_numeric(aircraft_view.get("default_price_per_hour", pd.Series(dtype=float)), errors="coerce").replace(0, pd.NA).dropna()
+            metric_card("Průměr Kč/h", f"{avg_price.mean():.0f}" if len(avg_price) else "—", "aktivní sazby")
+        with a4: metric_card("Ceník", str(len(rates)), "řádky")
+
+        reg_options = [""] + sorted([x for x in aircraft_view["registration"].dropna().unique() if x])
+        pick = st.selectbox("Vybrat letadlo", reg_options, format_func=lambda x: "Nové letadlo" if not x else x, key="aircraft_profile_pick_v041")
+        picked_row = {}
+        if pick:
+            sub = aircraft_view[aircraft_view["registration"].eq(pick)]
+            if not sub.empty:
+                picked_row = sub.iloc[0].to_dict()
+
+        if not is_admin():
+            st.info("Editace letadel je dostupná jen pro admina.")
+        else:
+            with st.form("aircraft_profile_form_v041"):
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    reg = st.text_input("Imatrikulace", value=str(picked_row.get("registration") or "")).upper()
+                    typ = st.text_input("Typ", value=str(picked_row.get("aircraft_type") or ""))
+                    icao_type = st.text_input("ICAO typ", value=str(picked_row.get("icao_type") or picked_row.get("aircraft_type") or ""))
+                with c2:
+                    ev_def = normalize_text(picked_row.get("evidence")) or evidence_from_registration(reg)
+                    evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0)
+                    class_def = normalize_text(picked_row.get("aircraft_class")) or default_class_for(evidence)
+                    aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(class_def) if class_def in CLASS_OPTIONS else 0)
+                    role_def = _clean_role(picked_row.get("default_role"))
+                    default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0)
+                with c3:
+                    price = st.number_input("Výchozí Kč/h", min_value=0.0, step=50.0, value=float(picked_row.get("default_price_per_hour") or 0))
+                    basis_def = _normalize_billing_basis(picked_row.get("billing_basis"))
+                    billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
+                    active = st.checkbox("Aktivní", value=bool(_bool_to_int(picked_row.get("active"), 1)))
+                note = st.text_input("Poznámka", value=str(picked_row.get("note") or ""))
+                sync_rate = st.checkbox("Zapsat cenu také do ceníku od dnešního dne", value=False)
+                submitted_aircraft = st.form_submit_button("Uložit letadlo", type="primary", use_container_width=True)
+            if submitted_aircraft:
+                try:
+                    upsert_aircraft_profile({
+                        "registration": reg,
+                        "aircraft_type": typ,
+                        "icao_type": icao_type,
+                        "aircraft_class": aircraft_class,
+                        "evidence": evidence,
+                        "default_price_per_hour": price,
+                        "default_role": default_role,
+                        "billing_basis": billing_basis,
+                        "active": active,
+                        "note": note,
+                        "sync_rate": sync_rate,
+                    })
+                    st.success("Letadlo uloženo."); st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+
+        st.markdown("### Přehled letadel")
+        f1, f2 = st.columns([1, 2])
+        with f1:
+            show_inactive = st.checkbox("Zobrazit neaktivní", value=False, key="aircraft_show_inactive_v041")
+        with f2:
+            q_aircraft = st.text_input("Hledat letadlo", value="", key="aircraft_search_v041")
+        table_aircraft = aircraft_view.copy()
+        if not show_inactive and not table_aircraft.empty:
+            table_aircraft = table_aircraft[table_aircraft["active"].eq(1)]
+        if q_aircraft.strip() and not table_aircraft.empty:
+            ql = q_aircraft.strip().lower()
+            table_aircraft = table_aircraft[
+                table_aircraft["registration"].fillna("").str.lower().str.contains(ql)
+                | table_aircraft.get("aircraft_type", pd.Series(dtype=str)).fillna("").str.lower().str.contains(ql)
+                | table_aircraft.get("note", pd.Series(dtype=str)).fillna("").str.lower().str.contains(ql)
+            ]
+        display = table_aircraft.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","icao_type":"ICAO typ","aircraft_class":"Třída","evidence":"Evidence","default_price_per_hour":"Výchozí Kč/h","default_role":"Výchozí role","billing_basis":"Účtovat podle","active":"Aktivní","note":"Poznámka"})
+        cols = ["ID","Imatrikulace","Typ","ICAO typ","Třída","Evidence","Výchozí Kč/h","Výchozí role","Účtovat podle","Aktivní","Poznámka"]
         display = display[[c for c in cols if c in display.columns]]
-        edited = st.data_editor(display.sort_values("Imatrikulace") if not display.empty else display, hide_index=True, use_container_width=True, num_rows="dynamic", disabled=["ID"] if is_admin() else display.columns.tolist(), height=560, column_config={"Výchozí Kč/h": st.column_config.NumberColumn(format="%.0f Kč"), "Aktivní": st.column_config.CheckboxColumn()})
-        if st.button("Uložit letadla", type="primary", disabled=not is_admin()):
+        edited = st.data_editor(
+            display.sort_values("Imatrikulace") if not display.empty else display,
+            hide_index=True,
+            use_container_width=True,
+            num_rows="dynamic",
+            disabled=["ID"] if is_admin() else display.columns.tolist(),
+            height=430,
+            key="aircraft_editor_v041",
+            column_config={
+                "Výchozí Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
+                "Aktivní": st.column_config.CheckboxColumn(),
+                "Evidence": st.column_config.SelectboxColumn(options=EVIDENCE_OPTIONS),
+                "Třída": st.column_config.SelectboxColumn(options=CLASS_OPTIONS),
+                "Výchozí role": st.column_config.SelectboxColumn(options=ROLE_OPTIONS),
+                "Účtovat podle": st.column_config.SelectboxColumn(options=BILLING_BASIS_OPTIONS),
+            },
+        )
+        if st.button("Uložit tabulku letadel", type="primary", disabled=not is_admin(), key="save_aircraft_table_v041"):
             if require_admin():
                 save_aircraft_editor(edited)
                 st.success("Letadla uložena."); st.rerun()
+
+    with tab_rates:
+        render_rates_editor(rates, key_prefix="database_rates")
 
     # Import světové databáze byl odstraněn z běžného UI po prvotním naplnění tabulky airports.
     # Importní funkce zůstávají v kódu pro případ budoucí servisní migrace, ale nejsou vystavené v aplikaci.

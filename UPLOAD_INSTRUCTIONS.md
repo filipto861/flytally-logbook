@@ -1,4 +1,4 @@
-# Upload instructions – v0.40
+# Upload instructions – v0.41
 
 Nahraj minimálně:
 
@@ -6,7 +6,7 @@ Nahraj minimálně:
 - `README.md`
 - `UPLOAD_INSTRUCTIONS.md`
 
-Složka `logbook_core/` může zůstat v repozitáři. Aplikace má fallback, takže nespadne ani při chybějícím modulu, ale pro v0.39+ optimalizace je vhodné ji ponechat.
+Složka `logbook_core/` může zůstat v repozitáři. Pokud už tam je, není nutné ji znovu řešit.
 
 NEPŘEPISOVAT:
 

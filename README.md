@@ -1,16 +1,16 @@
 # Letový zápisník
 
-Aktuální checkpoint: **v0.40 – Přidání letu / formulář 2.0**.
+Aktuální checkpoint: **v0.41 – Databáze 2.0**.
 
-## Změny v0.40
+## Změny v0.41
 
-- Přidán rychlý zápis v části **Přidat let**.
-- Nový let lze předvyplnit ze šablony posledních letů.
-- Lze rychle použít poslední let bez časů, použít i časy, nebo otočit trasu.
-- Přidán výběr nejčastějších tras z historie.
-- Přidán rychlý dopočet časů podle vzletu, délky Air Time a rezervy pro block time.
-- Výběr letadla z databáze zůstává zachovaný a lépe navazuje na předvyplněnou registraci.
-- Zachována funkčnost v0.39.1: optimalizace, agregovaná mapa, dashboard 2.0, KML landing detection a výběr letadla.
+- Přepracovaná část **Databáze → Letadla**.
+- Letadlo má nově výchozí roli, účtování podle Block/Air a aktivní/neaktivní stav.
+- Přidán rychlý formulář pro přidání nebo úpravu jednoho letadla.
+- Přehled letadel má filtrování, vyhledávání a hromadnou editaci.
+- Ceník je dostupný také přímo v databázi.
+- Přidání letu načítá z profilu letadla registraci, typ, evidenci, třídu, roli, cenu a způsob účtování.
+- Náklady letu se počítají podle uloženého způsobu účtování: Block Time nebo Air Time.
 
 ## Bezpečnost dat
 
