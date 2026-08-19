@@ -1,8 +1,8 @@
 """Runtime SQLite compatibility patches for the logbook app.
 
 This module is imported automatically by Python when present on sys.path.  It is
-kept intentionally small: it only protects older deployed databases from schema
-mismatches. UI behaviour is implemented in app.py, not here.
+kept intentionally small: it protects older deployed databases from schema
+mismatches and applies safe runtime compatibility patches.
 """
 from __future__ import annotations
 
@@ -74,3 +74,36 @@ def connect(*args, **kwargs):
 
 
 sqlite3.connect = connect
+
+
+def _patch_folium_popup_targets() -> None:
+    """Make route-overview detail links break out of Folium/Streamlit iframes.
+
+    Folium popups are rendered inside an iframe by streamlit-folium. A normal
+    target="_self" opens the Streamlit app inside that map iframe. For flight
+    detail links we need top-window navigation instead.
+    """
+    try:
+        import folium  # Imported here intentionally; Folium is already required by the app.
+    except Exception:
+        return
+
+    try:
+        popup_cls = folium.Popup
+        if getattr(popup_cls, "_logbook_target_patch", False):
+            return
+        original_init = popup_cls.__init__
+
+        def patched_init(self, html=None, *args, **kwargs):  # type: ignore[no-untyped-def]
+            if isinstance(html, str) and "flight_id=" in html:
+                html = html.replace('target="_self"', 'target="_top" rel="noopener"')
+                html = html.replace("target='_self'", "target='_top' rel='noopener'")
+            return original_init(self, html, *args, **kwargs)
+
+        popup_cls.__init__ = patched_init
+        popup_cls._logbook_target_patch = True
+    except Exception:
+        pass
+
+
+_patch_folium_popup_targets()
