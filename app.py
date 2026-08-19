@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.50.1"
+APP_VERSION = "v0.50.2"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -2981,7 +2981,7 @@ def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark
   #idx { width:100%; accent-color:#38bdf8; cursor:pointer; }
   .counter { color:__MUTED__; font-size:12px; text-align:right; white-space:nowrap; }
   .source-note { color:__MUTED__; font-size:11px; padding:0 14px 12px 14px; }
-  .plane-wrap { width:34px; height:34px; margin-left:-17px; margin-top:-17px; display:flex; align-items:center; justify-content:center; filter: drop-shadow(0 0 7px rgba(0,0,0,.85)); }
+  .plane-wrap { width:34px; height:34px; margin-left:0; margin-top:0; display:flex; align-items:center; justify-content:center; filter: drop-shadow(0 0 7px rgba(0,0,0,.85)); }
   .plane-svg { width:30px; height:30px; transform-origin:50% 50%; }
   .leaflet-control-attribution { font-size:10px; background:rgba(0,0,0,.36) !important; color:#b8c7d8 !important; }
   .leaflet-control-attribution a { color:#7dd3fc !important; }

@@ -1,8 +1,8 @@
 # Letový zápisník
 
-Verze: v0.50.1
+Verze: v0.50.2
 
-## v0.50.1 – Track playback hotfix
+## v0.50.2 – Track player icon alignment
 
 - plynulejší posuvník tracku bez Streamlit rerunu při každém pohybu
 - mapa a profil se aktualizují přímo v prohlížeči při tažení posuvníku
