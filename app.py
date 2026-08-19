@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import html
 import json
 import math
 import re
@@ -92,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.41"
+APP_VERSION = "v0.42"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 4
 _DB_READY = False
@@ -4130,39 +4131,459 @@ def page_control(df: pd.DataFrame):
         st.dataframe(control, hide_index=True, use_container_width=True)
 
 
-def export_excel(df: pd.DataFrame) -> bytes:
-    wb = Workbook(); ws = wb.active; ws.title = "Zápisník letů"
-    headers = ["Datum","Evidence","Imatrikulace","Typ","Třída","Odlet","Přílet","Off Block","Takeoff","Landing","On Block","Block Time","Air Time","Starty","Velitel","Instruktor","Funkce","Úloha","Cena Kč/h","Cena letu Kč","GPS tracky","GPS km","Poznámka"]
-    ws.append(headers)
-    work = df.sort_values(["date_dt","id"]).copy()
+
+def _export_date_bounds(df: pd.DataFrame) -> tuple[date, date]:
+    if df.empty or "date_dt" not in df.columns or df["date_dt"].dropna().empty:
+        today = date.today()
+        return today, today
+    vals = pd.to_datetime(df["date_dt"], errors="coerce").dropna()
+    return vals.min().date(), vals.max().date()
+
+
+def _safe_filename_part(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9_\-]+", "-", text, flags=re.IGNORECASE).strip("-")
+    return text or "export"
+
+
+def _export_prefix(df: pd.DataFrame, label: str = "logbook") -> str:
+    if df.empty or "date_dt" not in df.columns or df["date_dt"].dropna().empty:
+        return _safe_filename_part(label)
+    vals = pd.to_datetime(df["date_dt"], errors="coerce").dropna()
+    start = vals.min().strftime("%Y%m%d")
+    end = vals.max().strftime("%Y%m%d")
+    return f"{_safe_filename_part(label)}_{start}_{end}"
+
+
+def _duration_hours(minutes: Any) -> float:
+    if minutes is None or pd.isna(minutes):
+        return 0.0
+    return round(float(minutes) / 60.0, 2)
+
+
+def _money_number(value: Any) -> float:
+    if value is None or pd.isna(value):
+        return 0.0
+    return round(float(value), 0)
+
+
+def make_logbook_export_df(df: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "Datum", "Evidence", "Imatrikulace", "Typ", "Třída", "Odlet", "Přílet",
+        "Off Block", "Vzlet", "Přistání", "On Block", "Block Time", "Air Time",
+        "Block h", "Air h", "Starty", "Velitel", "Instruktor", "Funkce", "Úloha",
+        "Účtování", "Cena Kč/h", "Cena letu Kč", "GPS tracky", "GPS km", "Poznámka",
+    ]
+    if df.empty:
+        return pd.DataFrame(columns=columns)
+    work = df.sort_values(["date_dt", "off_block", "id"], na_position="last").copy()
+    rows = []
     for _, r in work.iterrows():
-        ws.append([r.get("date"), r.get("evidence"), r.get("registration"), r.get("aircraft_type"), r.get("aircraft_class"), r.get("departure"), r.get("arrival"), r.get("off_block"), r.get("takeoff"), r.get("landing"), r.get("on_block"), fmt_minutes(r.get("block_minutes")), fmt_minutes(r.get("air_minutes")), int(r.get("starts") or 0), r.get("commander"), r.get("instructor"), r.get("role"), r.get("task"), float(r.get("price_per_hour") or 0), float(r.get("cost") or 0), int(r.get("track_count") or 0), float(r.get("gps_km") or 0), r.get("note")])
-    style_worksheet(ws)
-    ws2 = wb.create_sheet("Souhrny")
-    summary = build_summary(df)
-    rows = [["Metrika","Hodnota"],["Celkový nálet",fmt_minutes(summary["total"])],["Air Time",fmt_minutes(summary["air"])],["PIC celkem",fmt_minutes(summary["pic"])],["PIC ULL",fmt_minutes(summary["pic_ull"])],["PIC EASA",fmt_minutes(summary["pic_easa"])],["DUAL",fmt_minutes(summary["dual"])],["Safety Pilot",fmt_minutes(summary["safety"])],["ULL celkem",fmt_minutes(summary["ull"])],["EASA celkem",fmt_minutes(summary["easa"])],["Starty",summary["starts"]],["GPS tracky",summary["tracks"]],["GPS km",summary["gps_km"]],["Náklady",summary["cost"]]]
-    for row in rows: ws2.append(row)
-    style_worksheet(ws2)
-    out = BytesIO(); wb.save(out); return out.getvalue()
+        rows.append({
+            "Datum": r.get("date"),
+            "Evidence": r.get("evidence"),
+            "Imatrikulace": r.get("registration"),
+            "Typ": r.get("aircraft_type"),
+            "Třída": r.get("aircraft_class"),
+            "Odlet": r.get("departure"),
+            "Přílet": r.get("arrival"),
+            "Off Block": r.get("off_block"),
+            "Vzlet": r.get("takeoff"),
+            "Přistání": r.get("landing"),
+            "On Block": r.get("on_block"),
+            "Block Time": fmt_minutes(r.get("block_minutes")),
+            "Air Time": fmt_minutes(r.get("air_minutes")),
+            "Block h": _duration_hours(r.get("block_minutes")),
+            "Air h": _duration_hours(r.get("air_minutes")),
+            "Starty": int(r.get("starts") or 0),
+            "Velitel": r.get("commander"),
+            "Instruktor": r.get("instructor"),
+            "Funkce": r.get("role"),
+            "Úloha": r.get("task"),
+            "Účtování": r.get("billing_basis"),
+            "Cena Kč/h": _money_number(r.get("price_per_hour")),
+            "Cena letu Kč": _money_number(r.get("cost")),
+            "GPS tracky": int(r.get("track_count") or 0),
+            "GPS km": round(float(r.get("gps_km") or 0), 1),
+            "Poznámka": r.get("note"),
+        })
+    return pd.DataFrame(rows, columns=columns)
 
 
-def style_worksheet(ws):
-    header_fill = PatternFill("solid", fgColor="0F172A"); header_font = Font(color="FFFFFF", bold=True); thin = Side(style="thin", color="D1D5DB")
-    for cell in ws[1]:
-        cell.fill = header_fill; cell.font = header_font; cell.alignment = Alignment(horizontal="center", vertical="center"); cell.border = Border(bottom=thin)
-    ws.freeze_panes = "A2"; ws.auto_filter.ref = ws.dimensions
+def _minutes_for_role(df: pd.DataFrame, role: str) -> int:
+    if df.empty:
+        return 0
+    return int(df["block_minutes"].where(df["role"].eq(role), 0).fillna(0).sum())
+
+
+def make_summary_table(df: pd.DataFrame) -> pd.DataFrame:
+    s = build_summary(df)
+    rows = [
+        ("Počet letů", s["flights"]),
+        ("Starty", s["starts"]),
+        ("Block Time", fmt_minutes(s["total"])),
+        ("Air Time", fmt_minutes(s["air"])),
+        ("PIC", fmt_minutes(s["pic"])),
+        ("PIC ULL", fmt_minutes(s["pic_ull"])),
+        ("PIC EASA", fmt_minutes(s["pic_easa"])),
+        ("DUAL", fmt_minutes(s["dual"])),
+        ("Safety Pilot", fmt_minutes(s["safety"])),
+        ("ULL celkem", fmt_minutes(s["ull"])),
+        ("EASA celkem", fmt_minutes(s["easa"])),
+        ("GPS tracky", s["tracks"]),
+        ("GPS km", round(float(s["gps_km"]), 1)),
+        ("Náklady", fmt_money(float(s["cost"]))),
+    ]
+    return pd.DataFrame(rows, columns=["Metrika", "Hodnota"])
+
+
+def make_group_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
+    base_cols = group_cols + ["Lety", "Starty", "Block", "Air", "PIC", "DUAL", "Safety", "GPS km", "Náklady Kč"]
+    if df.empty:
+        return pd.DataFrame(columns=base_cols)
+    work = df.copy()
+    for col in group_cols:
+        if col not in work.columns:
+            work[col] = ""
+        work[col] = work[col].fillna("").astype(str).replace("", "—")
+    work["_block"] = work["block_minutes"].fillna(0)
+    work["_air"] = work["air_minutes"].fillna(0)
+    work["_pic"] = work["_block"].where(work["role"].eq("PIC"), 0)
+    work["_dual"] = work["_block"].where(work["role"].eq("DUAL"), 0)
+    work["_safety"] = work["_block"].where(work["role"].eq("SAFETY PILOT"), 0)
+    grouped = work.groupby(group_cols, dropna=False).agg(
+        Lety=("id", "count"),
+        Starty=("starts", "sum"),
+        BlockMin=("_block", "sum"),
+        AirMin=("_air", "sum"),
+        PicMin=("_pic", "sum"),
+        DualMin=("_dual", "sum"),
+        SafetyMin=("_safety", "sum"),
+        GpsKm=("gps_km", "sum"),
+        Cost=("cost", "sum"),
+    ).reset_index()
+    grouped["Block"] = grouped["BlockMin"].apply(fmt_minutes)
+    grouped["Air"] = grouped["AirMin"].apply(fmt_minutes)
+    grouped["PIC"] = grouped["PicMin"].apply(fmt_minutes)
+    grouped["DUAL"] = grouped["DualMin"].apply(fmt_minutes)
+    grouped["Safety"] = grouped["SafetyMin"].apply(fmt_minutes)
+    grouped["GPS km"] = grouped["GpsKm"].fillna(0).round(1)
+    grouped["Náklady Kč"] = grouped["Cost"].fillna(0).round(0)
+    grouped = grouped.sort_values(["BlockMin", "Lety"], ascending=False)
+    return grouped[base_cols]
+
+
+def make_route_summary(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame(columns=["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"])
+    work = df.copy()
+    work["Trasa"] = work["departure"].fillna("").astype(str).str.upper().str.strip() + "–" + work["arrival"].fillna("").astype(str).str.upper().str.strip()
+    work.loc[work["Trasa"].eq("–"), "Trasa"] = "—"
+    grouped = work.groupby("Trasa", dropna=False).agg(
+        Lety=("id", "count"),
+        Starty=("starts", "sum"),
+        BlockMin=("block_minutes", "sum"),
+        AirMin=("air_minutes", "sum"),
+        GpsKm=("gps_km", "sum"),
+        Cost=("cost", "sum"),
+    ).reset_index()
+    grouped["Block"] = grouped["BlockMin"].apply(fmt_minutes)
+    grouped["Air"] = grouped["AirMin"].apply(fmt_minutes)
+    grouped["GPS km"] = grouped["GpsKm"].fillna(0).round(1)
+    grouped["Náklady Kč"] = grouped["Cost"].fillna(0).round(0)
+    grouped = grouped.sort_values(["Lety", "BlockMin"], ascending=False)
+    return grouped[["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"]]
+
+
+def make_airport_summary(df: pd.DataFrame) -> pd.DataFrame:
+    columns = ["Letiště", "Návštěvy", "Odlety", "Přílety", "První let", "Poslední let"]
+    if df.empty:
+        return pd.DataFrame(columns=columns)
+    rows = []
+    for kind, col in [("Odlety", "departure"), ("Přílety", "arrival")]:
+        tmp = df[["date", col]].copy()
+        tmp["Letiště"] = tmp[col].fillna("").astype(str).str.upper().str.strip()
+        tmp = tmp[tmp["Letiště"].ne("")]
+        tmp["Odlety"] = 1 if kind == "Odlety" else 0
+        tmp["Přílety"] = 1 if kind == "Přílety" else 0
+        rows.append(tmp[["date", "Letiště", "Odlety", "Přílety"]])
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    work = pd.concat(rows, ignore_index=True)
+    grouped = work.groupby("Letiště", dropna=False).agg(
+        Odlety=("Odlety", "sum"),
+        Přílety=("Přílety", "sum"),
+        První_let=("date", "min"),
+        Poslední_let=("date", "max"),
+    ).reset_index()
+    grouped["Návštěvy"] = grouped["Odlety"] + grouped["Přílety"]
+    grouped = grouped.sort_values(["Návštěvy", "Letiště"], ascending=[False, True])
+    grouped = grouped.rename(columns={"První_let": "První let", "Poslední_let": "Poslední let"})
+    return grouped[columns]
+
+
+def _append_dataframe(ws, df: pd.DataFrame, start_row: int = 1) -> None:
+    for col_idx, col in enumerate(df.columns, start=1):
+        ws.cell(start_row, col_idx, col)
+    for row_idx, row in enumerate(df.itertuples(index=False), start=start_row + 1):
+        for col_idx, value in enumerate(row, start=1):
+            ws.cell(row_idx, col_idx, value)
+
+
+def _style_export_sheet(ws, title: str | None = None) -> None:
+    header_fill = PatternFill("solid", fgColor="0F172A")
+    header_font = Font(color="FFFFFF", bold=True)
+    title_font = Font(color="0F172A", bold=True, size=14)
+    thin = Side(style="thin", color="D1D5DB")
+    if title:
+        ws.insert_rows(1)
+        ws.cell(1, 1, title)
+        ws.cell(1, 1).font = title_font
+        ws.row_dimensions[1].height = 22
+        header_row = 2
+    else:
+        header_row = 1
+    if ws.max_row >= header_row:
+        for cell in ws[header_row]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = Border(bottom=thin)
+    ws.freeze_panes = f"A{header_row + 1}"
+    if ws.max_column and ws.max_row >= header_row:
+        ws.auto_filter.ref = f"A{header_row}:{get_column_letter(ws.max_column)}{ws.max_row}"
+    for row in ws.iter_rows(min_row=header_row + 1):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+            cell.border = Border(bottom=Side(style="hair", color="E5E7EB"))
+            if isinstance(cell.value, (int, float)):
+                cell.number_format = '#,##0.00' if isinstance(cell.value, float) and abs(cell.value - int(cell.value)) > 0.001 else '#,##0'
     for col in range(1, ws.max_column + 1):
-        letter = get_column_letter(col); max_len = max(len(str(ws.cell(row, col).value or "")) for row in range(1, min(ws.max_row, 200) + 1)); ws.column_dimensions[letter].width = min(max(max_len + 2, 10), 26)
+        letter = get_column_letter(col)
+        max_len = max(len(str(ws.cell(row, col).value or "")) for row in range(1, min(ws.max_row, 300) + 1))
+        ws.column_dimensions[letter].width = min(max(max_len + 2, 10), 34)
+    ws.sheet_view.showGridLines = False
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+
+def export_excel(df: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Zápisník"
+    detail = make_logbook_export_df(df)
+    _append_dataframe(ws, detail)
+    _style_export_sheet(ws, "Letový zápisník")
+
+    ws2 = wb.create_sheet("Souhrn")
+    _append_dataframe(ws2, make_summary_table(df))
+    _style_export_sheet(ws2, "Souhrn")
+
+    sheets = [
+        ("Letadla", make_group_summary(df, ["registration", "aircraft_type", "evidence"]), "Souhrn podle letadel"),
+        ("Funkce", make_group_summary(df, ["role"]), "Souhrn podle funkce"),
+        ("Trasy", make_route_summary(df), "Souhrn tras"),
+        ("Letiště", make_airport_summary(df), "Souhrn letišť"),
+    ]
+    for name, table, title in sheets:
+        wsx = wb.create_sheet(name)
+        _append_dataframe(wsx, table)
+        _style_export_sheet(wsx, title)
+
+    out = BytesIO()
+    wb.save(out)
+    return out.getvalue()
+
+
+def build_print_html(df: pd.DataFrame, title: str = "Letový zápisník") -> str:
+    summary = build_summary(df)
+    detail = make_logbook_export_df(df)
+    generated = datetime.now(LOCAL_TZ).strftime("%d.%m.%Y %H:%M")
+    if df.empty or "date_dt" not in df.columns or df["date_dt"].dropna().empty:
+        period = "—"
+    else:
+        vals = pd.to_datetime(df["date_dt"], errors="coerce").dropna()
+        period = f"{vals.min().strftime('%d.%m.%Y')} – {vals.max().strftime('%d.%m.%Y')}"
+
+    cards = [
+        ("Lety", summary["flights"]),
+        ("Starty", summary["starts"]),
+        ("Block", fmt_minutes(summary["total"])),
+        ("Air", fmt_minutes(summary["air"])),
+        ("PIC", fmt_minutes(summary["pic"])),
+        ("DUAL", fmt_minutes(summary["dual"])),
+        ("GPS km", round(float(summary["gps_km"]), 1)),
+        ("Náklady", fmt_money(float(summary["cost"]))),
+    ]
+    cards_html = "".join(f"<div class='card'><span>{html.escape(str(label))}</span><strong>{html.escape(str(value))}</strong></div>" for label, value in cards)
+
+    columns = ["Datum", "Imatrikulace", "Typ", "Odlet", "Přílet", "Off Block", "Vzlet", "Přistání", "On Block", "Block Time", "Air Time", "Starty", "Funkce", "Úloha"]
+    header_html = "".join(f"<th>{html.escape(col)}</th>" for col in columns)
+    row_html = []
+    for _, r in detail.iterrows():
+        row_html.append("<tr>" + "".join(f"<td>{html.escape(str(r.get(col) or ''))}</td>" for col in columns) + "</tr>")
+    body_html = "".join(row_html) or f"<tr><td colspan='{len(columns)}'>Žádná data.</td></tr>"
+
+    css = """
+    body { font-family: Inter, Segoe UI, Arial, sans-serif; color:#111827; margin:28px; }
+    h1 { margin:0 0 4px 0; font-size:24px; }
+    .meta { color:#4b5563; font-size:12px; margin-bottom:18px; }
+    .cards { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin:16px 0 18px; }
+    .card { border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; background:#f9fafb; }
+    .card span { display:block; color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    .card strong { display:block; margin-top:4px; font-size:17px; }
+    table { width:100%; border-collapse:collapse; font-size:10px; }
+    th { background:#111827; color:white; padding:7px 6px; text-align:left; }
+    td { border-bottom:1px solid #e5e7eb; padding:5px 6px; vertical-align:top; }
+    tr:nth-child(even) td { background:#f9fafb; }
+    @media print {
+      body { margin:10mm; }
+      .cards { grid-template-columns:repeat(4, 1fr); }
+      table { font-size:8.5px; }
+      th, td { padding:4px; }
+    }
+    """
+    return f"""<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><title>{html.escape(title)}</title><style>{css}</style></head>
+<body>
+  <h1>{html.escape(title)}</h1>
+  <div class="meta">Období: {html.escape(period)} · Vygenerováno: {html.escape(generated)}</div>
+  <div class="cards">{cards_html}</div>
+  <table><thead><tr>{header_html}</tr></thead><tbody>{body_html}</tbody></table>
+</body>
+</html>"""
+
+
+def render_export_filters(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    work = df.copy()
+    min_date, max_date = _export_date_bounds(work)
+    with st.expander("Filtry exportu", expanded=True):
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            start_date = st.date_input("Od", value=min_date, min_value=min_date, max_value=max_date, key="export_start_date")
+        with c2:
+            end_date = st.date_input("Do", value=max_date, min_value=min_date, max_value=max_date, key="export_end_date")
+        with c3:
+            evidence_values = sorted([x for x in work["evidence"].dropna().unique() if x])
+            selected_evidence = st.multiselect("Evidence", evidence_values, default=evidence_values, key="export_evidence")
+        with c4:
+            role_values = sorted([x for x in work["role"].dropna().unique() if x])
+            selected_roles = st.multiselect("Funkce", role_values, default=role_values, key="export_roles")
+
+        c5, c6, c7 = st.columns(3)
+        with c5:
+            reg_values = sorted([x for x in work["registration"].dropna().unique() if x])
+            selected_regs = st.multiselect("Imatrikulace", reg_values, default=[], key="export_regs")
+        with c6:
+            class_values = sorted([x for x in work["aircraft_class"].dropna().unique() if x])
+            selected_classes = st.multiselect("Třída", class_values, default=[], key="export_classes")
+        with c7:
+            include_tracks_only = st.checkbox("Pouze lety s GPS trackem", value=False, key="export_tracks_only")
+
+    start_ts = pd.Timestamp(start_date)
+    end_ts = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+    work = work[pd.to_datetime(work["date_dt"], errors="coerce").between(start_ts, end_ts, inclusive="both")]
+    if selected_evidence:
+        work = work[work["evidence"].isin(selected_evidence)]
+    if selected_roles:
+        work = work[work["role"].isin(selected_roles)]
+    if selected_regs:
+        work = work[work["registration"].isin(selected_regs)]
+    if selected_classes:
+        work = work[work["aircraft_class"].isin(selected_classes)]
+    if include_tracks_only and "track_count" in work.columns:
+        work = work[work["track_count"].fillna(0).astype(int).gt(0)]
+    return work
+
+
+def render_export_summary(filtered: pd.DataFrame) -> None:
+    s = build_summary(filtered)
+    cols = st.columns(6)
+    values = [
+        ("Lety", s["flights"]),
+        ("Starty", s["starts"]),
+        ("Block", fmt_minutes(s["total"])),
+        ("Air", fmt_minutes(s["air"])),
+        ("PIC", fmt_minutes(s["pic"])),
+        ("Náklady", fmt_money(float(s["cost"]))),
+    ]
+    for col, (label, value) in zip(cols, values):
+        with col:
+            st.metric(label, value)
 
 
 def page_export(df: pd.DataFrame):
     st.markdown("## Export")
-    output = export_excel(df)
-    c1, c2 = st.columns(2)
-    with c1: st.download_button("Stáhnout Excel export", data=output, file_name="export_letovy_zapisnik.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", type="primary", use_container_width=True)
-    with c2:
+    if df.empty:
+        st.info("Zatím nejsou uložené žádné lety.")
         with open(DB_PATH, "rb") as f:
             st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+        return
+
+    filtered = render_export_filters(df)
+    render_export_summary(filtered)
+
+    tabs = st.tabs(["Soubory", "Tisk", "Náhled dat"])
+    prefix = _export_prefix(filtered, "letovy_zapisnik")
+    detail = make_logbook_export_df(filtered)
+
+    with tabs[0]:
+        xlsx = export_excel(filtered)
+        csv = detail.to_csv(index=False).encode("utf-8-sig")
+        html_doc = build_print_html(filtered)
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.download_button(
+                "Excel logbook",
+                data=xlsx,
+                file_name=f"{prefix}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary",
+                use_container_width=True,
+            )
+        with c2:
+            st.download_button("CSV", data=csv, file_name=f"{prefix}.csv", mime="text/csv", use_container_width=True)
+        with c3:
+            st.download_button("Tisk HTML", data=html_doc.encode("utf-8"), file_name=f"{prefix}_tisk.html", mime="text/html", use_container_width=True)
+        with c4:
+            with open(DB_PATH, "rb") as f:
+                st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", use_container_width=True)
+
+        st.markdown("### Obsah Excelu")
+        st.dataframe(
+            pd.DataFrame([
+                {"List": "Zápisník", "Obsah": "Filtrované lety ve stylu pilotního zápisníku"},
+                {"List": "Souhrn", "Obsah": "Celkový nálet, PIC, DUAL, Safety, ULL/EASA, GPS a náklady"},
+                {"List": "Letadla", "Obsah": "Součty podle imatrikulace, typu a evidence"},
+                {"List": "Funkce", "Obsah": "Součty podle funkce v letu"},
+                {"List": "Trasy", "Obsah": "Nejčastější direct trasy"},
+                {"List": "Letiště", "Obsah": "Odlety, přílety a návštěvy letišť"},
+            ]),
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    with tabs[1]:
+        st.markdown("### Tiskový přehled")
+        components.html(build_print_html(filtered), height=620, scrolling=True)
+
+    with tabs[2]:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Lety")
+            st.dataframe(detail.head(300), hide_index=True, use_container_width=True, height=420)
+        with c2:
+            st.markdown("### Souhrn")
+            st.dataframe(make_summary_table(filtered), hide_index=True, use_container_width=True, height=420)
+        st.markdown("### Letadla")
+        st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"]), hide_index=True, use_container_width=True)
+        st.markdown("### Trasy")
+        st.dataframe(make_route_summary(filtered), hide_index=True, use_container_width=True)
 
 def render_sidebar_toggle() -> None:
     """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""

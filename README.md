@@ -1,16 +1,22 @@
 # Letový zápisník
 
-Aktuální checkpoint: **v0.41 – Databáze 2.0**.
+Aktuální checkpoint: **v0.42 – Export / tisk logbooku 2.0**.
 
-## Změny v0.41
+## Změny v0.42
 
-- Přepracovaná část **Databáze → Letadla**.
-- Letadlo má nově výchozí roli, účtování podle Block/Air a aktivní/neaktivní stav.
-- Přidán rychlý formulář pro přidání nebo úpravu jednoho letadla.
-- Přehled letadel má filtrování, vyhledávání a hromadnou editaci.
-- Ceník je dostupný také přímo v databázi.
-- Přidání letu načítá z profilu letadla registraci, typ, evidenci, třídu, roli, cenu a způsob účtování.
-- Náklady letu se počítají podle uloženého způsobu účtování: Block Time nebo Air Time.
+- Přepracovaná část **Export**.
+- Přidány filtry exportu podle období, evidence, funkce, imatrikulace, třídy a GPS tracku.
+- Nový Excel export s listy:
+  - `Zápisník`
+  - `Souhrn`
+  - `Letadla`
+  - `Funkce`
+  - `Trasy`
+  - `Letiště`
+- Přidán CSV export filtrovaných letů.
+- Přidána tisková HTML verze, kterou lze otevřít v prohlížeči a uložit jako PDF.
+- Export ukazuje souhrn filtrovaných dat ještě před stažením.
+- SQLite databáze zůstává dostupná samostatně jako bezpečnostní záloha.
 
 ## Bezpečnost dat
 

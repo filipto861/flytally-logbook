@@ -1,4 +1,4 @@
-# Upload instructions – v0.41
+# Upload instructions – v0.42
 
 Nahraj minimálně:
 
