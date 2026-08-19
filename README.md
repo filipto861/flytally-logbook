@@ -1,19 +1,15 @@
-# Letový zápisník v0.36.1
+# Letový zápisník
 
-Hotfix verze v0.36.1 opravuje pád aplikace při startu po úpravě CSS v KML import wizardu.
+Aktuální checkpoint: v0.37.
 
-## Stav
+## v0.37
 
-- v0.36 KML wizard zachován
-- opravena CSS f-string chyba v `apply_ui_theme()`
-- databáze `data/logbook.sqlite` není součástí ZIPu a nesmí se přepisovat
+- Přidání letu z KML používá přesnější návrh takeoff/landing podle rychlosti a dostupné výšky.
+- Landing se neurčuje podle konce celého GPS tracku, takže dlouhé pojíždění po přistání nemá natahovat Air Time.
+- On Block se dopočítá jako landing + 5 minut.
+- Formulář nového letu umí vybrat letadlo z databáze.
+- Po výběru registrace se doplní typ, evidence, třída a sazba z ceníku/databáze letadel.
 
-## Nasazení
+## Bezpečnost dat
 
-Nahraj minimálně:
-
-- `app.py`
-- `README.md`
-- `UPLOAD_INSTRUCTIONS.md`
-
-Poté v Streamlit Cloud proveď Reboot app a v prohlížeči Ctrl+F5.
+Nepřepisovat ručně `data/logbook.sqlite`.

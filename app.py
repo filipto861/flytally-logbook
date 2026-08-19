@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.36.1"
+APP_VERSION = "v0.37"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1552,44 +1552,87 @@ def _longest_true_segment(mask: pd.Series, min_len: int = 1) -> tuple[int, int] 
     return best
 
 
+def _sustained_ground_after(speed: pd.Series, start_idx: int, threshold_kmh: float = 35.0, min_points: int = 4) -> int | None:
+    if speed.empty:
+        return None
+    values = speed.fillna(0).tolist()
+    run_start: int | None = None
+    run_len = 0
+    for idx in range(max(0, start_idx), len(values)):
+        if float(values[idx] or 0) <= threshold_kmh:
+            if run_start is None:
+                run_start = idx
+                run_len = 1
+            else:
+                run_len += 1
+            if run_len >= min_points:
+                return int(run_start)
+        else:
+            run_start = None
+            run_len = 0
+    return None
+
+
+def _airborne_segment_from_speed_and_altitude(prof: pd.DataFrame) -> tuple[int, int] | None:
+    if prof.empty:
+        return None
+    speed = pd.to_numeric(prof.get("speed_smooth", pd.Series(dtype=float)), errors="coerce").fillna(0)
+
+    fast_air = speed.gt(65)
+    segment = _longest_true_segment(fast_air, min_len=3)
+    if segment is not None:
+        return segment
+
+    medium_air = speed.gt(50)
+    segment = _longest_true_segment(medium_air, min_len=3)
+    if segment is not None:
+        return segment
+
+    if "alt_m" in prof and prof["alt_m"].notna().any():
+        alt = pd.to_numeric(prof["alt_m"], errors="coerce")
+        if alt.notna().sum() >= 3:
+            alt_range = float(alt.quantile(0.95) - alt.quantile(0.05))
+            if alt_range >= 45:
+                ground_band = float(alt.quantile(0.10))
+                airborne_alt = alt.gt(ground_band + 30)
+                segment = _longest_true_segment(airborne_alt, min_len=3)
+                if segment is not None:
+                    return segment
+    return None
+
+
 def detect_takeoff_landing(points: list[dict[str, Any]]) -> dict[str, Any]:
     prof = profile_from_points(points)
     n = len(prof)
     if n == 0:
         return {}
 
-    speed = prof.get("speed_smooth", pd.Series(dtype=float)).fillna(0)
+    speed = pd.to_numeric(prof.get("speed_smooth", pd.Series(dtype=float)), errors="coerce").fillna(0)
     moving = speed.gt(12)
+    first_move = int(moving.idxmax()) if moving.any() else 0
 
-    # Primary logic: airborne segment by GPS groundspeed.
-    # Use the longest continuous segment so short GPS spikes do not become takeoff/landing.
-    airborne = speed.gt(55)
-    segment = _longest_true_segment(airborne, min_len=3)
-
-    # Fallback when speed cannot be calculated: use altitude above the lowest recorded level.
-    if segment is None and "alt_m" in prof and prof["alt_m"].notna().any():
-        alt = prof["alt_m"]
-        base_alt = float(alt.dropna().quantile(0.05))
-        airborne_alt = alt.gt(base_alt + 35)
-        segment = _longest_true_segment(airborne_alt, min_len=3)
-
-    # Final fallback: treat the useful moving part as the flight.
+    segment = _airborne_segment_from_speed_and_altitude(prof)
     if segment is None:
         segment = _longest_true_segment(moving, min_len=1)
-
-    first_move = int(moving.idxmax()) if moving.any() else 0
-    last_move = int(moving[moving].index[-1]) if moving.any() else n - 1
 
     if segment is None:
         takeoff, landing = 0, n - 1
     else:
         takeoff, landing = segment
 
+    ground_start = _sustained_ground_after(speed, landing + 1, threshold_kmh=35.0, min_points=4)
+    if ground_start is not None and ground_start > takeoff:
+        landing = max(takeoff, ground_start - 1)
+
     if landing < takeoff:
         takeoff, landing = 0, n - 1
 
-    return {"off_idx": first_move, "takeoff_idx": int(takeoff), "landing_idx": int(landing), "on_idx": last_move}
-
+    return {
+        "off_idx": int(first_move),
+        "takeoff_idx": int(takeoff),
+        "landing_idx": int(landing),
+        "on_idx": int(min(n - 1, landing)),
+    }
 
 def point_local_dt(points: list[dict[str, Any]], idx: int) -> datetime | None:
     if not points:
@@ -1729,9 +1772,11 @@ def render_kml_import_header(raw: bytes, file_name: str, defaults: dict[str, Any
     with c3:
         metric_card("GPS", f"{float(stats.get('distance_km') or 0):.1f} km", "")
     with c4:
-        metric_card("Čas", _kml_range_label(stats), "")
+        air_range = f"{defaults.get('takeoff') or '—'}–{defaults.get('landing') or '—'}"
+        metric_card("Air", air_range, "")
     with c5:
-        metric_card("Detekce", _kml_quality(defaults, stats, has_clock), "")
+        block_range = f"{defaults.get('off_block') or '—'}–{defaults.get('on_block') or '—'}"
+        metric_card("Block", block_range, "")
     st.markdown(
         f"""
         <div class="flight-detail-hero compact-import-hero">
@@ -2383,20 +2428,108 @@ def flight_display_df(df: pd.DataFrame) -> pd.DataFrame:
     return df[use].rename(columns=rename)
 
 
-def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str) -> dict[str, Any] | None:
-    reg = str(defaults.get("registration") or "").upper()
+def read_aircraft_catalog() -> pd.DataFrame:
+    try:
+        aircraft = read_table("aircraft")
+    except Exception:
+        return pd.DataFrame()
+    if aircraft.empty:
+        return aircraft
+    aircraft = aircraft.copy()
+    aircraft["registration"] = aircraft["registration"].fillna("").astype(str).str.upper().str.strip()
+    aircraft = aircraft[aircraft["registration"].ne("")]
+    if "active" in aircraft.columns:
+        aircraft = aircraft[pd.to_numeric(aircraft["active"], errors="coerce").fillna(1).astype(int).eq(1)]
+    return aircraft.sort_values("registration")
+
+
+def _aircraft_label(reg: str, aircraft_by_reg: dict[str, dict[str, Any]], rates: pd.DataFrame) -> str:
+    if not reg:
+        return "Ručně"
+    row = aircraft_by_reg.get(reg, {})
     rate = lookup_latest_rate(rates, reg)
-    default_price = defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0
-    default_type = defaults.get("aircraft_type") or rate.get("aircraft_type") or ""
+    parts = [reg]
+    typ = normalize_text(row.get("aircraft_type")) or normalize_text(rate.get("aircraft_type"))
+    if typ:
+        parts.append(typ)
+    price = rate.get("price_per_hour")
+    if price is None or (isinstance(price, float) and pd.isna(price)):
+        price = row.get("default_price_per_hour")
+    try:
+        if price is not None and float(price or 0) > 0:
+            parts.append(f"{float(price):.0f} Kč/h")
+    except Exception:
+        pass
+    return " • ".join(parts)
+
+
+def _apply_aircraft_to_form(prefix: str, reg: str, row: dict[str, Any], rates: pd.DataFrame) -> None:
+    reg = str(reg or "").upper().strip()
+    if not reg:
+        return
+    rate = lookup_latest_rate(rates, reg)
+    evidence = normalize_text(row.get("evidence")) or evidence_from_registration(reg)
+    aircraft_class = normalize_text(row.get("aircraft_class")) or default_class_for(evidence)
+    aircraft_type = normalize_text(row.get("aircraft_type")) or normalize_text(rate.get("aircraft_type")) or ""
+    price = rate.get("price_per_hour")
+    if price is None or (isinstance(price, float) and pd.isna(price)):
+        price = row.get("default_price_per_hour")
+    try:
+        price = float(price or 0)
+    except Exception:
+        price = 0.0
+    st.session_state[f"{prefix}_reg"] = reg
+    st.session_state[f"{prefix}_type"] = aircraft_type
+    st.session_state[f"{prefix}_ev"] = evidence if evidence in EVIDENCE_OPTIONS else evidence_from_registration(reg)
+    st.session_state[f"{prefix}_class"] = aircraft_class if aircraft_class in CLASS_OPTIONS else default_class_for(st.session_state[f"{prefix}_ev"])
+    st.session_state[f"{prefix}_price"] = price
+
+
+def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
+    aircraft = read_aircraft_catalog()
+    if aircraft.empty:
+        return
+    aircraft_by_reg = {str(row.get("registration") or "").upper(): dict(row) for _, row in aircraft.iterrows()}
+    regs = [r for r in aircraft_by_reg if r]
+    if not regs:
+        return
+    options = [""] + regs
+    inferred_reg = str(defaults.get("registration") or "").upper().strip()
+    default_index = options.index(inferred_reg) if inferred_reg in options else 0
+    pick_key = f"{prefix}_aircraft_pick"
+
+    def on_change() -> None:
+        selected = st.session_state.get(pick_key, "")
+        if selected:
+            _apply_aircraft_to_form(prefix, selected, aircraft_by_reg.get(selected, {}), rates)
+
+    st.selectbox(
+        "Letadlo",
+        options,
+        index=default_index,
+        key=pick_key,
+        format_func=lambda value: _aircraft_label(str(value), aircraft_by_reg, rates),
+        on_change=on_change,
+    )
+
+    if inferred_reg in aircraft_by_reg and f"{prefix}_reg" not in st.session_state:
+        _apply_aircraft_to_form(prefix, inferred_reg, aircraft_by_reg.get(inferred_reg, {}), rates)
+
+def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str) -> dict[str, Any] | None:
+    render_aircraft_picker(prefix, defaults, rates)
+    reg = str(st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")).upper()
+    rate = lookup_latest_rate(rates, reg)
+    default_price = st.session_state.get(f"{prefix}_price", defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0)
+    default_type = st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type") or rate.get("aircraft_type") or "")
     with st.form(prefix):
         col1, col2, col3 = st.columns(3)
         with col1:
             flight_date = st.date_input("Datum", value=defaults.get("date") if isinstance(defaults.get("date"), date) else pd.to_datetime(defaults.get("date") or date.today()).date(), key=f"{prefix}_date")
             registration = st.text_input("Imatrikulace", value=reg, key=f"{prefix}_reg").upper()
-            ev_def = defaults.get("evidence") or evidence_from_registration(reg)
+            ev_def = st.session_state.get(f"{prefix}_ev", defaults.get("evidence") or evidence_from_registration(reg))
             evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0, key=f"{prefix}_ev")
             aircraft_type = st.text_input("Typ", value=str(default_type or ""), key=f"{prefix}_type")
-            cls_def = defaults.get("aircraft_class") or default_class_for(evidence)
+            cls_def = st.session_state.get(f"{prefix}_class", defaults.get("aircraft_class") or default_class_for(evidence))
             aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(cls_def) if cls_def in CLASS_OPTIONS else 0, key=f"{prefix}_class")
         with col2:
             departure = st.text_input("Odlet", value=str(defaults.get("departure") or ""), key=f"{prefix}_dep").upper()
@@ -2773,11 +2906,11 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         ["KML import", "Ručně"],
         horizontal=True,
         label_visibility="collapsed",
-        key="new_flight_mode_v036",
+        key="new_flight_mode_v037",
     )
 
     if mode == "KML import":
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v036")
+        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v037")
         if uploaded is None:
             return
 
@@ -2815,17 +2948,17 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         render_folium_readonly(
             make_map(preview_df, dark_mode),
             height=420,
-            key=f"new_flight_preview_map_v036_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
+            key=f"new_flight_preview_map_v037_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
         )
 
         if not has_clock:
             st.warning("Doplň časy ručně.")
 
-        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v036_{uploaded.name}_{len(points)}")
+        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v037_{uploaded.name}_{len(points)}")
         if show_profile:
             render_track_profile(points)
 
-        saved = flight_form("new_from_track_v036", defaults, rates, "Uložit let")
+        saved = flight_form("new_from_track_v037", defaults, rates, "Uložit let")
         if saved is not None:
             flight_id = create_flight(saved, auto_backup=False)
             save_track(flight_id, uploaded.name, points, replace_existing=True)
@@ -2837,7 +2970,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.rerun()
     else:
         defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": "Točík Filip", "role": "PIC"}
-        saved = flight_form("new_manual_v036", defaults, rates, "Přidat let")
+        saved = flight_form("new_manual_v037", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
             st.session_state["page"] = "Lety"

@@ -1,8 +1,13 @@
-# Nahrání v0.36.1
+# Upload v0.37
 
-1. Nahraj soubory ze ZIPu do GitHub repozitáře.
-2. Nepřepisuj `data/logbook.sqlite`.
-3. Ve Streamlit Cloud klikni na Manage app → Reboot app.
-4. V prohlížeči proveď Ctrl+F5.
+Nahraj minimálně:
 
-Po načtení má aplikace zobrazovat verzi v0.36.1.
+- app.py
+- README.md
+- UPLOAD_INSTRUCTIONS.md
+
+Nepřepisovat:
+
+- data/logbook.sqlite
+
+Po nahrání proveď reboot aplikace ve Streamlit Cloud a obnov stránku přes Ctrl + F5.
