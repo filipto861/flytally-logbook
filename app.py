@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.31"
+APP_VERSION = "v0.31.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1999,7 +1999,7 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
             {row.get('registration') or ''}<br>
             {dep_id}–{arr_id}<br>
             {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}<br>
-            <a href="{link}" target="_self">Otevřít detail letu</a>
+            <a href="{link}" target="_top" rel="noopener">Otevřít detail letu</a>
             """, max_width=320)
         folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.2, opacity=0.56, popup=popup, tooltip=f"ID {flight_id}: {dep_id}–{arr_id}").add_to(m)
 
@@ -2011,6 +2011,29 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
     folium.LayerControl().add_to(m)
     return m
 
+
+
+def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
+    """Render a Folium map without returning pan/zoom/click state to Streamlit.
+
+    streamlit-folium normally sends viewport changes back to Python. That is useful
+    for editable maps, but here the maps are read-only. Returning viewport changes
+    causes a full Streamlit rerun while the user drags/zooms the map, which makes
+    the page look dark/disabled and feels slow.  returned_objects=[] keeps the map
+    fully interactive in the browser but prevents those unnecessary reruns.
+    """
+    try:
+        st_folium(
+            m,
+            height=height,
+            use_container_width=True,
+            key=key,
+            returned_objects=[],
+        )
+    except TypeError:
+        # Fallback for older streamlit-folium versions. It is still read-only and
+        # avoids returning map state to Streamlit.
+        components.html(m.get_root().render(), height=height, scrolling=False)
 
 def render_track_profile(points: list[dict[str, Any]]) -> None:
     prof = profile_from_points(points)
@@ -2184,7 +2207,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         flight_tracks = read_tracks_for_flight(int(selected_id))
         if not flight_tracks.empty:
             joined = read_tracks_joined()
-            st_folium(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, use_container_width=True, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
+            render_folium_readonly(make_map(joined[joined["flight_id"].eq(int(selected_id))], dark_mode), height=440, key=f"track_map_existing_{selected_id}_{len(flight_tracks)}")
             first_points = json.loads(flight_tracks.iloc[0]["coordinates_json"])
             render_track_profile(first_points)
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
@@ -2201,7 +2224,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 points = parse_kml_bytes(uploaded.read())
                 if len(points) >= 2:
                     preview = pd.DataFrame([{"id": -1,"flight_id": selected_id,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": track_stats(points)["distance_km"],"date": row.get("date"),"registration": row.get("registration"),"departure": row.get("departure"),"arrival": row.get("arrival"),"role": row.get("role"),"evidence": row.get("evidence")}])
-                    st_folium(make_map(preview, dark_mode), height=360, use_container_width=True, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
+                    render_folium_readonly(make_map(preview, dark_mode), height=360, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
                     replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
                     if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
                         if require_admin():
@@ -2463,7 +2486,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
                 else:
                     st.warning("KML neobsahuje časové značky u bodů. Trasu a letiště lze odhadnout, ale časy musíš doplnit ručně.")
                 preview_df = pd.DataFrame([{"id": -1,"flight_id": -1,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": stats["distance_km"],"date": defaults.get("date"),"registration": defaults.get("registration"),"departure": defaults.get("departure"),"arrival": defaults.get("arrival"),"role": defaults.get("role"),"evidence": defaults.get("evidence")}])
-                st_folium(make_map(preview_df, dark_mode), height=420, use_container_width=True, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
+                render_folium_readonly(make_map(preview_df, dark_mode), height=420, key=f"new_flight_preview_map_{uploaded.name}_{len(points)}")
                 with st.expander("Profil tracku", expanded=True):
                     render_track_profile(points)
                 saved = flight_form("new_from_track", defaults, rates, "Uložit nový let včetně tracku")
@@ -2511,7 +2534,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
             st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
-            st_folium(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, use_container_width=True, key=f"all_tracks_map_v031_{len(tracks)}")
+            render_folium_readonly(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, key=f"all_tracks_map_v0312_{len(tracks)}")
             st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
     with tab_overview:
         if filtered.empty or known_routes == 0:
@@ -2526,7 +2549,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                 if arr and arr.upper() in lookup:
                     visited.add(arr.upper())
             st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
-            st_folium(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, use_container_width=True, key=f"route_overview_map_v031_{len(filtered)}_{known_routes}")
+            render_folium_readonly(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, key=f"route_overview_map_v0312_{len(filtered)}_{known_routes}")
             st.dataframe(
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
                 .rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","block_time":"Block"}),

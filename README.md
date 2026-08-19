@@ -1,20 +1,15 @@
-# Letový zápisník
+# Letový zápisník v0.31.2
 
-Aktuální stabilní checkpoint: v0.31 s hotfixem map.
+Hotfix výkonu map.
 
-## Poslední opravy
+## Změny
 
-- Sidebar je řešený jedním plynulým tlačítkem.
-- Letiště jsou oddělená do pevné databáze `data/airports_full.sqlite`.
-- ADSBexchange i Flightradar24 KML jsou kompatibilní.
-- GPS tracky se vizuálně doplní přímkou k ručně zadanému letišti odletu/příletu.
-- Orientační mapa letišť ukazuje navštívená letiště a direct spojnice letů.
-- Folium mapy jsou runtime patchnuté tak, aby pan/zoom neposílal zbytečně stav zpět do Streamlitu a nezpůsoboval šedé překrytí.
+- Mapy jsou nově vykreslené jako read-only komponenty bez vracení pan/zoom/click stavu zpět do Streamlitu.
+- Pohyb mapou už nemá spouštět zbytečný rerun celé stránky.
+- Tím mizí šedé/zatmavené překrytí a mapa je při posunu/zoomování výrazně plynulejší.
+- Zachována orientační mapa letišť z v0.31 i doplnění GPS tracku k letištím.
+- Zachována kompatibilita ADSBexchange i Flightradar24 KML.
 
 ## Bezpečnost dat
 
-Nikdy ručně nepřepisovat:
-
-- `data/logbook.sqlite`
-
-Tento soubor obsahuje živé lety, tracky a ruční data.
+Balíček záměrně neobsahuje `data/logbook.sqlite`, aby nedošlo k přepsání živé databáze letů.
