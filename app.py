@@ -35,6 +35,13 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from streamlit_folium import st_folium
 
+from logbook_core.performance import (
+    apply_sqlite_pragmas,
+    compact_records_json,
+    downsample_track_points,
+    optimize_sqlite,
+)
+
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "logbook.sqlite"
@@ -42,7 +49,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.38"
+APP_VERSION = "v0.39"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -176,8 +183,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_flights_date ON flights(date);
 CREATE INDEX IF NOT EXISTS idx_flights_registration ON flights(registration);
 CREATE INDEX IF NOT EXISTS idx_flights_evidence_role ON flights(evidence, role);
+CREATE INDEX IF NOT EXISTS idx_flights_route ON flights(departure, arrival);
+CREATE INDEX IF NOT EXISTS idx_flights_reg_date ON flights(registration, date);
+CREATE INDEX IF NOT EXISTS idx_rates_registration_valid ON rates(registration, valid_from);
+CREATE INDEX IF NOT EXISTS idx_aircraft_active_registration ON aircraft(active, registration);
 CREATE INDEX IF NOT EXISTS idx_tracks_flight_id ON flight_tracks(flight_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_imported_at ON flight_tracks(imported_at);
 CREATE INDEX IF NOT EXISTS idx_track_points_track_seq ON track_points(track_id, seq);
+CREATE INDEX IF NOT EXISTS idx_track_points_track_time ON track_points(track_id, time_utc);
 CREATE INDEX IF NOT EXISTS idx_airports_ident ON airports(ident);
 CREATE INDEX IF NOT EXISTS idx_airports_country ON airports(iso_country);
 CREATE INDEX IF NOT EXISTS idx_airports_active ON airports(active, closed);
@@ -430,18 +443,14 @@ def initialize_database(con: sqlite3.Connection) -> None:
     upgraded in place: flights/rates/tracks stay untouched, while airport/aircraft
     registries and normalized track_points are added.
     """
-    con.execute("PRAGMA foreign_keys = ON")
-    con.execute("PRAGMA busy_timeout = 5000")
-    try:
-        con.execute("PRAGMA journal_mode = WAL")
-    except sqlite3.DatabaseError:
-        pass
+    apply_sqlite_pragmas(con, initial=True)
     con.executescript(SCHEMA)
     ensure_schema_compatibility(con)
     _set_meta(con, "schema_version", DB_SCHEMA_VERSION)
     _seed_airports_from_overrides(con)
     _seed_aircraft_from_existing_data(con)
     _backfill_track_points(con)
+    optimize_sqlite(con)
     con.commit()
 
 
@@ -454,8 +463,7 @@ def connect() -> sqlite3.Connection:
         initialize_database(con)
         _DB_READY = True
     else:
-        con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA busy_timeout = 5000")
+        apply_sqlite_pragmas(con, initial=False)
     return con
 
 
@@ -1959,14 +1967,8 @@ def delete_flight(flight_id: int) -> None:
     auto_backup_after_change("delete_flight")
 
 
-def downsample_points(points: list[dict[str, Any]], max_points: int = 1200) -> list[dict[str, Any]]:
-    if len(points) <= max_points:
-        return points
-    step = max(1, math.ceil(len(points) / max_points))
-    sampled = points[::step]
-    if sampled[-1] != points[-1]:
-        sampled.append(points[-1])
-    return sampled
+def downsample_points(points: list[dict[str, Any]], max_points: int = 900) -> list[dict[str, Any]]:
+    return downsample_track_points(points, max_points=max_points)
 
 
 @st.cache_data(show_spinner=False, ttl=600)
@@ -2157,8 +2159,8 @@ def map_center_from_airport_coords(coords: list[tuple[float, float]]) -> tuple[l
 def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
     lookup = airport_coord_lookup()
     coords: list[tuple[float, float]] = []
-    routes: list[dict[str, Any]] = []
     visited: dict[str, dict[str, Any]] = {}
+    route_groups: dict[tuple[str, str], dict[str, Any]] = {}
 
     for _, row in flights.iterrows():
         dep = normalize_text(row.get("departure"))
@@ -2169,9 +2171,13 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
         arr_ap = lookup.get(arr.upper())
         if not dep_ap or not arr_ap:
             continue
+
+        dep_id = dep_ap["ident"]
+        arr_id = arr_ap["ident"]
         dep_ll = (float(dep_ap["lat"]), float(dep_ap["lon"]))
         arr_ll = (float(arr_ap["lat"]), float(arr_ap["lon"]))
         coords.extend([dep_ll, arr_ll])
+
         for ap, kind in ((dep_ap, "dep"), (arr_ap, "arr")):
             ident = ap["ident"]
             if ident not in visited:
@@ -2187,33 +2193,64 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
                     visited[ident]["first_date"] = date_txt
                 if not visited[ident]["last_date"] or date_txt > visited[ident]["last_date"]:
                     visited[ident]["last_date"] = date_txt
-        routes.append({"row": row, "dep": dep_ap, "arr": arr_ap, "dep_ll": dep_ll, "arr_ll": arr_ll})
+
+        key = tuple(sorted([dep_id, arr_id]))
+        group = route_groups.setdefault(
+            key,
+            {
+                "dep": lookup[key[0]],
+                "arr": lookup[key[1]],
+                "count": 0,
+                "ull": 0,
+                "easa": 0,
+                "first_date": "",
+                "last_date": "",
+                "sample_registration": "",
+            },
+        )
+        group["count"] += 1
+        evidence = str(row.get("evidence") or "").upper()
+        if evidence == "ULL":
+            group["ull"] += 1
+        elif evidence == "EASA":
+            group["easa"] += 1
+        if not group["sample_registration"]:
+            group["sample_registration"] = str(row.get("registration") or "")
+        date_txt = str(row.get("date") or "")
+        if date_txt:
+            if not group["first_date"] or date_txt < group["first_date"]:
+                group["first_date"] = date_txt
+            if not group["last_date"] or date_txt > group["last_date"]:
+                group["last_date"] = date_txt
 
     center, zoom = map_center_from_airport_coords(coords)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
     m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
 
-    route_counts: dict[tuple[str, str], int] = {}
-    for route in routes:
-        row = route["row"]
-        dep_id = route["dep"]["ident"]
-        arr_id = route["arr"]["ident"]
-        key = tuple(sorted([dep_id, arr_id]))
-        route_counts[key] = route_counts.get(key, 0) + 1
-        offset = min(route_counts[key] - 1, 8) * 0.0009
-        dep_ll = (route["dep_ll"][0] + offset, route["dep_ll"][1] + offset)
-        arr_ll = (route["arr_ll"][0] + offset, route["arr_ll"][1] + offset)
-        evidence = str(row.get("evidence") or "").upper()
-        color = "#38bdf8" if evidence == "ULL" else "#fbbf24"
-        flight_id = int(row.get("id"))
+    for (dep_id, arr_id), group in sorted(route_groups.items(), key=lambda item: (-int(item[1]["count"]), item[0])):
+        dep_ap = group["dep"]
+        arr_ap = group["arr"]
+        dep_ll = (float(dep_ap["lat"]), float(dep_ap["lon"]))
+        arr_ll = (float(arr_ap["lat"]), float(arr_ap["lon"]))
+        count = int(group.get("count") or 0)
+        ull = int(group.get("ull") or 0)
+        easa = int(group.get("easa") or 0)
+        if ull and easa:
+            color = "#a78bfa"
+        elif ull:
+            color = "#38bdf8"
+        else:
+            color = "#fbbf24"
+        weight = min(6.5, 2.6 + math.sqrt(max(1, count)) * 0.55)
+        opacity = 0.54 if count <= 1 else 0.72
         popup = folium.Popup(f"""
-            <b>ID {flight_id} • {row.get('date') or ''}</b><br>
-            {row.get('registration') or ''}<br>
-            {dep_id}–{arr_id}<br>
-            {row.get('off_block') or ''}–{row.get('on_block') or ''} • {row.get('role') or ''}
-            """, max_width=320)
-        tooltip = f"{dep_id}–{arr_id}"
-        folium.PolyLine([dep_ll, arr_ll], color=color, weight=2.8, opacity=0.62, popup=popup, tooltip=tooltip).add_to(m)
+            <b>{dep_id}–{arr_id}</b><br>
+            Letů: {count}<br>
+            ULL: {ull} • EASA: {easa}<br>
+            První: {group.get('first_date') or '—'} • Poslední: {group.get('last_date') or '—'}
+            """, max_width=300)
+        tooltip = f"{dep_id}–{arr_id} • {count}"
+        folium.PolyLine([dep_ll, arr_ll], color=color, weight=weight, opacity=opacity, popup=popup, tooltip=tooltip).add_to(m)
 
     for ident, ap in visited.items():
         visits = int(ap.get("visits") or 0)
@@ -2230,7 +2267,6 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
 
     folium.LayerControl().add_to(m)
     return m
-
 
 def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
     try:
@@ -2298,10 +2334,7 @@ def handle_route_map_interaction(value: Any) -> None:
 
 def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
     """Stable compact JSON for cached map rendering."""
-    if df.empty:
-        return "[]"
-    use_cols = [c for c in columns if c in df.columns]
-    return df[use_cols].fillna("").to_json(orient="records", force_ascii=False, date_format="iso")
+    return compact_records_json(df, columns)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -3159,9 +3192,9 @@ def render_map_navigation_controls(filtered: pd.DataFrame) -> None:
     airport_index = airport_values.index(current_airport) if current_airport in airport_values else 0
     route_index = route_values.index(current_route) if current_route in route_values else 0
     with c1:
-        airport_choice = st.selectbox("Letiště", airport_values, index=airport_index, key="map_airport_picker_v0357", format_func=lambda v: v or "—")
+        airport_choice = st.selectbox("Letiště", airport_values, index=airport_index, key="map_airport_picker_v039", format_func=lambda v: v or "—")
     with c2:
-        route_choice = st.selectbox("Trasa", route_values, index=route_index, key="map_route_picker_v0357", format_func=lambda v: route_labels.get(v, "—"))
+        route_choice = st.selectbox("Trasa", route_values, index=route_index, key="map_route_picker_v039", format_func=lambda v: route_labels.get(v, "—"))
     if airport_choice and airport_choice != current_airport:
         st.session_state["map_airport"] = airport_choice
         st.session_state.pop("map_route", None)
@@ -3296,7 +3329,7 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         ["Orientační mapa letišť", "GPS tracky"],
         horizontal=True,
         label_visibility="collapsed",
-        key="map_mode_v035",
+        key="map_mode_v039",
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -3340,7 +3373,7 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0357")
+            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v039")
             handle_route_map_interaction(map_event)
             render_map_selection(filtered, rates, dark_mode)
 
@@ -3842,12 +3875,12 @@ def main():
     if q_map_airport:
         st.session_state["page"] = "Mapa"
         st.session_state["map_airport"] = str(q_map_airport).upper().strip()
-        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+        st.session_state["map_mode_v039"] = "Orientační mapa letišť"
         st.session_state.pop("map_route", None)
     elif q_map_route:
         st.session_state["page"] = "Mapa"
         st.session_state["map_route"] = str(q_map_route).upper().strip()
-        st.session_state["map_mode_v035"] = "Orientační mapa letišť"
+        st.session_state["map_mode_v039"] = "Orientační mapa letišť"
         st.session_state.pop("map_airport", None)
     with st.sidebar:
         # Aplikace běží trvale v tmavém režimu; přepínač je z finálního UI odstraněn.
