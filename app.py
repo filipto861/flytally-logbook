@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.49.1"
+APP_VERSION = "v0.49.2"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 5
 _DB_READY = False
@@ -1342,12 +1342,14 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .quick-form-meta span {{border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.03);padding:.14rem .45rem;}}
 
     .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
-    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.10rem .15rem .20rem .15rem;border-bottom:1px solid var(--border);height:1.35rem;display:flex;align-items:flex-end;}}
-    .flight-cell {{font-size:.78rem;line-height:1.05;padding:.06rem .15rem;color:var(--text);min-height:1.78rem;display:flex;flex-direction:column;justify-content:flex-start;}}
+    .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.12rem .15rem .32rem .15rem;border-bottom:1px solid var(--border);height:1.55rem;display:flex;align-items:flex-end;white-space:nowrap;}}
+    .flight-list-first-gap {{height:.38rem;}}
+    .flight-cell {{font-size:.78rem;line-height:1.08;padding:.14rem .15rem .06rem .15rem;color:var(--text);min-height:1.86rem;display:flex;flex-direction:column;justify-content:flex-start;}}
     .flight-cell-main {{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.10rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.04rem 0 .04rem 0;}}
+    .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.18rem 0 .16rem 0;}}
     .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
+    div[data-testid="stButton"] > button {{white-space:nowrap;}}
     .flight-status {{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--border);padding:.10rem .42rem;font-size:.66rem;font-weight:900;line-height:1;white-space:nowrap;max-width:100%;}}
     .flight-status-ok {{color:#a7f3d0;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.32);}}
     .flight-status-warn {{color:#fde68a;background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.34);}}
@@ -3825,11 +3827,12 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.78, 0.70, 0.64, 0.40, 0.76, 0.46, 1.12, 0.94, 0.98, 0.66, 0.40, 0.76, 0.98, 0.68, 0.62, 0.42]
-    headers = ["Detail", "Edit", "GPS", "ID", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.78, 0.70, 0.64, 0.84, 0.46, 1.16, 1.02, 1.04, 0.70, 0.42, 0.84, 1.04, 0.70, 0.72, 0.48]
+    headers = ["Detail", "Edit", "GPS", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
         col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="flight-list-first-gap"></div>', unsafe_allow_html=True)
 
     for _, row in page_rows.iterrows():
         flight_id = int(row.get("id"))
@@ -3856,24 +3859,23 @@ def render_flight_list(table_df: pd.DataFrame, rates: pd.DataFrame, dark_mode: b
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
-        cols[3].markdown(_cell(flight_id), unsafe_allow_html=True)
-        cols[4].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[5].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
+        cols[3].markdown(_cell(row.get("date")), unsafe_allow_html=True)
+        cols[4].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
         aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[6].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[7].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
+        cols[5].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
+        cols[6].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
         time_main = _range_text(row.get("off_block"), row.get("on_block"))
         air_range = _range_text(row.get("takeoff"), row.get("landing"))
         time_sub = f"Air {air_range}" if air_range else ""
-        cols[8].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[9].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[10].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[11].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[13].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[14].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
+        cols[7].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
+        cols[8].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
+        cols[9].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
+        cols[10].markdown(_cell(row.get("role")), unsafe_allow_html=True)
+        cols[11].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
+        cols[12].markdown(_cell(row.get("task")), unsafe_allow_html=True)
+        cols[13].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
         gps_km = _safe_float(row.get("gps_km"))
-        cols[15].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        cols[14].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
         st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
