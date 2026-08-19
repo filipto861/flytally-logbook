@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.36"
+APP_VERSION = "v0.36.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1085,7 +1085,7 @@ def apply_ui_theme(dark_mode: bool) -> None:
     @media (max-width: 980px) {{.detail-grid {{grid-template-columns:repeat(2,minmax(0,1fr));}} .detail-split {{grid-template-columns:1fr;}}}}
     @media (max-width: 760px) {{.block-container {{padding-left:.75rem;padding-right:.75rem;}} .app-title {{padding:.85rem;border-radius:15px;}} .app-title-main {{font-size:1.2rem;}} .metric-value {{font-size:1.35rem;}} .detail-grid {{grid-template-columns:1fr;}}}}
     
-        .compact-import-hero{margin:1rem 0 1rem 0;padding:1rem 1.15rem;}
+        .compact-import-hero {{margin:1rem 0 1rem 0;padding:1rem 1.15rem;}}
         </style>
     """, unsafe_allow_html=True)
 
