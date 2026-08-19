@@ -93,7 +93,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.44"
+APP_VERSION = "v0.45.1"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 4
 _DB_READY = False
@@ -2437,6 +2437,66 @@ def handle_route_map_interaction(value: Any) -> None:
             st.rerun()
 
 
+
+
+def _decode_points_for_map(value: Any, max_points: int = 160) -> str:
+    """Return a compact coordinates_json string for map rendering only.
+
+    Stored KML remains untouched; this only reduces the number of Leaflet points
+    sent to the browser. The full track is still available in flight detail.
+    """
+    try:
+        points = json.loads(value or "[]")
+    except Exception:
+        points = []
+    if not isinstance(points, list):
+        points = []
+    points = downsample_points(points, max_points=max(2, int(max_points)))
+    compact: list[dict[str, Any]] = []
+    for pt in points:
+        try:
+            lat = round(float(pt.get("lat")), 6)
+            lon = round(float(pt.get("lon")), 6)
+        except Exception:
+            continue
+        item = {"lat": lat, "lon": lon}
+        alt = pt.get("alt")
+        if alt is not None and not (isinstance(alt, float) and math.isnan(alt)):
+            try:
+                item["alt"] = round(float(alt), 1)
+            except Exception:
+                pass
+        t = pt.get("time")
+        if t:
+            item["time"] = t
+        compact.append(item)
+    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
+
+
+def prepare_tracks_for_map(tracks: pd.DataFrame, *, mode: str = "Rychlá", max_fast_tracks: int = 60) -> pd.DataFrame:
+    """Prepare a lightweight GPS-track dataframe for Folium/Leaflet.
+
+    Rendering many dense KML tracks is expensive mainly in the browser. The app
+    therefore uses a fast default view and leaves the stored/raw tracks intact.
+    """
+    if tracks.empty:
+        return tracks.copy()
+    work = tracks.copy()
+    if "date" in work.columns:
+        work = work.sort_values(["date", "id"], ascending=[False, False], na_position="last")
+    mode_text = str(mode or "Rychlá")
+    if mode_text == "Rychlá":
+        work = work.head(max_fast_tracks)
+        max_points = 130
+    elif mode_text == "Střední":
+        max_points = 220
+    else:
+        max_points = 320
+    if "coordinates_json" in work.columns:
+        work["coordinates_json"] = work["coordinates_json"].apply(lambda x: _decode_points_for_map(x, max_points=max_points))
+    return work
+
+
 def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
     """Stable compact JSON for cached map rendering."""
     return compact_records_json(df, columns)
@@ -3147,8 +3207,12 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
             try:
                 points = parse_kml_bytes(uploaded.read())
                 if len(points) >= 2:
-                    preview = pd.DataFrame([{"id": -1,"flight_id": selected_id,"coordinates_json": json.dumps(points),"file_name": uploaded.name,"distance_km": track_stats(points)["distance_km"],"date": row.get("date"),"registration": row.get("registration"),"departure": row.get("departure"),"arrival": row.get("arrival"),"role": row.get("role"),"evidence": row.get("evidence")}])
-                    render_folium_readonly(make_map(preview, dark_mode), height=360, key=f"track_map_preview_{selected_id}_{uploaded.name}_{len(points)}")
+                    stats = track_stats(points)
+                    point_count = len(points)
+                    distance_km = _safe_float(stats.get("distance_km"), 0)
+                    start_utc = _safe_text(points[0].get("time")) or "—"
+                    end_utc = _safe_text(points[-1].get("time")) or "—"
+                    st.caption(f"{uploaded.name} · {point_count} bodů · {distance_km:.1f} km · {start_utc} – {end_utc}")
                     replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
                     if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
                         if require_admin():
@@ -3674,8 +3738,19 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
         if tracks.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
+            col_mode, col_count = st.columns([1, 2])
+            with col_mode:
+                gps_map_mode = st.selectbox(
+                    "Rozsah mapy",
+                    ["Rychlá", "Střední", "Vše"],
+                    index=0,
+                    key="gps_track_map_scope_v045",
+                )
+            tracks_for_map = prepare_tracks_for_map(tracks, mode=gps_map_mode, max_fast_tracks=60)
+            with col_count:
+                metric_card("Vykresleno", f"{len(tracks_for_map)} / {len(tracks)}", "GPS tracků")
             records_json = _df_to_records_json(
-                tracks,
+                tracks_for_map,
                 ["flight_id", "id", "date", "registration", "departure", "arrival", "role", "evidence", "file_name", "point_count", "distance_km", "coordinates_json"],
             )
             render_map_html(cached_track_map_html(records_json, bool(dark_mode)), height=680)
