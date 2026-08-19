@@ -42,7 +42,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.35.6"
+APP_VERSION = "v0.35.7"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -2159,7 +2159,6 @@ def handle_route_map_interaction(value: Any) -> None:
                 return
             st.session_state["_last_map_action"] = action
             st.session_state["map_route"] = route
-            st.session_state["map_mode_v035"] = "Orientační mapa letišť"
             st.session_state.pop("map_airport", None)
             st.rerun()
 
@@ -2171,7 +2170,6 @@ def handle_route_map_interaction(value: Any) -> None:
                 return
             st.session_state["_last_map_action"] = action
             st.session_state["map_airport"] = ident
-            st.session_state["map_mode_v035"] = "Orientační mapa letišť"
             st.session_state.pop("map_route", None)
             st.rerun()
 
@@ -2779,18 +2777,23 @@ def render_map_navigation_controls(filtered: pd.DataFrame) -> None:
     if not airports and not routes:
         return
     c1, c2 = st.columns(2)
-    with c1:
-        airport_choice = st.selectbox("Letiště", [""] + airports, index=0, key="map_airport_picker_v0356", format_func=lambda v: v or "—")
+    airport_values = [""] + airports
     route_values = [""] + [value for value, _ in routes]
     route_labels = {value: label for value, label in routes}
+    airport_index = airport_values.index(current_airport) if current_airport in airport_values else 0
+    route_index = route_values.index(current_route) if current_route in route_values else 0
+    with c1:
+        airport_choice = st.selectbox("Letiště", airport_values, index=airport_index, key="map_airport_picker_v0357", format_func=lambda v: v or "—")
     with c2:
-        route_choice = st.selectbox("Trasa", route_values, index=0, key="map_route_picker_v0356", format_func=lambda v: route_labels.get(v, "—"))
-    if airport_choice:
+        route_choice = st.selectbox("Trasa", route_values, index=route_index, key="map_route_picker_v0357", format_func=lambda v: route_labels.get(v, "—"))
+    if airport_choice and airport_choice != current_airport:
         st.session_state["map_airport"] = airport_choice
         st.session_state.pop("map_route", None)
-    elif route_choice:
+        st.rerun()
+    elif route_choice and route_choice != current_route:
         st.session_state["map_route"] = route_choice
         st.session_state.pop("map_airport", None)
+        st.rerun()
 
 def _airport_selection(df: pd.DataFrame, ident: str) -> pd.DataFrame:
     if df.empty or not ident:
@@ -2961,7 +2964,7 @@ def page_maps(flights: pd.DataFrame, rates: pd.DataFrame, dark_mode: bool):
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0355")
+            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v0357")
             handle_route_map_interaction(map_event)
             render_map_selection(filtered, rates, dark_mode)
 

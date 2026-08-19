@@ -1,6 +1,6 @@
 # Letový zápisník
 
-Aktuální checkpoint: v0.35.6.
+Aktuální checkpoint: v0.35.7.
 
 ## Stav
 
