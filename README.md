@@ -13,3 +13,11 @@ Hotfix výkonu map.
 ## Bezpečnost dat
 
 Balíček záměrně neobsahuje `data/logbook.sqlite`, aby nedošlo k přepsání živé databáze letů.
+
+
+## v0.32
+
+- Mapy se renderují jako klientské HTML bez Streamlit rerunu při posunu/zoomu.
+- Tabulky pod mapou jsou schované v rozbalovacích sekcích, aby mapa zůstala plynulá.
+- Detail letu má přehlednější hlavičku s trasou, datem, letadlem, funkcí a evidencí.
+- Dashboard umí dočasně skrýt grafy kvůli rychlejšímu načtení.

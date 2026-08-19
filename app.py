@@ -41,7 +41,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.31.1"
+APP_VERSION = "v0.32"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 3
 _DB_READY = False
@@ -1027,6 +1027,14 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
     .metric-value {{color:var(--text);font-size:1.72rem;line-height:1.25;font-weight:850;margin-top:.25rem;}}
     .metric-sub {{color:var(--muted);font-size:.82rem;margin-top:.28rem;}}
+
+    .performance-note {border:1px solid rgba(34,197,94,.28);background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.04));border-radius:16px;padding:.75rem .9rem;color:var(--muted);font-size:.86rem;margin:.35rem 0 .85rem 0;}
+    .flight-detail-hero {border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(15,23,42,.02)),var(--panel);padding:1rem 1.1rem;margin:.15rem 0 1rem 0;box-shadow:0 12px 28px var(--shadow);}
+    .flight-detail-route {font-size:1.35rem;font-weight:900;color:var(--text);line-height:1.15;letter-spacing:-.025em;}
+    .flight-detail-meta {color:var(--muted);font-size:.86rem;margin-top:.35rem;display:flex;gap:.55rem;flex-wrap:wrap;}
+    .flight-detail-meta span {border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.035);padding:.18rem .50rem;}
+    .map-perf-toolbar {display:flex;justify-content:space-between;align-items:center;gap:.75rem;border:1px solid var(--border);background:rgba(255,255,255,.025);border-radius:16px;padding:.65rem .80rem;margin:.35rem 0 .75rem 0;color:var(--muted);font-size:.85rem;}
+    .map-perf-toolbar strong {color:var(--text);}
     .section-card {{border:1px solid var(--border);border-radius:18px;padding:1rem;background:var(--panel);box-shadow:0 10px 28px var(--shadow);}}
     .pill {{display:inline-block;border:1px solid var(--border);border-radius:999px;background:var(--panel2);padding:.25rem .62rem;margin:.1rem .18rem;font-size:.82rem;color:var(--text);}}
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {{border-radius:16px;overflow:hidden;}}
@@ -2014,26 +2022,32 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
 
 
 def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None = None) -> None:
-    """Render a Folium map without returning pan/zoom/click state to Streamlit.
+    """Render a Folium map as static HTML with client-side interactivity only.
 
-    streamlit-folium normally sends viewport changes back to Python. That is useful
-    for editable maps, but here the maps are read-only. Returning viewport changes
-    causes a full Streamlit rerun while the user drags/zooms the map, which makes
-    the page look dark/disabled and feels slow.  returned_objects=[] keeps the map
-    fully interactive in the browser but prevents those unnecessary reruns.
+    This is faster than streamlit-folium for read-only maps because pan/zoom/click
+    no longer sends viewport state back to Streamlit. The map still moves and
+    popups still work in the browser, but the Python app is not rerun while the
+    user explores the map. That removes the grey overlay and makes map movement
+    feel immediate.
     """
     try:
-        st_folium(
-            m,
-            height=height,
-            use_container_width=True,
-            key=key,
-            returned_objects=[],
-        )
-    except TypeError:
-        # Fallback for older streamlit-folium versions. It is still read-only and
-        # avoids returning map state to Streamlit.
-        components.html(m.get_root().render(), height=height, scrolling=False)
+        html = m.get_root().render()
+        components.html(html, height=height, scrolling=False)
+    except Exception:
+        try:
+            st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
+        except TypeError:
+            st_folium(m, height=height, use_container_width=True, key=key)
+
+
+def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expanded: bool = False) -> None:
+    """Keep heavy tables out of the main render path unless the user needs them."""
+    with st.expander(title, expanded=expanded):
+        if data.empty:
+            st.info("Tabulka je prázdná.")
+        else:
+            st.dataframe(data, hide_index=True, use_container_width=True, height=height)
+
 
 def render_track_profile(points: list[dict[str, Any]]) -> None:
     prof = profile_from_points(points)
@@ -2093,6 +2107,10 @@ def page_dashboard(df: pd.DataFrame):
     with c2: metric_card("PIC", fmt_minutes(s["pic"]), f"ULL {fmt_minutes(s['pic_ull'])} • EASA {fmt_minutes(s['pic_easa'])}")
     with c3: metric_card("DUAL / Safety", f"{fmt_minutes(s['dual'])} / {fmt_minutes(s['safety'])}", f"Starty {s['starts']}")
     with c4: metric_card("Náklady", fmt_money(s["cost"]), f"GPS {s['tracks']} tracků • {s['gps_km']:.0f} km")
+    show_charts = st.toggle("Zobrazit grafy dashboardu", value=st.session_state.get("show_dashboard_charts", True), key="show_dashboard_charts")
+    if not show_charts:
+        st.info("Grafy jsou skryté kvůli rychlosti. Souhrnné karty zůstávají načtené okamžitě.")
+        return
     st.write("")
     chart_df = filtered.dropna(subset=["year"]).copy()
     if chart_df.empty:
@@ -2170,7 +2188,22 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
 @st.dialog("Detail letu", width="large", dismissible=True, on_dismiss=clear_open_flight_dialog)
 def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
     row = pd.Series(row_data)
-    st.markdown(f"### {flight_label(row_data)}")
+    route_text = f"{_safe_text(row_data.get('departure')) or '—'} → {_safe_text(row_data.get('arrival')) or '—'}"
+    st.markdown(
+        f"""
+        <div class="flight-detail-hero">
+            <div class="flight-detail-route">{route_text}</div>
+            <div class="flight-detail-meta">
+                <span>ID {int(selected_id)}</span>
+                <span>{_safe_text(row_data.get('date')) or 'bez data'}</span>
+                <span>{_safe_text(row_data.get('registration')) or 'bez imatrikulace'}</span>
+                <span>{_safe_text(row_data.get('role')) or 'bez funkce'}</span>
+                <span>{_safe_text(row_data.get('evidence')) or 'bez evidence'}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     detail_section = st.radio(
         "Sekce detailu",
         ["Přehled", "Editace", "Track", "Smazání"],
@@ -2508,6 +2541,10 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
 
 def page_maps(flights: pd.DataFrame, dark_mode: bool):
     st.markdown("## Mapa letů")
+    st.markdown(
+        '<div class="performance-note"><b>v0.32 optimalizace:</b> mapy se renderují jako klientské HTML, takže posun a zoom už nespouští celé překreslení stránky. Těžké tabulky jsou schované v rozbalovacích sekcích.</div>',
+        unsafe_allow_html=True,
+    )
     filtered = apply_filters(flights, "map")
     tracks = read_tracks_joined()
     if not tracks.empty:
@@ -2534,8 +2571,12 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
             st.caption("GPS mapa zobrazuje skutečné KML tracky. Když track nezačíná/nekončí na zadaném letišti, mapa doplní šedou přerušovanou spojku k letišti pouze vizuálně; uložené GPS body a GPS km zůstávají beze změny.")
-            render_folium_readonly(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, key=f"all_tracks_map_v0312_{len(tracks)}")
-            st.dataframe(tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}), hide_index=True, use_container_width=True)
+            render_folium_readonly(make_map(tracks, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True), height=680, key=f"all_tracks_map_v032_{len(tracks)}")
+            render_lazy_table(
+                "Tabulka GPS tracků",
+                tracks[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}),
+                height=320,
+            )
     with tab_overview:
         if filtered.empty or known_routes == 0:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
@@ -2549,12 +2590,12 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                 if arr and arr.upper() in lookup:
                     visited.add(arr.upper())
             st.caption("Orientační mapa neukazuje přesný GPS track. Zobrazuje navštívená letiště jako body a mezi nimi přímé spojnice jednotlivých letů. Kliknutím na linku v popupu otevřeš detail letu.")
-            render_folium_readonly(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, key=f"route_overview_map_v0312_{len(filtered)}_{known_routes}")
-            st.dataframe(
+            render_folium_readonly(make_route_overview_map(filtered, dark_mode=dark_mode), height=680, key=f"route_overview_map_v032_{len(filtered)}_{known_routes}")
+            render_lazy_table(
+                "Tabulka direct tras",
                 filtered[["id","date","registration","departure","arrival","role","evidence","block_time"]]
                 .rename(columns={"id":"ID","date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","block_time":"Block"}),
-                hide_index=True,
-                use_container_width=True,
+                height=360,
             )
 
 
