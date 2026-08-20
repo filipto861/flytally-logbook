@@ -3754,8 +3754,8 @@ def _render_manual_route_shortcuts(
     defaults: dict[str, Any],
     history: pd.DataFrame,
 ) -> None:
-    dep = normalize_text(st.session_state.get(f"{prefix}_dep", defaults.get("departure"))).upper()
-    arr = normalize_text(st.session_state.get(f"{prefix}_arr", defaults.get("arrival"))).upper()
+    dep = (normalize_text(st.session_state.get(f"{prefix}_dep", defaults.get("departure"))) or "").upper()
+    arr = (normalize_text(st.session_state.get(f"{prefix}_arr", defaults.get("arrival"))) or "").upper()
     home = current_user_home_airport()
 
     actions: list[tuple[str, str, str]] = []
@@ -3804,9 +3804,9 @@ def _prepare_next_manual_entry(prefix: str, saved: dict[str, Any]) -> None:
     values = {
         "date": saved.get("date") if isinstance(saved.get("date"), date) else date.today(),
         "reg": normalize_registration(saved.get("registration")),
-        "ev": normalize_text(saved.get("evidence")).upper(),
+        "ev": (normalize_text(saved.get("evidence")) or "").upper(),
         "type": normalize_text(saved.get("aircraft_type")),
-        "class": normalize_text(saved.get("aircraft_class")).upper(),
+        "class": (normalize_text(saved.get("aircraft_class")) or "").upper(),
         "dep": next_departure.upper(),
         "arr": "",
         "off": "",
@@ -3816,7 +3816,7 @@ def _prepare_next_manual_entry(prefix: str, saved: dict[str, Any]) -> None:
         "starts": 1,
         "cmd": normalize_text(saved.get("commander")) or current_user_display_name(),
         "instr": normalize_text(saved.get("instructor")),
-        "role": normalize_text(saved.get("role")).upper() or current_user_default_role(),
+        "role": (normalize_text(saved.get("role")) or "").upper() or current_user_default_role(),
         "task": normalize_text(saved.get("task")),
         "price": float(saved.get("price_per_hour") or 0),
         "billing_basis": _normalize_billing_basis(saved.get("billing_basis")),

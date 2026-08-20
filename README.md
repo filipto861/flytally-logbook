@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.65 – Pilot Currency & Recency
+## v0.65.1 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -138,7 +138,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.65 – Profile Recency Polish
+## v0.65.1 – Profile Recency Polish
 - removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
 - licence/medical/rating expiry tracking is the primary content
@@ -148,7 +148,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9; no migration required
 
 
-## v0.65 – Data Portability & Backup UX
+## v0.65.1 – Data Portability & Backup UX
 - adds `Export → Záloha účtu` for every authenticated user
 - portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
 - passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
@@ -161,7 +161,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.65 – Flight Entry UX 2.0
+## v0.65.1 – Flight Entry UX 2.0
 - manual flight entry now uses a compact pilot-focused layout
 - the most recent flight can prefill the last aircraft and next departure airport
 - last aircraft is reused only when its aircraft profile still exists
@@ -172,3 +172,9 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - `Uložit a přidat další` saves a leg and immediately prepares the next one, keeping aircraft/profile values and continuing from the previous arrival
 - KML import and existing-flight edit layouts remain unchanged
 - database schema remains 9
+
+
+## v0.65.1 – Manual Entry None Safety Hotfix
+- fixes `AttributeError: 'NoneType' object has no attribute 'upper'` when a new manual flight has an empty arrival
+- hardens all new v0.65 manual-entry uppercase conversions against missing optional values
+- no UX, database or schema changes
