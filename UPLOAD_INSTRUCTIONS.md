@@ -1,4 +1,4 @@
-# Upload v0.67
+# Upload v0.68
 
 1. Zachovej lokální `.git` a `data/logbook.sqlite`.
 2. Nahraď aplikační soubory obsahem tohoto balíčku.
@@ -28,7 +28,7 @@ Release ZIP neobsahuje `data/logbook.sqlite`.
 ### v0.62.2 smoke test
 Po deployi ověř Dashboard pro `Vše`, `Tento rok` a `Posledních 12 měsíců`, následně projdi Přehled, Letadla, Letiště a trasy, Náklady a Poslední lety. `data/logbook.sqlite` se nemění.
 
-### v0.67 smoke test
+### v0.68 smoke test
 
 1. Zachovej `.git` a `data/logbook.sqlite`.
 2. Nahraď aplikační soubory obsahem release ZIPu.
@@ -36,20 +36,24 @@ Po deployi ověř Dashboard pro `Vše`, `Tento rok` a `Posledních 12 měsíců`
 4. Ověř poslední let/přistání a 30/90/365 denní tabulku.
 5. Přidej testovací termín platnosti, uprav ho a odstraň ho.
 6. Ověř, že druhý uživatel termín prvního uživatele nevidí.
-7. Doporučený commit: `v0.67 - Pilot Currency & Recency`.
+7. Doporučený commit: `v0.68 - Pilot Currency & Recency`.
 
 
-### v0.67
+### v0.68
 No database migration is required (`DB_SCHEMA_VERSION = 9`). The release ZIP still excludes `data/logbook.sqlite`. Upload the new `logbook_core/portability.py` together with the other changed files.
 
 
-### v0.67
+### v0.68
 No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/flight_entry.py`. The release ZIP does not contain `data/logbook.sqlite`.
 
 
-### v0.67
+### v0.68
 No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/logbook_view.py`. The release ZIP still excludes `data/logbook.sqlite`.
 
 
-### v0.67
+### v0.68
 No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/track_player.py`. The release ZIP still excludes `data/logbook.sqlite`.
+
+
+### v0.68
+No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/data_quality.py`. The release ZIP still excludes `data/logbook.sqlite`.

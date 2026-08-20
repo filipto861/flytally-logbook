@@ -343,6 +343,57 @@ def apply_ui_theme(dark_mode: bool) -> None:
         text-transform:uppercase;
         margin:.08rem 0 .38rem 0;
     }}
+    .quality-empty {{
+        border:1px dashed rgba(148,163,184,.25);
+        border-radius:18px;
+        padding:1.15rem 1.1rem;
+        margin:.7rem 0;
+        background:rgba(255,255,255,.015);
+    }}
+    .quality-empty-title {{font-size:.95rem;font-weight:850;color:var(--text);}}
+    .quality-empty-sub {{font-size:.78rem;color:var(--muted);margin-top:.28rem;max-width:760px;line-height:1.5;}}
+    .quality-hero {{
+        display:flex;align-items:center;justify-content:space-between;gap:1rem;
+        border:1px solid var(--border);border-radius:20px;
+        padding:1rem 1.05rem;margin:.7rem 0 .9rem 0;
+        background:rgba(255,255,255,.022);
+        overflow:hidden;position:relative;
+    }}
+    .quality-hero::before {{
+        content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#38bdf8;
+    }}
+    .quality-hero.quality-ok::before {{background:#22c55e;}}
+    .quality-hero.quality-warning::before {{background:#f59e0b;}}
+    .quality-hero.quality-problem::before {{background:#ef4444;}}
+    .quality-kicker {{font-size:.63rem;font-weight:900;letter-spacing:.11em;color:var(--muted);}}
+    .quality-status {{font-size:1.5rem;font-weight:900;color:var(--text);line-height:1.05;margin-top:.18rem;}}
+    .quality-sub {{font-size:.76rem;color:var(--muted);margin-top:.26rem;}}
+    .quality-meta {{font-size:.68rem;line-height:1.45;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;}}
+    .quality-issue {{
+        border:1px solid var(--border);border-radius:15px;
+        padding:.72rem .82rem .68rem .82rem;background:rgba(255,255,255,.018);
+        position:relative;overflow:hidden;
+    }}
+    .quality-issue::before {{
+        content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#f59e0b;
+    }}
+    .quality-issue-problem::before {{background:#ef4444;}}
+    .quality-issue-warning::before {{background:#f59e0b;}}
+    .quality-issue-top {{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}}
+    .quality-badge {{
+        font-size:.57rem;font-weight:900;letter-spacing:.075em;
+        border:1px solid rgba(148,163,184,.20);border-radius:999px;
+        padding:.14rem .35rem;color:var(--text);background:rgba(255,255,255,.035);
+    }}
+    .quality-category {{font-size:.63rem;color:var(--muted);font-weight:760;}}
+    .quality-issue-title {{font-size:.87rem;font-weight:850;color:var(--text);margin-top:.36rem;}}
+    .quality-issue-flight {{font-size:.68rem;color:#7dd3fc;margin-top:.16rem;font-weight:720;}}
+    .quality-issue-detail {{font-size:.72rem;color:var(--muted);margin-top:.28rem;line-height:1.42;overflow-wrap:anywhere;}}
+    .quality-issue-gap {{height:.46rem;}}
+    @media (max-width:760px) {{
+        .quality-hero {{align-items:flex-start;flex-direction:column;}}
+        .quality-meta {{text-align:left;}}
+    }}
     @media (max-width:760px) {{
         .flight-entry-context {{
             align-items:flex-start;

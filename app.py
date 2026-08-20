@@ -67,6 +67,7 @@ from logbook_core.logbook_view import (
     flight_navigation, quick_search_flights,
 )
 from logbook_core.track_player import build_track_player_payload
+from logbook_core.data_quality import scan_data_quality
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -6744,6 +6745,488 @@ def upsert_airport_form(data: dict[str, Any]) -> None:
     auto_backup_after_change("upsert_airport")
 
 
+
+@st.cache_data(show_spinner=False, ttl=300)
+def read_quality_track_metadata(user_id: int) -> pd.DataFrame:
+    """Minimal GPS metadata for the manual Data Quality scan.
+
+    Four indexed point lookups expose only track endpoints; the heavy
+    coordinates_json payload is deliberately not loaded.
+    """
+    uid = strict_user_id(user_id)
+    with connect() as con:
+        return pd.read_sql_query(
+            """
+            SELECT
+                t.id,
+                t.flight_id,
+                t.point_count,
+                t.distance_km,
+                t.start_utc,
+                t.end_utc,
+                (
+                    SELECT p.latitude_deg
+                    FROM track_points p
+                    WHERE p.user_id = t.user_id AND p.track_id = t.id
+                    ORDER BY p.seq ASC
+                    LIMIT 1
+                ) AS start_lat,
+                (
+                    SELECT p.longitude_deg
+                    FROM track_points p
+                    WHERE p.user_id = t.user_id AND p.track_id = t.id
+                    ORDER BY p.seq ASC
+                    LIMIT 1
+                ) AS start_lon,
+                (
+                    SELECT p.latitude_deg
+                    FROM track_points p
+                    WHERE p.user_id = t.user_id AND p.track_id = t.id
+                    ORDER BY p.seq DESC
+                    LIMIT 1
+                ) AS end_lat,
+                (
+                    SELECT p.longitude_deg
+                    FROM track_points p
+                    WHERE p.user_id = t.user_id AND p.track_id = t.id
+                    ORDER BY p.seq DESC
+                    LIMIT 1
+                ) AS end_lon
+            FROM flight_tracks t
+            WHERE t.user_id = ?
+            ORDER BY t.flight_id, t.id
+            """,
+            con,
+            params=(uid,),
+        )
+
+
+def _quality_used_airports(flights: pd.DataFrame) -> tuple[str, ...]:
+    if flights.empty:
+        return ()
+    idents: set[str] = set()
+    for column in ("departure", "arrival"):
+        if column not in flights.columns:
+            continue
+        for value in flights[column].tolist():
+            ident = (normalize_text(value) or "").upper().strip()
+            if ident:
+                idents.add(ident)
+    return tuple(sorted(idents))
+
+
+def _quality_track_endpoint(
+    tracks: pd.DataFrame,
+    flight_id: int,
+    *,
+    endpoint: str,
+) -> dict[str, float] | None:
+    if tracks.empty or "flight_id" not in tracks.columns:
+        return None
+    sub = tracks[pd.to_numeric(tracks["flight_id"], errors="coerce").fillna(0).astype(int).eq(int(flight_id))]
+    if sub.empty:
+        return None
+    row = sub.iloc[0] if endpoint == "start" else sub.iloc[-1]
+    lat_key = "start_lat" if endpoint == "start" else "end_lat"
+    lon_key = "start_lon" if endpoint == "start" else "end_lon"
+    try:
+        lat = float(row.get(lat_key))
+        lon = float(row.get(lon_key))
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(lat) and math.isfinite(lon)):
+        return None
+    return {"lat": lat, "lon": lon}
+
+
+def build_data_quality_scan(user_id: int) -> dict[str, Any]:
+    uid = strict_user_id(user_id)
+    flights = read_flights(uid)
+    aircraft = read_aircraft_catalog(active_only=False, user_id=uid)
+    tracks = read_quality_track_metadata(uid)
+
+    used_airports = _quality_used_airports(flights)
+    known_lookup = airport_coords_for_idents(used_airports, uid)
+    scan = scan_data_quality(
+        flights,
+        aircraft,
+        known_airports=known_lookup.keys(),
+        tracks=tracks,
+    )
+
+    # GPS endpoint suggestions are intentionally generated outside the pure
+    # engine because they depend on the shared airport spatial index.
+    gps_patches: dict[int, dict[str, str]] = {}
+    for issue in scan.get("issues", []):
+        flight_id = issue.get("flight_id")
+        if not flight_id:
+            continue
+        if issue.get("code") == "missing_departure":
+            point = _quality_track_endpoint(tracks, int(flight_id), endpoint="start")
+            suggestion = nearest_airport(point, max_km=18.0) if point else ""
+            if suggestion:
+                issue["suggested_patch"] = {"departure": suggestion}
+                issue["patch_kind"] = "gps"
+                issue["detail"] += f" Nejbližší známé letiště k začátku tracku: {suggestion}."
+                gps_patches.setdefault(int(flight_id), {})["departure"] = suggestion
+        elif issue.get("code") == "missing_arrival":
+            point = _quality_track_endpoint(tracks, int(flight_id), endpoint="end")
+            suggestion = nearest_airport(point, max_km=18.0) if point else ""
+            if suggestion:
+                issue["suggested_patch"] = {"arrival": suggestion}
+                issue["patch_kind"] = "gps"
+                issue["detail"] += f" Nejbližší známé letiště ke konci tracku: {suggestion}."
+                gps_patches.setdefault(int(flight_id), {})["arrival"] = suggestion
+
+    scan["gps_patches"] = gps_patches
+    scan["scanned_at"] = datetime.now(current_user_timezone()).isoformat(timespec="seconds")
+    scan["flight_total"] = int(len(flights))
+    scan["track_total"] = int(len(tracks))
+    return scan
+
+
+def apply_data_quality_patches(
+    patches: dict[int, dict[str, Any]],
+    *,
+    audit_action: str,
+) -> tuple[int, int]:
+    """Apply explicit, user-confirmed partial patches to owned flight rows."""
+    allowed_fields = {
+        "evidence",
+        "aircraft_type",
+        "aircraft_class",
+        "role",
+        "departure",
+        "arrival",
+    }
+    uppercase_fields = {"evidence", "aircraft_class", "role", "departure", "arrival"}
+
+    uid = strict_user_id(current_user_id())
+    normalized: dict[int, dict[str, Any]] = {}
+    for raw_flight_id, raw_patch in (patches or {}).items():
+        try:
+            flight_id = int(raw_flight_id)
+        except (TypeError, ValueError):
+            continue
+        clean: dict[str, Any] = {}
+        for field, value in dict(raw_patch or {}).items():
+            if field not in allowed_fields:
+                continue
+            text = normalize_text(value)
+            clean[field] = text.upper() if text and field in uppercase_fields else text
+        clean = {field: value for field, value in clean.items() if value is not None}
+        if clean:
+            normalized[flight_id] = clean
+
+    if not normalized:
+        return 0, 0
+
+    rows_changed = 0
+    fields_changed = 0
+    with connect() as con:
+        for flight_id, patch in normalized.items():
+            require_owned_record(con, "flights", flight_id, uid)
+
+            existing = con.execute(
+                "SELECT " + ", ".join(patch.keys()) + " FROM flights WHERE id = ? AND user_id = ?",
+                (flight_id, uid),
+            ).fetchone()
+            if existing is None:
+                continue
+
+            effective: dict[str, Any] = {}
+            for index, (field, value) in enumerate(patch.items()):
+                current = normalize_text(existing[index])
+                current_cmp = current.upper() if current and field in uppercase_fields else current
+                if current_cmp != value:
+                    effective[field] = value
+
+            if not effective:
+                continue
+
+            assignments = ", ".join(f"{field} = ?" for field in effective)
+            con.execute(
+                f"UPDATE flights SET {assignments} WHERE id = ? AND user_id = ?",
+                (*effective.values(), flight_id, uid),
+            )
+            record_audit(
+                con,
+                audit_action,
+                "flights",
+                flight_id,
+                {"patch": effective},
+            )
+            rows_changed += 1
+            fields_changed += len(effective)
+        con.commit()
+
+    if rows_changed:
+        invalidate_cached_data("flights")
+        auto_backup_after_change(audit_action)
+    return rows_changed, fields_changed
+
+
+def _quality_status_meta(status: str) -> tuple[str, str, str]:
+    if status == "problem":
+        return "PROBLÉM", "Některé záznamy vyžadují kontrolu", "problem"
+    if status == "warning":
+        return "UPOZORNĚNÍ", "Data jsou použitelná, ale některé záznamy stojí za kontrolu", "warning"
+    return "OK", "Kontrola nenašla žádný problém ani upozornění", "ok"
+
+
+def _quality_flight_label(issue: dict[str, Any]) -> str:
+    parts = []
+    if issue.get("date"):
+        parts.append(str(issue["date"]))
+    if issue.get("registration"):
+        parts.append(str(issue["registration"]))
+    route = " → ".join(
+        value for value in (
+            normalize_text(issue.get("departure")),
+            normalize_text(issue.get("arrival")),
+        )
+        if value
+    )
+    if route:
+        parts.append(route)
+    if issue.get("flight_id"):
+        parts.append(f"ID {int(issue['flight_id'])}")
+    return " • ".join(parts) or "Databázový nález"
+
+
+def _open_quality_flight(flight_id: int) -> None:
+    st.session_state[f"detail_section_{int(flight_id)}"] = "Přehled"
+    st.session_state["open_flight_dialog_id"] = int(flight_id)
+    st.session_state["selected_flight_id"] = int(flight_id)
+    st.session_state.pop("dismissed_flight_id", None)
+    st.session_state["page"] = "Lety"
+
+
+def render_data_quality_page() -> None:
+    uid = strict_user_id(current_user_id())
+    scan_key = f"data_quality_scan_v068_u{uid}"
+    flash = st.session_state.pop("data_quality_flash_v068", None)
+    if flash:
+        st.success(str(flash))
+
+    st.markdown("### Kvalita dat")
+    st.caption(
+        "Kontrola je pouze diagnostická. Nic se neopravuje ani nemaže bez tvého potvrzení. "
+        "Spouští se ručně, aby běžný chod aplikace zůstal rychlý."
+    )
+
+    left, right = st.columns([1.3, 1])
+    with left:
+        run_scan = st.button(
+            "Spustit kontrolu",
+            type="primary",
+            width="stretch",
+            key="run_data_quality_scan_v068",
+        )
+    with right:
+        if st.session_state.get(scan_key):
+            clear_scan = st.button(
+                "Zahodit výsledek",
+                width="stretch",
+                key="clear_data_quality_scan_v068",
+            )
+            if clear_scan:
+                st.session_state.pop(scan_key, None)
+                st.rerun()
+
+    if run_scan:
+        with st.spinner("Kontroluji lety, profily letadel, letiště a GPS metadata…"):
+            st.session_state[scan_key] = build_data_quality_scan(uid)
+
+    scan = st.session_state.get(scan_key)
+    if not isinstance(scan, dict):
+        st.markdown(
+            """
+            <div class="quality-empty">
+              <div class="quality-empty-title">Databáze zatím nebyla zkontrolována</div>
+              <div class="quality-empty-sub">
+                Kontrola hledá duplicity, chybějící údaje, podezřelé časy,
+                nesoulad s profily letadel, neznámá letiště a poškozená GPS metadata.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    status_label, status_sub, status_tone = _quality_status_meta(str(scan.get("status") or "ok"))
+    counts = scan.get("counts") or {}
+    scanned_at = str(scan.get("scanned_at") or "")
+    st.markdown(
+        f"""
+        <div class="quality-hero quality-{status_tone}">
+          <div>
+            <div class="quality-kicker">DATA QUALITY</div>
+            <div class="quality-status">{html.escape(status_label)}</div>
+            <div class="quality-sub">{html.escape(status_sub)}</div>
+          </div>
+          <div class="quality-meta">
+            {int(scan.get('flight_total') or 0)} letů · {int(scan.get('track_total') or 0)} GPS tracků
+            <br>{html.escape(scanned_at)}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        metric_card("Problémy", str(int(counts.get("problem", 0))), "vyžadují kontrolu")
+    with m2:
+        metric_card("Upozornění", str(int(counts.get("warning", 0))), "doporučená kontrola")
+    with m3:
+        metric_card("Lety", str(int(counts.get("flights", 0))), "dotčené záznamy")
+    with m4:
+        metric_card("Bezpečné opravy", str(int(counts.get("safe_repairs", 0))), "doplnění z profilů")
+
+    safe_patches = {
+        int(flight_id): dict(patch)
+        for flight_id, patch in (scan.get("safe_patches") or {}).items()
+        if patch
+    }
+    if safe_patches:
+        with st.container(border=True):
+            st.markdown("#### Bezpečné doplnění z profilů letadel")
+            field_count = sum(len(patch) for patch in safe_patches.values())
+            st.caption(
+                f"Lze doplnit {field_count} chybějících hodnot u {len(safe_patches)} letů. "
+                "Doplňují se pouze prázdná pole z odpovídajícího profilu letadla; existující hodnoty se nepřepisují."
+            )
+            if st.button(
+                f"Doplnit bezpečně {len(safe_patches)} letů",
+                type="primary",
+                width="stretch",
+                key="apply_safe_quality_repairs_v068",
+            ):
+                try:
+                    rows_changed, fields_changed = apply_data_quality_patches(
+                        safe_patches,
+                        audit_action="data_quality_safe_fill",
+                    )
+                    st.session_state.pop(scan_key, None)
+                    st.session_state["data_quality_flash_v068"] = (
+                        f"Doplněno {fields_changed} hodnot u {rows_changed} letů. Spusť kontrolu znovu pro nový stav."
+                    )
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Opravu se nepodařilo provést: {exc}")
+
+    issues = list(scan.get("issues") or [])
+    if not issues:
+        st.success("Kontrola je čistá. Nebyl nalezen žádný problém ani upozornění.")
+        return
+
+    st.markdown("#### Nálezy")
+    filters = st.columns([1, 1.2, 1.7])
+    with filters[0]:
+        severity = st.selectbox(
+            "Závažnost",
+            ["Vše", "Problémy", "Upozornění"],
+            key="quality_severity_filter_v068",
+        )
+    categories = sorted({str(issue.get("category") or "Ostatní") for issue in issues})
+    with filters[1]:
+        category = st.selectbox(
+            "Kategorie",
+            ["Vše"] + categories,
+            key="quality_category_filter_v068",
+        )
+    with filters[2]:
+        query = st.text_input(
+            "Hledat v nálezech",
+            value="",
+            placeholder="registrace, letiště, ID, text problému…",
+            key="quality_search_v068",
+        )
+
+    filtered_issues = []
+    query_cf = query.strip().casefold()
+    for issue in issues:
+        if severity == "Problémy" and issue.get("severity") != "problem":
+            continue
+        if severity == "Upozornění" and issue.get("severity") != "warning":
+            continue
+        if category != "Vše" and str(issue.get("category")) != category:
+            continue
+        if query_cf:
+            haystack = " ".join(
+                str(issue.get(key) or "")
+                for key in (
+                    "flight_id", "date", "registration", "departure", "arrival",
+                    "category", "title", "detail",
+                )
+            ).casefold()
+            if query_cf not in haystack:
+                continue
+        filtered_issues.append(issue)
+
+    st.caption(
+        f"Zobrazeno {min(len(filtered_issues), 50)} z {len(filtered_issues)} odpovídajících nálezů."
+        + (" Pro rychlost UI se zobrazuje maximálně prvních 50." if len(filtered_issues) > 50 else "")
+    )
+
+    for index, issue in enumerate(filtered_issues[:50]):
+        severity_value = str(issue.get("severity") or "warning")
+        severity_text = "PROBLÉM" if severity_value == "problem" else "UPOZORNĚNÍ"
+        flight_label = _quality_flight_label(issue)
+        st.markdown(
+            f"""
+            <div class="quality-issue quality-issue-{html.escape(severity_value)}">
+              <div class="quality-issue-top">
+                <span class="quality-badge">{severity_text}</span>
+                <span class="quality-category">{html.escape(str(issue.get('category') or ''))}</span>
+              </div>
+              <div class="quality-issue-title">{html.escape(str(issue.get('title') or ''))}</div>
+              <div class="quality-issue-flight">{html.escape(flight_label)}</div>
+              <div class="quality-issue-detail">{html.escape(str(issue.get('detail') or ''))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        flight_id = issue.get("flight_id")
+        patch = dict(issue.get("suggested_patch") or {})
+        patch_kind = issue.get("patch_kind")
+        action_cols = st.columns([1, 1, 2.2])
+        if flight_id:
+            with action_cols[0]:
+                if st.button(
+                    "Otevřít let",
+                    width="stretch",
+                    key=f"quality_open_{index}_{int(flight_id)}",
+                ):
+                    _open_quality_flight(int(flight_id))
+                    st.rerun()
+
+        if flight_id and patch and patch_kind == "gps":
+            label = "Použít GPS návrh"
+            with action_cols[1]:
+                if st.button(
+                    label,
+                    width="stretch",
+                    key=f"quality_patch_{index}_{int(flight_id)}",
+                ):
+                    try:
+                        rows_changed, fields_changed = apply_data_quality_patches(
+                            {int(flight_id): patch},
+                            audit_action="data_quality_gps_suggestion",
+                        )
+                        st.session_state.pop(scan_key, None)
+                        st.session_state["data_quality_flash_v068"] = (
+                            f"GPS návrh použit: {fields_changed} hodnota u {rows_changed} letu. Spusť kontrolu znovu."
+                        )
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"Návrh se nepodařilo použít: {exc}")
+
+        st.markdown('<div class="quality-issue-gap"></div>', unsafe_allow_html=True)
+
+
 def page_database():
     st.markdown("## Databáze")
 
@@ -6764,7 +7247,7 @@ def page_database():
 
     section = st.radio(
         "Databáze sekce",
-        ["Letadla", "Letiště"],
+        ["Letadla", "Letiště", "Kvalita dat"],
         horizontal=True,
         label_visibility="collapsed",
         key="database_section_v058",
@@ -6831,6 +7314,8 @@ def page_database():
                 st.rerun()
             except Exception as exc:
                 st.error(str(exc))
+    elif section == "Kvalita dat":
+        render_data_quality_page()
     elif section == "Letadla":
         uid = current_user_id()
         aircraft = read_table("aircraft", uid)
