@@ -1,56 +1,57 @@
-# Logbook architecture — v0.55
+# Logbook architecture — v0.56
 
-## Cíl
+## Stav
 
-v0.55 zavádí multi-user datovou architekturu bez toho, aby se aplikace už dnes chovala jako veřejná multi-user služba. Produkční režim zůstává jeden pilot + SQLite + GitHub backup.
+v0.56 přidává autentizaci nad ownership modelem v0.55. Datový backend zůstává SQLite a `user_id` je bezpečnostní hranice mezi profily.
 
-## Ownership model
+## Identita původního uživatele
 
-Uživatelské tabulky:
+`user_id = 1` je legacy owner. Migrace v0.55 už přiřadila všechna historická data právě jemu. v0.56 tuto vazbu **nemění**; pouze k uživateli 1 přidá e-mail a credentials po bezpečné aktivaci.
 
 ```text
 users
-└── user_settings
-
-users
+├── user_credentials
+├── user_settings
 ├── flights
 │   └── flight_tracks
 │       └── track_points
 ├── aircraft
 ├── rates
-├── airports        # lokální/custom overrides
+├── airports (custom)
 └── audit_log
 ```
 
-`user_id` je hranice vlastnictví dat. V současném single-user režimu je aktivní `user_id = 1`.
+## Authentication gate
 
-### Shared data
+`main()` inicializuje DB, ale před navigací a před zpracováním detailových query parametrů volá auth gate. Bez platné session se žádná stránka s uživatelskými daty nevykreslí.
 
-`data/airports_full.sqlite` je globální read-only katalog světových letišť. Není kopírován pro jednotlivé uživatele. Lokální dodatky a overrides jsou v hlavní DB a mají `user_id`.
+První start nad legacy profilem vyžaduje aktivaci pomocí existujícího `auth.admin_password`, aby veřejný návštěvník nemohl převzít profil 1. Po aktivaci se používá e-mail + heslo.
 
-## Current user abstraction
+## Password storage
 
-`current_user_id()` v aplikaci dnes vrací výchozího lokálního uživatele ze session state. Hlavní cached read funkce přijímají `user_id` jako argument, takže budoucí autentizace může změnit aktivního uživatele bez sdílení cache mezi účty.
+`logbook_core/auth.py` používá `hashlib.scrypt`:
 
-Profil je uložen v `users` / `user_settings`. Výchozí profil při migraci převezme nejčastější jméno velitele z existujícího zápisníku, pokud je dostupné.
+- N = 16384,
+- r = 8,
+- p = 1,
+- 16B random salt,
+- 32B derived key,
+- constant-time comparison.
 
-## SQLite migration v6
+Do databáze se neukládá plaintext heslo.
 
-`logbook_core/tenancy.py` provádí jednorázovou migraci:
+## Registration
 
-- vytvoření lokálního uživatele,
-- doplnění ownership sloupců,
-- převod starých globálních UNIQUE omezení na per-user UNIQUE pro aircraft/rates/airports,
-- synchronizaci ownership přes flight → track → track point,
-- vytvoření user-aware indexů,
-- zápis markeru `tenancy_v1`.
+Implementace registrace je připravena, ale `auth.allow_registration = false` je výchozí a doporučený stav. Nový účet dostane nové `user_id` a žádná historická data.
 
-Po dokončení marker zajišťuje rychlý startup bez opakovaného skenování velké tabulky GPS bodů.
+## Full database access
 
-## Database backend
+Export jednotlivého uživatele (Excel/CSV/HTML) zůstává dostupný. Stažení celé SQLite DB je nově pouze pro aplikačního admina, protože DB může obsahovat data více uživatelů.
 
-v0.55 stále používá SQLite. To je záměrné: pro jednoho uživatele je stávající provoz jednoduchý a ověřený. Až bude zapnuta registrace více uživatelů, databázová vrstva se přesune na PostgreSQL a GitHub backup živé DB se odstraní.
+## Shared airport catalogue
 
-## Security boundary
+`data/airports_full.sqlite` zůstává globální read-only katalog. `airports` v hlavní DB jsou user-scoped custom/override záznamy.
 
-v0.55 je **příprava**, nikoli veřejný multi-user release. Skutečný multi-user provoz se nesmí zapnout pouze přidáním login formuláře; před otevřením dalším uživatelům musí být dokončena autentizace, autorizace všech dotazů a serverová databáze.
+## Budoucí backend
+
+SQLite + GitHub backup je přechodný single-user deployment. Před otevřením registrace širší veřejnosti je plánovaný PostgreSQL backend, serverová persistence, e-mail verification/reset a odstranění GitHub backupu živé DB.

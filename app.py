@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import html
 import hashlib
+import hmac
 import json
 import math
 import re
@@ -25,6 +26,10 @@ from logbook_core.config import (
     EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, OURAIRPORTS_AIRPORTS_URL, ROLE_OPTIONS,
 )
 from logbook_core.schema import SCHEMA
+from logbook_core.auth import (
+    PASSWORD_MIN_LENGTH, activate_legacy_profile, authenticate_user, change_password,
+    ensure_auth_schema, legacy_profile_needs_activation, register_user, verify_password,
+)
 from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema, normalize_user_id
 from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
@@ -140,13 +145,34 @@ def is_admin() -> bool:
     return st.session_state.get("auth_role") == "admin"
 
 
+def is_user_authenticated() -> bool:
+    return bool(st.session_state.get("user_authenticated")) and int(st.session_state.get("current_user_id", 0) or 0) > 0
+
+
+def _set_authenticated_user(user_id: int) -> None:
+    uid = normalize_user_id(user_id)
+    st.session_state["user_authenticated"] = True
+    st.session_state["current_user_id"] = uid
+    st.session_state["page"] = "Dashboard"
+
+
+def logout_user() -> None:
+    for key in ("user_authenticated", "current_user_id", "auth_role", "page", "selected_flight_id", "open_flight_dialog_id"):
+        st.session_state.pop(key, None)
+
+
 def actor_name() -> str:
-    return "admin" if is_admin() else "viewer"
+    if is_user_authenticated():
+        name = current_user_display_name()
+        return f"{name} (admin)" if is_admin() else name
+    return "anonymous"
 
 
 def current_user_id() -> int:
-    """Active data owner. v0.55 stays single-user, auth can replace this later."""
-    return normalize_user_id(st.session_state.get("current_user_id", DEFAULT_USER_ID))
+    """Return the authenticated data owner. No authentication means no user data."""
+    if not is_user_authenticated():
+        return 0
+    return normalize_user_id(st.session_state.get("current_user_id"), DEFAULT_USER_ID)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -172,6 +198,125 @@ def read_user_profile(user_id: int = DEFAULT_USER_ID) -> dict[str, Any]:
 def current_user_display_name() -> str:
     profile = read_user_profile(current_user_id())
     return normalize_text(profile.get("display_name")) or "Local pilot"
+
+
+def _auth_state() -> tuple[bool, dict[str, Any]]:
+    """Return whether the legacy owner still needs activation and its profile."""
+    with connect() as con:
+        needs_activation = legacy_profile_needs_activation(con)
+    return needs_activation, read_user_profile(DEFAULT_USER_ID)
+
+
+def render_auth_gate() -> bool:
+    """Render login/registration and stop all user-data UI until authenticated."""
+    if is_user_authenticated():
+        try:
+            profile = read_user_profile(current_user_id())
+            if int(profile.get("active", 1) or 0) == 1:
+                return True
+        except Exception:
+            pass
+        logout_user()
+
+    apply_ui_theme(True)
+    st.markdown(f"### Letový zápisník · {APP_VERSION}")
+    st.title("Přihlášení")
+    st.caption("Každý profil má vlastní lety, letadla, GPS tracky, ceník a vlastní letiště.")
+
+    needs_activation, legacy_profile = _auth_state()
+    if needs_activation:
+        st.info("Nejdříve aktivujte svůj stávající profil. Všechny dosavadní lety zůstanou přiřazené tomuto účtu.")
+        admin_password = str(_get_secret("auth", "admin_password", "") or "")
+        if not admin_password:
+            st.error("Pro bezpečnou aktivaci stávajícího profilu musí být ve Streamlit Secrets nastaveno [auth].admin_password. Bez něj by si veřejně dostupný profil mohl převzít někdo cizí.")
+            st.code('[auth]\nadmin_password = "VAŠE_SOUČASNÉ_ADMIN_HESLO"', language="toml")
+            return False
+        with st.form("activate_legacy_profile_form"):
+            display_name = st.text_input("Jméno", value=str(legacy_profile.get("display_name") or ""))
+            email = st.text_input("E-mail")
+            password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
+            password2 = st.text_input("Potvrzení nového hesla", type="password")
+            admin_pwd = st.text_input("Současné heslo správce aplikace", type="password")
+            submitted = st.form_submit_button("Aktivovat můj stávající profil", use_container_width=True)
+        if submitted:
+            if not hmac.compare_digest(admin_pwd, admin_password):
+                st.error("Heslo správce není správné.")
+                return False
+            if password != password2:
+                st.error("Nová hesla se neshodují.")
+                return False
+            with connect() as con:
+                result = activate_legacy_profile(
+                    con, email=email, display_name=display_name, password=password
+                )
+                if result.ok:
+                    con.execute(
+                        "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (DEFAULT_USER_ID, _now_iso(), str(display_name).strip(), "activate_profile", "user", str(DEFAULT_USER_ID), json.dumps({"email": str(email).strip().lower()}, ensure_ascii=False)),
+                    )
+                    con.commit()
+            if result.ok and result.user_id:
+                read_user_profile.clear()
+                _set_authenticated_user(result.user_id)
+                auto_backup_after_change("activate_profile")
+                st.rerun()
+            st.error(result.error or "Profil se nepodařilo aktivovat.")
+        return False
+
+    allow_registration = str(_get_secret("auth", "allow_registration", "false") or "false").strip().lower() in {"1", "true", "yes", "on"}
+    auth_tabs = st.tabs(["Přihlásit se"] + (["Vytvořit účet"] if allow_registration else []))
+    with auth_tabs[0]:
+        with st.form("user_login_form"):
+            email = st.text_input("E-mail", key="login_email")
+            password = st.text_input("Heslo", type="password", key="login_password")
+            submitted = st.form_submit_button("Přihlásit se", use_container_width=True)
+        if submitted:
+            with connect() as con:
+                result = authenticate_user(con, email, password)
+                if result.ok:
+                    con.commit()
+            if result.ok and result.user_id:
+                _set_authenticated_user(result.user_id)
+                st.rerun()
+            st.error(result.error or "Přihlášení se nepodařilo.")
+
+    if allow_registration:
+        with auth_tabs[1]:
+            st.caption("Nový účet začne s prázdným letovým zápisníkem. E-mail zatím není ověřován.")
+            with st.form("user_register_form"):
+                display_name = st.text_input("Jméno", key="register_name")
+                email = st.text_input("E-mail", key="register_email")
+                password = st.text_input(f"Heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password", key="register_password")
+                password2 = st.text_input("Potvrzení hesla", type="password", key="register_password2")
+                submitted = st.form_submit_button("Vytvořit účet", use_container_width=True)
+            if submitted:
+                if password != password2:
+                    st.error("Hesla se neshodují.")
+                    return False
+                with connect() as con:
+                    result = register_user(con, email=email, display_name=display_name, password=password)
+                    if result.ok:
+                        con.commit()
+                if result.ok and result.user_id:
+                    read_user_profile.clear()
+                    _set_authenticated_user(result.user_id)
+                    auto_backup_after_change("register_user")
+                    st.rerun()
+                st.error(result.error or "Účet se nepodařilo vytvořit.")
+    else:
+        st.caption("Registrace nových uživatelů je zatím vypnutá. Lze ji později povolit v Streamlit Secrets.")
+    return False
+
+
+def render_user_sidebar() -> None:
+    profile = read_user_profile(current_user_id())
+    st.divider()
+    st.markdown(f"**👤 {html.escape(str(profile.get('display_name') or 'Pilot'))}**")
+    if profile.get("email"):
+        st.caption(str(profile.get("email")))
+    if st.button("Odhlásit se", use_container_width=True, key="user_logout"):
+        logout_user()
+        st.rerun()
 
 
 def _clear_cached_function(name: str) -> None:
@@ -450,6 +595,7 @@ def initialize_database(con: sqlite3.Connection) -> None:
     # Both helpers are idempotent and safely upgrade the existing SQLite file.
     ensure_schema_compatibility(con)
     ensure_tenancy_schema(con)
+    ensure_auth_schema(con)
     # Re-run idempotent schema DDL because the tenancy migration may rebuild
     # tables with old global UNIQUE constraints; this restores standard indexes.
     con.executescript(SCHEMA)
@@ -4634,8 +4780,11 @@ def page_database():
             st.warning("Automatická GitHub záloha není nastavená. Změny ve Streamlit Cloud mohou po restartu zmizet.")
         if st.session_state.get("last_auto_backup_status") == "error":
             st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
-        with open(DB_PATH, "rb") as f:
-            st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+        if is_admin():
+            with open(DB_PATH, "rb") as f:
+                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+        else:
+            st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
         if github_backup_configured():
             if st.button("Uložit aktuální databázi na GitHub", type="primary", disabled=not is_admin(), use_container_width=True):
                 if require_admin():
@@ -5225,8 +5374,9 @@ def page_export(df: pd.DataFrame):
     st.markdown("## Export")
     if df.empty:
         st.info("Zatím nejsou uložené žádné lety.")
-        with open(DB_PATH, "rb") as f:
-            st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+        if is_admin():
+            with open(DB_PATH, "rb") as f:
+                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
         return
 
     filtered = render_export_filters(df)
@@ -5252,8 +5402,11 @@ def page_export(df: pd.DataFrame):
         with cprep:
             prepare_files = st.button("Připravit exportní soubory", type="primary", use_container_width=True, key="export_prepare_files_v044")
         with cdb:
-            with open(DB_PATH, "rb") as f:
-                st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", use_container_width=True)
+            if is_admin():
+                with open(DB_PATH, "rb") as f:
+                    st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", use_container_width=True)
+            else:
+                st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
 
         if prepare_files or st.session_state.get("export_files_ready_v044"):
             st.session_state["export_files_ready_v044"] = True
@@ -5312,6 +5465,81 @@ def page_export(df: pd.DataFrame):
         st.markdown("### Letadla")
         st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"]), hide_index=True, use_container_width=True)
 
+
+
+def page_profile() -> None:
+    uid = current_user_id()
+    profile = read_user_profile(uid)
+    st.markdown("## Profil")
+    st.caption("Nastavení tohoto profilu se vztahuje pouze na jeho vlastní letový zápisník.")
+
+    with st.form("profile_settings_form"):
+        display_name = st.text_input("Jméno", value=str(profile.get("display_name") or ""))
+        email = st.text_input("E-mail", value=str(profile.get("email") or ""), disabled=True)
+        timezone_value = str(profile.get("timezone") or "Europe/Prague")
+        timezone_name = st.text_input("Časové pásmo", value=timezone_value)
+        currency = st.selectbox("Měna", ["CZK", "EUR", "USD", "GBP"], index=["CZK", "EUR", "USD", "GBP"].index(str(profile.get("currency") or "CZK")) if str(profile.get("currency") or "CZK") in ["CZK", "EUR", "USD", "GBP"] else 0)
+        home_airport = st.text_input("Domovské letiště", value=str(profile.get("home_airport") or "")).upper().strip()
+        role_value = str(profile.get("default_role") or "PIC")
+        default_role = st.selectbox("Výchozí funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_value) if role_value in ROLE_OPTIONS else 0)
+        submitted = st.form_submit_button("Uložit profil", type="primary", use_container_width=True)
+    if submitted:
+        clean_name = str(display_name or "").strip()
+        if not clean_name:
+            st.error("Jméno profilu nesmí být prázdné.")
+        else:
+            with connect() as con:
+                con.execute(
+                    "UPDATE users SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (clean_name, uid),
+                )
+                con.execute(
+                    """
+                    INSERT INTO user_settings
+                        (user_id, timezone, currency, home_airport, default_role, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id) DO UPDATE SET
+                        timezone = excluded.timezone, currency = excluded.currency,
+                        home_airport = excluded.home_airport, default_role = excluded.default_role,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (uid, str(timezone_name or "Europe/Prague").strip(), currency, home_airport or None, default_role),
+                )
+                record_audit(con, "update_profile", "user", uid, {"display_name": clean_name})
+                con.commit()
+            read_user_profile.clear()
+            auto_backup_after_change("update_profile")
+            st.success("Profil byl uložen.")
+            st.rerun()
+
+    st.markdown("### Změna hesla")
+    with st.form("change_user_password_form"):
+        current_password = st.text_input("Současné heslo", type="password")
+        new_password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
+        new_password2 = st.text_input("Potvrzení nového hesla", type="password")
+        change_submitted = st.form_submit_button("Změnit heslo", use_container_width=True)
+    if change_submitted:
+        if new_password != new_password2:
+            st.error("Nová hesla se neshodují.")
+        else:
+            with connect() as con:
+                result = change_password(
+                    con, user_id=uid, current_password=current_password, new_password=new_password
+                )
+                if result.ok:
+                    record_audit(con, "change_password", "user", uid)
+                    con.commit()
+            if result.ok:
+                auto_backup_after_change("change_password")
+                st.success("Heslo bylo změněno.")
+            else:
+                st.error(result.error or "Heslo se nepodařilo změnit.")
+
+    st.markdown("### Účet")
+    st.write(f"**User ID:** {uid}")
+    st.write(f"**E-mail:** {profile.get('email') or '—'}")
+    if uid == DEFAULT_USER_ID:
+        st.info("Toto je původní profil. Všechny lety existující před zavedením účtů jsou přiřazené právě tomuto profilu.")
 
 def render_sidebar_toggle() -> None:
     """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""
@@ -5451,7 +5679,7 @@ def render_page_transition_runtime() -> None:
               if (btn && btn.id !== 'lb-sidebar-toggle') {
                 const inSidebar = btn.closest('section[data-testid="stSidebar"]');
                 const txt = (btn.innerText || btn.textContent || '').trim();
-                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Ceník','Databáze','Export'];
+                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Ceník','Databáze','Export','Profil'];
                 if (inSidebar && navLabels.indexOf(txt) !== -1) showLoader();
               }
               if (link && link.href && link.href.indexOf('flight_id=') !== -1) {
@@ -5503,6 +5731,8 @@ def main():
     if not _DB_READY:
         with connect():
             pass
+    if not render_auth_gate():
+        return
     if "page" not in st.session_state:
         st.session_state["page"] = "Dashboard"
     q_flight_id = _query_param_value("flight_id")
@@ -5530,6 +5760,7 @@ def main():
         st.markdown("## Letový zápisník")
         st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
         render_sidebar_nav()
+        render_user_sidebar()
         render_auth_sidebar()
     apply_ui_theme(dark_mode)
     render_sidebar_toggle()
@@ -5558,6 +5789,8 @@ def main():
         st.rerun()
     elif page == "Export":
         page_export(read_flights(current_user_id()))
+    elif page == "Profil":
+        page_profile()
     render_page_loaded_signal()
 
 if __name__ == "__main__":

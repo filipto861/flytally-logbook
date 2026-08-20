@@ -16,6 +16,15 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT,
     updated_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS user_credentials (
+    user_id INTEGER PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT,
+    last_login_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id INTEGER PRIMARY KEY,
     timezone TEXT DEFAULT 'Europe/Prague',
@@ -153,6 +162,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     detail_json TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_ci ON users(LOWER(TRIM(email))) WHERE email IS NOT NULL AND TRIM(email) <> '';
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
 CREATE INDEX IF NOT EXISTS idx_flights_date ON flights(date);
 CREATE INDEX IF NOT EXISTS idx_flights_registration ON flights(registration);
 CREATE INDEX IF NOT EXISTS idx_flights_evidence_role ON flights(evidence, role);

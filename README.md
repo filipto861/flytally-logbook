@@ -1,49 +1,72 @@
 # Logbook Streamlit
 
-Verze: **v0.55**
+Verze: **v0.56**
 
-## v0.55 – Multi-User Foundation
+## v0.56 – Authentication & Profiles
 
-v0.55 připravuje aplikaci na budoucí používání více piloty, ale **současné chování zůstává single-user**. Přihlášení ani registrace se zatím nezobrazují a aplikace dál používá SQLite + současný GitHub backup.
+v0.56 zapíná přihlášení a uživatelské profily nad multi-user základem z v0.55. Aplikace stále používá SQLite a současný GitHub backup. Ve výchozím nastavení je registrace dalších účtů **vypnutá**, takže aplikace zůstává zatím pouze pro původního uživatele.
 
-### Co se změnilo
+### První spuštění – důležité
 
-- nový interní model uživatelů (`users`, `user_settings`),
-- současný pilot je automaticky veden jako výchozí uživatel `user_id = 1`,
-- existující lety, letadla, ceník, lokální/custom letiště, GPS tracky, GPS body a audit log se při prvním startu automaticky přiřadí tomuto uživateli,
-- uživatelská data mají `user_id`,
-- letadla jsou unikátní podle `(user_id, registration)`,
-- ceny podle `(user_id, registration, valid_from)`,
-- lokální/custom letiště podle `(user_id, ident)`,
-- hlavní čtecí i zapisovací cesty aplikace jsou připravené na uživatelské oddělení,
-- světová databáze letišť `airports_full.sqlite` zůstává společná a read-only,
-- hardcoded jméno velitele bylo nahrazeno profilem aktuálního uživatele,
-- databázové schéma je nyní **6**.
+Původní profil je `user_id = 1`. **Všechny lety, letadla, ceny, custom letiště a GPS data existující před v0.56 zůstávají vlastnictvím tohoto profilu.**
 
-### Co se zatím nemění
+Při prvním startu v0.56 se zobrazí `Aktivovat můj stávající profil`. Aktivace vyžaduje:
 
-- žádná přihlašovací obrazovka,
-- žádná registrace,
-- žádný PostgreSQL/Supabase,
-- žádná změna Streamlit UI,
-- GitHub backup databáze zůstává zachován,
-- KML import a GPS Map Engine 2.0 fungují stejně jako ve v0.54.
+- jméno,
+- e-mail,
+- nové uživatelské heslo,
+- současné `auth.admin_password` ze Streamlit Secrets.
 
-## Bezpečná migrace
+Po aktivaci se stávající data nepřesouvají ani nekopírují; profil 1 pouze získá přihlašovací údaje.
 
-Při prvním spuštění nad databází z v0.54 proběhne jednorázová migrace. Staré záznamy se nemažou; doplní se jim vlastník `user_id = 1`. Migrace je idempotentní a má persistentní marker `tenancy_v1`, takže se při dalších startech neopakuje.
+### Bezpečnost
 
-**Před nasazením ponech zálohu `data/logbook.sqlite`. Release ZIP tento soubor neobsahuje a nesmí přepsat živou databázi.**
+- hesla nejsou ukládána v plaintextu,
+- používá se `scrypt` se samostatným náhodným saltem,
+- e-mail účtu je unikátní bez ohledu na velikost písmen,
+- neautentizovaný návštěvník se nedostane do aplikace ani k query parametrům detailu letu,
+- plná SQLite databáze je ke stažení pouze po samostatném přihlášení jako správce aplikace,
+- nové účty začínají s prázdným logbookem a všechny hlavní datové cesty zůstávají filtrovány podle `user_id`.
+
+### Registrace dalších uživatelů
+
+Ve výchozím nastavení je vypnutá:
+
+```toml
+[auth]
+admin_password = "..."
+allow_registration = false
+```
+
+Až bude aplikace připravená pro další piloty, lze dočasně nastavit `allow_registration = true`. Před skutečným veřejným multi-user provozem je stále plánovaný přesun z SQLite/GitHub backupu na PostgreSQL a doplnění ověřování e-mailu/resetu hesla.
+
+### Profil
+
+Nová stránka `Profil` umožňuje spravovat:
+
+- zobrazované jméno,
+- časové pásmo,
+- měnu,
+- domovské letiště,
+- výchozí funkci v letu,
+- změnu hesla.
+
+### Databáze
+
+Schéma: **7**. Nová tabulka `user_credentials` obsahuje pouze hash hesla a metadata přihlášení. Ownership dat z v0.55 se nemění.
+
+### GitHub backup
+
+Zůstává zachován podle požadavku. Protože DB od v0.56 obsahuje i e-mail a hash hesla, repozitář musí zůstat **private**. Release ZIP jako dříve neobsahuje `data/logbook.sqlite`.
 
 ## Testy
 
-Součástí jsou regresní testy core funkcí, GPS Map Engine 2.0 a nové testy multi-user migrace včetně ověření, že dva uživatelé mohou mít stejné letadlo i stejný custom ident letiště.
+Součástí release jsou testy autentizace, aktivace původního profilu, změny hesla, registrace odděleného uživatele, tenancy migrace, core výpočtů a GPS Map Engine 2.0.
 
 ## Další plán
 
-Po produkčním ověření v0.55 lze navázat:
-
-1. profil uživatele a editace jeho nastavení,
-2. autentizační vrstva (login / registrace),
-3. přesun datového backendu na PostgreSQL,
-4. teprve potom otevření aplikace dalším uživatelům.
+1. produkčně ověřit aktivaci profilu 1 a login,
+2. doplnit bezpečné resetování/ověření e-mailu,
+3. abstrahovat persistence vrstvu,
+4. PostgreSQL/Supabase,
+5. poté povolit reálný multi-user provoz.
