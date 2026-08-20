@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.61.7 – Flight Import UX 2.0
+## v0.62 – Flight Import UX 2.0
 
 v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.
 
@@ -48,16 +48,16 @@ v0.61 odstraňuje staré přímé použití `streamlit.components.v1.html` a hla
 - release ZIP neobsahuje `data/logbook.sqlite`.
 
 
-## v0.61.7 hotfix
+## v0.62 hotfix
 - fixes Streamlit 1.62 `StreamlitInvalidWidthError` caused by zero-width runtime iframes
 - sidebar toggle and page-transition helper iframes now use 1×1 px dimensions
 
 
-## v0.61.7
+## v0.62
 Invisible front-end runtime: sidebar toggle and page-transition scripts now use `st.html(..., unsafe_allow_javascript=True)` instead of 1×1 px iframes, removing the visible white artifacts introduced by the v0.61.1 compatibility hotfix.
 
 
-## v0.61.7 – Sidebar UX Final Polish
+## v0.62 – Sidebar UX Final Polish
 - minimalistický edge handle se dvěma chevrony bez kruhu a pozadí
 - ovladač přesunut z řádku Navigace na samostatnou hranu sidebaru
 - návrat k rychlejšímu 320 ms motion profilu z dřívějších verzí
@@ -65,7 +65,7 @@ Invisible front-end runtime: sidebar toggle and page-transition scripts now use 
 - kliknutí pouze přepíná CSS stav; žádný Streamlit rerun
 
 
-## v0.61.7 – Top Sidebar Chevron Polish
+## v0.62 – Top Sidebar Chevron Polish
 - sidebar handle moved to the upper-right area inside the open sidebar
 - two chevrons are horizontal instead of stacked
 - chevrons are larger with a wider click target
@@ -73,7 +73,7 @@ Invisible front-end runtime: sidebar toggle and page-transition scripts now use 
 - compositor-friendly sidebar motion from v0.61.5 is preserved
 
 
-## v0.61.7 – Stability & Performance Cleanup
+## v0.62 – Stability & Performance Cleanup
 No new user-facing feature is introduced. This release prepares a stable base for v0.62.
 
 - removed confirmed dead and legacy UI/map helper code from `app.py`
@@ -86,3 +86,21 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - old global `sitecustomize.py` SQLite monkeypatch is neutralized
 - runtime dependencies are exactly pinned to the versions validated on Streamlit Cloud
 - Streamlit 1.62 compatibility checks remain part of the regression suite
+
+
+## v0.62 – Dashboard & Statistics 2.0
+
+- nový rychlý volič období: celá historie, tento rok, posledních 12 měsíců, předchozí rok
+- dashboardové filtry zůstávají uživatelsky kombinovatelné s obdobím
+- nová horní sada KPI: Block, PIC, Air time, náklady, letadla, letiště/trasy, GPS a poslední let
+- přehled přidává rekordy: nejaktivnější měsíc, nejdelší let, top letadlo a top trasu
+- nový měsíční kombinovaný graf Block h + počet letů
+- roční rozpad podle role a evidence a formátovaný roční souhrn
+- rozšířené statistiky letadel včetně podílu na náletu, průměrné délky letu, ceny za block h, GPS a posledního letu
+- detail vybraného letadla přímo v dashboardu
+- letiště rozlišují odlety, přílety a návštěvy; trasy obsahují průměrný Block a poslední použití
+- nákladová sekce má měsíční trend, rozpad podle letadla a průměry
+- Poslední lety obsahují 30denní rychlý souhrn a volitelný počet řádků
+- agregace dashboardu jsou přesunuty do čistého modulu `logbook_core/dashboard.py`
+- jednotlivé dashboardové sekce zůstávají lazy: skryté grafy a tabulky se nevytvářejí
+- `DB_SCHEMA_VERSION = 8`; bez migrace databáze
