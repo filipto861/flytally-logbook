@@ -36,6 +36,7 @@ from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
     normalize_date, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
 )
+from logbook_core.pricing import lookup_latest_rate
 from logbook_core.tracks import (
     detect_kml_source, detect_takeoff_landing, dt_hhmm, extract_registration_from_filename,
     haversine_km, inferred_clock_times, normalize_track_points, parse_iso, parse_kml_bytes, point_local_date,
@@ -359,7 +360,7 @@ def invalidate_cached_data(scope: str = "all") -> None:
     names: set[str] = {"read_table", "read_audit_log", "read_logbook_counts"}  # audit/meta are updated by every write
     if scope in {"flights", "flight"}:
         names.update({
-            "read_flights", "read_tracks_joined", "read_tracks_joined_for_flights",
+            "read_flights", "read_aircraft_usage_summary", "read_tracks_joined", "read_tracks_joined_for_flights",
             "read_track_metadata_for_flights", "read_track_map_records_for_flights",
             "cached_route_overview_map_html", "cached_track_map_html",
             "build_database_health_report",
@@ -1653,24 +1654,13 @@ def default_class_for(evidence: str) -> str:
     return "ULL" if evidence == "ULL" else "SEP"
 
 
-def lookup_latest_rate(rates: pd.DataFrame, registration: str) -> dict[str, Any]:
-    if rates.empty or not registration:
-        return {}
-    reg = registration.strip().upper()
-    sub = rates[rates["registration"].fillna("").str.upper().eq(reg)].copy()
-    if sub.empty:
-        return {}
-    sub["valid_from_dt"] = pd.to_datetime(sub["valid_from"], errors="coerce")
-    row = sub.sort_values("valid_from_dt").iloc[-1]
-    return {"aircraft_type": row.get("aircraft_type"), "price_per_hour": row.get("price_per_hour")}
-
-
 def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.DataFrame) -> dict[str, Any]:
     idx = detect_takeoff_landing(points)
     stats = track_stats(points)
     reg = extract_registration_from_filename(file_name)
     evidence = evidence_from_registration(reg) if reg else "ULL"
-    rate = lookup_latest_rate(rates, reg)
+    flight_date = point_local_date(points)
+    rate = lookup_latest_rate(rates, reg, flight_date)
     clock = inferred_clock_times(points, idx, block_padding_minutes=5)
     has_clock = any(p.get("time") for p in points)
     note = "" if has_clock else "KML neobsahovalo časové značky, časy je nutné doplnit ručně."
@@ -3113,10 +3103,15 @@ def read_aircraft_catalog(active_only: bool = True, user_id: int = DEFAULT_USER_
 
 
 def _aircraft_price(row: dict[str, Any], rates: pd.DataFrame, reg: str) -> float:
+    # v0.58: dated rates are the source of truth; the aircraft field is only a
+    # compatibility/current-price cache for legacy installations.
+    rate = lookup_latest_rate(rates, reg, date.today())
+    if rate and pd.notna(rate.get("price_per_hour")):
+        try:
+            return max(0.0, float(rate.get("price_per_hour") or 0))
+        except Exception:
+            pass
     price = _as_positive_float(row.get("default_price_per_hour"))
-    if price is None:
-        rate = lookup_latest_rate(rates, reg)
-        price = _as_positive_float(rate.get("price_per_hour"))
     return float(price or 0.0)
 
 
@@ -3344,7 +3339,8 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
         render_quick_flight_tools(prefix, defaults, rates)
     render_aircraft_picker(prefix, defaults, rates)
     reg = str(st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")).upper()
-    rate = lookup_latest_rate(rates, reg)
+    default_rate_date = defaults.get("date") or date.today()
+    rate = lookup_latest_rate(rates, reg, default_rate_date)
     default_price = st.session_state.get(f"{prefix}_price", defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0)
     default_type = st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type") or rate.get("aircraft_type") or "")
     default_billing_basis = _normalize_billing_basis(st.session_state.get(f"{prefix}_billing_basis", defaults.get("billing_basis") or "BLOCK"))
@@ -4319,54 +4315,6 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                 render_map_selection(filtered, read_rates(current_user_id()), dark_mode)
 
 
-def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> None:
-    if rates.empty:
-        rates = pd.DataFrame(columns=["id", "registration", "aircraft_type", "valid_from", "price_per_hour", "dry_price_per_hour", "source"])
-    display = rates.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","valid_from":"Od data","price_per_hour":"Cena Kč/h","dry_price_per_hour":"Suchá hodina Kč/h","source":"Zdroj"})
-    display = display[[c for c in ["ID","Imatrikulace","Typ","Od data","Cena Kč/h","Suchá hodina Kč/h","Zdroj"] if c in display.columns]]
-    edited = st.data_editor(
-        display,
-        hide_index=True,
-        use_container_width=True,
-        num_rows="dynamic",
-        disabled=["ID"],
-        height=520,
-        key=f"{key_prefix}_editor_v041",
-        column_config={
-            "Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
-            "Suchá hodina Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
-            "Od data": st.column_config.TextColumn(help=None),
-        },
-    )
-    if st.button("Uložit ceník", type="primary", key=f"{key_prefix}_save_v041"):
-        save_rates_editor(edited)
-        st.success("Ceník uložen."); st.rerun()
-
-
-def page_rates(rates: pd.DataFrame):
-    st.markdown("## Ceník")
-    render_rates_editor(rates, key_prefix="page_rates")
-
-
-
-def save_rates_editor(edited: pd.DataFrame) -> None:
-    with connect() as con:
-        uid = current_user_id()
-        con.execute("DELETE FROM rates WHERE user_id = ?", (uid,))
-        for _, row in edited.iterrows():
-            reg = normalize_text(row.get("Imatrikulace"))
-            if not reg:
-                continue
-            con.execute(
-                "INSERT INTO rates (user_id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (uid, reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("Od data")), float(row.get("Cena Kč/h") or 0), float(row.get("Suchá hodina Kč/h") or 0), normalize_text(row.get("Zdroj"))),
-            )
-        record_audit(con, "save_rates", "rates", None, {"rows": len(edited)})
-        con.commit()
-    invalidate_cached_data("rates")
-    auto_backup_after_change("save_rates")
-
-
 def _bool_to_int(value: Any, default: int = 1) -> int:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return default
@@ -4385,49 +4333,153 @@ def _clean_role(value: Any) -> str:
     return text if text in ROLE_OPTIONS else "PIC"
 
 
-def save_aircraft_editor(edited: pd.DataFrame) -> None:
-    with connect() as con:
-        uid = current_user_id()
-        con.execute("DELETE FROM aircraft WHERE user_id = ?", (uid,))
-        now = _now_iso()
-        for _, row in edited.iterrows():
-            reg = normalize_text(row.get("Imatrikulace"))
-            if not reg:
-                continue
-            con.execute(
+@st.cache_data(show_spinner=False, ttl=300)
+def read_aircraft_usage_summary(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+    uid = normalize_user_id(user_id)
+    try:
+        with connect() as con:
+            return pd.read_sql_query(
                 """
-                INSERT INTO aircraft (user_id, registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                SELECT UPPER(TRIM(registration)) AS registration,
+                       COUNT(*) AS flight_count,
+                       MAX(date) AS last_flight,
+                       COALESCE(SUM(starts), 0) AS starts
+                FROM flights
+                WHERE user_id = ? AND registration IS NOT NULL AND TRIM(registration) <> ''
+                GROUP BY UPPER(TRIM(registration))
                 """,
-                (
-                    uid,
-                    reg.upper(),
-                    normalize_text(row.get("Typ")),
-                    normalize_text(row.get("ICAO typ")),
-                    normalize_text(row.get("Třída")),
-                    normalize_text(row.get("Evidence")),
-                    float(row.get("Výchozí Kč/h") or 0),
-                    _clean_role(row.get("Výchozí role")),
-                    _normalize_billing_basis(row.get("Účtovat podle")),
-                    _bool_to_int(row.get("Aktivní"), 1),
-                    normalize_text(row.get("Poznámka")),
-                    now,
-                    now,
-                ),
+                con,
+                params=(uid,),
             )
-        record_audit(con, "save_aircraft", "aircraft", None, {"rows": len(edited)})
+    except sqlite3.DatabaseError:
+        return pd.DataFrame(columns=["registration", "flight_count", "last_flight", "starts"])
+
+
+def _aircraft_rates_for_registration(rates: pd.DataFrame, registration: str) -> pd.DataFrame:
+    if rates.empty or not registration:
+        return pd.DataFrame(columns=list(rates.columns) if not rates.empty else ["id", "registration", "aircraft_type", "valid_from", "price_per_hour", "source"])
+    reg = str(registration or "").strip().upper()
+    sub = rates[rates["registration"].fillna("").astype(str).str.upper().str.strip().eq(reg)].copy()
+    if sub.empty:
+        return sub
+    sub["valid_from_dt"] = pd.to_datetime(sub.get("valid_from"), errors="coerce")
+    sort_cols = ["valid_from_dt"] + (["id"] if "id" in sub.columns else [])
+    return sub.sort_values(sort_cols, na_position="first")
+
+
+def _aircraft_rate_history_display(rates: pd.DataFrame, registration: str) -> pd.DataFrame:
+    sub = _aircraft_rates_for_registration(rates, registration)
+    if sub.empty:
+        return pd.DataFrame(columns=["Platí od", "Platí do", "Cena Kč/h", "Zdroj"])
+    rows: list[dict[str, Any]] = []
+    dated = sub[sub["valid_from_dt"].notna()].copy().sort_values("valid_from_dt")
+    today = date.today()
+    for i, (_, row) in enumerate(dated.iterrows()):
+        start = row["valid_from_dt"].date()
+        end = None
+        if i + 1 < len(dated):
+            end = (dated.iloc[i + 1]["valid_from_dt"] - pd.Timedelta(days=1)).date()
+        end_label = end.strftime("%d.%m.%Y") if end else ("plánováno" if start > today else "současnost")
+        rows.append({
+            "Platí od": start.strftime("%d.%m.%Y"),
+            "Platí do": end_label,
+            "Cena Kč/h": float(row.get("price_per_hour") or 0),
+            "Zdroj": {"aircraft_profile": "Profil letadla", "aircraft_history": "Historie", "aircraft_default": "Původní profil"}.get(normalize_text(row.get("source")), normalize_text(row.get("source")) or "—"),
+        })
+    undated = sub[sub["valid_from_dt"].isna()]
+    for _, row in undated.iterrows():
+        rows.insert(0, {
+            "Platí od": "legacy",
+            "Platí do": "—",
+            "Cena Kč/h": float(row.get("price_per_hour") or 0),
+            "Zdroj": {"aircraft_profile": "Profil letadla", "aircraft_history": "Historie", "aircraft_default": "Původní profil"}.get(normalize_text(row.get("source")), normalize_text(row.get("source")) or "—"),
+        })
+    return pd.DataFrame(rows)
+
+
+def _refresh_aircraft_current_price_in_connection(con: sqlite3.Connection, user_id: int, registration: str) -> None:
+    row = con.execute(
+        """
+        SELECT price_per_hour
+        FROM rates
+        WHERE user_id = ? AND UPPER(TRIM(registration)) = ?
+          AND valid_from IS NOT NULL AND TRIM(valid_from) <> ''
+          AND date(valid_from) <= date('now')
+        ORDER BY date(valid_from) DESC, id DESC
+        LIMIT 1
+        """,
+        (normalize_user_id(user_id), str(registration or "").strip().upper()),
+    ).fetchone()
+    if row is not None:
+        con.execute(
+            "UPDATE aircraft SET default_price_per_hour = ?, updated_at = ? WHERE user_id = ? AND UPPER(TRIM(registration)) = ?",
+            (float(row[0] or 0), _now_iso(), normalize_user_id(user_id), str(registration or "").strip().upper()),
+        )
+
+
+def _upsert_aircraft_rate_in_connection(
+    con: sqlite3.Connection,
+    *,
+    user_id: int,
+    registration: str,
+    aircraft_type: str,
+    valid_from: Any,
+    price_per_hour: float,
+    source: str = "aircraft_profile",
+) -> None:
+    uid = normalize_user_id(user_id)
+    reg = str(registration or "").strip().upper()
+    if not reg:
+        raise ValueError("Imatrikulace je povinná.")
+    try:
+        effective = pd.Timestamp(valid_from).date().isoformat()
+    except Exception as exc:
+        raise ValueError("Datum platnosti ceny není platné.") from exc
+    price = float(price_per_hour or 0)
+    if price < 0:
+        raise ValueError("Cena nemůže být záporná.")
+    con.execute(
+        """
+        INSERT INTO rates (user_id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source)
+        VALUES (?, ?, ?, ?, ?, 0, ?)
+        ON CONFLICT(user_id, registration, valid_from) DO UPDATE SET
+            aircraft_type = excluded.aircraft_type,
+            price_per_hour = excluded.price_per_hour,
+            source = excluded.source
+        """,
+        (uid, reg, normalize_text(aircraft_type), effective, price, source),
+    )
+    _refresh_aircraft_current_price_in_connection(con, uid, reg)
+
+
+def save_aircraft_rate(registration: str, aircraft_type: str, valid_from: Any, price_per_hour: float, *, source: str = "aircraft_profile") -> None:
+    uid = current_user_id()
+    reg = str(registration or "").strip().upper()
+    with connect() as con:
+        _upsert_aircraft_rate_in_connection(
+            con,
+            user_id=uid,
+            registration=reg,
+            aircraft_type=aircraft_type,
+            valid_from=valid_from,
+            price_per_hour=price_per_hour,
+            source=source,
+        )
+        record_audit(con, "save_aircraft_rate", "rates", reg, {"valid_from": str(valid_from), "price_per_hour": float(price_per_hour or 0)})
         con.commit()
+    invalidate_cached_data("rates")
     invalidate_cached_data("aircraft")
-    auto_backup_after_change("save_aircraft")
+    auto_backup_after_change("save_aircraft_rate")
 
 
 def upsert_aircraft_profile(data: dict[str, Any]) -> None:
     reg = normalize_text(data.get("registration"))
     if not reg:
         raise ValueError("Imatrikulace je povinná.")
+    reg = reg.upper()
     now = _now_iso()
-    price = float(data.get("default_price_per_hour") or 0)
     uid = current_user_id()
+    cached_price = float(data.get("default_price_per_hour") or 0)
     with connect() as con:
         con.execute(
             """
@@ -4446,41 +4498,24 @@ def upsert_aircraft_profile(data: dict[str, Any]) -> None:
                 updated_at=excluded.updated_at
             """,
             (
-                uid,
-                reg.upper(),
-                normalize_text(data.get("aircraft_type")),
-                normalize_text(data.get("icao_type")),
-                normalize_text(data.get("aircraft_class")),
-                normalize_text(data.get("evidence")),
-                price,
-                _clean_role(data.get("default_role")),
-                _normalize_billing_basis(data.get("billing_basis")),
-                _bool_to_int(data.get("active"), 1),
-                normalize_text(data.get("note")),
-                now,
-                now,
+                uid, reg, normalize_text(data.get("aircraft_type")), normalize_text(data.get("icao_type")),
+                normalize_text(data.get("aircraft_class")), normalize_text(data.get("evidence")), cached_price,
+                _clean_role(data.get("default_role")), _normalize_billing_basis(data.get("billing_basis")),
+                _bool_to_int(data.get("active"), 1), normalize_text(data.get("note")), now, now,
             ),
         )
-        if price > 0 and bool(data.get("sync_rate", False)):
-            today = date.today().isoformat()
-            con.execute(
-                """
-                INSERT INTO rates (user_id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(user_id, registration, valid_from) DO UPDATE SET
-                    aircraft_type=excluded.aircraft_type,
-                    price_per_hour=excluded.price_per_hour,
-                    source=excluded.source
-                """,
-                (uid, reg.upper(), normalize_text(data.get("aircraft_type")), today, price, 0.0, "aircraft_default"),
+        if data.get("rate_price") is not None:
+            _upsert_aircraft_rate_in_connection(
+                con, user_id=uid, registration=reg, aircraft_type=normalize_text(data.get("aircraft_type")),
+                valid_from=data.get("rate_valid_from") or date.today(), price_per_hour=float(data.get("rate_price") or 0),
+                source="aircraft_profile",
             )
-        record_audit(con, "upsert_aircraft", "aircraft", reg.upper(), data)
+        record_audit(con, "upsert_aircraft", "aircraft", reg, {k: v for k, v in data.items() if k != "rate_price"})
         con.commit()
     invalidate_cached_data("aircraft")
-    if bool(data.get("sync_rate", False)):
+    if data.get("rate_price") is not None:
         invalidate_cached_data("rates")
     auto_backup_after_change("upsert_aircraft")
-
 
 def upsert_airport_form(data: dict[str, Any]) -> None:
     ident = _clean_ident(data.get("ident"))
@@ -4565,10 +4600,10 @@ def page_database():
 
     section = st.radio(
         "Databáze sekce",
-        ["Letiště", "Letadla", "Ceník"],
+        ["Letadla", "Letiště"],
         horizontal=True,
         label_visibility="collapsed",
-        key="database_section_v057",
+        key="database_section_v058",
     )
 
     if section == "Letiště":
@@ -4633,8 +4668,10 @@ def page_database():
             except Exception as exc:
                 st.error(str(exc))
     elif section == "Letadla":
-        aircraft = read_table("aircraft", current_user_id())
-        rates = read_rates(current_user_id())
+        uid = current_user_id()
+        aircraft = read_table("aircraft", uid)
+        rates = read_rates(uid)
+        usage = read_aircraft_usage_summary(uid)
         if aircraft.empty:
             aircraft = pd.DataFrame(columns=["id", "registration", "aircraft_type", "icao_type", "aircraft_class", "evidence", "default_price_per_hour", "default_role", "billing_basis", "active", "note"])
         aircraft_view = aircraft.copy()
@@ -4644,106 +4681,276 @@ def page_database():
         aircraft_view["registration"] = aircraft_view.get("registration", pd.Series(dtype=str)).fillna("").astype(str).str.upper().str.strip()
         aircraft_view["active"] = pd.to_numeric(aircraft_view.get("active", 1), errors="coerce").fillna(1).astype(int)
 
-        a1, a2, a3, a4 = st.columns(4)
-        with a1: metric_card("Aktivní", str(int(aircraft_view["active"].eq(1).sum())) if not aircraft_view.empty else "0", "letadla")
-        with a2: metric_card("Neaktivní", str(int(aircraft_view["active"].eq(0).sum())) if not aircraft_view.empty else "0", "archiv")
-        with a3:
-            avg_price = pd.to_numeric(aircraft_view.get("default_price_per_hour", pd.Series(dtype=float)), errors="coerce").replace(0, pd.NA).dropna()
-            metric_card("Průměr Kč/h", f"{avg_price.mean():.0f}" if len(avg_price) else "—", "aktivní sazby")
-        with a4: metric_card("Ceník", str(len(rates)), "řádky")
+        usage_map: dict[str, dict[str, Any]] = {}
+        if not usage.empty:
+            for _, urow in usage.iterrows():
+                usage_map[str(urow.get("registration") or "").upper()] = urow.to_dict()
 
-        reg_options = [""] + sorted([x for x in aircraft_view["registration"].dropna().unique() if x])
-        pick = st.selectbox("Vybrat letadlo", reg_options, format_func=lambda x: "Nové letadlo" if not x else x, key="aircraft_profile_pick_v041")
-        picked_row = {}
-        if pick:
-            sub = aircraft_view[aircraft_view["registration"].eq(pick)]
-            if not sub.empty:
-                picked_row = sub.iloc[0].to_dict()
+        active_count = int(aircraft_view["active"].eq(1).sum()) if not aircraft_view.empty else 0
+        inactive_count = int(aircraft_view["active"].eq(0).sum()) if not aircraft_view.empty else 0
+        priced_count = 0
+        current_prices: list[float] = []
+        for _, arow in aircraft_view.iterrows():
+            reg0 = str(arow.get("registration") or "").upper()
+            price0 = _aircraft_price(arow.to_dict(), rates, reg0)
+            if price0 > 0:
+                priced_count += 1
+                current_prices.append(price0)
 
-        with st.form("aircraft_profile_form_v041"):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                reg = st.text_input("Imatrikulace", value=str(picked_row.get("registration") or "")).upper()
-                typ = st.text_input("Typ", value=str(picked_row.get("aircraft_type") or ""))
-                icao_type = st.text_input("ICAO typ", value=str(picked_row.get("icao_type") or picked_row.get("aircraft_type") or ""))
-            with c2:
-                ev_def = normalize_text(picked_row.get("evidence")) or evidence_from_registration(reg)
-                evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0)
-                class_def = normalize_text(picked_row.get("aircraft_class")) or default_class_for(evidence)
-                aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(class_def) if class_def in CLASS_OPTIONS else 0)
-                role_def = _clean_role(picked_row.get("default_role"))
-                default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0)
-            with c3:
-                price = st.number_input("Výchozí Kč/h", min_value=0.0, step=50.0, value=float(picked_row.get("default_price_per_hour") or 0))
-                basis_def = _normalize_billing_basis(picked_row.get("billing_basis"))
-                billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
-                active = st.checkbox("Aktivní", value=bool(_bool_to_int(picked_row.get("active"), 1)))
-            note = st.text_input("Poznámka", value=str(picked_row.get("note") or ""))
-            sync_rate = st.checkbox("Zapsat cenu také do ceníku od dnešního dne", value=False)
-            submitted_aircraft = st.form_submit_button("Uložit letadlo", type="primary", use_container_width=True)
-        if submitted_aircraft:
-            try:
-                upsert_aircraft_profile({
-                    "registration": reg,
-                    "aircraft_type": typ,
-                    "icao_type": icao_type,
-                    "aircraft_class": aircraft_class,
-                    "evidence": evidence,
-                    "default_price_per_hour": price,
-                    "default_role": default_role,
-                    "billing_basis": billing_basis,
-                    "active": active,
-                    "note": note,
-                    "sync_rate": sync_rate,
-                })
-                st.success("Letadlo uloženo.")
+        st.markdown("### Moje letadla")
+        st.caption("Profil letadla je jediné místo pro jeho údaje, výchozí nastavení a cenovou historii.")
+        m1, m2, m3, m4 = st.columns(4)
+        with m1: metric_card("Aktivní", str(active_count), "letadla")
+        with m2: metric_card("Archiv", str(inactive_count), "neaktivní")
+        with m3: metric_card("S cenou", str(priced_count), "aktuální sazba")
+        with m4: metric_card("Průměr Kč/h", f"{sum(current_prices) / len(current_prices):.0f}" if current_prices else "—", "aktuální ceny")
+
+        selected_reg = str(st.session_state.get("aircraft_profile_selected_v058") or "").upper().strip()
+        new_mode = bool(st.session_state.get("aircraft_profile_new_v058", False))
+
+        if new_mode:
+            top_left, top_right = st.columns([4, 1])
+            with top_left:
+                st.markdown("### Přidat letadlo")
+                st.caption("Základní údaje a první cenu uložíme společně do profilu letadla.")
+            with top_right:
+                if st.button("← Zpět", use_container_width=True, key="aircraft_new_back_v058"):
+                    st.session_state["aircraft_profile_new_v058"] = False
+                    st.rerun()
+
+            with st.container(border=True):
+                with st.form("aircraft_new_profile_form_v058"):
+                    st.markdown("#### Základní údaje")
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        reg = st.text_input("Imatrikulace", value="", placeholder="OK-DAS").upper().strip()
+                        typ = st.text_input("Typ", value="", placeholder="Bristell B23")
+                    with c2:
+                        icao_type = st.text_input("ICAO typ", value="", placeholder="BR23")
+                        evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=0)
+                    with c3:
+                        aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index("ULL") if "ULL" in CLASS_OPTIONS else 0)
+                        default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=0)
+
+                    st.markdown("#### Provoz a cena")
+                    p1, p2, p3 = st.columns(3)
+                    with p1:
+                        initial_price = st.number_input("Cena za hodinu", min_value=0.0, step=50.0, value=0.0, format="%.0f")
+                    with p2:
+                        price_valid_from = st.date_input("Cena platí od", value=date.today())
+                    with p3:
+                        billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=0, format_func=_billing_basis_label)
+                    note = st.text_area("Poznámka", value="", height=80)
+                    active = st.checkbox("Aktivní letadlo", value=True)
+                    st.caption("Cena se ukládá jako historický záznam s datem účinnosti. Další změny ceny nikdy nepřepisují starší období.")
+                    submitted_aircraft = st.form_submit_button("Přidat letadlo", type="primary", use_container_width=True)
+                if submitted_aircraft:
+                    try:
+                        if not reg:
+                            raise ValueError("Imatrikulace je povinná.")
+                        if not icao_type.strip():
+                            icao_type = typ
+                        upsert_aircraft_profile({
+                            "registration": reg,
+                            "aircraft_type": typ,
+                            "icao_type": icao_type,
+                            "aircraft_class": aircraft_class,
+                            "evidence": evidence,
+                            "default_price_per_hour": initial_price,
+                            "default_role": default_role,
+                            "billing_basis": billing_basis,
+                            "active": active,
+                            "note": note,
+                            "rate_price": initial_price if initial_price > 0 else None,
+                            "rate_valid_from": price_valid_from,
+                        })
+                        st.session_state["aircraft_profile_new_v058"] = False
+                        st.session_state["aircraft_profile_selected_v058"] = reg
+                        st.success("Letadlo bylo přidáno.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
+
+        elif selected_reg:
+            selected_rows = aircraft_view[aircraft_view["registration"].eq(selected_reg)]
+            if selected_rows.empty:
+                st.session_state.pop("aircraft_profile_selected_v058", None)
                 st.rerun()
-            except Exception as exc:
-                st.error(str(exc))
+            picked_row = selected_rows.iloc[0].to_dict()
+            current_rate = lookup_latest_rate(rates, selected_reg, date.today())
+            current_price = _aircraft_price(picked_row, rates, selected_reg)
+            usage_row = usage_map.get(selected_reg, {})
+            flight_count = int(usage_row.get("flight_count") or 0)
+            last_flight = normalize_text(usage_row.get("last_flight")) or "—"
+            active_now = bool(_bool_to_int(picked_row.get("active"), 1))
 
-        st.markdown("### Přehled letadel")
-        f1, f2 = st.columns([1, 2])
-        with f1:
-            show_inactive = st.checkbox("Zobrazit neaktivní", value=False, key="aircraft_show_inactive_v041")
-        with f2:
-            q_aircraft = st.text_input("Hledat letadlo", value="", key="aircraft_search_v041")
-        table_aircraft = aircraft_view.copy()
-        if not show_inactive and not table_aircraft.empty:
-            table_aircraft = table_aircraft[table_aircraft["active"].eq(1)]
-        if q_aircraft.strip() and not table_aircraft.empty:
-            ql = q_aircraft.strip().lower()
-            table_aircraft = table_aircraft[
-                table_aircraft["registration"].fillna("").str.lower().str.contains(ql, regex=False)
-                | table_aircraft.get("aircraft_type", pd.Series(dtype=str)).fillna("").str.lower().str.contains(ql, regex=False)
-                | table_aircraft.get("note", pd.Series(dtype=str)).fillna("").str.lower().str.contains(ql, regex=False)
-            ]
-        display = table_aircraft.rename(columns={"id":"ID","registration":"Imatrikulace","aircraft_type":"Typ","icao_type":"ICAO typ","aircraft_class":"Třída","evidence":"Evidence","default_price_per_hour":"Výchozí Kč/h","default_role":"Výchozí role","billing_basis":"Účtovat podle","active":"Aktivní","note":"Poznámka"})
-        cols = ["ID", "Imatrikulace", "Typ", "ICAO typ", "Třída", "Evidence", "Výchozí Kč/h", "Výchozí role", "Účtovat podle", "Aktivní", "Poznámka"]
-        display = display[[c for c in cols if c in display.columns]]
-        edited = st.data_editor(
-            display.sort_values("Imatrikulace") if not display.empty else display,
-            hide_index=True,
-            use_container_width=True,
-            num_rows="dynamic",
-            disabled=["ID"],
-            height=430,
-            key="aircraft_editor_v041",
-            column_config={
-                "Výchozí Kč/h": st.column_config.NumberColumn(format="%.0f Kč"),
-                "Aktivní": st.column_config.CheckboxColumn(),
-                "Evidence": st.column_config.SelectboxColumn(options=EVIDENCE_OPTIONS),
-                "Třída": st.column_config.SelectboxColumn(options=CLASS_OPTIONS),
-                "Výchozí role": st.column_config.SelectboxColumn(options=ROLE_OPTIONS),
-                "Účtovat podle": st.column_config.SelectboxColumn(options=BILLING_BASIS_OPTIONS),
-            },
-        )
-        if st.button("Uložit tabulku letadel", type="primary", key="save_aircraft_table_v041"):
-            save_aircraft_editor(edited)
-            st.success("Letadla uložena.")
-            st.rerun()
+            h1, h2 = st.columns([5, 1])
+            with h1:
+                st.markdown(f"### {selected_reg} · {normalize_text(picked_row.get('aircraft_type')) or 'Bez typu'}")
+                st.caption("Aktivní profil" if active_now else "Neaktivní / archivovaný profil")
+            with h2:
+                if st.button("← Letadla", use_container_width=True, key=f"aircraft_back_{selected_reg}"):
+                    st.session_state.pop("aircraft_profile_selected_v058", None)
+                    st.rerun()
 
-    elif section == "Ceník":
-        render_rates_editor(read_rates(current_user_id()), key_prefix="database_rates")
+            q1, q2, q3, q4 = st.columns(4)
+            with q1: metric_card("Aktuální cena", f"{current_price:.0f} Kč/h" if current_price > 0 else "—", f"od {current_rate.get('valid_from') or 'legacy'}")
+            with q2: metric_card("Účtování", _billing_basis_label(picked_row.get("billing_basis")), "výchozí")
+            with q3: metric_card("Třída", normalize_text(picked_row.get("aircraft_class")) or "—", normalize_text(picked_row.get("evidence")) or "evidence")
+            with q4: metric_card("Lety", str(flight_count), f"poslední {last_flight}")
+
+            tab_profile, tab_price = st.tabs(["Profil letadla", "Cena a historie"])
+            with tab_profile:
+                with st.container(border=True):
+                    st.markdown("#### Údaje letadla")
+                    with st.form(f"aircraft_profile_edit_v058_{selected_reg}"):
+                        c1, c2, c3 = st.columns(3)
+                        with c1:
+                            st.text_input("Imatrikulace", value=selected_reg, disabled=True)
+                            typ = st.text_input("Typ", value=str(picked_row.get("aircraft_type") or ""))
+                            icao_type = st.text_input("ICAO typ", value=str(picked_row.get("icao_type") or picked_row.get("aircraft_type") or ""))
+                        with c2:
+                            ev_def = normalize_text(picked_row.get("evidence")) or evidence_from_registration(selected_reg)
+                            evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0)
+                            class_def = normalize_text(picked_row.get("aircraft_class")) or default_class_for(evidence)
+                            aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(class_def) if class_def in CLASS_OPTIONS else 0)
+                            role_def = _clean_role(picked_row.get("default_role"))
+                            default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0)
+                        with c3:
+                            basis_def = _normalize_billing_basis(picked_row.get("billing_basis"))
+                            billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
+                            active = st.checkbox("Aktivní", value=active_now)
+                        note = st.text_area("Poznámka", value=str(picked_row.get("note") or ""), height=90)
+                        save_profile = st.form_submit_button("Uložit profil letadla", type="primary", use_container_width=True)
+                    if save_profile:
+                        try:
+                            upsert_aircraft_profile({
+                                "registration": selected_reg,
+                                "aircraft_type": typ,
+                                "icao_type": icao_type,
+                                "aircraft_class": aircraft_class,
+                                "evidence": evidence,
+                                "default_price_per_hour": current_price,
+                                "default_role": default_role,
+                                "billing_basis": billing_basis,
+                                "active": active,
+                                "note": note,
+                            })
+                            st.success("Profil letadla uložen.")
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(str(exc))
+
+            with tab_price:
+                with st.container(border=True):
+                    st.markdown("#### Změnit cenu")
+                    st.caption("Nová sazba se uloží od zvoleného data. Starší lety a starší cenová období se nepřepisují.")
+                    with st.form(f"aircraft_rate_change_v058_{selected_reg}"):
+                        p1, p2 = st.columns(2)
+                        with p1:
+                            new_price = st.number_input("Cena za hodinu", min_value=0.0, step=50.0, value=float(current_price or 0), format="%.0f", key=f"aircraft_rate_price_{selected_reg}")
+                        with p2:
+                            effective_from = st.date_input("Platí od", value=date.today(), key=f"aircraft_rate_date_{selected_reg}")
+                        st.caption("Po uložení se vytvoří nový bod v cenové historii. Pokud stejné datum už existuje, upraví se jen tento záznam.")
+                        save_rate = st.form_submit_button("Uložit změnu ceny", type="primary", use_container_width=True)
+                    if save_rate:
+                        try:
+                            save_aircraft_rate(selected_reg, normalize_text(picked_row.get("aircraft_type")), effective_from, new_price)
+                            st.success(f"Cena {new_price:.0f} Kč/h je uložená od {effective_from.strftime('%d.%m.%Y')}.")
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(str(exc))
+
+                with st.expander("Historie cen", expanded=False):
+                    history = _aircraft_rate_history_display(rates, selected_reg)
+                    if history.empty:
+                        st.info("Pro toto letadlo zatím není uložená cenová historie. Aktuální hodnota může pocházet ze staršího profilu letadla.")
+                    else:
+                        st.dataframe(
+                            history,
+                            hide_index=True,
+                            use_container_width=True,
+                            column_config={"Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč")},
+                        )
+                    st.markdown("##### Doplnit nebo opravit historickou cenu")
+                    st.caption("Tady můžete například nastavit sazbu od 1. 1. konkrétního roku. Stejné datum se při uložení pouze aktualizuje.")
+                    with st.form(f"aircraft_rate_history_edit_v058_{selected_reg}"):
+                        h1c, h2c = st.columns(2)
+                        with h1c:
+                            historical_date = st.date_input("Platnost od", value=date(date.today().year, 1, 1), key=f"aircraft_hist_date_{selected_reg}")
+                        with h2c:
+                            historical_price = st.number_input("Cena Kč/h", min_value=0.0, step=50.0, value=float(current_price or 0), format="%.0f", key=f"aircraft_hist_price_{selected_reg}")
+                        save_history = st.form_submit_button("Uložit historickou sazbu", use_container_width=True)
+                    if save_history:
+                        try:
+                            save_aircraft_rate(selected_reg, normalize_text(picked_row.get("aircraft_type")), historical_date, historical_price, source="aircraft_history")
+                            st.success("Historická sazba byla uložena.")
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(str(exc))
+
+        else:
+            toolbar_left, toolbar_mid, toolbar_right = st.columns([3, 1.3, 1.2])
+            with toolbar_left:
+                q_aircraft = st.text_input("Hledat letadlo", value="", placeholder="Imatrikulace, typ nebo poznámka", key="aircraft_search_v058")
+            with toolbar_mid:
+                show_inactive = st.checkbox("Zobrazit archiv", value=False, key="aircraft_show_inactive_v058")
+            with toolbar_right:
+                st.write("")
+                if st.button("＋ Přidat letadlo", type="primary", use_container_width=True, key="aircraft_add_v058"):
+                    st.session_state["aircraft_profile_new_v058"] = True
+                    st.session_state.pop("aircraft_profile_selected_v058", None)
+                    st.rerun()
+
+            table_aircraft = aircraft_view.copy()
+            if not show_inactive and not table_aircraft.empty:
+                table_aircraft = table_aircraft[table_aircraft["active"].eq(1)]
+            if q_aircraft.strip() and not table_aircraft.empty:
+                ql = q_aircraft.strip().lower()
+                type_series = table_aircraft["aircraft_type"] if "aircraft_type" in table_aircraft.columns else pd.Series(index=table_aircraft.index, dtype=str)
+                note_series = table_aircraft["note"] if "note" in table_aircraft.columns else pd.Series(index=table_aircraft.index, dtype=str)
+                table_aircraft = table_aircraft[
+                    table_aircraft["registration"].fillna("").str.lower().str.contains(ql, regex=False)
+                    | type_series.fillna("").astype(str).str.lower().str.contains(ql, regex=False)
+                    | note_series.fillna("").astype(str).str.lower().str.contains(ql, regex=False)
+                ]
+
+            if table_aircraft.empty:
+                st.info("Žádné letadlo neodpovídá filtru. Přidejte první letadlo nebo zobrazte archiv.")
+            else:
+                rows = list(table_aircraft.sort_values(["active", "registration"], ascending=[False, True]).iterrows())
+                for pos in range(0, len(rows), 2):
+                    card_cols = st.columns(2)
+                    for offset, (_, arow) in enumerate(rows[pos:pos + 2]):
+                        reg0 = str(arow.get("registration") or "").upper()
+                        typ0 = normalize_text(arow.get("aircraft_type")) or "Typ neuveden"
+                        price0 = _aircraft_price(arow.to_dict(), rates, reg0)
+                        usage0 = usage_map.get(reg0, {})
+                        count0 = int(usage0.get("flight_count") or 0)
+                        last0 = normalize_text(usage0.get("last_flight")) or "—"
+                        active0 = bool(_bool_to_int(arow.get("active"), 1))
+                        key_hash = hashlib.sha1(reg0.encode("utf-8")).hexdigest()[:10]
+                        with card_cols[offset]:
+                            with st.container(border=True):
+                                left, right = st.columns([3, 1])
+                                with left:
+                                    st.markdown(f"#### {reg0}")
+                                    st.caption(typ0)
+                                with right:
+                                    st.caption("Aktivní" if active0 else "Archiv")
+                                d1, d2 = st.columns(2)
+                                with d1:
+                                    st.markdown(f"**{price0:.0f} Kč/h**" if price0 > 0 else "**Cena —**")
+                                    st.caption(_billing_basis_label(arow.get("billing_basis")))
+                                with d2:
+                                    st.markdown(f"**{count0} letů**")
+                                    st.caption(f"Poslední: {last0}")
+                                meta = " • ".join([x for x in [normalize_text(arow.get("evidence")), normalize_text(arow.get("aircraft_class")), normalize_text(arow.get("default_role"))] if x])
+                                if meta:
+                                    st.caption(meta)
+                                if st.button("Otevřít profil", use_container_width=True, key=f"aircraft_open_{key_hash}"):
+                                    st.session_state["aircraft_profile_selected_v058"] = reg0
+                                    st.rerun()
 
     elif section == "Kontrola":
         render_database_control_panel()
@@ -5890,7 +6097,7 @@ def render_page_transition_runtime() -> None:
               if (btn && btn.id !== 'lb-sidebar-toggle') {
                 const inSidebar = btn.closest('section[data-testid="stSidebar"]');
                 const txt = (btn.innerText || btn.textContent || '').trim();
-                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Ceník','Databáze','Export','Profil'];
+                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Databáze','Export','Profil'];
                 if (inSidebar && navLabels.indexOf(txt) !== -1) showLoader();
               }
               if (link && link.href && link.href.indexOf('flight_id=') !== -1) {
@@ -5990,7 +6197,9 @@ def main():
     elif page == "Mapa":
         page_maps(read_flights(current_user_id()), dark_mode)
     elif page == "Ceník":
-        page_rates(read_rates(current_user_id()))
+        # Legacy session/bookmark from <= v0.57. Pricing now lives in aircraft profiles.
+        st.session_state["page"] = "Databáze"
+        st.rerun()
     elif page == "Databáze":
         page_database()
     elif page == "Kontrola":

@@ -11,7 +11,7 @@ from logbook_core.tracks import detect_kml_source, parse_kml_bytes, track_stats
 
 class CoreRefactorTests(unittest.TestCase):
     def test_version(self) -> None:
-        self.assertEqual(APP_VERSION, "v0.57")
+        self.assertEqual(APP_VERSION, "v0.58")
         self.assertEqual(DB_SCHEMA_VERSION, 8)
 
     def test_time_helpers(self) -> None:

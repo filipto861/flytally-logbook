@@ -1,52 +1,45 @@
 # Letový zápisník
 
-Verze: **v0.57**
+Verze: **v0.58**
 
-## v0.57 – Roles & Admin Console
+## v0.58 – Aircraft Profiles & Pricing UX
 
-v0.57 dokončuje oddělení běžného uživatele a správce aplikace. Přihlášení z v0.56 zůstává, ale uživatel už nepotřebuje druhé admin heslo k práci se svými vlastními daty.
+v0.58 slučuje databázi letadel a ceník do jednoho uživatelského workflow. Samostatná položka **Ceník** už není v navigaci ani v databázi. Cena se spravuje pouze uvnitř profilu konkrétního letadla.
 
-### Role
+### Databáze letadel
 
-- `user_id = 1` je původní účet a je automaticky označen jako **admin**.
-- Všechny historické lety, tracky, letadla, ceník a custom letiště zůstávají beze změny vlastnictví u `user_id = 1`.
-- Nově vytvořený profil má standardně roli **user** a začíná s prázdným zápisníkem.
-- Role je uložena trvale v tabulce `users`, ne v dočasné session.
+Sekce **Databáze → Letadla** má nové UI:
 
-### Co může běžný přihlášený uživatel
+- přehled letadel formou karet,
+- vyhledávání a samostatný archiv neaktivních letadel,
+- rychlé metriky aktivních/archivovaných profilů a aktuálních cen,
+- samostatné zobrazení profilu letadla,
+- čistý formulář pro přidání nového letadla,
+- oddělené záložky **Profil letadla** a **Cena a historie**,
+- počet letů a datum posledního letu přímo v profilu.
 
-Bez dalšího hesla může spravovat pouze svoje vlastní:
+### Ceny a historie
 
-- lety (přidat, editovat, smazat),
-- KML/GPS tracky,
-- letadla,
-- ceník,
-- custom letiště,
-- profil a heslo,
-- exporty.
+Tabulka `rates` zůstává zachována jako historický zdroj cen, ale uživatel ji již needituje jako samostatný ceník.
 
-Databázové dotazy dál používají `user_id`, takže jeden profil nemůže upravovat data jiného profilu.
+- Každá změna ceny má `valid_from`.
+- Výchozí datum nové změny je dnešní den.
+- Lze zadat i historické datum, například `01.01.2025`.
+- Pokud sazba pro stejné datum už existuje, upraví se pouze tento záznam.
+- Budoucí sazba se nezačne používat před datem účinnosti.
+- Historie cen je zobrazena v rozbalovací části profilu letadla jako období **Platí od / Platí do**.
+- Starší lety zůstávají beze změny, protože let si dál ukládá vlastní `price_per_hour` jako snapshot v okamžiku uložení.
 
-### Admin menu
+### Pricing engine
 
-Admin má v levé navigaci novou položku **Admin**:
+Výběr sazby je nyní datumově řízený. Pro dané letadlo se vybere poslední sazba, jejíž `valid_from` je menší nebo rovno datu letu. Logika je oddělena v `logbook_core/pricing.py`.
 
-- Přehled – uživatelé, lety, tracky, GPS body, verze DB,
-- Uživatelé – vytvoření profilu, role, aktivace/deaktivace a reset hesla,
-- Záloha – plná SQLite DB, GitHub backup a restore,
-- Servis – DB kontrola a SQLite servis,
-- Meta – globální metadata a audit log.
+### Multi-user
 
-Veřejná registrace může zůstat vypnutá (`allow_registration = false`). Admin přesto může vytvořit testovací běžný profil přímo v Admin → Uživatelé.
+Všechny změny respektují `user_id`. Každý uživatel má vlastní letadla i vlastní historii cen. Admin role a přihlášení z v0.57 zůstávají beze změny.
 
 ### Databáze
 
-- SQLite zůstává zachována.
-- GitHub auto-backup zůstává zachován.
-- `DB_SCHEMA_VERSION = 8`.
-- Přidává se `users.role` (`admin` / `user`).
+- `DB_SCHEMA_VERSION = 8` – žádná nová migrace databáze není potřeba.
+- SQLite + GitHub auto-backup zůstává zachován.
 - Release ZIP neobsahuje `data/logbook.sqlite`.
-
-## Další směr
-
-Až bude víceuživatelské chování ověřené, lze později přejít ze SQLite/GitHub persistence na PostgreSQL bez změny základního ownership modelu.

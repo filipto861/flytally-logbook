@@ -10,7 +10,7 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.57"
+APP_VERSION = "v0.58"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 8
 
@@ -24,7 +24,6 @@ NAV_ITEMS = [
     ("Lety", "Lety"),
     ("Nový let", "Přidat let"),
     ("Mapa", "Mapa"),
-    ("Ceník", "Ceník"),
     ("Databáze", "Databáze"),
     ("Export", "Export"),
     ("Profil", "Profil"),

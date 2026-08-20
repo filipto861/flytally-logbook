@@ -1,29 +1,43 @@
-# Logbook architecture — v0.57
+# Logbook architecture — v0.58
 
-## Identity and ownership
+## Aircraft profile as the editing boundary
 
-Každá privátní datová tabulka je oddělena pomocí `user_id`. `user_id = 1` zůstává původní vlastník všech dat vytvořených před multi-user verzí.
+Uživatelské UI už nemá samostatnou stránku Ceník. Vše, co patří ke konkrétnímu letadlu, se spravuje v jeho profilu:
 
-## Authorization
+- identita a typ letadla,
+- evidence/třída,
+- výchozí role,
+- billing basis,
+- aktivní/neaktivní stav,
+- poznámka,
+- aktuální cena,
+- cenová historie.
 
-Tabulka `users` obsahuje trvalý sloupec `role`:
+Tím se odstraní dvojí editace stejných informací na dvou místech.
 
-- `admin` – správce aplikace,
-- `user` – běžný pilot.
+## Pricing source of truth
 
-Při migraci na schema 8 je `user_id = 1` automaticky nastaven na `admin`; ostatní profily na `user`.
+Historické ceny jsou stále uloženy v tabulce `rates`:
 
-Autorizace má dvě vrstvy:
+- `user_id`
+- `registration`
+- `aircraft_type`
+- `valid_from`
+- `price_per_hour`
+- `source`
 
-1. přihlášený uživatel smí CRUD pouze nad vlastními záznamy (`WHERE user_id = current_user_id`),
-2. role `admin` je nutná pouze pro globální správu aplikace, uživatelů a celé databáze.
+`aircraft.default_price_per_hour` zůstává pouze jako kompatibilní cache aktuální ceny pro starší části aplikace a starší databáze. Datumově správná cena se vybírá z `rates`.
 
-Admin heslo ze Streamlit Secrets už není druhým heslem pro běžné CRUD operace. Může zůstat pouze jako bezpečnostní mechanismus při prvotní aktivaci legacy profilu.
+Funkce `logbook_core.pricing.lookup_latest_rate()` vybírá sazbu platnou k požadovanému datu a ignoruje budoucí sazby před jejich účinností.
 
-## Admin console
+## Historical correctness
 
-Admin konzole je samostatná stránka dostupná pouze roli `admin`. Veřejná registrace může zůstat vypnutá; testovací a budoucí profily lze vytvořit ze správy uživatelů.
+Tabulka `flights` dál uchovává `price_per_hour` přímo u letu. Změna ceny letadla proto nepřepočítá dříve uložené lety. Cenová historie slouží především jako zdroj správné sazby pro nové/importované lety podle jejich data.
+
+## Multi-user ownership
+
+Aircraft profiles i rates jsou scoped pomocí `user_id`. Dva uživatelé mohou mít stejnou registraci i rozdílnou cenovou historii bez vzájemného ovlivnění.
 
 ## Persistence
 
-Aktuálně SQLite + GitHub auto-backup. Datový model je koncipován tak, aby pozdější PostgreSQL backend zachoval stejné `user_id` a role.
+SQLite + GitHub auto-backup zůstává v této fázi zachován. `DB_SCHEMA_VERSION` zůstává 8.
