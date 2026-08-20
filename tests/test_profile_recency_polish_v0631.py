@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_and_schema():
-    assert APP_VERSION == "v0.69.1"
+    assert APP_VERSION == "v0.70"
     assert DB_SCHEMA_VERSION == 10
 
 

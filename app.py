@@ -69,6 +69,17 @@ from logbook_core.logbook_view import (
 )
 from logbook_core.track_player import build_track_player_payload
 from logbook_core.data_quality import scan_data_quality
+from logbook_core.database_foundation import (
+    ACTIVE_RUNTIME_BACKEND, POSTGRES_FOUNDATION_VERSION,
+    postgres_cutover_enabled, postgres_target_config, redact_postgres_dsn,
+)
+from logbook_core.postgres_migration import (
+    build_sqlite_migration_plan, migration_plan_json,
+)
+from logbook_core.postgres_runtime import (
+    postgres_driver_available, postgres_healthcheck, postgres_table_counts,
+)
+from logbook_core.postgres_schema import POSTGRES_SCHEMA_VERSION, postgres_schema_sql
 from logbook_core.sqlite_runtime import (
     MAX_ADMIN_RESTORE_BYTES, SQLiteRestoreError, atomic_replace_sqlite,
     inspect_sqlite_bytes, snapshot_sqlite_bytes,
@@ -8596,6 +8607,175 @@ def read_permission_health() -> dict[str, Any]:
     }
 
 
+
+
+def _postgres_streamlit_target_config():
+    try:
+        database_secrets = st.secrets.get("database", {})
+        if not hasattr(database_secrets, "get"):
+            database_secrets = {}
+    except Exception:
+        database_secrets = {}
+    return postgres_target_config(secrets_database=database_secrets)
+
+
+def _sqlite_migration_plan_cached() -> dict[str, Any]:
+    plan = build_sqlite_migration_plan(DB_PATH)
+    return plan.as_dict()
+
+
+def render_postgres_foundation_admin() -> None:
+    st.markdown("### PostgreSQL foundation")
+    st.caption(
+        "v0.70 připravuje PostgreSQL target a migrační tooling. "
+        "Aktivní runtime této verze zůstává SQLite a nelze ho přepnout secretem."
+    )
+
+    pg_config = _postgres_streamlit_target_config()
+    configured = pg_config.configured
+    driver_ok = postgres_driver_available()
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Runtime", "SQLite", "aktivní databáze")
+    with c2:
+        metric_card("PostgreSQL", "Nastaven" if configured else "Nenastaven", "target")
+    with c3:
+        metric_card("Driver", "OK" if driver_ok else "Chybí", "psycopg")
+    with c4:
+        metric_card("Cutover", "ZAMKNUT", f"foundation {POSTGRES_FOUNDATION_VERSION}")
+
+    st.info(
+        "Bezpečnostní pojistka v0.70: `postgres_cutover_enabled()` je vždy False. "
+        "Ani platný PostgreSQL DSN nezmění zdroj produkčních dat."
+    )
+
+    with st.container(border=True):
+        st.markdown("#### Konfigurace targetu")
+        if configured:
+            st.code(redact_postgres_dsn(pg_config.dsn), language=None)
+            st.caption(
+                f"Pool {pg_config.min_pool_size}–{pg_config.max_pool_size} spojení · "
+                f"connect timeout {pg_config.connect_timeout_s}s"
+            )
+        else:
+            st.code(
+                '[database]\\n'
+                'postgres_dsn = "postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"\\n'
+                'postgres_pool_min = 0\\n'
+                'postgres_pool_max = 4\\n'
+                'postgres_connect_timeout = 5',
+                language="toml",
+            )
+            st.caption("Hodnoty patří do Streamlit App settings → Secrets, ne do GitHub repozitáře.")
+
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button(
+            "Otestovat PostgreSQL spojení",
+            disabled=not configured,
+            width="stretch",
+            key="pg_healthcheck_v070",
+        ):
+            with st.spinner("Připojuji se k PostgreSQL targetu…"):
+                st.session_state["pg_health_v070"] = postgres_healthcheck(pg_config)
+    with b2:
+        if st.button(
+            "Porovnat počty tabulek",
+            disabled=not configured,
+            width="stretch",
+            key="pg_compare_counts_v070",
+        ):
+            try:
+                with st.spinner("Čtu pouze počty řádků…"):
+                    st.session_state["pg_counts_v070"] = postgres_table_counts(pg_config)
+            except Exception as exc:
+                st.session_state["pg_counts_v070"] = {"_error": str(exc)}
+
+    health = st.session_state.get("pg_health_v070")
+    if isinstance(health, dict):
+        if health.get("ok"):
+            st.success(
+                "PostgreSQL spojení je funkční: "
+                f"{health.get('database_name')} · server {health.get('server_version')}."
+            )
+            h1, h2, h3 = st.columns(3)
+            with h1:
+                metric_card("Database", str(health.get("database_name") or "—"), "target")
+            with h2:
+                metric_card("Schema", str(health.get("schema_name") or "—"), "PostgreSQL")
+            with h3:
+                metric_card(
+                    "Logbook schema",
+                    str(health.get("logbook_schema_version") or "není"),
+                    f"foundation {POSTGRES_SCHEMA_VERSION}",
+                )
+        else:
+            st.error("PostgreSQL test selhal: " + str(health.get("error") or "neznámá chyba"))
+
+    counts_target = st.session_state.get("pg_counts_v070")
+    if isinstance(counts_target, dict):
+        if "_error" in counts_target:
+            st.error("Počty PostgreSQL se nepodařilo načíst: " + str(counts_target["_error"]))
+        else:
+            source_plan = build_sqlite_migration_plan(DB_PATH)
+            rows = []
+            for table, sqlite_count in source_plan.table_counts.items():
+                pg_count = int(counts_target.get(table, -1))
+                rows.append({
+                    "Tabulka": table,
+                    "SQLite": int(sqlite_count),
+                    "PostgreSQL": "chybí" if pg_count < 0 else pg_count,
+                    "Stav": (
+                        "—" if pg_count < 0
+                        else ("OK" if int(sqlite_count) == pg_count else "Rozdíl")
+                    ),
+                })
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+
+    st.markdown("#### Migrační plán")
+    try:
+        plan = build_sqlite_migration_plan(DB_PATH)
+        p1, p2, p3 = st.columns(3)
+        with p1:
+            metric_card("SQLite schema", str(plan.sqlite_schema_version), "zdroj")
+        with p2:
+            metric_card("Řádků", f"{plan.total_rows:,}".replace(",", " "), "včetně GPS bodů")
+        with p3:
+            metric_card("PG schema", str(plan.postgres_schema_version), "target foundation")
+
+        st.download_button(
+            "Stáhnout migration manifest JSON",
+            data=migration_plan_json(plan),
+            file_name="logbook_postgres_migration_manifest.json",
+            mime="application/json",
+            width="stretch",
+            key="pg_manifest_download_v070",
+        )
+        st.download_button(
+            "Stáhnout PostgreSQL schema SQL",
+            data=postgres_schema_sql().encode("utf-8"),
+            file_name="postgresql_schema_v1.sql",
+            mime="text/sql",
+            width="stretch",
+            key="pg_schema_download_v070",
+        )
+    except Exception as exc:
+        st.error(f"Migrační plán nelze vytvořit: {exc}")
+
+    st.markdown("#### Bezpečný migrační workflow")
+    st.code(
+        "python scripts/migrate_sqlite_to_postgres.py --dry-run\\n"
+        "# nastav LOGBOOK_POSTGRES_DSN mimo shell history / v bezpečném env\\n"
+        "python scripts/migrate_sqlite_to_postgres.py --confirm MIGRATE",
+        language="bash",
+    )
+    st.caption(
+        "Migrační skript pracuje s konzistentním SQLite snapshotem, zachovává ID/user_id, "
+        "odmítne neprázdný PostgreSQL target a po kopii porovná počty a tenant/FK vazby. "
+        "Nic v PostgreSQL automaticky nemaže."
+    )
+
 def page_admin() -> None:
     if not require_admin():
         return
@@ -8604,7 +8784,7 @@ def page_admin() -> None:
     st.caption("Správa celé aplikace. Běžní uživatelé tuto stránku nevidí.")
     section = st.radio(
         "Admin sekce",
-        ["Přehled", "Uživatelé", "Bezpečnost", "Záloha", "Servis", "Meta"],
+        ["Přehled", "Uživatelé", "Bezpečnost", "PostgreSQL", "Záloha", "Servis", "Meta"],
         horizontal=True,
         label_visibility="collapsed",
         key="admin_section_v057",
@@ -8621,7 +8801,10 @@ def page_admin() -> None:
         with c3: metric_card("GPS tracky", str(counts["tracks"]), f"{counts['points']:,} bodů".replace(",", " "))
         with c4: metric_card("Správci", str(admins), f"schema {DB_SCHEMA_VERSION}")
         db_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
-        st.caption(f"Aplikace {APP_VERSION} · databáze {db_size / (1024 * 1024):.1f} MB · SQLite schema {DB_SCHEMA_VERSION}")
+        st.caption(
+            f"Aplikace {APP_VERSION} · runtime SQLite · databáze {db_size / (1024 * 1024):.1f} MB · "
+            f"SQLite schema {DB_SCHEMA_VERSION} · PostgreSQL foundation {POSTGRES_FOUNDATION_VERSION}"
+        )
         if not users.empty:
             show = users.rename(columns={
                 "id":"ID", "display_name":"Jméno", "email":"E-mail", "role":"Role", "active":"Aktivní",
@@ -8747,6 +8930,9 @@ def page_admin() -> None:
         if st.button("Spustit kontrolu znovu", width="stretch", key="admin_permission_recheck_v059"):
             read_permission_health.clear()
             st.rerun()
+
+    elif section == "PostgreSQL":
+        render_postgres_foundation_admin()
 
     elif section == "Záloha":
         metas = read_app_meta()

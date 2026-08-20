@@ -10,7 +10,7 @@ def _app():
 
 
 def test_version_without_schema_change():
-    assert APP_VERSION == "v0.69.1"
+    assert APP_VERSION == "v0.70"
     assert DB_SCHEMA_VERSION == 10
 
 

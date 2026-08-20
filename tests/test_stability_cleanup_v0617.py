@@ -56,6 +56,7 @@ def test_runtime_dependencies_are_exactly_pinned():
         "requests==2.34.2",
         "numpy==2.5.2",
         "pyarrow==24.0.0",
+        "psycopg[binary,pool]==3.3.4",
     ]
 
 
