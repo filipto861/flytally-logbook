@@ -66,6 +66,7 @@ from logbook_core.flight_entry import (
 from logbook_core.logbook_view import (
     flight_navigation, quick_search_flights,
 )
+from logbook_core.track_player import build_track_player_payload
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -2318,109 +2319,38 @@ def render_track_profile(points: list[dict[str, Any]], selected_idx: int | None 
     st.plotly_chart(plotly_layout(fig), width="stretch")
 
 
-def _track_playback_default_idx(points: list[dict[str, Any]]) -> int:
-    try:
-        detected = detect_takeoff_landing(points)
-        idx = int(detected.get("takeoff_idx", 0) or 0)
-        return max(0, min(idx, max(0, len(points) - 1)))
-    except Exception:
-        return 0
-
-
-def _format_track_point_value(value: Any, suffix: str = "") -> str:
-    try:
-        if value is None or pd.isna(value):
-            return "—"
-        return f"{float(value):.0f}{suffix}"
-    except Exception:
-        return "—"
 
 
 
 
 
-def _track_bearing_deg(a: dict[str, Any], b: dict[str, Any]) -> float:
-    try:
-        lat1 = math.radians(float(a["lat"]))
-        lat2 = math.radians(float(b["lat"]))
-        dlon = math.radians(float(b["lon"]) - float(a["lon"]))
-        y = math.sin(dlon) * math.cos(lat2)
-        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
-        deg = (math.degrees(math.atan2(y, x)) + 360.0) % 360.0
-        if not math.isfinite(deg):
-            return 0.0
-        return deg
-    except Exception:
-        return 0.0
 
 
-def _track_bearing_at(points: list[dict[str, Any]], idx: int) -> float:
-    if not points:
-        return 0.0
-    idx = max(0, min(int(idx), len(points) - 1))
-    current = points[idx]
-    for j in range(idx + 1, len(points)):
-        try:
-            if haversine_km(current, points[j]) > 0.015:
-                return _track_bearing_deg(current, points[j])
-        except Exception:
-            pass
-    for j in range(idx - 1, -1, -1):
-        try:
-            if haversine_km(points[j], current) > 0.015:
-                return _track_bearing_deg(points[j], current)
-        except Exception:
-            pass
-    return 0.0
 
 
-def _json_safe_float(value: Any, digits: int | None = None) -> float | None:
-    try:
-        if value is None or pd.isna(value):
-            return None
-        f = float(value)
-        if not math.isfinite(f):
-            return None
-        return round(f, digits) if digits is not None else f
-    except Exception:
-        return None
 
 
-def _prepare_track_player_points(points: list[dict[str, Any]], max_points: int = 3200) -> tuple[list[dict[str, Any]], int, int]:
-    source_points = normalize_track_points(points)
-    original_count = len(source_points)
-    if original_count > max_points:
-        playback_points = downsample_points(source_points, max_points=max_points)
-    else:
-        playback_points = source_points
-
-    prof = profile_from_points(playback_points, current_user_timezone())
-    if prof.empty:
-        return [], 0, original_count
-
-    data: list[dict[str, Any]] = []
-    for i, row in prof.iterrows():
-        dt = row.get("time_local")
-        time_txt = dt.strftime("%H:%M:%S") if pd.notna(dt) and hasattr(dt, "strftime") else "—"
-        data.append({
-            "lat": _json_safe_float(row.get("lat"), 7),
-            "lon": _json_safe_float(row.get("lon"), 7),
-            "alt_ft": _json_safe_float(row.get("alt_ft"), 0),
-            "speed_kmh": _json_safe_float(row.get("speed_smooth"), 0),
-            "distance_km": _json_safe_float(row.get("distance_km"), 2),
-            "time": time_txt,
-            "bearing": round(_track_bearing_at(playback_points, int(i)), 1),
-        })
-    data = [d for d in data if d.get("lat") is not None and d.get("lon") is not None]
-    default_idx = _track_playback_default_idx(playback_points) if playback_points else 0
-    default_idx = max(0, min(default_idx, max(0, len(data) - 1)))
-    return data, default_idx, original_count
 
 
-def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark_mode: bool, original_count: int) -> str:
+
+
+def _track_player_html(
+    points_data: list[dict[str, Any]],
+    default_idx: int,
+    dark_mode: bool,
+    original_count: int,
+) -> str:
     points_json = json.dumps(points_data, ensure_ascii=False, separators=(",", ":"))
-    tile_url = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" if dark_mode else "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    tile_attrib = "&copy; OpenStreetMap &copy; CARTO" if dark_mode else "&copy; OpenStreetMap contributors"
+    tile_url = (
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        if dark_mode
+        else "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    )
+    tile_attrib = (
+        "&copy; OpenStreetMap &copy; CARTO"
+        if dark_mode
+        else "&copy; OpenStreetMap contributors"
+    )
     replacements = {
         "__DATA__": html.escape(points_json, quote=False),
         "__DEFAULT__": str(int(default_idx)),
@@ -2428,12 +2358,15 @@ def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark
         "__TILE_URL__": json.dumps(tile_url),
         "__TILE_ATTRIB__": json.dumps(tile_attrib),
         "__BG__": "#07111f" if dark_mode else "#ffffff",
-        "__PANEL_BG__": "rgba(7,17,31,.92)" if dark_mode else "rgba(255,255,255,.95)",
+        "__PANEL_BG__": "rgba(7,17,31,.94)" if dark_mode else "rgba(255,255,255,.97)",
         "__FG__": "#e5edf7" if dark_mode else "#0f172a",
         "__MUTED__": "#8aa4bd" if dark_mode else "#475569",
         "__BORDER__": "rgba(56,189,248,.24)" if dark_mode else "rgba(14,165,233,.24)",
+        "__METRIC_BG__": "rgba(15,23,42,.46)" if dark_mode else "rgba(241,245,249,.82)",
+        "__CHART_BG__": "rgba(2,8,23,.44)" if dark_mode else "rgba(248,250,252,.96)",
     }
-    template = """
+
+    template = r"""
 <!doctype html>
 <html>
 <head>
@@ -2442,100 +2375,354 @@ def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  html, body { margin:0; padding:0; background:__BG__; color:__FG__; font-family: Inter, Segoe UI, Arial, sans-serif; }
-  .track-player { border:1px solid __BORDER__; border-radius:16px; overflow:hidden; background:__PANEL_BG__; box-shadow: 0 18px 44px rgba(0,0,0,.22); }
-  #map { height:360px; width:100%; background:#0b1220; }
-  .hud { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:10px; padding:12px 14px 6px 14px; }
-  .metric { border:1px solid __BORDER__; border-radius:13px; padding:10px 12px; background:rgba(15,23,42,.42); min-width:0; }
-  .label { color:__MUTED__; font-size:11px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .value { color:__FG__; font-size:21px; font-weight:760; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .chart-wrap { padding:8px 14px 0 14px; }
-  #profile { width:100%; height:190px; display:block; border:1px solid __BORDER__; border-radius:14px; background:rgba(2,8,23,.44); }
-  .controls { display:grid; grid-template-columns: 54px 1fr 54px 78px; gap:10px; align-items:center; padding:12px 14px 14px 14px; }
-  .btn { height:40px; border:1px solid rgba(56,189,248,.36); border-radius:12px; background:#0ea5e9; color:white; font-weight:800; cursor:pointer; }
-  .btn.secondary { background:rgba(15,23,42,.62); color:__FG__; }
+  * { box-sizing:border-box; }
+  html, body {
+    margin:0; padding:0; background:__BG__; color:__FG__;
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+  }
+  .track-player {
+    border:1px solid __BORDER__; border-radius:17px; overflow:hidden;
+    background:__PANEL_BG__; box-shadow:0 18px 44px rgba(0,0,0,.22);
+  }
+  .map-wrap { position:relative; }
+  #map { height:390px; width:100%; background:#0b1220; }
+  .map-badge {
+    position:absolute; z-index:500; left:12px; top:12px;
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid __BORDER__; border-radius:999px;
+    padding:6px 9px; background:__PANEL_BG__; color:__MUTED__;
+    font-size:11px; font-weight:750; backdrop-filter:blur(10px);
+    pointer-events:none;
+  }
+  .map-badge-dot {
+    width:7px; height:7px; border-radius:50%; background:#38bdf8;
+    box-shadow:0 0 10px rgba(56,189,248,.65);
+  }
+  .hud {
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:9px; padding:11px 13px 7px 13px;
+  }
+  .metric {
+    border:1px solid __BORDER__; border-radius:13px; padding:9px 11px;
+    background:__METRIC_BG__; min-width:0;
+  }
+  .label {
+    color:__MUTED__; font-size:10px; letter-spacing:.085em;
+    text-transform:uppercase; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .value {
+    color:__FG__; font-size:20px; line-height:1.1; font-weight:780;
+    margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-variant-numeric:tabular-nums;
+  }
+  .subvalue {
+    color:__MUTED__; font-size:10px; margin-top:2px; min-height:11px;
+    font-variant-numeric:tabular-nums;
+  }
+  .chart-wrap { padding:7px 13px 0 13px; }
+  #profile {
+    width:100%; height:190px; display:block; border:1px solid __BORDER__;
+    border-radius:14px; background:__CHART_BG__; touch-action:none;
+    cursor:ew-resize; user-select:none;
+  }
+  .controls {
+    display:grid; grid-template-columns:48px minmax(0,1fr) 48px;
+    gap:9px; align-items:center; padding:11px 13px 7px 13px;
+  }
+  .btn {
+    height:39px; border:1px solid rgba(56,189,248,.34); border-radius:11px;
+    background:#0ea5e9; color:white; font-weight:820; cursor:pointer;
+    transition:background 120ms ease,border-color 120ms ease,transform 120ms ease;
+  }
+  .btn:hover { transform:translateY(-1px); }
+  .btn.secondary { background:__METRIC_BG__; color:__FG__; }
+  .btn.active {
+    border-color:rgba(34,197,94,.62);
+    background:rgba(34,197,94,.14); color:#86efac;
+  }
   #idx { width:100%; accent-color:#38bdf8; cursor:pointer; }
-  .counter { color:__MUTED__; font-size:12px; text-align:right; white-space:nowrap; }
-  .source-note { color:__MUTED__; font-size:11px; padding:0 14px 12px 14px; }
-  .plane-wrap { width:34px; height:34px; margin-left:0; margin-top:0; display:flex; align-items:center; justify-content:center; filter: drop-shadow(0 0 7px rgba(0,0,0,.85)); }
-  .plane-svg { width:30px; height:30px; transform-origin:50% 50%; }
-  .leaflet-control-attribution { font-size:10px; background:rgba(0,0,0,.36) !important; color:#b8c7d8 !important; }
+  .timeline-labels {
+    display:grid; grid-template-columns:1fr auto 1fr; gap:8px;
+    padding:0 13px 8px 13px; color:__MUTED__; font-size:10px;
+    font-variant-numeric:tabular-nums;
+  }
+  .timeline-labels span:nth-child(2) { color:__FG__; font-weight:720; text-align:center; }
+  .timeline-labels span:last-child { text-align:right; }
+  .tools {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:0 13px 10px 13px;
+  }
+  .tools-left,.tools-right { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .tool-btn {
+    min-height:32px; border:1px solid __BORDER__; border-radius:10px;
+    background:__METRIC_BG__; color:__FG__; font-size:11px; font-weight:760;
+    padding:5px 9px; cursor:pointer;
+  }
+  .tool-btn.active {
+    border-color:rgba(34,197,94,.58); color:#86efac;
+    background:rgba(34,197,94,.12);
+  }
+  .source-note {
+    color:__MUTED__; font-size:10.5px; line-height:1.35;
+    padding:0 13px 11px 13px;
+  }
+  .plane-wrap {
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 0 7px rgba(0,0,0,.82));
+  }
+  .plane-svg {
+    width:30px; height:30px; transform-origin:50% 50%;
+    will-change:transform;
+  }
+  .leaflet-control-attribution {
+    font-size:10px; background:rgba(0,0,0,.36) !important;
+    color:#b8c7d8 !important;
+  }
   .leaflet-control-attribution a { color:#7dd3fc !important; }
-  @media (max-width: 760px) {
-    .hud { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .controls { grid-template-columns: 48px 1fr 48px; }
-    .counter { display:none; }
+  @media (max-width:760px) {
+    #map { height:315px; }
+    .hud { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    #profile { height:165px; }
+    .value { font-size:18px; }
+    .tools { align-items:flex-start; flex-direction:column; }
+    .tools-left,.tools-right { width:100%; }
+    .tools-right { justify-content:flex-start; }
   }
 </style>
 </head>
 <body>
 <div class="track-player">
-  <div id="map"></div>
-  <div class="hud">
-    <div class="metric"><div class="label">Čas</div><div class="value" id="v-time">—</div></div>
-    <div class="metric"><div class="label">Altitude</div><div class="value" id="v-alt">—</div></div>
-    <div class="metric"><div class="label">GPS speed</div><div class="value" id="v-speed">—</div></div>
-    <div class="metric"><div class="label">Vzdálenost</div><div class="value" id="v-dist">—</div></div>
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-badge"><span class="map-badge-dot"></span><span id="map-mode">Celý let</span></div>
   </div>
+
+  <div class="hud">
+    <div class="metric">
+      <div class="label">Čas</div><div class="value" id="v-time">—</div>
+      <div class="subvalue" id="v-elapsed">—</div>
+    </div>
+    <div class="metric">
+      <div class="label">Altitude</div><div class="value" id="v-alt">—</div>
+      <div class="subvalue">GPS altitude</div>
+    </div>
+    <div class="metric">
+      <div class="label">Groundspeed</div><div class="value" id="v-speed">—</div>
+      <div class="subvalue" id="v-speed-kmh">—</div>
+    </div>
+    <div class="metric">
+      <div class="label">Vzdálenost</div><div class="value" id="v-dist">—</div>
+      <div class="subvalue">od začátku tracku</div>
+    </div>
+  </div>
+
   <div class="chart-wrap">
-    <svg id="profile" viewBox="0 0 1000 220" preserveAspectRatio="none">
+    <svg id="profile" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-label="Profil letu – tažením změníš pozici">
       <line x1="52" y1="178" x2="970" y2="178" stroke="rgba(148,163,184,.24)" stroke-width="1" />
       <line x1="52" y1="42" x2="52" y2="178" stroke="rgba(148,163,184,.24)" stroke-width="1" />
       <g id="grid"></g>
       <polyline id="alt-line" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
       <polyline id="speed-line" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity=".94" />
-      <line id="cursor" x1="52" y1="30" x2="52" y2="187" stroke="#e5edf7" stroke-width="1.4" stroke-dasharray="5 5" opacity=".78" />
+      <line id="cursor" x1="52" y1="30" x2="52" y2="187" stroke="#e5edf7" stroke-width="1.4" stroke-dasharray="5 5" opacity=".82" />
       <circle id="alt-dot" r="6" fill="#22c55e" stroke="#e5edf7" stroke-width="1.4" />
       <circle id="speed-dot" r="5" fill="#f59e0b" stroke="#e5edf7" stroke-width="1.2" />
       <text x="56" y="27" fill="#38bdf8" font-size="13" font-weight="700">Altitude ft</text>
-      <text x="880" y="27" fill="#f59e0b" font-size="13" font-weight="700">Speed km/h</text>
+      <text x="870" y="27" fill="#f59e0b" font-size="13" font-weight="700">GS km/h</text>
     </svg>
   </div>
+
   <div class="controls">
-    <button class="btn" id="play">▶</button>
-    <input id="idx" type="range" min="0" max="0" value="0" step="1" />
-    <button class="btn secondary" id="reset">↺</button>
-    <div class="counter" id="counter">—</div>
+    <button class="btn" id="play" title="Přehrát / pauza">▶</button>
+    <input id="idx" type="range" min="0" max="10000" value="0" step="1" aria-label="Pozice v letu" />
+    <button class="btn secondary" id="reset" title="Zpět na detekovaný vzlet">↺</button>
   </div>
+
+  <div class="timeline-labels">
+    <span id="time-start">—</span>
+    <span id="time-current">—</span>
+    <span id="time-end">—</span>
+  </div>
+
+  <div class="tools">
+    <div class="tools-left">
+      <button class="tool-btn" id="speed">1×</button>
+      <button class="tool-btn" id="follow">Sledovat letadlo</button>
+      <button class="tool-btn" id="fit">Celý let</button>
+    </div>
+    <div class="tools-right">
+      <span style="color:__MUTED__;font-size:10.5px;">Timeline i graf jsou interaktivní</span>
+    </div>
+  </div>
+
   <div class="source-note" id="source-note"></div>
 </div>
+
 <script id="track-data" type="application/json">__DATA__</script>
 <script>
 (function() {
   const points = JSON.parse(document.getElementById('track-data').textContent || '[]');
-  const defaultIdx = Math.max(0, Math.min(__DEFAULT__, points.length - 1));
   const originalCount = __ORIGINAL_COUNT__;
   const tileUrl = __TILE_URL__;
   const tileAttrib = __TILE_ATTRIB__;
+  const defaultIdx = Math.max(0, Math.min(__DEFAULT__, Math.max(0, points.length - 1)));
   const slider = document.getElementById('idx');
   const playBtn = document.getElementById('play');
   const resetBtn = document.getElementById('reset');
-  let timer = null;
+  const speedBtn = document.getElementById('speed');
+  const followBtn = document.getElementById('follow');
+  const fitBtn = document.getElementById('fit');
+  const profile = document.getElementById('profile');
 
   if (!points.length) {
-    document.getElementById('map').innerHTML = '<div style="padding:20px;color:__MUTED__;">Track nemá data pro přehrávání.</div>';
+    document.getElementById('map').innerHTML =
+      '<div style="padding:20px;color:__MUTED__;">Track nemá data pro přehrávání.</div>';
     return;
   }
 
-  const route = points.map(p => [p.lat, p.lon]);
-  const map = L.map('map', { preferCanvas:true, zoomControl:true, attributionControl:true });
-  L.tileLayer(tileUrl, { maxZoom: 18, attribution: tileAttrib }).addTo(map);
-  const whole = L.polyline(route, { color:'#64748b', weight:3, opacity:.55 }).addTo(map);
-  const progress = L.polyline(route.slice(0, defaultIdx + 1), { color:'#38bdf8', weight:4, opacity:.96 }).addTo(map);
-  if (route.length > 1) { map.fitBounds(whole.getBounds(), { padding:[18,18] }); } else { map.setView(route[0], 11); }
+  const clamp = (value, min=0, max=1) => Math.max(min, Math.min(max, value));
+  const numeric = value => Number.isFinite(Number(value)) ? Number(value) : null;
+  const lerp = (a, b, t) => {
+    const na = numeric(a), nb = numeric(b);
+    if (na !== null && nb !== null) return na + (nb - na) * t;
+    if (na !== null) return na;
+    if (nb !== null) return nb;
+    return null;
+  };
+  const angleLerp = (a, b, t) => {
+    const na = numeric(a) ?? 0;
+    const nb = numeric(b) ?? na;
+    const delta = ((nb - na + 540) % 360) - 180;
+    return (na + delta * t + 360) % 360;
+  };
 
-  function planeHtml(bearing) {
-    const rot = Number.isFinite(Number(bearing)) ? Number(bearing) : 0;
-    return `<div class="plane-wrap"><svg class="plane-svg" style="transform:rotate(${rot}deg)" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C35 3 37 6 37 10 L37 26 L59 40 L59 47 L37 40 L37 53 L46 59 L46 63 L32 58 L18 63 L18 59 L27 53 L27 40 L5 47 L5 40 L27 26 L27 10 C27 6 29 3 32 3 Z" fill="#38bdf8" stroke="#e5edf7" stroke-width="2" /></svg></div>`;
+  const hasTimeline =
+    points.length > 1 &&
+    points.every(p => numeric(p.elapsed_s) !== null) &&
+    numeric(points[points.length - 1].elapsed_s) > numeric(points[0].elapsed_s);
+
+  const axis = hasTimeline
+    ? points.map(p => Number(p.elapsed_s))
+    : points.map((_, i) => i);
+  const axisStart = axis[0];
+  const axisEnd = axis[axis.length - 1];
+  const axisSpan = Math.max(1e-9, axisEnd - axisStart);
+
+  function progressForIndex(index) {
+    index = Math.max(0, Math.min(points.length - 1, Number(index) || 0));
+    return clamp((axis[index] - axisStart) / axisSpan);
   }
-  const planeIcon = (bearing) => L.divIcon({ className:'', html:planeHtml(bearing), iconSize:[34,34], iconAnchor:[17,17] });
-  const plane = L.marker(route[defaultIdx], { icon: planeIcon(points[defaultIdx].bearing), zIndexOffset:1000 }).addTo(map);
 
-  function fmt(v, suffix, decimals=0) {
-    if (v === null || v === undefined || Number.isNaN(Number(v))) return '—';
-    return `${Number(v).toFixed(decimals)}${suffix || ''}`;
+  function locate(progress) {
+    progress = clamp(Number(progress) || 0);
+    const target = axisStart + progress * axisSpan;
+
+    let lo = 0, hi = axis.length - 1;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi + 1) / 2);
+      if (axis[mid] <= target) lo = mid;
+      else hi = mid - 1;
+    }
+
+    const lower = Math.min(lo, points.length - 1);
+    const upper = Math.min(lower + 1, points.length - 1);
+    const segmentSpan = Math.max(1e-9, axis[upper] - axis[lower]);
+    const fraction = lower === upper
+      ? 0
+      : clamp((target - axis[lower]) / segmentSpan);
+
+    const a = points[lower], b = points[upper];
+    return {
+      progress, lower, upper, fraction,
+      lat: lerp(a.lat, b.lat, fraction),
+      lon: lerp(a.lon, b.lon, fraction),
+      alt_ft: lerp(a.alt_ft, b.alt_ft, fraction),
+      speed_kmh: lerp(a.speed_kmh, b.speed_kmh, fraction),
+      speed_kt: lerp(a.speed_kt, b.speed_kt, fraction),
+      distance_km: lerp(a.distance_km, b.distance_km, fraction),
+      clock_s: lerp(a.clock_s, b.clock_s, fraction),
+      elapsed_s: lerp(a.elapsed_s, b.elapsed_s, fraction),
+      bearing: angleLerp(a.bearing, b.bearing, fraction),
+      fallbackTime: fraction < .5 ? a.time : b.time,
+    };
   }
 
+  const route = points.map(p => [Number(p.lat), Number(p.lon)]);
+  const map = L.map('map', {
+    preferCanvas:true, zoomControl:true, attributionControl:true,
+    zoomAnimation:true, fadeAnimation:true, markerZoomAnimation:true
+  });
+  L.tileLayer(tileUrl, { maxZoom:18, attribution:tileAttrib }).addTo(map);
+  const whole = L.polyline(route, {
+    color:'#64748b', weight:3, opacity:.50, lineCap:'round', lineJoin:'round'
+  }).addTo(map);
+
+  if (route.length > 1) map.fitBounds(whole.getBounds(), { padding:[20,20] });
+  else map.setView(route[0], 11);
+
+  L.circleMarker(route[0], {
+    radius:5, color:'#dcfce7', weight:1.5, fillColor:'#22c55e', fillOpacity:.95
+  }).addTo(map);
+  L.circleMarker(route[route.length - 1], {
+    radius:5, color:'#fee2e2', weight:1.5, fillColor:'#ef4444', fillOpacity:.95
+  }).addTo(map);
+
+  function planeHtml() {
+    return `<div class="plane-wrap"><svg class="plane-svg" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3 C35 3 37 6 37 10 L37 26 L59 40 L59 47 L37 40 L37 53 L46 59 L46 63 L32 58 L18 63 L18 59 L27 53 L27 40 L5 47 L5 40 L27 26 L27 10 C27 6 29 3 32 3 Z" fill="#38bdf8" stroke="#e5edf7" stroke-width="2" /></svg></div>`;
+  }
+
+  const plane = L.marker(route[defaultIdx], {
+    icon:L.divIcon({
+      className:'', html:planeHtml(), iconSize:[34,34], iconAnchor:[17,17]
+    }),
+    zIndexOffset:1000,
+  }).addTo(map);
+
+  const progressDone = L.polyline(route.slice(0, defaultIdx + 1), {
+    color:'#38bdf8', weight:4, opacity:.95, lineCap:'round', lineJoin:'round'
+  }).addTo(map);
+  const progressActive = L.polyline(
+    [route[defaultIdx], route[defaultIdx]],
+    { color:'#38bdf8', weight:4, opacity:.95, lineCap:'round' }
+  ).addTo(map);
+
+  function setPlaneBearing(degrees) {
+    const element = plane.getElement();
+    const svg = element ? element.querySelector('.plane-svg') : null;
+    if (svg) svg.style.transform = `rotate(${Number(degrees || 0).toFixed(1)}deg)`;
+  }
+
+  function fmt(value, suffix='', decimals=0) {
+    const number = numeric(value);
+    if (number === null) return '—';
+    return `${number.toFixed(decimals)}${suffix}`;
+  }
+
+  function fmtClock(clockSeconds, fallback='—') {
+    const raw = numeric(clockSeconds);
+    if (raw === null) return fallback || '—';
+    let seconds = Math.round(raw) % 86400;
+    if (seconds < 0) seconds += 86400;
+    const hh = String(Math.floor(seconds / 3600)).padStart(2,'0');
+    const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2,'0');
+    const ss = String(seconds % 60).padStart(2,'0');
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  function fmtElapsed(seconds) {
+    const value = numeric(seconds);
+    if (value === null) return hasTimeline ? 'GPS timeline' : 'relativní timeline';
+    const total = Math.max(0, Math.round(value));
+    const hh = Math.floor(total / 3600);
+    const mm = Math.floor((total % 3600) / 60);
+    const ss = total % 60;
+    return hh > 0
+      ? `+${hh}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+      : `+${mm}:${String(ss).padStart(2,'0')}`;
+  }
+
+  // Profile drawing uses the same axis as playback: actual GPS time when
+  // available, otherwise point order. Cursor and aircraft therefore stay synced.
   const altLine = document.getElementById('alt-line');
   const speedLine = document.getElementById('speed-line');
   const cursor = document.getElementById('cursor');
@@ -2543,65 +2730,215 @@ def _track_player_html(points_data: list[dict[str, Any]], default_idx: int, dark
   const speedDot = document.getElementById('speed-dot');
   const grid = document.getElementById('grid');
   const L0 = 52, R0 = 970, T0 = 42, B0 = 178;
-  const altVals = points.map(p => Number(p.alt_ft)).filter(Number.isFinite);
-  const spdVals = points.map(p => Number(p.speed_kmh)).filter(Number.isFinite);
+  const altVals = points.map(p => numeric(p.alt_ft)).filter(v => v !== null);
+  const speedVals = points.map(p => numeric(p.speed_kmh)).filter(v => v !== null);
   const altMax = Math.max(500, ...(altVals.length ? altVals : [0]));
-  const spdMax = Math.max(80, ...(spdVals.length ? spdVals : [0]));
-  function x(i) { return L0 + (R0 - L0) * (points.length <= 1 ? 0 : i / (points.length - 1)); }
-  function yAlt(v) { const n = Number.isFinite(Number(v)) ? Number(v) : 0; return B0 - (B0 - T0) * Math.max(0, Math.min(1, n / altMax)); }
-  function ySpd(v) { const n = Number.isFinite(Number(v)) ? Number(v) : 0; return B0 - (B0 - T0) * Math.max(0, Math.min(1, n / spdMax)); }
-  function poly(vals, yfn) { return vals.map((v,i) => `${x(i).toFixed(1)},${yfn(v).toFixed(1)}`).join(' '); }
-  grid.innerHTML = '';
-  for (let g=1; g<=3; g++) {
-    const y = T0 + (B0-T0)*g/4;
+  const speedMax = Math.max(80, ...(speedVals.length ? speedVals : [0]));
+
+  function xProgress(progress) {
+    return L0 + (R0 - L0) * clamp(progress);
+  }
+  function xPoint(index) {
+    return xProgress((axis[index] - axisStart) / axisSpan);
+  }
+  function yAlt(value) {
+    const number = numeric(value) ?? 0;
+    return B0 - (B0 - T0) * clamp(number / altMax);
+  }
+  function ySpeed(value) {
+    const number = numeric(value) ?? 0;
+    return B0 - (B0 - T0) * clamp(number / speedMax);
+  }
+  function polyline(values, yFn) {
+    return values.map((value,index) =>
+      `${xPoint(index).toFixed(1)},${yFn(value).toFixed(1)}`
+    ).join(' ');
+  }
+
+  for (let gridIndex=1; gridIndex<=3; gridIndex++) {
+    const y = T0 + (B0 - T0) * gridIndex / 4;
     const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1', L0); line.setAttribute('x2', R0); line.setAttribute('y1', y); line.setAttribute('y2', y);
-    line.setAttribute('stroke', 'rgba(148,163,184,.16)'); line.setAttribute('stroke-width', '1');
+    line.setAttribute('x1',L0); line.setAttribute('x2',R0);
+    line.setAttribute('y1',y); line.setAttribute('y2',y);
+    line.setAttribute('stroke','rgba(148,163,184,.16)');
+    line.setAttribute('stroke-width','1');
     grid.appendChild(line);
   }
-  altLine.setAttribute('points', poly(points.map(p => p.alt_ft), yAlt));
-  speedLine.setAttribute('points', poly(points.map(p => p.speed_kmh), ySpd));
 
-  function update(idx) {
-    idx = Math.max(0, Math.min(points.length - 1, Number(idx) || 0));
-    const p = points[idx];
-    slider.value = String(idx);
-    plane.setLatLng([p.lat, p.lon]);
-    plane.setIcon(planeIcon(p.bearing));
-    progress.setLatLngs(route.slice(0, idx + 1));
-    document.getElementById('v-time').textContent = p.time || '—';
-    document.getElementById('v-alt').textContent = fmt(p.alt_ft, ' ft', 0);
-    document.getElementById('v-speed').textContent = fmt(p.speed_kmh, ' km/h', 0);
-    document.getElementById('v-dist').textContent = fmt(p.distance_km, ' km', 1);
-    document.getElementById('counter').textContent = `${idx + 1} / ${points.length}`;
-    const cx = x(idx);
-    cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
-    altDot.setAttribute('cx', cx); altDot.setAttribute('cy', yAlt(p.alt_ft));
-    speedDot.setAttribute('cx', cx); speedDot.setAttribute('cy', ySpd(p.speed_kmh));
+  altLine.setAttribute('points', polyline(points.map(p => p.alt_ft), yAlt));
+  speedLine.setAttribute('points', polyline(points.map(p => p.speed_kmh), ySpeed));
+
+  let currentProgress = progressForIndex(defaultIdx);
+  let lastCompletedIndex = -1;
+  let follow = false;
+  let followLastAt = 0;
+  let animationFrame = null;
+  let animationLastTs = null;
+  let playbackSpeed = 1;
+  const playbackSpeeds = [1,2,4];
+  const basePlaybackDurationMs = 48000;
+
+  function updateFollowUi() {
+    followBtn.classList.toggle('active', follow);
+    document.getElementById('map-mode').textContent =
+      follow ? 'Sledování letadla' : 'Celý let';
+  }
+
+  function setFollow(enabled) {
+    follow = Boolean(enabled);
+    updateFollowUi();
+    if (follow) {
+      const sample = locate(currentProgress);
+      const targetZoom = Math.max(map.getZoom(), 13);
+      map.setView([sample.lat, sample.lon], targetZoom, { animate:false });
+    }
+  }
+
+  function update(progress, allowFollow=true) {
+    currentProgress = clamp(progress);
+    const sample = locate(currentProgress);
+    const latLng = [sample.lat, sample.lon];
+
+    slider.value = String(Math.round(currentProgress * 10000));
+    plane.setLatLng(latLng);
+    setPlaneBearing(sample.bearing);
+
+    if (sample.lower !== lastCompletedIndex) {
+      progressDone.setLatLngs(route.slice(0, sample.lower + 1));
+      lastCompletedIndex = sample.lower;
+    }
+    progressActive.setLatLngs([route[sample.lower], latLng]);
+
+    const currentClock = fmtClock(sample.clock_s, sample.fallbackTime);
+    document.getElementById('v-time').textContent = currentClock;
+    document.getElementById('v-elapsed').textContent = fmtElapsed(sample.elapsed_s);
+    document.getElementById('v-alt').textContent = fmt(sample.alt_ft,' ft',0);
+    document.getElementById('v-speed').textContent = fmt(sample.speed_kt,' kt',0);
+    document.getElementById('v-speed-kmh').textContent = fmt(sample.speed_kmh,' km/h',0);
+    document.getElementById('v-dist').textContent = fmt(sample.distance_km,' km',1);
+    document.getElementById('time-current').textContent = currentClock;
+
+    const cursorX = xProgress(currentProgress);
+    cursor.setAttribute('x1',cursorX); cursor.setAttribute('x2',cursorX);
+    altDot.setAttribute('cx',cursorX); altDot.setAttribute('cy',yAlt(sample.alt_ft));
+    speedDot.setAttribute('cx',cursorX); speedDot.setAttribute('cy',ySpeed(sample.speed_kmh));
+
+    if (follow && allowFollow) {
+      const now = performance.now();
+      if (now - followLastAt > 120) {
+        map.panTo(latLng, { animate:false });
+        followLastAt = now;
+      }
+    }
   }
 
   function stop() {
-    if (timer) { clearInterval(timer); timer = null; }
+    if (animationFrame !== null) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    animationLastTs = null;
     playBtn.textContent = '▶';
   }
-  function play() {
-    if (timer) { stop(); return; }
-    playBtn.textContent = 'Ⅱ';
-    timer = setInterval(() => {
-      let i = Number(slider.value) || 0;
-      if (i >= points.length - 1) { stop(); return; }
-      update(i + 1);
-    }, 95);
+
+  function animationTick(timestamp) {
+    if (animationLastTs === null) animationLastTs = timestamp;
+    const delta = Math.min(80, Math.max(0, timestamp - animationLastTs));
+    animationLastTs = timestamp;
+    currentProgress += (delta / basePlaybackDurationMs) * playbackSpeed;
+
+    if (currentProgress >= 1) {
+      update(1);
+      stop();
+      return;
+    }
+
+    update(currentProgress);
+    animationFrame = requestAnimationFrame(animationTick);
   }
-  slider.max = String(points.length - 1);
-  slider.value = String(defaultIdx);
-  slider.addEventListener('input', e => update(e.target.value));
+
+  function play() {
+    if (animationFrame !== null) {
+      stop();
+      return;
+    }
+    if (currentProgress >= .9999) update(0);
+    playBtn.textContent = 'Ⅱ';
+    animationLastTs = null;
+    animationFrame = requestAnimationFrame(animationTick);
+  }
+
+  function cycleSpeed() {
+    const index = playbackSpeeds.indexOf(playbackSpeed);
+    playbackSpeed = playbackSpeeds[(index + 1) % playbackSpeeds.length];
+    speedBtn.textContent = `${playbackSpeed}×`;
+  }
+
+  function fitWholeFlight() {
+    setFollow(false);
+    if (route.length > 1) map.fitBounds(whole.getBounds(), { padding:[20,20] });
+    else map.setView(route[0],11);
+  }
+
+  // Timeline scrubber – no Streamlit rerun.
+  slider.addEventListener('input', event => {
+    stop();
+    update(Number(event.target.value) / 10000);
+  });
   slider.addEventListener('pointerdown', stop);
+
+  // SVG profile is a second scrubber. Dragging the cursor is intentionally
+  // continuous so altitude/speed/map stay synchronized.
+  let chartDragging = false;
+  function chartProgress(clientX) {
+    const rect = profile.getBoundingClientRect();
+    const svgX = ((clientX - rect.left) / Math.max(1, rect.width)) * 1000;
+    return clamp((svgX - L0) / (R0 - L0));
+  }
+  profile.addEventListener('pointerdown', event => {
+    stop();
+    chartDragging = true;
+    try { profile.setPointerCapture(event.pointerId); } catch (_err) {}
+    update(chartProgress(event.clientX));
+  });
+  profile.addEventListener('pointermove', event => {
+    if (chartDragging) update(chartProgress(event.clientX));
+  });
+  profile.addEventListener('pointerup', event => {
+    chartDragging = false;
+    try { profile.releasePointerCapture(event.pointerId); } catch (_err) {}
+  });
+  profile.addEventListener('pointercancel', () => { chartDragging = false; });
+
   playBtn.addEventListener('click', play);
-  resetBtn.addEventListener('click', () => { stop(); update(defaultIdx); });
-  document.getElementById('source-note').textContent = originalCount > points.length ? `Přehrávač používá ${points.length} zjednodušených bodů z původních ${originalCount}. Plný KML zůstává uložený.` : `${points.length} bodů v přehrávači.`;
-  setTimeout(() => map.invalidateSize(), 120);
-  update(defaultIdx);
+  resetBtn.addEventListener('click', () => {
+    stop();
+    update(progressForIndex(defaultIdx));
+  });
+  speedBtn.addEventListener('click', cycleSpeed);
+  followBtn.addEventListener('click', () => setFollow(!follow));
+  fitBtn.addEventListener('click', fitWholeFlight);
+
+  // Manual map movement means the pilot wants to inspect another area.
+  map.on('dragstart', () => setFollow(false));
+
+  const startPoint = points[0];
+  const endPoint = points[points.length - 1];
+  document.getElementById('time-start').textContent = startPoint.time || 'Start';
+  document.getElementById('time-end').textContent = endPoint.time || 'Konec';
+
+  const timelineLabel = hasTimeline ? 'GPS čas' : 'pořadí bodů';
+  document.getElementById('source-note').textContent =
+    originalCount > points.length
+      ? `Plynulý playback · ${points.length} optimalizovaných bodů z původních ${originalCount} · osa: ${timelineLabel}. Plný KML zůstává uložený.`
+      : `Plynulý playback · ${points.length} bodů · osa: ${timelineLabel}. Tažením po grafu nebo timeline posouváš let.`;
+
+  setTimeout(() => {
+    map.invalidateSize();
+    update(currentProgress, false);
+  }, 120);
+  updateFollowUi();
+  update(currentProgress, false);
 })();
 </script>
 </body>
@@ -2618,13 +2955,22 @@ def render_track_playback(points: list[dict[str, Any]], flight_id: int, dark_mod
         st.info("Track nemá dostatek bodů pro přehrávání.")
         return
 
-    player_points, default_idx, original_count = _prepare_track_player_points(points)
+    player_points, default_idx, original_count = build_track_player_payload(
+        points,
+        current_user_timezone(),
+        max_points=2800,
+    )
     if len(player_points) < 2:
         st.info("Track nemá dostatek bodů pro přehrávání.")
         return
 
-    html_doc = _track_player_html(player_points, default_idx, dark_mode, original_count)
-    st.iframe(html_doc, height=710)
+    html_doc = _track_player_html(
+        player_points,
+        default_idx,
+        dark_mode,
+        original_count,
+    )
+    st.iframe(html_doc, height=760)
 
 
 
@@ -4520,6 +4866,10 @@ def flight_detail_dialog(
         flight_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
         gps_proposal, first_points, selected_track_row = _gps_proposal_from_tracks(flight_tracks)
         if not flight_tracks.empty and first_points:
+            st.caption(
+                "Tažením timeline nebo přímo grafu plynule posouváš let. "
+                "Režim Sledovat letadlo drží mapu u aktuální pozice."
+            )
             render_track_playback(first_points, int(selected_id), dark_mode)
             if gps_proposal:
                 _render_gps_time_proposal(gps_proposal, compact=True)

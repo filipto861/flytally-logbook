@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.66 – Pilot Currency & Recency
+## v0.67 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -138,7 +138,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.66 – Profile Recency Polish
+## v0.67 – Profile Recency Polish
 - removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
 - licence/medical/rating expiry tracking is the primary content
@@ -148,7 +148,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9; no migration required
 
 
-## v0.66 – Data Portability & Backup UX
+## v0.67 – Data Portability & Backup UX
 - adds `Export → Záloha účtu` for every authenticated user
 - portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
 - passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
@@ -161,7 +161,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.66 – Flight Entry UX 2.0
+## v0.67 – Flight Entry UX 2.0
 - manual flight entry now uses a compact pilot-focused layout
 - the most recent flight can prefill the last aircraft and next departure airport
 - last aircraft is reused only when its aircraft profile still exists
@@ -174,13 +174,13 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.66 – Manual Entry None Safety Hotfix
+## v0.67 – Manual Entry None Safety Hotfix
 - fixes `AttributeError: 'NoneType' object has no attribute 'upper'` when a new manual flight has an empty arrival
 - hardens all new v0.65 manual-entry uppercase conversions against missing optional values
 - no UX, database or schema changes
 
 
-## v0.66 – Flight Detail & Logbook UX Polish
+## v0.67 – Flight Detail & Logbook UX Polish
 - simplifies the flight list from 15 columns to 9
 - removes separate Edit/GPS buttons from every list row; all actions remain available inside Detail
 - visible rows now render one Streamlit action button instead of three, reducing widget count substantially
@@ -193,3 +193,23 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - non-blocking validation warnings are collapsed by default
 - user-supplied list/detail text is HTML-escaped before unsafe HTML rendering
 - KML import, GPS playback, edit form and database schema remain unchanged
+
+
+## v0.67 – Map & Track UX 2.0
+- GPS playback now interpolates continuously between recorded fixes instead of jumping point-to-point
+- browser animation uses `requestAnimationFrame`, so moving the aircraft does not trigger Streamlit reruns
+- map position, aircraft bearing, altitude, groundspeed, distance, timeline and chart cursor are synchronized
+- playback uses actual GPS elapsed time as its horizontal axis when timestamps are available
+- profile chart itself is now a draggable scrubber
+- timeline scrubber has 10,000 virtual positions for smooth manual movement even after track downsampling
+- aircraft icon rotates continuously using the shortest angular path between bearings
+- Groundspped is shown primarily in knots with km/h as a secondary value
+- `Sledovat letadlo` follow mode keeps the map centered on the aircraft; manual map dragging automatically disables follow mode
+- `Celý let` restores the complete route view
+- playback speed cycles through 1× / 2× / 4×
+- progress rendering is split into completed route + one active segment to avoid rebuilding thousands of polyline points on every animation frame
+- start/end markers make route direction immediately visible
+- long tracks are capped at 2,800 browser-player points; the complete original KML remains stored
+- mobile player uses a shorter map/profile and stacked controls
+- data preparation moved to `logbook_core/track_player.py` for testable interpolation metadata
+- KML import logic, stored track data and database schema remain unchanged

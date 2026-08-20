@@ -1,4 +1,4 @@
-# Logbook architecture — v0.66
+# Logbook architecture — v0.67
 
 ## Flight Import UX 2.0
 
@@ -55,7 +55,7 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 
 `logbook_core/dashboard.py` obsahuje čisté, Streamlit-independent agregace pro období, měsíce, roky, letadla, letiště, trasy a dashboardové rekordy. UI pouze vybírá aktuální sekci a renderuje již agregovaná data. Tím se drží náklad skrytých dashboardových sekcí mimo aktuální rerun.
 
-## v0.66 Pilot Currency & Recency
+## v0.67 Pilot Currency & Recency
 
 `logbook_core/currency.py` owns rolling activity and validity-status calculations. The UI page only renders those results.
 
@@ -68,19 +68,29 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 The 90-day cards are logbook activity indicators only. They intentionally do not claim regulatory currency because the current flight model does not encode every rule dimension such as day/night, separate take-offs/approaches, type/class equivalence or sole-manipulator conditions.
 
 
-## v0.66 portable backup boundary
+## v0.67 portable backup boundary
 Portable backups are intentionally account-scoped. Restore rewrites ownership to the currently authenticated `user_id` and never imports authentication credentials or application roles. The portable payload covers `flights`, `aircraft`, `rates`, user airport overrides, `flight_tracks`, `track_points`, `user_expiries`, and `user_settings`. The global airport catalogue, `app_meta`, `audit_log`, `users`, and `user_credentials` are outside the portable restore boundary.
 
-Restore mode in v0.66 is deliberately **replace current profile data**, not merge. This avoids duplicate flights and ambiguous relation matching. The operation is atomic and remaps flight/track IDs when rebuilding GPS relationships.
+Restore mode in v0.67 is deliberately **replace current profile data**, not merge. This avoids duplicate flights and ambiguous relation matching. The operation is atomic and remaps flight/track IDs when rebuilding GPS relationships.
 
 
-## v0.66 manual-entry boundary
+## v0.67 manual-entry boundary
 `logbook_core.flight_entry` contains pure history/default-selection logic. Streamlit session continuity remains in `app.py`. Smart manual defaults are conservative by design: only the previous arrival and last configured aircraft may be carried forward. Arrival and all four flight times require explicit user input or an explicit shortcut action.
 
 The KML import wizard and flight edit form still use the full form layout. `flight_form(..., compact_layout=True)` is currently reserved for new manual entries.
 
 
-## v0.66 logbook view boundary
+## v0.67 logbook view boundary
 `logbook_core.logbook_view` owns pure quick-search and flight-neighbour navigation logic. The Streamlit list renders only one button per visible row; edit/track/delete remain inside the detail dialog. Navigation order follows the exact current filtered + sorted + quick-searched result, not database ID order.
 
 No data model changes are introduced. `DB_SCHEMA_VERSION` remains 9.
+
+
+## v0.67 track player architecture
+`logbook_core.track_player.build_track_player_payload()` prepares a compact, browser-safe payload with coordinates, smoothed speed, altitude, distance, bearing, local clock and elapsed GPS seconds. The embedded player performs continuous interpolation entirely client-side.
+
+The player uses a 0–1 virtual progress axis. When complete timestamps are available the axis maps to GPS elapsed time; otherwise it falls back to point order. Leaflet marker movement, SVG profile cursor and HUD values share the same interpolated sample.
+
+For performance, the whole route is static, completed progress is updated only when the underlying GPS segment changes, and only the current two-point active segment changes every animation frame. No Streamlit rerun occurs while playing or scrubbing.
+
+`DB_SCHEMA_VERSION` remains 9.
