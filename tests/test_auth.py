@@ -10,6 +10,9 @@ from logbook_core.auth import (
     legacy_profile_needs_activation,
     register_user,
     verify_password,
+    admin_set_user_password,
+    set_user_active,
+    set_user_role,
 )
 from logbook_core.schema import SCHEMA
 from logbook_core.tenancy import ensure_tenancy_schema
@@ -66,3 +69,46 @@ def test_password_is_hashed_not_plaintext():
     assert "strongpass123" not in encoded
     assert encoded.startswith("scrypt$")
     assert verify_password("strongpass123", encoded)
+
+
+def test_owner_is_admin_and_new_profile_is_user():
+    con = make_db()
+    owner_role = con.execute("SELECT role FROM users WHERE id = 1").fetchone()[0]
+    assert owner_role == "admin"
+    activate_legacy_profile(con, email="owner@example.com", display_name="Owner", password="strongpass123")
+    result = register_user(con, email="pilot@example.com", display_name="Pilot", password="strongpass456")
+    assert result.ok and result.user_id
+    role = con.execute("SELECT role FROM users WHERE id = ?", (result.user_id,)).fetchone()[0]
+    assert role == "user"
+
+
+def test_admin_can_manage_test_user_without_touching_owner():
+    con = make_db()
+    activate_legacy_profile(con, email="owner@example.com", display_name="Owner", password="strongpass123")
+    result = register_user(con, email="pilot@example.com", display_name="Pilot", password="strongpass456")
+    uid = int(result.user_id)
+    assert set_user_active(con, user_id=uid, active=False).ok
+    assert not authenticate_user(con, "pilot@example.com", "strongpass456").ok
+    assert set_user_active(con, user_id=uid, active=True).ok
+    assert set_user_role(con, user_id=uid, role="admin").ok
+    assert con.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()[0] == "admin"
+    assert admin_set_user_password(con, user_id=uid, new_password="anotherstrong789").ok
+    assert authenticate_user(con, "pilot@example.com", "anotherstrong789").ok
+    assert not set_user_active(con, user_id=1, active=False).ok
+    assert not set_user_role(con, user_id=1, role="user").ok
+
+
+def test_role_migration_promotes_existing_owner_only():
+    con = sqlite3.connect(":memory:")
+    con.row_factory = sqlite3.Row
+    con.executescript("""
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, display_name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE, active INTEGER DEFAULT 1, created_at TEXT, updated_at TEXT
+        );
+        INSERT INTO users (id, email, display_name, slug, active) VALUES (1, 'owner@example.com', 'Owner', 'local', 1);
+        INSERT INTO users (id, email, display_name, slug, active) VALUES (2, 'pilot@example.com', 'Pilot', 'pilot', 1);
+    """)
+    ensure_auth_schema(con)
+    roles = dict(con.execute("SELECT id, role FROM users ORDER BY id").fetchall())
+    assert roles == {1: "admin", 2: "user"}

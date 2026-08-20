@@ -1,57 +1,29 @@
-# Logbook architecture — v0.56
+# Logbook architecture — v0.57
 
-## Stav
+## Identity and ownership
 
-v0.56 přidává autentizaci nad ownership modelem v0.55. Datový backend zůstává SQLite a `user_id` je bezpečnostní hranice mezi profily.
+Každá privátní datová tabulka je oddělena pomocí `user_id`. `user_id = 1` zůstává původní vlastník všech dat vytvořených před multi-user verzí.
 
-## Identita původního uživatele
+## Authorization
 
-`user_id = 1` je legacy owner. Migrace v0.55 už přiřadila všechna historická data právě jemu. v0.56 tuto vazbu **nemění**; pouze k uživateli 1 přidá e-mail a credentials po bezpečné aktivaci.
+Tabulka `users` obsahuje trvalý sloupec `role`:
 
-```text
-users
-├── user_credentials
-├── user_settings
-├── flights
-│   └── flight_tracks
-│       └── track_points
-├── aircraft
-├── rates
-├── airports (custom)
-└── audit_log
-```
+- `admin` – správce aplikace,
+- `user` – běžný pilot.
 
-## Authentication gate
+Při migraci na schema 8 je `user_id = 1` automaticky nastaven na `admin`; ostatní profily na `user`.
 
-`main()` inicializuje DB, ale před navigací a před zpracováním detailových query parametrů volá auth gate. Bez platné session se žádná stránka s uživatelskými daty nevykreslí.
+Autorizace má dvě vrstvy:
 
-První start nad legacy profilem vyžaduje aktivaci pomocí existujícího `auth.admin_password`, aby veřejný návštěvník nemohl převzít profil 1. Po aktivaci se používá e-mail + heslo.
+1. přihlášený uživatel smí CRUD pouze nad vlastními záznamy (`WHERE user_id = current_user_id`),
+2. role `admin` je nutná pouze pro globální správu aplikace, uživatelů a celé databáze.
 
-## Password storage
+Admin heslo ze Streamlit Secrets už není druhým heslem pro běžné CRUD operace. Může zůstat pouze jako bezpečnostní mechanismus při prvotní aktivaci legacy profilu.
 
-`logbook_core/auth.py` používá `hashlib.scrypt`:
+## Admin console
 
-- N = 16384,
-- r = 8,
-- p = 1,
-- 16B random salt,
-- 32B derived key,
-- constant-time comparison.
+Admin konzole je samostatná stránka dostupná pouze roli `admin`. Veřejná registrace může zůstat vypnutá; testovací a budoucí profily lze vytvořit ze správy uživatelů.
 
-Do databáze se neukládá plaintext heslo.
+## Persistence
 
-## Registration
-
-Implementace registrace je připravena, ale `auth.allow_registration = false` je výchozí a doporučený stav. Nový účet dostane nové `user_id` a žádná historická data.
-
-## Full database access
-
-Export jednotlivého uživatele (Excel/CSV/HTML) zůstává dostupný. Stažení celé SQLite DB je nově pouze pro aplikačního admina, protože DB může obsahovat data více uživatelů.
-
-## Shared airport catalogue
-
-`data/airports_full.sqlite` zůstává globální read-only katalog. `airports` v hlavní DB jsou user-scoped custom/override záznamy.
-
-## Budoucí backend
-
-SQLite + GitHub backup je přechodný single-user deployment. Před otevřením registrace širší veřejnosti je plánovaný PostgreSQL backend, serverová persistence, e-mail verification/reset a odstranění GitHub backupu živé DB.
+Aktuálně SQLite + GitHub auto-backup. Datový model je koncipován tak, aby pozdější PostgreSQL backend zachoval stejné `user_id` a role.

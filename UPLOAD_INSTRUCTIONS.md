@@ -1,29 +1,19 @@
-# Nasazení v0.56
+# Nasazení v0.57
 
-Postup je stejný jako u v0.55.
+1. Zálohuj `data/logbook.sqlite`.
+2. V lokálním Git repozitáři zachovej `.git` a `data`.
+3. Nahraď aplikační soubory obsahem v0.57.
+4. Obsah `data` z release zkopíruj do existujícího `data`; `logbook.sqlite` v release není.
+5. Ověř, že `data/logbook.sqlite` stále existuje a není mezi změněnými soubory.
+6. Commit: `v0.57 - Roles & Admin Console`.
+7. Pokud mezitím GitHub auto-backup vytvořil vzdálený commit, použij Fetch/Pull a potom Push.
+8. Po deployi se schema automaticky posune na 8 a původní user ID 1 dostane roli admin.
 
-1. Zachovejte lokální `.git`.
-2. Zachovejte `data/logbook.sqlite` z běžící aplikace.
-3. Nahraďte aplikační soubory obsahem tohoto release.
-4. Obsah `data/` z release lze překopírovat; release **neobsahuje `logbook.sqlite`**.
-5. V GitHub Desktop ověřte, že `data/logbook.sqlite` není smazán.
-6. Commit: `v0.56 - Authentication & Profiles`.
-7. Pokud GitHub Desktop hlásí novější remote commit kvůli automatickému DB backupu, nejdřív `Fetch` / `Pull origin`, potom push.
-8. `Push origin`.
-9. Po redeployi Streamlit zobrazí aktivaci původního profilu.
+## Test po nasazení
 
-## Streamlit Secrets
-
-Musí existovat:
-
-```toml
-[auth]
-admin_password = "VAŠE_SOUČASNÉ_ADMIN_HESLO"
-allow_registration = false
-```
-
-`admin_password` je při prvním spuštění jednorázově použit také jako důkaz, že aktivaci legacy profilu provádí vlastník aplikace.
-
-## Po prvním spuštění
-
-Aktivujte stávající profil. Tento profil je `user_id = 1` a obsahuje všechny dosavadní lety. Poté zkontrolujte Dashboard, Lety, Mapu, Track Player, Ceník, Databázi a Profil.
+- Přihlásit se jako původní účet a ověřit všechny staré lety.
+- Ověřit, že Nový let/Editace/Track/Ceník/Letadla/Custom letiště nevyžadují admin heslo.
+- Otevřít Admin → Uživatelé a vytvořit testovací účet s rolí Uživatel.
+- Odhlásit se a přihlásit testovacím účtem.
+- Testovací účet musí mít prázdný zápisník a nesmí vidět Admin menu ani data původního účtu.
+- Přidat testovací let a ověřit, že se po návratu do admin účtu neobjeví mezi jeho lety.

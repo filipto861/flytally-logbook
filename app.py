@@ -29,6 +29,7 @@ from logbook_core.schema import SCHEMA
 from logbook_core.auth import (
     PASSWORD_MIN_LENGTH, activate_legacy_profile, authenticate_user, change_password,
     ensure_auth_schema, legacy_profile_needs_activation, register_user, verify_password,
+    admin_set_user_password, set_user_active, set_user_role,
 )
 from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema, normalize_user_id
 from logbook_core.metrics import (
@@ -142,7 +143,13 @@ def auth_configured() -> bool:
 
 
 def is_admin() -> bool:
-    return st.session_state.get("auth_role") == "admin"
+    """Return True when the authenticated profile has the persistent admin role."""
+    if not is_user_authenticated():
+        return False
+    try:
+        return str(read_user_profile(current_user_id()).get("role") or "user").lower() == "admin"
+    except Exception:
+        return False
 
 
 def is_user_authenticated() -> bool:
@@ -182,7 +189,7 @@ def read_user_profile(user_id: int = DEFAULT_USER_ID) -> dict[str, Any]:
         with connect() as con:
             row = con.execute(
                 """
-                SELECT u.id, u.email, u.display_name, u.slug, u.active,
+                SELECT u.id, u.email, u.display_name, u.slug, u.role, u.active,
                        s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json
                 FROM users u
                 LEFT JOIN user_settings s ON s.user_id = u.id
@@ -314,6 +321,8 @@ def render_user_sidebar() -> None:
     st.markdown(f"**👤 {html.escape(str(profile.get('display_name') or 'Pilot'))}**")
     if profile.get("email"):
         st.caption(str(profile.get("email")))
+    if str(profile.get("role") or "user").lower() == "admin":
+        st.caption("Správce aplikace")
     if st.button("Odhlásit se", use_container_width=True, key="user_logout"):
         logout_user()
         st.rerun()
@@ -1455,6 +1464,8 @@ def render_sidebar_nav() -> None:
     st.markdown("### Navigace")
     for page_name, label in NAV_ITEMS:
         render_nav_button(page_name, label, f"side_nav_{page_name}")
+    if is_admin():
+        render_nav_button("Admin", "Admin", "side_nav_Admin")
 
 
 def get_selected_dataframe_rows(event: Any) -> list[int]:
@@ -3557,29 +3568,26 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         elif detail_warnings:
             st.warning("Kontrola letu: " + " • ".join(detail_warnings[:5]))
     elif detail_section == "Editace":
-        if not is_admin():
-            st.info("Pouze admin.")
-        else:
-            edit_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
-            gps_proposal, _gps_points, _gps_track_row = _gps_proposal_from_tracks(edit_tracks)
-            if gps_proposal:
-                with st.expander("GPS návrh časů", expanded=False):
-                    _render_gps_time_proposal(gps_proposal, compact=True)
-                    g1, g2 = st.columns(2)
-                    with g1:
-                        if st.button("Použít GPS Block + Air", key=f"edit_apply_gps_all_{selected_id}", use_container_width=True):
-                            _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
-                            st.toast("GPS časy byly vloženy do editace.")
-                    with g2:
-                        if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", use_container_width=True):
-                            _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=True)
-                            st.toast("GPS Air časy byly vloženy do editace.")
-            saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False)
-            if saved is not None:
-                update_flight(int(selected_id), saved)
-                st.session_state[f"_detail_pending_section_{selected_id}"] = "Přehled"
-                st.session_state[f"_detail_flash_{selected_id}"] = "Změny uloženy."
-                st.rerun()
+        edit_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
+        gps_proposal, _gps_points, _gps_track_row = _gps_proposal_from_tracks(edit_tracks)
+        if gps_proposal:
+            with st.expander("GPS návrh časů", expanded=False):
+                _render_gps_time_proposal(gps_proposal, compact=True)
+                g1, g2 = st.columns(2)
+                with g1:
+                    if st.button("Použít GPS Block + Air", key=f"edit_apply_gps_all_{selected_id}", use_container_width=True):
+                        _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
+                        st.toast("GPS časy byly vloženy do editace.")
+                with g2:
+                    if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", use_container_width=True):
+                        _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=True)
+                        st.toast("GPS Air časy byly vloženy do editace.")
+        saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False)
+        if saved is not None:
+            update_flight(int(selected_id), saved)
+            st.session_state[f"_detail_pending_section_{selected_id}"] = "Přehled"
+            st.session_state[f"_detail_flash_{selected_id}"] = "Změny uloženy."
+            st.rerun()
     elif detail_section == "Track":
         flight_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
         gps_proposal, first_points, selected_track_row = _gps_proposal_from_tracks(flight_tracks)
@@ -3598,11 +3606,10 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 st.dataframe(show, hide_index=True, use_container_width=True)
                 del_id = st.selectbox("Track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}", key=f"delete_track_select_{selected_id}")
                 confirm_track_delete = st.checkbox("Potvrzuji smazání vybraného tracku", value=False, key=f"confirm_track_delete_{selected_id}")
-                if st.button("Smazat vybraný track", type="secondary", disabled=(not is_admin()) or (not confirm_track_delete), use_container_width=True, key=f"delete_track_btn_{selected_id}"):
-                    if require_admin():
-                        delete_track(int(del_id))
-                        st.session_state[f"_detail_flash_{selected_id}"] = "Track smazán."
-                        st.rerun()
+                if st.button("Smazat vybraný track", type="secondary", disabled=not confirm_track_delete, use_container_width=True, key=f"delete_track_btn_{selected_id}"):
+                    delete_track(int(del_id))
+                    st.session_state[f"_detail_flash_{selected_id}"] = "Track smazán."
+                    st.rerun()
         else:
             st.info("K letu zatím není připojený track.")
 
@@ -3618,47 +3625,43 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                     end_utc = _safe_text(points[-1].get("time")) or "—"
                     st.caption(f"{uploaded.name} · {point_count} bodů · {distance_km:.1f} km · {start_utc} – {end_utc}")
                     replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
-                    if st.button("Uložit track k letu", type="primary", disabled=not is_admin(), use_container_width=True):
-                        if require_admin():
-                            save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
-                            st.session_state[f"_detail_flash_{selected_id}"] = "Track uložen."
-                            st.rerun()
+                    if st.button("Uložit track k letu", type="primary", use_container_width=True):
+                        save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
+                        st.session_state[f"_detail_flash_{selected_id}"] = "Track uložen."
+                        st.rerun()
                 else:
                     st.error("V KML nejsou použitelné body.")
             except Exception as exc:
                 st.error(f"KML se nepodařilo zpracovat: {exc}")
     elif detail_section == "Smazání":
-        if not is_admin():
-            st.info("Pouze admin.")
-        else:
-            st.markdown(
-                f"""
-                <div class="danger-box">
-                    <div class="danger-title">Trvalé smazání letu</div>
-                    <div class="danger-text">Tato akce smaže let ID {selected_id} ze zápisníku, včetně všech připojených KML tracků a GPS bodů. Po uložení se změna automaticky zazálohuje na GitHub, pokud je záloha zapnutá.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            confirm = st.text_input(
-                f"Pro potvrzení napiš ID letu: {selected_id}",
-                value="",
-                key=f"delete_flight_confirm_{selected_id}",
-            )
-            c_del, c_cancel = st.columns([1, 1])
-            with c_del:
-                if st.button("Trvale smazat let", type="primary", use_container_width=True, key=f"delete_flight_btn_{selected_id}"):
-                    if confirm.strip() == str(selected_id):
-                        delete_flight(int(selected_id))
-                        st.success(f"Let ID {selected_id} byl smazán.")
-                        clear_open_flight_dialog()
-                        st.rerun()
-                    else:
-                        st.error("Potvrzení nesouhlasí. Napiš přesné ID letu.")
-            with c_cancel:
-                if st.button("Nemazat", use_container_width=True, key=f"delete_flight_cancel_{selected_id}"):
+        st.markdown(
+            f"""
+            <div class="danger-box">
+                <div class="danger-title">Trvalé smazání letu</div>
+                <div class="danger-text">Tato akce smaže let ID {selected_id} ze zápisníku, včetně všech připojených KML tracků a GPS bodů. Po uložení se změna automaticky zazálohuje na GitHub, pokud je záloha zapnutá.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        confirm = st.text_input(
+            f"Pro potvrzení napiš ID letu: {selected_id}",
+            value="",
+            key=f"delete_flight_confirm_{selected_id}",
+        )
+        c_del, c_cancel = st.columns([1, 1])
+        with c_del:
+            if st.button("Trvale smazat let", type="primary", use_container_width=True, key=f"delete_flight_btn_{selected_id}"):
+                if confirm.strip() == str(selected_id):
+                    delete_flight(int(selected_id))
+                    st.success(f"Let ID {selected_id} byl smazán.")
                     clear_open_flight_dialog()
                     st.rerun()
+                else:
+                    st.error("Potvrzení nesouhlasí. Napiš přesné ID letu.")
+        with c_cancel:
+            if st.button("Nemazat", use_container_width=True, key=f"delete_flight_cancel_{selected_id}"):
+                clear_open_flight_dialog()
+                st.rerun()
     if st.button("Zavřít detail", use_container_width=True):
         clear_open_flight_dialog()
         st.rerun()
@@ -3982,9 +3985,6 @@ def page_logbook(df: pd.DataFrame, dark_mode: bool):
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
-    if not is_admin():
-        st.info("Pouze admin.")
-        return
 
     mode = st.radio(
         "Způsob přidání",
@@ -4329,7 +4329,7 @@ def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> No
         hide_index=True,
         use_container_width=True,
         num_rows="dynamic",
-        disabled=["ID"] if is_admin() else display.columns.tolist(),
+        disabled=["ID"],
         height=520,
         key=f"{key_prefix}_editor_v041",
         column_config={
@@ -4338,10 +4338,9 @@ def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> No
             "Od data": st.column_config.TextColumn(help=None),
         },
     )
-    if st.button("Uložit ceník", type="primary", disabled=not is_admin(), key=f"{key_prefix}_save_v041"):
-        if require_admin():
-            save_rates_editor(edited)
-            st.success("Ceník uložen."); st.rerun()
+    if st.button("Uložit ceník", type="primary", key=f"{key_prefix}_save_v041"):
+        save_rates_editor(edited)
+        st.success("Ceník uložen."); st.rerun()
 
 
 def page_rates(rates: pd.DataFrame):
@@ -4566,10 +4565,10 @@ def page_database():
 
     section = st.radio(
         "Databáze sekce",
-        ["Letiště", "Letadla", "Ceník", "Kontrola", "Záloha", "Meta"],
+        ["Letiště", "Letadla", "Ceník"],
         horizontal=True,
         label_visibility="collapsed",
-        key="database_section_v052",
+        key="database_section_v057",
     )
 
     if section == "Letiště":
@@ -4609,34 +4608,30 @@ def page_database():
             )
 
         st.markdown("### Přidat / upravit letiště")
-        if not is_admin():
-            st.info("Ruční editace letišť je dostupná jen pro admina.")
-        else:
-            with st.form("airport_upsert_form"):
-                a1, a2, a3 = st.columns(3)
-                with a1:
-                    ident = st.text_input("Ident", value="").upper()
-                    name = st.text_input("Název", value="")
-                    airport_type = st.selectbox("Typ", ["ultralight_field", "small_airport", "medium_airport", "large_airport", "heliport", "closed", "manual_field"], index=0)
-                with a2:
-                    iso_country = st.text_input("Země", value="CZ").upper()
-                    iso_region = st.text_input("Region", value="")
-                    municipality = st.text_input("Obec", value="")
-                with a3:
-                    latitude_deg = st.number_input("Latitude", value=50.0, format="%.6f")
-                    longitude_deg = st.number_input("Longitude", value=14.0, format="%.6f")
-                    elevation_ft = st.number_input("Elevation ft", value=0.0, format="%.0f")
-                active = st.checkbox("Aktivní", value=True)
-                closed = st.checkbox("Uzavřené", value=False)
-                submitted = st.form_submit_button("Uložit letiště / plochu", type="primary")
-            if submitted:
-                try:
-                    upsert_airport_form({"ident": ident, "name": name, "airport_type": airport_type, "iso_country": iso_country, "iso_region": iso_region, "municipality": municipality, "latitude_deg": latitude_deg, "longitude_deg": longitude_deg, "elevation_ft": elevation_ft, "source": "manual", "active": active, "closed": closed, "data_quality": "manual"})
-                    st.success("Letiště uloženo.")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(str(exc))
-
+        with st.form("airport_upsert_form"):
+            a1, a2, a3 = st.columns(3)
+            with a1:
+                ident = st.text_input("Ident", value="").upper()
+                name = st.text_input("Název", value="")
+                airport_type = st.selectbox("Typ", ["ultralight_field", "small_airport", "medium_airport", "large_airport", "heliport", "closed", "manual_field"], index=0)
+            with a2:
+                iso_country = st.text_input("Země", value="CZ").upper()
+                iso_region = st.text_input("Region", value="")
+                municipality = st.text_input("Obec", value="")
+            with a3:
+                latitude_deg = st.number_input("Latitude", value=50.0, format="%.6f")
+                longitude_deg = st.number_input("Longitude", value=14.0, format="%.6f")
+                elevation_ft = st.number_input("Elevation ft", value=0.0, format="%.0f")
+            active = st.checkbox("Aktivní", value=True)
+            closed = st.checkbox("Uzavřené", value=False)
+            submitted = st.form_submit_button("Uložit letiště / plochu", type="primary")
+        if submitted:
+            try:
+                upsert_airport_form({"ident": ident, "name": name, "airport_type": airport_type, "iso_country": iso_country, "iso_region": iso_region, "municipality": municipality, "latitude_deg": latitude_deg, "longitude_deg": longitude_deg, "elevation_ft": elevation_ft, "source": "manual", "active": active, "closed": closed, "data_quality": "manual"})
+                st.success("Letiště uloženo.")
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
     elif section == "Letadla":
         aircraft = read_table("aircraft", current_user_id())
         rates = read_rates(current_user_id())
@@ -4665,49 +4660,46 @@ def page_database():
             if not sub.empty:
                 picked_row = sub.iloc[0].to_dict()
 
-        if not is_admin():
-            st.info("Editace letadel je dostupná jen pro admina.")
-        else:
-            with st.form("aircraft_profile_form_v041"):
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    reg = st.text_input("Imatrikulace", value=str(picked_row.get("registration") or "")).upper()
-                    typ = st.text_input("Typ", value=str(picked_row.get("aircraft_type") or ""))
-                    icao_type = st.text_input("ICAO typ", value=str(picked_row.get("icao_type") or picked_row.get("aircraft_type") or ""))
-                with c2:
-                    ev_def = normalize_text(picked_row.get("evidence")) or evidence_from_registration(reg)
-                    evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0)
-                    class_def = normalize_text(picked_row.get("aircraft_class")) or default_class_for(evidence)
-                    aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(class_def) if class_def in CLASS_OPTIONS else 0)
-                    role_def = _clean_role(picked_row.get("default_role"))
-                    default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0)
-                with c3:
-                    price = st.number_input("Výchozí Kč/h", min_value=0.0, step=50.0, value=float(picked_row.get("default_price_per_hour") or 0))
-                    basis_def = _normalize_billing_basis(picked_row.get("billing_basis"))
-                    billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
-                    active = st.checkbox("Aktivní", value=bool(_bool_to_int(picked_row.get("active"), 1)))
-                note = st.text_input("Poznámka", value=str(picked_row.get("note") or ""))
-                sync_rate = st.checkbox("Zapsat cenu také do ceníku od dnešního dne", value=False)
-                submitted_aircraft = st.form_submit_button("Uložit letadlo", type="primary", use_container_width=True)
-            if submitted_aircraft:
-                try:
-                    upsert_aircraft_profile({
-                        "registration": reg,
-                        "aircraft_type": typ,
-                        "icao_type": icao_type,
-                        "aircraft_class": aircraft_class,
-                        "evidence": evidence,
-                        "default_price_per_hour": price,
-                        "default_role": default_role,
-                        "billing_basis": billing_basis,
-                        "active": active,
-                        "note": note,
-                        "sync_rate": sync_rate,
-                    })
-                    st.success("Letadlo uloženo.")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(str(exc))
+        with st.form("aircraft_profile_form_v041"):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                reg = st.text_input("Imatrikulace", value=str(picked_row.get("registration") or "")).upper()
+                typ = st.text_input("Typ", value=str(picked_row.get("aircraft_type") or ""))
+                icao_type = st.text_input("ICAO typ", value=str(picked_row.get("icao_type") or picked_row.get("aircraft_type") or ""))
+            with c2:
+                ev_def = normalize_text(picked_row.get("evidence")) or evidence_from_registration(reg)
+                evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0)
+                class_def = normalize_text(picked_row.get("aircraft_class")) or default_class_for(evidence)
+                aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(class_def) if class_def in CLASS_OPTIONS else 0)
+                role_def = _clean_role(picked_row.get("default_role"))
+                default_role = st.selectbox("Výchozí role", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0)
+            with c3:
+                price = st.number_input("Výchozí Kč/h", min_value=0.0, step=50.0, value=float(picked_row.get("default_price_per_hour") or 0))
+                basis_def = _normalize_billing_basis(picked_row.get("billing_basis"))
+                billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
+                active = st.checkbox("Aktivní", value=bool(_bool_to_int(picked_row.get("active"), 1)))
+            note = st.text_input("Poznámka", value=str(picked_row.get("note") or ""))
+            sync_rate = st.checkbox("Zapsat cenu také do ceníku od dnešního dne", value=False)
+            submitted_aircraft = st.form_submit_button("Uložit letadlo", type="primary", use_container_width=True)
+        if submitted_aircraft:
+            try:
+                upsert_aircraft_profile({
+                    "registration": reg,
+                    "aircraft_type": typ,
+                    "icao_type": icao_type,
+                    "aircraft_class": aircraft_class,
+                    "evidence": evidence,
+                    "default_price_per_hour": price,
+                    "default_role": default_role,
+                    "billing_basis": billing_basis,
+                    "active": active,
+                    "note": note,
+                    "sync_rate": sync_rate,
+                })
+                st.success("Letadlo uloženo.")
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
 
         st.markdown("### Přehled letadel")
         f1, f2 = st.columns([1, 2])
@@ -4733,7 +4725,7 @@ def page_database():
             hide_index=True,
             use_container_width=True,
             num_rows="dynamic",
-            disabled=["ID"] if is_admin() else display.columns.tolist(),
+            disabled=["ID"],
             height=430,
             key="aircraft_editor_v041",
             column_config={
@@ -4745,11 +4737,10 @@ def page_database():
                 "Účtovat podle": st.column_config.SelectboxColumn(options=BILLING_BASIS_OPTIONS),
             },
         )
-        if st.button("Uložit tabulku letadel", type="primary", disabled=not is_admin(), key="save_aircraft_table_v041"):
-            if require_admin():
-                save_aircraft_editor(edited)
-                st.success("Letadla uložena.")
-                st.rerun()
+        if st.button("Uložit tabulku letadel", type="primary", key="save_aircraft_table_v041"):
+            save_aircraft_editor(edited)
+            st.success("Letadla uložena.")
+            st.rerun()
 
     elif section == "Ceník":
         render_rates_editor(read_rates(current_user_id()), key_prefix="database_rates")
@@ -5467,6 +5458,225 @@ def page_export(df: pd.DataFrame):
 
 
 
+
+def read_admin_user_overview() -> pd.DataFrame:
+    """Small global overview used only by the persistent admin console."""
+    with connect() as con:
+        return pd.read_sql_query(
+            """
+            SELECT
+                u.id,
+                u.display_name,
+                u.email,
+                COALESCE(u.role, 'user') AS role,
+                u.active,
+                u.created_at,
+                c.last_login_at,
+                (SELECT COUNT(*) FROM flights f WHERE f.user_id = u.id) AS flights,
+                (SELECT COUNT(*) FROM aircraft a WHERE a.user_id = u.id) AS aircraft,
+                (SELECT COUNT(*) FROM airports ap WHERE ap.user_id = u.id) AS custom_airports,
+                (SELECT COUNT(*) FROM flight_tracks t WHERE t.user_id = u.id) AS tracks,
+                (SELECT COUNT(*) FROM track_points p WHERE p.user_id = u.id) AS gps_points
+            FROM users u
+            LEFT JOIN user_credentials c ON c.user_id = u.id
+            ORDER BY u.id
+            """,
+            con,
+        )
+
+
+def _admin_global_counts() -> dict[str, int]:
+    with connect() as con:
+        def count(table: str) -> int:
+            try:
+                return int(con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+            except sqlite3.DatabaseError:
+                return 0
+        return {
+            "users": count("users"),
+            "flights": count("flights"),
+            "tracks": count("flight_tracks"),
+            "points": count("track_points"),
+        }
+
+
+def page_admin() -> None:
+    if not require_admin():
+        return
+
+    st.markdown("## Admin")
+    st.caption("Správa celé aplikace. Běžní uživatelé tuto stránku nevidí.")
+    section = st.radio(
+        "Admin sekce",
+        ["Přehled", "Uživatelé", "Záloha", "Servis", "Meta"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="admin_section_v057",
+    )
+
+    if section == "Přehled":
+        users = read_admin_user_overview()
+        counts = _admin_global_counts()
+        active_users = int(pd.to_numeric(users.get("active", pd.Series(dtype=int)), errors="coerce").fillna(0).eq(1).sum()) if not users.empty else 0
+        admins = int(users.get("role", pd.Series(dtype=str)).fillna("user").astype(str).str.lower().eq("admin").sum()) if not users.empty else 0
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: metric_card("Uživatelé", str(counts["users"]), f"{active_users} aktivních")
+        with c2: metric_card("Lety", str(counts["flights"]), "všechny profily")
+        with c3: metric_card("GPS tracky", str(counts["tracks"]), f"{counts['points']:,} bodů".replace(",", " "))
+        with c4: metric_card("Správci", str(admins), f"schema {DB_SCHEMA_VERSION}")
+        db_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
+        st.caption(f"Aplikace {APP_VERSION} · databáze {db_size / (1024 * 1024):.1f} MB · SQLite schema {DB_SCHEMA_VERSION}")
+        if not users.empty:
+            show = users.rename(columns={
+                "id":"ID", "display_name":"Jméno", "email":"E-mail", "role":"Role", "active":"Aktivní",
+                "created_at":"Vytvořen", "last_login_at":"Poslední přihlášení", "flights":"Lety",
+                "aircraft":"Letadla", "custom_airports":"Vlastní letiště", "tracks":"Tracky", "gps_points":"GPS body",
+            })
+            st.dataframe(show, hide_index=True, use_container_width=True, height=420)
+
+    elif section == "Uživatelé":
+        st.markdown("### Vytvořit nový profil")
+        st.caption("Tímto lze vytvořit testovací běžný účet i když je veřejná registrace vypnutá.")
+        with st.form("admin_create_user_v057"):
+            c1, c2 = st.columns(2)
+            with c1:
+                display_name = st.text_input("Jméno")
+                email = st.text_input("E-mail")
+            with c2:
+                password = st.text_input(f"Dočasné heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
+                role_label = st.selectbox("Role", ["Uživatel", "Správce"], index=0)
+            create_submitted = st.form_submit_button("Vytvořit profil", type="primary", use_container_width=True)
+        if create_submitted:
+            role = "admin" if role_label == "Správce" else "user"
+            with connect() as con:
+                result = register_user(con, email=email, display_name=display_name, password=password, role=role)
+                if result.ok:
+                    record_audit(con, "admin_create_user", "user", result.user_id, {"email": str(email).strip().lower(), "role": role})
+                    con.commit()
+            if result.ok:
+                read_user_profile.clear()
+                auto_backup_after_change("admin_create_user")
+                st.success(f"Profil vytvořen. User ID {result.user_id}.")
+                st.rerun()
+            else:
+                st.error(result.error or "Profil se nepodařilo vytvořit.")
+
+        users = read_admin_user_overview()
+        st.markdown("### Správa profilů")
+        if users.empty:
+            st.info("Nejsou žádní uživatelé.")
+            return
+        option_ids = users["id"].astype(int).tolist()
+        def user_label(uid: int) -> str:
+            row = users[users["id"].eq(uid)].iloc[0]
+            role_text = "admin" if str(row.get("role") or "user").lower() == "admin" else "user"
+            active_text = "aktivní" if int(row.get("active") or 0) == 1 else "deaktivovaný"
+            return f"#{uid} · {row.get('display_name') or '—'} · {row.get('email') or '—'} · {role_text} · {active_text}"
+        selected_uid = int(st.selectbox("Profil", option_ids, format_func=user_label, key="admin_user_pick_v057"))
+        selected = users[users["id"].eq(selected_uid)].iloc[0]
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: metric_card("Lety", str(int(selected.get("flights") or 0)), "")
+        with c2: metric_card("Letadla", str(int(selected.get("aircraft") or 0)), "")
+        with c3: metric_card("Vlastní letiště", str(int(selected.get("custom_airports") or 0)), "")
+        with c4: metric_card("Tracky", str(int(selected.get("tracks") or 0)), "")
+
+        with st.form("admin_user_state_v057"):
+            role_value = "Správce" if str(selected.get("role") or "user").lower() == "admin" else "Uživatel"
+            role_new = st.selectbox("Role profilu", ["Uživatel", "Správce"], index=1 if role_value == "Správce" else 0)
+            active_new = st.checkbox("Aktivní účet", value=bool(int(selected.get("active") or 0)))
+            save_user_state = st.form_submit_button("Uložit oprávnění", use_container_width=True)
+        if save_user_state:
+            if selected_uid == current_user_id() and (not active_new or role_new != "Správce"):
+                st.error("Nemůžeš si během aktuální relace odebrat vlastní administrátorský přístup nebo deaktivovat účet.")
+            else:
+                with connect() as con:
+                    role_result = set_user_role(con, user_id=selected_uid, role="admin" if role_new == "Správce" else "user")
+                    active_result = set_user_active(con, user_id=selected_uid, active=active_new)
+                    if role_result.ok and active_result.ok:
+                        record_audit(con, "admin_update_user", "user", selected_uid, {"role": role_new, "active": active_new})
+                        con.commit()
+                if role_result.ok and active_result.ok:
+                    read_user_profile.clear()
+                    auto_backup_after_change("admin_update_user")
+                    st.success("Oprávnění uživatele byla uložena.")
+                    st.rerun()
+                else:
+                    st.error(role_result.error or active_result.error or "Změna se nepodařila.")
+
+        st.markdown("#### Nastavit nové heslo")
+        with st.form("admin_reset_user_password_v057"):
+            new_password = st.text_input(f"Nové heslo pro #{selected_uid}", type="password")
+            reset_password = st.form_submit_button("Nastavit nové heslo", use_container_width=True)
+        if reset_password:
+            with connect() as con:
+                result = admin_set_user_password(con, user_id=selected_uid, new_password=new_password)
+                if result.ok:
+                    record_audit(con, "admin_reset_password", "user", selected_uid)
+                    con.commit()
+            if result.ok:
+                auto_backup_after_change("admin_reset_password")
+                st.success("Nové heslo bylo nastaveno.")
+            else:
+                st.error(result.error or "Heslo se nepodařilo změnit.")
+
+    elif section == "Záloha":
+        metas = read_table("app_meta")
+        st.markdown("### SQLite + GitHub backup")
+        dirty = last_change = last_backup = ""
+        if not metas.empty:
+            md = dict(zip(metas["key"], metas["value"]))
+            dirty = md.get("dirty", "")
+            last_change = md.get("last_change_at", "")
+            last_backup = md.get("last_github_backup_at", "")
+        b1, b2, b3 = st.columns(3)
+        with b1: metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
+        with b2: metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
+        with b3: metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
+        if github_auto_backup_enabled():
+            st.success("Automatická GitHub záloha je zapnutá.")
+        elif github_backup_configured():
+            st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá.")
+        else:
+            st.warning("GitHub backup není nakonfigurovaný.")
+        if DB_PATH.exists():
+            with open(DB_PATH, "rb") as f:
+                st.download_button("Stáhnout celou SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+        if github_backup_configured():
+            if st.button("Uložit aktuální databázi na GitHub", type="primary", use_container_width=True, key="admin_backup_now_v057"):
+                try:
+                    url = backup_database_to_github()
+                    st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
+                except Exception as exc:
+                    st.error(f"Backup selhal: {exc}")
+        st.markdown("#### Obnova celé databáze")
+        restore = st.file_uploader("SQLite databáze", type=["sqlite", "db"], key="admin_restore_db_v057")
+        confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="", key="admin_restore_confirm_v057")
+        if restore is not None and st.button("Obnovit databázi", disabled=confirm != "OBNOVIT", use_container_width=True, key="admin_restore_btn_v057"):
+            try:
+                restore_database_from_upload(restore)
+                st.success("Databáze obnovena.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Obnova selhala: {exc}")
+
+    elif section == "Servis":
+        render_database_control_panel()
+
+    elif section == "Meta":
+        st.markdown("### Metadata aplikace")
+        metas = read_table("app_meta")
+        if metas.empty:
+            st.info("Žádná metadata.")
+        else:
+            st.dataframe(metas.sort_values("key"), hide_index=True, use_container_width=True)
+        st.markdown("### Poslední auditní události napříč profily")
+        with connect() as con:
+            audits = pd.read_sql_query("SELECT * FROM audit_log ORDER BY id DESC LIMIT 500", con)
+        if audits.empty:
+            st.info("Žádný audit log.")
+        else:
+            st.dataframe(audits, hide_index=True, use_container_width=True, height=420)
+
 def page_profile() -> None:
     uid = current_user_id()
     profile = read_user_profile(uid)
@@ -5538,6 +5748,7 @@ def page_profile() -> None:
     st.markdown("### Účet")
     st.write(f"**User ID:** {uid}")
     st.write(f"**E-mail:** {profile.get('email') or '—'}")
+    st.write(f"**Role:** {'Správce' if str(profile.get('role') or 'user').lower() == 'admin' else 'Uživatel'}")
     if uid == DEFAULT_USER_ID:
         st.info("Toto je původní profil. Všechny lety existující před zavedením účtů jsou přiřazené právě tomuto profilu.")
 
@@ -5761,7 +5972,6 @@ def main():
         st.markdown(f'<div class="sidebar-version">{APP_VERSION}</div>', unsafe_allow_html=True)
         render_sidebar_nav()
         render_user_sidebar()
-        render_auth_sidebar()
     apply_ui_theme(dark_mode)
     render_sidebar_toggle()
     render_page_transition_runtime()
@@ -5791,6 +6001,12 @@ def main():
         page_export(read_flights(current_user_id()))
     elif page == "Profil":
         page_profile()
+    elif page == "Admin":
+        if is_admin():
+            page_admin()
+        else:
+            st.session_state["page"] = "Dashboard"
+            st.rerun()
     render_page_loaded_signal()
 
 if __name__ == "__main__":

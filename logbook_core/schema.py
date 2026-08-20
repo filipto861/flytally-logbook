@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT,
     display_name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'user',
     active INTEGER DEFAULT 1,
     created_at TEXT,
     updated_at TEXT

@@ -86,6 +86,13 @@ def verify_password(password: str, encoded: str) -> bool:
 
 def ensure_auth_schema(con: sqlite3.Connection) -> None:
     """Create authentication storage without changing ownership of existing data."""
+    # v0.57: persistent application roles. Existing owner (user ID 1) is
+    # always promoted to admin; all other accounts default to normal user.
+    columns = {str(row[1]) for row in con.execute("PRAGMA table_info(users)").fetchall()}
+    if "role" not in columns:
+        con.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
+    con.execute("UPDATE users SET role = 'user' WHERE role IS NULL OR role NOT IN ('admin', 'user')")
+    con.execute("UPDATE users SET role = 'admin' WHERE id = ?", (DEFAULT_USER_ID,))
     con.execute(
         """
         CREATE TABLE IF NOT EXISTS user_credentials (
@@ -203,9 +210,13 @@ def register_user(
     email: str,
     display_name: str,
     password: str,
+    role: str = "user",
 ) -> AuthResult:
     clean_email = normalize_email(email)
     clean_name = str(display_name or "").strip()
+    clean_role = str(role or "user").strip().lower()
+    if clean_role not in {"admin", "user"}:
+        clean_role = "user"
     if not clean_name:
         return AuthResult(False, error="Vyplňte jméno profilu.")
     if not email_is_valid(clean_email):
@@ -217,10 +228,10 @@ def register_user(
     try:
         cur = con.execute(
             """
-            INSERT INTO users (email, display_name, slug, active, created_at, updated_at)
-            VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            INSERT INTO users (email, display_name, slug, role, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
-            (clean_email, clean_name, _new_slug(clean_email)),
+            (clean_email, clean_name, _new_slug(clean_email), clean_role),
         )
         user_id = int(cur.lastrowid)
         con.execute(
@@ -266,5 +277,49 @@ def change_password(
         WHERE user_id = ?
         """,
         (hash_password(new_password), uid),
+    )
+    return AuthResult(True, user_id=uid)
+
+
+def set_user_active(con: sqlite3.Connection, *, user_id: int, active: bool) -> AuthResult:
+    uid = normalize_user_id(user_id)
+    if uid == DEFAULT_USER_ID and not active:
+        return AuthResult(False, error="Hlavní administrátorský účet nelze deaktivovat.")
+    row = con.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
+    if not row:
+        return AuthResult(False, error="Uživatel neexistuje.")
+    con.execute("UPDATE users SET active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (1 if active else 0, uid))
+    return AuthResult(True, user_id=uid)
+
+
+def set_user_role(con: sqlite3.Connection, *, user_id: int, role: str) -> AuthResult:
+    uid = normalize_user_id(user_id)
+    clean_role = str(role or "user").strip().lower()
+    if clean_role not in {"admin", "user"}:
+        return AuthResult(False, error="Neplatná role.")
+    if uid == DEFAULT_USER_ID and clean_role != "admin":
+        return AuthResult(False, error="Hlavní administrátorský účet musí zůstat admin.")
+    row = con.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
+    if not row:
+        return AuthResult(False, error="Uživatel neexistuje.")
+    con.execute("UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (clean_role, uid))
+    return AuthResult(True, user_id=uid)
+
+
+def admin_set_user_password(con: sqlite3.Connection, *, user_id: int, new_password: str) -> AuthResult:
+    uid = normalize_user_id(user_id)
+    if not password_is_valid(new_password):
+        return AuthResult(False, error=f"Nové heslo musí mít alespoň {PASSWORD_MIN_LENGTH} znaků.")
+    row = con.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
+    if not row:
+        return AuthResult(False, error="Uživatel neexistuje.")
+    con.execute(
+        """
+        INSERT INTO user_credentials (user_id, password_hash, created_at, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id) DO UPDATE SET
+            password_hash = excluded.password_hash, updated_at = CURRENT_TIMESTAMP
+        """,
+        (uid, hash_password(new_password)),
     )
     return AuthResult(True, user_id=uid)

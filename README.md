@@ -1,72 +1,52 @@
-# Logbook Streamlit
+# Letový zápisník
 
-Verze: **v0.56**
+Verze: **v0.57**
 
-## v0.56 – Authentication & Profiles
+## v0.57 – Roles & Admin Console
 
-v0.56 zapíná přihlášení a uživatelské profily nad multi-user základem z v0.55. Aplikace stále používá SQLite a současný GitHub backup. Ve výchozím nastavení je registrace dalších účtů **vypnutá**, takže aplikace zůstává zatím pouze pro původního uživatele.
+v0.57 dokončuje oddělení běžného uživatele a správce aplikace. Přihlášení z v0.56 zůstává, ale uživatel už nepotřebuje druhé admin heslo k práci se svými vlastními daty.
 
-### První spuštění – důležité
+### Role
 
-Původní profil je `user_id = 1`. **Všechny lety, letadla, ceny, custom letiště a GPS data existující před v0.56 zůstávají vlastnictvím tohoto profilu.**
+- `user_id = 1` je původní účet a je automaticky označen jako **admin**.
+- Všechny historické lety, tracky, letadla, ceník a custom letiště zůstávají beze změny vlastnictví u `user_id = 1`.
+- Nově vytvořený profil má standardně roli **user** a začíná s prázdným zápisníkem.
+- Role je uložena trvale v tabulce `users`, ne v dočasné session.
 
-Při prvním startu v0.56 se zobrazí `Aktivovat můj stávající profil`. Aktivace vyžaduje:
+### Co může běžný přihlášený uživatel
 
-- jméno,
-- e-mail,
-- nové uživatelské heslo,
-- současné `auth.admin_password` ze Streamlit Secrets.
+Bez dalšího hesla může spravovat pouze svoje vlastní:
 
-Po aktivaci se stávající data nepřesouvají ani nekopírují; profil 1 pouze získá přihlašovací údaje.
+- lety (přidat, editovat, smazat),
+- KML/GPS tracky,
+- letadla,
+- ceník,
+- custom letiště,
+- profil a heslo,
+- exporty.
 
-### Bezpečnost
+Databázové dotazy dál používají `user_id`, takže jeden profil nemůže upravovat data jiného profilu.
 
-- hesla nejsou ukládána v plaintextu,
-- používá se `scrypt` se samostatným náhodným saltem,
-- e-mail účtu je unikátní bez ohledu na velikost písmen,
-- neautentizovaný návštěvník se nedostane do aplikace ani k query parametrům detailu letu,
-- plná SQLite databáze je ke stažení pouze po samostatném přihlášení jako správce aplikace,
-- nové účty začínají s prázdným logbookem a všechny hlavní datové cesty zůstávají filtrovány podle `user_id`.
+### Admin menu
 
-### Registrace dalších uživatelů
+Admin má v levé navigaci novou položku **Admin**:
 
-Ve výchozím nastavení je vypnutá:
+- Přehled – uživatelé, lety, tracky, GPS body, verze DB,
+- Uživatelé – vytvoření profilu, role, aktivace/deaktivace a reset hesla,
+- Záloha – plná SQLite DB, GitHub backup a restore,
+- Servis – DB kontrola a SQLite servis,
+- Meta – globální metadata a audit log.
 
-```toml
-[auth]
-admin_password = "..."
-allow_registration = false
-```
-
-Až bude aplikace připravená pro další piloty, lze dočasně nastavit `allow_registration = true`. Před skutečným veřejným multi-user provozem je stále plánovaný přesun z SQLite/GitHub backupu na PostgreSQL a doplnění ověřování e-mailu/resetu hesla.
-
-### Profil
-
-Nová stránka `Profil` umožňuje spravovat:
-
-- zobrazované jméno,
-- časové pásmo,
-- měnu,
-- domovské letiště,
-- výchozí funkci v letu,
-- změnu hesla.
+Veřejná registrace může zůstat vypnutá (`allow_registration = false`). Admin přesto může vytvořit testovací běžný profil přímo v Admin → Uživatelé.
 
 ### Databáze
 
-Schéma: **7**. Nová tabulka `user_credentials` obsahuje pouze hash hesla a metadata přihlášení. Ownership dat z v0.55 se nemění.
+- SQLite zůstává zachována.
+- GitHub auto-backup zůstává zachován.
+- `DB_SCHEMA_VERSION = 8`.
+- Přidává se `users.role` (`admin` / `user`).
+- Release ZIP neobsahuje `data/logbook.sqlite`.
 
-### GitHub backup
+## Další směr
 
-Zůstává zachován podle požadavku. Protože DB od v0.56 obsahuje i e-mail a hash hesla, repozitář musí zůstat **private**. Release ZIP jako dříve neobsahuje `data/logbook.sqlite`.
-
-## Testy
-
-Součástí release jsou testy autentizace, aktivace původního profilu, změny hesla, registrace odděleného uživatele, tenancy migrace, core výpočtů a GPS Map Engine 2.0.
-
-## Další plán
-
-1. produkčně ověřit aktivaci profilu 1 a login,
-2. doplnit bezpečné resetování/ověření e-mailu,
-3. abstrahovat persistence vrstvu,
-4. PostgreSQL/Supabase,
-5. poté povolit reálný multi-user provoz.
+Až bude víceuživatelské chování ověřené, lze později přejít ze SQLite/GitHub persistence na PostgreSQL bez změny základního ownership modelu.
