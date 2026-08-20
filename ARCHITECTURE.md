@@ -1,56 +1,66 @@
-# Logbook architecture — v0.59
+# Logbook architecture — v0.60
 
-## Tenant boundary
+## Smart KML layer
 
-Každý uživatelský záznam je vlastněn pomocí `user_id`. Uživatelsky scoped tabulky jsou:
+Nový modul `logbook_core/smart_import.py` je analytická vrstva mezi KML parserem a uložením letu.
 
-- `flights`
-- `aircraft`
-- `rates`
-- `airports`
-- `flight_tracks`
-- `track_points`
-- `audit_log`
+Parser `logbook_core.tracks.parse_kml_bytes()` zůstává odpovědný pouze za převod souboru na normalizované GPS body. Smart Import nad body provádí vyšší analýzu a nikdy nemění původní data bez explicitní volby uživatele.
 
-Globální katalog letišť `data/airports_full.sqlite` je read-only a společný pro všechny profily. Lokální/custom letiště jsou uživatelská.
+## Analýza letových úseků
 
-## Strict identity
+`analyze_track()` využívá:
 
-`logbook_core.permissions.strict_user_id()` je bezpečnostní hranice pro runtime operace. Na rozdíl od migračního `normalize_user_id()` nikdy nepoužije fallback na `user_id = 1` při chybějícím nebo neplatném ID.
+- GPS groundspeed a jeho vyhlazenou hodnotu,
+- časové značky,
+- výšku jako doplňkový signál,
+- délku letových úseků,
+- dobu nízké rychlosti / zastavení,
+- časové mezery mezi body.
 
-Migrační kód smí explicitně používat legacy owner #1. Běžné runtime read/write operace musí mít platný přihlášený účet.
+Výstup obsahuje:
 
-## Object ownership
+- `flight_count`,
+- `split_candidates`,
+- `touch_and_go_events`,
+- `touch_and_go_count`,
+- `landing_count`,
+- `anomalies`.
 
-`require_owned_record()` ověřuje vlastnictví před destruktivní nebo editační operací. v0.59 jej používá minimálně pro:
+## Split candidates
 
-- editaci letu,
-- smazání letu,
-- uložení tracku k letu,
-- smazání tracku.
+Rozdělení tracku je konzervativní návrh. Full-stop kandidát typicky vyžaduje dva věrohodné letové úseky a mezi nimi alespoň jeden z těchto signálů:
 
-SQL zápisy zároveň stále používají `WHERE ... AND user_id = ?` jako druhou ochrannou vrstvu.
+- delší pozemní mezera,
+- několik sekund velmi nízké rychlosti / úplné zastavení,
+- výrazná mezera v časových značkách.
 
-## User settings
+`split_track_points()` původní body pouze rozdělí do částí; body nemaže a zachovává jejich pořadí.
 
-`user_settings` zůstává tabulka 1:1 k `users` a ukládá:
+## Touch-and-go
 
-- timezone,
-- currency,
-- home_airport,
-- default_role,
-- preferences_json.
+Krátký pozemní přechod bez úplného zastavení se klasifikuje jako touch-and-go místo samostatného letu. Druhý detektor hledá lokální minimum výšky mezi sestupem a následným stoupáním při zachované rychlosti.
 
-`preferences_json` v0.59 obsahuje `default_evidence`. Tento formát umožní přidávat další lehká UX nastavení bez zbytečných DB migrací.
+Detekovaný počet se používá pouze jako výchozí hodnota pole `starts`; uživatel jej může změnit.
 
-## Authentication
+## Import workflow
 
-Hesla jsou uložena pouze jako salted scrypt hash v `user_credentials`. Změna e-mailu vyžaduje potvrzení současným heslem. Role `admin/user` je persistentní v tabulce `users`.
+Pro navržené rozdělení funguje import jako sekvenční wizard:
 
-## Admin security health
+1. uživatel zvolí rozdělení nebo import jednoho letu,
+2. případně upraví split index,
+3. zkontroluje první část a uloží ji,
+4. split body se uzamknou,
+5. pokračuje další částí,
+6. každý díl dostane vlastní flight + track záznam.
 
-Admin konzole kontroluje integritu tenant vazeb a upozorní na cross-user vztahy mezi lety, tracky a GPS body. Tyto kontroly jsou diagnostické a samy data nemění.
+Tím se minimalizuje riziko, že po uložení prvního letu dojde ke změně dělicího bodu.
+
+## Security boundary
+
+Všechny nové lety a tracky stále používají `strict_user_id(current_user_id())` a stávající ownership kontroly z v0.59. Smart Import nijak neobchází tenant boundary.
 
 ## Persistence
 
-V této fázi zůstává SQLite + privátní GitHub backup. Při budoucím přechodu na PostgreSQL zůstane princip `user_id` a permission boundary zachován.
+- `DB_SCHEMA_VERSION = 8`
+- bez strukturální migrace,
+- SQLite + GitHub backup zůstává dočasným persistence modelem.

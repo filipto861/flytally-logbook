@@ -44,6 +44,7 @@ from logbook_core.tracks import (
     haversine_km, inferred_clock_times, normalize_track_points, parse_iso, parse_kml_bytes, point_local_date,
     point_local_dt, point_local_hhmm, profile_from_points, track_distance_km, track_stats,
 )
+from logbook_core.smart_import import analyze_track, split_track_points
 from logbook_core.exports import (
     _export_date_bounds, _export_prefix, build_print_html, export_excel, make_airport_summary,
     make_group_summary, make_logbook_export_df, make_route_summary, make_summary_table,
@@ -1680,7 +1681,13 @@ def default_class_for(evidence: str) -> str:
     return "ULL" if evidence == "ULL" else "SEP"
 
 
-def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.DataFrame) -> dict[str, Any]:
+def infer_from_track(
+    points: list[dict[str, Any]],
+    file_name: str,
+    rates: pd.DataFrame,
+    *,
+    smart_analysis: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     idx = detect_takeoff_landing(points)
     stats = track_stats(points)
     reg = extract_registration_from_filename(file_name)
@@ -1703,7 +1710,7 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
         "takeoff": clock.get("takeoff"),
         "landing": clock.get("landing"),
         "on_block": clock.get("on_block"),
-        "starts": 1,
+        "starts": max(1, int((smart_analysis or {}).get("landing_count") or 1)),
         "commander": current_user_display_name(),
         "instructor": "",
         "role": current_user_default_role(),
@@ -3393,7 +3400,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             landing = st.text_input("Landing", value=str(defaults.get("landing") or ""), key=f"{prefix}_ldg")
             on_block = st.text_input("On Block", value=str(defaults.get("on_block") or ""), key=f"{prefix}_on")
         with col3:
-            starts = st.number_input("Starty", min_value=0, step=1, value=int(defaults.get("starts") or 1), key=f"{prefix}_starts")
+            starts = st.number_input("Starty / přistání", min_value=0, step=1, value=int(defaults.get("starts") or 1), key=f"{prefix}_starts")
             commander = st.text_input("Velitel", value=str(defaults.get("commander") or current_user_display_name()), key=f"{prefix}_cmd")
             instructor = st.text_input("Instruktor", value=str(defaults.get("instructor") or ""), key=f"{prefix}_instr")
             role_def = defaults.get("role") or "PIC"
@@ -3572,7 +3579,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 <div class="detail-kv-row"><span>Trasa</span><span>{_safe_text(row.get('departure')) or '—'} → {_safe_text(row.get('arrival')) or '—'}</span></div>
                 <div class="detail-kv-row"><span>Evidence</span><span>{_safe_text(row.get('evidence')) or '—'}</span></div>
                 <div class="detail-kv-row"><span>Funkce</span><span>{_safe_text(row.get('role')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Starty</span><span>{_safe_text(row.get('starts')) or '—'}</span></div>
+                <div class="detail-kv-row"><span>Starty / přistání</span><span>{_safe_text(row.get('starts')) or '—'}</span></div>
               </div>
               <div class="detail-kv">
                 <div class="detail-kv-title">Časy a posádka</div>
@@ -3646,6 +3653,14 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 points = parse_kml_bytes(uploaded.read())
                 if len(points) >= 2:
                     stats = track_stats(points)
+                    smart_attach = analyze_track(points, current_user_timezone())
+                    if int(smart_attach.get("flight_count") or 1) > 1:
+                        st.warning(
+                            f"Smart KML v tomto souboru vidí {int(smart_attach.get('flight_count') or 1)} možné lety. "
+                            "Při připojení k existujícímu letu se track uloží jako jeden celek; pro rozdělení použij Nový let → KML import."
+                        )
+                    if int(smart_attach.get("touch_and_go_count") or 0):
+                        st.info(f"Detekováno touch-and-go: {int(smart_attach.get('touch_and_go_count') or 0)}.")
                     point_count = len(points)
                     distance_km = _safe_float(stats.get("distance_km"), 0)
                     start_utc = _safe_text(points[0].get("time")) or "—"
@@ -3996,6 +4011,9 @@ def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFr
 
 def page_logbook(df: pd.DataFrame, dark_mode: bool):
     st.markdown("## Lety")
+    notice = st.session_state.pop("_post_import_notice", None)
+    if notice:
+        st.success(str(notice))
     filtered = apply_logbook_filters_v2(df)
     s = build_summary(filtered)
     c1, c2, c3, c4 = st.columns(4)
@@ -4010,6 +4028,267 @@ def page_logbook(df: pd.DataFrame, dark_mode: bool):
 
     render_flight_list(filtered.reset_index(drop=True), dark_mode)
 
+
+def _smart_import_signature(raw: bytes, file_name: str) -> str:
+    digest = hashlib.sha1(raw).hexdigest()[:12]
+    safe = re.sub(r"[^a-zA-Z0-9]+", "_", str(file_name or "track"))[:30]
+    return f"{safe}_{digest}"
+
+
+def _smart_event_local_time(points: list[dict[str, Any]], idx: int) -> str:
+    if not points:
+        return "—"
+    idx = max(0, min(int(idx), len(points) - 1))
+    dt = parse_iso(points[idx].get("time"))
+    if not dt:
+        return f"bod {idx + 1}"
+    return dt.astimezone(current_user_timezone()).strftime("%H:%M:%S")
+
+
+def _smart_part_filename(file_name: str, part_no: int, total: int) -> str:
+    text = str(file_name or "track.kml")
+    if text.lower().endswith(".kml"):
+        return f"{text[:-4]}__part{part_no}-of-{total}.kml"
+    return f"{text}__part{part_no}-of-{total}.kml"
+
+
+def make_smart_split_preview_map(parts: list[list[dict[str, Any]]], dark_mode: bool = True) -> folium.Map:
+    import folium
+
+    all_coords: list[tuple[float, float]] = []
+    clean_parts: list[list[dict[str, Any]]] = []
+    for part in parts:
+        simplified = simplify_track_points(normalize_track_points(part), max_points=360)
+        coords = [(float(p["lat"]), float(p["lon"])) for p in simplified if p.get("lat") is not None and p.get("lon") is not None]
+        if len(coords) >= 2:
+            all_coords.extend(coords)
+            clean_parts.append(simplified)
+    viewport = viewport_from_coords(all_coords, profile="track") if all_coords else viewport_from_coords([], profile="track")
+    tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
+    m = folium.Map(location=[viewport.center[0], viewport.center[1]], zoom_start=viewport.zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
+    colors = ["#38bdf8", "#f59e0b", "#a78bfa", "#22c55e", "#f43f5e"]
+    for i, simplified in enumerate(clean_parts):
+        coords = [(float(p["lat"]), float(p["lon"])) for p in simplified]
+        color = colors[i % len(colors)]
+        folium.PolyLine(coords, color=color, weight=4, opacity=.9, tooltip=f"Navržený let {i + 1}").add_to(m)
+        folium.CircleMarker(coords[0], radius=4, color=color, fill=True, fill_opacity=.95, tooltip=f"Let {i + 1} – začátek").add_to(m)
+        folium.CircleMarker(coords[-1], radius=4, color=color, fill=True, fill_opacity=.95, tooltip=f"Let {i + 1} – konec").add_to(m)
+    return m
+
+
+def render_smart_kml_analysis(
+    analysis: dict[str, Any],
+    points: list[dict[str, Any]],
+    *,
+    signature: str,
+    dark_mode: bool,
+) -> tuple[str, list[int]]:
+    """Render Smart KML findings and return chosen mode + split indices.
+
+    mode is either ``single`` or ``split``.  The user always has the final word;
+    automatic detection is only a proposal.
+    """
+    split_candidates = list(analysis.get("split_candidates") or [])
+    touch_count = int(analysis.get("touch_and_go_count") or 0)
+    landing_count = int(analysis.get("landing_count") or 1)
+    anomalies = list(analysis.get("anomalies") or [])
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        metric_card("Smart KML", f"{int(analysis.get('flight_count') or 1)}", "navržených letů")
+    with c2:
+        metric_card("Touch-and-go", str(touch_count), "detekováno")
+    with c3:
+        metric_card("Přistání / starty", str(landing_count), "automatický návrh")
+
+    if touch_count:
+        st.success(
+            f"Detekováno {touch_count} pravděpodobných touch-and-go. "
+            f"Počet startů/přistání bude předvyplněn na {landing_count}. Hodnotu můžeš ve formuláři kdykoliv změnit."
+        )
+        with st.expander("Detaily touch-and-go", expanded=False):
+            for n, event in enumerate(analysis.get("touch_and_go_events") or [], start=1):
+                when = _smart_event_local_time(points, int(event.get("index") or 0))
+                st.markdown(f"**{n}. {when}** · {event.get('label') or 'Touch-and-go'}")
+                if event.get("detail"):
+                    st.caption(str(event.get("detail")))
+
+    if anomalies:
+        with st.expander(f"Kontrola kvality tracku · {len(anomalies)} upozornění", expanded=False):
+            for event in anomalies[:12]:
+                when = _smart_event_local_time(points, int(event.get("index") or 0))
+                st.warning(f"{event.get('label') or 'Upozornění'} · {when} · {event.get('detail') or ''}")
+            if len(anomalies) > 12:
+                st.caption(f"Dalších {len(anomalies) - 12} upozornění není zobrazeno.")
+
+    if not split_candidates:
+        return "single", []
+
+    proposed_count = len(split_candidates) + 1
+    st.warning(
+        f"Track pravděpodobně obsahuje **{proposed_count} samostatné lety**. "
+        "Detekce je pouze návrh – pokud je chybná, můžeš track bez omezení uložit jako jeden let."
+    )
+    adjusted: list[int] = []
+    locked_key = f"smart_import_locked_splits_{signature}"
+    progress_key = f"smart_import_progress_{signature}"
+    locked = st.session_state.get(locked_key)
+    progress = int(st.session_state.get(progress_key, 0) or 0)
+    if progress > 0 or (isinstance(locked, list) and locked):
+        mode_label = "Rozdělit podle návrhu"
+        st.info("Rozdělený import už probíhá. Dokonči zbývající části; původní track tím zůstane konzistentní.")
+    else:
+        mode_label = st.radio(
+            "Jak chceš track importovat?",
+            ["Rozdělit podle návrhu", "Nahrát jako jeden let"],
+            horizontal=True,
+            key=f"smart_import_mode_{signature}",
+        )
+    if mode_label == "Nahrát jako jeden let":
+        return "single", []
+    if isinstance(locked, list) and locked:
+        adjusted = [int(x) for x in locked]
+        st.info("Body rozdělení jsou po uložení prvního dílu uzamčené, aby oba záznamy používaly stejný track.")
+    else:
+        st.caption("Bod rozdělení můžeš před uložením ručně posunout. Čas vedle posuvníku ukazuje aktuální zvolenou pozici.")
+        for i, event in enumerate(split_candidates, start=1):
+            proposed = max(1, min(len(points) - 2, int(event.get("index") or 1)))
+            chosen = st.slider(
+                f"Rozdělení {i}",
+                min_value=1,
+                max_value=max(1, len(points) - 2),
+                value=proposed,
+                step=1,
+                key=f"smart_split_slider_{signature}_{i}",
+            )
+            adjusted.append(int(chosen))
+            when = _smart_event_local_time(points, int(chosen))
+            confidence = str(event.get("confidence") or "medium")
+            duration = event.get("duration_seconds")
+            duration_text = f" · mezera {float(duration):.0f} s" if duration is not None else ""
+            st.caption(f"Navržený čas: **{when}** · jistota {confidence}{duration_text} · {event.get('detail') or ''}")
+
+    adjusted = sorted({max(1, min(len(points) - 2, int(x))) for x in adjusted})
+    parts = split_track_points(points, adjusted)
+    if len(parts) >= 2:
+        render_folium_readonly(
+            make_smart_split_preview_map(parts, dark_mode),
+            height=390,
+            key=f"smart_split_map_{signature}_{'_'.join(str(x) for x in adjusted)}_{progress}",
+        )
+        summary_cols = st.columns(min(4, len(parts)))
+        for i, part in enumerate(parts[:4]):
+            part_stats = track_stats(part)
+            part_analysis = analyze_track(part, current_user_timezone())
+            part_idx = detect_takeoff_landing(part)
+            part_times = inferred_clock_times(part, part_idx, block_padding_minutes=5, tz=current_user_timezone())
+            with summary_cols[i]:
+                metric_card(
+                    f"Let {i + 1}",
+                    f"{part_times.get('takeoff') or '—'}–{part_times.get('landing') or '—'}",
+                    f"{float(part_stats.get('distance_km') or 0):.1f} km · přistání {int(part_analysis.get('landing_count') or 1)}",
+                )
+    return "split", adjusted
+
+
+def _clear_smart_import_progress(signature: str) -> None:
+    for key in (
+        f"smart_import_progress_{signature}",
+        f"smart_import_created_{signature}",
+        f"smart_import_locked_splits_{signature}",
+    ):
+        st.session_state.pop(key, None)
+
+
+def render_split_kml_import_wizard(
+    *,
+    raw: bytes,
+    file_name: str,
+    points: list[dict[str, Any]],
+    split_indices: list[int],
+    rates: pd.DataFrame,
+    dark_mode: bool,
+    signature: str,
+) -> None:
+    """Sequentially review and save every proposed flight segment."""
+    progress_key = f"smart_import_progress_{signature}"
+    created_key = f"smart_import_created_{signature}"
+    locked_key = f"smart_import_locked_splits_{signature}"
+    locked = st.session_state.get(locked_key)
+    effective_splits = [int(x) for x in locked] if isinstance(locked, list) and locked else [int(x) for x in split_indices]
+    parts = split_track_points(points, effective_splits)
+    if len(parts) < 2:
+        st.error("Track se podle zvolených bodů nepodařilo rozdělit na použitelné části.")
+        return
+
+    progress = max(0, min(int(st.session_state.get(progress_key, 0) or 0), len(parts) - 1))
+    created_ids = list(st.session_state.get(created_key) or [])
+    current = parts[progress]
+    current_analysis = analyze_track(current, current_user_timezone())
+    current_name = _smart_part_filename(file_name, progress + 1, len(parts))
+    defaults = infer_from_track(current, current_name, rates, smart_analysis=current_analysis)
+    stats = defaults.pop("stats")
+    defaults.pop("detect_idx", None)
+    has_clock = defaults.pop("has_clock", False)
+
+    st.markdown(f"### Rozdělený import · let {progress + 1} z {len(parts)}")
+    if created_ids:
+        st.caption("Již uložené lety: " + ", ".join(f"ID {x}" for x in created_ids))
+    render_kml_import_header(raw, current_name, defaults, stats, has_clock)
+
+    preview_df = pd.DataFrame([{
+        "id": -(progress + 1),
+        "flight_id": -(progress + 1),
+        "coordinates_json": json.dumps(current),
+        "file_name": current_name,
+        "distance_km": stats["distance_km"],
+        "date": defaults.get("date"),
+        "registration": defaults.get("registration"),
+        "departure": defaults.get("departure"),
+        "arrival": defaults.get("arrival"),
+        "role": defaults.get("role"),
+        "evidence": defaults.get("evidence"),
+    }])
+    render_folium_readonly(
+        make_map(preview_df, dark_mode),
+        height=360,
+        key=f"split_part_preview_{signature}_{progress}_{len(current)}",
+    )
+    if int(current_analysis.get("touch_and_go_count") or 0):
+        st.info(
+            f"V tomto dílu Smart KML detekoval {int(current_analysis.get('touch_and_go_count') or 0)} touch-and-go; "
+            f"počet startů/přistání je předvyplněn na {int(current_analysis.get('landing_count') or 1)}."
+        )
+
+    saved = flight_form(
+        f"new_split_{signature}_{progress}",
+        defaults,
+        rates,
+        "Uložit a pokračovat" if progress + 1 < len(parts) else "Uložit poslední let",
+    )
+    if saved is None:
+        return
+
+    if not locked:
+        st.session_state[locked_key] = [int(x) for x in effective_splits]
+    flight_id = create_flight(saved, auto_backup=False)
+    save_track(flight_id, current_name, current, replace_existing=True)
+    created_ids.append(int(flight_id))
+    st.session_state[created_key] = created_ids
+
+    if progress + 1 < len(parts):
+        st.session_state[progress_key] = progress + 1
+        st.rerun()
+
+    _clear_smart_import_progress(signature)
+    st.session_state["page"] = "Lety"
+    st.session_state["open_flight_dialog_id"] = int(created_ids[-1])
+    st.session_state["selected_flight_id"] = int(created_ids[-1])
+    st.session_state.pop("dismissed_flight_id", None)
+    st.session_state["_post_import_notice"] = f"Smart KML uložil {len(created_ids)} samostatné lety: " + ", ".join(f"ID {x}" for x in created_ids)
+    st.rerun()
+
+
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
 
@@ -4022,11 +4301,12 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     )
 
     if mode == "KML import":
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v040")
+        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v060")
         if uploaded is None:
             return
 
         raw = uploaded.getvalue()
+        signature = _smart_import_signature(raw, uploaded.name)
         try:
             points = parse_kml_bytes(raw)
         except Exception as exc:
@@ -4037,7 +4317,30 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.error("V KML nejsou použitelné body trasy.")
             return
 
-        defaults = infer_from_track(points, uploaded.name, rates)
+        smart = analyze_track(points, current_user_timezone())
+        mode_choice, split_indices = render_smart_kml_analysis(
+            smart,
+            points,
+            signature=signature,
+            dark_mode=dark_mode,
+        )
+
+        if mode_choice == "split" and split_indices:
+            render_split_kml_import_wizard(
+                raw=raw,
+                file_name=uploaded.name,
+                points=points,
+                split_indices=split_indices,
+                rates=rates,
+                dark_mode=dark_mode,
+                signature=signature,
+            )
+            return
+
+        # Explicit fallback chosen by the user, or no split was detected.  Keep the
+        # original KML intact and import it as one flight.
+        _clear_smart_import_progress(signature)
+        defaults = infer_from_track(points, uploaded.name, rates, smart_analysis=smart)
         stats = defaults.pop("stats")
         defaults.pop("detect_idx", None)
         has_clock = defaults.pop("has_clock", False)
@@ -4060,17 +4363,20 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         render_folium_readonly(
             make_map(preview_df, dark_mode),
             height=420,
-            key=f"new_flight_preview_map_v040_{uploaded.name}_{len(points)}_{int(stats.get('distance_km') or 0)}",
+            key=f"new_flight_preview_map_v060_{signature}_{len(points)}_{int(stats.get('distance_km') or 0)}",
         )
 
         if not has_clock:
             st.warning("Doplň časy ručně.")
 
-        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v040_{uploaded.name}_{len(points)}")
+        if int(smart.get("flight_count") or 1) > 1:
+            st.info("Zvolil jsi nahrání bez rozdělení. Celý původní KML track bude uložen k jednomu záznamu beze změny.")
+
+        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v060_{signature}_{len(points)}")
         if show_profile:
             render_track_profile(points)
 
-        saved = flight_form("new_from_track_v040", defaults, rates, "Uložit let")
+        saved = flight_form("new_from_track_v060", defaults, rates, "Uložit let")
         if saved is not None:
             flight_id = create_flight(saved, auto_backup=False)
             save_track(flight_id, uploaded.name, points, replace_existing=True)
@@ -4078,7 +4384,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.session_state["open_flight_dialog_id"] = flight_id
             st.session_state["selected_flight_id"] = flight_id
             st.session_state.pop("dismissed_flight_id", None)
-            st.success(f"Uloženo ID {flight_id}.")
+            st.session_state["_post_import_notice"] = f"KML uložen jako jeden let ID {flight_id}."
             st.rerun()
     else:
         default_evidence = current_user_default_evidence()

@@ -1,52 +1,56 @@
 # Letový zápisník
 
-Verze: **v0.59**
+Verze: **v0.60**
 
-## v0.59 – User Profile, Settings & Permission Hardening
+## v0.60 – Smart KML Import
 
-v0.59 dokončuje první multi-user bezpečnostní vrstvu a rozšiřuje profil uživatele. Aplikace dál používá SQLite a GitHub auto-backup; databázové schéma zůstává **8**.
+v0.60 přidává inteligentní analýzu KML/GPS tracků před uložením letu. Cílem je řešit reálné případy, kdy ADS-B/KML soubor obsahuje dva nebo více letů, touch-and-go, časové mezery nebo vadné GPS úseky.
 
-### Profil a nastavení
+### Detekce více letů
 
-Nová stránka **Profil a nastavení** je rozdělena na:
+Smart KML analyzuje průběh rychlosti, času a výšky a hledá samostatné letové úseky oddělené přistáním, zastavením, otočením nebo delší mezerou v datech.
 
-- **Profil** – jméno a přehled vlastního účtu,
-- **Výchozí hodnoty** – domovské letiště, výchozí funkce, evidence, měna a časové pásmo,
-- **Zabezpečení** – změna přihlašovacího e-mailu, změna hesla a informace o oprávnění účtu.
+Pokud najde pravděpodobně více letů:
 
-Domovské letiště se předvyplní do ručně přidávaného letu. Výchozí role a evidence se používají pro nové lety. Časové pásmo se používá při převodu GPS/KML časů do lokálního času.
+- zobrazí upozornění a počet navržených letů,
+- nabídne **Rozdělit podle návrhu**,
+- vždy zachová možnost **Nahrát jako jeden let**,
+- před rozdělením zobrazí mapu jednotlivých částí,
+- bod rozdělení lze ručně posunout,
+- po uložení prvního dílu se body rozdělení uzamknou,
+- jednotlivé části se potom kontrolují a ukládají postupně jako samostatné lety a samostatné GPS tracky.
 
-### Měna profilu
+Detekce je pouze návrh. Původní KML se při volbě „Nahrát jako jeden let“ uloží beze změny.
 
-Zvolená měna se nyní používá při zobrazení cen a nákladů v hlavním UI, profilech letadel a exportech. Číselná data se nepřepočítávají kurzem – měna je vlastnost profilu/ceníku, nikoli FX konverze.
+### Touch-and-go a počet přistání
 
-### Permission hardening
+Smart KML umí detekovat pravděpodobný touch-and-go dvěma způsoby:
 
-Nový modul `logbook_core/permissions.py` zavádí striktní práci s uživatelským kontextem:
+- krátký letový/pozemní přechod bez úplného zastavení,
+- lokální minimum výšky s následným opětovným stoupáním při zachované rychlosti.
 
-- neplatný nebo nepřihlášený `user_id` se už nesmí automaticky převést na původního uživatele #1,
-- editace a mazání letu/tracku ověřují vlastnictví záznamu před změnou,
-- user-scoped read funkce vyžadují explicitní `user_id`,
-- běžný uživatel vidí a upravuje pouze vlastní lety, letadla, ceny, GPS tracky, GPS body, vlastní letiště a audit,
-- globální servisní a zálohovací nástroje zůstávají pouze adminovi.
+Výsledek automaticky předvyplní pole **Starty / přistání**. Hodnota je vždy editovatelná před uložením letu.
 
-### Admin → Bezpečnost
+### Kontrola kvality tracku
 
-Admin konzole má novou sekci **Bezpečnost**, která kontroluje:
+Import upozorní například na:
 
-- chybějící nebo neexistující `user_id`,
-- nesoulad vlastníka `flight_track → flight`,
-- nesoulad vlastníka `track_point → flight_track`,
-- neplatné role uživatelů,
-- stav hlavního admin profilu #1.
+- výraznou časovou mezeru mezi GPS body,
+- podezřelý GPS skok,
+- více samostatných letových úseků.
 
-### Existující data
+Upozornění sama data nemažou ani neopravují. Uživatel rozhoduje o výsledném importu.
 
-Všechna data vytvořená před zavedením účtů zůstávají přiřazená původnímu profilu **user_id = 1**. v0.59 vlastnictví existujících letů nijak nemění.
+### Připojení KML k existujícímu letu
 
-### Databáze a persistence
+Pokud se KML připojuje k již existujícímu letu a Smart KML v něm najde více letů, aplikace zobrazí varování. Track lze stále připojit jako jeden celek; pro skutečné rozdělení se používá **Nový let → KML import**.
 
-- `APP_VERSION = v0.59`
+### Databáze a multi-user
+
+- Multi-user izolace z v0.59 zůstává zachována.
+- Každý vytvořený let i track patří přihlášenému uživateli.
+- `APP_VERSION = v0.60`
 - `DB_SCHEMA_VERSION = 8`
-- SQLite + GitHub auto-backup zůstává zachován.
+- Není nutná migrace struktury databáze.
+- SQLite + privátní GitHub auto-backup zůstává zachován.
 - Release ZIP neobsahuje `data/logbook.sqlite`.
