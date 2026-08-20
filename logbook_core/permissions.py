@@ -16,6 +16,7 @@ OWNED_TABLES = frozenset({
     "flight_tracks",
     "track_points",
     "audit_log",
+    "user_expiries",
 })
 
 

@@ -1,5 +1,18 @@
 # Letový zápisník
 
+## v0.63 – Pilot Currency & Recency
+
+- new **Recency** navigation page
+- last flight and last landing overview
+- rolling 90-day **PIC ULL** and **PIC EASA** activity cards
+- rolling 30 / 90 / 365 day activity table
+- new user-owned validity records for medicals, licences, ratings and other documents
+- configurable warning lead time for every validity record
+- status states: valid / warning / expired
+- strict tenant isolation for validity records
+- recency activity is explicitly informational; it does not claim legal passenger-carrying currency
+- database schema upgraded from 8 to **9** by adding `user_expiries`
+
 ## v0.62.2 – Flight Import UX 2.0
 
 v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.

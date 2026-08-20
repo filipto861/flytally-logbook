@@ -43,6 +43,9 @@ from logbook_core.tracks import (
     profile_from_points, track_stats,
 )
 from logbook_core.smart_import import analyze_track, split_track_points
+from logbook_core.currency import (
+    activity_windows, expiry_overview, last_activity, recency_by_evidence,
+)
 from logbook_core.dashboard import (
     PERIOD_PRESETS, aircraft_summary, airport_route_summaries, category_year_summary,
     dashboard_insights, filter_period as filter_dashboard_period, monthly_primary_summary,
@@ -739,6 +742,75 @@ def read_table(table: str, user_id: int | None = None) -> pd.DataFrame:
         if table in USER_SCOPED_TABLES:
             return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
+
+
+EXPIRY_CATEGORIES = ["Medical", "Licence", "Rating", "Průkaz", "Pojištění", "Jiné"]
+
+
+def save_user_expiry(
+    *,
+    label: str,
+    category: str,
+    expiry_date: date,
+    warning_days: int = 30,
+    note: str = "",
+    expiry_id: int | None = None,
+) -> int:
+    uid = strict_user_id(current_user_id())
+    clean_label = str(label or "").strip()
+    if not clean_label:
+        raise ValueError("Název dokladu nebo platnosti nesmí být prázdný.")
+    clean_category = str(category or "Doklad").strip() or "Doklad"
+    clean_warning = max(0, min(int(warning_days or 0), 3650))
+    clean_note = str(note or "").strip()
+    expiry_iso = pd.Timestamp(expiry_date).date().isoformat()
+
+    with connect() as con:
+        if expiry_id is None:
+            cur = con.execute(
+                """
+                INSERT INTO user_expiries
+                    (user_id, category, label, expiry_date, warning_days, note, active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """,
+                (uid, clean_category, clean_label, expiry_iso, clean_warning, clean_note or None),
+            )
+            saved_id = int(cur.lastrowid)
+            action = "create_user_expiry"
+        else:
+            saved_id = int(expiry_id)
+            require_owned_record(con, "user_expiries", saved_id, uid)
+            con.execute(
+                """
+                UPDATE user_expiries
+                SET category = ?, label = ?, expiry_date = ?, warning_days = ?, note = ?,
+                    active = 1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ?
+                """,
+                (clean_category, clean_label, expiry_iso, clean_warning, clean_note or None, saved_id, uid),
+            )
+            action = "update_user_expiry"
+        record_audit(
+            con, action, "user_expiry", saved_id,
+            {"label": clean_label, "category": clean_category, "expiry_date": expiry_iso, "warning_days": clean_warning},
+        )
+        con.commit()
+    invalidate_cached_data("user_expiries")
+    auto_backup_after_change(action)
+    return saved_id
+
+
+def delete_user_expiry(expiry_id: int) -> None:
+    uid = strict_user_id(current_user_id())
+    rid = int(expiry_id)
+    with connect() as con:
+        require_owned_record(con, "user_expiries", rid, uid)
+        row = con.execute("SELECT label FROM user_expiries WHERE id = ? AND user_id = ?", (rid, uid)).fetchone()
+        con.execute("DELETE FROM user_expiries WHERE id = ? AND user_id = ?", (rid, uid))
+        record_audit(con, "delete_user_expiry", "user_expiry", rid, {"label": str(row[0]) if row else ""})
+        con.commit()
+    invalidate_cached_data("user_expiries")
+    auto_backup_after_change("delete_user_expiry")
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -4275,6 +4347,223 @@ def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFr
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), dialog_rates, dark_mode)
 
 
+def _format_recency_date(value: object) -> str:
+    if value is None or value == "":
+        return "—"
+    try:
+        return pd.Timestamp(value).strftime("%d. %m. %Y")
+    except Exception:
+        return str(value)
+
+
+def _days_since_text(value: object) -> str:
+    if value is None:
+        return "bez záznamu"
+    days = int(value)
+    if days == 0:
+        return "dnes"
+    if days == 1:
+        return "před 1 dnem"
+    return f"před {days} dny"
+
+
+def _recency_activity_tone(landings: int) -> str:
+    if int(landings or 0) >= 3:
+        return "ok"
+    if int(landings or 0) > 0:
+        return "warn"
+    return "bad"
+
+
+def _render_recency_card(label: str, value: str, sub: str, tone: str = "") -> None:
+    tone_class = f" {tone}" if tone else ""
+    st.markdown(
+        f"""
+        <div class="recency-card{tone_class}">
+          <div class="recency-card-label">{html.escape(label)}</div>
+          <div class="recency-card-value">{html.escape(value)}</div>
+          <div class="recency-card-sub">{html.escape(sub)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def page_recency(df: pd.DataFrame) -> None:
+    uid = strict_user_id(current_user_id())
+    today = datetime.now(LOCAL_TZ).date()
+    activity = last_activity(df, today)
+    recency = recency_by_evidence(df, today, days=90)
+    recency_map = {str(row["evidence"]): row for _, row in recency.iterrows()}
+
+    st.markdown("## Pilot Currency & Recency")
+    st.caption(
+        "Rychlý provozní přehled podle záznamů v logbooku. Recency karty jsou informativní a nenahrazují kontrolu konkrétních právních požadavků."
+    )
+
+    ull = recency_map.get("ULL", {})
+    easa = recency_map.get("EASA", {})
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        _render_recency_card(
+            "Poslední let",
+            _format_recency_date(activity.get("last_flight_date")),
+            _days_since_text(activity.get("days_since_last_flight")),
+        )
+    with c2:
+        _render_recency_card(
+            "Poslední přistání",
+            _format_recency_date(activity.get("last_landing_date")),
+            _days_since_text(activity.get("days_since_last_landing")),
+        )
+    with c3:
+        ull_landings = int(ull.get("pic_landings", 0) or 0)
+        _render_recency_card(
+            "PIC ULL • 90 dní",
+            str(ull_landings),
+            f"přistání • {int(ull.get('pic_flights', 0) or 0)} letů • {fmt_minutes(int(ull.get('pic_minutes', 0) or 0))}",
+            _recency_activity_tone(ull_landings),
+        )
+    with c4:
+        easa_landings = int(easa.get("pic_landings", 0) or 0)
+        _render_recency_card(
+            "PIC EASA • 90 dní",
+            str(easa_landings),
+            f"přistání • {int(easa.get('pic_flights', 0) or 0)} letů • {fmt_minutes(int(easa.get('pic_minutes', 0) or 0))}",
+            _recency_activity_tone(easa_landings),
+        )
+
+    st.info(
+        "**90denní karty = aktivita v zápisníku, ne právní rozhodnutí.** Aplikace zatím nesleduje všechny možné podmínky "
+        "pro konkrétní recency (např. den/noc, samostatné vzlety a přiblížení, typovou/třídní shodu nebo sole-manipulator podmínky)."
+    )
+
+    st.markdown("### Aktivita podle období")
+    windows = activity_windows(df, today, windows=(30, 90, 365))
+    if not windows.empty:
+        display = pd.DataFrame({
+            "Období": [f"{int(v)} dní" for v in windows["days"]],
+            "Lety": windows["flights"].astype(int),
+            "Přistání": windows["landings"].astype(int),
+            "Block": [fmt_minutes(int(v)) for v in windows["block_minutes"]],
+            "PIC": [fmt_minutes(int(v)) for v in windows["pic_minutes"]],
+            "PIC přistání": windows["pic_landings"].astype(int),
+            "ULL PIC": windows["ull_pic_landings"].astype(int),
+            "EASA PIC": windows["easa_pic_landings"].astype(int),
+        })
+        st.dataframe(display, hide_index=True, width="stretch")
+
+    st.markdown("### Doklady a platnosti")
+    st.caption("Vlastní termíny – medical, licence, ratingy, průkazy nebo jiné položky. Upozornění se počítá podle zvoleného předstihu.")
+
+    expiries = read_table("user_expiries", uid)
+    overview = expiry_overview(expiries, today)
+    if overview.empty:
+        st.info("Zatím nemáš uložený žádný termín platnosti.")
+    else:
+        for _, row in overview.iterrows():
+            state = str(row.get("state") or "missing")
+            pill_class = state if state in {"ok", "warning", "expired"} else ""
+            days_left = row.get("days_left")
+            if days_left is None or pd.isna(days_left):
+                remain = "bez data"
+            elif int(days_left) < 0:
+                remain = f"{abs(int(days_left))} dní po expiraci"
+            elif int(days_left) == 0:
+                remain = "expiruje dnes"
+            else:
+                remain = f"zbývá {int(days_left)} dní"
+            st.markdown(
+                f"""
+                <div class="validity-card">
+                  <div class="validity-head">
+                    <div>
+                      <div class="validity-title">{html.escape(str(row.get('label') or ''))}</div>
+                      <div class="validity-meta">{html.escape(str(row.get('category') or 'Doklad'))} • do {_format_recency_date(row.get('expiry_date'))} • {html.escape(remain)}</div>
+                    </div>
+                    <span class="recency-status-pill {pill_class}">{html.escape(str(row.get('status') or ''))}</span>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    with st.expander("Přidat nový termín", expanded=overview.empty):
+        with st.form("add_user_expiry_v063", clear_on_submit=True):
+            a1, a2 = st.columns(2)
+            with a1:
+                category = st.selectbox("Kategorie", EXPIRY_CATEGORIES, key="expiry_category_new_v063")
+                label = st.text_input("Název", placeholder="Medical Class 2 / SEP / ULL průkaz…", key="expiry_label_new_v063")
+            with a2:
+                expiry_date_value = st.date_input("Platnost do", value=today, key="expiry_date_new_v063")
+                warning_days = st.number_input("Upozornit předem (dní)", min_value=0, max_value=3650, value=30, step=1, key="expiry_warning_new_v063")
+            note = st.text_input("Poznámka", value="", key="expiry_note_new_v063")
+            add_expiry = st.form_submit_button("Přidat termín", type="primary", width="stretch")
+        if add_expiry:
+            try:
+                save_user_expiry(
+                    label=label, category=category, expiry_date=expiry_date_value,
+                    warning_days=int(warning_days), note=note,
+                )
+                st.success("Termín byl uložen.")
+                st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
+
+    if not expiries.empty:
+        active_records = expiries.copy()
+        if "active" in active_records.columns:
+            active_records = active_records[pd.to_numeric(active_records["active"], errors="coerce").fillna(0).astype(int).eq(1)]
+        if not active_records.empty:
+            with st.expander("Upravit nebo odstranit termín", expanded=False):
+                records = {int(row["id"]): row for _, row in active_records.sort_values(["expiry_date", "label"]).iterrows()}
+                ids = list(records)
+                selected_id = int(st.selectbox(
+                    "Termín",
+                    ids,
+                    format_func=lambda rid: f"{records[rid].get('label') or ''} • {records[rid].get('expiry_date') or '—'}",
+                    key="expiry_edit_select_v063",
+                ))
+                selected = records[selected_id]
+                category_value = str(selected.get("category") or "Jiné")
+                if category_value not in EXPIRY_CATEGORIES:
+                    category_value = "Jiné"
+                try:
+                    selected_date = pd.Timestamp(selected.get("expiry_date")).date()
+                except Exception:
+                    selected_date = today
+                with st.form(f"edit_user_expiry_v063_{selected_id}"):
+                    e1, e2 = st.columns(2)
+                    with e1:
+                        edit_category = st.selectbox("Kategorie", EXPIRY_CATEGORIES, index=EXPIRY_CATEGORIES.index(category_value), key=f"expiry_category_edit_{selected_id}")
+                        edit_label = st.text_input("Název", value=str(selected.get("label") or ""), key=f"expiry_label_edit_{selected_id}")
+                    with e2:
+                        edit_date = st.date_input("Platnost do", value=selected_date, key=f"expiry_date_edit_{selected_id}")
+                        edit_warning = st.number_input(
+                            "Upozornit předem (dní)", min_value=0, max_value=3650,
+                            value=int(selected.get("warning_days") or 0), step=1, key=f"expiry_warning_edit_{selected_id}",
+                        )
+                    edit_note = st.text_input("Poznámka", value=str(selected.get("note") or ""), key=f"expiry_note_edit_{selected_id}")
+                    save_edit = st.form_submit_button("Uložit změny", type="primary", width="stretch")
+                if save_edit:
+                    try:
+                        save_user_expiry(
+                            expiry_id=selected_id, label=edit_label, category=edit_category, expiry_date=edit_date,
+                            warning_days=int(edit_warning), note=edit_note,
+                        )
+                        st.success("Změny byly uloženy.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
+                if st.button("Odstranit termín", width="stretch", key=f"delete_expiry_{selected_id}"):
+                    try:
+                        delete_user_expiry(selected_id)
+                        st.success("Termín byl odstraněn.")
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
+
+
 def page_logbook(df: pd.DataFrame, dark_mode: bool):
     st.markdown("## Lety")
     notice = st.session_state.pop("_post_import_notice", None)
@@ -5944,7 +6233,7 @@ def build_database_health_report() -> dict[str, Any]:
         "issue_count": 0,
     }
     with connect() as con:
-        tables = ["flights", "aircraft", "rates", "flight_tracks", "track_points", "airports", "audit_log", "app_meta"]
+        tables = ["flights", "aircraft", "rates", "flight_tracks", "track_points", "airports", "user_expiries", "audit_log", "app_meta"]
         report["counts"] = {table: _safe_count_query(con, table) for table in tables}
         try:
             row = con.execute("PRAGMA integrity_check").fetchone()
@@ -7223,7 +7512,7 @@ def render_page_transition_runtime() -> None:
               if (btn && btn.id !== 'lb-sidebar-toggle') {
                 const inSidebar = btn.closest('section[data-testid="stSidebar"]');
                 const txt = (btn.innerText || btn.textContent || '').trim();
-                const navLabels = ['Souhrn','Lety','Přidat let','Mapa','Databáze','Export','Profil'];
+                const navLabels = ['Souhrn','Recency','Lety','Přidat let','Mapa','Databáze','Export','Profil'];
                 if (inSidebar && navLabels.indexOf(txt) !== -1) showLoader();
               }
               if (link && link.href && link.href.indexOf('flight_id=') !== -1) {
@@ -7314,6 +7603,8 @@ def main():
     # body z track_points místo plného coordinates_json pro každý track.
     if page == "Dashboard":
         page_dashboard(read_flights(current_user_id()))
+    elif page == "Recency":
+        page_recency(read_flights(current_user_id()))
     elif page == "Lety":
         page_logbook(read_flights(current_user_id()), dark_mode)
     elif page == "Nový let":

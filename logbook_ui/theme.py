@@ -298,6 +298,27 @@ def apply_ui_theme(dark_mode: bool) -> None:
         .dashboard-category-value {{font-size:1.52rem;}}
         .dashboard-category-card {{min-height:110px;}}
     }}
+    /* v0.63 Pilot Currency / Recency */
+    .recency-card {{
+        position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;
+        padding:.92rem 1rem;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent),var(--panel);
+        box-shadow:0 10px 25px var(--shadow);min-height:112px;
+    }}
+    .recency-card::before {{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,#38bdf8,transparent);}}
+    .recency-card.ok::before {{background:linear-gradient(90deg,#34d399,transparent);}}
+    .recency-card.warn::before {{background:linear-gradient(90deg,#f59e0b,transparent);}}
+    .recency-card.bad::before {{background:linear-gradient(90deg,#fb7185,transparent);}}
+    .recency-card-label {{color:var(--muted);font-size:.69rem;text-transform:uppercase;letter-spacing:.08em;font-weight:850;}}
+    .recency-card-value {{color:var(--text);font-size:1.70rem;line-height:1.06;font-weight:900;letter-spacing:-.035em;margin:.36rem 0 .42rem 0;font-variant-numeric:tabular-nums;}}
+    .recency-card-sub {{color:var(--muted);font-size:.79rem;line-height:1.3;}}
+    .recency-status-pill {{display:inline-flex;align-items:center;border-radius:999px;padding:.18rem .48rem;font-size:.68rem;font-weight:850;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.025);color:var(--muted);}}
+    .recency-status-pill.ok {{border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.08);color:#a7f3d0;}}
+    .recency-status-pill.warning {{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.08);color:#fde68a;}}
+    .recency-status-pill.expired {{border-color:rgba(251,113,133,.28);background:rgba(251,113,133,.08);color:#fecdd3;}}
+    .validity-card {{border:1px solid var(--border);border-radius:17px;padding:.86rem .95rem;background:var(--panel);box-shadow:0 9px 22px var(--shadow);margin:.35rem 0;}}
+    .validity-head {{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;}}
+    .validity-title {{font-size:.98rem;font-weight:900;color:var(--text);}}
+    .validity-meta {{color:var(--muted);font-size:.78rem;margin-top:.22rem;line-height:1.35;}}
     #lb-page-loader {{position:fixed;left:var(--lb-sidebar-width);right:0;top:0;bottom:0;z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding-top:5.8rem;background:rgba(6,16,29,.10);opacity:0;pointer-events:none;transition:opacity 120ms ease;}}
     body.lb-sidebar-hidden #lb-page-loader {{left:0;}}
     body.lb-page-loading #lb-page-loader {{opacity:1;}}

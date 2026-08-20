@@ -15,6 +15,7 @@ USER_SCOPED_TABLES = frozenset({
     "flight_tracks",
     "track_points",
     "audit_log",
+    "user_expiries",
 })
 
 
@@ -245,6 +246,7 @@ def _create_user_indexes(con: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_tracks_user_flight ON flight_tracks(user_id, flight_id)",
         "CREATE INDEX IF NOT EXISTS idx_track_points_user_track_seq ON track_points(user_id, track_id, seq)",
         "CREATE INDEX IF NOT EXISTS idx_audit_user_created_at ON audit_log(user_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_user_expiries_user_expiry ON user_expiries(user_id, active, expiry_date)",
     )
     for statement in statements:
         con.execute(statement)

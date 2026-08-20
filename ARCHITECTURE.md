@@ -1,4 +1,4 @@
-# Logbook architecture — v0.62.2
+# Logbook architecture — v0.63
 
 ## Flight Import UX 2.0
 
@@ -54,3 +54,15 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 ## v0.62.2 dashboard analytics layer
 
 `logbook_core/dashboard.py` obsahuje čisté, Streamlit-independent agregace pro období, měsíce, roky, letadla, letiště, trasy a dashboardové rekordy. UI pouze vybírá aktuální sekci a renderuje již agregovaná data. Tím se drží náklad skrytých dashboardových sekcí mimo aktuální rerun.
+
+## v0.63 Pilot Currency & Recency
+
+`logbook_core/currency.py` owns rolling activity and validity-status calculations. The UI page only renders those results.
+
+### Data model
+
+`user_expiries` is a new tenant-scoped table with `user_id`, category, label, expiry date, warning lead time and note. `DB_SCHEMA_VERSION = 9`. The standard idempotent `SCHEMA` bootstrap creates the table on existing databases; existing flight data is untouched.
+
+### Safety boundary
+
+The 90-day cards are logbook activity indicators only. They intentionally do not claim regulatory currency because the current flight model does not encode every rule dimension such as day/night, separate take-offs/approaches, type/class equivalence or sole-manipulator conditions.

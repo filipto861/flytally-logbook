@@ -37,6 +37,19 @@ CREATE TABLE IF NOT EXISTS user_settings (
     updated_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS user_expiries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
+    category TEXT NOT NULL DEFAULT 'Doklad',
+    label TEXT NOT NULL,
+    expiry_date TEXT NOT NULL,
+    warning_days INTEGER NOT NULL DEFAULT 30,
+    note TEXT,
+    active INTEGER DEFAULT 1,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS flights (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL DEFAULT 1,
@@ -165,6 +178,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_ci ON users(LOWER(TRIM(email))) WHERE email IS NOT NULL AND TRIM(email) <> '';
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
+CREATE INDEX IF NOT EXISTS idx_user_expiries_user_expiry ON user_expiries(user_id, active, expiry_date);
 CREATE INDEX IF NOT EXISTS idx_flights_date ON flights(date);
 CREATE INDEX IF NOT EXISTS idx_flights_registration ON flights(registration);
 CREATE INDEX IF NOT EXISTS idx_flights_evidence_role ON flights(evidence, role);
