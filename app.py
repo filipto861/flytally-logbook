@@ -22,8 +22,8 @@ import streamlit as st
 
 from logbook_core.config import (
     AIRPORT_OVERRIDES_PATH, AIRPORTS_DB_PATH, APP_VERSION,
-    BILLING_BASIS_OPTIONS, CLASS_OPTIONS, DATA_DIR, DB_PATH, DB_SCHEMA_VERSION,
-    EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, ROLE_OPTIONS,
+    BILLING_BASIS_OPTIONS, CLASS_OPTIONS, DATA_DIR, DATABASE_RUNTIME, DB_PATH, DB_SCHEMA_VERSION,
+    EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, POSTGRES_CUTOVER_VERSION, ROLE_OPTIONS,
 )
 from logbook_core.schema import SCHEMA
 from logbook_core.auth import (
@@ -73,9 +73,18 @@ from logbook_core.database_foundation import (
     ACTIVE_RUNTIME_BACKEND, POSTGRES_FOUNDATION_VERSION,
     postgres_cutover_enabled, postgres_target_config, redact_postgres_dsn,
 )
+from logbook_core.db_runtime import (
+    DATABASE_ERRORS, DatabaseBackendError, DatabaseBackendConfigurationError,
+    PostgresConnectionAdapter, insert_and_get_id, is_postgres_connection,
+    read_sql_query as db_read_sql_query, resolve_runtime_database_config,
+)
+from logbook_core.production_cutover import (
+    CUTOVER_PROTOCOL_VERSION, ProductionCutoverError, activate_postgres_production,
+    inspect_cutover_readiness, mark_postgres_cutover_ready,
+)
 from logbook_core.postgres_migration import (
     PostgresMigrationError, build_sqlite_migration_plan, migration_plan_json,
-    migrate_sqlite_to_postgres,
+    migrate_sqlite_to_postgres, refresh_sqlite_to_postgres_shadow,
 )
 from logbook_core.shadow_verification import (
     shadow_report_json, verify_postgres_shadow,
@@ -101,6 +110,7 @@ from logbook_core.performance import (
 )
 
 _DB_READY = False
+_DB_READY_BACKEND = ""
 _DB_INIT_LOCK = threading.RLock()
 _GITHUB_BACKUP_LOCK = threading.Lock()
 
@@ -124,9 +134,15 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _set_meta(con: sqlite3.Connection, key: str, value: Any) -> None:
+def _set_meta(con: Any, key: str, value: Any) -> None:
     con.execute(
-        "INSERT OR REPLACE INTO app_meta (key, value, updated_at) VALUES (?, ?, ?)",
+        """
+        INSERT INTO app_meta (key, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET
+            value = excluded.value,
+            updated_at = excluded.updated_at
+        """,
         (key, str(value), _now_iso()),
     )
 
@@ -135,7 +151,7 @@ def _meta_value(con: sqlite3.Connection, key: str, default: str = "") -> str:
     try:
         row = con.execute("SELECT value FROM app_meta WHERE key = ?", (key,)).fetchone()
         return str(row[0]) if row and row[0] is not None else default
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return default
 
 
@@ -147,6 +163,43 @@ def _get_secret(section: str, key: str, default: Any = None) -> Any:
     except Exception:
         pass
     return default
+
+
+def _database_secrets_mapping() -> dict[str, Any]:
+    try:
+        section = st.secrets.get("database", {})
+        if hasattr(section, "items"):
+            return {str(k): v for k, v in section.items()}
+    except Exception:
+        pass
+    return {}
+
+
+def runtime_database_config():
+    return resolve_runtime_database_config(secrets_database=_database_secrets_mapping())
+
+
+def production_backend_name() -> str:
+    try:
+        return runtime_database_config().backend
+    except Exception:
+        return "configuration_error"
+
+
+def production_is_postgresql() -> bool:
+    return production_backend_name() == "postgresql"
+
+
+def emergency_sqlite_fallback_active() -> bool:
+    try:
+        cfg = runtime_database_config()
+        return bool(
+            cfg.is_sqlite
+            and cfg.cutover_confirmed
+            and cfg.sqlite_fallback_confirmed
+        )
+    except Exception:
+        return False
 
 
 def is_admin() -> bool:
@@ -243,7 +296,7 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
                 (uid,),
             ).fetchone()
             return dict(row) if row else {"id": uid, "display_name": "Local pilot"}
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return {"id": uid, "display_name": "Local pilot", "active": 0, "_load_error": True}
 
 
@@ -373,6 +426,8 @@ def render_auth_gate() -> bool:
                         "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
                         (DEFAULT_USER_ID, _now_iso(), str(display_name).strip(), "activate_profile", "user", str(DEFAULT_USER_ID), json.dumps({"email": str(email).strip().lower()}, ensure_ascii=False)),
                     )
+                    _set_meta(con, "last_change_at", _now_iso())
+                    _set_meta(con, "dirty", "1")
                     con.commit()
             if result.ok and result.user_id:
                 read_user_profile.clear()
@@ -422,7 +477,21 @@ def render_auth_gate() -> bool:
                     return False
                 with connect() as con:
                     result = register_user(con, email=email, display_name=display_name, password=password)
-                    if result.ok:
+                    if result.ok and result.user_id:
+                        con.execute(
+                            "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (
+                                int(result.user_id),
+                                _now_iso(),
+                                str(display_name).strip(),
+                                "register_user",
+                                "user",
+                                str(result.user_id),
+                                json.dumps({"email": str(email).strip().lower()}, ensure_ascii=False),
+                            ),
+                        )
+                        _set_meta(con, "last_change_at", _now_iso())
+                        _set_meta(con, "dirty", "1")
                         con.commit()
                 if result.ok and result.user_id:
                     read_user_profile.clear()
@@ -573,15 +642,28 @@ def require_admin() -> bool:
     return False
 
 
-def record_audit(con: sqlite3.Connection, action: str, object_type: str | None = None, object_id: Any = None, detail: Any = None) -> None:
+def record_audit(con: Any, action: str, object_type: str | None = None, object_id: Any = None, detail: Any = None) -> None:
     payload = json.dumps(detail, ensure_ascii=False, default=str) if detail is not None else None
     params = (current_user_id(), _now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, payload)
+
+    if is_postgres_connection(con):
+        # In PostgreSQL production the audit row and watermark are part of the
+        # same transaction as the business write. Failure must abort the action;
+        # silently continuing would weaken cutover recovery/audit semantics.
+        con.execute(
+            "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            params,
+        )
+        _set_meta(con, "last_change_at", _now_iso())
+        _set_meta(con, "dirty", "1")
+        return
+
     try:
         con.execute(
             "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
             params,
         )
-    except sqlite3.OperationalError:
+    except DATABASE_ERRORS:
         try:
             ensure_schema_compatibility(con)
             con.execute(
@@ -589,7 +671,8 @@ def record_audit(con: sqlite3.Connection, action: str, object_type: str | None =
                 params,
             )
         except Exception:
-            # Audit logging must never block the real database action.
+            # Legacy SQLite audit logging must not block a historical file
+            # migration/repair action.
             pass
     except Exception:
         pass
@@ -614,6 +697,11 @@ def github_backup_config() -> dict[str, str]:
 
 
 def github_auto_backup_enabled() -> bool:
+    # GitHub stores the legacy SQLite file only. Once PostgreSQL is production,
+    # continuing this flow would create a misleading "fresh" backup of a frozen
+    # fallback database.
+    if production_is_postgresql():
+        return False
     cfg = github_backup_config()
     return github_backup_configured() and str(cfg.get("auto_backup", "true")).strip().lower() not in {"0", "false", "no", "off"}
 
@@ -627,13 +715,14 @@ def _record_audit_clean(con: sqlite3.Connection, action: str, object_type: str |
             "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
             params,
         )
-    except sqlite3.OperationalError:
+    except DATABASE_ERRORS:
         try:
-            ensure_schema_compatibility(con)
-            con.execute(
-                "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                params,
-            )
+            if not is_postgres_connection(con):
+                ensure_schema_compatibility(con)
+                con.execute(
+                    "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    params,
+                )
         except Exception:
             pass
 
@@ -644,7 +733,7 @@ def checkpoint_database(*, truncate: bool = False, require_clean: bool = False) 
         apply_sqlite_pragmas(con, initial=False)
         try:
             row = con.execute(f"PRAGMA wal_checkpoint({mode})").fetchone()
-        except sqlite3.DatabaseError as exc:
+        except DATABASE_ERRORS as exc:
             if require_clean:
                 raise RuntimeError(f"SQLite WAL checkpoint selhal: {exc}") from exc
             return
@@ -714,17 +803,25 @@ def _backup_database_to_github_unlocked(commit_message: str | None = None) -> st
 
 
 def backup_database_to_github(commit_message: str | None = None) -> str:
-    """Serialize GitHub backups to avoid SHA races between concurrent sessions."""
+    """Serialize legacy SQLite GitHub backups.
+
+    This operation is intentionally unavailable while PostgreSQL is production;
+    otherwise the remote SQLite file could be mistaken for a current backup.
+    """
+    if production_is_postgresql():
+        raise RuntimeError(
+            "GitHub SQLite backup je po PostgreSQL cutoveru zmrazený fallback, ne produkční záloha."
+        )
     with _GITHUB_BACKUP_LOCK:
         return _backup_database_to_github_unlocked(commit_message)
 
 def auto_backup_after_change(reason: str) -> None:
-    """Automatically persist the current SQLite database to GitHub after a confirmed write.
-
-    Streamlit Community Cloud does not preserve local SQLite changes across every
-    restart/redeploy. This makes GitHub the versioned persistent backup for the
-    single-user online deployment.
-    """
+    """Persist SQLite writes to GitHub only while SQLite is production."""
+    if production_is_postgresql():
+        st.session_state["last_auto_backup_status"] = "postgresql_production"
+        st.session_state.pop("last_auto_backup_error", None)
+        st.session_state.pop("last_auto_backup_url", None)
+        return
     if not github_auto_backup_enabled():
         st.session_state["last_auto_backup_status"] = "not_configured"
         return
@@ -743,6 +840,11 @@ def auto_backup_after_change(reason: str) -> None:
 
 
 def restore_database_from_upload(uploaded_file) -> dict[str, Any]:
+    if production_is_postgresql():
+        raise SQLiteRestoreError(
+            "Plná SQLite obnova je během PostgreSQL produkce zablokovaná. "
+            "SQLite soubor je pouze nouzový fallback baseline."
+        )
     raw = uploaded_file.read()
     info = inspect_sqlite_bytes(
         raw,
@@ -809,25 +911,53 @@ def initialize_database(con: sqlite3.Connection) -> None:
     con.commit()
 
 
-def connect() -> sqlite3.Connection:
-    global _DB_READY
+def _connect_sqlite_runtime() -> sqlite3.Connection:
+    global _DB_READY, _DB_READY_BACKEND
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB_PATH, timeout=10.0)
     con.row_factory = sqlite3.Row
     try:
-        if _DB_READY:
+        if _DB_READY and _DB_READY_BACKEND == "sqlite":
             apply_sqlite_pragmas(con, initial=False)
             return con
         with _DB_INIT_LOCK:
-            if not _DB_READY:
+            if not _DB_READY or _DB_READY_BACKEND != "sqlite":
                 initialize_database(con)
                 _DB_READY = True
+                _DB_READY_BACKEND = "sqlite"
             else:
                 apply_sqlite_pragmas(con, initial=False)
         return con
     except Exception:
         con.close()
         raise
+
+
+def _connect_postgres_runtime(config) -> PostgresConnectionAdapter:
+    global _DB_READY, _DB_READY_BACKEND
+    if not _DB_READY or _DB_READY_BACKEND != "postgresql":
+        with _DB_INIT_LOCK:
+            if not _DB_READY or _DB_READY_BACKEND != "postgresql":
+                # First production activation is fail-closed. The PostgreSQL
+                # target must have a deep-verified cutover readiness marker and
+                # still match the frozen SQLite source watermark.
+                activate_postgres_production(config.postgres, sqlite_path=DB_PATH)
+                _DB_READY = True
+                _DB_READY_BACKEND = "postgresql"
+    return PostgresConnectionAdapter(config.postgres)
+
+
+def connect() -> Any:
+    """Open the explicitly configured production database.
+
+    There is intentionally no automatic PostgreSQL→SQLite fallback. If
+    PostgreSQL is selected and unavailable, the request fails rather than
+    writing into a stale local SQLite copy.
+    """
+    config = runtime_database_config()
+    if config.is_postgresql:
+        return _connect_postgres_runtime(config)
+    return _connect_sqlite_runtime()
 
 
 def _seed_airports_from_overrides(con: sqlite3.Connection) -> None:
@@ -906,7 +1036,7 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
             """
             , (DEFAULT_USER_ID,)
         ).fetchall()
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return
     for tr in tracks:
         try:
@@ -932,16 +1062,16 @@ def read_table(table: str, user_id: int | None = None) -> pd.DataFrame:
     table = _validated_read_table(table)
     with connect() as con:
         if table in USER_SCOPED_TABLES:
-            return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
-        return pd.read_sql_query(f"SELECT * FROM {table}", con)
+            return db_read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
+        return db_read_sql_query(f"SELECT * FROM {table}", con)
 
 
 def read_app_meta() -> pd.DataFrame:
     """Read tiny global metadata uncached; backup freshness must be cross-session."""
     try:
         with connect() as con:
-            return pd.read_sql_query("SELECT * FROM app_meta ORDER BY key", con)
-    except sqlite3.DatabaseError:
+            return db_read_sql_query("SELECT * FROM app_meta ORDER BY key", con)
+    except DATABASE_ERRORS:
         return pd.DataFrame()
 
 
@@ -968,7 +1098,8 @@ def save_user_expiry(
 
     with connect() as con:
         if expiry_id is None:
-            cur = con.execute(
+            saved_id = insert_and_get_id(
+                con,
                 """
                 INSERT INTO user_expiries
                     (user_id, category, label, expiry_date, warning_days, note, active, created_at, updated_at)
@@ -976,7 +1107,6 @@ def save_user_expiry(
                 """,
                 (uid, clean_category, clean_label, expiry_iso, clean_warning, clean_note or None),
             )
-            saved_id = int(cur.lastrowid)
             action = "create_user_expiry"
         else:
             saved_id = int(expiry_id)
@@ -1032,7 +1162,7 @@ def read_table_count(table: str, user_id: int | None = None) -> int:
             else:
                 row = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
             return int(row[0]) if row else 0
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return 0
 
 
@@ -1047,7 +1177,7 @@ def read_logbook_counts(user_id: int) -> dict[str, int]:
                 "tracks": int(con.execute("SELECT COUNT(*) FROM flight_tracks WHERE user_id = ?", (uid,)).fetchone()[0]),
                 "points": int(con.execute("SELECT COUNT(*) FROM track_points WHERE user_id = ?", (uid,)).fetchone()[0]),
             }
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return {"aircraft": 0, "tracks": 0, "points": 0}
 
 
@@ -1159,10 +1289,11 @@ def import_airports_dataframe(
         else:
             con.execute(
                 """
-                INSERT OR IGNORE INTO airports (user_id, ident, name, airport_type, iso_country, iso_region, municipality,
+                INSERT INTO airports (user_id, ident, name, airport_type, iso_country, iso_region, municipality,
                     latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code,
                     source, active, closed, data_quality, imported_at, updated_at, raw_json)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, ident) DO NOTHING
                 """,
                 params,
             )
@@ -1222,13 +1353,13 @@ def read_airports(active_only: bool, user_id: int) -> pd.DataFrame:
     if AIRPORTS_DB_PATH.exists():
         try:
             with connect_airports_ro() as airport_con:
-                frames.append(pd.read_sql_query(query, airport_con))
+                frames.append(db_read_sql_query(query, airport_con))
         except Exception:
             pass
 
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
+            frames.append(db_read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
     except Exception:
         pass
 
@@ -1291,13 +1422,13 @@ def airport_coords_for_idents(idents: tuple[str, ...], user_id: int) -> dict[str
     if AIRPORTS_DB_PATH.exists():
         try:
             with connect_airports_ro() as airport_con:
-                frames.append(pd.read_sql_query(query, airport_con, params=clean))
+                frames.append(db_read_sql_query(query, airport_con, params=clean))
         except Exception:
             pass
     try:
         with connect() as con:
             local_query = query.replace("WHERE ident IN", "WHERE user_id = ? AND ident IN")
-            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id), *clean)))
+            frames.append(db_read_sql_query(local_query, con, params=(strict_user_id(user_id), *clean)))
     except Exception:
         pass
     if not frames:
@@ -1342,13 +1473,13 @@ def airport_search_index(user_id: int) -> tuple[np.ndarray, np.ndarray, np.ndarr
     if AIRPORTS_DB_PATH.exists():
         try:
             with connect_airports_ro() as airport_con:
-                frames.append(pd.read_sql_query(query, airport_con))
+                frames.append(db_read_sql_query(query, airport_con))
         except Exception:
             pass
     try:
         with connect() as con:
             local_query = query.replace("WHERE active = 1", "WHERE user_id = ? AND active = 1")
-            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
+            frames.append(db_read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
     except Exception:
         pass
     if not frames:
@@ -1399,19 +1530,30 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
         ))
     con.executemany(
         """
-        INSERT OR REPLACE INTO track_points
+        INSERT INTO track_points
         (user_id, track_id, seq, time_utc, latitude_deg, longitude_deg, altitude_m,
          segment_km, distance_km, speed_kmh, speed_kt, source)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(track_id, seq) DO UPDATE SET
+            user_id = excluded.user_id,
+            time_utc = excluded.time_utc,
+            latitude_deg = excluded.latitude_deg,
+            longitude_deg = excluded.longitude_deg,
+            altitude_m = excluded.altitude_m,
+            segment_km = excluded.segment_km,
+            distance_km = excluded.distance_km,
+            speed_kmh = excluded.speed_kmh,
+            speed_kt = excluded.speed_kt,
+            source = excluded.source
         """,
         rows,
     )
 
 @st.cache_data(show_spinner=False, ttl=300)
 def read_flights(user_id: int) -> pd.DataFrame:
-    """Read flight rows and GPS aggregates in one SQLite round-trip."""
+    """Read flight rows and GPS aggregates in one production-database round-trip."""
     with connect() as con:
-        flights = pd.read_sql_query(
+        flights = db_read_sql_query(
             """
             SELECT f.*,
                    COALESCE(t.track_count, 0) AS track_count,
@@ -1454,7 +1596,7 @@ def read_track_metadata_for_flights(flight_ids: tuple[int, ...], user_id: int) -
         ORDER BY f.date DESC, f.off_block DESC, t.id DESC
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids))
+        return db_read_sql_query(query, con, params=(strict_user_id(user_id), *ids))
 
 
 def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
@@ -1501,11 +1643,27 @@ def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_
         FROM ranked
         WHERE rn = 1
            OR rn = n
-           OR ((rn - 1) % MAX(1, CAST((n + ? - 1) / ? AS INTEGER)) = 0)
+           OR (
+               (rn - 1) % (
+                   CASE
+                       WHEN CAST((n + ? - 1) / ? AS INTEGER) < 1 THEN 1
+                       ELSE CAST((n + ? - 1) / ? AS INTEGER)
+                   END
+               ) = 0
+           )
         ORDER BY track_id, seq
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids, max_points, max_points))
+        return db_read_sql_query(
+            query,
+            con,
+            params=(
+                strict_user_id(user_id),
+                *ids,
+                max_points, max_points,
+                max_points, max_points,
+            ),
+        )
 
 
 def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[int, str]:
@@ -1578,13 +1736,13 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, u
 @st.cache_data(show_spinner=False, ttl=300)
 def read_tracks_for_flight(flight_id: int, user_id: int) -> pd.DataFrame:
     with connect() as con:
-        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE user_id = ? AND flight_id = ? ORDER BY id", con, params=(strict_user_id(user_id), flight_id))
+        return db_read_sql_query("SELECT * FROM flight_tracks WHERE user_id = ? AND flight_id = ? ORDER BY id", con, params=(strict_user_id(user_id), flight_id))
 
 
 def _columns_for_table(con: sqlite3.Connection, table: str) -> set[str]:
     try:
         return {row[1] for row in con.execute(f"PRAGMA table_info({table})").fetchall()}
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return set()
 
 
@@ -1610,7 +1768,7 @@ def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
         _add_column_if_missing(con, "audit_log", "entity", "entity TEXT")
         _add_column_if_missing(con, "audit_log", "entity_id", "entity_id TEXT")
         _add_column_if_missing(con, "audit_log", "detail", "detail TEXT")
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         pass
     try:
         _add_column_if_missing(con, "flight_tracks", "min_alt_m", "min_alt_m REAL")
@@ -1619,7 +1777,7 @@ def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
         _add_column_if_missing(con, "flights", "billing_basis", "billing_basis TEXT DEFAULT 'BLOCK'")
         _add_column_if_missing(con, "aircraft", "default_role", "default_role TEXT DEFAULT 'PIC'")
         _add_column_if_missing(con, "aircraft", "billing_basis", "billing_basis TEXT DEFAULT 'BLOCK'")
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         pass
 
 
@@ -1833,14 +1991,14 @@ def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], rep
         require_owned_record(con, "flights", flight_id, uid)
         if replace_existing:
             con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid))
-        cur = con.execute(
+        track_id = insert_and_get_id(
+            con,
             """
             INSERT INTO flight_tracks (user_id, flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (uid, flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False)),
         )
-        track_id = int(cur.lastrowid)
         insert_track_points(con, track_id, points, user_id=uid)
         record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
         con.commit()
@@ -1869,14 +2027,14 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
         values.append(v)
     uid = strict_user_id(current_user_id())
     with connect() as con:
-        cur = con.execute(
+        flight_id = insert_and_get_id(
+            con,
             """
             INSERT INTO flights (user_id, date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, billing_basis, note)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [uid, *values],
         )
-        flight_id = int(cur.lastrowid)
         record_audit(con, "create_flight", "flights", flight_id, data)
         con.commit()
     invalidate_cached_data("flights")
@@ -1929,7 +2087,8 @@ def delete_flight(flight_id: int) -> None:
     """Delete one flight and all related KML/GPS data from SQLite."""
     uid = strict_user_id(current_user_id())
     with connect() as con:
-        ensure_schema_compatibility(con)
+        if not is_postgres_connection(con):
+            ensure_schema_compatibility(con)
         require_owned_record(con, "flights", flight_id, uid)
         row = con.execute("SELECT * FROM flights WHERE id = ? AND user_id = ?", (flight_id, uid)).fetchone()
         if row is None:
@@ -6577,7 +6736,7 @@ def read_aircraft_usage_summary(user_id: int) -> pd.DataFrame:
     uid = strict_user_id(user_id)
     try:
         with connect() as con:
-            return pd.read_sql_query(
+            return db_read_sql_query(
                 """
                 SELECT UPPER(TRIM(registration)) AS registration,
                        COUNT(*) AS flight_count,
@@ -6590,7 +6749,7 @@ def read_aircraft_usage_summary(user_id: int) -> pd.DataFrame:
                 con,
                 params=(uid,),
             )
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return pd.DataFrame(columns=["registration", "flight_count", "last_flight", "starts"])
 
 
@@ -6643,11 +6802,15 @@ def _refresh_aircraft_current_price_in_connection(con: sqlite3.Connection, user_
         FROM rates
         WHERE user_id = ? AND UPPER(TRIM(registration)) = ?
           AND valid_from IS NOT NULL AND TRIM(valid_from) <> ''
-          AND date(valid_from) <= date('now')
-        ORDER BY date(valid_from) DESC, id DESC
+          AND valid_from <= ?
+        ORDER BY valid_from DESC, id DESC
         LIMIT 1
         """,
-        (strict_user_id(user_id), str(registration or "").strip().upper()),
+        (
+            strict_user_id(user_id),
+            str(registration or "").strip().upper(),
+            date.today().isoformat(),
+        ),
     ).fetchone()
     if row is not None:
         con.execute(
@@ -6829,7 +6992,7 @@ def read_quality_track_metadata(user_id: int) -> pd.DataFrame:
     """
     uid = strict_user_id(user_id)
     with connect() as con:
-        return pd.read_sql_query(
+        return db_read_sql_query(
             """
             SELECT
                 t.id,
@@ -7685,26 +7848,26 @@ def _safe_count_query(con: sqlite3.Connection, table: str) -> int:
     try:
         row = con.execute(f"SELECT COUNT(*) AS n FROM {table}").fetchone()
         return int(row["n"] if isinstance(row, sqlite3.Row) else row[0]) if row else 0
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return 0
 
 
 def _safe_df_query(con: sqlite3.Connection, query: str, params: tuple[Any, ...] = ()) -> pd.DataFrame:
     try:
-        return pd.read_sql_query(query, con, params=params)
+        return db_read_sql_query(query, con, params=params)
     except Exception:
         return pd.DataFrame()
 
 
-def _attach_world_airports(con: sqlite3.Connection) -> bool:
-    if not AIRPORTS_DB_PATH.exists():
+def _attach_world_airports(con: Any) -> bool:
+    if is_postgres_connection(con) or not AIRPORTS_DB_PATH.exists():
         return False
     try:
         existing = [str(row[1]) for row in con.execute("PRAGMA database_list").fetchall()]
         if "world_airports" not in existing:
             con.execute("ATTACH DATABASE ? AS world_airports", (str(AIRPORTS_DB_PATH),))
         return True
-    except sqlite3.DatabaseError:
+    except DATABASE_ERRORS:
         return False
 
 
@@ -7732,27 +7895,64 @@ def build_database_health_report() -> dict[str, Any]:
     with connect() as con:
         tables = ["flights", "aircraft", "rates", "flight_tracks", "track_points", "airports", "user_expiries", "audit_log", "app_meta"]
         report["counts"] = {table: _safe_count_query(con, table) for table in tables}
-        try:
-            row = con.execute("PRAGMA integrity_check").fetchone()
-            report["checks"]["integrity_check"] = str(row[0] if row else "unknown")
-        except sqlite3.DatabaseError as exc:
-            report["checks"]["integrity_check"] = f"error: {exc}"
-        try:
-            fk_rows = con.execute("PRAGMA foreign_key_check").fetchall()
-            if fk_rows:
-                report["tables"]["foreign_key_check"] = pd.DataFrame([dict(r) for r in fk_rows])
-            report["checks"]["foreign_key_check"] = "OK" if not fk_rows else f"{len(fk_rows)} problémů"
-        except sqlite3.DatabaseError as exc:
-            report["checks"]["foreign_key_check"] = f"error: {exc}"
+        if is_postgres_connection(con):
+            # PostgreSQL has no PRAGMA integrity_check. Structural integrity is
+            # guarded by FK constraints plus the user-owner triggers created in
+            # postgres_schema.py; verify those relationships explicitly.
+            report["checks"]["integrity_check"] = "OK"
+            integrity_rows: list[dict[str, Any]] = []
+            checks = (
+                ("orphan_track", """
+                    SELECT COUNT(*) AS n FROM flight_tracks t
+                    LEFT JOIN flights f ON f.id=t.flight_id WHERE f.id IS NULL
+                """),
+                ("orphan_point", """
+                    SELECT COUNT(*) AS n FROM track_points p
+                    LEFT JOIN flight_tracks t ON t.id=p.track_id WHERE t.id IS NULL
+                """),
+                ("track_owner", """
+                    SELECT COUNT(*) AS n FROM flight_tracks t
+                    JOIN flights f ON f.id=t.flight_id WHERE t.user_id<>f.user_id
+                """),
+                ("point_owner", """
+                    SELECT COUNT(*) AS n FROM track_points p
+                    JOIN flight_tracks t ON t.id=p.track_id WHERE p.user_id<>t.user_id
+                """),
+            )
+            for label, query in checks:
+                row = con.execute(query).fetchone()
+                count = int(row[0]) if row else 0
+                if count:
+                    integrity_rows.append({"check": label, "count": count})
+            report["checks"]["foreign_key_check"] = "OK" if not integrity_rows else f"{sum(r['count'] for r in integrity_rows)} problémů"
+            if integrity_rows:
+                report["tables"]["foreign_key_check"] = pd.DataFrame(integrity_rows)
+        else:
+            try:
+                row = con.execute("PRAGMA integrity_check").fetchone()
+                report["checks"]["integrity_check"] = str(row[0] if row else "unknown")
+            except DATABASE_ERRORS as exc:
+                report["checks"]["integrity_check"] = f"error: {exc}"
+            try:
+                fk_rows = con.execute("PRAGMA foreign_key_check").fetchall()
+                if fk_rows:
+                    report["tables"]["foreign_key_check"] = pd.DataFrame([dict(r) for r in fk_rows])
+                report["checks"]["foreign_key_check"] = "OK" if not fk_rows else f"{len(fk_rows)} problémů"
+            except DATABASE_ERRORS as exc:
+                report["checks"]["foreign_key_check"] = f"error: {exc}"
 
-        duplicate_flights = _safe_df_query(con, """
-            SELECT date, UPPER(TRIM(COALESCE(registration,''))) AS registration,
+        ids_aggregate = (
+            "STRING_AGG(CAST(id AS TEXT), ',')" if is_postgres_connection(con)
+            else "GROUP_CONCAT(id)"
+        )
+        duplicate_flights = _safe_df_query(con, f"""
+            SELECT user_id, date, UPPER(TRIM(COALESCE(registration,''))) AS registration,
                    UPPER(TRIM(COALESCE(departure,''))) AS departure,
                    UPPER(TRIM(COALESCE(arrival,''))) AS arrival,
                    COALESCE(takeoff,'') AS takeoff, COALESCE(landing,'') AS landing,
-                   COUNT(*) AS pocet, GROUP_CONCAT(id) AS ids
+                   COUNT(*) AS pocet, {ids_aggregate} AS ids
             FROM flights
-            GROUP BY date, UPPER(TRIM(COALESCE(registration,''))), UPPER(TRIM(COALESCE(departure,''))),
+            GROUP BY user_id, date, UPPER(TRIM(COALESCE(registration,''))), UPPER(TRIM(COALESCE(departure,''))),
                      UPPER(TRIM(COALESCE(arrival,''))), COALESCE(takeoff,''), COALESCE(landing,'')
             HAVING COUNT(*) > 1
             ORDER BY date DESC
@@ -7789,52 +7989,49 @@ def build_database_health_report() -> dict[str, Any]:
             report["tables"]["missing_price"] = missing_price
 
         missing_aircraft = _safe_df_query(con, """
-            SELECT DISTINCT UPPER(TRIM(f.registration)) AS registration, COUNT(*) AS flights
+            SELECT f.user_id, UPPER(TRIM(f.registration)) AS registration, COUNT(*) AS flights
             FROM flights f
-            LEFT JOIN aircraft a ON UPPER(TRIM(a.registration)) = UPPER(TRIM(f.registration))
+            LEFT JOIN aircraft a ON a.user_id = f.user_id AND UPPER(TRIM(a.registration)) = UPPER(TRIM(f.registration))
             WHERE TRIM(COALESCE(f.registration,'')) <> '' AND a.id IS NULL
-            GROUP BY UPPER(TRIM(f.registration))
+            GROUP BY f.user_id, UPPER(TRIM(f.registration))
             ORDER BY flights DESC, registration
             LIMIT 250
         """)
         if not missing_aircraft.empty:
             report["tables"]["missing_aircraft"] = missing_aircraft
 
+        # The 85k-row world airport catalogue intentionally remains a local
+        # read-only SQLite asset. Only the SQLite backend can ATTACH it inside
+        # SQL. PostgreSQL runtime delegates this check to Data Quality, whose
+        # Python airport index already combines the global catalogue with
+        # tenant-owned overrides.
         world_ok = _attach_world_airports(con)
         if world_ok:
             unknown_airports_query = """
                 WITH used AS (
-                    SELECT id AS flight_id, 'Odlet' AS field, UPPER(TRIM(departure)) AS ident FROM flights WHERE TRIM(COALESCE(departure,'')) <> ''
+                    SELECT user_id, id AS flight_id, 'Odlet' AS field, UPPER(TRIM(departure)) AS ident
+                    FROM flights WHERE TRIM(COALESCE(departure,'')) <> ''
                     UNION ALL
-                    SELECT id AS flight_id, 'Přílet' AS field, UPPER(TRIM(arrival)) AS ident FROM flights WHERE TRIM(COALESCE(arrival,'')) <> ''
+                    SELECT user_id, id AS flight_id, 'Přílet' AS field, UPPER(TRIM(arrival)) AS ident
+                    FROM flights WHERE TRIM(COALESCE(arrival,'')) <> ''
                 )
-                SELECT u.field, u.ident, COUNT(*) AS flights, GROUP_CONCAT(u.flight_id) AS flight_ids
+                SELECT u.user_id, u.field, u.ident, COUNT(*) AS flights,
+                       GROUP_CONCAT(u.flight_id) AS flight_ids
                 FROM used u
-                LEFT JOIN airports a ON UPPER(TRIM(a.ident)) = u.ident
-                LEFT JOIN world_airports.airports wa ON UPPER(TRIM(wa.ident)) = u.ident
+                LEFT JOIN airports a ON a.user_id=u.user_id AND UPPER(TRIM(a.ident))=u.ident
+                LEFT JOIN world_airports.airports wa ON UPPER(TRIM(wa.ident))=u.ident
                 WHERE a.id IS NULL AND wa.id IS NULL
-                GROUP BY u.field, u.ident
+                GROUP BY u.user_id, u.field, u.ident
                 ORDER BY flights DESC, u.ident
                 LIMIT 250
             """
+            unknown_airports = _safe_df_query(con, unknown_airports_query)
+            if not unknown_airports.empty:
+                report["tables"]["unknown_airports"] = unknown_airports
+        elif not is_postgres_connection(con):
+            report["checks"]["world_airports"] = "reference DB unavailable"
         else:
-            unknown_airports_query = """
-                WITH used AS (
-                    SELECT id AS flight_id, 'Odlet' AS field, UPPER(TRIM(departure)) AS ident FROM flights WHERE TRIM(COALESCE(departure,'')) <> ''
-                    UNION ALL
-                    SELECT id AS flight_id, 'Přílet' AS field, UPPER(TRIM(arrival)) AS ident FROM flights WHERE TRIM(COALESCE(arrival,'')) <> ''
-                )
-                SELECT u.field, u.ident, COUNT(*) AS flights, GROUP_CONCAT(u.flight_id) AS flight_ids
-                FROM used u
-                LEFT JOIN airports a ON UPPER(TRIM(a.ident)) = u.ident
-                WHERE a.id IS NULL
-                GROUP BY u.field, u.ident
-                ORDER BY flights DESC, u.ident
-                LIMIT 250
-            """
-        unknown_airports = _safe_df_query(con, unknown_airports_query)
-        if not unknown_airports.empty:
-            report["tables"]["unknown_airports"] = unknown_airports
+            report["checks"]["world_airports"] = "Data Quality / Python index"
 
         orphan_tracks = _safe_df_query(con, """
             SELECT t.id AS track_id, t.flight_id, t.file_name, t.imported_at, t.point_count, t.distance_km
@@ -7852,7 +8049,7 @@ def build_database_health_report() -> dict[str, Any]:
             FROM flight_tracks t
             LEFT JOIN flights f ON f.id = t.flight_id
             LEFT JOIN track_points p ON p.track_id = t.id
-            GROUP BY t.id
+            GROUP BY t.id, f.date, f.registration
             HAVING COUNT(p.id) = 0
             ORDER BY t.id DESC
             LIMIT 250
@@ -7866,9 +8063,11 @@ def build_database_health_report() -> dict[str, Any]:
             FROM flight_tracks t
             LEFT JOIN flights f ON f.id = t.flight_id
             LEFT JOIN track_points p ON p.track_id = t.id
-            GROUP BY t.id
-            HAVING normalized_points > 0 AND stored_points > 0 AND ABS(stored_points - normalized_points) > 5
-            ORDER BY ABS(stored_points - normalized_points) DESC
+            GROUP BY t.id, f.date, f.registration
+            HAVING COUNT(p.id) > 0
+               AND COALESCE(t.point_count, 0) > 0
+               AND ABS(COALESCE(t.point_count, 0) - COUNT(p.id)) > 5
+            ORDER BY ABS(COALESCE(t.point_count, 0) - COUNT(p.id)) DESC
             LIMIT 250
         """)
         if not track_point_mismatch.empty:
@@ -7910,7 +8109,7 @@ def build_database_health_report() -> dict[str, Any]:
                     invalid_json_rows.append({"track_id": row["id"], "flight_id": row["flight_id"], "file_name": row["file_name"], "problem": str(exc)[:120]})
                 if len(invalid_json_rows) >= 250:
                     break
-        except sqlite3.DatabaseError:
+        except DATABASE_ERRORS:
             pass
         if invalid_json_rows:
             report["tables"]["invalid_track_json"] = pd.DataFrame(invalid_json_rows)
@@ -8011,10 +8210,14 @@ def run_safe_database_service() -> dict[str, Any]:
             )
             """,
         )
-        # Recreate/verify tenant indexes and owner guard triggers. This is
-        # idempotent and does not alter flight semantics.
-        ensure_tenancy_schema(con)
-        optimize_sqlite(con)
+        # SQLite can rebuild its migration-era tenant guards. PostgreSQL owner
+        # guards are part of the versioned schema and must not be rewritten here.
+        if is_postgres_connection(con):
+            con.execute("ANALYZE")
+            result["actions"].append({"Akce": "PostgreSQL ANALYZE", "Změny": 0})
+        else:
+            ensure_tenancy_schema(con)
+            optimize_sqlite(con)
         result["changed"] = int(con.total_changes - before)
         record_audit(con, "safe_database_service", "database", None, result)
         con.commit()
@@ -8024,20 +8227,27 @@ def run_safe_database_service() -> dict[str, Any]:
     return result
 
 
-def run_sqlite_service() -> dict[str, Any]:
-    result = {"Akce": [], "Stav": "OK"}
+def run_backend_service() -> dict[str, Any]:
+    result = {"Akce": [], "Stav": "OK", "Backend": production_backend_name()}
     with connect() as con:
-        try:
-            con.execute("PRAGMA optimize")
-            result["Akce"].append("PRAGMA optimize")
-        except sqlite3.DatabaseError as exc:
-            result["Akce"].append(f"PRAGMA optimize selhalo: {exc}")
-        try:
-            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            result["Akce"].append("WAL checkpoint")
-        except sqlite3.DatabaseError as exc:
-            result["Akce"].append(f"WAL checkpoint selhal: {exc}")
-        record_audit(con, "sqlite_service", "database", None, result)
+        if is_postgres_connection(con):
+            try:
+                con.execute("ANALYZE")
+                result["Akce"].append("PostgreSQL ANALYZE")
+            except DATABASE_ERRORS as exc:
+                result["Akce"].append(f"PostgreSQL ANALYZE selhalo: {exc}")
+        else:
+            try:
+                con.execute("PRAGMA optimize")
+                result["Akce"].append("PRAGMA optimize")
+            except DATABASE_ERRORS as exc:
+                result["Akce"].append(f"PRAGMA optimize selhalo: {exc}")
+            try:
+                con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                result["Akce"].append("WAL checkpoint")
+            except DATABASE_ERRORS as exc:
+                result["Akce"].append(f"WAL checkpoint selhal: {exc}")
+        record_audit(con, "database_backend_service", "database", None, result)
         con.commit()
     invalidate_cached_data("database")
     return result
@@ -8062,13 +8272,14 @@ def render_database_control_panel() -> None:
                     except Exception as exc:
                         st.error(f"Servis selhal: {exc}")
     with c3:
-        if st.button("SQLite optimize", width="stretch", disabled=not is_admin(), key="run_sqlite_service_v047"):
+        maintenance_label = "PostgreSQL ANALYZE" if production_is_postgresql() else "SQLite optimize"
+        if st.button(maintenance_label, width="stretch", disabled=not is_admin(), key="run_backend_service_v072"):
             if require_admin():
                 try:
-                    st.session_state["sqlite_service_result_v047"] = run_sqlite_service()
-                    st.success("SQLite optimalizace dokončena.")
+                    st.session_state["backend_service_result_v072"] = run_backend_service()
+                    st.success("Databázová údržba dokončena.")
                 except Exception as exc:
-                    st.error(f"SQLite optimalizace selhala: {exc}")
+                    st.error(f"Databázová údržba selhala: {exc}")
 
     if not is_admin():
         st.caption("Servisní opravy jsou dostupné jen po přihlášení jako admin.")
@@ -8081,10 +8292,10 @@ def render_database_control_panel() -> None:
             if not actions.empty:
                 st.dataframe(actions, hide_index=True, width="stretch")
 
-    sqlite_result = st.session_state.get("sqlite_service_result_v047")
-    if sqlite_result:
-        with st.expander("Poslední SQLite optimize", expanded=False):
-            st.write(" • ".join(sqlite_result.get("Akce", [])))
+    backend_result = st.session_state.get("backend_service_result_v072")
+    if backend_result:
+        with st.expander("Poslední databázová údržba", expanded=False):
+            st.write(" • ".join(backend_result.get("Akce", [])))
 
     report = st.session_state.get("db_health_report_v047")
     if not report:
@@ -8102,9 +8313,12 @@ def render_database_control_panel() -> None:
     st.caption(f"Kontrola: {report.get('generated_at', '')}")
 
     if str(checks.get("integrity_check", "")).upper() == "OK" and str(checks.get("foreign_key_check", "")).upper() == "OK":
-        st.success("SQLite integrita a foreign key check: OK")
+        st.success(f"{'PostgreSQL' if production_is_postgresql() else 'SQLite'} integrita a vazby: OK")
     else:
-        st.error(f"SQLite kontrola: integrity={checks.get('integrity_check')} • foreign_keys={checks.get('foreign_key_check')}")
+        st.error(
+            f"{'PostgreSQL' if production_is_postgresql() else 'SQLite'} kontrola: "
+            f"integrity={checks.get('integrity_check')} • foreign_keys={checks.get('foreign_key_check')}"
+        )
 
     tables = report.get("tables", {})
     _render_issue_table("Foreign key check", tables.get("foreign_key_check", pd.DataFrame()))
@@ -8502,7 +8716,7 @@ def page_export(df: pd.DataFrame):
 def read_admin_user_overview() -> pd.DataFrame:
     """Small global overview used only by the persistent admin console."""
     with connect() as con:
-        return pd.read_sql_query(
+        return db_read_sql_query(
             """
             SELECT
                 u.id,
@@ -8535,7 +8749,7 @@ def _admin_global_counts() -> dict[str, int]:
         def count(table: str) -> int:
             try:
                 return int(con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
-            except sqlite3.DatabaseError:
+            except DATABASE_ERRORS:
                 return 0
         return {
             "users": count("users"),
@@ -8558,7 +8772,7 @@ def read_permission_health() -> dict[str, Any]:
                 unknown_owner = int(con.execute(
                     f"SELECT COUNT(*) FROM {table} t LEFT JOIN users u ON u.id = t.user_id WHERE u.id IS NULL"
                 ).fetchone()[0])
-            except sqlite3.DatabaseError:
+            except DATABASE_ERRORS:
                 continue
             if missing_owner:
                 issues.append({"Kontrola": table, "Problém": "chybí user_id", "Počet": missing_owner})
@@ -8629,33 +8843,68 @@ def _sqlite_migration_plan_cached() -> dict[str, Any]:
 
 
 def render_postgres_foundation_admin() -> None:
-    st.markdown("### PostgreSQL shadow")
-    st.caption(
-        "SQLite zůstává produkční databází. PostgreSQL je v0.71 pouze shadow kopie "
-        "pro migraci a ověřování; runtime cutover je stále zamknutý."
-    )
-
+    runtime = runtime_database_config()
     pg_config = _postgres_streamlit_target_config()
     configured = pg_config.configured
     driver_ok = postgres_driver_available()
+    is_pg_prod = runtime.is_postgresql
+
+    st.markdown("### PostgreSQL production cutover")
+    st.caption(
+        "v0.72 umí PostgreSQL použít jako skutečný produkční read/write backend. "
+        "Přepnutí je explicitní, fail-closed a nikdy automaticky nespadne zpět do SQLite."
+    )
+
+    try:
+        readiness = inspect_cutover_readiness(
+            pg_config,
+            sqlite_path=None if is_pg_prod else DB_PATH,
+        ) if configured else None
+    except Exception:
+        readiness = None
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("Production", "SQLite", "read/write runtime")
+        metric_card(
+            "Production",
+            "PostgreSQL" if is_pg_prod else "SQLite",
+            "read/write runtime",
+        )
     with c2:
-        metric_card("Shadow", "Nastaven" if configured else "Nenastaven", "PostgreSQL")
+        metric_card("PostgreSQL", "Nastaven" if configured else "Nenastaven", "connection")
     with c3:
-        metric_card("Driver", "OK" if driver_ok else "Chybí", "psycopg")
+        metric_card(
+            "Readiness",
+            (
+                "AKTIVNÍ" if readiness and readiness.production_active
+                else ("READY" if readiness and readiness.ready else "NE")
+            ),
+            "cutover gate",
+        )
     with c4:
-        metric_card("Cutover", "ZAMKNUT", "v0.71")
+        metric_card("Fallback", "RUČNÍ", "nikdy automatický")
 
-    st.info(
-        "Bezpečnostní pojistka zůstává stejná: `postgres_cutover_enabled()` je False. "
-        "Migrace ani shadow kontrola nemění zdroj produkčních dat."
-    )
+    if is_pg_prod:
+        st.success(
+            "PRODUCTION: PostgreSQL. Všechny běžné Logbook CRUD operace používají PostgreSQL."
+        )
+        if readiness and readiness.production_cutover_at:
+            st.caption(
+                f"Produkční cutover: {readiness.production_cutover_at} · "
+                f"protocol {CUTOVER_PROTOCOL_VERSION}"
+            )
+        st.warning(
+            "Lokální/GitHub SQLite je po cutoveru pouze zmrazený fallback baseline. "
+            "Není průběžně synchronizovaný s PostgreSQL a nesmí být považován za aktuální zálohu."
+        )
+    else:
+        st.info(
+            "Aktuálně stále běží SQLite. PostgreSQL se stane produkcí až po deep verification, "
+            "CUTOVER READY gate a následné explicitní změně Streamlit Secrets."
+        )
 
     with st.container(border=True):
-        st.markdown("#### PostgreSQL target")
+        st.markdown("#### PostgreSQL connection")
         if configured:
             st.code(redact_postgres_dsn(pg_config.dsn), language=None)
             st.caption(
@@ -8671,31 +8920,17 @@ def render_postgres_foundation_admin() -> None:
                 'postgres_connect_timeout = 5',
                 language="toml",
             )
-            st.caption("Nastav v Streamlit App settings → Secrets. Aplikace bez toho dál normálně běží na SQLite.")
 
-    test_col, counts_col = st.columns(2)
-    with test_col:
-        if st.button(
-            "Otestovat spojení",
-            disabled=not configured,
-            width="stretch",
-            key="pg_healthcheck_v071",
-        ):
-            with st.spinner("Testuji PostgreSQL target…"):
-                st.session_state["pg_health_v071"] = postgres_healthcheck(pg_config)
-    with counts_col:
-        if st.button(
-            "Rychlé počty tabulek",
-            disabled=not configured,
-            width="stretch",
-            key="pg_compare_counts_v071",
-        ):
-            try:
-                st.session_state["pg_counts_v071"] = postgres_table_counts(pg_config)
-            except Exception as exc:
-                st.session_state["pg_counts_v071"] = {"_error": str(exc)}
+    if st.button(
+        "Otestovat PostgreSQL spojení",
+        disabled=not configured,
+        width="stretch",
+        key="pg_healthcheck_v072",
+    ):
+        with st.spinner("Testuji PostgreSQL…"):
+            st.session_state["pg_health_v072"] = postgres_healthcheck(pg_config)
 
-    health = st.session_state.get("pg_health_v071")
+    health = st.session_state.get("pg_health_v072")
     if isinstance(health, dict):
         if health.get("ok"):
             st.success(
@@ -8704,37 +8939,55 @@ def render_postgres_foundation_admin() -> None:
         else:
             st.error("PostgreSQL test selhal: " + str(health.get("error") or "neznámá chyba"))
 
-    counts_target = st.session_state.get("pg_counts_v071")
-    if isinstance(counts_target, dict):
-        if "_error" in counts_target:
-            st.error("Počty PostgreSQL se nepodařilo načíst: " + str(counts_target["_error"]))
-        else:
-            source_plan = build_sqlite_migration_plan(DB_PATH)
-            rows = []
-            for table, sqlite_count in source_plan.table_counts.items():
-                pg_count = int(counts_target.get(table, -1))
-                rows.append({
-                    "Tabulka": table,
-                    "SQLite": int(sqlite_count),
-                    "PostgreSQL raw": "chybí" if pg_count < 0 else pg_count,
-                })
-            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    # Once PostgreSQL is production, shadow migration controls are intentionally
+    # hidden. Re-running them against production would be conceptually wrong.
+    if is_pg_prod:
+        st.markdown("#### Produkční stav")
+        try:
+            pg_counts = postgres_table_counts(pg_config)
+            count_rows = [
+                {"Tabulka": table, "Řádků": count}
+                for table, count in pg_counts.items()
+                if count >= 0
+            ]
+            st.dataframe(pd.DataFrame(count_rows), hide_index=True, width="stretch")
+        except Exception as exc:
+            st.warning(f"Počty PostgreSQL se nepodařilo načíst: {exc}")
 
-    st.markdown("#### 1. Vytvořit první shadow kopii")
+        with st.expander("Nouzový ruční návrat na SQLite", expanded=False):
+            st.error(
+                "Použij jen při skutečném incidentu. SQLite po cutoveru nemusí obsahovat "
+                "nové PostgreSQL zápisy. Automatický fallback je záměrně zakázaný."
+            )
+            st.code(
+                '[database]\\n'
+                'production_backend = "sqlite"\\n'
+                'cutover_confirm = "POSTGRESQL_PRODUCTION"\\n'
+                'fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"',
+                language="toml",
+            )
+            st.caption(
+                "Pokud během fallbacku nevznikne žádný nový databázový zápis, lze se vrátit na PostgreSQL. "
+                "Jakmile SQLite dostane nový zápis, v0.72 návrat automaticky zablokuje a vyžaduje ruční reconciliaci."
+            )
+        return
+
+    # ------------------------------------------------------------------
+    # SQLite production -> PostgreSQL shadow/cutover preparation
+    # ------------------------------------------------------------------
+    st.markdown("#### 1. Shadow databáze")
     st.caption(
-        "Použije konzistentní SQLite snapshot a migruje ho do PRÁZDNÉ PostgreSQL databáze. "
-        "Zachová ID, user_id, účty, hesla, lety i GPS. Produkční SQLite se pouze čte."
+        "Pokud už shadow existuje, novou migraci nespouštěj. Tlačítko je určené jen pro prázdný target."
     )
-
     confirm_shadow = st.text_input(
-        "Pro spuštění napiš přesně VYTVOŘIT SHADOW",
+        "Pro první migraci napiš VYTVOŘIT SHADOW",
         value="",
-        key="pg_shadow_confirm_v071",
+        key="pg_shadow_confirm_v072",
     )
     acknowledge_credentials = st.checkbox(
-        "Rozumím, že jde o úplnou kopii aplikace včetně účtů a password hashů.",
+        "Rozumím, že úplná shadow kopie obsahuje účty a password hashe.",
         value=False,
-        key="pg_shadow_credentials_ack_v071",
+        key="pg_shadow_credentials_ack_v072",
     )
     migrate_disabled = (
         not configured
@@ -8743,46 +8996,21 @@ def render_postgres_foundation_admin() -> None:
         or not acknowledge_credentials
     )
     if st.button(
-        "Spustit shadow migraci",
-        type="primary",
+        "Spustit první shadow migraci",
         disabled=migrate_disabled,
         width="stretch",
-        key="pg_shadow_migrate_v071",
+        key="pg_shadow_migrate_v072",
     ):
         try:
-            progress = st.progress(0, text="Připravuji shadow migraci…")
-            plan = build_sqlite_migration_plan(DB_PATH)
-            table_totals = dict(plan.table_counts)
-            total_rows = max(1, sum(table_totals.values()))
-            completed_before: dict[str, int] = {}
-            copied_total = 0
-
-            def _shadow_progress(table: str, copied: int, total: int) -> None:
-                nonlocal copied_total
-                previous = completed_before.get(table, 0)
-                delta = max(0, int(copied) - int(previous))
-                copied_total += delta
-                completed_before[table] = int(copied)
-                progress.progress(
-                    min(1.0, copied_total / total_rows),
-                    text=f"Migruji {table}: {copied}/{total}",
-                )
-
-            with st.spinner("Kopíruji SQLite snapshot do PostgreSQL…"):
-                report = migrate_sqlite_to_postgres(
+            with st.spinner("Kopíruji konzistentní SQLite snapshot…"):
+                migration_report = migrate_sqlite_to_postgres(
                     DB_PATH,
                     pg_config.dsn,
                     batch_size=1000,
-                    progress=_shadow_progress,
                 )
-            progress.progress(1.0, text="Shadow migrace dokončena.")
-            st.session_state["pg_shadow_migration_report_v071"] = report.as_dict()
-            with st.spinner("Ověřuji novou shadow kopii…"):
-                verification = verify_postgres_shadow(DB_PATH, pg_config, deep=False)
-            st.session_state["pg_shadow_verify_v071"] = verification
+            st.session_state["pg_shadow_migration_report_v072"] = migration_report.as_dict()
             st.success(
-                f"Shadow migrace dokončena: {report.copied_rows:,} řádků. "
-                "Produkční runtime zůstává SQLite."
+                f"Shadow vytvořen: {migration_report.copied_rows:,} řádků."
                 .replace(",", " ")
             )
         except PostgresMigrationError as exc:
@@ -8790,61 +9018,48 @@ def render_postgres_foundation_admin() -> None:
         except Exception as exc:
             st.error("Shadow migrace selhala: " + str(exc))
 
-    migration_report = st.session_state.get("pg_shadow_migration_report_v071")
-    if isinstance(migration_report, dict):
-        st.caption(
-            "Poslední migrace v této session: "
-            f"{int(migration_report.get('copied_rows') or 0):,} zkopírovaných řádků."
-            .replace(",", " ")
-        )
-
-    st.markdown("#### 2. Ověřit SQLite ↔ PostgreSQL")
-    verify1, verify2 = st.columns(2)
-    with verify1:
+    st.markdown("#### 2. Ověření shadow")
+    v1, v2 = st.columns(2)
+    with v1:
         if st.button(
-            "Rychlá shadow kontrola",
+            "Rychlá kontrola",
             disabled=not configured,
-            type="primary",
             width="stretch",
-            key="pg_shadow_quick_verify_v071",
+            key="pg_shadow_quick_verify_v072",
         ):
             try:
                 with st.spinner("Porovnávám watermark, počty a pilotní součty…"):
-                    st.session_state["pg_shadow_verify_v071"] = verify_postgres_shadow(
+                    st.session_state["pg_shadow_verify_v072"] = verify_postgres_shadow(
                         DB_PATH, pg_config, deep=False
                     )
             except Exception as exc:
                 st.error("Shadow kontrola selhala: " + str(exc))
-    with verify2:
+    with v2:
         if st.button(
             "Hluboká kontrola SHA-256",
             disabled=not configured,
+            type="primary",
             width="stretch",
-            key="pg_shadow_deep_verify_v071",
+            key="pg_shadow_deep_verify_v072",
         ):
             try:
                 with st.spinner("Hashuji obsah všech migrovaných tabulek…"):
-                    st.session_state["pg_shadow_verify_v071"] = verify_postgres_shadow(
+                    st.session_state["pg_shadow_verify_v072"] = verify_postgres_shadow(
                         DB_PATH, pg_config, deep=True
                     )
             except Exception as exc:
-                st.error("Hluboká shadow kontrola selhala: " + str(exc))
+                st.error("Hluboká kontrola selhala: " + str(exc))
 
-    verification = st.session_state.get("pg_shadow_verify_v071")
+    verification = st.session_state.get("pg_shadow_verify_v072")
     if verification is not None and hasattr(verification, "as_dict"):
-        report_dict = verification.as_dict()
-        status = str(report_dict.get("status") or "")
-        if status == "match":
+        if verification.status == "match":
             st.success("SHADOW MATCH · PostgreSQL odpovídá aktuální SQLite produkci.")
-        elif status == "stale":
-            st.warning(
-                "SHADOW STALE · SQLite se od shadow migrace změnila. "
-                "To není chyba dat; shadow kopie už jen není aktuální."
-            )
-        elif status == "mismatch":
-            st.error("SHADOW MISMATCH · byly nalezeny obsahové rozdíly.")
+        elif verification.status == "stale":
+            st.warning("SHADOW STALE · SQLite se od shadow migrace změnila.")
+        elif verification.status == "mismatch":
+            st.error("SHADOW MISMATCH · obsah se neshoduje.")
         else:
-            st.warning("Target není označen jako v0.71 shadow migrace.")
+            st.warning("Target není platný shadow snapshot.")
 
         s1, s2, s3, s4 = st.columns(4)
         with s1:
@@ -8852,111 +9067,158 @@ def render_postgres_foundation_admin() -> None:
         with s2:
             metric_card("Pilotní součty", "MATCH" if verification.metrics_match else "ROZDÍL", "per user")
         with s3:
-            deep_label = "NEPROVEDENO" if verification.deep_match is None else ("MATCH" if verification.deep_match else "ROZDÍL")
-            metric_card("SHA-256", deep_label, "obsah tabulek")
+            sha_label = (
+                "NEPROVEDENO" if verification.deep_match is None
+                else ("MATCH" if verification.deep_match else "ROZDÍL")
+            )
+            metric_card("SHA-256", sha_label, "obsah")
         with s4:
-            metric_card("Aktuálnost", "ANO" if verification.shadow_current else "NE", "last_change_at")
-
-        st.caption(
-            f"Watermark SQLite: {verification.source_watermark or '—'} · "
-            f"PostgreSQL: {verification.target_watermark or '—'} · "
-            f"shadow vytvořen: {verification.shadow_migrated_at or '—'}"
-        )
-        st.caption(
-            f"Diagnostický COUNT dotaz: SQLite {verification.source_query_ms if verification.source_query_ms is not None else '—'} ms · "
-            f"PostgreSQL {verification.target_query_ms if verification.target_query_ms is not None else '—'} ms. "
-            "Není to benchmark celé aplikace."
-        )
-
-        if verification.count_differences:
-            st.markdown("##### Rozdíly v počtech")
-            st.dataframe(
-                pd.DataFrame([
-                    {"Tabulka": table, **values}
-                    for table, values in verification.count_differences.items()
-                ]),
-                hide_index=True,
-                width="stretch",
-            )
-
-        if verification.metric_differences:
-            st.markdown("##### Rozdíly v pilotních součtech")
-            metric_rows = []
-            for user_id, changes in verification.metric_differences.items():
-                for metric, values in changes.items():
-                    metric_rows.append({
-                        "User ID": user_id,
-                        "Metrika": metric,
-                        "SQLite": values.get("sqlite"),
-                        "PostgreSQL": values.get("postgresql"),
-                    })
-            st.dataframe(pd.DataFrame(metric_rows), hide_index=True, width="stretch")
-
-        if verification.fingerprint_differences:
-            st.markdown("##### Rozdíly SHA-256")
-            st.dataframe(
-                pd.DataFrame([
-                    {
-                        "Tabulka": table,
-                        "SQLite SHA-256": values["sqlite"],
-                        "PostgreSQL SHA-256": values["postgresql"],
-                    }
-                    for table, values in verification.fingerprint_differences.items()
-                ]),
-                hide_index=True,
-                width="stretch",
-            )
+            metric_card("Aktuálnost", "ANO" if verification.shadow_current else "NE", "watermark")
 
         st.download_button(
-            "Stáhnout shadow verification JSON",
+            "Stáhnout verification JSON",
             data=shadow_report_json(verification),
             file_name="logbook_shadow_verification.json",
             mime="application/json",
             width="stretch",
-            key="pg_shadow_report_download_v071",
+            key="pg_shadow_report_download_v072",
         )
 
-    st.markdown("#### 3. Migrační nástroje")
+    if verification is not None and getattr(verification, "status", "") in {"stale", "mismatch"}:
+        st.markdown("#### Obnovit shadow z aktuální SQLite")
+        st.warning(
+            "Toto přepíše pouze neprodukční PostgreSQL shadow aktuálním SQLite snapshotem. "
+            "Celá operace je v jedné PostgreSQL transakci; při chybě se vrátí předchozí shadow."
+        )
+        refresh_confirm = st.text_input(
+            "Pro refresh napiš OBNOVIT SHADOW",
+            value="",
+            key="pg_shadow_refresh_confirm_v072",
+        )
+        refresh_ack = st.checkbox(
+            "Rozumím, že stávající neprodukční shadow data budou nahrazena aktuálním SQLite snapshotem.",
+            value=False,
+            key="pg_shadow_refresh_ack_v072",
+        )
+        if st.button(
+            "Obnovit PostgreSQL shadow",
+            disabled=not (
+                configured
+                and refresh_confirm == "OBNOVIT SHADOW"
+                and refresh_ack
+            ),
+            width="stretch",
+            key="pg_shadow_refresh_v072",
+        ):
+            try:
+                with st.spinner("Obnovuji shadow z konzistentního SQLite snapshotu…"):
+                    refreshed = refresh_sqlite_to_postgres_shadow(
+                        DB_PATH,
+                        pg_config.dsn,
+                        batch_size=1000,
+                    )
+                st.session_state.pop("pg_shadow_verify_v072", None)
+                st.success(
+                    f"Shadow obnoven: {refreshed.copied_rows:,} řádků. "
+                    "Teď spusť znovu hlubokou SHA-256 kontrolu."
+                    .replace(",", " ")
+                )
+                st.rerun()
+            except PostgresMigrationError as exc:
+                st.error("Shadow refresh odmítnut: " + str(exc))
+            except Exception as exc:
+                st.error("Shadow refresh selhal: " + str(exc))
+
+    st.markdown("#### 3. CUTOVER READY")
+    current_readiness = None
     try:
-        plan = build_sqlite_migration_plan(DB_PATH)
-        p1, p2, p3 = st.columns(3)
-        with p1:
-            metric_card("SQLite schema", str(plan.sqlite_schema_version), "zdroj")
-        with p2:
-            metric_card("Řádků", f"{plan.total_rows:,}".replace(",", " "), "k migraci")
-        with p3:
-            metric_card("PG schema", str(plan.postgres_schema_version), "foundation")
-
-        st.download_button(
-            "Stáhnout migration manifest JSON",
-            data=migration_plan_json(plan),
-            file_name="logbook_postgres_migration_manifest.json",
-            mime="application/json",
-            width="stretch",
-            key="pg_manifest_download_v071",
-        )
-        st.download_button(
-            "Stáhnout PostgreSQL schema SQL",
-            data=postgres_schema_sql().encode("utf-8"),
-            file_name="postgresql_schema_v1.sql",
-            mime="text/sql",
-            width="stretch",
-            key="pg_schema_download_v071",
-        )
+        current_readiness = inspect_cutover_readiness(pg_config, sqlite_path=DB_PATH) if configured else None
     except Exception as exc:
-        st.error(f"Migrační plán nelze vytvořit: {exc}")
+        st.caption(f"Readiness nelze načíst: {exc}")
 
-    with st.expander("CLI nástroje", expanded=False):
-        st.code(
-            "python scripts/migrate_sqlite_to_postgres.py --dry-run\\n"
-            "python scripts/migrate_sqlite_to_postgres.py --confirm MIGRATE\\n"
-            "python scripts/verify_postgres_shadow.py\\n"
-            "python scripts/verify_postgres_shadow.py --deep",
-            language="bash",
+    if current_readiness and current_readiness.ready:
+        st.success(
+            "CUTOVER READY · PostgreSQL je hluboce ověřený proti aktuální SQLite."
         )
         st.caption(
-            "První migrace vyžaduje prázdný target. Pokud se SQLite později změní, "
-            "verification správně ukáže STALE; v0.71 shadow databázi automaticky nemaže ani nerebuildí."
+            f"Ready od: {current_readiness.ready_at} · "
+            f"watermark: {current_readiness.ready_watermark or '—'}"
+        )
+    else:
+        if current_readiness and current_readiness.reason:
+            st.caption("Readiness: " + current_readiness.reason)
+
+        confirm_ready = st.text_input(
+            "Po úspěšné hluboké kontrole napiš PŘIPRAVIT CUTOVER",
+            value="",
+            key="pg_cutover_ready_confirm_v072",
+        )
+        can_mark_ready = bool(
+            configured
+            and verification is not None
+            and getattr(verification, "status", "") == "match"
+            and getattr(verification, "deep_match", None) is True
+            and getattr(verification, "shadow_current", False)
+            and confirm_ready == "PŘIPRAVIT CUTOVER"
+        )
+        if st.button(
+            "Označit PostgreSQL jako CUTOVER READY",
+            disabled=not can_mark_ready,
+            type="primary",
+            width="stretch",
+            key="pg_cutover_ready_v072",
+        ):
+            try:
+                mark_postgres_cutover_ready(pg_config, verification)
+                st.success("CUTOVER READY marker uložen do PostgreSQL.")
+                st.rerun()
+            except ProductionCutoverError as exc:
+                st.error("Readiness odmítnuta: " + str(exc))
+            except Exception as exc:
+                st.error("Readiness selhala: " + str(exc))
+
+    if current_readiness and current_readiness.ready:
+        st.markdown("#### 4. Aktivace PostgreSQL produkce")
+        st.warning(
+            "Tento krok už přepne source of truth. Po uložení Secrets se aplikace restartuje "
+            "a první PostgreSQL startup znovu zkontroluje readiness watermark."
+        )
+        st.code(
+            '[database]\\n'
+            '# ponech stávající postgres_dsn + pool nastavení\\n'
+            'production_backend = "postgresql"\\n'
+            'cutover_confirm = "POSTGRESQL_PRODUCTION"',
+            language="toml",
+        )
+        st.caption(
+            "Pokud PostgreSQL při startupu není dostupný nebo readiness nesedí, aplikace selže zavřeně. "
+            "Nikdy sama nezačne zapisovat do SQLite."
+        )
+
+    with st.expander("Migrační soubory a CLI", expanded=False):
+        try:
+            plan = build_sqlite_migration_plan(DB_PATH)
+            st.download_button(
+                "Stáhnout migration manifest JSON",
+                data=migration_plan_json(plan),
+                file_name="logbook_postgres_migration_manifest.json",
+                mime="application/json",
+                width="stretch",
+                key="pg_manifest_download_v072",
+            )
+            st.download_button(
+                "Stáhnout PostgreSQL schema SQL",
+                data=postgres_schema_sql().encode("utf-8"),
+                file_name="postgresql_schema_v1.sql",
+                mime="text/sql",
+                width="stretch",
+                key="pg_schema_download_v072",
+            )
+        except Exception as exc:
+            st.caption(f"Migrační nástroje nejsou dostupné: {exc}")
+        st.code(
+            "python scripts/verify_postgres_shadow.py --deep",
+            language="bash",
         )
 
 def page_admin() -> None:
@@ -8984,9 +9246,11 @@ def page_admin() -> None:
         with c3: metric_card("GPS tracky", str(counts["tracks"]), f"{counts['points']:,} bodů".replace(",", " "))
         with c4: metric_card("Správci", str(admins), f"schema {DB_SCHEMA_VERSION}")
         db_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
+        backend_label = "PostgreSQL" if production_is_postgresql() else "SQLite"
         st.caption(
-            f"Aplikace {APP_VERSION} · runtime SQLite · databáze {db_size / (1024 * 1024):.1f} MB · "
-            f"SQLite schema {DB_SCHEMA_VERSION} · PostgreSQL shadow v1"
+            f"Aplikace {APP_VERSION} · runtime {backend_label} · "
+            f"SQLite fallback {db_size / (1024 * 1024):.1f} MB · "
+            f"SQLite schema {DB_SCHEMA_VERSION} · PostgreSQL schema {POSTGRES_SCHEMA_VERSION}"
         )
         if not users.empty:
             show = users.rename(columns={
@@ -9109,7 +9373,7 @@ def page_admin() -> None:
         st.write("• Běžný uživatel čte a mění pouze řádky se svým `user_id`.")
         st.write("• ID bez platného přihlášeného uživatele se už nesmí tiše převést na původní profil #1.")
         st.write("• Admin nástroje jsou oddělené od běžných uživatelských operací.")
-        st.write("• Úplná SQLite databáze a globální audit jsou dostupné pouze administrátorovi.")
+        st.write("• Celá produkční databáze a globální audit jsou dostupné pouze administrátorovi.")
         if st.button("Spustit kontrolu znovu", width="stretch", key="admin_permission_recheck_v059"):
             read_permission_health.clear()
             st.rerun()
@@ -9119,68 +9383,131 @@ def page_admin() -> None:
 
     elif section == "Záloha":
         metas = read_app_meta()
-        st.markdown("### Technická záloha celé aplikace")
-        st.caption("SQLite snapshot se vytváří přes SQLite Backup API, takže zahrnuje i potvrzené WAL změny a nestahuje živý databázový soubor napřímo.")
-        st.caption("Správcovská SQLite/GitHub záloha všech profilů. Přenosná záloha jednoho profilu je v **Export → Záloha účtu**.")
-        dirty = last_change = last_backup = ""
-        if not metas.empty:
-            md = dict(zip(metas["key"], metas["value"]))
-            dirty = md.get("dirty", "")
-            last_change = md.get("last_change_at", "")
-            last_backup = md.get("last_github_backup_at", "")
-        b1, b2, b3 = st.columns(3)
-        with b1: metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
-        with b2: metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
-        with b3: metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
-        if github_auto_backup_enabled():
-            st.success("Automatická GitHub záloha je zapnutá.")
-        elif github_backup_configured():
-            st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá.")
+        md = dict(zip(metas["key"], metas["value"])) if not metas.empty else {}
+        last_change = str(md.get("last_change_at") or "")
+        is_pg_prod = production_is_postgresql()
+
+        st.markdown("### Záloha a obnova")
+        if is_pg_prod:
+            st.success("Produkční source of truth je PostgreSQL.")
+            st.caption(
+                "Přenosná záloha jednotlivého profilu v Export → Záloha účtu dál čte aktuální PostgreSQL data."
+            )
+            b1, b2, b3, b4 = st.columns(4)
+            with b1:
+                metric_card("Backend", "PostgreSQL", "production")
+            with b2:
+                metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
+            with b3:
+                metric_card("Cutover", str(md.get("production_cutover_at") or "—")[:19], "UTC")
+            with b4:
+                sqlite_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
+                metric_card("SQLite baseline", f"{sqlite_size / (1024 * 1024):.1f} MB", "frozen fallback")
+
+            st.warning(
+                "GitHub SQLite auto-backup je po cutoveru záměrně vypnutý. "
+                "Soubor SQLite už není aktuální produkční databáze."
+            )
+            st.info(
+                "Plná SQLite obnova je v PostgreSQL režimu zablokovaná. "
+                "To brání tomu, aby se starý SQLite snapshot omylem vydával za obnovenou produkci."
+            )
+            if DB_PATH.exists():
+                with st.expander("Zmrazený SQLite fallback baseline", expanded=False):
+                    st.caption(
+                        "Tento snapshot je užitečný pouze pro nouzovou diagnostiku/rollback baseline. "
+                        "Po cutoveru neobsahuje nové PostgreSQL zápisy."
+                    )
+                    if st.button("Připravit fallback SQLite snapshot", width="stretch", key="admin_prepare_fallback_sqlite_v072"):
+                        try:
+                            st.session_state["admin_fallback_sqlite_v072"] = database_snapshot_bytes()
+                            st.success("Fallback snapshot připraven.")
+                        except Exception as exc:
+                            st.error(f"Snapshot selhal: {exc}")
+                    frozen = st.session_state.get("admin_fallback_sqlite_v072")
+                    if frozen:
+                        st.download_button(
+                            "Stáhnout fallback logbook.sqlite",
+                            data=frozen,
+                            file_name="logbook-fallback-baseline.sqlite",
+                            mime="application/x-sqlite3",
+                            width="stretch",
+                            key="admin_download_fallback_sqlite_v072",
+                        )
         else:
-            st.warning("GitHub backup není nakonfigurovaný.")
-        if DB_PATH.exists():
-            if st.button("Připravit SQLite snapshot", width="stretch", key="admin_prepare_snapshot_v069"):
+            st.caption(
+                "SQLite je produkční databáze. GitHub snapshot zůstává technická celá záloha; "
+                "přenosná záloha jednoho profilu je v Export → Záloha účtu."
+            )
+            dirty = str(md.get("dirty") or "")
+            last_backup = str(md.get("last_github_backup_at") or "")
+            b1, b2, b3 = st.columns(3)
+            with b1:
+                metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
+            with b2:
+                metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
+            with b3:
+                metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
+
+            if github_auto_backup_enabled():
+                st.success("Automatická GitHub SQLite záloha je zapnutá.")
+            elif github_backup_configured():
+                st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá.")
+            else:
+                st.warning("GitHub backup není nakonfigurovaný.")
+
+            if DB_PATH.exists():
+                if st.button("Připravit SQLite snapshot", width="stretch", key="admin_prepare_snapshot_v072"):
+                    try:
+                        with st.spinner("Připravuji konzistentní SQLite snapshot…"):
+                            st.session_state["admin_sqlite_snapshot_v072"] = database_snapshot_bytes()
+                            st.session_state["admin_sqlite_snapshot_change_v072"] = last_change
+                        st.success("Snapshot je připravený ke stažení.")
+                    except Exception as exc:
+                        st.error(f"Snapshot se nepodařilo připravit: {exc}")
+                snapshot = st.session_state.get("admin_sqlite_snapshot_v072")
+                snapshot_change = str(st.session_state.get("admin_sqlite_snapshot_change_v072") or "")
+                if snapshot and snapshot_change == last_change:
+                    st.download_button(
+                        "Stáhnout celou SQLite databázi",
+                        data=snapshot,
+                        file_name="logbook.sqlite",
+                        mime="application/x-sqlite3",
+                        width="stretch",
+                        key="admin_download_snapshot_v072",
+                    )
+                elif snapshot:
+                    st.session_state.pop("admin_sqlite_snapshot_v072", None)
+                    st.session_state.pop("admin_sqlite_snapshot_change_v072", None)
+                    st.warning("Databáze se od přípravy snapshotu změnila. Připrav nový snapshot.")
+
+            if github_backup_configured():
+                if st.button("Uložit aktuální SQLite na GitHub", type="primary", width="stretch", key="admin_backup_now_v072"):
+                    try:
+                        url = backup_database_to_github()
+                        st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
+                    except Exception as exc:
+                        st.error(f"Backup selhal: {exc}")
+
+            st.markdown("#### Obnova celé SQLite databáze")
+            restore = st.file_uploader("SQLite databáze", type=["sqlite", "db"], key="admin_restore_db_v072")
+            confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="", key="admin_restore_confirm_v072")
+            if restore is not None and st.button(
+                "Obnovit databázi",
+                disabled=confirm != "OBNOVIT",
+                width="stretch",
+                key="admin_restore_btn_v072",
+            ):
                 try:
-                    with st.spinner("Připravuji konzistentní SQLite snapshot…"):
-                        st.session_state["admin_sqlite_snapshot_v069"] = database_snapshot_bytes()
-                        st.session_state["admin_sqlite_snapshot_change_v069"] = last_change
-                    st.success("Snapshot je připravený ke stažení.")
+                    restore_database_from_upload(restore)
+                    _reset_session_state(
+                        notice="Databáze byla obnovena. Z bezpečnostních důvodů se přihlas znovu."
+                    )
+                    st.rerun()
+                except SQLiteRestoreError as exc:
+                    st.error(f"Obnova odmítnuta: {exc}")
                 except Exception as exc:
-                    st.error(f"Snapshot se nepodařilo připravit: {exc}")
-            snapshot = st.session_state.get("admin_sqlite_snapshot_v069")
-            snapshot_change = str(st.session_state.get("admin_sqlite_snapshot_change_v069") or "")
-            if snapshot and snapshot_change == str(last_change or ""):
-                st.download_button(
-                    "Stáhnout celou SQLite databázi",
-                    data=snapshot,
-                    file_name="logbook.sqlite",
-                    mime="application/x-sqlite3",
-                    width="stretch",
-                    key="admin_download_snapshot_v069",
-                )
-            elif snapshot:
-                st.session_state.pop("admin_sqlite_snapshot_v069", None)
-                st.session_state.pop("admin_sqlite_snapshot_change_v069", None)
-                st.warning("Databáze se od přípravy snapshotu změnila. Připrav nový snapshot.")
-        if github_backup_configured():
-            if st.button("Uložit aktuální databázi na GitHub", type="primary", width="stretch", key="admin_backup_now_v057"):
-                try:
-                    url = backup_database_to_github()
-                    st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
-                except Exception as exc:
-                    st.error(f"Backup selhal: {exc}")
-        st.markdown("#### Obnova celé databáze")
-        restore = st.file_uploader("SQLite databáze", type=["sqlite", "db"], key="admin_restore_db_v057")
-        confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="", key="admin_restore_confirm_v057")
-        if restore is not None and st.button("Obnovit databázi", disabled=confirm != "OBNOVIT", width="stretch", key="admin_restore_btn_v057"):
-            try:
-                restore_database_from_upload(restore)
-                _reset_session_state(notice="Databáze byla obnovena. Z bezpečnostních důvodů se přihlas znovu.")
-                st.rerun()
-            except SQLiteRestoreError as exc:
-                st.error(f"Obnova odmítnuta: {exc}")
-            except Exception as exc:
-                st.error(f"Obnova selhala: {exc}")
+                    st.error(f"Obnova selhala: {exc}")
 
     elif section == "Servis":
         render_database_control_panel()
@@ -9194,7 +9521,7 @@ def page_admin() -> None:
             st.dataframe(metas.sort_values("key"), hide_index=True, width="stretch")
         st.markdown("### Poslední auditní události napříč profily")
         with connect() as con:
-            audits = pd.read_sql_query("SELECT * FROM audit_log ORDER BY id DESC LIMIT 500", con)
+            audits = db_read_sql_query("SELECT * FROM audit_log ORDER BY id DESC LIMIT 500", con)
         if audits.empty:
             st.info("Žádný audit log.")
         else:
@@ -9623,8 +9950,20 @@ def render_page_loaded_signal() -> None:
 def main():
     st.set_page_config(page_title="Letový zápisník", page_icon="assets/logbook_icon_32.png", layout="wide", initial_sidebar_state="expanded")
     if not _DB_READY:
-        with connect():
-            pass
+        try:
+            with connect():
+                pass
+        except (DatabaseBackendError, ProductionCutoverError) as exc:
+            st.error("Produkční databázi se nepodařilo bezpečně otevřít.")
+            st.code(str(exc), language=None)
+            st.warning(
+                "Automatický fallback na jiný backend je záměrně vypnutý, aby nevznikly dvě rozdílné databáze."
+            )
+            return
+        except Exception as exc:
+            st.error("Start databáze selhal.")
+            st.code(str(exc), language=None)
+            return
     if not render_auth_gate():
         return
     if "page" not in st.session_state:
@@ -9659,6 +9998,11 @@ def main():
     render_sidebar_toggle()
     render_page_transition_runtime()
     app_header()
+    if emergency_sqlite_fallback_active():
+        st.error(
+            "NOUZOVÝ SQLITE FALLBACK JE AKTIVNÍ · případné nové zápisy vytvoří vědomou divergenci "
+            "a automatický návrat na PostgreSQL bude zablokovaný."
+        )
     page = st.session_state.get("page", "Dashboard")
 
     # Data se načítají až pro aktivní stránku. GPS Map Engine 2.0 ve v0.54

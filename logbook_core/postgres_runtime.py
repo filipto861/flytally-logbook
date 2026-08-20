@@ -58,10 +58,10 @@ def get_postgres_pool(config: PostgresTargetConfig):
                 kwargs={
                     "connect_timeout": int(config.connect_timeout_s),
                     "row_factory": dict_row,
-                    "application_name": "logbook-v070",
+                    "application_name": "logbook-v072",
                 },
                 open=True,
-                name="logbook-postgres-target",
+                name="logbook-postgres-runtime",
             )
             _POOLS[key] = pool
         return pool

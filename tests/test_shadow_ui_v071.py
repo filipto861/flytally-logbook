@@ -10,7 +10,7 @@ def _app():
 
 
 def test_version_no_sqlite_schema_migration():
-    assert APP_VERSION == "v0.71"
+    assert APP_VERSION == "v0.72"
     assert DB_SCHEMA_VERSION == 10
     assert POSTGRES_SHADOW_VERSION == 1
 
@@ -19,13 +19,13 @@ def test_admin_can_create_shadow_only_after_strong_confirmation():
     source = _app()
     assert '"VYTVOŘIT SHADOW"' in source
     assert "acknowledge_credentials" in source
-    assert '"Spustit shadow migraci"' in source
+    assert '"Spustit první shadow migraci"' in source
     assert "migrate_sqlite_to_postgres(" in source
 
 
 def test_admin_has_quick_and_deep_shadow_verification():
     source = _app()
-    assert '"Rychlá shadow kontrola"' in source
+    assert '"Rychlá kontrola"' in source
     assert '"Hluboká kontrola SHA-256"' in source
     assert "verify_postgres_shadow(" in source
     assert "deep=False" in source
@@ -39,7 +39,8 @@ def test_shadow_status_distinguishes_stale_from_mismatch():
     assert "SHADOW MISMATCH" in source
 
 
-def test_runtime_cutover_is_still_locked():
+def test_runtime_cutover_requires_explicit_confirmation():
     foundation = (ROOT / "logbook_core" / "database_foundation.py").read_text(encoding="utf-8")
-    assert "def postgres_cutover_enabled()" in foundation
-    assert "return False" in foundation
+    assert "def postgres_cutover_enabled(" in foundation
+    assert 'backend == "postgresql"' in foundation
+    assert 'confirm == "POSTGRESQL_PRODUCTION"' in foundation

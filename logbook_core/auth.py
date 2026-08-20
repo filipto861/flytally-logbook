@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from .tenancy import DEFAULT_USER_ID
 from .permissions import strict_user_id
+from .db_runtime import DATABASE_INTEGRITY_ERRORS, insert_and_get_id
 
 PASSWORD_MIN_LENGTH = 8
 _SCRYPT_N = 2**14
@@ -195,7 +196,7 @@ def activate_legacy_profile(
             (DEFAULT_USER_ID, password_hash),
         )
         return AuthResult(True, user_id=DEFAULT_USER_ID)
-    except sqlite3.IntegrityError:
+    except DATABASE_INTEGRITY_ERRORS:
         return AuthResult(False, error="Tento e-mail už používá jiný účet.")
 
 
@@ -227,14 +228,14 @@ def register_user(
     if get_user_by_email(con, clean_email):
         return AuthResult(False, error="Účet s tímto e-mailem už existuje.")
     try:
-        cur = con.execute(
+        user_id = insert_and_get_id(
+            con,
             """
             INSERT INTO users (email, display_name, slug, role, active, created_at, updated_at)
             VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
             (clean_email, clean_name, _new_slug(clean_email), clean_role),
         )
-        user_id = int(cur.lastrowid)
         con.execute(
             """
             INSERT INTO user_settings
@@ -251,7 +252,7 @@ def register_user(
             (user_id, hash_password(password)),
         )
         return AuthResult(True, user_id=user_id)
-    except sqlite3.IntegrityError:
+    except DATABASE_INTEGRITY_ERRORS:
         return AuthResult(False, error="Účet s tímto e-mailem už existuje.")
 
 
@@ -356,5 +357,5 @@ def change_email(
             (clean_email, uid),
         )
         return AuthResult(True, user_id=uid)
-    except sqlite3.IntegrityError:
+    except DATABASE_INTEGRITY_ERRORS:
         return AuthResult(False, error="Tento e-mail už používá jiný účet.")

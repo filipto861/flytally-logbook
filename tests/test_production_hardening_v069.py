@@ -22,7 +22,7 @@ def _app() -> str:
 
 
 def test_v069_schema_and_version():
-    assert APP_VERSION == "v0.71"
+    assert APP_VERSION == "v0.72"
     assert DB_SCHEMA_VERSION == 10
 
 
@@ -95,7 +95,7 @@ def test_unreachable_database_legacy_tabs_removed():
 
 def test_safe_database_service_does_not_modify_flight_semantics():
     text = _app()
-    block = text[text.index('def run_safe_database_service'):text.index('def run_sqlite_service')]
+    block = text[text.index('def run_safe_database_service'):text.index('def run_backend_service')]
     assert 'UPDATE flights SET registration' not in block
     assert 'UPDATE flights SET departure' not in block
     assert 'UPDATE flights SET starts' not in block
@@ -235,7 +235,7 @@ def test_portable_backup_signature_tracks_latest_user_audit():
 def test_admin_snapshot_detects_cross_session_database_change():
     text = _app()
     assert 'def read_app_meta()' in text
-    assert 'admin_sqlite_snapshot_change_v069' in text
+    assert 'admin_sqlite_snapshot_change_v072' in text
     assert 'Databáze se od přípravy snapshotu změnila' in text
 
 

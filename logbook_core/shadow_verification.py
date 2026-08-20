@@ -30,6 +30,16 @@ SHADOW_META_KEYS = frozenset({
     "shadow_migrated_at",
     "shadow_source_schema_version",
     "shadow_protocol_version",
+    # v0.72 PostgreSQL-only cutover lifecycle metadata.
+    "cutover_ready_protocol",
+    "cutover_ready_at",
+    "cutover_ready_watermark",
+    "cutover_ready_deep",
+    "cutover_ready_fingerprint",
+    "production_mode",
+    "production_cutover_at",
+    "production_backend",
+    "production_cutover_protocol",
 })
 
 TABLE_ORDER_KEYS: dict[str, tuple[str, ...]] = {
@@ -51,6 +61,21 @@ FLIGHT_SHADOW_COLUMNS = (
     "id", "user_id", "date", "evidence", "registration", "aircraft_class",
     "off_block", "takeoff", "landing", "on_block", "starts", "role",
     "price_per_hour", "billing_basis",
+)
+
+
+# Deep cutover verification covers durable application content. last_login_at is
+# intentionally excluded because a normal login after shadow creation updates
+# only this operational timestamp and must not invalidate an otherwise identical
+# migration snapshot.
+FINGERPRINT_COLUMNS: dict[str, tuple[str, ...]] = {
+    table: tuple(columns)
+    for table, columns in POSTGRES_TABLE_COLUMNS.items()
+}
+FINGERPRINT_COLUMNS["user_credentials"] = tuple(
+    column
+    for column in POSTGRES_TABLE_COLUMNS["user_credentials"]
+    if column != "last_login_at"
 )
 
 
@@ -285,7 +310,7 @@ def _postgres_user_metrics(con: Any) -> dict[str, dict[str, Any]]:
 
 
 def _sqlite_table_fingerprint(con: sqlite3.Connection, table: str) -> str:
-    columns = POSTGRES_TABLE_COLUMNS[table]
+    columns = FINGERPRINT_COLUMNS[table]
     order = TABLE_ORDER_KEYS[table]
     quoted = ", ".join(f'"{column}"' for column in columns)
     order_sql = ", ".join(f'"{column}"' for column in order)
@@ -310,7 +335,7 @@ def _sqlite_table_fingerprint(con: sqlite3.Connection, table: str) -> str:
 
 
 def _postgres_table_fingerprint(con: Any, table: str) -> str:
-    columns = POSTGRES_TABLE_COLUMNS[table]
+    columns = FINGERPRINT_COLUMNS[table]
     order = TABLE_ORDER_KEYS[table]
     quoted = ", ".join(f'"{column}"' for column in columns)
     order_sql = ", ".join(f'"{column}"' for column in order)
@@ -467,7 +492,7 @@ def verify_postgres_shadow(
         notes = (
             "SQLite remains the production runtime.",
             "Latency is a diagnostic median COUNT query, not an application benchmark.",
-            "Deep verification hashes canonical table rows and excludes shadow-only app_meta keys.",
+            "Deep verification hashes canonical durable table rows, excludes shadow-only app_meta keys and ignores volatile user_credentials.last_login_at.",
         )
         return ShadowVerificationReport(
             ok=ok,

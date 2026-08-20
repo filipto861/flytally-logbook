@@ -1,155 +1,135 @@
-# Logbook architecture — v0.71
+# Logbook architecture — v0.72
 
-## Flight Import UX 2.0
+## Storage model
 
-v0.62.2 ponechává parser, Smart KML a datovou vrstvu beze změny, ale přidává orchestration vrstvu pro bezpečný import před zápisem do SQLite.
+Logbook now has two production-capable storage implementations behind the application `connect()` boundary:
 
-### Import state machine
+- **SQLite** – default runtime and pre-cutover source
+- **PostgreSQL** – production runtime after explicit cutover
 
-KML import je logicky rozdělen do čtyř stavů:
+The large world-airport catalogue remains a separate read-only SQLite reference asset and is not part of tenant transactional storage.
 
-1. upload,
-2. Smart KML analýza a volba rozdělení,
-3. editace údajů letu,
-4. finální review.
+## Runtime backend selection
 
-Finální formulářová data se mezi krokem 3 a 4 drží pouze v `st.session_state`. Databázový `create_flight()` a `save_track()` se volají až po explicitním potvrzení review.
+`logbook_core.db_runtime.resolve_runtime_database_config()` is fail-closed.
 
-### Single-track review
+Default:
+```toml
+[database]
+# no production_backend means sqlite
+```
 
-Klíč `_single_import_review_key(signature)` izoluje review stav konkrétního nahraného souboru. Při návratu k editaci se review payload odstraní, ale KML zůstane v uploader/session workflow.
+PostgreSQL:
+```toml
+[database]
+postgres_dsn = "..."
+production_backend = "postgresql"
+cutover_confirm = "POSTGRESQL_PRODUCTION"
+```
 
-### Split-track review
+Emergency SQLite fallback after cutover requires a second explicit token:
+```toml
+[database]
+production_backend = "sqlite"
+cutover_confirm = "POSTGRESQL_PRODUCTION"
+fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"
+```
 
-Každý díl používá `_split_import_review_key(signature, progress)`. Díl se zapíše do databáze až po vlastní finální kontrole. Po dokončení se průvodce přesune na další část.
+No runtime path catches a PostgreSQL failure and silently opens SQLite.
 
-### Existing Smart KML guarantees
+## PostgreSQL compatibility layer
 
-- automatické rozdělení je pouze návrh,
-- uživatel může uložit původní KML jako jeden let,
-- ruční split zůstává dostupný,
-- touch-and-go pouze předvyplňuje počet startů/přistání,
-- vytvoření profilu letadla je volitelné.
+`logbook_core.db_runtime.PostgresConnectionAdapter` provides the small sqlite-like API surface used by the app:
+- `execute`
+- `executemany`
+- `commit`
+- `rollback`
+- context manager
+- sqlite-style mapping/integer row access
+- backend-neutral generated IDs
+- backend-neutral DataFrame reads
 
-### UI compatibility
+The adapter translates qmark parameters to Psycopg parameters and preserves literal question marks. It also escapes SQL modulo operators for Psycopg and normalizes `CURRENT_TIMESTAMP` assignments into the TEXT timestamp schema used by the migrated data model.
 
-Statické mapy a Track Player používají `st.iframe` místo deprecated `streamlit.components.v1.html`. Streamlit prvky používají nové width API.
+## Cutover lifecycle
 
-### Persistence
+The PostgreSQL lifecycle is serialized with the shared advisory lock:
 
-- DB schema: 8
-- žádná migrace
-- multi-user tenant ownership zůstává beze změny
-- GPS body ani původní KML nejsou při preview modifikovány
+`logbook-postgres-lifecycle`
 
+Operations under this lock:
+1. first shadow migration
+2. shadow refresh
+3. CUTOVER READY marker
+4. first PostgreSQL production activation
 
-## v0.62.2 cleanup rules
-1. Runtime behavior and DB schema stay unchanged (`DB_SCHEMA_VERSION = 8`).
-2. No release file may contain or replace `data/logbook.sqlite`.
-3. Cross-user reads remain explicitly user-scoped; generic table readers are allow-listed.
-4. Compatibility is handled in application bootstrap, not through global SQLite monkeypatches.
-5. Dependency upgrades are deliberate releases, not implicit deploy-time changes.
+### Shadow refresh invariant
 
+Refresh may delete PostgreSQL rows only after:
+- target is `shadow_mode=1`
+- shadow protocol matches
+- `production_mode != 1`
+- `production_cutover_at` is empty
 
-## v0.62.2 dashboard analytics layer
+The delete + copy + sequence repair + validation are one PostgreSQL transaction. Any failure restores the prior shadow.
 
-`logbook_core/dashboard.py` obsahuje čisté, Streamlit-independent agregace pro období, měsíce, roky, letadla, letiště, trasy a dashboardové rekordy. UI pouze vybírá aktuální sekci a renderuje již agregovaná data. Tím se drží náklad skrytých dashboardových sekcí mimo aktuální rerun.
+A target previously activated as production can never be refreshed by the shadow tool.
 
-## v0.71 Pilot Currency & Recency
+## CUTOVER READY
 
-`logbook_core/currency.py` owns rolling activity and validity-status calculations. The UI page only renders those results.
+CUTOVER READY is stored only after a current deep MATCH.
 
-### Data model
+The gate records:
+- source watermark
+- verification time
+- deep-verification marker
+- stable aggregate fingerprint of source table fingerprints
 
-`user_expiries` is a new tenant-scoped table with `user_id`, category, label, expiry date, warning lead time and note. `DB_SCHEMA_VERSION = 9`. The standard idempotent `SCHEMA` bootstrap creates the table on existing databases; existing flight data is untouched.
+First PostgreSQL startup re-checks the SQLite source watermark before writing production lifecycle metadata.
 
-### Safety boundary
+## Deep verification semantics
 
-The 90-day cards are logbook activity indicators only. They intentionally do not claim regulatory currency because the current flight model does not encode every rule dimension such as day/night, separate take-offs/approaches, type/class equivalence or sole-manipulator conditions.
+Deep SHA-256 comparison includes durable migrated application data.
 
+Excluded:
+- PostgreSQL-only `shadow_*`, `cutover_*` and `production_*` app metadata
+- `user_credentials.last_login_at`
 
-## v0.71 portable backup boundary
-Portable backups are intentionally account-scoped. Restore rewrites ownership to the currently authenticated `user_id` and never imports authentication credentials or application roles. The portable payload covers `flights`, `aircraft`, `rates`, user airport overrides, `flight_tracks`, `track_points`, `user_expiries`, and `user_settings`. The global airport catalogue, `app_meta`, `audit_log`, `users`, and `user_credentials` are outside the portable restore boundary.
+`last_login_at` is deliberately volatile and can change merely because the user logged in after creating the shadow. Password hashes, credential creation/update metadata, users, settings, flights, aircraft, rates, custom airports, tracks, points and audit content remain covered.
 
-Restore mode in v0.71 is deliberately **replace current profile data**, not merge. This avoids duplicate flights and ambiguous relation matching. The operation is atomic and remaps flight/track IDs when rebuilding GPS relationships.
+## Audit and change watermark
 
+For PostgreSQL production, `record_audit()` is strict: the business mutation, audit event and `app_meta.last_change_at` update are part of the same transaction. Audit failure aborts the business change.
 
-## v0.71 manual-entry boundary
-`logbook_core.flight_entry` contains pure history/default-selection logic. Streamlit session continuity remains in `app.py`. Smart manual defaults are conservative by design: only the previous arrival and last configured aircraft may be carried forward. Arrival and all four flight times require explicit user input or an explicit shortcut action.
+Login timestamp updates are operational and do not advance the durable change watermark.
 
-The KML import wizard and flight edit form still use the full form layout. `flight_form(..., compact_layout=True)` is currently reserved for new manual entries.
+Account creation/activation explicitly advances `last_change_at`.
 
+## Emergency fallback divergence
 
-## v0.71 logbook view boundary
-`logbook_core.logbook_view` owns pure quick-search and flight-neighbour navigation logic. The Streamlit list renders only one button per visible row; edit/track/delete remain inside the detail dialog. Navigation order follows the exact current filtered + sorted + quick-searched result, not database ID order.
+SQLite is frozen at the cutover baseline once PostgreSQL becomes production.
 
-No data model changes are introduced. `DB_SCHEMA_VERSION` remains 9.
+If emergency fallback is enabled and a business write advances SQLite `last_change_at`, a later PostgreSQL rejoin is refused. This prevents silently discarding fallback-era writes.
 
+No automatic merge/reconciliation is implemented in v0.72.
 
-## v0.71 track player architecture
-`logbook_core.track_player.build_track_player_payload()` prepares a compact, browser-safe payload with coordinates, smoothed speed, altitude, distance, bearing, local clock and elapsed GPS seconds. The embedded player performs continuous interpolation entirely client-side.
+## Backup boundary
 
-The player uses a 0–1 virtual progress axis. When complete timestamps are available the axis maps to GPS elapsed time; otherwise it falls back to point order. Leaflet marker movement, SVG profile cursor and HUD values share the same interpolated sample.
+While SQLite is production:
+- GitHub SQLite backup can run as before
+- full SQLite snapshot/restore is available to admin
 
-For performance, the whole route is static, completed progress is updated only when the underlying GPS segment changes, and only the current two-point active segment changes every animation frame. No Streamlit rerun occurs while playing or scrubbing.
+While PostgreSQL is production:
+- GitHub SQLite auto-backup is disabled
+- full SQLite restore is blocked
+- SQLite remains downloadable only as a clearly labelled frozen fallback baseline
+- per-user portable ZIP backup/restore works against PostgreSQL
 
-`DB_SCHEMA_VERSION` remains 9.
+Provider-level PostgreSQL backup/restore remains outside the application runtime.
 
+## Schemas
 
-## v0.71 Data Quality boundary
-`logbook_core.data_quality.scan_data_quality()` is a pure diagnostic engine. It accepts already user-scoped flights, aircraft profiles, used-airport membership and minimal GPS metadata and returns findings without writing data.
-
-Only missing profile-derived values are classified as safe bulk patches. The UI applies partial updates through a tenant-scoped transaction and audit entry. GPS airport suggestions are derived separately from track endpoints and the cached minimal airport spatial index and always require an explicit per-flight action.
-
-The scan is intentionally manual and session-local, so normal Dashboard/Logbook/Database startup does not gain another full-data scan. Full KML coordinate payloads are not loaded for Data Quality; only indexed first/last normalized GPS points are queried.
-
-`DB_SCHEMA_VERSION` remains 9.
-
-
-## v0.71 production hardening boundary
-The application remains SQLite-first, but the persistence boundary is cleaner for a later PostgreSQL repository layer. `logbook_core.sqlite_runtime` owns consistent SQLite snapshots and upload validation. Runtime initialization is protected by a process lock, while user-data caches are invalidated by tenant key where possible.
-
-SQLite tenant integrity is now defense-in-depth: application ownership checks remain primary, and database triggers reject new `flight_tracks` or `track_points` relations whose parent belongs to another user. Existing historical inconsistencies remain visible through Admin → Security/Service rather than being silently rewritten.
-
-Semantic flight normalization was removed from the global admin Safe Service. User content is corrected only through Data Quality's explicit, tenant-scoped actions. Admin Safe Service is limited to structural point cleanup/count synchronization, indexes/triggers, and optimizer maintenance.
-
-
-## v0.71 database foundation
-
-### Runtime boundary
-`connect()` and all production CRUD continue to use `data/logbook.sqlite`. v0.71 intentionally does **not** introduce a runtime backend selector. `postgres_cutover_enabled()` always returns `False`.
-
-This separation prevents a partially migrated target or an accidentally configured `DATABASE_URL` from becoming production data.
-
-### PostgreSQL target modules
-- `database_foundation.py`: target configuration, DSN redaction and the cutover lock.
-- `postgres_schema.py`: PostgreSQL DDL, indexes, table/column migration manifest and ownership triggers.
-- `postgres_runtime.py`: lazy Psycopg pool and read-only diagnostics.
-- `postgres_migration.py`: consistent snapshot migration, row-count verification, sequence repair and tenant/FK validation.
-- `scripts/migrate_sqlite_to_postgres.py`: explicit CLI entrypoint requiring `--confirm MIGRATE`.
-
-### Migration invariants
-The migrator preserves all primary IDs to keep foreign keys and audit object references stable. It refuses a non-empty target instead of trying to merge or overwrite records. The whole copy is performed inside one PostgreSQL transaction under an advisory transaction lock.
-
-The large world-airport catalogue remains a local read-only SQLite asset because it is reference data, not tenant-owned transactional data.
-
-### Next cutover step
-A later release can move CRUD repositories behind a backend interface and run PostgreSQL in shadow/read-validation mode before a production cutover. v0.71 only builds and validates the target foundation.
-
-
-## v0.71 shadow verification architecture
-
-The PostgreSQL target remains outside the production CRUD path.
-
-`shadow_verification.py` creates a consistent temporary SQLite snapshot before every comparison. The quick path compares:
-1. source/target migration watermark,
-2. normalized counts for every transactional table,
-3. per-user flight and GPS summary metrics.
-
-The deep path additionally iterates every table in deterministic primary-key order and hashes canonical row values with SHA-256. Floating-point values are normalized to a stable 12-significant-digit representation to avoid backend display artifacts while preserving meaningful migrated values.
-
-Target-only `app_meta` keys (`shadow_*`, `storage_backend`, `postgres_foundation_schema`) are excluded from normalized app_meta counts/fingerprints.
-
-A stale shadow is distinct from a mismatch. If production SQLite gets a confirmed write after shadow creation, `last_change_at` changes and the verifier reports `stale` even when the historical shadow data is internally valid.
-
-No PostgreSQL DELETE/TRUNCATE/reset path exists in the application in v0.71.
+- SQLite schema: 10
+- PostgreSQL schema: 1
+- shadow protocol: 1
+- production cutover protocol: 1

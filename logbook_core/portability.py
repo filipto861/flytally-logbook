@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .permissions import strict_user_id
+from .db_runtime import insert_and_get_id
 
 BACKUP_FORMAT = "logbook-user-backup"
 BACKUP_FORMAT_VERSION = 1
@@ -335,8 +336,7 @@ def _insert_record(
         f"INSERT INTO {table} (user_id, {', '.join(columns)}) "
         f"VALUES (?, {', '.join('?' for _ in columns)})"
     )
-    cur = con.execute(sql, (strict_user_id(user_id), *values))
-    return int(cur.lastrowid)
+    return insert_and_get_id(con, sql, (strict_user_id(user_id), *values))
 
 
 def _restore_settings(con: sqlite3.Connection, user_id: int, settings: dict[str, Any]) -> None:

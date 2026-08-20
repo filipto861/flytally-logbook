@@ -119,9 +119,9 @@ def build_sqlite_migration_plan(sqlite_path: str | Path) -> MigrationPlan:
         notes=(
             "Migrace zachovává primární ID i user_id.",
             "Globální data/airports_full.sqlite se nemigruje; zůstává read-only souborem aplikace.",
-            "Cílová PostgreSQL databáze musí být prázdná.",
-            "Migrační nástroj nikdy nemaže existující PostgreSQL řádky.",
-            "Runtime cutover není součástí v0.70.",
+            "První migrace vyžaduje prázdnou PostgreSQL databázi.",
+            "v0.72 umí explicitně obnovit pouze existující neprodukční shadow target.",
+            "Produkční PostgreSQL target se refresh nástrojem nikdy nemaže.",
         ),
     )
 
@@ -232,6 +232,184 @@ def _reset_postgres_sequences(con: Any) -> None:
             )
 
 
+
+def _write_shadow_metadata(con: Any, sqlite_schema_version: int) -> None:
+    migration_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    values = (
+        ("storage_backend", "postgresql"),
+        ("postgres_foundation_schema", str(POSTGRES_SCHEMA_VERSION)),
+        ("shadow_mode", "1"),
+        ("shadow_migrated_at", migration_now),
+        ("shadow_source_schema_version", str(sqlite_schema_version)),
+        ("shadow_protocol_version", str(POSTGRES_SHADOW_PROTOCOL_VERSION)),
+    )
+    for key, value in values:
+        con.execute(
+            """
+            INSERT INTO app_meta(key, value, updated_at)
+            VALUES (%s, %s, %s)
+            ON CONFLICT(key) DO UPDATE
+            SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
+            """,
+            (key, value, migration_now),
+        )
+
+
+def _assert_refreshable_shadow(con: Any) -> None:
+    rows = con.execute(
+        """
+        SELECT key, value
+        FROM app_meta
+        WHERE key IN (
+            'shadow_mode',
+            'shadow_protocol_version',
+            'production_mode',
+            'production_cutover_at'
+        )
+        """
+    ).fetchall()
+    meta = {str(row["key"]): str(row["value"] or "") for row in rows}
+    if meta.get("shadow_mode") != "1":
+        raise PostgresMigrationError(
+            "PostgreSQL target není označen jako shadow databáze."
+        )
+    if meta.get("shadow_protocol_version") != str(POSTGRES_SHADOW_PROTOCOL_VERSION):
+        raise PostgresMigrationError(
+            "Shadow protocol targetu není kompatibilní."
+        )
+    if meta.get("production_mode") == "1" or meta.get("production_cutover_at"):
+        raise PostgresMigrationError(
+            "Refresh je zablokovaný: PostgreSQL target už byl označen jako produkční."
+        )
+
+
+def _delete_shadow_rows(con: Any) -> None:
+    # Reverse dependency order keeps FK handling explicit even though several
+    # relationships also have ON DELETE CASCADE.
+    for table in reversed(POSTGRES_TABLE_ORDER):
+        con.execute(f'DELETE FROM "{table}"')
+
+
+def refresh_sqlite_to_postgres_shadow(
+    sqlite_path: str | Path,
+    dsn: str,
+    *,
+    batch_size: int = 1000,
+    progress: Callable[[str, int, int], None] | None = None,
+) -> MigrationReport:
+    """Replace an existing *non-production* PostgreSQL shadow with fresh SQLite.
+
+    The refresh is one PostgreSQL transaction. If copying or verification fails,
+    PostgreSQL rolls back to the previous shadow state. A target that was ever
+    activated as production is rejected before any DELETE statement is issued.
+    """
+    source_path = Path(sqlite_path)
+    plan = build_sqlite_migration_plan(source_path)
+    if not str(dsn or "").strip():
+        raise PostgresMigrationError("Chybí PostgreSQL DSN.")
+
+    psycopg, dict_row = _pg_imports()
+    snapshot_raw = snapshot_sqlite_bytes(source_path)
+    temp = tempfile.NamedTemporaryFile(
+        prefix=".logbook_pg_shadow_refresh_",
+        suffix=".sqlite",
+        delete=False,
+    )
+    temp_path = Path(temp.name)
+    temp.close()
+    temp_path.write_bytes(snapshot_raw)
+
+    sqlite_con: sqlite3.Connection | None = None
+    pg_con: Any = None
+    try:
+        sqlite_con = _sqlite_connection(temp_path)
+        pg_con = psycopg.connect(
+            dsn,
+            row_factory=dict_row,
+            connect_timeout=10,
+            application_name="logbook-v072-shadow-refresh",
+        )
+        with pg_con.transaction():
+            pg_con.execute(
+                "SELECT pg_advisory_xact_lock(hashtext('logbook-postgres-lifecycle'))"
+            )
+            _initialize_postgres_schema(pg_con)
+            _assert_refreshable_shadow(pg_con)
+
+            # Invalidate all previous readiness metadata by replacing app_meta
+            # from the fresh SQLite snapshot below.
+            _delete_shadow_rows(pg_con)
+            _assert_empty_target(pg_con)
+
+            copied_rows = 0
+            for table in POSTGRES_TABLE_ORDER:
+                copied_rows += _copy_table(
+                    sqlite_con,
+                    pg_con,
+                    table,
+                    batch_size=batch_size,
+                    progress=progress,
+                )
+
+            _reset_postgres_sequences(pg_con)
+            _write_shadow_metadata(pg_con, plan.sqlite_schema_version)
+
+            target_counts = _postgres_existing_counts(pg_con)
+            source_counts = dict(plan.table_counts)
+            for table in POSTGRES_TABLE_ORDER:
+                expected = source_counts[table]
+                actual = target_counts[table]
+                if table == "app_meta":
+                    if actual < expected:
+                        raise PostgresMigrationError(
+                            f"Počet řádků nesedí pro {table}: SQLite={expected}, PostgreSQL={actual}"
+                        )
+                elif actual != expected:
+                    raise PostgresMigrationError(
+                        f"Počet řádků nesedí pro {table}: SQLite={expected}, PostgreSQL={actual}"
+                    )
+
+            tenant_checks = postgres_tenant_checks(pg_con)
+            bad = {name: count for name, count in tenant_checks.items() if count != 0}
+            if bad:
+                raise PostgresMigrationError(
+                    "Tenant/FK kontrola po refresh selhala: "
+                    + ", ".join(f"{name}={count}" for name, count in sorted(bad.items()))
+                )
+
+        return MigrationReport(
+            ok=True,
+            source_counts=source_counts,
+            target_counts=target_counts,
+            copied_rows=copied_rows,
+            tenant_checks=tenant_checks,
+            sqlite_schema_version=plan.sqlite_schema_version,
+            postgres_schema_version=POSTGRES_SCHEMA_VERSION,
+        )
+    except PostgresMigrationError:
+        if pg_con is not None:
+            try:
+                pg_con.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if pg_con is not None:
+            try:
+                pg_con.rollback()
+            except Exception:
+                pass
+        raise PostgresMigrationError(str(exc)) from exc
+    finally:
+        if pg_con is not None:
+            pg_con.close()
+        if sqlite_con is not None:
+            sqlite_con.close()
+        try:
+            temp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+
 def postgres_tenant_checks(con: Any) -> dict[str, int]:
     checks = {
         "orphan_user_expiries": """
@@ -315,11 +493,11 @@ def migrate_sqlite_to_postgres(
             dsn,
             row_factory=dict_row,
             connect_timeout=10,
-            application_name="logbook-v070-migration",
+            application_name="logbook-v072-migration",
         )
         with pg_con.transaction():
             pg_con.execute(
-                "SELECT pg_advisory_xact_lock(hashtext('logbook-v070-sqlite-migration'))"
+                "SELECT pg_advisory_xact_lock(hashtext('logbook-postgres-lifecycle'))"
             )
             _initialize_postgres_schema(pg_con)
             _assert_empty_target(pg_con)
@@ -335,41 +513,7 @@ def migrate_sqlite_to_postgres(
                 )
 
             _reset_postgres_sequences(pg_con)
-            pg_con.execute(
-                """
-                INSERT INTO app_meta(key, value, updated_at)
-                VALUES ('storage_backend', 'postgresql', %s)
-                ON CONFLICT(key) DO UPDATE
-                SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
-                """,
-                (datetime.now(timezone.utc).isoformat(timespec="seconds"),),
-            )
-            migration_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-            pg_con.execute(
-                """
-                INSERT INTO app_meta(key, value, updated_at)
-                VALUES ('postgres_foundation_schema', %s, %s)
-                ON CONFLICT(key) DO UPDATE
-                SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
-                """,
-                (str(POSTGRES_SCHEMA_VERSION), migration_now),
-            )
-            source_schema_version = str(plan.sqlite_schema_version)
-            for key, value in (
-                ("shadow_mode", "1"),
-                ("shadow_migrated_at", migration_now),
-                ("shadow_source_schema_version", source_schema_version),
-                ("shadow_protocol_version", str(POSTGRES_SHADOW_PROTOCOL_VERSION)),
-            ):
-                pg_con.execute(
-                    """
-                    INSERT INTO app_meta(key, value, updated_at)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT(key) DO UPDATE
-                    SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
-                    """,
-                    (key, value, migration_now),
-                )
+            _write_shadow_metadata(pg_con, plan.sqlite_schema_version)
 
             target_counts = _postgres_existing_counts(pg_con)
             source_counts = dict(plan.table_counts)

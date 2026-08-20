@@ -8,7 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 
 POSTGRES_FOUNDATION_VERSION = 1
-ACTIVE_RUNTIME_BACKEND = "sqlite"
+ACTIVE_RUNTIME_BACKEND = "configurable"
 
 
 @dataclass(frozen=True)
@@ -107,6 +107,22 @@ def redact_postgres_dsn(dsn: str) -> str:
     return safe
 
 
-def postgres_cutover_enabled() -> bool:
-    """v0.70 deliberately has no runtime cutover path."""
-    return False
+def postgres_cutover_enabled(
+    *,
+    secrets_database: Mapping[str, Any] | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> bool:
+    """Return True only for an explicit, confirmed PostgreSQL production request."""
+    sec = secrets_database or {}
+    env = environ if environ is not None else os.environ
+    backend = str(
+        sec.get("production_backend")
+        or env.get("LOGBOOK_DATABASE_BACKEND")
+        or "sqlite"
+    ).strip().lower()
+    confirm = str(
+        sec.get("cutover_confirm")
+        or env.get("LOGBOOK_POSTGRES_CUTOVER_CONFIRM")
+        or ""
+    ).strip()
+    return backend == "postgresql" and confirm == "POSTGRESQL_PRODUCTION"

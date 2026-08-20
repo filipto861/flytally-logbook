@@ -1,85 +1,102 @@
-# Upload v0.71
+# Upload v0.72 – PostgreSQL Production Cutover
 
-1. Zachovej lokální `.git` a `data/logbook.sqlite`.
-2. Nahraď aplikační soubory obsahem tohoto balíčku.
-3. Zkontroluj, že `data/logbook.sqlite` zůstalo na místě a není mezi změněnými/smazanými soubory.
-4. Otevři GitHub Desktop.
-5. Pokud je na remote novější auto-backup databáze, použij nejdřív `Fetch` a `Pull origin`.
-6. Commit doporučený jako:
-   `v0.62.2 - Sidebar UX Final Polish`
-7. `Push origin`.
-8. Po redeployi ověř zejména:
-   - minimalistický dvojitý chevron na hraně sidebaru,
-   - plynulé skrytí i odkrytí sidebaru,
-   - favicon,
-   - single KML import až po finální kontrolu,
-   - tlačítko Upravit údaje,
-   - split KML a review každé části,
-   - inline vytvoření chybějícího letadla,
-   - touch-and-go count.
+## A. Deploy the code safely
 
-Release ZIP neobsahuje `data/logbook.sqlite`.
+1. Keep your local `.git` directory.
+2. Keep the current `data/logbook.sqlite`.
+3. Replace the application files with the v0.72 release package.
+4. Confirm that `data/logbook.sqlite` was not deleted or replaced.
+5. In GitHub Desktop use **Fetch** / **Pull origin** first if a newer SQLite auto-backup exists remotely.
+6. Commit:
+   `v0.72 - PostgreSQL Production Cutover`
+7. Push to `main`.
+8. Let Streamlit redeploy.
 
+**Important:** uploading v0.72 alone does not switch production to PostgreSQL. With the current Secrets, runtime remains SQLite.
 
-### v0.62.2 note
-`sitecustomize.py` is no longer part of the application from v0.71 onward. Remove any old copy from the repository if one is still present; the app no longer uses a Python startup hook.
+## B. Smoke test before cutover
 
+After deploy:
+1. Log in.
+2. Open Dashboard, Flights, Map, Database and Profile.
+3. Confirm normal SQLite behavior.
+4. Open **Admin → PostgreSQL**.
+5. Confirm PostgreSQL connection is OK.
+6. Run **Hluboká kontrola SHA-256**.
 
-### v0.62.2 smoke test
-Po deployi ověř Dashboard pro `Vše`, `Tento rok` a `Posledních 12 měsíců`, následně projdi Přehled, Letadla, Letiště a trasy, Náklady a Poslední lety. `data/logbook.sqlite` se nemění.
+Expected:
+- SHADOW MATCH
+- Counts MATCH
+- Pilot totals MATCH
+- SHA-256 MATCH
+- Current ANO
 
-### v0.71 smoke test
+If the shadow is STALE or MISMATCH because durable SQLite data changed, use the explicit **Obnovit PostgreSQL shadow** workflow and then run deep verification again.
 
-1. Zachovej `.git` a `data/logbook.sqlite`.
-2. Nahraď aplikační soubory obsahem release ZIPu.
-3. Po deployi ověř novou položku **Recency** v sidebaru.
-4. Ověř poslední let/přistání a 30/90/365 denní tabulku.
-5. Přidej testovací termín platnosti, uprav ho a odstraň ho.
-6. Ověř, že druhý uživatel termín prvního uživatele nevidí.
-7. Doporučený commit: `v0.71 - Pilot Currency & Recency`.
+## C. Prepare CUTOVER READY
 
+When deep verification is MATCH:
+1. Type `PŘIPRAVIT CUTOVER`.
+2. Click **Označit PostgreSQL jako CUTOVER READY**.
+3. Confirm the Admin page shows **CUTOVER READY**.
 
-### v0.71
-No database migration is required (`DB_SCHEMA_VERSION = 9`). The release ZIP still excludes `data/logbook.sqlite`. Upload the new `logbook_core/portability.py` together with the other changed files.
+Do not change flight data between this step and the Secrets cutover.
 
+## D. Activate PostgreSQL
 
-### v0.71
-No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/flight_entry.py`. The release ZIP does not contain `data/logbook.sqlite`.
+In Streamlit Secrets keep the existing PostgreSQL DSN/pool values and add:
 
+```toml
+[database]
+postgres_dsn = "YOUR_EXISTING_DIRECT_NEON_DSN"
+postgres_pool_min = 0
+postgres_pool_max = 4
+postgres_connect_timeout = 5
+production_backend = "postgresql"
+cutover_confirm = "POSTGRESQL_PRODUCTION"
+```
 
-### v0.71
-No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/logbook_view.py`. The release ZIP still excludes `data/logbook.sqlite`.
+Do not add `fallback_confirm`.
 
+Save Secrets. Streamlit restarts.
 
-### v0.71
-No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/track_player.py`. The release ZIP still excludes `data/logbook.sqlite`.
+On first startup v0.72:
+- validates CUTOVER READY
+- compares the frozen SQLite watermark
+- acquires the PostgreSQL lifecycle lock
+- marks PostgreSQL production
+- opens PostgreSQL runtime
 
+Any failed validation stops the app instead of silently using SQLite.
 
-### v0.71
-No database migration is required (`DB_SCHEMA_VERSION = 9`). Upload the new `logbook_core/data_quality.py`. The release ZIP still excludes `data/logbook.sqlite`.
+## E. Post-cutover smoke test
 
+After PostgreSQL production starts:
+1. Log in.
+2. Admin → PostgreSQL must show **Production: PostgreSQL**.
+3. Open Dashboard.
+4. Open several flight details.
+5. Open a GPS track.
+6. Add one small test flight or make one controlled edit.
+7. Reload the app and confirm the change remains.
+8. Export a portable account backup.
+9. Run Database health check.
 
-### v0.71
-`DB_SCHEMA_VERSION` changes from 9 to 10. This is a lightweight migration: no user data table is rebuilt; tenant guard triggers and an audit index are created idempotently on startup. Upload the new `logbook_core/sqlite_runtime.py`. The release ZIP still excludes `data/logbook.sqlite`.
+Do not manually edit the old SQLite database after cutover.
 
+## F. Emergency SQLite fallback
 
-### v0.71
-No database migration is required. `DB_SCHEMA_VERSION` remains 10. This is a navigation/runtime hotfix on top of v0.69.
+Use only during a real incident:
 
+```toml
+[database]
+production_backend = "sqlite"
+cutover_confirm = "POSTGRESQL_PRODUCTION"
+fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"
+```
 
-### v0.71
-SQLite migration: none. `DB_SCHEMA_VERSION` remains 10.
+A red global banner will show that fallback is active.
 
-New dependency: Psycopg PostgreSQL driver/pool from `requirements.txt`.
+If any business write happens during fallback, SQLite and PostgreSQL intentionally diverge. v0.72 will then refuse an automatic PostgreSQL rejoin until data is manually reconciled.
 
-PostgreSQL is optional in this release. If `[database].postgres_dsn` is not configured, the application continues normally on SQLite and only Admin → PostgreSQL shows the target as not configured.
-
-Do not add real PostgreSQL credentials to `.streamlit/secrets.toml.example` or GitHub.
-
-
-### v0.71
-No SQLite migration is required; schema stays 10.
-
-If PostgreSQL is configured, Admin → PostgreSQL can now perform the first shadow migration and verification. Use a dedicated empty PostgreSQL database. The application still runs entirely from SQLite after migration.
-
-A later write to SQLite will make the shadow status STALE. That is expected. v0.71 deliberately does not provide a destructive target reset.
+Never treat the frozen SQLite file as a current PostgreSQL backup.

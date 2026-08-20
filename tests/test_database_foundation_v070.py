@@ -8,13 +8,23 @@ from logbook_core.database_foundation import (
 from logbook_core.config import APP_VERSION, DB_SCHEMA_VERSION, DATABASE_RUNTIME
 
 
-def test_version_and_runtime_cutover_lock():
-    assert APP_VERSION == "v0.71"
+def test_version_and_runtime_cutover_is_explicit():
+    assert APP_VERSION == "v0.72"
     assert DB_SCHEMA_VERSION == 10
-    assert DATABASE_RUNTIME == "sqlite"
-    assert ACTIVE_RUNTIME_BACKEND == "sqlite"
+    assert DATABASE_RUNTIME == "configurable"
+    assert ACTIVE_RUNTIME_BACKEND == "configurable"
     assert POSTGRES_FOUNDATION_VERSION == 1
-    assert postgres_cutover_enabled() is False
+    assert postgres_cutover_enabled(
+        secrets_database={
+            "production_backend": "postgresql",
+            "cutover_confirm": "POSTGRESQL_PRODUCTION",
+        },
+        environ={},
+    ) is True
+    assert postgres_cutover_enabled(
+        secrets_database={"production_backend": "postgresql"},
+        environ={},
+    ) is False
 
 
 def test_config_prefers_explicit_streamlit_secret():
