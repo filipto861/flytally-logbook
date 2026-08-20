@@ -44,12 +44,15 @@ def _money_number(value: Any) -> float:
     return round(float(value), 0)
 
 @st.cache_data(show_spinner=False, ttl=300)
-def make_logbook_export_df(df: pd.DataFrame) -> pd.DataFrame:
+def make_logbook_export_df(df: pd.DataFrame, currency: str = "CZK") -> pd.DataFrame:
+    currency = str(currency or "CZK").upper()
+    rate_col = f"Cena {currency}/h"
+    cost_col = f"Cena letu {currency}"
     columns = [
         "Datum", "Evidence", "Imatrikulace", "Typ", "Třída", "Odlet", "Přílet",
         "Off Block", "Vzlet", "Přistání", "On Block", "Block Time", "Air Time",
         "Block h", "Air h", "Starty", "Velitel", "Instruktor", "Funkce", "Úloha",
-        "Účtování", "Cena Kč/h", "Cena letu Kč", "GPS tracky", "GPS km", "Poznámka",
+        "Účtování", rate_col, cost_col, "GPS tracky", "GPS km", "Poznámka",
     ]
     if df.empty:
         return pd.DataFrame(columns=columns)
@@ -78,8 +81,8 @@ def make_logbook_export_df(df: pd.DataFrame) -> pd.DataFrame:
             "Funkce": r.get("role"),
             "Úloha": r.get("task"),
             "Účtování": r.get("billing_basis"),
-            "Cena Kč/h": _money_number(r.get("price_per_hour")),
-            "Cena letu Kč": _money_number(r.get("cost")),
+            rate_col: _money_number(r.get("price_per_hour")),
+            cost_col: _money_number(r.get("cost")),
             "GPS tracky": int(r.get("track_count") or 0),
             "GPS km": round(float(r.get("gps_km") or 0), 1),
             "Poznámka": r.get("note"),
@@ -92,7 +95,7 @@ def _minutes_for_role(df: pd.DataFrame, role: str) -> int:
     return int(df["block_minutes"].where(df["role"].eq(role), 0).fillna(0).sum())
 
 @st.cache_data(show_spinner=False, ttl=300)
-def make_summary_table(df: pd.DataFrame) -> pd.DataFrame:
+def make_summary_table(df: pd.DataFrame, currency: str = "CZK") -> pd.DataFrame:
     s = build_summary(df)
     rows = [
         ("Počet letů", s["flights"]),
@@ -108,13 +111,14 @@ def make_summary_table(df: pd.DataFrame) -> pd.DataFrame:
         ("EASA celkem", fmt_minutes(s["easa"])),
         ("GPS tracky", s["tracks"]),
         ("GPS km", round(float(s["gps_km"]), 1)),
-        ("Náklady", fmt_money(float(s["cost"]))),
+        ("Náklady", fmt_money(float(s["cost"]), currency)),
     ]
     return pd.DataFrame(rows, columns=["Metrika", "Hodnota"])
 
 @st.cache_data(show_spinner=False, ttl=300)
-def make_group_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
-    base_cols = group_cols + ["Lety", "Starty", "Block", "Air", "PIC", "DUAL", "Safety", "GPS km", "Náklady Kč"]
+def make_group_summary(df: pd.DataFrame, group_cols: list[str], currency: str = "CZK") -> pd.DataFrame:
+    cost_col = f"Náklady {str(currency or 'CZK').upper()}"
+    base_cols = group_cols + ["Lety", "Starty", "Block", "Air", "PIC", "DUAL", "Safety", "GPS km", cost_col]
     if df.empty:
         return pd.DataFrame(columns=base_cols)
     work = df.copy()
@@ -144,14 +148,15 @@ def make_group_summary(df: pd.DataFrame, group_cols: list[str]) -> pd.DataFrame:
     grouped["DUAL"] = grouped["DualMin"].apply(fmt_minutes)
     grouped["Safety"] = grouped["SafetyMin"].apply(fmt_minutes)
     grouped["GPS km"] = grouped["GpsKm"].fillna(0).round(1)
-    grouped["Náklady Kč"] = grouped["Cost"].fillna(0).round(0)
+    grouped[cost_col] = grouped["Cost"].fillna(0).round(0)
     grouped = grouped.sort_values(["BlockMin", "Lety"], ascending=False)
     return grouped[base_cols]
 
 @st.cache_data(show_spinner=False, ttl=300)
-def make_route_summary(df: pd.DataFrame) -> pd.DataFrame:
+def make_route_summary(df: pd.DataFrame, currency: str = "CZK") -> pd.DataFrame:
+    cost_col = f"Náklady {str(currency or 'CZK').upper()}"
     if df.empty:
-        return pd.DataFrame(columns=["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"])
+        return pd.DataFrame(columns=["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", cost_col])
     work = df.copy()
     work["Trasa"] = work["departure"].fillna("").astype(str).str.upper().str.strip() + "–" + work["arrival"].fillna("").astype(str).str.upper().str.strip()
     work.loc[work["Trasa"].eq("–"), "Trasa"] = "—"
@@ -166,9 +171,9 @@ def make_route_summary(df: pd.DataFrame) -> pd.DataFrame:
     grouped["Block"] = grouped["BlockMin"].apply(fmt_minutes)
     grouped["Air"] = grouped["AirMin"].apply(fmt_minutes)
     grouped["GPS km"] = grouped["GpsKm"].fillna(0).round(1)
-    grouped["Náklady Kč"] = grouped["Cost"].fillna(0).round(0)
+    grouped[cost_col] = grouped["Cost"].fillna(0).round(0)
     grouped = grouped.sort_values(["Lety", "BlockMin"], ascending=False)
-    return grouped[["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", "Náklady Kč"]]
+    return grouped[["Trasa", "Lety", "Starty", "Block", "Air", "GPS km", cost_col]]
 
 @st.cache_data(show_spinner=False, ttl=300)
 def make_airport_summary(df: pd.DataFrame) -> pd.DataFrame:
@@ -265,23 +270,23 @@ def _style_export_sheet(ws, title: str | None = None) -> None:
     ws.sheet_properties.pageSetUpPr.fitToPage = True
 
 @st.cache_data(show_spinner=False, ttl=300)
-def export_excel(df: pd.DataFrame) -> bytes:
+def export_excel(df: pd.DataFrame, currency: str = "CZK") -> bytes:
     from openpyxl import Workbook
     wb = Workbook()
     ws = wb.active
     ws.title = "Zápisník"
-    detail = make_logbook_export_df(df)
+    detail = make_logbook_export_df(df, currency)
     _append_dataframe(ws, detail)
     _style_export_sheet(ws, "Letový zápisník")
 
     ws2 = wb.create_sheet("Souhrn")
-    _append_dataframe(ws2, make_summary_table(df))
+    _append_dataframe(ws2, make_summary_table(df, currency))
     _style_export_sheet(ws2, "Souhrn")
 
     sheets = [
-        ("Letadla", make_group_summary(df, ["registration", "aircraft_type", "evidence"]), "Souhrn podle letadel"),
-        ("Funkce", make_group_summary(df, ["role"]), "Souhrn podle funkce"),
-        ("Trasy", make_route_summary(df), "Souhrn tras"),
+        ("Letadla", make_group_summary(df, ["registration", "aircraft_type", "evidence"], currency), "Souhrn podle letadel"),
+        ("Funkce", make_group_summary(df, ["role"], currency), "Souhrn podle funkce"),
+        ("Trasy", make_route_summary(df, currency), "Souhrn tras"),
         ("Letiště", make_airport_summary(df), "Souhrn letišť"),
     ]
     for name, table, title in sheets:
@@ -294,9 +299,9 @@ def export_excel(df: pd.DataFrame) -> bytes:
     return out.getvalue()
 
 @st.cache_data(show_spinner=False, ttl=300)
-def build_print_html(df: pd.DataFrame, title: str = "Letový zápisník") -> str:
+def build_print_html(df: pd.DataFrame, title: str = "Letový zápisník", currency: str = "CZK") -> str:
     summary = build_summary(df)
-    detail = make_logbook_export_df(df)
+    detail = make_logbook_export_df(df, currency)
     generated = datetime.now(LOCAL_TZ).strftime("%d.%m.%Y %H:%M")
     if df.empty or "date_dt" not in df.columns or df["date_dt"].dropna().empty:
         period = "—"
@@ -312,7 +317,7 @@ def build_print_html(df: pd.DataFrame, title: str = "Letový zápisník") -> str
         ("PIC", fmt_minutes(summary["pic"])),
         ("DUAL", fmt_minutes(summary["dual"])),
         ("GPS km", round(float(summary["gps_km"]), 1)),
-        ("Náklady", fmt_money(float(summary["cost"]))),
+        ("Náklady", fmt_money(float(summary["cost"]), currency)),
     ]
     cards_html = "".join(f"<div class='card'><span>{html.escape(str(label))}</span><strong>{html.escape(str(value))}</strong></div>" for label, value in cards)
 

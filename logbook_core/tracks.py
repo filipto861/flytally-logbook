@@ -368,22 +368,22 @@ def detect_takeoff_landing(points: list[dict[str, Any]]) -> dict[str, Any]:
         "on_idx": int(min(n - 1, landing)),
     }
 
-def point_local_dt(points: list[dict[str, Any]], idx: int) -> datetime | None:
+def point_local_dt(points: list[dict[str, Any]], idx: int, tz: ZoneInfo = LOCAL_TZ) -> datetime | None:
     if not points:
         return None
     idx = max(0, min(idx, len(points) - 1))
     dt = parse_iso(points[idx].get("time"))
-    return dt.astimezone(LOCAL_TZ) if dt else None
+    return dt.astimezone(tz) if dt else None
 
 def dt_hhmm(dt: datetime | None) -> str | None:
     return dt.strftime("%H:%M") if dt else None
 
-def point_local_hhmm(points: list[dict[str, Any]], idx: int) -> str | None:
-    return dt_hhmm(point_local_dt(points, idx))
+def point_local_hhmm(points: list[dict[str, Any]], idx: int, tz: ZoneInfo = LOCAL_TZ) -> str | None:
+    return dt_hhmm(point_local_dt(points, idx, tz))
 
-def inferred_clock_times(points: list[dict[str, Any]], idx: dict[str, Any], block_padding_minutes: int = 5) -> dict[str, str | None]:
-    takeoff_dt = point_local_dt(points, idx.get("takeoff_idx", 0))
-    landing_dt = point_local_dt(points, idx.get("landing_idx", len(points) - 1))
+def inferred_clock_times(points: list[dict[str, Any]], idx: dict[str, Any], block_padding_minutes: int = 5, tz: ZoneInfo = LOCAL_TZ) -> dict[str, str | None]:
+    takeoff_dt = point_local_dt(points, idx.get("takeoff_idx", 0), tz)
+    landing_dt = point_local_dt(points, idx.get("landing_idx", len(points) - 1), tz)
     off_dt = takeoff_dt - timedelta(minutes=block_padding_minutes) if takeoff_dt else None
     on_dt = landing_dt + timedelta(minutes=block_padding_minutes) if landing_dt else None
     return {
@@ -393,11 +393,11 @@ def inferred_clock_times(points: list[dict[str, Any]], idx: dict[str, Any], bloc
         "on_block": dt_hhmm(on_dt),
     }
 
-def point_local_date(points: list[dict[str, Any]]) -> date:
+def point_local_date(points: list[dict[str, Any]], tz: ZoneInfo = LOCAL_TZ) -> date:
     for p in points:
         dt = parse_iso(p.get("time"))
         if dt:
-            return dt.astimezone(LOCAL_TZ).date()
+            return dt.astimezone(tz).date()
     return date.today()
 
 def extract_registration_from_filename(name: str) -> str:

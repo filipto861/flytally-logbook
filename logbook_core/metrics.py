@@ -73,12 +73,14 @@ def fmt_minutes(minutes: int | float | None) -> str:
     minutes = int(round(float(minutes)))
     return f"{minutes // 60}:{minutes % 60:02d}"
 
-def fmt_money(value: float | int | None) -> str:
+def fmt_money(value: float | int | None, currency: str = "CZK") -> str:
     if value is None or pd.isna(value):
         return ""
-    return f"{float(value):,.0f} Kč".replace(",", " ")
+    code = str(currency or "CZK").upper()
+    symbol = {"CZK": "Kč", "EUR": "€", "USD": "$", "GBP": "£"}.get(code, code)
+    return f"{float(value):,.0f} {symbol}".replace(",", " ")
 
-def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
+def compute_metrics(df: pd.DataFrame, currency: str = "CZK") -> pd.DataFrame:
     if df.empty:
         return df.copy()
     out = df.copy()
@@ -101,7 +103,7 @@ def compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
     out["starts"] = pd.to_numeric(out["starts"], errors="coerce").fillna(0).astype(int)
     out["block_time"] = out["block_minutes"].apply(fmt_minutes)
     out["air_time"] = out["air_minutes"].apply(fmt_minutes)
-    out["cost_label"] = out["cost"].apply(fmt_money)
+    out["cost_label"] = out["cost"].apply(lambda value: fmt_money(value, currency))
     return out
 
 def stat_minutes(df: pd.DataFrame, mask=None) -> int:

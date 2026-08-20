@@ -8,7 +8,8 @@ import secrets
 import sqlite3
 from dataclasses import dataclass
 
-from .tenancy import DEFAULT_USER_ID, normalize_user_id
+from .tenancy import DEFAULT_USER_ID
+from .permissions import strict_user_id
 
 PASSWORD_MIN_LENGTH = 8
 _SCRYPT_N = 2**14
@@ -122,7 +123,7 @@ def ensure_auth_schema(con: sqlite3.Connection) -> None:
 def user_has_credentials(con: sqlite3.Connection, user_id: int = DEFAULT_USER_ID) -> bool:
     row = con.execute(
         "SELECT 1 FROM user_credentials WHERE user_id = ?",
-        (normalize_user_id(user_id),),
+        (strict_user_id(user_id),),
     ).fetchone()
     return bool(row)
 
@@ -261,7 +262,7 @@ def change_password(
     current_password: str,
     new_password: str,
 ) -> AuthResult:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     row = con.execute(
         "SELECT password_hash FROM user_credentials WHERE user_id = ?",
         (uid,),
@@ -282,7 +283,7 @@ def change_password(
 
 
 def set_user_active(con: sqlite3.Connection, *, user_id: int, active: bool) -> AuthResult:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     if uid == DEFAULT_USER_ID and not active:
         return AuthResult(False, error="Hlavní administrátorský účet nelze deaktivovat.")
     row = con.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
@@ -293,7 +294,7 @@ def set_user_active(con: sqlite3.Connection, *, user_id: int, active: bool) -> A
 
 
 def set_user_role(con: sqlite3.Connection, *, user_id: int, role: str) -> AuthResult:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     clean_role = str(role or "user").strip().lower()
     if clean_role not in {"admin", "user"}:
         return AuthResult(False, error="Neplatná role.")
@@ -307,7 +308,7 @@ def set_user_role(con: sqlite3.Connection, *, user_id: int, role: str) -> AuthRe
 
 
 def admin_set_user_password(con: sqlite3.Connection, *, user_id: int, new_password: str) -> AuthResult:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     if not password_is_valid(new_password):
         return AuthResult(False, error=f"Nové heslo musí mít alespoň {PASSWORD_MIN_LENGTH} znaků.")
     row = con.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
@@ -323,3 +324,37 @@ def admin_set_user_password(con: sqlite3.Connection, *, user_id: int, new_passwo
         (uid, hash_password(new_password)),
     )
     return AuthResult(True, user_id=uid)
+
+
+def change_email(
+    con: sqlite3.Connection,
+    *,
+    user_id: int,
+    current_password: str,
+    new_email: str,
+) -> AuthResult:
+    """Change account e-mail after verifying the current password."""
+    uid = strict_user_id(user_id)
+    clean_email = normalize_email(new_email)
+    if not email_is_valid(clean_email):
+        return AuthResult(False, error="Zadejte platný e-mail.")
+    cred = con.execute(
+        "SELECT password_hash FROM user_credentials WHERE user_id = ?",
+        (uid,),
+    ).fetchone()
+    if not cred or not verify_password(current_password, str(cred[0] or "")):
+        return AuthResult(False, error="Současné heslo není správné.")
+    existing = con.execute(
+        "SELECT id FROM users WHERE id <> ? AND LOWER(TRIM(email)) = ? LIMIT 1",
+        (uid, clean_email),
+    ).fetchone()
+    if existing:
+        return AuthResult(False, error="Tento e-mail už používá jiný účet.")
+    try:
+        con.execute(
+            "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (clean_email, uid),
+        )
+        return AuthResult(True, user_id=uid)
+    except sqlite3.IntegrityError:
+        return AuthResult(False, error="Tento e-mail už používá jiný účet.")

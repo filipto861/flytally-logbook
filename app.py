@@ -10,6 +10,7 @@ import re
 import sqlite3
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, time, timezone, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from io import BytesIO
 from typing import Any
 from urllib.parse import urlencode
@@ -27,11 +28,12 @@ from logbook_core.config import (
 )
 from logbook_core.schema import SCHEMA
 from logbook_core.auth import (
-    PASSWORD_MIN_LENGTH, activate_legacy_profile, authenticate_user, change_password,
+    PASSWORD_MIN_LENGTH, activate_legacy_profile, authenticate_user, change_email, change_password,
     ensure_auth_schema, legacy_profile_needs_activation, register_user, verify_password,
     admin_set_user_password, set_user_active, set_user_role,
 )
 from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema, normalize_user_id
+from logbook_core.permissions import AccessDenied, require_owned_record, strict_user_id
 from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
     normalize_date, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
@@ -139,10 +141,6 @@ def _get_secret(section: str, key: str, default: Any = None) -> Any:
     return default
 
 
-def auth_configured() -> bool:
-    return bool(_get_secret("auth", "admin_password", ""))
-
-
 def is_admin() -> bool:
     """Return True when the authenticated profile has the persistent admin role."""
     if not is_user_authenticated():
@@ -158,14 +156,14 @@ def is_user_authenticated() -> bool:
 
 
 def _set_authenticated_user(user_id: int) -> None:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     st.session_state["user_authenticated"] = True
     st.session_state["current_user_id"] = uid
     st.session_state["page"] = "Dashboard"
 
 
 def logout_user() -> None:
-    for key in ("user_authenticated", "current_user_id", "auth_role", "page", "selected_flight_id", "open_flight_dialog_id"):
+    for key in ("user_authenticated", "current_user_id", "page", "selected_flight_id", "open_flight_dialog_id"):
         st.session_state.pop(key, None)
 
 
@@ -184,16 +182,18 @@ def current_user_id() -> int:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_user_profile(user_id: int = DEFAULT_USER_ID) -> dict[str, Any]:
-    uid = normalize_user_id(user_id)
+def read_user_profile(user_id: int) -> dict[str, Any]:
+    uid = strict_user_id(user_id)
     try:
         with connect() as con:
             row = con.execute(
                 """
-                SELECT u.id, u.email, u.display_name, u.slug, u.role, u.active,
-                       s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json
+                SELECT u.id, u.email, u.display_name, u.slug, u.role, u.active, u.created_at, u.updated_at,
+                       s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json,
+                       c.last_login_at
                 FROM users u
                 LEFT JOIN user_settings s ON s.user_id = u.id
+                LEFT JOIN user_credentials c ON c.user_id = u.id
                 WHERE u.id = ?
                 """,
                 (uid,),
@@ -206,6 +206,55 @@ def read_user_profile(user_id: int = DEFAULT_USER_ID) -> dict[str, Any]:
 def current_user_display_name() -> str:
     profile = read_user_profile(current_user_id())
     return normalize_text(profile.get("display_name")) or "Local pilot"
+
+
+def _profile_preferences(profile: dict[str, Any] | None = None) -> dict[str, Any]:
+    profile = profile or read_user_profile(current_user_id())
+    raw = profile.get("preferences_json")
+    if isinstance(raw, dict):
+        return dict(raw)
+    try:
+        parsed = json.loads(str(raw or "{}"))
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def current_user_currency() -> str:
+    profile = read_user_profile(current_user_id())
+    currency = str(profile.get("currency") or "CZK").strip().upper()
+    return currency if currency in {"CZK", "EUR", "USD", "GBP"} else "CZK"
+
+
+def currency_symbol(currency: str | None = None) -> str:
+    code = str(currency or current_user_currency()).upper()
+    return {"CZK": "Kč", "EUR": "€", "USD": "$", "GBP": "£"}.get(code, code)
+
+
+def current_user_timezone() -> ZoneInfo:
+    profile = read_user_profile(current_user_id())
+    name = str(profile.get("timezone") or "Europe/Prague").strip()
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        return LOCAL_TZ
+
+
+def current_user_default_evidence() -> str:
+    profile = read_user_profile(current_user_id())
+    value = str(_profile_preferences(profile).get("default_evidence") or "ULL").upper().strip()
+    return value if value in EVIDENCE_OPTIONS else "ULL"
+
+
+def current_user_default_role() -> str:
+    profile = read_user_profile(current_user_id())
+    value = str(profile.get("default_role") or "PIC").upper().strip()
+    return value if value in ROLE_OPTIONS else "PIC"
+
+
+def current_user_home_airport() -> str:
+    profile = read_user_profile(current_user_id())
+    return str(profile.get("home_airport") or "").upper().strip()
 
 
 def _auth_state() -> tuple[bool, dict[str, Any]]:
@@ -391,29 +440,6 @@ def invalidate_cached_data(scope: str = "all") -> None:
         _clear_cached_function(name)
     if scope in {"airports", "airport"}:
         _clear_cached_function("airport_search_index")
-
-
-def render_auth_sidebar() -> None:
-    admin_password = _get_secret("auth", "admin_password", "")
-    st.divider()
-    with st.expander("Správa aplikace", expanded=is_admin()):
-        if admin_password:
-            if is_admin():
-                if st.button("Odhlásit", use_container_width=True):
-                    st.session_state.pop("auth_role", None)
-                    st.rerun()
-            else:
-                with st.form("admin_login_form"):
-                    pwd = st.text_input("Heslo správce", type="password")
-                    submitted = st.form_submit_button("Přihlásit", use_container_width=True)
-                if submitted:
-                    if pwd == admin_password:
-                        st.session_state["auth_role"] = "admin"
-                        st.rerun()
-                    else:
-                        st.error("Nesprávné heslo")
-        else:
-            pass
 
 
 def require_admin() -> bool:
@@ -724,15 +750,15 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_table(table: str, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_table(table: str, user_id: int | None = None) -> pd.DataFrame:
     with connect() as con:
         if table in USER_SCOPED_TABLES:
-            return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(normalize_user_id(user_id),))
+            return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_rates(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_rates(user_id: int) -> pd.DataFrame:
     rates = read_table("rates", user_id)
     if not rates.empty and "registration" in rates.columns:
         rates = rates.copy()
@@ -740,11 +766,11 @@ def read_rates(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     return rates
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_table_count(table: str, user_id: int = DEFAULT_USER_ID) -> int:
+def read_table_count(table: str, user_id: int | None = None) -> int:
     try:
         with connect() as con:
             if table in USER_SCOPED_TABLES:
-                row = con.execute(f"SELECT COUNT(*) FROM {table} WHERE user_id = ?", (normalize_user_id(user_id),)).fetchone()
+                row = con.execute(f"SELECT COUNT(*) FROM {table} WHERE user_id = ?", (strict_user_id(user_id),)).fetchone()
             else:
                 row = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
             return int(row[0]) if row else 0
@@ -753,11 +779,11 @@ def read_table_count(table: str, user_id: int = DEFAULT_USER_ID) -> int:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_logbook_counts(user_id: int = DEFAULT_USER_ID) -> dict[str, int]:
+def read_logbook_counts(user_id: int) -> dict[str, int]:
     """Small database header counters in one connection instead of three."""
     try:
         with connect() as con:
-            uid = normalize_user_id(user_id)
+            uid = strict_user_id(user_id)
             return {
                 "aircraft": int(con.execute("SELECT COUNT(*) FROM aircraft WHERE user_id = ?", (uid,)).fetchone()[0]),
                 "tracks": int(con.execute("SELECT COUNT(*) FROM flight_tracks WHERE user_id = ?", (uid,)).fetchone()[0]),
@@ -768,7 +794,7 @@ def read_logbook_counts(user_id: int = DEFAULT_USER_ID) -> dict[str, int]:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_audit_log(limit: int = 500, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_audit_log(limit: int, user_id: int) -> pd.DataFrame:
     """Read only the newest audit rows; the full audit table can grow indefinitely."""
     limit = max(1, min(int(limit or 500), 5000))
     try:
@@ -776,7 +802,7 @@ def read_audit_log(limit: int = 500, user_id: int = DEFAULT_USER_ID) -> pd.DataF
             return pd.read_sql_query(
                 "SELECT * FROM audit_log WHERE user_id = ? ORDER BY id DESC LIMIT ?",
                 con,
-                params=(normalize_user_id(user_id), limit),
+                params=(strict_user_id(user_id), limit),
             )
     except sqlite3.DatabaseError:
         return pd.DataFrame()
@@ -835,7 +861,7 @@ def import_airports_dataframe(
         source = normalize_text(val(row, "source")) or default_source
         raw = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
         params = (
-            normalize_user_id(user_id),
+            strict_user_id(user_id),
             ident,
             name,
             airport_type,
@@ -935,7 +961,7 @@ def _local_airport_query(active_only: bool) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=1800)
-def read_airports(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_airports(active_only: bool, user_id: int) -> pd.DataFrame:
     """Return airport registry from the fixed world DB plus local overrides.
 
     data/airports_full.sqlite is the stable world airport database. The main
@@ -956,7 +982,7 @@ def read_airports(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> p
 
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
+            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
     except Exception:
         pass
 
@@ -972,14 +998,14 @@ def read_airports(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> p
 
 
 @st.cache_data(show_spinner=False, ttl=1800)
-def read_airport_registry_count(user_id: int = DEFAULT_USER_ID) -> int:
+def read_airport_registry_count(user_id: int) -> int:
     """Count unique airport idents without materializing the 85k-row catalogue."""
     local_idents: list[str] = []
     try:
         with connect() as con:
             local_idents = [
                 str(r[0]).upper().strip()
-                for r in con.execute("SELECT ident FROM airports WHERE user_id = ? AND ident IS NOT NULL AND TRIM(ident) <> ''", (normalize_user_id(user_id),)).fetchall()
+                for r in con.execute("SELECT ident FROM airports WHERE user_id = ? AND ident IS NOT NULL AND TRIM(ident) <> ''", (strict_user_id(user_id),)).fetchall()
             ]
     except Exception:
         local_idents = []
@@ -1003,7 +1029,7 @@ def read_airport_registry_count(user_id: int = DEFAULT_USER_ID) -> int:
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def airport_coords_for_idents(idents: tuple[str, ...], user_id: int = DEFAULT_USER_ID) -> dict[str, dict[str, Any]]:
+def airport_coords_for_idents(idents: tuple[str, ...], user_id: int) -> dict[str, dict[str, Any]]:
     """Load coordinates only for airport idents actually needed by the current view."""
     clean = tuple(sorted({str(x).upper().strip() for x in idents if str(x or '').strip()}))
     if not clean:
@@ -1025,7 +1051,7 @@ def airport_coords_for_idents(idents: tuple[str, ...], user_id: int = DEFAULT_US
     try:
         with connect() as con:
             local_query = query.replace("FROM airports", "FROM airports").replace("WHERE UPPER(TRIM(ident))", "WHERE user_id = ? AND UPPER(TRIM(ident))")
-            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id), *clean)))
+            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id), *clean)))
     except Exception:
         pass
     if not frames:
@@ -1054,7 +1080,7 @@ def airport_coords_for_idents(idents: tuple[str, ...], user_id: int = DEFAULT_US
 
 
 @st.cache_resource(show_spinner=False)
-def airport_search_index(user_id: int = DEFAULT_USER_ID) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def airport_search_index(user_id: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """In-memory minimal airport index for fast KML endpoint matching.
 
     Only ident/lat/lon are retained.  The index is built once per server process
@@ -1076,7 +1102,7 @@ def airport_search_index(user_id: int = DEFAULT_USER_ID) -> tuple[np.ndarray, np
     try:
         with connect() as con:
             local_query = query.replace("WHERE active = 1", "WHERE user_id = ? AND active = 1")
-            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
+            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
     except Exception:
         pass
     if not frames:
@@ -1137,7 +1163,7 @@ def import_airport_csv_upload(uploaded_file) -> int:
     return count
 
 
-def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]], user_id: int = DEFAULT_USER_ID) -> None:
+def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]], user_id: int) -> None:
     if not points:
         return
     profile = profile_from_points(points)
@@ -1147,7 +1173,7 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     for _, p in profile.iterrows():
         speed_kmh = None if pd.isna(p.get("speed_kmh")) else float(p.get("speed_kmh"))
         rows.append((
-            normalize_user_id(user_id),
+            strict_user_id(user_id),
             track_id,
             int(p["idx"]),
             p["time_utc"].isoformat() if pd.notna(p.get("time_utc")) else None,
@@ -1171,19 +1197,19 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     )
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_counts(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_track_counts(user_id: int) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
             """
             SELECT flight_id, COUNT(*) AS track_count, COALESCE(SUM(distance_km), 0) AS gps_km
             FROM flight_tracks WHERE user_id = ? GROUP BY flight_id
             """,
-            con, params=(normalize_user_id(user_id),),
+            con, params=(strict_user_id(user_id),),
         )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_flights(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_flights(user_id: int) -> pd.DataFrame:
     """Read flight rows and GPS aggregates in one SQLite round-trip."""
     with connect() as con:
         flights = pd.read_sql_query(
@@ -1201,9 +1227,9 @@ def read_flights(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
             WHERE f.user_id = ?
             """,
             con,
-            params=(normalize_user_id(user_id), normalize_user_id(user_id)),
+            params=(strict_user_id(user_id), strict_user_id(user_id)),
         )
-    flights = compute_metrics(flights)
+    flights = compute_metrics(flights, str(read_user_profile(strict_user_id(user_id)).get("currency") or "CZK"))
     if not flights.empty:
         flights["track_count"] = pd.to_numeric(flights["track_count"], errors="coerce").fillna(0).astype(int)
         flights["gps_km"] = pd.to_numeric(flights["gps_km"], errors="coerce").fillna(0.0)
@@ -1211,7 +1237,7 @@ def read_flights(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_tracks_joined(user_id: int) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
             """
@@ -1224,12 +1250,12 @@ def read_tracks_joined(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
             ORDER BY f.date, f.off_block, t.id
             """,
             con,
-            params=(normalize_user_id(user_id),),
+            params=(strict_user_id(user_id),),
         )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined_for_flights(flight_ids: tuple[int, ...], user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_tracks_joined_for_flights(flight_ids: tuple[int, ...], user_id: int) -> pd.DataFrame:
     """Return only tracks needed by the active map filter.
 
     The older GPS map path loaded every stored KML track including full
@@ -1252,11 +1278,11 @@ def read_tracks_joined_for_flights(flight_ids: tuple[int, ...], user_id: int = D
         ORDER BY f.date, f.off_block, t.id
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids))
+        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids))
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_metadata_for_flights(flight_ids: tuple[int, ...], user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_track_metadata_for_flights(flight_ids: tuple[int, ...], user_id: int) -> pd.DataFrame:
     """Return GPS track metadata without the heavy coordinates_json payload."""
     ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
     if not ids:
@@ -1274,7 +1300,7 @@ def read_track_metadata_for_flights(flight_ids: tuple[int, ...], user_id: int = 
         ORDER BY f.date DESC, f.off_block DESC, t.id DESC
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids))
+        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids))
 
 
 def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
@@ -1291,7 +1317,7 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_id: int) -> pd.DataFrame:
     """Read only a sampled subset of normalized GPS points for map rendering.
 
     This avoids loading and decoding the full coordinates_json for every visible
@@ -1325,7 +1351,7 @@ def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_
         ORDER BY track_id, seq
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids, max_points, max_points))
+        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids, max_points, max_points))
 
 
 def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[int, str]:
@@ -1358,7 +1384,7 @@ def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, user_id: int) -> pd.DataFrame:
     """Return lightweight track records ready for the GPS overview map."""
     metadata = read_track_metadata_for_flights(flight_ids, user_id)
     if metadata.empty:
@@ -1383,7 +1409,7 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, u
             with connect() as con:
                 rows = con.execute(
                     f"SELECT id, coordinates_json FROM flight_tracks WHERE user_id = ? AND id IN ({placeholders})",
-                    (normalize_user_id(user_id), *missing),
+                    (strict_user_id(user_id), *missing),
                 ).fetchall()
             for row in rows:
                 coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=plan.points_per_track)
@@ -1396,9 +1422,9 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, u
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_for_flight(flight_id: int, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_tracks_for_flight(flight_id: int, user_id: int) -> pd.DataFrame:
     with connect() as con:
-        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE user_id = ? AND flight_id = ? ORDER BY id", con, params=(normalize_user_id(user_id), flight_id))
+        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE user_id = ? AND flight_id = ? ORDER BY id", con, params=(strict_user_id(user_id), flight_id))
 
 
 def _columns_for_table(con: sqlite3.Connection, table: str) -> set[str]:
@@ -1589,7 +1615,7 @@ def _local_time_label(iso_text: Any) -> str:
     dt = parse_iso(str(iso_text)) if iso_text else None
     if not dt:
         return "—"
-    return dt.astimezone(LOCAL_TZ).strftime("%H:%M")
+    return dt.astimezone(current_user_timezone()).strftime("%H:%M")
 
 
 def _kml_range_label(stats: dict[str, Any]) -> str:
@@ -1658,14 +1684,15 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
     idx = detect_takeoff_landing(points)
     stats = track_stats(points)
     reg = extract_registration_from_filename(file_name)
-    evidence = evidence_from_registration(reg) if reg else "ULL"
-    flight_date = point_local_date(points)
+    tz = current_user_timezone()
+    evidence = evidence_from_registration(reg) if reg else current_user_default_evidence()
+    flight_date = point_local_date(points, tz)
     rate = lookup_latest_rate(rates, reg, flight_date)
-    clock = inferred_clock_times(points, idx, block_padding_minutes=5)
+    clock = inferred_clock_times(points, idx, block_padding_minutes=5, tz=tz)
     has_clock = any(p.get("time") for p in points)
     note = "" if has_clock else "KML neobsahovalo časové značky, časy je nutné doplnit ručně."
     return {
-        "date": point_local_date(points),
+        "date": flight_date,
         "registration": reg,
         "evidence": evidence,
         "aircraft_type": normalize_text(rate.get("aircraft_type")) or "",
@@ -1679,7 +1706,7 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
         "starts": 1,
         "commander": current_user_display_name(),
         "instructor": "",
-        "role": "PIC",
+        "role": current_user_default_role(),
         "task": "",
         "price_per_hour": float(rate.get("price_per_hour")) if rate and pd.notna(rate.get("price_per_hour")) else 0.0,
         "note": note,
@@ -1692,11 +1719,9 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
 def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], replace_existing: bool = False) -> None:
     points = normalize_track_points(points)
     stats = track_stats(points)
-    uid = current_user_id()
+    uid = strict_user_id(current_user_id())
     with connect() as con:
-        owner = con.execute("SELECT 1 FROM flights WHERE id = ? AND user_id = ?", (flight_id, uid)).fetchone()
-        if owner is None:
-            raise ValueError("Let nepatří aktuálnímu uživateli.")
+        require_owned_record(con, "flights", flight_id, uid)
         if replace_existing:
             con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid))
         cur = con.execute(
@@ -1733,7 +1758,7 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
         else:
             v = normalize_text(v)
         values.append(v)
-    uid = current_user_id()
+    uid = strict_user_id(current_user_id())
     with connect() as con:
         cur = con.execute(
             """
@@ -1770,8 +1795,10 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
         else:
             v = normalize_text(v)
         values.append(v)
+    uid = strict_user_id(current_user_id())
     with connect() as con:
-        con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=? AND user_id=?", [*values, flight_id, current_user_id()])
+        require_owned_record(con, "flights", flight_id, uid)
+        con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=? AND user_id=?", [*values, flight_id, uid])
         record_audit(con, "update_flight", "flights", flight_id, data)
         con.commit()
     invalidate_cached_data("flights")
@@ -1779,8 +1806,10 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
 
 
 def delete_track(track_id: int) -> None:
+    uid = strict_user_id(current_user_id())
     with connect() as con:
-        con.execute("DELETE FROM flight_tracks WHERE id = ? AND user_id = ?", (track_id, current_user_id()))
+        require_owned_record(con, "flight_tracks", track_id, uid)
+        con.execute("DELETE FROM flight_tracks WHERE id = ? AND user_id = ?", (track_id, uid))
         record_audit(con, "delete_track", "flight_tracks", track_id, None)
         con.commit()
     invalidate_cached_data("tracks")
@@ -1789,12 +1818,14 @@ def delete_track(track_id: int) -> None:
 
 def delete_flight(flight_id: int) -> None:
     """Delete one flight and all related KML/GPS data from SQLite."""
+    uid = strict_user_id(current_user_id())
     with connect() as con:
         ensure_schema_compatibility(con)
-        row = con.execute("SELECT * FROM flights WHERE id = ? AND user_id = ?", (flight_id, current_user_id())).fetchone()
+        require_owned_record(con, "flights", flight_id, uid)
+        row = con.execute("SELECT * FROM flights WHERE id = ? AND user_id = ?", (flight_id, uid)).fetchone()
         if row is None:
             return
-        track_rows = con.execute("SELECT id FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, current_user_id())).fetchall()
+        track_rows = con.execute("SELECT id FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid)).fetchall()
         track_ids = [int(r["id"]) for r in track_rows]
         audit_detail = {
             "date": row["date"],
@@ -1803,9 +1834,9 @@ def delete_flight(flight_id: int) -> None:
             "tracks_deleted": len(track_ids),
         }
         for track_id in track_ids:
-            con.execute("DELETE FROM track_points WHERE track_id = ? AND user_id = ?", (track_id, current_user_id()))
-        con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, current_user_id()))
-        con.execute("DELETE FROM flights WHERE id = ? AND user_id = ?", (flight_id, current_user_id()))
+            con.execute("DELETE FROM track_points WHERE track_id = ? AND user_id = ?", (track_id, uid))
+        con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid))
+        con.execute("DELETE FROM flights WHERE id = ? AND user_id = ?", (flight_id, uid))
         record_audit(con, "delete_flight", "flights", flight_id, audit_detail)
         con.commit()
     invalidate_cached_data("flights")
@@ -1818,7 +1849,7 @@ def downsample_points(points: list[dict[str, Any]], max_points: int = 900) -> li
 
 
 @st.cache_data(show_spinner=False, ttl=600)
-def airport_coord_lookup(user_id: int = DEFAULT_USER_ID) -> dict[str, dict[str, Any]]:
+def airport_coord_lookup(user_id: int) -> dict[str, dict[str, Any]]:
     """Fast airport coordinate lookup used by maps and track extensions.
 
     This intentionally reads only the five columns needed for drawing maps. The
@@ -1840,7 +1871,7 @@ def airport_coord_lookup(user_id: int = DEFAULT_USER_ID) -> dict[str, dict[str, 
     try:
         with connect() as con:
             local_query = query.replace("WHERE latitude_deg IS NOT NULL", "WHERE user_id = ? AND latitude_deg IS NOT NULL")
-            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
+            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
     except Exception:
         pass
     if not frames:
@@ -2277,7 +2308,7 @@ def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expa
 def render_track_profile(points: list[dict[str, Any]], selected_idx: int | None = None) -> None:
     import plotly.graph_objects as go
 
-    prof = profile_from_points(points)
+    prof = profile_from_points(points, current_user_timezone())
     if prof.empty:
         st.info("Track nemá data pro profil.")
         return
@@ -2402,7 +2433,7 @@ def make_track_playback_map(points: list[dict[str, Any]], selected_idx: int, dar
         folium.CircleMarker(coords[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.95, tooltip="Konec tracku").add_to(m)
 
     dt = parse_iso(selected.get("time"))
-    time_txt = dt.astimezone(LOCAL_TZ).strftime("%H:%M:%S") if dt else "—"
+    time_txt = dt.astimezone(current_user_timezone()).strftime("%H:%M:%S") if dt else "—"
     alt_txt = _format_track_point_value((float(selected.get("alt")) * 3.28084 if selected.get("alt") is not None else None), " ft")
     popup = folium.Popup(f"<b>Pozice tracku</b><br>Čas: {time_txt}<br>Alt: {alt_txt}<br>Bod: {selected_idx + 1}/{len(points)}", max_width=260)
     folium.Marker(
@@ -2477,7 +2508,7 @@ def _prepare_track_player_points(points: list[dict[str, Any]], max_points: int =
     else:
         playback_points = source_points
 
-    prof = profile_from_points(playback_points)
+    prof = profile_from_points(playback_points, current_user_timezone())
     if prof.empty:
         return [], 0, original_count
 
@@ -2754,7 +2785,7 @@ def page_dashboard(df: pd.DataFrame):
     with quick[2]:
         metric_card("DUAL / Safety", f"{fmt_minutes(s['dual'])} / {fmt_minutes(s['safety'])}", "")
     with quick[3]:
-        metric_card("Náklady", fmt_money(s["cost"]), f"Průměr {fmt_money((s['cost'] / max(s['flights'], 1)) if s['flights'] else 0)} / let")
+        metric_card("Náklady", fmt_money(s["cost"], current_user_currency()), f"Průměr {fmt_money((s['cost'] / max(s['flights'], 1)) if s['flights'] else 0, current_user_currency())} / let")
 
     if filtered.empty:
         st.info("Žádná data.")
@@ -2798,7 +2829,7 @@ def page_dashboard(df: pd.DataFrame):
                 {"Metrika": "Block", "Hodnota": fmt_minutes(s["total"])},
                 {"Metrika": "Air", "Hodnota": fmt_minutes(s["air"])},
                 {"Metrika": "PIC", "Hodnota": fmt_minutes(s["pic"])},
-                {"Metrika": "Náklady", "Hodnota": fmt_money(s["cost"])},
+                {"Metrika": "Náklady", "Hodnota": fmt_money(s["cost"], current_user_currency())},
                 {"Metrika": "GPS", "Hodnota": f"{s['tracks']} tracků / {s['gps_km']:.0f} km"},
             ])
             st.dataframe(summary_rows, hide_index=True, use_container_width=True, height=280)
@@ -2827,7 +2858,7 @@ def page_dashboard(df: pd.DataFrame):
             table = by_aircraft.copy()
             table["Block"] = table["Block_h"].mul(60).apply(fmt_minutes)
             table["Air"] = table["Air_h"].mul(60).apply(fmt_minutes)
-            table["Náklady"] = table["Náklady"].apply(fmt_money)
+            table["Náklady"] = table["Náklady"].apply(lambda v: fmt_money(v, current_user_currency()))
             table["GPS km"] = table["GPS_km"].round(0).astype(int)
             st.dataframe(table[["registration", "Lety", "Block", "Air", "Starty", "Náklady", "GPS km"]].rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=380)
 
@@ -2871,13 +2902,13 @@ def page_dashboard(df: pd.DataFrame):
             st.info("Žádná nákladová data.")
         else:
             by_cost_aircraft = cost_df.groupby("registration", as_index=False).agg(Náklady=("cost", "sum"), Hodiny=("block_hours", "sum"), Lety=("id", "count")).sort_values("Náklady", ascending=False)
-            by_cost_aircraft["Kč/h"] = (by_cost_aircraft["Náklady"] / by_cost_aircraft["Hodiny"].replace(0, pd.NA)).fillna(0)
+            by_cost_aircraft["Cena/h"] = (by_cost_aircraft["Náklady"] / by_cost_aircraft["Hodiny"].replace(0, pd.NA)).fillna(0)
             fig_cost = px.bar(by_cost_aircraft.head(12), x="registration", y="Náklady", title="Náklady podle letadla")
             st.plotly_chart(plotly_layout(fig_cost), use_container_width=True)
             table = by_cost_aircraft.copy()
-            table["Náklady"] = table["Náklady"].apply(fmt_money)
+            table["Náklady"] = table["Náklady"].apply(lambda v: fmt_money(v, current_user_currency()))
             table["Hodiny"] = table["Hodiny"].mul(60).apply(fmt_minutes)
-            table["Kč/h"] = table["Kč/h"].apply(fmt_money)
+            table["Cena/h"] = table["Cena/h"].apply(lambda v: fmt_money(v, current_user_currency()) + "/h")
             st.dataframe(table.rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=360)
 
     elif section == "Poslední lety":
@@ -2895,7 +2926,7 @@ def flight_label(row: pd.Series | dict[str, Any]) -> str:
 
 def flight_display_df(df: pd.DataFrame) -> pd.DataFrame:
     cols = ["id","date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","block_time","air_time","starts","commander","instructor","role","task","price_per_hour","cost_label","track_count","gps_km","note"]
-    rename = {"id":"ID","date":"Datum","evidence":"Evidence","registration":"Imatrikulace","aircraft_type":"Typ","aircraft_class":"Třída","departure":"Odlet","arrival":"Přílet","off_block":"Off Block","takeoff":"Takeoff","landing":"Landing","on_block":"On Block","block_time":"Block","air_time":"Air","starts":"Starty","commander":"Velitel","instructor":"Instruktor","role":"Funkce","task":"Úloha","price_per_hour":"Kč/h","cost_label":"Cena","track_count":"GPS","gps_km":"GPS km","note":"Poznámka"}
+    rename = {"id":"ID","date":"Datum","evidence":"Evidence","registration":"Imatrikulace","aircraft_type":"Typ","aircraft_class":"Třída","departure":"Odlet","arrival":"Přílet","off_block":"Off Block","takeoff":"Takeoff","landing":"Landing","on_block":"On Block","block_time":"Block","air_time":"Air","starts":"Starty","commander":"Velitel","instructor":"Instruktor","role":"Funkce","task":"Úloha","price_per_hour":"Cena/h","cost_label":"Cena","track_count":"GPS","gps_km":"GPS km","note":"Poznámka"}
     use = [c for c in cols if c in df.columns]
     return df[use].rename(columns=rename)
 
@@ -3081,7 +3112,7 @@ def _billing_basis_label(value: Any) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_aircraft_catalog(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+def read_aircraft_catalog(active_only: bool, user_id: int) -> pd.DataFrame:
     try:
         aircraft = read_table("aircraft", user_id)
     except Exception:
@@ -3130,7 +3161,7 @@ def _aircraft_label(reg: str, aircraft_by_reg: dict[str, dict[str, Any]], rates:
         parts.append(typ)
     price = _aircraft_price(row, rates, reg)
     if price > 0:
-        parts.append(f"{price:.0f} Kč/h")
+        parts.append(f"{price:.0f} {currency_symbol()}/h")
     basis = _normalize_billing_basis(row.get("billing_basis"))
     parts.append("AIR" if basis == "AIR" else "BLOCK")
     return " • ".join(parts)
@@ -3307,7 +3338,7 @@ def validate_flight_data(data: dict[str, Any]) -> tuple[list[str], list[str]]:
         if price < 0:
             errors.append("cena nesmí být záporná")
         elif price == 0:
-            warnings.append("cena letu je 0 Kč/h")
+            warnings.append(f"cena letu je 0 {currency_symbol()}/h")
     except Exception:
         errors.append("neplatná cena")
 
@@ -3367,7 +3398,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             instructor = st.text_input("Instruktor", value=str(defaults.get("instructor") or ""), key=f"{prefix}_instr")
             role_def = defaults.get("role") or "PIC"
             role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0, key=f"{prefix}_role")
-            price = st.number_input("Cena Kč/h", min_value=0.0, step=50.0, value=float(default_price or 0), key=f"{prefix}_price")
+            price = st.number_input(f"Cena {currency_symbol()}/h", min_value=0.0, step=50.0, value=float(default_price or 0), key=f"{prefix}_price")
             billing_basis = st.selectbox(
                 "Účtovat podle",
                 BILLING_BASIS_OPTIONS,
@@ -3383,7 +3414,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
         with c1: metric_card("Block Time", fmt_minutes(block), "")
         with c2: metric_card("Air Time", fmt_minutes(air), "")
         bill_minutes = air if billing_basis == "AIR" else block
-        with c3: metric_card("Cena letu", fmt_money((bill_minutes or 0)/60*price), _billing_basis_label(billing_basis))
+        with c3: metric_card("Cena letu", fmt_money((bill_minutes or 0)/60*price, current_user_currency()), _billing_basis_label(billing_basis))
         preview_errors, preview_warnings = validate_flight_data(form_data)
         if preview_errors:
             st.error("Kontrola: " + " • ".join(preview_errors[:5]))
@@ -3411,7 +3442,7 @@ def _track_time_proposal(points: list[dict[str, Any]], padding_minutes: int = 5)
     idx = detect_takeoff_landing(normalized)
     if not idx:
         return {}
-    times = inferred_clock_times(normalized, idx, block_padding_minutes=padding_minutes)
+    times = inferred_clock_times(normalized, idx, block_padding_minutes=padding_minutes, tz=current_user_timezone())
     if not times.get("takeoff") or not times.get("landing"):
         return {}
     air_minutes = minutes_diff(times.get("takeoff"), times.get("landing"))
@@ -3526,7 +3557,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
               <div class="detail-card">
                 <div class="detail-card-label">Cena</div>
                 <div class="detail-card-value">{price_text}</div>
-                <div class="detail-card-sub">{_safe_text(row.get('price_per_hour')) or '—'} Kč/h</div>
+                <div class="detail-card-sub">{_safe_text(row.get('price_per_hour')) or '—'} {currency_symbol()}/h</div>
               </div>
               <div class="detail-card">
                 <div class="detail-card-label">GPS</div>
@@ -3724,7 +3755,7 @@ def _safe_int(value: Any, default: int = 0) -> int:
 def _price_rate_label(value: Any) -> str:
     if _is_blank(value):
         return ""
-    return f"{_safe_float(value):.0f} Kč/h"
+    return f"{_safe_float(value):.0f} {currency_symbol()}/h"
 
 
 def _cell(main: Any, sub: Any = "") -> str:
@@ -4050,7 +4081,16 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.success(f"Uloženo ID {flight_id}.")
             st.rerun()
     else:
-        defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": current_user_display_name(), "role": "PIC"}
+        default_evidence = current_user_default_evidence()
+        defaults = {
+            "date": date.today(),
+            "evidence": default_evidence,
+            "aircraft_class": default_class_for(default_evidence),
+            "departure": current_user_home_airport(),
+            "starts": 1,
+            "commander": current_user_display_name(),
+            "role": current_user_default_role(),
+        }
         saved = flight_form("new_manual_v040", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
@@ -4334,8 +4374,8 @@ def _clean_role(value: Any) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_aircraft_usage_summary(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
-    uid = normalize_user_id(user_id)
+def read_aircraft_usage_summary(user_id: int) -> pd.DataFrame:
+    uid = strict_user_id(user_id)
     try:
         with connect() as con:
             return pd.read_sql_query(
@@ -4370,7 +4410,7 @@ def _aircraft_rates_for_registration(rates: pd.DataFrame, registration: str) -> 
 def _aircraft_rate_history_display(rates: pd.DataFrame, registration: str) -> pd.DataFrame:
     sub = _aircraft_rates_for_registration(rates, registration)
     if sub.empty:
-        return pd.DataFrame(columns=["Platí od", "Platí do", "Cena Kč/h", "Zdroj"])
+        return pd.DataFrame(columns=["Platí od", "Platí do", "Cena / h", "Zdroj"])
     rows: list[dict[str, Any]] = []
     dated = sub[sub["valid_from_dt"].notna()].copy().sort_values("valid_from_dt")
     today = date.today()
@@ -4383,7 +4423,7 @@ def _aircraft_rate_history_display(rates: pd.DataFrame, registration: str) -> pd
         rows.append({
             "Platí od": start.strftime("%d.%m.%Y"),
             "Platí do": end_label,
-            "Cena Kč/h": float(row.get("price_per_hour") or 0),
+            "Cena / h": float(row.get("price_per_hour") or 0),
             "Zdroj": {"aircraft_profile": "Profil letadla", "aircraft_history": "Historie", "aircraft_default": "Původní profil"}.get(normalize_text(row.get("source")), normalize_text(row.get("source")) or "—"),
         })
     undated = sub[sub["valid_from_dt"].isna()]
@@ -4391,7 +4431,7 @@ def _aircraft_rate_history_display(rates: pd.DataFrame, registration: str) -> pd
         rows.insert(0, {
             "Platí od": "legacy",
             "Platí do": "—",
-            "Cena Kč/h": float(row.get("price_per_hour") or 0),
+            "Cena / h": float(row.get("price_per_hour") or 0),
             "Zdroj": {"aircraft_profile": "Profil letadla", "aircraft_history": "Historie", "aircraft_default": "Původní profil"}.get(normalize_text(row.get("source")), normalize_text(row.get("source")) or "—"),
         })
     return pd.DataFrame(rows)
@@ -4408,12 +4448,12 @@ def _refresh_aircraft_current_price_in_connection(con: sqlite3.Connection, user_
         ORDER BY date(valid_from) DESC, id DESC
         LIMIT 1
         """,
-        (normalize_user_id(user_id), str(registration or "").strip().upper()),
+        (strict_user_id(user_id), str(registration or "").strip().upper()),
     ).fetchone()
     if row is not None:
         con.execute(
             "UPDATE aircraft SET default_price_per_hour = ?, updated_at = ? WHERE user_id = ? AND UPPER(TRIM(registration)) = ?",
-            (float(row[0] or 0), _now_iso(), normalize_user_id(user_id), str(registration or "").strip().upper()),
+            (float(row[0] or 0), _now_iso(), strict_user_id(user_id), str(registration or "").strip().upper()),
         )
 
 
@@ -4427,7 +4467,7 @@ def _upsert_aircraft_rate_in_connection(
     price_per_hour: float,
     source: str = "aircraft_profile",
 ) -> None:
-    uid = normalize_user_id(user_id)
+    uid = strict_user_id(user_id)
     reg = str(registration or "").strip().upper()
     if not reg:
         raise ValueError("Imatrikulace je povinná.")
@@ -4703,7 +4743,7 @@ def page_database():
         with m1: metric_card("Aktivní", str(active_count), "letadla")
         with m2: metric_card("Archiv", str(inactive_count), "neaktivní")
         with m3: metric_card("S cenou", str(priced_count), "aktuální sazba")
-        with m4: metric_card("Průměr Kč/h", f"{sum(current_prices) / len(current_prices):.0f}" if current_prices else "—", "aktuální ceny")
+        with m4: metric_card(f"Průměr {currency_symbol()}/h", f"{sum(current_prices) / len(current_prices):.0f}" if current_prices else "—", "aktuální ceny")
 
         selected_reg = str(st.session_state.get("aircraft_profile_selected_v058") or "").upper().strip()
         new_mode = bool(st.session_state.get("aircraft_profile_new_v058", False))
@@ -4735,7 +4775,7 @@ def page_database():
                     st.markdown("#### Provoz a cena")
                     p1, p2, p3 = st.columns(3)
                     with p1:
-                        initial_price = st.number_input("Cena za hodinu", min_value=0.0, step=50.0, value=0.0, format="%.0f")
+                        initial_price = st.number_input(f"Cena za hodinu ({currency_symbol()})", min_value=0.0, step=50.0, value=0.0, format="%.0f")
                     with p2:
                         price_valid_from = st.date_input("Cena platí od", value=date.today())
                     with p3:
@@ -4794,7 +4834,7 @@ def page_database():
                     st.rerun()
 
             q1, q2, q3, q4 = st.columns(4)
-            with q1: metric_card("Aktuální cena", f"{current_price:.0f} Kč/h" if current_price > 0 else "—", f"od {current_rate.get('valid_from') or 'legacy'}")
+            with q1: metric_card("Aktuální cena", f"{current_price:.0f} {currency_symbol()}/h" if current_price > 0 else "—", f"od {current_rate.get('valid_from') or 'legacy'}")
             with q2: metric_card("Účtování", _billing_basis_label(picked_row.get("billing_basis")), "výchozí")
             with q3: metric_card("Třída", normalize_text(picked_row.get("aircraft_class")) or "—", normalize_text(picked_row.get("evidence")) or "evidence")
             with q4: metric_card("Lety", str(flight_count), f"poslední {last_flight}")
@@ -4856,7 +4896,7 @@ def page_database():
                     if save_rate:
                         try:
                             save_aircraft_rate(selected_reg, normalize_text(picked_row.get("aircraft_type")), effective_from, new_price)
-                            st.success(f"Cena {new_price:.0f} Kč/h je uložená od {effective_from.strftime('%d.%m.%Y')}.")
+                            st.success(f"Cena {new_price:.0f} {currency_symbol()}/h je uložená od {effective_from.strftime('%d.%m.%Y')}.")
                             st.rerun()
                         except Exception as exc:
                             st.error(str(exc))
@@ -4870,7 +4910,7 @@ def page_database():
                             history,
                             hide_index=True,
                             use_container_width=True,
-                            column_config={"Cena Kč/h": st.column_config.NumberColumn(format="%.0f Kč")},
+                            column_config={"Cena / h": st.column_config.NumberColumn(format=f"%.0f {currency_symbol()}")},
                         )
                     st.markdown("##### Doplnit nebo opravit historickou cenu")
                     st.caption("Tady můžete například nastavit sazbu od 1. 1. konkrétního roku. Stejné datum se při uložení pouze aktualizuje.")
@@ -4879,7 +4919,7 @@ def page_database():
                         with h1c:
                             historical_date = st.date_input("Platnost od", value=date(date.today().year, 1, 1), key=f"aircraft_hist_date_{selected_reg}")
                         with h2c:
-                            historical_price = st.number_input("Cena Kč/h", min_value=0.0, step=50.0, value=float(current_price or 0), format="%.0f", key=f"aircraft_hist_price_{selected_reg}")
+                            historical_price = st.number_input(f"Cena {currency_symbol()}/h", min_value=0.0, step=50.0, value=float(current_price or 0), format="%.0f", key=f"aircraft_hist_price_{selected_reg}")
                         save_history = st.form_submit_button("Uložit historickou sazbu", use_container_width=True)
                     if save_history:
                         try:
@@ -4940,7 +4980,7 @@ def page_database():
                                     st.caption("Aktivní" if active0 else "Archiv")
                                 d1, d2 = st.columns(2)
                                 with d1:
-                                    st.markdown(f"**{price0:.0f} Kč/h**" if price0 > 0 else "**Cena —**")
+                                    st.markdown(f"**{price0:.0f} {currency_symbol()}/h**" if price0 > 0 else "**Cena —**")
                                     st.caption(_billing_basis_label(arow.get("billing_basis")))
                                 with d2:
                                     st.markdown(f"**{count0} letů**")
@@ -5561,7 +5601,7 @@ def render_export_summary(filtered: pd.DataFrame) -> None:
         ("Block", fmt_minutes(s["total"])),
         ("Air", fmt_minutes(s["air"])),
         ("PIC", fmt_minutes(s["pic"])),
-        ("Náklady", fmt_money(float(s["cost"]))),
+        ("Náklady", fmt_money(float(s["cost"]), current_user_currency())),
     ]
     for col, (label, value) in zip(cols, values):
         with col:
@@ -5608,10 +5648,10 @@ def page_export(df: pd.DataFrame):
 
         if prepare_files or st.session_state.get("export_files_ready_v044"):
             st.session_state["export_files_ready_v044"] = True
-            detail = make_logbook_export_df(filtered)
-            xlsx = export_excel(filtered)
+            detail = make_logbook_export_df(filtered, current_user_currency())
+            xlsx = export_excel(filtered, current_user_currency())
             csv = detail.to_csv(index=False).encode("utf-8-sig")
-            html_doc = build_print_html(filtered)
+            html_doc = build_print_html(filtered, currency=current_user_currency())
             c1, c2, c3 = st.columns(3)
             with c1:
                 st.download_button(
@@ -5647,21 +5687,21 @@ def page_export(df: pd.DataFrame):
         st.markdown("### Tiskový přehled")
         if st.button("Vygenerovat tiskový náhled", use_container_width=True, key="export_print_preview_v044") or st.session_state.get("export_print_ready_v044"):
             st.session_state["export_print_ready_v044"] = True
-            components.html(build_print_html(filtered), height=620, scrolling=True)
+            components.html(build_print_html(filtered, currency=current_user_currency()), height=620, scrolling=True)
         else:
             st.caption("Tiskový náhled se vygeneruje až na vyžádání.")
 
     elif section == "Náhled dat":
-        detail = make_logbook_export_df(filtered)
+        detail = make_logbook_export_df(filtered, current_user_currency())
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("### Lety")
             st.dataframe(detail.head(300), hide_index=True, use_container_width=True, height=420)
         with c2:
             st.markdown("### Souhrn")
-            st.dataframe(make_summary_table(filtered), hide_index=True, use_container_width=True, height=420)
+            st.dataframe(make_summary_table(filtered, current_user_currency()), hide_index=True, use_container_width=True, height=420)
         st.markdown("### Letadla")
-        st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"]), hide_index=True, use_container_width=True)
+        st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"], current_user_currency()), hide_index=True, use_container_width=True)
 
 
 
@@ -5679,6 +5719,10 @@ def read_admin_user_overview() -> pd.DataFrame:
                 u.active,
                 u.created_at,
                 c.last_login_at,
+                s.home_airport,
+                s.currency,
+                s.timezone,
+                s.default_role,
                 (SELECT COUNT(*) FROM flights f WHERE f.user_id = u.id) AS flights,
                 (SELECT COUNT(*) FROM aircraft a WHERE a.user_id = u.id) AS aircraft,
                 (SELECT COUNT(*) FROM airports ap WHERE ap.user_id = u.id) AS custom_airports,
@@ -5686,6 +5730,7 @@ def read_admin_user_overview() -> pd.DataFrame:
                 (SELECT COUNT(*) FROM track_points p WHERE p.user_id = u.id) AS gps_points
             FROM users u
             LEFT JOIN user_credentials c ON c.user_id = u.id
+            LEFT JOIN user_settings s ON s.user_id = u.id
             ORDER BY u.id
             """,
             con,
@@ -5707,6 +5752,72 @@ def _admin_global_counts() -> dict[str, int]:
         }
 
 
+@st.cache_data(show_spinner=False, ttl=120)
+def read_permission_health() -> dict[str, Any]:
+    """Global tenant-integrity checks. This is rendered only in the admin console."""
+    issues: list[dict[str, Any]] = []
+    with connect() as con:
+        for table in sorted(USER_SCOPED_TABLES):
+            try:
+                missing_owner = int(con.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE user_id IS NULL OR user_id <= 0"
+                ).fetchone()[0])
+                unknown_owner = int(con.execute(
+                    f"SELECT COUNT(*) FROM {table} t LEFT JOIN users u ON u.id = t.user_id WHERE u.id IS NULL"
+                ).fetchone()[0])
+            except sqlite3.DatabaseError:
+                continue
+            if missing_owner:
+                issues.append({"Kontrola": table, "Problém": "chybí user_id", "Počet": missing_owner})
+            if unknown_owner:
+                issues.append({"Kontrola": table, "Problém": "neexistující vlastník", "Počet": unknown_owner})
+
+        cross_tracks = int(con.execute(
+            """
+            SELECT COUNT(*)
+            FROM flight_tracks t
+            JOIN flights f ON f.id = t.flight_id
+            WHERE t.user_id <> f.user_id
+            """
+        ).fetchone()[0])
+        if cross_tracks:
+            issues.append({"Kontrola": "flight_tracks", "Problém": "track patří jinému uživateli než let", "Počet": cross_tracks})
+
+        cross_points = int(con.execute(
+            """
+            SELECT COUNT(*)
+            FROM track_points p
+            JOIN flight_tracks t ON t.id = p.track_id
+            WHERE p.user_id <> t.user_id
+            """
+        ).fetchone()[0])
+        if cross_points:
+            issues.append({"Kontrola": "track_points", "Problém": "GPS bod patří jinému uživateli než track", "Počet": cross_points})
+
+        invalid_roles = int(con.execute(
+            "SELECT COUNT(*) FROM users WHERE role NOT IN ('admin','user') OR role IS NULL"
+        ).fetchone()[0])
+        if invalid_roles:
+            issues.append({"Kontrola": "users", "Problém": "neplatná role", "Počet": invalid_roles})
+
+        owner_admin = int(con.execute(
+            "SELECT COUNT(*) FROM users WHERE id = ? AND role = 'admin' AND active = 1",
+            (DEFAULT_USER_ID,),
+        ).fetchone()[0])
+        if owner_admin != 1:
+            issues.append({"Kontrola": "users", "Problém": "hlavní profil #1 není aktivní admin", "Počet": 1})
+
+        active_users = int(con.execute("SELECT COUNT(*) FROM users WHERE active = 1").fetchone()[0])
+        admins = int(con.execute("SELECT COUNT(*) FROM users WHERE active = 1 AND role = 'admin'").fetchone()[0])
+    return {
+        "ok": len(issues) == 0,
+        "issues": pd.DataFrame(issues),
+        "active_users": active_users,
+        "admins": admins,
+        "scoped_tables": len(USER_SCOPED_TABLES),
+    }
+
+
 def page_admin() -> None:
     if not require_admin():
         return
@@ -5715,7 +5826,7 @@ def page_admin() -> None:
     st.caption("Správa celé aplikace. Běžní uživatelé tuto stránku nevidí.")
     section = st.radio(
         "Admin sekce",
-        ["Přehled", "Uživatelé", "Záloha", "Servis", "Meta"],
+        ["Přehled", "Uživatelé", "Bezpečnost", "Záloha", "Servis", "Meta"],
         horizontal=True,
         label_visibility="collapsed",
         key="admin_section_v057",
@@ -5738,6 +5849,7 @@ def page_admin() -> None:
                 "id":"ID", "display_name":"Jméno", "email":"E-mail", "role":"Role", "active":"Aktivní",
                 "created_at":"Vytvořen", "last_login_at":"Poslední přihlášení", "flights":"Lety",
                 "aircraft":"Letadla", "custom_airports":"Vlastní letiště", "tracks":"Tracky", "gps_points":"GPS body",
+                "home_airport":"Domovské letiště", "currency":"Měna", "timezone":"Časové pásmo", "default_role":"Výchozí funkce",
             })
             st.dataframe(show, hide_index=True, use_container_width=True, height=420)
 
@@ -5786,6 +5898,12 @@ def page_admin() -> None:
         with c2: metric_card("Letadla", str(int(selected.get("aircraft") or 0)), "")
         with c3: metric_card("Vlastní letiště", str(int(selected.get("custom_airports") or 0)), "")
         with c4: metric_card("Tracky", str(int(selected.get("tracks") or 0)), "")
+        st.caption(
+            f"Poslední přihlášení: {selected.get('last_login_at') or '—'} · "
+            f"Domovské letiště: {selected.get('home_airport') or '—'} · "
+            f"Měna: {selected.get('currency') or 'CZK'} · "
+            f"Timezone: {selected.get('timezone') or 'Europe/Prague'}"
+        )
 
         with st.form("admin_user_state_v057"):
             role_value = "Správce" if str(selected.get("role") or "user").lower() == "admin" else "Uživatel"
@@ -5825,6 +5943,30 @@ def page_admin() -> None:
                 st.success("Nové heslo bylo nastaveno.")
             else:
                 st.error(result.error or "Heslo se nepodařilo změnit.")
+
+    elif section == "Bezpečnost":
+        st.markdown("### Izolace uživatelských dat")
+        st.caption("Kontrola vazeb user_id napříč všemi uživatelskými tabulkami. Žádný běžný uživatel tuto část nevidí.")
+        health = read_permission_health()
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: metric_card("Stav", "OK" if health.get("ok") else "Pozor", "tenant isolation")
+        with c2: metric_card("Aktivní účty", str(health.get("active_users", 0)), "")
+        with c3: metric_card("Správci", str(health.get("admins", 0)), "")
+        with c4: metric_card("Scoped tabulky", str(health.get("scoped_tables", 0)), "user_id")
+        issues = health.get("issues")
+        if isinstance(issues, pd.DataFrame) and not issues.empty:
+            st.error("Byly nalezeny problémy v oddělení uživatelských dat.")
+            st.dataframe(issues, hide_index=True, use_container_width=True)
+        else:
+            st.success("Všechny uživatelské tabulky mají platného vlastníka a vazby track → let → uživatel jsou konzistentní.")
+        st.markdown("#### Bezpečnostní model")
+        st.write("• Běžný uživatel čte a mění pouze řádky se svým `user_id`.")
+        st.write("• ID bez platného přihlášeného uživatele se už nesmí tiše převést na původní profil #1.")
+        st.write("• Admin nástroje jsou oddělené od běžných uživatelských operací.")
+        st.write("• Úplná SQLite databáze a globální audit jsou dostupné pouze administrátorovi.")
+        if st.button("Spustit kontrolu znovu", use_container_width=True, key="admin_permission_recheck_v059"):
+            read_permission_health.clear()
+            st.rerun()
 
     elif section == "Záloha":
         metas = read_table("app_meta")
@@ -5885,79 +6027,212 @@ def page_admin() -> None:
             st.dataframe(audits, hide_index=True, use_container_width=True, height=420)
 
 def page_profile() -> None:
-    uid = current_user_id()
+    uid = strict_user_id(current_user_id())
     profile = read_user_profile(uid)
-    st.markdown("## Profil")
-    st.caption("Nastavení tohoto profilu se vztahuje pouze na jeho vlastní letový zápisník.")
+    prefs = _profile_preferences(profile)
+    flights_count = read_table_count("flights", uid)
+    counts = read_logbook_counts(uid)
 
-    with st.form("profile_settings_form"):
-        display_name = st.text_input("Jméno", value=str(profile.get("display_name") or ""))
-        email = st.text_input("E-mail", value=str(profile.get("email") or ""), disabled=True)
-        timezone_value = str(profile.get("timezone") or "Europe/Prague")
-        timezone_name = st.text_input("Časové pásmo", value=timezone_value)
-        currency = st.selectbox("Měna", ["CZK", "EUR", "USD", "GBP"], index=["CZK", "EUR", "USD", "GBP"].index(str(profile.get("currency") or "CZK")) if str(profile.get("currency") or "CZK") in ["CZK", "EUR", "USD", "GBP"] else 0)
-        home_airport = st.text_input("Domovské letiště", value=str(profile.get("home_airport") or "")).upper().strip()
-        role_value = str(profile.get("default_role") or "PIC")
-        default_role = st.selectbox("Výchozí funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_value) if role_value in ROLE_OPTIONS else 0)
-        submitted = st.form_submit_button("Uložit profil", type="primary", use_container_width=True)
-    if submitted:
-        clean_name = str(display_name or "").strip()
-        if not clean_name:
-            st.error("Jméno profilu nesmí být prázdné.")
-        else:
-            with connect() as con:
-                con.execute(
-                    "UPDATE users SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (clean_name, uid),
-                )
-                con.execute(
-                    """
-                    INSERT INTO user_settings
-                        (user_id, timezone, currency, home_airport, default_role, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                    ON CONFLICT(user_id) DO UPDATE SET
-                        timezone = excluded.timezone, currency = excluded.currency,
-                        home_airport = excluded.home_airport, default_role = excluded.default_role,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    (uid, str(timezone_name or "Europe/Prague").strip(), currency, home_airport or None, default_role),
-                )
-                record_audit(con, "update_profile", "user", uid, {"display_name": clean_name})
-                con.commit()
-            read_user_profile.clear()
-            auto_backup_after_change("update_profile")
-            st.success("Profil byl uložen.")
-            st.rerun()
+    st.markdown("## Profil a nastavení")
+    st.caption("Všechna nastavení patří pouze tomuto účtu. Ostatní uživatelé mají vlastní profil i vlastní data.")
 
-    st.markdown("### Změna hesla")
-    with st.form("change_user_password_form"):
-        current_password = st.text_input("Současné heslo", type="password")
-        new_password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
-        new_password2 = st.text_input("Potvrzení nového hesla", type="password")
-        change_submitted = st.form_submit_button("Změnit heslo", use_container_width=True)
-    if change_submitted:
-        if new_password != new_password2:
-            st.error("Nová hesla se neshodují.")
-        else:
-            with connect() as con:
-                result = change_password(
-                    con, user_id=uid, current_password=current_password, new_password=new_password
+    p1, p2, p3, p4 = st.columns(4)
+    with p1: metric_card("Profil", f"#{uid}", "Správce" if is_admin() else "Uživatel")
+    with p2: metric_card("Lety", str(flights_count), "vlastní záznamy")
+    with p3: metric_card("Letadla", str(counts.get("aircraft", 0)), "vlastní profily")
+    with p4: metric_card("GPS", str(counts.get("tracks", 0)), "vlastní tracky")
+
+    tabs = st.tabs(["Profil", "Výchozí hodnoty", "Zabezpečení"])
+
+    with tabs[0]:
+        st.markdown("### Osobní profil")
+        st.caption("Jméno se používá například jako výchozí velitel nového letu.")
+        with st.form("profile_identity_form_v059"):
+            display_name = st.text_input("Jméno", value=str(profile.get("display_name") or ""))
+            st.text_input("E-mail účtu", value=str(profile.get("email") or ""), disabled=True)
+            submitted = st.form_submit_button("Uložit profil", type="primary", use_container_width=True)
+        if submitted:
+            clean_name = str(display_name or "").strip()
+            if not clean_name:
+                st.error("Jméno profilu nesmí být prázdné.")
+            else:
+                with connect() as con:
+                    con.execute(
+                        "UPDATE users SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (clean_name, uid),
+                    )
+                    record_audit(con, "update_profile", "user", uid, {"display_name": clean_name})
+                    con.commit()
+                read_user_profile.clear()
+                auto_backup_after_change("update_profile")
+                st.success("Profil byl uložen.")
+                st.rerun()
+
+        st.markdown("### Účet")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write(f"**User ID:** {uid}")
+            st.write(f"**Role:** {'Správce' if is_admin() else 'Uživatel'}")
+        with c2:
+            st.write(f"**Vytvořen:** {profile.get('created_at') or '—'}")
+            st.write(f"**Domovské letiště:** {profile.get('home_airport') or '—'}")
+        if uid == DEFAULT_USER_ID:
+            st.info("Toto je původní administrátorský profil. Všechny lety existující před zavedením účtů zůstávají přiřazené právě tomuto profilu.")
+
+    with tabs[1]:
+        st.markdown("### Výchozí hodnoty nového letu")
+        st.caption("Tyto hodnoty pouze předvyplní formulář. U každého letu je můžeš změnit.")
+        timezone_options = [
+            "Europe/Prague", "Europe/London", "Europe/Berlin", "Europe/Paris",
+            "Europe/Vienna", "Europe/Warsaw", "Europe/Bratislava", "Europe/Budapest",
+            "UTC", "America/New_York", "America/Chicago", "America/Denver",
+            "America/Los_Angeles", "Australia/Sydney",
+        ]
+        current_tz = str(profile.get("timezone") or "Europe/Prague")
+        if current_tz not in timezone_options:
+            timezone_options.insert(0, current_tz)
+        currency_options = ["CZK", "EUR", "USD", "GBP"]
+        current_currency = str(profile.get("currency") or "CZK").upper()
+        current_evidence = str(prefs.get("default_evidence") or "ULL").upper()
+        if current_evidence not in EVIDENCE_OPTIONS:
+            current_evidence = "ULL"
+        role_value = str(profile.get("default_role") or "PIC").upper()
+        if role_value not in ROLE_OPTIONS:
+            role_value = "PIC"
+
+        with st.form("profile_defaults_form_v059"):
+            c1, c2 = st.columns(2)
+            with c1:
+                home_airport = st.text_input(
+                    "Domovské letiště",
+                    value=str(profile.get("home_airport") or ""),
+                    placeholder="LKVO",
+                    help="Předvyplní odlet při ručním zadávání nového letu.",
+                ).upper().strip()
+                default_role = st.selectbox(
+                    "Výchozí funkce",
+                    ROLE_OPTIONS,
+                    index=ROLE_OPTIONS.index(role_value),
                 )
+                default_evidence = st.selectbox(
+                    "Výchozí evidence",
+                    EVIDENCE_OPTIONS,
+                    index=EVIDENCE_OPTIONS.index(current_evidence),
+                )
+            with c2:
+                currency = st.selectbox(
+                    "Měna",
+                    currency_options,
+                    index=currency_options.index(current_currency) if current_currency in currency_options else 0,
+                    help="Používá se pro zobrazení cen a nákladů tohoto profilu.",
+                )
+                timezone_name = st.selectbox(
+                    "Časové pásmo",
+                    timezone_options,
+                    index=timezone_options.index(current_tz),
+                    help="Používá se při převodu časů GPS/KML do lokálního času.",
+                )
+            save_defaults = st.form_submit_button("Uložit výchozí hodnoty", type="primary", use_container_width=True)
+
+        if save_defaults:
+            validation_error = None
+            try:
+                ZoneInfo(timezone_name)
+            except (ZoneInfoNotFoundError, ValueError):
+                validation_error = "Vybrané časové pásmo není platné."
+            if not validation_error and home_airport:
+                lookup = airport_coords_for_idents((home_airport,), uid)
+                if home_airport not in lookup:
+                    validation_error = f"Letiště {home_airport} není v databázi. Nejdřív ho přidej jako vlastní letiště nebo použij známý ident."
+            if validation_error:
+                st.error(validation_error)
+            else:
+                new_prefs = dict(prefs)
+                new_prefs["default_evidence"] = default_evidence
+                with connect() as con:
+                    con.execute(
+                        """
+                        INSERT INTO user_settings
+                            (user_id, timezone, currency, home_airport, default_role, preferences_json, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            timezone = excluded.timezone,
+                            currency = excluded.currency,
+                            home_airport = excluded.home_airport,
+                            default_role = excluded.default_role,
+                            preferences_json = excluded.preferences_json,
+                            updated_at = CURRENT_TIMESTAMP
+                        """,
+                        (uid, timezone_name, currency, home_airport or None, default_role, json.dumps(new_prefs, ensure_ascii=False)),
+                    )
+                    record_audit(
+                        con,
+                        "update_user_settings",
+                        "user",
+                        uid,
+                        {"timezone": timezone_name, "currency": currency, "home_airport": home_airport or None, "default_role": default_role, "default_evidence": default_evidence},
+                    )
+                    con.commit()
+                read_user_profile.clear()
+                invalidate_cached_data("all")
+                auto_backup_after_change("update_user_settings")
+                st.success("Výchozí hodnoty byly uloženy.")
+                st.rerun()
+
+        st.info(
+            f"Nový ručně zadaný let se nyní předvyplní jako **{default_evidence} / {default_role}**"
+            + (f" z **{home_airport}**." if home_airport else ".")
+        )
+
+    with tabs[2]:
+        st.markdown("### Přihlašovací e-mail")
+        st.caption("Změnu e-mailu je nutné potvrdit současným heslem.")
+        with st.form("change_user_email_form_v059"):
+            new_email = st.text_input("Nový e-mail", value=str(profile.get("email") or ""))
+            email_password = st.text_input("Současné heslo", type="password", key="profile_email_password_v059")
+            email_submit = st.form_submit_button("Změnit e-mail", use_container_width=True)
+        if email_submit:
+            with connect() as con:
+                result = change_email(con, user_id=uid, current_password=email_password, new_email=new_email)
                 if result.ok:
-                    record_audit(con, "change_password", "user", uid)
+                    record_audit(con, "change_email", "user", uid, {"new_email": str(new_email).strip().lower()})
                     con.commit()
             if result.ok:
-                auto_backup_after_change("change_password")
-                st.success("Heslo bylo změněno.")
+                read_user_profile.clear()
+                auto_backup_after_change("change_email")
+                st.success("Přihlašovací e-mail byl změněn.")
+                st.rerun()
             else:
-                st.error(result.error or "Heslo se nepodařilo změnit.")
+                st.error(result.error or "E-mail se nepodařilo změnit.")
 
-    st.markdown("### Účet")
-    st.write(f"**User ID:** {uid}")
-    st.write(f"**E-mail:** {profile.get('email') or '—'}")
-    st.write(f"**Role:** {'Správce' if str(profile.get('role') or 'user').lower() == 'admin' else 'Uživatel'}")
-    if uid == DEFAULT_USER_ID:
-        st.info("Toto je původní profil. Všechny lety existující před zavedením účtů jsou přiřazené právě tomuto profilu.")
+        st.markdown("### Změna hesla")
+        with st.form("change_user_password_form_v059"):
+            current_password = st.text_input("Současné heslo", type="password", key="profile_current_password_v059")
+            new_password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password", key="profile_new_password_v059")
+            new_password2 = st.text_input("Potvrzení nového hesla", type="password", key="profile_new_password2_v059")
+            change_submitted = st.form_submit_button("Změnit heslo", use_container_width=True)
+        if change_submitted:
+            if new_password != new_password2:
+                st.error("Nová hesla se neshodují.")
+            else:
+                with connect() as con:
+                    result = change_password(
+                        con, user_id=uid, current_password=current_password, new_password=new_password
+                    )
+                    if result.ok:
+                        record_audit(con, "change_password", "user", uid)
+                        con.commit()
+                if result.ok:
+                    auto_backup_after_change("change_password")
+                    st.success("Heslo bylo změněno.")
+                else:
+                    st.error(result.error or "Heslo se nepodařilo změnit.")
+
+        st.markdown("### Oprávnění")
+        if is_admin():
+            st.success("Tento profil je správce aplikace. Admin oprávnění se mění pouze v Admin menu.")
+        else:
+            st.info("Tento profil je běžný uživatel. Může číst a upravovat pouze vlastní lety, letadla, ceny, GPS tracky a vlastní letiště.")
 
 def render_sidebar_toggle() -> None:
     """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""

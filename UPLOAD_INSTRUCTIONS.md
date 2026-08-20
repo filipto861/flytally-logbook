@@ -1,21 +1,31 @@
-# Nasazení v0.58
+# Nasazení v0.59
 
 1. Zálohuj `data/logbook.sqlite`.
 2. V lokálním Git repozitáři zachovej `.git` a `data`.
-3. Nahraď aplikační soubory obsahem v0.58.
+3. Nahraď aplikační soubory obsahem v0.59.
 4. Obsah `data` z release zkopíruj do existujícího `data`; `logbook.sqlite` v release není.
-5. Ověř v GitHub Desktopu, že `data/logbook.sqlite` není omylem smazaná nebo nahrazená.
-6. Commit: `v0.58 - Aircraft Profiles & Pricing UX`.
-7. Pokud mezitím GitHub auto-backup vytvořil vzdálený commit, použij Fetch/Pull a potom Push.
-8. Streamlit aplikaci po deployi otevři a zkontroluj Databáze → Letadla.
+5. V GitHub Desktopu ověř, že `data/logbook.sqlite` není omylem smazaná nebo nahrazená.
+6. Commit: `v0.59 - User Profile & Permission Hardening`.
+7. Pokud GitHub auto-backup mezitím vytvořil vzdálený commit, použij **Fetch → Pull origin → Push origin**.
+8. Po deployi se přihlas nejdřív admin účtem.
 
 ## Test po nasazení
 
-- Samostatná položka Ceník už není v menu.
-- Databáze → Letadla zobrazí karty letadel.
-- Otevření profilu zobrazí aktuální cenu a historii.
-- Změna ceny s dnešním datem vytvoří nový historický záznam.
-- Historická sazba zadaná např. od 01.01.2025 se správně zobrazí v historii.
-- Budoucí sazba se před datem účinnosti nezobrazí jako aktuální.
-- Přidání nového letadla vytvoří profil a volitelně první cenový záznam.
-- Běžný uživatel vidí jen svoje letadla a ceny; admin data ostatních uživatelů zůstávají oddělená.
+### Admin účet
+- všechny dosavadní lety jsou stále viditelné,
+- Profil → Výchozí hodnoty se uloží,
+- Admin → Bezpečnost hlásí stav **OK**,
+- Admin menu je dostupné pouze adminovi.
+
+### Testovací běžný účet
+- nevidí admin menu,
+- nevidí lety, letadla, ceny ani custom letiště admina,
+- může přidat/editovat/smazat vlastní let bez admin hesla,
+- může přidat vlastní letadlo a vlastní cenu,
+- vlastní profil a heslo lze upravit.
+
+### Nastavení
+- domovské letiště se předvyplní do ručně přidávaného letu,
+- výchozí role a evidence se předvyplní,
+- změna časového pásma ovlivní lokální časy KML/GPS,
+- změna měny změní popisky cen/nákladů v UI a exportech.

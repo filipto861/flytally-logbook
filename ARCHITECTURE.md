@@ -1,43 +1,56 @@
-# Logbook architecture — v0.58
+# Logbook architecture — v0.59
 
-## Aircraft profile as the editing boundary
+## Tenant boundary
 
-Uživatelské UI už nemá samostatnou stránku Ceník. Vše, co patří ke konkrétnímu letadlu, se spravuje v jeho profilu:
+Každý uživatelský záznam je vlastněn pomocí `user_id`. Uživatelsky scoped tabulky jsou:
 
-- identita a typ letadla,
-- evidence/třída,
-- výchozí role,
-- billing basis,
-- aktivní/neaktivní stav,
-- poznámka,
-- aktuální cena,
-- cenová historie.
+- `flights`
+- `aircraft`
+- `rates`
+- `airports`
+- `flight_tracks`
+- `track_points`
+- `audit_log`
 
-Tím se odstraní dvojí editace stejných informací na dvou místech.
+Globální katalog letišť `data/airports_full.sqlite` je read-only a společný pro všechny profily. Lokální/custom letiště jsou uživatelská.
 
-## Pricing source of truth
+## Strict identity
 
-Historické ceny jsou stále uloženy v tabulce `rates`:
+`logbook_core.permissions.strict_user_id()` je bezpečnostní hranice pro runtime operace. Na rozdíl od migračního `normalize_user_id()` nikdy nepoužije fallback na `user_id = 1` při chybějícím nebo neplatném ID.
 
-- `user_id`
-- `registration`
-- `aircraft_type`
-- `valid_from`
-- `price_per_hour`
-- `source`
+Migrační kód smí explicitně používat legacy owner #1. Běžné runtime read/write operace musí mít platný přihlášený účet.
 
-`aircraft.default_price_per_hour` zůstává pouze jako kompatibilní cache aktuální ceny pro starší části aplikace a starší databáze. Datumově správná cena se vybírá z `rates`.
+## Object ownership
 
-Funkce `logbook_core.pricing.lookup_latest_rate()` vybírá sazbu platnou k požadovanému datu a ignoruje budoucí sazby před jejich účinností.
+`require_owned_record()` ověřuje vlastnictví před destruktivní nebo editační operací. v0.59 jej používá minimálně pro:
 
-## Historical correctness
+- editaci letu,
+- smazání letu,
+- uložení tracku k letu,
+- smazání tracku.
 
-Tabulka `flights` dál uchovává `price_per_hour` přímo u letu. Změna ceny letadla proto nepřepočítá dříve uložené lety. Cenová historie slouží především jako zdroj správné sazby pro nové/importované lety podle jejich data.
+SQL zápisy zároveň stále používají `WHERE ... AND user_id = ?` jako druhou ochrannou vrstvu.
 
-## Multi-user ownership
+## User settings
 
-Aircraft profiles i rates jsou scoped pomocí `user_id`. Dva uživatelé mohou mít stejnou registraci i rozdílnou cenovou historii bez vzájemného ovlivnění.
+`user_settings` zůstává tabulka 1:1 k `users` a ukládá:
+
+- timezone,
+- currency,
+- home_airport,
+- default_role,
+- preferences_json.
+
+`preferences_json` v0.59 obsahuje `default_evidence`. Tento formát umožní přidávat další lehká UX nastavení bez zbytečných DB migrací.
+
+## Authentication
+
+Hesla jsou uložena pouze jako salted scrypt hash v `user_credentials`. Změna e-mailu vyžaduje potvrzení současným heslem. Role `admin/user` je persistentní v tabulce `users`.
+
+## Admin security health
+
+Admin konzole kontroluje integritu tenant vazeb a upozorní na cross-user vztahy mezi lety, tracky a GPS body. Tyto kontroly jsou diagnostické a samy data nemění.
 
 ## Persistence
 
-SQLite + GitHub auto-backup zůstává v této fázi zachován. `DB_SCHEMA_VERSION` zůstává 8.
+V této fázi zůstává SQLite + privátní GitHub backup. Při budoucím přechodu na PostgreSQL zůstane princip `user_id` a permission boundary zachován.

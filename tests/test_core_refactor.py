@@ -3,15 +3,16 @@ from __future__ import annotations
 import unittest
 
 import pandas as pd
+from zoneinfo import ZoneInfo
 
 from logbook_core.config import APP_VERSION, DB_SCHEMA_VERSION
-from logbook_core.metrics import build_summary, compute_metrics, fmt_minutes, minutes_diff, normalize_date
-from logbook_core.tracks import detect_kml_source, parse_kml_bytes, track_stats
+from logbook_core.metrics import build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff, normalize_date
+from logbook_core.tracks import detect_kml_source, parse_kml_bytes, point_local_date, track_stats
 
 
 class CoreRefactorTests(unittest.TestCase):
     def test_version(self) -> None:
-        self.assertEqual(APP_VERSION, "v0.58")
+        self.assertEqual(APP_VERSION, "v0.59")
         self.assertEqual(DB_SCHEMA_VERSION, 8)
 
     def test_time_helpers(self) -> None:
@@ -59,6 +60,23 @@ class CoreRefactorTests(unittest.TestCase):
         self.assertEqual(summary["pic"], 60)
         self.assertEqual(summary["pic_easa"], 60)
         self.assertEqual(summary["tracks"], 1)
+
+
+    def test_profile_currency_formatting(self) -> None:
+        self.assertEqual(fmt_money(2500, "EUR"), "2 500 €")
+        df = pd.DataFrame([{
+            "date": "2026-08-20", "off_block": "10:00", "takeoff": "10:05",
+            "landing": "10:55", "on_block": "11:00", "price_per_hour": 3000,
+            "billing_basis": "BLOCK", "role": "PIC", "evidence": "EASA",
+            "registration": "OK-TEST", "aircraft_class": "SEP", "starts": 1,
+        }])
+        out = compute_metrics(df, currency="EUR")
+        self.assertEqual(out.iloc[0]["cost_label"], "3 000 €")
+
+    def test_track_date_respects_profile_timezone(self) -> None:
+        points = [{"lat": 50.0, "lon": 14.0, "time": "2026-08-20T00:30:00Z"}]
+        self.assertEqual(str(point_local_date(points, ZoneInfo("Europe/Prague"))), "2026-08-20")
+        self.assertEqual(str(point_local_date(points, ZoneInfo("America/Los_Angeles"))), "2026-08-19")
 
     def test_kml_linestring(self) -> None:
         raw = b'''<?xml version="1.0"?>

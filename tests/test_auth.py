@@ -5,6 +5,7 @@ import sqlite3
 from logbook_core.auth import (
     activate_legacy_profile,
     authenticate_user,
+    change_email,
     change_password,
     ensure_auth_schema,
     legacy_profile_needs_activation,
@@ -112,3 +113,14 @@ def test_role_migration_promotes_existing_owner_only():
     ensure_auth_schema(con)
     roles = dict(con.execute("SELECT id, role FROM users ORDER BY id").fetchall())
     assert roles == {1: "admin", 2: "user"}
+
+
+def test_email_change_requires_current_password():
+    con = make_db()
+    activate_legacy_profile(con, email="owner@example.com", display_name="Owner", password="strongpass123")
+    denied = change_email(con, user_id=1, current_password="wrong", new_email="new@example.com")
+    assert not denied.ok
+    changed = change_email(con, user_id=1, current_password="strongpass123", new_email="new@example.com")
+    assert changed.ok
+    assert not authenticate_user(con, "owner@example.com", "strongpass123").ok
+    assert authenticate_user(con, "new@example.com", "strongpass123").ok
