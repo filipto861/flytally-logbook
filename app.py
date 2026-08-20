@@ -7049,17 +7049,20 @@ def page_profile() -> None:
             st.info("Tento profil je běžný uživatel. Může číst a upravovat pouze vlastní lety, letadla, ceny, GPS tracky a vlastní letiště.")
 
 def render_sidebar_toggle() -> None:
-    """Render one fixed, smooth sidebar toggle without a Streamlit rerun.
+    """Render a compositor-friendly edge handle for the sidebar.
 
-    The button itself lives inside the Streamlit-managed HTML node. JavaScript only
-    attaches behaviour and toggles a body class. This is more reliable than
-    appending a new element directly to ``document.body`` after every rerun.
+    The control is deliberately minimal (two chevrons, no visible button chrome).
+    It toggles only a CSS class on ``body`` and never triggers a Streamlit rerun.
     """
     st.html(
         """
         <button id="lb-sidebar-toggle" type="button"
                 aria-label="Skrýt nebo zobrazit menu"
-                title="Skrýt / zobrazit menu">‹</button>
+                aria-expanded="true"
+                title="Skrýt / zobrazit menu">
+          <span class="lb-sidebar-chevron" aria-hidden="true">‹</span>
+          <span class="lb-sidebar-chevron" aria-hidden="true">‹</span>
+        </button>
         <script>
         (function() {
           const doc = document;
@@ -7094,14 +7097,30 @@ def render_sidebar_toggle() -> None:
             });
           }
 
-          function setHidden(hidden) {
-            doc.body.classList.toggle('lb-sidebar-hidden', hidden);
-            try { window.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
+          function paintButton(hidden) {
             const btn = doc.getElementById(btnId);
-            if (btn) {
-              btn.textContent = hidden ? '›' : '‹';
-              btn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+            if (!btn) return;
+            btn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+            btn.dataset.sidebarState = hidden ? 'closed' : 'open';
+            btn.querySelectorAll('.lb-sidebar-chevron').forEach(el => {
+              el.textContent = hidden ? '›' : '‹';
+            });
+          }
+
+          function setHidden(hidden, persist=true) {
+            if (doc.body.classList.contains('lb-sidebar-hidden') === hidden) {
+              paintButton(hidden);
+              return;
             }
+            // One rAF keeps the class change aligned with the browser's compositor
+            // frame instead of mixing it with Streamlit's HTML reconciliation.
+            window.requestAnimationFrame(() => {
+              doc.body.classList.toggle('lb-sidebar-hidden', hidden);
+              paintButton(hidden);
+              if (persist) {
+                try { window.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
+              }
+            });
           }
 
           function install() {
@@ -7117,14 +7136,13 @@ def render_sidebar_toggle() -> None:
               try { return window.localStorage.getItem(storageKey) === '1'; }
               catch(e) { return false; }
             })();
-            setHidden(saved);
+            // Initial state must not animate from the opposite side on page load.
+            doc.body.classList.toggle('lb-sidebar-hidden', saved);
+            paintButton(saved);
             return true;
           }
 
           install();
-          // Streamlit can reconcile the HTML node immediately after insertion. A
-          // couple of cheap retries ensure the listener remains attached without a
-          // document-wide MutationObserver.
           setTimeout(install, 80);
           setTimeout(install, 260);
 
