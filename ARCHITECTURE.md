@@ -1,8 +1,8 @@
-# Logbook architecture — v0.62.1
+# Logbook architecture — v0.62.2
 
 ## Flight Import UX 2.0
 
-v0.62.1 ponechává parser, Smart KML a datovou vrstvu beze změny, ale přidává orchestration vrstvu pro bezpečný import před zápisem do SQLite.
+v0.62.2 ponechává parser, Smart KML a datovou vrstvu beze změny, ale přidává orchestration vrstvu pro bezpečný import před zápisem do SQLite.
 
 ### Import state machine
 
@@ -43,7 +43,7 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 - GPS body ani původní KML nejsou při preview modifikovány
 
 
-## v0.62.1 cleanup rules
+## v0.62.2 cleanup rules
 1. Runtime behavior and DB schema stay unchanged (`DB_SCHEMA_VERSION = 8`).
 2. No release file may contain or replace `data/logbook.sqlite`.
 3. Cross-user reads remain explicitly user-scoped; generic table readers are allow-listed.
@@ -51,6 +51,6 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 5. Dependency upgrades are deliberate releases, not implicit deploy-time changes.
 
 
-## v0.62.1 dashboard analytics layer
+## v0.62.2 dashboard analytics layer
 
 `logbook_core/dashboard.py` obsahuje čisté, Streamlit-independent agregace pro období, měsíce, roky, letadla, letiště, trasy a dashboardové rekordy. UI pouze vybírá aktuální sekci a renderuje již agregovaná data. Tím se drží náklad skrytých dashboardových sekcí mimo aktuální rerun.

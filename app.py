@@ -2580,10 +2580,14 @@ def page_dashboard(df: pd.DataFrame):
     st.markdown(
         f"""
         <div class="dashboard-primary-card">
-          <div class="dashboard-primary-label">Celkový čas</div>
+          <div class="dashboard-card-top">
+            <div class="dashboard-primary-label">Celkový čas</div>
+            <div class="dashboard-card-badge">TOTAL</div>
+          </div>
           <div class="dashboard-primary-value">{fmt_minutes(primary['total_minutes'])}</div>
-          <div class="dashboard-primary-sub">
-            {primary['total_flights']} letů • {primary['total_landings']} přistání
+          <div class="dashboard-stat-chips">
+            <span class="dashboard-stat-chip">✈ <strong>{primary['total_flights']}</strong> letů</span>
+            <span class="dashboard-stat-chip">↘ <strong>{primary['total_landings']}</strong> přistání</span>
           </div>
         </div>
         """,
@@ -2595,10 +2599,16 @@ def page_dashboard(df: pd.DataFrame):
     with evidence_cols[0]:
         st.markdown(
             f"""
-            <div class="dashboard-category-card">
-              <div class="dashboard-category-label">ULL</div>
+            <div class="dashboard-category-card ull">
+              <div class="dashboard-card-top">
+                <div class="dashboard-category-label">ULL</div>
+                <div class="dashboard-card-badge">ULL</div>
+              </div>
               <div class="dashboard-category-value">{fmt_minutes(primary['ull_minutes'])}</div>
-              <div class="dashboard-category-sub">{primary['ull_flights']} letů • {primary['ull_landings']} přistání</div>
+              <div class="dashboard-stat-chips">
+                <span class="dashboard-stat-chip">✈ <strong>{primary['ull_flights']}</strong> letů</span>
+                <span class="dashboard-stat-chip">↘ <strong>{primary['ull_landings']}</strong> přistání</span>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -2606,10 +2616,16 @@ def page_dashboard(df: pd.DataFrame):
     with evidence_cols[1]:
         st.markdown(
             f"""
-            <div class="dashboard-category-card">
-              <div class="dashboard-category-label">EASA</div>
+            <div class="dashboard-category-card easa">
+              <div class="dashboard-card-top">
+                <div class="dashboard-category-label">EASA</div>
+                <div class="dashboard-card-badge">EASA</div>
+              </div>
               <div class="dashboard-category-value">{fmt_minutes(primary['easa_minutes'])}</div>
-              <div class="dashboard-category-sub">{primary['easa_flights']} letů • {primary['easa_landings']} přistání</div>
+              <div class="dashboard-stat-chips">
+                <span class="dashboard-stat-chip">✈ <strong>{primary['easa_flights']}</strong> letů</span>
+                <span class="dashboard-stat-chip">↘ <strong>{primary['easa_landings']}</strong> přistání</span>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -2622,10 +2638,16 @@ def page_dashboard(df: pd.DataFrame):
     with pic_cols[0]:
         st.markdown(
             f"""
-            <div class="dashboard-category-card">
-              <div class="dashboard-category-label">PIC • ULL</div>
+            <div class="dashboard-category-card pic-ull">
+              <div class="dashboard-card-top">
+                <div class="dashboard-category-label">PIC • ULL</div>
+                <div class="dashboard-card-badge">PIC</div>
+              </div>
               <div class="dashboard-category-value">{fmt_minutes(primary['pic_ull_minutes'])}</div>
-              <div class="dashboard-category-sub">{primary['pic_ull_flights']} letů • {primary['pic_ull_landings']} přistání</div>
+              <div class="dashboard-stat-chips">
+                <span class="dashboard-stat-chip">✈ <strong>{primary['pic_ull_flights']}</strong> letů</span>
+                <span class="dashboard-stat-chip">↘ <strong>{primary['pic_ull_landings']}</strong> přistání</span>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -2633,10 +2655,16 @@ def page_dashboard(df: pd.DataFrame):
     with pic_cols[1]:
         st.markdown(
             f"""
-            <div class="dashboard-category-card">
-              <div class="dashboard-category-label">PIC • EASA</div>
+            <div class="dashboard-category-card pic-easa">
+              <div class="dashboard-card-top">
+                <div class="dashboard-category-label">PIC • EASA</div>
+                <div class="dashboard-card-badge">PIC</div>
+              </div>
               <div class="dashboard-category-value">{fmt_minutes(primary['pic_easa_minutes'])}</div>
-              <div class="dashboard-category-sub">{primary['pic_easa_flights']} letů • {primary['pic_easa_landings']} přistání</div>
+              <div class="dashboard-stat-chips">
+                <span class="dashboard-stat-chip">✈ <strong>{primary['pic_easa_flights']}</strong> letů</span>
+                <span class="dashboard-stat-chip">↘ <strong>{primary['pic_easa_landings']}</strong> přistání</span>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,

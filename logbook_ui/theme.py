@@ -154,6 +154,150 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .metric-label {{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}}
     .metric-value {{color:var(--text);font-size:1.72rem;line-height:1.25;font-weight:850;margin-top:.25rem;}}
     .metric-sub {{color:var(--muted);font-size:.82rem;margin-top:.28rem;}}
+    /* Dashboard v0.62.2: compact information hierarchy with richer card visuals. */
+    .dashboard-primary-card {{
+        position:relative;
+        overflow:hidden;
+        border:1px solid rgba(56,189,248,.30);
+        border-radius:22px;
+        padding:1.22rem 1.30rem 1.12rem 1.30rem;
+        background:
+            radial-gradient(circle at 92% 18%,rgba(56,189,248,.16),transparent 30%),
+            linear-gradient(135deg,rgba(56,189,248,.12),rgba(15,23,42,.025)),
+            var(--panel);
+        box-shadow:0 15px 36px var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
+        margin:.22rem 0 .85rem 0;
+    }}
+    .dashboard-primary-card::before {{
+        content:"";
+        position:absolute;
+        left:0;top:0;bottom:0;
+        width:4px;
+        background:linear-gradient(180deg,#38bdf8,#22d3ee);
+        opacity:.95;
+    }}
+    .dashboard-card-top {{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:.75rem;
+        min-width:0;
+    }}
+    .dashboard-primary-label,
+    .dashboard-category-label {{
+        color:var(--muted);
+        font-size:.70rem;
+        text-transform:uppercase;
+        letter-spacing:.09em;
+        font-weight:850;
+    }}
+    .dashboard-card-badge {{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-height:1.45rem;
+        padding:.18rem .48rem;
+        border-radius:999px;
+        border:1px solid rgba(125,211,252,.20);
+        background:rgba(56,189,248,.065);
+        color:#bae6fd;
+        font-size:.64rem;
+        font-weight:850;
+        letter-spacing:.055em;
+        line-height:1;
+        white-space:nowrap;
+    }}
+    .dashboard-primary-value {{
+        color:var(--text);
+        font-size:2.52rem;
+        line-height:1.02;
+        font-weight:900;
+        letter-spacing:-.045em;
+        margin:.38rem 0 .62rem 0;
+        font-variant-numeric:tabular-nums;
+    }}
+    .dashboard-category-card {{
+        position:relative;
+        overflow:hidden;
+        border:1px solid var(--border);
+        border-radius:18px;
+        padding:.92rem 1rem .86rem 1rem;
+        background:
+            radial-gradient(circle at 96% 0%,rgba(56,189,248,.09),transparent 34%),
+            linear-gradient(180deg,rgba(255,255,255,.035),transparent),
+            var(--panel);
+        box-shadow:0 10px 25px var(--shadow),inset 0 1px 0 rgba(255,255,255,.03);
+        min-height:116px;
+        transition:transform 150ms ease,border-color 150ms ease,box-shadow 150ms ease;
+    }}
+    .dashboard-category-card:hover {{
+        transform:translateY(-1px);
+        border-color:rgba(125,211,252,.27);
+        box-shadow:0 13px 29px var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
+    }}
+    .dashboard-category-card::before {{
+        content:"";
+        position:absolute;
+        left:0;right:0;top:0;
+        height:2px;
+        background:linear-gradient(90deg,rgba(56,189,248,.85),rgba(56,189,248,0));
+    }}
+    .dashboard-category-card.ull::before {{
+        background:linear-gradient(90deg,#38bdf8,rgba(56,189,248,0));
+    }}
+    .dashboard-category-card.easa::before {{
+        background:linear-gradient(90deg,#34d399,rgba(52,211,153,0));
+    }}
+    .dashboard-category-card.pic-ull::before {{
+        background:linear-gradient(90deg,#22d3ee,rgba(34,211,238,0));
+    }}
+    .dashboard-category-card.pic-easa::before {{
+        background:linear-gradient(90deg,#a7f3d0,rgba(167,243,208,0));
+    }}
+    .dashboard-category-value {{
+        color:var(--text);
+        font-size:1.72rem;
+        line-height:1.06;
+        font-weight:900;
+        letter-spacing:-.035em;
+        margin:.34rem 0 .56rem 0;
+        font-variant-numeric:tabular-nums;
+    }}
+    .dashboard-stat-chips {{
+        display:flex;
+        align-items:center;
+        gap:.34rem;
+        flex-wrap:wrap;
+    }}
+    .dashboard-stat-chip {{
+        display:inline-flex;
+        align-items:center;
+        gap:.28rem;
+        border:1px solid rgba(148,163,184,.13);
+        border-radius:999px;
+        background:rgba(255,255,255,.025);
+        color:var(--muted);
+        padding:.18rem .46rem;
+        font-size:.72rem;
+        line-height:1.1;
+        white-space:nowrap;
+    }}
+    .dashboard-stat-chip strong {{
+        color:var(--text);
+        font-weight:820;
+    }}
+    .dashboard-quickline {{
+        color:var(--muted);
+        font-size:.82rem;
+        margin:.12rem 0 1rem 0;
+        padding:.12rem .15rem .68rem .15rem;
+        border-bottom:1px solid rgba(148,163,184,.10);
+    }}
+    @media (max-width:760px) {{
+        .dashboard-primary-value {{font-size:2.18rem;}}
+        .dashboard-category-value {{font-size:1.52rem;}}
+        .dashboard-category-card {{min-height:110px;}}
+    }}
     #lb-page-loader {{position:fixed;left:var(--lb-sidebar-width);right:0;top:0;bottom:0;z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding-top:5.8rem;background:rgba(6,16,29,.10);opacity:0;pointer-events:none;transition:opacity 120ms ease;}}
     body.lb-sidebar-hidden #lb-page-loader {{left:0;}}
     body.lb-page-loading #lb-page-loader {{opacity:1;}}
