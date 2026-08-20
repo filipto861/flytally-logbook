@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.65.1 – Pilot Currency & Recency
+## v0.66 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -138,7 +138,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.65.1 – Profile Recency Polish
+## v0.66 – Profile Recency Polish
 - removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
 - licence/medical/rating expiry tracking is the primary content
@@ -148,7 +148,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9; no migration required
 
 
-## v0.65.1 – Data Portability & Backup UX
+## v0.66 – Data Portability & Backup UX
 - adds `Export → Záloha účtu` for every authenticated user
 - portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
 - passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
@@ -161,7 +161,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.65.1 – Flight Entry UX 2.0
+## v0.66 – Flight Entry UX 2.0
 - manual flight entry now uses a compact pilot-focused layout
 - the most recent flight can prefill the last aircraft and next departure airport
 - last aircraft is reused only when its aircraft profile still exists
@@ -174,7 +174,22 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.65.1 – Manual Entry None Safety Hotfix
+## v0.66 – Manual Entry None Safety Hotfix
 - fixes `AttributeError: 'NoneType' object has no attribute 'upper'` when a new manual flight has an empty arrival
 - hardens all new v0.65 manual-entry uppercase conversions against missing optional values
 - no UX, database or schema changes
+
+
+## v0.66 – Flight Detail & Logbook UX Polish
+- simplifies the flight list from 15 columns to 9
+- removes separate Edit/GPS buttons from every list row; all actions remain available inside Detail
+- visible rows now render one Streamlit action button instead of three, reducing widget count substantially
+- quick search uses a lower-memory column-mask implementation
+- filtered logbook summary now prioritizes flights, Block, PIC and landings
+- flight detail adds Previous / Next navigation within the current filtered/search result
+- detail overview is reorganized around Block, Air, landings and cost
+- aircraft/crew and time information are grouped into two concise panels
+- GPS status remains visible without occupying a top-level metric card
+- non-blocking validation warnings are collapsed by default
+- user-supplied list/detail text is HTML-escaped before unsafe HTML rendering
+- KML import, GPS playback, edit form and database schema remain unchanged

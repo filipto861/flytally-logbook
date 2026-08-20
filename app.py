@@ -63,6 +63,9 @@ from logbook_core.portability import (
 from logbook_core.flight_entry import (
     frequent_destinations, manual_entry_defaults,
 )
+from logbook_core.logbook_view import (
+    flight_navigation, quick_search_flights,
+)
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -4327,24 +4330,67 @@ def _render_gps_time_proposal(proposal: dict[str, Any], *, compact: bool = False
 
 
 @st.dialog("Detail letu", width="large", dismissible=True, on_dismiss=clear_open_flight_dialog)
-def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.DataFrame, dark_mode: bool) -> None:
+def flight_detail_dialog(
+    selected_id: int,
+    row_data: dict[str, Any],
+    rates: pd.DataFrame,
+    dark_mode: bool,
+    navigation_ids: list[int] | None = None,
+) -> None:
     row = pd.Series(row_data)
-    route_text = f"{_safe_text(row_data.get('departure')) or '—'} → {_safe_text(row_data.get('arrival')) or '—'}"
+    departure = html.escape(_safe_text(row_data.get("departure")) or "—")
+    arrival = html.escape(_safe_text(row_data.get("arrival")) or "—")
+    route_text = f"{departure} → {arrival}"
     st.markdown(
         f"""
         <div class="flight-detail-hero">
             <div class="flight-detail-route">{route_text}</div>
             <div class="flight-detail-meta">
+                <span>{html.escape(_safe_text(row_data.get('date')) or 'bez data')}</span>
+                <span>{html.escape(_safe_text(row_data.get('registration')) or 'bez imatrikulace')}</span>
+                <span>{html.escape(_safe_text(row_data.get('evidence')) or 'bez evidence')}</span>
+                <span>{html.escape(_safe_text(row_data.get('role')) or 'bez funkce')}</span>
                 <span>ID {int(selected_id)}</span>
-                <span>{_safe_text(row_data.get('date')) or 'bez data'}</span>
-                <span>{_safe_text(row_data.get('registration')) or 'bez imatrikulace'}</span>
-                <span>{_safe_text(row_data.get('role')) or 'bez funkce'}</span>
-                <span>{_safe_text(row_data.get('evidence')) or 'bez evidence'}</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+    navigation = flight_navigation(navigation_ids or [], selected_id)
+    if int(navigation.get("total") or 0) > 1:
+        previous_id = navigation.get("previous_id")
+        next_id = navigation.get("next_id")
+        nav_left, nav_middle, nav_right = st.columns([1, 1.25, 1])
+        with nav_left:
+            if st.button(
+                "← Předchozí",
+                disabled=previous_id is None,
+                width="stretch",
+                key=f"detail_prev_{selected_id}",
+            ):
+                target = int(previous_id)
+                st.session_state[f"detail_section_{target}"] = "Přehled"
+                st.session_state["open_flight_dialog_id"] = target
+                st.session_state["selected_flight_id"] = target
+                st.rerun()
+        with nav_middle:
+            st.markdown(
+                f'<div class="detail-position">{int(navigation.get("position") or 0)} / {int(navigation.get("total") or 0)} v aktuálním seznamu</div>',
+                unsafe_allow_html=True,
+            )
+        with nav_right:
+            if st.button(
+                "Další →",
+                disabled=next_id is None,
+                width="stretch",
+                key=f"detail_next_{selected_id}",
+            ):
+                target = int(next_id)
+                st.session_state[f"detail_section_{target}"] = "Přehled"
+                st.session_state["open_flight_dialog_id"] = target
+                st.session_state["selected_flight_id"] = target
+                st.rerun()
     pending_section_key = f"_detail_pending_section_{selected_id}"
     pending_section = st.session_state.pop(pending_section_key, None)
     if pending_section:
@@ -4362,64 +4408,93 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         label_visibility="collapsed",
     )
     if detail_section == "Přehled":
-        block_text = _safe_text(row.get("block_time")) or "—"
-        air_text = _safe_text(row.get("air_time")) or "—"
-        price_text = _safe_text(row.get("cost_label")) or "—"
+        block_text = html.escape(_safe_text(row.get("block_time")) or "—")
+        air_text = html.escape(_safe_text(row.get("air_time")) or "—")
+        price_text = html.escape(_safe_text(row.get("cost_label")) or "—")
+        starts_text = html.escape(_safe_text(row.get("starts")) or "0")
         gps_count = int(_safe_float(row.get("track_count"), 0))
         gps_km = _safe_float(row.get("gps_km"), 0)
+
+        aircraft = html.escape(_safe_text(row.get("registration")) or "—")
+        aircraft_sub = html.escape(
+            _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")]) or "—"
+        )
+        date_text = html.escape(_safe_text(row.get("date")) or "—")
+        evidence_text = html.escape(_safe_text(row.get("evidence")) or "—")
+        role_text = html.escape(_safe_text(row.get("role")) or "—")
+        block_range = html.escape(_range_text(row.get("off_block"), row.get("on_block")) or "—")
+        air_range = html.escape(_range_text(row.get("takeoff"), row.get("landing")) or "—")
+        commander_text = html.escape(_safe_text(row.get("commander")) or "—")
+        instructor_text = html.escape(_safe_text(row.get("instructor")) or "—")
+        task_text = html.escape(_safe_text(row.get("task")) or "—")
+        price_rate = html.escape(_price_rate_label(row.get("price_per_hour")) or "—")
+        gps_text = f"{gps_count} track" + ("" if gps_count == 1 else "y")
+        gps_detail = f"{gps_text} · {gps_km:.1f} km" if gps_count > 0 else "bez GPS tracku"
+
         st.markdown(
             f"""
             <div class="detail-grid">
-              <div class="detail-card">
-                <div class="detail-card-label">Čas letu</div>
+              <div class="detail-card detail-card-primary">
+                <div class="detail-card-label">Block</div>
                 <div class="detail-card-value">{block_text}</div>
-                <div class="detail-card-sub">Air {air_text}</div>
+                <div class="detail-card-sub">{block_range}</div>
               </div>
               <div class="detail-card">
-                <div class="detail-card-label">Letadlo</div>
-                <div class="detail-card-value">{_safe_text(row.get('registration')) or '—'}</div>
-                <div class="detail-card-sub">{_safe_text(row.get('aircraft_type')) or '—'} · {_safe_text(row.get('aircraft_class')) or '—'}</div>
+                <div class="detail-card-label">Air</div>
+                <div class="detail-card-value">{air_text}</div>
+                <div class="detail-card-sub">{air_range}</div>
               </div>
               <div class="detail-card">
-                <div class="detail-card-label">Cena</div>
+                <div class="detail-card-label">Přistání</div>
+                <div class="detail-card-value">{starts_text}</div>
+                <div class="detail-card-sub">{evidence_text} · {role_text}</div>
+              </div>
+              <div class="detail-card">
+                <div class="detail-card-label">Náklady</div>
                 <div class="detail-card-value">{price_text}</div>
-                <div class="detail-card-sub">{_safe_text(row.get('price_per_hour')) or '—'} {currency_symbol()}/h</div>
-              </div>
-              <div class="detail-card">
-                <div class="detail-card-label">GPS</div>
-                <div class="detail-card-value">{gps_count}</div>
-                <div class="detail-card-sub">{gps_km:.1f} km</div>
+                <div class="detail-card-sub">{price_rate}</div>
               </div>
             </div>
+
             <div class="detail-split">
               <div class="detail-kv">
-                <div class="detail-kv-title">Let</div>
-                <div class="detail-kv-row"><span>Datum</span><span>{_safe_text(row.get('date')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Trasa</span><span>{_safe_text(row.get('departure')) or '—'} → {_safe_text(row.get('arrival')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Evidence</span><span>{_safe_text(row.get('evidence')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Funkce</span><span>{_safe_text(row.get('role')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Starty / přistání</span><span>{_safe_text(row.get('starts')) or '—'}</span></div>
+                <div class="detail-kv-title">Let a časy</div>
+                <div class="detail-kv-row"><span>Datum</span><span>{date_text}</span></div>
+                <div class="detail-kv-row"><span>Trasa</span><span>{route_text}</span></div>
+                <div class="detail-kv-row"><span>Block</span><span>{block_range}</span></div>
+                <div class="detail-kv-row"><span>Air</span><span>{air_range}</span></div>
+                <div class="detail-kv-row"><span>GPS</span><span>{html.escape(gps_detail)}</span></div>
               </div>
+
               <div class="detail-kv">
-                <div class="detail-kv-title">Časy a posádka</div>
-                <div class="detail-kv-row"><span>Block</span><span>{_safe_text(row.get('off_block')) or '—'} – {_safe_text(row.get('on_block')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Air</span><span>{_safe_text(row.get('takeoff')) or '—'} – {_safe_text(row.get('landing')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Velitel</span><span>{_safe_text(row.get('commander')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Instruktor</span><span>{_safe_text(row.get('instructor')) or '—'}</span></div>
-                <div class="detail-kv-row"><span>Úloha</span><span>{_safe_text(row.get('task')) or '—'}</span></div>
+                <div class="detail-kv-title">Letadlo a posádka</div>
+                <div class="detail-kv-row"><span>Letadlo</span><span>{aircraft} · {aircraft_sub}</span></div>
+                <div class="detail-kv-row"><span>Funkce</span><span>{role_text}</span></div>
+                <div class="detail-kv-row"><span>Velitel</span><span>{commander_text}</span></div>
+                <div class="detail-kv-row"><span>Instruktor</span><span>{instructor_text}</span></div>
+                <div class="detail-kv-row"><span>Úloha</span><span>{task_text}</span></div>
               </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
         note_text = _safe_text(row.get("note"))
         if note_text:
-            st.markdown(f'<div class="detail-kv"><div class="detail-kv-title">Poznámka</div>{note_text}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="detail-note"><div class="detail-kv-title">Poznámka</div>{html.escape(note_text)}</div>',
+                unsafe_allow_html=True,
+            )
+
         detail_errors, detail_warnings = validate_flight_data(row_data)
         if detail_errors:
             st.error("Kontrola letu: " + " • ".join(detail_errors[:5]))
         elif detail_warnings:
-            st.warning("Kontrola letu: " + " • ".join(detail_warnings[:5]))
+            with st.expander(
+                f"Kontrola záznamu · {len(detail_warnings)} upozornění",
+                expanded=False,
+            ):
+                st.warning(" • ".join(detail_warnings[:8]))
     elif detail_section == "Editace":
         edit_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
         gps_proposal, _gps_points, _gps_track_row = _gps_proposal_from_tracks(edit_tracks)
@@ -4593,8 +4668,8 @@ def _price_rate_label(value: Any) -> str:
 
 
 def _cell(main: Any, sub: Any = "") -> str:
-    main_txt = _safe_text(main)
-    sub_txt = _safe_text(sub)
+    main_txt = html.escape(_safe_text(main))
+    sub_txt = html.escape(_safe_text(sub))
     if sub_txt:
         return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div><div class="flight-cell-sub">{sub_txt}</div></div>'
     return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div></div>'
@@ -4704,116 +4779,187 @@ def apply_logbook_filters_v2(df: pd.DataFrame) -> pd.DataFrame:
     return work.reset_index(drop=True)
 
 
-def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFrame | None = None) -> None:
-    """Compact paginated flight list with one real Detail button per visible row.
+def render_flight_list(
+    table_df: pd.DataFrame,
+    dark_mode: bool,
+    rates: pd.DataFrame | None = None,
+) -> None:
+    """Clean paginated logbook list.
 
-    This avoids unreliable table selection and avoids opening browser links. Only the
-    visible page gets buttons, so it stays responsive on Streamlit Cloud.
+    Only one Streamlit button is rendered per visible flight. Edit, GPS and
+    deletion actions live inside the detail dialog, which cuts widget count
+    and makes the overview substantially easier to scan.
     """
     if table_df.empty:
         st.info("Filtr nevrátil žádné lety.")
         return
 
-    controls = st.columns([1.0, 2.4, 1.0, 1.0])
+    controls = st.columns([2.5, .8, .9, 1.0])
     with controls[0]:
-        page_size_choice = st.selectbox("Řádků", [25, 50, 100, "Vše"], index=0, key="flight_page_size_v14")
+        quick_filter = st.text_input(
+            "Rychlé hledání",
+            value="",
+            placeholder="registrace, letiště, typ, funkce…",
+            key="flight_table_quick_filter_v066",
+        )
     with controls[1]:
-        quick_filter = st.text_input("Rychlé hledání", value="", placeholder="registrace, letiště, typ, funkce…", key="flight_table_quick_filter_v14")
+        page_size_choice = st.selectbox(
+            "Řádků",
+            [25, 50, 100, "Vše"],
+            index=0,
+            key="flight_page_size_v066",
+        )
 
-    if quick_filter.strip():
-        q = quick_filter.strip().lower()
-        search_cols = [
-            c for c in [
-                "date", "evidence", "registration", "aircraft_type", "aircraft_class",
-                "departure", "arrival", "role", "commander", "instructor", "task", "note"
-            ] if c in table_df.columns
-        ]
-        if search_cols:
-            search_frame = table_df[search_cols].fillna("").astype(str)
-            search_blob = search_frame.agg(" ".join, axis=1).str.lower()
-            shown_table = table_df.loc[search_blob.str.contains(q, regex=False, na=False)].copy()
-        else:
-            shown_table = table_df.iloc[0:0].copy()
-    else:
-        shown_table = table_df.copy()
-
-    shown_table = shown_table.reset_index(drop=True)
-
+    shown_table = quick_search_flights(table_df, quick_filter).reset_index(drop=True)
     total_rows = len(shown_table)
     show_all_rows = page_size_choice == "Vše"
     page_size = total_rows if show_all_rows else int(page_size_choice)
     page_size = max(1, page_size)
     page_count = max(1, math.ceil(total_rows / page_size))
+
     with controls[2]:
         if show_all_rows:
             page = 1
-            st.text_input("Stránka", value="Vše", disabled=True, key="flight_page_all_v14")
+            st.text_input(
+                "Stránka",
+                value="Vše",
+                disabled=True,
+                key="flight_page_all_v066",
+            )
         else:
-            page = st.number_input("Stránka", min_value=1, max_value=page_count, value=min(max(1, int(st.session_state.get("flight_page_v14", 1))), page_count), step=1, key="flight_page_v14")
+            page = st.number_input(
+                "Stránka",
+                min_value=1,
+                max_value=page_count,
+                value=min(
+                    max(1, int(st.session_state.get("flight_page_v066", 1))),
+                    page_count,
+                ),
+                step=1,
+                key="flight_page_v066",
+            )
     with controls[3]:
-        st.markdown(f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="flight-page-info">{total_rows} letů • {page_count} stran</div>',
+            unsafe_allow_html=True,
+        )
+
+    if shown_table.empty:
+        st.info("Rychlé hledání nevrátilo žádné lety.")
+        return
 
     start = 0 if show_all_rows else (int(page) - 1) * page_size
     end = total_rows if show_all_rows else start + page_size
     page_rows = shown_table.iloc[start:end].copy()
 
-    widths = [0.78, 0.70, 0.64, 0.84, 0.46, 1.16, 1.02, 1.04, 0.70, 0.42, 0.84, 1.04, 0.70, 0.72, 0.48]
-    headers = ["Detail", "Edit", "GPS", "Datum", "Ev.", "Letadlo", "Trasa", "Časy", "Block", "St.", "Funkce", "Velitel", "Úloha", "Cena", "GPS"]
+    widths = [0.72, 0.92, 1.18, 1.24, 1.17, 0.76, 1.02, 0.58, 0.68]
+    headers = [
+        "Detail",
+        "Datum",
+        "Letadlo",
+        "Trasa",
+        "Časy",
+        "Block",
+        "Funkce",
+        "Přist.",
+        "GPS",
+    ]
     hcols = st.columns(widths, gap="small", vertical_alignment="top")
     for col, header in zip(hcols, headers):
-        col.markdown(f'<div class="flight-list-head">{header}</div>', unsafe_allow_html=True)
+        col.markdown(
+            f'<div class="flight-list-head">{header}</div>',
+            unsafe_allow_html=True,
+        )
     st.markdown('<div class="flight-list-first-gap"></div>', unsafe_allow_html=True)
 
     for _, row in page_rows.iterrows():
         flight_id = int(row.get("id"))
         cols = st.columns(widths, gap="small", vertical_alignment="top")
+
         with cols[0]:
-            if st.button("Detail", key=f"flight_detail_btn_{flight_id}", width="stretch"):
+            if st.button(
+                "Detail",
+                key=f"flight_detail_btn_v066_{flight_id}",
+                width="stretch",
+            ):
                 st.session_state[f"detail_section_{flight_id}"] = "Přehled"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
-        with cols[1]:
-            if st.button("Edit", key=f"flight_edit_btn_{flight_id}", width="stretch"):
-                st.session_state[f"detail_section_{flight_id}"] = "Editace"
-                st.session_state["open_flight_dialog_id"] = flight_id
-                st.session_state["selected_flight_id"] = flight_id
-                st.session_state.pop("dismissed_flight_id", None)
-                st.rerun()
-        with cols[2]:
-            track_count = _safe_int(row.get("track_count"))
-            if st.button("GPS", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, width="stretch"):
-                st.session_state[f"detail_section_{flight_id}"] = "Track"
-                st.session_state["open_flight_dialog_id"] = flight_id
-                st.session_state["selected_flight_id"] = flight_id
-                st.session_state.pop("dismissed_flight_id", None)
-                st.rerun()
-        cols[3].markdown(_cell(row.get("date")), unsafe_allow_html=True)
-        cols[4].markdown(_cell(row.get("evidence")), unsafe_allow_html=True)
-        aircraft_sub = _join_nonblank([row.get("aircraft_type"), row.get("aircraft_class")])
-        cols[5].markdown(_cell(row.get("registration"), aircraft_sub), unsafe_allow_html=True)
-        cols[6].markdown(_cell(_range_text(row.get("departure"), row.get("arrival"))), unsafe_allow_html=True)
-        time_main = _range_text(row.get("off_block"), row.get("on_block"))
+
+        cols[1].markdown(
+            _cell(row.get("date"), row.get("evidence")),
+            unsafe_allow_html=True,
+        )
+
+        aircraft_sub = _join_nonblank(
+            [row.get("aircraft_type"), row.get("aircraft_class")]
+        )
+        cols[2].markdown(
+            _cell(row.get("registration"), aircraft_sub),
+            unsafe_allow_html=True,
+        )
+
+        cols[3].markdown(
+            _cell(_range_text(row.get("departure"), row.get("arrival"))),
+            unsafe_allow_html=True,
+        )
+
+        block_range = _range_text(row.get("off_block"), row.get("on_block"))
         air_range = _range_text(row.get("takeoff"), row.get("landing"))
-        time_sub = f"Air {air_range}" if air_range else ""
-        cols[7].markdown(_cell(time_main, time_sub), unsafe_allow_html=True)
-        cols[8].markdown(_cell(row.get("block_time"), f"Air {row.get('air_time') or ''}"), unsafe_allow_html=True)
-        cols[9].markdown(_cell(_safe_int(row.get("starts"))), unsafe_allow_html=True)
-        cols[10].markdown(_cell(row.get("role")), unsafe_allow_html=True)
-        cols[11].markdown(_cell(row.get("commander"), row.get("instructor") if not _is_blank(row.get("instructor")) else ""), unsafe_allow_html=True)
-        cols[12].markdown(_cell(row.get("task")), unsafe_allow_html=True)
-        cols[13].markdown(_cell(row.get("cost_label"), _price_rate_label(row.get("price_per_hour"))), unsafe_allow_html=True)
+        cols[4].markdown(
+            _cell(block_range, f"Air {air_range}" if air_range else ""),
+            unsafe_allow_html=True,
+        )
+
+        cols[5].markdown(
+            _cell(
+                row.get("block_time"),
+                f"Air {row.get('air_time') or ''}" if row.get("air_time") else "",
+            ),
+            unsafe_allow_html=True,
+        )
+
+        crew_sub = _safe_text(row.get("commander"))
+        if not _is_blank(row.get("instructor")):
+            crew_sub = _join_nonblank([crew_sub, f"Instr. {row.get('instructor')}"])
+        cols[6].markdown(
+            _cell(row.get("role"), crew_sub),
+            unsafe_allow_html=True,
+        )
+
+        cols[7].markdown(
+            _cell(_safe_int(row.get("starts"))),
+            unsafe_allow_html=True,
+        )
+
+        track_count = _safe_int(row.get("track_count"))
         gps_km = _safe_float(row.get("gps_km"))
-        cols[14].markdown(_cell(_safe_int(row.get("track_count")), f"{gps_km:.0f} km"), unsafe_allow_html=True)
+        cols[8].markdown(
+            _cell(
+                "GPS" if track_count > 0 else "—",
+                f"{gps_km:.0f} km" if track_count > 0 else "",
+            ),
+            unsafe_allow_html=True,
+        )
         st.markdown('<div class="flight-row-sep"></div>', unsafe_allow_html=True)
 
     open_id = st.session_state.get("open_flight_dialog_id")
-    valid_ids = set(table_df["id"].astype(int).tolist())
+    valid_ids = set(shown_table["id"].astype(int).tolist())
     if open_id is not None and int(open_id) in valid_ids:
-        dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
+        dialog_row = shown_table[
+            shown_table["id"].astype(int).eq(int(open_id))
+        ].iloc[0]
         dialog_rates = rates if rates is not None else read_rates(current_user_id())
-        flight_detail_dialog(int(open_id), dialog_row.to_dict(), dialog_rates, dark_mode)
+        navigation_ids = shown_table["id"].astype(int).tolist()
+        flight_detail_dialog(
+            int(open_id),
+            dialog_row.to_dict(),
+            dialog_rates,
+            dark_mode,
+            navigation_ids=navigation_ids,
+        )
 
 
 def _format_recency_date(value: object) -> str:
@@ -5042,10 +5188,14 @@ def page_logbook(df: pd.DataFrame, dark_mode: bool):
     filtered = apply_logbook_filters_v2(df)
     s = build_summary(filtered)
     c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Zobrazeno", str(s["flights"]), "letů")
-    with c2: metric_card("Celkem", fmt_minutes(s["total"]), "block time")
-    with c3: metric_card("PIC", fmt_minutes(s["pic"]), "z filtrovaných letů")
-    with c4: metric_card("GPS", str(s["tracks"]), f"{s['gps_km']:.0f} km")
+    with c1:
+        metric_card("Lety", str(s["flights"]), "zobrazeno")
+    with c2:
+        metric_card("Block", fmt_minutes(s["total"]), "celkový čas")
+    with c3:
+        metric_card("PIC", fmt_minutes(s["pic"]), "z filtrovaných letů")
+    with c4:
+        metric_card("Přistání", str(s["starts"]), f"{s['tracks']} GPS tracků")
 
     if filtered.empty:
         st.info("Filtr nevrátil žádné lety.")

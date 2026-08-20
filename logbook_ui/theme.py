@@ -397,6 +397,23 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .flight-detail-route {{font-size:1.35rem;font-weight:900;color:var(--text);line-height:1.15;letter-spacing:-.025em;}}
     .flight-detail-meta {{color:var(--muted);font-size:.86rem;margin-top:.35rem;display:flex;gap:.55rem;flex-wrap:wrap;}}
     .flight-detail-meta span {{border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.035);padding:.18rem .50rem;}}
+    .detail-position {{color:var(--muted);font-size:.77rem;text-align:center;padding-top:.55rem;white-space:nowrap;}}
+    .detail-card-primary {{
+        border-color:rgba(56,189,248,.28);
+        background:
+            radial-gradient(circle at 95% 0%,rgba(56,189,248,.10),transparent 40%),
+            var(--panel);
+    }}
+    .detail-note {{
+        border:1px solid var(--border);
+        border-radius:16px;
+        background:rgba(255,255,255,.022);
+        padding:.78rem .9rem;
+        color:var(--text);
+        line-height:1.45;
+        margin:.15rem 0 .75rem 0;
+        overflow-wrap:anywhere;
+    }}
     .detail-grid {{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin:.8rem 0;}}
     .detail-card {{border:1px solid var(--border);border-radius:16px;background:var(--panel);padding:.78rem .85rem;box-shadow:0 10px 24px var(--shadow);min-height:5.4rem;}}
     .detail-card-label {{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:850;margin-bottom:.32rem;}}
@@ -421,9 +438,9 @@ def apply_ui_theme(dark_mode: bool) -> None:
     .flight-list-note {{color:var(--muted);font-size:.84rem;margin:.25rem 0 .6rem 0;}}
     .flight-list-head {{font-size:.70rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:850;padding:.12rem .15rem .32rem .15rem;border-bottom:1px solid var(--border);height:1.55rem;display:flex;align-items:flex-end;white-space:nowrap;}}
     .flight-list-first-gap {{height:.38rem;}}
-    .flight-cell {{font-size:.78rem;line-height:1.08;padding:.14rem .15rem .06rem .15rem;color:var(--text);min-height:1.86rem;display:flex;flex-direction:column;justify-content:flex-start;}}
+    .flight-cell {{font-size:.80rem;line-height:1.10;padding:.14rem .15rem .07rem .15rem;color:var(--text);min-height:1.92rem;display:flex;flex-direction:column;justify-content:flex-start;}}
     .flight-cell-main {{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-    .flight-cell-sub {{font-size:.68rem;color:var(--muted);margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    .flight-cell-sub {{font-size:.69rem;color:var(--muted);margin-top:.13rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
     .flight-row-sep {{height:1px;background:rgba(148,163,184,.10);margin:.18rem 0 .16rem 0;}}
     .flight-page-info {{color:var(--muted);font-size:.82rem;padding-top:1.85rem;text-align:right;}}
     div[data-testid="stButton"] > button {{white-space:nowrap;}}
