@@ -7050,11 +7050,11 @@ def page_profile() -> None:
 
 def render_sidebar_toggle() -> None:
     """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""
-    st.iframe(
+    st.html(
         """
         <script>
         (function() {
-          const doc = window.parent.document;
+          const doc = document;
           const btnId = 'lb-sidebar-toggle';
           const storageKey = 'lb_sidebar_hidden_v3';
 
@@ -7105,14 +7105,14 @@ def render_sidebar_toggle() -> None:
 
           function setHidden(hidden) {
             doc.body.classList.toggle('lb-sidebar-hidden', hidden);
-            try { window.parent.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
+            try { window.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
             const btn = ensureButton();
             btn.textContent = hidden ? '›' : '‹';
           }
 
           hideNativeButtons();
           const saved = (function() {
-            try { return window.parent.localStorage.getItem(storageKey) === '1'; }
+            try { return window.localStorage.getItem(storageKey) === '1'; }
             catch(e) { return false; }
           })();
           setHidden(saved);
@@ -7120,15 +7120,14 @@ def render_sidebar_toggle() -> None:
           // versions also ran a document-wide MutationObserver and repeated many
           // querySelectorAll scans while tables/maps were rendering. One pass per
           // rerun is enough and keeps browser-side rendering lighter.
-          if (window.parent.__lbSidebarObserver) {
-            try { window.parent.__lbSidebarObserver.disconnect(); } catch(e) {}
-            window.parent.__lbSidebarObserver = null;
+          if (window.__lbSidebarObserver) {
+            try { window.__lbSidebarObserver.disconnect(); } catch(e) {}
+            window.__lbSidebarObserver = null;
           }
         })();
         </script>
         """,
-        height=1,
-        width=1,
+        unsafe_allow_javascript=True,
     )
 
 
@@ -7140,11 +7139,11 @@ def render_page_transition_runtime() -> None:
     while the new page is being generated. This overlay hides that intermediate
     state and makes navigation feel much closer to a normal web app.
     """
-    st.iframe(
+    st.html(
         """
         <script>
         (function() {
-          const doc = window.parent.document;
+          const doc = document;
           const overlayId = 'lb-page-loader';
 
           function ensureOverlay() {
@@ -7163,21 +7162,21 @@ def render_page_transition_runtime() -> None:
             // Safety timeout: the loader is only a visual transition. It must never
             // stay visible if Streamlit finishes rendering or if an error interrupts
             // the normal page-loaded signal.
-            clearTimeout(window.parent.__lbLoaderSafety1);
-            clearTimeout(window.parent.__lbLoaderSafety2);
-            clearTimeout(window.parent.__lbLoaderSafety3);
-            clearTimeout(window.parent.__lbLoaderSafety4);
-            window.parent.__lbLoaderSafety1 = setTimeout(hideLoader, 900);
-            window.parent.__lbLoaderSafety2 = setTimeout(hideLoader, 1800);
-            window.parent.__lbLoaderSafety3 = setTimeout(hideLoader, 4000);
-            window.parent.__lbLoaderSafety4 = setTimeout(hideLoader, 7000);
+            clearTimeout(window.__lbLoaderSafety1);
+            clearTimeout(window.__lbLoaderSafety2);
+            clearTimeout(window.__lbLoaderSafety3);
+            clearTimeout(window.__lbLoaderSafety4);
+            window.__lbLoaderSafety1 = setTimeout(hideLoader, 900);
+            window.__lbLoaderSafety2 = setTimeout(hideLoader, 1800);
+            window.__lbLoaderSafety3 = setTimeout(hideLoader, 4000);
+            window.__lbLoaderSafety4 = setTimeout(hideLoader, 7000);
           }
           function hideLoader() {
             ensureOverlay();
             doc.body.classList.remove('lb-page-loading');
           }
 
-          if (!window.parent.__lbPageLoaderInstalled) {
+          if (!window.__lbPageLoaderInstalled) {
             doc.addEventListener('click', function(ev) {
               const target = ev.target;
               if (!target) return;
@@ -7193,7 +7192,7 @@ def render_page_transition_runtime() -> None:
                 showLoader();
               }
             }, true);
-            window.parent.__lbPageLoaderInstalled = true;
+            window.__lbPageLoaderInstalled = true;
           }
           // The new page has reached the browser once this component runs.
           setTimeout(hideLoader, 120);
@@ -7203,18 +7202,17 @@ def render_page_transition_runtime() -> None:
         })();
         </script>
         """,
-        height=1,
-        width=1,
+        unsafe_allow_javascript=True,
     )
 
 
 def render_page_loaded_signal() -> None:
     """Hide the front-end loader after the current Streamlit page has rendered."""
-    st.iframe(
+    st.html(
         """
         <script>
         (function() {
-          const doc = window.parent.document;
+          const doc = document;
           function hideLoader() { doc.body.classList.remove('lb-page-loading'); }
           setTimeout(hideLoader, 40);
           setTimeout(hideLoader, 180);
@@ -7224,8 +7222,7 @@ def render_page_loaded_signal() -> None:
         })();
         </script>
         """,
-        height=1,
-        width=1,
+        unsafe_allow_javascript=True,
     )
 
 
