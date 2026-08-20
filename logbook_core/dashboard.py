@@ -8,6 +8,100 @@ import pandas as pd
 PERIOD_PRESETS = ("Vše", "Tento rok", "Posledních 12 měsíců", "Předchozí rok")
 
 
+def primary_pilot_summary(df: pd.DataFrame) -> dict[str, int]:
+    """Core dashboard totals focused on pilot logbook priorities.
+
+    ``starts`` is the application's existing Starty / přistání counter, so the
+    same value is exposed here as landings for the dashboard category cards.
+    """
+    keys = (
+        "total_minutes", "total_landings", "total_flights",
+        "ull_minutes", "ull_landings", "ull_flights",
+        "easa_minutes", "easa_landings", "easa_flights",
+        "pic_ull_minutes", "pic_ull_landings", "pic_ull_flights",
+        "pic_easa_minutes", "pic_easa_landings", "pic_easa_flights",
+    )
+    if df.empty:
+        return {key: 0 for key in keys}
+
+    block = pd.to_numeric(df.get("block_minutes", pd.Series(0, index=df.index)), errors="coerce").fillna(0)
+    starts = pd.to_numeric(df.get("starts", pd.Series(0, index=df.index)), errors="coerce").fillna(0)
+    evidence = df.get("evidence", pd.Series("", index=df.index)).fillna("").astype(str).str.upper().str.strip()
+    role = df.get("role", pd.Series("", index=df.index)).fillna("").astype(str).str.upper().str.strip()
+
+    ull = evidence.eq("ULL")
+    easa = evidence.eq("EASA")
+    pic = role.eq("PIC")
+    pic_ull = pic & ull
+    pic_easa = pic & easa
+
+    def count(mask: pd.Series) -> int:
+        return int(mask.fillna(False).sum())
+
+    return {
+        "total_minutes": int(block.sum()),
+        "total_landings": int(starts.sum()),
+        "total_flights": int(len(df)),
+        "ull_minutes": int(block[ull].sum()),
+        "ull_landings": int(starts[ull].sum()),
+        "ull_flights": count(ull),
+        "easa_minutes": int(block[easa].sum()),
+        "easa_landings": int(starts[easa].sum()),
+        "easa_flights": count(easa),
+        "pic_ull_minutes": int(block[pic_ull].sum()),
+        "pic_ull_landings": int(starts[pic_ull].sum()),
+        "pic_ull_flights": count(pic_ull),
+        "pic_easa_minutes": int(block[pic_easa].sum()),
+        "pic_easa_landings": int(starts[pic_easa].sum()),
+        "pic_easa_flights": count(pic_easa),
+    }
+
+
+def monthly_primary_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Monthly trend for the compact primary dashboard."""
+    columns = [
+        "month", "total_hours", "ull_hours", "easa_hours",
+        "pic_ull_hours", "pic_easa_hours", "landings",
+    ]
+    if df.empty:
+        return pd.DataFrame(columns=columns)
+
+    work = df.copy()
+    work["_date"] = _dates(work)
+    work = work.dropna(subset=["_date"])
+    if work.empty:
+        return pd.DataFrame(columns=columns)
+
+    work["month"] = work["_date"].dt.to_period("M").dt.to_timestamp()
+    block = pd.to_numeric(work.get("block_minutes", 0), errors="coerce").fillna(0)
+    starts = pd.to_numeric(work.get("starts", 0), errors="coerce").fillna(0)
+    evidence = work.get("evidence", pd.Series("", index=work.index)).fillna("").astype(str).str.upper().str.strip()
+    role = work.get("role", pd.Series("", index=work.index)).fillna("").astype(str).str.upper().str.strip()
+
+    work["_total"] = block
+    work["_ull"] = block.where(evidence.eq("ULL"), 0)
+    work["_easa"] = block.where(evidence.eq("EASA"), 0)
+    work["_pic_ull"] = block.where(role.eq("PIC") & evidence.eq("ULL"), 0)
+    work["_pic_easa"] = block.where(role.eq("PIC") & evidence.eq("EASA"), 0)
+    work["_landings"] = starts
+
+    out = work.groupby("month", as_index=False).agg(
+        total_minutes=("_total", "sum"),
+        ull_minutes=("_ull", "sum"),
+        easa_minutes=("_easa", "sum"),
+        pic_ull_minutes=("_pic_ull", "sum"),
+        pic_easa_minutes=("_pic_easa", "sum"),
+        landings=("_landings", "sum"),
+    )
+    out["total_hours"] = out["total_minutes"] / 60.0
+    out["ull_hours"] = out["ull_minutes"] / 60.0
+    out["easa_hours"] = out["easa_minutes"] / 60.0
+    out["pic_ull_hours"] = out["pic_ull_minutes"] / 60.0
+    out["pic_easa_hours"] = out["pic_easa_minutes"] / 60.0
+    return out[columns].sort_values("month").reset_index(drop=True)
+
+
+
 def _dates(df: pd.DataFrame) -> pd.Series:
     if "date_dt" in df.columns:
         return pd.to_datetime(df["date_dt"], errors="coerce")

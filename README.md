@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.62 – Flight Import UX 2.0
+## v0.62.1 – Flight Import UX 2.0
 
 v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.
 
@@ -48,16 +48,16 @@ v0.61 odstraňuje staré přímé použití `streamlit.components.v1.html` a hla
 - release ZIP neobsahuje `data/logbook.sqlite`.
 
 
-## v0.62 hotfix
+## v0.62.1 hotfix
 - fixes Streamlit 1.62 `StreamlitInvalidWidthError` caused by zero-width runtime iframes
 - sidebar toggle and page-transition helper iframes now use 1×1 px dimensions
 
 
-## v0.62
+## v0.62.1
 Invisible front-end runtime: sidebar toggle and page-transition scripts now use `st.html(..., unsafe_allow_javascript=True)` instead of 1×1 px iframes, removing the visible white artifacts introduced by the v0.61.1 compatibility hotfix.
 
 
-## v0.62 – Sidebar UX Final Polish
+## v0.62.1 – Sidebar UX Final Polish
 - minimalistický edge handle se dvěma chevrony bez kruhu a pozadí
 - ovladač přesunut z řádku Navigace na samostatnou hranu sidebaru
 - návrat k rychlejšímu 320 ms motion profilu z dřívějších verzí
@@ -65,7 +65,7 @@ Invisible front-end runtime: sidebar toggle and page-transition scripts now use 
 - kliknutí pouze přepíná CSS stav; žádný Streamlit rerun
 
 
-## v0.62 – Top Sidebar Chevron Polish
+## v0.62.1 – Top Sidebar Chevron Polish
 - sidebar handle moved to the upper-right area inside the open sidebar
 - two chevrons are horizontal instead of stacked
 - chevrons are larger with a wider click target
@@ -73,8 +73,8 @@ Invisible front-end runtime: sidebar toggle and page-transition scripts now use 
 - compositor-friendly sidebar motion from v0.61.5 is preserved
 
 
-## v0.62 – Stability & Performance Cleanup
-No new user-facing feature is introduced. This release prepares a stable base for v0.62.
+## v0.62.1 – Stability & Performance Cleanup
+No new user-facing feature is introduced. This release prepares a stable base for v0.62.1.
 
 - removed confirmed dead and legacy UI/map helper code from `app.py`
 - removed duplicate `logbook_core.performance` fallback implementations
@@ -88,7 +88,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - Streamlit 1.62 compatibility checks remain part of the regression suite
 
 
-## v0.62 – Dashboard & Statistics 2.0
+## v0.62.1 – Dashboard & Statistics 2.0
 
 - nový rychlý volič období: celá historie, tento rok, posledních 12 měsíců, předchozí rok
 - dashboardové filtry zůstávají uživatelsky kombinovatelné s obdobím
@@ -104,3 +104,13 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - agregace dashboardu jsou přesunuty do čistého modulu `logbook_core/dashboard.py`
 - jednotlivé dashboardové sekce zůstávají lazy: skryté grafy a tabulky se nevytvářejí
 - `DB_SCHEMA_VERSION = 8`; bez migrace databáze
+
+
+## v0.62.1 – Dashboard Polish
+- dashboard hierarchy now prioritizes total logged time
+- primary evidence split: ULL and EASA with landing counts
+- primary PIC split: PIC ULL and PIC EASA with landing counts
+- one dominant monthly chart with metric selector
+- contextual items are condensed into one lightweight information line
+- aircraft, airports/routes, costs, annual analysis and recent flights remain available under `Detailní statistiky`
+- no database migration; schema stays at 8

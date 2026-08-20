@@ -45,8 +45,9 @@ from logbook_core.tracks import (
 from logbook_core.smart_import import analyze_track, split_track_points
 from logbook_core.dashboard import (
     PERIOD_PRESETS, aircraft_summary, airport_route_summaries, category_year_summary,
-    dashboard_insights, filter_period as filter_dashboard_period, monthly_summary as dashboard_monthly_summary,
-    period_label as dashboard_period_label, yearly_summary as dashboard_yearly_summary,
+    dashboard_insights, filter_period as filter_dashboard_period, monthly_primary_summary,
+    monthly_summary as dashboard_monthly_summary, period_label as dashboard_period_label,
+    primary_pilot_summary, yearly_summary as dashboard_yearly_summary,
 )
 from logbook_core.exports import (
     _export_date_bounds, _export_prefix, build_print_html, export_excel,
@@ -2559,11 +2560,11 @@ def page_dashboard(df: pd.DataFrame):
         list(PERIOD_PRESETS),
         horizontal=True,
         label_visibility="collapsed",
-        key="dashboard_period_v062",
+        key="dashboard_period_v0621",
     )
     period_df = filter_dashboard_period(df, period, today)
-    filtered = apply_filters(period_df, "dash_v062")
-    s = build_summary(filtered)
+    filtered = apply_filters(period_df, "dash_v0621")
+    primary = primary_pilot_summary(filtered)
     insights = dashboard_insights(filtered)
 
     st.caption(
@@ -2571,63 +2572,150 @@ def page_dashboard(df: pd.DataFrame):
         f"zobrazeno {len(filtered)} z {len(df)} letů"
     )
 
-    block_hours = float(s["total"]) / 60.0 if s["total"] else 0.0
-    pic_pct = (float(s["pic"]) / float(s["total"]) * 100.0) if s["total"] else 0.0
-    air_pct = (float(s["air"]) / float(s["total"]) * 100.0) if s["total"] else 0.0
-    avg_cost_flight = float(s["cost"]) / max(int(s["flights"]), 1) if s["flights"] else 0.0
-    avg_cost_hour = float(s["cost"]) / block_hours if block_hours > 0 else 0.0
-
-    last_flight = (
-        filtered.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(1)
-        if not filtered.empty
-        else pd.DataFrame()
-    )
-    last_text = "—"
-    last_sub = "Žádný let v období"
-    if not last_flight.empty:
-        lr = last_flight.iloc[0]
-        last_text = str(lr.get("date") or "—")
-        route = f"{lr.get('departure') or ''}–{lr.get('arrival') or ''}".strip("–")
-        reg = str(lr.get("registration") or "").strip()
-        age = ""
-        if pd.notna(lr.get("date_dt")):
-            days = (today - lr.get("date_dt").date()).days
-            age = "dnes" if days == 0 else ("před 1 dnem" if days == 1 else f"před {days} dny")
-        last_sub = " • ".join(v for v in (reg, route, age) if v)
-
-    top1 = st.columns(4)
-    with top1[0]:
-        metric_card("Block time", fmt_minutes(s["total"]), f"{s['flights']} letů • {s['starts']} startů")
-    with top1[1]:
-        metric_card("PIC", fmt_minutes(s["pic"]), f"{pic_pct:.0f}% block • ULL {fmt_minutes(s['pic_ull'])} • EASA {fmt_minutes(s['pic_easa'])}")
-    with top1[2]:
-        metric_card("Air time", fmt_minutes(s["air"]), f"{air_pct:.0f}% block • rozdíl {fmt_minutes(max(int(s['total']) - int(s['air']), 0))}")
-    with top1[3]:
-        metric_card("Náklady", fmt_money(s["cost"], currency), f"Ø {fmt_money(avg_cost_flight, currency)} / let • {fmt_money(avg_cost_hour, currency)} / block h")
-
-    top2 = st.columns(4)
-    with top2[0]:
-        metric_card("Letadla", str(insights["unique_aircraft"]), f"TOP {insights['top_aircraft']} • {fmt_minutes(insights['top_aircraft_minutes'])}")
-    with top2[1]:
-        metric_card("Letiště / trasy", f"{insights['unique_airports']} / {insights['unique_routes']}", f"TOP letiště {insights['top_airport']} • {insights['top_airport_visits']} návštěv")
-    with top2[2]:
-        metric_card("GPS", f"{s['tracks']} tracků", f"{s['gps_km']:.0f} km • pokrytí {insights['gps_coverage_pct']:.0f}% letů")
-    with top2[3]:
-        metric_card("Poslední let", last_text, last_sub)
-
     if filtered.empty:
         st.info("Pro zvolené období a filtry nejsou žádná data.")
         return
 
-    section = st.radio(
-        "Dashboard sekce",
-        ["Přehled", "Letadla", "Letiště a trasy", "Náklady", "Poslední lety"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="dashboard_section_v062",
+    # Primary pilot metric: the complete logged block time.
+    st.markdown(
+        f"""
+        <div class="dashboard-primary-card">
+          <div class="dashboard-primary-label">Celkový čas</div>
+          <div class="dashboard-primary-value">{fmt_minutes(primary['total_minutes'])}</div>
+          <div class="dashboard-primary-sub">
+            {primary['total_flights']} letů • {primary['total_landings']} přistání
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    if section == "Přehled":
+    # Evidence split – the second most important view.
+    evidence_cols = st.columns(2)
+    with evidence_cols[0]:
+        st.markdown(
+            f"""
+            <div class="dashboard-category-card">
+              <div class="dashboard-category-label">ULL</div>
+              <div class="dashboard-category-value">{fmt_minutes(primary['ull_minutes'])}</div>
+              <div class="dashboard-category-sub">{primary['ull_flights']} letů • {primary['ull_landings']} přistání</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with evidence_cols[1]:
+        st.markdown(
+            f"""
+            <div class="dashboard-category-card">
+              <div class="dashboard-category-label">EASA</div>
+              <div class="dashboard-category-value">{fmt_minutes(primary['easa_minutes'])}</div>
+              <div class="dashboard-category-sub">{primary['easa_flights']} letů • {primary['easa_landings']} přistání</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:.42rem'></div>", unsafe_allow_html=True)
+
+    # PIC split follows the same ULL / EASA structure.
+    pic_cols = st.columns(2)
+    with pic_cols[0]:
+        st.markdown(
+            f"""
+            <div class="dashboard-category-card">
+              <div class="dashboard-category-label">PIC • ULL</div>
+              <div class="dashboard-category-value">{fmt_minutes(primary['pic_ull_minutes'])}</div>
+              <div class="dashboard-category-sub">{primary['pic_ull_flights']} letů • {primary['pic_ull_landings']} přistání</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with pic_cols[1]:
+        st.markdown(
+            f"""
+            <div class="dashboard-category-card">
+              <div class="dashboard-category-label">PIC • EASA</div>
+              <div class="dashboard-category-value">{fmt_minutes(primary['pic_easa_minutes'])}</div>
+              <div class="dashboard-category-sub">{primary['pic_easa_flights']} letů • {primary['pic_easa_landings']} přistání</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Compact context line instead of another row of KPI cards.
+    last_flight = filtered.sort_values(
+        ["date_dt", "off_block", "id"],
+        ascending=[False, False, False],
+        na_position="last",
+    ).head(1)
+    last_text = "—"
+    if not last_flight.empty:
+        lr = last_flight.iloc[0]
+        route = f"{lr.get('departure') or ''}–{lr.get('arrival') or ''}".strip("–")
+        reg = str(lr.get("registration") or "").strip()
+        last_text = " ".join(v for v in (str(lr.get("date") or ""), reg, route) if v)
+    st.markdown(
+        f"""
+        <div class="dashboard-quickline">
+          Poslední let <strong>{last_text}</strong>
+          &nbsp;·&nbsp; {insights['unique_aircraft']} letadel
+          &nbsp;·&nbsp; {insights['unique_airports']} letišť
+          &nbsp;·&nbsp; {float(filtered.get('gps_km', pd.Series(dtype=float)).fillna(0).sum()):.0f} km GPS
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # One dominant chart. The user chooses which primary quantity it shows.
+    chart_metric = st.segmented_control(
+        "Graf",
+        ["Celkový čas", "ULL", "EASA", "PIC ULL", "PIC EASA", "Přistání"],
+        default="Celkový čas",
+        label_visibility="collapsed",
+        key="dashboard_primary_chart_v0621",
+    )
+    primary_monthly = monthly_primary_summary(filtered)
+    if not primary_monthly.empty:
+        import plotly.express as px
+
+        metric_map = {
+            "Celkový čas": ("total_hours", "Block h"),
+            "ULL": ("ull_hours", "ULL h"),
+            "EASA": ("easa_hours", "EASA h"),
+            "PIC ULL": ("pic_ull_hours", "PIC ULL h"),
+            "PIC EASA": ("pic_easa_hours", "PIC EASA h"),
+            "Přistání": ("landings", "Přistání"),
+        }
+        y_col, y_title = metric_map.get(chart_metric or "Celkový čas", ("total_hours", "Block h"))
+        fig_main = px.bar(
+            primary_monthly.tail(24),
+            x="month",
+            y=y_col,
+            title="Vývoj po měsících",
+        )
+        fig_main.update_yaxes(title=y_title)
+        fig_main.update_xaxes(title=None)
+        st.plotly_chart(plotly_layout(fig_main), width="stretch")
+
+    show_details = st.toggle(
+        "Detailní statistiky",
+        value=False,
+        help="Letadla, letiště, náklady, roční přehled a poslední lety.",
+        key="dashboard_show_details_v0621",
+    )
+    if not show_details:
+        return
+
+    st.markdown("### Detailní statistiky")
+    section = st.radio(
+        "Dashboard sekce",
+        ["Roční přehled", "Letadla", "Letiště a trasy", "Náklady", "Poslední lety"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="dashboard_section_v0621",
+    )
+
+    if section == "Roční přehled":
         insight_cols = st.columns(4)
         with insight_cols[0]:
             metric_card("Nejaktivnější měsíc", insights["busiest_month"], fmt_minutes(insights["busiest_month_minutes"]))
