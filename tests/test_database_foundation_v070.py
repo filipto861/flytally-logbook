@@ -9,7 +9,7 @@ from logbook_core.config import APP_VERSION, DB_SCHEMA_VERSION, DATABASE_RUNTIME
 
 
 def test_version_and_runtime_cutover_lock():
-    assert APP_VERSION == "v0.70"
+    assert APP_VERSION == "v0.71"
     assert DB_SCHEMA_VERSION == 10
     assert DATABASE_RUNTIME == "sqlite"
     assert ACTIVE_RUNTIME_BACKEND == "sqlite"

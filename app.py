@@ -74,7 +74,11 @@ from logbook_core.database_foundation import (
     postgres_cutover_enabled, postgres_target_config, redact_postgres_dsn,
 )
 from logbook_core.postgres_migration import (
-    build_sqlite_migration_plan, migration_plan_json,
+    PostgresMigrationError, build_sqlite_migration_plan, migration_plan_json,
+    migrate_sqlite_to_postgres,
+)
+from logbook_core.shadow_verification import (
+    shadow_report_json, verify_postgres_shadow,
 )
 from logbook_core.postgres_runtime import (
     postgres_driver_available, postgres_healthcheck, postgres_table_counts,
@@ -8625,10 +8629,10 @@ def _sqlite_migration_plan_cached() -> dict[str, Any]:
 
 
 def render_postgres_foundation_admin() -> None:
-    st.markdown("### PostgreSQL foundation")
+    st.markdown("### PostgreSQL shadow")
     st.caption(
-        "v0.70 připravuje PostgreSQL target a migrační tooling. "
-        "Aktivní runtime této verze zůstává SQLite a nelze ho přepnout secretem."
+        "SQLite zůstává produkční databází. PostgreSQL je v0.71 pouze shadow kopie "
+        "pro migraci a ověřování; runtime cutover je stále zamknutý."
     )
 
     pg_config = _postgres_streamlit_target_config()
@@ -8637,25 +8641,25 @@ def render_postgres_foundation_admin() -> None:
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("Runtime", "SQLite", "aktivní databáze")
+        metric_card("Production", "SQLite", "read/write runtime")
     with c2:
-        metric_card("PostgreSQL", "Nastaven" if configured else "Nenastaven", "target")
+        metric_card("Shadow", "Nastaven" if configured else "Nenastaven", "PostgreSQL")
     with c3:
         metric_card("Driver", "OK" if driver_ok else "Chybí", "psycopg")
     with c4:
-        metric_card("Cutover", "ZAMKNUT", f"foundation {POSTGRES_FOUNDATION_VERSION}")
+        metric_card("Cutover", "ZAMKNUT", "v0.71")
 
     st.info(
-        "Bezpečnostní pojistka v0.70: `postgres_cutover_enabled()` je vždy False. "
-        "Ani platný PostgreSQL DSN nezmění zdroj produkčních dat."
+        "Bezpečnostní pojistka zůstává stejná: `postgres_cutover_enabled()` je False. "
+        "Migrace ani shadow kontrola nemění zdroj produkčních dat."
     )
 
     with st.container(border=True):
-        st.markdown("#### Konfigurace targetu")
+        st.markdown("#### PostgreSQL target")
         if configured:
             st.code(redact_postgres_dsn(pg_config.dsn), language=None)
             st.caption(
-                f"Pool {pg_config.min_pool_size}–{pg_config.max_pool_size} spojení · "
+                f"Pool {pg_config.min_pool_size}–{pg_config.max_pool_size} · "
                 f"connect timeout {pg_config.connect_timeout_s}s"
             )
         else:
@@ -8667,53 +8671,40 @@ def render_postgres_foundation_admin() -> None:
                 'postgres_connect_timeout = 5',
                 language="toml",
             )
-            st.caption("Hodnoty patří do Streamlit App settings → Secrets, ne do GitHub repozitáře.")
+            st.caption("Nastav v Streamlit App settings → Secrets. Aplikace bez toho dál normálně běží na SQLite.")
 
-    b1, b2 = st.columns(2)
-    with b1:
+    test_col, counts_col = st.columns(2)
+    with test_col:
         if st.button(
-            "Otestovat PostgreSQL spojení",
+            "Otestovat spojení",
             disabled=not configured,
             width="stretch",
-            key="pg_healthcheck_v070",
+            key="pg_healthcheck_v071",
         ):
-            with st.spinner("Připojuji se k PostgreSQL targetu…"):
-                st.session_state["pg_health_v070"] = postgres_healthcheck(pg_config)
-    with b2:
+            with st.spinner("Testuji PostgreSQL target…"):
+                st.session_state["pg_health_v071"] = postgres_healthcheck(pg_config)
+    with counts_col:
         if st.button(
-            "Porovnat počty tabulek",
+            "Rychlé počty tabulek",
             disabled=not configured,
             width="stretch",
-            key="pg_compare_counts_v070",
+            key="pg_compare_counts_v071",
         ):
             try:
-                with st.spinner("Čtu pouze počty řádků…"):
-                    st.session_state["pg_counts_v070"] = postgres_table_counts(pg_config)
+                st.session_state["pg_counts_v071"] = postgres_table_counts(pg_config)
             except Exception as exc:
-                st.session_state["pg_counts_v070"] = {"_error": str(exc)}
+                st.session_state["pg_counts_v071"] = {"_error": str(exc)}
 
-    health = st.session_state.get("pg_health_v070")
+    health = st.session_state.get("pg_health_v071")
     if isinstance(health, dict):
         if health.get("ok"):
             st.success(
-                "PostgreSQL spojení je funkční: "
-                f"{health.get('database_name')} · server {health.get('server_version')}."
+                f"Spojení OK · {health.get('database_name')} · PostgreSQL {health.get('server_version')}"
             )
-            h1, h2, h3 = st.columns(3)
-            with h1:
-                metric_card("Database", str(health.get("database_name") or "—"), "target")
-            with h2:
-                metric_card("Schema", str(health.get("schema_name") or "—"), "PostgreSQL")
-            with h3:
-                metric_card(
-                    "Logbook schema",
-                    str(health.get("logbook_schema_version") or "není"),
-                    f"foundation {POSTGRES_SCHEMA_VERSION}",
-                )
         else:
             st.error("PostgreSQL test selhal: " + str(health.get("error") or "neznámá chyba"))
 
-    counts_target = st.session_state.get("pg_counts_v070")
+    counts_target = st.session_state.get("pg_counts_v071")
     if isinstance(counts_target, dict):
         if "_error" in counts_target:
             st.error("Počty PostgreSQL se nepodařilo načíst: " + str(counts_target["_error"]))
@@ -8725,24 +8716,216 @@ def render_postgres_foundation_admin() -> None:
                 rows.append({
                     "Tabulka": table,
                     "SQLite": int(sqlite_count),
-                    "PostgreSQL": "chybí" if pg_count < 0 else pg_count,
-                    "Stav": (
-                        "—" if pg_count < 0
-                        else ("OK" if int(sqlite_count) == pg_count else "Rozdíl")
-                    ),
+                    "PostgreSQL raw": "chybí" if pg_count < 0 else pg_count,
                 })
             st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
 
-    st.markdown("#### Migrační plán")
+    st.markdown("#### 1. Vytvořit první shadow kopii")
+    st.caption(
+        "Použije konzistentní SQLite snapshot a migruje ho do PRÁZDNÉ PostgreSQL databáze. "
+        "Zachová ID, user_id, účty, hesla, lety i GPS. Produkční SQLite se pouze čte."
+    )
+
+    confirm_shadow = st.text_input(
+        "Pro spuštění napiš přesně VYTVOŘIT SHADOW",
+        value="",
+        key="pg_shadow_confirm_v071",
+    )
+    acknowledge_credentials = st.checkbox(
+        "Rozumím, že jde o úplnou kopii aplikace včetně účtů a password hashů.",
+        value=False,
+        key="pg_shadow_credentials_ack_v071",
+    )
+    migrate_disabled = (
+        not configured
+        or not driver_ok
+        or confirm_shadow != "VYTVOŘIT SHADOW"
+        or not acknowledge_credentials
+    )
+    if st.button(
+        "Spustit shadow migraci",
+        type="primary",
+        disabled=migrate_disabled,
+        width="stretch",
+        key="pg_shadow_migrate_v071",
+    ):
+        try:
+            progress = st.progress(0, text="Připravuji shadow migraci…")
+            plan = build_sqlite_migration_plan(DB_PATH)
+            table_totals = dict(plan.table_counts)
+            total_rows = max(1, sum(table_totals.values()))
+            completed_before: dict[str, int] = {}
+            copied_total = 0
+
+            def _shadow_progress(table: str, copied: int, total: int) -> None:
+                nonlocal copied_total
+                previous = completed_before.get(table, 0)
+                delta = max(0, int(copied) - int(previous))
+                copied_total += delta
+                completed_before[table] = int(copied)
+                progress.progress(
+                    min(1.0, copied_total / total_rows),
+                    text=f"Migruji {table}: {copied}/{total}",
+                )
+
+            with st.spinner("Kopíruji SQLite snapshot do PostgreSQL…"):
+                report = migrate_sqlite_to_postgres(
+                    DB_PATH,
+                    pg_config.dsn,
+                    batch_size=1000,
+                    progress=_shadow_progress,
+                )
+            progress.progress(1.0, text="Shadow migrace dokončena.")
+            st.session_state["pg_shadow_migration_report_v071"] = report.as_dict()
+            with st.spinner("Ověřuji novou shadow kopii…"):
+                verification = verify_postgres_shadow(DB_PATH, pg_config, deep=False)
+            st.session_state["pg_shadow_verify_v071"] = verification
+            st.success(
+                f"Shadow migrace dokončena: {report.copied_rows:,} řádků. "
+                "Produkční runtime zůstává SQLite."
+                .replace(",", " ")
+            )
+        except PostgresMigrationError as exc:
+            st.error("Shadow migrace odmítnuta: " + str(exc))
+        except Exception as exc:
+            st.error("Shadow migrace selhala: " + str(exc))
+
+    migration_report = st.session_state.get("pg_shadow_migration_report_v071")
+    if isinstance(migration_report, dict):
+        st.caption(
+            "Poslední migrace v této session: "
+            f"{int(migration_report.get('copied_rows') or 0):,} zkopírovaných řádků."
+            .replace(",", " ")
+        )
+
+    st.markdown("#### 2. Ověřit SQLite ↔ PostgreSQL")
+    verify1, verify2 = st.columns(2)
+    with verify1:
+        if st.button(
+            "Rychlá shadow kontrola",
+            disabled=not configured,
+            type="primary",
+            width="stretch",
+            key="pg_shadow_quick_verify_v071",
+        ):
+            try:
+                with st.spinner("Porovnávám watermark, počty a pilotní součty…"):
+                    st.session_state["pg_shadow_verify_v071"] = verify_postgres_shadow(
+                        DB_PATH, pg_config, deep=False
+                    )
+            except Exception as exc:
+                st.error("Shadow kontrola selhala: " + str(exc))
+    with verify2:
+        if st.button(
+            "Hluboká kontrola SHA-256",
+            disabled=not configured,
+            width="stretch",
+            key="pg_shadow_deep_verify_v071",
+        ):
+            try:
+                with st.spinner("Hashuji obsah všech migrovaných tabulek…"):
+                    st.session_state["pg_shadow_verify_v071"] = verify_postgres_shadow(
+                        DB_PATH, pg_config, deep=True
+                    )
+            except Exception as exc:
+                st.error("Hluboká shadow kontrola selhala: " + str(exc))
+
+    verification = st.session_state.get("pg_shadow_verify_v071")
+    if verification is not None and hasattr(verification, "as_dict"):
+        report_dict = verification.as_dict()
+        status = str(report_dict.get("status") or "")
+        if status == "match":
+            st.success("SHADOW MATCH · PostgreSQL odpovídá aktuální SQLite produkci.")
+        elif status == "stale":
+            st.warning(
+                "SHADOW STALE · SQLite se od shadow migrace změnila. "
+                "To není chyba dat; shadow kopie už jen není aktuální."
+            )
+        elif status == "mismatch":
+            st.error("SHADOW MISMATCH · byly nalezeny obsahové rozdíly.")
+        else:
+            st.warning("Target není označen jako v0.71 shadow migrace.")
+
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            metric_card("Počty", "MATCH" if verification.count_match else "ROZDÍL", "tabulky")
+        with s2:
+            metric_card("Pilotní součty", "MATCH" if verification.metrics_match else "ROZDÍL", "per user")
+        with s3:
+            deep_label = "NEPROVEDENO" if verification.deep_match is None else ("MATCH" if verification.deep_match else "ROZDÍL")
+            metric_card("SHA-256", deep_label, "obsah tabulek")
+        with s4:
+            metric_card("Aktuálnost", "ANO" if verification.shadow_current else "NE", "last_change_at")
+
+        st.caption(
+            f"Watermark SQLite: {verification.source_watermark or '—'} · "
+            f"PostgreSQL: {verification.target_watermark or '—'} · "
+            f"shadow vytvořen: {verification.shadow_migrated_at or '—'}"
+        )
+        st.caption(
+            f"Diagnostický COUNT dotaz: SQLite {verification.source_query_ms if verification.source_query_ms is not None else '—'} ms · "
+            f"PostgreSQL {verification.target_query_ms if verification.target_query_ms is not None else '—'} ms. "
+            "Není to benchmark celé aplikace."
+        )
+
+        if verification.count_differences:
+            st.markdown("##### Rozdíly v počtech")
+            st.dataframe(
+                pd.DataFrame([
+                    {"Tabulka": table, **values}
+                    for table, values in verification.count_differences.items()
+                ]),
+                hide_index=True,
+                width="stretch",
+            )
+
+        if verification.metric_differences:
+            st.markdown("##### Rozdíly v pilotních součtech")
+            metric_rows = []
+            for user_id, changes in verification.metric_differences.items():
+                for metric, values in changes.items():
+                    metric_rows.append({
+                        "User ID": user_id,
+                        "Metrika": metric,
+                        "SQLite": values.get("sqlite"),
+                        "PostgreSQL": values.get("postgresql"),
+                    })
+            st.dataframe(pd.DataFrame(metric_rows), hide_index=True, width="stretch")
+
+        if verification.fingerprint_differences:
+            st.markdown("##### Rozdíly SHA-256")
+            st.dataframe(
+                pd.DataFrame([
+                    {
+                        "Tabulka": table,
+                        "SQLite SHA-256": values["sqlite"],
+                        "PostgreSQL SHA-256": values["postgresql"],
+                    }
+                    for table, values in verification.fingerprint_differences.items()
+                ]),
+                hide_index=True,
+                width="stretch",
+            )
+
+        st.download_button(
+            "Stáhnout shadow verification JSON",
+            data=shadow_report_json(verification),
+            file_name="logbook_shadow_verification.json",
+            mime="application/json",
+            width="stretch",
+            key="pg_shadow_report_download_v071",
+        )
+
+    st.markdown("#### 3. Migrační nástroje")
     try:
         plan = build_sqlite_migration_plan(DB_PATH)
         p1, p2, p3 = st.columns(3)
         with p1:
             metric_card("SQLite schema", str(plan.sqlite_schema_version), "zdroj")
         with p2:
-            metric_card("Řádků", f"{plan.total_rows:,}".replace(",", " "), "včetně GPS bodů")
+            metric_card("Řádků", f"{plan.total_rows:,}".replace(",", " "), "k migraci")
         with p3:
-            metric_card("PG schema", str(plan.postgres_schema_version), "target foundation")
+            metric_card("PG schema", str(plan.postgres_schema_version), "foundation")
 
         st.download_button(
             "Stáhnout migration manifest JSON",
@@ -8750,7 +8933,7 @@ def render_postgres_foundation_admin() -> None:
             file_name="logbook_postgres_migration_manifest.json",
             mime="application/json",
             width="stretch",
-            key="pg_manifest_download_v070",
+            key="pg_manifest_download_v071",
         )
         st.download_button(
             "Stáhnout PostgreSQL schema SQL",
@@ -8758,23 +8941,23 @@ def render_postgres_foundation_admin() -> None:
             file_name="postgresql_schema_v1.sql",
             mime="text/sql",
             width="stretch",
-            key="pg_schema_download_v070",
+            key="pg_schema_download_v071",
         )
     except Exception as exc:
         st.error(f"Migrační plán nelze vytvořit: {exc}")
 
-    st.markdown("#### Bezpečný migrační workflow")
-    st.code(
-        "python scripts/migrate_sqlite_to_postgres.py --dry-run\\n"
-        "# nastav LOGBOOK_POSTGRES_DSN mimo shell history / v bezpečném env\\n"
-        "python scripts/migrate_sqlite_to_postgres.py --confirm MIGRATE",
-        language="bash",
-    )
-    st.caption(
-        "Migrační skript pracuje s konzistentním SQLite snapshotem, zachovává ID/user_id, "
-        "odmítne neprázdný PostgreSQL target a po kopii porovná počty a tenant/FK vazby. "
-        "Nic v PostgreSQL automaticky nemaže."
-    )
+    with st.expander("CLI nástroje", expanded=False):
+        st.code(
+            "python scripts/migrate_sqlite_to_postgres.py --dry-run\\n"
+            "python scripts/migrate_sqlite_to_postgres.py --confirm MIGRATE\\n"
+            "python scripts/verify_postgres_shadow.py\\n"
+            "python scripts/verify_postgres_shadow.py --deep",
+            language="bash",
+        )
+        st.caption(
+            "První migrace vyžaduje prázdný target. Pokud se SQLite později změní, "
+            "verification správně ukáže STALE; v0.71 shadow databázi automaticky nemaže ani nerebuildí."
+        )
 
 def page_admin() -> None:
     if not require_admin():
@@ -8803,7 +8986,7 @@ def page_admin() -> None:
         db_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
         st.caption(
             f"Aplikace {APP_VERSION} · runtime SQLite · databáze {db_size / (1024 * 1024):.1f} MB · "
-            f"SQLite schema {DB_SCHEMA_VERSION} · PostgreSQL foundation {POSTGRES_FOUNDATION_VERSION}"
+            f"SQLite schema {DB_SCHEMA_VERSION} · PostgreSQL shadow v1"
         )
         if not users.empty:
             show = users.rename(columns={

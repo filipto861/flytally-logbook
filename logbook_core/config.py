@@ -10,11 +10,12 @@ AIRPORT_OVERRIDES_PATH = DATA_DIR / "airport_overrides.csv"
 AIRPORTS_CSV_PATH = DATA_DIR / "airports.csv"
 AIRPORTS_DB_PATH = DATA_DIR / "airports_full.sqlite"
 OURAIRPORTS_AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-APP_VERSION = "v0.70"
+APP_VERSION = "v0.71"
 LOCAL_TZ = ZoneInfo("Europe/Prague")
 DB_SCHEMA_VERSION = 10
 DATABASE_RUNTIME = "sqlite"
 POSTGRES_FOUNDATION_VERSION = 1
+POSTGRES_SHADOW_VERSION = 1
 
 EVIDENCE_OPTIONS = ["ULL", "EASA"]
 CLASS_OPTIONS = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"]

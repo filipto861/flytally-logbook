@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_and_navigation():
-    assert APP_VERSION == "v0.70"
+    assert APP_VERSION == "v0.71"
     assert DB_SCHEMA_VERSION == 10
     assert ("Recency", "Recency") not in NAV_ITEMS
 

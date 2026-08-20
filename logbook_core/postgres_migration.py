@@ -20,6 +20,7 @@ from .sqlite_runtime import snapshot_sqlite_bytes
 
 MIGRATION_FORMAT = "logbook-sqlite-to-postgresql"
 MIGRATION_FORMAT_VERSION = 1
+POSTGRES_SHADOW_PROTOCOL_VERSION = 1
 
 
 class PostgresMigrationError(RuntimeError):
@@ -343,6 +344,7 @@ def migrate_sqlite_to_postgres(
                 """,
                 (datetime.now(timezone.utc).isoformat(timespec="seconds"),),
             )
+            migration_now = datetime.now(timezone.utc).isoformat(timespec="seconds")
             pg_con.execute(
                 """
                 INSERT INTO app_meta(key, value, updated_at)
@@ -350,11 +352,24 @@ def migrate_sqlite_to_postgres(
                 ON CONFLICT(key) DO UPDATE
                 SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
                 """,
-                (
-                    str(POSTGRES_SCHEMA_VERSION),
-                    datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                ),
+                (str(POSTGRES_SCHEMA_VERSION), migration_now),
             )
+            source_schema_version = str(plan.sqlite_schema_version)
+            for key, value in (
+                ("shadow_mode", "1"),
+                ("shadow_migrated_at", migration_now),
+                ("shadow_source_schema_version", source_schema_version),
+                ("shadow_protocol_version", str(POSTGRES_SHADOW_PROTOCOL_VERSION)),
+            ):
+                pg_con.execute(
+                    """
+                    INSERT INTO app_meta(key, value, updated_at)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT(key) DO UPDATE
+                    SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at
+                    """,
+                    (key, value, migration_now),
+                )
 
             target_counts = _postgres_existing_counts(pg_con)
             source_counts = dict(plan.table_counts)
