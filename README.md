@@ -1,8 +1,15 @@
 # Letový zápisník
 
-Verze: **v0.60.2**
+## v0.60.3 hotfix
 
-## v0.60.2 – Inline Aircraft Creation
+- Oprava pádu inline vytváření profilu letadla při prázdném session-state `bypass` klíči.
+- Normalizace imatrikulace je nyní bezpečná i pro `None` a prázdné hodnoty.
+- Stejná oprava byla aplikována na všechny vstupy nové inline-aircraft funkce.
+
+
+Verze: **v0.60.3**
+
+## v0.60.3 – Inline Aircraft Creation
 
 Tato verze navazuje na Smart KML Import z v0.60.1 a zlepšuje workflow přidávání letu v situaci, kdy importovaná nebo ručně zadaná registrace ještě nemá vytvořený profil letadla.
 
@@ -45,7 +52,7 @@ Pokud je profil vytvořen během importu historického letu, datum první ceny s
 
 ### Smart KML zůstává zachován
 
-v0.60.2 zachovává všechny funkce v0.60.1:
+v0.60.3 zachovává všechny funkce v0.60.1:
 
 - detekci více letů,
 - návrh rozdělení / možnost ponechat jeden let,
@@ -58,7 +65,7 @@ v0.60.2 zachovává všechny funkce v0.60.1:
 
 - Profil letadla se vytváří pouze pro právě přihlášeného uživatele.
 - Data ostatních uživatelů nejsou dotčena.
-- `APP_VERSION = v0.60.2`
+- `APP_VERSION = v0.60.3`
 - `DB_SCHEMA_VERSION = 8`
 - Není nutná migrace struktury databáze.
 - SQLite + privátní GitHub auto-backup zůstává zachován.

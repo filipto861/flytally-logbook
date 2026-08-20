@@ -36,7 +36,7 @@ from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_ten
 from logbook_core.permissions import AccessDenied, require_owned_record, strict_user_id
 from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
-    normalize_date, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
+    normalize_date, normalize_registration, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
 )
 from logbook_core.pricing import lookup_latest_rate
 from logbook_core.tracks import (
@@ -3383,7 +3383,7 @@ def _inline_aircraft_state_keys(prefix: str) -> tuple[str, str, str]:
 
 
 def _aircraft_profile_exists(registration: str) -> bool:
-    reg = normalize_text(registration).upper().strip()
+    reg = normalize_registration(registration)
     if not reg:
         return False
     catalog = read_aircraft_catalog(active_only=False, user_id=current_user_id())
@@ -3395,7 +3395,7 @@ def _aircraft_profile_exists(registration: str) -> bool:
 
 def _inline_aircraft_prefill(prefix: str, defaults: dict[str, Any]) -> dict[str, Any]:
     """Build aircraft-profile defaults without mutating the in-progress flight."""
-    reg = normalize_text(st.session_state.get(f"{prefix}_reg", defaults.get("registration"))).upper().strip()
+    reg = normalize_registration(st.session_state.get(f"{prefix}_reg", defaults.get("registration")))
     flight_date = st.session_state.get(f"{prefix}_date", defaults.get("date") or date.today())
     try:
         effective = pd.to_datetime(flight_date).date()
@@ -3441,7 +3441,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
     profile = dict(payload.get("profile") or {})
     form_data = dict(payload.get("form_data") or {})
     mode = normalize_text(payload.get("mode")) or "preflight"
-    reg = normalize_text(profile.get("registration") or form_data.get("registration")).upper().strip()
+    reg = normalize_registration(profile.get("registration") or form_data.get("registration"))
     if not reg:
         st.error("Chybí imatrikulace letadla.")
         if st.button("Zpět", use_container_width=True, key=f"inline_aircraft_missing_reg_{prefix}"):
@@ -3604,8 +3604,8 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
 
     # KML imports already know the registration before the form is shown. Offer
     # aircraft creation immediately instead of waiting until the user presses Save.
-    inferred_reg = normalize_text(st.session_state.get(f"{prefix}_reg", defaults.get("registration"))).upper().strip()
-    bypass_reg = normalize_text(st.session_state.get(bypass_key)).upper().strip()
+    inferred_reg = normalize_registration(st.session_state.get(f"{prefix}_reg", defaults.get("registration")))
+    bypass_reg = normalize_registration(st.session_state.get(bypass_key))
     if (
         prompt_missing_aircraft
         and inferred_reg
@@ -3676,8 +3676,8 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
         if errors:
             return None
         if prompt_missing_aircraft:
-            submitted_reg = normalize_text(form_data.get("registration")).upper().strip()
-            bypass_reg = normalize_text(st.session_state.get(bypass_key)).upper().strip()
+            submitted_reg = normalize_registration(form_data.get("registration"))
+            bypass_reg = normalize_registration(st.session_state.get(bypass_key))
             if submitted_reg and submitted_reg != bypass_reg and not _aircraft_profile_exists(submitted_reg):
                 _prompt_inline_aircraft_profile(prefix, defaults, form_data=form_data)
                 return None

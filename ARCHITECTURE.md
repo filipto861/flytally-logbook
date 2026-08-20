@@ -1,8 +1,8 @@
-# Logbook architecture — v0.60.2
+# Logbook architecture — v0.60.3
 
 ## Inline aircraft creation
 
-v0.60.2 přidává do `app.py` malou orchestration vrstvu mezi formulář letu a existující aircraft/rates datovou vrstvu.
+v0.60.3 přidává do `app.py` malou orchestration vrstvu mezi formulář letu a existující aircraft/rates datovou vrstvu.
 
 Hlavní prvky:
 

@@ -39,3 +39,15 @@ def test_inline_dialog_keeps_escape_hatch() -> None:
 def test_edit_existing_flight_does_not_force_aircraft_profile() -> None:
     source = APP.read_text(encoding="utf-8")
     assert 'quick_tools=False, prompt_missing_aircraft=False' in source
+
+
+def test_inline_aircraft_registration_normalization_is_none_safe() -> None:
+    source = APP.read_text(encoding="utf-8")
+    assert "normalize_registration(st.session_state.get(bypass_key))" in source
+    assert "normalize_text(st.session_state.get(bypass_key)).upper()" not in source
+
+
+def test_all_inline_registration_normalization_uses_safe_helper() -> None:
+    source = APP.read_text(encoding="utf-8")
+    assert "normalize_registration(registration)" in source
+    assert "normalize_registration(form_data.get(\"registration\"))" in source

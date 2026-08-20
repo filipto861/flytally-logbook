@@ -10,6 +10,15 @@ def normalize_text(value: Any) -> str | None:
     text = str(value).strip()
     return text if text else None
 
+def normalize_registration(value: Any) -> str:
+    """Normalize an aircraft registration to a safe uppercase string.
+
+    Unlike ``normalize_text`` this helper intentionally returns an empty string
+    for missing values, so callers can safely use it in comparisons and session
+    state flows without dereferencing ``None``.
+    """
+    return (normalize_text(value) or "").upper().strip()
+
 def normalize_date(value: Any) -> str | None:
     if value is None or pd.isna(value):
         return None
