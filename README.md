@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.61.2 – Flight Import UX 2.0
+## v0.61.3 – Flight Import UX 2.0
 
 v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.
 
@@ -48,10 +48,10 @@ v0.61 odstraňuje staré přímé použití `streamlit.components.v1.html` a hla
 - release ZIP neobsahuje `data/logbook.sqlite`.
 
 
-## v0.61.2 hotfix
+## v0.61.3 hotfix
 - fixes Streamlit 1.62 `StreamlitInvalidWidthError` caused by zero-width runtime iframes
 - sidebar toggle and page-transition helper iframes now use 1×1 px dimensions
 
 
-## v0.61.2
+## v0.61.3
 Invisible front-end runtime: sidebar toggle and page-transition scripts now use `st.html(..., unsafe_allow_javascript=True)` instead of 1×1 px iframes, removing the visible white artifacts introduced by the v0.61.1 compatibility hotfix.

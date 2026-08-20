@@ -7049,9 +7049,17 @@ def page_profile() -> None:
             st.info("Tento profil je běžný uživatel. Může číst a upravovat pouze vlastní lety, letadla, ceny, GPS tracky a vlastní letiště.")
 
 def render_sidebar_toggle() -> None:
-    """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""
+    """Render one fixed, smooth sidebar toggle without a Streamlit rerun.
+
+    The button itself lives inside the Streamlit-managed HTML node. JavaScript only
+    attaches behaviour and toggles a body class. This is more reliable than
+    appending a new element directly to ``document.body`` after every rerun.
+    """
     st.html(
         """
+        <button id="lb-sidebar-toggle" type="button"
+                aria-label="Skrýt nebo zobrazit menu"
+                title="Skrýt / zobrazit menu">‹</button>
         <script>
         (function() {
           const doc = document;
@@ -7086,40 +7094,40 @@ def render_sidebar_toggle() -> None:
             });
           }
 
-          function ensureButton() {
-            let btn = doc.getElementById(btnId);
-            if (!btn) {
-              btn = doc.createElement('button');
-              btn.id = btnId;
-              btn.type = 'button';
-              btn.setAttribute('aria-label', 'Skrýt nebo zobrazit menu');
-              btn.title = 'Skrýt / zobrazit menu';
-              doc.body.appendChild(btn);
-              btn.addEventListener('click', function(ev) {
-                ev.preventDefault();
-                setHidden(!doc.body.classList.contains('lb-sidebar-hidden'));
-              });
-            }
-            return btn;
-          }
-
           function setHidden(hidden) {
             doc.body.classList.toggle('lb-sidebar-hidden', hidden);
             try { window.localStorage.setItem(storageKey, hidden ? '1' : '0'); } catch(e) {}
-            const btn = ensureButton();
-            btn.textContent = hidden ? '›' : '‹';
+            const btn = doc.getElementById(btnId);
+            if (btn) {
+              btn.textContent = hidden ? '›' : '‹';
+              btn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+            }
           }
 
-          hideNativeButtons();
-          const saved = (function() {
-            try { return window.localStorage.getItem(storageKey) === '1'; }
-            catch(e) { return false; }
-          })();
-          setHidden(saved);
-          // CSS already suppresses Streamlit's native sidebar controls. Older
-          // versions also ran a document-wide MutationObserver and repeated many
-          // querySelectorAll scans while tables/maps were rendering. One pass per
-          // rerun is enough and keeps browser-side rendering lighter.
+          function install() {
+            const btn = doc.getElementById(btnId);
+            if (!btn) return false;
+            btn.onclick = function(ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              setHidden(!doc.body.classList.contains('lb-sidebar-hidden'));
+            };
+            hideNativeButtons();
+            const saved = (function() {
+              try { return window.localStorage.getItem(storageKey) === '1'; }
+              catch(e) { return false; }
+            })();
+            setHidden(saved);
+            return true;
+          }
+
+          install();
+          // Streamlit can reconcile the HTML node immediately after insertion. A
+          // couple of cheap retries ensure the listener remains attached without a
+          // document-wide MutationObserver.
+          setTimeout(install, 80);
+          setTimeout(install, 260);
+
           if (window.__lbSidebarObserver) {
             try { window.__lbSidebarObserver.disconnect(); } catch(e) {}
             window.__lbSidebarObserver = null;
@@ -7127,6 +7135,7 @@ def render_sidebar_toggle() -> None:
         })();
         </script>
         """,
+        width="content",
         unsafe_allow_javascript=True,
     )
 
