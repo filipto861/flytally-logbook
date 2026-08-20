@@ -1,72 +1,48 @@
 # Letový zápisník
 
-## v0.60.3 hotfix
+## v0.61 – Flight Import UX 2.0
 
-- Oprava pádu inline vytváření profilu letadla při prázdném session-state `bypass` klíči.
-- Normalizace imatrikulace je nyní bezpečná i pro `None` a prázdné hodnoty.
-- Stejná oprava byla aplikována na všechny vstupy nové inline-aircraft funkce.
+v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.
 
+### Nový čtyřkrokový KML workflow
 
-Verze: **v0.60.3**
+1. **KML / Soubor** – nahrání zdrojového KML.
+2. **Smart KML / Analýza** – detekce více letů, touch-and-go, časových mezer a GPS anomálií.
+3. **Údaje letu / Kontrola polí** – mapa, automaticky odhadnuté časy, letiště, registrace a editovatelný formulář.
+4. **Finální kontrola / Uložit** – souhrn všech údajů, nákladů a GPS tracku před skutečným zápisem do databáze.
 
-## v0.60.3 – Inline Aircraft Creation
+Do databáze se nic nezapíše, dokud uživatel nepotvrdí finální kontrolu.
 
-Tato verze navazuje na Smart KML Import z v0.60.1 a zlepšuje workflow přidávání letu v situaci, kdy importovaná nebo ručně zadaná registrace ještě nemá vytvořený profil letadla.
+### Rozdělené tracky
 
-### Nový inline workflow
+Pokud Smart KML navrhne více letů, každý díl má vlastní workflow a vlastní finální kontrolu. Po uložení jednoho dílu pokračuje průvodce na další část. Body rozdělení zůstávají po prvním uložení uzamčené stejně jako v předchozí verzi.
 
-Pokud KML už obsahuje rozpoznanou registraci a letadlo není v databázi uživatele, aplikace otevře popup **Vytvořit profil letadla** ještě před uložením letu.
+### Návrat k editaci
 
-Popup obsahuje kompletní základní konfiguraci:
+Ve finální kontrole je tlačítko **Upravit údaje**, které vrátí uživatele zpět k formuláři bez ztráty nahraného KML nebo Smart KML analýzy.
 
-- imatrikulaci,
-- typ,
-- ICAO typ,
-- evidenci,
-- třídu,
-- výchozí roli,
-- cenu za hodinu,
-- datum účinnosti ceny,
-- způsob účtování BLOCK / AIR,
-- poznámku,
-- aktivní / neaktivní stav.
+### Inline profil letadla
 
-Po vytvoření profilu se uživatel vrátí do stejného rozpracovaného letu. KML, mapa, Smart KML analýza, detekované časy, starty/přistání a ostatní formulářová data se neztratí.
+Workflow z v0.60.3 zůstává zachovaný. Pokud importovaná registrace nemá profil letadla, lze jej vytvořit přímo v popupu a potom pokračovat v rozpracovaném importu.
 
-### Ruční zadání registrace
+### Branding
 
-U ručně přidaného letu se registrace nevyhodnocuje během psaní uvnitř formuláře. Pokud uživatel stiskne **Přidat let** a profil pro danou registraci neexistuje, uložení se pozastaví a otevře se stejný popup. Po vytvoření profilu se původní rozpracovaný let automaticky dokončí s novou konfigurací letadla.
+Součástí release jsou soubory:
 
-### Bezpečný fallback
+- `assets/logbook_icon.png`
+- `assets/logbook_icon_32.png`
+- `assets/favicon.ico`
 
-Popup vždy nabízí i:
+Aplikace používá vlastní ikonu v záložce prohlížeče.
 
-- **Pokračovat bez profilu** – let lze uložit i bez vytvoření letadla,
-- **Vrátit se k formuláři** – uživatel může registraci nebo jiné údaje opravit.
+### Streamlit API cleanup
 
-Vytvoření profilu tedy není povinné.
+v0.61 odstraňuje staré přímé použití `streamlit.components.v1.html` a hlavní výskyty deprecated `use_container_width`. Interní HTML/JS vizualizace se vykreslují přes současné `st.iframe` API a Streamlit prvky používají `width="stretch"`.
 
-### Cenová historie
+### Databáze
 
-Pokud je profil vytvořen během importu historického letu, datum první ceny se standardně předvyplní podle data rozpracovaného letu. Uživatel jej může změnit před uložením.
-
-### Smart KML zůstává zachován
-
-v0.60.3 zachovává všechny funkce v0.60.1:
-
-- detekci více letů,
-- návrh rozdělení / možnost ponechat jeden let,
-- ruční rozdělení,
-- detekci touch-and-go,
-- automatický návrh počtu startů / přistání,
-- kontrolu časových mezer a GPS skoků.
-
-### Databáze a multi-user
-
-- Profil letadla se vytváří pouze pro právě přihlášeného uživatele.
-- Data ostatních uživatelů nejsou dotčena.
-- `APP_VERSION = v0.60.3`
+- `APP_VERSION = v0.61`
 - `DB_SCHEMA_VERSION = 8`
-- Není nutná migrace struktury databáze.
-- SQLite + privátní GitHub auto-backup zůstává zachován.
-- Release ZIP neobsahuje `data/logbook.sqlite`.
+- není nutná migrace databáze,
+- SQLite + privátní GitHub auto-backup zůstává zachován,
+- release ZIP neobsahuje `data/logbook.sqlite`.

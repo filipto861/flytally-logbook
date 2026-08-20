@@ -1,35 +1,19 @@
-# Nasazení v0.60.3
+# Upload v0.61
 
-1. Zálohuj `data/logbook.sqlite`.
-2. V lokálním Git repozitáři zachovej `.git` a `data`.
-3. Nahraď aplikační soubory obsahem v0.60.3.
-4. Obsah `data` z release zkopíruj do existujícího `data`; `logbook.sqlite` v release není.
-5. V GitHub Desktopu ověř, že `data/logbook.sqlite` není omylem smazaná nebo nahrazená.
-6. Commit: `v0.60.3 - Inline Aircraft Creation`.
-7. Pokud GitHub auto-backup mezitím vytvořil vzdálený commit, použij **Fetch → Pull origin → Push origin**.
-8. Po deployi se přihlas a otestuj KML s registrací, kterou daný testovací účet ještě nemá v databázi letadel.
+1. Zachovej lokální `.git` a `data/logbook.sqlite`.
+2. Nahraď aplikační soubory obsahem tohoto balíčku.
+3. Zkontroluj, že `data/logbook.sqlite` zůstalo na místě a není mezi změněnými/smazanými soubory.
+4. Otevři GitHub Desktop.
+5. Pokud je na remote novější auto-backup databáze, použij nejdřív `Fetch` a `Pull origin`.
+6. Commit doporučený jako:
+   `v0.61 - Flight Import UX 2.0`
+7. `Push origin`.
+8. Po redeployi ověř zejména:
+   - favicon,
+   - single KML import až po finální kontrolu,
+   - tlačítko Upravit údaje,
+   - split KML a review každé části,
+   - inline vytvoření chybějícího letadla,
+   - touch-and-go count.
 
-## Doporučený test
-
-### KML s novým letadlem
-- přihlas se testovacím uživatelem,
-- nahraj KML s registrací bez existujícího profilu,
-- má se otevřít popup pro vytvoření letadla,
-- vyplň typ, třídu, cenu a další parametry,
-- vytvoř profil,
-- ověř, že se vrátíš do stejného KML importu a nic z tracku nezmizelo,
-- ulož let a zkontroluj Databáze → Letadla.
-
-### Pokračovat bez profilu
-- použij jinou novou registraci,
-- v popupu zvol **Pokračovat bez profilu**,
-- let musí jít normálně uložit.
-
-### Ruční let
-- zvol Ručně,
-- zadej novou registraci a ostatní údaje,
-- po potvrzení se má otevřít popup,
-- po vytvoření profilu se původní let dokončí bez opakovaného vyplňování.
-
-### Smart KML regression
-- ověř, že stále funguje rozdělení více letů a detekce touch-and-go.
+Release ZIP neobsahuje `data/logbook.sqlite`.

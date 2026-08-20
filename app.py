@@ -19,7 +19,6 @@ from urllib.parse import urlencode
 import numpy as np
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from logbook_core.config import (
     AIRPORT_OVERRIDES_PATH, AIRPORTS_CSV_PATH, AIRPORTS_DB_PATH, APP_VERSION,
@@ -295,7 +294,7 @@ def render_auth_gate() -> bool:
             password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
             password2 = st.text_input("Potvrzení nového hesla", type="password")
             admin_pwd = st.text_input("Současné heslo správce aplikace", type="password")
-            submitted = st.form_submit_button("Aktivovat můj stávající profil", use_container_width=True)
+            submitted = st.form_submit_button("Aktivovat můj stávající profil", width="stretch")
         if submitted:
             if not hmac.compare_digest(admin_pwd, admin_password):
                 st.error("Heslo správce není správné.")
@@ -327,7 +326,7 @@ def render_auth_gate() -> bool:
         with st.form("user_login_form"):
             email = st.text_input("E-mail", key="login_email")
             password = st.text_input("Heslo", type="password", key="login_password")
-            submitted = st.form_submit_button("Přihlásit se", use_container_width=True)
+            submitted = st.form_submit_button("Přihlásit se", width="stretch")
         if submitted:
             with connect() as con:
                 result = authenticate_user(con, email, password)
@@ -346,7 +345,7 @@ def render_auth_gate() -> bool:
                 email = st.text_input("E-mail", key="register_email")
                 password = st.text_input(f"Heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password", key="register_password")
                 password2 = st.text_input("Potvrzení hesla", type="password", key="register_password2")
-                submitted = st.form_submit_button("Vytvořit účet", use_container_width=True)
+                submitted = st.form_submit_button("Vytvořit účet", width="stretch")
             if submitted:
                 if password != password2:
                     st.error("Hesla se neshodují.")
@@ -374,7 +373,7 @@ def render_user_sidebar() -> None:
         st.caption(str(profile.get("email")))
     if str(profile.get("role") or "user").lower() == "admin":
         st.caption("Správce aplikace")
-    if st.button("Odhlásit se", use_container_width=True, key="user_logout"):
+    if st.button("Odhlásit se", width="stretch", key="user_logout"):
         logout_user()
         st.rerun()
 
@@ -1484,7 +1483,7 @@ def go_to_page(page: str) -> None:
 
 def render_nav_button(page_name: str, label: str, key: str) -> None:
     current = st.session_state.get("page", "Dashboard") == page_name
-    if st.button(label, key=key, use_container_width=True, type="primary" if current else "secondary"):
+    if st.button(label, key=key, width="stretch", type="primary" if current else "secondary"):
         go_to_page(page_name)
 
 
@@ -2176,12 +2175,12 @@ def render_folium_readonly(m: folium.Map, *, height: int = 680, key: str | None 
     from streamlit_folium import st_folium
     try:
         html = m.get_root().render()
-        components.html(html, height=height, scrolling=False)
+        st.iframe(html, height=height)
     except Exception:
         try:
-            st_folium(m, height=height, use_container_width=True, key=key, returned_objects=[])
+            st_folium(m, height=height, width=None, key=key, returned_objects=[])
         except TypeError:
-            st_folium(m, height=height, use_container_width=True, key=key)
+            st_folium(m, height=height, width=None, key=key)
 
 
 def render_folium_navigable(m: folium.Map, *, height: int = 680, key: str | None = None) -> Any:
@@ -2190,12 +2189,12 @@ def render_folium_navigable(m: folium.Map, *, height: int = 680, key: str | None
         return st_folium(
             m,
             height=height,
-            use_container_width=True,
+            width=None,
             key=key,
             returned_objects=["last_object_clicked", "last_object_clicked_tooltip", "last_object_clicked_popup"],
         )
     except TypeError:
-        return st_folium(m, height=height, use_container_width=True, key=key)
+        return st_folium(m, height=height, width=None, key=key)
 
 
 def _stringify_map_event(value: Any) -> str:
@@ -2300,7 +2299,7 @@ def render_map_html(html: str, *, height: int = 680) -> None:
     if not html:
         st.info("Mapa nemá data k zobrazení.")
         return
-    components.html(html, height=height, scrolling=False)
+    st.iframe(html, height=height)
 
 
 def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expanded: bool = False) -> None:
@@ -2309,7 +2308,7 @@ def render_lazy_table(title: str, data: pd.DataFrame, *, height: int = 360, expa
         if data.empty:
             st.info("Tabulka je prázdná.")
         else:
-            st.dataframe(data, hide_index=True, use_container_width=True, height=height)
+            st.dataframe(data, hide_index=True, width="stretch", height=height)
 
 
 def render_track_profile(points: list[dict[str, Any]], selected_idx: int | None = None) -> None:
@@ -2388,7 +2387,7 @@ def render_track_profile(points: list[dict[str, Any]], selected_idx: int | None 
         yaxis2=dict(title="GPS speed km/h", overlaying="y", side="right", rangemode="tozero"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
-    st.plotly_chart(plotly_layout(fig), use_container_width=True)
+    st.plotly_chart(plotly_layout(fig), width="stretch")
 
 
 def _track_playback_default_idx(points: list[dict[str, Any]]) -> int:
@@ -2745,7 +2744,7 @@ def render_track_playback(points: list[dict[str, Any]], flight_id: int, dark_mod
         return
 
     html_doc = _track_player_html(player_points, default_idx, dark_mode, original_count)
-    components.html(html_doc, height=710, scrolling=False)
+    st.iframe(html_doc, height=710)
 
 
 
@@ -2822,13 +2821,13 @@ def page_dashboard(df: pd.DataFrame):
                 Náklady=("cost", "sum"),
             ).tail(24)
             fig_month = px.bar(month_summary, x="month", y="Hodiny", title="Nálet po měsících")
-            st.plotly_chart(plotly_layout(fig_month), use_container_width=True)
+            st.plotly_chart(plotly_layout(fig_month), width="stretch")
 
             role_year = chart_df.pivot_table(index="year", columns="role", values="block_hours", aggfunc="sum", fill_value=0).reset_index()
             role_cols = [c for c in ["PIC", "DUAL", "SAFETY PILOT", "INSTRUKTOR"] if c in role_year.columns]
             if role_cols:
                 fig_role = px.bar(role_year, x="year", y=role_cols, barmode="stack", title="Nálet podle roku a funkce")
-                st.plotly_chart(plotly_layout(fig_role), use_container_width=True)
+                st.plotly_chart(plotly_layout(fig_role), width="stretch")
         else:
             summary_rows = pd.DataFrame([
                 {"Metrika": "Lety", "Hodnota": s["flights"]},
@@ -2839,7 +2838,7 @@ def page_dashboard(df: pd.DataFrame):
                 {"Metrika": "Náklady", "Hodnota": fmt_money(s["cost"], current_user_currency())},
                 {"Metrika": "GPS", "Hodnota": f"{s['tracks']} tracků / {s['gps_km']:.0f} km"},
             ])
-            st.dataframe(summary_rows, hide_index=True, use_container_width=True, height=280)
+            st.dataframe(summary_rows, hide_index=True, width="stretch", height=280)
 
     elif section == "Letadla":
         by_aircraft = (
@@ -2861,13 +2860,13 @@ def page_dashboard(df: pd.DataFrame):
         else:
             import plotly.express as px
             fig_aircraft = px.bar(by_aircraft.head(12), x="registration", y="Block_h", title="TOP letadla podle block time")
-            st.plotly_chart(plotly_layout(fig_aircraft), use_container_width=True)
+            st.plotly_chart(plotly_layout(fig_aircraft), width="stretch")
             table = by_aircraft.copy()
             table["Block"] = table["Block_h"].mul(60).apply(fmt_minutes)
             table["Air"] = table["Air_h"].mul(60).apply(fmt_minutes)
             table["Náklady"] = table["Náklady"].apply(lambda v: fmt_money(v, current_user_currency()))
             table["GPS km"] = table["GPS_km"].round(0).astype(int)
-            st.dataframe(table[["registration", "Lety", "Block", "Air", "Starty", "Náklady", "GPS km"]].rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=380)
+            st.dataframe(table[["registration", "Lety", "Block", "Air", "Starty", "Náklady", "GPS km"]].rename(columns={"registration":"Imatrikulace"}), hide_index=True, width="stretch", height=380)
 
     elif section == "Letiště a trasy":
         import plotly.express as px
@@ -2887,18 +2886,18 @@ def page_dashboard(df: pd.DataFrame):
         with left:
             if not airport_visits.empty:
                 fig_airports = px.bar(airport_visits.head(15), x="Letiště", y="Návštěvy", title="Nejčastější letiště")
-                st.plotly_chart(plotly_layout(fig_airports), use_container_width=True)
-                st.dataframe(airport_visits.head(30), hide_index=True, use_container_width=True, height=360)
+                st.plotly_chart(plotly_layout(fig_airports), width="stretch")
+                st.dataframe(airport_visits.head(30), hide_index=True, width="stretch", height=360)
             else:
                 st.info("Žádná letiště.")
         with right:
             if not route_summary.empty:
                 fig_routes = px.bar(route_summary.head(15), x="Trasa", y="Lety", title="Nejčastější trasy")
-                st.plotly_chart(plotly_layout(fig_routes), use_container_width=True)
+                st.plotly_chart(plotly_layout(fig_routes), width="stretch")
                 table = route_summary.copy()
                 table["Block"] = table["Block_h"].mul(60).apply(fmt_minutes)
                 table["GPS km"] = table["GPS_km"].round(0).astype(int)
-                st.dataframe(table[["Trasa", "Lety", "Block", "GPS km"]].head(30), hide_index=True, use_container_width=True, height=360)
+                st.dataframe(table[["Trasa", "Lety", "Block", "GPS km"]].head(30), hide_index=True, width="stretch", height=360)
             else:
                 st.info("Žádné trasy.")
 
@@ -2911,12 +2910,12 @@ def page_dashboard(df: pd.DataFrame):
             by_cost_aircraft = cost_df.groupby("registration", as_index=False).agg(Náklady=("cost", "sum"), Hodiny=("block_hours", "sum"), Lety=("id", "count")).sort_values("Náklady", ascending=False)
             by_cost_aircraft["Cena/h"] = (by_cost_aircraft["Náklady"] / by_cost_aircraft["Hodiny"].replace(0, pd.NA)).fillna(0)
             fig_cost = px.bar(by_cost_aircraft.head(12), x="registration", y="Náklady", title="Náklady podle letadla")
-            st.plotly_chart(plotly_layout(fig_cost), use_container_width=True)
+            st.plotly_chart(plotly_layout(fig_cost), width="stretch")
             table = by_cost_aircraft.copy()
             table["Náklady"] = table["Náklady"].apply(lambda v: fmt_money(v, current_user_currency()))
             table["Hodiny"] = table["Hodiny"].mul(60).apply(fmt_minutes)
             table["Cena/h"] = table["Cena/h"].apply(lambda v: fmt_money(v, current_user_currency()) + "/h")
-            st.dataframe(table.rename(columns={"registration":"Imatrikulace"}), hide_index=True, use_container_width=True, height=360)
+            st.dataframe(table.rename(columns={"registration":"Imatrikulace"}), hide_index=True, width="stretch", height=360)
 
     elif section == "Poslední lety":
         recent = filtered.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(20).copy()
@@ -2924,7 +2923,7 @@ def page_dashboard(df: pd.DataFrame):
             st.info("Žádné lety.")
         else:
             recent_table = recent[["date", "registration", "departure", "arrival", "off_block", "on_block", "block_time", "role", "cost_label", "track_count"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","off_block":"Off","on_block":"On","block_time":"Block","role":"Role","cost_label":"Cena","track_count":"GPS"})
-            st.dataframe(recent_table, hide_index=True, use_container_width=True, height=520)
+            st.dataframe(recent_table, hide_index=True, width="stretch", height=520)
 
 
 def flight_label(row: pd.Series | dict[str, Any]) -> str:
@@ -3073,10 +3072,10 @@ def render_quick_flight_tools(prefix: str, defaults: dict[str, Any], rates: pd.D
             r1, r2 = st.columns(2)
             if picked_route:
                 dep, arr = str(picked_route).split("__", 1)
-                if r1.button("Použít trasu", key=f"{prefix}_apply_route_v0401", use_container_width=True):
+                if r1.button("Použít trasu", key=f"{prefix}_apply_route_v0401", width="stretch"):
                     st.session_state[f"{prefix}_dep"] = dep
                     st.session_state[f"{prefix}_arr"] = arr
-                if r2.button("Otočit trasu", key=f"{prefix}_reverse_route_v0401", use_container_width=True):
+                if r2.button("Otočit trasu", key=f"{prefix}_reverse_route_v0401", width="stretch"):
                     st.session_state[f"{prefix}_dep"] = arr
                     st.session_state[f"{prefix}_arr"] = dep
 
@@ -3091,7 +3090,7 @@ def render_quick_flight_tools(prefix: str, defaults: dict[str, Any], rates: pd.D
             q_pad = st.number_input("Rezerva min", min_value=0, max_value=60, step=1, value=5, key=f"{prefix}_quick_pad_v0401")
         with t4:
             st.write("")
-            if st.button("Doplnit časy", key=f"{prefix}_apply_times_v0401", use_container_width=True):
+            if st.button("Doplnit časy", key=f"{prefix}_apply_times_v0401", width="stretch"):
                 takeoff = normalize_time(q_takeoff) or ""
                 if takeoff:
                     st.session_state[f"{prefix}_to"] = takeoff
@@ -3434,7 +3433,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
     payload = st.session_state.get(pending_key)
     if not isinstance(payload, dict):
         st.info("Rozpracovaný profil letadla už není k dispozici.")
-        if st.button("Zavřít", use_container_width=True, key=f"inline_aircraft_close_{prefix}"):
+        if st.button("Zavřít", width="stretch", key=f"inline_aircraft_close_{prefix}"):
             st.rerun()
         return
 
@@ -3444,7 +3443,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
     reg = normalize_registration(profile.get("registration") or form_data.get("registration"))
     if not reg:
         st.error("Chybí imatrikulace letadla.")
-        if st.button("Zpět", use_container_width=True, key=f"inline_aircraft_missing_reg_{prefix}"):
+        if st.button("Zpět", width="stretch", key=f"inline_aircraft_missing_reg_{prefix}"):
             st.session_state.pop(pending_key, None)
             st.rerun()
         return
@@ -3511,7 +3510,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
         note = st.text_area("Poznámka k letadlu", value="", height=70)
         active = st.checkbox("Aktivní letadlo", value=True)
         st.caption("První cena se uloží s datem účinnosti. Pozdější změny ceny se budou vést v historii profilu letadla.")
-        create_profile = st.form_submit_button("Vytvořit profil a pokračovat", type="primary", use_container_width=True)
+        create_profile = st.form_submit_button("Vytvořit profil a pokračovat", type="primary", width="stretch")
 
     if create_profile:
         try:
@@ -3562,7 +3561,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
 
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("Pokračovat bez profilu", use_container_width=True, key=f"inline_aircraft_skip_{token}"):
+        if st.button("Pokračovat bez profilu", width="stretch", key=f"inline_aircraft_skip_{token}"):
             if mode == "postsubmit":
                 st.session_state[resolution_key] = "skip"
             else:
@@ -3570,7 +3569,7 @@ def inline_aircraft_create_dialog(prefix: str) -> None:
                 st.session_state.pop(pending_key, None)
             st.rerun()
     with c2:
-        if st.button("Vrátit se k formuláři", use_container_width=True, key=f"inline_aircraft_back_{token}"):
+        if st.button("Vrátit se k formuláři", width="stretch", key=f"inline_aircraft_back_{token}"):
             st.session_state[bypass_key] = reg
             st.session_state.pop(pending_key, None)
             st.session_state.pop(resolution_key, None)
@@ -3670,7 +3669,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             st.error("Kontrola: " + " • ".join(preview_errors[:5]))
         elif preview_warnings:
             st.warning("Kontrola: " + " • ".join(preview_warnings[:5]))
-        submitted = st.form_submit_button(submit_label, type="primary", use_container_width=True)
+        submitted = st.form_submit_button(submit_label, type="primary", width="stretch")
     if submitted:
         errors, _warnings = validate_flight_data(form_data)
         if errors:
@@ -3858,11 +3857,11 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 _render_gps_time_proposal(gps_proposal, compact=True)
                 g1, g2 = st.columns(2)
                 with g1:
-                    if st.button("Použít GPS Block + Air", key=f"edit_apply_gps_all_{selected_id}", use_container_width=True):
+                    if st.button("Použít GPS Block + Air", key=f"edit_apply_gps_all_{selected_id}", width="stretch"):
                         _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
                         st.toast("GPS časy byly vloženy do editace.")
                 with g2:
-                    if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", use_container_width=True):
+                    if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", width="stretch"):
                         _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=True)
                         st.toast("GPS Air časy byly vloženy do editace.")
         saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False, prompt_missing_aircraft=False)
@@ -3878,7 +3877,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
             render_track_playback(first_points, int(selected_id), dark_mode)
             if gps_proposal:
                 _render_gps_time_proposal(gps_proposal, compact=True)
-                if st.button("Použít GPS časy v editaci", key=f"track_to_edit_gps_{selected_id}", type="secondary", use_container_width=True):
+                if st.button("Použít GPS časy v editaci", key=f"track_to_edit_gps_{selected_id}", type="secondary", width="stretch"):
                     _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=False)
                     st.session_state[f"_detail_pending_section_{selected_id}"] = "Editace"
                     st.session_state[f"_detail_flash_{selected_id}"] = "GPS návrh byl vložen do editace. Zkontroluj časy a ulož změny."
@@ -3886,10 +3885,10 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
 
             show = flight_tracks[["id","file_name","point_count","distance_km","start_utc","end_utc","max_alt_m"]].rename(columns={"id":"Track ID","file_name":"Soubor","point_count":"Body","distance_km":"Km","start_utc":"Start UTC","end_utc":"End UTC","max_alt_m":"Max alt m"})
             with st.expander("GPS soubory", expanded=False):
-                st.dataframe(show, hide_index=True, use_container_width=True)
+                st.dataframe(show, hide_index=True, width="stretch")
                 del_id = st.selectbox("Track", show["Track ID"].tolist(), format_func=lambda x: f"Track ID {x}", key=f"delete_track_select_{selected_id}")
                 confirm_track_delete = st.checkbox("Potvrzuji smazání vybraného tracku", value=False, key=f"confirm_track_delete_{selected_id}")
-                if st.button("Smazat vybraný track", type="secondary", disabled=not confirm_track_delete, use_container_width=True, key=f"delete_track_btn_{selected_id}"):
+                if st.button("Smazat vybraný track", type="secondary", disabled=not confirm_track_delete, width="stretch", key=f"delete_track_btn_{selected_id}"):
                     delete_track(int(del_id))
                     st.session_state[f"_detail_flash_{selected_id}"] = "Track smazán."
                     st.rerun()
@@ -3916,7 +3915,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                     end_utc = _safe_text(points[-1].get("time")) or "—"
                     st.caption(f"{uploaded.name} · {point_count} bodů · {distance_km:.1f} km · {start_utc} – {end_utc}")
                     replace = st.checkbox("Nahradit existující tracky u tohoto letu", value=True, key=f"replace_track_{selected_id}_{uploaded.name}")
-                    if st.button("Uložit track k letu", type="primary", use_container_width=True):
+                    if st.button("Uložit track k letu", type="primary", width="stretch"):
                         save_track(int(selected_id), uploaded.name, points, replace_existing=replace)
                         st.session_state[f"_detail_flash_{selected_id}"] = "Track uložen."
                         st.rerun()
@@ -3941,7 +3940,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         )
         c_del, c_cancel = st.columns([1, 1])
         with c_del:
-            if st.button("Trvale smazat let", type="primary", use_container_width=True, key=f"delete_flight_btn_{selected_id}"):
+            if st.button("Trvale smazat let", type="primary", width="stretch", key=f"delete_flight_btn_{selected_id}"):
                 if confirm.strip() == str(selected_id):
                     delete_flight(int(selected_id))
                     st.success(f"Let ID {selected_id} byl smazán.")
@@ -3950,10 +3949,10 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 else:
                     st.error("Potvrzení nesouhlasí. Napiš přesné ID letu.")
         with c_cancel:
-            if st.button("Nemazat", use_container_width=True, key=f"delete_flight_cancel_{selected_id}"):
+            if st.button("Nemazat", width="stretch", key=f"delete_flight_cancel_{selected_id}"):
                 clear_open_flight_dialog()
                 st.rerun()
-    if st.button("Zavřít detail", use_container_width=True):
+    if st.button("Zavřít detail", width="stretch"):
         clear_open_flight_dialog()
         st.rerun()
 
@@ -4210,14 +4209,14 @@ def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFr
         flight_id = int(row.get("id"))
         cols = st.columns(widths, gap="small", vertical_alignment="top")
         with cols[0]:
-            if st.button("Detail", key=f"flight_detail_btn_{flight_id}", use_container_width=True):
+            if st.button("Detail", key=f"flight_detail_btn_{flight_id}", width="stretch"):
                 st.session_state[f"detail_section_{flight_id}"] = "Přehled"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
                 st.session_state.pop("dismissed_flight_id", None)
                 st.rerun()
         with cols[1]:
-            if st.button("Edit", key=f"flight_edit_btn_{flight_id}", use_container_width=True):
+            if st.button("Edit", key=f"flight_edit_btn_{flight_id}", width="stretch"):
                 st.session_state[f"detail_section_{flight_id}"] = "Editace"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
@@ -4225,7 +4224,7 @@ def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFr
                 st.rerun()
         with cols[2]:
             track_count = _safe_int(row.get("track_count"))
-            if st.button("GPS", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, use_container_width=True):
+            if st.button("GPS", key=f"flight_track_btn_{flight_id}", disabled=track_count <= 0, width="stretch"):
                 st.session_state[f"detail_section_{flight_id}"] = "Track"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
@@ -4494,6 +4493,165 @@ def render_smart_kml_analysis(
     return "split", adjusted
 
 
+
+def render_import_stepper(active_step: int, *, caption: str = "") -> None:
+    """Compact four-step import progress indicator used by KML workflows."""
+    active = max(1, min(4, int(active_step or 1)))
+    labels = [
+        (1, "KML", "Soubor"),
+        (2, "Smart KML", "Analýza"),
+        (3, "Údaje letu", "Kontrola polí"),
+        (4, "Finální kontrola", "Uložit"),
+    ]
+    items: list[str] = []
+    for number, title, subtitle in labels:
+        state = "done" if number < active else ("active" if number == active else "todo")
+        icon = "✓" if number < active else str(number)
+        items.append(
+            f'<div class="lb-import-step {state}">'
+            f'<span class="lb-import-step-dot">{icon}</span>'
+            f'<span><b>{title}</b><small>{subtitle}</small></span>'
+            f'</div>'
+        )
+    st.markdown(
+        """
+        <style>
+        .lb-import-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 18px 0}
+        .lb-import-step{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid rgba(125,150,175,.28);border-radius:13px;background:rgba(15,36,58,.36);min-width:0}
+        .lb-import-step span:last-child{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+        .lb-import-step b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lb-import-step small{opacity:.62;font-size:.72rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lb-import-step-dot{width:25px;height:25px;min-width:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(130,170,205,.5);font-size:.78rem;font-weight:700}
+        .lb-import-step.done{opacity:.78}.lb-import-step.done .lb-import-step-dot{background:rgba(43,190,125,.18);border-color:rgba(43,190,125,.6)}
+        .lb-import-step.active{border-color:#38bdf8;background:rgba(56,189,248,.11)}
+        .lb-import-step.active .lb-import-step-dot{background:#38bdf8;color:#062033;border-color:#38bdf8}
+        @media(max-width:700px){.lb-import-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        </style>
+        """ + f'<div class="lb-import-steps">{"".join(items)}</div>',
+        unsafe_allow_html=True,
+    )
+    if caption:
+        st.caption(caption)
+
+
+def _import_review_metrics(saved: dict[str, Any]) -> dict[str, Any]:
+    block = minutes_diff(saved.get("off_block"), saved.get("on_block"))
+    air = minutes_diff(saved.get("takeoff"), saved.get("landing"))
+    basis = _normalize_billing_basis(saved.get("billing_basis") or "BLOCK")
+    billed = air if basis == "AIR" else block
+    price = float(saved.get("price_per_hour") or 0)
+    cost = (float(billed or 0) / 60.0) * price
+    return {"block": block, "air": air, "basis": basis, "price": price, "cost": cost}
+
+
+def render_import_final_review(
+    saved: dict[str, Any],
+    *,
+    points: list[dict[str, Any]] | None,
+    file_name: str | None,
+    dark_mode: bool,
+    key_prefix: str,
+    heading: str = "Finální kontrola před uložením",
+) -> str | None:
+    """Render a non-destructive final review and return ``save`` / ``back``."""
+    st.markdown(f"### {heading}")
+    st.info("Ještě se nic neuložilo. Zkontroluj údaje a až potom potvrď uložení letu.")
+
+    metrics = _import_review_metrics(saved)
+    route = f"{normalize_text(saved.get('departure')) or '—'} → {normalize_text(saved.get('arrival')) or '—'}"
+    time_range = f"{normalize_text(saved.get('takeoff')) or '—'}–{normalize_text(saved.get('landing')) or '—'}"
+    date_value = saved.get("date")
+    try:
+        date_label = pd.to_datetime(date_value).strftime("%d.%m.%Y") if date_value else "—"
+    except Exception:
+        date_label = str(date_value or "—")
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Datum", date_label, normalize_text(saved.get("evidence")) or "")
+    with c2:
+        metric_card("Letadlo", normalize_registration(saved.get("registration")) or "—", normalize_text(saved.get("aircraft_type")) or "")
+    with c3:
+        metric_card("Trasa", route, normalize_text(saved.get("role")) or "")
+    with c4:
+        metric_card("Air", time_range, f"{fmt_minutes(metrics['air']) or '—'}")
+
+    d1, d2, d3, d4 = st.columns(4)
+    with d1:
+        metric_card("Block", fmt_minutes(metrics["block"]) or "—", f"{normalize_text(saved.get('off_block')) or '—'}–{normalize_text(saved.get('on_block')) or '—'}")
+    with d2:
+        metric_card("Starty / přistání", str(int(saved.get("starts") or 0)), "")
+    with d3:
+        metric_card("Sazba", _price_rate_label(metrics["price"]), _billing_basis_label(metrics["basis"]))
+    with d4:
+        metric_card("Cena letu", fmt_money(metrics["cost"], current_user_currency()), _billing_basis_label(metrics["basis"]))
+
+    detail_bits = [
+        f"**Velitel:** {normalize_text(saved.get('commander')) or '—'}",
+        f"**Instruktor:** {normalize_text(saved.get('instructor')) or '—'}",
+        f"**Třída:** {normalize_text(saved.get('aircraft_class')) or '—'}",
+        f"**Úloha:** {normalize_text(saved.get('task')) or '—'}",
+    ]
+    st.markdown(" · ".join(detail_bits))
+    if normalize_text(saved.get("note")):
+        st.caption(f"Poznámka: {normalize_text(saved.get('note'))}")
+
+    errors, warnings = validate_flight_data(saved)
+    if errors:
+        st.error("Před uložením je nutné opravit: " + " • ".join(errors[:6]))
+    elif warnings:
+        st.warning("Kontrola: " + " • ".join(warnings[:6]))
+    else:
+        st.success("Kontrola údajů neodhalila žádný problém.")
+
+    if points and len(points) >= 2:
+        stats = track_stats(points)
+        preview_df = pd.DataFrame([{
+            "id": -777,
+            "flight_id": -777,
+            "coordinates_json": json.dumps(points),
+            "file_name": file_name or "track.kml",
+            "distance_km": stats.get("distance_km"),
+            "date": saved.get("date"),
+            "registration": saved.get("registration"),
+            "departure": saved.get("departure"),
+            "arrival": saved.get("arrival"),
+            "role": saved.get("role"),
+            "evidence": saved.get("evidence"),
+        }])
+        render_folium_readonly(
+            make_map(preview_df, dark_mode),
+            height=330,
+            key=f"final_review_map_{key_prefix}_{len(points)}",
+        )
+        with st.expander("GPS / profil tracku", expanded=False):
+            st.caption(f"{len(points)} GPS bodů · {float(stats.get('distance_km') or 0):.1f} km")
+            render_track_profile(points)
+
+    b1, b2 = st.columns([1, 1.6])
+    with b1:
+        if st.button("← Upravit údaje", width="stretch", key=f"review_back_{key_prefix}"):
+            return "back"
+    with b2:
+        if st.button("Uložit let", type="primary", width="stretch", disabled=bool(errors), key=f"review_save_{key_prefix}"):
+            return "save"
+    return None
+
+
+def _single_import_review_key(signature: str) -> str:
+    return f"kml_import_review_{signature}"
+
+
+def _split_import_review_key(signature: str, progress: int) -> str:
+    return f"split_import_review_{signature}_{int(progress)}"
+
+
+def _clear_import_review_keys(signature: str) -> None:
+    prefix = f"kml_import_review_{signature}"
+    for key in list(st.session_state.keys()):
+        if str(key).startswith(prefix) or str(key).startswith(f"split_import_review_{signature}_"):
+            st.session_state.pop(key, None)
+
 def _clear_smart_import_progress(signature: str) -> None:
     for key in (
         f"smart_import_progress_{signature}",
@@ -4533,8 +4691,51 @@ def render_split_kml_import_wizard(
     stats = defaults.pop("stats")
     defaults.pop("detect_idx", None)
     has_clock = defaults.pop("has_clock", False)
+    review_key = _split_import_review_key(signature, progress)
+    review_payload = st.session_state.get(review_key)
 
-    st.markdown(f"### Rozdělený import · let {progress + 1} z {len(parts)}")
+    render_import_stepper(
+        4 if isinstance(review_payload, dict) else 3,
+        caption=f"Rozdělený import · let {progress + 1} z {len(parts)}",
+    )
+
+    if isinstance(review_payload, dict):
+        decision = render_import_final_review(
+            review_payload,
+            points=current,
+            file_name=current_name,
+            dark_mode=dark_mode,
+            key_prefix=f"split_{signature}_{progress}",
+            heading=f"Finální kontrola · let {progress + 1} z {len(parts)}",
+        )
+        if decision == "back":
+            st.session_state.pop(review_key, None)
+            st.rerun()
+        if decision != "save":
+            return
+
+        if not locked:
+            st.session_state[locked_key] = [int(x) for x in effective_splits]
+        flight_id = create_flight(review_payload, auto_backup=False)
+        save_track(flight_id, current_name, current, replace_existing=True)
+        created_ids.append(int(flight_id))
+        st.session_state[created_key] = created_ids
+        st.session_state.pop(review_key, None)
+
+        if progress + 1 < len(parts):
+            st.session_state[progress_key] = progress + 1
+            st.rerun()
+
+        _clear_import_review_keys(signature)
+        _clear_smart_import_progress(signature)
+        st.session_state["page"] = "Lety"
+        st.session_state["open_flight_dialog_id"] = int(created_ids[-1])
+        st.session_state["selected_flight_id"] = int(created_ids[-1])
+        st.session_state.pop("dismissed_flight_id", None)
+        st.session_state["_post_import_notice"] = f"Smart KML uložil {len(created_ids)} samostatné lety: " + ", ".join(f"ID {x}" for x in created_ids)
+        st.rerun()
+
+    st.markdown(f"### Údaje letu · část {progress + 1} z {len(parts)}")
     if created_ids:
         st.caption("Již uložené lety: " + ", ".join(f"ID {x}" for x in created_ids))
     render_kml_import_header(raw, current_name, defaults, stats, has_clock)
@@ -4567,30 +4768,11 @@ def render_split_kml_import_wizard(
         f"new_split_{signature}_{progress}",
         defaults,
         rates,
-        "Uložit a pokračovat" if progress + 1 < len(parts) else "Uložit poslední let",
+        "Pokračovat na finální kontrolu",
     )
-    if saved is None:
-        return
-
-    if not locked:
-        st.session_state[locked_key] = [int(x) for x in effective_splits]
-    flight_id = create_flight(saved, auto_backup=False)
-    save_track(flight_id, current_name, current, replace_existing=True)
-    created_ids.append(int(flight_id))
-    st.session_state[created_key] = created_ids
-
-    if progress + 1 < len(parts):
-        st.session_state[progress_key] = progress + 1
+    if saved is not None:
+        st.session_state[review_key] = dict(saved)
         st.rerun()
-
-    _clear_smart_import_progress(signature)
-    st.session_state["page"] = "Lety"
-    st.session_state["open_flight_dialog_id"] = int(created_ids[-1])
-    st.session_state["selected_flight_id"] = int(created_ids[-1])
-    st.session_state.pop("dismissed_flight_id", None)
-    st.session_state["_post_import_notice"] = f"Smart KML uložil {len(created_ids)} samostatné lety: " + ", ".join(f"ID {x}" for x in created_ids)
-    st.rerun()
-
 
 def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
     st.markdown("## Nový let")
@@ -4600,12 +4782,14 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         ["KML import", "Ručně"],
         horizontal=True,
         label_visibility="collapsed",
-        key="new_flight_mode_v040",
+        key="new_flight_mode_v061",
     )
 
     if mode == "KML import":
-        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v060")
+        uploaded = st.file_uploader("KML track", type=["kml"], key="new_track_kml_v061")
         if uploaded is None:
+            render_import_stepper(1, caption="Nahraj KML soubor. Nic se neuloží, dokud neprojdeš finální kontrolou.")
+            st.info("Po nahrání Logbook provede Smart KML analýzu, navrhne případné rozdělení a před uložením zobrazí finální souhrn.")
             return
 
         raw = uploaded.getvalue()
@@ -4621,6 +4805,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             return
 
         smart = analyze_track(points, current_user_timezone())
+        render_import_stepper(2, caption=f"{uploaded.name} · {len(points)} GPS bodů")
         mode_choice, split_indices = render_smart_kml_analysis(
             smart,
             points,
@@ -4640,14 +4825,41 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             )
             return
 
-        # Explicit fallback chosen by the user, or no split was detected.  Keep the
+        # Explicit fallback chosen by the user, or no split was detected. Keep the
         # original KML intact and import it as one flight.
         _clear_smart_import_progress(signature)
         defaults = infer_from_track(points, uploaded.name, rates, smart_analysis=smart)
         stats = defaults.pop("stats")
         defaults.pop("detect_idx", None)
         has_clock = defaults.pop("has_clock", False)
+        review_key = _single_import_review_key(signature)
+        review_payload = st.session_state.get(review_key)
 
+        if isinstance(review_payload, dict):
+            render_import_stepper(4, caption="Celý KML bude uložen jako jeden let.")
+            decision = render_import_final_review(
+                review_payload,
+                points=points,
+                file_name=uploaded.name,
+                dark_mode=dark_mode,
+                key_prefix=f"single_{signature}",
+            )
+            if decision == "back":
+                st.session_state.pop(review_key, None)
+                st.rerun()
+            if decision == "save":
+                flight_id = create_flight(review_payload, auto_backup=False)
+                save_track(flight_id, uploaded.name, points, replace_existing=True)
+                _clear_import_review_keys(signature)
+                st.session_state["page"] = "Lety"
+                st.session_state["open_flight_dialog_id"] = flight_id
+                st.session_state["selected_flight_id"] = flight_id
+                st.session_state.pop("dismissed_flight_id", None)
+                st.session_state["_post_import_notice"] = f"KML uložen jako jeden let ID {flight_id}."
+                st.rerun()
+            return
+
+        render_import_stepper(3, caption="Zkontroluj automaticky předvyplněné údaje. Další krok je finální náhled.")
         render_kml_import_header(raw, uploaded.name, defaults, stats, has_clock)
 
         preview_df = pd.DataFrame([{
@@ -4666,28 +4878,22 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         render_folium_readonly(
             make_map(preview_df, dark_mode),
             height=420,
-            key=f"new_flight_preview_map_v060_{signature}_{len(points)}_{int(stats.get('distance_km') or 0)}",
+            key=f"new_flight_preview_map_v061_{signature}_{len(points)}_{int(stats.get('distance_km') or 0)}",
         )
 
         if not has_clock:
-            st.warning("Doplň časy ručně.")
+            st.warning("KML neobsahuje spolehlivé časy. Doplň je ručně před pokračováním.")
 
         if int(smart.get("flight_count") or 1) > 1:
             st.info("Zvolil jsi nahrání bez rozdělení. Celý původní KML track bude uložen k jednomu záznamu beze změny.")
 
-        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v060_{signature}_{len(points)}")
+        show_profile = st.toggle("Profil tracku", value=False, key=f"show_import_profile_v061_{signature}_{len(points)}")
         if show_profile:
             render_track_profile(points)
 
-        saved = flight_form("new_from_track_v060", defaults, rates, "Uložit let")
+        saved = flight_form("new_from_track_v061", defaults, rates, "Pokračovat na finální kontrolu")
         if saved is not None:
-            flight_id = create_flight(saved, auto_backup=False)
-            save_track(flight_id, uploaded.name, points, replace_existing=True)
-            st.session_state["page"] = "Lety"
-            st.session_state["open_flight_dialog_id"] = flight_id
-            st.session_state["selected_flight_id"] = flight_id
-            st.session_state.pop("dismissed_flight_id", None)
-            st.session_state["_post_import_notice"] = f"KML uložen jako jeden let ID {flight_id}."
+            st.session_state[review_key] = dict(saved)
             st.rerun()
     else:
         default_evidence = current_user_default_evidence()
@@ -4700,7 +4906,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             "commander": current_user_display_name(),
             "role": current_user_default_role(),
         }
-        saved = flight_form("new_manual_v040", defaults, rates, "Přidat let")
+        saved = flight_form("new_manual_v061", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
             st.session_state["page"] = "Lety"
@@ -4709,7 +4915,6 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.session_state.pop("dismissed_flight_id", None)
             st.success(f"Uloženo ID {flight_id}.")
             st.rerun()
-
 
 def map_navigation_options(df: pd.DataFrame) -> tuple[list[str], list[tuple[str, str]], int]:
     needed: set[str] = set()
@@ -4845,7 +5050,7 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
         flight_id = int(row.get("id"))
         cols = st.columns([.62,.58,.55,.86,1.1,1.05,.86,.72,.75], gap="small", vertical_alignment="top")
         with cols[0]:
-            if st.button("Detail", key=f"map_selection_detail_{flight_id}", use_container_width=True):
+            if st.button("Detail", key=f"map_selection_detail_{flight_id}", width="stretch"):
                 st.session_state[f"detail_section_{flight_id}"] = "Přehled"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
@@ -4853,7 +5058,7 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
                 st.rerun()
         with cols[1]:
             track_count = int(_safe_float(row.get("track_count"), 0))
-            if st.button("Track", key=f"map_selection_track_{flight_id}", disabled=track_count <= 0, use_container_width=True):
+            if st.button("Track", key=f"map_selection_track_{flight_id}", disabled=track_count <= 0, width="stretch"):
                 st.session_state[f"detail_section_{flight_id}"] = "Track"
                 st.session_state["open_flight_dialog_id"] = flight_id
                 st.session_state["selected_flight_id"] = flight_id
@@ -4915,7 +5120,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
         if st.session_state.get("map_airport") or st.session_state.get("map_route"):
             _, clear_col = st.columns([1, .16])
             with clear_col:
-                if st.button("Zrušit", key="map_selection_clear", use_container_width=True):
+                if st.button("Zrušit", key="map_selection_clear", width="stretch"):
                     _clear_map_selection()
                     st.rerun()
 
@@ -5278,9 +5483,9 @@ def page_database():
             )
             view = view[mask]
         cols = ["ident", "name", "airport_type", "iso_country", "municipality", "latitude_deg", "longitude_deg", "source", "data_quality", "active", "closed"]
-        st.dataframe(view[[c for c in cols if c in view.columns]].head(1000), hide_index=True, use_container_width=True, height=430)
+        st.dataframe(view[[c for c in cols if c in view.columns]].head(1000), hide_index=True, width="stretch", height=430)
 
-        prepare_airport_export = st.button("Připravit export letišť CSV", key="prepare_airport_csv_v052", use_container_width=True)
+        prepare_airport_export = st.button("Připravit export letišť CSV", key="prepare_airport_csv_v052", width="stretch")
         if prepare_airport_export or st.session_state.get("airport_csv_ready_v052"):
             st.session_state["airport_csv_ready_v052"] = True
             st.download_button(
@@ -5288,7 +5493,7 @@ def page_database():
                 data=airports.to_csv(index=False).encode("utf-8"),
                 file_name="airports_export.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
 
         st.markdown("### Přidat / upravit letiště")
@@ -5363,7 +5568,7 @@ def page_database():
                 st.markdown("### Přidat letadlo")
                 st.caption("Základní údaje a první cenu uložíme společně do profilu letadla.")
             with top_right:
-                if st.button("← Zpět", use_container_width=True, key="aircraft_new_back_v058"):
+                if st.button("← Zpět", width="stretch", key="aircraft_new_back_v058"):
                     st.session_state["aircraft_profile_new_v058"] = False
                     st.rerun()
 
@@ -5392,7 +5597,7 @@ def page_database():
                     note = st.text_area("Poznámka", value="", height=80)
                     active = st.checkbox("Aktivní letadlo", value=True)
                     st.caption("Cena se ukládá jako historický záznam s datem účinnosti. Další změny ceny nikdy nepřepisují starší období.")
-                    submitted_aircraft = st.form_submit_button("Přidat letadlo", type="primary", use_container_width=True)
+                    submitted_aircraft = st.form_submit_button("Přidat letadlo", type="primary", width="stretch")
                 if submitted_aircraft:
                     try:
                         if not reg:
@@ -5438,7 +5643,7 @@ def page_database():
                 st.markdown(f"### {selected_reg} · {normalize_text(picked_row.get('aircraft_type')) or 'Bez typu'}")
                 st.caption("Aktivní profil" if active_now else "Neaktivní / archivovaný profil")
             with h2:
-                if st.button("← Letadla", use_container_width=True, key=f"aircraft_back_{selected_reg}"):
+                if st.button("← Letadla", width="stretch", key=f"aircraft_back_{selected_reg}"):
                     st.session_state.pop("aircraft_profile_selected_v058", None)
                     st.rerun()
 
@@ -5470,7 +5675,7 @@ def page_database():
                             billing_basis = st.selectbox("Účtovat podle", BILLING_BASIS_OPTIONS, index=BILLING_BASIS_OPTIONS.index(basis_def) if basis_def in BILLING_BASIS_OPTIONS else 0, format_func=_billing_basis_label)
                             active = st.checkbox("Aktivní", value=active_now)
                         note = st.text_area("Poznámka", value=str(picked_row.get("note") or ""), height=90)
-                        save_profile = st.form_submit_button("Uložit profil letadla", type="primary", use_container_width=True)
+                        save_profile = st.form_submit_button("Uložit profil letadla", type="primary", width="stretch")
                     if save_profile:
                         try:
                             upsert_aircraft_profile({
@@ -5501,7 +5706,7 @@ def page_database():
                         with p2:
                             effective_from = st.date_input("Platí od", value=date.today(), key=f"aircraft_rate_date_{selected_reg}")
                         st.caption("Po uložení se vytvoří nový bod v cenové historii. Pokud stejné datum už existuje, upraví se jen tento záznam.")
-                        save_rate = st.form_submit_button("Uložit změnu ceny", type="primary", use_container_width=True)
+                        save_rate = st.form_submit_button("Uložit změnu ceny", type="primary", width="stretch")
                     if save_rate:
                         try:
                             save_aircraft_rate(selected_reg, normalize_text(picked_row.get("aircraft_type")), effective_from, new_price)
@@ -5518,7 +5723,7 @@ def page_database():
                         st.dataframe(
                             history,
                             hide_index=True,
-                            use_container_width=True,
+                            width="stretch",
                             column_config={"Cena / h": st.column_config.NumberColumn(format=f"%.0f {currency_symbol()}")},
                         )
                     st.markdown("##### Doplnit nebo opravit historickou cenu")
@@ -5529,7 +5734,7 @@ def page_database():
                             historical_date = st.date_input("Platnost od", value=date(date.today().year, 1, 1), key=f"aircraft_hist_date_{selected_reg}")
                         with h2c:
                             historical_price = st.number_input(f"Cena {currency_symbol()}/h", min_value=0.0, step=50.0, value=float(current_price or 0), format="%.0f", key=f"aircraft_hist_price_{selected_reg}")
-                        save_history = st.form_submit_button("Uložit historickou sazbu", use_container_width=True)
+                        save_history = st.form_submit_button("Uložit historickou sazbu", width="stretch")
                     if save_history:
                         try:
                             save_aircraft_rate(selected_reg, normalize_text(picked_row.get("aircraft_type")), historical_date, historical_price, source="aircraft_history")
@@ -5546,7 +5751,7 @@ def page_database():
                 show_inactive = st.checkbox("Zobrazit archiv", value=False, key="aircraft_show_inactive_v058")
             with toolbar_right:
                 st.write("")
-                if st.button("＋ Přidat letadlo", type="primary", use_container_width=True, key="aircraft_add_v058"):
+                if st.button("＋ Přidat letadlo", type="primary", width="stretch", key="aircraft_add_v058"):
                     st.session_state["aircraft_profile_new_v058"] = True
                     st.session_state.pop("aircraft_profile_selected_v058", None)
                     st.rerun()
@@ -5597,7 +5802,7 @@ def page_database():
                                 meta = " • ".join([x for x in [normalize_text(arow.get("evidence")), normalize_text(arow.get("aircraft_class")), normalize_text(arow.get("default_role"))] if x])
                                 if meta:
                                     st.caption(meta)
-                                if st.button("Otevřít profil", use_container_width=True, key=f"aircraft_open_{key_hash}"):
+                                if st.button("Otevřít profil", width="stretch", key=f"aircraft_open_{key_hash}"):
                                     st.session_state["aircraft_profile_selected_v058"] = reg0
                                     st.rerun()
 
@@ -5629,11 +5834,11 @@ def page_database():
             st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
         if is_admin():
             with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
         else:
             st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
         if github_backup_configured():
-            if st.button("Uložit aktuální databázi na GitHub", type="primary", disabled=not is_admin(), use_container_width=True):
+            if st.button("Uložit aktuální databázi na GitHub", type="primary", disabled=not is_admin(), width="stretch"):
                 if require_admin():
                     try:
                         url = backup_database_to_github()
@@ -5644,7 +5849,7 @@ def page_database():
             st.info("GitHub backup není nakonfigurovaný ve Streamlit Secrets. Stále můžeš ručně stahovat SQLite soubor.")
         restore = st.file_uploader("Obnovit SQLite databázi ze souboru", type=["sqlite", "db"], key="restore_db_upload")
         confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="")
-        if restore is not None and st.button("Obnovit databázi", disabled=not is_admin() or confirm != "OBNOVIT", use_container_width=True):
+        if restore is not None and st.button("Obnovit databázi", disabled=not is_admin() or confirm != "OBNOVIT", width="stretch"):
             if require_admin():
                 try:
                     restore_database_from_upload(restore)
@@ -5660,12 +5865,12 @@ def page_database():
         if metas.empty:
             st.info("Žádná metadata.")
         else:
-            st.dataframe(metas.sort_values("key"), hide_index=True, use_container_width=True)
+            st.dataframe(metas.sort_values("key"), hide_index=True, width="stretch")
         st.markdown("### Audit log")
         if audits.empty:
             st.info("Žádný audit log.")
         else:
-            st.dataframe(audits, hide_index=True, use_container_width=True, height=360)
+            st.dataframe(audits, hide_index=True, width="stretch", height=360)
 
 
 # -----------------------------------------------------------------------------
@@ -5958,7 +6163,7 @@ def _render_issue_table(title: str, df: pd.DataFrame, empty_text: str = "OK") ->
         if df is None or df.empty:
             st.success(empty_text)
         else:
-            st.dataframe(_health_table_preview(df), hide_index=True, use_container_width=True, height=260)
+            st.dataframe(_health_table_preview(df), hide_index=True, width="stretch", height=260)
 
 
 def run_safe_database_service() -> dict[str, Any]:
@@ -6054,11 +6259,11 @@ def render_database_control_panel() -> None:
     st.markdown("### Kontrola a servis")
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("Spustit kontrolu", type="primary", use_container_width=True, key="run_db_health_v047"):
+        if st.button("Spustit kontrolu", type="primary", width="stretch", key="run_db_health_v047"):
             with st.spinner("Kontroluji databázi…"):
                 st.session_state["db_health_report_v047"] = build_database_health_report()
     with c2:
-        if st.button("Bezpečný servis", use_container_width=True, disabled=not is_admin(), key="run_safe_service_v047"):
+        if st.button("Bezpečný servis", width="stretch", disabled=not is_admin(), key="run_safe_service_v047"):
             if require_admin():
                 with st.spinner("Provádím bezpečný servis…"):
                     try:
@@ -6068,7 +6273,7 @@ def render_database_control_panel() -> None:
                     except Exception as exc:
                         st.error(f"Servis selhal: {exc}")
     with c3:
-        if st.button("SQLite optimize", use_container_width=True, disabled=not is_admin(), key="run_sqlite_service_v047"):
+        if st.button("SQLite optimize", width="stretch", disabled=not is_admin(), key="run_sqlite_service_v047"):
             if require_admin():
                 try:
                     st.session_state["sqlite_service_result_v047"] = run_sqlite_service()
@@ -6085,7 +6290,7 @@ def render_database_control_panel() -> None:
             st.metric("Změny", int(result.get("changed", 0)))
             actions = pd.DataFrame(result.get("actions", []))
             if not actions.empty:
-                st.dataframe(actions, hide_index=True, use_container_width=True)
+                st.dataframe(actions, hide_index=True, width="stretch")
 
     sqlite_result = st.session_state.get("sqlite_service_result_v047")
     if sqlite_result:
@@ -6153,7 +6358,7 @@ def page_control(df: pd.DataFrame):
     if control.empty:
         st.success("OK")
     else:
-        st.dataframe(control, hide_index=True, use_container_width=True)
+        st.dataframe(control, hide_index=True, width="stretch")
 
 
 
@@ -6223,7 +6428,7 @@ def page_export(df: pd.DataFrame):
         st.info("Zatím nejsou uložené žádné lety.")
         if is_admin():
             with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
         return
 
     filtered = render_export_filters(df)
@@ -6247,11 +6452,11 @@ def page_export(df: pd.DataFrame):
         st.markdown("### Soubory")
         cprep, cdb = st.columns([1, 1])
         with cprep:
-            prepare_files = st.button("Připravit exportní soubory", type="primary", use_container_width=True, key="export_prepare_files_v044")
+            prepare_files = st.button("Připravit exportní soubory", type="primary", width="stretch", key="export_prepare_files_v044")
         with cdb:
             if is_admin():
                 with open(DB_PATH, "rb") as f:
-                    st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", use_container_width=True)
+                    st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", width="stretch")
             else:
                 st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
 
@@ -6269,12 +6474,12 @@ def page_export(df: pd.DataFrame):
                     file_name=f"{prefix}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
             with c2:
-                st.download_button("CSV", data=csv, file_name=f"{prefix}.csv", mime="text/csv", use_container_width=True)
+                st.download_button("CSV", data=csv, file_name=f"{prefix}.csv", mime="text/csv", width="stretch")
             with c3:
-                st.download_button("Tisk HTML", data=html_doc.encode("utf-8"), file_name=f"{prefix}_tisk.html", mime="text/html", use_container_width=True)
+                st.download_button("Tisk HTML", data=html_doc.encode("utf-8"), file_name=f"{prefix}_tisk.html", mime="text/html", width="stretch")
         else:
             st.caption("Excel/CSV/HTML se připraví až po stisku tlačítka.")
 
@@ -6289,14 +6494,14 @@ def page_export(df: pd.DataFrame):
                 {"List": "Letiště", "Obsah": "Odlety, přílety a návštěvy letišť"},
             ]),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
     elif section == "Tisk":
         st.markdown("### Tiskový přehled")
-        if st.button("Vygenerovat tiskový náhled", use_container_width=True, key="export_print_preview_v044") or st.session_state.get("export_print_ready_v044"):
+        if st.button("Vygenerovat tiskový náhled", width="stretch", key="export_print_preview_v044") or st.session_state.get("export_print_ready_v044"):
             st.session_state["export_print_ready_v044"] = True
-            components.html(build_print_html(filtered, currency=current_user_currency()), height=620, scrolling=True)
+            st.iframe(build_print_html(filtered, currency=current_user_currency()), height=620)
         else:
             st.caption("Tiskový náhled se vygeneruje až na vyžádání.")
 
@@ -6305,12 +6510,12 @@ def page_export(df: pd.DataFrame):
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("### Lety")
-            st.dataframe(detail.head(300), hide_index=True, use_container_width=True, height=420)
+            st.dataframe(detail.head(300), hide_index=True, width="stretch", height=420)
         with c2:
             st.markdown("### Souhrn")
-            st.dataframe(make_summary_table(filtered, current_user_currency()), hide_index=True, use_container_width=True, height=420)
+            st.dataframe(make_summary_table(filtered, current_user_currency()), hide_index=True, width="stretch", height=420)
         st.markdown("### Letadla")
-        st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"], current_user_currency()), hide_index=True, use_container_width=True)
+        st.dataframe(make_group_summary(filtered, ["registration", "aircraft_type", "evidence"], current_user_currency()), hide_index=True, width="stretch")
 
 
 
@@ -6460,7 +6665,7 @@ def page_admin() -> None:
                 "aircraft":"Letadla", "custom_airports":"Vlastní letiště", "tracks":"Tracky", "gps_points":"GPS body",
                 "home_airport":"Domovské letiště", "currency":"Měna", "timezone":"Časové pásmo", "default_role":"Výchozí funkce",
             })
-            st.dataframe(show, hide_index=True, use_container_width=True, height=420)
+            st.dataframe(show, hide_index=True, width="stretch", height=420)
 
     elif section == "Uživatelé":
         st.markdown("### Vytvořit nový profil")
@@ -6473,7 +6678,7 @@ def page_admin() -> None:
             with c2:
                 password = st.text_input(f"Dočasné heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password")
                 role_label = st.selectbox("Role", ["Uživatel", "Správce"], index=0)
-            create_submitted = st.form_submit_button("Vytvořit profil", type="primary", use_container_width=True)
+            create_submitted = st.form_submit_button("Vytvořit profil", type="primary", width="stretch")
         if create_submitted:
             role = "admin" if role_label == "Správce" else "user"
             with connect() as con:
@@ -6518,7 +6723,7 @@ def page_admin() -> None:
             role_value = "Správce" if str(selected.get("role") or "user").lower() == "admin" else "Uživatel"
             role_new = st.selectbox("Role profilu", ["Uživatel", "Správce"], index=1 if role_value == "Správce" else 0)
             active_new = st.checkbox("Aktivní účet", value=bool(int(selected.get("active") or 0)))
-            save_user_state = st.form_submit_button("Uložit oprávnění", use_container_width=True)
+            save_user_state = st.form_submit_button("Uložit oprávnění", width="stretch")
         if save_user_state:
             if selected_uid == current_user_id() and (not active_new or role_new != "Správce"):
                 st.error("Nemůžeš si během aktuální relace odebrat vlastní administrátorský přístup nebo deaktivovat účet.")
@@ -6540,7 +6745,7 @@ def page_admin() -> None:
         st.markdown("#### Nastavit nové heslo")
         with st.form("admin_reset_user_password_v057"):
             new_password = st.text_input(f"Nové heslo pro #{selected_uid}", type="password")
-            reset_password = st.form_submit_button("Nastavit nové heslo", use_container_width=True)
+            reset_password = st.form_submit_button("Nastavit nové heslo", width="stretch")
         if reset_password:
             with connect() as con:
                 result = admin_set_user_password(con, user_id=selected_uid, new_password=new_password)
@@ -6565,7 +6770,7 @@ def page_admin() -> None:
         issues = health.get("issues")
         if isinstance(issues, pd.DataFrame) and not issues.empty:
             st.error("Byly nalezeny problémy v oddělení uživatelských dat.")
-            st.dataframe(issues, hide_index=True, use_container_width=True)
+            st.dataframe(issues, hide_index=True, width="stretch")
         else:
             st.success("Všechny uživatelské tabulky mají platného vlastníka a vazby track → let → uživatel jsou konzistentní.")
         st.markdown("#### Bezpečnostní model")
@@ -6573,7 +6778,7 @@ def page_admin() -> None:
         st.write("• ID bez platného přihlášeného uživatele se už nesmí tiše převést na původní profil #1.")
         st.write("• Admin nástroje jsou oddělené od běžných uživatelských operací.")
         st.write("• Úplná SQLite databáze a globální audit jsou dostupné pouze administrátorovi.")
-        if st.button("Spustit kontrolu znovu", use_container_width=True, key="admin_permission_recheck_v059"):
+        if st.button("Spustit kontrolu znovu", width="stretch", key="admin_permission_recheck_v059"):
             read_permission_health.clear()
             st.rerun()
 
@@ -6598,9 +6803,9 @@ def page_admin() -> None:
             st.warning("GitHub backup není nakonfigurovaný.")
         if DB_PATH.exists():
             with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout celou SQLite databázi", f.read(), file_name="logbook.sqlite", use_container_width=True)
+                st.download_button("Stáhnout celou SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
         if github_backup_configured():
-            if st.button("Uložit aktuální databázi na GitHub", type="primary", use_container_width=True, key="admin_backup_now_v057"):
+            if st.button("Uložit aktuální databázi na GitHub", type="primary", width="stretch", key="admin_backup_now_v057"):
                 try:
                     url = backup_database_to_github()
                     st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
@@ -6609,7 +6814,7 @@ def page_admin() -> None:
         st.markdown("#### Obnova celé databáze")
         restore = st.file_uploader("SQLite databáze", type=["sqlite", "db"], key="admin_restore_db_v057")
         confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="", key="admin_restore_confirm_v057")
-        if restore is not None and st.button("Obnovit databázi", disabled=confirm != "OBNOVIT", use_container_width=True, key="admin_restore_btn_v057"):
+        if restore is not None and st.button("Obnovit databázi", disabled=confirm != "OBNOVIT", width="stretch", key="admin_restore_btn_v057"):
             try:
                 restore_database_from_upload(restore)
                 st.success("Databáze obnovena.")
@@ -6626,14 +6831,14 @@ def page_admin() -> None:
         if metas.empty:
             st.info("Žádná metadata.")
         else:
-            st.dataframe(metas.sort_values("key"), hide_index=True, use_container_width=True)
+            st.dataframe(metas.sort_values("key"), hide_index=True, width="stretch")
         st.markdown("### Poslední auditní události napříč profily")
         with connect() as con:
             audits = pd.read_sql_query("SELECT * FROM audit_log ORDER BY id DESC LIMIT 500", con)
         if audits.empty:
             st.info("Žádný audit log.")
         else:
-            st.dataframe(audits, hide_index=True, use_container_width=True, height=420)
+            st.dataframe(audits, hide_index=True, width="stretch", height=420)
 
 def page_profile() -> None:
     uid = strict_user_id(current_user_id())
@@ -6659,7 +6864,7 @@ def page_profile() -> None:
         with st.form("profile_identity_form_v059"):
             display_name = st.text_input("Jméno", value=str(profile.get("display_name") or ""))
             st.text_input("E-mail účtu", value=str(profile.get("email") or ""), disabled=True)
-            submitted = st.form_submit_button("Uložit profil", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("Uložit profil", type="primary", width="stretch")
         if submitted:
             clean_name = str(display_name or "").strip()
             if not clean_name:
@@ -6741,7 +6946,7 @@ def page_profile() -> None:
                     index=timezone_options.index(current_tz),
                     help="Používá se při převodu časů GPS/KML do lokálního času.",
                 )
-            save_defaults = st.form_submit_button("Uložit výchozí hodnoty", type="primary", use_container_width=True)
+            save_defaults = st.form_submit_button("Uložit výchozí hodnoty", type="primary", width="stretch")
 
         if save_defaults:
             validation_error = None
@@ -6799,7 +7004,7 @@ def page_profile() -> None:
         with st.form("change_user_email_form_v059"):
             new_email = st.text_input("Nový e-mail", value=str(profile.get("email") or ""))
             email_password = st.text_input("Současné heslo", type="password", key="profile_email_password_v059")
-            email_submit = st.form_submit_button("Změnit e-mail", use_container_width=True)
+            email_submit = st.form_submit_button("Změnit e-mail", width="stretch")
         if email_submit:
             with connect() as con:
                 result = change_email(con, user_id=uid, current_password=email_password, new_email=new_email)
@@ -6819,7 +7024,7 @@ def page_profile() -> None:
             current_password = st.text_input("Současné heslo", type="password", key="profile_current_password_v059")
             new_password = st.text_input(f"Nové heslo (min. {PASSWORD_MIN_LENGTH} znaků)", type="password", key="profile_new_password_v059")
             new_password2 = st.text_input("Potvrzení nového hesla", type="password", key="profile_new_password2_v059")
-            change_submitted = st.form_submit_button("Změnit heslo", use_container_width=True)
+            change_submitted = st.form_submit_button("Změnit heslo", width="stretch")
         if change_submitted:
             if new_password != new_password2:
                 st.error("Nová hesla se neshodují.")
@@ -6845,7 +7050,7 @@ def page_profile() -> None:
 
 def render_sidebar_toggle() -> None:
     """One smooth sidebar toggle controlled in the browser, without Streamlit rerun."""
-    components.html(
+    st.iframe(
         """
         <script>
         (function() {
@@ -6935,7 +7140,7 @@ def render_page_transition_runtime() -> None:
     while the new page is being generated. This overlay hides that intermediate
     state and makes navigation feel much closer to a normal web app.
     """
-    components.html(
+    st.iframe(
         """
         <script>
         (function() {
@@ -7005,7 +7210,7 @@ def render_page_transition_runtime() -> None:
 
 def render_page_loaded_signal() -> None:
     """Hide the front-end loader after the current Streamlit page has rendered."""
-    components.html(
+    st.iframe(
         """
         <script>
         (function() {
@@ -7029,7 +7234,7 @@ def render_page_loaded_signal() -> None:
 # -----------------------------------------------------------------------------
 
 def main():
-    st.set_page_config(page_title="Letový zápisník",page_icon="assets/logbook_icon_16.png", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="Letový zápisník", page_icon="assets/logbook_icon_32.png", layout="wide", initial_sidebar_state="expanded")
     if not _DB_READY:
         with connect():
             pass
