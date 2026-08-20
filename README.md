@@ -1,29 +1,42 @@
 # Letový zápisník
 
-Verze: v0.52
+Verze: **v0.53**
 
-## v0.52 – Deep UX / Performance Optimization
+## v0.53 – Core Architecture Refactor
 
-Tato verze je zaměřená na rychlost, stabilitu a omezení zbytečných Streamlit rerun nákladů bez změny datového modelu letů.
+v0.53 navazuje přímo na v0.52 Deep UX / Performance Optimization. Cílem této verze není přidávání funkcí, ale vytvoření čistšího základu pro další vývoj bez změny chování aplikace a bez změny datového modelu letů.
 
-- Dashboard, Databáze a Export používají lazy sekce: vykresluje se jen právě otevřená část místo všech skrytých tabů
-- Databáze už při otevření nenačítá celý světový registr letišť, audit log ani ceník, pokud nejsou potřeba
-- seznam letišť nenačítá těžký `raw_json`; CSV export se generuje až na vyžádání
-- audit log načítá jen posledních 500 záznamů
-- vyhledání nejbližšího letiště při KML importu používá přednačtený minimální NumPy index a prostorový prefilter
-- mapové pomocné funkce načítají souřadnice jen letišť použitých v aktuálním pohledu
-- čtení letů a GPS souhrnů probíhá jedním SQL dotazem místo následného Pandas merge
-- databázové cache mají cílenou invalidaci; běžná editace už nemaže všechny drahé cache aplikace
-- katalog letadel je cachovaný i po normalizaci
-- cold start nespouští znovu drahé migrace tracků a seedování letadel při každém restartu procesu
-- světová airport SQLite databáze se otevírá read-only
-- `sitecustomize.py` už nepatchuje a nekontroluje každé SQLite spojení; ochrana se týká pouze `logbook.sqlite`
-- Folium, streamlit-folium, Plotly, OpenPyXL a Requests se importují až ve chvíli, kdy je příslušná funkce skutečně potřeba
-- odstraněn nepoužívaný AgGrid import
-- zachován Smooth Track Player, GPS časové návrhy a všechny funkce v0.51
+### Co se změnilo
 
-Velká přestavba GPS přehledové mapy není součástí v0.52; zůstává jako samostatný projekt GPS Map Engine 2.0.
+- základní konfigurace a cesty přesunuty do `logbook_core/config.py`
+- SQLite schéma přesunuto do `logbook_core/schema.py`
+- výpočty času, ceny a souhrnů přesunuty do `logbook_core/metrics.py`
+- KML parser a GPS/track analýza přesunuty do `logbook_core/tracks.py`
+- exportní logika přesunuta do `logbook_core/exports.py`
+- globální UI theme/header/metric helpers přesunuty do `logbook_ui/theme.py`
+- společné filtry přesunuty do `logbook_ui/filters.py`
+- `app.py` je přibližně o 1 270 řádků menší než ve v0.52
+- přidány regresní testy základních výpočtů a KML parseru
+- přidána dokumentace architektury a čistého GitHub layoutu
 
-## Upload
+### Co se záměrně nezměnilo
 
-Nepřepisovat `data/logbook.sqlite`.
+- `DB_SCHEMA_VERSION` zůstává 5
+- žádná migrace nebo přepis `data/logbook.sqlite`
+- Smooth Track Player zůstává funkčně stejný
+- KML import zůstává funkčně stejný
+- Dashboard, seznam letů, databáze, export a mapy zachovávají chování v0.52
+- GPS Map Engine 2.0 není součástí v0.53
+
+## Bezpečnost dat při uploadu
+
+**Nepřepisovat ani nemazat `data/logbook.sqlite`.** Release ZIP tento soubor úmyslně neobsahuje. Při GitHub cleanupu se musí zachovat aktuální databáze z repozitáře.
+
+## Test
+
+```bash
+python -m unittest tests/test_core_refactor.py
+python -m py_compile app.py logbook_core/*.py logbook_ui/*.py
+```
+
+Podrobnosti: `ARCHITECTURE.md` a `UPLOAD_INSTRUCTIONS.md`.
