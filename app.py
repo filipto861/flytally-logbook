@@ -7029,7 +7029,7 @@ def render_page_loaded_signal() -> None:
 # -----------------------------------------------------------------------------
 
 def main():
-    st.set_page_config(page_title="Letový zápisník", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="Letový zápisník",page_icon="assets/logbook_icon_16" layout="wide", initial_sidebar_state="expanded")
     if not _DB_READY:
         with connect():
             pass
