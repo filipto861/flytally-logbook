@@ -4092,6 +4092,10 @@ def render_smart_kml_analysis(
     touch_count = int(analysis.get("touch_and_go_count") or 0)
     landing_count = int(analysis.get("landing_count") or 1)
     anomalies = list(analysis.get("anomalies") or [])
+    locked_key = f"smart_import_locked_splits_{signature}"
+    progress_key = f"smart_import_progress_{signature}"
+    locked = st.session_state.get(locked_key)
+    progress = int(st.session_state.get(progress_key, 0) or 0)
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -4122,7 +4126,61 @@ def render_smart_kml_analysis(
                 st.caption(f"Dalších {len(anomalies) - 12} upozornění není zobrazeno.")
 
     if not split_candidates:
-        return "single", []
+        # Even when automatic detection is conservative, the pilot must always have
+        # a manual escape hatch. This is especially useful for ADS-B coverage gaps
+        # where the source does not contain ground points.
+        st.markdown("#### Možnosti importu")
+        if progress > 0 or (isinstance(locked, list) and locked):
+            mode_label = "Rozdělit ručně"
+            st.info("Rozdělený import už probíhá. Dokonči zbývající část; bod řezu je uzamčený.")
+        else:
+            mode_label = st.radio(
+                "Jak chceš track importovat?",
+                ["Nahrát jako jeden let", "Rozdělit ručně"],
+                horizontal=True,
+                key=f"smart_import_manual_mode_{signature}",
+            )
+        if mode_label == "Nahrát jako jeden let":
+            return "single", []
+
+        default_idx = max(1, min(len(points) - 2, len(points) // 2))
+        time_gaps = [
+            event for event in anomalies
+            if str(event.get("kind") or "") == "time_gap" and event.get("duration_seconds") is not None
+        ]
+        if time_gaps:
+            largest_gap = max(time_gaps, key=lambda event: float(event.get("duration_seconds") or 0))
+            default_idx = max(1, min(len(points) - 2, int(largest_gap.get("index") or 1) - 1))
+            st.info(
+                "Automatická detekce nenašla dostatečně jisté rozdělení. "
+                "Posuvník je proto přednastaven u největší časové mezery v tracku."
+            )
+        else:
+            st.info("Automatická detekce nenašla rozdělení. Bod řezu můžeš zvolit ručně.")
+
+        if isinstance(locked, list) and locked:
+            chosen = int(locked[0])
+            when = _smart_event_local_time(points, chosen)
+            st.caption(f"Uzamčený čas rozdělení: **{when}**")
+        else:
+            chosen = st.slider(
+                "Ruční bod rozdělení",
+                min_value=1,
+                max_value=max(1, len(points) - 2),
+                value=default_idx,
+                step=1,
+                key=f"smart_manual_split_slider_{signature}",
+            )
+            when = _smart_event_local_time(points, int(chosen))
+            st.caption(f"Zvolený čas rozdělení: **{when}**")
+        parts = split_track_points(points, [int(chosen)])
+        if len(parts) >= 2:
+            render_folium_readonly(
+                make_smart_split_preview_map(parts, dark_mode),
+                height=390,
+                key=f"smart_manual_split_map_{signature}_{chosen}",
+            )
+        return "split", [int(chosen)]
 
     proposed_count = len(split_candidates) + 1
     st.warning(
@@ -4130,10 +4188,6 @@ def render_smart_kml_analysis(
         "Detekce je pouze návrh – pokud je chybná, můžeš track bez omezení uložit jako jeden let."
     )
     adjusted: list[int] = []
-    locked_key = f"smart_import_locked_splits_{signature}"
-    progress_key = f"smart_import_progress_{signature}"
-    locked = st.session_state.get(locked_key)
-    progress = int(st.session_state.get(progress_key, 0) or 0)
     if progress > 0 or (isinstance(locked, list) and locked):
         mode_label = "Rozdělit podle návrhu"
         st.info("Rozdělený import už probíhá. Dokonči zbývající části; původní track tím zůstane konzistentní.")

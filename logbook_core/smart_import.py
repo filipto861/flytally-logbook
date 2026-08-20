@@ -230,6 +230,141 @@ def _anomalies(points: list[dict[str, Any]]) -> list[TrackEvent]:
     return out
 
 
+
+def _series_edge_median(series: pd.Series, start: int, end: int) -> float | None:
+    """Return a robust median for one index window, ignoring missing values."""
+    if series.empty:
+        return None
+    start = max(0, int(start))
+    end = min(len(series), int(end))
+    if end <= start:
+        return None
+    window = pd.to_numeric(series.iloc[start:end], errors="coerce").dropna()
+    if window.empty:
+        return None
+    return float(window.median())
+
+
+def _time_gap_turnaround_event(
+    points: list[dict[str, Any]],
+    prof: pd.DataFrame,
+    anomaly: TrackEvent,
+) -> TrackEvent | None:
+    """Classify a long timestamp gap as a likely landing/turnaround/new flight.
+
+    A timestamp gap alone is not enough because ADS-B coverage can disappear in
+    cruise. Stronger evidence is a landing-like trend before the gap and a
+    departure-like trend after it, or a very long gap whose endpoints stay near
+    the same place. This deliberately uses samples around the missing interval
+    instead of interpolating through it.
+    """
+    if anomaly.kind != "time_gap" or not anomaly.duration_seconds:
+        return None
+
+    duration = float(anomaly.duration_seconds)
+    if duration < 600:
+        return None
+
+    idx = max(1, min(len(points) - 1, int(anomaly.index)))
+    if idx <= 0 or idx >= len(points):
+        return None
+
+    try:
+        endpoint_km = float(haversine_km(points[idx - 1], points[idx]))
+    except Exception:
+        endpoint_km = 9999.0
+
+    left_dist = _segment_distance(prof, 0, idx - 1)
+    right_dist = _segment_distance(prof, idx, len(prof) - 1)
+    credible_sides = left_dist >= 1.5 and right_dist >= 1.5
+    if not credible_sides:
+        return None
+
+    alt = pd.to_numeric(prof.get("alt_m", pd.Series(index=prof.index, dtype=float)), errors="coerce")
+    speed = pd.to_numeric(prof.get("speed_smooth", pd.Series(index=prof.index, dtype=float)), errors="coerce")
+
+    before_early_alt = _series_edge_median(alt, idx - 12, idx - 8)
+    before_late_alt = _series_edge_median(alt, idx - 4, idx)
+    after_early_alt = _series_edge_median(alt, idx, idx + 4)
+    after_late_alt = _series_edge_median(alt, idx + 8, idx + 12)
+
+    before_early_speed = _series_edge_median(speed, idx - 12, idx - 8)
+    before_late_speed = _series_edge_median(speed, idx - 4, idx)
+    after_early_speed = _series_edge_median(speed, idx + 1, idx + 5)
+    after_late_speed = _series_edge_median(speed, idx + 8, idx + 12)
+
+    descent_before = (
+        before_early_alt is not None
+        and before_late_alt is not None
+        and before_early_alt - before_late_alt >= 20.0
+    )
+    climb_after = (
+        after_early_alt is not None
+        and after_late_alt is not None
+        and after_late_alt - after_early_alt >= 20.0
+    )
+    slowing_before = (
+        before_early_speed is not None
+        and before_late_speed is not None
+        and before_early_speed - before_late_speed >= 15.0
+    )
+    accelerating_after = (
+        after_early_speed is not None
+        and after_late_speed is not None
+        and after_late_speed - after_early_speed >= 15.0
+    )
+
+    landing_departure_shape = descent_before and climb_after
+    speed_turnaround = slowing_before and accelerating_after
+
+    likely_split = False
+    confidence = "medium"
+
+    # Because this result is only a proposal and the UI always offers "keep as one
+    # flight", the detector can intentionally favour recall over destructive
+    # certainty for very long gaps.
+    if duration >= 600 and landing_departure_shape and endpoint_km <= 60.0:
+        likely_split = True
+        confidence = "high"
+    elif duration >= 3600 and endpoint_km <= 50.0:
+        likely_split = True
+        confidence = "high"
+    elif duration >= 1200 and endpoint_km <= 12.0 and speed_turnaround:
+        likely_split = True
+        confidence = "high"
+    elif duration >= 1800 and landing_departure_shape:
+        likely_split = True
+        confidence = "high"
+    elif duration >= 5400:
+        # A 90+ minute hole between two meaningful track portions is important
+        # enough to ask the pilot whether these are separate flights even when
+        # the source lacks enough approach/departure fixes to prove it.
+        likely_split = True
+        confidence = "medium"
+    elif duration >= 1800 and endpoint_km <= 4.0:
+        likely_split = True
+        confidence = "medium"
+
+    if not likely_split:
+        return None
+
+    signals = [f"časová mezera {duration / 60:.0f} min", f"body před/po mezeře {endpoint_km:.1f} km od sebe"]
+    if landing_departure_shape:
+        signals.append("před mezerou klesání a po mezeře stoupání")
+    if speed_turnaround:
+        signals.append("před mezerou zpomalování a po mezeře zrychlování")
+
+    split_idx = max(1, min(len(points) - 2, idx - 1))
+    return TrackEvent(
+        kind="split",
+        index=split_idx,
+        label="Pravděpodobné přistání, přestávka a nový let",
+        confidence=confidence,
+        duration_seconds=duration,
+        detail=", ".join(signals),
+    )
+
+
 def analyze_track(points: list[dict[str, Any]], tz=LOCAL_TZ) -> dict[str, Any]:
     normalized = normalize_track_points(points)
     if len(normalized) < 2:
@@ -310,27 +445,36 @@ def analyze_track(points: list[dict[str, Any]], tz=LOCAL_TZ) -> dict[str, Any]:
                         )
                     )
 
-    # Time gaps can separate flights even when speed could not be calculated across
-    # the missing interval. Add them only when there is meaningful track on both sides.
+    # Time gaps need special handling. GPS/ADSB sources may provide a speed at both
+    # edges of a multi-hour gap, so an index-based airborne segment can otherwise
+    # appear continuous. Classify the physical situation around the gap instead:
+    # descent/slowdown before it, climb/acceleration after it, and endpoint proximity.
     anomalies = _anomalies(normalized)
     for anomaly in anomalies:
+        gap_event = _time_gap_turnaround_event(normalized, prof, anomaly)
+        if gap_event is not None:
+            if not any(abs(ev.index - gap_event.index) <= 5 for ev in split_events):
+                split_events.append(gap_event)
+            continue
+
+        # Conservative fallback: if the gap already separates two independently
+        # detected airborne segments, it is also a split candidate.
         if anomaly.kind != "time_gap" or not anomaly.duration_seconds or anomaly.duration_seconds < 300:
             continue
         idx = int(anomaly.index)
         before = [seg for seg in air_segments if seg[1] < idx]
         after = [seg for seg in air_segments if seg[0] >= idx]
-        if before and after:
-            if not any(abs(ev.index - idx) <= 5 for ev in split_events):
-                split_events.append(
-                    TrackEvent(
-                        kind="split",
-                        index=max(1, min(len(normalized) - 2, idx - 1)),
-                        label="Pravděpodobné dva lety oddělené mezerou v datech",
-                        confidence="high",
-                        duration_seconds=anomaly.duration_seconds,
-                        detail=anomaly.detail,
-                    )
+        if before and after and not any(abs(ev.index - idx) <= 5 for ev in split_events):
+            split_events.append(
+                TrackEvent(
+                    kind="split",
+                    index=max(1, min(len(normalized) - 2, idx - 1)),
+                    label="Pravděpodobné dva lety oddělené mezerou v datech",
+                    confidence="high",
+                    duration_seconds=anomaly.duration_seconds,
+                    detail=anomaly.detail,
                 )
+            )
 
     # Touch-and-go events that do not create a speed gap (common in a rolling T&G).
     local_touch = _local_touch_and_go_events(prof, air_segments)

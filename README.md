@@ -1,10 +1,12 @@
 # Letový zápisník
 
-Verze: **v0.60**
+Verze: **v0.60.1**
 
-## v0.60 – Smart KML Import
+## v0.60.1 – Smart KML Import
 
-v0.60 přidává inteligentní analýzu KML/GPS tracků před uložením letu. Cílem je řešit reálné případy, kdy ADS-B/KML soubor obsahuje dva nebo více letů, touch-and-go, časové mezery nebo vadné GPS úseky.
+v0.60.1 je opravná verze Smart KML importu zaměřená na reálné ADS-B mezery mezi přistáním a dalším vzletem. Detekce nyní kombinuje délku časové mezery, polohu bodů před/po mezeře a trend výšky/rychlosti. Velmi dlouhá mezera se zobrazí jako návrh na rozdělení i při neúplných datech, protože pilot může návrh vždy odmítnout.
+
+Nově jsou **Možnosti importu zobrazené vždy**. Pokud Smart KML automaticky žádné rozdělení nenajde, lze zvolit **Nahrát jako jeden let** nebo **Rozdělit ručně**; ruční posuvník se při časové mezeře přednastaví právě na ni.
 
 ### Detekce více letů
 
@@ -49,7 +51,7 @@ Pokud se KML připojuje k již existujícímu letu a Smart KML v něm najde víc
 
 - Multi-user izolace z v0.59 zůstává zachována.
 - Každý vytvořený let i track patří přihlášenému uživateli.
-- `APP_VERSION = v0.60`
+- `APP_VERSION = v0.60.1`
 - `DB_SCHEMA_VERSION = 8`
 - Není nutná migrace struktury databáze.
 - SQLite + privátní GitHub auto-backup zůstává zachován.

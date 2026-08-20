@@ -1,4 +1,4 @@
-# Logbook architecture — v0.60
+# Logbook architecture — v0.60.1
 
 ## Smart KML layer
 
