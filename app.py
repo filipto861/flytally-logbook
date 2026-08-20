@@ -7127,8 +7127,8 @@ def render_sidebar_toggle() -> None:
         })();
         </script>
         """,
-        height=0,
-        width=0,
+        height=1,
+        width=1,
     )
 
 
@@ -7203,8 +7203,8 @@ def render_page_transition_runtime() -> None:
         })();
         </script>
         """,
-        height=0,
-        width=0,
+        height=1,
+        width=1,
     )
 
 
@@ -7224,8 +7224,8 @@ def render_page_loaded_signal() -> None:
         })();
         </script>
         """,
-        height=0,
-        width=0,
+        height=1,
+        width=1,
     )
 
 
