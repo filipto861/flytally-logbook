@@ -293,6 +293,65 @@ def apply_ui_theme(dark_mode: bool) -> None:
         padding:.12rem .15rem .68rem .15rem;
         border-bottom:1px solid rgba(148,163,184,.10);
     }}
+    .flight-entry-context {{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:.8rem;
+        border:1px solid rgba(56,189,248,.20);
+        border-radius:17px;
+        padding:.78rem .92rem;
+        margin:.1rem 0 .75rem 0;
+        background:
+            radial-gradient(circle at 96% 0%,rgba(56,189,248,.08),transparent 34%),
+            rgba(255,255,255,.018);
+    }}
+    .flight-entry-context-title {{
+        color:var(--text);
+        font-size:.84rem;
+        font-weight:850;
+    }}
+    .flight-entry-context-sub {{
+        color:var(--muted);
+        font-size:.74rem;
+        margin-top:.15rem;
+    }}
+    .flight-entry-chip-row {{
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:.3rem;
+        flex-wrap:wrap;
+    }}
+    .flight-entry-chip {{
+        display:inline-flex;
+        align-items:center;
+        padding:.19rem .46rem;
+        border:1px solid rgba(125,211,252,.15);
+        border-radius:999px;
+        background:rgba(56,189,248,.055);
+        color:#bae6fd;
+        font-size:.68rem;
+        font-weight:760;
+        white-space:nowrap;
+    }}
+    .flight-entry-section-label {{
+        color:var(--muted);
+        font-size:.68rem;
+        font-weight:850;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+        margin:.08rem 0 .38rem 0;
+    }}
+    @media (max-width:760px) {{
+        .flight-entry-context {{
+            align-items:flex-start;
+            flex-direction:column;
+        }}
+        .flight-entry-chip-row {{
+            justify-content:flex-start;
+        }}
+    }}
     @media (max-width:760px) {{
         .dashboard-primary-value {{font-size:2.18rem;}}
         .dashboard-category-value {{font-size:1.52rem;}}

@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.64 – Pilot Currency & Recency
+## v0.65 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -138,7 +138,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.64 – Profile Recency Polish
+## v0.65 – Profile Recency Polish
 - removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
 - licence/medical/rating expiry tracking is the primary content
@@ -148,7 +148,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9; no migration required
 
 
-## v0.64 – Data Portability & Backup UX
+## v0.65 – Data Portability & Backup UX
 - adds `Export → Záloha účtu` for every authenticated user
 - portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
 - passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
@@ -158,4 +158,17 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - every restore automatically creates a downloadable safety backup of the state that existed immediately before restore
 - human-readable CSV copies of the main tables are included in the ZIP
 - full SQLite/GitHub backup remains an admin-only technical backup under Database
+- database schema remains 9
+
+
+## v0.65 – Flight Entry UX 2.0
+- manual flight entry now uses a compact pilot-focused layout
+- the most recent flight can prefill the last aircraft and next departure airport
+- last aircraft is reused only when its aircraft profile still exists
+- no destination or flight times are guessed automatically
+- quick route buttons offer local flight, home airport and frequent destinations when relevant
+- less frequently used fields (evidence, type/class, crew details, pricing, task and note) live under `Další údaje`
+- validation warnings are less visually intrusive during normal manual entry; blocking errors remain explicit
+- `Uložit a přidat další` saves a leg and immediately prepares the next one, keeping aircraft/profile values and continuing from the previous arrival
+- KML import and existing-flight edit layouts remain unchanged
 - database schema remains 9

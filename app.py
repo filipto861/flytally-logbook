@@ -60,6 +60,9 @@ from logbook_core.portability import (
     BackupError, backup_filename, build_user_backup, inspect_user_backup,
     restore_user_backup,
 )
+from logbook_core.flight_entry import (
+    frequent_destinations, manual_entry_defaults,
+)
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -3693,7 +3696,149 @@ def _prompt_inline_aircraft_profile(prefix: str, defaults: dict[str, Any], *, fo
     inline_aircraft_create_dialog(prefix)
 
 
-def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str, *, quick_tools: bool = True, prompt_missing_aircraft: bool = True) -> dict[str, Any] | None:
+
+def _render_manual_entry_context(context: dict[str, Any], defaults: dict[str, Any]) -> None:
+    if context:
+        route = " → ".join(
+            part for part in (
+                normalize_text(context.get("departure")),
+                normalize_text(context.get("arrival")),
+            )
+            if part
+        ) or "bez trasy"
+        registration = normalize_registration(defaults.get("registration"))
+        aircraft_part = (
+            f'<span class="flight-entry-chip">✈ {html.escape(registration)}</span>'
+            if registration else ""
+        )
+        dep = normalize_text(defaults.get("departure"))
+        dep_part = (
+            f'<span class="flight-entry-chip">Odlet {html.escape(dep)}</span>'
+            if dep else ""
+        )
+        st.markdown(
+            f"""
+            <div class="flight-entry-context">
+              <div>
+                <div class="flight-entry-context-title">Chytré předvyplnění</div>
+                <div class="flight-entry-context-sub">
+                  Poslední let {html.escape(str(context.get('date') or ''))}
+                  • {html.escape(route)}
+                </div>
+              </div>
+              <div class="flight-entry-chip-row">
+                {aircraft_part}{dep_part}
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            """
+            <div class="flight-entry-context">
+              <div>
+                <div class="flight-entry-context-title">Nový ruční let</div>
+                <div class="flight-entry-context-sub">
+                  Používám výchozí hodnoty z profilu. Časy ani cílové letiště se nikdy neodhadují.
+                </div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def _render_manual_route_shortcuts(
+    prefix: str,
+    defaults: dict[str, Any],
+    history: pd.DataFrame,
+) -> None:
+    dep = normalize_text(st.session_state.get(f"{prefix}_dep", defaults.get("departure"))).upper()
+    arr = normalize_text(st.session_state.get(f"{prefix}_arr", defaults.get("arrival"))).upper()
+    home = current_user_home_airport()
+
+    actions: list[tuple[str, str, str]] = []
+    if dep:
+        actions.append(("local", f"{dep} → {dep}", "Lokální"))
+    if dep and home and dep != home:
+        actions.append(("home", f"{dep} → {home}", "Domů"))
+    if dep and arr:
+        actions.append(("reverse", f"{arr} → {dep}", "Otočit"))
+
+    known_targets = {item[1].split(" → ")[-1] for item in actions if " → " in item[1]}
+    for destination, count in frequent_destinations(history, dep, limit=3):
+        if destination in known_targets:
+            continue
+        actions.append((f"dest:{destination}", f"{dep} → {destination}", f"{count}×"))
+        if len(actions) >= 4:
+            break
+
+    if not actions:
+        return
+
+    st.caption("Rychlá trasa")
+    cols = st.columns(len(actions))
+    for col, (action, label, meta) in zip(cols, actions):
+        with col:
+            button_label = f"{label} · {meta}"
+            if st.button(
+                button_label,
+                width="stretch",
+                key=f"{prefix}_shortcut_{hashlib.sha1(action.encode('utf-8')).hexdigest()[:8]}",
+            ):
+                if action == "local":
+                    st.session_state[f"{prefix}_arr"] = dep
+                elif action == "home":
+                    st.session_state[f"{prefix}_arr"] = home
+                elif action == "reverse":
+                    st.session_state[f"{prefix}_dep"] = arr
+                    st.session_state[f"{prefix}_arr"] = dep
+                elif action.startswith("dest:"):
+                    st.session_state[f"{prefix}_arr"] = action.split(":", 1)[1]
+
+
+def _prepare_next_manual_entry(prefix: str, saved: dict[str, Any]) -> None:
+    """Keep continuity for another leg while clearing flight-specific values."""
+    next_departure = normalize_text(saved.get("arrival")) or normalize_text(saved.get("departure"))
+    values = {
+        "date": saved.get("date") if isinstance(saved.get("date"), date) else date.today(),
+        "reg": normalize_registration(saved.get("registration")),
+        "ev": normalize_text(saved.get("evidence")).upper(),
+        "type": normalize_text(saved.get("aircraft_type")),
+        "class": normalize_text(saved.get("aircraft_class")).upper(),
+        "dep": next_departure.upper(),
+        "arr": "",
+        "off": "",
+        "to": "",
+        "ldg": "",
+        "on": "",
+        "starts": 1,
+        "cmd": normalize_text(saved.get("commander")) or current_user_display_name(),
+        "instr": normalize_text(saved.get("instructor")),
+        "role": normalize_text(saved.get("role")).upper() or current_user_default_role(),
+        "task": normalize_text(saved.get("task")),
+        "price": float(saved.get("price_per_hour") or 0),
+        "billing_basis": _normalize_billing_basis(saved.get("billing_basis")),
+        "note": "",
+    }
+    for suffix, value in values.items():
+        st.session_state[f"{prefix}_{suffix}"] = value
+    if values["reg"]:
+        st.session_state[f"{prefix}_aircraft_pick"] = values["reg"]
+
+
+def flight_form(
+    prefix: str,
+    defaults: dict[str, Any],
+    rates: pd.DataFrame,
+    submit_label: str,
+    *,
+    quick_tools: bool = True,
+    prompt_missing_aircraft: bool = True,
+    compact_layout: bool = False,
+    allow_add_another: bool = False,
+) -> dict[str, Any] | None:
     pending_key, resolution_key, bypass_key = _inline_aircraft_state_keys(prefix)
     pending_payload = st.session_state.get(pending_key)
     resolution = normalize_text(st.session_state.get(resolution_key))
@@ -3707,9 +3852,9 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
         inline_aircraft_create_dialog(prefix)
         return None
 
-    # KML imports already know the registration before the form is shown. Offer
-    # aircraft creation immediately instead of waiting until the user presses Save.
-    inferred_reg = normalize_registration(st.session_state.get(f"{prefix}_reg", defaults.get("registration")))
+    inferred_reg = normalize_registration(
+        st.session_state.get(f"{prefix}_reg", defaults.get("registration"))
+    )
     bypass_reg = normalize_registration(st.session_state.get(bypass_key))
     if (
         prompt_missing_aircraft
@@ -3723,68 +3868,388 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
 
     if quick_tools:
         render_quick_flight_tools(prefix, defaults, rates)
+
     render_aircraft_picker(prefix, defaults, rates)
-    reg = str(st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")).upper()
+    reg = str(
+        st.session_state.get(f"{prefix}_reg", defaults.get("registration") or "")
+    ).upper()
     default_rate_date = defaults.get("date") or date.today()
     rate = lookup_latest_rate(rates, reg, default_rate_date)
-    default_price = st.session_state.get(f"{prefix}_price", defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0)
-    default_type = st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type") or rate.get("aircraft_type") or "")
-    default_billing_basis = _normalize_billing_basis(st.session_state.get(f"{prefix}_billing_basis", defaults.get("billing_basis") or "BLOCK"))
+    default_price = st.session_state.get(
+        f"{prefix}_price",
+        defaults.get("price_per_hour") or rate.get("price_per_hour") or 0.0,
+    )
+    default_type = st.session_state.get(
+        f"{prefix}_type",
+        defaults.get("aircraft_type") or rate.get("aircraft_type") or "",
+    )
+    default_billing_basis = _normalize_billing_basis(
+        st.session_state.get(
+            f"{prefix}_billing_basis",
+            defaults.get("billing_basis") or "BLOCK",
+        )
+    )
+
     with st.form(prefix):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            flight_date = st.date_input("Datum", value=defaults.get("date") if isinstance(defaults.get("date"), date) else pd.to_datetime(defaults.get("date") or date.today()).date(), key=f"{prefix}_date")
-            registration = st.text_input("Imatrikulace", value=reg, key=f"{prefix}_reg").upper()
-            ev_def = st.session_state.get(f"{prefix}_ev", defaults.get("evidence") or evidence_from_registration(reg))
-            evidence = st.selectbox("Evidence", EVIDENCE_OPTIONS, index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0, key=f"{prefix}_ev")
-            aircraft_type = st.text_input("Typ", value=str(default_type or ""), key=f"{prefix}_type")
-            cls_def = st.session_state.get(f"{prefix}_class", defaults.get("aircraft_class") or default_class_for(evidence))
-            aircraft_class = st.selectbox("Třída", CLASS_OPTIONS, index=CLASS_OPTIONS.index(cls_def) if cls_def in CLASS_OPTIONS else 0, key=f"{prefix}_class")
-        with col2:
-            departure = st.text_input("Odlet", value=str(defaults.get("departure") or ""), key=f"{prefix}_dep").upper()
-            arrival = st.text_input("Přílet", value=str(defaults.get("arrival") or ""), key=f"{prefix}_arr").upper()
-            off_block = st.text_input("Off Block", value=str(defaults.get("off_block") or ""), key=f"{prefix}_off")
-            takeoff = st.text_input("Takeoff", value=str(defaults.get("takeoff") or ""), key=f"{prefix}_to")
-            landing = st.text_input("Landing", value=str(defaults.get("landing") or ""), key=f"{prefix}_ldg")
-            on_block = st.text_input("On Block", value=str(defaults.get("on_block") or ""), key=f"{prefix}_on")
-        with col3:
-            starts = st.number_input("Starty / přistání", min_value=0, step=1, value=int(defaults.get("starts") or 1), key=f"{prefix}_starts")
-            commander = st.text_input("Velitel", value=str(defaults.get("commander") or current_user_display_name()), key=f"{prefix}_cmd")
-            instructor = st.text_input("Instruktor", value=str(defaults.get("instructor") or ""), key=f"{prefix}_instr")
-            role_def = defaults.get("role") or "PIC"
-            role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0, key=f"{prefix}_role")
-            price = st.number_input(f"Cena {currency_symbol()}/h", min_value=0.0, step=50.0, value=float(default_price or 0), key=f"{prefix}_price")
-            billing_basis = st.selectbox(
-                "Účtovat podle",
-                BILLING_BASIS_OPTIONS,
-                index=BILLING_BASIS_OPTIONS.index(default_billing_basis) if default_billing_basis in BILLING_BASIS_OPTIONS else 0,
-                key=f"{prefix}_billing_basis",
-                format_func=_billing_basis_label,
+        if compact_layout:
+            st.markdown('<div class="flight-entry-section-label">Základ letu</div>', unsafe_allow_html=True)
+
+            top1, top2, top3, top4 = st.columns([1.05, 1.15, 1, .8])
+            with top1:
+                flight_date = st.date_input(
+                    "Datum",
+                    value=defaults.get("date")
+                    if isinstance(defaults.get("date"), date)
+                    else pd.to_datetime(defaults.get("date") or date.today()).date(),
+                    key=f"{prefix}_date",
+                )
+            with top2:
+                registration = st.text_input(
+                    "Imatrikulace",
+                    value=reg,
+                    key=f"{prefix}_reg",
+                ).upper()
+            with top3:
+                role_def = st.session_state.get(
+                    f"{prefix}_role",
+                    defaults.get("role") or "PIC",
+                )
+                role = st.selectbox(
+                    "Funkce",
+                    ROLE_OPTIONS,
+                    index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0,
+                    key=f"{prefix}_role",
+                )
+            with top4:
+                starts = st.number_input(
+                    "Přistání",
+                    min_value=0,
+                    step=1,
+                    value=int(defaults.get("starts") or 1),
+                    key=f"{prefix}_starts",
+                )
+
+            route1, route2 = st.columns(2)
+            with route1:
+                departure = st.text_input(
+                    "Odlet",
+                    value=str(defaults.get("departure") or ""),
+                    key=f"{prefix}_dep",
+                ).upper()
+            with route2:
+                arrival = st.text_input(
+                    "Přílet",
+                    value=str(defaults.get("arrival") or ""),
+                    key=f"{prefix}_arr",
+                ).upper()
+
+            st.markdown('<div class="flight-entry-section-label">Časy</div>', unsafe_allow_html=True)
+            time1, time2, time3, time4 = st.columns(4)
+            with time1:
+                off_block = st.text_input(
+                    "Off Block",
+                    value=str(defaults.get("off_block") or ""),
+                    placeholder="HH:MM",
+                    key=f"{prefix}_off",
+                )
+            with time2:
+                takeoff = st.text_input(
+                    "Takeoff",
+                    value=str(defaults.get("takeoff") or ""),
+                    placeholder="HH:MM",
+                    key=f"{prefix}_to",
+                )
+            with time3:
+                landing = st.text_input(
+                    "Landing",
+                    value=str(defaults.get("landing") or ""),
+                    placeholder="HH:MM",
+                    key=f"{prefix}_ldg",
+                )
+            with time4:
+                on_block = st.text_input(
+                    "On Block",
+                    value=str(defaults.get("on_block") or ""),
+                    placeholder="HH:MM",
+                    key=f"{prefix}_on",
+                )
+
+            ev_def = st.session_state.get(
+                f"{prefix}_ev",
+                defaults.get("evidence") or evidence_from_registration(registration),
             )
-            task = st.text_input("Úloha", value=str(defaults.get("task") or ""), key=f"{prefix}_task")
-            note = st.text_input("Poznámka", value=str(defaults.get("note") or ""), key=f"{prefix}_note")
-        form_data = {"date": flight_date, "evidence": evidence, "registration": registration, "aircraft_type": aircraft_type, "aircraft_class": aircraft_class, "departure": departure, "arrival": arrival, "off_block": off_block, "takeoff": takeoff, "landing": landing, "on_block": on_block, "starts": int(starts), "commander": commander, "instructor": instructor, "role": role, "task": task, "price_per_hour": price, "billing_basis": billing_basis, "note": note}
-        block = minutes_diff(off_block, on_block); air = minutes_diff(takeoff, landing)
+            cls_def = st.session_state.get(
+                f"{prefix}_class",
+                defaults.get("aircraft_class") or default_class_for(ev_def),
+            )
+
+            with st.expander("Další údaje", expanded=False):
+                ex1, ex2, ex3 = st.columns(3)
+                with ex1:
+                    evidence = st.selectbox(
+                        "Evidence",
+                        EVIDENCE_OPTIONS,
+                        index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0,
+                        key=f"{prefix}_ev",
+                    )
+                    aircraft_type = st.text_input(
+                        "Typ",
+                        value=str(default_type or ""),
+                        key=f"{prefix}_type",
+                    )
+                    aircraft_class = st.selectbox(
+                        "Třída",
+                        CLASS_OPTIONS,
+                        index=CLASS_OPTIONS.index(cls_def) if cls_def in CLASS_OPTIONS else 0,
+                        key=f"{prefix}_class",
+                    )
+                with ex2:
+                    commander = st.text_input(
+                        "Velitel",
+                        value=str(defaults.get("commander") or current_user_display_name()),
+                        key=f"{prefix}_cmd",
+                    )
+                    instructor = st.text_input(
+                        "Instruktor",
+                        value=str(defaults.get("instructor") or ""),
+                        key=f"{prefix}_instr",
+                    )
+                    task = st.text_input(
+                        "Úloha",
+                        value=str(defaults.get("task") or ""),
+                        key=f"{prefix}_task",
+                    )
+                with ex3:
+                    price = st.number_input(
+                        f"Cena {currency_symbol()}/h",
+                        min_value=0.0,
+                        step=50.0,
+                        value=float(default_price or 0),
+                        key=f"{prefix}_price",
+                    )
+                    billing_basis = st.selectbox(
+                        "Účtovat podle",
+                        BILLING_BASIS_OPTIONS,
+                        index=BILLING_BASIS_OPTIONS.index(default_billing_basis)
+                        if default_billing_basis in BILLING_BASIS_OPTIONS
+                        else 0,
+                        key=f"{prefix}_billing_basis",
+                        format_func=_billing_basis_label,
+                    )
+                    note = st.text_input(
+                        "Poznámka",
+                        value=str(defaults.get("note") or ""),
+                        key=f"{prefix}_note",
+                    )
+        else:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                flight_date = st.date_input(
+                    "Datum",
+                    value=defaults.get("date")
+                    if isinstance(defaults.get("date"), date)
+                    else pd.to_datetime(defaults.get("date") or date.today()).date(),
+                    key=f"{prefix}_date",
+                )
+                registration = st.text_input(
+                    "Imatrikulace",
+                    value=reg,
+                    key=f"{prefix}_reg",
+                ).upper()
+                ev_def = st.session_state.get(
+                    f"{prefix}_ev",
+                    defaults.get("evidence") or evidence_from_registration(reg),
+                )
+                evidence = st.selectbox(
+                    "Evidence",
+                    EVIDENCE_OPTIONS,
+                    index=EVIDENCE_OPTIONS.index(ev_def) if ev_def in EVIDENCE_OPTIONS else 0,
+                    key=f"{prefix}_ev",
+                )
+                aircraft_type = st.text_input(
+                    "Typ",
+                    value=str(default_type or ""),
+                    key=f"{prefix}_type",
+                )
+                cls_def = st.session_state.get(
+                    f"{prefix}_class",
+                    defaults.get("aircraft_class") or default_class_for(evidence),
+                )
+                aircraft_class = st.selectbox(
+                    "Třída",
+                    CLASS_OPTIONS,
+                    index=CLASS_OPTIONS.index(cls_def) if cls_def in CLASS_OPTIONS else 0,
+                    key=f"{prefix}_class",
+                )
+            with col2:
+                departure = st.text_input(
+                    "Odlet",
+                    value=str(defaults.get("departure") or ""),
+                    key=f"{prefix}_dep",
+                ).upper()
+                arrival = st.text_input(
+                    "Přílet",
+                    value=str(defaults.get("arrival") or ""),
+                    key=f"{prefix}_arr",
+                ).upper()
+                off_block = st.text_input(
+                    "Off Block",
+                    value=str(defaults.get("off_block") or ""),
+                    key=f"{prefix}_off",
+                )
+                takeoff = st.text_input(
+                    "Takeoff",
+                    value=str(defaults.get("takeoff") or ""),
+                    key=f"{prefix}_to",
+                )
+                landing = st.text_input(
+                    "Landing",
+                    value=str(defaults.get("landing") or ""),
+                    key=f"{prefix}_ldg",
+                )
+                on_block = st.text_input(
+                    "On Block",
+                    value=str(defaults.get("on_block") or ""),
+                    key=f"{prefix}_on",
+                )
+            with col3:
+                starts = st.number_input(
+                    "Starty / přistání",
+                    min_value=0,
+                    step=1,
+                    value=int(defaults.get("starts") or 1),
+                    key=f"{prefix}_starts",
+                )
+                commander = st.text_input(
+                    "Velitel",
+                    value=str(defaults.get("commander") or current_user_display_name()),
+                    key=f"{prefix}_cmd",
+                )
+                instructor = st.text_input(
+                    "Instruktor",
+                    value=str(defaults.get("instructor") or ""),
+                    key=f"{prefix}_instr",
+                )
+                role_def = defaults.get("role") or "PIC"
+                role = st.selectbox(
+                    "Funkce",
+                    ROLE_OPTIONS,
+                    index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0,
+                    key=f"{prefix}_role",
+                )
+                price = st.number_input(
+                    f"Cena {currency_symbol()}/h",
+                    min_value=0.0,
+                    step=50.0,
+                    value=float(default_price or 0),
+                    key=f"{prefix}_price",
+                )
+                billing_basis = st.selectbox(
+                    "Účtovat podle",
+                    BILLING_BASIS_OPTIONS,
+                    index=BILLING_BASIS_OPTIONS.index(default_billing_basis)
+                    if default_billing_basis in BILLING_BASIS_OPTIONS
+                    else 0,
+                    key=f"{prefix}_billing_basis",
+                    format_func=_billing_basis_label,
+                )
+                task = st.text_input(
+                    "Úloha",
+                    value=str(defaults.get("task") or ""),
+                    key=f"{prefix}_task",
+                )
+                note = st.text_input(
+                    "Poznámka",
+                    value=str(defaults.get("note") or ""),
+                    key=f"{prefix}_note",
+                )
+
+        form_data = {
+            "date": flight_date,
+            "evidence": evidence,
+            "registration": registration,
+            "aircraft_type": aircraft_type,
+            "aircraft_class": aircraft_class,
+            "departure": departure,
+            "arrival": arrival,
+            "off_block": off_block,
+            "takeoff": takeoff,
+            "landing": landing,
+            "on_block": on_block,
+            "starts": int(starts),
+            "commander": commander,
+            "instructor": instructor,
+            "role": role,
+            "task": task,
+            "price_per_hour": price,
+            "billing_basis": billing_basis,
+            "note": note,
+        }
+
+        block = minutes_diff(off_block, on_block)
+        air = minutes_diff(takeoff, landing)
         c1, c2, c3 = st.columns(3)
-        with c1: metric_card("Block Time", fmt_minutes(block), "")
-        with c2: metric_card("Air Time", fmt_minutes(air), "")
+        with c1:
+            metric_card("Block Time", fmt_minutes(block), "")
+        with c2:
+            metric_card("Air Time", fmt_minutes(air), "")
         bill_minutes = air if billing_basis == "AIR" else block
-        with c3: metric_card("Cena letu", fmt_money((bill_minutes or 0)/60*price, current_user_currency()), _billing_basis_label(billing_basis))
+        with c3:
+            metric_card(
+                "Cena letu",
+                fmt_money((bill_minutes or 0) / 60 * price, current_user_currency()),
+                _billing_basis_label(billing_basis),
+            )
+
         preview_errors, preview_warnings = validate_flight_data(form_data)
         if preview_errors:
             st.error("Kontrola: " + " • ".join(preview_errors[:5]))
         elif preview_warnings:
-            st.warning("Kontrola: " + " • ".join(preview_warnings[:5]))
-        submitted = st.form_submit_button(submit_label, type="primary", width="stretch")
-    if submitted:
+            if compact_layout:
+                st.caption("Kontrola: " + " • ".join(preview_warnings[:4]))
+            else:
+                st.warning("Kontrola: " + " • ".join(preview_warnings[:5]))
+
+        submitted = False
+        add_another = False
+        if compact_layout and allow_add_another:
+            s1, s2 = st.columns([1.15, 1])
+            with s1:
+                submitted = st.form_submit_button(
+                    submit_label,
+                    type="primary",
+                    width="stretch",
+                )
+            with s2:
+                add_another = st.form_submit_button(
+                    "Uložit a přidat další",
+                    width="stretch",
+                )
+        else:
+            submitted = st.form_submit_button(
+                submit_label,
+                type="primary",
+                width="stretch",
+            )
+
+    if submitted or add_another:
         errors, _warnings = validate_flight_data(form_data)
         if errors:
             return None
+        form_data["_entry_action"] = "another" if add_another else "save"
         if prompt_missing_aircraft:
             submitted_reg = normalize_registration(form_data.get("registration"))
             bypass_reg = normalize_registration(st.session_state.get(bypass_key))
-            if submitted_reg and submitted_reg != bypass_reg and not _aircraft_profile_exists(submitted_reg):
-                _prompt_inline_aircraft_profile(prefix, defaults, form_data=form_data)
+            if (
+                submitted_reg
+                and submitted_reg != bypass_reg
+                and not _aircraft_profile_exists(submitted_reg)
+            ):
+                _prompt_inline_aircraft_profile(
+                    prefix,
+                    defaults,
+                    form_data=form_data,
+                )
                 return None
         return form_data
     return None
@@ -5208,19 +5673,52 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.session_state[review_key] = dict(saved)
             st.rerun()
     else:
+        prefix = "new_manual_v065"
+        flash = st.session_state.pop("_manual_entry_flash_v065", None)
+        if flash:
+            st.success(str(flash))
+
+        history = read_flights(current_user_id())
         default_evidence = current_user_default_evidence()
-        defaults = {
-            "date": date.today(),
-            "evidence": default_evidence,
-            "aircraft_class": default_class_for(default_evidence),
-            "departure": current_user_home_airport(),
-            "starts": 1,
-            "commander": current_user_display_name(),
-            "role": current_user_default_role(),
-        }
-        saved = flight_form("new_manual_v061", defaults, rates, "Přidat let")
+        defaults, context = manual_entry_defaults(
+            history,
+            today=date.today(),
+            home_airport=current_user_home_airport(),
+            default_evidence=default_evidence,
+            default_role=current_user_default_role(),
+            commander=current_user_display_name(),
+        )
+
+        # Reuse the last aircraft only when it still has a profile. This avoids
+        # opening the inline-aircraft dialog just because an old historical
+        # registration is no longer active/configured.
+        if defaults.get("registration") and not _aircraft_profile_exists(defaults["registration"]):
+            defaults["registration"] = ""
+        defaults["aircraft_class"] = default_class_for(default_evidence)
+
+        _render_manual_entry_context(context, defaults)
+        _render_manual_route_shortcuts(prefix, defaults, history)
+
+        saved = flight_form(
+            prefix,
+            defaults,
+            rates,
+            "Uložit let",
+            quick_tools=False,
+            compact_layout=True,
+            allow_add_another=True,
+        )
         if saved is not None:
+            action = str(saved.pop("_entry_action", "save"))
             flight_id = create_flight(saved)
+
+            if action == "another":
+                _prepare_next_manual_entry(prefix, saved)
+                st.session_state["_manual_entry_flash_v065"] = (
+                    f"Let ID {flight_id} uložen. Připravil jsem navazující úsek."
+                )
+                st.rerun()
+
             st.session_state["page"] = "Lety"
             st.session_state["open_flight_dialog_id"] = flight_id
             st.session_state["selected_flight_id"] = flight_id
