@@ -48,29 +48,30 @@ def apply_ui_theme(dark_mode: bool) -> None:
     }
     [data-testid="stAppViewContainer"] .main .block-container {max-width:1500px !important;}
 
-    /* Minimal edge handle: two chevrons, no circle/background/border. The hit area
-       stays generous even though the visible control is intentionally tiny. */
+    /* Minimal top-right handle. When the sidebar is open it lives clearly
+       inside the panel; when closed it glides to the left edge and remains
+       reachable. The visible control is two horizontal chevrons only. */
     #lb-sidebar-toggle {
         position:fixed;
-        top:31vh;
-        left:calc(var(--lb-sidebar-width) - .86rem);
+        top:.82rem;
+        left:calc(var(--lb-sidebar-width) - 3.35rem);
         z-index:2147483647;
-        width:1.72rem;
-        height:3.15rem;
-        padding:.45rem 0;
+        width:2.85rem;
+        height:2.35rem;
+        padding:0;
         margin:0;
         border:0 !important;
         outline:0 !important;
-        border-radius:0 !important;
+        border-radius:.55rem !important;
         background:transparent !important;
         box-shadow:none !important;
-        color:rgba(186,230,253,.68);
+        color:rgba(186,230,253,.70);
         cursor:pointer;
         display:flex;
-        flex-direction:column;
+        flex-direction:row;
         align-items:center;
         justify-content:center;
-        gap:.03rem;
+        gap:.13rem;
         transition:left var(--lb-sidebar-motion), color 140ms ease, opacity 140ms ease, transform 140ms ease;
         will-change:left,transform;
         -webkit-tap-highlight-color:transparent;
@@ -78,13 +79,13 @@ def apply_ui_theme(dark_mode: bool) -> None:
     }
     #lb-sidebar-toggle .lb-sidebar-chevron {
         display:block;
-        height:.72rem;
-        font-size:1.34rem;
+        font-size:1.72rem;
         font-family:Arial,Helvetica,sans-serif;
         font-weight:300;
-        line-height:.58;
+        line-height:1;
         letter-spacing:0;
-        text-shadow:0 0 10px rgba(56,189,248,0);
+        transform:translateY(-.04rem);
+        text-shadow:0 0 11px rgba(56,189,248,0);
         transition:transform 140ms ease, color 140ms ease, text-shadow 140ms ease;
         pointer-events:none;
     }
@@ -92,26 +93,28 @@ def apply_ui_theme(dark_mode: bool) -> None:
     #lb-sidebar-toggle:focus-visible {
         color:#7dd3fc;
         transform:translateX(-1px);
+        background:rgba(56,189,248,.045) !important;
     }
     #lb-sidebar-toggle:hover .lb-sidebar-chevron,
     #lb-sidebar-toggle:focus-visible .lb-sidebar-chevron {
-        text-shadow:0 0 10px rgba(56,189,248,.40);
+        text-shadow:0 0 11px rgba(56,189,248,.42);
     }
-    #lb-sidebar-toggle:active {transform:translateX(-2px) scale(.96);}
+    #lb-sidebar-toggle:active {transform:translateX(-2px) scale(.95);}
     body.lb-sidebar-hidden #lb-sidebar-toggle {
-        left:.24rem;
-        color:rgba(125,211,252,.76);
+        left:.28rem;
+        color:rgba(125,211,252,.80);
     }
     body.lb-sidebar-hidden #lb-sidebar-toggle:hover,
     body.lb-sidebar-hidden #lb-sidebar-toggle:focus-visible {transform:translateX(1px);}
-    body.lb-sidebar-hidden #lb-sidebar-toggle:active {transform:translateX(2px) scale(.96);}
+    body.lb-sidebar-hidden #lb-sidebar-toggle:active {transform:translateX(2px) scale(.95);}
 
     @media (prefers-reduced-motion: reduce) {
         section[data-testid="stSidebar"], [data-testid="stSidebar"], [data-testid="stSidebarContent"], #lb-sidebar-toggle {transition:none !important;}
     }
     @media (max-width: 760px) {
-        #lb-sidebar-toggle {top:25vh; left:calc(var(--lb-sidebar-width) - .84rem); height:3.35rem;}
-        body.lb-sidebar-hidden #lb-sidebar-toggle {left:.14rem;}
+        #lb-sidebar-toggle {top:.68rem; left:calc(var(--lb-sidebar-width) - 3.18rem); width:2.72rem; height:2.28rem;}
+        #lb-sidebar-toggle .lb-sidebar-chevron {font-size:1.62rem;}
+        body.lb-sidebar-hidden #lb-sidebar-toggle {left:.18rem;}
     }
     """
 

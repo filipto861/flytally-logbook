@@ -1,4 +1,4 @@
-# Upload v0.61.5
+# Upload v0.61.6
 
 1. Zachovej lokální `.git` a `data/logbook.sqlite`.
 2. Nahraď aplikační soubory obsahem tohoto balíčku.
@@ -6,7 +6,7 @@
 4. Otevři GitHub Desktop.
 5. Pokud je na remote novější auto-backup databáze, použij nejdřív `Fetch` a `Pull origin`.
 6. Commit doporučený jako:
-   `v0.61.5 - Sidebar UX Final Polish`
+   `v0.61.6 - Sidebar UX Final Polish`
 7. `Push origin`.
 8. Po redeployi ověř zejména:
    - minimalistický dvojitý chevron na hraně sidebaru,

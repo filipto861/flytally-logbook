@@ -1,8 +1,8 @@
-# Logbook architecture — v0.61.5
+# Logbook architecture — v0.61.6
 
 ## Flight Import UX 2.0
 
-v0.61.5 ponechává parser, Smart KML a datovou vrstvu beze změny, ale přidává orchestration vrstvu pro bezpečný import před zápisem do SQLite.
+v0.61.6 ponechává parser, Smart KML a datovou vrstvu beze změny, ale přidává orchestration vrstvu pro bezpečný import před zápisem do SQLite.
 
 ### Import state machine
 

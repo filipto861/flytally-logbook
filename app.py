@@ -7051,7 +7051,7 @@ def page_profile() -> None:
 def render_sidebar_toggle() -> None:
     """Render a compositor-friendly edge handle for the sidebar.
 
-    The control is deliberately minimal (two chevrons, no visible button chrome).
+    The control is deliberately minimal (two horizontal chevrons in the sidebar header area, no visible button chrome).
     It toggles only a CSS class on ``body`` and never triggers a Streamlit rerun.
     """
     st.html(
