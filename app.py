@@ -3372,7 +3372,250 @@ def render_flight_validation(data: dict[str, Any], *, compact: bool = False) -> 
         st.success("Kontrola: OK")
     return errors, warnings
 
-def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str, *, quick_tools: bool = True) -> dict[str, Any] | None:
+
+def _inline_aircraft_state_keys(prefix: str) -> tuple[str, str, str]:
+    token = hashlib.sha1(str(prefix).encode("utf-8")).hexdigest()[:12]
+    return (
+        f"inline_aircraft_pending_{token}",
+        f"inline_aircraft_resolution_{token}",
+        f"inline_aircraft_bypass_{token}",
+    )
+
+
+def _aircraft_profile_exists(registration: str) -> bool:
+    reg = normalize_text(registration).upper().strip()
+    if not reg:
+        return False
+    catalog = read_aircraft_catalog(active_only=False, user_id=current_user_id())
+    if catalog.empty or "registration" not in catalog.columns:
+        return False
+    regs = catalog["registration"].fillna("").astype(str).str.upper().str.strip()
+    return bool(regs.eq(reg).any())
+
+
+def _inline_aircraft_prefill(prefix: str, defaults: dict[str, Any]) -> dict[str, Any]:
+    """Build aircraft-profile defaults without mutating the in-progress flight."""
+    reg = normalize_text(st.session_state.get(f"{prefix}_reg", defaults.get("registration"))).upper().strip()
+    flight_date = st.session_state.get(f"{prefix}_date", defaults.get("date") or date.today())
+    try:
+        effective = pd.to_datetime(flight_date).date()
+    except Exception:
+        effective = date.today()
+    evidence = normalize_text(st.session_state.get(f"{prefix}_ev", defaults.get("evidence"))) or evidence_from_registration(reg)
+    if evidence not in EVIDENCE_OPTIONS:
+        evidence = evidence_from_registration(reg)
+    aircraft_class = normalize_text(st.session_state.get(f"{prefix}_class", defaults.get("aircraft_class"))) or default_class_for(evidence)
+    if aircraft_class not in CLASS_OPTIONS:
+        aircraft_class = default_class_for(evidence)
+    role = normalize_text(st.session_state.get(f"{prefix}_role", defaults.get("role"))) or current_user_default_role()
+    if role not in ROLE_OPTIONS:
+        role = "PIC"
+    billing_basis = _normalize_billing_basis(st.session_state.get(f"{prefix}_billing_basis", defaults.get("billing_basis") or "BLOCK"))
+    try:
+        price = float(st.session_state.get(f"{prefix}_price", defaults.get("price_per_hour") or 0) or 0)
+    except Exception:
+        price = 0.0
+    return {
+        "registration": reg,
+        "aircraft_type": normalize_text(st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type"))),
+        "icao_type": normalize_text(st.session_state.get(f"{prefix}_type", defaults.get("aircraft_type"))),
+        "evidence": evidence,
+        "aircraft_class": aircraft_class,
+        "default_role": role,
+        "billing_basis": billing_basis,
+        "price_per_hour": price,
+        "valid_from": effective,
+    }
+
+
+@st.dialog("Vytvořit profil letadla", width="large", dismissible=False)
+def inline_aircraft_create_dialog(prefix: str) -> None:
+    pending_key, resolution_key, bypass_key = _inline_aircraft_state_keys(prefix)
+    payload = st.session_state.get(pending_key)
+    if not isinstance(payload, dict):
+        st.info("Rozpracovaný profil letadla už není k dispozici.")
+        if st.button("Zavřít", use_container_width=True, key=f"inline_aircraft_close_{prefix}"):
+            st.rerun()
+        return
+
+    profile = dict(payload.get("profile") or {})
+    form_data = dict(payload.get("form_data") or {})
+    mode = normalize_text(payload.get("mode")) or "preflight"
+    reg = normalize_text(profile.get("registration") or form_data.get("registration")).upper().strip()
+    if not reg:
+        st.error("Chybí imatrikulace letadla.")
+        if st.button("Zpět", use_container_width=True, key=f"inline_aircraft_missing_reg_{prefix}"):
+            st.session_state.pop(pending_key, None)
+            st.rerun()
+        return
+
+    st.markdown(f"### {reg}")
+    st.caption("Toto letadlo zatím nemá vlastní profil. Můžete ho vytvořit přímo tady a potom pokračovat v rozpracovaném letu.")
+    st.info("KML, mapa, detekované časy i ostatní údaje rozpracovaného letu zůstanou zachované.")
+
+    token = hashlib.sha1(str(prefix).encode("utf-8")).hexdigest()[:10]
+    with st.form(f"inline_aircraft_profile_form_{token}"):
+        st.markdown("#### Základní údaje")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.text_input("Imatrikulace", value=reg, disabled=True)
+            typ = st.text_input("Typ", value=normalize_text(profile.get("aircraft_type")), placeholder="Bristell B23")
+        with c2:
+            icao_type = st.text_input("ICAO typ", value=normalize_text(profile.get("icao_type") or profile.get("aircraft_type")), placeholder="BR23")
+            evidence_default = normalize_text(profile.get("evidence")) or evidence_from_registration(reg)
+            evidence = st.selectbox(
+                "Evidence",
+                EVIDENCE_OPTIONS,
+                index=EVIDENCE_OPTIONS.index(evidence_default) if evidence_default in EVIDENCE_OPTIONS else 0,
+            )
+        with c3:
+            class_default = normalize_text(profile.get("aircraft_class")) or default_class_for(evidence_default)
+            aircraft_class = st.selectbox(
+                "Třída",
+                CLASS_OPTIONS,
+                index=CLASS_OPTIONS.index(class_default) if class_default in CLASS_OPTIONS else 0,
+            )
+            role_default = normalize_text(profile.get("default_role")) or current_user_default_role()
+            default_role = st.selectbox(
+                "Výchozí role",
+                ROLE_OPTIONS,
+                index=ROLE_OPTIONS.index(role_default) if role_default in ROLE_OPTIONS else 0,
+            )
+
+        st.markdown("#### Provoz a cena")
+        p1, p2, p3 = st.columns(3)
+        with p1:
+            initial_price = st.number_input(
+                f"Cena za hodinu ({currency_symbol()})",
+                min_value=0.0,
+                step=50.0,
+                value=float(profile.get("price_per_hour") or 0),
+                format="%.0f",
+            )
+        with p2:
+            valid_from = profile.get("valid_from")
+            if not isinstance(valid_from, date):
+                try:
+                    valid_from = pd.to_datetime(valid_from or date.today()).date()
+                except Exception:
+                    valid_from = date.today()
+            price_valid_from = st.date_input("Cena platí od", value=valid_from)
+        with p3:
+            basis_default = _normalize_billing_basis(profile.get("billing_basis") or "BLOCK")
+            billing_basis = st.selectbox(
+                "Účtovat podle",
+                BILLING_BASIS_OPTIONS,
+                index=BILLING_BASIS_OPTIONS.index(basis_default) if basis_default in BILLING_BASIS_OPTIONS else 0,
+                format_func=_billing_basis_label,
+            )
+        note = st.text_area("Poznámka k letadlu", value="", height=70)
+        active = st.checkbox("Aktivní letadlo", value=True)
+        st.caption("První cena se uloží s datem účinnosti. Pozdější změny ceny se budou vést v historii profilu letadla.")
+        create_profile = st.form_submit_button("Vytvořit profil a pokračovat", type="primary", use_container_width=True)
+
+    if create_profile:
+        try:
+            upsert_aircraft_profile({
+                "registration": reg,
+                "aircraft_type": typ,
+                "icao_type": icao_type.strip() or typ,
+                "aircraft_class": aircraft_class,
+                "evidence": evidence,
+                "default_price_per_hour": initial_price,
+                "default_role": default_role,
+                "billing_basis": billing_basis,
+                "active": active,
+                "note": note,
+                "rate_price": initial_price if initial_price > 0 else None,
+                "rate_valid_from": price_valid_from,
+            })
+            # Keep the in-progress flight, but synchronize fields that are owned by
+            # the newly created aircraft profile.
+            st.session_state[f"{prefix}_reg"] = reg
+            st.session_state[f"{prefix}_type"] = typ
+            st.session_state[f"{prefix}_ev"] = evidence
+            st.session_state[f"{prefix}_class"] = aircraft_class
+            st.session_state[f"{prefix}_price"] = float(initial_price or 0)
+            st.session_state[f"{prefix}_billing_basis"] = billing_basis
+
+            if mode == "postsubmit":
+                form_data.update({
+                    "registration": reg,
+                    "aircraft_type": typ,
+                    "evidence": evidence,
+                    "aircraft_class": aircraft_class,
+                    "price_per_hour": float(initial_price or 0),
+                    "billing_basis": billing_basis,
+                })
+                if not normalize_text(form_data.get("role")):
+                    form_data["role"] = default_role
+                payload["form_data"] = form_data
+                st.session_state[pending_key] = payload
+                st.session_state[resolution_key] = "created"
+            else:
+                st.session_state.pop(pending_key, None)
+                st.session_state.pop(resolution_key, None)
+            st.session_state.pop(bypass_key, None)
+            st.rerun()
+        except Exception as exc:
+            st.error(str(exc))
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Pokračovat bez profilu", use_container_width=True, key=f"inline_aircraft_skip_{token}"):
+            if mode == "postsubmit":
+                st.session_state[resolution_key] = "skip"
+            else:
+                st.session_state[bypass_key] = reg
+                st.session_state.pop(pending_key, None)
+            st.rerun()
+    with c2:
+        if st.button("Vrátit se k formuláři", use_container_width=True, key=f"inline_aircraft_back_{token}"):
+            st.session_state[bypass_key] = reg
+            st.session_state.pop(pending_key, None)
+            st.session_state.pop(resolution_key, None)
+            st.rerun()
+
+
+def _prompt_inline_aircraft_profile(prefix: str, defaults: dict[str, Any], *, form_data: dict[str, Any] | None = None) -> None:
+    pending_key, resolution_key, _bypass_key = _inline_aircraft_state_keys(prefix)
+    st.session_state[pending_key] = {
+        "mode": "postsubmit" if form_data is not None else "preflight",
+        "profile": _inline_aircraft_prefill(prefix, form_data or defaults),
+        "form_data": dict(form_data or {}),
+    }
+    st.session_state.pop(resolution_key, None)
+    inline_aircraft_create_dialog(prefix)
+
+
+def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, submit_label: str, *, quick_tools: bool = True, prompt_missing_aircraft: bool = True) -> dict[str, Any] | None:
+    pending_key, resolution_key, bypass_key = _inline_aircraft_state_keys(prefix)
+    pending_payload = st.session_state.get(pending_key)
+    resolution = normalize_text(st.session_state.get(resolution_key))
+    if prompt_missing_aircraft and isinstance(pending_payload, dict) and resolution in {"created", "skip"}:
+        saved = dict(pending_payload.get("form_data") or {})
+        st.session_state.pop(pending_key, None)
+        st.session_state.pop(resolution_key, None)
+        if saved:
+            return saved
+    if prompt_missing_aircraft and isinstance(pending_payload, dict) and not resolution:
+        inline_aircraft_create_dialog(prefix)
+        return None
+
+    # KML imports already know the registration before the form is shown. Offer
+    # aircraft creation immediately instead of waiting until the user presses Save.
+    inferred_reg = normalize_text(st.session_state.get(f"{prefix}_reg", defaults.get("registration"))).upper().strip()
+    bypass_reg = normalize_text(st.session_state.get(bypass_key)).upper().strip()
+    if (
+        prompt_missing_aircraft
+        and inferred_reg
+        and inferred_reg != bypass_reg
+        and not _aircraft_profile_exists(inferred_reg)
+        and normalize_text(defaults.get("registration"))
+    ):
+        _prompt_inline_aircraft_profile(prefix, defaults)
+        return None
+
     if quick_tools:
         render_quick_flight_tools(prefix, defaults, rates)
     render_aircraft_picker(prefix, defaults, rates)
@@ -3432,6 +3675,12 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
         errors, _warnings = validate_flight_data(form_data)
         if errors:
             return None
+        if prompt_missing_aircraft:
+            submitted_reg = normalize_text(form_data.get("registration")).upper().strip()
+            bypass_reg = normalize_text(st.session_state.get(bypass_key)).upper().strip()
+            if submitted_reg and submitted_reg != bypass_reg and not _aircraft_profile_exists(submitted_reg):
+                _prompt_inline_aircraft_profile(prefix, defaults, form_data=form_data)
+                return None
         return form_data
     return None
 
@@ -3616,7 +3865,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                     if st.button("Použít jen Takeoff + Landing", key=f"edit_apply_gps_air_{selected_id}", use_container_width=True):
                         _set_edit_times_from_gps(int(selected_id), gps_proposal, air_only=True)
                         st.toast("GPS Air časy byly vloženy do editace.")
-        saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False)
+        saved = flight_form(f"edit_flight_{selected_id}", row.to_dict(), rates, "Uložit změny", quick_tools=False, prompt_missing_aircraft=False)
         if saved is not None:
             update_flight(int(selected_id), saved)
             st.session_state[f"_detail_pending_section_{selected_id}"] = "Přehled"

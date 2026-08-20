@@ -1,57 +1,64 @@
 # Letový zápisník
 
-Verze: **v0.60.1**
+Verze: **v0.60.2**
 
-## v0.60.1 – Smart KML Import
+## v0.60.2 – Inline Aircraft Creation
 
-v0.60.1 je opravná verze Smart KML importu zaměřená na reálné ADS-B mezery mezi přistáním a dalším vzletem. Detekce nyní kombinuje délku časové mezery, polohu bodů před/po mezeře a trend výšky/rychlosti. Velmi dlouhá mezera se zobrazí jako návrh na rozdělení i při neúplných datech, protože pilot může návrh vždy odmítnout.
+Tato verze navazuje na Smart KML Import z v0.60.1 a zlepšuje workflow přidávání letu v situaci, kdy importovaná nebo ručně zadaná registrace ještě nemá vytvořený profil letadla.
 
-Nově jsou **Možnosti importu zobrazené vždy**. Pokud Smart KML automaticky žádné rozdělení nenajde, lze zvolit **Nahrát jako jeden let** nebo **Rozdělit ručně**; ruční posuvník se při časové mezeře přednastaví právě na ni.
+### Nový inline workflow
 
-### Detekce více letů
+Pokud KML už obsahuje rozpoznanou registraci a letadlo není v databázi uživatele, aplikace otevře popup **Vytvořit profil letadla** ještě před uložením letu.
 
-Smart KML analyzuje průběh rychlosti, času a výšky a hledá samostatné letové úseky oddělené přistáním, zastavením, otočením nebo delší mezerou v datech.
+Popup obsahuje kompletní základní konfiguraci:
 
-Pokud najde pravděpodobně více letů:
+- imatrikulaci,
+- typ,
+- ICAO typ,
+- evidenci,
+- třídu,
+- výchozí roli,
+- cenu za hodinu,
+- datum účinnosti ceny,
+- způsob účtování BLOCK / AIR,
+- poznámku,
+- aktivní / neaktivní stav.
 
-- zobrazí upozornění a počet navržených letů,
-- nabídne **Rozdělit podle návrhu**,
-- vždy zachová možnost **Nahrát jako jeden let**,
-- před rozdělením zobrazí mapu jednotlivých částí,
-- bod rozdělení lze ručně posunout,
-- po uložení prvního dílu se body rozdělení uzamknou,
-- jednotlivé části se potom kontrolují a ukládají postupně jako samostatné lety a samostatné GPS tracky.
+Po vytvoření profilu se uživatel vrátí do stejného rozpracovaného letu. KML, mapa, Smart KML analýza, detekované časy, starty/přistání a ostatní formulářová data se neztratí.
 
-Detekce je pouze návrh. Původní KML se při volbě „Nahrát jako jeden let“ uloží beze změny.
+### Ruční zadání registrace
 
-### Touch-and-go a počet přistání
+U ručně přidaného letu se registrace nevyhodnocuje během psaní uvnitř formuláře. Pokud uživatel stiskne **Přidat let** a profil pro danou registraci neexistuje, uložení se pozastaví a otevře se stejný popup. Po vytvoření profilu se původní rozpracovaný let automaticky dokončí s novou konfigurací letadla.
 
-Smart KML umí detekovat pravděpodobný touch-and-go dvěma způsoby:
+### Bezpečný fallback
 
-- krátký letový/pozemní přechod bez úplného zastavení,
-- lokální minimum výšky s následným opětovným stoupáním při zachované rychlosti.
+Popup vždy nabízí i:
 
-Výsledek automaticky předvyplní pole **Starty / přistání**. Hodnota je vždy editovatelná před uložením letu.
+- **Pokračovat bez profilu** – let lze uložit i bez vytvoření letadla,
+- **Vrátit se k formuláři** – uživatel může registraci nebo jiné údaje opravit.
 
-### Kontrola kvality tracku
+Vytvoření profilu tedy není povinné.
 
-Import upozorní například na:
+### Cenová historie
 
-- výraznou časovou mezeru mezi GPS body,
-- podezřelý GPS skok,
-- více samostatných letových úseků.
+Pokud je profil vytvořen během importu historického letu, datum první ceny se standardně předvyplní podle data rozpracovaného letu. Uživatel jej může změnit před uložením.
 
-Upozornění sama data nemažou ani neopravují. Uživatel rozhoduje o výsledném importu.
+### Smart KML zůstává zachován
 
-### Připojení KML k existujícímu letu
+v0.60.2 zachovává všechny funkce v0.60.1:
 
-Pokud se KML připojuje k již existujícímu letu a Smart KML v něm najde více letů, aplikace zobrazí varování. Track lze stále připojit jako jeden celek; pro skutečné rozdělení se používá **Nový let → KML import**.
+- detekci více letů,
+- návrh rozdělení / možnost ponechat jeden let,
+- ruční rozdělení,
+- detekci touch-and-go,
+- automatický návrh počtu startů / přistání,
+- kontrolu časových mezer a GPS skoků.
 
 ### Databáze a multi-user
 
-- Multi-user izolace z v0.59 zůstává zachována.
-- Každý vytvořený let i track patří přihlášenému uživateli.
-- `APP_VERSION = v0.60.1`
+- Profil letadla se vytváří pouze pro právě přihlášeného uživatele.
+- Data ostatních uživatelů nejsou dotčena.
+- `APP_VERSION = v0.60.2`
 - `DB_SCHEMA_VERSION = 8`
 - Není nutná migrace struktury databáze.
 - SQLite + privátní GitHub auto-backup zůstává zachován.
