@@ -1,63 +1,56 @@
-# Logbook architecture — v0.54
+# Logbook architecture — v0.55
 
-v0.54 pokračuje v modularizaci zahájené ve v0.53 a zavádí samostatnou vrstvu pro přípravu GPS/mapových dat. Hlavní princip je oddělit **fidelitu uložených GPS dat** od **fidelity potřebné pro vykreslení v browseru**.
+## Cíl
 
-## Current structure
+v0.55 zavádí multi-user datovou architekturu bez toho, aby se aplikace už dnes chovala jako veřejná multi-user služba. Produkční režim zůstává jeden pilot + SQLite + GitHub backup.
 
-```text
-app.py                         Streamlit routing, DB access and application orchestration
-logbook_core/
-  config.py                    Paths, version, options and navigation constants
-  schema.py                    SQLite schema definition
-  metrics.py                   Time normalization, flight metrics and summaries
-  tracks.py                    KML parsing and full-fidelity GPS/track analysis
-  map_engine.py                Adaptive browser render budgets, geometry simplification, viewport
-  exports.py                   Excel/print export builders
-  performance.py               SQLite/cache/general performance helpers
-logbook_ui/
-  theme.py                     Global theme, header, metric card, Plotly layout
-  filters.py                   Shared Streamlit filter UI
-scripts/                       Data import/seed utilities
-data/                          Runtime/reference data
-```
+## Ownership model
 
-## GPS data flow in v0.54
+Uživatelské tabulky:
 
 ```text
-SQLite track_points (full fidelity)
-          |
-          v
-SQL candidate sampling (bounded)
-          |
-          v
-Map Engine 2.0 geometry simplifier
-          |
-          v
-compact JSON payload
-          |
-          v
-Folium / Leaflet canvas renderer
+users
+└── user_settings
+
+users
+├── flights
+│   └── flight_tracks
+│       └── track_points
+├── aircraft
+├── rates
+├── airports        # lokální/custom overrides
+└── audit_log
 ```
 
-The original `flight_tracks.coordinates_json` remains available as a compatibility fallback. The map engine never rewrites stored track data.
+`user_id` je hranice vlastnictví dat. V současném single-user režimu je aktivní `user_id = 1`.
 
-## Render budget
+### Shared data
 
-The overview map uses two independent controls:
+`data/airports_full.sqlite` je globální read-only katalog světových letišť. Není kopírován pro jednotlivé uživatele. Lokální dodatky a overrides jsou v hlavní DB a mají `user_id`.
 
-1. **Track limit** — Rychlá/Střední keep the historical 40/120 limits; Vše includes all tracks.
-2. **Point budget** — point count per track adapts to the number of visible tracks so browser payload cannot grow linearly at 180 points per track forever.
+## Current user abstraction
 
-This is especially important for the long-term logbook: 1 000 tracks in mode Vše target about 24 points/track instead of 180 points/track.
+`current_user_id()` v aplikaci dnes vrací výchozího lokálního uživatele ze session state. Hlavní cached read funkce přijímají `user_id` jako argument, takže budoucí autentizace může změnit aktivního uživatele bez sdílení cache mezi účty.
 
-## Refactor rules
+Profil je uložen v `users` / `user_settings`. Výchozí profil při migraci převezme nejčastější jméno velitele z existujícího zápisníku, pokud je dostupné.
 
-1. `data/logbook.sqlite` is never replaced by release ZIPs.
-2. `DB_SCHEMA_VERSION` remains 5 in v0.54.
-3. Map simplification is presentation-only; calculations continue to use full GPS data.
-4. KML parsing and takeoff/landing detection are intentionally not redesigned in v0.54.
-5. Smooth Track Player is intentionally kept functionally stable.
+## SQLite migration v6
 
-## Next architecture candidates
+`logbook_core/tenancy.py` provádí jednorázovou migraci:
 
-After v0.54 production validation, the next logical step is **Smart KML Import / Flight Segmentation**: detection of ground stops, separate flights, invalid pre-flight/post-flight fragments, touch-and-go and user-adjustable split points.
+- vytvoření lokálního uživatele,
+- doplnění ownership sloupců,
+- převod starých globálních UNIQUE omezení na per-user UNIQUE pro aircraft/rates/airports,
+- synchronizaci ownership přes flight → track → track point,
+- vytvoření user-aware indexů,
+- zápis markeru `tenancy_v1`.
+
+Po dokončení marker zajišťuje rychlý startup bez opakovaného skenování velké tabulky GPS bodů.
+
+## Database backend
+
+v0.55 stále používá SQLite. To je záměrné: pro jednoho uživatele je stávající provoz jednoduchý a ověřený. Až bude zapnuta registrace více uživatelů, databázová vrstva se přesune na PostgreSQL a GitHub backup živé DB se odstraní.
+
+## Security boundary
+
+v0.55 je **příprava**, nikoli veřejný multi-user release. Skutečný multi-user provoz se nesmí zapnout pouze přidáním login formuláře; před otevřením dalším uživatelům musí být dokončena autentizace, autorizace všech dotazů a serverová databáze.

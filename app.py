@@ -25,6 +25,7 @@ from logbook_core.config import (
     EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, OURAIRPORTS_AIRPORTS_URL, ROLE_OPTIONS,
 )
 from logbook_core.schema import SCHEMA
+from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema, normalize_user_id
 from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
     normalize_date, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
@@ -143,6 +144,36 @@ def actor_name() -> str:
     return "admin" if is_admin() else "viewer"
 
 
+def current_user_id() -> int:
+    """Active data owner. v0.55 stays single-user, auth can replace this later."""
+    return normalize_user_id(st.session_state.get("current_user_id", DEFAULT_USER_ID))
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def read_user_profile(user_id: int = DEFAULT_USER_ID) -> dict[str, Any]:
+    uid = normalize_user_id(user_id)
+    try:
+        with connect() as con:
+            row = con.execute(
+                """
+                SELECT u.id, u.email, u.display_name, u.slug, u.active,
+                       s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json
+                FROM users u
+                LEFT JOIN user_settings s ON s.user_id = u.id
+                WHERE u.id = ?
+                """,
+                (uid,),
+            ).fetchone()
+            return dict(row) if row else {"id": uid, "display_name": "Local pilot"}
+    except sqlite3.DatabaseError:
+        return {"id": uid, "display_name": "Local pilot"}
+
+
+def current_user_display_name() -> str:
+    profile = read_user_profile(current_user_id())
+    return normalize_text(profile.get("display_name")) or "Local pilot"
+
+
 def _clear_cached_function(name: str) -> None:
     """Clear one Streamlit cached function if it is already defined."""
     try:
@@ -239,17 +270,17 @@ def require_admin() -> bool:
 
 def record_audit(con: sqlite3.Connection, action: str, object_type: str | None = None, object_id: Any = None, detail: Any = None) -> None:
     payload = json.dumps(detail, ensure_ascii=False, default=str) if detail is not None else None
-    params = (_now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, payload)
+    params = (current_user_id(), _now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, payload)
     try:
         con.execute(
-            "INSERT INTO audit_log (created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
             params,
         )
     except sqlite3.OperationalError:
         try:
             ensure_schema_compatibility(con)
             con.execute(
-                "INSERT INTO audit_log (created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 params,
             )
         except Exception:
@@ -285,17 +316,17 @@ def github_auto_backup_enabled() -> bool:
 def _record_audit_clean(con: sqlite3.Connection, action: str, object_type: str | None = None, object_id: Any = None, detail: Any = None) -> None:
     """Audit entry that does not mark the database dirty. Used by backup itself."""
     payload = json.dumps(detail, ensure_ascii=False, default=str) if detail is not None else None
-    params = (_now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, payload)
+    params = (current_user_id(), _now_iso(), actor_name(), action, object_type, str(object_id) if object_id is not None else None, payload)
     try:
         con.execute(
-            "INSERT INTO audit_log (created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
             params,
         )
     except sqlite3.OperationalError:
         try:
             ensure_schema_compatibility(con)
             con.execute(
-                "INSERT INTO audit_log (created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO audit_log (user_id, created_at, actor, action, object_type, object_id, detail_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 params,
             )
         except Exception:
@@ -415,10 +446,16 @@ def initialize_database(con: sqlite3.Connection) -> None:
     """
     apply_sqlite_pragmas(con, initial=True)
     con.executescript(SCHEMA)
+    # v0.55 introduces ownership columns while keeping the current single-user UX.
+    # Both helpers are idempotent and safely upgrade the existing SQLite file.
+    ensure_schema_compatibility(con)
+    ensure_tenancy_schema(con)
+    # Re-run idempotent schema DDL because the tenancy migration may rebuild
+    # tables with old global UNIQUE constraints; this restores standard indexes.
+    con.executescript(SCHEMA)
 
     schema_version = _meta_value(con, "schema_version", "0")
     if schema_version != str(DB_SCHEMA_VERSION):
-        ensure_schema_compatibility(con)
         _set_meta(con, "schema_version", DB_SCHEMA_VERSION)
 
     # These helpers contain their own migration/hash markers. On a warm/current
@@ -458,7 +495,7 @@ def _seed_airports_from_overrides(con: sqlite3.Connection) -> None:
     except Exception:
         return
     if not df.empty:
-        import_airports_dataframe(con, df, default_source="manual_override", replace_existing=True)
+        import_airports_dataframe(con, df, default_source="manual_override", replace_existing=True, user_id=DEFAULT_USER_ID)
     _set_meta(con, "airport_overrides_sha1", digest)
 
 
@@ -473,9 +510,10 @@ def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
                MAX(evidence) AS evidence,
                MAX(price_per_hour) AS price_per_hour
         FROM flights
-        WHERE registration IS NOT NULL AND TRIM(registration) <> ''
+        WHERE user_id = ? AND registration IS NOT NULL AND TRIM(registration) <> ''
         GROUP BY registration
-        """
+        """,
+        (DEFAULT_USER_ID,),
     ).fetchall()
     now = _now_iso()
     for row in rows:
@@ -484,11 +522,12 @@ def _seed_aircraft_from_existing_data(con: sqlite3.Connection) -> None:
         con.execute(
             """
             INSERT OR IGNORE INTO aircraft
-            (registration, aircraft_type, icao_type, aircraft_class, evidence,
+            (user_id, registration, aircraft_type, icao_type, aircraft_class, evidence,
              default_price_per_hour, default_role, billing_basis, active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'PIC', 'BLOCK', 1, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'PIC', 'BLOCK', 1, ?, ?)
             """,
             (
+                DEFAULT_USER_ID,
                 (row["registration"] or "").upper(),
                 row["aircraft_type"],
                 row["aircraft_type"],
@@ -511,10 +550,11 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
             """
             SELECT t.id, t.coordinates_json
             FROM flight_tracks t
-            WHERE NOT EXISTS (
-                SELECT 1 FROM track_points p WHERE p.track_id = t.id
+            WHERE t.user_id = ? AND NOT EXISTS (
+                SELECT 1 FROM track_points p WHERE p.track_id = t.id AND p.user_id = t.user_id
             )
             """
+            , (DEFAULT_USER_ID,)
         ).fetchall()
     except sqlite3.DatabaseError:
         return
@@ -523,58 +563,64 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
             points = json.loads(tr["coordinates_json"] or "[]")
         except Exception:
             points = []
-        insert_track_points(con, int(tr["id"]), points)
+        insert_track_points(con, int(tr["id"]), points, user_id=DEFAULT_USER_ID)
     _set_meta(con, "track_points_backfill_v1", "1")
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_table(table: str) -> pd.DataFrame:
+def read_table(table: str, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     with connect() as con:
+        if table in USER_SCOPED_TABLES:
+            return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(normalize_user_id(user_id),))
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_rates() -> pd.DataFrame:
-    rates = read_table("rates")
+def read_rates(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
+    rates = read_table("rates", user_id)
     if not rates.empty and "registration" in rates.columns:
         rates = rates.copy()
         rates["registration"] = rates["registration"].fillna("").astype(str).str.upper()
     return rates
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_table_count(table: str) -> int:
+def read_table_count(table: str, user_id: int = DEFAULT_USER_ID) -> int:
     try:
         with connect() as con:
-            row = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+            if table in USER_SCOPED_TABLES:
+                row = con.execute(f"SELECT COUNT(*) FROM {table} WHERE user_id = ?", (normalize_user_id(user_id),)).fetchone()
+            else:
+                row = con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
             return int(row[0]) if row else 0
     except sqlite3.DatabaseError:
         return 0
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_logbook_counts() -> dict[str, int]:
+def read_logbook_counts(user_id: int = DEFAULT_USER_ID) -> dict[str, int]:
     """Small database header counters in one connection instead of three."""
     try:
         with connect() as con:
+            uid = normalize_user_id(user_id)
             return {
-                "aircraft": int(con.execute("SELECT COUNT(*) FROM aircraft").fetchone()[0]),
-                "tracks": int(con.execute("SELECT COUNT(*) FROM flight_tracks").fetchone()[0]),
-                "points": int(con.execute("SELECT COUNT(*) FROM track_points").fetchone()[0]),
+                "aircraft": int(con.execute("SELECT COUNT(*) FROM aircraft WHERE user_id = ?", (uid,)).fetchone()[0]),
+                "tracks": int(con.execute("SELECT COUNT(*) FROM flight_tracks WHERE user_id = ?", (uid,)).fetchone()[0]),
+                "points": int(con.execute("SELECT COUNT(*) FROM track_points WHERE user_id = ?", (uid,)).fetchone()[0]),
             }
     except sqlite3.DatabaseError:
         return {"aircraft": 0, "tracks": 0, "points": 0}
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_audit_log(limit: int = 500) -> pd.DataFrame:
+def read_audit_log(limit: int = 500, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Read only the newest audit rows; the full audit table can grow indefinitely."""
     limit = max(1, min(int(limit or 500), 5000))
     try:
         with connect() as con:
             return pd.read_sql_query(
-                "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?",
+                "SELECT * FROM audit_log WHERE user_id = ? ORDER BY id DESC LIMIT ?",
                 con,
-                params=(limit,),
+                params=(normalize_user_id(user_id), limit),
             )
     except sqlite3.DatabaseError:
         return pd.DataFrame()
@@ -600,6 +646,7 @@ def import_airports_dataframe(
     df: pd.DataFrame,
     default_source: str,
     replace_existing: bool = True,
+    user_id: int = DEFAULT_USER_ID,
 ) -> int:
     """Import airport-like rows into the airports registry.
 
@@ -632,6 +679,7 @@ def import_airports_dataframe(
         source = normalize_text(val(row, "source")) or default_source
         raw = {str(k): (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
         params = (
+            normalize_user_id(user_id),
             ident,
             name,
             airport_type,
@@ -655,11 +703,11 @@ def import_airports_dataframe(
         if replace_existing:
             con.execute(
                 """
-                INSERT INTO airports (ident, name, airport_type, iso_country, iso_region, municipality,
+                INSERT INTO airports (user_id, ident, name, airport_type, iso_country, iso_region, municipality,
                     latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code,
                     source, active, closed, data_quality, imported_at, updated_at, raw_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(ident) DO UPDATE SET
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, ident) DO UPDATE SET
                     name=excluded.name,
                     airport_type=excluded.airport_type,
                     iso_country=excluded.iso_country,
@@ -683,10 +731,10 @@ def import_airports_dataframe(
         else:
             con.execute(
                 """
-                INSERT OR IGNORE INTO airports (ident, name, airport_type, iso_country, iso_region, municipality,
+                INSERT OR IGNORE INTO airports (user_id, ident, name, airport_type, iso_country, iso_region, municipality,
                     latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code,
                     source, active, closed, data_quality, imported_at, updated_at, raw_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 params,
             )
@@ -716,8 +764,22 @@ def _airport_query(active_only: bool) -> str:
     return query
 
 
+def _local_airport_query(active_only: bool) -> str:
+    query = """
+        SELECT ident, name, airport_type, iso_country, iso_region, municipality,
+               latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code,
+               local_code, source, active, closed, data_quality, imported_at, updated_at
+        FROM airports
+        WHERE user_id = ?
+    """
+    if active_only:
+        query += " AND active = 1 AND closed = 0 AND latitude_deg IS NOT NULL AND longitude_deg IS NOT NULL"
+    query += " ORDER BY ident"
+    return query
+
+
 @st.cache_data(show_spinner=False, ttl=1800)
-def read_airports(active_only: bool = True) -> pd.DataFrame:
+def read_airports(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Return airport registry from the fixed world DB plus local overrides.
 
     data/airports_full.sqlite is the stable world airport database. The main
@@ -727,6 +789,7 @@ def read_airports(active_only: bool = True) -> pd.DataFrame:
     """
     frames: list[pd.DataFrame] = []
     query = _airport_query(active_only)
+    local_query = _local_airport_query(active_only)
 
     if AIRPORTS_DB_PATH.exists():
         try:
@@ -737,7 +800,7 @@ def read_airports(active_only: bool = True) -> pd.DataFrame:
 
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(query, con))
+            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
     except Exception:
         pass
 
@@ -753,14 +816,14 @@ def read_airports(active_only: bool = True) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False, ttl=1800)
-def read_airport_registry_count() -> int:
+def read_airport_registry_count(user_id: int = DEFAULT_USER_ID) -> int:
     """Count unique airport idents without materializing the 85k-row catalogue."""
     local_idents: list[str] = []
     try:
         with connect() as con:
             local_idents = [
                 str(r[0]).upper().strip()
-                for r in con.execute("SELECT ident FROM airports WHERE ident IS NOT NULL AND TRIM(ident) <> ''").fetchall()
+                for r in con.execute("SELECT ident FROM airports WHERE user_id = ? AND ident IS NOT NULL AND TRIM(ident) <> ''", (normalize_user_id(user_id),)).fetchall()
             ]
     except Exception:
         local_idents = []
@@ -784,7 +847,7 @@ def read_airport_registry_count() -> int:
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def airport_coords_for_idents(idents: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+def airport_coords_for_idents(idents: tuple[str, ...], user_id: int = DEFAULT_USER_ID) -> dict[str, dict[str, Any]]:
     """Load coordinates only for airport idents actually needed by the current view."""
     clean = tuple(sorted({str(x).upper().strip() for x in idents if str(x or '').strip()}))
     if not clean:
@@ -805,7 +868,8 @@ def airport_coords_for_idents(idents: tuple[str, ...]) -> dict[str, dict[str, An
             pass
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(query, con, params=clean))
+            local_query = query.replace("FROM airports", "FROM airports").replace("WHERE UPPER(TRIM(ident))", "WHERE user_id = ? AND UPPER(TRIM(ident))")
+            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id), *clean)))
     except Exception:
         pass
     if not frames:
@@ -834,7 +898,7 @@ def airport_coords_for_idents(idents: tuple[str, ...]) -> dict[str, dict[str, An
 
 
 @st.cache_resource(show_spinner=False)
-def airport_search_index() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def airport_search_index(user_id: int = DEFAULT_USER_ID) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """In-memory minimal airport index for fast KML endpoint matching.
 
     Only ident/lat/lon are retained.  The index is built once per server process
@@ -855,7 +919,8 @@ def airport_search_index() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
             pass
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(query, con))
+            local_query = query.replace("WHERE active = 1", "WHERE user_id = ? AND active = 1")
+            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
     except Exception:
         pass
     if not frames:
@@ -908,7 +973,7 @@ def import_ourairports_to_database() -> int:
 def import_airport_csv_upload(uploaded_file) -> int:
     df = pd.read_csv(uploaded_file)
     with connect() as con:
-        count = import_airports_dataframe(con, df, default_source="user_csv", replace_existing=True)
+        count = import_airports_dataframe(con, df, default_source="user_csv", replace_existing=True, user_id=current_user_id())
         record_audit(con, "import_airport_csv", "airports", None, {"rows": count, "file": getattr(uploaded_file, "name", None)})
         con.commit()
     invalidate_cached_data("airports")
@@ -916,7 +981,7 @@ def import_airport_csv_upload(uploaded_file) -> int:
     return count
 
 
-def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]]) -> None:
+def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]], user_id: int = DEFAULT_USER_ID) -> None:
     if not points:
         return
     profile = profile_from_points(points)
@@ -926,6 +991,7 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     for _, p in profile.iterrows():
         speed_kmh = None if pd.isna(p.get("speed_kmh")) else float(p.get("speed_kmh"))
         rows.append((
+            normalize_user_id(user_id),
             track_id,
             int(p["idx"]),
             p["time_utc"].isoformat() if pd.notna(p.get("time_utc")) else None,
@@ -941,27 +1007,27 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     con.executemany(
         """
         INSERT OR REPLACE INTO track_points
-        (track_id, seq, time_utc, latitude_deg, longitude_deg, altitude_m,
+        (user_id, track_id, seq, time_utc, latitude_deg, longitude_deg, altitude_m,
          segment_km, distance_km, speed_kmh, speed_kt, source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         rows,
     )
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_counts() -> pd.DataFrame:
+def read_track_counts(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
             """
             SELECT flight_id, COUNT(*) AS track_count, COALESCE(SUM(distance_km), 0) AS gps_km
-            FROM flight_tracks GROUP BY flight_id
+            FROM flight_tracks WHERE user_id = ? GROUP BY flight_id
             """,
-            con,
+            con, params=(normalize_user_id(user_id),),
         )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_flights() -> pd.DataFrame:
+def read_flights(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Read flight rows and GPS aggregates in one SQLite round-trip."""
     with connect() as con:
         flights = pd.read_sql_query(
@@ -973,10 +1039,13 @@ def read_flights() -> pd.DataFrame:
             LEFT JOIN (
                 SELECT flight_id, COUNT(*) AS track_count, COALESCE(SUM(distance_km), 0.0) AS gps_km
                 FROM flight_tracks
+                WHERE user_id = ?
                 GROUP BY flight_id
             ) t ON t.flight_id = f.id
+            WHERE f.user_id = ?
             """,
             con,
+            params=(normalize_user_id(user_id), normalize_user_id(user_id)),
         )
     flights = compute_metrics(flights)
     if not flights.empty:
@@ -986,7 +1055,7 @@ def read_flights() -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined() -> pd.DataFrame:
+def read_tracks_joined(user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     with connect() as con:
         return pd.read_sql_query(
             """
@@ -994,15 +1063,17 @@ def read_tracks_joined() -> pd.DataFrame:
                    f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
                    f.role, f.starts, f.task, f.commander
             FROM flight_tracks t
-            JOIN flights f ON f.id = t.flight_id
+            JOIN flights f ON f.id = t.flight_id AND f.user_id = t.user_id
+            WHERE t.user_id = ?
             ORDER BY f.date, f.off_block, t.id
             """,
             con,
+            params=(normalize_user_id(user_id),),
         )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
+def read_tracks_joined_for_flights(flight_ids: tuple[int, ...], user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Return only tracks needed by the active map filter.
 
     The older GPS map path loaded every stored KML track including full
@@ -1020,16 +1091,16 @@ def read_tracks_joined_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
                f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
                f.role, f.starts, f.task, f.commander
         FROM flight_tracks t
-        JOIN flights f ON f.id = t.flight_id
-        WHERE t.flight_id IN ({placeholders})
+        JOIN flights f ON f.id = t.flight_id AND f.user_id = t.user_id
+        WHERE t.user_id = ? AND t.flight_id IN ({placeholders})
         ORDER BY f.date, f.off_block, t.id
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=ids)
+        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids))
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_metadata_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame:
+def read_track_metadata_for_flights(flight_ids: tuple[int, ...], user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Return GPS track metadata without the heavy coordinates_json payload."""
     ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
     if not ids:
@@ -1042,12 +1113,12 @@ def read_track_metadata_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame
                f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
                f.role, f.starts, f.task, f.commander
         FROM flight_tracks t
-        JOIN flights f ON f.id = t.flight_id
-        WHERE t.flight_id IN ({placeholders})
+        JOIN flights f ON f.id = t.flight_id AND f.user_id = t.user_id
+        WHERE t.user_id = ? AND t.flight_id IN ({placeholders})
         ORDER BY f.date DESC, f.off_block DESC, t.id DESC
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=ids)
+        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids))
 
 
 def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
@@ -1064,7 +1135,7 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int) -> pd.DataFrame:
+def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Read only a sampled subset of normalized GPS points for map rendering.
 
     This avoids loading and decoding the full coordinates_json for every visible
@@ -1088,7 +1159,7 @@ def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int) -> pd
                 ROW_NUMBER() OVER (PARTITION BY track_id ORDER BY seq) AS rn,
                 COUNT(*) OVER (PARTITION BY track_id) AS n
             FROM track_points
-            WHERE track_id IN ({placeholders})
+            WHERE user_id = ? AND track_id IN ({placeholders})
         )
         SELECT track_id, seq, lat, lon, alt, time
         FROM ranked
@@ -1098,7 +1169,7 @@ def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int) -> pd
         ORDER BY track_id, seq
     """
     with connect() as con:
-        return pd.read_sql_query(query, con, params=(*ids, max_points, max_points))
+        return pd.read_sql_query(query, con, params=(normalize_user_id(user_id), *ids, max_points, max_points))
 
 
 def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[int, str]:
@@ -1131,9 +1202,9 @@ def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -> pd.DataFrame:
+def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     """Return lightweight track records ready for the GPS overview map."""
-    metadata = read_track_metadata_for_flights(flight_ids)
+    metadata = read_track_metadata_for_flights(flight_ids, user_id)
     if metadata.empty:
         return metadata
     track_ids = _track_ids_for_map(metadata, mode)
@@ -1144,7 +1215,7 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -
     sort_cols = [c for c in ["date", "off_block", "id"] if c in selected.columns]
     if sort_cols:
         selected = selected.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
-    points = read_sampled_track_points(track_ids, plan.candidate_points_per_track)
+    points = read_sampled_track_points(track_ids, plan.candidate_points_per_track, user_id)
     coord_map = _points_dataframe_to_json(points, max_points=plan.points_per_track)
 
     missing = [tid for tid in track_ids if tid not in coord_map]
@@ -1155,8 +1226,8 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -
         try:
             with connect() as con:
                 rows = con.execute(
-                    f"SELECT id, coordinates_json FROM flight_tracks WHERE id IN ({placeholders})",
-                    tuple(missing),
+                    f"SELECT id, coordinates_json FROM flight_tracks WHERE user_id = ? AND id IN ({placeholders})",
+                    (normalize_user_id(user_id), *missing),
                 ).fetchall()
             for row in rows:
                 coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=plan.points_per_track)
@@ -1169,9 +1240,9 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_for_flight(flight_id: int) -> pd.DataFrame:
+def read_tracks_for_flight(flight_id: int, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     with connect() as con:
-        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE flight_id = ? ORDER BY id", con, params=(flight_id,))
+        return pd.read_sql_query("SELECT * FROM flight_tracks WHERE user_id = ? AND flight_id = ? ORDER BY id", con, params=(normalize_user_id(user_id), flight_id))
 
 
 def _columns_for_table(con: sqlite3.Connection, table: str) -> set[str]:
@@ -1326,7 +1397,7 @@ def nearest_airport(point: dict[str, Any] | None, max_km: float = 18.0) -> str:
         p_lon = float(point["lon"])
     except Exception:
         return ""
-    idents, lats, lons = airport_search_index()
+    idents, lats, lons = airport_search_index(current_user_id())
     if lats.size == 0:
         return ""
 
@@ -1459,7 +1530,7 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
         "landing": clock.get("landing"),
         "on_block": clock.get("on_block"),
         "starts": 1,
-        "commander": "Točík Filip",
+        "commander": current_user_display_name(),
         "instructor": "",
         "role": "PIC",
         "task": "",
@@ -1474,18 +1545,22 @@ def infer_from_track(points: list[dict[str, Any]], file_name: str, rates: pd.Dat
 def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], replace_existing: bool = False) -> None:
     points = normalize_track_points(points)
     stats = track_stats(points)
+    uid = current_user_id()
     with connect() as con:
+        owner = con.execute("SELECT 1 FROM flights WHERE id = ? AND user_id = ?", (flight_id, uid)).fetchone()
+        if owner is None:
+            raise ValueError("Let nepatří aktuálnímu uživateli.")
         if replace_existing:
-            con.execute("DELETE FROM flight_tracks WHERE flight_id = ?", (flight_id,))
+            con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid))
         cur = con.execute(
             """
-            INSERT INTO flight_tracks (flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flight_tracks (user_id, flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False)),
+            (uid, flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False)),
         )
         track_id = int(cur.lastrowid)
-        insert_track_points(con, track_id, points)
+        insert_track_points(con, track_id, points, user_id=uid)
         record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
         con.commit()
     invalidate_cached_data("tracks")
@@ -1511,13 +1586,14 @@ def create_flight(data: dict[str, Any], auto_backup: bool = True) -> int:
         else:
             v = normalize_text(v)
         values.append(v)
+    uid = current_user_id()
     with connect() as con:
         cur = con.execute(
             """
-            INSERT INTO flights (date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, billing_basis, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flights (user_id, date, evidence, registration, aircraft_type, aircraft_class, departure, arrival, off_block, takeoff, landing, on_block, starts, commander, instructor, role, task, price_per_hour, billing_basis, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            values,
+            [uid, *values],
         )
         flight_id = int(cur.lastrowid)
         record_audit(con, "create_flight", "flights", flight_id, data)
@@ -1548,7 +1624,7 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
             v = normalize_text(v)
         values.append(v)
     with connect() as con:
-        con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=?", [*values, flight_id])
+        con.execute("UPDATE flights SET " + ", ".join(f"{f}=?" for f in fields) + " WHERE id=? AND user_id=?", [*values, flight_id, current_user_id()])
         record_audit(con, "update_flight", "flights", flight_id, data)
         con.commit()
     invalidate_cached_data("flights")
@@ -1557,7 +1633,7 @@ def update_flight(flight_id: int, data: dict[str, Any]) -> None:
 
 def delete_track(track_id: int) -> None:
     with connect() as con:
-        con.execute("DELETE FROM flight_tracks WHERE id = ?", (track_id,))
+        con.execute("DELETE FROM flight_tracks WHERE id = ? AND user_id = ?", (track_id, current_user_id()))
         record_audit(con, "delete_track", "flight_tracks", track_id, None)
         con.commit()
     invalidate_cached_data("tracks")
@@ -1568,10 +1644,10 @@ def delete_flight(flight_id: int) -> None:
     """Delete one flight and all related KML/GPS data from SQLite."""
     with connect() as con:
         ensure_schema_compatibility(con)
-        row = con.execute("SELECT * FROM flights WHERE id = ?", (flight_id,)).fetchone()
+        row = con.execute("SELECT * FROM flights WHERE id = ? AND user_id = ?", (flight_id, current_user_id())).fetchone()
         if row is None:
             return
-        track_rows = con.execute("SELECT id FROM flight_tracks WHERE flight_id = ?", (flight_id,)).fetchall()
+        track_rows = con.execute("SELECT id FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, current_user_id())).fetchall()
         track_ids = [int(r["id"]) for r in track_rows]
         audit_detail = {
             "date": row["date"],
@@ -1580,9 +1656,9 @@ def delete_flight(flight_id: int) -> None:
             "tracks_deleted": len(track_ids),
         }
         for track_id in track_ids:
-            con.execute("DELETE FROM track_points WHERE track_id = ?", (track_id,))
-        con.execute("DELETE FROM flight_tracks WHERE flight_id = ?", (flight_id,))
-        con.execute("DELETE FROM flights WHERE id = ?", (flight_id,))
+            con.execute("DELETE FROM track_points WHERE track_id = ? AND user_id = ?", (track_id, current_user_id()))
+        con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, current_user_id()))
+        con.execute("DELETE FROM flights WHERE id = ? AND user_id = ?", (flight_id, current_user_id()))
         record_audit(con, "delete_flight", "flights", flight_id, audit_detail)
         con.commit()
     invalidate_cached_data("flights")
@@ -1595,7 +1671,7 @@ def downsample_points(points: list[dict[str, Any]], max_points: int = 900) -> li
 
 
 @st.cache_data(show_spinner=False, ttl=600)
-def airport_coord_lookup() -> dict[str, dict[str, Any]]:
+def airport_coord_lookup(user_id: int = DEFAULT_USER_ID) -> dict[str, dict[str, Any]]:
     """Fast airport coordinate lookup used by maps and track extensions.
 
     This intentionally reads only the five columns needed for drawing maps. The
@@ -1616,7 +1692,8 @@ def airport_coord_lookup() -> dict[str, dict[str, Any]]:
             pass
     try:
         with connect() as con:
-            frames.append(pd.read_sql_query(query, con))
+            local_query = query.replace("WHERE latitude_deg IS NOT NULL", "WHERE user_id = ? AND latitude_deg IS NOT NULL")
+            frames.append(pd.read_sql_query(local_query, con, params=(normalize_user_id(user_id),)))
     except Exception:
         pass
     if not frames:
@@ -1654,7 +1731,7 @@ def airport_coord(ident: Any) -> dict[str, Any] | None:
     if not text:
         return None
     ident_up = text.upper()
-    return airport_coords_for_idents((ident_up,)).get(ident_up)
+    return airport_coords_for_idents((ident_up,), current_user_id()).get(ident_up)
 
 
 def _coord_dict_from_airport(ap: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -1739,7 +1816,7 @@ def make_map(
             if col in tracks.columns:
                 values = tracks[col].fillna("").astype(str).str.upper().str.strip()
                 needed.update(values[values.ne("")].tolist())
-        airport_lookup = airport_coords_for_idents(tuple(sorted(needed)))
+        airport_lookup = airport_coords_for_idents(tuple(sorted(needed)), current_user_id())
     center, zoom = map_center_from_tracks(tracks, airport_lookup=airport_lookup)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
     m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
@@ -1799,7 +1876,7 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
                 needed.update(
                     flights[col].fillna("").astype(str).str.upper().str.strip().loc[lambda x: x.ne("")].tolist()
                 )
-    lookup = airport_coords_for_idents(tuple(sorted(needed)))
+    lookup = airport_coords_for_idents(tuple(sorted(needed)), current_user_id())
     coords: list[tuple[float, float]] = []
     visited: dict[str, dict[str, Any]] = {}
     route_groups: dict[tuple[str, str], dict[str, Any]] = {}
@@ -2749,7 +2826,7 @@ def set_form_values(prefix: str, values: dict[str, Any], *, include_times: bool 
 
 def recent_flights_for_templates(limit: int = 25) -> pd.DataFrame:
     try:
-        flights = read_table("flights")
+        flights = read_table("flights", current_user_id())
     except Exception:
         return pd.DataFrame()
     if flights.empty:
@@ -2763,7 +2840,7 @@ def recent_flights_for_templates(limit: int = 25) -> pd.DataFrame:
 
 def recent_routes_for_picker(limit: int = 18) -> list[tuple[str, str]]:
     try:
-        flights = read_table("flights")
+        flights = read_table("flights", current_user_id())
     except Exception:
         return []
     if flights.empty or "departure" not in flights.columns or "arrival" not in flights.columns:
@@ -2857,9 +2934,9 @@ def _billing_basis_label(value: Any) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_aircraft_catalog(active_only: bool = True) -> pd.DataFrame:
+def read_aircraft_catalog(active_only: bool = True, user_id: int = DEFAULT_USER_ID) -> pd.DataFrame:
     try:
-        aircraft = read_table("aircraft")
+        aircraft = read_table("aircraft", user_id)
     except Exception:
         return pd.DataFrame()
     if aircraft.empty:
@@ -2929,7 +3006,7 @@ def _apply_aircraft_to_form(prefix: str, reg: str, row: dict[str, Any], rates: p
 
 
 def render_aircraft_picker(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
-    aircraft = read_aircraft_catalog(active_only=True)
+    aircraft = read_aircraft_catalog(active_only=True, user_id=current_user_id())
     if aircraft.empty:
         return
     aircraft_by_reg = {str(row.get("registration") or "").upper(): dict(row) for _, row in aircraft.iterrows()}
@@ -3133,7 +3210,7 @@ def flight_form(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame, subm
             on_block = st.text_input("On Block", value=str(defaults.get("on_block") or ""), key=f"{prefix}_on")
         with col3:
             starts = st.number_input("Starty", min_value=0, step=1, value=int(defaults.get("starts") or 1), key=f"{prefix}_starts")
-            commander = st.text_input("Velitel", value=str(defaults.get("commander") or "Točík Filip"), key=f"{prefix}_cmd")
+            commander = st.text_input("Velitel", value=str(defaults.get("commander") or current_user_display_name()), key=f"{prefix}_cmd")
             instructor = st.text_input("Instruktor", value=str(defaults.get("instructor") or ""), key=f"{prefix}_instr")
             role_def = defaults.get("role") or "PIC"
             role = st.selectbox("Funkce", ROLE_OPTIONS, index=ROLE_OPTIONS.index(role_def) if role_def in ROLE_OPTIONS else 0, key=f"{prefix}_role")
@@ -3337,7 +3414,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
         if not is_admin():
             st.info("Pouze admin.")
         else:
-            edit_tracks = read_tracks_for_flight(int(selected_id))
+            edit_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
             gps_proposal, _gps_points, _gps_track_row = _gps_proposal_from_tracks(edit_tracks)
             if gps_proposal:
                 with st.expander("GPS návrh časů", expanded=False):
@@ -3358,7 +3435,7 @@ def flight_detail_dialog(selected_id: int, row_data: dict[str, Any], rates: pd.D
                 st.session_state[f"_detail_flash_{selected_id}"] = "Změny uloženy."
                 st.rerun()
     elif detail_section == "Track":
-        flight_tracks = read_tracks_for_flight(int(selected_id))
+        flight_tracks = read_tracks_for_flight(int(selected_id), current_user_id())
         gps_proposal, first_points, selected_track_row = _gps_proposal_from_tracks(flight_tracks)
         if not flight_tracks.empty and first_points:
             render_track_playback(first_points, int(selected_id), dark_mode)
@@ -3737,7 +3814,7 @@ def render_flight_list(table_df: pd.DataFrame, dark_mode: bool, rates: pd.DataFr
     valid_ids = set(table_df["id"].astype(int).tolist())
     if open_id is not None and int(open_id) in valid_ids:
         dialog_row = table_df[table_df["id"].astype(int).eq(int(open_id))].iloc[0]
-        dialog_rates = rates if rates is not None else read_rates()
+        dialog_rates = rates if rates is not None else read_rates(current_user_id())
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), dialog_rates, dark_mode)
 
 
@@ -3831,7 +3908,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
             st.success(f"Uloženo ID {flight_id}.")
             st.rerun()
     else:
-        defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": "Točík Filip", "role": "PIC"}
+        defaults = {"date": date.today(), "evidence": "ULL", "aircraft_class": "ULL", "starts": 1, "commander": current_user_display_name(), "role": "PIC"}
         saved = flight_form("new_manual_v040", defaults, rates, "Přidat let")
         if saved is not None:
             flight_id = create_flight(saved)
@@ -3850,7 +3927,7 @@ def map_navigation_options(df: pd.DataFrame) -> tuple[list[str], list[tuple[str,
             if col in df.columns:
                 values = df[col].fillna("").astype(str).str.upper().str.strip()
                 needed.update(values[values.ne("")].tolist())
-    lookup = airport_coords_for_idents(tuple(sorted(needed)))
+    lookup = airport_coords_for_idents(tuple(sorted(needed)), current_user_id())
     airports: set[str] = set()
     routes: dict[tuple[str, str], int] = {}
     known_routes = 0
@@ -4059,7 +4136,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
 
     if map_mode == "GPS tracky":
         flight_ids = _flight_id_tuple(filtered)
-        tracks_meta = read_track_metadata_for_flights(flight_ids)
+        tracks_meta = read_track_metadata_for_flights(flight_ids, current_user_id())
         if tracks_meta.empty:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
         else:
@@ -4071,7 +4148,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
                     index=0,
                     key="gps_track_map_scope_v046",
                 )
-            tracks_for_map = read_track_map_records_for_flights(flight_ids, gps_map_mode)
+            tracks_for_map = read_track_map_records_for_flights(flight_ids, gps_map_mode, current_user_id())
             with col_count:
                 metric_card("Vykresleno", f"{len(tracks_for_map)} / {len(tracks_meta)}", "GPS tracků")
             records_json = _df_to_records_json(
@@ -4093,7 +4170,7 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
             map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v044")
             handle_route_map_interaction(map_event)
             if st.session_state.get("map_airport") or st.session_state.get("map_route"):
-                render_map_selection(filtered, read_rates(), dark_mode)
+                render_map_selection(filtered, read_rates(current_user_id()), dark_mode)
 
 
 def render_rates_editor(rates: pd.DataFrame, *, key_prefix: str = "rates") -> None:
@@ -4129,14 +4206,15 @@ def page_rates(rates: pd.DataFrame):
 
 def save_rates_editor(edited: pd.DataFrame) -> None:
     with connect() as con:
-        con.execute("DELETE FROM rates")
+        uid = current_user_id()
+        con.execute("DELETE FROM rates WHERE user_id = ?", (uid,))
         for _, row in edited.iterrows():
             reg = normalize_text(row.get("Imatrikulace"))
             if not reg:
                 continue
             con.execute(
-                "INSERT INTO rates (registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source) VALUES (?, ?, ?, ?, ?, ?)",
-                (reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("Od data")), float(row.get("Cena Kč/h") or 0), float(row.get("Suchá hodina Kč/h") or 0), normalize_text(row.get("Zdroj"))),
+                "INSERT INTO rates (user_id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (uid, reg.upper(), normalize_text(row.get("Typ")), normalize_text(row.get("Od data")), float(row.get("Cena Kč/h") or 0), float(row.get("Suchá hodina Kč/h") or 0), normalize_text(row.get("Zdroj"))),
             )
         record_audit(con, "save_rates", "rates", None, {"rows": len(edited)})
         con.commit()
@@ -4164,7 +4242,8 @@ def _clean_role(value: Any) -> str:
 
 def save_aircraft_editor(edited: pd.DataFrame) -> None:
     with connect() as con:
-        con.execute("DELETE FROM aircraft")
+        uid = current_user_id()
+        con.execute("DELETE FROM aircraft WHERE user_id = ?", (uid,))
         now = _now_iso()
         for _, row in edited.iterrows():
             reg = normalize_text(row.get("Imatrikulace"))
@@ -4172,10 +4251,11 @@ def save_aircraft_editor(edited: pd.DataFrame) -> None:
                 continue
             con.execute(
                 """
-                INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO aircraft (user_id, registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    uid,
                     reg.upper(),
                     normalize_text(row.get("Typ")),
                     normalize_text(row.get("ICAO typ")),
@@ -4202,12 +4282,13 @@ def upsert_aircraft_profile(data: dict[str, Any]) -> None:
         raise ValueError("Imatrikulace je povinná.")
     now = _now_iso()
     price = float(data.get("default_price_per_hour") or 0)
+    uid = current_user_id()
     with connect() as con:
         con.execute(
             """
-            INSERT INTO aircraft (registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(registration) DO UPDATE SET
+            INSERT INTO aircraft (user_id, registration, aircraft_type, icao_type, aircraft_class, evidence, default_price_per_hour, default_role, billing_basis, active, note, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, registration) DO UPDATE SET
                 aircraft_type=excluded.aircraft_type,
                 icao_type=excluded.icao_type,
                 aircraft_class=excluded.aircraft_class,
@@ -4220,6 +4301,7 @@ def upsert_aircraft_profile(data: dict[str, Any]) -> None:
                 updated_at=excluded.updated_at
             """,
             (
+                uid,
                 reg.upper(),
                 normalize_text(data.get("aircraft_type")),
                 normalize_text(data.get("icao_type")),
@@ -4238,14 +4320,14 @@ def upsert_aircraft_profile(data: dict[str, Any]) -> None:
             today = date.today().isoformat()
             con.execute(
                 """
-                INSERT INTO rates (registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(registration, valid_from) DO UPDATE SET
+                INSERT INTO rates (user_id, registration, aircraft_type, valid_from, price_per_hour, dry_price_per_hour, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, registration, valid_from) DO UPDATE SET
                     aircraft_type=excluded.aircraft_type,
                     price_per_hour=excluded.price_per_hour,
                     source=excluded.source
                 """,
-                (reg.upper(), normalize_text(data.get("aircraft_type")), today, price, 0.0, "aircraft_default"),
+                (uid, reg.upper(), normalize_text(data.get("aircraft_type")), today, price, 0.0, "aircraft_default"),
             )
         record_audit(con, "upsert_aircraft", "aircraft", reg.upper(), data)
         con.commit()
@@ -4264,12 +4346,13 @@ def upsert_airport_form(data: dict[str, Any]) -> None:
     if lat is None or lon is None:
         raise ValueError("Latitude a longitude jsou povinné.")
     now = _now_iso()
+    uid = current_user_id()
     with connect() as con:
         con.execute(
             """
-            INSERT INTO airports (ident, name, airport_type, iso_country, iso_region, municipality, latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code, source, active, closed, data_quality, imported_at, updated_at, raw_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(ident) DO UPDATE SET
+            INSERT INTO airports (user_id, ident, name, airport_type, iso_country, iso_region, municipality, latitude_deg, longitude_deg, elevation_ft, gps_code, iata_code, local_code, source, active, closed, data_quality, imported_at, updated_at, raw_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, ident) DO UPDATE SET
                 name=excluded.name,
                 airport_type=excluded.airport_type,
                 iso_country=excluded.iso_country,
@@ -4289,6 +4372,7 @@ def upsert_airport_form(data: dict[str, Any]) -> None:
                 raw_json=excluded.raw_json
             """,
             (
+                uid,
                 ident,
                 normalize_text(data.get("name")),
                 normalize_text(data.get("airport_type")) or "manual_field",
@@ -4322,8 +4406,8 @@ def page_database():
     # Header metrics intentionally use COUNT queries.  Older versions loaded the
     # entire 85k-row airport catalogue, aircraft table, metadata and audit log
     # before the user had even chosen a database section.
-    airport_count_total = read_airport_registry_count()
-    counts = read_logbook_counts()
+    airport_count_total = read_airport_registry_count(current_user_id())
+    counts = read_logbook_counts(current_user_id())
     aircraft_count_total = counts["aircraft"]
     track_count_total = counts["tracks"]
     point_count_total = counts["points"]
@@ -4343,7 +4427,7 @@ def page_database():
     )
 
     if section == "Letiště":
-        airports = read_airports(active_only=False)
+        airports = read_airports(active_only=False, user_id=current_user_id())
         col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             country = st.selectbox("Země", ["Vše"] + sorted([x for x in airports.get("iso_country", pd.Series(dtype=str)).dropna().unique() if x]), index=0)
@@ -4408,8 +4492,8 @@ def page_database():
                     st.error(str(exc))
 
     elif section == "Letadla":
-        aircraft = read_table("aircraft")
-        rates = read_rates()
+        aircraft = read_table("aircraft", current_user_id())
+        rates = read_rates(current_user_id())
         if aircraft.empty:
             aircraft = pd.DataFrame(columns=["id", "registration", "aircraft_type", "icao_type", "aircraft_class", "evidence", "default_price_per_hour", "default_role", "billing_basis", "active", "note"])
         aircraft_view = aircraft.copy()
@@ -4522,7 +4606,7 @@ def page_database():
                 st.rerun()
 
     elif section == "Ceník":
-        render_rates_editor(read_rates(), key_prefix="database_rates")
+        render_rates_editor(read_rates(current_user_id()), key_prefix="database_rates")
 
     elif section == "Kontrola":
         render_database_control_panel()
@@ -4575,7 +4659,7 @@ def page_database():
 
     elif section == "Meta":
         metas = read_table("app_meta")
-        audits = read_audit_log(500)
+        audits = read_audit_log(500, current_user_id())
         st.markdown("### Metadata")
         if metas.empty:
             st.info("Žádná metadata.")
@@ -4827,7 +4911,7 @@ def build_database_health_report() -> dict[str, Any]:
             report["tables"]["invalid_track_json"] = pd.DataFrame(invalid_json_rows)
 
     # Time anomalies are easier and safer to evaluate with the existing Python duration logic.
-    flights = read_flights()
+    flights = read_flights(current_user_id())
     time_rows: list[dict[str, Any]] = []
     if not flights.empty:
         for _, r in flights.iterrows():
@@ -5457,15 +5541,15 @@ def main():
     # pracuje s lehkými metadaty, adaptivním point budgetem a vzorkovanými
     # body z track_points místo plného coordinates_json pro každý track.
     if page == "Dashboard":
-        page_dashboard(read_flights())
+        page_dashboard(read_flights(current_user_id()))
     elif page == "Lety":
-        page_logbook(read_flights(), dark_mode)
+        page_logbook(read_flights(current_user_id()), dark_mode)
     elif page == "Nový let":
-        page_new_flight(read_rates(), dark_mode)
+        page_new_flight(read_rates(current_user_id()), dark_mode)
     elif page == "Mapa":
-        page_maps(read_flights(), dark_mode)
+        page_maps(read_flights(current_user_id()), dark_mode)
     elif page == "Ceník":
-        page_rates(read_rates())
+        page_rates(read_rates(current_user_id()))
     elif page == "Databáze":
         page_database()
     elif page == "Kontrola":
@@ -5473,7 +5557,7 @@ def main():
         st.session_state["page"] = "Dashboard"
         st.rerun()
     elif page == "Export":
-        page_export(read_flights())
+        page_export(read_flights(current_user_id()))
     render_page_loaded_signal()
 
 if __name__ == "__main__":

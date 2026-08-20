@@ -7,8 +7,29 @@ CREATE TABLE IF NOT EXISTS app_meta (
     value TEXT,
     updated_at TEXT
 );
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT,
+    display_name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    active INTEGER DEFAULT 1,
+    created_at TEXT,
+    updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id INTEGER PRIMARY KEY,
+    timezone TEXT DEFAULT 'Europe/Prague',
+    currency TEXT DEFAULT 'CZK',
+    home_airport TEXT,
+    default_role TEXT DEFAULT 'PIC',
+    preferences_json TEXT,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 CREATE TABLE IF NOT EXISTS flights (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     date TEXT NOT NULL,
     evidence TEXT,
     registration TEXT,
@@ -27,11 +48,13 @@ CREATE TABLE IF NOT EXISTS flights (
     task TEXT,
     price_per_hour REAL,
     billing_basis TEXT DEFAULT 'BLOCK',
-    note TEXT
+    note TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS aircraft (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration TEXT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL DEFAULT 1,
+    registration TEXT NOT NULL,
     aircraft_type TEXT,
     icao_type TEXT,
     aircraft_class TEXT,
@@ -42,21 +65,28 @@ CREATE TABLE IF NOT EXISTS aircraft (
     active INTEGER DEFAULT 1,
     note TEXT,
     created_at TEXT,
-    updated_at TEXT
+    updated_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, registration)
 );
 CREATE TABLE IF NOT EXISTS rates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     registration TEXT NOT NULL,
     aircraft_type TEXT,
     valid_from TEXT,
     price_per_hour REAL,
     dry_price_per_hour REAL,
     source TEXT,
-    UNIQUE(registration, valid_from)
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, registration, valid_from)
 );
+-- This table stores local/user airport overrides only. The large world catalogue
+-- remains in data/airports_full.sqlite and is shared read-only by all users.
 CREATE TABLE IF NOT EXISTS airports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ident TEXT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL DEFAULT 1,
+    ident TEXT NOT NULL,
     name TEXT,
     airport_type TEXT,
     iso_country TEXT,
@@ -74,10 +104,13 @@ CREATE TABLE IF NOT EXISTS airports (
     data_quality TEXT,
     imported_at TEXT,
     updated_at TEXT,
-    raw_json TEXT
+    raw_json TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, ident)
 );
 CREATE TABLE IF NOT EXISTS flight_tracks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     flight_id INTEGER NOT NULL,
     file_name TEXT,
     imported_at TEXT,
@@ -88,10 +121,12 @@ CREATE TABLE IF NOT EXISTS flight_tracks (
     min_alt_m REAL,
     max_alt_m REAL,
     coordinates_json TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(flight_id) REFERENCES flights(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS track_points (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     track_id INTEGER NOT NULL,
     seq INTEGER NOT NULL,
     time_utc TEXT,
@@ -103,17 +138,20 @@ CREATE TABLE IF NOT EXISTS track_points (
     speed_kmh REAL,
     speed_kt REAL,
     source TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(track_id) REFERENCES flight_tracks(id) ON DELETE CASCADE,
     UNIQUE(track_id, seq)
 );
 CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     actor TEXT,
     action TEXT NOT NULL,
     object_type TEXT,
     object_id TEXT,
-    detail_json TEXT
+    detail_json TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_flights_date ON flights(date);
 CREATE INDEX IF NOT EXISTS idx_flights_registration ON flights(registration);

@@ -1,29 +1,18 @@
-# Upload v0.54
+# Upload v0.55
 
-v0.53 už vytvořila čistou strukturu GitHub repozitáře. Pro v0.54 není potřeba nic hromadně mazat.
+Postup je stejný jako u v0.54.
 
-## Kritické pravidlo
+1. Měj bokem zálohu `data/logbook.sqlite`.
+2. Rozbal ZIP v0.55.
+3. Zkopíruj jeho obsah do lokálního repozitáře `Documents/GitHub/Logbook`.
+4. **Nemaž `.git` a nepřepisuj `data/logbook.sqlite`.** Release ZIP živou databázi neobsahuje.
+5. V GitHub Desktop ověř, že `data/logbook.sqlite` není mezi změněnými/smazanými soubory.
+6. Commit message: `v0.55 - Multi-User Foundation`.
+7. Push origin.
+8. Streamlit po redeployi provede při prvním otevření automatickou migraci DB ze schema 5 na 6.
+9. Ověř Dashboard, Lety, detail letu, KML/Track Player, Mapu, Ceník a custom letiště.
+10. Pokud vše funguje, vytvoř GitHub release/tag `v0.55`.
 
-**Zachovat stávající `data/logbook.sqlite`.** Release ZIP tento soubor neobsahuje.
+### Důležité
 
-## Doporučený postup
-
-1. Rozbal ZIP v0.54 do samostatné složky.
-2. Zkopíruj celý obsah rozbalené v0.54 do lokálního repozitáře `Documents/GitHub/Logbook`.
-3. Windows se zeptá na nahrazení existujících souborů — potvrď nahrazení.
-4. Ověř, že `data/logbook.sqlite` je stále přítomný.
-5. Otevři GitHub Desktop a zkontroluj změny.
-6. Commit message: `v0.54 - GPS Map Engine 2.0`.
-7. Commitni a následně `Push origin`.
-8. Počkej na automatický redeploy Streamlit Cloud.
-
-## Po nasazení
-
-1. Ověřit badge `v0.54`.
-2. Otevřít `Mapa → GPS tracky`.
-3. Vyzkoušet `Rychlá`, `Střední` a `Vše`.
-4. Zkontrolovat, že trasy vypadají přirozeně a zatáčky nejsou useknuté.
-5. Otevřít detail letu se Smooth Track Playerem.
-6. Importovat jeden testovací KML.
-7. Ověřit Dashboard, Lety a Export.
-8. Ověřit, že všechny stávající lety a tracky zůstaly v databázi.
+První start v0.55 může být o něco delší, protože jednorázově upraví databázové schéma. Další starty už používají migration marker a nemají migraci opakovat.

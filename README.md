@@ -1,53 +1,49 @@
-# Letový zápisník
+# Logbook Streamlit
 
-Verze: **v0.54**
+Verze: **v0.55**
 
-## v0.54 – GPS / Map Engine 2.0
+## v0.55 – Multi-User Foundation
 
-v0.54 navazuje na stabilní v0.53 Core Architecture Refactor. Tato verze přepracovává interní přípravu GPS dat pro mapy tak, aby výkon zůstal předvídatelný i s výrazně větším počtem letů a tracků. Uložená GPS data ani databázové schéma se nemění.
+v0.55 připravuje aplikaci na budoucí používání více piloty, ale **současné chování zůstává single-user**. Přihlášení ani registrace se zatím nezobrazují a aplikace dál používá SQLite + současný GitHub backup.
 
-### Hlavní změny
+### Co se změnilo
 
-- nový samostatný modul `logbook_core/map_engine.py`
-- adaptivní render budget pro GPS overview mapu
-  - **Rychlá:** max. 40 tracků, přibližně max. 4 400 GPS bodů v browser payloadu
-  - **Střední:** max. 120 tracků, přibližně max. 14 400 bodů
-  - **Vše:** všechny tracky, ale dynamický počet bodů na track s cílovým rozpočtem přibližně 24 000 bodů
-- geometry-preserving simplifikace tracku místo prostého výběru každého N-tého bodu
-  - vždy zachová první a poslední bod
-  - prioritně zachovává zatáčky a změny tvaru trasy
-  - má přesný horní limit počtu bodů
-- dvoustupňové načítání overview mapy
-  - SQLite načte pouze omezený počet kandidátních bodů z `track_points`
-  - Map Engine 2.0 z kandidátů vybere geometricky nejdůležitější body
-  - plný `coordinates_json` se používá pouze jako fallback u starých/neúplně migrovaných tracků
-- sjednocený výpočet středu a zoomu map přes nový viewport helper
-- Leaflet/Folium mapy používají canvas renderer pro efektivnější vykreslení většího počtu tras
-- statická playback mapa používá stejnou geometry-preserving simplifikaci
-- přidány samostatné regresní testy Map Engine 2.0
+- nový interní model uživatelů (`users`, `user_settings`),
+- současný pilot je automaticky veden jako výchozí uživatel `user_id = 1`,
+- existující lety, letadla, ceník, lokální/custom letiště, GPS tracky, GPS body a audit log se při prvním startu automaticky přiřadí tomuto uživateli,
+- uživatelská data mají `user_id`,
+- letadla jsou unikátní podle `(user_id, registration)`,
+- ceny podle `(user_id, registration, valid_from)`,
+- lokální/custom letiště podle `(user_id, ident)`,
+- hlavní čtecí i zapisovací cesty aplikace jsou připravené na uživatelské oddělení,
+- světová databáze letišť `airports_full.sqlite` zůstává společná a read-only,
+- hardcoded jméno velitele bylo nahrazeno profilem aktuálního uživatele,
+- databázové schéma je nyní **6**.
 
-### Co zůstává beze změny
+### Co se zatím nemění
 
-- `DB_SCHEMA_VERSION = 5`
-- žádná migrace `data/logbook.sqlite`
-- plné GPS tracky zůstávají v databázi beze změny
-- výpočty GPS vzdálenosti používají plná data, nikoli zjednodušenou mapovou reprezentaci
-- KML import zůstává funkčně stejný
-- Smooth Track Player zůstává funkčně stejný
-- filtry a režimy mapy zůstávají stejné
-- Rychlá/Střední zachovávají dosavadní limit 40/120 tracků
+- žádná přihlašovací obrazovka,
+- žádná registrace,
+- žádný PostgreSQL/Supabase,
+- žádná změna Streamlit UI,
+- GitHub backup databáze zůstává zachován,
+- KML import a GPS Map Engine 2.0 fungují stejně jako ve v0.54.
 
-## Bezpečnost dat při uploadu
+## Bezpečná migrace
 
-**Nepřepisovat ani nemazat `data/logbook.sqlite`.** Release ZIP tento soubor úmyslně neobsahuje. Při kopírování v0.54 do lokálního Git repozitáře zůstane současná databáze na místě.
+Při prvním spuštění nad databází z v0.54 proběhne jednorázová migrace. Staré záznamy se nemažou; doplní se jim vlastník `user_id = 1`. Migrace je idempotentní a má persistentní marker `tenancy_v1`, takže se při dalších startech neopakuje.
 
-## Test
+**Před nasazením ponech zálohu `data/logbook.sqlite`. Release ZIP tento soubor neobsahuje a nesmí přepsat živou databázi.**
 
-```bash
-python -m unittest discover -s tests -v
-python -m py_compile app.py logbook_core/*.py logbook_ui/*.py
-```
+## Testy
 
-Aktuální sada: **10 testů**.
+Součástí jsou regresní testy core funkcí, GPS Map Engine 2.0 a nové testy multi-user migrace včetně ověření, že dva uživatelé mohou mít stejné letadlo i stejný custom ident letiště.
 
-Podrobnosti: `ARCHITECTURE.md` a `UPLOAD_INSTRUCTIONS.md`.
+## Další plán
+
+Po produkčním ověření v0.55 lze navázat:
+
+1. profil uživatele a editace jeho nastavení,
+2. autentizační vrstva (login / registrace),
+3. přesun datového backendu na PostgreSQL,
+4. teprve potom otevření aplikace dalším uživatelům.

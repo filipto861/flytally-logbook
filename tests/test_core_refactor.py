@@ -4,14 +4,15 @@ import unittest
 
 import pandas as pd
 
-from logbook_core.config import APP_VERSION
+from logbook_core.config import APP_VERSION, DB_SCHEMA_VERSION
 from logbook_core.metrics import build_summary, compute_metrics, fmt_minutes, minutes_diff, normalize_date
 from logbook_core.tracks import detect_kml_source, parse_kml_bytes, track_stats
 
 
 class CoreRefactorTests(unittest.TestCase):
     def test_version(self) -> None:
-        self.assertEqual(APP_VERSION, "v0.54")
+        self.assertEqual(APP_VERSION, "v0.55")
+        self.assertEqual(DB_SCHEMA_VERSION, 6)
 
     def test_time_helpers(self) -> None:
         self.assertEqual(minutes_diff("23:50", "00:10"), 20)
