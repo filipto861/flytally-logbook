@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.69 – Pilot Currency & Recency
+## v0.69.1 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -96,7 +96,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - generic cached SQL readers accept only explicitly permitted tables
 - normal current-database cold starts skip the unnecessary second full `SCHEMA` DDL pass
 - cached track-map JSON decoding uses the standard JSON decoder instead of a Pandas JSON parser
-- old global `sitecustomize.py` SQLite monkeypatch was neutralized in v0.61.7 and the startup hook is removed entirely in v0.69
+- old global `sitecustomize.py` SQLite monkeypatch was neutralized in v0.61.7 and the startup hook is removed entirely in v0.69.1
 - runtime dependencies are exactly pinned to the versions validated on Streamlit Cloud
 - Streamlit 1.62 compatibility checks remain part of the regression suite
 
@@ -138,7 +138,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.69 – Profile Recency Polish
+## v0.69.1 – Profile Recency Polish
 - removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
 - licence/medical/rating expiry tracking is the primary content
@@ -148,7 +148,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9; no migration required
 
 
-## v0.69 – Data Portability & Backup UX
+## v0.69.1 – Data Portability & Backup UX
 - adds `Export → Záloha účtu` for every authenticated user
 - portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
 - passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
@@ -161,7 +161,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.69 – Flight Entry UX 2.0
+## v0.69.1 – Flight Entry UX 2.0
 - manual flight entry now uses a compact pilot-focused layout
 - the most recent flight can prefill the last aircraft and next departure airport
 - last aircraft is reused only when its aircraft profile still exists
@@ -174,13 +174,13 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.69 – Manual Entry None Safety Hotfix
+## v0.69.1 – Manual Entry None Safety Hotfix
 - fixes `AttributeError: 'NoneType' object has no attribute 'upper'` when a new manual flight has an empty arrival
 - hardens all new v0.65 manual-entry uppercase conversions against missing optional values
 - no UX, database or schema changes
 
 
-## v0.69 – Flight Detail & Logbook UX Polish
+## v0.69.1 – Flight Detail & Logbook UX Polish
 - simplifies the flight list from 15 columns to 9
 - removes separate Edit/GPS buttons from every list row; all actions remain available inside Detail
 - visible rows now render one Streamlit action button instead of three, reducing widget count substantially
@@ -195,7 +195,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - KML import, GPS playback, edit form and database schema remain unchanged
 
 
-## v0.69 – Map & Track UX 2.0
+## v0.69.1 – Map & Track UX 2.0
 - GPS playback now interpolates continuously between recorded fixes instead of jumping point-to-point
 - browser animation uses `requestAnimationFrame`, so moving the aircraft does not trigger Streamlit reruns
 - map position, aircraft bearing, altitude, groundspeed, distance, timeline and chart cursor are synchronized
@@ -215,7 +215,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - KML import logic, stored track data and database schema remain unchanged
 
 
-## v0.69 – Data Quality & Automation
+## v0.69.1 – Data Quality & Automation
 - adds `Databáze → Kvalita dat` without expanding the sidebar
 - scan runs only on demand and is scoped strictly to the signed-in user
 - simple overall status: OK / UPOZORNĚNÍ / PROBLÉM
@@ -234,7 +234,7 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - database schema remains 9
 
 
-## v0.69 – Production Hardening & Performance Audit
+## v0.69.1 – Production Hardening & Performance Audit
 - schema marker 10: adds tenant-owner guard triggers and a user/id audit index; no user data table rebuild
 - thread-safe SQLite cold initialization plus 10-second busy timeout
 - removes accidental double/triple Streamlit cache decorators that could retain stale inner cache values
@@ -251,3 +251,13 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - map mini-table unsafe HTML values are consistently escaped
 - index-friendly exact airport-ident lookups replace `UPPER(TRIM(...))` scans
 - removes unreachable Database branches, stale cache invalidation names, obsolete helpers and the Python `sitecustomize` startup hook
+
+
+## v0.69.1 – Navigation Performance Hotfix
+- sidebar navigation now uses a Streamlit button callback and performs only the rerun already caused by the click
+- removes the redundant explicit `st.rerun()` that previously caused two complete script passes for every menu change
+- keeps the selected page available before the same rerun reaches the main router
+- adds a request-local current-profile snapshot so repeated role/name/timezone/currency lookups inside one rerun do not repeatedly traverse the Streamlit data-cache wrapper
+- the request-local profile cache is recreated on every script run, so the v0.69 authentication/session hardening remains intact
+- shortens only the visual page-loader fade timings; the loader safety timeouts remain in place
+- database schema remains 10

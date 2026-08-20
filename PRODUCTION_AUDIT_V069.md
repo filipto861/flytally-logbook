@@ -1,4 +1,4 @@
-# Production Audit v0.69
+# Production Audit v0.69.1
 
 ## Scope
 Cold-start/bootstrap, SQLite concurrency, backup/restore consistency, cache invalidation, session isolation, authentication abuse resistance, tenant boundaries, admin service behavior, heavy diagnostics, HTML rendering, dead code, and PostgreSQL-readiness.
@@ -36,4 +36,4 @@ Cold-start/bootstrap, SQLite concurrency, backup/restore consistency, cache inva
 - asynchronous backup worker/queue (current deployment intentionally keeps confirmed writes synchronous with GitHub persistence).
 
 ## Offline maintenance script finding
-The legacy `scripts/import_excel.py` still used pre-multi-user tables and a global reset that could delete every profile's flights/rates. v0.69 updates it to the current schema and requires a target `--user-id`; reset now deletes only that tenant's rows.
+The legacy `scripts/import_excel.py` still used pre-multi-user tables and a global reset that could delete every profile's flights/rates. v0.69.1 updates it to the current schema and requires a target `--user-id`; reset now deletes only that tenant's rows.

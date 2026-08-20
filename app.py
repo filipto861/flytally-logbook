@@ -89,6 +89,11 @@ _DB_READY = False
 _DB_INIT_LOCK = threading.RLock()
 _GITHUB_BACKUP_LOCK = threading.Lock()
 
+# Reinitialized on every Streamlit script run. It avoids repeated st.cache_data
+# retrieval/copy work for the same profile inside one rerun without weakening
+# cross-rerun profile freshness.
+_RUN_USER_PROFILE_CACHE: dict[int, dict[str, Any]] = {}
+
 _REQUIRED_RESTORE_TABLES = frozenset({
     "app_meta", "users", "user_credentials", "user_settings",
     "flights", "aircraft", "rates", "airports", "flight_tracks",
@@ -134,7 +139,7 @@ def is_admin() -> bool:
     if not is_user_authenticated():
         return False
     try:
-        return str(read_user_profile(current_user_id()).get("role") or "user").lower() == "admin"
+        return str(current_user_profile().get("role") or "user").lower() == "admin"
     except Exception:
         return False
 
@@ -227,13 +232,28 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
         return {"id": uid, "display_name": "Local pilot", "active": 0, "_load_error": True}
 
 
+def current_user_profile(user_id: int | None = None) -> dict[str, Any]:
+    """Return one request-local profile snapshot.
+
+    `read_user_profile` remains the cross-rerun cache and source of truth. This
+    helper only prevents the same cached dict from being copied/deserialized
+    several times during one Streamlit rerun.
+    """
+    uid = strict_user_id(user_id if user_id is not None else current_user_id())
+    cached = _RUN_USER_PROFILE_CACHE.get(uid)
+    if cached is None:
+        cached = read_user_profile(uid)
+        _RUN_USER_PROFILE_CACHE[uid] = cached
+    return cached
+
+
 def current_user_display_name() -> str:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     return normalize_text(profile.get("display_name")) or "Local pilot"
 
 
 def _profile_preferences(profile: dict[str, Any] | None = None) -> dict[str, Any]:
-    profile = profile or read_user_profile(current_user_id())
+    profile = profile or current_user_profile()
     raw = profile.get("preferences_json")
     if isinstance(raw, dict):
         return dict(raw)
@@ -245,7 +265,7 @@ def _profile_preferences(profile: dict[str, Any] | None = None) -> dict[str, Any
 
 
 def current_user_currency() -> str:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     currency = str(profile.get("currency") or "CZK").strip().upper()
     return currency if currency in {"CZK", "EUR", "USD", "GBP"} else "CZK"
 
@@ -256,7 +276,7 @@ def currency_symbol(currency: str | None = None) -> str:
 
 
 def current_user_timezone() -> ZoneInfo:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     name = str(profile.get("timezone") or "Europe/Prague").strip()
     try:
         return ZoneInfo(name)
@@ -265,19 +285,19 @@ def current_user_timezone() -> ZoneInfo:
 
 
 def current_user_default_evidence() -> str:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     value = str(_profile_preferences(profile).get("default_evidence") or "ULL").upper().strip()
     return value if value in EVIDENCE_OPTIONS else "ULL"
 
 
 def current_user_default_role() -> str:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     value = str(profile.get("default_role") or "PIC").upper().strip()
     return value if value in ROLE_OPTIONS else "PIC"
 
 
 def current_user_home_airport() -> str:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     return str(profile.get("home_airport") or "").upper().strip()
 
 
@@ -292,7 +312,7 @@ def render_auth_gate() -> bool:
     """Render login/registration and stop all user-data UI until authenticated."""
     if is_user_authenticated():
         try:
-            profile = read_user_profile(current_user_id())
+            profile = current_user_profile()
             if int(profile.get("active", 1) or 0) == 1:
                 return True
         except Exception:
@@ -401,7 +421,7 @@ def render_auth_gate() -> bool:
 
 
 def render_user_sidebar() -> None:
-    profile = read_user_profile(current_user_id())
+    profile = current_user_profile()
     st.divider()
     st.markdown(f"**👤 {html.escape(str(profile.get('display_name') or 'Pilot'))}**")
     if profile.get("email"):
@@ -1595,15 +1615,20 @@ def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
 
 
 
-def go_to_page(page: str) -> None:
-    st.session_state["page"] = page
-    st.rerun()
+def _set_page_callback(page_name: str) -> None:
+    st.session_state["page"] = page_name
 
 
 def render_nav_button(page_name: str, label: str, key: str) -> None:
     current = st.session_state.get("page", "Dashboard") == page_name
-    if st.button(label, key=key, width="stretch", type="primary" if current else "secondary"):
-        go_to_page(page_name)
+    st.button(
+        label,
+        key=key,
+        width="stretch",
+        type="primary" if current else "secondary",
+        on_click=_set_page_callback,
+        args=(page_name,),
+    )
 
 
 def render_sidebar_nav() -> None:
@@ -8182,7 +8207,7 @@ def _portable_backup_counts(user_id: int) -> dict[str, int]:
 
 def render_portable_backup() -> None:
     uid = strict_user_id(current_user_id())
-    profile = read_user_profile(uid)
+    profile = current_user_profile(uid)
     counts = _portable_backup_counts(uid)
 
     st.markdown("### Přenosná záloha účtu")
@@ -8808,7 +8833,7 @@ def page_admin() -> None:
 
 def page_profile(df: pd.DataFrame) -> None:
     uid = strict_user_id(current_user_id())
-    profile = read_user_profile(uid)
+    profile = current_user_profile(uid)
     prefs = _profile_preferences(profile)
     flights_count = read_table_count("flights", uid)
     counts = read_logbook_counts(uid)
@@ -9191,8 +9216,8 @@ def render_page_transition_runtime() -> None:
             window.__lbPageLoaderInstalled = true;
           }
           // The new page has reached the browser once this component runs.
-          setTimeout(hideLoader, 120);
-          setTimeout(hideLoader, 800);
+          setTimeout(hideLoader, 70);
+          setTimeout(hideLoader, 500);
           setTimeout(hideLoader, 1800);
           setTimeout(hideLoader, 4000);
         })();
@@ -9210,9 +9235,9 @@ def render_page_loaded_signal() -> None:
         (function() {
           const doc = document;
           function hideLoader() { doc.body.classList.remove('lb-page-loading'); }
-          setTimeout(hideLoader, 40);
-          setTimeout(hideLoader, 180);
-          setTimeout(hideLoader, 650);
+          setTimeout(hideLoader, 20);
+          setTimeout(hideLoader, 100);
+          setTimeout(hideLoader, 420);
           setTimeout(hideLoader, 1500);
           setTimeout(hideLoader, 4000);
         })();
