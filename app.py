@@ -8,8 +8,7 @@ import json
 import math
 import re
 import sqlite3
-import xml.etree.ElementTree as ET
-from datetime import date, datetime, time, timezone, timedelta
+from datetime import date, datetime, time, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from io import BytesIO
 from typing import Any
@@ -21,32 +20,32 @@ import pandas as pd
 import streamlit as st
 
 from logbook_core.config import (
-    AIRPORT_OVERRIDES_PATH, AIRPORTS_CSV_PATH, AIRPORTS_DB_PATH, APP_VERSION,
+    AIRPORT_OVERRIDES_PATH, AIRPORTS_DB_PATH, APP_VERSION,
     BILLING_BASIS_OPTIONS, CLASS_OPTIONS, DATA_DIR, DB_PATH, DB_SCHEMA_VERSION,
-    EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, OURAIRPORTS_AIRPORTS_URL, ROLE_OPTIONS,
+    EVIDENCE_OPTIONS, LOCAL_TZ, NAV_ITEMS, ROLE_OPTIONS,
 )
 from logbook_core.schema import SCHEMA
 from logbook_core.auth import (
     PASSWORD_MIN_LENGTH, activate_legacy_profile, authenticate_user, change_email, change_password,
-    ensure_auth_schema, legacy_profile_needs_activation, register_user, verify_password,
+    ensure_auth_schema, legacy_profile_needs_activation, register_user,
     admin_set_user_password, set_user_active, set_user_role,
 )
-from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema, normalize_user_id
-from logbook_core.permissions import AccessDenied, require_owned_record, strict_user_id
+from logbook_core.tenancy import DEFAULT_USER_ID, USER_SCOPED_TABLES, ensure_tenancy_schema
+from logbook_core.permissions import require_owned_record, strict_user_id
 from logbook_core.metrics import (
     build_summary, compute_metrics, fmt_minutes, fmt_money, minutes_diff,
-    normalize_date, normalize_registration, normalize_text, normalize_time, parse_time_to_minutes, stat_minutes,
+    normalize_date, normalize_registration, normalize_text, normalize_time, parse_time_to_minutes,
 )
 from logbook_core.pricing import lookup_latest_rate
 from logbook_core.tracks import (
-    detect_kml_source, detect_takeoff_landing, dt_hhmm, extract_registration_from_filename,
+    detect_kml_source, detect_takeoff_landing, extract_registration_from_filename,
     haversine_km, inferred_clock_times, normalize_track_points, parse_iso, parse_kml_bytes, point_local_date,
-    point_local_dt, point_local_hhmm, profile_from_points, track_distance_km, track_stats,
+    profile_from_points, track_stats,
 )
 from logbook_core.smart_import import analyze_track, split_track_points
 from logbook_core.exports import (
-    _export_date_bounds, _export_prefix, build_print_html, export_excel, make_airport_summary,
-    make_group_summary, make_logbook_export_df, make_route_summary, make_summary_table,
+    _export_date_bounds, _export_prefix, build_print_html, export_excel,
+    make_group_summary, make_logbook_export_df, make_summary_table,
 )
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
@@ -54,62 +53,18 @@ from logbook_core.map_engine import (
 )
 from logbook_ui.filters import apply_filters
 from logbook_ui.theme import apply_ui_theme, app_header, metric_card, plotly_layout
-try:
-    from logbook_core.performance import (
-        apply_sqlite_pragmas,
-        compact_records_json,
-        downsample_track_points,
-        optimize_sqlite,
-    )
-except ModuleNotFoundError:
-    # Fallback for deployments where only app.py was uploaded.
-    def apply_sqlite_pragmas(con: sqlite3.Connection, *, initial: bool = False) -> None:
-        read_pragmas = (
-            "PRAGMA foreign_keys = ON",
-            "PRAGMA busy_timeout = 5000",
-            "PRAGMA temp_store = MEMORY",
-            "PRAGMA cache_size = -32768",
-        )
-        init_pragmas = read_pragmas + (
-            "PRAGMA journal_mode = WAL",
-            "PRAGMA synchronous = NORMAL",
-        )
-        for pragma in init_pragmas if initial else read_pragmas:
-            try:
-                con.execute(pragma)
-            except sqlite3.DatabaseError:
-                pass
-
-    def optimize_sqlite(con: sqlite3.Connection) -> None:
-        try:
-            con.execute("PRAGMA optimize")
-        except sqlite3.DatabaseError:
-            pass
-
-    def compact_records_json(df: pd.DataFrame, columns: list[str]) -> str:
-        if df.empty:
-            return "[]"
-        use_cols = [c for c in columns if c in df.columns]
-        if not use_cols:
-            return "[]"
-        records = df[use_cols].fillna("").to_dict(orient="records")
-        return json.dumps(records, ensure_ascii=False, separators=(",", ":"), default=str)
-
-    def downsample_track_points(points: list[dict[str, Any]], max_points: int = 900) -> list[dict[str, Any]]:
-        if len(points) <= max_points:
-            return points
-        step = max(1, math.ceil(len(points) / max_points))
-        sampled = points[::step]
-        if sampled and sampled[-1] != points[-1]:
-            sampled.append(points[-1])
-        return sampled
+from logbook_core.performance import (
+    apply_sqlite_pragmas,
+    compact_records_json,
+    downsample_track_points,
+    optimize_sqlite,
+)
 
 _DB_READY = False
 
 
 # -----------------------------------------------------------------------------
 # Database
-# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
 def _now_iso() -> str:
@@ -151,8 +106,21 @@ def is_admin() -> bool:
         return False
 
 
+def _session_user_id() -> int:
+    """Return a validated positive session user id, otherwise 0.
+
+    An invalid or malformed authenticated session must never fall back to the
+    legacy owner (user_id=1).
+    """
+    try:
+        uid = int(st.session_state.get("current_user_id", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+    return uid if uid > 0 else 0
+
+
 def is_user_authenticated() -> bool:
-    return bool(st.session_state.get("user_authenticated")) and int(st.session_state.get("current_user_id", 0) or 0) > 0
+    return bool(st.session_state.get("user_authenticated")) and _session_user_id() > 0
 
 
 def _set_authenticated_user(user_id: int) -> None:
@@ -176,9 +144,7 @@ def actor_name() -> str:
 
 def current_user_id() -> int:
     """Return the authenticated data owner. No authentication means no user data."""
-    if not is_user_authenticated():
-        return 0
-    return normalize_user_id(st.session_state.get("current_user_id"), DEFAULT_USER_ID)
+    return _session_user_id() if is_user_authenticated() else 0
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -409,14 +375,13 @@ def invalidate_cached_data(scope: str = "all") -> None:
     names: set[str] = {"read_table", "read_audit_log", "read_logbook_counts"}  # audit/meta are updated by every write
     if scope in {"flights", "flight"}:
         names.update({
-            "read_flights", "read_aircraft_usage_summary", "read_tracks_joined", "read_tracks_joined_for_flights",
-            "read_track_metadata_for_flights", "read_track_map_records_for_flights",
-            "cached_route_overview_map_html", "cached_track_map_html",
+            "read_flights", "read_aircraft_usage_summary", "read_track_metadata_for_flights", "read_track_map_records_for_flights",
+            "cached_track_map_html",
             "build_database_health_report",
         })
     elif scope in {"flight_tracks", "track_points", "tracks", "track"}:
         names.update({
-            "read_track_counts", "read_flights", "read_tracks_joined",
+            "read_flights", "read_tracks_joined",
             "read_tracks_joined_for_flights", "read_track_metadata_for_flights",
             "read_sampled_track_points", "read_track_map_records_for_flights",
             "read_tracks_for_flight", "cached_track_map_html",
@@ -429,7 +394,7 @@ def invalidate_cached_data(scope: str = "all") -> None:
     elif scope in {"airports", "airport"}:
         names.update({
             "read_airports", "airport_coords_for_idents", "airport_coord_lookup",
-            "cached_route_overview_map_html", "build_database_health_report",
+            "build_database_health_report",
             "read_airport_registry_count",
         })
     else:
@@ -627,14 +592,16 @@ def initialize_database(con: sqlite3.Connection) -> None:
     """
     apply_sqlite_pragmas(con, initial=True)
     con.executescript(SCHEMA)
-    # v0.55 introduces ownership columns while keeping the current single-user UX.
-    # Both helpers are idempotent and safely upgrade the existing SQLite file.
+    tenancy_ready_before = _meta_value(con, "tenancy_v1", "0") == "1"
+    # Current databases already carry tenancy_v1, so the second full DDL pass is
+    # unnecessary on normal cold starts. It is retained only for a fresh/legacy
+    # migration because that migration can rebuild tables and needs indexes
+    # restored afterward.
     ensure_schema_compatibility(con)
     ensure_tenancy_schema(con)
     ensure_auth_schema(con)
-    # Re-run idempotent schema DDL because the tenancy migration may rebuild
-    # tables with old global UNIQUE constraints; this restores standard indexes.
-    con.executescript(SCHEMA)
+    if not tenancy_ready_before:
+        con.executescript(SCHEMA)
 
     schema_version = _meta_value(con, "schema_version", "0")
     if schema_version != str(DB_SCHEMA_VERSION):
@@ -749,8 +716,19 @@ def _backfill_track_points(con: sqlite3.Connection) -> None:
     _set_meta(con, "track_points_backfill_v1", "1")
 
 
+_READABLE_TABLES = frozenset(USER_SCOPED_TABLES) | {"app_meta"}
+
+
+def _validated_read_table(table: str) -> str:
+    name = str(table or "").strip()
+    if name not in _READABLE_TABLES:
+        raise ValueError(f"Unsupported table read: {name!r}")
+    return name
+
+
 @st.cache_data(show_spinner=False, ttl=300)
 def read_table(table: str, user_id: int | None = None) -> pd.DataFrame:
+    table = _validated_read_table(table)
     with connect() as con:
         if table in USER_SCOPED_TABLES:
             return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
@@ -767,6 +745,7 @@ def read_rates(user_id: int) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False, ttl=300)
 def read_table_count(table: str, user_id: int | None = None) -> int:
+    table = _validated_read_table(table)
     try:
         with connect() as con:
             if table in USER_SCOPED_TABLES:
@@ -1124,43 +1103,8 @@ def airport_search_index(user_id: int) -> tuple[np.ndarray, np.ndarray, np.ndarr
     )
 
 
-def import_ourairports_to_database() -> int:
-    """Import world airport database into SQLite.
-
-    Prefer bundled data/airports.csv when present. If it is not present,
-    fall back to the public OurAirports CSV URL. The application never
-    keeps the world airport list hard-coded in Python.
-    """
-    if AIRPORTS_CSV_PATH.exists():
-        df = pd.read_csv(AIRPORTS_CSV_PATH)
-        source_label = "OurAirports bundled CSV"
-        source_ref = str(AIRPORTS_CSV_PATH.name)
-    else:
-        df = pd.read_csv(OURAIRPORTS_AIRPORTS_URL)
-        source_label = "OurAirports URL"
-        source_ref = OURAIRPORTS_AIRPORTS_URL
-    with connect() as con:
-        count = import_airports_dataframe(con, df, default_source=source_label, replace_existing=True)
-        _seed_airports_from_overrides(con)
-        _set_meta(con, "ourairports_source", source_ref)
-        _set_meta(con, "ourairports_rows", count)
-        _set_meta(con, "ourairports_imported_at", _now_iso())
-        record_audit(con, "import_ourairports", "airports", None, {"rows": count, "source": source_ref})
-        con.commit()
-    invalidate_cached_data("airports")
-    auto_backup_after_change("import_ourairports")
-    return count
 
 
-def import_airport_csv_upload(uploaded_file) -> int:
-    df = pd.read_csv(uploaded_file)
-    with connect() as con:
-        count = import_airports_dataframe(con, df, default_source="user_csv", replace_existing=True, user_id=current_user_id())
-        record_audit(con, "import_airport_csv", "airports", None, {"rows": count, "file": getattr(uploaded_file, "name", None)})
-        con.commit()
-    invalidate_cached_data("airports")
-    auto_backup_after_change("import_airport_csv")
-    return count
 
 
 def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dict[str, Any]], user_id: int) -> None:
@@ -1197,15 +1141,6 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     )
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_counts(user_id: int) -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query(
-            """
-            SELECT flight_id, COUNT(*) AS track_count, COALESCE(SUM(distance_km), 0) AS gps_km
-            FROM flight_tracks WHERE user_id = ? GROUP BY flight_id
-            """,
-            con, params=(strict_user_id(user_id),),
-        )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -1237,48 +1172,9 @@ def read_flights(user_id: int) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined(user_id: int) -> pd.DataFrame:
-    with connect() as con:
-        return pd.read_sql_query(
-            """
-            SELECT t.*, f.date, f.evidence, f.registration, f.aircraft_type, f.aircraft_class,
-                   f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
-                   f.role, f.starts, f.task, f.commander
-            FROM flight_tracks t
-            JOIN flights f ON f.id = t.flight_id AND f.user_id = t.user_id
-            WHERE t.user_id = ?
-            ORDER BY f.date, f.off_block, t.id
-            """,
-            con,
-            params=(strict_user_id(user_id),),
-        )
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_tracks_joined_for_flights(flight_ids: tuple[int, ...], user_id: int) -> pd.DataFrame:
-    """Return only tracks needed by the active map filter.
-
-    The older GPS map path loaded every stored KML track including full
-    coordinates_json and then filtered in pandas. With longer history this is one
-    of the most expensive operations in the app. This query keeps the heavy JSON
-    payload limited to the flights that are actually visible in the current map
-    filter.
-    """
-    ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
-    if not ids:
-        return pd.DataFrame()
-    placeholders = ",".join("?" for _ in ids)
-    query = f"""
-        SELECT t.*, f.date, f.evidence, f.registration, f.aircraft_type, f.aircraft_class,
-               f.departure, f.arrival, f.off_block, f.takeoff, f.landing, f.on_block,
-               f.role, f.starts, f.task, f.commander
-        FROM flight_tracks t
-        JOIN flights f ON f.id = t.flight_id AND f.user_id = t.user_id
-        WHERE t.user_id = ? AND t.flight_id IN ({placeholders})
-        ORDER BY f.date, f.off_block, t.id
-    """
-    with connect() as con:
-        return pd.read_sql_query(query, con, params=(strict_user_id(user_id), *ids))
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -1495,17 +1391,6 @@ def render_sidebar_nav() -> None:
         render_nav_button("Admin", "Admin", "side_nav_Admin")
 
 
-def get_selected_dataframe_rows(event: Any) -> list[int]:
-    if event is None:
-        return []
-    try:
-        return list(event.selection.rows)
-    except Exception:
-        pass
-    try:
-        return list(event["selection"]["rows"])
-    except Exception:
-        return []
 
 
 def clear_open_flight_dialog() -> None:
@@ -1549,16 +1434,10 @@ def app_link(**params: Any) -> str:
     return f"?{qs}" if qs else "?"
 
 
-def detail_link(flight_id: int) -> str:
-    return app_link(flight_id=int(flight_id))
 
 
-def airport_link(ident: str) -> str:
-    return app_link(map_airport=str(ident).upper())
 
 
-def route_link(dep: str, arr: str) -> str:
-    return app_link(map_route=f"{str(dep).upper()}__{str(arr).upper()}")
 
 
 
@@ -1618,27 +1497,8 @@ def _local_time_label(iso_text: Any) -> str:
     return dt.astimezone(current_user_timezone()).strftime("%H:%M")
 
 
-def _kml_range_label(stats: dict[str, Any]) -> str:
-    start = _local_time_label(stats.get("start_utc"))
-    end = _local_time_label(stats.get("end_utc"))
-    if start == "—" and end == "—":
-        return "—"
-    return f"{start}–{end}"
 
 
-def _kml_quality(defaults: dict[str, Any], stats: dict[str, Any], has_clock: bool) -> str:
-    score = 0
-    if int(stats.get("point_count") or 0) >= 2:
-        score += 1
-    if has_clock:
-        score += 1
-    if normalize_text(defaults.get("departure")) and normalize_text(defaults.get("arrival")):
-        score += 1
-    if score >= 3:
-        return "Vysoká"
-    if score == 2:
-        return "Střední"
-    return "Nízká"
 
 
 def render_kml_import_header(raw: bytes, file_name: str, defaults: dict[str, Any], stats: dict[str, Any], has_clock: bool) -> None:
@@ -2248,21 +2108,6 @@ def _decode_points_for_map(value: Any, max_points: int = 160) -> str:
     return encode_compact_track_points(points, max_points=max(2, int(max_points)))
 
 
-def prepare_tracks_for_map(tracks: pd.DataFrame, *, mode: str = "Rychlá", max_fast_tracks: int = 60) -> pd.DataFrame:
-    """Compatibility wrapper for already-loaded track data using Map Engine 2.0."""
-    if tracks.empty:
-        return tracks.copy()
-    work = tracks.copy()
-    if "date" in work.columns:
-        work = work.sort_values(["date", "id"], ascending=[False, False], na_position="last")
-    plan = build_gps_render_plan(mode, len(work))
-    if plan.max_tracks is not None:
-        work = work.head(min(int(plan.max_tracks), int(max_fast_tracks or plan.max_tracks)))
-    if "coordinates_json" in work.columns:
-        work["coordinates_json"] = work["coordinates_json"].apply(
-            lambda x: _decode_points_for_map(x, max_points=plan.points_per_track)
-        )
-    return work
 
 
 def _df_to_records_json(df: pd.DataFrame, columns: list[str]) -> str:
@@ -2279,7 +2124,8 @@ def _flight_id_tuple(df: pd.DataFrame) -> tuple[int, ...]:
 
 @st.cache_data(show_spinner=False, ttl=300)
 def cached_track_map_html(records_json: str, dark_mode: bool) -> str:
-    df = pd.read_json(BytesIO(records_json.encode("utf-8")), orient="records") if records_json and records_json != "[]" else pd.DataFrame()
+    records = json.loads(records_json) if records_json and records_json != "[]" else []
+    df = pd.DataFrame.from_records(records) if records else pd.DataFrame()
     if df.empty:
         return ""
     m = make_map(df, dark_mode=dark_mode, line_weight=2, line_opacity=0.46, show_endpoints=False, extend_to_airports=True)
@@ -2287,12 +2133,6 @@ def cached_track_map_html(records_json: str, dark_mode: bool) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def cached_route_overview_map_html(records_json: str, dark_mode: bool) -> str:
-    df = pd.read_json(BytesIO(records_json.encode("utf-8")), orient="records") if records_json and records_json != "[]" else pd.DataFrame()
-    if df.empty:
-        return ""
-    m = make_route_overview_map(df, dark_mode=dark_mode)
-    return m.get_root().render()
 
 
 def render_map_html(html: str, *, height: int = 680) -> None:
@@ -2408,54 +2248,6 @@ def _format_track_point_value(value: Any, suffix: str = "") -> str:
         return "—"
 
 
-def make_track_playback_map(points: list[dict[str, Any]], selected_idx: int, dark_mode: bool = True) -> folium.Map:
-    import folium
-
-    points = normalize_track_points(points)
-    if not points:
-        return folium.Map(location=[49.8, 15.5], zoom_start=7, tiles="CartoDB dark_matter" if dark_mode else "OpenStreetMap", control_scale=True)
-
-    selected_idx = max(0, min(int(selected_idx), len(points) - 1))
-    line_points = simplify_track_points(points, max_points=850)
-    progress_points = simplify_track_points(points[: selected_idx + 1], max_points=450) if selected_idx >= 1 else points[:1]
-
-    coords = [(float(p["lat"]), float(p["lon"])) for p in line_points if p.get("lat") is not None and p.get("lon") is not None]
-    progress_coords = [(float(p["lat"]), float(p["lon"])) for p in progress_points if p.get("lat") is not None and p.get("lon") is not None]
-    selected = points[selected_idx]
-    selected_ll = (float(selected["lat"]), float(selected["lon"]))
-
-    viewport = viewport_from_coords(coords or [selected_ll], profile="playback", default_center=selected_ll, default_zoom=10)
-    center = [viewport.center[0], viewport.center[1]]
-    zoom = viewport.zoom
-
-    tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
-    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
-    if coords and len(coords) >= 2:
-        folium.PolyLine(coords, color="#64748b", weight=3, opacity=0.55, tooltip="Celý GPS track").add_to(m)
-    if progress_coords and len(progress_coords) >= 2:
-        folium.PolyLine(progress_coords, color="#38bdf8", weight=4, opacity=0.95, tooltip="Proletěná část").add_to(m)
-    if coords:
-        folium.CircleMarker(coords[0], radius=4, color="#22c55e", fill=True, fill_opacity=.95, tooltip="Start tracku").add_to(m)
-        folium.CircleMarker(coords[-1], radius=4, color="#ef4444", fill=True, fill_opacity=.95, tooltip="Konec tracku").add_to(m)
-
-    dt = parse_iso(selected.get("time"))
-    time_txt = dt.astimezone(current_user_timezone()).strftime("%H:%M:%S") if dt else "—"
-    alt_txt = _format_track_point_value((float(selected.get("alt")) * 3.28084 if selected.get("alt") is not None else None), " ft")
-    popup = folium.Popup(f"<b>Pozice tracku</b><br>Čas: {time_txt}<br>Alt: {alt_txt}<br>Bod: {selected_idx + 1}/{len(points)}", max_width=260)
-    folium.Marker(
-        selected_ll,
-        tooltip="Aktuální pozice",
-        popup=popup,
-        icon=folium.DivIcon(
-            html='<div style="font-size:28px;line-height:28px;color:#38bdf8;text-shadow:0 0 8px #000;transform:translate(-12px,-12px);">✈</div>'
-        ),
-    ).add_to(m)
-    try:
-        if coords:
-            m.fit_bounds([[min(c[0] for c in coords), min(c[1] for c in coords)], [max(c[0] for c in coords), max(c[1] for c in coords)]], padding=(22, 22))
-    except Exception:
-        pass
-    return m
 
 
 
@@ -2926,15 +2718,8 @@ def page_dashboard(df: pd.DataFrame):
             st.dataframe(recent_table, hide_index=True, width="stretch", height=520)
 
 
-def flight_label(row: pd.Series | dict[str, Any]) -> str:
-    return f"ID {int(row['id'])} • {row.get('date') or ''} • {row.get('registration') or ''} • {row.get('departure') or ''}-{row.get('arrival') or ''} • {row.get('off_block') or ''}-{row.get('on_block') or ''} • {row.get('role') or ''}"
 
 
-def flight_display_df(df: pd.DataFrame) -> pd.DataFrame:
-    cols = ["id","date","evidence","registration","aircraft_type","aircraft_class","departure","arrival","off_block","takeoff","landing","on_block","block_time","air_time","starts","commander","instructor","role","task","price_per_hour","cost_label","track_count","gps_km","note"]
-    rename = {"id":"ID","date":"Datum","evidence":"Evidence","registration":"Imatrikulace","aircraft_type":"Typ","aircraft_class":"Třída","departure":"Odlet","arrival":"Přílet","off_block":"Off Block","takeoff":"Takeoff","landing":"Landing","on_block":"On Block","block_time":"Block","air_time":"Air","starts":"Starty","commander":"Velitel","instructor":"Instruktor","role":"Funkce","task":"Úloha","price_per_hour":"Cena/h","cost_label":"Cena","track_count":"GPS","gps_km":"GPS km","note":"Poznámka"}
-    use = [c for c in cols if c in df.columns]
-    return df[use].rename(columns=rename)
 
 
 
@@ -2968,8 +2753,6 @@ FORM_KEY_MAP = {
 }
 
 
-def _state_key(prefix: str, field: str) -> str:
-    return f"{prefix}_{FORM_KEY_MAP[field]}"
 
 
 def _clean_form_value(field: str, value: Any) -> Any:
@@ -2997,29 +2780,8 @@ def _clean_form_value(field: str, value: Any) -> Any:
     return str(value or "").strip()
 
 
-def set_form_values(prefix: str, values: dict[str, Any], *, include_times: bool = True, include_date: bool = False) -> None:
-    for field, key_suffix in FORM_KEY_MAP.items():
-        if field not in values:
-            continue
-        if field == "date" and not include_date:
-            continue
-        if field in {"off_block", "takeoff", "landing", "on_block"} and not include_times:
-            continue
-        st.session_state[f"{prefix}_{key_suffix}"] = _clean_form_value(field, values.get(field))
 
 
-def recent_flights_for_templates(limit: int = 25) -> pd.DataFrame:
-    try:
-        flights = read_table("flights", current_user_id())
-    except Exception:
-        return pd.DataFrame()
-    if flights.empty:
-        return flights
-    work = flights.copy()
-    work["date_dt"] = pd.to_datetime(work.get("date"), errors="coerce")
-    if "id" not in work.columns:
-        return work.tail(limit)
-    return work.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").head(limit)
 
 
 def recent_routes_for_picker(limit: int = 18) -> list[tuple[str, str]]:
@@ -3045,9 +2807,6 @@ def recent_routes_for_picker(limit: int = 18) -> list[tuple[str, str]]:
     return out
 
 
-def _template_label(row: pd.Series | dict[str, Any]) -> str:
-    r = row if isinstance(row, dict) else row.to_dict()
-    return f"ID {int(r.get('id') or 0)} • {r.get('date') or ''} • {r.get('registration') or ''} • {r.get('departure') or ''}–{r.get('arrival') or ''} • {r.get('role') or ''}"
 
 
 def render_quick_flight_tools(prefix: str, defaults: dict[str, Any], rates: pd.DataFrame) -> None:
@@ -3361,15 +3120,6 @@ def validate_flight_data(data: dict[str, Any]) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
-def render_flight_validation(data: dict[str, Any], *, compact: bool = False) -> tuple[list[str], list[str]]:
-    errors, warnings = validate_flight_data(data)
-    if errors:
-        st.error("Kontrola: " + " • ".join(errors[:6]))
-    elif warnings and not compact:
-        st.warning("Kontrola: " + " • ".join(warnings[:6]))
-    elif not compact:
-        st.success("Kontrola: OK")
-    return errors, warnings
 
 
 def _inline_aircraft_state_keys(prefix: str) -> tuple[str, str, str]:
@@ -4029,20 +3779,8 @@ def _cell(main: Any, sub: Any = "") -> str:
     return f'<div class="flight-cell"><div class="flight-cell-main">{main_txt}</div></div>'
 
 
-def _flight_validation_status(row: pd.Series | dict[str, Any]) -> tuple[str, str, str]:
-    data = row.to_dict() if isinstance(row, pd.Series) else dict(row)
-    errors, warnings = validate_flight_data(data)
-    if errors:
-        return "Chyba", "flight-status-error", "; ".join(errors[:3])
-    if warnings:
-        return "Pozor", "flight-status-warn", "; ".join(warnings[:3])
-    return "OK", "flight-status-ok", ""
 
 
-def _status_badge(label: Any, css_class: str = "") -> str:
-    label_txt = _safe_text(label)
-    class_txt = _safe_text(css_class or "flight-status-ok")
-    return f'<div class="flight-cell"><span class="flight-status {class_txt}">{label_txt}</span></div>'
 
 
 def annotate_flight_overview(df: pd.DataFrame) -> pd.DataFrame:
@@ -6352,13 +6090,6 @@ def make_control_df(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def page_control(df: pd.DataFrame):
-    st.markdown("## Kontrola")
-    control = make_control_df(df)
-    if control.empty:
-        st.success("OK")
-    else:
-        st.dataframe(control, hide_index=True, width="stretch")
 
 
 

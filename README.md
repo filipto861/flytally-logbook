@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.61.6 – Flight Import UX 2.0
+## v0.61.7 – Flight Import UX 2.0
 
 v0.61 sjednocuje KML import do jednoho konzistentního workflow a přidává finální kontrolu před uložením.
 
@@ -48,16 +48,16 @@ v0.61 odstraňuje staré přímé použití `streamlit.components.v1.html` a hla
 - release ZIP neobsahuje `data/logbook.sqlite`.
 
 
-## v0.61.6 hotfix
+## v0.61.7 hotfix
 - fixes Streamlit 1.62 `StreamlitInvalidWidthError` caused by zero-width runtime iframes
 - sidebar toggle and page-transition helper iframes now use 1×1 px dimensions
 
 
-## v0.61.6
+## v0.61.7
 Invisible front-end runtime: sidebar toggle and page-transition scripts now use `st.html(..., unsafe_allow_javascript=True)` instead of 1×1 px iframes, removing the visible white artifacts introduced by the v0.61.1 compatibility hotfix.
 
 
-## v0.61.6 – Sidebar UX Final Polish
+## v0.61.7 – Sidebar UX Final Polish
 - minimalistický edge handle se dvěma chevrony bez kruhu a pozadí
 - ovladač přesunut z řádku Navigace na samostatnou hranu sidebaru
 - návrat k rychlejšímu 320 ms motion profilu z dřívějších verzí
@@ -65,9 +65,24 @@ Invisible front-end runtime: sidebar toggle and page-transition scripts now use 
 - kliknutí pouze přepíná CSS stav; žádný Streamlit rerun
 
 
-## v0.61.6 – Top Sidebar Chevron Polish
+## v0.61.7 – Top Sidebar Chevron Polish
 - sidebar handle moved to the upper-right area inside the open sidebar
 - two chevrons are horizontal instead of stacked
 - chevrons are larger with a wider click target
 - closed-state handle remains available at the left edge
 - compositor-friendly sidebar motion from v0.61.5 is preserved
+
+
+## v0.61.7 – Stability & Performance Cleanup
+No new user-facing feature is introduced. This release prepares a stable base for v0.62.
+
+- removed confirmed dead and legacy UI/map helper code from `app.py`
+- removed duplicate `logbook_core.performance` fallback implementations
+- removed unused imports and obsolete helper code
+- authenticated session IDs no longer have any fallback path to user `1`
+- generic cached SQL readers accept only explicitly permitted tables
+- normal current-database cold starts skip the unnecessary second full `SCHEMA` DDL pass
+- cached track-map JSON decoding uses the standard JSON decoder instead of a Pandas JSON parser
+- old global `sitecustomize.py` SQLite monkeypatch is neutralized
+- runtime dependencies are exactly pinned to the versions validated on Streamlit Cloud
+- Streamlit 1.62 compatibility checks remain part of the regression suite

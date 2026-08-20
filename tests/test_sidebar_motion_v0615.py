@@ -15,4 +15,4 @@ def test_sidebar_motion_uses_compositor_friendly_timing():
 def test_runtime_dependencies_are_stable():
     req = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     assert "streamlit==1.62.0" in req
-    assert "pyarrow>=24,<25" in req
+    assert "pyarrow==24.0.0" in req
