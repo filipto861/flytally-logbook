@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_and_navigation():
-    assert APP_VERSION == "v0.63"
+    assert APP_VERSION == "v0.63.1"
     assert DB_SCHEMA_VERSION == 9
-    assert ("Recency", "Recency") in NAV_ITEMS
+    assert ("Recency", "Recency") not in NAV_ITEMS
 
 
 def test_user_expiries_is_tenant_scoped_and_owned():
@@ -31,7 +31,7 @@ def test_user_expiries_is_tenant_scoped_and_owned():
 
 def test_recency_page_and_crud_are_wired():
     source = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "def page_recency(df: pd.DataFrame)" in source
+    assert "def _render_profile_validity_tab(df: pd.DataFrame)" in source
     assert 'elif page == "Recency":' in source
     assert 'read_table("user_expiries", uid)' in source
     assert "def save_user_expiry(" in source

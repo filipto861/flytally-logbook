@@ -1,4 +1,4 @@
-# Logbook architecture — v0.63
+# Logbook architecture — v0.63.1
 
 ## Flight Import UX 2.0
 
@@ -55,7 +55,7 @@ Statické mapy a Track Player používají `st.iframe` místo deprecated `stream
 
 `logbook_core/dashboard.py` obsahuje čisté, Streamlit-independent agregace pro období, měsíce, roky, letadla, letiště, trasy a dashboardové rekordy. UI pouze vybírá aktuální sekci a renderuje již agregovaná data. Tím se drží náklad skrytých dashboardových sekcí mimo aktuální rerun.
 
-## v0.63 Pilot Currency & Recency
+## v0.63.1 Pilot Currency & Recency
 
 `logbook_core/currency.py` owns rolling activity and validity-status calculations. The UI page only renders those results.
 

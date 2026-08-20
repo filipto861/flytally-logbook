@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.63 – Pilot Currency & Recency
+## v0.63.1 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -137,3 +137,12 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - flight and landing counts are displayed as compact chips
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
+
+## v0.63.1 – Profile Recency Polish
+- removes standalone Recency from sidebar navigation
+- moves validity/recency into `Profil → Platnosti`
+- licence/medical/rating expiry tracking is now the primary content
+- 90-day ULL/EASA activity is reduced to a compact supporting summary
+- removes the large 30/90/365 activity table from the UI
+- legacy Recency sessions/bookmarks redirect safely to Profile
+- database schema remains 9; no migration required

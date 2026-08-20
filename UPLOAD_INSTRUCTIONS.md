@@ -1,4 +1,4 @@
-# Upload v0.63
+# Upload v0.63.1
 
 1. Zachovej lokální `.git` a `data/logbook.sqlite`.
 2. Nahraď aplikační soubory obsahem tohoto balíčku.
@@ -28,7 +28,7 @@ Release ZIP neobsahuje `data/logbook.sqlite`.
 ### v0.62.2 smoke test
 Po deployi ověř Dashboard pro `Vše`, `Tento rok` a `Posledních 12 měsíců`, následně projdi Přehled, Letadla, Letiště a trasy, Náklady a Poslední lety. `data/logbook.sqlite` se nemění.
 
-### v0.63 smoke test
+### v0.63.1 smoke test
 
 1. Zachovej `.git` a `data/logbook.sqlite`.
 2. Nahraď aplikační soubory obsahem release ZIPu.
@@ -36,4 +36,4 @@ Po deployi ověř Dashboard pro `Vše`, `Tento rok` a `Posledních 12 měsíců`
 4. Ověř poslední let/přistání a 30/90/365 denní tabulku.
 5. Přidej testovací termín platnosti, uprav ho a odstraň ho.
 6. Ověř, že druhý uživatel termín prvního uživatele nevidí.
-7. Doporučený commit: `v0.63 - Pilot Currency & Recency`.
+7. Doporučený commit: `v0.63.1 - Pilot Currency & Recency`.
