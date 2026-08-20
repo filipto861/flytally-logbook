@@ -40,10 +40,8 @@ def test_map_cache_does_not_use_pandas_json_parser():
     assert "pd.DataFrame.from_records(records)" in text
 
 
-def test_no_global_sqlite_monkeypatch():
-    text = (ROOT / "sitecustomize.py").read_text(encoding="utf-8")
-    assert "sqlite3.connect =" not in text
-    assert "no global monkeypatching" in text
+def test_no_global_sqlite_startup_hook():
+    assert not (ROOT / "sitecustomize.py").exists()
 
 
 def test_runtime_dependencies_are_exactly_pinned():

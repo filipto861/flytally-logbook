@@ -96,7 +96,7 @@ def _db():
 
 def test_backup_contains_only_source_user_and_no_credentials():
     con = _db()
-    raw = build_user_backup(con, 1, app_version="v0.68", schema_version=9)
+    raw = build_user_backup(con, 1, app_version="v0.69", schema_version=9)
     info = inspect_user_backup(raw)
 
     assert info["format"] == BACKUP_FORMAT
@@ -122,7 +122,7 @@ def test_backup_contains_only_source_user_and_no_credentials():
 
 def test_restore_replaces_only_target_user_and_remaps_relations():
     source = _db()
-    raw = build_user_backup(source, 1, app_version="v0.68", schema_version=9)
+    raw = build_user_backup(source, 1, app_version="v0.69", schema_version=9)
 
     target = _db()
     # Make target user 2 visibly different and give it extra rows that should be replaced.
@@ -194,7 +194,7 @@ def test_invalid_archive_is_rejected_before_restore():
 
 def test_backup_with_missing_relation_is_atomic():
     con = _db()
-    raw = build_user_backup(con, 1, app_version="v0.68", schema_version=9)
+    raw = build_user_backup(con, 1, app_version="v0.69", schema_version=9)
 
     with zipfile.ZipFile(io.BytesIO(raw), "r") as source_zip:
         manifest = source_zip.read("manifest.json")

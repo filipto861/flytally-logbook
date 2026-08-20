@@ -10,8 +10,8 @@ def _app():
 
 
 def test_version_without_schema_change():
-    assert APP_VERSION == "v0.68"
-    assert DB_SCHEMA_VERSION == 9
+    assert APP_VERSION == "v0.69"
+    assert DB_SCHEMA_VERSION == 10
 
 
 def test_player_uses_pure_payload_builder_and_cap():

@@ -12,8 +12,8 @@ from logbook_core.tracks import detect_kml_source, parse_kml_bytes, point_local_
 
 class CoreRefactorTests(unittest.TestCase):
     def test_version(self) -> None:
-        self.assertEqual(APP_VERSION, "v0.68")
-        self.assertEqual(DB_SCHEMA_VERSION, 9)
+        self.assertEqual(APP_VERSION, "v0.69")
+        self.assertEqual(DB_SCHEMA_VERSION, 10)
 
     def test_time_helpers(self) -> None:
         self.assertEqual(minutes_diff("23:50", "00:10"), 20)

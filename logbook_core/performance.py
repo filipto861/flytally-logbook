@@ -16,7 +16,7 @@ import pandas as pd
 
 READ_PRAGMAS = (
     "PRAGMA foreign_keys = ON",
-    "PRAGMA busy_timeout = 5000",
+    "PRAGMA busy_timeout = 10000",
     "PRAGMA temp_store = MEMORY",
     "PRAGMA cache_size = -32768",
 )

@@ -6,8 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_hotfix_version_without_schema_change():
-    assert APP_VERSION == "v0.68"
-    assert DB_SCHEMA_VERSION == 9
+    assert APP_VERSION == "v0.69"
+    assert DB_SCHEMA_VERSION == 10
 
 
 def test_route_shortcuts_are_none_safe():

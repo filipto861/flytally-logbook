@@ -8,11 +8,12 @@ import json
 import math
 import re
 import sqlite3
-from datetime import date, datetime, time, timezone
+import threading
+import time as time_module
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from io import BytesIO
 from typing import Any
-from urllib.parse import urlencode
 
 
 import numpy as np
@@ -68,6 +69,10 @@ from logbook_core.logbook_view import (
 )
 from logbook_core.track_player import build_track_player_payload
 from logbook_core.data_quality import scan_data_quality
+from logbook_core.sqlite_runtime import (
+    MAX_ADMIN_RESTORE_BYTES, SQLiteRestoreError, atomic_replace_sqlite,
+    inspect_sqlite_bytes, snapshot_sqlite_bytes,
+)
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -77,11 +82,18 @@ from logbook_ui.theme import apply_ui_theme, app_header, metric_card, plotly_lay
 from logbook_core.performance import (
     apply_sqlite_pragmas,
     compact_records_json,
-    downsample_track_points,
     optimize_sqlite,
 )
 
 _DB_READY = False
+_DB_INIT_LOCK = threading.RLock()
+_GITHUB_BACKUP_LOCK = threading.Lock()
+
+_REQUIRED_RESTORE_TABLES = frozenset({
+    "app_meta", "users", "user_credentials", "user_settings",
+    "flights", "aircraft", "rates", "airports", "flight_tracks",
+    "track_points", "audit_log", "user_expiries",
+})
 
 
 # -----------------------------------------------------------------------------
@@ -144,16 +156,41 @@ def is_user_authenticated() -> bool:
     return bool(st.session_state.get("user_authenticated")) and _session_user_id() > 0
 
 
+def _reset_session_state(*, notice: str | None = None) -> None:
+    """Drop all per-browser user state so data cannot survive an account switch."""
+    st.session_state.clear()
+    if notice:
+        st.session_state["auth_notice"] = str(notice)
+
+
 def _set_authenticated_user(user_id: int) -> None:
     uid = strict_user_id(user_id)
+    _reset_session_state()
     st.session_state["user_authenticated"] = True
     st.session_state["current_user_id"] = uid
     st.session_state["page"] = "Dashboard"
 
 
 def logout_user() -> None:
-    for key in ("user_authenticated", "current_user_id", "page", "selected_flight_id", "open_flight_dialog_id"):
-        st.session_state.pop(key, None)
+    _reset_session_state()
+
+
+def _login_rate_limit_remaining() -> int:
+    try:
+        until = float(st.session_state.get("auth_lock_until", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        until = 0.0
+    return max(0, int(math.ceil(until - time_module.time())))
+
+
+def _register_login_failure() -> int:
+    failures = int(st.session_state.get("auth_failures", 0) or 0) + 1
+    st.session_state["auth_failures"] = failures
+    if failures >= 5:
+        delay = min(60, 5 * (2 ** min(failures - 5, 4)))
+        st.session_state["auth_lock_until"] = time_module.time() + delay
+        return int(delay)
+    return 0
 
 
 def actor_name() -> str:
@@ -187,7 +224,7 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
             ).fetchone()
             return dict(row) if row else {"id": uid, "display_name": "Local pilot"}
     except sqlite3.DatabaseError:
-        return {"id": uid, "display_name": "Local pilot"}
+        return {"id": uid, "display_name": "Local pilot", "active": 0, "_load_error": True}
 
 
 def current_user_display_name() -> str:
@@ -266,6 +303,9 @@ def render_auth_gate() -> bool:
     st.markdown(f"### Letový zápisník · {APP_VERSION}")
     st.title("Přihlášení")
     st.caption("Každý profil má vlastní lety, letadla, GPS tracky, ceník a vlastní letiště.")
+    auth_notice = st.session_state.pop("auth_notice", None)
+    if auth_notice:
+        st.success(str(auth_notice))
 
     needs_activation, legacy_profile = _auth_state()
     if needs_activation:
@@ -315,6 +355,10 @@ def render_auth_gate() -> bool:
             password = st.text_input("Heslo", type="password", key="login_password")
             submitted = st.form_submit_button("Přihlásit se", width="stretch")
         if submitted:
+            wait_seconds = _login_rate_limit_remaining()
+            if wait_seconds > 0:
+                st.error(f"Příliš mnoho neúspěšných pokusů. Zkus to znovu za {wait_seconds} s.")
+                return False
             with connect() as con:
                 result = authenticate_user(con, email, password)
                 if result.ok:
@@ -322,7 +366,11 @@ def render_auth_gate() -> bool:
             if result.ok and result.user_id:
                 _set_authenticated_user(result.user_id)
                 st.rerun()
-            st.error(result.error or "Přihlášení se nepodařilo.")
+            delay = _register_login_failure()
+            if delay:
+                st.error(f"Přihlášení se nepodařilo. Další pokus bude možný za {delay} s.")
+            else:
+                st.error(result.error or "Přihlášení se nepodařilo.")
 
     if allow_registration:
         with auth_tabs[1]:
@@ -365,26 +413,59 @@ def render_user_sidebar() -> None:
         st.rerun()
 
 
-def _clear_cached_function(name: str) -> None:
-    """Clear one Streamlit cached function if it is already defined."""
+def _clear_cached_function(name: str, *args: Any, **kwargs: Any) -> None:
+    """Clear one Streamlit cached function, optionally only for one cache key."""
     try:
         fn = globals().get(name)
         clear = getattr(fn, "clear", None)
-        if callable(clear):
-            clear()
+        if not callable(clear):
+            return
+        if args or kwargs:
+            try:
+                clear(*args, **kwargs)
+                return
+            except TypeError:
+                # Older/future Streamlit cache wrappers may not support key-level
+                # clearing. Falling back to a function clear is safe.
+                pass
+        clear()
     except Exception:
         pass
 
 
-def invalidate_cached_data(scope: str = "all") -> None:
-    """Invalidate only caches affected by a committed database write.
+def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> None:
+    """Invalidate the smallest practical cache surface after a committed write.
 
-    Older versions called ``st.cache_data.clear()`` after every edit.  That also
-    discarded expensive, unrelated caches such as the world-airport catalogue and
-    map preparation.  Scoped invalidation keeps the UI warm while still making
-    writes visible immediately.
+    Per-user cache keys are cleared where Streamlit supports it. Cache functions
+    whose arguments contain arbitrary ID tuples are cleared as a whole because
+    enumerating every possible key would be less reliable than recomputation.
     """
     scope = str(scope or "all").lower()
+
+    # Prepared downloadable snapshots/backups and manual Data Quality scans must
+    # never survive a data mutation with stale content. Meta-only backup status
+    # writes are excluded because they do not change portable user data.
+    data_scopes = {
+        "all", "database", "restore", "flights", "flight", "flight_tracks",
+        "track_points", "tracks", "track", "rates", "rate", "aircraft",
+        "airports", "airport", "user_expiries", "expiry", "expiries",
+        "profile", "user",
+    }
+    if scope in data_scopes:
+        for key in (
+            "portable_backup_bytes_v064", "portable_backup_name_v064",
+            "admin_sqlite_snapshot_v069",
+        ):
+            st.session_state.pop(key, None)
+        try:
+            uid_for_state = strict_user_id(user_id if user_id is not None else current_user_id())
+            st.session_state.pop(f"data_quality_scan_v068_u{uid_for_state}", None)
+        except Exception:
+            pass
+        # record_audit() updates global app_meta for every user-data write. This
+        # key clear is process-wide and keeps backup status fresh in other sessions.
+        _clear_cached_function("read_table", "app_meta")
+
     if scope in {"all", "database", "restore"}:
         try:
             st.cache_data.clear()
@@ -393,39 +474,61 @@ def invalidate_cached_data(scope: str = "all") -> None:
         _clear_cached_function("airport_search_index")
         return
 
-    names: set[str] = {"read_table", "read_audit_log", "read_logbook_counts"}  # audit/meta are updated by every write
-    if scope in {"flights", "flight"}:
-        names.update({
-            "read_flights", "read_aircraft_usage_summary", "read_track_metadata_for_flights", "read_track_map_records_for_flights",
-            "cached_track_map_html",
-            "build_database_health_report",
-        })
-    elif scope in {"flight_tracks", "track_points", "tracks", "track"}:
-        names.update({
-            "read_flights", "read_tracks_joined",
-            "read_tracks_joined_for_flights", "read_track_metadata_for_flights",
-            "read_sampled_track_points", "read_track_map_records_for_flights",
-            "read_tracks_for_flight", "cached_track_map_html",
-            "build_database_health_report",
-        })
-    elif scope in {"rates", "rate"}:
-        names.update({"read_rates"})
-    elif scope in {"aircraft"}:
-        names.update({"read_aircraft_catalog"})
-    elif scope in {"airports", "airport"}:
-        names.update({
-            "read_airports", "airport_coords_for_idents", "airport_coord_lookup",
-            "build_database_health_report",
-            "read_airport_registry_count",
-        })
-    else:
-        # Unknown small table: clear generic table reads, not the entire app cache.
-        names.update({"build_database_health_report"})
+    try:
+        uid = strict_user_id(user_id if user_id is not None else current_user_id())
+    except Exception:
+        uid = 0
 
-    for name in names:
-        _clear_cached_function(name)
-    if scope in {"airports", "airport"}:
-        _clear_cached_function("airport_search_index")
+    if scope in {"flights", "flight"}:
+        if uid:
+            _clear_cached_function("read_table", "flights", uid)
+            _clear_cached_function("read_flights", uid)
+            _clear_cached_function("read_aircraft_usage_summary", uid)
+            _clear_cached_function("read_table_count", "flights", uid)
+        _clear_cached_function("read_track_metadata_for_flights")
+        _clear_cached_function("read_track_map_records_for_flights")
+        _clear_cached_function("build_database_health_report")
+    elif scope in {"flight_tracks", "track_points", "tracks", "track"}:
+        if uid:
+            _clear_cached_function("read_table", "flight_tracks", uid)
+            _clear_cached_function("read_table", "track_points", uid)
+            _clear_cached_function("read_flights", uid)
+            _clear_cached_function("read_logbook_counts", uid)
+        for name in (
+            "read_track_metadata_for_flights", "read_sampled_track_points",
+            "read_track_map_records_for_flights", "read_tracks_for_flight",
+            "build_database_health_report",
+        ):
+            _clear_cached_function(name)
+    elif scope in {"rates", "rate"}:
+        if uid:
+            _clear_cached_function("read_table", "rates", uid)
+            _clear_cached_function("read_rates", uid)
+    elif scope == "aircraft":
+        if uid:
+            _clear_cached_function("read_table", "aircraft", uid)
+            _clear_cached_function("read_aircraft_catalog", True, uid)
+            _clear_cached_function("read_aircraft_catalog", False, uid)
+            _clear_cached_function("read_logbook_counts", uid)
+    elif scope in {"airports", "airport"}:
+        if uid:
+            _clear_cached_function("read_table", "airports", uid)
+            _clear_cached_function("read_airports", True, uid)
+            _clear_cached_function("read_airports", False, uid)
+            _clear_cached_function("read_airport_registry_count", uid)
+            _clear_cached_function("airport_search_index", uid)
+        _clear_cached_function("airport_coords_for_idents")
+        _clear_cached_function("build_database_health_report")
+    elif scope in {"user_expiries", "expiry", "expiries"}:
+        if uid:
+            _clear_cached_function("read_table", "user_expiries", uid)
+    elif scope in {"profile", "user"}:
+        if uid:
+            _clear_cached_function("read_user_profile", uid)
+    elif scope in {"app_meta", "meta"}:
+        _clear_cached_function("read_table", "app_meta")
+    else:
+        _clear_cached_function("build_database_health_report")
 
 
 def require_admin() -> bool:
@@ -500,15 +603,26 @@ def _record_audit_clean(con: sqlite3.Connection, action: str, object_type: str |
             pass
 
 
-def checkpoint_database() -> None:
-    with sqlite3.connect(DB_PATH) as con:
+def checkpoint_database(*, truncate: bool = False, require_clean: bool = False) -> None:
+    mode = "TRUNCATE" if truncate else "PASSIVE"
+    with sqlite3.connect(DB_PATH, timeout=10.0) as con:
+        apply_sqlite_pragmas(con, initial=False)
         try:
-            con.execute("PRAGMA wal_checkpoint(FULL)")
-        except sqlite3.DatabaseError:
-            pass
+            row = con.execute(f"PRAGMA wal_checkpoint({mode})").fetchone()
+        except sqlite3.DatabaseError as exc:
+            if require_clean:
+                raise RuntimeError(f"SQLite WAL checkpoint selhal: {exc}") from exc
+            return
+        if require_clean and row and int(row[0] or 0) != 0:
+            raise RuntimeError("Databáze je právě používána jinou operací. Obnovu zkus znovu za chvíli.")
 
 
-def backup_database_to_github(commit_message: str | None = None) -> str:
+def database_snapshot_bytes() -> bytes:
+    """Consistent single-file snapshot including committed WAL content."""
+    return snapshot_sqlite_bytes(DB_PATH)
+
+
+def _backup_database_to_github_unlocked(commit_message: str | None = None) -> str:
     # requests is only needed when a backup is actually executed. Keeping it out
     # of the normal import path trims cold-start work for everyday navigation.
     import requests
@@ -535,14 +649,14 @@ def backup_database_to_github(commit_message: str | None = None) -> str:
     invalidate_cached_data("app_meta")
 
     try:
-        checkpoint_database()
+        snapshot_bytes = database_snapshot_bytes()
         sha = None
         get_resp = requests.get(api_url, headers=headers, params={"ref": branch}, timeout=30)
         if get_resp.status_code == 200:
             sha = get_resp.json().get("sha")
         elif get_resp.status_code not in (404,):
             raise RuntimeError(f"GitHub GET selhal: {get_resp.status_code} {get_resp.text[:300]}")
-        content_b64 = base64.b64encode(DB_PATH.read_bytes()).decode("ascii")
+        content_b64 = base64.b64encode(snapshot_bytes).decode("ascii")
         payload = {
             "message": commit_message or f"Backup logbook database {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M')}",
             "content": content_b64,
@@ -562,6 +676,12 @@ def backup_database_to_github(commit_message: str | None = None) -> str:
         invalidate_cached_data("app_meta")
         raise
 
+
+
+def backup_database_to_github(commit_message: str | None = None) -> str:
+    """Serialize GitHub backups to avoid SHA races between concurrent sessions."""
+    with _GITHUB_BACKUP_LOCK:
+        return _backup_database_to_github_unlocked(commit_message)
 
 def auto_backup_after_change(reason: str) -> None:
     """Automatically persist the current SQLite database to GitHub after a confirmed write.
@@ -587,21 +707,38 @@ def auto_backup_after_change(reason: str) -> None:
 
 
 
-def restore_database_from_upload(uploaded_file) -> None:
+def restore_database_from_upload(uploaded_file) -> dict[str, Any]:
     raw = uploaded_file.read()
-    if not raw.startswith(b"SQLite format 3"):
-        raise RuntimeError("Nahraný soubor nevypadá jako SQLite databáze.")
-    backup_path = DB_PATH.with_suffix(".sqlite.before_restore")
+    info = inspect_sqlite_bytes(
+        raw,
+        required_tables=_REQUIRED_RESTORE_TABLES,
+        max_schema_version=DB_SCHEMA_VERSION,
+        max_bytes=MAX_ADMIN_RESTORE_BYTES,
+    )
+
+    # Keep a verified consistent snapshot of the current database before the
+    # atomic replacement. It is deliberately outside the uploaded database.
+    backup_path = DB_PATH.with_suffix('.sqlite.before_restore')
     if DB_PATH.exists():
-        checkpoint_database()
-        backup_path.write_bytes(DB_PATH.read_bytes())
-    DB_PATH.write_bytes(raw)
+        backup_path.write_bytes(database_snapshot_bytes())
+
+    checkpoint_database(truncate=True, require_clean=True)
+    atomic_replace_sqlite(DB_PATH, raw)
     global _DB_READY
     _DB_READY = False
     with connect() as con:
-        record_audit(con, "restore_database", "database", None, {"file": uploaded_file.name})
+        # The restored DB may be an older supported schema; connect() performs
+        # the normal migration before the audit row is written.
+        record_audit(
+            con,
+            'restore_database',
+            'database',
+            None,
+            {'file': uploaded_file.name, 'source_schema': info.get('schema_version')},
+        )
         con.commit()
-    invalidate_cached_data("restore")
+    invalidate_cached_data('restore')
+    return info
 
 
 def initialize_database(con: sqlite3.Connection) -> None:
@@ -640,14 +777,22 @@ def initialize_database(con: sqlite3.Connection) -> None:
 def connect() -> sqlite3.Connection:
     global _DB_READY
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(DB_PATH, timeout=10.0)
     con.row_factory = sqlite3.Row
-    if not _DB_READY:
-        initialize_database(con)
-        _DB_READY = True
-    else:
-        apply_sqlite_pragmas(con, initial=False)
-    return con
+    try:
+        if _DB_READY:
+            apply_sqlite_pragmas(con, initial=False)
+            return con
+        with _DB_INIT_LOCK:
+            if not _DB_READY:
+                initialize_database(con)
+                _DB_READY = True
+            else:
+                apply_sqlite_pragmas(con, initial=False)
+        return con
+    except Exception:
+        con.close()
+        raise
 
 
 def _seed_airports_from_overrides(con: sqlite3.Connection) -> None:
@@ -754,6 +899,15 @@ def read_table(table: str, user_id: int | None = None) -> pd.DataFrame:
         if table in USER_SCOPED_TABLES:
             return pd.read_sql_query(f"SELECT * FROM {table} WHERE user_id = ?", con, params=(strict_user_id(user_id),))
         return pd.read_sql_query(f"SELECT * FROM {table}", con)
+
+
+def read_app_meta() -> pd.DataFrame:
+    """Read tiny global metadata uncached; backup freshness must be cross-session."""
+    try:
+        with connect() as con:
+            return pd.read_sql_query("SELECT * FROM app_meta ORDER BY key", con)
+    except sqlite3.DatabaseError:
+        return pd.DataFrame()
 
 
 EXPIRY_CATEGORIES = ["Medical", "Licence", "Rating", "Průkaz", "Pojištění", "Jiné"]
@@ -863,18 +1017,6 @@ def read_logbook_counts(user_id: int) -> dict[str, int]:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_audit_log(limit: int, user_id: int) -> pd.DataFrame:
-    """Read only the newest audit rows; the full audit table can grow indefinitely."""
-    limit = max(1, min(int(limit or 500), 5000))
-    try:
-        with connect() as con:
-            return pd.read_sql_query(
-                "SELECT * FROM audit_log WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-                con,
-                params=(strict_user_id(user_id), limit),
-            )
-    except sqlite3.DatabaseError:
-        return pd.DataFrame()
 
 
 def _clean_ident(value: Any) -> str:
@@ -1089,7 +1231,7 @@ def read_airport_registry_count(user_id: int) -> int:
                 return full_count
             placeholders = ",".join("?" for _ in unique_local)
             overlap = int(airport_con.execute(
-                f"SELECT COUNT(*) FROM airports WHERE UPPER(TRIM(ident)) IN ({placeholders})",
+                f"SELECT COUNT(*) FROM airports WHERE ident IN ({placeholders})",
                 unique_local,
             ).fetchone()[0])
             return full_count + len(unique_local) - overlap
@@ -1107,7 +1249,7 @@ def airport_coords_for_idents(idents: tuple[str, ...], user_id: int) -> dict[str
     query = f"""
         SELECT ident, name, latitude_deg, longitude_deg, source
         FROM airports
-        WHERE UPPER(TRIM(ident)) IN ({placeholders})
+        WHERE ident IN ({placeholders})
           AND latitude_deg IS NOT NULL AND longitude_deg IS NOT NULL
     """
     frames: list[pd.DataFrame] = []
@@ -1119,7 +1261,7 @@ def airport_coords_for_idents(idents: tuple[str, ...], user_id: int) -> dict[str
             pass
     try:
         with connect() as con:
-            local_query = query.replace("FROM airports", "FROM airports").replace("WHERE UPPER(TRIM(ident))", "WHERE user_id = ? AND UPPER(TRIM(ident))")
+            local_query = query.replace("WHERE ident IN", "WHERE user_id = ? AND ident IN")
             frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id), *clean)))
     except Exception:
         pass
@@ -1231,9 +1373,6 @@ def insert_track_points(con: sqlite3.Connection, track_id: int, points: list[dic
     )
 
 @st.cache_data(show_spinner=False, ttl=300)
-
-
-@st.cache_data(show_spinner=False, ttl=300)
 def read_flights(user_id: int) -> pd.DataFrame:
     """Read flight rows and GPS aggregates in one SQLite round-trip."""
     with connect() as con:
@@ -1259,12 +1398,6 @@ def read_flights(user_id: int) -> pd.DataFrame:
         flights["track_count"] = pd.to_numeric(flights["track_count"], errors="coerce").fillna(0).astype(int)
         flights["gps_km"] = pd.to_numeric(flights["gps_km"], errors="coerce").fillna(0.0)
     return flights
-
-
-@st.cache_data(show_spinner=False, ttl=300)
-
-
-@st.cache_data(show_spinner=False, ttl=300)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -1505,23 +1638,8 @@ def _query_param_value(name: str) -> str | None:
         return None
 
 
-def base_app_url() -> str:
-    try:
-        current_url = str(getattr(st.context, "url", "") or "")
-        if current_url.startswith(("http://", "https://")):
-            return current_url.split("?")[0].split("#")[0]
-    except Exception:
-        pass
-    return ""
 
 
-def app_link(**params: Any) -> str:
-    clean = {str(k): str(v) for k, v in params.items() if v is not None and str(v) != ""}
-    qs = urlencode(clean)
-    base = base_app_url()
-    if base:
-        return f"{base}?{qs}" if qs else base
-    return f"?{qs}" if qs else "?"
 
 
 
@@ -1580,11 +1698,6 @@ def nearest_airport(point: dict[str, Any] | None, max_km: float = 18.0) -> str:
 
 
 
-def _local_time_label(iso_text: Any) -> str:
-    dt = parse_iso(str(iso_text)) if iso_text else None
-    if not dt:
-        return "—"
-    return dt.astimezone(current_user_timezone()).strftime("%H:%M")
 
 
 
@@ -1800,64 +1913,9 @@ def delete_flight(flight_id: int) -> None:
     auto_backup_after_change("delete_flight")
 
 
-def downsample_points(points: list[dict[str, Any]], max_points: int = 900) -> list[dict[str, Any]]:
-    return downsample_track_points(points, max_points=max_points)
 
 
 @st.cache_data(show_spinner=False, ttl=600)
-def airport_coord_lookup(user_id: int) -> dict[str, dict[str, Any]]:
-    """Fast airport coordinate lookup used by maps and track extensions.
-
-    This intentionally reads only the five columns needed for drawing maps. The
-    full airport registry has tens of thousands of rows and many columns; loading
-    it here would make every first map render noticeably slower.
-    """
-    query = """
-        SELECT ident, name, latitude_deg, longitude_deg, source
-        FROM airports
-        WHERE latitude_deg IS NOT NULL AND longitude_deg IS NOT NULL
-    """
-    frames: list[pd.DataFrame] = []
-    if AIRPORTS_DB_PATH.exists():
-        try:
-            with connect_airports_ro() as airport_con:
-                frames.append(pd.read_sql_query(query, airport_con))
-        except Exception:
-            pass
-    try:
-        with connect() as con:
-            local_query = query.replace("WHERE latitude_deg IS NOT NULL", "WHERE user_id = ? AND latitude_deg IS NOT NULL")
-            frames.append(pd.read_sql_query(local_query, con, params=(strict_user_id(user_id),)))
-    except Exception:
-        pass
-    if not frames:
-        return {}
-    airports = pd.concat(frames, ignore_index=True, sort=False)
-    if airports.empty or "ident" not in airports.columns:
-        return {}
-    airports["ident"] = airports["ident"].fillna("").astype(str).str.upper().str.strip()
-    airports = airports[airports["ident"] != ""]
-    airports["latitude_deg"] = pd.to_numeric(airports["latitude_deg"], errors="coerce")
-    airports["longitude_deg"] = pd.to_numeric(airports["longitude_deg"], errors="coerce")
-    airports = airports.dropna(subset=["latitude_deg", "longitude_deg"])
-    airports = airports[
-        airports["latitude_deg"].between(-90, 90)
-        & airports["longitude_deg"].between(-180, 180)
-    ]
-    airports = airports.drop_duplicates(subset=["ident"], keep="last")
-    lookup: dict[str, dict[str, Any]] = {}
-    for row in airports.itertuples(index=False):
-        ident = str(getattr(row, "ident", "") or "").upper()
-        if not ident:
-            continue
-        lookup[ident] = {
-            "ident": ident,
-            "name": normalize_text(getattr(row, "name", "")) or ident,
-            "lat": float(getattr(row, "latitude_deg")),
-            "lon": float(getattr(row, "longitude_deg")),
-            "source": normalize_text(getattr(row, "source", "")) or "",
-        }
-    return lookup
 
 
 def airport_coord(ident: Any) -> dict[str, Any] | None:
@@ -3464,29 +3522,6 @@ FORM_KEY_MAP = {
 
 
 
-def _clean_form_value(field: str, value: Any) -> Any:
-    if value is None or (not isinstance(value, (date, datetime, time)) and pd.isna(value)):
-        return ""
-    if field == "date":
-        try:
-            return pd.to_datetime(value).date()
-        except Exception:
-            return date.today()
-    if field in {"off_block", "takeoff", "landing", "on_block"}:
-        return normalize_time(value) or ""
-    if field in {"registration", "departure", "arrival", "evidence", "aircraft_class", "role"}:
-        return str(value or "").upper().strip()
-    if field == "starts":
-        try:
-            return int(value or 0)
-        except Exception:
-            return 1
-    if field == "price_per_hour":
-        try:
-            return float(value or 0)
-        except Exception:
-            return 0.0
-    return str(value or "").strip()
 
 
 
@@ -4977,8 +5012,7 @@ def _clean_text(value: Any) -> str:
 
 
 def _safe_text(value: Any) -> str:
-    text = _clean_text(value)
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return html.escape(_clean_text(value), quote=True)
 
 
 def _join_nonblank(values: list[Any] | tuple[Any, ...], sep: str = " • ") -> str:
@@ -6337,7 +6371,7 @@ def _clear_map_selection() -> None:
 
 def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd.DataFrame, dark_mode: bool) -> None:
     if selection_df.empty:
-        st.markdown(f'<div class="map-selection-panel"><div class="map-selection-title">{title}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="map-selection-panel"><div class="map-selection-title">{_safe_text(title)}</div></div>', unsafe_allow_html=True)
         return
     work = selection_df.sort_values(["date_dt", "off_block", "id"], ascending=[False, False, False], na_position="last").reset_index(drop=True)
     total_minutes = int(work.get("block_minutes", pd.Series(dtype=float)).fillna(0).sum()) if "block_minutes" in work else 0
@@ -6345,7 +6379,7 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
     gps = float(work.get("gps_km", pd.Series(dtype=float)).fillna(0).sum()) if "gps_km" in work else 0.0
     st.markdown(
         f"""<div class="map-selection-panel">
-            <div class="map-selection-title">{title}</div>
+            <div class="map-selection-title">{_safe_text(title)}</div>
             <div class="map-selection-meta">
                 <span>{len(work)} letů</span><span>{fmt_minutes(total_minutes)}</span><span>{tracks} tracků</span><span>{gps:.0f} km GPS</span>
             </div>
@@ -6378,8 +6412,8 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
         cols[2].markdown(f'<div class="map-mini-cell">{flight_id}</div>', unsafe_allow_html=True)
         cols[3].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("date"))}</div>', unsafe_allow_html=True)
         cols[4].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("registration"))}<div class="map-mini-sub">{_safe_text(row.get("aircraft_type"))}</div></div>', unsafe_allow_html=True)
-        cols[5].markdown(f'<div class="map-mini-cell">{_range_text(row.get("departure"), row.get("arrival"))}<div class="map-mini-sub">{_safe_text(row.get("evidence"))}</div></div>', unsafe_allow_html=True)
-        cols[6].markdown(f'<div class="map-mini-cell">{_range_text(row.get("off_block"), row.get("on_block"))}</div>', unsafe_allow_html=True)
+        cols[5].markdown(f'<div class="map-mini-cell">{_safe_text(_range_text(row.get("departure"), row.get("arrival")))}<div class="map-mini-sub">{_safe_text(row.get("evidence"))}</div></div>', unsafe_allow_html=True)
+        cols[6].markdown(f'<div class="map-mini-cell">{_safe_text(_range_text(row.get("off_block"), row.get("on_block")))}</div>', unsafe_allow_html=True)
         cols[7].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("block_time"))}</div>', unsafe_allow_html=True)
         cols[8].markdown(f'<div class="map-mini-cell">{_safe_text(row.get("role"))}</div>', unsafe_allow_html=True)
     if len(work) > limit:
@@ -7601,72 +7635,6 @@ def page_database():
                                     st.session_state["aircraft_profile_selected_v058"] = reg0
                                     st.rerun()
 
-    elif section == "Kontrola":
-        render_database_control_panel()
-
-    elif section == "Záloha":
-        metas = read_table("app_meta")
-        st.markdown("### Technická záloha celé aplikace")
-        st.caption("Správcovská SQLite/GitHub záloha všech profilů. Přenosná záloha jednoho profilu je v **Export → Záloha účtu**.")
-        dirty = ""
-        last_change = ""
-        last_backup = ""
-        if not metas.empty:
-            md = dict(zip(metas["key"], metas["value"]))
-            dirty = md.get("dirty", "")
-            last_change = md.get("last_change_at", "")
-            last_backup = md.get("last_github_backup_at", "")
-        b1, b2, b3 = st.columns(3)
-        with b1: metric_card("Stav", "Nezálohováno" if dirty == "1" else "OK", "dirty flag")
-        with b2: metric_card("Poslední změna", last_change[:19] if last_change else "—", "UTC")
-        with b3: metric_card("GitHub backup", last_backup[:19] if last_backup else "—", "UTC")
-        if github_auto_backup_enabled():
-            st.success("Automatická GitHub záloha je zapnutá. Po každé potvrzené změně se databáze uloží do repozitáře.")
-        elif github_backup_configured():
-            st.warning("GitHub token je nastavený, ale automatická záloha je vypnutá. Zapni github.auto_backup = true v Secrets.")
-        else:
-            st.warning("Automatická GitHub záloha není nastavená. Změny ve Streamlit Cloud mohou po restartu zmizet.")
-        if st.session_state.get("last_auto_backup_status") == "error":
-            st.error(f"Poslední automatická záloha selhala: {st.session_state.get('last_auto_backup_error')}")
-        if is_admin():
-            with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
-        else:
-            st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
-        if github_backup_configured():
-            if st.button("Uložit aktuální databázi na GitHub", type="primary", disabled=not is_admin(), width="stretch"):
-                if require_admin():
-                    try:
-                        url = backup_database_to_github()
-                        st.success("Databáze zazálohována na GitHub." + (f" Commit: {url}" if url else ""))
-                    except Exception as exc:
-                        st.error(f"Backup selhal: {exc}")
-        else:
-            st.info("GitHub backup není nakonfigurovaný ve Streamlit Secrets. Stále můžeš ručně stahovat SQLite soubor.")
-        restore = st.file_uploader("Obnovit SQLite databázi ze souboru", type=["sqlite", "db"], key="restore_db_upload")
-        confirm = st.text_input("Pro obnovení napiš OBNOVIT", value="")
-        if restore is not None and st.button("Obnovit databázi", disabled=not is_admin() or confirm != "OBNOVIT", width="stretch"):
-            if require_admin():
-                try:
-                    restore_database_from_upload(restore)
-                    st.success("Databáze obnovena.")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(f"Obnova selhala: {exc}")
-
-    elif section == "Meta":
-        metas = read_table("app_meta")
-        audits = read_audit_log(500, current_user_id())
-        st.markdown("### Metadata")
-        if metas.empty:
-            st.info("Žádná metadata.")
-        else:
-            st.dataframe(metas.sort_values("key"), hide_index=True, width="stretch")
-        st.markdown("### Audit log")
-        if audits.empty:
-            st.info("Žádný audit log.")
-        else:
-            st.dataframe(audits, hide_index=True, width="stretch", height=360)
 
 
 # -----------------------------------------------------------------------------
@@ -7892,7 +7860,7 @@ def build_database_health_report() -> dict[str, Any]:
         # Decode only track headers/JSON validity here; keep this diagnostic bounded.
         invalid_json_rows: list[dict[str, Any]] = []
         try:
-            rows = con.execute("SELECT id, flight_id, file_name, coordinates_json FROM flight_tracks ORDER BY id DESC").fetchall()
+            rows = con.execute("SELECT id, flight_id, file_name, coordinates_json FROM flight_tracks ORDER BY id DESC LIMIT 500").fetchall()
             for row in rows:
                 try:
                     points = json.loads(row["coordinates_json"] or "[]")
@@ -7963,66 +7931,50 @@ def _render_issue_table(title: str, df: pd.DataFrame, empty_text: str = "OK") ->
 
 
 def run_safe_database_service() -> dict[str, Any]:
-    """Apply non-destructive repairs and normalization."""
+    """Apply only structural, non-semantic database repairs.
+
+    Flight values are intentionally not normalized here anymore. User-visible
+    data corrections belong to Data Quality, where each change is explicit.
+    """
     result: dict[str, Any] = {"changed": 0, "actions": []}
     with connect() as con:
         before = con.total_changes
+
         def step(label: str, sql: str, params: tuple[Any, ...] = ()) -> None:
             prev = con.total_changes
             con.execute(sql, params)
-            changed = con.total_changes - prev
-            result["actions"].append({"Akce": label, "Změny": int(changed)})
+            result["actions"].append({"Akce": label, "Změny": int(con.total_changes - prev)})
 
-        step("Normalizace imatrikulací v letech", """
-            UPDATE flights SET registration = UPPER(TRIM(registration))
-            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
-        """)
-        step("Normalizace letišť v letech", """
-            UPDATE flights SET departure = UPPER(TRIM(departure)), arrival = UPPER(TRIM(arrival))
-            WHERE (departure IS NOT NULL AND departure <> UPPER(TRIM(departure)))
-               OR (arrival IS NOT NULL AND arrival <> UPPER(TRIM(arrival)))
-        """)
-        step("Normalizace evidence/třídy/role", """
-            UPDATE flights SET
-                evidence = UPPER(TRIM(evidence)),
-                aircraft_class = UPPER(TRIM(aircraft_class)),
-                role = UPPER(TRIM(role))
-            WHERE (evidence IS NOT NULL AND evidence <> UPPER(TRIM(evidence)))
-               OR (aircraft_class IS NOT NULL AND aircraft_class <> UPPER(TRIM(aircraft_class)))
-               OR (role IS NOT NULL AND role <> UPPER(TRIM(role)))
-        """)
-        step("Doplnění startů", "UPDATE flights SET starts = 1 WHERE starts IS NULL OR starts <= 0")
-        step("Doplnění účtování", """
-            UPDATE flights SET billing_basis = 'BLOCK'
-            WHERE UPPER(TRIM(COALESCE(billing_basis,''))) NOT IN ('BLOCK','AIR')
-        """)
-        step("Normalizace imatrikulací v letadlech", """
-            UPDATE aircraft SET registration = UPPER(TRIM(registration))
-            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
-        """)
-        step("Normalizace imatrikulací v ceníku", """
-            UPDATE rates SET registration = UPPER(TRIM(registration))
-            WHERE registration IS NOT NULL AND registration <> UPPER(TRIM(registration))
-        """)
-        step("Odstranění osiřelých GPS bodů", """
+        step(
+            "Odstranění osiřelých GPS bodů",
+            """
             DELETE FROM track_points
-            WHERE track_id NOT IN (SELECT id FROM flight_tracks)
-        """)
-        prev = con.total_changes
-        _seed_aircraft_from_existing_data(con)
-        result["actions"].append({"Akce": "Doplnění letadel z existujících letů", "Změny": int(con.total_changes - prev)})
-        prev = con.total_changes
-        _backfill_track_points(con)
-        result["actions"].append({"Akce": "Doplnění normalizovaných GPS bodů", "Změny": int(con.total_changes - prev)})
-        step("Doplnění point_count z track_points", """
+            WHERE NOT EXISTS (
+                SELECT 1 FROM flight_tracks t WHERE t.id = track_points.track_id
+            )
+            """,
+        )
+        step(
+            "Synchronizace point_count",
+            """
             UPDATE flight_tracks
-            SET point_count = COALESCE((SELECT COUNT(*) FROM track_points p WHERE p.track_id = flight_tracks.id), point_count)
-            WHERE EXISTS (SELECT 1 FROM track_points p WHERE p.track_id = flight_tracks.id)
-        """)
-        try:
-            optimize_sqlite(con)
-        except Exception:
-            pass
+            SET point_count = (
+                SELECT COUNT(*) FROM track_points p
+                WHERE p.track_id = flight_tracks.id
+            )
+            WHERE EXISTS (
+                SELECT 1 FROM track_points p WHERE p.track_id = flight_tracks.id
+            )
+              AND COALESCE(point_count, -1) <> (
+                SELECT COUNT(*) FROM track_points p
+                WHERE p.track_id = flight_tracks.id
+            )
+            """,
+        )
+        # Recreate/verify tenant indexes and owner guard triggers. This is
+        # idempotent and does not alter flight semantics.
+        ensure_tenancy_schema(con)
+        optimize_sqlite(con)
         result["changed"] = int(con.total_changes - before)
         record_audit(con, "safe_database_service", "database", None, result)
         con.commit()
@@ -8053,6 +8005,7 @@ def run_sqlite_service() -> dict[str, Any]:
 
 def render_database_control_panel() -> None:
     st.markdown("### Kontrola a servis")
+    st.caption("Bezpečný servis mění jen strukturální metadata databáze; obsah letů se opravuje výhradně přes Kvalitu dat.")
     c1, c2, c3 = st.columns(3)
     with c1:
         if st.button("Spustit kontrolu", type="primary", width="stretch", key="run_db_health_v047"):
@@ -8128,24 +8081,6 @@ def render_database_control_panel() -> None:
     _render_issue_table("Osiřelé GPS body", tables.get("orphan_points", pd.DataFrame()))
     _render_issue_table("Neplatný JSON tracku", tables.get("invalid_track_json", pd.DataFrame()))
 
-def make_control_df(df: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    for _, r in df.iterrows():
-        issues = []
-        if pd.isna(r.get("date_dt")): issues.append("datum")
-        else:
-            y = int(r["date_dt"].year)
-            if y < 2000 or y > 2035: issues.append("rok")
-        for col, label in [("evidence","evidence"),("registration","imatrikulace"),("role","funkce")]:
-            if not str(r.get(col) or "").strip(): issues.append(label)
-        if r.get("starts", 0) <= 0: issues.append("starty")
-        if r.get("block_minutes") is None or pd.isna(r.get("block_minutes")): issues.append("block time")
-        if r.get("air_minutes") is None or pd.isna(r.get("air_minutes")): issues.append("air time")
-        if pd.notna(r.get("air_minutes")) and pd.notna(r.get("block_minutes")) and r["air_minutes"] > r["block_minutes"]: issues.append("air > block")
-        if pd.isna(r.get("price_per_hour")) or float(r.get("price_per_hour") or 0) <= 0: issues.append("sazba")
-        if issues:
-            rows.append({"ID": r.get("id"), "Datum": r.get("date"), "Imatrikulace": r.get("registration"), "Problém": ", ".join(issues)})
-    return pd.DataFrame(rows)
 
 
 
@@ -8231,12 +8166,17 @@ def _portable_backup_counts(user_id: int) -> dict[str, int]:
                 (uid,),
             ).fetchone()
             return int(row[0]) if row else 0
+        audit_row = con.execute(
+            "SELECT COALESCE(MAX(id), 0) FROM audit_log WHERE user_id = ?",
+            (uid,),
+        ).fetchone()
         return {
             "flights": count("flights"),
             "aircraft": count("aircraft"),
             "tracks": count("flight_tracks"),
             "points": count("track_points"),
             "expiries": count("user_expiries"),
+            "audit_id": int(audit_row[0]) if audit_row else 0,
         }
 
 
@@ -8268,6 +8208,7 @@ def render_portable_backup() -> None:
         counts["tracks"],
         counts["points"],
         counts["expiries"],
+        counts.get("audit_id", 0),
         str(profile.get("updated_at") or ""),
     )
     if st.session_state.get("portable_backup_signature_v064") != backup_signature:
@@ -8686,6 +8627,7 @@ def page_admin() -> None:
                     con.commit()
             if result.ok:
                 read_user_profile.clear()
+                read_permission_health.clear()
                 auto_backup_after_change("admin_create_user")
                 st.success(f"Profil vytvořen. User ID {result.user_id}.")
                 st.rerun()
@@ -8734,6 +8676,7 @@ def page_admin() -> None:
                         con.commit()
                 if role_result.ok and active_result.ok:
                     read_user_profile.clear()
+                    read_permission_health.clear()
                     auto_backup_after_change("admin_update_user")
                     st.success("Oprávnění uživatele byla uložena.")
                     st.rerun()
@@ -8781,8 +8724,9 @@ def page_admin() -> None:
             st.rerun()
 
     elif section == "Záloha":
-        metas = read_table("app_meta")
+        metas = read_app_meta()
         st.markdown("### Technická záloha celé aplikace")
+        st.caption("SQLite snapshot se vytváří přes SQLite Backup API, takže zahrnuje i potvrzené WAL změny a nestahuje živý databázový soubor napřímo.")
         st.caption("Správcovská SQLite/GitHub záloha všech profilů. Přenosná záloha jednoho profilu je v **Export → Záloha účtu**.")
         dirty = last_change = last_backup = ""
         if not metas.empty:
@@ -8801,8 +8745,29 @@ def page_admin() -> None:
         else:
             st.warning("GitHub backup není nakonfigurovaný.")
         if DB_PATH.exists():
-            with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout celou SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
+            if st.button("Připravit SQLite snapshot", width="stretch", key="admin_prepare_snapshot_v069"):
+                try:
+                    with st.spinner("Připravuji konzistentní SQLite snapshot…"):
+                        st.session_state["admin_sqlite_snapshot_v069"] = database_snapshot_bytes()
+                        st.session_state["admin_sqlite_snapshot_change_v069"] = last_change
+                    st.success("Snapshot je připravený ke stažení.")
+                except Exception as exc:
+                    st.error(f"Snapshot se nepodařilo připravit: {exc}")
+            snapshot = st.session_state.get("admin_sqlite_snapshot_v069")
+            snapshot_change = str(st.session_state.get("admin_sqlite_snapshot_change_v069") or "")
+            if snapshot and snapshot_change == str(last_change or ""):
+                st.download_button(
+                    "Stáhnout celou SQLite databázi",
+                    data=snapshot,
+                    file_name="logbook.sqlite",
+                    mime="application/x-sqlite3",
+                    width="stretch",
+                    key="admin_download_snapshot_v069",
+                )
+            elif snapshot:
+                st.session_state.pop("admin_sqlite_snapshot_v069", None)
+                st.session_state.pop("admin_sqlite_snapshot_change_v069", None)
+                st.warning("Databáze se od přípravy snapshotu změnila. Připrav nový snapshot.")
         if github_backup_configured():
             if st.button("Uložit aktuální databázi na GitHub", type="primary", width="stretch", key="admin_backup_now_v057"):
                 try:
@@ -8816,8 +8781,10 @@ def page_admin() -> None:
         if restore is not None and st.button("Obnovit databázi", disabled=confirm != "OBNOVIT", width="stretch", key="admin_restore_btn_v057"):
             try:
                 restore_database_from_upload(restore)
-                st.success("Databáze obnovena.")
+                _reset_session_state(notice="Databáze byla obnovena. Z bezpečnostních důvodů se přihlas znovu.")
                 st.rerun()
+            except SQLiteRestoreError as exc:
+                st.error(f"Obnova odmítnuta: {exc}")
             except Exception as exc:
                 st.error(f"Obnova selhala: {exc}")
 
@@ -8826,7 +8793,7 @@ def page_admin() -> None:
 
     elif section == "Meta":
         st.markdown("### Metadata aplikace")
-        metas = read_table("app_meta")
+        metas = read_app_meta()
         if metas.empty:
             st.info("Žádná metadata.")
         else:

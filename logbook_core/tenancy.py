@@ -246,11 +246,68 @@ def _create_user_indexes(con: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_tracks_user_flight ON flight_tracks(user_id, flight_id)",
         "CREATE INDEX IF NOT EXISTS idx_track_points_user_track_seq ON track_points(user_id, track_id, seq)",
         "CREATE INDEX IF NOT EXISTS idx_audit_user_created_at ON audit_log(user_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_audit_user_id_desc ON audit_log(user_id, id DESC)",
         "CREATE INDEX IF NOT EXISTS idx_user_expiries_user_expiry ON user_expiries(user_id, active, expiry_date)",
     )
     for statement in statements:
         con.execute(statement)
 
+
+
+def _create_owner_guard_triggers(con: sqlite3.Connection) -> None:
+    """Reject future cross-tenant child relations at the SQLite boundary."""
+    statements: Iterable[str] = (
+        """
+        CREATE TRIGGER IF NOT EXISTS trg_flight_tracks_owner_insert
+        BEFORE INSERT ON flight_tracks
+        FOR EACH ROW
+        WHEN NOT EXISTS (
+            SELECT 1 FROM flights f
+            WHERE f.id = NEW.flight_id AND f.user_id = NEW.user_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'flight_tracks owner mismatch');
+        END
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS trg_flight_tracks_owner_update
+        BEFORE UPDATE OF user_id, flight_id ON flight_tracks
+        FOR EACH ROW
+        WHEN NOT EXISTS (
+            SELECT 1 FROM flights f
+            WHERE f.id = NEW.flight_id AND f.user_id = NEW.user_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'flight_tracks owner mismatch');
+        END
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS trg_track_points_owner_insert
+        BEFORE INSERT ON track_points
+        FOR EACH ROW
+        WHEN NOT EXISTS (
+            SELECT 1 FROM flight_tracks t
+            WHERE t.id = NEW.track_id AND t.user_id = NEW.user_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'track_points owner mismatch');
+        END
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS trg_track_points_owner_update
+        BEFORE UPDATE OF user_id, track_id ON track_points
+        FOR EACH ROW
+        WHEN NOT EXISTS (
+            SELECT 1 FROM flight_tracks t
+            WHERE t.id = NEW.track_id AND t.user_id = NEW.user_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'track_points owner mismatch');
+        END
+        """,
+    )
+    for statement in statements:
+        con.execute(statement)
 
 def ensure_tenancy_schema(con: sqlite3.Connection) -> None:
     """Make the SQLite database multi-user ready without changing current UX.
@@ -263,6 +320,7 @@ def ensure_tenancy_schema(con: sqlite3.Connection) -> None:
         marker = con.execute("SELECT value FROM app_meta WHERE key = 'tenancy_v1'").fetchone()
         if marker and str(marker[0] or "") == "1":
             _create_user_indexes(con)
+            _create_owner_guard_triggers(con)
             return
     except sqlite3.DatabaseError:
         pass
@@ -300,6 +358,7 @@ def ensure_tenancy_schema(con: sqlite3.Connection) -> None:
     con.execute("UPDATE audit_log SET user_id = 1 WHERE user_id IS NULL OR user_id <= 0")
 
     _create_user_indexes(con)
+    _create_owner_guard_triggers(con)
     try:
         con.execute(
             "INSERT OR REPLACE INTO app_meta (key, value, updated_at) VALUES ('tenancy_v1', '1', CURRENT_TIMESTAMP)"
