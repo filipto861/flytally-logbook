@@ -10,20 +10,21 @@ def apply_ui_theme(dark_mode: bool) -> None:
     else:
         bg = "#f5f8fc"; panel = "#ffffff"; panel2 = "#eaf3ff"; text = "#0f172a"; muted = "#475569"; border = "rgba(15,23,42,.12)"; accent = "#0284c7"; good = "#16a34a"; warn = "#d97706"; shadow = "rgba(15,23,42,.10)"
     sidebar_css = """
-    :root {--lb-sidebar-width:16.4rem;}
+    :root {--lb-sidebar-width:16.4rem;--lb-sidebar-motion:390ms cubic-bezier(.16,1,.3,1);}
     section[data-testid="stSidebar"], [data-testid="stSidebar"] {
         display:block !important; visibility:visible !important; opacity:1 !important;
         width:var(--lb-sidebar-width) !important; min-width:var(--lb-sidebar-width) !important; max-width:var(--lb-sidebar-width) !important;
         transform:translateX(0) !important; margin-left:0 !important;
-        transition:margin-left 320ms cubic-bezier(.22,.61,.36,1), opacity 220ms ease !important;
-        will-change:margin-left; z-index:1000 !important;
+        transition:margin-left var(--lb-sidebar-motion), opacity 220ms ease !important;
+        will-change:margin-left; backface-visibility:hidden; transform:translateZ(0) !important; z-index:1000 !important;
     }
-    [data-testid="stSidebarContent"] {display:block !important; visibility:visible !important; opacity:1 !important;}
+    [data-testid="stSidebarContent"] {display:block !important; visibility:visible !important; opacity:1 !important; transform:translateX(0); transition:opacity 180ms ease, transform var(--lb-sidebar-motion) !important; will-change:transform,opacity;}
     body.lb-sidebar-hidden section[data-testid="stSidebar"],
     body.lb-sidebar-hidden [data-testid="stSidebar"] {
         margin-left:calc(-1 * var(--lb-sidebar-width)) !important;
     }
-    [data-testid="stAppViewContainer"] > .main {transition:margin-left 320ms cubic-bezier(.22,.61,.36,1) !important;}
+    body.lb-sidebar-hidden [data-testid="stSidebarContent"] {opacity:.94 !important; transform:translateX(-.28rem);}
+    [data-testid="stAppViewContainer"] > .main {transition:margin-left var(--lb-sidebar-motion), width var(--lb-sidebar-motion) !important; will-change:margin-left,width;}
     [data-testid="stAppViewContainer"] .main .block-container {max-width:1500px !important;}
     #lb-sidebar-toggle {
         position:fixed; top:5.20rem; left:calc(var(--lb-sidebar-width) - 2.36rem);
@@ -32,10 +33,13 @@ def apply_ui_theme(dark_mode: bool) -> None:
         font-weight:900; font-size:1.02rem; line-height:1; cursor:pointer;
         display:flex; align-items:center; justify-content:center;
         box-shadow:0 10px 28px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.06);
-        transition:left 320ms cubic-bezier(.22,.61,.36,1), transform 130ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+        transition:left var(--lb-sidebar-motion), transform 160ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease; will-change:left,transform;
     }
     #lb-sidebar-toggle:hover {background:linear-gradient(135deg,rgba(31,64,105,.99),rgba(12,29,50,.99)); border-color:rgba(56,189,248,.68); transform:translateY(-1px); box-shadow:0 12px 32px rgba(0,0,0,.34),0 0 0 3px rgba(56,189,248,.06);}
     body.lb-sidebar-hidden #lb-sidebar-toggle {left:.50rem;}
+    @media (prefers-reduced-motion: reduce) {
+        section[data-testid="stSidebar"], [data-testid="stSidebar"], [data-testid="stSidebarContent"], #lb-sidebar-toggle, [data-testid="stAppViewContainer"] > .main {transition:none !important;}
+    }
     @media (max-width: 760px) {
         #lb-sidebar-toggle {top:4.35rem; left:calc(var(--lb-sidebar-width) - 2.35rem);}
         body.lb-sidebar-hidden #lb-sidebar-toggle {left:.42rem;}
