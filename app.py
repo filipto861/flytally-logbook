@@ -56,6 +56,10 @@ from logbook_core.exports import (
     _export_date_bounds, _export_prefix, build_print_html, export_excel,
     make_group_summary, make_logbook_export_df, make_summary_table,
 )
+from logbook_core.portability import (
+    BackupError, backup_filename, build_user_backup, inspect_user_backup,
+    restore_user_backup,
+)
 from logbook_core.map_engine import (
     build_gps_render_plan, encode_compact_track_points, simplify_track_points,
     viewport_from_coords,
@@ -6119,7 +6123,8 @@ def page_database():
 
     elif section == "Záloha":
         metas = read_table("app_meta")
-        st.markdown("### SQLite + GitHub backup")
+        st.markdown("### Technická záloha celé aplikace")
+        st.caption("Správcovská SQLite/GitHub záloha všech profilů. Přenosná záloha jednoho profilu je v **Export → Záloha účtu**.")
         dirty = ""
         last_change = ""
         last_backup = ""
@@ -6723,25 +6728,237 @@ def render_export_summary(filtered: pd.DataFrame) -> None:
             st.metric(label, value)
 
 
+
+def _portable_backup_bytes(user_id: int) -> bytes:
+    with connect() as con:
+        return build_user_backup(
+            con,
+            strict_user_id(user_id),
+            app_version=APP_VERSION,
+            schema_version=DB_SCHEMA_VERSION,
+        )
+
+
+def _portable_backup_counts(user_id: int) -> dict[str, int]:
+    uid = strict_user_id(user_id)
+    with connect() as con:
+        def count(table: str) -> int:
+            row = con.execute(
+                f"SELECT COUNT(*) FROM {table} WHERE user_id = ?",
+                (uid,),
+            ).fetchone()
+            return int(row[0]) if row else 0
+        return {
+            "flights": count("flights"),
+            "aircraft": count("aircraft"),
+            "tracks": count("flight_tracks"),
+            "points": count("track_points"),
+            "expiries": count("user_expiries"),
+        }
+
+
+def render_portable_backup() -> None:
+    uid = strict_user_id(current_user_id())
+    profile = read_user_profile(uid)
+    counts = _portable_backup_counts(uid)
+
+    st.markdown("### Přenosná záloha účtu")
+    st.caption(
+        "Kompletní přenosná kopie dat tohoto profilu. Neobsahuje heslo, "
+        "přihlašovací údaje, data ostatních uživatelů ani globální databázi letišť."
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card("Lety", str(counts["flights"]), "v tomto profilu")
+    with c2:
+        metric_card("Letadla", str(counts["aircraft"]), "profily a ceny")
+    with c3:
+        metric_card("GPS tracky", str(counts["tracks"]), f"{counts['points']:,} bodů".replace(",", " "))
+    with c4:
+        metric_card("Platnosti", str(counts["expiries"]), "licence / medical")
+
+    backup_signature = (
+        uid,
+        counts["flights"],
+        counts["aircraft"],
+        counts["tracks"],
+        counts["points"],
+        counts["expiries"],
+        str(profile.get("updated_at") or ""),
+    )
+    if st.session_state.get("portable_backup_signature_v064") != backup_signature:
+        st.session_state["portable_backup_signature_v064"] = backup_signature
+        st.session_state.pop("portable_backup_bytes_v064", None)
+        st.session_state.pop("portable_backup_name_v064", None)
+
+    prepare = st.button(
+        "Připravit přenosnou zálohu",
+        type="primary",
+        width="stretch",
+        key="prepare_portable_backup_v064",
+    )
+    if prepare:
+        try:
+            with st.spinner("Připravuji zálohu profilu…"):
+                raw = _portable_backup_bytes(uid)
+            st.session_state["portable_backup_bytes_v064"] = raw
+            st.session_state["portable_backup_name_v064"] = backup_filename(profile)
+        except Exception as exc:
+            st.error(f"Zálohu se nepodařilo připravit: {exc}")
+
+    ready = st.session_state.get("portable_backup_bytes_v064")
+    if ready:
+        st.download_button(
+            "Stáhnout zálohu účtu",
+            data=ready,
+            file_name=st.session_state.get("portable_backup_name_v064") or backup_filename(profile),
+            mime="application/zip",
+            width="stretch",
+            key="download_portable_backup_v064",
+        )
+        st.caption(
+            "ZIP obsahuje strojově obnovitelná data a čitelné CSV kopie hlavních tabulek."
+        )
+
+    pre_restore = st.session_state.get("portable_pre_restore_backup_v064")
+    if pre_restore:
+        st.warning("Je k dispozici bezpečnostní kopie stavu před poslední obnovou.")
+        st.download_button(
+            "Stáhnout stav před obnovou",
+            data=pre_restore,
+            file_name=st.session_state.get(
+                "portable_pre_restore_name_v064",
+                f"logbook_before_restore_{datetime.now(LOCAL_TZ).strftime('%Y%m%d_%H%M')}.zip",
+            ),
+            mime="application/zip",
+            width="stretch",
+            key="download_pre_restore_backup_v064",
+        )
+
+    if st.session_state.pop("portable_restore_success_v064", False):
+        st.success("Data profilu byla z přenosné zálohy úspěšně obnovena.")
+
+    st.markdown("### Obnova dat")
+    with st.expander("Obnovit tento profil z přenosné zálohy", expanded=False):
+        st.warning(
+            "Obnova **nahradí lety, letadla, ceny, vlastní letiště, GPS tracky a platnosti "
+            "aktuálního profilu**. Ostatní účty, e-mail, heslo a role se nezmění."
+        )
+        uploaded = st.file_uploader(
+            "Přenosná záloha Logbooku (.zip)",
+            type=["zip"],
+            key="portable_restore_upload_v064",
+        )
+
+        backup_raw: bytes | None = None
+        backup_info: dict[str, Any] | None = None
+        if uploaded is not None:
+            try:
+                backup_raw = uploaded.getvalue()
+                backup_info = inspect_user_backup(backup_raw)
+                source = backup_info.get("source_profile") or {}
+                source_name = normalize_text(source.get("display_name")) or "Neznámý profil"
+                source_email = normalize_text(source.get("email"))
+                created = str(backup_info.get("created_at") or "—")
+                bcounts = backup_info.get("counts") or {}
+
+                st.success("Záloha je platná a lze ji obnovit.")
+                st.markdown(
+                    f"**Zdroj:** {html.escape(source_name)}"
+                    + (f" • {html.escape(source_email)}" if source_email else "")
+                    + f"  \n**Vytvořeno:** {html.escape(created)}"
+                )
+                p1, p2, p3, p4 = st.columns(4)
+                with p1:
+                    st.metric("Lety", int(bcounts.get("flights", 0)))
+                with p2:
+                    st.metric("Letadla", int(bcounts.get("aircraft", 0)))
+                with p3:
+                    st.metric("Tracky", int(bcounts.get("flight_tracks", 0)))
+                with p4:
+                    st.metric("GPS body", int(bcounts.get("track_points", 0)))
+            except BackupError as exc:
+                st.error(str(exc))
+                backup_raw = None
+                backup_info = None
+            except Exception as exc:
+                st.error(f"Zálohu nelze načíst: {exc}")
+                backup_raw = None
+                backup_info = None
+
+        confirm = st.text_input(
+            "Pro potvrzení napiš OBNOVIT MOJE DATA",
+            value="",
+            key="portable_restore_confirm_v064",
+        )
+        can_restore = backup_raw is not None and confirm.strip().upper() == "OBNOVIT MOJE DATA"
+        if st.button(
+            "Obnovit data tohoto profilu",
+            type="primary",
+            disabled=not can_restore,
+            width="stretch",
+            key="portable_restore_button_v064",
+        ):
+            try:
+                # Always preserve a portable snapshot of the current state first.
+                before = _portable_backup_bytes(uid)
+                before_name = (
+                    f"logbook_before_restore_{datetime.now(LOCAL_TZ).strftime('%Y%m%d_%H%M')}.zip"
+                )
+
+                with connect() as con:
+                    restored = restore_user_backup(con, uid, backup_raw or b"")
+                    record_audit(
+                        con,
+                        "restore_portable_backup",
+                        "user",
+                        uid,
+                        {
+                            "file": uploaded.name if uploaded is not None else None,
+                            "restored": restored,
+                            "format_version": (backup_info or {}).get("format_version"),
+                        },
+                    )
+                    con.commit()
+
+                read_user_profile.clear()
+                invalidate_cached_data("all")
+                st.session_state["portable_pre_restore_backup_v064"] = before
+                st.session_state["portable_pre_restore_name_v064"] = before_name
+                st.session_state["portable_restore_success_v064"] = True
+                st.session_state.pop("portable_backup_bytes_v064", None)
+                st.session_state.pop("portable_backup_name_v064", None)
+
+                auto_backup_after_change("restore_portable_backup")
+                st.rerun()
+            except BackupError as exc:
+                st.error(str(exc))
+            except Exception as exc:
+                st.error(f"Obnova selhala: {exc}")
+
+
 def page_export(df: pd.DataFrame):
     st.markdown("## Export")
+
+    section = st.radio(
+        "Export sekce",
+        ["Soubory", "Tisk", "Náhled dat", "Záloha účtu"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="export_section_v064",
+    )
+
+    if section == "Záloha účtu":
+        render_portable_backup()
+        return
+
     if df.empty:
-        st.info("Zatím nejsou uložené žádné lety.")
-        if is_admin():
-            with open(DB_PATH, "rb") as f:
-                st.download_button("Stáhnout SQLite databázi", f.read(), file_name="logbook.sqlite", width="stretch")
+        st.info("Zatím nejsou uložené žádné lety. Přenosnou zálohu profilu můžeš vytvořit v sekci **Záloha účtu**.")
         return
 
     filtered = render_export_filters(df)
     render_export_summary(filtered)
-
-    section = st.radio(
-        "Export sekce",
-        ["Soubory", "Tisk", "Náhled dat"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="export_section_v052",
-    )
     prefix = _export_prefix(filtered, "letovy_zapisnik")
     export_signature = _flight_id_tuple(filtered)
     if st.session_state.get("export_signature_v044") != export_signature:
@@ -6750,16 +6967,13 @@ def page_export(df: pd.DataFrame):
         st.session_state.pop("export_print_ready_v044", None)
 
     if section == "Soubory":
-        st.markdown("### Soubory")
-        cprep, cdb = st.columns([1, 1])
-        with cprep:
-            prepare_files = st.button("Připravit exportní soubory", type="primary", width="stretch", key="export_prepare_files_v044")
-        with cdb:
-            if is_admin():
-                with open(DB_PATH, "rb") as f:
-                    st.download_button("SQLite databáze", f.read(), file_name="logbook.sqlite", width="stretch")
-            else:
-                st.caption("Úplná SQLite databáze je dostupná pouze správci aplikace.")
+        st.markdown("### Soubory zápisníku")
+        prepare_files = st.button(
+            "Připravit exportní soubory",
+            type="primary",
+            width="stretch",
+            key="export_prepare_files_v064",
+        )
 
         if prepare_files or st.session_state.get("export_files_ready_v044"):
             st.session_state["export_files_ready_v044"] = True
@@ -7085,7 +7299,8 @@ def page_admin() -> None:
 
     elif section == "Záloha":
         metas = read_table("app_meta")
-        st.markdown("### SQLite + GitHub backup")
+        st.markdown("### Technická záloha celé aplikace")
+        st.caption("Správcovská SQLite/GitHub záloha všech profilů. Přenosná záloha jednoho profilu je v **Export → Záloha účtu**.")
         dirty = last_change = last_backup = ""
         if not metas.empty:
             md = dict(zip(metas["key"], metas["value"]))

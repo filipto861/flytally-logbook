@@ -1,6 +1,6 @@
 # Letový zápisník
 
-## v0.63.1 – Pilot Currency & Recency
+## v0.64 – Pilot Currency & Recency
 
 - new **Recency** navigation page
 - last flight and last landing overview
@@ -138,11 +138,24 @@ No new user-facing feature is introduced. This release prepares a stable base fo
 - typography, spacing and numeric emphasis are improved
 - no data model or calculation changes
 
-## v0.63.1 – Profile Recency Polish
-- removes standalone Recency from sidebar navigation
+## v0.64 – Profile Recency Polish
+- removes the standalone Recency item from sidebar navigation
 - moves validity/recency into `Profil → Platnosti`
-- licence/medical/rating expiry tracking is now the primary content
-- 90-day ULL/EASA activity is reduced to a compact supporting summary
-- removes the large 30/90/365 activity table from the UI
-- legacy Recency sessions/bookmarks redirect safely to Profile
+- licence/medical/rating expiry tracking is the primary content
+- 90-day ULL/EASA activity is reduced to a small supporting summary
+- removes the large 30/90/365-day activity table from the UI
+- legacy `Recency` sessions/bookmarks redirect safely to Profile
 - database schema remains 9; no migration required
+
+
+## v0.64 – Data Portability & Backup UX
+- adds `Export → Záloha účtu` for every authenticated user
+- portable ZIP contains only the signed-in profile's flights, aircraft, rates, custom airports, GPS tracks/points, validity records and preferences
+- passwords, password hashes, roles, other users, global airport catalogue and audit history are excluded
+- portable restore is tenant-safe: it replaces only the current profile's portable data
+- account identity (e-mail/password/role/user id) is never overwritten by restore
+- restore validates archive format before writing and runs atomically in a SQLite savepoint
+- every restore automatically creates a downloadable safety backup of the state that existed immediately before restore
+- human-readable CSV copies of the main tables are included in the ZIP
+- full SQLite/GitHub backup remains an admin-only technical backup under Database
+- database schema remains 9
