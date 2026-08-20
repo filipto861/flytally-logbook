@@ -1,61 +1,29 @@
-# Upload v0.53 / GitHub cleanup
+# Upload v0.54
+
+v0.53 už vytvořila čistou strukturu GitHub repozitáře. Pro v0.54 není potřeba nic hromadně mazat.
+
+## Kritické pravidlo
+
+**Zachovat stávající `data/logbook.sqlite`.** Release ZIP tento soubor neobsahuje.
 
 ## Doporučený postup
 
-Repozitář **není potřeba zakládat znovu**. Pro v0.53 je vhodné udělat jeden čistý cleanup commit, který nahradí pracovní strom novou strukturou, ale zachová Git historii.
-
-### Kritické pravidlo
-
-**Zachovat stávající `data/logbook.sqlite`.** Tento soubor obsahuje živá data a release ZIP jej neobsahuje.
-
-## Cílový obsah repozitáře
-
-```text
-.github/
-.streamlit/
-.gitignore
-ARCHITECTURE.md
-README.md
-UPLOAD_INSTRUCTIONS.md
-app.py
-data/
-  Zapisnik_letu_source.xlsx
-  airport_overrides.csv
-  airports.csv
-  airports_full.sqlite
-  logbook.sqlite              <- ponechat existující verzi z GitHubu
-logbook_core/
-logbook_ui/
-requirements.txt
-scripts/
-sitecustomize.py
-tests/
-```
-
-## Odstranit staré duplicity z rootu
-
-Pokud jsou stále trackované, odstranit zejména:
-
-- `__pycache__/`
-- `*.pyc`
-- root `airports.csv`
-- root `airports_full.sqlite`
-- root `airport_overrides.csv`
-- root `Zapisnik_letu_source.xlsx`
-- root `config.toml`
-- root `import_airports.py`, `import_excel.py`, `seed_airports_full.py`
-- `download`
-- jiné staré kopie souborů, které už existují v `data/` nebo `scripts/`
-
-## Důležité k velikosti GitHub repozitáře
-
-Smazání starých souborů v novém commitu vyčistí aktuální pracovní strom, ale staré velké soubory zůstávají v Git historii. Proto se tím automaticky nevynuluje historická velikost repozitáře. Pro běžný provoz to nevadí; přepis historie nebo nový repozitář není pro v0.53 potřeba.
+1. Rozbal ZIP v0.54 do samostatné složky.
+2. Zkopíruj celý obsah rozbalené v0.54 do lokálního repozitáře `Documents/GitHub/Logbook`.
+3. Windows se zeptá na nahrazení existujících souborů — potvrď nahrazení.
+4. Ověř, že `data/logbook.sqlite` je stále přítomný.
+5. Otevři GitHub Desktop a zkontroluj změny.
+6. Commit message: `v0.54 - GPS Map Engine 2.0`.
+7. Commitni a následně `Push origin`.
+8. Počkej na automatický redeploy Streamlit Cloud.
 
 ## Po nasazení
 
-1. Ověřit badge `v0.53`.
-2. Otevřít Dashboard a seznam letů.
-3. Otevřít detail letu s GPS trackem a vyzkoušet Smooth Track Player.
-4. Importovat jeden testovací KML.
-5. Ověřit editaci letu a automatickou GitHub zálohu `data/logbook.sqlite`.
-6. Ověřit Export do XLSX.
+1. Ověřit badge `v0.54`.
+2. Otevřít `Mapa → GPS tracky`.
+3. Vyzkoušet `Rychlá`, `Střední` a `Vše`.
+4. Zkontrolovat, že trasy vypadají přirozeně a zatáčky nejsou useknuté.
+5. Otevřít detail letu se Smooth Track Playerem.
+6. Importovat jeden testovací KML.
+7. Ověřit Dashboard, Lety a Export.
+8. Ověřit, že všechny stávající lety a tracky zůstaly v databázi.

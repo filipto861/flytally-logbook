@@ -38,6 +38,10 @@ from logbook_core.exports import (
     _export_date_bounds, _export_prefix, build_print_html, export_excel, make_airport_summary,
     make_group_summary, make_logbook_export_df, make_route_summary, make_summary_table,
 )
+from logbook_core.map_engine import (
+    build_gps_render_plan, encode_compact_track_points, simplify_track_points,
+    viewport_from_coords,
+)
 from logbook_ui.filters import apply_filters
 from logbook_ui.theme import apply_ui_theme, app_header, metric_card, plotly_layout
 try:
@@ -1046,15 +1050,6 @@ def read_track_metadata_for_flights(flight_ids: tuple[int, ...]) -> pd.DataFrame
         return pd.read_sql_query(query, con, params=ids)
 
 
-def _gps_map_limits(mode: str) -> tuple[int | None, int]:
-    mode_text = str(mode or "Rychlá")
-    if mode_text == "Rychlá":
-        return 40, 90
-    if mode_text == "Střední":
-        return 120, 140
-    return None, 180
-
-
 def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
     if metadata.empty or "id" not in metadata.columns:
         return ()
@@ -1062,9 +1057,9 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
     sort_cols = [c for c in ["date", "off_block", "id"] if c in work.columns]
     if sort_cols:
         work = work.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
-    limit, _ = _gps_map_limits(mode)
-    if limit is not None:
-        work = work.head(limit)
+    plan = build_gps_render_plan(mode, len(work))
+    if plan.max_tracks is not None:
+        work = work.head(plan.max_tracks)
     return tuple(int(x) for x in pd.to_numeric(work["id"], errors="coerce").dropna().astype(int).tolist())
 
 
@@ -1106,7 +1101,8 @@ def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int) -> pd
         return pd.read_sql_query(query, con, params=(*ids, max_points, max_points))
 
 
-def _points_dataframe_to_json(points: pd.DataFrame) -> dict[int, str]:
+def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[int, str]:
+    """Convert SQL candidate points into geometry-preserving browser payloads."""
     if points.empty:
         return {}
     out: dict[int, str] = {}
@@ -1114,15 +1110,15 @@ def _points_dataframe_to_json(points: pd.DataFrame) -> dict[int, str]:
         items: list[dict[str, Any]] = []
         for row in group.itertuples(index=False):
             try:
-                lat = round(float(row.lat), 6)
-                lon = round(float(row.lon), 6)
+                lat = float(row.lat)
+                lon = float(row.lon)
             except Exception:
                 continue
             item: dict[str, Any] = {"lat": lat, "lon": lon}
             alt = getattr(row, "alt", None)
             if alt is not None and not pd.isna(alt):
                 try:
-                    item["alt"] = round(float(alt), 1)
+                    item["alt"] = float(alt)
                 except Exception:
                     pass
             time_value = getattr(row, "time", None)
@@ -1130,7 +1126,7 @@ def _points_dataframe_to_json(points: pd.DataFrame) -> dict[int, str]:
                 item["time"] = str(time_value)
             items.append(item)
         if len(items) >= 2:
-            out[int(track_id)] = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
+            out[int(track_id)] = encode_compact_track_points(items, max_points=max_points)
     return out
 
 
@@ -1143,13 +1139,13 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -
     track_ids = _track_ids_for_map(metadata, mode)
     if not track_ids:
         return metadata.iloc[0:0].copy()
-    _, max_points = _gps_map_limits(mode)
+    plan = build_gps_render_plan(mode, len(metadata))
     selected = metadata[metadata["id"].astype(int).isin(track_ids)].copy()
     sort_cols = [c for c in ["date", "off_block", "id"] if c in selected.columns]
     if sort_cols:
         selected = selected.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
-    points = read_sampled_track_points(track_ids, max_points)
-    coord_map = _points_dataframe_to_json(points)
+    points = read_sampled_track_points(track_ids, plan.candidate_points_per_track)
+    coord_map = _points_dataframe_to_json(points, max_points=plan.points_per_track)
 
     missing = [tid for tid in track_ids if tid not in coord_map]
     if missing:
@@ -1163,7 +1159,7 @@ def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str) -
                     tuple(missing),
                 ).fetchall()
             for row in rows:
-                coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=max_points)
+                coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=plan.points_per_track)
         except Exception:
             pass
 
@@ -1717,19 +1713,13 @@ def map_center_from_tracks(
     coords: list[tuple[float, float]] = []
     for _, row in tracks.iterrows():
         try:
-            points = downsample_points(json.loads(row["coordinates_json"]), max_points=300)
+            points = simplify_track_points(json.loads(row["coordinates_json"]), max_points=180)
             latlon, _ = track_latlon_with_airport_extensions(row, points, airport_lookup=airport_lookup)
-            stride = max(1, len(latlon) // 50 or 1)
-            coords.extend(latlon[::stride])
+            coords.extend(latlon)
         except Exception:
             continue
-    if not coords:
-        return [49.8, 15.5], 7
-    min_lat = min(c[0] for c in coords); max_lat = max(c[0] for c in coords); min_lon = min(c[1] for c in coords); max_lon = max(c[1] for c in coords)
-    center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
-    spread = max(max_lat - min_lat, max_lon - min_lon)
-    zoom = 10 if spread < .25 else 8 if spread < 1 else 7 if spread < 4 else 6 if spread < 10 else 5
-    return center, zoom
+    viewport = viewport_from_coords(coords, profile="track")
+    return [viewport.center[0], viewport.center[1]], viewport.zoom
 
 
 def make_map(
@@ -1752,12 +1742,12 @@ def make_map(
         airport_lookup = airport_coords_for_idents(tuple(sorted(needed)))
     center, zoom = map_center_from_tracks(tracks, airport_lookup=airport_lookup)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
-    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
     if tracks.empty:
         return m
     for _, row in tracks.iterrows():
         try:
-            points = downsample_points(json.loads(row["coordinates_json"]))
+            points = simplify_track_points(json.loads(row["coordinates_json"]), max_points=220)
         except Exception:
             continue
         if len(points) < 2:
@@ -1795,13 +1785,8 @@ def make_map(
 
 
 def map_center_from_airport_coords(coords: list[tuple[float, float]]) -> tuple[list[float], int]:
-    if not coords:
-        return [49.8, 15.5], 7
-    min_lat = min(c[0] for c in coords); max_lat = max(c[0] for c in coords); min_lon = min(c[1] for c in coords); max_lon = max(c[1] for c in coords)
-    center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
-    spread = max(max_lat - min_lat, max_lon - min_lon)
-    zoom = 11 if spread < .15 else 9 if spread < .6 else 8 if spread < 1.8 else 7 if spread < 5 else 6 if spread < 10 else 5
-    return center, zoom
+    viewport = viewport_from_coords(coords, profile="airport")
+    return [viewport.center[0], viewport.center[1]], viewport.zoom
 
 
 def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> folium.Map:
@@ -1882,7 +1867,7 @@ def make_route_overview_map(flights: pd.DataFrame, dark_mode: bool = True) -> fo
 
     center, zoom = map_center_from_airport_coords(coords)
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
-    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
 
     for (dep_id, arr_id), group in sorted(route_groups.items(), key=lambda item: (-int(item[1]["count"]), item[0])):
         dep_ap = group["dep"]
@@ -1992,56 +1977,30 @@ def handle_route_map_interaction(value: Any) -> None:
 
 
 def _decode_points_for_map(value: Any, max_points: int = 160) -> str:
-    """Return a compact coordinates_json string for map rendering only.
-
-    Stored KML remains untouched; this only reduces the number of Leaflet points
-    sent to the browser. The full track is still available in flight detail.
-    """
+    """Return a geometry-preserving compact JSON representation for a map."""
     try:
         points = json.loads(value or "[]")
     except Exception:
         points = []
     if not isinstance(points, list):
         points = []
-    points = downsample_points(points, max_points=max(2, int(max_points)))
-    compact: list[dict[str, Any]] = []
-    for pt in points:
-        try:
-            lat = round(float(pt.get("lat")), 6)
-            lon = round(float(pt.get("lon")), 6)
-        except Exception:
-            continue
-        item = {"lat": lat, "lon": lon}
-        alt = pt.get("alt")
-        if alt is not None and not (isinstance(alt, float) and math.isnan(alt)):
-            try:
-                item["alt"] = round(float(alt), 1)
-            except Exception:
-                pass
-        t = pt.get("time")
-        if t:
-            item["time"] = t
-        compact.append(item)
-    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
+    return encode_compact_track_points(points, max_points=max(2, int(max_points)))
 
 
 def prepare_tracks_for_map(tracks: pd.DataFrame, *, mode: str = "Rychlá", max_fast_tracks: int = 60) -> pd.DataFrame:
-    """Compatibility wrapper for already-loaded track data.
-
-    The main GPS overview map now uses read_track_map_records_for_flights(),
-    which avoids loading full coordinates_json at all. This helper remains for
-    older call sites and detail views.
-    """
+    """Compatibility wrapper for already-loaded track data using Map Engine 2.0."""
     if tracks.empty:
         return tracks.copy()
     work = tracks.copy()
     if "date" in work.columns:
         work = work.sort_values(["date", "id"], ascending=[False, False], na_position="last")
-    limit, max_points = _gps_map_limits(mode)
-    if limit is not None:
-        work = work.head(min(int(limit), int(max_fast_tracks or limit)))
+    plan = build_gps_render_plan(mode, len(work))
+    if plan.max_tracks is not None:
+        work = work.head(min(int(plan.max_tracks), int(max_fast_tracks or plan.max_tracks)))
     if "coordinates_json" in work.columns:
-        work["coordinates_json"] = work["coordinates_json"].apply(lambda x: _decode_points_for_map(x, max_points=max_points))
+        work["coordinates_json"] = work["coordinates_json"].apply(
+            lambda x: _decode_points_for_map(x, max_points=plan.points_per_track)
+        )
     return work
 
 
@@ -2196,25 +2155,20 @@ def make_track_playback_map(points: list[dict[str, Any]], selected_idx: int, dar
         return folium.Map(location=[49.8, 15.5], zoom_start=7, tiles="CartoDB dark_matter" if dark_mode else "OpenStreetMap", control_scale=True)
 
     selected_idx = max(0, min(int(selected_idx), len(points) - 1))
-    line_points = downsample_points(points, max_points=850)
-    progress_points = downsample_points(points[: selected_idx + 1], max_points=450) if selected_idx >= 1 else points[:1]
+    line_points = simplify_track_points(points, max_points=850)
+    progress_points = simplify_track_points(points[: selected_idx + 1], max_points=450) if selected_idx >= 1 else points[:1]
 
     coords = [(float(p["lat"]), float(p["lon"])) for p in line_points if p.get("lat") is not None and p.get("lon") is not None]
     progress_coords = [(float(p["lat"]), float(p["lon"])) for p in progress_points if p.get("lat") is not None and p.get("lon") is not None]
     selected = points[selected_idx]
     selected_ll = (float(selected["lat"]), float(selected["lon"]))
 
-    center = [selected_ll[0], selected_ll[1]]
-    zoom = 10
-    if coords:
-        min_lat = min(c[0] for c in coords); max_lat = max(c[0] for c in coords)
-        min_lon = min(c[1] for c in coords); max_lon = max(c[1] for c in coords)
-        center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
-        spread = max(max_lat - min_lat, max_lon - min_lon)
-        zoom = 12 if spread < .08 else 10 if spread < .25 else 8 if spread < 1 else 7 if spread < 3 else 6 if spread < 8 else 5
+    viewport = viewport_from_coords(coords or [selected_ll], profile="playback", default_center=selected_ll, default_zoom=10)
+    center = [viewport.center[0], viewport.center[1]]
+    zoom = viewport.zoom
 
     tiles = "CartoDB dark_matter" if dark_mode else "OpenStreetMap"
-    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True)
+    m = folium.Map(location=center, zoom_start=zoom, tiles=tiles, control_scale=True, prefer_canvas=True)
     if coords and len(coords) >= 2:
         folium.PolyLine(coords, color="#64748b", weight=3, opacity=0.55, tooltip="Celý GPS track").add_to(m)
     if progress_coords and len(progress_coords) >= 2:
@@ -5499,9 +5453,9 @@ def main():
     app_header()
     page = st.session_state.get("page", "Dashboard")
 
-    # Data se načítají až pro aktivní stránku. GPS mapy ve v0.46 navíc
-    # pracují s lehkými metadaty a vzorkovanými body z track_points místo
-    # plného coordinates_json pro každý track.
+    # Data se načítají až pro aktivní stránku. GPS Map Engine 2.0 ve v0.54
+    # pracuje s lehkými metadaty, adaptivním point budgetem a vzorkovanými
+    # body z track_points místo plného coordinates_json pro každý track.
     if page == "Dashboard":
         page_dashboard(read_flights())
     elif page == "Lety":

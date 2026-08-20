@@ -21,7 +21,7 @@ exports/
 # Keep the bundled demo/live DB intentionally committed for current Streamlit test
 !data/logbook.sqlite
 
-# v0.53 repository layout: reference data/scripts belong in data/ and scripts/
+# v0.54 repository layout: reference data/scripts belong in data/ and scripts/
 /airports.csv
 /airports_full.sqlite
 /airport_overrides.csv
