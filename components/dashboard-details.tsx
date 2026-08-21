@@ -6,11 +6,12 @@ import type { DashboardData } from "@/lib/data/dashboard";
 
 const formatDuration=(minutes:number)=>{const value=Math.max(0,Math.round(minutes));return `${Math.floor(value/60)}:${String(value%60).padStart(2,"0")}`};
 
-const sections = [["years","Roční přehled"],["aircraft","Letadla"],["routes","Letiště a trasy"],["cost","Náklady"],["recent","Poslední lety"]] as const;
+const sections = [["years","Roční přehled"],["aircraft","Letadla"],["cost","Útrata"],["routes","Letiště a trasy"],["recent","Poslední lety"]] as const;
 
 export function DashboardDetails({data}:{data:DashboardData}){
   const [open,setOpen]=useState(false);
   const [section,setSection]=useState<(typeof sections)[number][0]>("years");
+  const costAircraft=[...data.topAircraft].sort((left,right)=>right.cost-left.cost);
   return <section className="panel details-panel">
     <button className="details-toggle" type="button" aria-expanded={open} onClick={()=>setOpen(value=>!value)}><span>Podrobné statistiky</span><b>{open?"−":"＋"}</b></button>
     {open?<div className="detail-stats">
@@ -18,9 +19,9 @@ export function DashboardDetails({data}:{data:DashboardData}){
       <div className="segment-control detail-tabs" role="tablist">{sections.map(([key,label])=><button type="button" role="tab" aria-selected={section===key} className={section===key?"active":""} key={key} onClick={()=>setSection(key)}>{label}</button>)}</div>
       <div className="detail-tab-panel">
         {section==="years"?<StatTable empty={!data.yearly.length} headings={["Rok","Lety","Čas","Přistání"]}>{data.yearly.map(row=><tr key={row.year}><td>{row.year}</td><td>{row.flights}</td><td>{formatDuration(row.minutes)}</td><td>{row.landings}</td></tr>)}</StatTable>:null}
-        {section==="aircraft"?<StatTable empty={!data.topAircraft.length} headings={["Registrace","Lety","Čas"]}>{data.topAircraft.map(row=><tr key={row.registration}><td>{row.registration}</td><td>{row.flights}</td><td>{formatDuration(row.minutes)}</td></tr>)}</StatTable>:null}
+        {section==="aircraft"?<StatTable empty={!data.topAircraft.length} headings={["Registrace","Lety","Nálet","Útrata"]}>{data.topAircraft.map(row=><tr key={row.registration}><td><strong>{row.registration}</strong></td><td>{row.flights}</td><td>{formatDuration(row.minutes)}</td><td><strong>{Math.round(row.cost).toLocaleString("cs-CZ")} Kč</strong></td></tr>)}</StatTable>:null}
         {section==="routes"?<StatTable empty={!data.topRoutes.length} headings={["Trasa","Lety","Čas"]}>{data.topRoutes.map(row=><tr key={row.route}><td>{row.route}</td><td>{row.flights}</td><td>{formatDuration(row.minutes)}</td></tr>)}</StatTable>:null}
-        {section==="cost"?<div className="cost-overview"><span>Odhad nákladů ve vybraném období</span><strong>{Math.round(data.cost).toLocaleString("cs-CZ")} Kč</strong><small>Výpočet vychází z hodinových sazeb letadel a nastaveného způsobu účtování.</small></div>:null}
+        {section==="cost"?<div className="cost-breakdown"><header><div><span>Útrata ve vybraném období</span><strong>{Math.round(data.cost).toLocaleString("cs-CZ")} Kč</strong></div><small>Historická sazba uložená u letu × účtovaný BLOCK/AIR čas × nastavený podíl.</small></header><div>{costAircraft.map(row=>{const share=data.cost>0?row.cost/data.cost*100:0;return <article key={row.registration}><div><b>{row.registration}</b><span>{Math.round(row.cost).toLocaleString("cs-CZ")} Kč</span></div><div className="cost-bar"><i style={{width:`${Math.max(row.cost?2:0,share)}%`}}/></div><small>{share.toFixed(1)} % · {row.flights} letů · {formatDuration(row.minutes)}</small></article>})}{!costAircraft.length?<p className="empty-state">Pro vybrané období nejsou k dispozici žádné náklady.</p>:null}</div></div>:null}
         {section==="recent"?<StatTable empty={!data.recentFlights.length} headings={["Datum","Letadlo","Trasa",""]}>{data.recentFlights.map(row=><tr key={row.id}><td>{row.date}</td><td>{row.registration||"—"}</td><td>{row.departure||"—"} → {row.arrival||"—"}</td><td><Link className="row-link" href={`/flights/${row.id}`}>Detail</Link></td></tr>)}</StatTable>:null}
       </div>
     </div>:null}
