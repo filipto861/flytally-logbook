@@ -1,7 +1,22 @@
 # Letový zápisník
 
-Current release: **v0.73.1 – Navigation & PostgreSQL Latency Hotfix**
+Current release: **v0.73.2 – Map & Database Latency Hotfix**
 
+
+## v0.73.2 – Map & Database Latency Hotfix
+
+Runtime telemetry from v0.73.1 isolated the next bottlenecks: the GPS overview
+map and first-open Database page.
+
+- overview GPS map no longer scans/samples `track_points`
+- selected `flight_tracks.coordinates_json` payloads are fetched with a simple indexed query
+- geometry simplification remains local and bounded by the existing map render plan
+- aircraft profiles + rates + usage load in one PostgreSQL round-trip
+- exact airport registry count is deferred until the Airport section is selected
+- new caches use existing mutation-scoped invalidation
+- no schema migration and no Secrets change
+
+See `POSTGRESQL_LATENCY_HOTFIX_V0732.md` for the detailed audit.
 
 ## v0.73.1 – Navigation & PostgreSQL Latency Hotfix
 

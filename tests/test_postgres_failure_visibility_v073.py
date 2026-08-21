@@ -76,9 +76,10 @@ def test_main_has_database_error_boundary_around_active_page():
     assert '_render_database_runtime_error(f"Stránku „{page}“ se nepodařilo načíst.")' in block
 
 
-def test_track_map_json_fallback_does_not_hide_postgres_outage():
+def test_track_map_geometry_reader_does_not_hide_postgres_outage():
     source = _app()
-    block = _function_block(source, "read_track_map_records_for_flights")
-    assert "except DATABASE_ERRORS:" in block
-    assert "production_is_postgresql()" in block
-    assert "raise" in block
+    block = _function_block(source, "read_track_geometry_payloads")
+    assert "with read_connect() as con:" in block
+    assert "con.execute(" in block
+    assert "except DATABASE_ERRORS" not in block
+    assert "except Exception" not in block

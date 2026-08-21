@@ -657,6 +657,7 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
             _clear_cached_function("read_table", "flights", uid)
             _clear_cached_function("read_flights", uid)
             _clear_cached_function("read_aircraft_usage_summary", uid)
+            _clear_cached_function("read_aircraft_database_bundle", uid)
             _clear_cached_function("read_logbook_counts", uid)
         _clear_cached_function("read_track_metadata_for_flights")
         _clear_cached_function("read_track_map_records_for_flights")
@@ -671,7 +672,8 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
             _clear_cached_function("read_logbook_counts", uid)
         for name in (
             "read_track_metadata_for_flights", "read_sampled_track_points",
-            "read_track_map_records_for_flights", "read_tracks_for_flight",
+            "read_track_geometry_payloads", "read_track_map_records_for_flights",
+            "read_tracks_for_flight",
             "build_database_health_report",
         ):
             _clear_cached_function(name)
@@ -679,12 +681,14 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
         if uid:
             _clear_cached_function("read_table", "rates", uid)
             _clear_cached_function("read_rates", uid)
+            _clear_cached_function("read_aircraft_database_bundle", uid)
     elif scope == "aircraft":
         if uid:
             _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "aircraft", uid)
             _clear_cached_function("read_aircraft_catalog", True, uid)
             _clear_cached_function("read_aircraft_catalog", False, uid)
+            _clear_cached_function("read_aircraft_database_bundle", uid)
             _clear_cached_function("read_logbook_counts", uid)
     elif scope in {"airports", "airport"}:
         if uid:
@@ -1727,6 +1731,34 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
     return tuple(int(x) for x in pd.to_numeric(work["id"], errors="coerce").dropna().astype(int).tolist())
 
 
+@st.cache_data(show_spinner=False, ttl=600)
+def read_track_geometry_payloads(track_ids: tuple[int, ...], user_id: int) -> dict[int, str]:
+    """Read stored geometry only for tracks selected for the overview map.
+
+    v0.73.1 telemetry showed the PostgreSQL window query over track_points at
+    ~723 ms. flight_tracks already stores canonical coordinates_json, so the
+    overview can fetch a small number of indexed rows and simplify locally.
+    """
+    ids = tuple(sorted({int(x) for x in track_ids if x is not None}))
+    if not ids:
+        return {}
+    placeholders = ",".join("?" for _ in ids)
+    with read_connect() as con:
+        rows = con.execute(
+            f"""
+            SELECT id, coordinates_json
+            FROM flight_tracks
+            WHERE user_id = ? AND id IN ({placeholders})
+            ORDER BY id
+            """,
+            (strict_user_id(user_id), *ids),
+        ).fetchall()
+    return {
+        int(row["id"]): str(row["coordinates_json"] or "[]")
+        for row in rows
+    }
+
+
 @st.cache_data(show_spinner=False, ttl=300)
 def read_sampled_track_points(track_ids: tuple[int, ...], max_points: int, user_id: int) -> pd.DataFrame:
     """Read only a sampled subset of normalized GPS points for map rendering.
@@ -1812,42 +1844,45 @@ def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[
 
 @st.cache_data(show_spinner=False, ttl=300)
 def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, user_id: int) -> pd.DataFrame:
-    """Return lightweight track records ready for the GPS overview map."""
+    """Return lightweight track records ready for the GPS overview map.
+
+    The overview deliberately avoids track_points. Only the selected
+    flight_tracks.coordinates_json payloads cross the network and geometric
+    simplification runs locally in Python.
+    """
     metadata = read_track_metadata_for_flights(flight_ids, user_id)
     if metadata.empty:
         return metadata
+
     track_ids = _track_ids_for_map(metadata, mode)
     if not track_ids:
         return metadata.iloc[0:0].copy()
+
     plan = build_gps_render_plan(mode, len(metadata))
     selected = metadata[metadata["id"].astype(int).isin(track_ids)].copy()
     sort_cols = [c for c in ["date", "off_block", "id"] if c in selected.columns]
     if sort_cols:
-        selected = selected.sort_values(sort_cols, ascending=[False] * len(sort_cols), na_position="last")
-    points = read_sampled_track_points(track_ids, plan.candidate_points_per_track, user_id)
-    coord_map = _points_dataframe_to_json(points, max_points=plan.points_per_track)
+        selected = selected.sort_values(
+            sort_cols,
+            ascending=[False] * len(sort_cols),
+            na_position="last",
+        )
 
-    missing = [tid for tid in track_ids if tid not in coord_map]
-    if missing:
-        # Fallback for older or partially migrated databases. This path only reads
-        # full JSON for the few tracks that do not have normalized points yet.
-        placeholders = ",".join("?" for _ in missing)
-        try:
-            with read_connect() as con:
-                rows = con.execute(
-                    f"SELECT id, coordinates_json FROM flight_tracks WHERE user_id = ? AND id IN ({placeholders})",
-                    (strict_user_id(user_id), *missing),
-                ).fetchall()
-            for row in rows:
-                coord_map[int(row["id"])] = _decode_points_for_map(row["coordinates_json"], max_points=plan.points_per_track)
-        except DATABASE_ERRORS:
-            if production_is_postgresql():
-                raise
-        except Exception:
-            pass
+    raw_geometry = read_track_geometry_payloads(track_ids, user_id)
+    coord_map = {
+        int(track_id): _decode_points_for_map(
+            payload,
+            max_points=plan.points_per_track,
+        )
+        for track_id, payload in raw_geometry.items()
+    }
 
-    selected["coordinates_json"] = selected["id"].astype(int).map(coord_map).fillna("[]")
-    selected = selected[selected["coordinates_json"].astype(str).str.len() > 2]
+    selected["coordinates_json"] = (
+        selected["id"].astype(int).map(coord_map).fillna("[]")
+    )
+    selected = selected[
+        selected["coordinates_json"].astype(str).str.len() > 2
+    ]
     return selected.reset_index(drop=True)
 
 
@@ -6844,6 +6879,142 @@ def _clean_role(value: Any) -> str:
 
 
 @st.cache_data(show_spinner=False, ttl=300)
+def read_aircraft_database_bundle(user_id: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load aircraft, rates and usage in one PostgreSQL round-trip.
+
+    SQLite fallback keeps the existing readers. PostgreSQL uses one denormalized
+    result and splits it locally; the dataset is small (aircraft/rate history).
+    """
+    uid = strict_user_id(user_id)
+
+    if not production_is_postgresql():
+        return (
+            read_table("aircraft", uid),
+            read_rates(uid),
+            read_aircraft_usage_summary(uid),
+        )
+
+    with read_connect() as con:
+        joined = db_read_sql_query(
+            """
+            WITH usage AS (
+                SELECT
+                    UPPER(TRIM(registration)) AS registration,
+                    COUNT(*) AS flight_count,
+                    MAX(date) AS last_flight,
+                    COALESCE(SUM(starts), 0) AS starts
+                FROM flights
+                WHERE user_id = ?
+                  AND registration IS NOT NULL
+                  AND TRIM(registration) <> ''
+                GROUP BY UPPER(TRIM(registration))
+            )
+            SELECT
+                a.id AS aircraft_id,
+                a.user_id AS aircraft_user_id,
+                a.registration AS aircraft_registration,
+                a.aircraft_type AS aircraft_type,
+                a.icao_type AS icao_type,
+                a.aircraft_class AS aircraft_class,
+                a.evidence AS evidence,
+                a.default_price_per_hour AS default_price_per_hour,
+                a.default_role AS default_role,
+                a.billing_basis AS billing_basis,
+                a.active AS active,
+                a.note AS note,
+                a.created_at AS aircraft_created_at,
+                a.updated_at AS aircraft_updated_at,
+
+                r.id AS rate_id,
+                r.user_id AS rate_user_id,
+                r.registration AS rate_registration,
+                r.aircraft_type AS rate_aircraft_type,
+                r.valid_from AS valid_from,
+                r.price_per_hour AS price_per_hour,
+                r.dry_price_per_hour AS dry_price_per_hour,
+                r.source AS rate_source,
+
+                COALESCE(u.flight_count, 0) AS flight_count,
+                u.last_flight AS last_flight,
+                COALESCE(u.starts, 0) AS starts
+            FROM aircraft a
+            LEFT JOIN rates r
+              ON r.user_id = a.user_id
+             AND UPPER(TRIM(r.registration)) = UPPER(TRIM(a.registration))
+            LEFT JOIN usage u
+              ON u.registration = UPPER(TRIM(a.registration))
+            WHERE a.user_id = ?
+            ORDER BY UPPER(TRIM(a.registration)), r.valid_from, r.id
+            """,
+            con,
+            params=(uid, uid),
+        )
+
+    aircraft_columns = [
+        "id", "user_id", "registration", "aircraft_type", "icao_type",
+        "aircraft_class", "evidence", "default_price_per_hour",
+        "default_role", "billing_basis", "active", "note",
+        "created_at", "updated_at",
+    ]
+    rate_columns = [
+        "id", "user_id", "registration", "aircraft_type", "valid_from",
+        "price_per_hour", "dry_price_per_hour", "source",
+    ]
+    usage_columns = ["registration", "flight_count", "last_flight", "starts"]
+
+    if joined.empty:
+        return (
+            pd.DataFrame(columns=aircraft_columns),
+            pd.DataFrame(columns=rate_columns),
+            pd.DataFrame(columns=usage_columns),
+        )
+
+    aircraft = pd.DataFrame({
+        "id": joined["aircraft_id"],
+        "user_id": joined["aircraft_user_id"],
+        "registration": joined["aircraft_registration"],
+        "aircraft_type": joined["aircraft_type"],
+        "icao_type": joined["icao_type"],
+        "aircraft_class": joined["aircraft_class"],
+        "evidence": joined["evidence"],
+        "default_price_per_hour": joined["default_price_per_hour"],
+        "default_role": joined["default_role"],
+        "billing_basis": joined["billing_basis"],
+        "active": joined["active"],
+        "note": joined["note"],
+        "created_at": joined["aircraft_created_at"],
+        "updated_at": joined["aircraft_updated_at"],
+    }).drop_duplicates(subset=["id"], keep="first").reset_index(drop=True)
+
+    rate_mask = joined["rate_id"].notna()
+    rates = pd.DataFrame({
+        "id": joined.loc[rate_mask, "rate_id"],
+        "user_id": joined.loc[rate_mask, "rate_user_id"],
+        "registration": joined.loc[rate_mask, "rate_registration"],
+        "aircraft_type": joined.loc[rate_mask, "rate_aircraft_type"],
+        "valid_from": joined.loc[rate_mask, "valid_from"],
+        "price_per_hour": joined.loc[rate_mask, "price_per_hour"],
+        "dry_price_per_hour": joined.loc[rate_mask, "dry_price_per_hour"],
+        "source": joined.loc[rate_mask, "rate_source"],
+    }).reset_index(drop=True)
+    if not rates.empty:
+        rates["registration"] = (
+            rates["registration"].fillna("").astype(str).str.upper()
+        )
+
+    usage = pd.DataFrame({
+        "registration": joined["aircraft_registration"],
+        "flight_count": joined["flight_count"],
+        "last_flight": joined["last_flight"],
+        "starts": joined["starts"],
+    }).drop_duplicates(
+        subset=["registration"], keep="first"
+    ).reset_index(drop=True)
+
+    return aircraft, rates, usage
+
+
+@st.cache_data(show_spinner=False, ttl=300)
 def read_aircraft_usage_summary(user_id: int) -> pd.DataFrame:
     uid = strict_user_id(user_id)
     try:
@@ -7581,21 +7752,7 @@ def render_data_quality_page() -> None:
 def page_database():
     st.markdown("## Databáze")
 
-    # Header metrics intentionally use COUNT queries.  Older versions loaded the
-    # entire 85k-row airport catalogue, aircraft table, metadata and audit log
-    # before the user had even chosen a database section.
-    airport_count_total = read_airport_registry_count(current_user_id())
-    counts = session_read_logbook_counts(current_user_id())
-    aircraft_count_total = counts["aircraft"]
-    track_count_total = counts["tracks"]
-    point_count_total = counts["points"]
-
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: metric_card("Letiště / plochy", str(airport_count_total), "databázová tabulka")
-    with c2: metric_card("Letadla", str(aircraft_count_total), "registrace")
-    with c3: metric_card("Tracky", str(track_count_total), "KML soubory")
-    with c4: metric_card("GPS body", f"{point_count_total:,}".replace(",", " "), "normalizováno")
-
+    # Resolve the selected section before section-specific PostgreSQL reads.
     section = st.radio(
         "Databáze sekce",
         ["Letadla", "Letiště", "Kvalita dat"],
@@ -7603,6 +7760,30 @@ def page_database():
         label_visibility="collapsed",
         key="database_section_v058",
     )
+
+    counts = session_read_logbook_counts(current_user_id())
+    aircraft_count_total = counts["aircraft"]
+    track_count_total = counts["tracks"]
+    point_count_total = counts["points"]
+
+    # Exact airport total needs tenant override idents from PostgreSQL. Do not
+    # pay that network round-trip while the user is in Aircraft/Data Quality.
+    airport_count_total = (
+        read_airport_registry_count(current_user_id())
+        if section == "Letiště"
+        else None
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        metric_card(
+            "Letiště / plochy",
+            str(airport_count_total) if airport_count_total is not None else "—",
+            "načte se v sekci Letiště" if airport_count_total is None else "databázová tabulka",
+        )
+    with c2: metric_card("Letadla", str(aircraft_count_total), "registrace")
+    with c3: metric_card("Tracky", str(track_count_total), "KML soubory")
+    with c4: metric_card("GPS body", f"{point_count_total:,}".replace(",", " "), "normalizováno")
 
     if section == "Letiště":
         airports = read_airports(active_only=False, user_id=current_user_id())
@@ -7669,9 +7850,7 @@ def page_database():
         render_data_quality_page()
     elif section == "Letadla":
         uid = current_user_id()
-        aircraft = read_table("aircraft", uid)
-        rates = read_rates(uid)
-        usage = read_aircraft_usage_summary(uid)
+        aircraft, rates, usage = read_aircraft_database_bundle(uid)
         if aircraft.empty:
             aircraft = pd.DataFrame(columns=["id", "registration", "aircraft_type", "icao_type", "aircraft_class", "evidence", "default_price_per_hour", "default_role", "billing_basis", "active", "note"])
         aircraft_view = aircraft.copy()

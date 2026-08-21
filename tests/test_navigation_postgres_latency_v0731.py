@@ -19,7 +19,7 @@ def _function(source: str, name: str) -> str:
 
 
 def test_version_is_navigation_latency_hotfix_without_schema_change():
-    assert APP_VERSION == "v0.73.1"
+    assert APP_VERSION == "v0.73.2"
     assert DB_SCHEMA_VERSION == 10
 
 
