@@ -1,6 +1,21 @@
 # Letový zápisník
 
-Current release: **v0.73 – PostgreSQL Production Polish & Performance**
+Current release: **v0.73.1 – Navigation & PostgreSQL Latency Hotfix**
+
+
+## v0.73.1 – Navigation & PostgreSQL Latency Hotfix
+
+Production diagnostics from v0.73 showed the bottleneck was network SQL latency rather than pool contention: roughly 148 ms SQL p50, 331 ms p95 and effectively 0 ms pool checkout p95.
+
+This hotfix therefore reduces repeated PostgreSQL round-trips during Streamlit reruns:
+- session-hot flight table reused across Dashboard / Flights / Map / Export / Profile
+- session-hot current-user profile reused across sidebar and page reruns
+- session-hot compact logbook counters reused on Profile/Database
+- hot data has a bounded 45-second TTL and is invalidated immediately after relevant writes
+- profile changes also invalidate flight presentation because currency affects computed cost labels
+- normal profile query no longer joins `user_credentials`; last-login remains in the dedicated Admin overview query
+- database health keeps its own cached read path and does not depend on session state
+- no schema migration and no Secrets change
 
 ## v0.73 – PostgreSQL Production Polish & Performance
 

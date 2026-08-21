@@ -277,11 +277,9 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
             row = con.execute(
                 """
                 SELECT u.id, u.email, u.display_name, u.slug, u.role, u.active, u.created_at, u.updated_at,
-                       s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json,
-                       c.last_login_at
+                       s.timezone, s.currency, s.home_airport, s.default_role, s.preferences_json
                 FROM users u
                 LEFT JOIN user_settings s ON s.user_id = u.id
-                LEFT JOIN user_credentials c ON c.user_id = u.id
                 WHERE u.id = ?
                 """,
                 (uid,),
@@ -293,19 +291,78 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
         return {"id": uid, "display_name": "Local pilot", "active": 0, "_load_error": True}
 
 
-def current_user_profile(user_id: int | None = None) -> dict[str, Any]:
-    """Return one request-local profile snapshot.
+_SESSION_HOT_PROFILE_PREFIX = "_hot_profile_v0731_"
+_SESSION_HOT_FLIGHTS_PREFIX = "_hot_flights_v0731_"
+_SESSION_HOT_COUNTS_PREFIX = "_hot_counts_v0731_"
+_SESSION_HOT_TTL_SECONDS = 45.0
 
-    `read_user_profile` remains the cross-rerun cache and source of truth. This
-    helper only prevents the same cached dict from being copied/deserialized
-    several times during one Streamlit rerun.
-    """
+
+def _session_hot_key(prefix: str, user_id: int) -> str:
+    return f"{prefix}{strict_user_id(user_id)}"
+
+
+def _session_hot_get(key: str) -> Any:
+    cached = st.session_state.get(key)
+    try:
+        cached_at = float(st.session_state.get(f"{key}__at", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        cached_at = 0.0
+    if cached is not None and cached_at > 0 and (time_module.monotonic() - cached_at) <= _SESSION_HOT_TTL_SECONDS:
+        return cached
+    st.session_state.pop(key, None)
+    st.session_state.pop(f"{key}__at", None)
+    return None
+
+
+def _session_hot_set(key: str, value: Any) -> None:
+    st.session_state[key] = value
+    st.session_state[f"{key}__at"] = time_module.monotonic()
+
+
+def _clear_session_hot_cache(kind: str | None = None, user_id: int | None = None) -> None:
+    prefixes = {
+        "profile": (_SESSION_HOT_PROFILE_PREFIX,),
+        "flights": (_SESSION_HOT_FLIGHTS_PREFIX,),
+        "counts": (_SESSION_HOT_COUNTS_PREFIX,),
+        "all": (
+            _SESSION_HOT_PROFILE_PREFIX,
+            _SESSION_HOT_FLIGHTS_PREFIX,
+            _SESSION_HOT_COUNTS_PREFIX,
+        ),
+    }
+    selected = prefixes.get(str(kind or "all").lower(), prefixes["all"])
+    suffix = None
+    if user_id is not None:
+        try:
+            suffix = str(strict_user_id(user_id))
+        except Exception:
+            suffix = None
+    for key in list(st.session_state.keys()):
+        skey = str(key)
+        if not any(skey.startswith(prefix) for prefix in selected):
+            continue
+        if suffix is not None and not skey.endswith(suffix):
+            continue
+        st.session_state.pop(key, None)
+
+
+def current_user_profile(user_id: int | None = None) -> dict[str, Any]:
+    """Return a session-hot profile snapshot and avoid a PostgreSQL read per rerun."""
     uid = strict_user_id(user_id if user_id is not None else current_user_id())
-    cached = _RUN_USER_PROFILE_CACHE.get(uid)
-    if cached is None:
-        cached = read_user_profile(uid)
-        _RUN_USER_PROFILE_CACHE[uid] = cached
-    return cached
+    session_key = _session_hot_key(_SESSION_HOT_PROFILE_PREFIX, uid)
+
+    session_cached = _session_hot_get(session_key)
+    if isinstance(session_cached, dict):
+        return dict(session_cached)
+
+    request_cached = _RUN_USER_PROFILE_CACHE.get(uid)
+    if request_cached is None:
+        request_cached = read_user_profile(uid)
+        _RUN_USER_PROFILE_CACHE[uid] = request_cached
+
+    snapshot = dict(request_cached)
+    _session_hot_set(session_key, snapshot)
+    return dict(snapshot)
 
 
 def current_user_display_name() -> str:
@@ -439,6 +496,7 @@ def render_auth_gate() -> bool:
                     con.commit()
             if result.ok and result.user_id:
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 _set_authenticated_user(result.user_id)
                 auto_backup_after_change("activate_profile")
                 st.rerun()
@@ -503,6 +561,7 @@ def render_auth_gate() -> bool:
                         con.commit()
                 if result.ok and result.user_id:
                     read_user_profile.clear()
+                    _clear_session_hot_cache("all")
                     _set_authenticated_user(result.user_id)
                     auto_backup_after_change("register_user")
                     st.rerun()
@@ -577,6 +636,8 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
             pass
 
     if scope in {"all", "database", "restore"}:
+        _clear_session_hot_cache("all")
+        _RUN_USER_PROFILE_CACHE.clear()
         try:
             st.cache_data.clear()
         except Exception:
@@ -591,6 +652,8 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
 
     if scope in {"flights", "flight"}:
         if uid:
+            _clear_session_hot_cache("flights", uid)
+            _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "flights", uid)
             _clear_cached_function("read_flights", uid)
             _clear_cached_function("read_aircraft_usage_summary", uid)
@@ -600,6 +663,8 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
         _clear_cached_function("build_database_health_report")
     elif scope in {"flight_tracks", "track_points", "tracks", "track"}:
         if uid:
+            _clear_session_hot_cache("flights", uid)
+            _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "flight_tracks", uid)
             _clear_cached_function("read_table", "track_points", uid)
             _clear_cached_function("read_flights", uid)
@@ -616,6 +681,7 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
             _clear_cached_function("read_rates", uid)
     elif scope == "aircraft":
         if uid:
+            _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "aircraft", uid)
             _clear_cached_function("read_aircraft_catalog", True, uid)
             _clear_cached_function("read_aircraft_catalog", False, uid)
@@ -634,6 +700,9 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
             _clear_cached_function("read_table", "user_expiries", uid)
     elif scope in {"profile", "user"}:
         if uid:
+            _clear_session_hot_cache("profile", uid)
+            _clear_session_hot_cache("flights", uid)
+            _RUN_USER_PROFILE_CACHE.pop(uid, None)
             _clear_cached_function("read_user_profile", uid)
     elif scope in {"app_meta", "meta"}:
         _clear_cached_function("read_table", "app_meta")
@@ -1597,6 +1666,30 @@ def read_flights(user_id: int) -> pd.DataFrame:
         flights["track_count"] = pd.to_numeric(flights["track_count"], errors="coerce").fillna(0).astype(int)
         flights["gps_km"] = pd.to_numeric(flights["gps_km"], errors="coerce").fillna(0.0)
     return flights
+
+
+def session_read_flights(user_id: int) -> pd.DataFrame:
+    """Keep the current user's computed flight table hot across Streamlit reruns."""
+    uid = strict_user_id(user_id)
+    key = _session_hot_key(_SESSION_HOT_FLIGHTS_PREFIX, uid)
+    cached = _session_hot_get(key)
+    if isinstance(cached, pd.DataFrame):
+        return cached.copy(deep=True)
+
+    flights = read_flights(uid)
+    _session_hot_set(key, flights.copy(deep=True))
+    return flights.copy(deep=True)
+
+
+def session_read_logbook_counts(user_id: int) -> dict[str, int]:
+    uid = strict_user_id(user_id)
+    key = _session_hot_key(_SESSION_HOT_COUNTS_PREFIX, uid)
+    cached = _session_hot_get(key)
+    if isinstance(cached, dict):
+        return dict(cached)
+    counts = read_logbook_counts(uid)
+    _session_hot_set(key, dict(counts))
+    return dict(counts)
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -6431,7 +6524,7 @@ def page_new_flight(rates: pd.DataFrame, dark_mode: bool):
         if flash:
             st.success(str(flash))
 
-        history = read_flights(current_user_id())
+        history = session_read_flights(current_user_id())
         default_evidence = current_user_default_evidence()
         defaults, context = manual_entry_defaults(
             history,
@@ -7099,7 +7192,7 @@ def _quality_track_endpoint(
 
 def build_data_quality_scan(user_id: int) -> dict[str, Any]:
     uid = strict_user_id(user_id)
-    flights = read_flights(uid)
+    flights = session_read_flights(uid)
     aircraft = read_aircraft_catalog(active_only=False, user_id=uid)
     tracks = read_quality_track_metadata(uid)
 
@@ -7492,7 +7585,7 @@ def page_database():
     # entire 85k-row airport catalogue, aircraft table, metadata and audit log
     # before the user had even chosen a database section.
     airport_count_total = read_airport_registry_count(current_user_id())
-    counts = read_logbook_counts(current_user_id())
+    counts = session_read_logbook_counts(current_user_id())
     aircraft_count_total = counts["aircraft"]
     track_count_total = counts["tracks"]
     point_count_total = counts["points"]
@@ -8626,6 +8719,7 @@ def render_portable_backup() -> None:
                     con.commit()
 
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 invalidate_cached_data("all")
                 st.session_state["portable_pre_restore_backup_v064"] = before
                 st.session_state["portable_pre_restore_name_v064"] = before_name
@@ -8939,6 +9033,7 @@ def page_admin() -> None:
                     con.commit()
             if result.ok:
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 read_permission_health.clear()
                 auto_backup_after_change("admin_create_user")
                 st.success(f"Profil vytvořen. User ID {result.user_id}.")
@@ -8988,6 +9083,7 @@ def page_admin() -> None:
                         con.commit()
                 if role_result.ok and active_result.ok:
                     read_user_profile.clear()
+                    _clear_session_hot_cache("all")
                     read_permission_health.clear()
                     auto_backup_after_change("admin_update_user")
                     st.success("Oprávnění uživatele byla uložena.")
@@ -9191,7 +9287,7 @@ def page_profile(df: pd.DataFrame) -> None:
     uid = strict_user_id(current_user_id())
     profile = current_user_profile(uid)
     prefs = _profile_preferences(profile)
-    counts = read_logbook_counts(uid)
+    counts = session_read_logbook_counts(uid)
     flights_count = int(len(df))
 
     st.markdown("## Profil a nastavení")
@@ -9225,6 +9321,7 @@ def page_profile(df: pd.DataFrame) -> None:
                     record_audit(con, "update_profile", "user", uid, {"display_name": clean_name})
                     con.commit()
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 auto_backup_after_change("update_profile")
                 st.success("Profil byl uložen.")
                 st.rerun()
@@ -9338,6 +9435,7 @@ def page_profile(df: pd.DataFrame) -> None:
                     )
                     con.commit()
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 invalidate_cached_data("all")
                 auto_backup_after_change("update_user_settings")
                 st.success("Výchozí hodnoty byly uloženy.")
@@ -9363,6 +9461,7 @@ def page_profile(df: pd.DataFrame) -> None:
                     con.commit()
             if result.ok:
                 read_user_profile.clear()
+                _clear_session_hot_cache("all")
                 auto_backup_after_change("change_email")
                 st.success("Přihlašovací e-mail byl změněn.")
                 st.rerun()
@@ -9675,17 +9774,17 @@ def main():
     # body z track_points místo plného coordinates_json pro každý track.
     try:
         if page == "Dashboard":
-            page_dashboard(read_flights(current_user_id()))
+            page_dashboard(session_read_flights(current_user_id()))
         elif page == "Recency":
             # Legacy bookmark/session from v0.63: recency now lives inside Profile.
             st.session_state["page"] = "Profil"
             st.rerun()
         elif page == "Lety":
-            page_logbook(read_flights(current_user_id()), dark_mode)
+            page_logbook(session_read_flights(current_user_id()), dark_mode)
         elif page == "Nový let":
             page_new_flight(read_rates(current_user_id()), dark_mode)
         elif page == "Mapa":
-            page_maps(read_flights(current_user_id()), dark_mode)
+            page_maps(session_read_flights(current_user_id()), dark_mode)
         elif page == "Ceník":
             # Legacy session/bookmark from <= v0.57. Pricing now lives in aircraft profiles.
             st.session_state["page"] = "Databáze"
@@ -9697,9 +9796,9 @@ def main():
             st.session_state["page"] = "Dashboard"
             st.rerun()
         elif page == "Export":
-            page_export(read_flights(current_user_id()))
+            page_export(session_read_flights(current_user_id()))
         elif page == "Profil":
-            page_profile(read_flights(current_user_id()))
+            page_profile(session_read_flights(current_user_id()))
         elif page == "Admin":
             if is_admin():
                 page_admin()

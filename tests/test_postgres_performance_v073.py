@@ -89,7 +89,7 @@ def _config():
 
 
 def test_v073_version_without_sqlite_schema_change():
-    assert APP_VERSION == "v0.73"
+    assert APP_VERSION == "v0.73.1"
     assert DB_SCHEMA_VERSION == 10
 
 

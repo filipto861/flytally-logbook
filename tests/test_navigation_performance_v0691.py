@@ -10,7 +10,7 @@ def _app() -> str:
 
 
 def test_version_without_schema_change():
-    assert APP_VERSION == "v0.73"
+    assert APP_VERSION == "v0.73.1"
     assert DB_SCHEMA_VERSION == 10
 
 
@@ -26,7 +26,7 @@ def test_sidebar_navigation_does_not_force_second_rerun():
     assert "def go_to_page(" not in source
 
 
-def test_request_local_profile_cache_is_not_session_persistent():
+def test_profile_cache_is_session_hot_and_still_keeps_request_cache():
     source = _app()
     assert "_RUN_USER_PROFILE_CACHE: dict[int, dict[str, Any]] = {}" in source
     assert "def current_user_profile(" in source
@@ -34,7 +34,7 @@ def test_request_local_profile_cache_is_not_session_persistent():
     helper_end = source.index("def current_user_display_name", helper_start)
     helper = source[helper_start:helper_end]
 
-    assert "st.session_state" not in helper
+    assert "_session_hot_get(session_key)" in helper
     assert "_RUN_USER_PROFILE_CACHE.get(uid)" in helper
     assert "read_user_profile(uid)" in helper
 

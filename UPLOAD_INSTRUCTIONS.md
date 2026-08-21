@@ -1,4 +1,4 @@
-# Upload v0.73 – PostgreSQL Production Polish & Performance
+# Upload v0.73.1 – Navigation & PostgreSQL Latency Hotfix
 
 ## Deploy
 
@@ -7,7 +7,7 @@
 3. Replace application files with the v0.73 package.
 4. Do **not** replace your Streamlit Secrets.
 5. Commit:
-   `v0.73 - PostgreSQL Production Polish & Performance`
+   `v0.73.1 - Navigation & PostgreSQL Latency Hotfix`
 6. Push `main`.
 7. Let Streamlit redeploy.
 

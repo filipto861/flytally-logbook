@@ -10,7 +10,7 @@ def _admin():
 
 
 def test_version_no_sqlite_schema_migration():
-    assert APP_VERSION == "v0.73"
+    assert APP_VERSION == "v0.73.1"
     assert DB_SCHEMA_VERSION == 10
     assert POSTGRES_SHADOW_VERSION == 1
 

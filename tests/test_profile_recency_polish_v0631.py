@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_and_schema():
-    assert APP_VERSION == "v0.73"
+    assert APP_VERSION == "v0.73.1"
     assert DB_SCHEMA_VERSION == 10
 
 
@@ -39,4 +39,4 @@ def test_legacy_recency_route_redirects_to_profile():
 
 def test_profile_route_loads_flights_for_embedded_activity():
     source = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert 'page_profile(read_flights(current_user_id()))' in source
+    assert 'page_profile(session_read_flights(current_user_id()))' in source
