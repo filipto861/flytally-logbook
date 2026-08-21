@@ -22,8 +22,8 @@ def _app() -> str:
 
 
 def test_v069_schema_and_version():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_duplicate_cache_wrappers_are_gone():

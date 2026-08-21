@@ -7,7 +7,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit, urlunsplit
 
 
-POSTGRES_FOUNDATION_VERSION = 1
+POSTGRES_FOUNDATION_VERSION = 2
 ACTIVE_RUNTIME_BACKEND = "configurable"
 
 

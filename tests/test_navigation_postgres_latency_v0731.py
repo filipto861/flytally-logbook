@@ -19,17 +19,17 @@ def _function(source: str, name: str) -> str:
 
 
 def test_version_is_navigation_latency_hotfix_without_schema_change():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_main_navigation_uses_session_hot_flights():
     source = _source()
     block = _function(source, "main")
+    assert "page_dashboard(session_read_dashboard_flights(current_user_id()))" in block
     for page_call in (
-        "page_dashboard(session_read_flights(current_user_id()))",
         "page_logbook(session_read_flights(current_user_id()), dark_mode)",
-        "page_maps(session_read_flights(current_user_id()), dark_mode)",
+        "page_maps(session_read_dashboard_flights(current_user_id()), dark_mode)",
         "page_export(session_read_flights(current_user_id()))",
         "page_profile(session_read_flights(current_user_id()))",
     ):
@@ -87,7 +87,7 @@ def test_database_health_keeps_its_own_cached_read_path():
 
 def test_session_hot_cache_has_bounded_ttl():
     source = _source()
-    assert "_SESSION_HOT_TTL_SECONDS = 45.0" in source
+    assert "_SESSION_HOT_TTL_SECONDS = 300.0" in source
     block = _function(source, "_session_hot_get")
     assert "time_module.monotonic()" in block
     assert "_SESSION_HOT_TTL_SECONDS" in block

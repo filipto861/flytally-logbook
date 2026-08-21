@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-POSTGRES_SCHEMA_VERSION = 1
+POSTGRES_SCHEMA_VERSION = 2
 
 POSTGRES_TABLE_ORDER = (
     "app_meta",
@@ -71,7 +71,7 @@ POSTGRES_TABLE_COLUMNS: dict[str, tuple[str, ...]] = {
     "flight_tracks": (
         "id", "user_id", "flight_id", "file_name", "imported_at", "point_count",
         "distance_km", "start_utc", "end_utc", "min_alt_m", "max_alt_m",
-        "coordinates_json",
+        "coordinates_json", "overview_coordinates_json", "overview_version",
     ),
     "track_points": (
         "id", "user_id", "track_id", "seq", "time_utc", "latitude_deg",
@@ -236,7 +236,9 @@ POSTGRES_SCHEMA_STATEMENTS = (
         end_utc TEXT,
         min_alt_m DOUBLE PRECISION,
         max_alt_m DOUBLE PRECISION,
-        coordinates_json TEXT NOT NULL
+        coordinates_json TEXT NOT NULL,
+        overview_coordinates_json TEXT,
+        overview_version INTEGER DEFAULT 0
     )
     """,
     """

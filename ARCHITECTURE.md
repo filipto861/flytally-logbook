@@ -113,3 +113,43 @@ The recovery tooling is intentionally retained after production cutover but kept
 - PostgreSQL schema: 1
 - PostgreSQL shadow protocol: 1
 - production cutover protocol: 1
+
+
+## v0.73.3 performance architecture
+
+### Track storage layers
+
+`flight_tracks` now intentionally has two geometry layers:
+
+1. canonical/full:
+   - `coordinates_json`
+   - normalized `track_points`
+2. derived overview:
+   - `overview_coordinates_json`
+   - `overview_version`
+
+Overview geometry is never the source of truth. It exists only to avoid
+transferring/analyzing full GPS data for a map thumbnail/overview.
+
+### Runtime schema
+
+`logbook_core.runtime_schema.ensure_postgres_runtime_schema()` performs the
+idempotent PostgreSQL v2 upgrade under an advisory lock before production
+runtime initialization completes.
+
+### Dashboard data
+
+`read_dashboard_flights()` is a PostgreSQL compact projection and
+`session_read_dashboard_flights()` is the navigation hot layer.
+
+Dashboard and Map use this compact data for ordinary rendering. Full
+`session_read_flights()` is deferred until a workflow explicitly needs complete
+flight records, such as opening a full detail.
+
+### Rendering
+
+The default Dashboard primary chart is a lightweight HTML/CSS component. Plotly
+is lazy and reserved for detailed statistics.
+
+Map overview render budgets are deliberately bounded independently of full track
+fidelity.

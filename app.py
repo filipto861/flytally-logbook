@@ -77,13 +77,15 @@ from logbook_core.db_runtime import (
 from logbook_core.production_cutover import (
     ProductionCutoverError, activate_postgres_production,
 )
+from logbook_core.runtime_schema import ensure_postgres_runtime_schema
 from logbook_core.runtime_metrics import record_page_event
 from logbook_core.sqlite_runtime import (
     MAX_ADMIN_RESTORE_BYTES, SQLiteRestoreError, atomic_replace_sqlite,
     inspect_sqlite_bytes, snapshot_sqlite_bytes,
 )
 from logbook_core.map_engine import (
-    build_gps_render_plan, encode_compact_track_points, simplify_track_points,
+    TRACK_OVERVIEW_MAX_POINTS, TRACK_OVERVIEW_VERSION, build_gps_render_plan,
+    encode_compact_track_points, encode_overview_track_points, simplify_track_points,
     viewport_from_coords,
 )
 from logbook_ui.filters import apply_filters
@@ -294,7 +296,8 @@ def read_user_profile(user_id: int) -> dict[str, Any]:
 _SESSION_HOT_PROFILE_PREFIX = "_hot_profile_v0731_"
 _SESSION_HOT_FLIGHTS_PREFIX = "_hot_flights_v0731_"
 _SESSION_HOT_COUNTS_PREFIX = "_hot_counts_v0731_"
-_SESSION_HOT_TTL_SECONDS = 45.0
+_SESSION_HOT_DASHBOARD_PREFIX = "_hot_dashboard_v0733_"
+_SESSION_HOT_TTL_SECONDS = 300.0
 
 
 def _session_hot_key(prefix: str, user_id: int) -> str:
@@ -324,10 +327,12 @@ def _clear_session_hot_cache(kind: str | None = None, user_id: int | None = None
         "profile": (_SESSION_HOT_PROFILE_PREFIX,),
         "flights": (_SESSION_HOT_FLIGHTS_PREFIX,),
         "counts": (_SESSION_HOT_COUNTS_PREFIX,),
+        "dashboard": (_SESSION_HOT_DASHBOARD_PREFIX,),
         "all": (
             _SESSION_HOT_PROFILE_PREFIX,
             _SESSION_HOT_FLIGHTS_PREFIX,
             _SESSION_HOT_COUNTS_PREFIX,
+            _SESSION_HOT_DASHBOARD_PREFIX,
         ),
     }
     selected = prefixes.get(str(kind or "all").lower(), prefixes["all"])
@@ -653,9 +658,11 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
     if scope in {"flights", "flight"}:
         if uid:
             _clear_session_hot_cache("flights", uid)
+            _clear_session_hot_cache("dashboard", uid)
             _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "flights", uid)
             _clear_cached_function("read_flights", uid)
+            _clear_cached_function("read_dashboard_flights")
             _clear_cached_function("read_aircraft_usage_summary", uid)
             _clear_cached_function("read_aircraft_database_bundle", uid)
             _clear_cached_function("read_logbook_counts", uid)
@@ -665,10 +672,12 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
     elif scope in {"flight_tracks", "track_points", "tracks", "track"}:
         if uid:
             _clear_session_hot_cache("flights", uid)
+            _clear_session_hot_cache("dashboard", uid)
             _clear_session_hot_cache("counts", uid)
             _clear_cached_function("read_table", "flight_tracks", uid)
             _clear_cached_function("read_table", "track_points", uid)
             _clear_cached_function("read_flights", uid)
+            _clear_cached_function("read_dashboard_flights")
             _clear_cached_function("read_logbook_counts", uid)
         for name in (
             "read_track_metadata_for_flights", "read_sampled_track_points",
@@ -706,8 +715,10 @@ def invalidate_cached_data(scope: str = "all", user_id: int | None = None) -> No
         if uid:
             _clear_session_hot_cache("profile", uid)
             _clear_session_hot_cache("flights", uid)
+            _clear_session_hot_cache("dashboard", uid)
             _RUN_USER_PROFILE_CACHE.pop(uid, None)
             _clear_cached_function("read_user_profile", uid)
+            _clear_cached_function("read_dashboard_flights")
     elif scope in {"app_meta", "meta"}:
         _clear_cached_function("read_table", "app_meta")
     else:
@@ -1021,6 +1032,7 @@ def _connect_postgres_runtime(config, *, read_only: bool = False) -> PostgresCon
                 # target must have a deep-verified cutover readiness marker and
                 # still match the frozen SQLite source watermark.
                 activate_postgres_production(config.postgres, sqlite_path=DB_PATH)
+                ensure_postgres_runtime_schema(config.postgres)
                 _DB_READY = True
                 _DB_READY_BACKEND = "postgresql"
     return PostgresConnectionAdapter(config.postgres, read_only=read_only)
@@ -1685,6 +1697,60 @@ def session_read_flights(user_id: int) -> pd.DataFrame:
     return flights.copy(deep=True)
 
 
+@st.cache_data(show_spinner=False, ttl=300)
+def read_dashboard_flights(user_id: int, currency: str) -> pd.DataFrame:
+    """Read only the columns needed by Dashboard, minimizing PostgreSQL payload."""
+    uid = strict_user_id(user_id)
+    if not production_is_postgresql():
+        return read_flights(uid)
+    with read_connect() as con:
+        flights = db_read_sql_query(
+            """
+            SELECT
+                f.id, f.date, f.evidence, f.registration, f.aircraft_type,
+                f.aircraft_class, f.departure, f.arrival, f.off_block,
+                f.takeoff, f.landing, f.on_block, f.starts, f.role,
+                f.price_per_hour, f.billing_basis,
+                COALESCE(t.track_count, 0) AS track_count,
+                COALESCE(t.gps_km, 0.0) AS gps_km
+            FROM flights f
+            LEFT JOIN (
+                SELECT flight_id, COUNT(*) AS track_count,
+                       COALESCE(SUM(distance_km), 0.0) AS gps_km
+                FROM flight_tracks
+                WHERE user_id = ?
+                GROUP BY flight_id
+            ) t ON t.flight_id = f.id
+            WHERE f.user_id = ?
+            """,
+            con,
+            params=(uid, uid),
+        )
+    flights = compute_metrics(flights, str(currency or "CZK"))
+    if not flights.empty:
+        flights["track_count"] = pd.to_numeric(flights["track_count"], errors="coerce").fillna(0).astype(int)
+        flights["gps_km"] = pd.to_numeric(flights["gps_km"], errors="coerce").fillna(0.0)
+    return flights
+
+
+def session_read_dashboard_flights(user_id: int) -> pd.DataFrame:
+    uid = strict_user_id(user_id)
+    # If the full flight table is already hot, reuse it with zero SQL.
+    full_key = _session_hot_key(_SESSION_HOT_FLIGHTS_PREFIX, uid)
+    full_cached = _session_hot_get(full_key)
+    if isinstance(full_cached, pd.DataFrame):
+        return full_cached.copy(deep=True)
+
+    key = _session_hot_key(_SESSION_HOT_DASHBOARD_PREFIX, uid)
+    cached = _session_hot_get(key)
+    if isinstance(cached, pd.DataFrame):
+        return cached.copy(deep=True)
+
+    dashboard = read_dashboard_flights(uid, current_user_currency())
+    _session_hot_set(key, dashboard.copy(deep=True))
+    return dashboard.copy(deep=True)
+
+
 def session_read_logbook_counts(user_id: int) -> dict[str, int]:
     uid = strict_user_id(user_id)
     key = _session_hot_key(_SESSION_HOT_COUNTS_PREFIX, uid)
@@ -1733,30 +1799,80 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
 
 @st.cache_data(show_spinner=False, ttl=600)
 def read_track_geometry_payloads(track_ids: tuple[int, ...], user_id: int) -> dict[int, str]:
-    """Read stored geometry only for tracks selected for the overview map.
+    """Read tiny persistent overview geometry; lazily backfill legacy tracks once.
 
-    v0.73.1 telemetry showed the PostgreSQL window query over track_points at
-    ~723 ms. flight_tracks already stores canonical coordinates_json, so the
-    overview can fetch a small number of indexed rows and simplify locally.
+    Normal warm-map navigation transfers only overview JSON (<=180 lat/lon points).
+    Legacy full coordinates_json is fetched only for tracks that have not yet
+    received the derived overview cache.
     """
     ids = tuple(sorted({int(x) for x in track_ids if x is not None}))
     if not ids:
         return {}
+    uid = strict_user_id(user_id)
     placeholders = ",".join("?" for _ in ids)
     with read_connect() as con:
         rows = con.execute(
             f"""
-            SELECT id, coordinates_json
+            SELECT id, overview_coordinates_json, COALESCE(overview_version, 0) AS overview_version
             FROM flight_tracks
             WHERE user_id = ? AND id IN ({placeholders})
             ORDER BY id
             """,
-            (strict_user_id(user_id), *ids),
+            (uid, *ids),
         ).fetchall()
-    return {
-        int(row["id"]): str(row["coordinates_json"] or "[]")
-        for row in rows
-    }
+
+    payloads: dict[int, str] = {}
+    missing: list[int] = []
+    for row in rows:
+        tid = int(row["id"])
+        payload = str(row["overview_coordinates_json"] or "")
+        version = int(row["overview_version"] or 0)
+        if payload and version == TRACK_OVERVIEW_VERSION:
+            payloads[tid] = payload
+        else:
+            missing.append(tid)
+
+    if missing:
+        missing_ph = ",".join("?" for _ in missing)
+        with read_connect() as con:
+            legacy_rows = con.execute(
+                f"""
+                SELECT id, coordinates_json
+                FROM flight_tracks
+                WHERE user_id = ? AND id IN ({missing_ph})
+                ORDER BY id
+                """,
+                (uid, *missing),
+            ).fetchall()
+
+        updates: list[tuple[str, int, int, int]] = []
+        for row in legacy_rows:
+            tid = int(row["id"])
+            try:
+                points = json.loads(row["coordinates_json"] or "[]")
+                if not isinstance(points, list):
+                    points = []
+            except Exception:
+                points = []
+            overview = encode_overview_track_points(
+                points, max_points=TRACK_OVERVIEW_MAX_POINTS
+            )
+            payloads[tid] = overview
+            updates.append((overview, TRACK_OVERVIEW_VERSION, tid, uid))
+
+        if updates:
+            with connect() as con:
+                con.executemany(
+                    """
+                    UPDATE flight_tracks
+                    SET overview_coordinates_json = ?, overview_version = ?
+                    WHERE id = ? AND user_id = ?
+                    """,
+                    updates,
+                )
+                con.commit()
+
+    return payloads
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -1926,6 +2042,8 @@ def ensure_schema_compatibility(con: sqlite3.Connection) -> None:
     try:
         _add_column_if_missing(con, "flight_tracks", "min_alt_m", "min_alt_m REAL")
         _add_column_if_missing(con, "flight_tracks", "max_alt_m", "max_alt_m REAL")
+        _add_column_if_missing(con, "flight_tracks", "overview_coordinates_json", "overview_coordinates_json TEXT")
+        _add_column_if_missing(con, "flight_tracks", "overview_version", "overview_version INTEGER DEFAULT 0")
         _add_column_if_missing(con, "flights", "note", "note TEXT")
         _add_column_if_missing(con, "flights", "billing_basis", "billing_basis TEXT DEFAULT 'BLOCK'")
         _add_column_if_missing(con, "aircraft", "default_role", "default_role TEXT DEFAULT 'PIC'")
@@ -2144,13 +2262,14 @@ def save_track(flight_id: int, file_name: str, points: list[dict[str, Any]], rep
         require_owned_record(con, "flights", flight_id, uid)
         if replace_existing:
             con.execute("DELETE FROM flight_tracks WHERE flight_id = ? AND user_id = ?", (flight_id, uid))
+        overview_json = encode_overview_track_points(points, max_points=TRACK_OVERVIEW_MAX_POINTS)
         track_id = insert_and_get_id(
             con,
             """
-            INSERT INTO flight_tracks (user_id, flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO flight_tracks (user_id, flight_id, file_name, imported_at, point_count, distance_km, start_utc, end_utc, min_alt_m, max_alt_m, coordinates_json, overview_coordinates_json, overview_version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (uid, flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False)),
+            (uid, flight_id, file_name, _now_iso(), stats["point_count"], stats["distance_km"], stats["start_utc"], stats["end_utc"], stats["min_alt_m"], stats["max_alt_m"], json.dumps(points, ensure_ascii=False), overview_json, TRACK_OVERVIEW_VERSION),
         )
         insert_track_points(con, track_id, points, user_id=uid)
         record_audit(con, "save_track", "flight_tracks", track_id, {"flight_id": flight_id, "file_name": file_name, "replace_existing": replace_existing})
@@ -3383,6 +3502,51 @@ def render_track_playback(points: list[dict[str, Any]], flight_id: int, dark_mod
 # Pages
 # -----------------------------------------------------------------------------
 
+def render_dashboard_primary_chart_light(
+    monthly: pd.DataFrame, metric: str
+) -> None:
+    """Render the default dashboard trend without importing Plotly.
+
+    Detailed statistics still use Plotly on demand.  The default five-second
+    dashboard path stays pure HTML/CSS and avoids the large cold import/render.
+    """
+    if monthly.empty:
+        return
+    metric_map = {
+        "Celkový čas": ("total_hours", "Block h"),
+        "ULL": ("ull_hours", "ULL h"),
+        "EASA": ("easa_hours", "EASA h"),
+        "PIC ULL": ("pic_ull_hours", "PIC ULL h"),
+        "PIC EASA": ("pic_easa_hours", "PIC EASA h"),
+        "Přistání": ("landings", "Přistání"),
+    }
+    y_col, y_title = metric_map.get(metric or "Celkový čas", ("total_hours", "Block h"))
+    work = monthly.tail(24).copy()
+    values = pd.to_numeric(work.get(y_col), errors="coerce").fillna(0.0)
+    max_value = max(float(values.max()) if len(values) else 0.0, 1e-9)
+    bars: list[str] = []
+    n = len(work)
+    for pos, (_, row) in enumerate(work.iterrows()):
+        value = float(values.iloc[pos])
+        height = 4.0 if value <= 0 else max(8.0, min(100.0, value / max_value * 100.0))
+        month_raw = pd.to_datetime(row.get("month"), errors="coerce")
+        month_label = month_raw.strftime("%m/%y") if pd.notna(month_raw) else ""
+        visible_label = month_label if (pos % 3 == 0 or pos == n - 1) else ""
+        value_label = f"{value:.0f}" if y_col == "landings" else f"{value:.1f}"
+        title = html.escape(f"{month_label}: {value_label} {y_title}")
+        bars.append(
+            f'<div class="dashboard-lite-col" title="{title}">'
+            f'<div class="dashboard-lite-barwrap"><div class="dashboard-lite-bar" style="height:{height:.1f}%"></div></div>'
+            f'<div class="dashboard-lite-month">{html.escape(visible_label)}</div></div>'
+        )
+    st.markdown(
+        '<div class="dashboard-lite-chart">'
+        f'<div class="dashboard-lite-head"><strong>Vývoj po měsících</strong><span>{html.escape(y_title)}</span></div>'
+        f'<div class="dashboard-lite-bars">{"".join(bars)}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def page_dashboard(df: pd.DataFrame):
     st.markdown("## Dashboard")
 
@@ -3536,27 +3700,7 @@ def page_dashboard(df: pd.DataFrame):
         key="dashboard_primary_chart_v0621",
     )
     primary_monthly = monthly_primary_summary(filtered)
-    if not primary_monthly.empty:
-        import plotly.express as px
-
-        metric_map = {
-            "Celkový čas": ("total_hours", "Block h"),
-            "ULL": ("ull_hours", "ULL h"),
-            "EASA": ("easa_hours", "EASA h"),
-            "PIC ULL": ("pic_ull_hours", "PIC ULL h"),
-            "PIC EASA": ("pic_easa_hours", "PIC EASA h"),
-            "Přistání": ("landings", "Přistání"),
-        }
-        y_col, y_title = metric_map.get(chart_metric or "Celkový čas", ("total_hours", "Block h"))
-        fig_main = px.bar(
-            primary_monthly.tail(24),
-            x="month",
-            y=y_col,
-            title="Vývoj po měsících",
-        )
-        fig_main.update_yaxes(title=y_title)
-        fig_main.update_xaxes(title=None)
-        st.plotly_chart(plotly_layout(fig_main), width="stretch")
+    render_dashboard_primary_chart_light(primary_monthly, chart_metric or "Celkový čas")
 
     show_details = st.toggle(
         "Detailní statistiky",
@@ -6771,7 +6915,11 @@ def render_map_selection_panel(selection_df: pd.DataFrame, title: str, rates: pd
         )
     open_id = st.session_state.get("open_flight_dialog_id")
     if open_id is not None and int(open_id) in set(work["id"].astype(int).tolist()):
-        dialog_row = work[work["id"].astype(int).eq(int(open_id))].iloc[0]
+        # The map itself uses a compact flight dataset. Load the full flight row
+        # only after the user explicitly opens Detail.
+        full_flights = session_read_flights(current_user_id())
+        full_match = full_flights[full_flights["id"].astype(int).eq(int(open_id))] if not full_flights.empty else pd.DataFrame()
+        dialog_row = full_match.iloc[0] if not full_match.empty else work[work["id"].astype(int).eq(int(open_id))].iloc[0]
         flight_detail_dialog(int(open_id), dialog_row.to_dict(), rates, dark_mode)
 
 
@@ -9953,7 +10101,7 @@ def main():
     # body z track_points místo plného coordinates_json pro každý track.
     try:
         if page == "Dashboard":
-            page_dashboard(session_read_flights(current_user_id()))
+            page_dashboard(session_read_dashboard_flights(current_user_id()))
         elif page == "Recency":
             # Legacy bookmark/session from v0.63: recency now lives inside Profile.
             st.session_state["page"] = "Profil"
@@ -9963,7 +10111,7 @@ def main():
         elif page == "Nový let":
             page_new_flight(read_rates(current_user_id()), dark_mode)
         elif page == "Mapa":
-            page_maps(session_read_flights(current_user_id()), dark_mode)
+            page_maps(session_read_dashboard_flights(current_user_id()), dark_mode)
         elif page == "Ceník":
             # Legacy session/bookmark from <= v0.57. Pricing now lives in aircraft profiles.
             st.session_state["page"] = "Databáze"

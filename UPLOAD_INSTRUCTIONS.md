@@ -1,4 +1,4 @@
-# Upload v0.73.2 – Map & Database Latency Hotfix
+# Upload v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path
 
 ## Deploy
 
@@ -7,7 +7,7 @@
 3. Replace application files with the v0.73 package.
 4. Do **not** replace your Streamlit Secrets.
 5. Commit:
-   `v0.73.2 - Map & Database Latency Hotfix`
+   `v0.73.3 - Lightweight GPS Geometry & Dashboard Hot Path`
 6. Push `main`.
 7. Let Streamlit redeploy.
 
@@ -80,3 +80,32 @@ After deploy, exercise:
 
 The key production signal is that `SELECT track_points` should no longer appear
 from normal GPS overview-map navigation.
+
+
+## v0.73.3 deployment notes
+
+No Streamlit Secrets change is required.
+
+On first startup the application automatically and idempotently upgrades:
+- PostgreSQL schema/foundation 1 → 2
+- SQLite emergency fallback schema 10 → 11
+
+The added track columns contain derived overview geometry only. Full GPS data is
+not rewritten or removed.
+
+### First map test
+
+The first Map → GPS view after deploy can be slower because legacy selected
+tracks may need one-time overview backfill.
+
+For a fair performance test:
+1. open Map once and let it finish;
+2. navigate away;
+3. open Map again;
+4. then inspect Admin → PostgreSQL → Runtime performance.
+
+Future app restarts retain the generated overview geometry in PostgreSQL.
+
+Suggested commit:
+
+`v0.73.3 - Lightweight GPS Geometry & Dashboard Hot Path`

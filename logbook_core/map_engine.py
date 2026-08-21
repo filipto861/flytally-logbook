@@ -15,6 +15,9 @@ from typing import Any, Iterable, Sequence
 
 
 DEFAULT_CENTER = (49.8, 15.5)
+TRACK_OVERVIEW_VERSION = 1
+TRACK_OVERVIEW_MAX_POINTS = 180
+
 
 
 @dataclass(frozen=True)
@@ -45,9 +48,11 @@ class MapViewport:
 # is that the "Vše" mode may include every track without sending 180 points for
 # every single historic flight indefinitely.
 _GPS_PRESETS: dict[str, dict[str, int | None]] = {
-    "Rychlá": {"max_tracks": 40, "per_track_cap": 110, "total_budget": 4400},
-    "Střední": {"max_tracks": 120, "per_track_cap": 160, "total_budget": 14400},
-    "Vše": {"max_tracks": None, "per_track_cap": 180, "total_budget": 24000},
+    # Network PostgreSQL + Folium rendering both benefit from conservative
+    # overview budgets. Full-fidelity playback remains unchanged.
+    "Rychlá": {"max_tracks": 32, "per_track_cap": 64, "total_budget": 2048},
+    "Střední": {"max_tracks": 100, "per_track_cap": 120, "total_budget": 9600},
+    "Vše": {"max_tracks": None, "per_track_cap": 140, "total_budget": 18000},
 }
 
 
@@ -230,6 +235,25 @@ def compact_track_points(points: list[dict[str, Any]], max_points: int) -> list[
         compact.append(item)
     return compact
 
+
+
+def encode_overview_track_points(
+    points: list[dict[str, Any]],
+    max_points: int = TRACK_OVERVIEW_MAX_POINTS,
+) -> str:
+    """Persist a tiny map-only geometry with lat/lon and no profile payload.
+
+    Full track fidelity remains in coordinates_json/track_points.  The overview
+    exists solely to make normal map navigation cheap over a network database.
+    """
+    compact: list[dict[str, float]] = []
+    for point in simplify_track_points(points, max_points=max(2, int(max_points))):
+        ll = _valid_lat_lon(point)
+        if ll is None:
+            continue
+        lat, lon = ll
+        compact.append({"lat": round(lat, 6), "lon": round(lon, 6)})
+    return json.dumps(compact, ensure_ascii=False, separators=(",", ":"))
 
 def encode_compact_track_points(points: list[dict[str, Any]], max_points: int) -> str:
     return json.dumps(

@@ -144,6 +144,8 @@ CREATE TABLE IF NOT EXISTS flight_tracks (
     min_alt_m REAL,
     max_alt_m REAL,
     coordinates_json TEXT NOT NULL,
+    overview_coordinates_json TEXT,
+    overview_version INTEGER DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(flight_id) REFERENCES flights(id) ON DELETE CASCADE
 );

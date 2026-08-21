@@ -12,18 +12,18 @@ from logbook_core.map_engine import (
 
 
 class MapEngineTests(unittest.TestCase):
-    def test_quick_and_medium_keep_historic_track_caps(self) -> None:
+    def test_quick_and_medium_use_v0733_latency_track_caps(self) -> None:
         quick = build_gps_render_plan("Rychlá", 300)
         medium = build_gps_render_plan("Střední", 300)
-        self.assertEqual(quick.selected_tracks, 40)
-        self.assertEqual(medium.selected_tracks, 120)
+        self.assertEqual(quick.selected_tracks, 32)
+        self.assertEqual(medium.selected_tracks, 100)
         self.assertLessEqual(quick.estimated_payload_points, quick.total_point_budget)
         self.assertLessEqual(medium.estimated_payload_points, medium.total_point_budget)
 
     def test_all_mode_uses_adaptive_global_budget(self) -> None:
         plan = build_gps_render_plan("Vše", 2000)
         self.assertEqual(plan.selected_tracks, 2000)
-        self.assertEqual(plan.points_per_track, 12)
+        self.assertEqual(plan.points_per_track, 9)
         self.assertLessEqual(plan.estimated_payload_points, plan.total_point_budget)
         self.assertGreater(plan.candidate_points_per_track, plan.points_per_track)
 

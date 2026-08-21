@@ -19,8 +19,8 @@ def _function(source: str, name: str) -> str:
 
 
 def test_release_version_without_schema_migration():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_overview_map_no_longer_reads_track_points():
@@ -31,11 +31,12 @@ def test_overview_map_no_longer_reads_track_points():
     assert "_decode_points_for_map(" in block
 
 
-def test_geometry_reader_is_simple_flight_tracks_query():
+def test_geometry_reader_avoids_track_points_and_uses_persistent_overview():
     source = _source()
     block = _function(source, "read_track_geometry_payloads")
     assert "FROM flight_tracks" in block
-    assert "coordinates_json" in block
+    assert "overview_coordinates_json" in block
+    assert "overview_version" in block
     assert "FROM track_points" not in block
     assert "ROW_NUMBER()" not in block
     assert "COUNT(*) OVER" not in block

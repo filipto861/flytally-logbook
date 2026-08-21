@@ -10,8 +10,8 @@ def _app() -> str:
 
 
 def test_version_without_schema_change():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_sidebar_navigation_does_not_force_second_rerun():

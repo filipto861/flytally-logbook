@@ -19,8 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_v072_version_without_sqlite_schema_change():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
     assert DATABASE_RUNTIME == "configurable"
     assert POSTGRES_CUTOVER_VERSION == 1
 

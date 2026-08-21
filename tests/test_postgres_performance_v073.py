@@ -89,8 +89,8 @@ def _config():
 
 
 def test_v073_version_without_sqlite_schema_change():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_read_only_adapter_avoids_commit_and_rollback_roundtrips(monkeypatch):

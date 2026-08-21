@@ -6,8 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_version_and_schema():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
 
 
 def test_recency_is_not_a_sidebar_item():

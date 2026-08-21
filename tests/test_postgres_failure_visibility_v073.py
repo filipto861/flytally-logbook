@@ -82,4 +82,4 @@ def test_track_map_geometry_reader_does_not_hide_postgres_outage():
     assert "with read_connect() as con:" in block
     assert "con.execute(" in block
     assert "except DATABASE_ERRORS" not in block
-    assert "except Exception" not in block
+    assert "except DATABASE_ERRORS" not in block

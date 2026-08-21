@@ -9,11 +9,11 @@ from logbook_core.config import APP_VERSION, DB_SCHEMA_VERSION, DATABASE_RUNTIME
 
 
 def test_version_and_runtime_cutover_is_explicit():
-    assert APP_VERSION == "v0.73.2"
-    assert DB_SCHEMA_VERSION == 10
+    assert APP_VERSION == "v0.73.3"
+    assert DB_SCHEMA_VERSION == 11
     assert DATABASE_RUNTIME == "configurable"
     assert ACTIVE_RUNTIME_BACKEND == "configurable"
-    assert POSTGRES_FOUNDATION_VERSION == 1
+    assert POSTGRES_FOUNDATION_VERSION == 2
     assert postgres_cutover_enabled(
         secrets_database={
             "production_backend": "postgresql",

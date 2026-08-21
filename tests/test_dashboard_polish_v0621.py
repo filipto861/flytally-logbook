@@ -54,4 +54,5 @@ def test_dashboard_default_is_compact_and_detail_is_opt_in():
 def test_dashboard_uses_single_primary_chart_selector():
     text = (ROOT / "app.py").read_text(encoding="utf-8")
     assert '"Celkový čas", "ULL", "EASA", "PIC ULL", "PIC EASA", "Přistání"' in text
-    assert 'title="Vývoj po měsících"' in text
+    assert 'render_dashboard_primary_chart_light' in text
+    assert 'dashboard-lite-chart' in text

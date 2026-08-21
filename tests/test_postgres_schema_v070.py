@@ -8,7 +8,7 @@ from logbook_core.postgres_schema import (
 
 
 def test_postgres_schema_contains_every_transaction_table():
-    assert POSTGRES_SCHEMA_VERSION == 1
+    assert POSTGRES_SCHEMA_VERSION == 2
     assert set(POSTGRES_TABLE_ORDER) == set(POSTGRES_TABLE_COLUMNS)
     sql = postgres_schema_sql()
     for table in POSTGRES_TABLE_ORDER:

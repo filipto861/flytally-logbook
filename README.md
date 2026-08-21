@@ -1,7 +1,23 @@
 # Letový zápisník
 
-Current release: **v0.73.2 – Map & Database Latency Hotfix**
+Current release: **v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path**
 
+
+## v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path
+
+- persistent lightweight GPS overview geometry stored alongside full tracks
+- lazy one-time backfill for existing tracks
+- new KML tracks generate overview geometry immediately
+- Dashboard uses a compact PostgreSQL flight projection
+- Dashboard and Map share the compact session-hot dataset
+- default Dashboard monthly chart is lightweight HTML/CSS rather than Plotly
+- tighter GPS overview point budget
+- navigation hot-cache TTL increased to 300 seconds with write-scoped invalidation
+- PostgreSQL schema automatically upgrades to foundation v2
+- SQLite fallback schema automatically upgrades to 11
+- no Secrets change and no destructive migration
+
+See `POSTGRESQL_PERFORMANCE_V0733.md`.
 
 ## v0.73.2 – Map & Database Latency Hotfix
 
