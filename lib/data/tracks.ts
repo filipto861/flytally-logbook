@@ -17,18 +17,24 @@ function decodePoints(payload: unknown, maxPoints: number): TrackPoint[] {
     const valid: TrackPoint[] = [];
     for (const item of parsed) {
       const lat = Number(item?.lat); const lon = Number(item?.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || (Math.abs(lat)<.001&&Math.abs(lon)<.001)) continue;
       const point: TrackPoint = { lat, lon };
       const alt = Number(item?.alt); if (Number.isFinite(alt)) point.alt = alt;
       if (item?.time) point.time = String(item.time);
       valid.push(point);
     }
-    if (valid.length <= maxPoints) return valid;
-    const stride = Math.max(1, Math.ceil(valid.length / maxPoints));
-    const sampled = valid.filter((_, index) => index === 0 || index === valid.length - 1 || index % stride === 0);
-    return sampled.slice(0, maxPoints - 1).concat(valid.at(-1)!);
+    const segments:TrackPoint[][]=[];let segment:TrackPoint[]=[];
+    for(const point of valid){if(segment.length&&pointGap(segment.at(-1)!,point)>250){if(segment.length>=2)segments.push(segment);segment=[]}segment.push(point)}
+    if(segment.length>=2)segments.push(segment);
+    const clean=(segments.sort((a,b)=>b.length-a.length)[0]??valid);
+    if (clean.length <= maxPoints) return clean;
+    const stride = Math.max(1, Math.ceil(clean.length / maxPoints));
+    const sampled = clean.filter((_, index) => index === 0 || index === clean.length - 1 || index % stride === 0);
+    return sampled.slice(0, maxPoints - 1).concat(clean.at(-1)!);
   } catch { return []; }
 }
+
+function pointGap(a:TrackPoint,b:TrackPoint){const p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p,q=Math.sin(dLat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)**2;return 12742.0176*Math.asin(Math.sqrt(q))}
 
 export type MapFilters={registration?:string;evidence?:string;airport?:string;route?:string;year?:string};
 export async function getOverviewTracks(userId: number, limit = 100,filters:MapFilters={}) {
