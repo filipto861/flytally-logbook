@@ -31,3 +31,11 @@ exports/
 /import_excel.py
 /seed_airports_full.py
 /download
+
+# Next.js / Vercel
+node_modules/
+.next/
+.vercel/
+.env.local
+.env.*.local
+npm-debug.log*
