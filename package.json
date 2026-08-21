@@ -1,6 +1,6 @@
 {
   "name": "pilot-logbook-web",
-  "version": "0.87.0",
+  "version": "0.89.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
