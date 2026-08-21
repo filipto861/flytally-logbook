@@ -2,6 +2,7 @@
 
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 import { useEffect,useState } from "react";
+import { createPortal } from "react-dom";
 
 type Row=Record<string,unknown>;
 type Action=(form:FormData)=>Promise<void>;
@@ -50,12 +51,12 @@ export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRate
       <div className="aircraft-card-metrics"><span><small>ICAO</small><b>{t(item.icao_type)||"—"}</b></span><span><small>Aktuální cena</small><b>{Number(item.current_price_per_hour||0).toLocaleString("cs-CZ")} Kč/h</b><em>{t(item.current_price_valid_from)?`od ${t(item.current_price_valid_from)}`:"původní výchozí sazba"}</em></span><span><small>Účtování</small><b>{billing.basis} · 1/{billing.share}</b></span><span><small>Funkce</small><b>{t(item.default_role)||"PIC"}</b></span></div>
       <button type="button" className="aircraft-manage-button" onClick={()=>setSelectedId(t(item.id))}>Spravovat letadlo</button>
     </article>})}{!aircraft.length?<p className="empty-state">Zatím není uložené žádné letadlo.</p>:null}</div>
-    {selected?<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
+    {selected?createPortal(<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
       <header><div><p className="eyebrow">SPRÁVA LETADLA</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{t(selected.aircraft_type)||"Typ neuveden"} · {t(selected.aircraft_class)||"—"} · {t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Zavřít" onClick={()=>setSelectedId(null)}>×</button></header>
       <div className="aircraft-modal-content">
         <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">NASTAVENÍ</p><h3>Profil letadla</h3></div></div><p className="muted">Změna profilu nemění historické ceny. Novou cenu přidejte samostatně do historie cen.</p><form action={saveAction}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button">Uložit profil</button></div></form></section>
         <RateTimeline aircraft={selected} rates={rates} saveAction={saveRateAction} deleteAction={deleteRateAction}/>
       </div>
-    </section></div>:null}
+    </section></div>,document.body):null}
   </div>;
 }
