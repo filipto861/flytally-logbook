@@ -18,7 +18,7 @@ Thumbs.db
 exports/
 *.tmp
 
-# Keep the bundled demo/live DB intentionally committed for current Streamlit test
+# Keep the frozen SQLite fallback baseline intentionally tracked for emergency recovery
 !data/logbook.sqlite
 
 # v0.55 repository layout: reference data/scripts belong in data/ and scripts/

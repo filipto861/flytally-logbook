@@ -6,11 +6,12 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from .database_foundation import PostgresTargetConfig
 from .postgres_runtime import postgres_connection
-from .shadow_verification import ShadowVerificationReport
+if TYPE_CHECKING:
+    from .shadow_verification import ShadowVerificationReport
 
 
 CUTOVER_PROTOCOL_VERSION = 1

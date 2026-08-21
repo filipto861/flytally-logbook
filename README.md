@@ -1,65 +1,77 @@
 # Letový zápisník
 
-Current release: **v0.72 – PostgreSQL Production Cutover**
+Current release: **v0.73 – PostgreSQL Production Polish & Performance**
 
-## v0.72 – PostgreSQL Production Cutover
+## v0.73 – PostgreSQL Production Polish & Performance
 
-v0.72 introduces the first production-capable PostgreSQL runtime while keeping the existing SQLite database as the controlled migration/fallback baseline.
+v0.73 is a cleanup and optimization release after the successful PostgreSQL production cutover. It does not change the user-facing data model and does not require a database migration.
 
-### Runtime safety
-- default backend after upload remains **SQLite**
-- PostgreSQL production requires both:
-  - `production_backend = "postgresql"`
-  - `cutover_confirm = "POSTGRESQL_PRODUCTION"`
-- there is no automatic PostgreSQL → SQLite fallback
-- PostgreSQL activation requires a previously recorded **CUTOVER READY** gate
-- first activation revalidates the frozen SQLite `last_change_at` watermark
-- shadow refresh, CUTOVER READY and production activation share one PostgreSQL advisory lifecycle lock
-- production audit + `last_change_at` are committed in the same transaction as business writes
+### PostgreSQL runtime
+- production remains PostgreSQL when `production_backend = "postgresql"` is present in Streamlit Secrets
+- SQLite remains the explicit emergency fallback baseline
+- no automatic PostgreSQL → SQLite fallback was introduced
+- read-only PostgreSQL helpers now borrow pooled connections in autocommit mode and avoid an extra transaction COMMIT/ROLLBACK round-trip
+- write helpers retain explicit transaction semantics
+- PostgreSQL pool checkout and query timing are measured locally without storing SQL parameters or credentials
 
-### Shadow refresh
-- an existing non-production shadow can be transactionally rebuilt from the current SQLite snapshot
-- refresh requires explicit UI confirmation
-- refresh is rejected unless the target is a recognized shadow
-- refresh is permanently rejected after PostgreSQL has been marked production
-- failed refresh rolls back to the previous shadow state
-- sequences and tenant/FK relationships are revalidated after refresh
+### Query / navigation performance
+- `read_connect()` is used for normal read-only production helpers
+- database header counts are batched into one production SQL statement
+- Profile no longer runs a separate flight-count query; it uses the already loaded flight dataframe
+- global Admin user overview is short-cached and invalidated after durable data changes
+- PostgreSQL healthcheck is a single SQL round-trip
+- PostgreSQL table counts are batched instead of issuing one COUNT query per table
+- expensive relation/index diagnostics are lazy and run only after explicit Admin clicks
+- Admin PostgreSQL migration/cutover UI was moved out of the main `app.py` execution path and is imported only when that Admin section is opened
 
-### Deep verification
-- table counts and per-user pilot metrics are compared
-- deep SHA-256 fingerprints cover durable migrated application content
-- PostgreSQL-only lifecycle metadata is excluded
-- `user_credentials.last_login_at` is intentionally excluded because a normal login is volatile operational metadata; password hash and all durable credential fields remain verified
+### Runtime performance diagnostics
+Admin → PostgreSQL includes local worker diagnostics for:
+- SQL p50 / p95 / max
+- pool checkout latency
+- query failures / slow-query count
+- query groups by safe operation/table tag
+- page-render timing
+- Psycopg pool counters
+- lazy relation/table/index statistics
 
-### PostgreSQL runtime compatibility
-- backend-neutral generated-ID helper replaces SQLite-only `lastrowid`
-- backend-neutral DataFrame SQL reader
-- qmark `?` SQL parameters are translated for Psycopg
-- SQL modulo `%` is safely escaped for Psycopg
-- `CURRENT_TIMESTAMP` is stored compatibly in the migrated TEXT timestamp columns
-- SQLite-only PRAGMA / ATTACH / initialization paths are isolated from PostgreSQL runtime
-- PostgreSQL maintenance uses `ANALYZE`
-- world-airport reference data remains the local read-only `airports_full.sqlite` asset
+Metrics are in-memory diagnostics only. Raw SQL values, query parameters, passwords and DSNs are not recorded.
 
-### Backup behavior
-- portable per-user backup/restore continues to work on the active production backend
-- SQLite GitHub auto-backup is disabled while PostgreSQL is production because the SQLite file is then only a frozen fallback baseline
-- full SQLite restore is blocked while PostgreSQL is production
-- emergency SQLite fallback is explicit:
-  - `production_backend = "sqlite"`
-  - `cutover_confirm = "POSTGRESQL_PRODUCTION"`
-  - `fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"`
-- if SQLite receives business writes during emergency fallback, automatic rejoin to PostgreSQL is blocked to prevent silent data loss
+### Cache cleanup
+- removed accidental caching from helpers where it provided no benefit or could mix user-specific state
+- tenant-dependent airport caches are keyed by `user_id`
+- UI-render helpers are not cached
+- cache invalidation now also clears the short Admin aggregate cache after user-data mutations
+- flight changes invalidate the combined logbook-count cache
+
+### Failure visibility
+PostgreSQL production read failures are no longer converted into plausible empty application data:
+- profile reads do not silently become a local fallback profile
+- airport override reads do not silently disappear
+- database health SQL does not silently become an empty dataframe
+- GPS fallback reads do not silently disappear on PostgreSQL outage
+- authenticated profile read failure preserves the login session rather than logging the user out
+- active-page database failures show a controlled database-unavailable state
+
+This preserves the v0.72 fail-closed principle: an outage is visible and the app does not silently switch data sources.
+
+### Code cleanup
+- PostgreSQL Admin/migration UI extracted into `logbook_ui/postgres_admin.py`
+- runtime metrics isolated in `logbook_core/runtime_metrics.py`
+- removed redundant `read_table_count()` helper
+- removed unused imports found by AST audit
+- `app.py` reduced from approximately **10,046 lines in v0.72 to ~9,718 lines** while adding production diagnostics
+- legacy migration/shadow code remains available for recovery, but it is outside the normal application execution path
 
 ### Schema
-- `APP_VERSION = v0.72`
+- `APP_VERSION = v0.73`
 - SQLite schema remains **10**
 - PostgreSQL schema remains **1**
-- cutover protocol **1**
-- no SQLite migration is required for this release
+- cutover protocol remains **1**
+- **no database migration**
 
 ## Release history
 
+- **v0.72** – PostgreSQL Production Cutover
 - **v0.71** – PostgreSQL Shadow Migration & Verification
 - **v0.70** – PostgreSQL & Production Multi-User Foundation
 - **v0.69.1** – Navigation Performance Hotfix
@@ -71,14 +83,11 @@ v0.72 introduces the first production-capable PostgreSQL runtime while keeping t
 - **v0.65** – Flight Entry UX 2.0
 - **v0.64** – Data Portability & Backup UX
 - **v0.63.1** – Profile Recency Polish
-- **v0.63** – Pilot Currency & Recency
 - **v0.62.2** – Dashboard Card Visual Polish
-- **v0.62.1** – Dashboard Polish
-- **v0.62** – Dashboard & Statistics 2.0
 - **v0.61.7** – Stability & Performance Cleanup
 
-## Deployment notes
+## Deployment
 
-The release ZIP deliberately excludes `data/logbook.sqlite`. Preserve the existing repository database and `.git` directory when replacing application files.
+Keep the existing `.git` directory and `data/logbook.sqlite` fallback baseline when replacing files.
 
-Real PostgreSQL credentials belong only in Streamlit Secrets and must never be committed to GitHub.
+Real PostgreSQL/GitHub/auth credentials belong only in Streamlit Secrets and must never be committed to GitHub.

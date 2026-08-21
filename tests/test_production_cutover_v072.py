@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_v072_version_without_sqlite_schema_change():
-    assert APP_VERSION == "v0.72"
+    assert APP_VERSION == "v0.73"
     assert DB_SCHEMA_VERSION == 10
     assert DATABASE_RUNTIME == "configurable"
     assert POSTGRES_CUTOVER_VERSION == 1
@@ -123,7 +123,7 @@ def test_app_has_no_automatic_postgres_to_sqlite_fallback():
     source = (ROOT / "app.py").read_text(encoding="utf-8")
     connect_block = source[source.index("def connect() -> Any:"):source.index("def _seed_airports_from_overrides", source.index("def connect() -> Any:"))]
     assert "config.is_postgresql" in connect_block
-    assert "return _connect_postgres_runtime(config)" in connect_block
+    assert "return _connect_postgres_runtime(config, read_only=False)" in connect_block
     assert "return _connect_sqlite_runtime()" in connect_block
     assert "except" not in connect_block
     assert "fallback" in connect_block.lower()
@@ -157,11 +157,12 @@ def test_postgresql_production_disables_sqlite_github_backup_and_restore():
 
 
 def test_cutover_ui_documents_exact_activation_and_manual_fallback_tokens():
-    source = (ROOT / "app.py").read_text(encoding="utf-8")
+    source = (ROOT / "logbook_ui" / "postgres_admin.py").read_text(encoding="utf-8")
+    app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert 'confirm_ready == "PŘIPRAVIT CUTOVER"' in source
     assert 'cutover_confirm = "POSTGRESQL_PRODUCTION"' in source
     assert 'fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"' in source
-    assert "Automatický fallback" in source
+    assert "Automatický fallback" in app
 
 
 def test_shadow_hash_excludes_v072_postgres_only_lifecycle_metadata():

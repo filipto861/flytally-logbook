@@ -1,135 +1,115 @@
-# Logbook architecture — v0.72
+# Logbook architecture — v0.73
 
-## Storage model
+## Production storage
 
-Logbook now has two production-capable storage implementations behind the application `connect()` boundary:
+PostgreSQL is the normal production source of truth after the v0.72 cutover.
 
-- **SQLite** – default runtime and pre-cutover source
-- **PostgreSQL** – production runtime after explicit cutover
+SQLite remains supported for:
+- pre-cutover/dev use
+- explicit emergency fallback
+- the frozen repository fallback baseline
 
-The large world-airport catalogue remains a separate read-only SQLite reference asset and is not part of tenant transactional storage.
+The application never automatically switches PostgreSQL production to SQLite.
 
-## Runtime backend selection
+The world-airport catalogue remains a separate read-only SQLite reference asset (`data/airports_full.sqlite`) because it is shared reference data rather than tenant transactional storage.
 
-`logbook_core.db_runtime.resolve_runtime_database_config()` is fail-closed.
+## Runtime connection model
 
-Default:
-```toml
-[database]
-# no production_backend means sqlite
-```
+### Writes
+`connect()` returns:
+- SQLite transactional connection in SQLite mode
+- `PostgresConnectionAdapter(read_only=False)` in PostgreSQL mode
 
-PostgreSQL:
-```toml
-[database]
-postgres_dsn = "..."
-production_backend = "postgresql"
-cutover_confirm = "POSTGRESQL_PRODUCTION"
-```
+PostgreSQL writes preserve explicit transaction semantics. Business mutation, audit row and durable `app_meta.last_change_at` are part of the same transaction.
 
-Emergency SQLite fallback after cutover requires a second explicit token:
-```toml
-[database]
-production_backend = "sqlite"
-cutover_confirm = "POSTGRESQL_PRODUCTION"
-fallback_confirm = "SQLITE_EMERGENCY_FALLBACK"
-```
+### Reads
+`read_connect()` uses:
+- normal SQLite read connection in SQLite mode
+- `PostgresConnectionAdapter(read_only=True)` in PostgreSQL mode
 
-No runtime path catches a PostgreSQL failure and silently opens SQLite.
+PostgreSQL read-only checkouts temporarily use autocommit. This avoids opening a transaction only to SELECT and then paying a trailing COMMIT/ROLLBACK network round-trip.
 
-## PostgreSQL compatibility layer
+The adapter refuses DML through a read-only checkout.
 
-`logbook_core.db_runtime.PostgresConnectionAdapter` provides the small sqlite-like API surface used by the app:
-- `execute`
-- `executemany`
-- `commit`
-- `rollback`
-- context manager
-- sqlite-style mapping/integer row access
-- backend-neutral generated IDs
-- backend-neutral DataFrame reads
+## Connection pooling
 
-The adapter translates qmark parameters to Psycopg parameters and preserves literal question marks. It also escapes SQL modulo operators for Psycopg and normalizes `CURRENT_TIMESTAMP` assignments into the TEXT timestamp schema used by the migrated data model.
+`logbook_core.postgres_runtime.get_postgres_pool()` owns one process-local Psycopg pool per effective DSN/pool configuration.
 
-## Cutover lifecycle
+Default deployment settings:
+- min pool: 0
+- max pool: 4
+- connection timeout: 5 seconds
 
-The PostgreSQL lifecycle is serialized with the shared advisory lock:
+The pool is process-local. Runtime metrics are also process-local and diagnostic only.
 
-`logbook-postgres-lifecycle`
+## Runtime performance instrumentation
 
-Operations under this lock:
-1. first shadow migration
-2. shadow refresh
-3. CUTOVER READY marker
-4. first PostgreSQL production activation
+`logbook_core.runtime_metrics` stores bounded in-memory event deques.
 
-### Shadow refresh invariant
+Recorded:
+- query operation/table tag
+- duration
+- success/failure
+- returned rowcount where available
+- batch size
+- pool checkout duration
+- active-page render duration
 
-Refresh may delete PostgreSQL rows only after:
-- target is `shadow_mode=1`
-- shadow protocol matches
-- `production_mode != 1`
-- `production_cutover_at` is empty
+Not recorded:
+- SQL parameters
+- note contents
+- passwords
+- DSNs
+- user-entered values
 
-The delete + copy + sequence repair + validation are one PostgreSQL transaction. Any failure restores the prior shadow.
+This is deliberately lightweight and has no database writes.
 
-A target previously activated as production can never be refreshed by the shadow tool.
+## PostgreSQL diagnostics
 
-## CUTOVER READY
+Heavy Admin diagnostics are explicit:
+- table counts
+- relation/index sizes
+- pg_stat_user_tables data
+- lifecycle metadata
 
-CUTOVER READY is stored only after a current deep MATCH.
+Opening normal application pages does not execute these diagnostics.
 
-The gate records:
-- source watermark
-- verification time
-- deep-verification marker
-- stable aggregate fingerprint of source table fingerprints
+`postgres_table_counts()` batches table counts rather than issuing N separate network queries.
 
-First PostgreSQL startup re-checks the SQLite source watermark before writing production lifecycle metadata.
+## Cache model
 
-## Deep verification semantics
+User-scoped cached functions accept explicit `user_id` keys.
 
-Deep SHA-256 comparison includes durable migrated application data.
+Important principles:
+- no implicit-current-user cache functions
+- airport search index is keyed by user
+- rendered Streamlit UI helpers are not cached
+- durable writes invalidate the smallest practical user cache surface
+- global Admin aggregate overview has a short 30-second cache and is explicitly invalidated on data mutations
 
-Excluded:
-- PostgreSQL-only `shadow_*`, `cutover_*` and `production_*` app metadata
-- `user_credentials.last_login_at`
+## Failure model
 
-`last_login_at` is deliberately volatile and can change merely because the user logged in after creating the shadow. Password hashes, credential creation/update metadata, users, settings, flights, aircraft, rates, custom airports, tracks, points and audit content remain covered.
+PostgreSQL production failures must remain visible.
 
-## Audit and change watermark
+Critical reads re-raise production database errors rather than returning:
+- empty DataFrames
+- zero counters
+- fallback pilot profiles
+- missing custom airports
 
-For PostgreSQL production, `record_audit()` is strict: the business mutation, audit event and `app_meta.last_change_at` update are part of the same transaction. Audit failure aborts the business change.
+`main()` provides a controlled database-error boundary around authentication and the active page. A database outage does not silently log an authenticated user out and never changes the configured backend.
 
-Login timestamp updates are operational and do not advance the durable change watermark.
+## PostgreSQL Admin isolation
 
-Account creation/activation explicitly advances `last_change_at`.
+Migration/shadow/cutover controls live in `logbook_ui/postgres_admin.py`.
 
-## Emergency fallback divergence
+The module is imported lazily only from Admin → PostgreSQL. Normal Dashboard / Flights / Map / Profile execution does not import migration and shadow-verification tooling.
 
-SQLite is frozen at the cutover baseline once PostgreSQL becomes production.
-
-If emergency fallback is enabled and a business write advances SQLite `last_change_at`, a later PostgreSQL rejoin is refused. This prevents silently discarding fallback-era writes.
-
-No automatic merge/reconciliation is implemented in v0.72.
-
-## Backup boundary
-
-While SQLite is production:
-- GitHub SQLite backup can run as before
-- full SQLite snapshot/restore is available to admin
-
-While PostgreSQL is production:
-- GitHub SQLite auto-backup is disabled
-- full SQLite restore is blocked
-- SQLite remains downloadable only as a clearly labelled frozen fallback baseline
-- per-user portable ZIP backup/restore works against PostgreSQL
-
-Provider-level PostgreSQL backup/restore remains outside the application runtime.
+The recovery tooling is intentionally retained after production cutover but kept outside the hot path.
 
 ## Schemas
 
 - SQLite schema: 10
 - PostgreSQL schema: 1
-- shadow protocol: 1
+- PostgreSQL shadow protocol: 1
 - production cutover protocol: 1

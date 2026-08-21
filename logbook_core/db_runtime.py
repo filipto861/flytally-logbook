@@ -4,12 +4,14 @@ from dataclasses import dataclass
 import os
 import re
 import sqlite3
+import time
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 import pandas as pd
 
 from .database_foundation import PostgresTargetConfig, postgres_target_config
 from .postgres_runtime import get_postgres_pool
+from .runtime_metrics import record_checkout_event, record_query_event
 
 
 POSTGRES_CUTOVER_CONFIRM = "POSTGRESQL_PRODUCTION"
@@ -241,28 +243,61 @@ class PostgresCursorAdapter:
 
 
 class PostgresConnectionAdapter:
-    """Small sqlite-like facade over a pooled psycopg connection.
+    """Small sqlite-like facade over a pooled Psycopg connection.
 
-    Application SQL can keep qmark placeholders while the adapter translates
-    them to psycopg parameters. It intentionally exposes only the subset of the
-    sqlite connection API used by Logbook.
+    `read_only=True` temporarily borrows the pooled connection in PostgreSQL
+    autocommit mode. Pure SELECT helpers therefore avoid the extra COMMIT/
+    ROLLBACK network round-trip that the v0.72 transactional adapter paid after
+    every cached read. Write paths keep the original explicit transaction model.
     """
 
     backend = "postgresql"
+    _WRITE_OPERATIONS = frozenset({
+        "INSERT", "UPDATE", "DELETE", "MERGE", "CREATE", "ALTER", "DROP",
+        "TRUNCATE", "VACUUM", "ANALYZE", "REINDEX", "GRANT", "REVOKE",
+    })
 
-    def __init__(self, config: PostgresTargetConfig):
+    def __init__(self, config: PostgresTargetConfig, *, read_only: bool = False):
         self._config = config
         self._pool = get_postgres_pool(config)
+        self._read_only = bool(read_only)
+        started = time.perf_counter()
         try:
             self._connection = self._pool.getconn(timeout=float(config.connect_timeout_s))
+            record_checkout_event(
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=True,
+            )
         except Exception as exc:
+            record_checkout_event(
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=False,
+            )
             raise PostgresDatabaseError(f"PostgreSQL connection failed: {exc}") from exc
+
         self._closed = False
         self._total_changes = 0
+        self._executed_any = False
+        self._dirty = False
+        if self._read_only:
+            try:
+                self._connection.autocommit = True
+            except Exception as exc:
+                try:
+                    self._pool.putconn(self._connection)
+                finally:
+                    self._closed = True
+                raise PostgresDatabaseError(
+                    f"PostgreSQL read-only checkout initialization failed: {exc}"
+                ) from exc
 
     @property
     def total_changes(self) -> int:
         return int(self._total_changes)
+
+    @property
+    def read_only(self) -> bool:
+        return bool(self._read_only)
 
     def _translate(self, sql: str) -> str:
         translated = _translate_qmark_placeholders(sql)
@@ -288,44 +323,118 @@ class PostgresConnectionAdapter:
             raise
         raise PostgresDatabaseError(str(exc)) from exc
 
+    def _operation(self, sql: str) -> str:
+        raw = str(sql or "").lstrip()
+        match = re.match(r"([A-Za-z]+)", raw)
+        operation = match.group(1).upper() if match else "UNKNOWN"
+        # Logbook CTEs are read queries. Production DML helpers intentionally
+        # use explicit INSERT/UPDATE/DELETE statements, which keeps this guard
+        # simple and avoids matching write-like words inside SQL string literals.
+        return "SELECT" if operation == "WITH" else operation
+
+    def _query_tag(self, sql: str) -> str:
+        raw = re.sub(r"\s+", " ", str(sql or "")).strip()
+        if not raw:
+            return "UNKNOWN"
+        operation = self._operation(raw)
+        table = ""
+        patterns = {
+            "SELECT": r"\bFROM\s+\"?([a-zA-Z_][\w]*)",
+            "INSERT": r"\bINTO\s+\"?([a-zA-Z_][\w]*)",
+            "UPDATE": r"\bUPDATE\s+\"?([a-zA-Z_][\w]*)",
+            "DELETE": r"\bFROM\s+\"?([a-zA-Z_][\w]*)",
+        }
+        match = re.search(patterns.get(operation, r"$^"), raw, re.IGNORECASE)
+        if match:
+            table = str(match.group(1)).lower()
+        return f"{operation} {table}".strip()[:80]
+
+    def _is_write_sql(self, sql: str) -> bool:
+        return self._operation(sql) in self._WRITE_OPERATIONS
+
     def execute(self, sql: str, params: Sequence[Any] | Mapping[str, Any] | None = None) -> PostgresCursorAdapter:
+        if self._read_only and self._is_write_sql(sql):
+            raise PostgresDatabaseError("Write SQL nelze spustit přes read-only PostgreSQL connection.")
+
+        started = time.perf_counter()
+        tag = self._query_tag(sql)
         try:
             cursor = self._connection.execute(self._translate(sql), params or ())
-            head = str(sql).lstrip().split(None, 1)[0].upper() if str(sql).strip() else ""
-            if head in {"INSERT", "UPDATE", "DELETE"}:
+            self._executed_any = True
+            if self._is_write_sql(sql):
+                self._dirty = True
                 try:
                     if int(cursor.rowcount) > 0:
                         self._total_changes += int(cursor.rowcount)
                 except Exception:
                     pass
+            record_query_event(
+                tag=tag,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=True,
+                rows=(int(cursor.rowcount) if getattr(cursor, "rowcount", -1) not in (-1, None) else None),
+            )
             return PostgresCursorAdapter(cursor)
         except Exception as exc:
+            record_query_event(
+                tag=tag,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=False,
+            )
             self._raise(exc)
             raise AssertionError("unreachable")
 
     def executemany(self, sql: str, seq_of_params: Iterable[Sequence[Any]]) -> PostgresCursorAdapter:
+        if self._read_only:
+            raise PostgresDatabaseError("executemany nelze spustit přes read-only PostgreSQL connection.")
+        batch_size = len(seq_of_params) if hasattr(seq_of_params, "__len__") else None
+        started = time.perf_counter()
+        tag = self._query_tag(sql) + " MANY"
         try:
             cursor = self._connection.cursor()
             cursor.executemany(self._translate(sql), seq_of_params)
+            self._executed_any = True
+            self._dirty = True
             try:
                 if int(cursor.rowcount) > 0:
                     self._total_changes += int(cursor.rowcount)
             except Exception:
                 pass
+            record_query_event(
+                tag=tag,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=True,
+                rows=(int(cursor.rowcount) if getattr(cursor, "rowcount", -1) not in (-1, None) else None),
+                batch_size=batch_size,
+            )
             return PostgresCursorAdapter(cursor)
         except Exception as exc:
+            record_query_event(
+                tag=tag,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                success=False,
+                batch_size=batch_size,
+            )
             self._raise(exc)
             raise AssertionError("unreachable")
 
     def commit(self) -> None:
+        if self._read_only:
+            return
         try:
             self._connection.commit()
+            self._executed_any = False
+            self._dirty = False
         except Exception as exc:
             self._raise(exc)
 
     def rollback(self) -> None:
+        if self._read_only:
+            return
         try:
             self._connection.rollback()
+            self._executed_any = False
+            self._dirty = False
         except Exception as exc:
             self._raise(exc)
 
@@ -333,12 +442,30 @@ class PostgresConnectionAdapter:
         if self._closed:
             return
         try:
-            # A borrowed pooled connection must never return with an open failed
-            # transaction. Rollback is harmless after an already committed tx.
-            try:
-                self._connection.rollback()
-            except Exception:
-                pass
+            if self._read_only:
+                try:
+                    self._connection.autocommit = False
+                except Exception:
+                    # If restoring pool state fails, mark the physical connection
+                    # broken and return it to the pool so pool accounting remains
+                    # correct and a replacement can be opened later.
+                    try:
+                        self._connection.close()
+                    finally:
+                        try:
+                            self._pool.putconn(self._connection)
+                        except Exception:
+                            pass
+                        return
+            elif self._executed_any:
+                # Pure SELECTs on a transactional connection leave a transaction
+                # open; clean it before returning the connection to the pool.
+                try:
+                    self._connection.rollback()
+                except Exception:
+                    pass
+                self._executed_any = False
+                self._dirty = False
             self._pool.putconn(self._connection)
         finally:
             self._closed = True
@@ -348,9 +475,16 @@ class PostgresConnectionAdapter:
 
     def __exit__(self, exc_type, exc, tb) -> bool:
         try:
-            if exc_type is None:
+            if self._read_only:
+                return False
+            if exc_type is not None:
+                if self._executed_any:
+                    self.rollback()
+            elif self._dirty:
+                # Preserve v0.72 semantics for a write helper that forgot an
+                # explicit commit, but do not COMMIT after pure SELECTs.
                 self.commit()
-            else:
+            elif self._executed_any:
                 self.rollback()
         finally:
             self.close()
