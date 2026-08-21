@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./v082.css";
+import "./v083.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
   title: "Letový zápisník",
   description: "Elektronický letový zápisník",
+  icons:{icon:"/icon.svg",shortcut:"/icon.svg",apple:"/icon.svg"},
 };
 
 export const viewport: Viewport = {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MonthlyChart } from "@/components/monthly-chart";
+import { DashboardDetails } from "@/components/dashboard-details";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardData } from "@/lib/data/dashboard";
 
@@ -24,11 +25,6 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       <Link href="/map"><span>GPS tracky</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} uložených tracků</small></Link>
     </section>
     <MonthlyChart data={data.monthly}/>
-    <details className="panel details-panel"><summary>Podrobné statistiky</summary>
-      <div className="detail-stats">
-        <div className="mini-metrics"><div><span>Čas ve vzduchu</span><b>{formatDuration(data.airMinutes)}</b></div><div><span>PIC celkem</span><b>{formatDuration(data.picMinutes)}</b></div><div><span>DUAL</span><b>{formatDuration(data.dualMinutes)}</b></div><div><span>Safety pilot</span><b>{formatDuration(data.safetyMinutes)}</b></div><div><span>Náklady</span><b>{Math.round(data.cost).toLocaleString('cs-CZ')} Kč</b></div></div>
-        <div className="stats-columns"><section><h3>Roční přehled</h3><table><thead><tr><th>Rok</th><th>Lety</th><th>Čas</th><th>Přistání</th></tr></thead><tbody>{data.yearly.map(r=><tr key={r.year}><td>{r.year}</td><td>{r.flights}</td><td>{formatDuration(r.minutes)}</td><td>{r.landings}</td></tr>)}</tbody></table></section><section><h3>Nejčastější letadla</h3><table><thead><tr><th>Registrace</th><th>Lety</th><th>Čas</th></tr></thead><tbody>{data.topAircraft.map(r=><tr key={r.registration}><td>{r.registration}</td><td>{r.flights}</td><td>{formatDuration(r.minutes)}</td></tr>)}</tbody></table></section><section><h3>Nejčastější trasy</h3><table><thead><tr><th>Trasa</th><th>Lety</th><th>Čas</th></tr></thead><tbody>{data.topRoutes.map(r=><tr key={r.route}><td>{r.route}</td><td>{r.flights}</td><td>{formatDuration(r.minutes)}</td></tr>)}</tbody></table></section></div>
-      </div>
-    </details>
+    <DashboardDetails data={data}/>
   </>;
 }
