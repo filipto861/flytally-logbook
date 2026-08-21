@@ -10,7 +10,8 @@ export async function getAircraftOptions(userId: number) {
            COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, 'BLOCK') AS billing_basis,
            COALESCE(r.price_per_hour, a.default_price_per_hour, 0) AS price_per_hour
     FROM aircraft a LEFT JOIN LATERAL (
-      SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(registration)=UPPER(a.registration)
+      SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(a.registration))
+        AND (valid_from IS NULL OR valid_from='' OR valid_from<=CURRENT_DATE::text)
       ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 1
     ) r ON TRUE
     WHERE a.user_id = ${userId} AND active = 1 ORDER BY a.registration
