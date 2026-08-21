@@ -11,7 +11,7 @@ type Metric=(typeof choices)[number][0];
 const duration=(minutes:number)=>`${Math.floor(minutes/60)}:${String(Math.round(minutes%60)).padStart(2,"0")}`;
 const monthLabel=(month:string)=>{const [year="",value=""]=month.split("-");return `${value}/${year.slice(2)}`};
 
-export function MonthlyChart({data}:{data:MonthlyPoint[]}){
+export function MonthlyChart({data,totalFlights,invalidDates}:{data:MonthlyPoint[];totalFlights:number;invalidDates:number}){
   const [metric,setMetric]=useState<Metric>("total");
   const visible=data.slice(-18),values=visible.map(point=>Number(point[metric])||0),max=Math.max(1,...values);
   const total=values.reduce((sum,value)=>sum+value,0),bestIndex=values.indexOf(Math.max(...values));
@@ -32,6 +32,7 @@ export function MonthlyChart({data}:{data:MonthlyPoint[]}){
         </svg>
         <div className="chart-axis-labels" style={{gridTemplateColumns:`repeat(${visible.length},minmax(0,1fr))`}}>{visible.map((point,index)=><span key={point.month} className={index%Math.max(1,Math.ceil(visible.length/9))===0||index===visible.length-1?"":"axis-hidden"}>{monthLabel(point.month)}</span>)}</div>
       </div>
-    </>:<p className="empty-state">Pro toto období zatím nejsou žádné platné letové záznamy.</p>}
+    </>:<div className="chart-empty-state"><strong>{totalFlights?"Letové záznamy se nepodařilo zařadit do měsíců":"Pro toto období zatím nejsou žádné lety"}</strong><p>{totalFlights?`Ve vybraném období je ${totalFlights} letů, ale nemají použitelné datum pro graf.`:"Po přidání letu se zde automaticky zobrazí měsíční vývoj."}</p></div>}
+    {invalidDates?<p className="chart-warning">⚠ {invalidDates} {invalidDates===1?"let nemá":"lety nemají"} platné datum a {invalidDates===1?"není":"nejsou"} zahrnuto do časového grafu.</p>:null}
   </section>;
 }
