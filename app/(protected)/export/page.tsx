@@ -1,0 +1,1 @@
+export default function ExportPlaceholder() { return <section className="panel"><p className="eyebrow">MIGRACE</p><h1>Export</h1><p className="muted">Excel, tisk a zálohy budou připojeny po dokončení zápisu a editace letů.</p></section>; }
