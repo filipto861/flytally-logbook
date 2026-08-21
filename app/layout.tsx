@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 export const metadata: Metadata = {
   title: "Letový zápisník",
   description: "Elektronický letový zápisník",
-  icons:{icon:"/icon.svg",shortcut:"/icon.svg",apple:"/icon.svg"},
+  icons:{icon:"/logbook_icon_32.png",shortcut:"/logbook_icon_32.png",apple:"/logbook_icon_32.png"},
 };
 
 export const viewport: Viewport = {

@@ -9,7 +9,7 @@ export default async function LoginPage() {
   return (
     <main className="login-shell">
       <section className="login-card">
-        <div className="brand-mark"><img src="/icon.svg" alt="Logo Letového zápisníku" /></div>
+        <div className="brand-mark"><img src="/logbook_icon_32.png" alt="Logo Letového zápisníku" /></div>
         <p className="eyebrow">PILOT LOGBOOK</p>
         <h1>Letový zápisník</h1>
         <p className="muted">Přihlaste se ke svému pilotnímu profilu.</p>
