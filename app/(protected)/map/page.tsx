@@ -1,0 +1,1 @@
+export default function MapPlaceholder() { return <section className="panel"><p className="eyebrow">MIGRACE</p><h1>Mapa</h1><p className="muted">Mapy budou načítány dynamicky pouze při otevření stránky, aby nezpomalovaly zbytek aplikace.</p></section>; }
