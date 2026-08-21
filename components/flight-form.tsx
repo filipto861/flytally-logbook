@@ -1,40 +1,24 @@
 "use client";
-
-import { useActionState, useMemo, useState } from "react";
+import { useActionState,useMemo,useState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { FlightRow } from "@/lib/data/flights";
 import type { FlightActionState } from "@/app/(protected)/flights/actions";
-import { BILLING, CLASSES, EVIDENCE, ROLES } from "@/lib/flight-input";
-
-type Action = (state: FlightActionState, data: FormData) => Promise<FlightActionState>;
-type Initial = Partial<FlightRow> & Record<string, unknown>;
-
-function Submit() { const { pending } = useFormStatus(); return <button className="primary-button" disabled={pending}>{pending ? "Ukládám…" : "Uložit let"}</button>; }
-
-export function FlightForm({ action, aircraft, initial = {} }: { action: Action; aircraft: AircraftOption[]; initial?: Initial }) {
-  const [state, formAction] = useActionState(action, {});
-  const [registration, setRegistration] = useState(String(initial.registration ?? aircraft[0]?.registration ?? ""));
-  const selected = useMemo(() => aircraft.find((item) => item.registration === registration), [aircraft, registration]);
-  const field = (name: string, fallback = "") => String(initial[name] ?? fallback);
-  return <form action={formAction} className="flight-form"><div className="form-grid">
-    <label>Datum<input name="date" type="date" defaultValue={field("date", new Date().toISOString().slice(0,10))} required /></label>
-    <label>Imatrikulace<select name="registration" value={registration} onChange={(e) => setRegistration(e.target.value)} required><option value="">Vyberte</option>{aircraft.map((a) => <option key={a.registration}>{a.registration}</option>)}</select></label>
-    <label>Typ letadla<input name="aircraftType" defaultValue={field("aircraft_type", selected?.aircraft_type)} /></label>
-    <label>Třída<select name="aircraftClass" defaultValue={field("aircraft_class", selected?.aircraft_class || "ULL")}>{CLASSES.map((x) => <option key={x}>{x}</option>)}</select></label>
-    <label>Evidence<select name="evidence" defaultValue={field("evidence", selected?.evidence || "ULL")}>{EVIDENCE.map((x) => <option key={x}>{x}</option>)}</select></label>
-    <label>Funkce<select name="role" defaultValue={field("role", selected?.default_role || "PIC")}>{ROLES.map((x) => <option key={x}>{x}</option>)}</select></label>
-    <label>Odlet<input name="departure" defaultValue={field("departure")} placeholder="LKLT" /></label>
-    <label>Přílet<input name="arrival" defaultValue={field("arrival")} placeholder="LKLT" /></label>
-    <label>Off-block<input name="offBlock" type="time" defaultValue={field("off_block")} /></label>
-    <label>Vzlet<input name="takeoff" type="time" defaultValue={field("takeoff")} /></label>
-    <label>Přistání<input name="landing" type="time" defaultValue={field("landing")} /></label>
-    <label>On-block<input name="onBlock" type="time" defaultValue={field("on_block")} /></label>
-    <label>Počet přistání<input name="starts" type="number" min="0" max="99" defaultValue={field("starts", "1")} /></label>
-    <label>Účtování<select name="billingBasis" defaultValue={field("billing_basis", selected?.billing_basis || "BLOCK")}>{BILLING.map((x) => <option key={x}>{x}</option>)}</select></label>
-    <label>Velitel<input name="commander" defaultValue={field("commander")} /></label>
-    <label>Instruktor<input name="instructor" defaultValue={field("instructor")} /></label>
-    <label className="wide">Úloha<input name="task" defaultValue={field("task")} /></label>
-    <label className="wide">Poznámka<textarea name="note" rows={4} defaultValue={field("note")} /></label>
-  </div>{state.error ? <p className="form-error" role="alert">{state.error}</p> : null}<div className="form-actions"><Submit /></div></form>;
+import { BILLING,CLASSES,EVIDENCE,ROLES } from "@/lib/flight-input";
+type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;type Initial=Partial<FlightRow>&Record<string,unknown>;
+function addTime(value:string,minutes:number){if(!/^\d\d:\d\d$/.test(value))return"";const total=(Number(value.slice(0,2))*60+Number(value.slice(3))+minutes+1440)%1440;return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
+function Submit({another=false}:{another?:boolean}){const{pending}=useFormStatus();return <button className={another?"secondary-link":"primary-button"} name="intent" value={another?"another":"save"} disabled={pending}>{pending?"Ukládám…":another?"Uložit a přidat další":"Uložit let"}</button>}
+export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>}){
+ const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
+ const[registration,setRegistration]=useState(field("registration",aircraft[0]?.registration||""));const selected=useMemo(()=>aircraft.find(x=>x.registration===registration),[aircraft,registration]);
+ const[type,setType]=useState(field("aircraft_type",selected?.aircraft_type||"")),[aircraftClass,setClass]=useState(field("aircraft_class",selected?.aircraft_class||"ULL")),[evidence,setEvidence]=useState(field("evidence",selected?.evidence||"ULL")),[role,setRole]=useState(field("role",selected?.default_role||"PIC")),[billing,setBilling]=useState(field("billing_basis",selected?.billing_basis||"BLOCK"));
+ const[departure,setDeparture]=useState(field("departure")),[arrival,setArrival]=useState(field("arrival")),[off,setOff]=useState(field("off_block")),[takeoff,setTakeoff]=useState(field("takeoff")),[landing,setLanding]=useState(field("landing")),[on,setOn]=useState(field("on_block")),[duration,setDuration]=useState(60);
+ const pickAircraft=(reg:string)=>{setRegistration(reg);const a=aircraft.find(x=>x.registration===reg);if(a){setType(a.aircraft_type||"");setClass(a.aircraft_class||"ULL");setEvidence(a.evidence||"ULL");setRole(a.default_role||"PIC");setBilling(a.billing_basis||"BLOCK")}};
+ const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("cs-CZ",{hour:"2-digit",minute:"2-digit"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
+ return <form action={formAction} className="flight-form">{!editing?<details className="quick-tools"><summary>Rychlé doplnění</summary><div className="quick-tools-grid"><label>Délka letu (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Doplnit časy ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Obrátit trasu</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}<div className="form-grid">
+  <label>Datum<input name="date" type="date" defaultValue={field("date",new Date().toISOString().slice(0,10))} required/></label><label>Imatrikulace<select name="registration" value={registration} onChange={e=>pickAircraft(e.target.value)} required><option value="">Vyberte</option>{aircraft.map(a=><option key={a.registration}>{a.registration}</option>)}</select><small><Link href="/database">Spravovat letadla</Link></small></label><label>Typ letadla<input name="aircraftType" value={type} onChange={e=>setType(e.target.value)}/></label><label>Třída<select name="aircraftClass" value={aircraftClass} onChange={e=>setClass(e.target.value)}>{CLASSES.map(x=><option key={x}>{x}</option>)}</select></label><label>Evidence<select name="evidence" value={evidence} onChange={e=>setEvidence(e.target.value)}>{EVIDENCE.map(x=><option key={x}>{x}</option>)}</select></label><label>Funkce<select name="role" value={role} onChange={e=>setRole(e.target.value)}>{ROLES.map(x=><option key={x}>{x}</option>)}</select></label>
+  <label>Odlet<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT"/></label><label>Přílet<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT"/></label><label>Off-block<input name="offBlock" type="time" value={off} onChange={e=>setOff(e.target.value)}/></label><label>Vzlet<input name="takeoff" type="time" value={takeoff} onChange={e=>setTakeoff(e.target.value)}/></label><label>Přistání<input name="landing" type="time" value={landing} onChange={e=>setLanding(e.target.value)}/></label><label>On-block<input name="onBlock" type="time" value={on} onChange={e=>setOn(e.target.value)}/></label>
+  <label>Počet přistání<input name="starts" type="number" min="0" max="99" defaultValue={field("starts","1")}/></label><label>Účtování<select name="billingBasis" value={billing} onChange={e=>setBilling(e.target.value)}>{BILLING.map(x=><option key={x}>{x}</option>)}</select></label><label>Velitel<input name="commander" defaultValue={field("commander")}/></label><label>Instruktor<input name="instructor" defaultValue={field("instructor")}/></label><label className="wide">Úloha<input name="task" defaultValue={field("task")}/></label><label className="wide">Poznámka<textarea name="note" rows={4} defaultValue={field("note")}/></label>
+ </div>{state.error?<p className="form-error" role="alert">{state.error}</p>:null}<div className="form-actions"><Submit/>{!editing?<Submit another/>:null}</div></form>
 }

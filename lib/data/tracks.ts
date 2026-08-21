@@ -27,8 +27,10 @@ function decodePoints(payload: unknown, maxPoints: number): TrackPoint[] {
   } catch { return []; }
 }
 
-export async function getOverviewTracks(userId: number, limit = 100) {
+export type MapFilters={registration?:string;evidence?:string;airport?:string;route?:string;year?:string};
+export async function getOverviewTracks(userId: number, limit = 100,filters:MapFilters={}) {
   const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+  const registration=filters.registration?.trim()||null,evidence=filters.evidence?.trim()||null,airport=filters.airport?.trim()||null,route=filters.route?.trim()||null,year=filters.year?.trim()||null;
   const rows = await sql`
     SELECT t.id, t.flight_id, t.overview_coordinates_json, COALESCE(t.distance_km,0) AS distance_km,
            f.date, COALESCE(f.registration,'') AS registration, COALESCE(f.departure,'') AS departure,
@@ -38,6 +40,11 @@ export async function getOverviewTracks(userId: number, limit = 100) {
     FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id
     WHERE t.user_id=${userId} AND t.overview_coordinates_json IS NOT NULL
       AND t.overview_coordinates_json<>''
+      AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text))
+      AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text))
+      AND (${airport}::text IS NULL OR UPPER(f.departure)=UPPER(${airport}::text) OR UPPER(f.arrival)=UPPER(${airport}::text))
+      AND (${route}::text IS NULL OR UPPER(CONCAT(f.departure,'→',f.arrival))=UPPER(${route}::text))
+      AND (${year}::text IS NULL OR EXTRACT(YEAR FROM f.date::date)::text=${year}::text)
     ORDER BY f.date DESC, f.off_block DESC NULLS LAST, t.id DESC LIMIT ${safeLimit}
   ` as Array<Record<string, unknown>>;
   const tracks: MapTrack[] = rows.map((row) => ({
@@ -48,6 +55,8 @@ export async function getOverviewTracks(userId: number, limit = 100) {
   })).filter((track) => track.points.length >= 2);
   return { tracks, total: Number(rows[0]?.total_tracks ?? 0), totalDistanceKm: Number(rows[0]?.total_distance_km ?? 0) };
 }
+
+export async function getMapFilterOptions(userId:number){const [regs,evidence,airports,routes,years]=await Promise.all([sql`SELECT DISTINCT UPPER(TRIM(registration)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(registration),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(evidence)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(evidence),'') IS NOT NULL ORDER BY 1`,sql`SELECT value FROM (SELECT UPPER(TRIM(departure)) value FROM flights WHERE user_id=${userId} UNION SELECT UPPER(TRIM(arrival)) value FROM flights WHERE user_id=${userId}) a WHERE value<>'' ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(departure))||'→'||UPPER(TRIM(arrival)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(departure),'') IS NOT NULL AND NULLIF(TRIM(arrival),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT EXTRACT(YEAR FROM date::date)::int value FROM flights WHERE user_id=${userId} ORDER BY 1 DESC`]) as Array<Array<Record<string,unknown>>>;const v=(r:Array<Record<string,unknown>>)=>r.map(x=>String(x.value??""));return{registrations:v(regs),evidence:v(evidence),airports:v(airports),routes:v(routes),years:v(years)}}
 
 export async function getFlightTracks(userId: number, flightId: number) {
   const rows = await sql`
