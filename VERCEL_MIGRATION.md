@@ -13,6 +13,8 @@ schema; no destructive database migration is required for this foundation.
 - Aircraft, historical rates, custom airports, profile and expiries.
 - Excel-compatible, CSV and portable JSON account exports.
 - Collapsible responsive navigation and mobile layout.
+- Smart KML can conservatively split multi-flight files at long timestamp gaps.
+- Dedicated landscape print/PDF logbook layout.
 
 ## Vercel configuration
 

@@ -1,0 +1,11 @@
+import { PrintButton } from "@/components/print-button";
+import { requireUser } from "@/lib/auth/require-user";
+import { formatDuration } from "@/lib/data/dashboard";
+import { sql } from "@/lib/db";
+export const metadata={title:"Tisk letového deníku"};
+export default async function PrintPage(){
+  const {userId}=await requireUser();
+  const rows=await sql`SELECT date,evidence,registration,aircraft_type,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,note,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes FROM flights WHERE user_id=${userId} ORDER BY date,off_block,id` as Array<Record<string,unknown>>;
+  const minutes=rows.reduce((n,r)=>n+Number(r.block_minutes||0),0),landings=rows.reduce((n,r)=>n+Number(r.starts||0),0);
+  return <div className="print-logbook"><header><div><p className="eyebrow">PILOT LOGBOOK</p><h1>Letový deník</h1></div><PrintButton/></header><section className="print-totals"><span>Lety <b>{rows.length}</b></span><span>BLOCK <b>{formatDuration(minutes)}</b></span><span>Přistání <b>{landings}</b></span></section><table><thead><tr><th>Datum</th><th>Letadlo</th><th>Trasa</th><th>BLOCK</th><th>AIR</th><th>Čas</th><th>Funkce</th><th>Přist.</th><th>Velitel / instruktor</th><th>Úloha / poznámka</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i}><td>{new Date(`${r.date}T00:00:00`).toLocaleDateString('cs-CZ')}</td><td><b>{String(r.registration||'')}</b><small>{String(r.aircraft_type||'')} · {String(r.evidence||'')}</small></td><td>{String(r.departure||'')}–{String(r.arrival||'')}</td><td>{String(r.off_block||'')}–{String(r.on_block||'')}</td><td>{String(r.takeoff||'')}–{String(r.landing||'')}</td><td><b>{formatDuration(Number(r.block_minutes||0))}</b></td><td>{String(r.role||'')}</td><td>{String(r.starts||0)}</td><td>{String(r.commander||'')}<small>{String(r.instructor||'')}</small></td><td>{String(r.task||'')}<small>{String(r.note||'')}</small></td></tr>)}</tbody></table><footer>Vygenerováno {new Date().toLocaleDateString('cs-CZ')} · Letový zápisník</footer></div>;
+}
