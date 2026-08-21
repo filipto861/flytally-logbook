@@ -1,14 +1,7 @@
 # Letový zápisník
 
-Current release: **v0.73.3.1 – Theme Runtime Hotfix**
+Current release: **v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path**
 
-
-## v0.73.3.1 – Theme Runtime Hotfix
-
-- fixes unescaped CSS braces in the v0.73.3 lightweight Dashboard chart
-- fixes Python 3.14 `return in finally` SyntaxWarning in PostgreSQL connection cleanup
-- retains all v0.73.3 GPS/Dashboard performance changes and automatic schema upgrades
-- no additional database migration and no Secrets change
 
 ## v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path
 
@@ -144,3 +137,13 @@ This preserves the v0.72 fail-closed principle: an outage is visible and the app
 Keep the existing `.git` directory and `data/logbook.sqlite` fallback baseline when replacing files.
 
 Real PostgreSQL/GitHub/auth credentials belong only in Streamlit Secrets and must never be committed to GitHub.
+
+
+## v0.73.3.2 – Map Latency Rescue
+
+- removes synchronous GPS overview backfill writes from Map navigation
+- one-time overview backfill runs server-side at PostgreSQL startup
+- GPS Map hot path uses one PostgreSQL SELECT for selected track metadata + overview geometry
+- full GPS track table loads only on explicit request
+- no schema version bump beyond v0.73.3 and no Secrets change
+

@@ -28,7 +28,7 @@ def _function(source: str, name: str) -> str:
 
 
 def test_release_versions_and_schema_upgrade():
-    assert APP_VERSION == "v0.73.3.1"
+    assert APP_VERSION == "v0.73.3.2"
     assert DB_SCHEMA_VERSION == 11
     assert POSTGRES_FOUNDATION_VERSION == 2
     assert POSTGRES_SCHEMA_VERSION == 2
@@ -83,16 +83,10 @@ def test_new_tracks_store_overview_at_import_time():
 
 def test_map_warm_path_reads_only_small_overview_payload():
     source = _source()
-    block = _function(source, "read_track_geometry_payloads")
-    first_select = block[:block.index("if missing:")]
-    assert "SELECT id, overview_coordinates_json" in first_select
-    assert "SELECT id, coordinates_json" not in first_select
-    assert "overview_version" in first_select
-    # Full payload remains a legacy-only branch.
-    legacy = block[block.index("if missing:"):]
-    assert "SELECT id, coordinates_json" in legacy
-    assert "UPDATE flight_tracks" in legacy
-
+    block = _function(source, "read_track_map_records_for_flights")
+    assert "overview_coordinates_json AS coordinates_json" in block
+    assert "FROM track_points" not in block
+    assert "UPDATE flight_tracks" not in block
 
 def test_dashboard_has_compact_postgres_dataset_and_session_hot_path():
     source = _source()

@@ -19,14 +19,15 @@ def _function(source: str, name: str) -> str:
 
 
 def test_release_version_without_schema_migration():
-    assert APP_VERSION == "v0.73.3.1"
+    assert APP_VERSION == "v0.73.3.2"
     assert DB_SCHEMA_VERSION == 11
 
 
 def test_overview_map_no_longer_reads_track_points():
     source = _source()
     block = _function(source, "read_track_map_records_for_flights")
-    assert "read_track_geometry_payloads(" in block
+    assert "overview_coordinates_json AS coordinates_json" in block
+    assert "read_track_geometry_payloads(" not in block
     assert "read_sampled_track_points(" not in block
     assert "_decode_points_for_map(" in block
 

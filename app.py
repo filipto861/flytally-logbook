@@ -1799,11 +1799,10 @@ def _track_ids_for_map(metadata: pd.DataFrame, mode: str) -> tuple[int, ...]:
 
 @st.cache_data(show_spinner=False, ttl=600)
 def read_track_geometry_payloads(track_ids: tuple[int, ...], user_id: int) -> dict[int, str]:
-    """Read tiny persistent overview geometry; lazily backfill legacy tracks once.
+    """Read only persistent lightweight overview geometry.
 
-    Normal warm-map navigation transfers only overview JSON (<=180 lat/lon points).
-    Legacy full coordinates_json is fetched only for tracks that have not yet
-    received the derived overview cache.
+    v0.73.3.2 forbids synchronous GPS backfill writes during Map navigation.
+    Legacy overviews are backfilled once at PostgreSQL startup.
     """
     ids = tuple(sorted({int(x) for x in track_ids if x is not None}))
     if not ids:
@@ -1813,66 +1812,21 @@ def read_track_geometry_payloads(track_ids: tuple[int, ...], user_id: int) -> di
     with read_connect() as con:
         rows = con.execute(
             f"""
-            SELECT id, overview_coordinates_json, COALESCE(overview_version, 0) AS overview_version
+            SELECT id, overview_coordinates_json
             FROM flight_tracks
-            WHERE user_id = ? AND id IN ({placeholders})
+            WHERE user_id = ?
+              AND id IN ({placeholders})
+              AND overview_version = ?
+              AND overview_coordinates_json IS NOT NULL
+              AND overview_coordinates_json <> ''
             ORDER BY id
             """,
-            (uid, *ids),
+            (uid, *ids, TRACK_OVERVIEW_VERSION),
         ).fetchall()
-
-    payloads: dict[int, str] = {}
-    missing: list[int] = []
-    for row in rows:
-        tid = int(row["id"])
-        payload = str(row["overview_coordinates_json"] or "")
-        version = int(row["overview_version"] or 0)
-        if payload and version == TRACK_OVERVIEW_VERSION:
-            payloads[tid] = payload
-        else:
-            missing.append(tid)
-
-    if missing:
-        missing_ph = ",".join("?" for _ in missing)
-        with read_connect() as con:
-            legacy_rows = con.execute(
-                f"""
-                SELECT id, coordinates_json
-                FROM flight_tracks
-                WHERE user_id = ? AND id IN ({missing_ph})
-                ORDER BY id
-                """,
-                (uid, *missing),
-            ).fetchall()
-
-        updates: list[tuple[str, int, int, int]] = []
-        for row in legacy_rows:
-            tid = int(row["id"])
-            try:
-                points = json.loads(row["coordinates_json"] or "[]")
-                if not isinstance(points, list):
-                    points = []
-            except Exception:
-                points = []
-            overview = encode_overview_track_points(
-                points, max_points=TRACK_OVERVIEW_MAX_POINTS
-            )
-            payloads[tid] = overview
-            updates.append((overview, TRACK_OVERVIEW_VERSION, tid, uid))
-
-        if updates:
-            with connect() as con:
-                con.executemany(
-                    """
-                    UPDATE flight_tracks
-                    SET overview_coordinates_json = ?, overview_version = ?
-                    WHERE id = ? AND user_id = ?
-                    """,
-                    updates,
-                )
-                con.commit()
-
-    return payloads
+    return {
+        int(row["id"]): str(row["overview_coordinates_json"] or "[]")
+        for row in rows
+    }
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -1959,46 +1913,62 @@ def _points_dataframe_to_json(points: pd.DataFrame, *, max_points: int) -> dict[
 
 
 @st.cache_data(show_spinner=False, ttl=300)
-def read_track_map_records_for_flights(flight_ids: tuple[int, ...], mode: str, user_id: int) -> pd.DataFrame:
-    """Return lightweight track records ready for the GPS overview map.
+def read_track_map_records_for_flights(
+    flight_ids: tuple[int, ...],
+    mode: str,
+    user_id: int,
+    total_tracks: int | None = None,
+) -> pd.DataFrame:
+    """Load selected GPS overview tracks with one PostgreSQL round-trip."""
+    ids = tuple(sorted({int(x) for x in flight_ids if x is not None}))
+    if not ids:
+        return pd.DataFrame()
 
-    The overview deliberately avoids track_points. Only the selected
-    flight_tracks.coordinates_json payloads cross the network and geometric
-    simplification runs locally in Python.
-    """
-    metadata = read_track_metadata_for_flights(flight_ids, user_id)
-    if metadata.empty:
-        return metadata
+    uid = strict_user_id(user_id)
+    plan = build_gps_render_plan(
+        mode,
+        int(total_tracks if total_tracks is not None else len(ids)),
+    )
+    placeholders = ",".join("?" for _ in ids)
+    limit_sql = ""
+    params: list[Any] = [uid, *ids, TRACK_OVERVIEW_VERSION]
+    if plan.max_tracks is not None:
+        limit_sql = " LIMIT ?"
+        params.append(int(plan.max_tracks))
 
-    track_ids = _track_ids_for_map(metadata, mode)
-    if not track_ids:
-        return metadata.iloc[0:0].copy()
-
-    plan = build_gps_render_plan(mode, len(metadata))
-    selected = metadata[metadata["id"].astype(int).isin(track_ids)].copy()
-    sort_cols = [c for c in ["date", "off_block", "id"] if c in selected.columns]
-    if sort_cols:
-        selected = selected.sort_values(
-            sort_cols,
-            ascending=[False] * len(sort_cols),
-            na_position="last",
+    with read_connect() as con:
+        selected = db_read_sql_query(
+            f"""
+            SELECT
+                t.id, t.flight_id, t.file_name, t.point_count, t.distance_km,
+                t.overview_coordinates_json AS coordinates_json,
+                f.date, f.registration, f.departure, f.arrival,
+                f.role, f.evidence, f.off_block
+            FROM flight_tracks t
+            JOIN flights f
+              ON f.id = t.flight_id
+             AND f.user_id = t.user_id
+            WHERE t.user_id = ?
+              AND t.flight_id IN ({placeholders})
+              AND t.overview_version = ?
+              AND t.overview_coordinates_json IS NOT NULL
+              AND t.overview_coordinates_json <> ''
+            ORDER BY f.date DESC, f.off_block DESC, t.id DESC
+            {limit_sql}
+            """,
+            con,
+            params=tuple(params),
         )
 
-    raw_geometry = read_track_geometry_payloads(track_ids, user_id)
-    coord_map = {
-        int(track_id): _decode_points_for_map(
+    if selected.empty:
+        return selected
+
+    selected["coordinates_json"] = selected["coordinates_json"].map(
+        lambda payload: _decode_points_for_map(
             payload,
             max_points=plan.points_per_track,
         )
-        for track_id, payload in raw_geometry.items()
-    }
-
-    selected["coordinates_json"] = (
-        selected["id"].astype(int).map(coord_map).fillna("[]")
     )
-    selected = selected[
-        selected["coordinates_json"].astype(str).str.len() > 2
-    ]
     return selected.reset_index(drop=True)
 
 
@@ -6950,8 +6920,13 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-    base_track_count = int(filtered.get("track_count", pd.Series(dtype=float)).fillna(0).sum()) if not filtered.empty else 0
-    base_gps_km = float(filtered.get("gps_km", pd.Series(dtype=float)).fillna(0).sum()) if not filtered.empty else 0.0
+    base_track_count = int(
+        filtered.get("track_count", pd.Series(dtype=float)).fillna(0).sum()
+    ) if not filtered.empty else 0
+    base_gps_km = float(
+        filtered.get("gps_km", pd.Series(dtype=float)).fillna(0).sum()
+    ) if not filtered.empty else 0.0
+
     known_routes: int | None = None
     if map_mode == "Orientační mapa letišť":
         _, _, known_routes = map_navigation_options(filtered)
@@ -6970,42 +6945,103 @@ def page_maps(flights: pd.DataFrame, dark_mode: bool):
     with c4: metric_card("Direct trasy", str(known_routes) if known_routes is not None else "—", "")
 
     if map_mode == "GPS tracky":
-        flight_ids = _flight_id_tuple(filtered)
-        tracks_meta = read_track_metadata_for_flights(flight_ids, current_user_id())
-        if tracks_meta.empty:
+        if base_track_count <= 0:
             st.info("Pro aktuální filtr není dostupný žádný KML track.")
+            return
+
+        flight_ids = _flight_id_tuple(filtered)
+        col_mode, col_count = st.columns([1, 2])
+        with col_mode:
+            gps_map_mode = st.selectbox(
+                "Rozsah mapy",
+                ["Rychlá", "Střední", "Vše"],
+                index=0,
+                key="gps_track_map_scope_v046",
+            )
+
+        tracks_for_map = read_track_map_records_for_flights(
+            flight_ids,
+            gps_map_mode,
+            current_user_id(),
+            base_track_count,
+        )
+        with col_count:
+            metric_card(
+                "Vykresleno",
+                f"{len(tracks_for_map)} / {base_track_count}",
+                "GPS tracků",
+            )
+
+        if tracks_for_map.empty:
+            st.info("Pro aktuální filtr není připravený GPS náhled.")
         else:
-            col_mode, col_count = st.columns([1, 2])
-            with col_mode:
-                gps_map_mode = st.selectbox(
-                    "Rozsah mapy",
-                    ["Rychlá", "Střední", "Vše"],
-                    index=0,
-                    key="gps_track_map_scope_v046",
-                )
-            tracks_for_map = read_track_map_records_for_flights(flight_ids, gps_map_mode, current_user_id())
-            with col_count:
-                metric_card("Vykresleno", f"{len(tracks_for_map)} / {len(tracks_meta)}", "GPS tracků")
             records_json = _df_to_records_json(
                 tracks_for_map,
-                ["flight_id", "id", "date", "registration", "departure", "arrival", "role", "evidence", "file_name", "point_count", "distance_km", "coordinates_json"],
+                [
+                    "flight_id", "id", "date", "registration",
+                    "departure", "arrival", "role", "evidence",
+                    "file_name", "point_count", "distance_km",
+                    "coordinates_json",
+                ],
             )
-            render_map_html(cached_track_map_html(records_json, bool(dark_mode)), height=680)
-            render_lazy_table(
-                "Tabulka GPS tracků",
-                tracks_meta[["date","registration","departure","arrival","role","evidence","file_name","point_count","distance_km"]].rename(columns={"date":"Datum","registration":"Imatrikulace","departure":"Odlet","arrival":"Přílet","role":"Funkce","evidence":"Evidence","file_name":"Soubor","point_count":"Body","distance_km":"Km"}),
-                height=320,
+            render_map_html(
+                cached_track_map_html(records_json, bool(dark_mode)),
+                height=680,
             )
+
+        # Do not pay a second PostgreSQL metadata query unless the user
+        # explicitly needs the detailed table.
+        with st.expander("Tabulka GPS tracků", expanded=False):
+            load_table = st.toggle(
+                "Načíst detailní tabulku",
+                value=False,
+                key="gps_track_table_load_v07332",
+            )
+            if load_table:
+                tracks_meta = read_track_metadata_for_flights(
+                    flight_ids,
+                    current_user_id(),
+                )
+                render_lazy_table(
+                    "Data",
+                    tracks_meta[
+                        [
+                            "date", "registration", "departure", "arrival",
+                            "role", "evidence", "file_name",
+                            "point_count", "distance_km",
+                        ]
+                    ].rename(
+                        columns={
+                            "date": "Datum",
+                            "registration": "Imatrikulace",
+                            "departure": "Odlet",
+                            "arrival": "Přílet",
+                            "role": "Funkce",
+                            "evidence": "Evidence",
+                            "file_name": "Soubor",
+                            "point_count": "Body",
+                            "distance_km": "Km",
+                        }
+                    ),
+                    height=320,
+                    expanded=True,
+                )
     else:
         if filtered.empty or not known_routes:
             st.info("Pro aktuální filtr nejsou známé souřadnice odletového i příletového letiště.")
         else:
-            # The orientation map remains interactive, but rates are loaded only
-            # after a route/airport selection actually needs the detail panel.
-            map_event = render_folium_navigable(make_route_overview_map(filtered, bool(dark_mode)), height=680, key="route_overview_nav_map_v044")
+            map_event = render_folium_navigable(
+                make_route_overview_map(filtered, bool(dark_mode)),
+                height=680,
+                key="route_overview_nav_map_v044",
+            )
             handle_route_map_interaction(map_event)
             if st.session_state.get("map_airport") or st.session_state.get("map_route"):
-                render_map_selection(filtered, read_rates(current_user_id()), dark_mode)
+                render_map_selection(
+                    filtered,
+                    read_rates(current_user_id()),
+                    dark_mode,
+                )
 
 
 def _bool_to_int(value: Any, default: int = 1) -> int:

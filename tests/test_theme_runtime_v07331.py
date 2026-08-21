@@ -3,7 +3,7 @@ import logbook_ui.theme as theme
 
 
 def test_hotfix_version():
-    assert APP_VERSION == "v0.73.3.1"
+    assert APP_VERSION == "v0.73.3.2"
 
 
 def test_apply_ui_theme_executes_for_dark_and_light(monkeypatch):

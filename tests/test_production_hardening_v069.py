@@ -22,7 +22,7 @@ def _app() -> str:
 
 
 def test_v069_schema_and_version():
-    assert APP_VERSION == "v0.73.3.1"
+    assert APP_VERSION == "v0.73.3.2"
     assert DB_SCHEMA_VERSION == 11
 
 

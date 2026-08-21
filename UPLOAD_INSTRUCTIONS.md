@@ -1,4 +1,4 @@
-# Upload v0.73.3.1 – Theme Runtime Hotfix
+# Upload v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path
 
 ## Deploy
 
@@ -7,7 +7,7 @@
 3. Replace application files with the v0.73 package.
 4. Do **not** replace your Streamlit Secrets.
 5. Commit:
-   `v0.73.3.1 - Theme Runtime Hotfix`
+   `v0.73.3 - Lightweight GPS Geometry & Dashboard Hot Path`
 6. Push `main`.
 7. Let Streamlit redeploy.
 
@@ -108,18 +108,11 @@ Future app restarts retain the generated overview geometry in PostgreSQL.
 
 Suggested commit:
 
-`v0.73.3.1 - Theme Runtime Hotfix`
+`v0.73.3 - Lightweight GPS Geometry & Dashboard Hot Path`
 
 
-## v0.73.3.1 hotfix notes
+## v0.73.3.2 notes
 
-This is a code-only hotfix for the v0.73.3 startup failure in `apply_ui_theme()`.
+No Secrets change. On first startup PostgreSQL performs a one-time server-side backfill of any missing lightweight GPS overview geometry. Normal Map navigation never writes overview data.
 
-- keep PostgreSQL production Secrets unchanged
-- no manual DB action is required
-- the v0.73.3 automatic PostgreSQL/SQLite schema upgrade remains idempotent
-- all v0.73.3 performance changes remain enabled
-
-Suggested commit:
-
-`v0.73.3.1 - Theme Runtime Hotfix`
+Suggested commit: `v0.73.3.2 - Map Latency Rescue`
