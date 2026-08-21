@@ -1,0 +1,1 @@
+export default function ProfilePlaceholder() { return <section className="panel"><p className="eyebrow">MIGRACE</p><h1>Profil</h1><p className="muted">Nastavení profilu a platnosti dokumentů budou převedeny v další etapě.</p></section>; }
