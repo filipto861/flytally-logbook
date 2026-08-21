@@ -25,7 +25,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       <div><span>Letiště</span><strong>{data.uniqueAirports}</strong><small>navštívených míst</small></div>
       <Link href="/map"><span>GPS tracky</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} uložených tracků</small></Link>
     </section>
-    <MonthlyChart data={data.monthly}/>
+    <MonthlyChart data={data.monthly} totalFlights={data.total.flights} invalidDates={data.invalidDateFlights}/>
     <DashboardDetails data={data}/>
   </>;
 }
