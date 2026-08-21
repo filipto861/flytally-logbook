@@ -20,6 +20,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     </section>
     <section className="quickline">
       <Link href={data.lastFlight?`/flights/${data.lastFlight.id}`:'/flights'}><span>Poslední let</span><strong>{data.lastFlight?`${data.lastFlight.date} · ${data.lastFlight.registration}`:'—'}</strong><small>{data.lastFlight?`${data.lastFlight.departure} → ${data.lastFlight.arrival}`:'Bez záznamu'}</small></Link>
+      <div className="quickline-cost"><span>Útrata</span><strong>{Math.round(data.cost).toLocaleString("cs-CZ")} Kč</strong><small>ve vybraném období</small></div>
       <div><span>Letadla</span><strong>{data.uniqueAircraft}</strong><small>unikátních registrací</small></div>
       <div><span>Letiště</span><strong>{data.uniqueAirports}</strong><small>navštívených míst</small></div>
       <Link href="/map"><span>GPS tracky</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} uložených tracků</small></Link>
