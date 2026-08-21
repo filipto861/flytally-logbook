@@ -1,80 +1,143 @@
 import "server-only";
+import { calculatedFlightPrice } from "@/lib/billing";
 import { sql } from "@/lib/db";
+import { flightDateKey,flightMinutes } from "@/lib/dashboard-math";
 
-export const PERIODS = ["all", "year", "12m", "previous"] as const;
-export type DashboardPeriod = (typeof PERIODS)[number];
-export type PrimaryMetric = { minutes: number; landings: number; flights: number };
-export type MonthlyPoint = { month:string; total:number; ull:number; easa:number; picUll:number; picEasa:number; landings:number };
-export type DashboardData = {
-  displayName:string; rangeLabel:string; total:PrimaryMetric; ull:PrimaryMetric; easa:PrimaryMetric; picUll:PrimaryMetric; picEasa:PrimaryMetric;
-  airMinutes:number; picMinutes:number; dualMinutes:number; safetyMinutes:number; cost:number; tracks:number; gpsKm:number;
-  uniqueAircraft:number; uniqueAirports:number;
-  lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string}; monthly:MonthlyPoint[];
+export const PERIODS=["all","year","12m","previous"] as const;
+export type DashboardPeriod=(typeof PERIODS)[number];
+export type PrimaryMetric={minutes:number;landings:number;flights:number};
+export type MonthlyPoint={month:string;total:number;ull:number;easa:number;picUll:number;picEasa:number;landings:number};
+export type DashboardData={
+  displayName:string;rangeLabel:string;total:PrimaryMetric;ull:PrimaryMetric;easa:PrimaryMetric;picUll:PrimaryMetric;picEasa:PrimaryMetric;
+  airMinutes:number;picMinutes:number;dualMinutes:number;safetyMinutes:number;cost:number;tracks:number;gpsKm:number;
+  uniqueAircraft:number;uniqueAirports:number;chartFlights:number;invalidDateFlights:number;
+  lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string};monthly:MonthlyPoint[];
   recentFlights:Array<{id:number;date:string;registration:string;departure:string;arrival:string}>;
-  topAircraft:Array<{registration:string;flights:number;minutes:number;cost:number}>; topRoutes:Array<{route:string;flights:number;minutes:number}>;
+  topAircraft:Array<{registration:string;flights:number;minutes:number;cost:number}>;
+  topRoutes:Array<{route:string;flights:number;minutes:number}>;
   yearly:Array<{year:number;flights:number;minutes:number;landings:number}>;
 };
 
-function bounds(period:DashboardPeriod,today=new Date()) {
-  const year=today.getUTCFullYear(); const iso=(d:Date)=>d.toISOString().slice(0,10);
-  if(period==="year") return {start:`${year}-01-01`,end:iso(today),label:String(year)};
-  if(period==="previous") return {start:`${year-1}-01-01`,end:`${year-1}-12-31`,label:String(year-1)};
-  if(period==="12m") { const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1)); return {start:iso(start),end:iso(today),label:`${start.toLocaleDateString("cs-CZ")}–${today.toLocaleDateString("cs-CZ")}`}; }
-  return {start:null,end:null,label:"celá historie"};
-}
-const num=(v:unknown)=>Number(v??0); const txt=(v:unknown)=>String(v??"");
-const metric=(r:Record<string,unknown>,key:string):PrimaryMetric=>({minutes:num(r[`${key}_minutes`]),landings:num(r[`${key}_landings`]),flights:num(r[`${key}_flights`])});
+type NormalizedFlight={
+  id:number;date:string;dateKey:string|null;offBlock:string;evidence:string;role:string;registration:string;departure:string;arrival:string;
+  landings:number;blockMinutes:number;airMinutes:number;cost:number;trackCount:number;gpsKm:number;
+};
 
-async function fallbackDashboard(userId:number,rangeLabel:string,start:string|null,end:string|null):Promise<DashboardData>{
-  const [rows,trackRows,latestRows]=await Promise.all([
-    sql`WITH normalized AS (SELECT id,evidence,role,registration,departure,arrival,COALESCE(starts,0)::integer starts,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::integer*60+split_part(on_block,':',2)::integer)-(split_part(off_block,':',1)::integer*60+split_part(off_block,':',2)::integer)+1440,1440) ELSE 0 END block_minutes FROM flights WHERE user_id=${userId} AND (${start}::date IS NULL OR date::date>=${start}::date) AND (${end}::date IS NULL OR date::date<=${end}::date)) SELECT u.display_name,COUNT(n.id)::integer total_flights,COALESCE(SUM(n.block_minutes),0)::integer total_minutes,COALESCE(SUM(n.starts),0)::integer total_landings,COUNT(n.id) FILTER(WHERE UPPER(n.evidence)='ULL')::integer ull_flights,COALESCE(SUM(n.block_minutes) FILTER(WHERE UPPER(n.evidence)='ULL'),0)::integer ull_minutes,COALESCE(SUM(n.starts) FILTER(WHERE UPPER(n.evidence)='ULL'),0)::integer ull_landings,COUNT(n.id) FILTER(WHERE UPPER(n.evidence)='EASA')::integer easa_flights,COALESCE(SUM(n.block_minutes) FILTER(WHERE UPPER(n.evidence)='EASA'),0)::integer easa_minutes,COALESCE(SUM(n.starts) FILTER(WHERE UPPER(n.evidence)='EASA'),0)::integer easa_landings,COUNT(n.id) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='ULL')::integer pic_ull_flights,COALESCE(SUM(n.block_minutes) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='ULL'),0)::integer pic_ull_minutes,COALESCE(SUM(n.starts) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='ULL'),0)::integer pic_ull_landings,COUNT(n.id) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='EASA')::integer pic_easa_flights,COALESCE(SUM(n.block_minutes) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='EASA'),0)::integer pic_easa_minutes,COALESCE(SUM(n.starts) FILTER(WHERE UPPER(n.role)='PIC' AND UPPER(n.evidence)='EASA'),0)::integer pic_easa_landings,COALESCE(SUM(n.block_minutes) FILTER(WHERE UPPER(n.role)='PIC'),0)::integer pic_minutes,COUNT(DISTINCT NULLIF(UPPER(n.registration),''))::integer unique_aircraft,COUNT(DISTINCT NULLIF(UPPER(n.departure),''))+COUNT(DISTINCT NULLIF(UPPER(n.arrival),''))::integer unique_airports FROM users u LEFT JOIN normalized n ON TRUE WHERE u.id=${userId} GROUP BY u.id,u.display_name`,
-    sql`SELECT COUNT(*)::integer tracks,COALESCE(SUM(t.distance_km),0) gps_km FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id WHERE t.user_id=${userId} AND (${start}::date IS NULL OR f.date::date>=${start}::date) AND (${end}::date IS NULL OR f.date::date<=${end}::date)`,
-    sql`SELECT id,date,COALESCE(registration,'') registration,COALESCE(departure,'') departure,COALESCE(arrival,'') arrival FROM flights WHERE user_id=${userId} AND (${start}::date IS NULL OR date::date>=${start}::date) AND (${end}::date IS NULL OR date::date<=${end}::date) ORDER BY date DESC,off_block DESC NULLS LAST,id DESC LIMIT 8`
-  ]) as Array<Array<Record<string,unknown>>>;const r=rows[0]??{},tr=trackRows[0]??{};
-  const recentFlights=latestRows.map(x=>({id:num(x.id),date:txt(x.date),registration:txt(x.registration),departure:txt(x.departure),arrival:txt(x.arrival)}));
-  return {displayName:txt(r.display_name)||"Pilot",rangeLabel,total:metric(r,"total"),ull:metric(r,"ull"),easa:metric(r,"easa"),picUll:metric(r,"pic_ull"),picEasa:metric(r,"pic_easa"),airMinutes:0,picMinutes:num(r.pic_minutes),dualMinutes:0,safetyMinutes:0,cost:0,tracks:num(tr.tracks),gpsKm:num(tr.gps_km),uniqueAircraft:num(r.unique_aircraft),uniqueAirports:num(r.unique_airports),lastFlight:recentFlights[0]??null,recentFlights,monthly:[],topAircraft:[],topRoutes:[],yearly:[]};
+const num=(value:unknown)=>Number(value??0)||0;
+const text=(value:unknown)=>String(value??"").trim();
+const emptyMetric=():PrimaryMetric=>({minutes:0,landings:0,flights:0});
+const addMetric=(metric:PrimaryMetric,flight:NormalizedFlight)=>{metric.flights+=1;metric.minutes+=flight.blockMinutes;metric.landings+=flight.landings};
+
+function bounds(period:DashboardPeriod,today=new Date()){
+  const year=today.getUTCFullYear();
+  const iso=(date:Date)=>date.toISOString().slice(0,10);
+  if(period==="year")return{start:`${year}-01-01`,end:iso(today),label:String(year)};
+  if(period==="previous")return{start:`${year-1}-01-01`,end:`${year-1}-12-31`,label:String(year-1)};
+  if(period==="12m"){
+    const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1));
+    return{start:iso(start),end:iso(today),label:`${start.toLocaleDateString("cs-CZ")}–${today.toLocaleDateString("cs-CZ")}`};
+  }
+  return{start:null,end:null,label:"celá historie"};
+}
+
+function normalize(row:Record<string,unknown>):NormalizedFlight{
+  const instructor=text(row.instructor);
+  const rawRole=text(row.role).toUpperCase();
+  const role=instructor||rawRole==="STUDENT"?"DUAL":rawRole;
+  const blockMinutes=flightMinutes(row.off_block,row.on_block),airMinutes=flightMinutes(row.takeoff,row.landing);
+  const rawDate=text(row.date),dateKey=flightDateKey(row.date);
+  return{
+    id:num(row.id),date:dateKey??rawDate,dateKey,offBlock:text(row.off_block),evidence:text(row.evidence).toUpperCase(),role,
+    registration:text(row.registration).toUpperCase(),departure:text(row.departure).toUpperCase(),arrival:text(row.arrival).toUpperCase(),
+    landings:Math.max(0,Math.round(num(row.starts))),blockMinutes,airMinutes,
+    cost:calculatedFlightPrice(row.price_per_hour,blockMinutes,airMinutes,row.billing_basis),
+    trackCount:Math.max(0,Math.round(num(row.track_count))),gpsKm:Math.max(0,num(row.gps_km)),
+  };
 }
 
 export async function getDashboardData(userId:number,requested:string):Promise<DashboardData>{
   const period:DashboardPeriod=PERIODS.includes(requested as DashboardPeriod)?requested as DashboardPeriod:"all";
   const {start,end,label}=bounds(period);
-  const settled=await Promise.allSettled([
-    sql`
-      WITH base AS (
-        SELECT f.*,
-          CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
-            THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes,
-          CASE WHEN f.takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
-            THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END air_minutes
-        FROM (SELECT raw.*,CASE WHEN TRIM(raw.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(raw.date::text),10)::date WHEN TRIM(raw.date::text) ~ '^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$' THEN TO_DATE(TRIM(raw.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights raw WHERE raw.user_id=${userId}) f
-        WHERE (${start}::date IS NULL OR f.flight_date>=${start}::date) AND (${end}::date IS NULL OR f.flight_date<=${end}::date)
-      ), track AS (
-        SELECT COUNT(*)::int tracks,COALESCE(SUM(t.distance_km),0) gps_km FROM flight_tracks t JOIN base b ON b.id=t.flight_id WHERE t.user_id=${userId}
-      ), base_stats AS (
-        SELECT COUNT(*)::int total_flights,COALESCE(SUM(block_minutes),0)::int total_minutes,COALESCE(SUM(starts),0)::int total_landings,
-          COUNT(*) FILTER(WHERE UPPER(TRIM(evidence))='ULL')::int ull_flights,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(evidence))='ULL'),0)::int ull_minutes,COALESCE(SUM(starts) FILTER(WHERE UPPER(TRIM(evidence))='ULL'),0)::int ull_landings,
-          COUNT(*) FILTER(WHERE UPPER(TRIM(evidence))='EASA')::int easa_flights,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(evidence))='EASA'),0)::int easa_minutes,COALESCE(SUM(starts) FILTER(WHERE UPPER(TRIM(evidence))='EASA'),0)::int easa_landings,
-          COUNT(*) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='ULL')::int pic_ull_flights,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='ULL'),0)::int pic_ull_minutes,COALESCE(SUM(starts) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='ULL'),0)::int pic_ull_landings,
-          COUNT(*) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='EASA')::int pic_easa_flights,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='EASA'),0)::int pic_easa_minutes,COALESCE(SUM(starts) FILTER(WHERE UPPER(TRIM(role))='PIC' AND UPPER(TRIM(evidence))='EASA'),0)::int pic_easa_landings,
-          COALESCE(SUM(air_minutes),0)::int air_minutes,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='PIC'),0)::int pic_minutes,
-          COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='DUAL'),0)::int dual_minutes,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='SAFETY PILOT'),0)::int safety_minutes,
-          COUNT(DISTINCT NULLIF(UPPER(TRIM(registration)),''))::int unique_aircraft,
-          COALESCE(SUM((CASE WHEN UPPER(COALESCE(billing_basis,'BLOCK')) LIKE 'AIR%' THEN air_minutes ELSE block_minutes END)::numeric/60*COALESCE(price_per_hour,0)/(CASE WHEN split_part(COALESCE(billing_basis,''),'/',2) ~ '^[1-9][0-9]*$' THEN GREATEST(split_part(billing_basis,'/',2)::numeric,1) ELSE 1 END)),0) cost
-        FROM base
-      ), airports AS (SELECT COUNT(DISTINCT code)::int unique_airports FROM (SELECT NULLIF(UPPER(TRIM(departure)),'') code FROM base UNION SELECT NULLIF(UPPER(TRIM(arrival)),'') FROM base) x WHERE code IS NOT NULL)
-      SELECT u.display_name,s.*,a.unique_airports,t.tracks,t.gps_km FROM users u CROSS JOIN base_stats s CROSS JOIN airports a CROSS JOIN track t WHERE u.id=${userId}`,
-    sql`WITH source AS (SELECT f.*,CASE WHEN TRIM(f.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(f.date::text),10)::date WHEN TRIM(f.date::text) ~ '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$' THEN TO_DATE(TRIM(f.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights f WHERE f.user_id=${userId}),b AS (SELECT date_trunc('month',flight_date) month,COALESCE(starts,0) starts,UPPER(TRIM(evidence)) evidence,UPPER(TRIM(role)) role,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END mins FROM source WHERE flight_date IS NOT NULL AND (${start}::date IS NULL OR flight_date>=${start}::date) AND (${end}::date IS NULL OR flight_date<=${end}::date)) SELECT to_char(month,'YYYY-MM') month,SUM(mins)::int total,COALESCE(SUM(mins) FILTER(WHERE evidence='ULL'),0)::int ull,COALESCE(SUM(mins) FILTER(WHERE evidence='EASA'),0)::int easa,COALESCE(SUM(mins) FILTER(WHERE role='PIC' AND evidence='ULL'),0)::int pic_ull,COALESCE(SUM(mins) FILTER(WHERE role='PIC' AND evidence='EASA'),0)::int pic_easa,SUM(starts)::int landings FROM b GROUP BY month ORDER BY month`,
-    sql`WITH source AS (SELECT f.*,CASE WHEN TRIM(f.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(f.date::text),10)::date WHEN TRIM(f.date::text) ~ '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$' THEN TO_DATE(TRIM(f.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights f WHERE f.user_id=${userId}),b AS (SELECT registration,price_per_hour,billing_basis,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END mins,CASE WHEN takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(landing,':',1)::int*60+split_part(landing,':',2)::int)-(split_part(takeoff,':',1)::int*60+split_part(takeoff,':',2)::int)+1440,1440) ELSE 0 END air_mins FROM source WHERE (${start}::date IS NULL OR flight_date>=${start}::date) AND (${end}::date IS NULL OR flight_date<=${end}::date)) SELECT UPPER(TRIM(registration)) registration,COUNT(*)::int flights,SUM(mins)::int minutes,COALESCE(SUM(COALESCE(price_per_hour,0)*(CASE WHEN UPPER(COALESCE(billing_basis,'BLOCK')) LIKE 'AIR%' THEN air_mins ELSE mins END)/60.0/(CASE WHEN split_part(COALESCE(billing_basis,''),'/',2) ~ '^[1-9][0-9]*$' THEN GREATEST(split_part(billing_basis,'/',2)::numeric,1) ELSE 1 END)),0) cost FROM b WHERE NULLIF(TRIM(registration),'') IS NOT NULL GROUP BY 1 ORDER BY minutes DESC`,
-    sql`WITH source AS (SELECT f.*,CASE WHEN TRIM(f.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(f.date::text),10)::date WHEN TRIM(f.date::text) ~ '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$' THEN TO_DATE(TRIM(f.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights f WHERE f.user_id=${userId}),b AS (SELECT UPPER(TRIM(departure)) dep,UPPER(TRIM(arrival)) arr,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END mins FROM source WHERE (${start}::date IS NULL OR flight_date>=${start}::date) AND (${end}::date IS NULL OR flight_date<=${end}::date)) SELECT dep||'–'||arr route,COUNT(*)::int flights,SUM(mins)::int minutes FROM b WHERE dep<>'' AND arr<>'' GROUP BY 1 ORDER BY flights DESC,minutes DESC LIMIT 8`,
-    sql`WITH source AS (SELECT f.*,CASE WHEN TRIM(f.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(f.date::text),10)::date WHEN TRIM(f.date::text) ~ '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$' THEN TO_DATE(TRIM(f.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights f WHERE f.user_id=${userId}),b AS (SELECT EXTRACT(YEAR FROM flight_date)::int year,COALESCE(starts,0) starts,CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END mins FROM source WHERE flight_date IS NOT NULL AND (${start}::date IS NULL OR flight_date>=${start}::date) AND (${end}::date IS NULL OR flight_date<=${end}::date)) SELECT year,COUNT(*)::int flights,SUM(mins)::int minutes,SUM(starts)::int landings FROM b GROUP BY year ORDER BY year DESC`,
-    sql`WITH source AS (SELECT f.*,CASE WHEN TRIM(f.date::text) ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(TRIM(f.date::text),10)::date WHEN TRIM(f.date::text) ~ '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$' THEN TO_DATE(TRIM(f.date::text),'DD.MM.YYYY') ELSE NULL END flight_date FROM flights f WHERE f.user_id=${userId}) SELECT id,date,COALESCE(registration,'') registration,COALESCE(departure,'') departure,COALESCE(arrival,'') arrival FROM source WHERE (${start}::date IS NULL OR flight_date>=${start}::date) AND (${end}::date IS NULL OR flight_date<=${end}::date) ORDER BY flight_date DESC NULLS LAST,off_block DESC NULLS LAST,id DESC LIMIT 8`
-  ]);
-  settled.forEach((entry,index)=>{if(entry.status==="rejected")console.error("dashboard-query",index,entry.reason)});
-  const result=settled.map(entry=>entry.status==="fulfilled"?entry.value as Array<Record<string,unknown>>:[]);
-  const [statsRows,monthRows,aircraftRows,routeRows,yearRows,latestRows]=result;
-  if(!statsRows.length){const fallback=await fallbackDashboard(userId,label,start,end),recentFlights=latestRows.map(x=>({id:num(x.id),date:txt(x.date),registration:txt(x.registration),departure:txt(x.departure),arrival:txt(x.arrival)}));return{...fallback,lastFlight:recentFlights[0]??fallback.lastFlight,recentFlights:recentFlights.length?recentFlights:fallback.recentFlights,monthly:monthRows.map(r=>({month:txt(r.month),total:num(r.total),ull:num(r.ull),easa:num(r.easa),picUll:num(r.pic_ull),picEasa:num(r.pic_easa),landings:num(r.landings)})),topAircraft:aircraftRows.map(r=>({registration:txt(r.registration),flights:num(r.flights),minutes:num(r.minutes),cost:num(r.cost)})),topRoutes:routeRows.map(r=>({route:txt(r.route),flights:num(r.flights),minutes:num(r.minutes)})),yearly:yearRows.map(r=>({year:num(r.year),flights:num(r.flights),minutes:num(r.minutes),landings:num(r.landings)}))}}
-  const r=statsRows[0]??{};
-  const recentFlights=latestRows.map(x=>({id:num(x.id),date:txt(x.date),registration:txt(x.registration),departure:txt(x.departure),arrival:txt(x.arrival)}));
-  return {displayName:txt(r.display_name)||"Pilot",rangeLabel:label,total:metric(r,"total"),ull:metric(r,"ull"),easa:metric(r,"easa"),picUll:metric(r,"pic_ull"),picEasa:metric(r,"pic_easa"),airMinutes:num(r.air_minutes),picMinutes:num(r.pic_minutes),dualMinutes:num(r.dual_minutes),safetyMinutes:num(r.safety_minutes),cost:num(r.cost),tracks:num(r.tracks),gpsKm:num(r.gps_km),uniqueAircraft:num(r.unique_aircraft),uniqueAirports:num(r.unique_airports),lastFlight:recentFlights[0]??null,recentFlights,monthly:monthRows.map(r=>({month:txt(r.month),total:num(r.total),ull:num(r.ull),easa:num(r.easa),picUll:num(r.pic_ull),picEasa:num(r.pic_easa),landings:num(r.landings)})),topAircraft:aircraftRows.map(r=>({registration:txt(r.registration),flights:num(r.flights),minutes:num(r.minutes),cost:num(r.cost)})),topRoutes:routeRows.map(r=>({route:txt(r.route),flights:num(r.flights),minutes:num(r.minutes)})),yearly:yearRows.map(r=>({year:num(r.year),flights:num(r.flights),minutes:num(r.minutes),landings:num(r.landings)}))};
+  const [userRows,rawRows]=await Promise.all([
+    sql`SELECT COALESCE(display_name,'Pilot') display_name FROM users WHERE id=${userId} LIMIT 1`,
+    sql`WITH track AS (
+      SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km
+      FROM flight_tracks WHERE user_id=${userId} GROUP BY flight_id
+    )
+    SELECT f.id,f.date::text date,COALESCE(f.evidence,'') evidence,COALESCE(f.role,'') role,COALESCE(f.instructor,'') instructor,
+      COALESCE(f.registration,'') registration,COALESCE(f.departure,'') departure,COALESCE(f.arrival,'') arrival,
+      COALESCE(f.starts,0) starts,COALESCE(f.off_block,'') off_block,COALESCE(f.on_block,'') on_block,
+      COALESCE(f.takeoff,'') takeoff,COALESCE(f.landing,'') landing,f.price_per_hour,COALESCE(f.billing_basis,'BLOCK') billing_basis,
+      COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km
+    FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}`,
+  ]) as [Array<Record<string,unknown>>,Array<Record<string,unknown>>];
+
+  const allFlights=rawRows.map(normalize);
+  const flights=allFlights.filter(flight=>{
+    if(!start&&!end)return true;
+    if(!flight.dateKey)return false;
+    return(!start||flight.dateKey>=start)&&(!end||flight.dateKey<=end);
+  });
+
+  const total=emptyMetric(),ull=emptyMetric(),easa=emptyMetric(),picUll=emptyMetric(),picEasa=emptyMetric();
+  let airMinutes=0,picMinutes=0,dualMinutes=0,safetyMinutes=0,cost=0,tracks=0,gpsKm=0;
+  const airports=new Set<string>();
+  const monthlyMap=new Map<string,MonthlyPoint>();
+  const aircraftMap=new Map<string,{registration:string;flights:number;minutes:number;cost:number}>();
+  const routeMap=new Map<string,{route:string;flights:number;minutes:number}>();
+  const yearMap=new Map<number,{year:number;flights:number;minutes:number;landings:number}>();
+
+  for(const flight of flights){
+    addMetric(total,flight);
+    if(flight.evidence==="ULL")addMetric(ull,flight);
+    if(flight.evidence==="EASA")addMetric(easa,flight);
+    if(flight.role==="PIC"&&flight.evidence==="ULL")addMetric(picUll,flight);
+    if(flight.role==="PIC"&&flight.evidence==="EASA")addMetric(picEasa,flight);
+    airMinutes+=flight.airMinutes;
+    if(flight.role==="PIC")picMinutes+=flight.blockMinutes;
+    if(flight.role==="DUAL")dualMinutes+=flight.blockMinutes;
+    if(flight.role==="SAFETY PILOT")safetyMinutes+=flight.blockMinutes;
+    cost+=flight.cost;tracks+=flight.trackCount;gpsKm+=flight.gpsKm;
+    if(flight.departure)airports.add(flight.departure);
+    if(flight.arrival)airports.add(flight.arrival);
+
+    if(flight.registration){
+      const value=aircraftMap.get(flight.registration)??{registration:flight.registration,flights:0,minutes:0,cost:0};
+      value.flights+=1;value.minutes+=flight.blockMinutes;value.cost+=flight.cost;aircraftMap.set(flight.registration,value);
+    }
+    if(flight.departure&&flight.arrival){
+      const route=`${flight.departure}–${flight.arrival}`;
+      const value=routeMap.get(route)??{route,flights:0,minutes:0};
+      value.flights+=1;value.minutes+=flight.blockMinutes;routeMap.set(route,value);
+    }
+    if(flight.dateKey){
+      const month=flight.dateKey.slice(0,7);
+      const monthly=monthlyMap.get(month)??{month,total:0,ull:0,easa:0,picUll:0,picEasa:0,landings:0};
+      monthly.total+=flight.blockMinutes;monthly.landings+=flight.landings;
+      if(flight.evidence==="ULL")monthly.ull+=flight.blockMinutes;
+      if(flight.evidence==="EASA")monthly.easa+=flight.blockMinutes;
+      if(flight.role==="PIC"&&flight.evidence==="ULL")monthly.picUll+=flight.blockMinutes;
+      if(flight.role==="PIC"&&flight.evidence==="EASA")monthly.picEasa+=flight.blockMinutes;
+      monthlyMap.set(month,monthly);
+      const year=Number(flight.dateKey.slice(0,4));
+      const yearly=yearMap.get(year)??{year,flights:0,minutes:0,landings:0};
+      yearly.flights+=1;yearly.minutes+=flight.blockMinutes;yearly.landings+=flight.landings;yearMap.set(year,yearly);
+    }
+  }
+
+  const ordered=[...flights].sort((left,right)=>(right.dateKey??"").localeCompare(left.dateKey??"")||right.offBlock.localeCompare(left.offBlock)||right.id-left.id);
+  const recentFlights=ordered.slice(0,8).map(({id,date,registration,departure,arrival})=>({id,date,registration,departure,arrival}));
+  return{
+    displayName:text(userRows[0]?.display_name)||"Pilot",rangeLabel:label,total,ull,easa,picUll,picEasa,
+    airMinutes,picMinutes,dualMinutes,safetyMinutes,cost,tracks,gpsKm,
+    uniqueAircraft:aircraftMap.size,uniqueAirports:airports.size,
+    chartFlights:flights.filter(flight=>Boolean(flight.dateKey)).length,invalidDateFlights:flights.filter(flight=>!flight.dateKey).length,
+    lastFlight:recentFlights[0]??null,recentFlights,
+    monthly:[...monthlyMap.values()].sort((left,right)=>left.month.localeCompare(right.month)),
+    topAircraft:[...aircraftMap.values()].sort((left,right)=>right.minutes-left.minutes||left.registration.localeCompare(right.registration)),
+    topRoutes:[...routeMap.values()].sort((left,right)=>right.flights-left.flights||right.minutes-left.minutes).slice(0,8),
+    yearly:[...yearMap.values()].sort((left,right)=>right.year-left.year),
+  };
 }
-export function formatDuration(minutes:number){const v=Math.max(0,Math.round(minutes));return `${Math.floor(v/60)}:${String(v%60).padStart(2,"0")}`;}
+
+export function formatDuration(minutes:number){const value=Math.max(0,Math.round(minutes));return`${Math.floor(value/60)}:${String(value%60).padStart(2,"0")}`}
