@@ -1,0 +1,1 @@
+export default function NewFlightPlaceholder() { return <section className="panel"><p className="eyebrow">MIGRACE</p><h1>Nový let</h1><p className="muted">Formulář, automatické předvyplnění a KML import budou převedeny v další etapě.</p></section>; }
