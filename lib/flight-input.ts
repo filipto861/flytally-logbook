@@ -1,4 +1,5 @@
-import { serializeBilling } from "@/lib/billing";
+import { serializeBilling } from "./billing.ts";
+import { flightDateKey } from "./dashboard-math.ts";
 
 export const EVIDENCE = ["ULL", "EASA"] as const;
 export const CLASSES = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"] as const;
@@ -23,7 +24,7 @@ function option<T extends readonly string[]>(value: string, values: T, fallback:
 
 export function parseFlightInput(form: FormData): { data?: FlightInput; error?: string } {
   const date = text(form, "date", 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return { error: "Zadejte platné datum." };
+  if (flightDateKey(date)!==date) return { error: "Zadejte platné datum." };
   const time = (name: string) => text(form, name, 5);
   const times = [time("offBlock"), time("takeoff"), time("landing"), time("onBlock")];
   if (times.some((value) => value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))) return { error: "Časy musí být ve formátu HH:MM." };
@@ -36,14 +37,15 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
   const starts = Math.max(0, Math.min(99, Number.parseInt(text(form, "starts", 2) || "0", 10) || 0));
   const registration = text(form, "registration", 32).toUpperCase();
   if (!registration) return { error: "Vyberte nebo zadejte imatrikulaci." };
+  const instructor=text(form,"instructor",100);
   return { data: {
     date, registration, aircraftType: text(form, "aircraftType", 80),
     aircraftClass: option(text(form, "aircraftClass", 16).toUpperCase(), CLASSES, "ULL"),
     evidence: option(text(form, "evidence", 8).toUpperCase(), EVIDENCE, "ULL"),
     departure: text(form, "departure", 16).toUpperCase(), arrival: text(form, "arrival", 16).toUpperCase(),
     offBlock: times[0], takeoff: times[1], landing: times[2], onBlock: times[3], starts,
-    commander: text(form, "commander", 100), instructor: text(form, "instructor", 100),
-    role: option(text(form, "role", 24).toUpperCase(), ROLES, "PIC"), task: text(form, "task", 160),
+    commander: text(form, "commander", 100), instructor,
+    role: instructor?"DUAL":option(text(form, "role", 24).toUpperCase(), ROLES, "PIC"), task: text(form, "task", 160),
     billingBasis: serializeBilling(option(text(form, "billingBasis", 8).toUpperCase(), BILLING, "BLOCK"),text(form,"billingShare",2)), note: text(form, "note", 2000),
   }};
 }
