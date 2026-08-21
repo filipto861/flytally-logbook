@@ -15,6 +15,14 @@ export type FlightRow = {
   on_block: string;
   role: string;
   starts: number;
+  takeoff?: string;
+  landing?: string;
+  aircraft_class?: string;
+  commander?: string;
+  instructor?: string;
+  task?: string;
+  billing_basis?: string;
+  note?: string;
 };
 
 export async function getFlightsPage(userId: number, page: number) {
@@ -34,4 +42,13 @@ export async function getFlightsPage(userId: number, page: number) {
     total: Number(rows[0]?.total_count ?? 0),
     page: safePage,
   };
+}
+
+export async function getFlight(userId: number, id: number) {
+  const rows = await sql`
+    SELECT id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,
+           off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,billing_basis,note
+    FROM flights WHERE user_id=${userId} AND id=${id} LIMIT 1
+  ` as FlightRow[];
+  return rows[0] ?? null;
 }
