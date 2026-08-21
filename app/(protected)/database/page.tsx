@@ -1,0 +1,1 @@
+export default function DatabasePlaceholder() { return <section className="panel"><p className="eyebrow">MIGRACE</p><h1>Databáze</h1><p className="muted">Letadla, sazby a letiště budou převedeny v další etapě.</p></section>; }
