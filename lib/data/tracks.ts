@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "@/lib/db";
+import { getCatalogAirport } from "@/lib/airport-catalog";
 
 export type TrackPoint = { lat: number; lon: number; alt?: number; time?: string };
 export type MapTrack = {
@@ -48,8 +49,8 @@ export async function getOverviewTracks(userId: number, limit = 100,filters:MapF
            COUNT(*) OVER()::integer AS total_tracks,
            COALESCE(SUM(COALESCE(t.distance_km,0)) OVER(),0) AS total_distance_km
     FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id
-    LEFT JOIN airports dep ON dep.user_id=f.user_id AND UPPER(dep.ident)=UPPER(f.departure) AND dep.active=1
-    LEFT JOIN airports arr ON arr.user_id=f.user_id AND UPPER(arr.ident)=UPPER(f.arrival) AND arr.active=1
+    LEFT JOIN LATERAL (SELECT latitude_deg,longitude_deg FROM airports x WHERE UPPER(x.ident)=UPPER(f.departure) AND x.active=1 AND COALESCE(x.closed,0)=0 AND (x.user_id=f.user_id OR LOWER(COALESCE(x.source,'')) LIKE 'ourairports%') ORDER BY (x.user_id=f.user_id) DESC LIMIT 1) dep ON TRUE
+    LEFT JOIN LATERAL (SELECT latitude_deg,longitude_deg FROM airports x WHERE UPPER(x.ident)=UPPER(f.arrival) AND x.active=1 AND COALESCE(x.closed,0)=0 AND (x.user_id=f.user_id OR LOWER(COALESCE(x.source,'')) LIKE 'ourairports%') ORDER BY (x.user_id=f.user_id) DESC LIMIT 1) arr ON TRUE
     WHERE t.user_id=${userId} AND t.overview_coordinates_json IS NOT NULL
       AND t.overview_coordinates_json<>''
       AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text))
@@ -64,7 +65,7 @@ export async function getOverviewTracks(userId: number, limit = 100,filters:MapF
     registration: String(row.registration ?? ""), departure: String(row.departure ?? ""),
     arrival: String(row.arrival ?? ""), evidence: String(row.evidence ?? ""),
     distanceKm: Number(row.distance_km ?? 0), points: decodePoints(row.overview_coordinates_json, 140),
-    departurePoint:airportPoint(row.dep_lat,row.dep_lon),arrivalPoint:airportPoint(row.arr_lat,row.arr_lon),
+    departurePoint:airportPoint(row.dep_lat,row.dep_lon)??catalogPoint(String(row.departure??"")),arrivalPoint:airportPoint(row.arr_lat,row.arr_lon)??catalogPoint(String(row.arrival??"")),
   })).filter((track) => track.points.length >= 2);
   return { tracks, total: Number(rows[0]?.total_tracks ?? 0), totalDistanceKm: Number(rows[0]?.total_distance_km ?? 0) };
 }
@@ -77,27 +78,31 @@ export async function getFlightTracks(userId: number, flightId: number) {
       f.date,COALESCE(f.registration,'') registration,COALESCE(f.departure,'') departure,COALESCE(f.arrival,'') arrival,COALESCE(f.evidence,'') evidence,
       dep.latitude_deg dep_lat,dep.longitude_deg dep_lon,arr.latitude_deg arr_lat,arr.longitude_deg arr_lon
     FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id
-    LEFT JOIN airports dep ON dep.user_id=f.user_id AND UPPER(dep.ident)=UPPER(f.departure) AND dep.active=1
-    LEFT JOIN airports arr ON arr.user_id=f.user_id AND UPPER(arr.ident)=UPPER(f.arrival) AND arr.active=1
+    LEFT JOIN LATERAL (SELECT latitude_deg,longitude_deg FROM airports x WHERE UPPER(x.ident)=UPPER(f.departure) AND x.active=1 AND COALESCE(x.closed,0)=0 AND (x.user_id=f.user_id OR LOWER(COALESCE(x.source,'')) LIKE 'ourairports%') ORDER BY (x.user_id=f.user_id) DESC LIMIT 1) dep ON TRUE
+    LEFT JOIN LATERAL (SELECT latitude_deg,longitude_deg FROM airports x WHERE UPPER(x.ident)=UPPER(f.arrival) AND x.active=1 AND COALESCE(x.closed,0)=0 AND (x.user_id=f.user_id OR LOWER(COALESCE(x.source,'')) LIKE 'ourairports%') ORDER BY (x.user_id=f.user_id) DESC LIMIT 1) arr ON TRUE
     WHERE t.user_id=${userId} AND t.flight_id=${flightId} ORDER BY t.id
   ` as Array<Record<string, unknown>>;
   return rows.map((row) => ({
     id: Number(row.id), flightId: Number(row.flight_id), date: String(row.date??""), registration: String(row.registration??""), departure: String(row.departure??""),
     arrival: String(row.arrival??""), evidence: String(row.evidence??""), distanceKm: Number(row.distance_km ?? 0),
     points: decodePoints(row.coordinates_json, 2500),
-    departurePoint:airportPoint(row.dep_lat,row.dep_lon),arrivalPoint:airportPoint(row.arr_lat,row.arr_lon),
+    departurePoint:airportPoint(row.dep_lat,row.dep_lon)??catalogPoint(String(row.departure??"")),arrivalPoint:airportPoint(row.arr_lat,row.arr_lon)??catalogPoint(String(row.arrival??"")),
   } satisfies MapTrack)).filter((track) => track.points.length >= 2);
 }
 
 function airportPoint(lat:unknown,lon:unknown):TrackPoint|undefined{const a=Number(lat),o=Number(lon);return Number.isFinite(a)&&Number.isFinite(o)?{lat:a,lon:o}:undefined}
+function catalogPoint(ident:string):TrackPoint|undefined{const airport=getCatalogAirport(ident);return airport?{lat:airport.lat,lon:airport.lon}:undefined}
 
 export async function getRouteOverview(userId:number,filters:MapFilters={}){
   const registration=filters.registration?.trim()||null,evidence=filters.evidence?.trim()||null,airport=filters.airport?.trim()||null,route=filters.route?.trim()||null,year=filters.year?.trim()||null;
-  const [routeRows,airportRows]=await Promise.all([
-    sql`WITH b AS (SELECT UPPER(TRIM(f.departure)) departure,UPPER(TRIM(f.arrival)) arrival,CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END minutes FROM flights f WHERE f.user_id=${userId} AND NULLIF(TRIM(f.departure),'') IS NOT NULL AND NULLIF(TRIM(f.arrival),'') IS NOT NULL AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${airport}::text IS NULL OR UPPER(f.departure)=UPPER(${airport}::text) OR UPPER(f.arrival)=UPPER(${airport}::text)) AND (${route}::text IS NULL OR UPPER(CONCAT(f.departure,'→',f.arrival))=UPPER(${route}::text)) AND (${year}::text IS NULL OR EXTRACT(YEAR FROM f.date::date)::text=${year}::text)),r AS (SELECT departure,arrival,COUNT(*)::int flights,SUM(minutes)::int minutes FROM b GROUP BY 1,2) SELECT r.*,d.name dep_name,d.latitude_deg dep_lat,d.longitude_deg dep_lon,a.name arr_name,a.latitude_deg arr_lat,a.longitude_deg arr_lon FROM r JOIN airports d ON d.user_id=${userId} AND UPPER(d.ident)=r.departure AND d.active=1 JOIN airports a ON a.user_id=${userId} AND UPPER(a.ident)=r.arrival AND a.active=1 ORDER BY flights DESC,departure,arrival`,
-    sql`WITH b AS (SELECT UPPER(TRIM(f.departure)) departure,UPPER(TRIM(f.arrival)) arrival FROM flights f WHERE f.user_id=${userId} AND NULLIF(TRIM(f.departure),'') IS NOT NULL AND NULLIF(TRIM(f.arrival),'') IS NOT NULL AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${airport}::text IS NULL OR UPPER(f.departure)=UPPER(${airport}::text) OR UPPER(f.arrival)=UPPER(${airport}::text)) AND (${route}::text IS NULL OR UPPER(CONCAT(f.departure,'→',f.arrival))=UPPER(${route}::text)) AND (${year}::text IS NULL OR EXTRACT(YEAR FROM f.date::date)::text=${year}::text)),movements AS (SELECT departure ident FROM b UNION ALL SELECT arrival FROM b),m AS (SELECT ident,COUNT(*)::int flights FROM movements GROUP BY ident) SELECT m.ident,COALESCE(a.name,'') name,a.latitude_deg lat,a.longitude_deg lon,m.flights FROM m JOIN airports a ON a.user_id=${userId} AND UPPER(a.ident)=m.ident AND a.active=1 ORDER BY m.flights DESC,m.ident`
+  const [routeRows,airportRows,customAirportRows]=await Promise.all([
+    sql`WITH b AS (SELECT UPPER(TRIM(f.departure)) departure,UPPER(TRIM(f.arrival)) arrival,CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END minutes FROM flights f WHERE f.user_id=${userId} AND NULLIF(TRIM(f.departure),'') IS NOT NULL AND NULLIF(TRIM(f.arrival),'') IS NOT NULL AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${airport}::text IS NULL OR UPPER(f.departure)=UPPER(${airport}::text) OR UPPER(f.arrival)=UPPER(${airport}::text)) AND (${route}::text IS NULL OR UPPER(CONCAT(f.departure,'→',f.arrival))=UPPER(${route}::text)) AND (${year}::text IS NULL OR EXTRACT(YEAR FROM f.date::date)::text=${year}::text)) SELECT departure,arrival,COUNT(*)::int flights,SUM(minutes)::int minutes FROM b GROUP BY 1,2 ORDER BY flights DESC,departure,arrival`,
+    sql`WITH b AS (SELECT UPPER(TRIM(f.departure)) departure,UPPER(TRIM(f.arrival)) arrival FROM flights f WHERE f.user_id=${userId} AND NULLIF(TRIM(f.departure),'') IS NOT NULL AND NULLIF(TRIM(f.arrival),'') IS NOT NULL AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${airport}::text IS NULL OR UPPER(f.departure)=UPPER(${airport}::text) OR UPPER(f.arrival)=UPPER(${airport}::text)) AND (${route}::text IS NULL OR UPPER(CONCAT(f.departure,'→',f.arrival))=UPPER(${route}::text)) AND (${year}::text IS NULL OR EXTRACT(YEAR FROM f.date::date)::text=${year}::text)),movements AS (SELECT departure ident FROM b UNION ALL SELECT arrival FROM b) SELECT ident,COUNT(*)::int flights FROM movements GROUP BY ident ORDER BY flights DESC,ident`,
+    sql`SELECT UPPER(TRIM(ident)) ident,COALESCE(name,'') name,latitude_deg lat,longitude_deg lon FROM airports WHERE user_id=${userId} AND active=1 AND COALESCE(closed,0)=0 AND LOWER(COALESCE(source,'')) NOT LIKE 'ourairports%' LIMIT 2000`
   ]) as Array<Array<Record<string,unknown>>>;
-  const airports:MapAirport[]=airportRows.map(row=>({ident:String(row.ident),name:String(row.name??""),lat:Number(row.lat),lon:Number(row.lon),flights:Number(row.flights)})).filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lon));
-  const routes:RouteLine[]=routeRows.map(row=>({departure:String(row.departure),arrival:String(row.arrival),flights:Number(row.flights),minutes:Number(row.minutes),from:{ident:String(row.departure),name:String(row.dep_name??""),lat:Number(row.dep_lat),lon:Number(row.dep_lon),flights:Number(row.flights)},to:{ident:String(row.arrival),name:String(row.arr_name??""),lat:Number(row.arr_lat),lon:Number(row.arr_lon),flights:Number(row.flights)}})).filter(r=>Number.isFinite(r.from.lat)&&Number.isFinite(r.to.lat));
+  const custom=new Map(customAirportRows.map(row=>[String(row.ident),row]));
+  const airportFor=(ident:string,flights:number):MapAirport|null=>{const own=custom.get(ident);if(own&&Number.isFinite(Number(own.lat))&&Number.isFinite(Number(own.lon)))return{ident,name:String(own.name??""),lat:Number(own.lat),lon:Number(own.lon),flights};const item=getCatalogAirport(ident);return item?{ident:item.ident,name:item.name,lat:item.lat,lon:item.lon,flights}:null};
+  const airports:MapAirport[]=airportRows.map(row=>airportFor(String(row.ident),Number(row.flights))).filter((value):value is MapAirport=>value!==null);
+  const routes:RouteLine[]=routeRows.map(row=>{const departure=String(row.departure),arrival=String(row.arrival),flights=Number(row.flights),from=airportFor(departure,flights),to=airportFor(arrival,flights);return from&&to?{departure,arrival,flights,minutes:Number(row.minutes),from,to}:null}).filter((value):value is RouteLine=>value!==null);
   return{routes,airports,totalFlights:routes.reduce((sum,r)=>sum+r.flights,0)};
 }

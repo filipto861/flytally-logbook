@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { parseFlightInput } from "@/lib/flight-input";
 import { flightEnvelope,haversineKm,landingCount,localParts,overview,parseTrackFile,splitPoints,trackStats } from "@/lib/kml";
+import { airportCatalogSize,nearestCatalogAirport } from "@/lib/airport-catalog";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -29,15 +30,16 @@ export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arri
 async function nearestAirport(userId:number,candidates:Array<{lat:number;lon:number}>):Promise<AirportDetection>{
   const valid=candidates.filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180).slice(0,20);if(!valid.length)return null;
   const minLat=Math.min(...valid.map(point=>point.lat))-.65,maxLat=Math.max(...valid.map(point=>point.lat))+.65,minLon=Math.min(...valid.map(point=>point.lon))-1,maxLon=Math.max(...valid.map(point=>point.lon))+1;
-  const rows=await sql`SELECT ident,COALESCE(name,'') name,latitude_deg,longitude_deg,user_id,COALESCE(source,'') source FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND latitude_deg BETWEEN ${minLat} AND ${maxLat} AND longitude_deg BETWEEN ${minLon} AND ${maxLon} AND (user_id=${userId} OR source='ourairports_csv') LIMIT 2500` as Array<{ident:string;name:string;latitude_deg:number;longitude_deg:number;user_id:number;source:string}>;
+  const rows=await sql`SELECT ident,COALESCE(name,'') name,latitude_deg,longitude_deg,user_id,COALESCE(source,'') source FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND latitude_deg BETWEEN ${minLat} AND ${maxLat} AND longitude_deg BETWEEN ${minLon} AND ${maxLon} AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%') LIMIT 2500` as Array<{ident:string;name:string;latitude_deg:number;longitude_deg:number;user_id:number;source:string}>;
   const unique=new Map<string,typeof rows[number]>();for(const row of rows){const ident=String(row.ident||"").trim().toUpperCase();if(!ident)continue;const previous=unique.get(ident);if(!previous||Number(row.user_id)===userId)unique.set(ident,row)}
   let best:{row:typeof rows[number];distanceKm:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg),alt:null,time:null};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;for(const point of valid){const distanceKm=haversineKm({lat:point.lat,lon:point.lon,alt:null,time:null},airport);if(!best||distanceKm<best.distanceKm)best={row,distanceKm}}}
-  return best&&best.distanceKm<=35?{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10}:null;
+  if(best&&best.distanceKm<=35)return{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10};
+  const fallback=nearestCatalogAirport(valid,35);return fallback?{ident:fallback.ident,name:fallback.name,distanceKm:fallback.distanceKm}:null;
 }
 
 export async function detectTrackAirports(requests:AirportDetectionRequest[]):Promise<AirportDetectionResult>{
-  const {userId}=await requireUser();const safe=requests.slice(0,20),countQuery=async()=>await sql`SELECT COUNT(DISTINCT UPPER(ident))::integer count FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR source='ourairports_csv')` as Array<{count:number}>;const [parts,count]=await Promise.all([Promise.all(safe.map(async request=>{const [departure,arrival]=await Promise.all([nearestAirport(userId,request.departureCandidates),nearestAirport(userId,request.arrivalCandidates)]);return{departure,arrival}})),countQuery()]);
-  return{parts,airportCount:Number(count[0]?.count||0)};
+  const {userId}=await requireUser();const safe=requests.slice(0,20),countQuery=async()=>await sql`SELECT COUNT(DISTINCT UPPER(ident))::integer count FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%')` as Array<{count:number}>;const [parts,count]=await Promise.all([Promise.all(safe.map(async request=>{const [departure,arrival]=await Promise.all([nearestAirport(userId,request.departureCandidates),nearestAirport(userId,request.arrivalCandidates)]);return{departure,arrival}})),countQuery()]);
+  return{parts,airportCount:Math.max(Number(count[0]?.count||0),airportCatalogSize())};
 }
 
 export async function createFlight(_: FlightActionState, form: FormData): Promise<FlightActionState> {

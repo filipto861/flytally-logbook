@@ -25,6 +25,12 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
   const time = (name: string) => text(form, name, 5);
   const times = [time("offBlock"), time("takeoff"), time("landing"), time("onBlock")];
   if (times.some((value) => value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))) return { error: "Časy musí být ve formátu HH:MM." };
+  const minute=(value:string)=>value?Number(value.slice(0,2))*60+Number(value.slice(3)):null;
+  const delta=(a:string,b:string)=>{const start=minute(a),end=minute(b);return start===null||end===null?null:(end-start+1440)%1440};
+  const block=delta(times[0],times[3]),air=delta(times[1],times[2]),taxiOut=delta(times[0],times[1]),taxiIn=delta(times[2],times[3]);
+  if(block!==null&&block>18*60)return {error:"BLOCK čas je delší než 18 hodin. Zkontrolujte Off-block a On-block."};
+  if(air!==null&&block!==null&&air>block+5)return {error:"AIR čas nemůže být delší než BLOCK čas. Zkontrolujte pořadí časů."};
+  if((taxiOut!==null&&taxiOut>180)||(taxiIn!==null&&taxiIn>180))return {error:"Časy pojíždění jsou delší než 3 hodiny. Zkontrolujte pořadí Off-block, vzletu, přistání a On-block."};
   const starts = Math.max(0, Math.min(99, Number.parseInt(text(form, "starts", 2) || "0", 10) || 0));
   const registration = text(form, "registration", 32).toUpperCase();
   if (!registration) return { error: "Vyberte nebo zadejte imatrikulaci." };

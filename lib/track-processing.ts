@@ -35,7 +35,20 @@ export const haversineKm=(a:KmlPoint,b:KmlPoint)=>{const radius=6371.0088,p=Math
 const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value=(Date.parse(b.time)-Date.parse(a.time))/1000;return Number.isFinite(value)&&value>0?value:0};
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
-export function suggestedSplits(points:KmlPoint[]){const out:number[]=[];for(let i=1;i<points.length;i++){const gap=seconds(points[i-1],points[i]),endpoint=haversineKm(points[i-1],points[i]);if((gap>=3600&&endpoint<=50)||(gap>=1200&&endpoint<=12)||gap>=5400)out.push(i-1)}for(const event of groundEvents(points))if(event.duration>=90)out.push(Math.round((event.start+event.end)/2));return[...new Set(out)].sort((a,b)=>a-b).filter((value,index,all)=>value>2&&value<points.length-3&&(!index||value-all[index-1]>=5))}
+export function suggestedSplits(points:KmlPoint[]){
+  const out:number[]=[];
+  for(let i=1;i<points.length;i++){
+    const gap=seconds(points[i-1],points[i]),endpoint=haversineKm(points[i-1],points[i]);
+    // A coverage hole while the aircraft is moving must stay one flight. A
+    // substantial pause at (or close to) the same place is a flight boundary.
+    if((gap>=3600&&endpoint<=50)||(gap>=1200&&endpoint<=12)||(gap>=5400&&endpoint<=120))out.push(i-1);
+  }
+  for(const event of groundEvents(points))if(event.duration>=90)out.push(Math.round((event.start+event.end)/2));
+  // splitPoints() cuts after the selected point. Two points on each side are
+  // sufficient; the previous >2/<length-3 rule silently discarded valid
+  // short multi-flight exports and made the wizard show a single dot/flight.
+  return[...new Set(out)].sort((a,b)=>a-b).filter((value,index,all)=>value>=1&&value<=points.length-3&&(!index||value-all[index-1]>=2));
+}
 export function landingCount(points:KmlPoint[]){return Math.max(1,1+groundEvents(points).filter(event=>event.duration>5&&event.duration<90).length)}
 export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.length)return[points];const parts:KmlPoint[][]=[];let start=0;for(const raw of indices){const index=Math.max(1,Math.min(points.length-2,raw)),part=points.slice(start,index+1);if(part.length>=2)parts.push(part);start=index+1}const tail=points.slice(start);if(tail.length>=2)parts.push(tail);return parts.length?parts:[points]}
 export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&value!==0),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}

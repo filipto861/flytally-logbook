@@ -1,6 +1,6 @@
 {
-  "name": "woodcomp-logbook-web",
-  "version": "0.82.0",
+  "name": "pilot-logbook-web",
+  "version": "0.87.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

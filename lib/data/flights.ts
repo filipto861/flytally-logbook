@@ -9,7 +9,7 @@ const txt=(v:unknown)=>String(v??"");
 const normalize=(r:Record<string,unknown>):FlightRow=>({id:num(r.id),date:txt(r.date),evidence:txt(r.evidence),registration:txt(r.registration),aircraft_type:txt(r.aircraft_type),departure:txt(r.departure),arrival:txt(r.arrival),off_block:txt(r.off_block),on_block:txt(r.on_block),takeoff:txt(r.takeoff),landing:txt(r.landing),role:txt(r.role),starts:num(r.starts),aircraft_class:txt(r.aircraft_class),commander:txt(r.commander),instructor:txt(r.instructor),task:txt(r.task),billing_basis:txt(r.billing_basis),note:txt(r.note),price_per_hour:num(r.price_per_hour),block_minutes:num(r.block_minutes),air_minutes:num(r.air_minutes),track_count:num(r.track_count),gps_km:num(r.gps_km)});
 
 export async function getFlightsPage(userId:number,filters:FlightFilters){
-  const page=Math.max(1,Math.floor(filters.page||1)); const size=[25,50,100,200].includes(Number(filters.size))?Number(filters.size):50; const offset=(page-1)*size;
+  const page=Math.max(1,Math.floor(filters.page||1)); const requestedSize=Number(filters.size); const size=requestedSize===5000?5000:[25,50,100,200].includes(requestedSize)?requestedSize:50; const offset=(page-1)*size;
   const q=(filters.q??"").trim()||null,evidence=(filters.evidence??"").trim()||null,role=(filters.role??"").trim()||null,registration=(filters.registration??"").trim()||null,aircraftClass=(filters.aircraftClass??"").trim()||null,airport=(filters.airport??"").trim()||null,route=(filters.route??"").trim()||null,gps=(filters.gps??"").trim()||null,year=(filters.year??"").trim()||null,sort=(filters.sort??"newest").trim(),from=(filters.from??"").trim()||null,to=(filters.to??"").trim()||null;
   const base=sql`
     WITH track AS (SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km FROM flight_tracks WHERE user_id=${userId} GROUP BY flight_id), b AS (
@@ -40,3 +40,20 @@ export async function getFlight(userId:number,id:number){const rows=await sql`WI
 export async function getFlightFilterOptions(userId:number){const [regs,evidence,roles,classes,airports,routes,years]=await Promise.all([sql`SELECT DISTINCT UPPER(TRIM(registration)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(registration),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(evidence)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(evidence),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(role)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(role),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(aircraft_class)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(aircraft_class),'') IS NOT NULL ORDER BY 1`,sql`SELECT value FROM (SELECT UPPER(TRIM(departure)) value FROM flights WHERE user_id=${userId} UNION SELECT UPPER(TRIM(arrival)) value FROM flights WHERE user_id=${userId}) x WHERE value<>'' ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(departure))||'→'||UPPER(TRIM(arrival)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(departure),'') IS NOT NULL AND NULLIF(TRIM(arrival),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT EXTRACT(YEAR FROM date::date)::int value FROM flights WHERE user_id=${userId} ORDER BY 1 DESC`]) as Array<Array<Record<string,unknown>>>;return {registrations:regs.map(r=>txt(r.value)),evidence:evidence.map(r=>txt(r.value)),roles:roles.map(r=>txt(r.value)),classes:classes.map(r=>txt(r.value)),airports:airports.map(r=>txt(r.value)),routes:routes.map(r=>txt(r.value)),years:years.map(r=>txt(r.value))};}
 
 export async function getRecentRoutes(userId:number){const rows=await sql`SELECT UPPER(TRIM(departure)) departure,UPPER(TRIM(arrival)) arrival,COUNT(*) uses,MAX(date) last_date FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(departure),'') IS NOT NULL AND NULLIF(TRIM(arrival),'') IS NOT NULL GROUP BY 1,2 ORDER BY uses DESC,last_date DESC LIMIT 18` as Array<{departure:string;arrival:string}>;return rows.map(r=>({departure:String(r.departure),arrival:String(r.arrival)}));}
+
+export async function getManualEntryDefaults(userId:number){
+  const [latest,settings,user]=await Promise.all([
+    sql`SELECT registration,arrival,evidence,role,commander FROM flights WHERE user_id=${userId} ORDER BY date DESC,off_block DESC NULLS LAST,id DESC LIMIT 1`,
+    sql`SELECT home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1`,
+    sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
+  ]) as Array<Array<Record<string,unknown>>>;
+  const last=latest[0]??{},cfg=settings[0]??{};let preferences:Record<string,unknown>={};
+  try{preferences=JSON.parse(String(cfg.preferences_json||"{}"))}catch{}
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  return {date:today,registration:String(last.registration||""),departure:String(last.arrival||cfg.home_airport||"").toUpperCase(),arrival:"",evidence:String(preferences.default_evidence||last.evidence||"ULL").toUpperCase(),role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||last.commander||""),starts:1};
+}
+
+export async function getFlightNavigation(userId:number,id:number){
+  const rows=await sql`WITH ordered AS (SELECT id,LAG(id) OVER(ORDER BY date DESC,off_block DESC NULLS LAST,id DESC) previous_id,LEAD(id) OVER(ORDER BY date DESC,off_block DESC NULLS LAST,id DESC) next_id,ROW_NUMBER() OVER(ORDER BY date DESC,off_block DESC NULLS LAST,id DESC)::int position,COUNT(*) OVER()::int total FROM flights WHERE user_id=${userId}) SELECT previous_id,next_id,position,total FROM ordered WHERE id=${id}` as Array<Record<string,unknown>>;
+  const row=rows[0]??{};return{previousId:row.previous_id?Number(row.previous_id):null,nextId:row.next_id?Number(row.next_id):null,position:Number(row.position||0),total:Number(row.total||0)};
+}
