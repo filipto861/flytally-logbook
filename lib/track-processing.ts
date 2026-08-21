@@ -41,3 +41,26 @@ export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.leng
 export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&value!==0),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}
 export function overview(points:KmlPoint[],max=180){if(points.length<=max)return points;const step=Math.ceil(points.length/max),out=points.filter((_,index)=>index===0||index===points.length-1||index%step===0);if(out.at(-1)!==points.at(-1))out.push(points.at(-1)!);return out.slice(0,max)}
 export function localParts(iso:string|null){if(!iso)return null;const date=new Date(iso);if(Number.isNaN(date.getTime()))return null;const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map(part=>[part.type,part.value]));return{date:`${parts.year}-${parts.month}-${parts.day}`,time:`${parts.hour}:${parts.minute}`}}
+
+function shiftedIso(iso:string|null,minutes:number){if(!iso)return null;const date=new Date(iso);if(Number.isNaN(date.getTime()))return null;return new Date(date.getTime()+minutes*60_000).toISOString()}
+
+export type FlightEnvelope={
+  takeoffIndex:number;landingIndex:number;offBlockUtc:string|null;takeoffUtc:string|null;
+  landingUtc:string|null;onBlockUtc:string|null;departureCandidates:KmlPoint[];arrivalCandidates:KmlPoint[];
+};
+
+function sampledWindow(points:KmlPoint[],from:number,to:number,max=16){const slice=points.slice(Math.max(0,from),Math.min(points.length,to+1));if(slice.length<=max)return slice;const step=Math.max(1,Math.floor(slice.length/(max-1)));const result=slice.filter((_,index)=>index===0||index===slice.length-1||index%step===0);return result.slice(0,max-1).concat(slice.at(-1)!)}
+
+/** Detect the airborne portion without assuming that the file starts/ends at an airport. */
+export function flightEnvelope(points:KmlPoint[]):FlightEnvelope{
+  if(points.length<2)return{takeoffIndex:0,landingIndex:0,offBlockUtc:null,takeoffUtc:null,landingUtc:null,onBlockUtc:null,departureCandidates:points,arrivalCandidates:points};
+  const speed=speeds(points),alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),floor=alts.length?Math.min(...alts):null;
+  const active=speed.map((value,index)=>value>=50||(value>=18&&floor!==null&&points[index].alt!==null&&points[index].alt!-floor>=45));
+  let first=active.findIndex(Boolean),last=-1;for(let index=active.length-1;index>=0;index--)if(active[index]){last=index;break}
+  if(first<0||last<first){first=0;last=points.length-1}
+  const takeoffIndex=Math.max(0,first),landingIndex=Math.min(points.length-1,last),takeoffUtc=points[takeoffIndex].time||points.find(point=>point.time)?.time||null,landingUtc=points[landingIndex].time||[...points].reverse().find(point=>point.time)?.time||null;
+  // The logbook convention is five minutes before take-off / after landing.
+  // All four values remain editable in the confirmation step.
+  const offBlockUtc=shiftedIso(takeoffUtc,-5),onBlockUtc=shiftedIso(landingUtc,5);
+  return{takeoffIndex,landingIndex,offBlockUtc,takeoffUtc,landingUtc,onBlockUtc,departureCandidates:sampledWindow(points,0,Math.min(points.length-1,takeoffIndex+5)),arrivalCandidates:sampledWindow(points,Math.max(0,landingIndex-5),points.length-1)};
+}
