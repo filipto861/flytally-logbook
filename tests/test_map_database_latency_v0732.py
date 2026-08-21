@@ -19,7 +19,7 @@ def _function(source: str, name: str) -> str:
 
 
 def test_release_version_without_schema_migration():
-    assert APP_VERSION == "v0.73.3"
+    assert APP_VERSION == "v0.73.3.1"
     assert DB_SCHEMA_VERSION == 11
 
 

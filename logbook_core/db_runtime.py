@@ -441,22 +441,23 @@ class PostgresConnectionAdapter:
     def close(self) -> None:
         if self._closed:
             return
+        pool_returned = False
         try:
             if self._read_only:
                 try:
                     self._connection.autocommit = False
                 except Exception:
-                    # If restoring pool state fails, mark the physical connection
-                    # broken and return it to the pool so pool accounting remains
-                    # correct and a replacement can be opened later.
+                    # If restoring pool state fails, close the physical connection
+                    # and still return its slot to the pool. Avoid control-flow
+                    # inside finally so Python 3.14 does not warn.
                     try:
                         self._connection.close()
                     finally:
                         try:
                             self._pool.putconn(self._connection)
+                            pool_returned = True
                         except Exception:
                             pass
-                        return
             elif self._executed_any:
                 # Pure SELECTs on a transactional connection leave a transaction
                 # open; clean it before returning the connection to the pool.
@@ -466,7 +467,9 @@ class PostgresConnectionAdapter:
                     pass
                 self._executed_any = False
                 self._dirty = False
-            self._pool.putconn(self._connection)
+
+            if not pool_returned:
+                self._pool.putconn(self._connection)
         finally:
             self._closed = True
 

@@ -1,7 +1,14 @@
 # Letový zápisník
 
-Current release: **v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path**
+Current release: **v0.73.3.1 – Theme Runtime Hotfix**
 
+
+## v0.73.3.1 – Theme Runtime Hotfix
+
+- fixes unescaped CSS braces in the v0.73.3 lightweight Dashboard chart
+- fixes Python 3.14 `return in finally` SyntaxWarning in PostgreSQL connection cleanup
+- retains all v0.73.3 GPS/Dashboard performance changes and automatic schema upgrades
+- no additional database migration and no Secrets change
 
 ## v0.73.3 – Lightweight GPS Geometry & Dashboard Hot Path
 

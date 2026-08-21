@@ -28,7 +28,7 @@ def _function(source: str, name: str) -> str:
 
 
 def test_release_versions_and_schema_upgrade():
-    assert APP_VERSION == "v0.73.3"
+    assert APP_VERSION == "v0.73.3.1"
     assert DB_SCHEMA_VERSION == 11
     assert POSTGRES_FOUNDATION_VERSION == 2
     assert POSTGRES_SCHEMA_VERSION == 2

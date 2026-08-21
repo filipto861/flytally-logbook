@@ -287,14 +287,14 @@ def apply_ui_theme(dark_mode: bool) -> None:
         font-weight:820;
     }}
 
-    .dashboard-lite-chart {border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.028),transparent),var(--panel);padding:.82rem .95rem .62rem .95rem;margin:.45rem 0 .7rem 0;box-shadow:0 10px 24px var(--shadow);}
-    .dashboard-lite-head {display:flex;align-items:center;justify-content:space-between;gap:1rem;color:var(--text);font-size:.88rem;margin-bottom:.55rem;}
-    .dashboard-lite-head span {color:var(--muted);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
-    .dashboard-lite-bars {display:flex;align-items:flex-end;gap:3px;height:142px;border-bottom:1px solid rgba(148,163,184,.16);}
-    .dashboard-lite-col {flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;}
-    .dashboard-lite-barwrap {height:116px;display:flex;align-items:flex-end;justify-content:center;}
-    .dashboard-lite-bar {width:min(78%,18px);min-height:3px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,rgba(56,189,248,.96),rgba(14,165,233,.50));box-shadow:0 3px 10px rgba(56,189,248,.10);}
-    .dashboard-lite-month {height:20px;padding-top:4px;text-align:center;color:var(--muted);font-size:.61rem;white-space:nowrap;overflow:visible;}
+    .dashboard-lite-chart {{border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.028),transparent),var(--panel);padding:.82rem .95rem .62rem .95rem;margin:.45rem 0 .7rem 0;box-shadow:0 10px 24px var(--shadow);}}
+    .dashboard-lite-head {{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:var(--text);font-size:.88rem;margin-bottom:.55rem;}}
+    .dashboard-lite-head span {{color:var(--muted);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}}
+    .dashboard-lite-bars {{display:flex;align-items:flex-end;gap:3px;height:142px;border-bottom:1px solid rgba(148,163,184,.16);}}
+    .dashboard-lite-col {{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;}}
+    .dashboard-lite-barwrap {{height:116px;display:flex;align-items:flex-end;justify-content:center;}}
+    .dashboard-lite-bar {{width:min(78%,18px);min-height:3px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,rgba(56,189,248,.96),rgba(14,165,233,.50));box-shadow:0 3px 10px rgba(56,189,248,.10);}}
+    .dashboard-lite-month {{height:20px;padding-top:4px;text-align:center;color:var(--muted);font-size:.61rem;white-space:nowrap;overflow:visible;}}
     .dashboard-quickline {{
         color:var(--muted);
         font-size:.82rem;
