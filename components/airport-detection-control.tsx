@@ -1,0 +1,17 @@
+"use client";
+
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import type { FlightActionState } from "@/app/(protected)/flights/actions";
+
+type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
+
+function Submit(){
+  const {pending}=useFormStatus();
+  return <button className="secondary-button" disabled={pending}>{pending?"Hledám v katalogu…":"Detekovat letiště z GPS"}</button>;
+}
+
+export function AirportDetectionControl({action,departure,arrival}:{action:Action;departure:string;arrival:string}){
+  const [state,formAction]=useActionState(action,{});
+  return <section className="panel airport-detection"><div><p className="eyebrow">LETIŠTĚ PODLE GPS</p><strong>{departure||"?"} → {arrival||"?"}</strong><small>Spustí se pouze ručně. Začátek a konec tracku porovná s úplným katalogem v okruhu 35 km a nalezené kódy uloží do letu.</small></div><form action={formAction}><Submit/></form>{state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">{state.success}</p>:null}</section>;
+}

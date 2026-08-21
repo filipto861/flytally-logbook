@@ -42,6 +42,18 @@ export async function detectTrackAirports(requests:AirportDetectionRequest[]):Pr
   return{parts,airportCount:Math.max(Number(count[0]?.count||0),airportCatalogSize())};
 }
 
+export async function redetectFlightAirports(flightId:number,_:FlightActionState,_form:FormData):Promise<FlightActionState>{
+  const {userId}=await requireUser();if(!Number.isSafeInteger(flightId)||flightId<=0)return{error:"Neplatný let."};
+  const rows=await sql`SELECT coordinates_json FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} ORDER BY start_utc NULLS LAST,id` as Array<{coordinates_json:unknown}>;
+  const parts:Array<Array<{lat:number;lon:number}>>=[];for(const row of rows){try{const parsed=typeof row.coordinates_json==="string"?JSON.parse(row.coordinates_json):row.coordinates_json;if(!Array.isArray(parsed))continue;const valid=parsed.map(point=>({lat:Number(point?.lat),lon:Number(point?.lon)})).filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180);if(valid.length>=2)parts.push(valid)}catch{}}
+  if(!parts.length)return{error:"Let nemá použitelný GPS track."};
+  const departureCandidates=parts[0].slice(0,20),arrivalCandidates=parts.at(-1)!.slice(-20).reverse(),[departure,arrival]=await Promise.all([nearestAirport(userId,departureCandidates),nearestAirport(userId,arrivalCandidates)]);
+  if(!departure&&!arrival)return{error:"V okruhu 35 km od začátku ani konce tracku nebylo nalezeno letiště."};
+  await sql`UPDATE flights SET departure=CASE WHEN ${departure?.ident||""}<>'' THEN ${departure?.ident||""} ELSE departure END,arrival=CASE WHEN ${arrival?.ident||""}<>'' THEN ${arrival?.ident||""} ELSE arrival END WHERE id=${flightId} AND user_id=${userId}`;
+  revalidatePath(`/flights/${flightId}`);revalidatePath("/flights");revalidatePath("/database");revalidatePath("/map");
+  const found=[departure?`odlet ${departure.ident} (${departure.distanceKm} km)`:"",arrival?`přílet ${arrival.ident} (${arrival.distanceKm} km)`:""].filter(Boolean).join(" · ");return{success:`Nalezeno a uloženo: ${found}.`};
+}
+
 export async function createFlight(_: FlightActionState, form: FormData): Promise<FlightActionState> {
   const { userId } = await requireUser(); const parsed = parseFlightInput(form);
   if (!parsed.data) return { error: parsed.error }; const f = parsed.data;
