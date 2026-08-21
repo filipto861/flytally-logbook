@@ -90,7 +90,14 @@ export async function getFlightTracks(userId: number, flightId: number) {
   } satisfies MapTrack)).filter((track) => track.points.length >= 2);
 }
 
-function airportPoint(lat:unknown,lon:unknown):TrackPoint|undefined{const a=Number(lat),o=Number(lon);return Number.isFinite(a)&&Number.isFinite(o)?{lat:a,lon:o}:undefined}
+function airportPoint(lat:unknown,lon:unknown):TrackPoint|undefined{
+  // A missing LEFT JOIN value is null. Number(null) is 0, which previously
+  // produced a fake point in the Gulf of Guinea and prevented the catalogue
+  // fallback for manually entered airport identifiers.
+  if(lat===null||lat===undefined||lon===null||lon===undefined||lat===""||lon==="")return undefined;
+  const a=Number(lat),o=Number(lon);
+  return Number.isFinite(a)&&Number.isFinite(o)&&a>=-90&&a<=90&&o>=-180&&o<=180?{lat:a,lon:o}:undefined;
+}
 function catalogPoint(ident:string):TrackPoint|undefined{const airport=getCatalogAirport(ident);return airport?{lat:airport.lat,lon:airport.lon}:undefined}
 
 export async function getRouteOverview(userId:number,filters:MapFilters={}){

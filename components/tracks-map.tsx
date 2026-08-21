@@ -21,8 +21,8 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
       const color = track.evidence === "EASA" ? "#38bdf8" : "#34d399";
       const line = L.polyline(latlngs, { color, weight: detail ? 3 : 2, opacity: detail ? .95 : .68, renderer: L.canvas() }).addTo(map);
       const depGap=track.departurePoint?gap(track.departurePoint,track.points[0]):0,arrGap=track.arrivalPoint?gap(track.points.at(-1)!,track.arrivalPoint):0;
-      if(track.departurePoint&&depGap>.35&&depGap<150){const connector=[L.latLng(track.departurePoint.lat,track.departurePoint.lon),latlngs[0]];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer:L.canvas()}).addTo(map)}
-      if(track.arrivalPoint&&arrGap>.35&&arrGap<150){const connector=[latlngs.at(-1)!,L.latLng(track.arrivalPoint.lat,track.arrivalPoint.lon)];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer:L.canvas()}).addTo(map)}
+      if(track.departurePoint&&depGap>.35){const connector=[L.latLng(track.departurePoint.lat,track.departurePoint.lon),latlngs[0]];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer:L.canvas()}).addTo(map)}
+      if(track.arrivalPoint&&arrGap>.35){const connector=[latlngs.at(-1)!,L.latLng(track.arrivalPoint.lat,track.arrivalPoint.lon)];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer:L.canvas()}).addTo(map)}
       if (!detail) {
         const node = document.createElement("div");
         const title = document.createElement("strong"); title.textContent = `${track.registration || "Let"} · ${track.date}`;
