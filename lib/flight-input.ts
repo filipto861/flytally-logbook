@@ -1,3 +1,5 @@
+import { serializeBilling } from "@/lib/billing";
+
 export const EVIDENCE = ["ULL", "EASA"] as const;
 export const CLASSES = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"] as const;
 export const ROLES = ["PIC", "DUAL", "INSTRUKTOR", "SAFETY PILOT", "CO-PILOT", "PAX", "OBSERVER"] as const;
@@ -42,6 +44,6 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
     offBlock: times[0], takeoff: times[1], landing: times[2], onBlock: times[3], starts,
     commander: text(form, "commander", 100), instructor: text(form, "instructor", 100),
     role: option(text(form, "role", 24).toUpperCase(), ROLES, "PIC"), task: text(form, "task", 160),
-    billingBasis: option(text(form, "billingBasis", 8).toUpperCase(), BILLING, "BLOCK"), note: text(form, "note", 2000),
+    billingBasis: serializeBilling(option(text(form, "billingBasis", 8).toUpperCase(), BILLING, "BLOCK"),text(form,"billingShare",2)), note: text(form, "note", 2000),
   }};
 }
