@@ -58,7 +58,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
           COALESCE(SUM(air_minutes),0)::int air_minutes,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='PIC'),0)::int pic_minutes,
           COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='DUAL'),0)::int dual_minutes,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(TRIM(role))='SAFETY PILOT'),0)::int safety_minutes,
           COUNT(DISTINCT NULLIF(UPPER(TRIM(registration)),''))::int unique_aircraft,
-          COALESCE(SUM((CASE WHEN UPPER(COALESCE(billing_basis,'BLOCK'))='AIR' THEN air_minutes ELSE block_minutes END)::numeric/60*COALESCE(price_per_hour,0)),0) cost
+          COALESCE(SUM((CASE WHEN UPPER(COALESCE(billing_basis,'BLOCK')) LIKE 'AIR%' THEN air_minutes ELSE block_minutes END)::numeric/60*COALESCE(price_per_hour,0)/(CASE WHEN split_part(COALESCE(billing_basis,''),'/',2) ~ '^[1-9][0-9]*$' THEN GREATEST(split_part(billing_basis,'/',2)::numeric,1) ELSE 1 END)),0) cost
         FROM base
       ), airports AS (SELECT COUNT(DISTINCT code)::int unique_airports FROM (SELECT NULLIF(UPPER(TRIM(departure)),'') code FROM base UNION SELECT NULLIF(UPPER(TRIM(arrival)),'') FROM base) x WHERE code IS NOT NULL)
       SELECT u.display_name,s.*,a.unique_airports,t.tracks,t.gps_km FROM users u CROSS JOIN base_stats s CROSS JOIN airports a CROSS JOIN track t WHERE u.id=${userId}`,
