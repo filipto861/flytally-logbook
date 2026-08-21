@@ -1,8 +1,18 @@
 # Vercel migration
 
 The repository contains the production Streamlit v0.73.3.2 application and a
-new Next.js v0.80 migration target. Both use the same existing Neon PostgreSQL
+new Next.js v0.81 migration target. Both use the same existing Neon PostgreSQL
 schema; no destructive database migration is required for this foundation.
+
+## v0.81 parity expansion
+
+- Streamlit-priority dashboard with period filters, ULL/EASA and PIC cards.
+- Searchable logbook with BLOCK/AIR metrics and complete GPS coverage.
+- Flight GPS map, altitude profile and track playback.
+- KML, gx:Track, Flightradar24 and common ADS-B KML import.
+- Aircraft, historical rates, custom airports, profile and expiries.
+- Excel-compatible, CSV and portable JSON account exports.
+- Collapsible responsive navigation and mobile layout.
 
 ## Vercel configuration
 
@@ -20,11 +30,11 @@ functions with that database instead.
 ## Performance rules
 
 - Private data is never cached across users.
-- Dashboard totals are produced by one aggregate SQL query.
-- Flight history is sorted and paginated in PostgreSQL (50 rows per page).
+- Dashboard sections use parallel aggregate SQL queries and never transfer raw tracks.
+- Flight history is filtered, sorted and paginated in PostgreSQL (25–200 rows per page).
 - Large GPS payloads are excluded from dashboard and flight-list queries.
-- Maps and track-player JavaScript will be dynamically loaded only on their
-  dedicated routes.
+- Full GPS data is loaded only on map and flight-detail routes; overview geometry
+  is capped at 180 points per track.
 - Mutations will invalidate only the affected route/data scope.
 
 ## Migration gates
@@ -37,7 +47,3 @@ functions with that database instead.
 - export/backup parity
 - authorization and ownership tests for every mutation
 - cold/warm response measurements from the production region
-
-## Deployment trigger
-
-The Vercel project tracks `codex/vercel-migration-v080` during the parity phase. This commit starts the first branch-native production build after environment variables were configured.

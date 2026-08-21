@@ -1,23 +1,21 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
-import { FLIGHTS_PAGE_SIZE, getFlightsPage } from "@/lib/data/flights";
+import { formatDuration } from "@/lib/data/dashboard";
+import { getFlightFilterOptions,getFlightsPage } from "@/lib/data/flights";
+export const metadata={title:"Lety | Letový zápisník"};
 
-export const metadata = { title: "Lety | Letový zápisník" };
-
-export default async function FlightsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  const session = await requireUser();
-  const requested = Number((await searchParams).page ?? "1");
-  const result = await getFlightsPage(session.userId, Number.isFinite(requested) ? requested : 1);
-  const pages = Math.max(1, Math.ceil(result.total / FLIGHTS_PAGE_SIZE));
-  return (
-    <>
-      <header className="page-header"><div><p className="eyebrow">LOGBOOK</p><h1>Lety</h1><p className="muted">{result.total} záznamů</p></div><Link className="primary-link" href="/flights/new">Přidat let</Link></header>
-      <section className="table-panel">
-        <div className="table-scroll"><table><thead><tr><th>Datum</th><th>Letadlo</th><th>Trasa</th><th>BLOCK</th><th>Funkce</th><th>Přistání</th></tr></thead><tbody>
-          {result.rows.map((flight) => <tr key={flight.id}><td><Link className="row-link" href={`/flights/${flight.id}`}>{flight.date}</Link></td><td><strong>{flight.registration || "—"}</strong><small>{flight.aircraft_type || flight.evidence || ""}</small></td><td>{flight.departure || "—"} → {flight.arrival || "—"}</td><td>{flight.off_block || "—"}–{flight.on_block || "—"}</td><td>{flight.role || "—"}</td><td>{flight.starts}</td></tr>)}
-        </tbody></table></div>
-        <div className="pagination"><Link aria-disabled={result.page <= 1} href={`/flights?page=${Math.max(1, result.page - 1)}`}>Předchozí</Link><span>{result.page} / {pages}</span><Link aria-disabled={result.page >= pages} href={`/flights?page=${Math.min(pages, result.page + 1)}`}>Další</Link></div>
-      </section>
-    </>
-  );
+type Params={page?:string;size?:string;q?:string;evidence?:string;role?:string;registration?:string;from?:string;to?:string};
+function href(params:Params,changes:Params){const out=new URLSearchParams();for(const [k,v] of Object.entries({...params,...changes}))if(v)out.set(k,v);return `/flights?${out}`;}
+export default async function FlightsPage({searchParams}:{searchParams:Promise<Params>}){
+  const session=await requireUser();const params=await searchParams;const filters={...params,page:Number(params.page||1),size:Number(params.size||50)};
+  const [result,options]=await Promise.all([getFlightsPage(session.userId,filters),getFlightFilterOptions(session.userId)]);const pages=Math.max(1,Math.ceil(result.total/result.size));
+  return <>
+    <header className="page-header"><div><p className="eyebrow">LETOVÝ DENÍK</p><h1>Lety</h1><p className="muted">Vyhledávání, filtry a kompletní historie</p></div><Link className="primary-link" href="/flights/new">＋ Přidat let</Link></header>
+    <form className="panel filter-panel" method="get"><div className="filter-grid"><label className="search-field">Hledat<input name="q" defaultValue={params.q} placeholder="Registrace, letiště, typ, funkce…"/></label><label>Evidence<select name="evidence" defaultValue={params.evidence||""}><option value="">Vše</option>{options.evidence.map(v=><option key={v}>{v}</option>)}</select></label><label>Funkce<select name="role" defaultValue={params.role||""}><option value="">Vše</option>{options.roles.map(v=><option key={v}>{v}</option>)}</select></label><label>Letadlo<select name="registration" defaultValue={params.registration||""}><option value="">Všechna</option>{options.registrations.map(v=><option key={v}>{v}</option>)}</select></label><label>Od<input type="date" name="from" defaultValue={params.from}/></label><label>Do<input type="date" name="to" defaultValue={params.to}/></label><label>Řádků<select name="size" defaultValue={String(result.size)}>{[25,50,100,200].map(v=><option key={v}>{v}</option>)}</select></label><div className="filter-actions"><button className="primary-button">Použít filtry</button><Link className="secondary-link" href="/flights">Vymazat</Link></div></div></form>
+    <section className="flight-summary"><div><span>Lety</span><strong>{result.summary.flights}</strong><small>{result.summary.tracks} GPS tracků</small></div><div><span>BLOCK</span><strong>{formatDuration(result.summary.blockMinutes)}</strong><small>celkový čas</small></div><div><span>PIC</span><strong>{formatDuration(result.summary.picMinutes)}</strong><small>velitelský čas</small></div><div><span>Přistání</span><strong>{result.summary.landings}</strong><small>{result.summary.gpsKm.toFixed(0)} GPS km</small></div></section>
+    <section className="table-panel"><div className="table-scroll"><table><thead><tr><th>Detail</th><th>Datum</th><th>Letadlo</th><th>Trasa</th><th>Časy</th><th>BLOCK</th><th>Funkce</th><th>Přist.</th><th>GPS</th></tr></thead><tbody>
+      {result.rows.map(f=><tr key={f.id}><td><Link className="detail-button" href={`/flights/${f.id}`}>Otevřít</Link></td><td>{new Date(`${f.date}T00:00:00`).toLocaleDateString('cs-CZ')}</td><td><strong>{f.registration||"—"}</strong><small>{f.aircraft_type||f.evidence}</small></td><td><strong>{f.departure||"—"} → {f.arrival||"—"}</strong><small>{f.task||""}</small></td><td>{f.off_block||"—"}–{f.on_block||"—"}<small>{f.takeoff&&f.landing?`${f.takeoff}–${f.landing}`:""}</small></td><td><strong>{formatDuration(f.block_minutes)}</strong><small>AIR {formatDuration(f.air_minutes)}</small></td><td>{f.role||"—"}<small>{f.evidence}</small></td><td>{f.starts}</td><td>{f.track_count?<Link className="gps-badge" href={`/flights/${f.id}`}>● {f.track_count}<small>{f.gps_km.toFixed(0)} km</small></Link>:<span className="muted">—</span>}</td></tr>)}
+      {!result.rows.length?<tr><td colSpan={9} className="empty-state">Filtrům neodpovídá žádný let.</td></tr>:null}
+    </tbody></table></div><div className="pagination"><span>{result.total} záznamů</span><Link aria-disabled={result.page<=1} href={href(params,{page:String(Math.max(1,result.page-1))})}>← Předchozí</Link><strong>{result.page} / {pages}</strong><Link aria-disabled={result.page>=pages} href={href(params,{page:String(Math.min(pages,result.page+1))})}>Další →</Link></div></section>
+  </>;
 }

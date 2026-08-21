@@ -1,5 +1,5 @@
 import "server-only";
-import { scrypt as nodeScrypt, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import { randomBytes, scrypt as nodeScrypt, timingSafeEqual, type ScryptOptions } from "node:crypto";
 
 function scrypt(password: string, salt: Buffer, keyLength: number, options: ScryptOptions) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -36,4 +36,9 @@ export async function verifyLegacyPassword(password: string, encoded: string): P
   } catch {
     return false;
   }
+}
+
+export async function hashLegacyPassword(password:string){
+  const salt=randomBytes(16);const digest=await scrypt(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
+  return `scrypt$n=16384,r=8,p=1$${salt.toString("base64url")}$${digest.toString("base64url")}`;
 }

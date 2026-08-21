@@ -1,54 +1,34 @@
 import "server-only";
 import { sql } from "@/lib/db";
 
-export const FLIGHTS_PAGE_SIZE = 50;
+export type FlightRow={id:number;date:string;evidence:string;registration:string;aircraft_type:string;departure:string;arrival:string;off_block:string;on_block:string;role:string;starts:number;takeoff?:string;landing?:string;aircraft_class?:string;commander?:string;instructor?:string;task?:string;billing_basis?:string;note?:string;price_per_hour?:number;block_minutes:number;air_minutes:number;track_count:number;gps_km:number};
+export type FlightFilters={q?:string;evidence?:string;role?:string;registration?:string;from?:string;to?:string;page?:number;size?:number};
+export type FlightsSummary={flights:number;blockMinutes:number;picMinutes:number;landings:number;tracks:number;gpsKm:number};
+const num=(v:unknown)=>Number(v??0);
+const txt=(v:unknown)=>String(v??"");
+const normalize=(r:Record<string,unknown>):FlightRow=>({id:num(r.id),date:txt(r.date),evidence:txt(r.evidence),registration:txt(r.registration),aircraft_type:txt(r.aircraft_type),departure:txt(r.departure),arrival:txt(r.arrival),off_block:txt(r.off_block),on_block:txt(r.on_block),takeoff:txt(r.takeoff),landing:txt(r.landing),role:txt(r.role),starts:num(r.starts),aircraft_class:txt(r.aircraft_class),commander:txt(r.commander),instructor:txt(r.instructor),task:txt(r.task),billing_basis:txt(r.billing_basis),note:txt(r.note),price_per_hour:num(r.price_per_hour),block_minutes:num(r.block_minutes),air_minutes:num(r.air_minutes),track_count:num(r.track_count),gps_km:num(r.gps_km)});
 
-export type FlightRow = {
-  id: number;
-  date: string;
-  evidence: string;
-  registration: string;
-  aircraft_type: string;
-  departure: string;
-  arrival: string;
-  off_block: string;
-  on_block: string;
-  role: string;
-  starts: number;
-  takeoff?: string;
-  landing?: string;
-  aircraft_class?: string;
-  commander?: string;
-  instructor?: string;
-  task?: string;
-  billing_basis?: string;
-  note?: string;
-};
-
-export async function getFlightsPage(userId: number, page: number) {
-  const safePage = Math.max(1, Math.floor(page));
-  const offset = (safePage - 1) * FLIGHTS_PAGE_SIZE;
-  const rows = await sql`
-    SELECT id, date, evidence, registration, aircraft_type, departure, arrival,
-           off_block, on_block, role, COALESCE(starts, 0)::integer AS starts,
-           COUNT(*) OVER()::integer AS total_count
-    FROM flights
-    WHERE user_id = ${userId}
-    ORDER BY date DESC, off_block DESC NULLS LAST, id DESC
-    LIMIT ${FLIGHTS_PAGE_SIZE} OFFSET ${offset}
-  ` as Array<FlightRow & { total_count: number }>;
-  return {
-    rows: rows.map(({ total_count: _total, ...flight }) => flight),
-    total: Number(rows[0]?.total_count ?? 0),
-    page: safePage,
-  };
+export async function getFlightsPage(userId:number,filters:FlightFilters){
+  const page=Math.max(1,Math.floor(filters.page||1)); const size=[25,50,100,200].includes(Number(filters.size))?Number(filters.size):50; const offset=(page-1)*size;
+  const q=(filters.q??"").trim()||null,evidence=(filters.evidence??"").trim()||null,role=(filters.role??"").trim()||null,registration=(filters.registration??"").trim()||null,from=(filters.from??"").trim()||null,to=(filters.to??"").trim()||null;
+  const base=sql`
+    WITH track AS (SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km FROM flight_tracks WHERE user_id=${userId} GROUP BY flight_id), b AS (
+      SELECT f.*,CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes,CASE WHEN f.takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END air_minutes,COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}
+      AND (${q}::text IS NULL OR concat_ws(' ',f.registration,f.aircraft_type,f.departure,f.arrival,f.role,f.evidence,f.commander,f.task,f.note) ILIKE '%'||${q}::text||'%')
+      AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${role}::text IS NULL OR UPPER(f.role)=UPPER(${role}::text))
+      AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${from}::date IS NULL OR f.date::date>=${from}::date) AND (${to}::date IS NULL OR f.date::date<=${to}::date)
+    ) SELECT *,COUNT(*) OVER()::int total_count FROM b ORDER BY date DESC,off_block DESC NULLS LAST,id DESC LIMIT ${size} OFFSET ${offset}`;
+  const summaryQuery=sql`
+    WITH track AS (SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km FROM flight_tracks WHERE user_id=${userId} GROUP BY flight_id), b AS (
+      SELECT f.*,CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes,COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}
+      AND (${q}::text IS NULL OR concat_ws(' ',f.registration,f.aircraft_type,f.departure,f.arrival,f.role,f.evidence,f.commander,f.task,f.note) ILIKE '%'||${q}::text||'%')
+      AND (${evidence}::text IS NULL OR UPPER(f.evidence)=UPPER(${evidence}::text)) AND (${role}::text IS NULL OR UPPER(f.role)=UPPER(${role}::text))
+      AND (${registration}::text IS NULL OR UPPER(f.registration)=UPPER(${registration}::text)) AND (${from}::date IS NULL OR f.date::date>=${from}::date) AND (${to}::date IS NULL OR f.date::date<=${to}::date)
+    ) SELECT COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int block_minutes,COALESCE(SUM(block_minutes) FILTER(WHERE UPPER(role)='PIC'),0)::int pic_minutes,COALESCE(SUM(starts),0)::int landings,COALESCE(SUM(track_count),0)::int tracks,COALESCE(SUM(gps_km),0) gps_km FROM b`;
+  const [rows,summaryRows]=await Promise.all([base,summaryQuery]) as Array<Array<Record<string,unknown>>>; const s=summaryRows[0]??{};
+  return {rows:rows.map(normalize),total:num(rows[0]?.total_count),page,size,summary:{flights:num(s.flights),blockMinutes:num(s.block_minutes),picMinutes:num(s.pic_minutes),landings:num(s.landings),tracks:num(s.tracks),gpsKm:num(s.gps_km)} satisfies FlightsSummary};
 }
 
-export async function getFlight(userId: number, id: number) {
-  const rows = await sql`
-    SELECT id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,
-           off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,billing_basis,note
-    FROM flights WHERE user_id=${userId} AND id=${id} LIMIT 1
-  ` as FlightRow[];
-  return rows[0] ?? null;
-}
+export async function getFlight(userId:number,id:number){const rows=await sql`WITH t AS (SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km FROM flight_tracks WHERE user_id=${userId} AND flight_id=${id} GROUP BY flight_id) SELECT f.*,CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes,CASE WHEN f.takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END air_minutes,COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km FROM flights f LEFT JOIN t ON t.flight_id=f.id WHERE f.user_id=${userId} AND f.id=${id} LIMIT 1` as Array<Record<string,unknown>>;return rows[0]?normalize(rows[0]):null;}
+
+export async function getFlightFilterOptions(userId:number){const [regs,evidence,roles]=await Promise.all([sql`SELECT DISTINCT UPPER(TRIM(registration)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(registration),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(evidence)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(evidence),'') IS NOT NULL ORDER BY 1`,sql`SELECT DISTINCT UPPER(TRIM(role)) value FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(role),'') IS NOT NULL ORDER BY 1`]) as Array<Array<Record<string,unknown>>>;return {registrations:regs.map(r=>txt(r.value)),evidence:evidence.map(r=>txt(r.value)),roles:roles.map(r=>txt(r.value))};}
