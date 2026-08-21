@@ -37,3 +37,7 @@ functions with that database instead.
 - export/backup parity
 - authorization and ownership tests for every mutation
 - cold/warm response measurements from the production region
+
+## Deployment trigger
+
+The Vercel project tracks `codex/vercel-migration-v080` during the parity phase. This commit starts the first branch-native production build after environment variables were configured.
