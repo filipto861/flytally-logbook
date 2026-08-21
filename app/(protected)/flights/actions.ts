@@ -8,6 +8,7 @@ import { parseFlightInput } from "@/lib/flight-input";
 import { flightEnvelope,haversineKm,landingCount,localParts,overview,parseTrackFile,splitPoints,trackStats } from "@/lib/kml";
 import { airportCatalogSize,nearestCatalogAirport } from "@/lib/airport-catalog";
 import { serializeBilling } from "@/lib/billing";
+import { shouldResolveStoredPrice } from "@/lib/rate-history";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -15,7 +16,7 @@ async function resolvedPrice(userId: number, registration: string, date: string)
   const rows = await sql`
     SELECT COALESCE(r.price_per_hour, a.default_price_per_hour) AS price_per_hour
     FROM aircraft a LEFT JOIN LATERAL (
-      SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(registration)=${registration}
+      SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(${registration}))
         AND (valid_from IS NULL OR valid_from='' OR valid_from<=${date})
       ORDER BY valid_from DESC NULLS LAST, id DESC LIMIT 1
     ) r ON TRUE
@@ -74,17 +75,19 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
   const parts=splitPoints(points,indices),partCount=Number(form.get("partCount"));if(!Number.isSafeInteger(partCount)||partCount!==parts.length||partCount<1||partCount>20)return{error:"Počet kontrolovaných letů neodpovídá rozdělení tracku."};
   const reviewed:Array<{date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:number;note:string}>=[];
   const validTime=(value:string)=>!value||/^([01]\d|2[0-3]):[0-5]\d$/.test(value);for(let index=0;index<parts.length;index++){if(String(form.get(`part_${index}_reviewed`)||"")!=="yes")return{error:`Let ${index+1} nebyl jednotlivě potvrzen.`};const date=String(form.get(`part_${index}_date`)||""),offBlock=String(form.get(`part_${index}_offBlock`)||""),takeoff=String(form.get(`part_${index}_takeoff`)||""),landing=String(form.get(`part_${index}_landing`)||""),onBlock=String(form.get(`part_${index}_onBlock`)||"");if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||[offBlock,takeoff,landing,onBlock].some(value=>!validTime(value)))return{error:`Let ${index+1} má neplatné datum nebo čas.`};reviewed.push({date,offBlock,takeoff,landing,onBlock,departure:String(form.get(`part_${index}_departure`)||"").trim().toUpperCase().slice(0,16),arrival:String(form.get(`part_${index}_arrival`)||"").trim().toUpperCase().slice(0,16),starts:Math.max(0,Math.min(99,Number(form.get(`part_${index}_starts`)||1))),note:String(form.get(`part_${index}_note`)||"").trim().slice(0,2000)})}
-  let lastId=0;for(let index=0;index<parts.length;index++){const part=parts[index],stats=trackStats(part),envelope=flightEnvelope(part),values=reviewed[index],price=await resolvedPrice(userId,registration,values.date),departure=values.departure||(await nearestAirport(userId,envelope.departureCandidates))?.ident||"",arrival=values.arrival||(await nearestAirport(userId,envelope.arrivalCandidates))?.ident||"",partNote=parts.length>1?`${values.note}${values.note?' · ':''}Kontrolovaný import ${index+1}/${parts.length}`:values.note,starts=values.starts;
-    const rows=await sql`INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note) VALUES(${userId},${values.date},${evidence},${registration},${aircraftType},${aircraftClass},${departure},${arrival},${values.offBlock},${values.takeoff},${values.landing},${values.onBlock},${starts},'', '',${role},${task},${price},${billing},${partNote}) RETURNING id` as Array<{id:number|string}>;lastId=Number(rows[0].id);const suffix=parts.length>1?`__part${index+1}-of-${parts.length}.kml`:file.name;
+  let lastId=0;const createdIds:number[]=[],priceCache=new Map<string,number|null>();try{for(let index=0;index<parts.length;index++){const part=parts[index],stats=trackStats(part),envelope=flightEnvelope(part),values=reviewed[index];let price=priceCache.get(values.date);if(!priceCache.has(values.date)){price=await resolvedPrice(userId,registration,values.date);priceCache.set(values.date,price??null)}const [detectedDeparture,detectedArrival]=await Promise.all([values.departure?Promise.resolve(null):nearestAirport(userId,envelope.departureCandidates),values.arrival?Promise.resolve(null):nearestAirport(userId,envelope.arrivalCandidates)]),departure=values.departure||detectedDeparture?.ident||"",arrival=values.arrival||detectedArrival?.ident||"",partNote=parts.length>1?`${values.note}${values.note?' · ':''}Kontrolovaný import ${index+1}/${parts.length}`:values.note,starts=values.starts;
+    const rows=await sql`INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note) VALUES(${userId},${values.date},${evidence},${registration},${aircraftType},${aircraftClass},${departure},${arrival},${values.offBlock},${values.takeoff},${values.landing},${values.onBlock},${starts},'', '',${role},${task},${price??null},${billing},${partNote}) RETURNING id` as Array<{id:number|string}>;lastId=Number(rows[0].id);createdIds.push(lastId);const suffix=parts.length>1?`__part${index+1}-of-${parts.length}.kml`:file.name;
     await sql`INSERT INTO flight_tracks(user_id,flight_id,file_name,imported_at,point_count,distance_km,start_utc,end_utc,min_alt_m,max_alt_m,coordinates_json,overview_coordinates_json,overview_version) VALUES(${userId},${lastId},${suffix.slice(0,240)},NOW(),${stats.pointCount},${stats.distanceKm},${stats.startUtc},${stats.endUtc},${stats.minAlt},${stats.maxAlt},${JSON.stringify(part)},${JSON.stringify(overview(part))},1)`;
-  }
+  }}catch(error){console.error("reviewed-import-failed",error);for(const flightId of createdIds.reverse()){try{await sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId}`;await sql`DELETE FROM flights WHERE user_id=${userId} AND id=${flightId}`}catch(cleanupError){console.error("reviewed-import-cleanup-failed",flightId,cleanupError)}}return{error:"Import se nepodařilo dokončit. Částečně vytvořené záznamy byly bezpečně odstraněny; soubor můžete zkusit znovu."}}
   revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/map");redirect(`/flights/${lastId}`);
 }
 
 export async function updateFlight(id: number, _: FlightActionState, form: FormData): Promise<FlightActionState> {
   const { userId } = await requireUser(); if (!Number.isSafeInteger(id) || id <= 0) return { error: "Neplatný záznam." };
   const parsed = parseFlightInput(form); if (!parsed.data) return { error: parsed.error }; const f = parsed.data;
-  const price=await resolvedPrice(userId,f.registration,f.date);
+  const existingRows=await sql`SELECT registration,date::text date,price_per_hour FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<{registration:string;date:string;price_per_hour:number|null}>;
+  const existing=existingRows[0];if(!existing)return { error: "Let nebyl nalezen nebo k němu nemáte přístup." };
+  const price=shouldResolveStoredPrice(existing,f.registration,f.date)?await resolvedPrice(userId,f.registration,f.date):existing.price_per_hour;
   const result = await sql`
     UPDATE flights SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},departure=${f.departure},arrival=${f.arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${f.commander},instructor=${f.instructor},role=${f.role},task=${f.task},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note}
     WHERE id=${id} AND user_id=${userId} RETURNING id
