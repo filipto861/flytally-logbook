@@ -1,13 +1,18 @@
 import "server-only";
 import { sql } from "@/lib/db";
 
-export type AircraftOption = { registration: string; aircraft_type: string; aircraft_class: string; evidence: string; default_role: string; billing_basis: string };
+export type AircraftOption = { registration: string; aircraft_type: string; aircraft_class: string; evidence: string; default_role: string; billing_basis: string; price_per_hour: number };
 
 export async function getAircraftOptions(userId: number) {
   return await sql`
-    SELECT registration, COALESCE(aircraft_type, '') AS aircraft_type,
+    SELECT a.registration, COALESCE(a.aircraft_type, '') AS aircraft_type,
            COALESCE(aircraft_class, '') AS aircraft_class, COALESCE(evidence, '') AS evidence,
-           COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, 'BLOCK') AS billing_basis
-    FROM aircraft WHERE user_id = ${userId} AND active = 1 ORDER BY registration
+           COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, 'BLOCK') AS billing_basis,
+           COALESCE(r.price_per_hour, a.default_price_per_hour, 0) AS price_per_hour
+    FROM aircraft a LEFT JOIN LATERAL (
+      SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(registration)=UPPER(a.registration)
+      ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 1
+    ) r ON TRUE
+    WHERE a.user_id = ${userId} AND active = 1 ORDER BY a.registration
   ` as AircraftOption[];
 }
