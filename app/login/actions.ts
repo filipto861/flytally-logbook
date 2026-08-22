@@ -10,7 +10,7 @@ type LoginState = { error?: string };
 export async function login(_: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase().slice(0, 254);
   const password = String(formData.get("password") ?? "");
-  if (!email || !password) return { error: "Vyplňte e-mail a heslo." };
+  if (!email || !password) return { error: "Enter your email and password." };
 
   const rows = await sql`
     SELECT u.id, u.role, c.password_hash
@@ -22,7 +22,7 @@ export async function login(_: LoginState, formData: FormData): Promise<LoginSta
   const user = rows[0];
   if (!user || !(await verifyLegacyPassword(password, user.password_hash))) {
     // Deliberately use one generic message to avoid account enumeration.
-    return { error: "Neplatný e-mail nebo heslo." };
+    return { error: "Invalid email or password." };
   }
 
   const userId = Number(user.id);

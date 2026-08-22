@@ -35,9 +35,9 @@ function bounds(period:DashboardPeriod,today=new Date()){
   if(period==="previous")return{start:`${year-1}-01-01`,end:`${year-1}-12-31`,label:String(year-1)};
   if(period==="12m"){
     const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1));
-    return{start:iso(start),end:iso(today),label:`${start.toLocaleDateString("cs-CZ")}–${today.toLocaleDateString("cs-CZ")}`};
+    return{start:iso(start),end:iso(today),label:`${start.toLocaleDateString("en-GB")}–${today.toLocaleDateString("en-GB")}`};
   }
-  return{start:null,end:null,label:"celá historie"};
+  return{start:null,end:null,label:"all time"};
 }
 
 function normalize(row:Record<string,unknown>):NormalizedFlight{

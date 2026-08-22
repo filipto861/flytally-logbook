@@ -14,15 +14,15 @@ export function flightRestoreKey(row:BackupRow){return [String(row.date??"").sli
 export function trackRestoreKey(flightKey:string,row:BackupRow){return [flightKey,String(row.file_name??"").trim(),timeKey(row.start_utc),timeKey(row.end_utc),Number(row.point_count||0)].join("|")}
 
 export async function parsePortableBackup(source:string):Promise<{backup:PortableBackup;digest:string}>{
-  let parsed:Record<string,unknown>;try{parsed=JSON.parse(source)}catch{throw new Error("Soubor není platný JSON.")}
+  let parsed:Record<string,unknown>;try{parsed=JSON.parse(source)}catch{throw new Error("File is not valid JSON.")}
   const integrity=parsed.integrity as Record<string,unknown>|undefined,{integrity:_removed,...payload}=parsed;
-  if(payload.format!=="pilot-logbook-portable"||Number(payload.version)<4)throw new Error("Záloha není v podporovaném přenosném formátu verze 4 nebo novější.");
-  for(const key of arrays)if(!Array.isArray(payload[key]))throw new Error(`Záloha neobsahuje povinnou část ${key}.`);
-  if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Záloha překračuje bezpečný počet letů nebo GPS tracků.");
+  if(payload.format!=="pilot-logbook-portable"||Number(payload.version)<4)throw new Error("Unsupported portable backup format. Version 4 or newer is required.");
+  for(const key of arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
+  if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Backup exceeds the safe number of flights or GPS tracks.");
   const expected=String(integrity?.payload_sha256??""),digest=await sha256(JSON.stringify(payload));
-  if(String(integrity?.algorithm??"").toUpperCase()!=="SHA-256"||!expected)throw new Error("Záloha nemá podporovaný kontrolní SHA-256 otisk.");
-  if(expected!==digest)throw new Error("Kontrolní otisk nesouhlasí. Soubor je poškozený nebo byl po exportu změněn.");
+  if(String(integrity?.algorithm??"").toUpperCase()!=="SHA-256"||!expected)throw new Error("Backup has no supported SHA-256 integrity value.");
+  if(expected!==digest)throw new Error("Integrity check failed. The file is damaged or was modified.");
   const counts=payload.counts as Record<string,unknown>|undefined;
-  for(const key of ["flights","aircraft","rates","airports","expiries","flight_tracks","track_points"] as const)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Deklarovaný počet ${key} nesouhlasí s obsahem zálohy.`);
+  for(const key of ["flights","aircraft","rates","airports","expiries","flight_tracks","track_points"] as const)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   return{backup:{...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}},digest};
 }

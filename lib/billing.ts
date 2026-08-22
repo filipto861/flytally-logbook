@@ -37,5 +37,5 @@ export function calculatedFlightPrice(
 
 export function billingLabel(value: unknown): string {
   const { basis, share } = parseBilling(value);
-  return `${basis}${share > 1 ? ` · podíl 1/${share}` : " · celá cena"}`;
+  return `${basis}${share > 1 ? ` · share 1/${share}` : " · full price"}`;
 }

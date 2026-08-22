@@ -4,26 +4,26 @@ import { DashboardDetails } from "@/components/dashboard-details";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardData } from "@/lib/data/dashboard";
 
-export const metadata={title:"Souhrn | Letový zápisník"};
-const periods=[['all','Vše'],['year','Tento rok'],['12m','Posledních 12 měsíců'],['previous','Předchozí rok']] as const;
-function CategoryCard({title,data,accent}:{title:string;data:{minutes:number;landings:number;flights:number};accent?:boolean}){return <article className={`metric category-card${accent?' accent-card':''}`}><span>{title}</span><strong>{formatDuration(data.minutes)}</strong><div><small>{data.flights} letů</small><small>{data.landings} přistání</small></div></article>}
+export const metadata={title:"Dashboard | FlyTally"};
+const periods=[['all','All time'],['year','This year'],['12m','Last 12 months'],['previous','Previous year']] as const;
+function CategoryCard({title,data,accent}:{title:string;data:{minutes:number;landings:number;flights:number};accent?:boolean}){return <article className={`metric category-card${accent?' accent-card':''}`}><span>{title}</span><strong>{formatDuration(data.minutes)}</strong><div><small>{data.flights} flights</small><small>{data.landings} landings</small></div></article>}
 
 export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string}>}){
   const session=await requireUser(); const selected=(await searchParams).period??"all"; const data=await getDashboardData(session.userId,selected);
   return <>
-    <header className="page-header"><div><p className="eyebrow">PŘEHLED</p><h1>Ahoj, {data.displayName}</h1><p className="muted">Období: {data.rangeLabel} · {data.total.flights} zobrazených letů</p></div><Link className="primary-link" href="/flights/new">＋ Přidat let</Link></header>
+    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>Hello, {data.displayName}</h1></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
     <div className="period-control">{periods.map(([key,label])=><Link key={key} className={selected===key||(!periods.some(([p])=>p===selected)&&key==='all')?'active':''} href={`/dashboard?period=${key}`}>{label}</Link>)}</div>
     <section className="dashboard-primary">
-      <article className="hero-metric"><span>CELKOVÝ ČAS</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} letů · {data.total.landings} přistání</p></article>
+      <article className="hero-metric"><span>TOTAL TIME</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p></article>
       <CategoryCard title="ULL" data={data.ull}/><CategoryCard title="EASA" data={data.easa}/>
       <CategoryCard title="PIC ULL" data={data.picUll} accent/><CategoryCard title="PIC EASA" data={data.picEasa} accent/>
     </section>
     <section className="quickline">
-      <Link href={data.lastFlight?`/flights/${data.lastFlight.id}`:'/flights'}><span>Poslední let</span><strong>{data.lastFlight?`${data.lastFlight.date} · ${data.lastFlight.registration}`:'—'}</strong><small>{data.lastFlight?`${data.lastFlight.departure} → ${data.lastFlight.arrival}`:'Bez záznamu'}</small></Link>
-      <div className="quickline-cost"><span>Útrata</span><strong>{Math.round(data.cost).toLocaleString("cs-CZ")} Kč</strong><small>ve vybraném období</small></div>
-      <div><span>Letadla</span><strong>{data.uniqueAircraft}</strong><small>unikátních registrací</small></div>
-      <div><span>Letiště</span><strong>{data.uniqueAirports}</strong><small>navštívených míst</small></div>
-      <Link href="/map"><span>GPS tracky</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} uložených tracků</small></Link>
+      <Link href={data.lastFlight?`/flights/${data.lastFlight.id}`:'/flights'}><span>Last flight</span><strong>{data.lastFlight?`${data.lastFlight.date} · ${data.lastFlight.registration}`:'—'}</strong><small>{data.lastFlight?`${data.lastFlight.departure} → ${data.lastFlight.arrival}`:'No record'}</small></Link>
+      <div className="quickline-cost"><span>Cost</span><strong>{Math.round(data.cost).toLocaleString("en-GB")} CZK</strong></div>
+      <div><span>Aircraft</span><strong>{data.uniqueAircraft}</strong></div>
+      <div><span>Airports</span><strong>{data.uniqueAirports}</strong></div>
+      <Link href="/map"><span>GPS tracks</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} tracks</small></Link>
     </section>
     <MonthlyChart data={data.monthly} totalFlights={data.total.flights} invalidDates={data.invalidDateFlights}/>
     <DashboardDetails data={data}/>

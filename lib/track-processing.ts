@@ -75,8 +75,8 @@ export type SplitSuggestion={index:number;reason:string;gapMinutes:number|null;e
 export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
   return suggestedSplits(points).map(index=>{
     const next=points[index+1],current=points[index],gap=next&&current?seconds(current,next):0,endpoint=next&&current?haversineKm(current,next):0;
-    if(gap>=1200)return{index,reason:`Časová mezera ${Math.round(gap/60)} min; před i po ní je samostatný letový úsek.`,gapMinutes:Math.round(gap/60),endpointKm:Math.round(endpoint*10)/10};
-    return{index,reason:"Delší zastavení na zemi mezi dvěma úseky s věrohodným letem.",gapMinutes:null,endpointKm:null};
+    if(gap>=1200)return{index,reason:`${Math.round(gap/60)} minute gap between credible flight sections.`,gapMinutes:Math.round(gap/60),endpointKm:Math.round(endpoint*10)/10};
+    return{index,reason:"Extended ground stop between credible flight sections.",gapMinutes:null,endpointKm:null};
   });
 }
 export function landingCount(points:KmlPoint[]){return Math.max(1,1+groundEvents(points).filter(event=>event.duration>5&&event.duration<90).length)}

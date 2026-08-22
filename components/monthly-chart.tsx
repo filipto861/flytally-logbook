@@ -5,7 +5,7 @@ import type { MonthlyPoint } from "@/lib/data/dashboard";
 import { niceChartMaximum } from "@/lib/dashboard-math";
 
 const choices=[
-  ["total","Celkový čas"],["ull","ULL"],["easa","EASA"],["picUll","PIC ULL"],["picEasa","PIC EASA"],["landings","Přistání"],
+  ["total","Total time"],["ull","ULL"],["easa","EASA"],["picUll","PIC ULL"],["picEasa","PIC EASA"],["landings","Landings"],
 ] as const;
 type Metric=(typeof choices)[number][0];
 
@@ -23,11 +23,11 @@ export function MonthlyChart({data,totalFlights,invalidDates}:{data:MonthlyPoint
   useEffect(()=>setActive(null),[metric,data]);
 
   return <section className="panel chart-panel dashboard-chart-v3">
-    <div className="section-heading"><div><p className="eyebrow">VÝVOJ</p><h2>Měsíční přehled</h2><p className="muted">Posledních {Math.min(18,visible.length)} měsíců ve vybraném období</p></div><div className="segment-control chart-metric-control">{choices.map(([key,label])=><button type="button" className={metric===key?"active":""} key={key} onClick={()=>setMetric(key)}>{label}</button>)}</div></div>
+    <div className="section-heading"><div><p className="eyebrow">TREND</p><h2>Monthly activity</h2></div><div className="segment-control chart-metric-control">{choices.map(([key,label])=><button type="button" className={metric===key?"active":""} key={key} onClick={()=>setMetric(key)}>{label}</button>)}</div></div>
     {visible.length?<>
-      <div className="chart-summary"><span><small>Celkem</small><b>{isLandings?total:duration(total)}</b></span><span><small>Průměr / měsíc</small><b>{isLandings?Math.round(total/visible.length):(total/visible.length/60).toFixed(1)+" h"}</b></span><span><small>Nejaktivnější měsíc</small><b>{monthLabel(visible[bestIndex]?.month??"",true)}</b></span></div>
-      <div className="chart-focus"><span>{focus?monthLabel(focus.month,true):"—"}</span><strong>{isLandings?`${focusValue} přistání`:duration(focusValue)}</strong><small>Najetím nebo kliknutím vyberte měsíc</small></div>
-      <div className="monthly-chart" aria-label={`Měsíční vývoj: ${choices.find(([key])=>key===metric)?.[1]}`}>
+      <div className="chart-summary"><span><small>Total</small><b>{isLandings?total:duration(total)}</b></span><span><small>Monthly average</small><b>{isLandings?Math.round(total/visible.length):(total/visible.length/60).toFixed(1)+" h"}</b></span><span><small>Busiest month</small><b>{monthLabel(visible[bestIndex]?.month??"",true)}</b></span></div>
+      <div className="chart-focus"><span>{focus?monthLabel(focus.month,true):"—"}</span><strong>{isLandings?`${focusValue} landings`:duration(focusValue)}</strong></div>
+      <div className="monthly-chart" aria-label={`Monthly trend: ${choices.find(([key])=>key===metric)?.[1]}`}>
         <svg viewBox={`0 0 ${width} ${height}`} role="img" onMouseLeave={()=>setActive(null)}>
           <defs><linearGradient id="monthlyBarGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#38bdf8"/><stop offset="1" stopColor="#155e75"/></linearGradient><linearGradient id="monthlyBarActive" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#6ee7b7"/><stop offset="1" stopColor="#059669"/></linearGradient></defs>
           <rect x={left} y={top} width={usableW} height={usableH} rx="12" className="chart-plot-bg"/>
@@ -38,7 +38,7 @@ export function MonthlyChart({data,totalFlights,invalidDates}:{data:MonthlyPoint
           {visible.map((point,index)=>index%labelStep===0||index===visible.length-1?<text key={point.month} x={geometry[index].x} y={height-18} textAnchor="middle" className="chart-x-label">{monthLabel(point.month)}</text>:null)}
         </svg>
       </div>
-    </>:<div className="chart-empty-state"><strong>{totalFlights?"Letové záznamy se nepodařilo zařadit do měsíců":"Pro toto období zatím nejsou žádné lety"}</strong><p>{totalFlights?`Ve vybraném období je ${totalFlights} letů, ale nemají použitelné datum pro graf.`:"Po přidání letu se zde automaticky zobrazí měsíční vývoj."}</p></div>}
-    {invalidDates?<p className="chart-warning">⚠ {invalidDates} {invalidDates===1?"let nemá":"lety nemají"} platné datum a {invalidDates===1?"není":"nejsou"} zahrnuto do časového grafu.</p>:null}
+    </>:<div className="chart-empty-state"><strong>{totalFlights?"Flights could not be grouped by month":"No flights in this period"}</strong></div>}
+    {invalidDates?<p className="chart-warning">⚠ {invalidDates} flight records have no valid date.</p>:null}
   </section>;
 }

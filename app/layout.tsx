@@ -5,9 +5,9 @@ import "./v083.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
-  title: "Letový zápisník",
-  description: "Elektronický letový zápisník",
-  icons:{icon:"/logbook_icon_32.png",shortcut:"/logbook_icon_32.png",apple:"/logbook_icon_32.png"},
+  title: "FlyTally",
+  description: "Digital pilot logbook",
+  icons:{icon:"/logbook_icon_32.png",shortcut:"/logbook_icon_32.png",apple:"/logbook_icon.png"},
 };
 
 export const viewport: Viewport = {
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="cs">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

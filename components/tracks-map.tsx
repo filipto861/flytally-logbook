@@ -26,9 +26,9 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
       if(track.arrivalPoint&&arrGap>.35){const connector=[latlngs.at(-1)!,L.latLng(track.arrivalPoint.lat,track.arrivalPoint.lon)];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer}).addTo(map)}
       if (!detail) {
         const node = document.createElement("div");
-        const title = document.createElement("strong"); title.textContent = `${track.registration || "Let"} · ${track.date}`;
+        const title = document.createElement("strong"); title.textContent = `${track.registration || "Flight"} · ${track.date}`;
         const route = document.createElement("div"); route.textContent = `${track.departure || "—"} → ${track.arrival || "—"}`;
-        const link = document.createElement("a"); link.href = `/flights/${track.flightId}`; link.textContent = "Otevřít detail letu";
+        const link = document.createElement("a"); link.href = `/flights/${track.flightId}`; link.textContent = "Open flight details";
         node.append(title, route, link); line.bindPopup(node);
       }
       if (detail || index === 0) {
@@ -41,5 +41,5 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
     const cleanupResponsive=installResponsiveMap(map,target.current);
     return () => { cleanupResponsive();map.remove(); };
   }, [tracks, detail]);
-  return <div ref={target} className={`track-map responsive-map${detail?" detail-responsive-map":""}`} style={{"--map-height":`${height}px`} as CSSProperties} aria-label="Mapa GPS tracků" />;
+  return <div ref={target} className={`track-map responsive-map${detail?" detail-responsive-map":""}`} style={{"--map-height":`${height}px`} as CSSProperties} aria-label="GPS tracks map" />;
 }

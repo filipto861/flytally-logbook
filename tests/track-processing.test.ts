@@ -16,7 +16,7 @@ test("a long pause near the same airport proposes a split",()=>{
   const cuts=suggestedSplits(points);
   assert.deepEqual(cuts,[2]);
   assert.deepEqual(splitPoints(points,cuts).map(part=>part.length),[3,3]);
-  assert.match(suggestedSplitDetails(points)[0].reason,/Časová mezera 118 min/);
+  assert.match(suggestedSplitDetails(points)[0].reason,/118 minute gap/);
 });
 
 test("an airborne coverage gap does not split a flight",()=>{
