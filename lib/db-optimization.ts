@@ -14,9 +14,10 @@ export function ensureDatabaseOptimizations():Promise<void>{
           to_regclass('public.flight_audit_log') IS NOT NULL audit_table,
           EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='flights' AND column_name='locked_at') lock_column,
           to_regclass('public.account_backups') IS NOT NULL backup_table,
+          to_regclass('public.deleted_flights') IS NOT NULL trash_table,
           EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_protect_locked_flight' AND NOT tgisinternal) lock_trigger,
-          EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_audit_flight_change' AND NOT tgisinternal) audit_trigger` as Array<{audit_table:boolean;backup_table:boolean;lock_column:boolean;lock_trigger:boolean;audit_trigger:boolean}>;
-        if(ready[0]?.audit_table&&ready[0]?.lock_column&&ready[0]?.backup_table&&ready[0]?.lock_trigger&&ready[0]?.audit_trigger)return;
+          EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_audit_flight_change' AND NOT tgisinternal) audit_trigger` as Array<{audit_table:boolean;backup_table:boolean;trash_table:boolean;lock_column:boolean;lock_trigger:boolean;audit_trigger:boolean}>;
+        if(ready[0]?.audit_table&&ready[0]?.lock_column&&ready[0]?.backup_table&&ready[0]?.trash_table&&ready[0]?.lock_trigger&&ready[0]?.audit_trigger)return;
         await sql.transaction([
           sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ`,
           sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_by_user_id BIGINT`,
@@ -42,6 +43,18 @@ export function ensureDatabaseOptimizations():Promise<void>{
             raw_bytes BIGINT NOT NULL,
             compressed_bytes BIGINT NOT NULL,
             counts JSONB NOT NULL DEFAULT '{}'::jsonb
+          )`,
+          sql`CREATE TABLE IF NOT EXISTS deleted_flights (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            original_flight_id BIGINT NOT NULL,
+            delete_token TEXT NOT NULL UNIQUE,
+            flight_data JSONB NOT NULL,
+            tracks_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+            deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            purge_after TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '90 days'),
+            restored_at TIMESTAMPTZ,
+            restored_flight_id BIGINT
           )`,
           sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
             BEGIN
@@ -94,6 +107,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_expiries_user_active_date ON user_expiries(user_id,active,expiry_date)`,
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_flight_audit_user_flight ON flight_audit_log(user_id,flight_id,changed_at DESC,id DESC)`,
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_account_backups_user_date ON account_backups(user_id,created_at DESC,id DESC)`,
+          sql`CREATE INDEX IF NOT EXISTS idx_logbook_deleted_flights_user_date ON deleted_flights(user_id,restored_at,purge_after,deleted_at DESC,id DESC)`,
         ]);
       }catch(error){
         console.error("database-optimization-skipped",error);
