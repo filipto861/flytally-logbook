@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { getCatalogAirport } from "@/lib/airport-catalog";
+import { routePairKey } from "@/lib/route-filter";
 
 export type TrackPoint = { lat: number; lon: number; alt?: number; time?: string };
 export type MapTrack = {
@@ -110,6 +111,8 @@ export async function getRouteOverview(userId:number,filters:MapFilters={}){
   const custom=new Map(customAirportRows.map(row=>[String(row.ident),row]));
   const airportFor=(ident:string,flights:number):MapAirport|null=>{const own=custom.get(ident);if(own&&Number.isFinite(Number(own.lat))&&Number.isFinite(Number(own.lon)))return{ident,name:String(own.name??""),lat:Number(own.lat),lon:Number(own.lon),flights};const item=getCatalogAirport(ident);return item?{ident:item.ident,name:item.name,lat:item.lat,lon:item.lon,flights}:null};
   const airports:MapAirport[]=airportRows.map(row=>airportFor(String(row.ident),Number(row.flights))).filter((value):value is MapAirport=>value!==null);
-  const routes:RouteLine[]=routeRows.map(row=>{const departure=String(row.departure),arrival=String(row.arrival),flights=Number(row.flights),from=airportFor(departure,flights),to=airportFor(arrival,flights);return from&&to?{departure,arrival,flights,minutes:Number(row.minutes),from,to}:null}).filter((value):value is RouteLine=>value!==null);
+  const grouped=new Map<string,{departure:string;arrival:string;flights:number;minutes:number}>();
+  for(const row of routeRows){const key=routePairKey(row.departure,row.arrival);if(!key)continue;const [departure,arrival]=key.split("↔"),current=grouped.get(key)??{departure,arrival,flights:0,minutes:0};current.flights+=Number(row.flights||0);current.minutes+=Number(row.minutes||0);grouped.set(key,current)}
+  const routes:RouteLine[]=[...grouped.values()].map(row=>{const from=airportFor(row.departure,row.flights),to=airportFor(row.arrival,row.flights);return from&&to?{...row,from,to}:null}).filter((value):value is RouteLine=>value!==null).sort((a,b)=>b.flights-a.flights||a.departure.localeCompare(b.departure)||a.arrival.localeCompare(b.arrival));
   return{routes,airports,totalFlights:routes.reduce((sum,r)=>sum+r.flights,0)};
 }

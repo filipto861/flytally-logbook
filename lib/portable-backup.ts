@@ -1,0 +1,28 @@
+export type BackupRow=Record<string,unknown>;
+export type PortableBackup={
+  format:string;version:number;exported_at:string;profile:BackupRow;counts:Record<string,number>;
+  flights:BackupRow[];aircraft:BackupRow[];rates:BackupRow[];airports:BackupRow[];expiries:BackupRow[];
+  settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];integrity:{algorithm:string;payload_sha256:string};
+};
+
+const arrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
+const sha256=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
+const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
+const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?raw:date.toISOString()};
+
+export function flightRestoreKey(row:BackupRow){return [String(row.date??"").slice(0,10),clean(row.registration),String(row.off_block??"").trim(),clean(row.departure),clean(row.arrival)].join("|")}
+export function trackRestoreKey(flightKey:string,row:BackupRow){return [flightKey,String(row.file_name??"").trim(),timeKey(row.start_utc),timeKey(row.end_utc),Number(row.point_count||0)].join("|")}
+
+export async function parsePortableBackup(source:string):Promise<{backup:PortableBackup;digest:string}>{
+  let parsed:Record<string,unknown>;try{parsed=JSON.parse(source)}catch{throw new Error("Soubor není platný JSON.")}
+  const integrity=parsed.integrity as Record<string,unknown>|undefined,{integrity:_removed,...payload}=parsed;
+  if(payload.format!=="pilot-logbook-portable"||Number(payload.version)<4)throw new Error("Záloha není v podporovaném přenosném formátu verze 4 nebo novější.");
+  for(const key of arrays)if(!Array.isArray(payload[key]))throw new Error(`Záloha neobsahuje povinnou část ${key}.`);
+  if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Záloha překračuje bezpečný počet letů nebo GPS tracků.");
+  const expected=String(integrity?.payload_sha256??""),digest=await sha256(JSON.stringify(payload));
+  if(String(integrity?.algorithm??"").toUpperCase()!=="SHA-256"||!expected)throw new Error("Záloha nemá podporovaný kontrolní SHA-256 otisk.");
+  if(expected!==digest)throw new Error("Kontrolní otisk nesouhlasí. Soubor je poškozený nebo byl po exportu změněn.");
+  const counts=payload.counts as Record<string,unknown>|undefined;
+  for(const key of ["flights","aircraft","rates","airports","expiries","flight_tracks","track_points"] as const)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Deklarovaný počet ${key} nesouhlasí s obsahem zálohy.`);
+  return{backup:{...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}},digest};
+}

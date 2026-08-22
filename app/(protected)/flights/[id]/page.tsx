@@ -13,7 +13,7 @@ import { formatDuration } from "@/lib/data/dashboard";
 import { AirportDetectionControl } from "@/components/airport-detection-control";
 import { billingLabel } from "@/lib/billing";
 
-type Context={q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string};
+type Context={q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string};
 const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value)query.set(key,value);return query.toString()};
 export default async function FlightDetailPage({ params,searchParams }: { params: Promise<{ id: string }>;searchParams:Promise<Context> }) {
   const { userId } = await requireUser(); const id = Number((await params).id),context=await searchParams,query=contextQuery(context),suffix=query?`?${query}`:"";
