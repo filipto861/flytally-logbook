@@ -13,9 +13,10 @@ export function ensureDatabaseOptimizations():Promise<void>{
         const ready=await sql`SELECT
           to_regclass('public.flight_audit_log') IS NOT NULL audit_table,
           EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='flights' AND column_name='locked_at') lock_column,
+          to_regclass('public.account_backups') IS NOT NULL backup_table,
           EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_protect_locked_flight' AND NOT tgisinternal) lock_trigger,
-          EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_audit_flight_change' AND NOT tgisinternal) audit_trigger` as Array<{audit_table:boolean;lock_column:boolean;lock_trigger:boolean;audit_trigger:boolean}>;
-        if(ready[0]?.audit_table&&ready[0]?.lock_column&&ready[0]?.lock_trigger&&ready[0]?.audit_trigger)return;
+          EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_audit_flight_change' AND NOT tgisinternal) audit_trigger` as Array<{audit_table:boolean;backup_table:boolean;lock_column:boolean;lock_trigger:boolean;audit_trigger:boolean}>;
+        if(ready[0]?.audit_table&&ready[0]?.lock_column&&ready[0]?.backup_table&&ready[0]?.lock_trigger&&ready[0]?.audit_trigger)return;
         await sql.transaction([
           sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ`,
           sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS locked_by_user_id BIGINT`,
@@ -28,6 +29,19 @@ export function ensureDatabaseOptimizations():Promise<void>{
             old_data JSONB,
             new_data JSONB,
             changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )`,
+          sql`CREATE TABLE IF NOT EXISTS account_backups (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            kind TEXT NOT NULL CHECK(kind IN ('automatic','manual','pre_restore')),
+            version INTEGER NOT NULL,
+            exported_at TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            payload_base64 TEXT NOT NULL,
+            payload_sha256 TEXT NOT NULL,
+            raw_bytes BIGINT NOT NULL,
+            compressed_bytes BIGINT NOT NULL,
+            counts JSONB NOT NULL DEFAULT '{}'::jsonb
           )`,
           sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
             BEGIN
@@ -79,6 +93,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_airports_user_active ON airports(user_id,active,ident)`,
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_expiries_user_active_date ON user_expiries(user_id,active,expiry_date)`,
           sql`CREATE INDEX IF NOT EXISTS idx_logbook_flight_audit_user_flight ON flight_audit_log(user_id,flight_id,changed_at DESC,id DESC)`,
+          sql`CREATE INDEX IF NOT EXISTS idx_logbook_account_backups_user_date ON account_backups(user_id,created_at DESC,id DESC)`,
         ]);
       }catch(error){
         console.error("database-optimization-skipped",error);
