@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseKml,splitPoints,suggestedSplits,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,parseKml,splitPoints,suggestedSplits,trackEndpointCandidates,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -21,4 +21,25 @@ test("a long pause near the same airport proposes a split",()=>{
 test("an airborne coverage gap does not split a flight",()=>{
   const points=[point("2026-08-21T08:00:00Z"),point("2026-08-21T08:01:00Z",50.1,14.1),point("2026-08-21T08:31:00Z",51.1,15.1),point("2026-08-21T08:32:00Z",51.2,15.2)];
   assert.deepEqual(suggestedSplits(points),[]);
+});
+
+test("one ground stop cannot create a third stationary flight",()=>{
+  const at=(seconds:number,lat:number):KmlPoint=>({lat,lon:14,alt:300,time:new Date(Date.parse("2026-08-21T08:00:00Z")+seconds*1000).toISOString()});
+  const points=[at(0,50),at(20,50.01),at(40,50.02),at(60,50.03),at(80,50.0301),at(1280,50.0301),at(1300,50.0301),at(1320,50.0301),at(1340,50.04),at(1360,50.05),at(1380,50.06)];
+  const cuts=suggestedSplits(points),parts=splitPoints(points,cuts);
+  assert.equal(cuts.length,1);
+  assert.equal(parts.length,2);
+  assert.ok(parts.every(part=>part.length>=4));
+});
+
+test("airport ranking prefers the actual arrival edge over an earlier exact match",()=>{
+  const arrival={lat:50.5,lon:15},departure={lat:50,lon:14},candidates=[arrival,{lat:50.35,lon:14.7},departure];
+  assert.ok(airportCandidateScore(candidates,arrival).score<airportCandidateScore(candidates,departure).score);
+});
+
+test("arrival candidates are ordered from the end and do not span a long route",()=>{
+  const points=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:05:00Z",50.1,14),point("2026-08-21T08:10:00Z",50.2,14),point("2026-08-21T08:15:00Z",50.3,14),point("2026-08-21T08:20:00Z",50.4,14)];
+  const candidates=trackEndpointCandidates(points,true);
+  assert.equal(candidates[0],points.at(-1));
+  assert.ok(!candidates.includes(points[0]));
 });
