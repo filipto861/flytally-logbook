@@ -6,7 +6,7 @@ import { logout } from "@/app/login/actions";
 
 const links=[
   ["/dashboard","⌂","Dashboard"],["/flights","✈","Flights"],["/flights/new","＋","Add flight"],["/map","◎","Map"],
-  ["/database","▤","Database"],["/export","⇩","Export"],["/profile","●","Profile"],
+  ["/database","▤","Database"],["/data","◆","Data"],["/profile","●","Profile"],
 ] as const;
 export function Sidebar({role="user"}:{role?:"admin"|"user"}){
   const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
