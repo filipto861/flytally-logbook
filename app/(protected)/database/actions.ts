@@ -27,5 +27,5 @@ export async function canonicalizeFlightAirportCodes(form:FormData){
     sql`UPDATE user_settings SET home_airport=${item.to} WHERE user_id=${userId} AND UPPER(TRIM(COALESCE(home_airport,'')))=${item.from}`,
   ]);
   await sql.transaction(queries);console.info("canonical-airport-codes",{userId,migrations:migrations.length});
-  revalidatePath("/database");revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/flights/new");revalidatePath("/map");revalidatePath("/print");revalidatePath("/export");
+  revalidatePath("/database");revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/flights/new");revalidatePath("/map");revalidatePath("/print");revalidatePath("/data");revalidatePath("/export");
 }
