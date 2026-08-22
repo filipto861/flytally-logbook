@@ -12,6 +12,8 @@ import { shouldResolveStoredPrice } from "@/lib/rate-history";
 import { flightFingerprint } from "@/lib/flight-dedup";
 import { flightDateKey } from "@/lib/dashboard-math";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { moveFlightToTrash } from "@/lib/flight-trash";
+import { createStoredBackup } from "@/lib/backup-center";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -119,13 +121,9 @@ export async function updateFlight(id: number, _: FlightActionState, form: FormD
 
 export async function deleteFlight(id: number) {
   const { userId } = await requireUser(); await ensureDatabaseOptimizations(); if (!Number.isSafeInteger(id) || id <= 0) return;
-  const owned=await sql`SELECT id,locked_at FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<{id:number;locked_at:string|null}>;if(!owned[0]||owned[0].locked_at)return;
-  await sql.transaction([
-    sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${id})`,
-    sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${id}`,
-    sql`DELETE FROM flights WHERE id=${id} AND user_id=${userId}`,
-  ]);
-  revalidatePath("/dashboard"); revalidatePath("/flights"); redirect("/flights");
+  let deleted=false;try{deleted=await moveFlightToTrash(userId,id)}catch(error){console.error("flight-trash-transaction-failed",error)}
+  if(!deleted)return;
+  revalidatePath("/dashboard"); revalidatePath("/flights");revalidatePath("/map");revalidatePath("/export"); redirect("/flights");
 }
 
 export async function attachKmlTrack(flightId:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{
@@ -139,7 +137,7 @@ export async function attachKmlTrack(flightId:number,_:FlightActionState,form:Fo
   revalidatePath(`/flights/${flightId}`);revalidatePath("/map");revalidatePath("/dashboard");return{success:"GPS track saved."};
 }
 
-export async function deleteTrack(flightId:number,form:FormData){const {userId}=await requireUser();await ensureDatabaseOptimizations();const trackId=Number(form.get("trackId"));if(!Number.isSafeInteger(flightId)||flightId<=0||!Number.isSafeInteger(trackId)||trackId<=0)return;const owned=await sql`SELECT t.id,f.locked_at FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id WHERE t.id=${trackId} AND t.flight_id=${flightId} AND t.user_id=${userId} LIMIT 1` as Array<{id:number;locked_at:string|null}>;if(!owned[0]||owned[0].locked_at)return;await sql.transaction([sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id=${trackId}`,sql`DELETE FROM flight_tracks WHERE id=${trackId} AND flight_id=${flightId} AND user_id=${userId}`]);revalidatePath(`/flights/${flightId}`);revalidatePath("/map");revalidatePath("/dashboard");}
+export async function deleteTrack(flightId:number,form:FormData){const {userId}=await requireUser();await ensureDatabaseOptimizations();const trackId=Number(form.get("trackId"));if(!Number.isSafeInteger(flightId)||flightId<=0||!Number.isSafeInteger(trackId)||trackId<=0)return;const owned=await sql`SELECT t.id,f.locked_at FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id WHERE t.id=${trackId} AND t.flight_id=${flightId} AND t.user_id=${userId} LIMIT 1` as Array<{id:number;locked_at:string|null}>;if(!owned[0]||owned[0].locked_at)return;try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-track-delete-backup-failed",error);return}await sql.transaction([sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id=${trackId}`,sql`DELETE FROM flight_tracks WHERE id=${trackId} AND flight_id=${flightId} AND user_id=${userId}`]);revalidatePath(`/flights/${flightId}`);revalidatePath("/map");revalidatePath("/dashboard");revalidatePath("/export");}
 
 export async function applyGpsTimes(flightId:number){const {userId}=await requireUser();await ensureDatabaseOptimizations();const rows=await sql`SELECT t.coordinates_json,f.locked_at FROM flight_tracks t JOIN flights f ON f.id=t.flight_id AND f.user_id=t.user_id WHERE t.user_id=${userId} AND t.flight_id=${flightId} ORDER BY t.start_utc NULLS LAST,t.id LIMIT 1` as Array<{coordinates_json:string;locked_at:string|null}>;if(!rows[0]||rows[0].locked_at)return;let points;try{points=JSON.parse(rows[0].coordinates_json)}catch{return}if(!Array.isArray(points)||points.length<2)return;const envelope=flightEnvelope(points),off=localParts(envelope.offBlockUtc),takeoff=localParts(envelope.takeoffUtc),landing=localParts(envelope.landingUtc),on=localParts(envelope.onBlockUtc);if(!off||!takeoff||!landing||!on)return;await sql`UPDATE flights SET off_block=${off.time},takeoff=${takeoff.time},landing=${landing.time},on_block=${on.time} WHERE id=${flightId} AND user_id=${userId} AND locked_at IS NULL`;revalidatePath(`/flights/${flightId}`);revalidatePath("/flights");revalidatePath("/dashboard");}
 
