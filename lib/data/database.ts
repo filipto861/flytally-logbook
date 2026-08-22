@@ -1,8 +1,8 @@
 import "server-only";
 import { sql } from "@/lib/db";
-import { airportCatalogSize,getCatalogAirport } from "@/lib/airport-catalog";
+import { airportCatalogSize,airportCodeMigrations,getCatalogAirport } from "@/lib/airport-catalog";
 export async function getDatabaseData(userId:number){
-  const [aircraft,rates,airports,quality,issues,airportStats]=await Promise.all([
+  const [aircraft,rates,airports,quality,issues,airportStats,routeCodes]=await Promise.all([
     sql`SELECT a.id,a.registration,a.aircraft_type,a.icao_type,a.aircraft_class,a.evidence,a.default_price_per_hour,a.default_role,a.billing_basis,a.active,a.note,COALESCE(current_rate.price_per_hour,a.default_price_per_hour,0) current_price_per_hour,current_rate.valid_from current_price_valid_from,COALESCE(rate_stats.rate_count,0)::int rate_count FROM aircraft a LEFT JOIN LATERAL (SELECT price_per_hour,valid_from FROM rates r WHERE r.user_id=a.user_id AND UPPER(TRIM(r.registration))=UPPER(TRIM(a.registration)) AND (r.valid_from IS NULL OR r.valid_from='' OR r.valid_from<=CURRENT_DATE::text) ORDER BY r.valid_from DESC NULLS LAST,r.id DESC LIMIT 1) current_rate ON TRUE LEFT JOIN LATERAL (SELECT COUNT(*)::int rate_count FROM rates r WHERE r.user_id=a.user_id AND UPPER(TRIM(r.registration))=UPPER(TRIM(a.registration))) rate_stats ON TRUE WHERE a.user_id=${userId} ORDER BY a.active DESC,a.registration`,
     sql`SELECT id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source FROM rates WHERE user_id=${userId} ORDER BY registration,valid_from DESC NULLS LAST`,
     sql`SELECT id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source FROM airports WHERE user_id=${userId} ORDER BY active DESC,ident LIMIT 500`,
@@ -50,6 +50,13 @@ export async function getDatabaseData(userId:number){
       UNION ALL SELECT b.id,'problem','track_too_short','GPS track nemá dost bodů','Track musí obsahovat alespoň dva platné body.' FROM base b JOIN flight_tracks t ON t.flight_id=b.id AND t.user_id=b.user_id WHERE COALESCE(t.point_count,0)<2
       UNION ALL SELECT b.id,'warning','track_zero_distance','GPS track má nulovou vzdálenost','Zkontrolujte geometrii uloženého tracku.' FROM base b JOIN flight_tracks t ON t.flight_id=b.id AND t.user_id=b.user_id WHERE COALESCE(t.point_count,0)>=2 AND COALESCE(t.distance_km,0)<=0
     ) SELECT f.*,b.date,b.registration,b.departure,b.arrival FROM findings f JOIN base b ON b.id=f.id ORDER BY CASE severity WHEN 'problem' THEN 0 ELSE 1 END,b.date DESC,b.id DESC LIMIT 250`,
-    sql`SELECT COUNT(DISTINCT UPPER(ident))::int total,COUNT(DISTINCT UPPER(ident)) FILTER(WHERE user_id=${userId})::int own FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%')`
-  ]);const visibleIssues=issues.filter(issue=>issue.code==="unknown_departure"?!getCatalogAirport(String(issue.departure??"")):issue.code==="unknown_arrival"?!getCatalogAirport(String(issue.arrival??"")):true),stats=airportStats[0]??{};return {aircraft,rates,airports,quality:quality[0]??{},issues:visibleIssues,airportStats:{...stats,total:Math.max(Number(stats.total??0),airportCatalogSize())}} as {aircraft:Array<Record<string,unknown>>;rates:Array<Record<string,unknown>>;airports:Array<Record<string,unknown>>;quality:Record<string,unknown>;issues:Array<Record<string,unknown>>;airportStats:Record<string,unknown>};
+    sql`SELECT COUNT(DISTINCT UPPER(ident))::int total,COUNT(DISTINCT UPPER(ident)) FILTER(WHERE user_id=${userId})::int own FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%')`,
+    sql`WITH codes AS (
+      SELECT UPPER(TRIM(departure)) code,COUNT(*)::int departures,0::int arrivals FROM flights WHERE user_id=${userId} AND UPPER(TRIM(COALESCE(departure,''))) ~ '^CZ-[0-9]{4}$' GROUP BY 1
+      UNION ALL
+      SELECT UPPER(TRIM(arrival)) code,0::int departures,COUNT(*)::int arrivals FROM flights WHERE user_id=${userId} AND UPPER(TRIM(COALESCE(arrival,''))) ~ '^CZ-[0-9]{4}$' GROUP BY 1
+    ) SELECT code,SUM(departures)::int departures,SUM(arrivals)::int arrivals FROM codes GROUP BY code ORDER BY code`
+  ]);
+  const visibleIssues=issues.filter(issue=>issue.code==="unknown_departure"?!getCatalogAirport(String(issue.departure??"")):issue.code==="unknown_arrival"?!getCatalogAirport(String(issue.arrival??"")):true),stats=airportStats[0]??{},counts=new Map(routeCodes.map(row=>[String(row.code),row])),codeMigrations=airportCodeMigrations(routeCodes.map(row=>String(row.code))).map(item=>{const count=counts.get(item.from)??{};return{...item,departures:Number(count.departures??0),arrivals:Number(count.arrivals??0)}});
+  return {aircraft,rates,airports,quality:quality[0]??{},issues:visibleIssues,airportStats:{...stats,total:Math.max(Number(stats.total??0),airportCatalogSize())},codeMigrations} as {aircraft:Array<Record<string,unknown>>;rates:Array<Record<string,unknown>>;airports:Array<Record<string,unknown>>;quality:Record<string,unknown>;issues:Array<Record<string,unknown>>;airportStats:Record<string,unknown>;codeMigrations:Array<{from:string;to:string;name:string;departures:number;arrivals:number}>};
 }

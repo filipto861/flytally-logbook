@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { parseFlightInput } from "@/lib/flight-input";
 import { airportCandidateScore,flightEnvelope,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
-import { airportCatalogSize,nearestCatalogAirport } from "@/lib/airport-catalog";
+import { airportCatalogSize,canonicalAirportIdent,nearestCatalogAirport } from "@/lib/airport-catalog";
 import { serializeBilling } from "@/lib/billing";
 import { shouldResolveStoredPrice } from "@/lib/rate-history";
 import { flightFingerprint } from "@/lib/flight-dedup";
@@ -64,14 +64,14 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
 
 export async function createFlight(_: FlightActionState, form: FormData): Promise<FlightActionState> {
   const { userId } = await requireUser(); const parsed = parseFlightInput(form);
-  if (!parsed.data) return { error: parsed.error }; const f = parsed.data;
+  if (!parsed.data) return { error: parsed.error }; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival);
   const price = await resolvedPrice(userId, f.registration, f.date);
-  const fingerprint=flightFingerprint(userId,{date:f.date,registration:f.registration,offBlock:f.offBlock,departure:f.departure,arrival:f.arrival});
+  const fingerprint=flightFingerprint(userId,{date:f.date,registration:f.registration,offBlock:f.offBlock,departure,arrival});
   const results=await sql.transaction([
     sql`SELECT pg_advisory_xact_lock(hashtextextended(${fingerprint},0))`,
     sql`INSERT INTO flights (user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note)
-      SELECT ${userId},${f.date},${f.evidence},${f.registration},${f.aircraftType},${f.aircraftClass},${f.departure},${f.arrival},${f.offBlock},${f.takeoff},${f.landing},${f.onBlock},${f.starts},${f.commander},${f.instructor},${f.role},${f.task},${price},${f.billingBasis},${f.note}
-      WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${f.departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${f.arrival}) RETURNING id`,
+      SELECT ${userId},${f.date},${f.evidence},${f.registration},${f.aircraftType},${f.aircraftClass},${departure},${arrival},${f.offBlock},${f.takeoff},${f.landing},${f.onBlock},${f.starts},${f.commander},${f.instructor},${f.role},${f.task},${price},${f.billingBasis},${f.note}
+      WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival}) RETURNING id`,
   ]);
   const rows=results[1] as Array<{id:number|string}>;
   if(!rows[0])return{error:"Stejný let už je v databázi uložený. Duplicitní odeslání bylo zablokováno."};
@@ -85,7 +85,7 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
   const rawIndices=String(form.get("splitIndices")||"").split(",").filter(Boolean).map(Number),indices=[...new Set(rawIndices)].filter(value=>Number.isSafeInteger(value)&&value>0&&value<points.length-1).sort((a,b)=>a-b);if(indices.length!==rawIndices.length)return{error:"Návrh rozdělení je neplatný. Nahrajte soubor znovu."};
   const parts=splitPoints(points,indices),partCount=Number(form.get("partCount"));if(!Number.isSafeInteger(partCount)||partCount!==parts.length||partCount<1||partCount>20)return{error:"Počet kontrolovaných letů neodpovídá rozdělení tracku."};
   const reviewed:Array<{date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:number;note:string}>=[];
-  const validTime=(value:string)=>!value||/^([01]\d|2[0-3]):[0-5]\d$/.test(value);for(let index=0;index<parts.length;index++){if(String(form.get(`part_${index}_reviewed`)||"")!=="yes")return{error:`Let ${index+1} nebyl jednotlivě potvrzen.`};const date=String(form.get(`part_${index}_date`)||""),offBlock=String(form.get(`part_${index}_offBlock`)||""),takeoff=String(form.get(`part_${index}_takeoff`)||""),landing=String(form.get(`part_${index}_landing`)||""),onBlock=String(form.get(`part_${index}_onBlock`)||"");if(flightDateKey(date)!==date||[offBlock,takeoff,landing,onBlock].some(value=>!validTime(value)))return{error:`Let ${index+1} má neplatné datum nebo čas.`};reviewed.push({date,offBlock,takeoff,landing,onBlock,departure:String(form.get(`part_${index}_departure`)||"").trim().toUpperCase().slice(0,16),arrival:String(form.get(`part_${index}_arrival`)||"").trim().toUpperCase().slice(0,16),starts:Math.max(0,Math.min(99,Number(form.get(`part_${index}_starts`)||1))),note:String(form.get(`part_${index}_note`)||"").trim().slice(0,2000)})}
+  const validTime=(value:string)=>!value||/^([01]\d|2[0-3]):[0-5]\d$/.test(value);for(let index=0;index<parts.length;index++){if(String(form.get(`part_${index}_reviewed`)||"")!=="yes")return{error:`Let ${index+1} nebyl jednotlivě potvrzen.`};const date=String(form.get(`part_${index}_date`)||""),offBlock=String(form.get(`part_${index}_offBlock`)||""),takeoff=String(form.get(`part_${index}_takeoff`)||""),landing=String(form.get(`part_${index}_landing`)||""),onBlock=String(form.get(`part_${index}_onBlock`)||"");if(flightDateKey(date)!==date||[offBlock,takeoff,landing,onBlock].some(value=>!validTime(value)))return{error:`Let ${index+1} má neplatné datum nebo čas.`};reviewed.push({date,offBlock,takeoff,landing,onBlock,departure:canonicalAirportIdent(String(form.get(`part_${index}_departure`)||"").slice(0,16)),arrival:canonicalAirportIdent(String(form.get(`part_${index}_arrival`)||"").slice(0,16)),starts:Math.max(0,Math.min(99,Number(form.get(`part_${index}_starts`)||1))),note:String(form.get(`part_${index}_note`)||"").trim().slice(0,2000)})}
   const priceCache=new Map<string,number|null>();const prepared=[];for(let index=0;index<parts.length;index++){const part=parts[index],stats=trackStats(part),envelope=flightEnvelope(part),values=reviewed[index];let price=priceCache.get(values.date);if(!priceCache.has(values.date)){price=await resolvedPrice(userId,registration,values.date);priceCache.set(values.date,price??null)}const [detectedDeparture,detectedArrival]=await Promise.all([values.departure?Promise.resolve(null):nearestAirport(userId,envelope.departureCandidates),values.arrival?Promise.resolve(null):nearestAirport(userId,envelope.arrivalCandidates)]),departure=values.departure||detectedDeparture?.ident||"",arrival=values.arrival||detectedArrival?.ident||"",partNote=parts.length>1?`${values.note}${values.note?' · ':''}Kontrolovaný import ${index+1}/${parts.length}`:values.note,suffix=parts.length>1?`__part${index+1}-of-${parts.length}.kml`:file.name;prepared.push({part,stats,values,price:price??null,departure,arrival,partNote,suffix:suffix.slice(0,240),fingerprint:flightFingerprint(userId,{date:values.date,registration,offBlock:values.offBlock,departure,arrival})})}
   if(new Set(prepared.map(item=>item.fingerprint)).size!==prepared.length)return{error:"Dvě části importu mají stejné datum, čas a trasu. Upravte rozdělení nebo časy před uložením."};
   const existing=await Promise.all(prepared.map(item=>sql`SELECT id FROM flights WHERE user_id=${userId} AND date::text=${item.values.date} AND UPPER(TRIM(registration))=${registration} AND COALESCE(off_block,'')=${item.values.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${item.departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${item.arrival} LIMIT 1`));
@@ -96,12 +96,12 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
 
 export async function updateFlight(id: number, _: FlightActionState, form: FormData): Promise<FlightActionState> {
   const { userId } = await requireUser(); if (!Number.isSafeInteger(id) || id <= 0) return { error: "Neplatný záznam." };
-  const parsed = parseFlightInput(form); if (!parsed.data) return { error: parsed.error }; const f = parsed.data;
+  const parsed = parseFlightInput(form); if (!parsed.data) return { error: parsed.error }; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival);
   const existingRows=await sql`SELECT registration,date::text date,price_per_hour FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<{registration:string;date:string;price_per_hour:number|null}>;
   const existing=existingRows[0];if(!existing)return { error: "Let nebyl nalezen nebo k němu nemáte přístup." };
   const price=shouldResolveStoredPrice(existing,f.registration,f.date)?await resolvedPrice(userId,f.registration,f.date):existing.price_per_hour;
   const result = await sql`
-    UPDATE flights SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},departure=${f.departure},arrival=${f.arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${f.commander},instructor=${f.instructor},role=${f.role},task=${f.task},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note}
+    UPDATE flights SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${f.commander},instructor=${f.instructor},role=${f.role},task=${f.task},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note}
     WHERE id=${id} AND user_id=${userId} RETURNING id
   ` as Array<{ id: number | string }>;
   if (!result[0]) return { error: "Let nebyl nalezen nebo k němu nemáte přístup." };
