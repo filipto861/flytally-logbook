@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { parseFlightInput } from "@/lib/flight-input";
-import { flightEnvelope,haversineKm,landingCount,localParts,overview,parseTrackFile,splitPoints,trackStats } from "@/lib/kml";
+import { airportCandidateScore,flightEnvelope,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
 import { airportCatalogSize,nearestCatalogAirport } from "@/lib/airport-catalog";
 import { serializeBilling } from "@/lib/billing";
 import { shouldResolveStoredPrice } from "@/lib/rate-history";
@@ -36,8 +36,8 @@ async function nearestAirport(userId:number,candidates:Array<{lat:number;lon:num
   const minLat=Math.min(...valid.map(point=>point.lat))-.65,maxLat=Math.max(...valid.map(point=>point.lat))+.65,minLon=Math.min(...valid.map(point=>point.lon))-1,maxLon=Math.max(...valid.map(point=>point.lon))+1;
   const rows=await sql`SELECT ident,COALESCE(name,'') name,latitude_deg,longitude_deg,user_id,COALESCE(source,'') source FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND latitude_deg BETWEEN ${minLat} AND ${maxLat} AND longitude_deg BETWEEN ${minLon} AND ${maxLon} AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%') LIMIT 2500` as Array<{ident:string;name:string;latitude_deg:number;longitude_deg:number;user_id:number;source:string}>;
   const unique=new Map<string,typeof rows[number]>();for(const row of rows){const ident=String(row.ident||"").trim().toUpperCase();if(!ident)continue;const previous=unique.get(ident);if(!previous||Number(row.user_id)===userId)unique.set(ident,row)}
-  let best:{row:typeof rows[number];distanceKm:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg),alt:null,time:null};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;for(const point of valid){const distanceKm=haversineKm({lat:point.lat,lon:point.lon,alt:null,time:null},airport);if(!best||distanceKm<best.distanceKm)best={row,distanceKm}}}
-  if(best&&best.distanceKm<=35)return{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10};
+  let best:{row:typeof rows[number];distanceKm:number;score:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg)};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;const ranked=airportCandidateScore(valid,airport);if(ranked.distanceKm<=35&&(!best||ranked.score<best.score))best={row,distanceKm:ranked.distanceKm,score:ranked.score}}
+  if(best)return{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10};
   const fallback=nearestCatalogAirport(valid,35);return fallback?{ident:fallback.ident,name:fallback.name,distanceKm:fallback.distanceKm}:null;
 }
 
@@ -51,7 +51,7 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
   const rows=await sql`SELECT coordinates_json FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} ORDER BY start_utc NULLS LAST,id` as Array<{coordinates_json:unknown}>;
   const parts:Array<Array<{lat:number;lon:number}>>=[];for(const row of rows){try{const parsed=typeof row.coordinates_json==="string"?JSON.parse(row.coordinates_json):row.coordinates_json;if(!Array.isArray(parsed))continue;const valid=parsed.map(point=>({lat:Number(point?.lat),lon:Number(point?.lon)})).filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180);if(valid.length>=2)parts.push(valid)}catch{}}
   if(!parts.length)return{error:"Let nemá použitelný GPS track."};
-  const departureCandidates=parts[0].slice(0,20),arrivalCandidates=parts.at(-1)!.slice(-20).reverse(),[departure,arrival]=await Promise.all([nearestAirport(userId,departureCandidates),nearestAirport(userId,arrivalCandidates)]);
+  const departureCandidates=trackEndpointCandidates(parts[0],false),arrivalCandidates=trackEndpointCandidates(parts.at(-1)!,true),[departure,arrival]=await Promise.all([nearestAirport(userId,departureCandidates),nearestAirport(userId,arrivalCandidates)]);
   if(!departure&&!arrival)return{error:"V okruhu 35 km od začátku ani konce tracku nebylo nalezeno letiště."};
   await sql`UPDATE flights SET departure=CASE WHEN ${departure?.ident||""}<>'' THEN ${departure?.ident||""} ELSE departure END,arrival=CASE WHEN ${arrival?.ident||""}<>'' THEN ${arrival?.ident||""} ELSE arrival END WHERE id=${flightId} AND user_id=${userId}`;
   revalidatePath(`/flights/${flightId}`);revalidatePath("/flights");revalidatePath("/database");revalidatePath("/map");
