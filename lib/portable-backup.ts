@@ -2,11 +2,11 @@ export type BackupRow=Record<string,unknown>;
 export type PortableBackup={
   format:string;version:number;exported_at:string;profile:BackupRow;counts:Record<string,number>;
   flights:BackupRow[];aircraft:BackupRow[];rates:BackupRow[];airports:BackupRow[];expiries:BackupRow[];
-  settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];integrity:{algorithm:string;payload_sha256:string};
+  settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];audit_log:BackupRow[];integrity:{algorithm:string;payload_sha256:string};
 };
 
 const arrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
-const sha256=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
+export const portableBackupDigest=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
 const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?raw:date.toISOString()};
 
@@ -18,11 +18,14 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   const integrity=parsed.integrity as Record<string,unknown>|undefined,{integrity:_removed,...payload}=parsed;
   if(payload.format!=="pilot-logbook-portable"||Number(payload.version)<4)throw new Error("Unsupported portable backup format. Version 4 or newer is required.");
   for(const key of arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
+  if(Number(payload.version)>=5&&!Array.isArray(payload.audit_log))throw new Error("Backup section audit_log is missing.");
   if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Backup exceeds the safe number of flights or GPS tracks.");
-  const expected=String(integrity?.payload_sha256??""),digest=await sha256(JSON.stringify(payload));
+  const expected=String(integrity?.payload_sha256??""),digest=await portableBackupDigest(JSON.stringify(payload));
   if(String(integrity?.algorithm??"").toUpperCase()!=="SHA-256"||!expected)throw new Error("Backup has no supported SHA-256 integrity value.");
   if(expected!==digest)throw new Error("Integrity check failed. The file is damaged or was modified.");
+  if(!Array.isArray(payload.audit_log))payload.audit_log=[];
   const counts=payload.counts as Record<string,unknown>|undefined;
   for(const key of ["flights","aircraft","rates","airports","expiries","flight_tracks","track_points"] as const)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
+  if(Number(payload.version)>=5&&Number(counts?.audit_log??-1)!==(payload.audit_log as unknown[]).length)throw new Error("Declared audit_log count does not match the backup content.");
   return{backup:{...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}},digest};
 }
