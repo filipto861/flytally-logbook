@@ -1,6 +1,7 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { airportCandidateScore } from "@/lib/track-processing";
 
 export type CatalogAirport={ident:string;name:string;lat:number;lon:number;type:string;municipality:string;country:string;region:string};
 let cache:CatalogAirport[]|null=null;
@@ -17,5 +18,4 @@ export function searchAirportCatalog(query:string,page=1,size=50){
   const pages=Math.max(1,Math.ceil(matches.length/safeSize)),safePage=Math.max(1,Math.min(pages,Math.floor(page)||1)),offset=(safePage-1)*safeSize;
   return{rows:matches.slice(offset,offset+safeSize),total:matches.length,page:safePage,pages,size:safeSize};
 }
-function distanceKm(lat1:number,lon1:number,lat2:number,lon2:number){const p=Math.PI/180,dLat=(lat2-lat1)*p,dLon=(lon2-lon1)*p,q=Math.sin(dLat/2)**2+Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin(dLon/2)**2;return 12742.0176*Math.asin(Math.sqrt(q))}
-export function nearestCatalogAirport(candidates:Array<{lat:number;lon:number}>,maxKm=35){let best:{airport:CatalogAirport;distanceKm:number}|null=null;for(const airport of load())for(const point of candidates){const distance=distanceKm(point.lat,point.lon,airport.lat,airport.lon);if(!best||distance<best.distanceKm)best={airport,distanceKm:distance}}return best&&best.distanceKm<=maxKm?{...best.airport,distanceKm:Math.round(best.distanceKm*10)/10}:null}
+export function nearestCatalogAirport(candidates:Array<{lat:number;lon:number}>,maxKm=35){let best:{airport:CatalogAirport;distanceKm:number;score:number}|null=null;for(const airport of load()){const ranked=airportCandidateScore(candidates,airport);if(ranked.distanceKm<=maxKm&&(!best||ranked.score<best.score))best={airport,distanceKm:ranked.distanceKm,score:ranked.score}}return best?{...best.airport,distanceKm:Math.round(best.distanceKm*10)/10}:null}
