@@ -30,15 +30,19 @@ async function resolvedPrice(userId: number, registration: string, date: string)
 export type AirportDetection={ident:string;name:string;distanceKm:number}|null;
 export type AirportDetectionRequest={departureCandidates:Array<{lat:number;lon:number}>;arrivalCandidates:Array<{lat:number;lon:number}>};
 export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection}>;airportCount:number};
+const AUTO_AIRPORT_RADIUS_KM=8;
 
 async function nearestAirport(userId:number,candidates:Array<{lat:number;lon:number}>):Promise<AirportDetection>{
   const valid=candidates.filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180).slice(0,20);if(!valid.length)return null;
   const minLat=Math.min(...valid.map(point=>point.lat))-.65,maxLat=Math.max(...valid.map(point=>point.lat))+.65,minLon=Math.min(...valid.map(point=>point.lon))-1,maxLon=Math.max(...valid.map(point=>point.lon))+1;
   const rows=await sql`SELECT ident,COALESCE(name,'') name,latitude_deg,longitude_deg,user_id,COALESCE(source,'') source FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND latitude_deg BETWEEN ${minLat} AND ${maxLat} AND longitude_deg BETWEEN ${minLon} AND ${maxLon} AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%') LIMIT 2500` as Array<{ident:string;name:string;latitude_deg:number;longitude_deg:number;user_id:number;source:string}>;
   const unique=new Map<string,typeof rows[number]>();for(const row of rows){const ident=String(row.ident||"").trim().toUpperCase();if(!ident)continue;const previous=unique.get(ident);if(!previous||Number(row.user_id)===userId)unique.set(ident,row)}
-  let best:{row:typeof rows[number];distanceKm:number;score:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg)};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;const ranked=airportCandidateScore(valid,airport);if(ranked.distanceKm<=35&&(!best||ranked.score<best.score))best={row,distanceKm:ranked.distanceKm,score:ranked.score}}
-  if(best)return{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10};
-  const fallback=nearestCatalogAirport(valid,35);return fallback?{ident:fallback.ident,name:fallback.name,distanceKm:fallback.distanceKm}:null;
+  let best:{row:typeof rows[number];distanceKm:number;score:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg)};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;const ranked=airportCandidateScore(valid,airport);if(ranked.distanceKm<=AUTO_AIRPORT_RADIUS_KM&&(!best||ranked.score<best.score))best={row,distanceKm:ranked.distanceKm,score:ranked.score}}
+  const catalog=nearestCatalogAirport(valid,AUTO_AIRPORT_RADIUS_KM),catalogRank=catalog?airportCandidateScore(valid,catalog):null;
+  // Always compare both sources. The bundled catalogue may contain a newer
+  // local code (for example LKLOCH) than an older PostgreSQL OurAirports copy.
+  if(catalog&&catalogRank&&(!best||catalogRank.score<=best.score+.15))return{ident:catalog.ident,name:catalog.name,distanceKm:catalog.distanceKm};
+  return best?{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10}:null;
 }
 
 export async function detectTrackAirports(requests:AirportDetectionRequest[]):Promise<AirportDetectionResult>{
@@ -52,7 +56,7 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
   const parts:Array<Array<{lat:number;lon:number}>>=[];for(const row of rows){try{const parsed=typeof row.coordinates_json==="string"?JSON.parse(row.coordinates_json):row.coordinates_json;if(!Array.isArray(parsed))continue;const valid=parsed.map(point=>({lat:Number(point?.lat),lon:Number(point?.lon)})).filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180);if(valid.length>=2)parts.push(valid)}catch{}}
   if(!parts.length)return{error:"Let nemá použitelný GPS track."};
   const departureCandidates=trackEndpointCandidates(parts[0],false),arrivalCandidates=trackEndpointCandidates(parts.at(-1)!,true),[departure,arrival]=await Promise.all([nearestAirport(userId,departureCandidates),nearestAirport(userId,arrivalCandidates)]);
-  if(!departure&&!arrival)return{error:"V okruhu 35 km od začátku ani konce tracku nebylo nalezeno letiště."};
+  if(!departure&&!arrival)return{error:`V okruhu ${AUTO_AIRPORT_RADIUS_KM} km od začátku ani konce tracku nebylo nalezeno dostatečně blízké letiště. Kódy ponechte nebo doplňte ručně.`};
   await sql`UPDATE flights SET departure=CASE WHEN ${departure?.ident||""}<>'' THEN ${departure?.ident||""} ELSE departure END,arrival=CASE WHEN ${arrival?.ident||""}<>'' THEN ${arrival?.ident||""} ELSE arrival END WHERE id=${flightId} AND user_id=${userId}`;
   revalidatePath(`/flights/${flightId}`);revalidatePath("/flights");revalidatePath("/database");revalidatePath("/map");
   const found=[departure?`odlet ${departure.ident} (${departure.distanceKm} km)`:"",arrival?`přílet ${arrival.ident} (${arrival.distanceKm} km)`:""].filter(Boolean).join(" · ");return{success:`Nalezeno a uloženo: ${found}.`};
