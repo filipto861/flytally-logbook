@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { flightRestoreKey,parsePortableBackup,trackRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { createStoredBackup,loadStoredBackup } from "@/lib/backup-center";
 
 export type RestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number};
 export type RestoreState={error?:string;success?:string;preview?:RestorePreview};
@@ -37,6 +38,7 @@ export async function restorePortableBackup(_:RestoreState,form:FormData):Promis
   const preview=await buildPreview(userId,parsed.backup,parsed.digest),intent=String(form.get("intent")||"preview");if(intent!=="restore")return{preview};
   if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};
   if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview};
+  try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview}}
   const backup=parsed.backup,queries=[];
   const settings=backup.settings[0];if(settings)queries.push(sql`INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json,created_at,updated_at) VALUES(${userId},${text(settings,"timezone")||"Europe/Prague"},${text(settings,"currency")||"CZK"},${upper(settings,"home_airport")},${upper(settings,"default_role")||"PIC"},${jsonText(settings.preferences_json,"{}")},NOW(),NOW()) ON CONFLICT(user_id) DO UPDATE SET timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,home_airport=EXCLUDED.home_airport,default_role=EXCLUDED.default_role,preferences_json=EXCLUDED.preferences_json,updated_at=NOW()`);
   for(const row of backup.aircraft){const registration=upper(row,"registration");if(!registration)continue;queries.push(sql`INSERT INTO aircraft(user_id,registration,aircraft_type,icao_type,aircraft_class,evidence,default_price_per_hour,default_role,billing_basis,active,note,created_at,updated_at) SELECT ${userId},${registration},${text(row,"aircraft_type",120)},${text(row,"icao_type",120)},${upper(row,"aircraft_class")},${upper(row,"evidence")},${nullableNumber(row.default_price_per_hour)},${upper(row,"default_role")||"PIC"},${text(row,"billing_basis",40)||"BLOCK"},${integer(row.active,1)},${text(row,"note")},NOW(),NOW() WHERE NOT EXISTS(SELECT 1 FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration})`)}
@@ -49,4 +51,12 @@ export async function restorePortableBackup(_:RestoreState,form:FormData):Promis
   try{if(queries.length)await sql.transaction(queries)}catch(error){console.error("portable-backup-restore-failed",error);return{error:"Restore failed and the transaction was rolled back. Existing data is unchanged.",preview}}
   for(const path of ["/export","/dashboard","/flights","/database","/profile","/map","/print"])revalidatePath(path);
   const added=Object.values(preview.add).reduce((sum,value)=>sum+value,0);return{success:`Restore completed. Added ${added} missing records; existing flights and historical rates were not changed.`};
+}
+
+export async function createManualBackup(){const {userId}=await requireUser();await createStoredBackup(userId,"manual");revalidatePath("/export")}
+
+export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
+  const {userId}=await requireUser(),id=Number(form.get("backup_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};
+  let stored;try{stored=await loadStoredBackup(userId,id)}catch(error){return{error:error instanceof Error?error.message:"Stored backup could not be read."}}
+  const forwarded=new FormData();forwarded.set("backup",new File([stored.json],`stored-backup-${id}.json`,{type:"application/json"}));forwarded.set("intent",String(form.get("intent")||"preview"));forwarded.set("preview_digest",String(form.get("preview_digest")||""));forwarded.set("confirm",String(form.get("confirm")||""));return restorePortableBackup({},forwarded);
 }
