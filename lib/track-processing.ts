@@ -35,6 +35,28 @@ export const haversineKm=(a:KmlPoint,b:KmlPoint)=>{const radius=6371.0088,p=Math
 const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value=(Date.parse(b.time)-Date.parse(a.time))/1000;return Number.isFinite(value)&&value>0?value:0};
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
+
+function segmentHasAirborneMovement(points:KmlPoint[]){
+  if(points.length<2)return false;
+  const distance=points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),duration=seconds(points[0],points.at(-1)!);
+  const speed=speeds(points),maxSpeed=speed.length?Math.max(...speed):0,alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),altRange=alts.length>1?Math.max(...alts)-Math.min(...alts):0;
+  return (maxSpeed>=35||(maxSpeed>=18&&altRange>=35))&&(distance>=.7||duration>=60);
+}
+
+/**
+ * Several import formats mark one stop both as a time gap and as a low-speed
+ * ground event. Treating both markers as separate cuts creates a fake flight
+ * of a few stationary points between the real flights. Collapse boundaries
+ * whenever the points between them contain no credible airborne movement.
+ */
+function consolidateGroundCuts(points:KmlPoint[],rawCuts:number[]){
+  const cuts=[...new Set(rawCuts)].sort((a,b)=>a-b).filter(value=>value>=1&&value<=points.length-3);if(!cuts.length)return cuts;
+  const merged:number[]=[];
+  for(const cut of cuts){const previous=merged.at(-1);if(previous!==undefined&&!segmentHasAirborneMovement(points.slice(previous+1,cut+1))){merged[merged.length-1]=Math.round((previous+cut)/2)}else merged.push(cut)}
+  while(merged.length&&!segmentHasAirborneMovement(points.slice(0,merged[0]+1)))merged.shift();
+  while(merged.length&&!segmentHasAirborneMovement(points.slice(merged.at(-1)!+1)))merged.pop();
+  return merged;
+}
 export function suggestedSplits(points:KmlPoint[]){
   const out:number[]=[];
   for(let i=1;i<points.length;i++){
@@ -47,7 +69,7 @@ export function suggestedSplits(points:KmlPoint[]){
   // splitPoints() cuts after the selected point. Two points on each side are
   // sufficient; the previous >2/<length-3 rule silently discarded valid
   // short multi-flight exports and made the wizard show a single dot/flight.
-  return[...new Set(out)].sort((a,b)=>a-b).filter((value,index,all)=>value>=1&&value<=points.length-3&&(!index||value-all[index-1]>=2));
+  return consolidateGroundCuts(points,out);
 }
 export function landingCount(points:KmlPoint[]){return Math.max(1,1+groundEvents(points).filter(event=>event.duration>5&&event.duration<90).length)}
 export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.length)return[points];const parts:KmlPoint[][]=[];let start=0;for(const raw of indices){const index=Math.max(1,Math.min(points.length-2,raw)),part=points.slice(start,index+1);if(part.length>=2)parts.push(part);start=index+1}const tail=points.slice(start);if(tail.length>=2)parts.push(tail);return parts.length?parts:[points]}
@@ -62,7 +84,18 @@ export type FlightEnvelope={
   landingUtc:string|null;onBlockUtc:string|null;departureCandidates:KmlPoint[];arrivalCandidates:KmlPoint[];
 };
 
-function sampledWindow(points:KmlPoint[],from:number,to:number,max=16){const slice=points.slice(Math.max(0,from),Math.min(points.length,to+1));if(slice.length<=max)return slice;const step=Math.max(1,Math.floor(slice.length/(max-1)));const result=slice.filter((_,index)=>index===0||index===slice.length-1||index%step===0);return result.slice(0,max-1).concat(slice.at(-1)!)}
+export function trackEndpointCandidates<T extends {lat:number;lon:number}>(points:T[],arrival:boolean,max=12,maxPathKm=22){
+  const ordered=arrival?[...points].reverse():points,result:T[]=[];let pathKm=0;
+  for(const point of ordered){if(result.length){pathKm+=haversineKm({...result.at(-1)!,alt:null,time:null},{...point,alt:null,time:null});if(pathKm>maxPathKm&&result.length>=3)break}result.push(point);if(result.length>=max)break}
+  return result;
+}
+
+/** Rank an airport primarily against the actual edge of the track. */
+export function airportCandidateScore(candidates:Array<{lat:number;lon:number}>,airport:{lat:number;lon:number}){
+  if(!candidates.length)return{distanceKm:Infinity,score:Infinity};
+  const distances=candidates.map(point=>haversineKm({lat:point.lat,lon:point.lon,alt:null,time:null},{lat:airport.lat,lon:airport.lon,alt:null,time:null})),distanceKm=distances[0],support=Math.min(...distances);
+  return{distanceKm,score:distanceKm*.88+support*.12};
+}
 
 /** Detect the airborne portion without assuming that the file starts/ends at an airport. */
 export function flightEnvelope(points:KmlPoint[]):FlightEnvelope{
@@ -75,5 +108,5 @@ export function flightEnvelope(points:KmlPoint[]):FlightEnvelope{
   // The logbook convention is five minutes before take-off / after landing.
   // All four values remain editable in the confirmation step.
   const offBlockUtc=shiftedIso(takeoffUtc,-5),onBlockUtc=shiftedIso(landingUtc,5);
-  return{takeoffIndex,landingIndex,offBlockUtc,takeoffUtc,landingUtc,onBlockUtc,departureCandidates:sampledWindow(points,0,Math.min(points.length-1,takeoffIndex+5)),arrivalCandidates:sampledWindow(points,Math.max(0,landingIndex-5),points.length-1)};
+  return{takeoffIndex,landingIndex,offBlockUtc,takeoffUtc,landingUtc,onBlockUtc,departureCandidates:trackEndpointCandidates(points,false),arrivalCandidates:trackEndpointCandidates(points,true)};
 }
