@@ -5,9 +5,11 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { flightRestoreKey,parsePortableBackup,trackRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { createStoredBackup,loadStoredBackup } from "@/lib/backup-center";
+import { restoreDeletedFlightRecord } from "@/lib/flight-trash";
 
 export type RestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number};
 export type RestoreState={error?:string;success?:string;preview?:RestorePreview};
+export type TrashRestoreState={error?:string;success?:string};
 const text=(row:BackupRow,key:string,max=2000)=>String(row[key]??"").trim().slice(0,max),upper=(row:BackupRow,key:string,max=120)=>text(row,key,max).toUpperCase();
 const nullableNumber=(value:unknown)=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Number(value):null;
 const integer=(value:unknown,fallback=0)=>Number.isFinite(Number(value))?Math.trunc(Number(value)):fallback;
@@ -59,4 +61,12 @@ export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<
   const {userId}=await requireUser(),id=Number(form.get("backup_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};
   let stored;try{stored=await loadStoredBackup(userId,id)}catch(error){return{error:error instanceof Error?error.message:"Stored backup could not be read."}}
   const forwarded=new FormData();forwarded.set("backup",new File([stored.json],`stored-backup-${id}.json`,{type:"application/json"}));forwarded.set("intent",String(form.get("intent")||"preview"));forwarded.set("preview_digest",String(form.get("preview_digest")||""));forwarded.set("confirm",String(form.get("confirm")||""));return restorePortableBackup({},forwarded);
+}
+
+export async function restoreDeletedFlight(_:TrashRestoreState,form:FormData):Promise<TrashRestoreState>{
+  const {userId}=await requireUser(),id=Number(form.get("trash_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a deleted flight."};
+  let result;try{result=await restoreDeletedFlightRecord(userId,id)}catch(error){console.error("flight-trash-restore-failed",error);return{error:"The flight could not be restored. Existing data is unchanged."}}
+  if(result.error)return{error:result.error};
+  for(const path of ["/export","/dashboard","/flights","/database","/map","/print"])revalidatePath(path);
+  return{success:`Flight restored as record ${result.flightId}.`};
 }
