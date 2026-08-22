@@ -4,17 +4,22 @@ import { useState } from "react";
 import { BackupCenter } from "@/components/backup-center";
 import { BackupRestore } from "@/components/backup-restore";
 import { BackupValidator } from "@/components/backup-validator";
+import { FlightTrash } from "@/components/flight-trash";
 import type { StoredBackup } from "@/lib/backup-center";
-import type { RestoreState } from "@/app/(protected)/export/actions";
+import type { DeletedFlight } from "@/lib/flight-trash";
+import type { RestoreState,TrashRestoreState } from "@/app/(protected)/export/actions";
 
-type Section="export"|"backups"|"restore";
+type Section="export"|"backups"|"restore"|"trash";
 type RestoreAction=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
+type TrashAction=(state:TrashRestoreState,form:FormData)=>Promise<TrashRestoreState>;
 
-export function DataHub({backups,createAction,restoreStoredAction,restoreFileAction}:{
+export function DataHub({backups,deletedFlights,createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
   backups:StoredBackup[];
+  deletedFlights:DeletedFlight[];
   createAction:()=>Promise<void>;
   restoreStoredAction:RestoreAction;
   restoreFileAction:RestoreAction;
+  restoreTrashAction:TrashAction;
 }){
   const [section,setSection]=useState<Section>("export");
   return <section className="data-hub">
@@ -22,6 +27,7 @@ export function DataHub({backups,createAction,restoreStoredAction,restoreFileAct
       <button type="button" className={section==="export"?"active":""} aria-pressed={section==="export"} onClick={()=>setSection("export")}><span>Export</span></button>
       <button type="button" className={section==="backups"?"active":""} aria-pressed={section==="backups"} onClick={()=>setSection("backups")}><span>Backups</span><b>{backups.length}</b></button>
       <button type="button" className={section==="restore"?"active":""} aria-pressed={section==="restore"} onClick={()=>setSection("restore")}><span>Restore</span></button>
+      <button type="button" className={section==="trash"?"active":""} aria-pressed={section==="trash"} onClick={()=>setSection("trash")}><span>Trash</span>{deletedFlights.length?<b>{deletedFlights.length}</b>:null}</button>
     </nav>
 
     <div className="data-hub-content">
@@ -38,6 +44,7 @@ export function DataHub({backups,createAction,restoreStoredAction,restoreFileAct
       </section>:null}
       {section==="backups"?<BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/>:null}
       {section==="restore"?<div className="restore-workspace"><BackupValidator/><BackupRestore action={restoreFileAction}/></div>:null}
+      {section==="trash"?<FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/>:null}
     </div>
   </section>;
 }
