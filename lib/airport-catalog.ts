@@ -30,4 +30,9 @@ export function searchAirportCatalog(query:string,page=1,size=50){
   const pages=Math.max(1,Math.ceil(matches.length/safeSize)),safePage=Math.max(1,Math.min(pages,Math.floor(page)||1)),offset=(safePage-1)*safeSize;
   return{rows:matches.slice(offset,offset+safeSize),total:matches.length,page:safePage,pages,size:safeSize};
 }
-export function nearestCatalogAirport(candidates:Array<{lat:number;lon:number}>,maxKm=35){let best:{airport:CatalogAirport;distanceKm:number;score:number}|null=null;for(const airport of load()){const ranked=airportCandidateScore(candidates,airport);if(ranked.distanceKm<=maxKm&&(!best||ranked.score<best.score))best={airport,distanceKm:ranked.distanceKm,score:ranked.score}}return best?{...best.airport,distanceKm:Math.round(best.distanceKm*10)/10}:null}
+export function nearestCatalogAirports(candidates:Array<{lat:number;lon:number}>,maxKm=35,limit=3){
+  const ranked=new Map<string,CatalogAirport&{distanceKm:number;score:number}>();
+  for(const airport of load()){const value=airportCandidateScore(candidates,airport);if(value.distanceKm>maxKm)continue;const item={...airport,distanceKm:Math.round(value.distanceKm*10)/10,score:value.score},previous=ranked.get(airport.ident);if(!previous||item.score<previous.score)ranked.set(airport.ident,item)}
+  return [...ranked.values()].sort((a,b)=>a.score-b.score||a.distanceKm-b.distanceKm||a.ident.localeCompare(b.ident)).slice(0,Math.max(1,limit));
+}
+export function nearestCatalogAirport(candidates:Array<{lat:number;lon:number}>,maxKm=35){const best=nearestCatalogAirports(candidates,maxKm,1)[0];return best?{ident:best.ident,name:best.name,lat:best.lat,lon:best.lon,type:best.type,municipality:best.municipality,country:best.country,region:best.region,distanceKm:best.distanceKm}:null}

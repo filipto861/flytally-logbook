@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { flightDateKey,flightMinutes } from "../lib/dashboard-math.ts";
+import { flightDateKey,flightMinutes,niceChartMaximum } from "../lib/dashboard-math.ts";
 
 test("dashboard accepts ISO and legacy Czech dates",()=>{
   assert.equal(flightDateKey("2026-08-21"),"2026-08-21");
@@ -13,4 +13,10 @@ test("dashboard calculates flight durations including midnight",()=>{
   assert.equal(flightMinutes("13:18","14:48"),90);
   assert.equal(flightMinutes("23:40","00:20"),40);
   assert.equal(flightMinutes("invalid","14:48"),0);
+});
+
+test("dashboard chart uses stable readable scale steps",()=>{
+  assert.equal(niceChartMaximum(87),100);
+  assert.equal(niceChartMaximum(241),400);
+  assert.equal(niceChartMaximum(0),1);
 });

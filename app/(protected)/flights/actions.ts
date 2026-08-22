@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { parseFlightInput } from "@/lib/flight-input";
-import { airportCandidateScore,flightEnvelope,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
-import { airportCatalogSize,canonicalAirportIdent,nearestCatalogAirport } from "@/lib/airport-catalog";
+import { airportCandidateScore,flightEnvelope,hasAirborneMovement,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
+import { airportCatalogSize,canonicalAirportIdent,nearestCatalogAirports } from "@/lib/airport-catalog";
 import { serializeBilling } from "@/lib/billing";
 import { shouldResolveStoredPrice } from "@/lib/rate-history";
 import { flightFingerprint } from "@/lib/flight-dedup";
@@ -27,26 +27,32 @@ async function resolvedPrice(userId: number, registration: string, date: string)
   return rows[0]?.price_per_hour ?? null;
 }
 
-export type AirportDetection={ident:string;name:string;distanceKm:number}|null;
+export type AirportCandidate={ident:string;name:string;distanceKm:number;confidence:"vysoká"|"střední"|"nízká"|"ruční";source:"vlastní"|"katalog"};
+export type AirportDetection=AirportCandidate|null;
 export type AirportDetectionRequest={departureCandidates:Array<{lat:number;lon:number}>;arrivalCandidates:Array<{lat:number;lon:number}>};
-export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection}>;airportCount:number};
+export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection;departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]}>;airportCount:number};
 const AUTO_AIRPORT_RADIUS_KM=8;
+const AIRPORT_CANDIDATE_RADIUS_KM=20;
 
-async function nearestAirport(userId:number,candidates:Array<{lat:number;lon:number}>):Promise<AirportDetection>{
-  const valid=candidates.filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180).slice(0,20);if(!valid.length)return null;
+const airportConfidence=(distanceKm:number):AirportCandidate["confidence"]=>distanceKm<=1.5?"vysoká":distanceKm<=4?"střední":distanceKm<=8?"nízká":"ruční";
+async function airportSuggestions(userId:number,candidates:Array<{lat:number;lon:number}>):Promise<Array<AirportCandidate&{score:number}>>{
+  const valid=candidates.filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lon)&&Math.abs(point.lat)<=90&&Math.abs(point.lon)<=180).slice(0,20);if(!valid.length)return[];
   const minLat=Math.min(...valid.map(point=>point.lat))-.65,maxLat=Math.max(...valid.map(point=>point.lat))+.65,minLon=Math.min(...valid.map(point=>point.lon))-1,maxLon=Math.max(...valid.map(point=>point.lon))+1;
   const rows=await sql`SELECT ident,COALESCE(name,'') name,latitude_deg,longitude_deg,user_id,COALESCE(source,'') source FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND latitude_deg BETWEEN ${minLat} AND ${maxLat} AND longitude_deg BETWEEN ${minLon} AND ${maxLon} AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%') LIMIT 2500` as Array<{ident:string;name:string;latitude_deg:number;longitude_deg:number;user_id:number;source:string}>;
-  const unique=new Map<string,typeof rows[number]>();for(const row of rows){const ident=String(row.ident||"").trim().toUpperCase();if(!ident)continue;const previous=unique.get(ident);if(!previous||Number(row.user_id)===userId)unique.set(ident,row)}
-  let best:{row:typeof rows[number];distanceKm:number;score:number}|null=null;for(const row of unique.values()){const airport={lat:Number(row.latitude_deg),lon:Number(row.longitude_deg)};if(!Number.isFinite(airport.lat)||!Number.isFinite(airport.lon))continue;const ranked=airportCandidateScore(valid,airport);if(ranked.distanceKm<=AUTO_AIRPORT_RADIUS_KM&&(!best||ranked.score<best.score))best={row,distanceKm:ranked.distanceKm,score:ranked.score}}
-  const catalog=nearestCatalogAirport(valid,AUTO_AIRPORT_RADIUS_KM),catalogRank=catalog?airportCandidateScore(valid,catalog):null;
-  // Always compare both sources. The bundled catalogue may contain a newer
-  // local code (for example LKLOCH) than an older PostgreSQL OurAirports copy.
-  if(catalog&&catalogRank&&(!best||catalogRank.score<=best.score+.15))return{ident:catalog.ident,name:catalog.name,distanceKm:catalog.distanceKm};
-  return best?{ident:String(best.row.ident).toUpperCase(),name:String(best.row.name||""),distanceKm:Math.round(best.distanceKm*10)/10}:null;
+  const ranked=new Map<string,AirportCandidate&{score:number}>(),add=(item:AirportCandidate&{score:number})=>{const previous=ranked.get(item.ident);if(!previous||item.source==="vlastní"&&previous.source!=="vlastní"||item.source===previous.source&&item.score<previous.score)ranked.set(item.ident,item)};
+  for(const row of rows){const lat=Number(row.latitude_deg),lon=Number(row.longitude_deg);if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;const value=airportCandidateScore(valid,{lat,lon});if(value.distanceKm>AIRPORT_CANDIDATE_RADIUS_KM)continue;const distanceKm=Math.round(value.distanceKm*10)/10;add({ident:canonicalAirportIdent(String(row.ident||"")),name:String(row.name||""),distanceKm,score:value.score,confidence:airportConfidence(distanceKm),source:Number(row.user_id)===userId?"vlastní":"katalog"})}
+  for(const airport of nearestCatalogAirports(valid,AIRPORT_CANDIDATE_RADIUS_KM,12))add({ident:airport.ident,name:airport.name,distanceKm:airport.distanceKm,score:airport.score,confidence:airportConfidence(airport.distanceKm),source:"katalog"});
+  return [...ranked.values()].filter(item=>Boolean(item.ident)).sort((a,b)=>a.score-b.score||a.distanceKm-b.distanceKm||a.ident.localeCompare(b.ident)).slice(0,3);
 }
+function automaticAirport(candidates:Array<AirportCandidate&{score:number}>):AirportDetection{
+  const best=candidates[0],second=candidates[1];if(!best||best.distanceKm>AUTO_AIRPORT_RADIUS_KM)return null;
+  if(second&&best.distanceKm>2&&second.score-best.score<.75)return null;
+  const {score:_score,...selected}=best;return selected;
+}
+async function nearestAirport(userId:number,candidates:Array<{lat:number;lon:number}>):Promise<AirportDetection>{return automaticAirport(await airportSuggestions(userId,candidates))}
 
 export async function detectTrackAirports(requests:AirportDetectionRequest[]):Promise<AirportDetectionResult>{
-  const {userId}=await requireUser();const safe=requests.slice(0,20),countQuery=async()=>await sql`SELECT COUNT(DISTINCT UPPER(ident))::integer count FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%')` as Array<{count:number}>;const [parts,count]=await Promise.all([Promise.all(safe.map(async request=>{const [departure,arrival]=await Promise.all([nearestAirport(userId,request.departureCandidates),nearestAirport(userId,request.arrivalCandidates)]);return{departure,arrival}})),countQuery()]);
+  const {userId}=await requireUser();const safe=requests.slice(0,20),countQuery=async()=>await sql`SELECT COUNT(DISTINCT UPPER(ident))::integer count FROM airports WHERE active=1 AND COALESCE(closed,0)=0 AND (user_id=${userId} OR LOWER(COALESCE(source,'')) LIKE 'ourairports%')` as Array<{count:number}>;const [parts,count]=await Promise.all([Promise.all(safe.map(async request=>{const [departureCandidates,arrivalCandidates]=await Promise.all([airportSuggestions(userId,request.departureCandidates),airportSuggestions(userId,request.arrivalCandidates)]);return{departure:automaticAirport(departureCandidates),arrival:automaticAirport(arrivalCandidates),departureCandidates:departureCandidates.map(({score:_score,...item})=>item),arrivalCandidates:arrivalCandidates.map(({score:_score,...item})=>item)}})),countQuery()]);
   return{parts,airportCount:Math.max(Number(count[0]?.count||0),airportCatalogSize())};
 }
 
@@ -83,7 +89,7 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
   let points;try{points=parseTrackFile(await file.text(),file.name)}catch{return {error:"Soubor se nepodařilo přečíst."}}if(points.length<2)return {error:"V souboru nebyl nalezen použitelný GPS track."};
   const registration=String(form.get("registration")??"").trim().toUpperCase();if(!registration)return {error:"Vyberte imatrikulaci."};const evidence=String(form.get("evidence")||"ULL"),role=String(form.get("role")||"PIC"),aircraftType=String(form.get("aircraftType")??""),aircraftClass=String(form.get("aircraftClass")||"ULL"),task=String(form.get("task")??"KML import"),billing=serializeBilling(form.get("billingBasis"),form.get("billingShare"));
   const rawIndices=String(form.get("splitIndices")||"").split(",").filter(Boolean).map(Number),indices=[...new Set(rawIndices)].filter(value=>Number.isSafeInteger(value)&&value>0&&value<points.length-1).sort((a,b)=>a-b);if(indices.length!==rawIndices.length)return{error:"Návrh rozdělení je neplatný. Nahrajte soubor znovu."};
-  const parts=splitPoints(points,indices),partCount=Number(form.get("partCount"));if(!Number.isSafeInteger(partCount)||partCount!==parts.length||partCount<1||partCount>20)return{error:"Počet kontrolovaných letů neodpovídá rozdělení tracku."};
+  const parts=splitPoints(points,indices),partCount=Number(form.get("partCount"));if(!Number.isSafeInteger(partCount)||partCount!==parts.length||partCount<1||partCount>20)return{error:"Počet kontrolovaných letů neodpovídá rozdělení tracku."};const groundOnly=parts.findIndex(part=>!hasAirborneMovement(part));if(groundOnly>=0)return{error:`Část ${groundOnly+1} neobsahuje věrohodný let a vypadá pouze jako pohyb nebo stání na zemi. Posuňte nebo odstraňte sousední hranici.`};
   const reviewed:Array<{date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:number;note:string}>=[];
   const validTime=(value:string)=>!value||/^([01]\d|2[0-3]):[0-5]\d$/.test(value);for(let index=0;index<parts.length;index++){if(String(form.get(`part_${index}_reviewed`)||"")!=="yes")return{error:`Let ${index+1} nebyl jednotlivě potvrzen.`};const date=String(form.get(`part_${index}_date`)||""),offBlock=String(form.get(`part_${index}_offBlock`)||""),takeoff=String(form.get(`part_${index}_takeoff`)||""),landing=String(form.get(`part_${index}_landing`)||""),onBlock=String(form.get(`part_${index}_onBlock`)||"");if(flightDateKey(date)!==date||[offBlock,takeoff,landing,onBlock].some(value=>!validTime(value)))return{error:`Let ${index+1} má neplatné datum nebo čas.`};reviewed.push({date,offBlock,takeoff,landing,onBlock,departure:canonicalAirportIdent(String(form.get(`part_${index}_departure`)||"").slice(0,16)),arrival:canonicalAirportIdent(String(form.get(`part_${index}_arrival`)||"").slice(0,16)),starts:Math.max(0,Math.min(99,Number(form.get(`part_${index}_starts`)||1))),note:String(form.get(`part_${index}_note`)||"").trim().slice(0,2000)})}
   const priceCache=new Map<string,number|null>();const prepared=[];for(let index=0;index<parts.length;index++){const part=parts[index],stats=trackStats(part),envelope=flightEnvelope(part),values=reviewed[index];let price=priceCache.get(values.date);if(!priceCache.has(values.date)){price=await resolvedPrice(userId,registration,values.date);priceCache.set(values.date,price??null)}const [detectedDeparture,detectedArrival]=await Promise.all([values.departure?Promise.resolve(null):nearestAirport(userId,envelope.departureCandidates),values.arrival?Promise.resolve(null):nearestAirport(userId,envelope.arrivalCandidates)]),departure=values.departure||detectedDeparture?.ident||"",arrival=values.arrival||detectedArrival?.ident||"",partNote=parts.length>1?`${values.note}${values.note?' · ':''}Kontrolovaný import ${index+1}/${parts.length}`:values.note,suffix=parts.length>1?`__part${index+1}-of-${parts.length}.kml`:file.name;prepared.push({part,stats,values,price:price??null,departure,arrival,partNote,suffix:suffix.slice(0,240),fingerprint:flightFingerprint(userId,{date:values.date,registration,offBlock:values.offBlock,departure,arrival})})}

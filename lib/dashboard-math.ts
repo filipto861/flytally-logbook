@@ -17,3 +17,9 @@ export function flightMinutes(start:unknown,end:unknown):number{
   const from=parse(start),to=parse(end);
   return from===null||to===null?0:(to-from+1440)%1440;
 }
+
+export function niceChartMaximum(value:number,steps=4):number{
+  const safe=Math.max(1,Number.isFinite(value)?value:1),rawStep=safe/Math.max(1,steps),magnitude=10**Math.floor(Math.log10(rawStep)),normalized=rawStep/magnitude;
+  const nice=normalized<=1?1:normalized<=2?2:normalized<=2.5?2.5:normalized<=5?5:10;
+  return nice*magnitude*Math.max(1,steps);
+}

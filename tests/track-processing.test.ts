@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,parseKml,splitPoints,suggestedSplits,trackEndpointCandidates,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,hasAirborneMovement,parseKml,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -16,6 +16,7 @@ test("a long pause near the same airport proposes a split",()=>{
   const cuts=suggestedSplits(points);
   assert.deepEqual(cuts,[2]);
   assert.deepEqual(splitPoints(points,cuts).map(part=>part.length),[3,3]);
+  assert.match(suggestedSplitDetails(points)[0].reason,/Časová mezera 118 min/);
 });
 
 test("an airborne coverage gap does not split a flight",()=>{
@@ -30,6 +31,17 @@ test("one ground stop cannot create a third stationary flight",()=>{
   assert.equal(cuts.length,1);
   assert.equal(parts.length,2);
   assert.ok(parts.every(part=>part.length>=4));
+  assert.ok(parts.every(hasAirborneMovement));
+});
+
+test("ground-only movement can never be confirmed as a flight",()=>{
+  const ground=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:30Z",50.00002,14),point("2026-08-21T08:01:00Z",50.00003,14),point("2026-08-21T08:01:30Z",50.00004,14)];
+  assert.equal(hasAirborneMovement(ground),false);
+});
+
+test("a short but credible airborne segment remains a flight",()=>{
+  const flight=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:30Z",50.01,14.01),point("2026-08-21T08:01:00Z",50.02,14.02),point("2026-08-21T08:01:30Z",50.03,14.03)];
+  assert.equal(hasAirborneMovement(flight),true);
 });
 
 test("airport ranking prefers the actual arrival edge over an earlier exact match",()=>{
