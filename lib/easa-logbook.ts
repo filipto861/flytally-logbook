@@ -1,6 +1,6 @@
 export const OPERATION_TYPES=["SP","MP"] as const;
 export const ENGINE_TYPES=["SE","ME"] as const;
-export const EASA_ROLES=["PIC","CO-PILOT","DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER","SAFETY PILOT"] as const;
+export const EASA_ROLES=["PIC","SOLO","CO-PILOT","CRUISE-RELIEF CO-PILOT","DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER","SAFETY PILOT"] as const;
 
 export function durationMinutes(value:unknown){
   const raw=String(value??"").trim();
@@ -11,6 +11,6 @@ export function durationMinutes(value:unknown){
 export function formatEasaDuration(minutes:unknown){const value=Math.max(0,Math.round(Number(minutes)||0));return `${Math.floor(value/60)}:${String(value%60).padStart(2,"0")}`}
 export function allocatedFunctionTimes(role:string,blockMinutes:number){
   const minutes=Math.max(0,Math.round(blockMinutes)),normalized=role.trim().toUpperCase();
-  return{picMinutes:["PIC","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(normalized)?minutes:0,copilotMinutes:normalized==="CO-PILOT"?minutes:0,dualMinutes:normalized==="DUAL"?minutes:0,instructorMinutes:["INSTRUCTOR","EXAMINER"].includes(normalized)?minutes:0};
+  return{picMinutes:["PIC","SOLO","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(normalized)?minutes:0,copilotMinutes:["CO-PILOT","CRUISE-RELIEF CO-PILOT"].includes(normalized)?minutes:0,dualMinutes:normalized==="DUAL"?minutes:0,instructorMinutes:["INSTRUCTOR","EXAMINER"].includes(normalized)?minutes:0};
 }
 export function defaultEngineType(aircraftClass:string){return aircraftClass.trim().toUpperCase()==="MEP"?"ME":"SE"}
