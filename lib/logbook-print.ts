@@ -34,9 +34,15 @@ export function parsePilotPreferences(value:unknown):PilotPreferences{
 }
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
-  const commander=String(row.commander??"").trim();if(commander)return commander;
-  const role=String(row.role??"").trim().toUpperCase(),instructor=String(row.instructor??"").trim();
+  const role=String(row.role??"").trim().toUpperCase();
+  const instructor=String(row.instructor??"").trim();
+  const commander=String(row.commander??"").trim();
+
+  // During dual instruction the instructor is the pilot in command unless the
+  // record explicitly lacks an instructor. This must take precedence over a
+  // legacy/default commander value that may contain the student's own name.
   if(role==="DUAL"&&instructor)return instructor;
+  if(commander)return commander;
   if(["PIC","SOLO","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
   return "";
 }
