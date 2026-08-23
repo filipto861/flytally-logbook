@@ -2,6 +2,7 @@ import "server-only";
 import { calculatedFlightPrice } from "@/lib/billing";
 import { sql } from "@/lib/db";
 import { flightDateKey,flightMinutes } from "@/lib/dashboard-math";
+import { measureServerTask } from "@/lib/performance";
 
 export const PERIODS=["all","year","12m","previous"] as const;
 export type DashboardPeriod=(typeof PERIODS)[number];
@@ -58,7 +59,7 @@ function normalize(row:Record<string,unknown>):NormalizedFlight{
 export async function getDashboardData(userId:number,requested:string):Promise<DashboardData>{
   const period:DashboardPeriod=PERIODS.includes(requested as DashboardPeriod)?requested as DashboardPeriod:"all";
   const {start,end,label}=bounds(period);
-  const [userRows,rawRows]=await Promise.all([
+  const [userRows,rawRows]=await measureServerTask("dashboard-data",()=>Promise.all([
     sql`SELECT COALESCE(display_name,'Pilot') display_name FROM users WHERE id=${userId} LIMIT 1`,
     sql`WITH track AS (
       SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km
@@ -69,8 +70,10 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
       COALESCE(f.starts,0) starts,COALESCE(f.off_block,'') off_block,COALESCE(f.on_block,'') on_block,
       COALESCE(f.takeoff,'') takeoff,COALESCE(f.landing,'') landing,f.price_per_hour,COALESCE(f.billing_basis,'BLOCK') billing_basis,
       COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km
-    FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}`,
-  ]) as [Array<Record<string,unknown>>,Array<Record<string,unknown>>];
+    FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}
+      AND (${start}::text IS NULL OR f.date::text>=${start}::text)
+      AND (${end}::text IS NULL OR f.date::text<=${end}::text)`,
+  ])) as [Array<Record<string,unknown>>,Array<Record<string,unknown>>];
 
   const allFlights=rawRows.map(normalize);
   const flights=allFlights.filter(flight=>{
