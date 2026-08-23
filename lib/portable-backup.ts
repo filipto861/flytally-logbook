@@ -13,6 +13,21 @@ const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)retur
 export function flightRestoreKey(row:BackupRow){return [String(row.date??"").slice(0,10),clean(row.registration),String(row.off_block??"").trim(),clean(row.departure),clean(row.arrival)].join("|")}
 export function trackRestoreKey(flightKey:string,row:BackupRow){return [flightKey,String(row.file_name??"").trim(),timeKey(row.start_utc),timeKey(row.end_utc),Number(row.point_count||0)].join("|")}
 
+export function validateBackupRelationships(backup:Pick<PortableBackup,"flights"|"flight_tracks"|"track_points">){
+  const flightIds=new Set(backup.flights.map(row=>String(row.id??""))),trackIds=new Set<string>();
+  for(const track of backup.flight_tracks){
+    const id=String(track.id??"");
+    if(!id)throw new Error("A GPS track has no source identifier.");
+    if(trackIds.has(id))throw new Error(`Duplicate GPS track identifier ${id}.`);
+    trackIds.add(id);
+    if(!flightIds.has(String(track.flight_id??"")))throw new Error(`GPS track ${id} refers to a missing flight.`);
+  }
+  for(const point of backup.track_points){
+    if(!trackIds.has(String(point.track_id??"")))throw new Error("A legacy GPS point refers to a missing track.");
+  }
+  return{flights:flightIds.size,tracks:trackIds.size,points:backup.track_points.length};
+}
+
 export async function parsePortableBackup(source:string):Promise<{backup:PortableBackup;digest:string}>{
   let parsed:Record<string,unknown>;try{parsed=JSON.parse(source)}catch{throw new Error("File is not valid JSON.")}
   const integrity=parsed.integrity as Record<string,unknown>|undefined,{integrity:_removed,...payload}=parsed;
@@ -27,5 +42,7 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   const counts=payload.counts as Record<string,unknown>|undefined;
   for(const key of ["flights","aircraft","rates","airports","expiries","flight_tracks","track_points"] as const)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(Number(payload.version)>=5&&Number(counts?.audit_log??-1)!==(payload.audit_log as unknown[]).length)throw new Error("Declared audit_log count does not match the backup content.");
-  return{backup:{...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}},digest};
+  const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}};
+  validateBackupRelationships(backup);
+  return{backup,digest};
 }
