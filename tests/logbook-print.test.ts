@@ -22,5 +22,7 @@ test("pilot preferences and PIC name remain safe for legacy rows",()=>{
   assert.deepEqual(parsePilotPreferences("broken"),{});
   assert.equal(pilotInCommandName({role:"PIC",commander:""},"Test Pilot"),"Test Pilot");
   assert.equal(pilotInCommandName({role:"DUAL",instructor:"Flight Instructor"},"Test Pilot"),"Flight Instructor");
+  assert.equal(pilotInCommandName({role:"DUAL",commander:"Test Pilot",instructor:"Flight Instructor"},"Test Pilot"),"Flight Instructor");
+  assert.equal(pilotInCommandName({role:"DUAL",commander:"Captain",instructor:""},"Test Pilot"),"Captain");
   assert.equal(pilotInCommandName({role:"CO-PILOT",commander:"Captain"},"Test Pilot"),"Captain");
 });
