@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { flightRestoreKey,parsePortableBackup,portableBackupDigest,trackRestoreKey } from "../lib/portable-backup.ts";
+import { flightRestoreKey,parsePortableBackup,portableBackupDigest,trackRestoreKey,validateBackupRelationships } from "../lib/portable-backup.ts";
 
 test("restore keys ignore source database ids",()=>{
   const left={id:1,date:"2026-08-22",registration:"ok-bid",off_block:"10:00",departure:"lksz",arrival:"lkro"},right={id:999,date:"2026-08-22",registration:"OK-BID",off_block:"10:00",departure:"LKSZ",arrival:"LKRO"};
@@ -27,4 +27,13 @@ test("version 5 backup validates its audit history count",async()=>{
 
 test("backup integrity rejects modified content",async()=>{
   const source=await backup(5);await assert.rejects(()=>parsePortableBackup(source.replace('"version":5','"version":6')),/Integrity check failed/);
+});
+
+test("backup relationship check accepts a complete flight and track graph",()=>{
+  assert.deepEqual(validateBackupRelationships({flights:[{id:7}],flight_tracks:[{id:9,flight_id:7}],track_points:[{track_id:9}]}),{flights:1,tracks:1,points:1});
+});
+
+test("backup relationship check rejects orphan tracks and points",()=>{
+  assert.throws(()=>validateBackupRelationships({flights:[],flight_tracks:[{id:9,flight_id:7}],track_points:[]}),/missing flight/);
+  assert.throws(()=>validateBackupRelationships({flights:[{id:7}],flight_tracks:[],track_points:[{track_id:9}]}),/missing track/);
 });
