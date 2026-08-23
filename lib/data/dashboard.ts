@@ -10,7 +10,7 @@ export type PrimaryMetric={minutes:number;landings:number;flights:number};
 export type MonthlyPoint={month:string;total:number;ull:number;easa:number;picUll:number;picEasa:number;landings:number};
 export type DashboardData={
   displayName:string;rangeLabel:string;total:PrimaryMetric;ull:PrimaryMetric;easa:PrimaryMetric;picUll:PrimaryMetric;picEasa:PrimaryMetric;
-  airMinutes:number;picMinutes:number;dualMinutes:number;safetyMinutes:number;cost:number;tracks:number;gpsKm:number;
+  airMinutes:number;picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;nightMinutes:number;ifrMinutes:number;dayLandings:number;nightLandings:number;safetyMinutes:number;cost:number;tracks:number;gpsKm:number;
   uniqueAircraft:number;uniqueAirports:number;chartFlights:number;invalidDateFlights:number;
   lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string};monthly:MonthlyPoint[];
   recentFlights:Array<{id:number;date:string;registration:string;departure:string;arrival:string}>;
@@ -21,7 +21,7 @@ export type DashboardData={
 
 type NormalizedFlight={
   id:number;date:string;dateKey:string|null;offBlock:string;evidence:string;role:string;registration:string;departure:string;arrival:string;
-  landings:number;blockMinutes:number;airMinutes:number;cost:number;trackCount:number;gpsKm:number;
+  landings:number;dayLandings:number;nightLandings:number;blockMinutes:number;airMinutes:number;picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;nightMinutes:number;ifrMinutes:number;cost:number;trackCount:number;gpsKm:number;
 };
 
 const num=(value:unknown)=>Number(value??0)||0;
@@ -50,7 +50,7 @@ function normalize(row:Record<string,unknown>):NormalizedFlight{
   return{
     id:num(row.id),date:dateKey??rawDate,dateKey,offBlock:text(row.off_block),evidence:text(row.evidence).toUpperCase(),role,
     registration:text(row.registration).toUpperCase(),departure:text(row.departure).toUpperCase(),arrival:text(row.arrival).toUpperCase(),
-    landings:Math.max(0,Math.round(num(row.starts))),blockMinutes,airMinutes,
+    landings:Math.max(0,Math.round(num(row.starts))),dayLandings:num(row.landings_day),nightLandings:num(row.landings_night),blockMinutes,airMinutes,picMinutes:num(row.pic_minutes),copilotMinutes:num(row.copilot_minutes),dualMinutes:num(row.dual_minutes),instructorMinutes:num(row.instructor_minutes),nightMinutes:num(row.night_minutes),ifrMinutes:num(row.ifr_minutes),
     cost:calculatedFlightPrice(row.price_per_hour,blockMinutes,airMinutes,row.billing_basis),
     trackCount:Math.max(0,Math.round(num(row.track_count))),gpsKm:Math.max(0,num(row.gps_km)),
   };
@@ -67,7 +67,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
     )
     SELECT f.id,f.date::text date,COALESCE(f.evidence,'') evidence,COALESCE(f.role,'') role,COALESCE(f.instructor,'') instructor,
       COALESCE(f.registration,'') registration,COALESCE(f.departure,'') departure,COALESCE(f.arrival,'') arrival,
-      COALESCE(f.starts,0) starts,COALESCE(f.off_block,'') off_block,COALESCE(f.on_block,'') on_block,
+      COALESCE(f.starts,0) starts,COALESCE(f.landings_day,0) landings_day,COALESCE(f.landings_night,0) landings_night,COALESCE(f.night_minutes,0) night_minutes,COALESCE(f.ifr_minutes,0) ifr_minutes,COALESCE(f.pic_minutes,0) pic_minutes,COALESCE(f.copilot_minutes,0) copilot_minutes,COALESCE(f.dual_minutes,0) dual_minutes,COALESCE(f.instructor_minutes,0) instructor_minutes,COALESCE(f.off_block,'') off_block,COALESCE(f.on_block,'') on_block,
       COALESCE(f.takeoff,'') takeoff,COALESCE(f.landing,'') landing,f.price_per_hour,COALESCE(f.billing_basis,'BLOCK') billing_basis,
       COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km
     FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}
@@ -83,7 +83,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   });
 
   const total=emptyMetric(),ull=emptyMetric(),easa=emptyMetric(),picUll=emptyMetric(),picEasa=emptyMetric();
-  let airMinutes=0,picMinutes=0,dualMinutes=0,safetyMinutes=0,cost=0,tracks=0,gpsKm=0;
+  let airMinutes=0,picMinutes=0,copilotMinutes=0,dualMinutes=0,instructorMinutes=0,nightMinutes=0,ifrMinutes=0,dayLandings=0,nightLandings=0,safetyMinutes=0,cost=0,tracks=0,gpsKm=0;
   const airports=new Set<string>();
   const monthlyMap=new Map<string,MonthlyPoint>();
   const aircraftMap=new Map<string,{registration:string;flights:number;minutes:number;cost:number}>();
@@ -97,8 +97,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
     if(flight.role==="PIC"&&flight.evidence==="ULL")addMetric(picUll,flight);
     if(flight.role==="PIC"&&flight.evidence==="EASA")addMetric(picEasa,flight);
     airMinutes+=flight.airMinutes;
-    if(flight.role==="PIC")picMinutes+=flight.blockMinutes;
-    if(flight.role==="DUAL")dualMinutes+=flight.blockMinutes;
+    picMinutes+=flight.picMinutes;copilotMinutes+=flight.copilotMinutes;dualMinutes+=flight.dualMinutes;instructorMinutes+=flight.instructorMinutes;nightMinutes+=flight.nightMinutes;ifrMinutes+=flight.ifrMinutes;dayLandings+=flight.dayLandings;nightLandings+=flight.nightLandings;
     if(flight.role==="SAFETY PILOT")safetyMinutes+=flight.blockMinutes;
     cost+=flight.cost;tracks+=flight.trackCount;gpsKm+=flight.gpsKm;
     if(flight.departure)airports.add(flight.departure);
@@ -132,7 +131,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   const recentFlights=ordered.slice(0,8).map(({id,date,registration,departure,arrival})=>({id,date,registration,departure,arrival}));
   return{
     displayName:text(userRows[0]?.display_name)||"Pilot",rangeLabel:label,total,ull,easa,picUll,picEasa,
-    airMinutes,picMinutes,dualMinutes,safetyMinutes,cost,tracks,gpsKm,
+    airMinutes,picMinutes,copilotMinutes,dualMinutes,instructorMinutes,nightMinutes,ifrMinutes,dayLandings,nightLandings,safetyMinutes,cost,tracks,gpsKm,
     uniqueAircraft:aircraftMap.size,uniqueAirports:airports.size,
     chartFlights:flights.filter(flight=>Boolean(flight.dateKey)).length,invalidDateFlights:flights.filter(flight=>!flight.dateKey).length,
     lastFlight:recentFlights[0]??null,recentFlights,

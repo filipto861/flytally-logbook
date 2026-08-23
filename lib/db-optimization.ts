@@ -12,6 +12,7 @@ const migrationNames:Record<number,string>={
   2:"backups and recoverable trash",
   3:"core query indexes",
   4:"restore and route performance indexes",
+  5:"EASA FCL.050 flight logbook fields",
 };
 
 const migrationQueries=(version:number)=>{
@@ -90,6 +91,24 @@ const migrationQueries=(version:number)=>{
     sql`CREATE INDEX IF NOT EXISTS idx_logbook_tracks_restore_key ON flight_tracks(user_id,flight_id,file_name,point_count)`,
     sql`CREATE INDEX IF NOT EXISTS idx_logbook_tracks_user_time ON flight_tracks(user_id,start_utc,id)`,
     sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_route ON flights(user_id,departure,arrival,date DESC)`,
+  ];
+  if(version===5)return[
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS operation_type TEXT NOT NULL DEFAULT 'SP'`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS engine_type TEXT NOT NULL DEFAULT 'SE'`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS landings_day INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS landings_night INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS night_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS ifr_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS pic_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS copilot_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS dual_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS instructor_minutes INTEGER NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS verification_name TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS verification_reference TEXT NOT NULL DEFAULT ''`,
+    sql`UPDATE flights SET landings_day=GREATEST(COALESCE(starts,0),0) WHERE landings_day=0 AND landings_night=0 AND COALESCE(starts,0)>0`,
+    sql`UPDATE flights SET engine_type=CASE WHEN UPPER(COALESCE(aircraft_class,''))='MEP' THEN 'ME' ELSE 'SE' END WHERE engine_type IS NULL OR engine_type NOT IN ('SE','ME')`,
+    sql`UPDATE flights SET pic_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('PIC','SPIC','PICUS','INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, copilot_minutes=CASE WHEN UPPER(COALESCE(role,''))='CO-PILOT' THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, dual_minutes=CASE WHEN UPPER(COALESCE(role,''))='DUAL' OR NULLIF(TRIM(COALESCE(instructor,'')),'') IS NOT NULL THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, instructor_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END WHERE pic_minutes=0 AND copilot_minutes=0 AND dual_minutes=0 AND instructor_minutes=0`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_easa ON flights(user_id,evidence,date DESC)`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

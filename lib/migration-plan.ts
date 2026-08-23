@@ -1,10 +1,11 @@
-export const DATABASE_SCHEMA_VERSION=4;
+export const DATABASE_SCHEMA_VERSION=5;
 
 export const DATABASE_MIGRATIONS=[
   {version:1,name:"flight audit and locking"},
   {version:2,name:"backups and recoverable trash"},
   {version:3,name:"core query indexes"},
   {version:4,name:"restore and route performance indexes"},
+  {version:5,name:"EASA FCL.050 flight logbook fields"},
 ] as const;
 
 export function pendingMigrationVersions(applied:Iterable<number>){

@@ -1,15 +1,18 @@
 import { serializeBilling } from "./billing.ts";
 import { flightDateKey } from "./dashboard-math.ts";
+import { allocatedFunctionTimes,defaultEngineType,durationMinutes,EASA_ROLES,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 
 export const EVIDENCE = ["ULL", "EASA"] as const;
 export const CLASSES = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"] as const;
-export const ROLES = ["PIC", "DUAL", "INSTRUKTOR", "SAFETY PILOT", "CO-PILOT", "PAX", "OBSERVER"] as const;
+export const ROLES = [...EASA_ROLES,"PAX","OBSERVER"] as const;
 export const BILLING = ["BLOCK", "AIR"] as const;
 
 export type FlightInput = {
   date: string; registration: string; aircraftType: string; aircraftClass: string;
   evidence: string; departure: string; arrival: string; offBlock: string;
   takeoff: string; landing: string; onBlock: string; starts: number;
+  operationType:string;engineType:string;landingsDay:number;landingsNight:number;nightMinutes:number;ifrMinutes:number;
+  picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;verificationName:string;verificationReference:string;
   commander: string; instructor: string; role: string; task: string;
   billingBasis: string; note: string;
 };
@@ -34,18 +37,25 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
   if(block!==null&&block>18*60)return {error:"BLOCK time exceeds 18 hours. Check Off-block and On-block."};
   if(air!==null&&block!==null&&air>block+5)return {error:"AIR time cannot exceed BLOCK time. Check the time order."};
   if((taxiOut!==null&&taxiOut>180)||(taxiIn!==null&&taxiIn>180))return {error:"Taxi time exceeds 3 hours. Check Off-block, takeoff, landing and On-block."};
-  const starts = Math.max(0, Math.min(99, Number.parseInt(text(form, "starts", 2) || "0", 10) || 0));
+  const legacyStarts=Math.max(0,Math.min(99,Number.parseInt(text(form,"starts",2)||"0",10)||0));
+  const hasEasaLandings=form.has("landingsDay")||form.has("landingsNight"),landingsDay=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsDay",2)||"0",10)||0)),landingsNight=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsNight",2)||"0",10)||0)),starts=hasEasaLandings?landingsDay+landingsNight:legacyStarts;
   const registration = text(form, "registration", 32).toUpperCase();
   if (!registration) return { error: "Select or enter an aircraft registration." };
   const instructor=text(form,"instructor",100);
+  const evidence=option(text(form,"evidence",8).toUpperCase(),EVIDENCE,"ULL"),aircraftClass=option(text(form,"aircraftClass",16).toUpperCase(),CLASSES,"ULL"),selectedRole=option(text(form,"role",24).toUpperCase(),ROLES,"PIC"),role=instructor?"DUAL":selectedRole;
+  const operationType=option(text(form,"operationType",2).toUpperCase(),OPERATION_TYPES,"SP"),engineType=option(text(form,"engineType",2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass));
+  const nightMinutes=durationMinutes(form.get("nightTime")),ifrMinutes=durationMinutes(form.get("ifrTime")),blockMinutes=block??0;
+  if(block!==null&&(nightMinutes>blockMinutes||ifrMinutes>blockMinutes))return{error:"Night and IFR time cannot exceed BLOCK time."};
+  const verificationName=text(form,"verificationName",160),verificationReference=text(form,"verificationReference",160);
+  if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&!verificationName)return{error:"SPIC and PICUS entries require the supervising pilot's name."};
+  const allocation=allocatedFunctionTimes(role,blockMinutes);
   return { data: {
     date, registration, aircraftType: text(form, "aircraftType", 80),
-    aircraftClass: option(text(form, "aircraftClass", 16).toUpperCase(), CLASSES, "ULL"),
-    evidence: option(text(form, "evidence", 8).toUpperCase(), EVIDENCE, "ULL"),
+    aircraftClass,evidence,
     departure: text(form, "departure", 16).toUpperCase(), arrival: text(form, "arrival", 16).toUpperCase(),
     offBlock: times[0], takeoff: times[1], landing: times[2], onBlock: times[3], starts,
-    commander: text(form, "commander", 100), instructor,
-    role: instructor?"DUAL":option(text(form, "role", 24).toUpperCase(), ROLES, "PIC"), task: text(form, "task", 160),
+    operationType,engineType,landingsDay:hasEasaLandings?landingsDay:starts,landingsNight:hasEasaLandings?landingsNight:0,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,
+    commander: text(form, "commander", 100), instructor,role,task: text(form, "task", 160),
     billingBasis: serializeBilling(option(text(form, "billingBasis", 8).toUpperCase(), BILLING, "BLOCK"),text(form,"billingShare",2)), note: text(form, "note", 2000),
   }};
 }
