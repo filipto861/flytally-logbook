@@ -8,7 +8,7 @@ import { listDeletedFlights } from "@/lib/flight-trash";
 export const metadata={title:"Data | FlyTally"};
 
 export default async function DataPage(){
-  const {userId}=await requireUser();await ensureDailyBackup(userId);const [d,backups,deletedFlights]=await Promise.all([getDashboardData(userId,"all"),listStoredBackups(userId),listDeletedFlights(userId)]);
+  const {userId}=await requireUser();const [,d,backups,deletedFlights]=await Promise.all([ensureDailyBackup(userId),getDashboardData(userId,"all"),listStoredBackups(userId),listDeletedFlights(userId)]);
   return <>
     <header className="page-header"><div><p className="eyebrow">ACCOUNT DATA</p><h1>Data</h1></div></header>
     <section className="export-summary"><div><span>Flights</span><strong>{d.total.flights}</strong></div><div><span>BLOCK</span><strong>{formatDuration(d.total.minutes)}</strong></div><div><span>Landings</span><strong>{d.total.landings}</strong></div><div><span>GPS</span><strong>{d.gpsKm.toFixed(0)} km</strong></div></section>
