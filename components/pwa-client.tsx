@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname,useSearchParams } from "next/navigation";
 import { useEffect,useState } from "react";
-import { FLIGHT_DRAFT_STORAGE_KEY,PENDING_FLIGHT_DRAFT_STORAGE_KEY,parseFlightDraft } from "@/lib/offline-flight-draft";
+import { FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,PENDING_FLIGHT_DRAFT_STORAGE_KEY,flightDraftStorageKey,parseFlightDraft } from "@/lib/offline-flight-draft";
 
 type InstallPromptEvent=Event&{
   prompt:()=>Promise<void>;
@@ -11,11 +11,12 @@ type InstallPromptEvent=Event&{
 };
 type PendingDraft={id:string;submittedAt:number};
 
-export function PwaClient(){
-  const pathname=usePathname(),searchParams=useSearchParams();
+export function PwaClient({userId}:{userId:number}){
+  const pathname=usePathname(),searchParams=useSearchParams(),scope=String(userId),storageKey=flightDraftStorageKey(scope);
   const[online,setOnline]=useState(true),[installPrompt,setInstallPrompt]=useState<InstallPromptEvent|null>(null),[standalone,setStandalone]=useState(false);
 
   useEffect(()=>{
+    localStorage.setItem(FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,scope);
     setOnline(navigator.onLine);
     setStandalone(window.matchMedia("(display-mode: standalone)").matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone));
 
@@ -26,17 +27,17 @@ export function PwaClient(){
     if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>undefined);
 
     return()=>{window.removeEventListener("online",onOnline);window.removeEventListener("offline",onOffline);window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled);document.removeEventListener("submit",onSubmit)};
-  },[]);
+  },[scope]);
 
   useEffect(()=>{
     let pending:PendingDraft|null=null;try{pending=JSON.parse(sessionStorage.getItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY)||"null") as PendingDraft|null}catch{sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY)}
-    if(!pending?.id||!Number.isFinite(pending.submittedAt))return;
+    if(!pending?.id||!Number.isFinite(pending.submittedAt)||!storageKey)return;
     if(Date.now()-pending.submittedAt>60_000){sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY);return}
     const successfulFlightNavigation=/^\/flights\/\d+$/.test(pathname)||(pathname==="/flights/new"&&searchParams.get("added")==="1");
     if(!successfulFlightNavigation)return;
-    const draft=parseFlightDraft(localStorage.getItem(FLIGHT_DRAFT_STORAGE_KEY));if(draft?.id===pending.id)localStorage.removeItem(FLIGHT_DRAFT_STORAGE_KEY);
+    const draft=parseFlightDraft(localStorage.getItem(storageKey));if(draft?.id===pending.id)localStorage.removeItem(storageKey);
     sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY);
-  },[pathname,searchParams]);
+  },[pathname,searchParams,storageKey]);
 
   const install=async()=>{
     if(!installPrompt)return;
