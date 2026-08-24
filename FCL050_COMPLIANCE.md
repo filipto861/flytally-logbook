@@ -55,9 +55,8 @@ Before an EASA flight can be pilot-certified, FlyTally checks the stored record 
 - PIC identity;
 - valid creditable pilot function and function-time allocation;
 - instructor/PIC identity for DUAL;
-- supervising PIC/FI name and countersignature reference for SPIC/PICUS.
-
-Potential skill/proficiency check, revalidation/recency and instrument-training contexts are surfaced as advisory remarks unless a dedicated structured endorsement workflow provides enough information for a stronger rule. Generic hidden verifier fields are not required for ordinary EASA roles.
+- supervising pilot and countersignature reference for SPIC/PICUS;
+- mandatory instrument-training remarks where detected from the structured flight context.
 
 Non-creditable auxiliary roles (Safety Pilot, PAX and Observer) cannot be certified as FCL.050 pilot-function time. They may remain in FlyTally for reference and are excluded from official totals by default.
 
@@ -65,22 +64,22 @@ FSTD certification is separately gated on date, device type, qualification numbe
 
 The checks run both in the UI and again server-side. Hiding or bypassing a disabled certification button therefore does not bypass the compliance gate.
 
-## v1.11 certified-record integrity and audit
+## v1.11 certified records and audit
 
-v1.11 adds a verification layer around the existing certified-record workflow:
+v1.11 extends certified-record integrity without adding a separate certification dashboard. Certification controls remain in the context where the record is managed.
 
-- flight certification fingerprints are generated and re-verified from one shared canonical payload definition;
-- legacy flight certification version 1 and current version 2 remain verifiable;
-- current and archived certified flight revisions are checked against their stored SHA-256 fingerprints;
-- corrected flight revisions show material field-by-field differences between revisions;
-- a printable Certification Audit Report shows the revision chain, correction reasons, timestamps, hashes and verification results;
-- FSTD records now use the same traceable correction model as flights: certified R1 → mandatory correction reason → editable R2 → certified R2;
-- every superseded certified FSTD revision is stored as an immutable JSON snapshot with its original hash and certification metadata;
-- FSTD current and archived revision fingerprints are re-verifiable;
-- Certification Center provides a combined queue for Ready to certify, Needs attention, Correction drafts, Certified records and fingerprint integrity issues;
-- integrity mismatches are reported for manual review and are never silently repaired.
+Implemented concepts include:
 
-Database schema version 8 contains the FSTD certified revision archive and database-level protection that permits a certified FSTD record to enter correction mode only after a matching certified snapshot has been archived in the same transaction.
+- shared canonical SHA-256 payload generation for certification and later verification;
+- verification states for current and archived certification fingerprints;
+- field-by-field comparison between superseded and current flight revisions;
+- printable per-flight certification audit report, separate from the official Pilot Logbook print;
+- FSTD Certified R1 → Correction R2 → Certified R2 workflow with mandatory correction reason;
+- immutable archived FSTD revision snapshots and database-level protection against silent certified-record edits;
+- integrity status and revision history shown directly on the relevant flight or FSTD record;
+- compact Draft / Locked / Certified / Correction status in the normal Flights workflow.
+
+Integrity mismatches are surfaced for review and are never silently repaired.
 
 ## Implemented or substantially implemented
 
@@ -99,10 +98,10 @@ Database schema version 8 contains the FSTD certified revision archive and datab
 - unified print scope for Complete / ULL / EASA / ULL+EASA;
 - explicit UTC handling for imported track timestamps with a known timezone;
 - pilot certification with SHA-256 record fingerprint;
-- immutable certified flight and FSTD records;
-- traceable flight and FSTD correction revisions with mandatory correction reason and retained prior fingerprints;
+- immutable certified records;
+- traceable certified-record correction revisions with mandatory correction reason and retained prior fingerprints;
 - v1.10 FCL.050 certification-readiness gate;
-- v1.11 fingerprint verification, revision comparison, Certification Center and audit report.
+- v1.11 flight/FSTD revision comparison and certification integrity verification.
 
 ## Remaining before any approval claim
 
@@ -110,7 +109,6 @@ The implementation is still **not** a basis for claiming that FlyTally is “EAS
 
 - competent-authority review of the electronic format and pilot-certification method;
 - confirmation of how the authority expects electronic PIC/FI/FE countersignatures or endorsement evidence to be represented and authenticated;
-- structured handling and validation of applicable skill tests, proficiency checks, revalidation/recency entries and other Column 12 endorsements where required;
 - validation of the complete workflow against authority test cases and real exported logbooks;
 - final documented data dictionary and evidence/test matrix for every applicable FCL.050/AMC item;
 - any changes requested by the competent authority during acceptance review.
