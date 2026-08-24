@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState,useMemo,useState } from "react";
+import { useActionState,useEffect,useMemo,useRef,useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
@@ -9,6 +9,7 @@ import type { FlightActionState } from "@/app/(protected)/flights/actions";
 import { BILLING,CLASSES,EVIDENCE,ROLES } from "@/lib/flight-input";
 import { defaultEngineType,ENGINE_TYPES,formatEasaDuration,OPERATION_TYPES } from "@/lib/easa-logbook";
 import { BILLING_SHARES,calculatedFlightPrice,parseBilling,serializeBilling } from "@/lib/billing";
+import { FLIGHT_DRAFT_STORAGE_KEY,parseFlightDraft } from "@/lib/offline-flight-draft";
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type Initial=Partial<FlightRow>&Record<string,unknown>;
@@ -16,6 +17,8 @@ type Initial=Partial<FlightRow>&Record<string,unknown>;
 function addTime(value:string,minutes:number){if(!/^\d\d:\d\d$/.test(value))return"";const total=(Number(value.slice(0,2))*60+Number(value.slice(3))+minutes+1440)%1440;return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function minutesBetween(start:string,end:string){if(!/^\d\d:\d\d$/.test(start)||!/^\d\d:\d\d$/.test(end))return 0;const a=Number(start.slice(0,2))*60+Number(start.slice(3)),b=Number(end.slice(0,2))*60+Number(end.slice(3));return(b-a+1440)%1440}
 const roleLabel=(value:string)=>value==="INSTRUKTOR"?"INSTRUCTOR":value;
+const draftId=()=>typeof crypto!=="undefined"&&"randomUUID" in crypto?crypto.randomUUID():`draft_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+const controlledDraftFields=new Set(["registration","role","evidence","aircraftType","aircraftClass","billingBasis","billingShare","departure","arrival","offBlock","onBlock","takeoff","landing","operationType","engineType","landingsDay","landingsNight"]);
 
 function Submit({another=false}:{another?:boolean}){
   const{pending}=useFormStatus();
@@ -24,11 +27,13 @@ function Submit({another=false}:{another?:boolean}){
 
 export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
+  const formRef=useRef<HTMLFormElement>(null),draftTokenRef=useRef<HTMLInputElement>(null),saveTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const[draftKey,setDraftKey]=useState(""),[draftStatus,setDraftStatus]=useState("");
   const initialRegistration=field("registration",aircraft[0]?.registration||"").trim().toUpperCase();
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:item.registration.trim().toUpperCase()})),[aircraft]);
   const[registration,setRegistration]=useState(initialRegistration);
   const selected=useMemo(()=>normalizedAircraft.find(x=>x.registration===registration),[normalizedAircraft,registration]);
-  const registrationOptions=useMemo(()=>initialRegistration&&!normalizedAircraft.some(item=>item.registration===initialRegistration)?[{registration:initialRegistration} as AircraftOption,...normalizedAircraft]:normalizedAircraft,[initialRegistration,normalizedAircraft]);
+  const registrationOptions=useMemo(()=>{const extras:AircraftOption[]=[];for(const value of [initialRegistration,registration])if(value&&!normalizedAircraft.some(item=>item.registration===value)&&!extras.some(item=>item.registration===value))extras.push({registration:value} as AircraftOption);return[...extras,...normalizedAircraft]},[initialRegistration,registration,normalizedAircraft]);
   const initialBilling=parseBilling(field("billing_basis",selected?.billing_basis||"BLOCK"));
   const initialRole=field("role",selected?.default_role||"PIC")==="INSTRUKTOR"?"INSTRUCTOR":field("role",selected?.default_role||"PIC");
   const[type,setType]=useState(field("aircraft_type",selected?.aircraft_type||""));
@@ -58,12 +63,42 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
       setType(a.aircraft_type||"");setClass(nextClass);setEngineType(defaultEngineType(nextClass));setEvidence(a.evidence||"ULL");setRole(a.default_role==="INSTRUKTOR"?"INSTRUCTOR":a.default_role||"PIC");setBilling(nextBilling.basis);setBillingShare(nextBilling.share);setHourlyRate(Number(a.price_per_hour)||0);
     }
   };
-  const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
+
+  const persistLocalDraft=()=>{
+    if(editing||!formRef.current)return;
+    const data=new FormData(formRef.current),values:Record<string,string>={};
+    for(const [key,value] of data.entries())if(typeof value==="string"&&key!=="clientDraftId"&&key!=="intent")values[key]=value;
+    let id=draftTokenRef.current?.value||draftKey;if(!id){id=draftId();if(draftTokenRef.current)draftTokenRef.current.value=id;setDraftKey(id)}
+    const updatedAt=new Date().toISOString();localStorage.setItem(FLIGHT_DRAFT_STORAGE_KEY,JSON.stringify({version:1,id,updatedAt,values}));
+    setDraftStatus(`Saved locally · ${new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(updatedAt))}`);
+  };
+  const scheduleLocalDraft=()=>{if(editing)return;if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(persistLocalDraft,350)};
+  const clearLocalDraft=()=>{if(saveTimer.current)clearTimeout(saveTimer.current);localStorage.removeItem(FLIGHT_DRAFT_STORAGE_KEY);if(draftTokenRef.current)draftTokenRef.current.value="";setDraftKey("");setDraftStatus("Local draft cleared.")};
+
+  useEffect(()=>{
+    if(editing)return;
+    const draft=parseFlightDraft(localStorage.getItem(FLIGHT_DRAFT_STORAGE_KEY));if(!draft)return;
+    const v=draft.values;setDraftKey(draft.id);if(draftTokenRef.current)draftTokenRef.current.value=draft.id;
+    if(v.registration!==undefined)pickAircraft(v.registration);
+    if(v.aircraftType!==undefined)setType(v.aircraftType);if(v.aircraftClass!==undefined)setClass(v.aircraftClass);if(v.evidence!==undefined)setEvidence(v.evidence);if(v.role!==undefined)setRole(v.role);
+    if(v.billingBasis==="BLOCK"||v.billingBasis==="AIR")setBilling(v.billingBasis);if(v.billingShare&&Number(v.billingShare)>0)setBillingShare(Number(v.billingShare));
+    if(v.departure!==undefined)setDeparture(v.departure);if(v.arrival!==undefined)setArrival(v.arrival);if(v.offBlock!==undefined)setOff(v.offBlock);if(v.takeoff!==undefined)setTakeoff(v.takeoff);if(v.landing!==undefined)setLanding(v.landing);if(v.onBlock!==undefined)setOn(v.onBlock);
+    if(v.operationType!==undefined)setOperationType(v.operationType);if(v.engineType!==undefined)setEngineType(v.engineType);if(v.landingsDay!==undefined)setLandingsDay(Number(v.landingsDay)||0);if(v.landingsNight!==undefined)setLandingsNight(Number(v.landingsNight)||0);
+    const timer=setTimeout(()=>{const form=formRef.current;if(!form)return;for(const [name,value] of Object.entries(v)){if(controlledDraftFields.has(name))continue;const item=form.elements.namedItem(name);if(item instanceof HTMLInputElement||item instanceof HTMLTextAreaElement||item instanceof HTMLSelectElement)item.value=value}},0);
+    setDraftStatus(`Restored local draft · ${new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"}).format(new Date(draft.updatedAt))}`);
+    return()=>clearTimeout(timer);
+  // restore is intentionally performed once for a new-flight form
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[editing]);
+  useEffect(()=>()=>{if(saveTimer.current)clearTimeout(saveTimer.current)},[]);
+
+  const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration));setTimeout(scheduleLocalDraft,0)};
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:blockMinutes,billingValue=serializeBilling(billing,billingShare),flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
   const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),countersignatureRequired=["SPIC","PICUS"].includes(role);
 
-  return <form action={formAction} className="flight-form">
-    {!editing?<details className="quick-tools"><summary>Quick tools</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
+  return <form ref={formRef} action={formAction} className="flight-form" onInput={editing?undefined:scheduleLocalDraft} onChange={editing?undefined:scheduleLocalDraft} onSubmit={editing?undefined:persistLocalDraft}>
+    {!editing?<><input ref={draftTokenRef} type="hidden" name="clientDraftId"/><div className="local-draft-bar"><div><strong>{draftKey?"Offline-safe local draft":"Offline-safe entry"}</strong><small>{draftStatus||"Changes are kept on this device while you fill the flight."}</small></div>{draftKey?<button type="button" className="secondary-button" onClick={clearLocalDraft}>Clear</button>:null}</div></>:null}
+    {!editing?<details className="quick-tools" open><summary>Quick tools</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure);setTimeout(scheduleLocalDraft,0)}}>Reverse route</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival);setTimeout(scheduleLocalDraft,0)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
 
     <section className="entry-section entry-section-primary">
       <p className="section-kicker">Flight essentials</p>
@@ -72,8 +107,8 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
         <label>Registration<select name="registration" value={registration} onChange={e=>pickAircraft(e.target.value)} required><option value="">Select</option>{registrationOptions.map(a=><option key={a.registration} value={a.registration}>{a.registration}</option>)}</select><small><Link href="/database">Manage aircraft</Link></small></label>
         <label>Role<select name="role" value={role} onChange={e=>setRole(e.target.value)}>{ROLES.map(x=><option key={x} value={x}>{roleLabel(x)}</option>)}</select></label>
         <label>Day landings<input name="landingsDay" type="number" min="0" max="99" value={landingsDay} onChange={event=>setLandingsDay(Number(event.target.value)||0)}/></label>
-        <label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT"/></label>
-        <label>Arrival<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT"/></label>
+        <label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>
+        <label>Arrival<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>
         <label>Off-block <span className="field-hint">UTC</span><input name="offBlock" type="time" value={off} onChange={e=>setOff(e.target.value)}/></label>
         <label>On-block <span className="field-hint">UTC</span><input name="onBlock" type="time" value={on} onChange={e=>setOn(e.target.value)}/></label>
         <label>Takeoff <span className="field-hint">UTC</span><input name="takeoff" type="time" value={takeoff} onChange={e=>setTakeoff(e.target.value)}/></label>
