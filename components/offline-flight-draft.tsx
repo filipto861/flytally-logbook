@@ -46,7 +46,7 @@ export function OfflineFlightDraft(){
       <label>Landings<input type="number" min="0" max="99" value={values.landingsDay||"1"} onChange={event=>update("landingsDay",event.target.value)}/></label>
       <label className="wide">Notes<textarea rows={3} value={values.note||""} onChange={event=>update("note",event.target.value)}/></label>
     </div>
-    <div className="offline-draft-actions"><button type="button" className="primary-button" onClick={save}>Save locally</button>{draft?<button type="button" className="secondary-button" onClick={clear}>Clear draft</button>:null}{online?<Link className="secondary-link" href="/flights/new">Continue in Add Flight</Link>:null}</div></>:<div className="offline-draft-actions">{online?<Link className="primary-link" href="/login">Sign in</Link>:null}</div>}
+    <div className="offline-draft-actions"><button type="button" className="primary-button" onClick={save}>Save locally</button>{draft?<button type="button" className="secondary-button" onClick={clear}>Clear draft</button>:null}{online?<Link className="secondary-link" href="/flights/new?mode=manual">Continue in Add Flight</Link>:null}</div></>:<div className="offline-draft-actions">{online?<Link className="primary-link" href="/login">Sign in</Link>:null}</div>}
     {updated?<small className="muted">Last local update: {updated}</small>:null}{message?<p className="form-success">{message}</p>:null}
   </section>;
 }
