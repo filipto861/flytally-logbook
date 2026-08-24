@@ -1,4 +1,5 @@
 export const FLIGHT_DRAFT_STORAGE_KEY="flytally.flight-draft.v1";
+export const PENDING_FLIGHT_DRAFT_STORAGE_KEY="flytally.pending-flight-draft.v1";
 
 export type StoredFlightDraft={
   version:1;
