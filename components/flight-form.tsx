@@ -101,8 +101,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
         <label>Night landings<input name="landingsNight" type="number" min="0" max="99" value={landingsNight} onChange={event=>setLandingsNight(Number(event.target.value)||0)}/></label>
         <label>Night time<input name="nightTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("night_minutes","0"))}/></label>
         <label>IFR time<input name="ifrTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("ifr_minutes","0"))}/></label>
-        <label>Verifier / supervising pilot<input name="verificationName" defaultValue={field("verification_name")} required={countersignatureRequired}/><small>Required for SPIC/PICUS and applicable tests, checks, revalidation or recency entries.</small></label>
-        <label>Signature / countersignature reference<input name="verificationReference" defaultValue={field("verification_reference")} required={countersignatureRequired}/><small>Reference to the PIC/FI/FE countersignature or endorsement evidence.</small></label>
+        {countersignatureRequired?<><label>Supervising PIC / FI<input name="verificationName" defaultValue={field("verification_name")} required/><small>Required for {role} credit.</small></label><label>Countersignature reference<input name="verificationReference" defaultValue={field("verification_reference")} required/><small>Reference to the supervising PIC/FI countersignature or signed evidence.</small></label></>:<><input type="hidden" name="verificationName" value={field("verification_name")}/><input type="hidden" name="verificationReference" value={field("verification_reference")}/></>}
       </div></div>
     </details>
 
