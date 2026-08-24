@@ -5,6 +5,7 @@ import L from "leaflet";
 import type { MapTrack, TrackPoint } from "@/lib/data/tracks";
 import { installResponsiveMap } from "@/components/leaflet-mobile";
 
+type IndexedPoint = TrackPoint & { track: number };
 type Sample = TrackPoint & { distance: number; speed: number; bearing: number; track: number };
 
 const rad = Math.PI / 180;
@@ -25,10 +26,37 @@ function path(values:number[], width:number, height:number) {
   const finite=values.filter(Number.isFinite), lo=Math.min(...finite,0), hi=Math.max(...finite,1), range=hi-lo||1;
   return values.map((v,i)=>`${i/Math.max(1,values.length-1)*width},${height-(v-lo)/range*height}`).join(" ");
 }
+function median(values:number[]) {
+  const sorted=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!sorted.length)return 0;
+  const middle=Math.floor(sorted.length/2);
+  return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;
+}
+function smoothTrackSpeeds(points:IndexedPoint[],raw:number[]) {
+  const filtered=raw.map((value,index)=>{
+    const track=points[index]?.track;
+    const neighborhood:number[]=[];
+    for(let i=Math.max(0,index-2);i<=Math.min(raw.length-1,index+2);i++)if(points[i]?.track===track&&Number.isFinite(raw[i]))neighborhood.push(raw[i]);
+    const center=median(neighborhood),mad=median(neighborhood.map(item=>Math.abs(item-center)));
+    const isolatedHigh=center>=20&&value>Math.max(center*1.8,center+Math.max(100,mad*8));
+    return isolatedHigh?center:value;
+  });
+  return filtered.map((value,index)=>{
+    const track=points[index]?.track;
+    const prev=points[index-1]?.track===track?filtered[index-1]:value;
+    const next=points[index+1]?.track===track?filtered[index+1]:value;
+    return Math.max(0,prev*.2+value*.6+next*.2);
+  });
+}
 
 export function FlightTrackPlayer({tracks}:{tracks:MapTrack[]}) {
-  const points=useMemo(()=>tracks.flatMap((t,track)=>t.points.map(p=>({...p,track}))),[tracks]);
-  const samples=useMemo<Sample[]>(()=>{let distance=0;return points.map((p,i)=>{const candidate=points[i-1],prev=candidate?.track===p.track?candidate:undefined,next=points[i+1]?.track===p.track?points[i+1]:undefined;if(prev)distance+=leg(prev,p);const hours=prev?elapsed(prev.time,p.time):0;const raw=prev&&hours?leg(prev,p)/hours:0;return {...p,distance,speed:Math.min(600,raw),bearing:prev?bearing(prev,p):next?bearing(p,next):0}})},[points]);
+  const points=useMemo<IndexedPoint[]>(()=>tracks.flatMap((t,track)=>t.points.map(p=>({...p,track}))),[tracks]);
+  const samples=useMemo<Sample[]>(()=>{
+    const rawSpeeds=points.map((p,i)=>{const candidate=points[i-1],prev=candidate?.track===p.track?candidate:undefined;const hours=prev?elapsed(prev.time,p.time):0;const speed=prev&&hours?leg(prev,p)/hours:0;return Number.isFinite(speed)&&speed>=0?speed:0});
+    const speeds=smoothTrackSpeeds(points,rawSpeeds);
+    let distance=0;
+    return points.map((p,i)=>{const candidate=points[i-1],prev=candidate?.track===p.track?candidate:undefined,next=points[i+1]?.track===p.track?points[i+1]:undefined;if(prev)distance+=leg(prev,p);return {...p,distance,speed:speeds[i]??0,bearing:prev?bearing(prev,p):next?bearing(p,next):0}})
+  },[points]);
   const target=useRef<HTMLDivElement>(null), mapRef=useRef<L.Map|null>(null), markerRef=useRef<L.Marker|null>(null);
   const [cursor,setCursor]=useState(0),[playing,setPlaying]=useState(false),[rate,setRate]=useState(1);
   const max=Math.max(0,samples.length-1), index=Math.min(max,Math.floor(cursor)), fraction=cursor-index, a=samples[index], candidate=samples[Math.min(max,index+1)]??a, b=candidate?.track===a?.track?candidate:a;
