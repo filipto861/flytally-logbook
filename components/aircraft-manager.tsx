@@ -10,7 +10,10 @@ type Action=(form:FormData)=>Promise<void>;
 const t=(value:unknown)=>String(value??"");
 const classes=["ULL","SEP","TMG","MEP","SET","OTHER","GLIDER"];
 const evidence=["ULL","EASA"];
-const roles=[{value:"PIC",label:"PIC"},{value:"DUAL",label:"DUAL"},{value:"INSTRUKTOR",label:"INSTRUCTOR"},{value:"SAFETY PILOT",label:"SAFETY PILOT"},{value:"CO-PILOT",label:"CO-PILOT"},{value:"PAX",label:"PAX"},{value:"OBSERVER",label:"OBSERVER"}];
+const roles=[
+  {value:"PIC",label:"PIC"},{value:"SOLO",label:"SOLO"},{value:"DUAL",label:"DUAL"},{value:"SPIC",label:"SPIC"},{value:"PICUS",label:"PICUS"},
+  {value:"INSTRUCTOR",label:"INSTRUCTOR"},{value:"EXAMINER",label:"EXAMINER"},{value:"SAFETY PILOT",label:"SAFETY PILOT"},{value:"CO-PILOT",label:"CO-PILOT"},{value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},{value:"PAX",label:"PAX"},{value:"OBSERVER",label:"OBSERVER"}
+];
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
@@ -18,8 +21,11 @@ function AircraftFields({aircraft}:{aircraft?:Row}){
   return <div className="aircraft-form-grid">
     {editing?<input type="hidden" name="id" value={t(aircraft?.id)}/>:null}
     <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/></label>
-    <label>Aircraft type<input name="aircraft_type" defaultValue={t(aircraft?.aircraft_type)} placeholder="P92 Echo"/></label>
-    <label>ICAO type<input name="icao_type" defaultValue={t(aircraft?.icao_type)} placeholder="P92"/></label>
+    <label>Make<input name="aircraft_make" defaultValue={t(aircraft?.aircraft_make)} placeholder="Tecnam"/><small>FCL.050 aircraft identity</small></label>
+    <label>Model<input name="aircraft_model" defaultValue={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} placeholder="P2008 JC"/><small>Required for an EASA record</small></label>
+    <label>Variant<input name="aircraft_variant" defaultValue={t(aircraft?.aircraft_variant)} placeholder="Optional variant"/></label>
+    <label>Display type<input name="aircraft_type" defaultValue={t(aircraft?.aircraft_type)} placeholder="P2008 JC"/><small>Short label used elsewhere in FlyTally</small></label>
+    <label>ICAO type<input name="icao_type" defaultValue={t(aircraft?.icao_type)} placeholder="P208"/></label>
     <label>Class<select name="aircraft_class" defaultValue={t(aircraft?.aircraft_class)||"ULL"}>{classes.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Logbook<select name="evidence" defaultValue={t(aircraft?.evidence)||"ULL"}>{evidence.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
@@ -45,13 +51,13 @@ export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRate
   useEffect(()=>{document.body.style.overflow=selected?"hidden":"";return()=>{document.body.style.overflow=""}},[selected]);
   return <div className="aircraft-manager">
     <details className="add-aircraft-card"><summary>＋ Add aircraft</summary><form action={saveAction}><AircraftFields/><div className="form-actions"><button className="primary-button">Add aircraft</button></div></form></details>
-    <div className="aircraft-card-list">{aircraft.map(item=>{const billing=parseBilling(item.billing_basis),active=Boolean(Number(item.active));return <article className={`aircraft-card${active?"":" inactive"}`} key={t(item.id)}>
-      <header><div><strong>{t(item.registration)}</strong><span>{t(item.aircraft_type)||"Type not set"} · {t(item.aircraft_class)||"—"} · {t(item.evidence)||"—"}</span></div><form action={toggleAction}><input type="hidden" name="id" value={t(item.id)}/><button className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</button></form></header>
+    <div className="aircraft-card-list">{aircraft.map(item=>{const billing=parseBilling(item.billing_basis),active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" ");return <article className={`aircraft-card${active?"":" inactive"}`} key={t(item.id)}>
+      <header><div><strong>{t(item.registration)}</strong><span>{identity||"Type not set"} · {t(item.aircraft_class)||"—"} · {t(item.evidence)||"—"}</span></div><form action={toggleAction}><input type="hidden" name="id" value={t(item.id)}/><button className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</button></form></header>
       <div className="aircraft-card-metrics"><span><small>ICAO</small><b>{t(item.icao_type)||"—"}</b></span><span><small>Current rate</small><b>{Number(item.current_price_per_hour||0).toLocaleString("en-GB")} CZK/h</b><em>{t(item.current_price_valid_from)?`from ${t(item.current_price_valid_from)}`:"default rate"}</em></span><span><small>Billing</small><b>{billing.basis} · 1/{billing.share}</b></span><span><small>Role</small><b>{t(item.default_role)||"PIC"}</b></span></div>
       <button type="button" className="aircraft-manage-button" onClick={()=>setSelectedId(t(item.id))}>Manage</button>
     </article>})}{!aircraft.length?<p className="empty-state">No aircraft.</p>:null}</div>
     {selected?createPortal(<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
-      <header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{t(selected.aircraft_type)||"Type not set"} · {t(selected.aircraft_class)||"—"} · {t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Close" onClick={()=>setSelectedId(null)}>×</button></header>
+      <header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{[t(selected.aircraft_make),t(selected.aircraft_model)||t(selected.aircraft_type),t(selected.aircraft_variant)].filter(Boolean).join(" ")||"Type not set"} · {t(selected.aircraft_class)||"—"} · {t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Close" onClick={()=>setSelectedId(null)}>×</button></header>
       <div className="aircraft-modal-content">
         <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3></div></div><form action={saveAction}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button">Save profile</button></div></form></section>
         <RateTimeline aircraft={selected} rates={rates} saveAction={saveRateAction} deleteAction={deleteRateAction}/>
