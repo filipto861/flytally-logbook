@@ -32,15 +32,16 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
 
     <div className="data-hub-content">
       {section==="export"?<section className="panel export-workspace" aria-label="Export flight records">
-        <header><div><p className="eyebrow">EXPORT</p><h2>Flight records</h2></div></header>
+        <header><div><p className="eyebrow">EXPORT</p><h2>Flight records</h2><p className="muted">Logbook identities and default print behaviour are configured in Settings.</p></div></header>
         <form className="export-filter" action="/api/export" method="get">
           <label>From<input type="date" name="from"/></label>
           <label>To<input type="date" name="to"/></label>
           <label>Logbook<select name="evidence"><option value="">All</option><option>ULL</option><option>EASA</option></select></label>
           <label>Registration<input name="registration" placeholder="OK-..."/></label>
+          <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
           <div className="export-format-actions"><button className="primary-button" name="format" value="xls">Excel</button><button name="format" value="csv">CSV</button></div>
         </form>
-        <div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a><a className="secondary-link" href="/print"><span>Printable logbook</span><b>Open</b></a></div>
+        <div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a><a className="secondary-link" href="/print"><span>Printable logbook</span><b>Open</b></a><a className="secondary-link" href="/profile"><span>Logbook & export settings</span><b>Settings</b></a></div>
       </section>:null}
       {section==="backups"?<BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/>:null}
       {section==="restore"?<div className="restore-workspace"><BackupValidator/><BackupRestore action={restoreFileAction}/></div>:null}
