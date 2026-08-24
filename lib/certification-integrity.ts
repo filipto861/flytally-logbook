@@ -1,0 +1,55 @@
+import { createHash } from "node:crypto";
+
+export type IntegrityStatus="verified"|"mismatch"|"missing"|"unsupported";
+export type IntegrityResult={status:IntegrityStatus;stored:string;calculated:string;version:number};
+
+const text=(value:unknown)=>String(value??"").trim();
+const number=(value:unknown)=>Number(value||0);
+const digest=(value:unknown)=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
+
+export function flightCertificationPayload(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||2)){
+  const base={
+    version,userId,id:Number(row.id),date:text(row.date),evidence:text(row.evidence),registration:text(row.registration),
+    aircraft:{make:text(row.aircraft_make),model:text(row.aircraft_model)||text(row.aircraft_type),variant:text(row.aircraft_variant),legacyType:text(row.aircraft_type),class:text(row.aircraft_class)},
+    route:{departure:text(row.departure),arrival:text(row.arrival)},times:{offBlock:text(row.off_block),takeoff:text(row.takeoff),landing:text(row.landing),onBlock:text(row.on_block)},
+    operation:{operationType:text(row.operation_type),engineType:text(row.engine_type),landingsDay:number(row.landings_day),landingsNight:number(row.landings_night),nightMinutes:number(row.night_minutes),ifrMinutes:number(row.ifr_minutes)},
+    function:{picMinutes:number(row.pic_minutes),copilotMinutes:number(row.copilot_minutes),dualMinutes:number(row.dual_minutes),instructorMinutes:number(row.instructor_minutes),commander:text(row.commander),instructor:text(row.instructor),role:text(row.role)},
+    remarks:{task:text(row.task),note:text(row.note),verificationName:text(row.verification_name),verificationReference:text(row.verification_reference)}
+  };
+  if(version===1)return base;
+  if(version===2)return{version:2,userId,id:Number(row.id),recordRevision:Math.max(1,Number(row.record_revision||1)),correctionReason:text(row.correction_reason),date:base.date,evidence:base.evidence,registration:base.registration,aircraft:base.aircraft,route:base.route,times:base.times,operation:base.operation,function:base.function,remarks:base.remarks};
+  return null;
+}
+
+export function flightCertificationHash(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||2)){
+  const payload=flightCertificationPayload(row,userId,version);return payload?digest(payload):"";
+}
+
+export function verifyFlightCertification(row:Record<string,unknown>,userId:number):IntegrityResult{
+  const version=Number(row.certification_version||0),stored=text(row.certification_hash);
+  if(!stored)return{status:"missing",stored,calculated:"",version};
+  const calculated=flightCertificationHash(row,userId,version);
+  if(!calculated)return{status:"unsupported",stored,calculated:"",version};
+  return{status:calculated===stored?"verified":"mismatch",stored,calculated,version};
+}
+
+export function fstdCertificationPayload(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||1)){
+  const base={version,userId,id:Number(row.id),date:text(row.session_date),deviceType:text(row.device_type),qualificationNumber:text(row.qualification_number),instruction:text(row.instruction),totalMinutes:number(row.total_minutes),remarks:text(row.remarks)};
+  if(version===1)return base;
+  if(version===2)return{version:2,userId,id:Number(row.id),recordRevision:Math.max(1,Number(row.record_revision||1)),correctionReason:text(row.correction_reason),date:base.date,deviceType:base.deviceType,qualificationNumber:base.qualificationNumber,instruction:base.instruction,totalMinutes:base.totalMinutes,remarks:base.remarks};
+  return null;
+}
+
+export function fstdCertificationHash(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||1)){
+  const payload=fstdCertificationPayload(row,userId,version);return payload?digest(payload):"";
+}
+
+export function verifyFstdCertification(row:Record<string,unknown>,userId:number):IntegrityResult{
+  const version=Number(row.certification_version||0),stored=text(row.certification_hash);
+  if(!stored)return{status:"missing",stored,calculated:"",version};
+  const calculated=fstdCertificationHash(row,userId,version);
+  if(!calculated)return{status:"unsupported",stored,calculated:"",version};
+  return{status:calculated===stored?"verified":"mismatch",stored,calculated,version};
+}
+
+export const integrityLabel=(result:IntegrityResult)=>result.status==="verified"?"Integrity verified":result.status==="mismatch"?"Integrity mismatch":result.status==="missing"?"Fingerprint missing":`Unsupported fingerprint v${result.version}`;
