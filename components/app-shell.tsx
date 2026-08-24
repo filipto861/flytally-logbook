@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { PwaClient } from "@/components/pwa-client";
 
@@ -6,7 +7,7 @@ export function AppShell({ children,role,userId }: { children: React.ReactNode;r
     <div className="app-grid">
       <Sidebar role={role} />
       <main className="content">{children}</main>
-      <PwaClient userId={userId}/>
+      <Suspense fallback={null}><PwaClient userId={userId}/></Suspense>
     </div>
   );
 }
