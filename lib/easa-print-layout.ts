@@ -1,3 +1,5 @@
+import { isAuxiliaryLogbookRole } from "./logbook-print.ts";
+
 export type EasaPrintRecord=Record<string,unknown>&{kind:"flight"|"fstd";sortKey:string};
 
 export type EasaPageTotals={
@@ -11,6 +13,11 @@ const n=(value:unknown)=>Math.max(0,Math.round(Number(value)||0));
 export function totalsForEasaRecord(row:EasaPrintRecord):EasaPageTotals{
   const out=emptyEasaPageTotals();
   if(row.kind==="fstd"){out.fstd=n(row.total_minutes);return out;}
+  // Safety Pilot / PAX / Observer are retained as auxiliary records only. FCL.050
+  // does not provide a pilot-function time category for those labels, so they
+  // must never increase official flight-time or landing totals unless the flight
+  // is recorded under an actual loggable function such as PIC or co-pilot.
+  if(isAuxiliaryLogbookRole(row.role))return out;
   const flight=n(row.block_minutes),operation=String(row.operation_type??"SP").trim().toUpperCase(),engine=String(row.engine_type??"SE").trim().toUpperCase();
   if(operation==="MP")out.mp=flight;else if(engine==="ME")out.spMe=flight;else out.spSe=flight;
   out.flight=flight;out.landingsDay=n(row.landings_day);out.landingsNight=n(row.landings_night);out.night=n(row.night_minutes);out.ifr=n(row.ifr_minutes);out.pic=n(row.pic_minutes);out.copilot=n(row.copilot_minutes);out.dual=n(row.dual_minutes);out.instructor=n(row.instructor_minutes);
@@ -23,8 +30,8 @@ export function addEasaPageTotals(a:EasaPageTotals,b:EasaPageTotals):EasaPageTot
 
 export function sumEasaRecords(rows:EasaPrintRecord[]){return rows.reduce((total,row)=>addEasaPageTotals(total,totalsForEasaRecord(row)),emptyEasaPageTotals())}
 
-export function paginateEasaRecords<T extends EasaPrintRecord>(records:T[],rowsPerPage=10){
-  const size=Math.max(1,Math.min(20,Math.floor(rowsPerPage)||10)),pages:Array<{records:T[];pageTotal:EasaPageTotals;previousTotal:EasaPageTotals;runningTotal:EasaPageTotals;blankRows:number}>=[];
+export function paginateEasaRecords<T extends EasaPrintRecord>(records:T[],rowsPerPage=8){
+  const size=Math.max(1,Math.min(20,Math.floor(rowsPerPage)||8)),pages:Array<{records:T[];pageTotal:EasaPageTotals;previousTotal:EasaPageTotals;runningTotal:EasaPageTotals;blankRows:number}>=[];
   let previous=emptyEasaPageTotals();
   const chunks=Math.max(1,Math.ceil(records.length/size));
   for(let page=0;page<chunks;page++){
