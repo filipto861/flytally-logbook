@@ -60,7 +60,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
   };
   const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:blockMinutes,billingValue=serializeBilling(billing,billingShare),flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
-  const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role);
+  const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),countersignatureRequired=["SPIC","PICUS"].includes(role);
 
   return <form action={formAction} className="flight-form">
     {!editing?<details className="quick-tools"><summary>Quick tools</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
@@ -101,7 +101,8 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
         <label>Night landings<input name="landingsNight" type="number" min="0" max="99" value={landingsNight} onChange={event=>setLandingsNight(Number(event.target.value)||0)}/></label>
         <label>Night time<input name="nightTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("night_minutes","0"))}/></label>
         <label>IFR time<input name="ifrTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("ifr_minutes","0"))}/></label>
-        {["SPIC","PICUS"].includes(role)?<><label>Supervising pilot<input name="verificationName" defaultValue={field("verification_name")} required/></label><label>Signature / reference<input name="verificationReference" defaultValue={field("verification_reference")}/></label></>:<><input type="hidden" name="verificationName" value={field("verification_name")}/><input type="hidden" name="verificationReference" value={field("verification_reference")}/></>}
+        <label>Verifier / supervising pilot<input name="verificationName" defaultValue={field("verification_name")} required={countersignatureRequired}/><small>Required for SPIC/PICUS and applicable tests, checks, revalidation or recency entries.</small></label>
+        <label>Signature / countersignature reference<input name="verificationReference" defaultValue={field("verification_reference")} required={countersignatureRequired}/><small>Reference to the PIC/FI/FE countersignature or endorsement evidence.</small></label>
       </div></div>
     </details>
 
