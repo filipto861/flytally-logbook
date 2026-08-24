@@ -15,6 +15,7 @@ export function PwaClient(){
   const[installPrompt,setInstallPrompt]=useState<InstallPromptEvent|null>(null),[standalone,setStandalone]=useState(false);
 
   useEffect(()=>{
+    // v1.12 is online-first; this only removes state left by the retired offline prototype.
     for(let index=localStorage.length-1;index>=0;index--){const key=localStorage.key(index);if(key&&(key.startsWith(LEGACY_LOCAL_PREFIX)||LEGACY_LOCAL_KEYS.has(key)))localStorage.removeItem(key)}
     for(const key of LEGACY_SESSION_KEYS)sessionStorage.removeItem(key);
     setStandalone(window.matchMedia("(display-mode: standalone)").matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone));
