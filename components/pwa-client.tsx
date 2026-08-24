@@ -1,43 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname,useSearchParams } from "next/navigation";
 import { useEffect,useState } from "react";
-import { FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,PENDING_FLIGHT_DRAFT_STORAGE_KEY,flightDraftStorageKey,parseFlightDraft } from "@/lib/offline-flight-draft";
 
 type InstallPromptEvent=Event&{
   prompt:()=>Promise<void>;
   userChoice:Promise<{outcome:"accepted"|"dismissed";platform:string}>;
 };
-type PendingDraft={id:string;submittedAt:number};
 
-export function PwaClient({userId}:{userId:number}){
-  const pathname=usePathname(),searchParams=useSearchParams(),scope=String(userId),storageKey=flightDraftStorageKey(scope);
-  const[online,setOnline]=useState(true),[installPrompt,setInstallPrompt]=useState<InstallPromptEvent|null>(null),[standalone,setStandalone]=useState(false);
+export function PwaClient(){
+  const[installPrompt,setInstallPrompt]=useState<InstallPromptEvent|null>(null),[standalone,setStandalone]=useState(false);
 
   useEffect(()=>{
-    localStorage.setItem(FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,scope);
-    setOnline(navigator.onLine);
     setStandalone(window.matchMedia("(display-mode: standalone)").matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone));
-
-    const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false),onInstall=(event:Event)=>{event.preventDefault();setInstallPrompt(event as InstallPromptEvent)},onInstalled=()=>{setInstallPrompt(null);setStandalone(true)};
-    const onSubmit=(event:Event)=>{const form=event.target;if(!(form instanceof HTMLFormElement)||!form.elements.namedItem("clientDraftId"))return;setTimeout(()=>{const input=form.elements.namedItem("clientDraftId"),id=input instanceof HTMLInputElement?input.value.trim():"";if(id)sessionStorage.setItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY,JSON.stringify({id,submittedAt:Date.now()} satisfies PendingDraft))},0)};
-    window.addEventListener("online",onOnline);window.addEventListener("offline",onOffline);window.addEventListener("beforeinstallprompt",onInstall);window.addEventListener("appinstalled",onInstalled);document.addEventListener("submit",onSubmit);
-
+    const onInstall=(event:Event)=>{event.preventDefault();setInstallPrompt(event as InstallPromptEvent)};
+    const onInstalled=()=>{setInstallPrompt(null);setStandalone(true)};
+    window.addEventListener("beforeinstallprompt",onInstall);
+    window.addEventListener("appinstalled",onInstalled);
     if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>undefined);
-
-    return()=>{window.removeEventListener("online",onOnline);window.removeEventListener("offline",onOffline);window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled);document.removeEventListener("submit",onSubmit)};
-  },[scope]);
-
-  useEffect(()=>{
-    let pending:PendingDraft|null=null;try{pending=JSON.parse(sessionStorage.getItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY)||"null") as PendingDraft|null}catch{sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY)}
-    if(!pending?.id||!Number.isFinite(pending.submittedAt)||!storageKey)return;
-    if(Date.now()-pending.submittedAt>60_000){sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY);return}
-    const successfulFlightNavigation=/^\/flights\/\d+$/.test(pathname)||(pathname==="/flights/new"&&searchParams.get("added")==="1");
-    if(!successfulFlightNavigation)return;
-    const draft=parseFlightDraft(localStorage.getItem(storageKey));if(draft?.id===pending.id)localStorage.removeItem(storageKey);
-    sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY);
-  },[pathname,searchParams,storageKey]);
+    return()=>{window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled)};
+  },[]);
 
   const install=async()=>{
     if(!installPrompt)return;
@@ -46,9 +27,10 @@ export function PwaClient({userId}:{userId:number}){
     if(choice.outcome==="accepted")setInstallPrompt(null);
   };
 
-  if(online&&(standalone||!installPrompt))return null;
-  return <aside className={`pwa-status ${online?"installable":"offline"}`} aria-live="polite">
-    {!online?<><strong>Offline</strong><span>Local flight drafts stay on this device until you review and save them online.</span><Link href="/offline">Open local draft</Link></>:null}
-    {online&&!standalone&&installPrompt?<><strong>FlyTally app</strong><span>Install the standalone app on this device.</span><button type="button" className="secondary-button" onClick={install}>Install</button></>:null}
+  if(standalone||!installPrompt)return null;
+  return <aside className="pwa-status installable" aria-live="polite">
+    <strong>Install FlyTally</strong>
+    <span>Open FlyTally as a standalone app on this device.</span>
+    <button type="button" className="secondary-button" onClick={install}>Install</button>
   </aside>;
 }
