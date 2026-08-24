@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect,useState } from "react";
 import { logout } from "@/app/login/actions";
+import { FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,PENDING_FLIGHT_DRAFT_STORAGE_KEY } from "@/lib/offline-flight-draft";
 import styles from "./sidebar.module.css";
 
 // Certification remains contextual on flight/FSTD records; there is no standalone sidebar destination.
@@ -24,6 +25,7 @@ export function Sidebar({role="user"}:{role?:"admin"|"user"}){
   useEffect(()=>{setCollapsed(localStorage.getItem("logbook-sidebar")==="collapsed")},[]);
   const toggle=()=>{const next=!collapsed;setCollapsed(next);localStorage.setItem("logbook-sidebar",next?"collapsed":"open")};
   const activeFor=(href:string)=>href==="/dashboard"?pathname===href:href==="/flights"?(pathname===href||/^\/flights\/\d/.test(pathname)||pathname==="/fstd"):pathname===href||pathname.startsWith(`${href}/`);
+  const detachLocalScope=()=>{localStorage.removeItem(FLIGHT_DRAFT_ACTIVE_SCOPE_KEY);sessionStorage.removeItem(PENDING_FLIGHT_DRAFT_STORAGE_KEY)};
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">PILOT</p><h2>FlyTally</h2></div><button className="sidebar-toggle" type="button" onClick={toggle} aria-label="Collapse navigation">{collapsed?"›":"‹"}</button><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label="Open navigation">☰</button></div>
     <nav>
@@ -34,6 +36,6 @@ export function Sidebar({role="user"}:{role?:"admin"|"user"}){
       </div>
       {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration"><i>⚙</i><span>Administration</span></Link>:null}
     </nav>
-    <form action={logout}><button className="ghost-button" title="Sign out"><i>↪</i><span>Sign out</span></button></form>
+    <form action={logout} onSubmit={detachLocalScope}><button className="ghost-button" title="Sign out"><i>↪</i><span>Sign out</span></button></form>
   </aside>;
 }
