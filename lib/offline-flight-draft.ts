@@ -1,4 +1,5 @@
-export const FLIGHT_DRAFT_STORAGE_KEY="flytally.flight-draft.v1";
+export const FLIGHT_DRAFT_STORAGE_PREFIX="flytally.flight-draft.v1";
+export const FLIGHT_DRAFT_ACTIVE_SCOPE_KEY="flytally.flight-draft.active-scope.v1";
 export const PENDING_FLIGHT_DRAFT_STORAGE_KEY="flytally.pending-flight-draft.v1";
 
 export type StoredFlightDraft={
@@ -12,6 +13,12 @@ const MAX_FIELDS=80;
 const MAX_KEY=80;
 const MAX_VALUE=6000;
 const draftId=/^[A-Za-z0-9_-]{8,80}$/;
+const scopeId=/^[A-Za-z0-9_-]{1,80}$/;
+
+export function flightDraftStorageKey(scope:string){
+  const safe=String(scope??"").trim();
+  return scopeId.test(safe)?`${FLIGHT_DRAFT_STORAGE_PREFIX}:${safe}`:"";
+}
 
 export function normalizeFlightDraft(value:unknown):StoredFlightDraft|null{
   if(!value||typeof value!=="object"||Array.isArray(value))return null;
