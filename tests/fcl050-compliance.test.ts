@@ -16,8 +16,16 @@ test("complete EASA flight is ready for certification",()=>{
 });
 
 test("SPIC and PICUS require countersignature details",()=>{
-  const issues=fcl050FlightCompliance(flight({role:"SPIC",verification_name:"",verification_reference:""}),"Test Pilot");
-  assert.deepEqual(blockingComplianceIssues(issues).map(item=>item.code).filter(code=>code.startsWith("supervising_")),["supervising_pilot","supervising_signature"]);
+  for(const role of ["SPIC","PICUS"]){
+    const issues=fcl050FlightCompliance(flight({role,verification_name:"",verification_reference:""}),"Test Pilot");
+    assert.deepEqual(blockingComplianceIssues(issues).map(item=>item.code).filter(code=>code.startsWith("supervising_")),["supervising_pilot","supervising_signature"]);
+  }
+});
+
+test("ordinary EASA roles do not require generic countersignature fields",()=>{
+  const issues=fcl050FlightCompliance(flight({role:"PIC",task:"SEP revalidation",verification_name:"",verification_reference:""}),"Test Pilot");
+  assert.equal(blockingComplianceIssues(issues).some(item=>item.field==="verification_name"||item.field==="verification_reference"),false);
+  assert.ok(issues.some(item=>item.code==="revalidation_endorsement"&&item.severity==="warning"));
 });
 
 test("dual flight requires instructor PIC name",()=>{
