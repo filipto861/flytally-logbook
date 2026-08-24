@@ -15,6 +15,7 @@ const migrationNames:Record<number,string>={
   5:"EASA FCL.050 flight logbook fields",
   6:"FCL.050 structured aircraft, FSTD and certification",
   7:"certified flight correction revisions",
+  8:"certified FSTD correction revisions",
 };
 
 const migrationQueries=(version:number)=>{
@@ -226,6 +227,55 @@ const migrationQueries=(version:number)=>{
         IF OLD.locked_at IS NOT NULL
           AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
           RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+  ];
+  if(version===8)return[
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS record_revision INTEGER NOT NULL DEFAULT 1`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_reason TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_opened_at TIMESTAMPTZ`,
+    sql`ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS correction_opened_by_user_id BIGINT`,
+    sql`CREATE TABLE IF NOT EXISTS fstd_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      fstd_session_id BIGINT NOT NULL,
+      user_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      snapshot_data JSONB NOT NULL,
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL DEFAULT 1,
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      superseded_by_user_id BIGINT NOT NULL,
+      correction_reason TEXT NOT NULL,
+      UNIQUE(user_id,fstd_session_id,revision_number)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_fstd_revisions_user_session ON fstd_certified_revisions(user_id,fstd_session_id,revision_number DESC)`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_certified_fstd() RETURNS TRIGGER AS $$
+      DECLARE correction_transition BOOLEAN:=FALSE;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified FSTD session cannot be deleted'; END IF;
+          RETURN OLD;
+        END IF;
+        IF OLD.certified_at IS NOT NULL THEN
+          correction_transition :=
+            NEW.certified_at IS NULL
+            AND COALESCE(NEW.certification_hash,'')=''
+            AND COALESCE(NEW.record_revision,1)=COALESCE(OLD.record_revision,1)+1
+            AND NULLIF(TRIM(COALESCE(NEW.correction_reason,'')),'') IS NOT NULL
+            AND (to_jsonb(OLD)-'certified_at'-'certified_by_user_id'-'certification_hash'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+                IS NOT DISTINCT FROM
+                (to_jsonb(NEW)-'certified_at'-'certified_by_user_id'-'certification_hash'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+            AND EXISTS(
+              SELECT 1 FROM fstd_certified_revisions r
+              WHERE r.user_id=OLD.user_id AND r.fstd_session_id=OLD.id
+                AND r.revision_number=COALESCE(OLD.record_revision,1)
+                AND r.certification_hash=COALESCE(OLD.certification_hash,'')
+            );
+          IF NOT correction_transition THEN RAISE EXCEPTION 'Certified FSTD session is immutable; start a traceable correction instead'; END IF;
         END IF;
         RETURN NEW;
       END;
