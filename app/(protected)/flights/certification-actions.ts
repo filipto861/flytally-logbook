@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { blockingComplianceIssues,fcl050FlightCompliance } from "@/lib/fcl050-compliance";
 
 const hash=(value:unknown)=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const text=(value:unknown)=>String(value??"").trim();
@@ -13,8 +14,9 @@ const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`
 export async function certifyFlight(flightId:number,form:FormData){
   const {userId}=await requireUser();await ensureDatabaseOptimizations();
   if(!Number.isSafeInteger(flightId)||flightId<=0||text(form.get("confirm"))!=="certify")return;
-  const rows=await sql`SELECT id,date::text date,evidence,registration,aircraft_make,aircraft_model,aircraft_variant,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,operation_type,engine_type,landings_day,landings_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,commander,instructor,role,task,note,verification_name,verification_reference,certified_at,record_revision,correction_reason FROM flights WHERE id=${flightId} AND user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;
+  const rows=await sql`SELECT f.id,f.date::text date,f.evidence,f.registration,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_type,f.aircraft_class,f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,f.operation_type,f.engine_type,f.landings_day,f.landings_night,f.night_minutes,f.ifr_minutes,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.role,f.task,f.note,f.verification_name,f.verification_reference,f.certified_at,f.record_revision,f.correction_reason,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${flightId} AND f.user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;
   const row=rows[0];if(!row||row.certified_at)return;
+  const compliance=fcl050FlightCompliance(row,text(row.pilot_name));if(blockingComplianceIssues(compliance).length)return;
   const recordRevision=Math.max(1,Number(row.record_revision||1));
   const certificationHash=hash({
     version:2,userId,id:Number(row.id),recordRevision,correctionReason:text(row.correction_reason),date:text(row.date),evidence:text(row.evidence),registration:text(row.registration),
