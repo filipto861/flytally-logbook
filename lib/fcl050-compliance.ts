@@ -36,7 +36,7 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(role==="DUAL"&&!text(row.instructor))issues.push(issue("dual_instructor","instructor","A DUAL flight requires the instructor/PIC name."));
   if(["SPIC","PICUS"].includes(role)){
     if(!text(row.verification_name))issues.push(issue("supervising_pilot","verification_name",`${role} time requires the supervising PIC/FI name.`));
-    if(!text(row.verification_reference))issues.push(issue("supervising_signature","verification_reference",`${role} time must be countersigned; add the signature/countersignature reference.`));
+    if(!text(row.verification_reference))issues.push(issue("supervising_signature","verification_reference",`${role} time must be countersigned; add the countersignature reference.`));
   }
   const functionTotal=number(row.pic_minutes)+number(row.copilot_minutes)+number(row.dual_minutes)+number(row.instructor_minutes);
   if(block>0&&functionTotal<=0)issues.push(issue("function_time","role","Pilot-function time is missing."));
@@ -45,15 +45,8 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(number(row.ifr_minutes)>block)issues.push(issue("ifr_time","ifr_minutes","IFR time cannot exceed total flight time."));
 
   const testOrCheck=TEST_PATTERN.test(remarks),revalidation=REVALIDATION_PATTERN.test(remarks),instrumentTraining=INSTRUMENT_TRAINING_PATTERN.test(remarks)||(role==="DUAL"&&number(row.ifr_minutes)>0);
-  if(testOrCheck&&!remarks)issues.push(issue("test_remarks","note","Skill tests and proficiency checks must be identified in Remarks."));
-  if(testOrCheck&&!["DUAL","CO-PILOT","CRUISE-RELIEF CO-PILOT"].includes(role)){
-    if(!text(row.verification_name))issues.push(issue("test_verifier","verification_name","A skill test/proficiency check logged as PIC requires the instructor/examiner countersignature details."));
-    if(!text(row.verification_reference))issues.push(issue("test_signature","verification_reference","Add the instructor/examiner signature or countersignature reference for this test/check."));
-  }
-  if(revalidation){
-    if(!text(row.verification_name))issues.push(issue("revalidation_instructor","verification_name","Revalidation/recency flight requires the instructor name in the endorsement details."));
-    if(!text(row.verification_reference))issues.push(issue("revalidation_signature","verification_reference","Revalidation/recency flight requires the instructor signature/countersignature reference."));
-  }
+  if(testOrCheck)issues.push(issue("test_endorsement","note","Skill/proficiency check detected. Keep the applicable examiner/instructor endorsement and signed evidence with the record.","warning"));
+  if(revalidation)issues.push(issue("revalidation_endorsement","note","Revalidation/recency activity detected. Keep the applicable instructor endorsement and signed evidence with the record.","warning"));
   if(instrumentTraining&&!remarks)issues.push(issue("instrument_training_remarks","note","Instrument flight time used for licence/rating training must be described in Remarks."));
   if(!task&&!note)issues.push(issue("remarks_recommended","note","Add a concise task or remark so the purpose of the flight is traceable.","warning"));
   return issues;
