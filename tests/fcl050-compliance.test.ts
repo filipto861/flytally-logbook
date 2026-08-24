@@ -15,6 +15,12 @@ test("complete EASA flight is ready for certification",()=>{
   assert.equal(complianceReady(issues),true);
 });
 
+test("aircraft variant is optional when no separate variant applies",()=>{
+  const issues=fcl050FlightCompliance(flight({aircraft_variant:""}),"Test Pilot");
+  assert.equal(blockingComplianceIssues(issues).some(item=>item.code==="aircraft_variant"),false);
+  assert.equal(complianceReady(issues),true);
+});
+
 test("SPIC and PICUS require countersignature details",()=>{
   for(const role of ["SPIC","PICUS"]){
     const issues=fcl050FlightCompliance(flight({role,verification_name:"",verification_reference:""}),"Test Pilot");

@@ -28,7 +28,6 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(!text(row.registration))issues.push(issue("registration","registration","Aircraft registration is required."));
   if(!text(row.aircraft_make))issues.push(issue("aircraft_make","aircraft","Aircraft make is required for the FCL.050 aircraft identity."));
   if(!text(row.aircraft_model)&&!text(row.aircraft_type))issues.push(issue("aircraft_model","aircraft","Aircraft model is required for the FCL.050 aircraft identity."));
-  if(!text(row.aircraft_variant))issues.push(issue("aircraft_variant","aircraft","Aircraft variant is required for the FCL.050 aircraft identity."));
   if(!["SE","ME"].includes(upper(row.engine_type)))issues.push(issue("engine_type","engine_type","Select SE or ME."));
   if(!["SP","MP"].includes(upper(row.operation_type)))issues.push(issue("operation_type","operation_type","Select single-pilot or multi-pilot operation."));
   if(!EASA_FUNCTIONS.includes(role)||isAuxiliaryLogbookRole(role))issues.push(issue("pilot_function","role","This role is not creditable as an AMC1 FCL.050 pilot-function entry. Reclassify the flight before certification."));

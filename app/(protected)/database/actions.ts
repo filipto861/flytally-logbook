@@ -6,6 +6,8 @@ import { serializeBilling } from "@/lib/billing";
 import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
 import { createStoredBackup } from "@/lib/backup-center";
+import { blockingComplianceIssues,fcl050FlightCompliance } from "@/lib/fcl050-compliance";
+import { flightCertificationHash,verifyFlightCertification } from "@/lib/certification-integrity";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
 function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print");}
 export type AircraftSaveResult={ok:boolean;message:string};
@@ -29,9 +31,27 @@ export async function saveRate(form:FormData){const {userId}=await requireUser()
 export async function deleteRate(form:FormData){const {userId}=await requireUser();await sql`DELETE FROM rates WHERE id=${n(form,"id")} AND user_id=${userId}`;refreshPricing();}
 export async function saveAirport(form:FormData){const {userId}=await requireUser();const ident=canonicalAirportIdent(s(form,"ident"));if(!ident)return;await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source,updated_at) VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},1,0,'Manual',NOW()) ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,active=1,updated_at=NOW()`;revalidatePath("/database");}
 export async function toggleAirport(form:FormData){const {userId}=await requireUser();await sql`UPDATE airports SET active=CASE WHEN active=1 THEN 0 ELSE 1 END,updated_at=NOW() WHERE id=${n(form,"id")} AND user_id=${userId}`;revalidatePath("/database");}
+
+const AIRCRAFT_SYNC_REASON="Aircraft profile metadata synchronization";
+const certifiedProfileMismatchSql=(userId:number)=>sql`
+  SELECT f.*,u.display_name pilot_name,
+    a.aircraft_type profile_type,a.aircraft_make profile_make,a.aircraft_model profile_model,a.aircraft_variant profile_variant,a.aircraft_class profile_class,a.evidence profile_evidence
+  FROM flights f
+  JOIN aircraft a ON a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))
+  JOIN users u ON u.id=f.user_id
+  WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND (
+    (NULLIF(TRIM(a.evidence),'') IS NOT NULL AND UPPER(COALESCE(TRIM(f.evidence),''))<>UPPER(TRIM(a.evidence))) OR
+    (NULLIF(TRIM(a.aircraft_type),'') IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_type),''))<>LOWER(TRIM(a.aircraft_type))) OR
+    (NULLIF(TRIM(a.aircraft_make),'') IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_make),''))<>LOWER(TRIM(a.aircraft_make))) OR
+    (COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),'')) IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_model),''))<>LOWER(COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),'')))) OR
+    LOWER(COALESCE(TRIM(f.aircraft_variant),''))<>LOWER(COALESCE(TRIM(a.aircraft_variant),'')) OR
+    (NULLIF(TRIM(a.aircraft_class),'') IS NOT NULL AND UPPER(COALESCE(TRIM(f.aircraft_class),''))<>UPPER(TRIM(a.aircraft_class)))
+  ) ORDER BY f.id`;
+
 export async function applySafeProfileRepairs(form:FormData){
   const {userId}=await requireUser();if(s(form,"confirm")!=="sync-aircraft-profiles")return;
   await createStoredBackup(userId,"manual");
+
   const updated=await sql`UPDATE flights f SET
     evidence=COALESCE(NULLIF(TRIM(a.evidence),''),f.evidence),
     aircraft_type=COALESCE(NULLIF(TRIM(a.aircraft_type),''),f.aircraft_type),
@@ -51,7 +71,42 @@ export async function applySafeProfileRepairs(form:FormData){
       (NULLIF(TRIM(a.aircraft_class),'') IS NOT NULL AND UPPER(COALESCE(TRIM(f.aircraft_class),''))<>UPPER(TRIM(a.aircraft_class))) OR
       NULLIF(TRIM(f.role),'') IS NULL OR f.price_per_hour IS NULL OR f.price_per_hour<=0
     ) RETURNING f.id` as Array<{id:number|string}>;
-  console.info("aircraft-profile-flight-sync",{userId,updated:updated.length});
+
+  const certified=await certifiedProfileMismatchSql(userId) as Array<Record<string,unknown>>;
+  let revised=0,recertified=0,pendingReview=0,integritySkipped=0,failed=0;
+  for(const row of certified){
+    if(verifyFlightCertification(row,userId).status!=="verified"){integritySkipped++;continue;}
+    const id=Number(row.id);if(!Number.isSafeInteger(id)||id<=0){failed++;continue;}
+    try{
+      await sql.transaction([
+        sql`INSERT INTO flight_certified_revisions(flight_id,user_id,revision_number,snapshot_data,certification_hash,certification_version,certified_at,certified_by_user_id,superseded_at,superseded_by_user_id,correction_reason)
+          SELECT f.id,f.user_id,COALESCE(f.record_revision,1),to_jsonb(f),COALESCE(f.certification_hash,''),COALESCE(f.certification_version,1),f.certified_at,f.certified_by_user_id,NOW(),${userId},${AIRCRAFT_SYNC_REASON}
+          FROM flights f WHERE f.id=${id} AND f.user_id=${userId} AND f.certified_at IS NOT NULL
+          ON CONFLICT(user_id,flight_id,revision_number) DO NOTHING`,
+        sql`UPDATE flights SET record_revision=COALESCE(record_revision,1)+1,correction_reason=${AIRCRAFT_SYNC_REASON},correction_opened_at=NOW(),correction_opened_by_user_id=${userId},certified_at=NULL,certified_by_user_id=NULL,certification_hash='',locked_at=NULL,locked_by_user_id=NULL
+          WHERE id=${id} AND user_id=${userId} AND certified_at IS NOT NULL`,
+        sql`UPDATE flights f SET
+          evidence=COALESCE(NULLIF(TRIM(a.evidence),''),f.evidence),
+          aircraft_type=COALESCE(NULLIF(TRIM(a.aircraft_type),''),f.aircraft_type),
+          aircraft_make=COALESCE(NULLIF(TRIM(a.aircraft_make),''),f.aircraft_make),
+          aircraft_model=COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),f.aircraft_model),
+          aircraft_variant=COALESCE(a.aircraft_variant,''),
+          aircraft_class=COALESCE(NULLIF(TRIM(a.aircraft_class),''),f.aircraft_class)
+          FROM aircraft a WHERE f.id=${id} AND f.user_id=${userId} AND f.certified_at IS NULL AND f.locked_at IS NULL AND a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))`,
+      ]);
+      revised++;
+      const afterRows=await sql`SELECT f.*,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;
+      const after=afterRows[0];if(!after){failed++;continue;}
+      const blockers=blockingComplianceIssues(fcl050FlightCompliance(after,String(after.pilot_name??"")));
+      if(blockers.length){pendingReview++;continue;}
+      const hash=flightCertificationHash({...after,certification_version:2},userId,2);
+      const locked=await sql`UPDATE flights SET certified_at=NOW(),certified_by_user_id=${userId},certification_hash=${hash},certification_version=2,locked_at=NOW(),locked_by_user_id=${userId}
+        WHERE id=${id} AND user_id=${userId} AND certified_at IS NULL AND locked_at IS NULL RETURNING id` as Array<{id:number|string}>;
+      if(locked[0])recertified++;else pendingReview++;
+    }catch(error){failed++;console.error("certified-aircraft-profile-sync-failed",{userId,id,error});}
+  }
+
+  console.info("aircraft-profile-flight-sync",{userId,draftUpdated:updated.length,certifiedFound:certified.length,revised,recertified,pendingReview,integritySkipped,failed});
   revalidatePath("/database");revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/flights/new");revalidatePath("/print");revalidatePath("/data");
 }
 
