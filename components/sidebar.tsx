@@ -12,7 +12,7 @@ const links=[
   {href:"/map",icon:"◎",label:"Map"},
   {href:"/database",icon:"▤",label:"Database"},
   {href:"/data",icon:"◆",label:"Data"},
-  {href:"/profile",icon:"●",label:"Profile"},
+  {href:"/profile",icon:"●",label:"Settings"},
 ] as const;
 export function Sidebar({role="user"}:{role?:"admin"|"user"}){
   const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
