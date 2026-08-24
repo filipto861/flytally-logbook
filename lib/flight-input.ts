@@ -21,6 +21,11 @@ function text(form: FormData, name: string, max: number) {
   return String(form.get(name) ?? "").trim().slice(0, max);
 }
 
+function requiredOption<T extends readonly string[]>(value:string,values:T,label:string){
+  if(!values.includes(value as T[number]))return{error:`Select a valid ${label}.`} as const;
+  return{value:value as T[number]} as const;
+}
+
 function option<T extends readonly string[]>(value: string, values: T, fallback: T[number]) {
   return values.includes(value as T[number]) ? value : fallback;
 }
@@ -41,8 +46,14 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
   const hasEasaLandings=form.has("landingsDay")||form.has("landingsNight"),landingsDay=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsDay",2)||"0",10)||0)),landingsNight=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsNight",2)||"0",10)||0)),starts=hasEasaLandings?landingsDay+landingsNight:legacyStarts;
   const registration = text(form, "registration", 32).toUpperCase();
   if (!registration) return { error: "Select or enter an aircraft registration." };
+
+  const evidenceResult=requiredOption(text(form,"evidence",8).toUpperCase(),EVIDENCE,"logbook");if("error" in evidenceResult)return evidenceResult;
+  const classResult=requiredOption(text(form,"aircraftClass",16).toUpperCase(),CLASSES,"aircraft class");if("error" in classResult)return classResult;
+  const roleResult=requiredOption(text(form,"role",24).toUpperCase(),ROLES,"pilot role");if("error" in roleResult)return roleResult;
+  const billingResult=requiredOption(text(form,"billingBasis",8).toUpperCase(),BILLING,"billing time basis");if("error" in billingResult)return billingResult;
+
+  const evidence=evidenceResult.value,aircraftClass=classResult.value,role=roleResult.value,billingBasis=billingResult.value;
   const instructor=text(form,"instructor",100);
-  const evidence=option(text(form,"evidence",8).toUpperCase(),EVIDENCE,"ULL"),aircraftClass=option(text(form,"aircraftClass",16).toUpperCase(),CLASSES,"ULL"),selectedRole=option(text(form,"role",24).toUpperCase(),ROLES,"PIC"),role=instructor?"DUAL":selectedRole;
   const operationType=option(text(form,"operationType",2).toUpperCase(),OPERATION_TYPES,"SP"),engineType=option(text(form,"engineType",2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass));
   const nightMinutes=durationMinutes(form.get("nightTime")),ifrMinutes=durationMinutes(form.get("ifrTime")),blockMinutes=block??0;
   if(block!==null&&(nightMinutes>blockMinutes||ifrMinutes>blockMinutes))return{error:"Night and IFR time cannot exceed BLOCK time."};
@@ -56,6 +67,6 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
     offBlock: times[0], takeoff: times[1], landing: times[2], onBlock: times[3], starts,
     operationType,engineType,landingsDay:hasEasaLandings?landingsDay:starts,landingsNight:hasEasaLandings?landingsNight:0,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,
     commander: text(form, "commander", 100), instructor,role,task: text(form, "task", 160),
-    billingBasis: serializeBilling(option(text(form, "billingBasis", 8).toUpperCase(), BILLING, "BLOCK"),text(form,"billingShare",2)), note: text(form, "note", 2000),
+    billingBasis: serializeBilling(billingBasis,text(form,"billingShare",2)), note: text(form, "note", 2000),
   }};
 }
