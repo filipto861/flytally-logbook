@@ -11,10 +11,10 @@ function CategoryCard({title,data,accent}:{title:string;data:{minutes:number;lan
 export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string}>}){
   const session=await requireUser(); const selected=(await searchParams).period??"all"; const data=await getDashboardData(session.userId,selected);
   return <>
-    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>Hello, {data.displayName}</h1></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
+    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>Hello, {data.displayName}</h1><p className="muted page-lead">Flying time, activity and costs at a glance.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
     <div className="period-control">{periods.map(([key,label])=><Link key={key} className={selected===key||(!periods.some(([p])=>p===selected)&&key==='all')?'active':''} href={`/dashboard?period=${key}`}>{label}</Link>)}</div>
     <section className="dashboard-primary">
-      <article className="hero-metric"><span>TOTAL TIME</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p></article>
+      <article className="hero-metric"><span>TOTAL TIME</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · Dashboard only</small>:null}</article>
       <CategoryCard title="ULL" data={data.ull}/><CategoryCard title="EASA" data={data.easa}/>
       <CategoryCard title="PIC ULL" data={data.picUll} accent/><CategoryCard title="PIC EASA" data={data.picEasa} accent/>
     </section>
