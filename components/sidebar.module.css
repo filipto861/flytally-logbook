@@ -1,0 +1,6 @@
+.group{display:grid;gap:4px;margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.groupTitle{height:32px;padding:0 13px;display:flex;align-items:center;gap:13px;color:#d7e5f4;font-size:.68rem;font-weight:850;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.groupTitle i{flex:0 0 20px;width:20px;text-align:center;font-style:normal;color:var(--muted);font-size:.72rem}
+.profileLink{height:38px!important}
+:global(.sidebar.collapsed) .group{margin-top:0;padding-top:0;border-top:0}
+:global(.sidebar.collapsed) .groupTitle{display:none}
