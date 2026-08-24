@@ -23,13 +23,27 @@
 
 PWA is a required v1.12 deliverable.
 
-- installable FlyTally PWA for iPad/iPhone/Android/desktop
-- web app manifest, icons and standalone display mode
-- service-worker/offline shell strategy
-- field-first Add Flight UX for iPad and mobile
-- resilient local draft handling when airport connectivity is poor
-- explicit sync/conflict handling before any offline draft becomes a server record
-- SkyDemon/KML mobile import polish and UTC regression coverage
-- large touch targets and reduced data-entry steps for use at the aircraft/airfield
+Implemented foundation:
 
-Offline support must not silently weaken certified-record integrity. Certified records remain server-authoritative and immutable; offline functionality should focus on safe drafts and read-only cached reference data until synchronisation succeeds.
+- installable FlyTally PWA metadata for iPad/iPhone/Android/desktop with standalone mode and safe-area viewport support
+- privacy-safe service worker: only the offline shell and static assets are cached; authenticated logbook pages and API responses are not cached
+- public `/offline` shell that can keep a minimal flight draft while the server is unreachable
+- user-scoped local flight drafts so different FlyTally accounts using the same browser do not share offline draft data
+- Add Flight autosaves a new manual entry locally while it is being filled and restores it after navigation, refresh or connectivity loss
+- a local draft is cleared only after a successful server-side flight save/navigation; validation or network failures keep it available
+- no background or silent flight synchronisation: after connectivity returns, the pilot opens/reviews the draft in normal Add Flight and explicitly saves it to the server
+- certified records remain server-authoritative and immutable and are never modified offline
+- field-first mobile/iPad styling: 48 px touch targets, 16 px form text, one-column narrow layouts, sticky save actions and safe-area insets
+- resumed offline drafts and `Save and add another` open directly into Manual entry; normal Add Flight still keeps GPS import as its primary workflow
+- existing KML/GPX/CSV UTC handling remains deterministic: explicit offsets are converted to UTC and timezone-less timestamps are never guessed from the iPad/device clock
+- regression tests cover UTC normalization plus local-draft validation, size limits and per-user storage isolation
+
+Still requiring device validation before v1.12 is considered fully field-tested:
+
+- install/add-to-home-screen behavior on real iPad/iPhone and Android devices
+- offline launch after the shell has been cached at least once online
+- resume/save behavior across an actual connectivity interruption
+- SkyDemon/KML import from the mobile file picker and share/file workflow on iPad
+- final visual/touch polish based on real cockpit/airfield use
+
+Offline support must not silently weaken certified-record integrity. Certified records remain server-authoritative and immutable; offline functionality focuses on safe drafts and cached application shell data until the pilot deliberately returns online and saves a reviewed record.
