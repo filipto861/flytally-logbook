@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./v082.css";
 import "./v083.css";
+import "./v107.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
