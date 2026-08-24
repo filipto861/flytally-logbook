@@ -5,6 +5,7 @@ import { useEffect,useState } from "react";
 import { logout } from "@/app/login/actions";
 import styles from "./sidebar.module.css";
 
+// Certification remains contextual on flight/FSTD records; there is no standalone sidebar destination.
 const mainLinks=[
   {href:"/dashboard",icon:"⌂",label:"Dashboard"},
   {href:"/flights",icon:"✈",label:"Flights"},
