@@ -68,15 +68,14 @@ function licenceForScope(preferences:PilotPreferences,licences:Array<Record<stri
   return{address:clean(selected.profile.address)||legacyAddress,number:clean(selected.profile.number)||legacyNumber,expiry:selected.expiry,expired:Boolean(selected.expiry&&selected.expiry<today),label:clean(selected.row.label)};
 }
 
+const expiryWarning=(prefix:string,entry:{expired:boolean;label:string;number:string;expiry:string})=>entry.expired?`${prefix} licence ${entry.label||entry.number||"record"} is expired (${entry.expiry}).`:"";
 export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintScope,licences:Array<Record<string,unknown>>=[]){
-  const easa=licenceForScope(preferences,licences,"EASA"),ull=licenceForScope(preferences,licences,"ULL"),warnings:string[]=[];
-  if(easa.expired)warnings.push(`EASA licence ${easa.label||easa.number||"record"} is expired (${easa.expiry}).`);
-  if(ull.expired)warnings.push(`ULL licence ${ull.label||ull.number||"record"} is expired (${ull.expiry}).`);
-  if(scope==="easa")return{address:easa.address,licence:easa.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings};
-  if(scope==="ull")return{address:ull.address,licence:ull.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings};
+  const easa=licenceForScope(preferences,licences,"EASA"),ull=licenceForScope(preferences,licences,"ULL");
+  if(scope==="easa")return{address:easa.address,licence:easa.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("EASA",easa)].filter(Boolean)};
+  if(scope==="ull")return{address:ull.address,licence:ull.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("ULL",ull)].filter(Boolean)};
   const addresses=[easa.address?`EASA: ${easa.address}`:"",ull.address?`ULL: ${ull.address}`:""].filter(Boolean).join("\n");
   const numbers=[easa.number?`EASA: ${easa.number}`:"",ull.number?`ULL: ${ull.number}`:""].filter(Boolean).join("\n");
-  return{address:addresses,licence:numbers,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers",warnings};
+  return{address:addresses,licence:numbers,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers",warnings:[expiryWarning("EASA",easa),expiryWarning("ULL",ull)].filter(Boolean)};
 }
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
