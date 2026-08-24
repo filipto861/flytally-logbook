@@ -9,7 +9,7 @@ import type { FlightActionState } from "@/app/(protected)/flights/actions";
 import { BILLING,CLASSES,EVIDENCE,ROLES } from "@/lib/flight-input";
 import { defaultEngineType,ENGINE_TYPES,formatEasaDuration,OPERATION_TYPES } from "@/lib/easa-logbook";
 import { BILLING_SHARES,calculatedFlightPrice,parseBilling,serializeBilling } from "@/lib/billing";
-import { FLIGHT_DRAFT_STORAGE_KEY,parseFlightDraft } from "@/lib/offline-flight-draft";
+import { FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,flightDraftStorageKey,parseFlightDraft } from "@/lib/offline-flight-draft";
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type Initial=Partial<FlightRow>&Record<string,unknown>;
@@ -25,8 +25,8 @@ function Submit({another=false}:{another?:boolean}){
   return <button className={another?"secondary-link":"primary-button"} name="intent" value={another?"another":"save"} disabled={pending}>{pending?"Saving…":another?"Save and add another":"Save flight"}</button>;
 }
 
-export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>}){
-  const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
+export function FlightForm({action,aircraft,initial={},routes=[],draftScope=""}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>;draftScope?:string}){
+  const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id),storageKey=flightDraftStorageKey(draftScope);
   const formRef=useRef<HTMLFormElement>(null),draftTokenRef=useRef<HTMLInputElement>(null),saveTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const[draftKey,setDraftKey]=useState(""),[draftStatus,setDraftStatus]=useState("");
   const initialRegistration=field("registration",aircraft[0]?.registration||"").trim().toUpperCase();
@@ -65,19 +65,20 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
   };
 
   const persistLocalDraft=()=>{
-    if(editing||!formRef.current)return;
+    if(editing||!storageKey||!formRef.current)return;
     const data=new FormData(formRef.current),values:Record<string,string>={};
     for(const [key,value] of data.entries())if(typeof value==="string"&&key!=="clientDraftId"&&key!=="intent")values[key]=value;
     let id=draftTokenRef.current?.value||draftKey;if(!id){id=draftId();if(draftTokenRef.current)draftTokenRef.current.value=id;setDraftKey(id)}
-    const updatedAt=new Date().toISOString();localStorage.setItem(FLIGHT_DRAFT_STORAGE_KEY,JSON.stringify({version:1,id,updatedAt,values}));
+    const updatedAt=new Date().toISOString();localStorage.setItem(FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,draftScope);localStorage.setItem(storageKey,JSON.stringify({version:1,id,updatedAt,values}));
     setDraftStatus(`Saved locally · ${new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(updatedAt))}`);
   };
-  const scheduleLocalDraft=()=>{if(editing)return;if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(persistLocalDraft,350)};
-  const clearLocalDraft=()=>{if(saveTimer.current)clearTimeout(saveTimer.current);localStorage.removeItem(FLIGHT_DRAFT_STORAGE_KEY);if(draftTokenRef.current)draftTokenRef.current.value="";setDraftKey("");setDraftStatus("Local draft cleared.")};
+  const scheduleLocalDraft=()=>{if(editing||!storageKey)return;if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(persistLocalDraft,350)};
+  const clearLocalDraft=()=>{if(saveTimer.current)clearTimeout(saveTimer.current);if(storageKey)localStorage.removeItem(storageKey);if(draftTokenRef.current)draftTokenRef.current.value="";setDraftKey("");setDraftStatus("Local draft cleared.")};
 
   useEffect(()=>{
-    if(editing)return;
-    const draft=parseFlightDraft(localStorage.getItem(FLIGHT_DRAFT_STORAGE_KEY));if(!draft)return;
+    if(editing||!storageKey)return;
+    localStorage.setItem(FLIGHT_DRAFT_ACTIVE_SCOPE_KEY,draftScope);
+    const draft=parseFlightDraft(localStorage.getItem(storageKey));if(!draft)return;
     const v=draft.values;setDraftKey(draft.id);if(draftTokenRef.current)draftTokenRef.current.value=draft.id;
     if(v.registration!==undefined)pickAircraft(v.registration);
     if(v.aircraftType!==undefined)setType(v.aircraftType);if(v.aircraftClass!==undefined)setClass(v.aircraftClass);if(v.evidence!==undefined)setEvidence(v.evidence);if(v.role!==undefined)setRole(v.role);
@@ -87,17 +88,18 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
     const timer=setTimeout(()=>{const form=formRef.current;if(!form)return;for(const [name,value] of Object.entries(v)){if(controlledDraftFields.has(name))continue;const item=form.elements.namedItem(name);if(item instanceof HTMLInputElement||item instanceof HTMLTextAreaElement||item instanceof HTMLSelectElement)item.value=value}},0);
     setDraftStatus(`Restored local draft · ${new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short"}).format(new Date(draft.updatedAt))}`);
     return()=>clearTimeout(timer);
-  // restore is intentionally performed once for a new-flight form
+  // restore is intentionally performed once per scoped new-flight form
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[editing]);
+  },[editing,storageKey,draftScope]);
   useEffect(()=>()=>{if(saveTimer.current)clearTimeout(saveTimer.current)},[]);
 
   const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration));setTimeout(scheduleLocalDraft,0)};
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:blockMinutes,billingValue=serializeBilling(billing,billingShare),flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
   const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),countersignatureRequired=["SPIC","PICUS"].includes(role);
 
-  return <form ref={formRef} action={formAction} className="flight-form" onInput={editing?undefined:scheduleLocalDraft} onChange={editing?undefined:scheduleLocalDraft} onSubmit={editing?undefined:persistLocalDraft}>
-    {!editing?<><input ref={draftTokenRef} type="hidden" name="clientDraftId"/><div className="local-draft-bar"><div><strong>{draftKey?"Offline-safe local draft":"Offline-safe entry"}</strong><small>{draftStatus||"Changes are kept on this device while you fill the flight."}</small></div>{draftKey?<button type="button" className="secondary-button" onClick={clearLocalDraft}>Clear</button>:null}</div></>:null}
+  const draftEnabled=!editing&&Boolean(storageKey);
+  return <form ref={formRef} action={formAction} className="flight-form" onInput={draftEnabled?scheduleLocalDraft:undefined} onChange={draftEnabled?scheduleLocalDraft:undefined} onSubmit={draftEnabled?persistLocalDraft:undefined}>
+    {draftEnabled?<><input ref={draftTokenRef} type="hidden" name="clientDraftId"/><div className="local-draft-bar"><div><strong>{draftKey?"Offline-safe local draft":"Offline-safe entry"}</strong><small>{draftStatus||"Changes are kept for this account on this device while you fill the flight."}</small></div>{draftKey?<button type="button" className="secondary-button" onClick={clearLocalDraft}>Clear</button>:null}</div></>:null}
     {!editing?<details className="quick-tools" open><summary>Quick tools</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure);setTimeout(scheduleLocalDraft,0)}}>Reverse route</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival);setTimeout(scheduleLocalDraft,0)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
 
     <section className="entry-section entry-section-primary">
