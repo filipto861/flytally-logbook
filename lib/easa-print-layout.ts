@@ -13,10 +13,9 @@ const n=(value:unknown)=>Math.max(0,Math.round(Number(value)||0));
 export function totalsForEasaRecord(row:EasaPrintRecord):EasaPageTotals{
   const out=emptyEasaPageTotals();
   if(row.kind==="fstd"){out.fstd=n(row.total_minutes);return out;}
-  // Safety Pilot / PAX / Observer are retained as auxiliary records only. FCL.050
-  // does not provide a pilot-function time category for those labels, so they
-  // must never increase official flight-time or landing totals unless the flight
-  // is recorded under an actual loggable function such as PIC or co-pilot.
+  // Auxiliary-only records are kept for reference but do not increase FCL.050
+  // flight-time totals. If the holder actually acts as PIC/co-pilot, that flight
+  // should be recorded under the corresponding loggable pilot function instead.
   if(isAuxiliaryLogbookRole(row.role))return out;
   const flight=n(row.block_minutes),operation=String(row.operation_type??"SP").trim().toUpperCase(),engine=String(row.engine_type??"SE").trim().toUpperCase();
   if(operation==="MP")out.mp=flight;else if(engine==="ME")out.spMe=flight;else out.spSe=flight;
@@ -30,8 +29,8 @@ export function addEasaPageTotals(a:EasaPageTotals,b:EasaPageTotals):EasaPageTot
 
 export function sumEasaRecords(rows:EasaPrintRecord[]){return rows.reduce((total,row)=>addEasaPageTotals(total,totalsForEasaRecord(row)),emptyEasaPageTotals())}
 
-export function paginateEasaRecords<T extends EasaPrintRecord>(records:T[],rowsPerPage=8){
-  const size=Math.max(1,Math.min(20,Math.floor(rowsPerPage)||8)),pages:Array<{records:T[];pageTotal:EasaPageTotals;previousTotal:EasaPageTotals;runningTotal:EasaPageTotals;blankRows:number}>=[];
+export function paginateEasaRecords<T extends EasaPrintRecord>(records:T[],rowsPerPage=10){
+  const size=Math.max(1,Math.min(20,Math.floor(rowsPerPage)||10)),pages:Array<{records:T[];pageTotal:EasaPageTotals;previousTotal:EasaPageTotals;runningTotal:EasaPageTotals;blankRows:number}>=[];
   let previous=emptyEasaPageTotals();
   const chunks=Math.max(1,Math.ceil(records.length/size));
   for(let page=0;page<chunks;page++){
