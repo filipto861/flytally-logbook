@@ -2,32 +2,22 @@
 
 ## v1.10 — FCL.050 Compliance Gate
 
-Completed:
-
 - per-flight FCL.050 certification readiness status
 - server-side blocking of incomplete EASA certification
 - mandatory SPIC/PICUS countersignature details
-- checks for DUAL PIC/instructor identity and applicable advisory remarks
+- checks for DUAL PIC/instructor identity and applicable test/check/revalidation remarks
 - complete FSTD data gate before certification
-- stable EASA column 1–12 print layout
+- keep the official EASA column 1–12 print layout stable
 
 ## v1.11 — Certified Records & Audit v2
 
-Completed / implemented in this release:
-
-- shared canonical certification fingerprint logic for current and archived records
-- SHA-256 integrity verification for flight certification versions 1 and 2
-- detailed revision comparison for corrected certified flights
-- printable per-flight Certification Audit Report
-- FSTD certified corrections using the same R1 → correction R2 → certified R2 model as flights
-- immutable archived FSTD revision snapshots with mandatory correction reason
-- FSTD revision comparison and integrity verification
-- Certification Center for Ready / Needs attention / Correction drafts / Certified / Integrity issues
-- certification state labels in the normal Flights list
-- database schema v8 for FSTD certified revision history
-- integrity regression tests for flight and FSTD fingerprints
-
-Authority review of electronic countersignature evidence remains an external acceptance item and must not be represented as completed product approval.
+- refine revision comparison for corrected certified flights
+- exportable certification/audit report on the relevant flight
+- bring FSTD certified corrections to the same revision model as flights
+- integrity diagnostics directly on certified flights and FSTD records
+- compact Draft / Locked / Certified / Correction states in the normal flight workflow
+- keep certification and audit controls contextual instead of adding a separate certification dashboard
+- authority-review preparation for electronic countersignature evidence
 
 ## v1.12 — Field UX + PWA
 
