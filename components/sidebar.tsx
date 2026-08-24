@@ -5,7 +5,7 @@ import { useEffect,useState } from "react";
 import { logout } from "@/app/login/actions";
 
 const links=[
-  ["/dashboard","⌂","Dashboard"],["/flights","✈","Flights"],["/flights/new","＋","Add flight"],["/map","◎","Map"],
+  ["/dashboard","⌂","Dashboard"],["/flights","✈","Flights"],["/flights/new","＋","Add flight"],["/fstd","▣","FSTD"],["/map","◎","Map"],
   ["/database","▤","Database"],["/data","◆","Data"],["/profile","●","Profile"],
 ] as const;
 export function Sidebar({role="user"}:{role?:"admin"|"user"}){
