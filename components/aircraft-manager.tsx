@@ -6,6 +6,8 @@ import { createPortal } from "react-dom";
 
 type Row=Record<string,unknown>;
 type Action=(form:FormData)=>Promise<void>;
+type AircraftSaveResult={ok:boolean;message:string};
+type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
 
 const t=(value:unknown)=>String(value??"");
 const classes=["ULL","SEP","TMG","MEP","SET","OTHER","GLIDER"];
@@ -44,13 +46,17 @@ function RateTimeline({aircraft,rates,saveAction,deleteAction}:{aircraft:Row;rat
   </section>;
 }
 
-export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRateAction,deleteRateAction}:{aircraft:Row[];rates:Row[];saveAction:Action;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action}){
+export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRateAction,deleteRateAction}:{aircraft:Row[];rates:Row[];saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
+  const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null);
+  const [savingProfile,setSavingProfile]=useState(false);
   const selected=aircraft.find(item=>t(item.id)===selectedId)??null;
   useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedId(null)};document.addEventListener("keydown",close);return()=>document.removeEventListener("keydown",close)},[]);
   useEffect(()=>{document.body.style.overflow=selected?"hidden":"";return()=>{document.body.style.overflow=""}},[selected]);
+  useEffect(()=>{setProfileStatus(null)},[selectedId]);
+  const saveSelected=async(form:FormData)=>{setSavingProfile(true);setProfileStatus(null);try{setProfileStatus(await saveAction(form))}catch{setProfileStatus({ok:false,message:"Aircraft profile could not be saved."})}finally{setSavingProfile(false)}};
   return <div className="aircraft-manager">
-    <details className="add-aircraft-card"><summary>＋ Add aircraft</summary><form action={saveAction}><AircraftFields/><div className="form-actions"><button className="primary-button">Add aircraft</button></div></form></details>
+    <details className="add-aircraft-card"><summary>＋ Add aircraft</summary><form action={async form=>{await saveAction(form)}}><AircraftFields/><div className="form-actions"><button className="primary-button">Add aircraft</button></div></form></details>
     <div className="aircraft-card-list">{aircraft.map(item=>{const billing=parseBilling(item.billing_basis),active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" ");return <article className={`aircraft-card${active?"":" inactive"}`} key={t(item.id)}>
       <header><div><strong>{t(item.registration)}</strong><span>{identity||"Type not set"} · {t(item.aircraft_class)||"—"} · {t(item.evidence)||"—"}</span></div><form action={toggleAction}><input type="hidden" name="id" value={t(item.id)}/><button className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</button></form></header>
       <div className="aircraft-card-metrics"><span><small>ICAO</small><b>{t(item.icao_type)||"—"}</b></span><span><small>Current rate</small><b>{Number(item.current_price_per_hour||0).toLocaleString("en-GB")} CZK/h</b><em>{t(item.current_price_valid_from)?`from ${t(item.current_price_valid_from)}`:"default rate"}</em></span><span><small>Billing</small><b>{billing.basis} · 1/{billing.share}</b></span><span><small>Role</small><b>{t(item.default_role)||"PIC"}</b></span></div>
@@ -59,7 +65,7 @@ export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRate
     {selected?createPortal(<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
       <header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{[t(selected.aircraft_make),t(selected.aircraft_model)||t(selected.aircraft_type),t(selected.aircraft_variant)].filter(Boolean).join(" ")||"Type not set"} · {t(selected.aircraft_class)||"—"} · {t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Close" onClick={()=>setSelectedId(null)}>×</button></header>
       <div className="aircraft-modal-content">
-        <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3></div></div><form action={saveAction}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button">Save profile</button></div></form></section>
+        <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3></div></div><form action={saveSelected}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button" disabled={savingProfile}>{savingProfile?"Saving…":"Save profile"}</button></div>{profileStatus?<p className={profileStatus.ok?"form-success":"form-error"} role="status">{profileStatus.message}</p>:null}</form></section>
         <RateTimeline aircraft={selected} rates={rates} saveAction={saveRateAction} deleteAction={deleteRateAction}/>
       </div>
     </section></div>,document.body):null}

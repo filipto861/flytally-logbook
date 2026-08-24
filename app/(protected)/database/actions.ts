@@ -5,10 +5,12 @@ import { sql } from "@/lib/db";
 import { serializeBilling } from "@/lib/billing";
 import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
+import { createStoredBackup } from "@/lib/backup-center";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
 function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print");}
-export async function saveAircraft(form:FormData){
-  const {userId}=await requireUser(),id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return;
+export type AircraftSaveResult={ok:boolean;message:string};
+export async function saveAircraft(form:FormData):Promise<AircraftSaveResult>{
+  const {userId}=await requireUser(),id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return{ok:false,message:"Aircraft registration is required."};
   const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" ");
   if(id){
     await sql`UPDATE aircraft SET aircraft_type=${displayType},aircraft_make=${make},aircraft_model=${model},aircraft_variant=${variant},icao_type=${s(form,"icao_type")},aircraft_class=${s(form,"aircraft_class")},evidence=${s(form,"evidence")},default_role=${s(form,"default_role")||"PIC"},billing_basis=${billing},note=${s(form,"note")},updated_at=NOW() WHERE id=${id} AND user_id=${userId} AND UPPER(TRIM(registration))=${reg}`;
@@ -18,13 +20,38 @@ export async function saveAircraft(form:FormData){
     await sql.transaction(queries);
   }
   refreshPricing();
+  return{ok:true,message:id?"Aircraft profile saved.":"Aircraft added."};
 }
 export async function toggleAircraft(form:FormData){const {userId}=await requireUser();await sql`UPDATE aircraft SET active=CASE WHEN active=1 THEN 0 ELSE 1 END,updated_at=NOW() WHERE id=${n(form,"id")} AND user_id=${userId}`;revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");}
 export async function saveRate(form:FormData){const {userId}=await requireUser();const reg=s(form,"registration").toUpperCase(),valid=s(form,"valid_from"),price=n(form,"price_per_hour");if(!reg||!validIsoDate(valid)||price===null||price<=0)return;await sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) VALUES(${userId},${reg},${s(form,"aircraft_type")},${valid},${price},${n(form,"dry_price_per_hour")},${s(form,"source")||"Aircraft rate change"}) ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source`;refreshPricing();}
 export async function deleteRate(form:FormData){const {userId}=await requireUser();await sql`DELETE FROM rates WHERE id=${n(form,"id")} AND user_id=${userId}`;refreshPricing();}
 export async function saveAirport(form:FormData){const {userId}=await requireUser();const ident=canonicalAirportIdent(s(form,"ident"));if(!ident)return;await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source,updated_at) VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},1,0,'Manual',NOW()) ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,active=1,updated_at=NOW()`;revalidatePath("/database");}
 export async function toggleAirport(form:FormData){const {userId}=await requireUser();await sql`UPDATE airports SET active=CASE WHEN active=1 THEN 0 ELSE 1 END,updated_at=NOW() WHERE id=${n(form,"id")} AND user_id=${userId}`;revalidatePath("/database");}
-export async function applySafeProfileRepairs(){const {userId}=await requireUser();await sql`UPDATE flights f SET evidence=COALESCE(NULLIF(TRIM(f.evidence),''),a.evidence),aircraft_type=COALESCE(NULLIF(TRIM(f.aircraft_type),''),a.aircraft_type),aircraft_make=COALESCE(NULLIF(TRIM(f.aircraft_make),''),a.aircraft_make),aircraft_model=COALESCE(NULLIF(TRIM(f.aircraft_model),''),NULLIF(TRIM(a.aircraft_model),''),a.aircraft_type),aircraft_variant=COALESCE(NULLIF(TRIM(f.aircraft_variant),''),a.aircraft_variant),aircraft_class=COALESCE(NULLIF(TRIM(f.aircraft_class),''),a.aircraft_class),role=COALESCE(NULLIF(TRIM(f.role),''),a.default_role),price_per_hour=COALESCE(f.price_per_hour,(SELECT r.price_per_hour FROM rates r WHERE r.user_id=f.user_id AND UPPER(TRIM(r.registration))=UPPER(TRIM(f.registration)) AND (r.valid_from IS NULL OR r.valid_from='' OR r.valid_from<=f.date) ORDER BY r.valid_from DESC NULLS LAST,r.id DESC LIMIT 1),a.default_price_per_hour) FROM aircraft a WHERE f.user_id=${userId} AND f.locked_at IS NULL AND f.certified_at IS NULL AND a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)) AND (NULLIF(TRIM(f.evidence),'') IS NULL OR NULLIF(TRIM(f.aircraft_type),'') IS NULL OR NULLIF(TRIM(f.aircraft_make),'') IS NULL OR NULLIF(TRIM(f.aircraft_model),'') IS NULL OR NULLIF(TRIM(f.aircraft_variant),'') IS NULL OR NULLIF(TRIM(f.aircraft_class),'') IS NULL OR NULLIF(TRIM(f.role),'') IS NULL OR f.price_per_hour IS NULL OR f.price_per_hour<=0)`;revalidatePath("/database");revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/print");}
+export async function applySafeProfileRepairs(form:FormData){
+  const {userId}=await requireUser();if(s(form,"confirm")!=="sync-aircraft-profiles")return;
+  await createStoredBackup(userId,"manual");
+  const updated=await sql`UPDATE flights f SET
+    evidence=COALESCE(NULLIF(TRIM(a.evidence),''),f.evidence),
+    aircraft_type=COALESCE(NULLIF(TRIM(a.aircraft_type),''),f.aircraft_type),
+    aircraft_make=COALESCE(NULLIF(TRIM(a.aircraft_make),''),f.aircraft_make),
+    aircraft_model=COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),f.aircraft_model),
+    aircraft_variant=COALESCE(a.aircraft_variant,''),
+    aircraft_class=COALESCE(NULLIF(TRIM(a.aircraft_class),''),f.aircraft_class),
+    role=COALESCE(NULLIF(TRIM(f.role),''),NULLIF(TRIM(a.default_role),''),'PIC'),
+    price_per_hour=COALESCE(f.price_per_hour,(SELECT r.price_per_hour FROM rates r WHERE r.user_id=f.user_id AND UPPER(TRIM(r.registration))=UPPER(TRIM(f.registration)) AND (r.valid_from IS NULL OR r.valid_from='' OR r.valid_from<=f.date) ORDER BY r.valid_from DESC NULLS LAST,r.id DESC LIMIT 1),a.default_price_per_hour)
+    FROM aircraft a
+    WHERE f.user_id=${userId} AND f.locked_at IS NULL AND f.certified_at IS NULL AND a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)) AND (
+      (NULLIF(TRIM(a.evidence),'') IS NOT NULL AND UPPER(COALESCE(TRIM(f.evidence),''))<>UPPER(TRIM(a.evidence))) OR
+      (NULLIF(TRIM(a.aircraft_type),'') IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_type),''))<>LOWER(TRIM(a.aircraft_type))) OR
+      (NULLIF(TRIM(a.aircraft_make),'') IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_make),''))<>LOWER(TRIM(a.aircraft_make))) OR
+      (COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),'')) IS NOT NULL AND LOWER(COALESCE(TRIM(f.aircraft_model),''))<>LOWER(COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),'')))) OR
+      LOWER(COALESCE(TRIM(f.aircraft_variant),''))<>LOWER(COALESCE(TRIM(a.aircraft_variant),'')) OR
+      (NULLIF(TRIM(a.aircraft_class),'') IS NOT NULL AND UPPER(COALESCE(TRIM(f.aircraft_class),''))<>UPPER(TRIM(a.aircraft_class))) OR
+      NULLIF(TRIM(f.role),'') IS NULL OR f.price_per_hour IS NULL OR f.price_per_hour<=0
+    ) RETURNING f.id` as Array<{id:number|string}>;
+  console.info("aircraft-profile-flight-sync",{userId,updated:updated.length});
+  revalidatePath("/database");revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/flights/new");revalidatePath("/print");revalidatePath("/data");
+}
 
 export async function canonicalizeFlightAirportCodes(form:FormData){
   const {userId}=await requireUser();if(s(form,"confirm")!=="canonicalize-airports")return;
