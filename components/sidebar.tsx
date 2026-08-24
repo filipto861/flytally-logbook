@@ -9,6 +9,7 @@ const mainLinks=[
   {href:"/dashboard",icon:"⌂",label:"Dashboard"},
   {href:"/flights",icon:"✈",label:"Flights"},
   {href:"/fstd",icon:"↳",label:"FSTD sessions",sub:true},
+  {href:"/certification",icon:"✓",label:"Certification",sub:true},
   {href:"/flights/new",icon:"＋",label:"Add flight"},
   {href:"/map",icon:"◎",label:"Map"},
 ] as const;
@@ -22,7 +23,7 @@ export function Sidebar({role="user"}:{role?:"admin"|"user"}){
   const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
   useEffect(()=>{setCollapsed(localStorage.getItem("logbook-sidebar")==="collapsed")},[]);
   const toggle=()=>{const next=!collapsed;setCollapsed(next);localStorage.setItem("logbook-sidebar",next?"collapsed":"open")};
-  const activeFor=(href:string)=>href==="/dashboard"?pathname===href:href==="/flights"?(pathname===href||/^\/flights\/\d/.test(pathname)||pathname==="/fstd"):pathname===href||pathname.startsWith(`${href}/`);
+  const activeFor=(href:string)=>href==="/dashboard"?pathname===href:href==="/flights"?(pathname===href||/^\/flights\/\d/.test(pathname)||pathname==="/fstd"||pathname==="/certification"):pathname===href||pathname.startsWith(`${href}/`);
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">PILOT</p><h2>FlyTally</h2></div><button className="sidebar-toggle" type="button" onClick={toggle} aria-label="Collapse navigation">{collapsed?"›":"‹"}</button><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label="Open navigation">☰</button></div>
     <nav>
