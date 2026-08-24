@@ -1,4 +1,4 @@
-export const DATABASE_SCHEMA_VERSION=7;
+export const DATABASE_SCHEMA_VERSION=8;
 
 export const DATABASE_MIGRATIONS=[
   {version:1,name:"flight audit and locking"},
@@ -8,6 +8,7 @@ export const DATABASE_MIGRATIONS=[
   {version:5,name:"EASA FCL.050 flight logbook fields"},
   {version:6,name:"FCL.050 structured aircraft, FSTD and certification"},
   {version:7,name:"certified flight correction revisions"},
+  {version:8,name:"certified FSTD correction revisions"},
 ] as const;
 
 export function pendingMigrationVersions(applied:Iterable<number>){
