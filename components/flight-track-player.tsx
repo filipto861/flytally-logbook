@@ -33,43 +33,65 @@ function median(values:number[]) {
   const middle=Math.floor(sorted.length/2);
   return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;
 }
+function windowedSpeed(points:IndexedPoint[],index:number,radius=2) {
+  const track=points[index]?.track;
+  let start=index,end=index;
+  for(let step=1;step<=radius;step++)if(points[index-step]?.track===track)start=index-step;else break;
+  for(let step=1;step<=radius;step++)if(points[index+step]?.track===track)end=index+step;else break;
+  if(end===start)return 0;
+  const hours=elapsed(points[start]?.time,points[end]?.time);
+  if(!hours)return 0;
+  let distance=0;
+  for(let i=start+1;i<=end;i++)if(points[i-1]?.track===track&&points[i]?.track===track)distance+=leg(points[i-1],points[i]);
+  const speed=distance/hours;
+  return Number.isFinite(speed)&&speed>=0?speed:0;
+}
 function smoothTrackSpeeds(points:IndexedPoint[],raw:number[]) {
   const trackBaselines=new Map<number,number>();
   for(const point of points){
     if(trackBaselines.has(point.track))continue;
-    const candidates=raw.filter((value,index)=>points[index]?.track===point.track&&value>=20&&value<=MAX_SANITY_SPEED_KMH);
+    const candidates=raw.filter((value,index)=>points[index]?.track===point.track&&value>=5&&value<=MAX_SANITY_SPEED_KMH);
     trackBaselines.set(point.track,median(candidates));
   }
-  const filtered=raw.map((value,index)=>{
+  const cleaned=raw.map((value,index)=>{
     const track=points[index]?.track;
-    const trackBaseline=trackBaselines.get(track)??0;
+    const baseline=trackBaselines.get(track)??0;
     if(!Number.isFinite(value)||value<0)return 0;
-    if(value>MAX_SANITY_SPEED_KMH)return trackBaseline;
-    const neighborhood:number[]=[];
+    if(value>MAX_SANITY_SPEED_KMH)return baseline;
+    const neighbors:number[]=[];
     for(let i=Math.max(0,index-3);i<=Math.min(raw.length-1,index+3);i++){
       if(i===index||points[i]?.track!==track)continue;
       const candidate=raw[i];
-      if(Number.isFinite(candidate)&&candidate>=5&&candidate<=MAX_SANITY_SPEED_KMH)neighborhood.push(candidate);
+      if(Number.isFinite(candidate)&&candidate>=0&&candidate<=MAX_SANITY_SPEED_KMH)neighbors.push(candidate);
     }
-    const local=median(neighborhood),reference=local||trackBaseline;
-    if(reference>0){
-      const threshold=Math.max(450,reference*2.5,reference+180);
-      if(value>threshold)return reference;
-    }
+    const local=median(neighbors),reference=local||baseline;
+    if(reference>0&&value>Math.max(reference*1.9,reference+140))return reference;
     return value;
   });
-  return filtered.map((value,index)=>{
+  const medianPass=cleaned.map((value,index)=>{
     const track=points[index]?.track;
-    const prev=points[index-1]?.track===track?filtered[index-1]:value;
-    const next=points[index+1]?.track===track?filtered[index+1]:value;
-    return Math.max(0,prev*.15+value*.7+next*.15);
+    const window:number[]=[];
+    for(let i=Math.max(0,index-2);i<=Math.min(cleaned.length-1,index+2);i++)if(points[i]?.track===track)window.push(cleaned[i]);
+    return window.length>=3?median(window):value;
   });
+  const weighted=medianPass.map((value,index)=>{
+    const track=points[index]?.track;
+    let sum=0,weight=0;
+    for(let offset=-3;offset<=3;offset++){
+      const i=index+offset;
+      if(points[i]?.track!==track)continue;
+      const w=4-Math.abs(offset);
+      sum+=medianPass[i]*w;weight+=w;
+    }
+    return weight?Math.max(0,sum/weight):Math.max(0,value);
+  });
+  return weighted;
 }
 
 export function FlightTrackPlayer({tracks}:{tracks:MapTrack[]}) {
   const points=useMemo<IndexedPoint[]>(()=>tracks.flatMap((t,track)=>t.points.map(p=>({...p,track}))),[tracks]);
   const samples=useMemo<Sample[]>(()=>{
-    const rawSpeeds=points.map((p,i)=>{const candidate=points[i-1],prev=candidate?.track===p.track?candidate:undefined;const hours=prev?elapsed(prev.time,p.time):0;const speed=prev&&hours?leg(prev,p)/hours:0;return Number.isFinite(speed)&&speed>=0?speed:0});
+    const rawSpeeds=points.map((_,index)=>windowedSpeed(points,index,2));
     const speeds=smoothTrackSpeeds(points,rawSpeeds);
     let distance=0;
     return points.map((p,i)=>{const candidate=points[i-1],prev=candidate?.track===p.track?candidate:undefined,next=points[i+1]?.track===p.track?points[i+1]:undefined;if(prev)distance+=leg(prev,p);return {...p,distance,speed:speeds[i]??0,bearing:prev?bearing(prev,p):next?bearing(p,next):0}})
