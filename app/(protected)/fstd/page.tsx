@@ -18,8 +18,8 @@ const changes=(before:Record<string,unknown>,after:Record<string,unknown>)=>fstd
 export default async function FstdPage(){
   const {userId}=await requireUser();
   const [rows,revisionRows]=await Promise.all([
-    sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes,remarks,certified_at,certification_hash,certification_version,record_revision,correction_reason,correction_opened_at FROM fstd_sessions WHERE user_id=${userId} ORDER BY session_date DESC,id DESC` as Promise<FstdRow[]>,
-    sql`SELECT fstd_session_id,revision_number,certification_hash,certification_version,certified_at,superseded_at,correction_reason,snapshot_data FROM fstd_certified_revisions WHERE user_id=${userId} ORDER BY fstd_session_id,revision_number DESC` as Promise<RevisionRow[]>
+    sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes,remarks,certified_at,certification_hash,certification_version,record_revision,correction_reason,correction_opened_at FROM fstd_sessions WHERE user_id=${userId} ORDER BY session_date DESC,id DESC` as unknown as Promise<FstdRow[]>,
+    sql`SELECT fstd_session_id,revision_number,certification_hash,certification_version,certified_at,superseded_at,correction_reason,snapshot_data FROM fstd_certified_revisions WHERE user_id=${userId} ORDER BY fstd_session_id,revision_number DESC` as unknown as Promise<RevisionRow[]>
   ]);
   const history=new Map<number,RevisionRow[]>();for(const revision of revisionRows){const id=Number(revision.fstd_session_id),list=history.get(id)??[];list.push(revision);history.set(id,list)}
   let accumulated=0;const chronological=[...rows].reverse().map(row=>{accumulated+=Math.max(0,Number(row.total_minutes)||0);return{...row,accumulated_minutes:accumulated}}).reverse();
