@@ -28,8 +28,8 @@ test("page totals carry forward exactly between EASA logbook pages",()=>{
   assert.equal(pages[1].previousTotal.flight,90);assert.equal(pages[1].pageTotal.fstd,30);assert.equal(pages[1].runningTotal.fstd,30);assert.equal(pages[1].blankRows,1);
 });
 
-test("print layout defaults to eight fixed record rows per page",()=>{
-  const records=Array.from({length:9},(_,index)=>flight({sortKey:`2026-08-${String(index+1).padStart(2,"0")}T10:00`}));
+test("print layout defaults to ten fixed record rows per page",()=>{
+  const records=Array.from({length:11},(_,index)=>flight({sortKey:`2026-08-${String(index+1).padStart(2,"0")}T10:00`}));
   const pages=paginateEasaRecords(records);
-  assert.equal(pages.length,2);assert.equal(pages[0].records.length,8);assert.equal(pages[0].blankRows,0);assert.equal(pages[1].records.length,1);assert.equal(pages[1].blankRows,7);
+  assert.equal(pages.length,2);assert.equal(pages[0].records.length,10);assert.equal(pages[0].blankRows,0);assert.equal(pages[1].records.length,1);assert.equal(pages[1].blankRows,9);
 });
