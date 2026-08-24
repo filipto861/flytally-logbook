@@ -2,6 +2,7 @@ import "server-only";
 import { calculatedFlightPrice } from "@/lib/billing";
 import { sql } from "@/lib/db";
 import { flightDateKey,flightMinutes } from "@/lib/dashboard-math";
+import { isAuxiliaryLogbookRole } from "@/lib/logbook-print";
 import { measureServerTask } from "@/lib/performance";
 
 export const PERIODS=["all","year","12m","previous"] as const;
@@ -91,13 +92,16 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   const yearMap=new Map<number,{year:number;flights:number;minutes:number;landings:number}>();
 
   for(const flight of flights){
-    addMetric(total,flight);
-    if(flight.evidence==="ULL")addMetric(ull,flight);
-    if(flight.evidence==="EASA")addMetric(easa,flight);
-    if(flight.role==="PIC"&&flight.evidence==="ULL")addMetric(picUll,flight);
-    if(flight.role==="PIC"&&flight.evidence==="EASA")addMetric(picEasa,flight);
-    airMinutes+=flight.airMinutes;
-    picMinutes+=flight.picMinutes;copilotMinutes+=flight.copilotMinutes;dualMinutes+=flight.dualMinutes;instructorMinutes+=flight.instructorMinutes;nightMinutes+=flight.nightMinutes;ifrMinutes+=flight.ifrMinutes;dayLandings+=flight.dayLandings;nightLandings+=flight.nightLandings;
+    const auxiliary=isAuxiliaryLogbookRole(flight.role);
+    if(!auxiliary){
+      addMetric(total,flight);
+      if(flight.evidence==="ULL")addMetric(ull,flight);
+      if(flight.evidence==="EASA")addMetric(easa,flight);
+      if(flight.role==="PIC"&&flight.evidence==="ULL")addMetric(picUll,flight);
+      if(flight.role==="PIC"&&flight.evidence==="EASA")addMetric(picEasa,flight);
+      airMinutes+=flight.airMinutes;
+      picMinutes+=flight.picMinutes;copilotMinutes+=flight.copilotMinutes;dualMinutes+=flight.dualMinutes;instructorMinutes+=flight.instructorMinutes;nightMinutes+=flight.nightMinutes;ifrMinutes+=flight.ifrMinutes;dayLandings+=flight.dayLandings;nightLandings+=flight.nightLandings;
+    }
     if(flight.role==="SAFETY PILOT")safetyMinutes+=flight.blockMinutes;
     cost+=flight.cost;tracks+=flight.trackCount;gpsKm+=flight.gpsKm;
     if(flight.departure)airports.add(flight.departure);
@@ -105,14 +109,15 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
 
     if(flight.registration){
       const value=aircraftMap.get(flight.registration)??{registration:flight.registration,flights:0,minutes:0,cost:0};
-      value.flights+=1;value.minutes+=flight.blockMinutes;value.cost+=flight.cost;aircraftMap.set(flight.registration,value);
+      if(!auxiliary){value.flights+=1;value.minutes+=flight.blockMinutes;}
+      value.cost+=flight.cost;aircraftMap.set(flight.registration,value);
     }
-    if(flight.departure&&flight.arrival){
+    if(!auxiliary&&flight.departure&&flight.arrival){
       const route=`${flight.departure}–${flight.arrival}`;
       const value=routeMap.get(route)??{route,flights:0,minutes:0};
       value.flights+=1;value.minutes+=flight.blockMinutes;routeMap.set(route,value);
     }
-    if(flight.dateKey){
+    if(!auxiliary&&flight.dateKey){
       const month=flight.dateKey.slice(0,7);
       const monthly=monthlyMap.get(month)??{month,total:0,ull:0,easa:0,picUll:0,picEasa:0,landings:0};
       monthly.total+=flight.blockMinutes;monthly.landings+=flight.landings;
@@ -129,11 +134,12 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
 
   const ordered=[...flights].sort((left,right)=>(right.dateKey??"").localeCompare(left.dateKey??"")||right.offBlock.localeCompare(left.offBlock)||right.id-left.id);
   const recentFlights=ordered.slice(0,8).map(({id,date,registration,departure,arrival})=>({id,date,registration,departure,arrival}));
+  const creditableFlights=flights.filter(flight=>!isAuxiliaryLogbookRole(flight.role));
   return{
     displayName:text(userRows[0]?.display_name)||"Pilot",rangeLabel:label,total,ull,easa,picUll,picEasa,
     airMinutes,picMinutes,copilotMinutes,dualMinutes,instructorMinutes,nightMinutes,ifrMinutes,dayLandings,nightLandings,safetyMinutes,cost,tracks,gpsKm,
     uniqueAircraft:aircraftMap.size,uniqueAirports:airports.size,
-    chartFlights:flights.filter(flight=>Boolean(flight.dateKey)).length,invalidDateFlights:flights.filter(flight=>!flight.dateKey).length,
+    chartFlights:creditableFlights.filter(flight=>Boolean(flight.dateKey)).length,invalidDateFlights:creditableFlights.filter(flight=>!flight.dateKey).length,
     lastFlight:recentFlights[0]??null,recentFlights,
     monthly:[...monthlyMap.values()].sort((left,right)=>left.month.localeCompare(right.month)),
     topAircraft:[...aircraftMap.values()].sort((left,right)=>right.minutes-left.minutes||left.registration.localeCompare(right.registration)),

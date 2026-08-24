@@ -40,9 +40,16 @@ test("dual flight requires instructor PIC name",()=>{
   assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="pic_name"));
 });
 
-test("auxiliary safety pilot role is not certifiable as FCL.050 pilot time",()=>{
-  const issues=fcl050FlightCompliance(flight({role:"SAFETY PILOT",pic_minutes:0}),"Test Pilot");
-  assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="pilot_function"));
+test("auxiliary safety pilot record can be certified but is non-creditable",()=>{
+  const issues=fcl050FlightCompliance(flight({role:"SAFETY PILOT",pic_minutes:0,commander:"Actual PIC"}),"Test Pilot");
+  assert.equal(blockingComplianceIssues(issues).length,0);
+  assert.ok(issues.some(item=>item.code==="non_creditable_role"&&item.severity==="warning"));
+  assert.equal(complianceReady(issues),true);
+});
+
+test("auxiliary record cannot contain creditable pilot-function time",()=>{
+  const issues=fcl050FlightCompliance(flight({role:"SAFETY PILOT",pic_minutes:60,commander:"Actual PIC"}),"Test Pilot");
+  assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="auxiliary_function_time"));
 });
 
 test("FSTD requires qualification, instruction and session time",()=>{

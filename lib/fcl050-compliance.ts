@@ -18,7 +18,7 @@ const INSTRUMENT_TRAINING_PATTERN=/\b(instrument training|ir training|instrument
 
 export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):ComplianceIssue[]{
   if(upper(row.evidence)!=="EASA")return[];
-  const issues:ComplianceIssue[]=[],role=upper(row.role),block=number(row.block_minutes)||duration(row.off_block,row.on_block),task=text(row.task),note=text(row.note),remarks=[task,note].filter(Boolean).join(" · ");
+  const issues:ComplianceIssue[]=[],role=upper(row.role),auxiliary=isAuxiliaryLogbookRole(role),block=number(row.block_minutes)||duration(row.off_block,row.on_block),task=text(row.task),note=text(row.note),remarks=[task,note].filter(Boolean).join(" · ");
   if(!validDate(row.date))issues.push(issue("date","date","A valid flight date is required."));
   if(!text(row.departure))issues.push(issue("departure","departure","Departure place is required."));
   if(!text(row.arrival))issues.push(issue("arrival","arrival","Arrival place is required."));
@@ -30,7 +30,8 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(!text(row.aircraft_model)&&!text(row.aircraft_type))issues.push(issue("aircraft_model","aircraft","Aircraft model is required for the FCL.050 aircraft identity."));
   if(!["SE","ME"].includes(upper(row.engine_type)))issues.push(issue("engine_type","engine_type","Select SE or ME."));
   if(!["SP","MP"].includes(upper(row.operation_type)))issues.push(issue("operation_type","operation_type","Select single-pilot or multi-pilot operation."));
-  if(!EASA_FUNCTIONS.includes(role)||isAuxiliaryLogbookRole(role))issues.push(issue("pilot_function","role","This role is not creditable as an AMC1 FCL.050 pilot-function entry. Reclassify the flight before certification."));
+  if(auxiliary)issues.push(issue("non_creditable_role","role",`${role} is retained as a certified reference record but is excluded from creditable FCL.050 flight-time totals.`,"warning"));
+  else if(!EASA_FUNCTIONS.includes(role))issues.push(issue("pilot_function","role","Select a creditable AMC1 FCL.050 pilot function before certification."));
   if(!pilotInCommandName(row,pilotName))issues.push(issue("pic_name","commander","Name of PIC is required."));
   if(role==="DUAL"&&!text(row.instructor))issues.push(issue("dual_instructor","instructor","A DUAL flight requires the instructor/PIC name."));
   if(["SPIC","PICUS"].includes(role)){
@@ -38,8 +39,9 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
     if(!text(row.verification_reference))issues.push(issue("supervising_signature","verification_reference",`${role} time must be countersigned; add the countersignature reference.`));
   }
   const functionTotal=number(row.pic_minutes)+number(row.copilot_minutes)+number(row.dual_minutes)+number(row.instructor_minutes);
-  if(block>0&&functionTotal<=0)issues.push(issue("function_time","role","Pilot-function time is missing."));
-  if(block>0&&functionTotal>block*2)issues.push(issue("function_time_excess","role","Pilot-function allocation is inconsistent with total flight time."));
+  if(auxiliary&&functionTotal>0)issues.push(issue("auxiliary_function_time","role",`${role} must not contain PIC, co-pilot, DUAL or instructor time because it is a non-creditable reference record.`));
+  if(!auxiliary&&block>0&&functionTotal<=0)issues.push(issue("function_time","role","Pilot-function time is missing."));
+  if(!auxiliary&&block>0&&functionTotal>block*2)issues.push(issue("function_time_excess","role","Pilot-function allocation is inconsistent with total flight time."));
   if(number(row.night_minutes)>block)issues.push(issue("night_time","night_minutes","Night time cannot exceed total flight time."));
   if(number(row.ifr_minutes)>block)issues.push(issue("ifr_time","ifr_minutes","IFR time cannot exceed total flight time."));
 
