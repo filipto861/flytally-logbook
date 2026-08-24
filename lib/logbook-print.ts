@@ -30,6 +30,7 @@ export function withAccumulatedFlightTime<T extends Record<string,unknown>>(rows
 export const AUXILIARY_LOGBOOK_ROLES=["SAFETY PILOT","PAX","OBSERVER"] as const;
 export function isAuxiliaryLogbookRole(role:unknown){return AUXILIARY_LOGBOOK_ROLES.includes(String(role??"").trim().toUpperCase() as (typeof AUXILIARY_LOGBOOK_ROLES)[number])}
 
+export type LicenceProfile={scope?:string;number?:string;address?:string};
 export type PilotPreferences={
   default_evidence?:string;
   pilot_address?:string;
@@ -38,6 +39,7 @@ export type PilotPreferences={
   easa_licence_number?:string;
   ull_address?:string;
   ull_licence_number?:string;
+  licence_profiles?:Record<string,LicenceProfile>;
   print_default_scope?:string;
   print_include_auxiliary_roles?:boolean;
   [key:string]:unknown;
@@ -48,24 +50,39 @@ export function parsePilotPreferences(value:unknown):PilotPreferences{
 }
 
 const clean=(value:unknown)=>String(value??"").trim();
-export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintScope){
-  const easaAddress=clean(preferences.easa_address)||clean(preferences.pilot_address),easaLicence=clean(preferences.easa_licence_number)||clean(preferences.licence_number);
-  const ullAddress=clean(preferences.ull_address)||clean(preferences.pilot_address),ullLicence=clean(preferences.ull_licence_number);
-  if(scope==="easa")return{address:easaAddress,licence:easaLicence,addressLabel:"Holder's address",licenceLabel:"Holder's licence number"};
-  if(scope==="ull")return{address:ullAddress,licence:ullLicence,addressLabel:"Holder's address",licenceLabel:"Holder's licence number"};
-  const addresses=[easaAddress?`EASA: ${easaAddress}`:"",ullAddress?`ULL: ${ullAddress}`:""].filter(Boolean).join("\n");
-  const licences=[easaLicence?`EASA: ${easaLicence}`:"",ullLicence?`ULL: ${ullLicence}`:""].filter(Boolean).join("\n");
-  return{address:addresses,licence:licences,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers"};
+export function licenceProfileMap(preferences:PilotPreferences):Record<string,LicenceProfile>{
+  const value=preferences.licence_profiles;
+  return value&&typeof value==="object"&&!Array.isArray(value)?value:{};
+}
+
+function licenceForScope(preferences:PilotPreferences,licences:Array<Record<string,unknown>>,target:"EASA"|"ULL"){
+  const profiles=licenceProfileMap(preferences),today=new Date().toISOString().slice(0,10);
+  const candidates=licences.filter(row=>String(row.category??"").trim().toUpperCase()==="LICENCE"&&Number(row.active??1)!==0).map(row=>{
+    const profile=profiles[String(row.id??"")]??{},expiry=clean(row.expiry_date),scope=clean(profile.scope).toUpperCase();
+    return{row,profile,expiry,scope,valid:!expiry||expiry>=today};
+  }).filter(item=>item.scope===target).sort((a,b)=>Number(b.valid)-Number(a.valid)||b.expiry.localeCompare(a.expiry));
+  const selected=candidates[0];
+  const legacyAddress=target==="EASA"?(clean(preferences.easa_address)||clean(preferences.pilot_address)):(clean(preferences.ull_address)||clean(preferences.pilot_address));
+  const legacyNumber=target==="EASA"?(clean(preferences.easa_licence_number)||clean(preferences.licence_number)):clean(preferences.ull_licence_number);
+  if(!selected)return{address:legacyAddress,number:legacyNumber,expiry:"",expired:false,label:""};
+  return{address:clean(selected.profile.address)||legacyAddress,number:clean(selected.profile.number)||legacyNumber,expiry:selected.expiry,expired:Boolean(selected.expiry&&selected.expiry<today),label:clean(selected.row.label)};
+}
+
+export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintScope,licences:Array<Record<string,unknown>>=[]){
+  const easa=licenceForScope(preferences,licences,"EASA"),ull=licenceForScope(preferences,licences,"ULL"),warnings:string[]=[];
+  if(easa.expired)warnings.push(`EASA licence ${easa.label||easa.number||"record"} is expired (${easa.expiry}).`);
+  if(ull.expired)warnings.push(`ULL licence ${ull.label||ull.number||"record"} is expired (${ull.expiry}).`);
+  if(scope==="easa")return{address:easa.address,licence:easa.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings};
+  if(scope==="ull")return{address:ull.address,licence:ull.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings};
+  const addresses=[easa.address?`EASA: ${easa.address}`:"",ull.address?`ULL: ${ull.address}`:""].filter(Boolean).join("\n");
+  const numbers=[easa.number?`EASA: ${easa.number}`:"",ull.number?`ULL: ${ull.number}`:""].filter(Boolean).join("\n");
+  return{address:addresses,licence:numbers,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers",warnings};
 }
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
   const role=String(row.role??"").trim().toUpperCase();
   const instructor=String(row.instructor??"").trim();
   const commander=String(row.commander??"").trim();
-
-  // During dual instruction the instructor is the pilot in command unless the
-  // record explicitly lacks an instructor. This must take precedence over a
-  // legacy/default commander value that may contain the student's own name.
   if(role==="DUAL"&&instructor)return instructor;
   if(commander)return commander;
   if(["PIC","SOLO","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
