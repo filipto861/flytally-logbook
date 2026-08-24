@@ -13,6 +13,7 @@ const migrationNames:Record<number,string>={
   3:"core query indexes",
   4:"restore and route performance indexes",
   5:"EASA FCL.050 flight logbook fields",
+  6:"FCL.050 structured aircraft, FSTD and certification",
 };
 
 const migrationQueries=(version:number)=>{
@@ -109,6 +110,67 @@ const migrationQueries=(version:number)=>{
     sql`UPDATE flights SET engine_type=CASE WHEN UPPER(COALESCE(aircraft_class,''))='MEP' THEN 'ME' ELSE 'SE' END WHERE engine_type IS NULL OR engine_type NOT IN ('SE','ME')`,
     sql`UPDATE flights SET pic_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('PIC','SPIC','PICUS','INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, copilot_minutes=CASE WHEN UPPER(COALESCE(role,''))='CO-PILOT' THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, dual_minutes=CASE WHEN UPPER(COALESCE(role,''))='DUAL' OR NULLIF(TRIM(COALESCE(instructor,'')),'') IS NOT NULL THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END, instructor_minutes=CASE WHEN UPPER(COALESCE(role,'')) IN ('INSTRUKTOR','INSTRUCTOR','EXAMINER') THEN CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440) ELSE 0 END ELSE 0 END WHERE pic_minutes=0 AND copilot_minutes=0 AND dual_minutes=0 AND instructor_minutes=0`,
     sql`CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_easa ON flights(user_id,evidence,date DESC)`,
+  ];
+  if(version===6)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_make TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_model TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS aircraft_variant TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_make TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_model TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS aircraft_variant TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certified_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certified_by_user_id BIGINT`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certification_hash TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS certification_version INTEGER NOT NULL DEFAULT 1`,
+    sql`UPDATE aircraft SET aircraft_model=COALESCE(NULLIF(TRIM(aircraft_model),''),NULLIF(TRIM(aircraft_type),''),'') WHERE aircraft_model=''`,
+    sql`UPDATE flights f SET aircraft_make=COALESCE(NULLIF(TRIM(f.aircraft_make),''),NULLIF(TRIM(a.aircraft_make),''),''),aircraft_model=COALESCE(NULLIF(TRIM(f.aircraft_model),''),NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(f.aircraft_type),''),''),aircraft_variant=COALESCE(NULLIF(TRIM(f.aircraft_variant),''),NULLIF(TRIM(a.aircraft_variant),''),'') FROM aircraft a WHERE a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))`,
+    sql`UPDATE flights SET aircraft_model=COALESCE(NULLIF(TRIM(aircraft_model),''),NULLIF(TRIM(aircraft_type),''),'') WHERE aircraft_model=''`,
+    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $$
+      DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+      BEGIN
+        IF TG_OP='INSERT' OR NEW.registration IS DISTINCT FROM OLD.registration THEN
+          SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+            INTO v_make,v_model,v_variant FROM aircraft a
+            WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration)) LIMIT 1;
+          NEW.aircraft_make:=COALESCE(v_make,'');
+          NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+          NEW.aircraft_variant:=COALESCE(v_variant,'');
+        ELSE
+          IF COALESCE(TRIM(NEW.aircraft_model),'')='' THEN NEW.aircraft_model:=COALESCE(NULLIF(TRIM(NEW.aircraft_type),''),''); END IF;
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_snapshot_aircraft_identity ON flights`,
+    sql`CREATE TRIGGER trg_logbook_snapshot_aircraft_identity BEFORE INSERT OR UPDATE OF registration ON flights FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity()`,
+    sql`CREATE TABLE IF NOT EXISTS fstd_sessions (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,session_date DATE NOT NULL,device_type TEXT NOT NULL,
+      qualification_number TEXT NOT NULL DEFAULT '',instruction TEXT NOT NULL DEFAULT '',total_minutes INTEGER NOT NULL CHECK(total_minutes>=0 AND total_minutes<=1440),
+      remarks TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certified_by_user_id BIGINT,certification_hash TEXT NOT NULL DEFAULT '',certification_version INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_logbook_fstd_user_date ON fstd_sessions(user_id,session_date DESC,id DESC)`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_certified_fstd() RETURNS TRIGGER AS $$
+      BEGIN
+        IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified FSTD session cannot be changed or deleted'; END IF;
+        IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_certified_fstd ON fstd_sessions`,
+    sql`CREATE TRIGGER trg_logbook_protect_certified_fstd BEFORE UPDATE OR DELETE ON fstd_sessions FOR EACH ROW EXECUTE FUNCTION logbook_protect_certified_fstd()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
+      BEGIN
+        IF OLD.certified_at IS NOT NULL THEN RAISE EXCEPTION 'Certified flight cannot be changed or deleted'; END IF;
+        IF TG_OP='DELETE' AND OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+        IF TG_OP='UPDATE' AND OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
