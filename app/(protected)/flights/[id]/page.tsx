@@ -3,7 +3,6 @@ import { FlightForm } from "@/components/flight-form";
 import { requireUser } from "@/lib/auth/require-user";
 import { getAircraftOptions } from "@/lib/data/aircraft";
 import { getFlight, getFlightNavigation } from "@/lib/data/flights";
-import { getFlightAudit } from "@/lib/data/flight-audit";
 import Link from "next/link";
 import { deleteFlight, setFlightLock, updateFlight } from "../actions";
 import { getFlightTracks } from "@/lib/data/tracks";
@@ -13,7 +12,6 @@ import { attachKmlTrack, applyGpsTimes, deleteTrack, redetectFlightAirports } fr
 import { formatDuration } from "@/lib/data/dashboard";
 import { AirportDetectionControl } from "@/components/airport-detection-control";
 import { billingLabel } from "@/lib/billing";
-import { FlightAuditPanel } from "@/components/flight-audit-panel";
 import { DeleteFlightButton } from "@/components/delete-flight-button";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
@@ -27,8 +25,8 @@ export default async function FlightDetailPage({ params,searchParams }: { params
   const { userId } = await requireUser(); const id = Number((await params).id),context=await searchParams,query=contextQuery(context),suffix=query?`?${query}`:"";
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
   await ensureDatabaseOptimizations();
-  const [flight, aircraft, tracks,navigation,audit,certRows] = await Promise.all([
-    getFlight(userId, id), getAircraftOptions(userId), getFlightTracks(userId, id),getFlightNavigation(userId,id,context),getFlightAudit(userId,id),
+  const [flight, aircraft, tracks,navigation,certRows] = await Promise.all([
+    getFlight(userId, id), getAircraftOptions(userId), getFlightTracks(userId, id),getFlightNavigation(userId,id,context),
     sql`SELECT f.*,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
   if (!flight) notFound(); const update = updateFlight.bind(null, id); const remove = deleteFlight.bind(null, id);
@@ -43,5 +41,6 @@ export default async function FlightDetailPage({ params,searchParams }: { params
     {certified?<div className="record-protection-actions"><details className="certified-correction"><summary className="secondary-button">Correct flight</summary><form action={correct} className="stack-form"><label>Reason for correction<textarea name="reason" minLength={8} maxLength={1000} rows={3} required placeholder="Example: Incorrect number of landings entered."/></label><p className="muted">The current revision stays archived in the audit report. A new editable revision {recordRevision+1} will be created.</p><button className="primary-button">Open correction R{recordRevision+1}</button></form></details></div>:<div className="record-protection-actions"><form action={toggleLock}><input type="hidden" name="lock" value={locked?"no":"yes"}/><button className={locked?"secondary-link":"secondary-button"}>{locked?"Unlock":"Lock"}</button></form><form action={certify}><input type="hidden" name="confirm" value="certify"/><button className="primary-button" disabled={easa&&blockers.length>0} title={easa&&blockers.length?"Resolve the issues shown here before certification.":undefined}>{correctionDraft?`Certify R${recordRevision}`:"Certify"}</button></form></div>}
   </section>
 
-  {tracks.length?<>{!locked?<AirportDetectionControl action={detect} departure={flight.departure} arrival={flight.arrival}/>:null}<FlightTrackPlayer tracks={tracks}/></>:<section className="panel no-track"><p className="eyebrow">GPS</p><h2>No GPS track</h2></section>}{!locked?<TrackManager flightId={id} tracks={tracks} attachAction={attach} applyAction={apply} deleteAction={dropTrack}/>:null}{!locked?<details className="panel edit-flight" open><summary>Flight details</summary><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight}/></details>:<section className="panel locked-flight-note"><strong>{certified?"Editing is disabled for this certified revision.":"Editing is disabled while this flight is locked."}</strong><p>{certified?"Use Correct flight above if a change is needed. Certification history and integrity details are available in Audit report.":"Unlock the flight if a correction is required."}</p></section>}<FlightAuditPanel events={audit}/></>;
+  {tracks.length?<>{!locked?<AirportDetectionControl action={detect} departure={flight.departure} arrival={flight.arrival}/>:null}<FlightTrackPlayer tracks={tracks}/></>:<section className="panel no-track"><p className="eyebrow">GPS</p><h2>No GPS track</h2></section>}{!locked?<TrackManager flightId={id} tracks={tracks} attachAction={attach} applyAction={apply} deleteAction={dropTrack}/>:null}{!locked?<details className="panel edit-flight" open><summary>Flight details</summary><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight}/></details>:<section className="panel locked-flight-note"><strong>{certified?"Editing is disabled for this certified revision.":"Editing is disabled while this flight is locked."}</strong><p>{certified?"Use Correct flight above if a change is needed. Certification history and integrity details are available in Audit report.":"Unlock the flight if a correction is required."}</p></section>}
+</>;
 }

@@ -9,6 +9,7 @@ type IndexedPoint = TrackPoint & { track: number };
 type Sample = TrackPoint & { distance: number; speed: number; bearing: number; track: number };
 
 const rad = Math.PI / 180;
+const MAX_SANITY_SPEED_KMH = 2500;
 function leg(a: TrackPoint, b: TrackPoint) {
   const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
   const q = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
@@ -33,19 +34,35 @@ function median(values:number[]) {
   return sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2;
 }
 function smoothTrackSpeeds(points:IndexedPoint[],raw:number[]) {
+  const trackBaselines=new Map<number,number>();
+  for(const point of points){
+    if(trackBaselines.has(point.track))continue;
+    const candidates=raw.filter((value,index)=>points[index]?.track===point.track&&value>=20&&value<=MAX_SANITY_SPEED_KMH);
+    trackBaselines.set(point.track,median(candidates));
+  }
   const filtered=raw.map((value,index)=>{
     const track=points[index]?.track;
+    const trackBaseline=trackBaselines.get(track)??0;
+    if(!Number.isFinite(value)||value<0)return 0;
+    if(value>MAX_SANITY_SPEED_KMH)return trackBaseline;
     const neighborhood:number[]=[];
-    for(let i=Math.max(0,index-2);i<=Math.min(raw.length-1,index+2);i++)if(points[i]?.track===track&&Number.isFinite(raw[i]))neighborhood.push(raw[i]);
-    const center=median(neighborhood),mad=median(neighborhood.map(item=>Math.abs(item-center)));
-    const isolatedHigh=center>=20&&value>Math.max(center*1.8,center+Math.max(100,mad*8));
-    return isolatedHigh?center:value;
+    for(let i=Math.max(0,index-3);i<=Math.min(raw.length-1,index+3);i++){
+      if(i===index||points[i]?.track!==track)continue;
+      const candidate=raw[i];
+      if(Number.isFinite(candidate)&&candidate>=5&&candidate<=MAX_SANITY_SPEED_KMH)neighborhood.push(candidate);
+    }
+    const local=median(neighborhood),reference=local||trackBaseline;
+    if(reference>0){
+      const threshold=Math.max(450,reference*2.5,reference+180);
+      if(value>threshold)return reference;
+    }
+    return value;
   });
   return filtered.map((value,index)=>{
     const track=points[index]?.track;
     const prev=points[index-1]?.track===track?filtered[index-1]:value;
     const next=points[index+1]?.track===track?filtered[index+1]:value;
-    return Math.max(0,prev*.2+value*.6+next*.2);
+    return Math.max(0,prev*.15+value*.7+next*.15);
   });
 }
 
