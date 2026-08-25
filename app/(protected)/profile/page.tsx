@@ -2,7 +2,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getProfileData } from "@/lib/data/profile";
 import { EASA_ROLES } from "@/lib/easa-logbook";
 import { licenceProfileMap,parsePilotPreferences } from "@/lib/logbook-print";
-import { addExpiry,addLicence,changePassword,deleteExpiry,saveLicence,saveProfile,saveSettings,toggleExpiry } from "./actions";
+import { addExpiry,addLicence,changePassword,deleteExpiry,saveAccountSettings,saveLicence,toggleExpiry } from "./actions";
 import { LicenceSaveForm } from "@/components/licence-save-form";
 import { InstallAppControl } from "@/components/install-app-control";
 
@@ -16,17 +16,18 @@ export default async function ProfilePage(){
   const d=await getProfileData(userId),preferences=parsePilotPreferences(d.settings.preferences_json),profiles=licenceProfileMap(preferences);
   const licences=d.expiries.filter(e=>t(e.category).toUpperCase()==="LICENCE"),otherExpiries=d.expiries.filter(e=>t(e.category).toUpperCase()!=="LICENCE");
   return <>
-    <header className="page-header"><div><p className="eyebrow">PROFILE</p><h1>Settings</h1><p className="muted">Pilot details, licences, validity monitoring and application defaults.</p></div></header>
+    <header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted">Manage your profile, logbook defaults, licences and account security.</p></div></header>
+    <nav className="settings-nav" aria-label="Settings sections"><a href="#profile">Profile & defaults</a><a href="#licences">Licences & validity</a><a href="#app">App</a><a href="#security">Security</a></nav>
 
-    <section className="profile-stats"><div><span>Profile</span><strong>#{t(d.user.id)}</strong><small>{t(d.user.role)}</small></div><div><span>Flights</span><strong>{t(d.stats.flights)||'0'}</strong></div><div><span>Aircraft</span><strong>{t(d.stats.aircraft)||'0'}</strong></div><div><span>GPS</span><strong>{t(d.stats.tracks)||'0'}</strong></div></section>
-    <section className="recency-grid"><article><span>Last flight</span><strong>{t(d.recency.last_flight)||'—'}</strong></article><article><span>ULL · 90 days</span><strong>{t(d.recency.ull_landings_90)||'0'} landings</strong><small>last {t(d.recency.last_ull)||'—'}</small></article><article><span>EASA · 90 days</span><strong>{t(d.recency.easa_landings_90)||'0'} landings</strong><small>last {t(d.recency.last_easa)||'—'}</small></article></section>
+    <form action={saveAccountSettings} className="account-settings-form" id="profile">
+      <div className="profile-grid">
+        <section className="panel"><p className="eyebrow">PERSONAL</p><h2>Pilot details</h2><div className="stack-form"><label>Name<input name="display_name" defaultValue={t(d.user.display_name)} required/></label><label>Account email<input name="email" type="email" defaultValue={t(d.user.email)} required/><small>This is the email associated with your FlyTally account.</small></label></div></section>
+        <section className="panel"><p className="eyebrow">APPLICATION</p><h2>Logbook defaults</h2><div className="stack-form"><label>Home airport<input name="home_airport" defaultValue={t(d.settings.home_airport)} placeholder="LKLT"/></label><label>Default role<select name="default_role" defaultValue={t(d.settings.default_role)||'PIC'}>{EASA_ROLES.map(role=><option key={role} value={role}>{role}</option>)}</select></label><label>Default logbook<select name="default_evidence" defaultValue={t(preferences.default_evidence)||'ULL'}><option>ULL</option><option>EASA</option></select></label><label>Currency<select name="currency" defaultValue={t(d.settings.currency)||'CZK'}><option>CZK</option><option>EUR</option><option>USD</option><option>GBP</option></select></label><label>Time zone<input name="timezone" defaultValue={t(d.settings.timezone)||'Europe/Prague'}/><small>Screen dates use this zone. Official FCL.050 flight times remain UTC.</small></label></div></section>
+      </div>
+      <div className="settings-save"><span>Profile and defaults are saved together.</span><button className="primary-button">Save changes</button></div>
+    </form>
 
-    <div className="profile-grid">
-      <section className="panel"><p className="eyebrow">PERSONAL</p><h2>Pilot details</h2><form action={saveProfile} className="stack-form"><label>Name<input name="display_name" defaultValue={t(d.user.display_name)} required/></label><label>Email<input name="email" type="email" defaultValue={t(d.user.email)} required/></label><button className="primary-button">Save profile</button></form></section>
-      <section className="panel"><p className="eyebrow">APPLICATION</p><h2>Defaults</h2><form action={saveSettings} className="stack-form"><label>Home airport<input name="home_airport" defaultValue={t(d.settings.home_airport)} placeholder="LKLT"/></label><label>Default role<select name="default_role" defaultValue={t(d.settings.default_role)||'PIC'}>{EASA_ROLES.map(role=><option key={role} value={role}>{role}</option>)}</select></label><label>Default logbook<select name="default_evidence" defaultValue={t(preferences.default_evidence)||'ULL'}><option>ULL</option><option>EASA</option></select></label><label>Currency<select name="currency" defaultValue={t(d.settings.currency)||'CZK'}><option>CZK</option><option>EUR</option><option>USD</option><option>GBP</option></select></label><label>Time zone<input name="timezone" defaultValue={t(d.settings.timezone)||'Europe/Prague'}/><small>FCL.050 print times remain UTC.</small></label><button className="primary-button">Save settings</button></form></section>
-    </div>
-
-    <section className="panel expiry-panel">
+    <section className="panel expiry-panel" id="licences">
       <div className="section-heading"><div><p className="eyebrow">LICENCES</p><h2>Licences & logbook identity</h2><p className="muted">Licence identity and validity used by the matching printable logbook.</p></div></div>
       <div className="credential-list">{licences.map(e=>{
         const state=expiryState(e.expiry_date,e.warning_days),meta=profiles[t(e.id)]??{},scope=t(meta.scope)||"EASA",legacyNumber=scope==="ULL"?t(preferences.ull_licence_number):t(preferences.easa_licence_number)||t(preferences.licence_number),legacyAddress=scope==="ULL"?t(preferences.ull_address):t(preferences.easa_address)||t(preferences.pilot_address),licenceNumber=t(meta.number)||legacyNumber;
@@ -50,7 +51,7 @@ export default async function ProfilePage(){
       <details className="credential-create"><summary>Add document or qualification</summary><form action={addExpiry} className="inline-editor"><select name="category"><option>Document</option><option>Medical</option><option>Qualification</option><option>Insurance</option></select><input name="label" placeholder="Name" required/><label>Valid until<input type="date" name="expiry_date" required/></label><input type="number" name="warning_days" defaultValue="30" placeholder="Warning days"/><input name="note" placeholder="Notes"/><button className="primary-button">Add</button></form></details>
     </section>
 
-    <section className="panel install-app-panel"><div><p className="eyebrow">APP</p><h2>Install FlyTally</h2><p className="muted">Install FlyTally as a standalone app on this device. You can return here at any time.</p></div><InstallAppControl/></section>
-    <details className="panel security-panel"><summary>Account security</summary><form action={changePassword} className="stack-form narrow-form"><label>Current password<input type="password" name="current_password" autoComplete="current-password" required/></label><label>New password<input type="password" name="new_password" minLength={10} autoComplete="new-password" required/></label><label>Confirm new password<input type="password" name="confirm_password" minLength={10} autoComplete="new-password" required/></label><button className="primary-button">Change password</button></form></details>
+    <section className="panel install-app-panel" id="app"><div><p className="eyebrow">APP</p><h2>Install FlyTally</h2><p className="muted">Install FlyTally as a standalone app on this device. Installation prompts will not cover other pages.</p></div><InstallAppControl/></section>
+    <details className="panel security-panel" id="security"><summary>Account security</summary><form action={changePassword} className="stack-form narrow-form"><label>Current password<input type="password" name="current_password" autoComplete="current-password" required/></label><label>New password<input type="password" name="new_password" minLength={10} autoComplete="new-password" required/></label><label>Confirm new password<input type="password" name="confirm_password" minLength={10} autoComplete="new-password" required/></label><button className="primary-button">Change password</button></form></details>
   </>;
 }

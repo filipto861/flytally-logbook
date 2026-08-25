@@ -26,6 +26,17 @@ export async function saveSettings(f:FormData){
   refresh();
 }
 
+export async function saveAccountSettings(f:FormData){
+  const {userId}=await requireUser(),current=await currentSettings(userId),existing=current.preferences,row=current.row;
+  const name=s(f,"display_name"),email=s(f,"email").toLowerCase();if(!name||!email)return;
+  const preferences=JSON.stringify({...existing,default_evidence:pick(f,"default_evidence",existing.default_evidence)||"ULL"});
+  const timezone=pick(f,"timezone",row.timezone)||"Europe/Prague",currency=pick(f,"currency",row.currency)||"CZK",homeAirport=pick(f,"home_airport",row.home_airport).toUpperCase(),defaultRole=pick(f,"default_role",row.default_role)||"PIC";
+  await sql.transaction([
+    sql`UPDATE users SET display_name=${name},email=${email},updated_at=NOW() WHERE id=${userId}`,
+    sql`INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json,created_at,updated_at) VALUES(${userId},${timezone},${currency},${homeAirport},${defaultRole},${preferences},NOW(),NOW()) ON CONFLICT(user_id) DO UPDATE SET timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,home_airport=EXCLUDED.home_airport,default_role=EXCLUDED.default_role,preferences_json=EXCLUDED.preferences_json,updated_at=NOW()`,
+  ]);refresh();revalidatePath("/dashboard");
+}
+
 export async function addLicence(f:FormData){
   const {userId}=await requireUser(),label=s(f,"label"),date=s(f,"expiry_date"),number=s(f,"licence_number").slice(0,100),address=s(f,"holder_address").slice(0,500),scope=licenceScope(s(f,"logbook_scope"));
   if(!label||!date||!number)return;

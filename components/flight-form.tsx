@@ -75,32 +75,32 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
   };
   const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:billing==="BLOCK"?blockMinutes:0,billingValue=billing?serializeBilling(billing,billingShare):"",flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
-  const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),countersignatureRequired=["SPIC","PICUS"].includes(role);
+  const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),pilotSectionOpen=trainingRole||role==="SAFETY PILOT",countersignatureRequired=["SPIC","PICUS"].includes(role);
 
+  const roleGuidance=role==="DUAL"?"Enter the instructor below. The instructor is recorded as PIC; your time is credited as DUAL.":role==="SAFETY PILOT"?"Enter the actual PIC below. Safety Pilot time is kept for reference and is not added to creditable logbook totals.":["SPIC","PICUS"].includes(role)?"Add the supervising PIC/FI and countersignature reference in the EASA section.":"";
   return <form action={formAction} className="flight-form">
-    {!editing?<details className="quick-tools" open><summary>Quick tools</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips">{routes.slice(0,12).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
-
     <section className="entry-section entry-section-primary">
       <p className="section-kicker">Flight essentials</p>
       <div className="form-grid essential-grid">
         <label>Date<input name="date" type="date" defaultValue={field("date",new Date().toISOString().slice(0,10))} required/></label>
         <label>Registration<select name="registration" value={registration} onChange={e=>pickAircraft(e.target.value)} required><option value="">Select</option>{registrationOptions.map(a=><option key={a.registration} value={a.registration}>{a.registration}</option>)}</select><small><Link href="/database">Manage aircraft</Link></small></label>
-        <label>Role<select name="role" value={role} onChange={e=>setRole(e.target.value)} required><option value="">Select role</option>{ROLES.map(x=><option key={x} value={x}>{roleLabel(x)}</option>)}</select></label>
-        <label>Day landings<input name="landingsDay" type="number" min="0" max="99" value={landingsDay} onChange={event=>setLandingsDay(Number(event.target.value)||0)}/></label>
+        <label>Role<select name="role" value={role} onChange={e=>setRole(e.target.value)} required><option value="">Select role</option>{ROLES.map(x=><option key={x} value={x}>{roleLabel(x)}</option>)}</select>{roleGuidance?<small className="role-guidance">{roleGuidance}</small>:null}</label>
         <label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>
         <label>Arrival<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>
         <label>Off-block <span className="field-hint">UTC</span><input name="offBlock" type="time" value={off} onChange={e=>setOff(e.target.value)}/></label>
-        <label>On-block <span className="field-hint">UTC</span><input name="onBlock" type="time" value={on} onChange={e=>setOn(e.target.value)}/></label>
         <label>Takeoff <span className="field-hint">UTC</span><input name="takeoff" type="time" value={takeoff} onChange={e=>setTakeoff(e.target.value)}/></label>
         <label>Landing <span className="field-hint">UTC</span><input name="landing" type="time" value={landing} onChange={e=>setLanding(e.target.value)}/></label>
+        <label>On-block <span className="field-hint">UTC</span><input name="onBlock" type="time" value={on} onChange={e=>setOn(e.target.value)}/></label>
+        <label>Day landings<input name="landingsDay" type="number" min="0" max="99" value={landingsDay} onChange={event=>setLandingsDay(Number(event.target.value)||0)}/></label>
       </div>
     </section>
 
-    <details className="entry-section" open={trainingRole}>
+    {!editing?<details className="quick-tools"><summary>Speed up entry</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips"><small>Recent routes</small>{routes.slice(0,8).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
+
+    <details className="entry-section" open={pilotSectionOpen}>
       <summary><span>Pilot & training</span><small>{role}{field("instructor")?` · ${field("instructor")}`:""}</small></summary>
       <div className="entry-section-body"><div className="form-grid secondary-entry-grid">
-        <label>Commander / PIC<input name="commander" defaultValue={field("commander")}/></label>
-        <label>Instructor<input name="instructor" defaultValue={field("instructor")}/></label>
+        {role==="DUAL"?<><input type="hidden" name="commander" value={field("commander")}/><label>Instructor / PIC<input name="instructor" defaultValue={field("instructor")} required={evidence==="EASA"}/><small>Required for a DUAL training record.</small></label></>:<><label>{role==="SAFETY PILOT"?"Actual PIC":"Commander / PIC"}<input name="commander" defaultValue={field("commander")} required={evidence==="EASA"&&role==="SAFETY PILOT"}/></label><label>Instructor<input name="instructor" defaultValue={field("instructor")}/></label></>}
         <label className="wide">Task / exercise<input name="task" defaultValue={field("task")}/></label>
       </div></div>
     </details>

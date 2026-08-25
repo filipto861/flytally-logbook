@@ -15,8 +15,8 @@ const mainLinks=[
 ] as const;
 const profileLinks=[
   {href:"/profile",icon:"⚙",label:"Settings"},
-  {href:"/database",icon:"▤",label:"Database"},
-  {href:"/data",icon:"◆",label:"Export"},
+  {href:"/database",icon:"▤",label:"Aircraft & airports"},
+  {href:"/data",icon:"◆",label:"Print & data"},
 ] as const;
 
 export function Sidebar({role="user"}:{role?:"admin"|"user"}){
@@ -29,8 +29,8 @@ export function Sidebar({role="user"}:{role?:"admin"|"user"}){
     <nav>
       {mainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i>{link.icon}</i><span>{link.label}</span></Link>})}
       <div className={styles.group}>
-        <div className={styles.groupTitle}><i>●</i><span>Profile</span></div>
-        {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={`${link.label} · Profile`} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i>{link.icon}</i><span>{link.label}</span></Link>})}
+        <div className={styles.groupTitle}><i>●</i><span>Manage</span></div>
+        {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i>{link.icon}</i><span>{link.label}</span></Link>})}
       </div>
       {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i>⚙</i><span>Administration</span></Link>:null}
     </nav>

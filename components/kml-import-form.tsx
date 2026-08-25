@@ -2,13 +2,15 @@
 
 import { useActionState,useEffect,useMemo,useState } from "react";
 import { useFormStatus } from "react-dom";
+import dynamic from "next/dynamic";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
-import { TracksMap } from "@/components/tracks-map";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
+
+const TracksMap=dynamic(()=>import("@/components/tracks-map").then(module=>module.TracksMap),{ssr:false,loading:()=> <div className="track-map-loading">Loading GPS preview…</div>});
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectionResult>;
