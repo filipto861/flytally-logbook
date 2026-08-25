@@ -26,7 +26,7 @@ test("pilot preferences and PIC name remain safe for legacy rows",()=>{
   assert.equal(pilotInCommandName({role:"DUAL",commander:"Captain",instructor:""},"Test Pilot"),"Captain");
   assert.equal(pilotInCommandName({role:"CO-PILOT",commander:"Captain"},"Test Pilot"),"Captain");
   assert.equal(pilotInCommandName({role:"PICUS",commander:"",verification_name:"Supervising PIC"},"Test Pilot"),"Supervising PIC");
-  assert.equal(pilotInCommandName({role:"SPIC",commander:"Captain",verification_name:"Instructor"},"Test Pilot"),"Captain");
+  assert.equal(pilotInCommandName({role:"SPIC",commander:"Student Pilot",verification_name:"Instructor"},"Test Pilot"),"Instructor");
 });
 
 test("print uses ICAO code while retaining full structured aircraft identity",()=>{
