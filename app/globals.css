@@ -1079,3 +1079,49 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
   .flights-table .table-scroll{overflow:visible}.flights-table table,.flights-table tbody,.flights-table tr,.flights-table td{display:block;width:100%}.flights-table thead{display:none}.flights-table tbody{display:grid;gap:12px}.flights-table tr{padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--panel)}
   .flights-table td{display:grid!important;grid-template-columns:88px minmax(0,1fr);align-items:start;gap:10px;padding:8px 0!important;border:0!important;text-align:left!important}.flights-table td::before{content:attr(data-label);color:var(--muted);font-size:.72rem;font-weight:750;text-transform:uppercase;letter-spacing:.06em}.flights-table td:first-child{padding-top:0!important}.flights-table td:first-child .detail-button{width:100%;text-align:center}.flights-table td:last-child{padding-bottom:0!important}
 }
+
+/* FlyTally 1.22 — everyday flight workflow */
+.flight-finder{margin-bottom:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);overflow:hidden}
+.flight-search-form{display:grid;gap:8px;padding:18px 20px}
+.flight-search-form>label{color:var(--text);font-size:.78rem;font-weight:800}
+.flight-search-form>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.flight-search-form input{width:100%;min-height:46px}
+.flight-search-form button{min-width:112px}
+.advanced-flight-filters{border-top:1px solid var(--border)}
+.advanced-flight-filters>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;cursor:pointer;list-style:none;color:var(--muted);font-size:.78rem;font-weight:750}
+.advanced-flight-filters>summary::-webkit-details-marker{display:none}
+.advanced-flight-filters>summary span:before{content:'＋';display:inline-block;width:20px;color:var(--accent2)}
+.advanced-flight-filters[open]>summary span:before{content:'−'}
+.advanced-flight-filters>summary small{color:var(--muted);font-size:.68rem;font-weight:600}
+.advanced-flight-filters>form{padding:0 20px 20px;border-top:1px solid var(--border)}
+.advanced-flight-filters .filter-grid{padding-top:18px}
+.active-filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.active-filter-bar>span{margin-right:2px;color:var(--muted);font-size:.72rem;font-weight:750}
+.active-filter-bar>a{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 9px;border:1px solid #31566e;border-radius:999px;background:#0a1a27;color:var(--text);font-size:.72rem;font-weight:750}
+.active-filter-bar>a:hover{border-color:var(--accent2);background:#10293a}
+.active-filter-bar a small{color:var(--muted);font-size:.62rem;font-weight:650;text-transform:uppercase}
+.active-filter-bar a b{color:var(--accent2);font-size:.9rem}
+.active-filter-bar .clear-all-filters{border-color:transparent;background:transparent;color:var(--accent2)}
+.flight-results-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:20px 2px 10px}
+.flight-results-heading h2{margin:2px 0 0;font-size:1.15rem}
+.flight-results-heading p:last-child{margin:0;color:var(--muted);font-size:.75rem}
+.flight-row-actions{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.flight-row-actions>a:not(.detail-button){padding:6px 2px;color:var(--muted);font-size:.7rem;font-weight:750}
+.flight-row-actions>a:not(.detail-button):hover{color:var(--accent2)}
+.pagination-disabled{min-width:34px;height:34px;display:grid;place-items:center;color:#4f6476;opacity:.55}
+.flight-empty-state{display:grid;justify-items:center;padding:60px 24px;text-align:center}
+.flight-empty-state>span{display:grid;place-items:center;width:54px;height:54px;margin-bottom:12px;border:1px solid var(--border);border-radius:50%;color:var(--accent2);font-size:1.8rem}
+.flight-empty-state h2{margin:0 0 7px;font-size:1.15rem}
+.flight-empty-state p{max-width:480px;margin:0;color:var(--muted);line-height:1.5}
+.flight-empty-state>div{display:flex;gap:10px;margin-top:20px}
+
+@media(max-width:700px){
+  .flight-search-form{padding:16px}.flight-search-form>div{grid-template-columns:1fr}.flight-search-form button{width:100%}
+  .advanced-flight-filters>summary{align-items:flex-start;padding:13px 16px}.advanced-flight-filters>summary small{text-align:right}.advanced-flight-filters>form{padding:0 16px 16px}
+  .active-filter-bar{margin-bottom:14px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px;scrollbar-width:none}.active-filter-bar>a,.active-filter-bar>span{flex:0 0 auto}
+  .flight-results-heading{align-items:flex-start;flex-direction:column;gap:4px;margin-top:16px}
+  .flight-results-heading p:last-child{font-size:.7rem}
+  .flights-table td:first-child .detail-button{width:auto}
+  .flight-row-actions{display:grid;grid-template-columns:1fr 1fr 1fr;width:100%;gap:7px}.flight-row-actions>a{display:grid!important;place-items:center;min-height:40px!important;padding:7px!important;border:1px solid var(--border);border-radius:9px}
+  .flight-empty-state{padding:45px 18px}.flight-empty-state>div{align-items:stretch;flex-direction:column;width:100%}.flight-empty-state>div a{text-align:center}
+}

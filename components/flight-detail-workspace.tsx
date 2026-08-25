@@ -4,8 +4,8 @@ import { useState,type ReactNode } from "react";
 
 type Tab="overview"|"gps"|"logbook";
 
-export function FlightDetailWorkspace({overview,gps,logbook,gpsCount=0}:{overview:ReactNode;gps:ReactNode;logbook:ReactNode;gpsCount?:number}){
-  const[tab,setTab]=useState<Tab>("overview");
+export function FlightDetailWorkspace({overview,gps,logbook,gpsCount=0,initialTab="overview"}:{overview:ReactNode;gps:ReactNode;logbook:ReactNode;gpsCount?:number;initialTab?:Tab}){
+  const[tab,setTab]=useState<Tab>(initialTab);
   const item=(value:Tab,label:string,badge?:number)=><button type="button" role="tab" id={`flight-tab-${value}`} aria-controls={`flight-panel-${value}`} className={tab===value?"active":""} aria-selected={tab===value} onClick={()=>setTab(value)}><span>{label}</span>{badge!==undefined?<b>{badge}</b>:null}</button>;
   return <section className="flight-detail-workspace">
     <nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}</nav>

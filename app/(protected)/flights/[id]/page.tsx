@@ -18,8 +18,8 @@ import { certifyFlight,startCertifiedCorrection } from "../certification-actions
 import { measureServerTask } from "@/lib/performance";
 import { FlightDetailWorkspace } from "@/components/flight-detail-workspace";
 
-type Context={q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string};
-const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value)query.set(key,value);return query.toString()};
+type Context={q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string};
+const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value&&key!=="tab")query.set(key,value);return query.toString()};
 
 export default async function FlightDetailPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<Context>}){
   const {userId}=await requireUser();const id=Number((await params).id),context=await searchParams,query=contextQuery(context),suffix=query?`?${query}`:"";
@@ -51,6 +51,6 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const logbook=!locked?<section className="panel logbook-edit-panel"><header><div><p className="eyebrow">LOGBOOK DATA</p><h2>Edit flight record</h2><p className="muted">Changes are saved only when you press Save flight at the end of the form.</p></div></header><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight}/></section>:<section className="panel locked-flight-note"><strong>{certified?"Editing is disabled for this certified revision.":"Editing is disabled while this flight is locked."}</strong><p>{certified?"Use Correct flight on the Overview tab if a value must be changed.":"Unlock the record on the Overview tab to edit it."}</p></section>;
   return <>
     <header className="page-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation"><Link className="secondary-link" href={`/flights${suffix}`}>Back to flights</Link>{navigation.previousId?<Link className="secondary-link" href={`/flights/${navigation.previousId}${suffix}`}>← Previous</Link>:null}{navigation.nextId?<Link className="secondary-link" href={`/flights/${navigation.nextId}${suffix}`}>Next →</Link>:null}{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit report</Link>:null}</div></header>
-    <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={tracks.length}/>
+    <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={tracks.length} initialTab={context.tab==="logbook"?"logbook":context.tab==="gps"?"gps":"overview"}/>
   </>;
 }
