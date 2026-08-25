@@ -23,15 +23,15 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
 }){
   const [section,setSection]=useState<Section>("export");
   return <section className="data-hub">
-    <nav className="data-hub-nav" aria-label="Data tools">
-      <button type="button" className={section==="export"?"active":""} aria-pressed={section==="export"} onClick={()=>setSection("export")}><span>Print & export</span></button>
-      <button type="button" className={section==="backups"?"active":""} aria-pressed={section==="backups"} onClick={()=>setSection("backups")}><span>Backups</span><b>{backups.length}</b></button>
-      <button type="button" className={section==="restore"?"active":""} aria-pressed={section==="restore"} onClick={()=>setSection("restore")}><span>Restore</span></button>
-      <button type="button" className={section==="trash"?"active":""} aria-pressed={section==="trash"} onClick={()=>setSection("trash")}><span>Trash</span>{deletedFlights.length?<b>{deletedFlights.length}</b>:null}</button>
+    <nav className="data-hub-nav" aria-label="Data tools" role="tablist">
+      <button type="button" role="tab" id="data-tab-export" aria-controls="data-panel-export" className={section==="export"?"active":""} aria-selected={section==="export"} onClick={()=>setSection("export")}><span>Print & export</span></button>
+      <button type="button" role="tab" id="data-tab-backups" aria-controls="data-panel-backups" className={section==="backups"?"active":""} aria-selected={section==="backups"} onClick={()=>setSection("backups")}><span>Backups</span><b>{backups.length}</b></button>
+      <button type="button" role="tab" id="data-tab-restore" aria-controls="data-panel-restore" className={section==="restore"?"active":""} aria-selected={section==="restore"} onClick={()=>setSection("restore")}><span>Restore file</span></button>
+      <button type="button" role="tab" id="data-tab-trash" aria-controls="data-panel-trash" className={section==="trash"?"active":""} aria-selected={section==="trash"} onClick={()=>setSection("trash")}><span>Deleted flights</span>{deletedFlights.length?<b>{deletedFlights.length}</b>:null}</button>
     </nav>
 
     <div className="data-hub-content">
-      {section==="export"?<div className="restore-workspace"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose the output you need</h2><p className="muted">Printing creates the official logbook layout. Excel and CSV are working data exports.</p></header>
+      {section==="export"?<div className="export-hub-workspace" role="tabpanel" id="data-panel-export" aria-labelledby="data-tab-export"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose one output</h2><p className="muted">Use the printable logbook for an official record. Excel and CSV are for your own data processing.</p></header>
         <section className="panel export-workspace" aria-label="Printable pilot logbook">
           <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">This is the single place for official print filters. Holder identity is taken automatically from Profile → Settings → Licences.</p></div></header>
           <form className="export-filter" action="/print" method="get">
@@ -56,9 +56,9 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
 
         <section className="panel export-workspace" aria-label="Complete account backup"><header><div><p className="eyebrow">BACKUP EXPORT</p><h2>Complete JSON backup</h2><p className="muted">Unfiltered portable account backup. Safety Pilot and all other records are always retained.</p></div></header><div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a></div></section>
       </div>:null}
-      {section==="backups"?<><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Backups</h2><p className="muted">Automatic and manual recovery points for this account.</p></header><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/></>:null}
-      {section==="restore"?<div className="restore-workspace"><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Restore from a file</h2><p className="muted">Select one FlyTally JSON backup. It will be validated automatically before you can restore anything.</p></header><BackupRestore action={restoreFileAction}/></div>:null}
-      {section==="trash"?<><header className="workspace-heading"><p className="eyebrow">RECOVERY</p><h2>Trash</h2><p className="muted">Restore flights that were removed from the logbook.</p></header><FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/></>:null}
+      {section==="backups"?<div role="tabpanel" id="data-panel-backups" aria-labelledby="data-tab-backups"><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Backups</h2><p className="muted">Automatic and manual recovery points for this account.</p></header><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/></div>:null}
+      {section==="restore"?<div className="restore-workspace" role="tabpanel" id="data-panel-restore" aria-labelledby="data-tab-restore"><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Restore from a file</h2><p className="muted">Select one FlyTally JSON backup. It will be validated automatically before you can restore anything.</p></header><BackupRestore action={restoreFileAction}/></div>:null}
+      {section==="trash"?<div role="tabpanel" id="data-panel-trash" aria-labelledby="data-tab-trash"><header className="workspace-heading"><p className="eyebrow">RECOVERY</p><h2>Deleted flights</h2><p className="muted">Restore flights that were removed from the logbook.</p></header><FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/></div>:null}
     </div>
   </section>;
 }
