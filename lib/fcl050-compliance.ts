@@ -51,6 +51,7 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   }
   if(number(row.night_minutes)>block)issues.push(issue("night_time","night_minutes","Night time cannot exceed total flight time."));
   if(number(row.ifr_minutes)>block)issues.push(issue("ifr_time","ifr_minutes","IFR time cannot exceed total flight time."));
+  if(number(row.landings_day)+number(row.landings_night)!==number(row.starts))issues.push(issue("landing_total","landings_day","Day and night landings must add up to the recorded landing total."));
 
   const testOrCheck=TEST_PATTERN.test(remarks),revalidation=REVALIDATION_PATTERN.test(remarks),instrumentTraining=INSTRUMENT_TRAINING_PATTERN.test(remarks)||(role==="DUAL"&&number(row.ifr_minutes)>0),verificationMissing=!text(row.verification_name)||!text(row.verification_reference);
   if(testOrCheck)issues.push(issue("test_endorsement","note",verificationMissing?"Skill/proficiency check detected. Record the applicable examiner/instructor name and signed endorsement reference with the record.":"Skill/proficiency check detected. Keep the applicable examiner/instructor endorsement and signed evidence with the record.","warning"));
