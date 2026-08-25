@@ -2,6 +2,7 @@ import "server-only";
 import { calculatedFlightPrice } from "@/lib/billing";
 import { sql } from "@/lib/db";
 import { flightDateKey,flightMinutes } from "@/lib/dashboard-math";
+import { effectivePicMinutes,normalizedPilotRole } from "@/lib/flight-credit";
 import { isAuxiliaryLogbookRole } from "@/lib/logbook-print";
 import { measureServerTask } from "@/lib/performance";
 
@@ -43,14 +44,13 @@ function bounds(period:DashboardPeriod,today=new Date()){
 
 function normalize(row:Record<string,unknown>):NormalizedFlight{
   const instructor=text(row.instructor);
-  const rawRole=text(row.role).toUpperCase();
-  const role=instructor||rawRole==="STUDENT"?"DUAL":rawRole;
+  const role=normalizedPilotRole(row.role,instructor);
   const blockMinutes=flightMinutes(row.off_block,row.on_block),airMinutes=flightMinutes(row.takeoff,row.landing);
   const rawDate=text(row.date),dateKey=flightDateKey(row.date);
   return{
     id:num(row.id),date:dateKey??rawDate,dateKey,offBlock:text(row.off_block),evidence:text(row.evidence).toUpperCase(),role,
     registration:text(row.registration).toUpperCase(),departure:text(row.departure).toUpperCase(),arrival:text(row.arrival).toUpperCase(),
-    landings:Math.max(0,Math.round(num(row.starts))),dayLandings:num(row.landings_day),nightLandings:num(row.landings_night),blockMinutes,airMinutes,picMinutes:num(row.pic_minutes),copilotMinutes:num(row.copilot_minutes),dualMinutes:num(row.dual_minutes),instructorMinutes:num(row.instructor_minutes),nightMinutes:num(row.night_minutes),ifrMinutes:num(row.ifr_minutes),
+    landings:Math.max(0,Math.round(num(row.starts))),dayLandings:num(row.landings_day),nightLandings:num(row.landings_night),blockMinutes,airMinutes,picMinutes:effectivePicMinutes(role,row.pic_minutes,blockMinutes),copilotMinutes:num(row.copilot_minutes),dualMinutes:num(row.dual_minutes),instructorMinutes:num(row.instructor_minutes),nightMinutes:num(row.night_minutes),ifrMinutes:num(row.ifr_minutes),
     cost:calculatedFlightPrice(row.price_per_hour,blockMinutes,airMinutes,row.billing_basis),
     trackCount:Math.max(0,Math.round(num(row.track_count))),gpsKm:Math.max(0,num(row.gps_km)),
   };
@@ -91,7 +91,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   const yearMap=new Map<number,{year:number;flights:number;minutes:number;landings:number}>();
 
   for(const flight of flights){
-    const auxiliary=isAuxiliaryLogbookRole(flight.role),safetyPilot=flight.role==="SAFETY PILOT",dashboardTotal=!auxiliary||safetyPilot;
+    const auxiliary=isAuxiliaryLogbookRole(flight.role),safetyPilot=flight.role==="SAFETY PILOT",dashboardTotal=!auxiliary;
     if(dashboardTotal){
       total.flights+=1;total.minutes+=flight.blockMinutes;
       if(!auxiliary)total.landings+=flight.landings;
@@ -99,8 +99,8 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
     if(!auxiliary){
       if(flight.evidence==="ULL"){ull.flights+=1;ull.minutes+=flight.blockMinutes;ull.landings+=flight.landings;}
       if(flight.evidence==="EASA"){easa.flights+=1;easa.minutes+=flight.blockMinutes;easa.landings+=flight.landings;}
-      if(flight.role==="PIC"&&flight.evidence==="ULL"){picUll.flights+=1;picUll.minutes+=flight.blockMinutes;picUll.landings+=flight.landings;}
-      if(flight.role==="PIC"&&flight.evidence==="EASA"){picEasa.flights+=1;picEasa.minutes+=flight.blockMinutes;picEasa.landings+=flight.landings;}
+      if(flight.picMinutes>0&&flight.evidence==="ULL"){picUll.flights+=1;picUll.minutes+=flight.picMinutes;picUll.landings+=flight.landings;}
+      if(flight.picMinutes>0&&flight.evidence==="EASA"){picEasa.flights+=1;picEasa.minutes+=flight.picMinutes;picEasa.landings+=flight.landings;}
       airMinutes+=flight.airMinutes;
       picMinutes+=flight.picMinutes;copilotMinutes+=flight.copilotMinutes;dualMinutes+=flight.dualMinutes;instructorMinutes+=flight.instructorMinutes;nightMinutes+=flight.nightMinutes;ifrMinutes+=flight.ifrMinutes;dayLandings+=flight.dayLandings;nightLandings+=flight.nightLandings;
     }
@@ -127,8 +127,8 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
         monthly.landings+=flight.landings;
         if(flight.evidence==="ULL")monthly.ull+=flight.blockMinutes;
         if(flight.evidence==="EASA")monthly.easa+=flight.blockMinutes;
-        if(flight.role==="PIC"&&flight.evidence==="ULL")monthly.picUll+=flight.blockMinutes;
-        if(flight.role==="PIC"&&flight.evidence==="EASA")monthly.picEasa+=flight.blockMinutes;
+        if(flight.picMinutes>0&&flight.evidence==="ULL")monthly.picUll+=flight.picMinutes;
+        if(flight.picMinutes>0&&flight.evidence==="EASA")monthly.picEasa+=flight.picMinutes;
       }
       monthlyMap.set(month,monthly);
       const year=Number(flight.dateKey.slice(0,4));
@@ -139,7 +139,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
 
   const ordered=[...flights].sort((left,right)=>(right.dateKey??"").localeCompare(left.dateKey??"")||right.offBlock.localeCompare(left.offBlock)||right.id-left.id);
   const recentFlights=ordered.slice(0,8).map(({id,date,registration,departure,arrival})=>({id,date,registration,departure,arrival}));
-  const dashboardTotalFlights=flights.filter(flight=>!isAuxiliaryLogbookRole(flight.role)||flight.role==="SAFETY PILOT");
+  const dashboardTotalFlights=flights.filter(flight=>!isAuxiliaryLogbookRole(flight.role));
   return{
     displayName:text(userRows[0]?.display_name)||"Pilot",rangeLabel:label,total,ull,easa,picUll,picEasa,
     airMinutes,picMinutes,copilotMinutes,dualMinutes,instructorMinutes,nightMinutes,ifrMinutes,dayLandings,nightLandings,safetyMinutes,cost,tracks,gpsKm,

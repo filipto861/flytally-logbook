@@ -92,8 +92,8 @@ export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
   const commander=clean(row.commander);
   const verifier=clean(row.verification_name);
   if(role==="DUAL"&&instructor)return instructor;
+  if(["SPIC","PICUS"].includes(role)&&verifier)return verifier;
   if(commander)return commander;
-  if(["SPIC","PICUS"].includes(role))return verifier;
   if(["PIC","SOLO","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
   return "";
 }
