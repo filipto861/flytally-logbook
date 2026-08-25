@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,hasAirborneMovement,parseKml,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -9,6 +9,17 @@ test("all gx:Track blocks are parsed",()=>{
   const points=parseKml(kml);
   assert.equal(points.length,4);
   assert.equal(points[3].time,"2026-08-21T10:01:00Z");
+});
+
+test("quoted CSV and separate UTC date/time columns are parsed",()=>{
+  const csv='Latitude,Longitude,Altitude ft,UTC Date,UTC Time,Note\n50.0000,14.0000,1000,2026-08-25,08:00:00Z,"start, apron"\n50.0100,14.0100,1200,2026-08-25,08:01:00Z,"airborne"';
+  const points=parseTrackFile(csv,"SkyDemon_track.csv");
+  assert.equal(points.length,2);
+  assert.equal(points[0].time,"2026-08-25T08:00:00Z");
+  assert.ok(Math.abs((points[0].alt||0)-304.8)<.01);
+  const inspection=inspectTrackFile(csv,"SkyDemon_track.csv");
+  assert.equal(inspection.format,"csv");
+  assert.equal(inspection.source,"skydemon");
 });
 
 test("a long pause near the same airport proposes a split",()=>{
@@ -21,6 +32,11 @@ test("a long pause near the same airport proposes a split",()=>{
 
 test("an airborne coverage gap does not split a flight",()=>{
   const points=[point("2026-08-21T08:00:00Z"),point("2026-08-21T08:01:00Z",50.1,14.1),point("2026-08-21T08:31:00Z",51.1,15.1),point("2026-08-21T08:32:00Z",51.2,15.2)];
+  assert.deepEqual(suggestedSplits(points),[]);
+});
+
+test("a moderate coverage gap with nearby but moving endpoints remains one flight",()=>{
+  const points=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:01:00Z",50.02,14.02),point("2026-08-21T08:26:00Z",50.07,14.07),point("2026-08-21T08:27:00Z",50.09,14.09)];
   assert.deepEqual(suggestedSplits(points),[]);
 });
 
@@ -37,11 +53,20 @@ test("one ground stop cannot create a third stationary flight",()=>{
 test("ground-only movement can never be confirmed as a flight",()=>{
   const ground=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:30Z",50.00002,14),point("2026-08-21T08:01:00Z",50.00003,14),point("2026-08-21T08:01:30Z",50.00004,14)];
   assert.equal(hasAirborneMovement(ground),false);
+  assert.equal(trackQuality(ground).status,"poor");
 });
 
 test("a short but credible airborne segment remains a flight",()=>{
   const flight=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:30Z",50.01,14.01),point("2026-08-21T08:01:00Z",50.02,14.02),point("2026-08-21T08:01:30Z",50.03,14.03)];
   assert.equal(hasAirborneMovement(flight),true);
+});
+
+test("track quality surfaces implausible position jumps",()=>{
+  const points=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:10Z",51,15),point("2026-08-21T08:01:00Z",51.01,15.01),point("2026-08-21T08:02:00Z",51.02,15.02)];
+  const quality=trackQuality(points);
+  assert.equal(quality.status,"review");
+  assert.ok(quality.implausibleJumps>=1);
+  assert.match(quality.warnings.join(" "),/implausible position/);
 });
 
 test("airport ranking prefers the actual arrival edge over an earlier exact match",()=>{

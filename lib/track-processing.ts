@@ -1,4 +1,12 @@
 export type KmlPoint={lat:number;lon:number;alt:number|null;time:string|null};
+export type TrackFileFormat="kml"|"gpx"|"csv";
+export type TrackSource="adsbexchange"|"flightradar24"|"skydemon"|"generic";
+export type TrackQualityStatus="good"|"review"|"poor";
+export type TrackQuality={
+  status:TrackQualityStatus;timedPoints:number;timestampCoverage:number;altitudeCoverage:number;
+  largestGapMinutes:number;implausibleJumps:number;warnings:string[];
+};
+export type TrackInspection={format:TrackFileFormat;source:TrackSource;points:KmlPoint[];quality:TrackQuality};
 
 const clean=(value:string)=>value.replace(/<!\[CDATA\[|\]\]>/g,"").trim();
 const childText=(source:string,name:string)=>clean(source.match(new RegExp(`<(?:\\w+:)?${name}\\b[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${name}>`,"i"))?.[1]||"")||null;
@@ -28,8 +36,26 @@ export function parseKml(source:string){
 }
 
 function parseGpx(source:string){const points:KmlPoint[]=[];for(const match of source.matchAll(/<(?:\w+:)?(?:trkpt|rtept)\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?(?:trkpt|rtept)>/gi)){const lat=Number(match[1].match(/\blat=["']([^"']+)/i)?.[1]),lon=Number(match[1].match(/\blon=["']([^"']+)/i)?.[1]);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)continue;const altitudeText=childText(match[2],"ele"),altitude=altitudeText===null?null:Number(altitudeText),time=childText(match[2],"time");points.push({lat,lon,alt:altitude!==null&&Number.isFinite(altitude)?altitude:null,time})}return normalize(points)}
-function parseCsv(source:string){const lines=source.replace(/^\uFEFF/,"").split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];const delimiter=(lines[0].match(/;/g)?.length||0)>(lines[0].match(/,/g)?.length||0)?";":lines[0].includes("\t")?"\t":",",cells=(line:string)=>line.split(delimiter).map(value=>value.trim().replace(/^"|"$/g,"").replaceAll('""','"')),headers=cells(lines[0]).map(value=>value.toLowerCase().replace(/[^a-z0-9]/g,"")),at=(names:string[])=>headers.findIndex(header=>names.includes(header)),latIndex=at(["lat","latitude","latitudedeg"]),lonIndex=at(["lon","lng","longitude","longitudedeg"]),altIndex=at(["alt","altitude","elevation","ele","altm"]),timeIndex=at(["time","timestamp","datetime","utc","dateandtime"]);if(latIndex<0||lonIndex<0)return[];return normalize(lines.slice(1).map(line=>{const row=cells(line),number=(value:string|undefined)=>Number((value||"").replace(",",".")),lat=number(row[latIndex]),lon=number(row[lonIndex]),alt=altIndex>=0?number(row[altIndex]):null,time=timeIndex>=0?row[timeIndex]?.trim()||null:null;if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;return{lat,lon,alt:alt!==null&&Number.isFinite(alt)?alt:null,time}}).filter(Boolean) as KmlPoint[])}
-export function parseTrackFile(source:string,fileName=""){const lower=fileName.toLowerCase();return lower.endsWith(".gpx")||/<(?:\w+:)?gpx\b/i.test(source)?parseGpx(source):lower.endsWith(".csv")||(!source.includes("<")&&/[;,\t]/.test(source.split(/\r?\n/,1)[0]))?parseCsv(source):parseKml(source)}
+
+function delimiterCount(line:string,delimiter:string){let quoted=false,count=0;for(let index=0;index<line.length;index++){const char=line[index];if(char==='"'){if(quoted&&line[index+1]==='"'){index++;continue}quoted=!quoted}else if(char===delimiter&&!quoted)count++}return count}
+function csvCells(line:string,delimiter:string){const out:string[]=[],push=()=>{out.push(current.trim());current=""};let current="",quoted=false;for(let index=0;index<line.length;index++){const char=line[index];if(char==='"'){if(quoted&&line[index+1]==='"'){current+='"';index++}else quoted=!quoted}else if(char===delimiter&&!quoted)push();else current+=char}push();return out}
+function normalizeHeader(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"")}
+function combineCsvTimestamp(dateValue:string|undefined,timeValue:string|undefined){const date=(dateValue||"").trim(),time=(timeValue||"").trim();if(!time)return date||null;if(/^\d{4}-\d{2}-\d{2}(?:[T ]|$)/.test(time))return time.replace(" ","T");if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/.test(time))return`${date}T${time}`;return time}
+function parseCsv(source:string){
+  const lines=source.replace(/^\uFEFF/,"").split(/\r?\n/).filter(line=>line.trim());if(lines.length<2)return[];
+  const delimiter=[",",";","\t"].map(value=>({value,count:delimiterCount(lines[0],value)})).sort((a,b)=>b.count-a.count)[0]?.value||",";
+  const headers=csvCells(lines[0],delimiter).map(normalizeHeader),at=(names:string[])=>headers.findIndex(header=>names.includes(header));
+  const latIndex=at(["lat","latitude","latitudedeg","latitudedegrees"]),lonIndex=at(["lon","lng","long","longitude","longitudedeg","longitudedegrees"]),altIndex=at(["alt","altitude","elevation","ele","altm","altitudem","altitudemeters","altitudeft","altitudefeet","elevationft","elevationfeet","gpsaltitude"]),timeIndex=at(["time","timestamp","datetime","utc","utctime","dateandtime","gpstime"]),dateIndex=at(["date","utcdate","flightdate"]);
+  if(latIndex<0||lonIndex<0)return[];
+  const altitudeFeet=altIndex>=0&&/(ft|feet)$/.test(headers[altIndex]);
+  const number=(value:string|undefined)=>Number((value||"").trim().replace(",","."));
+  const points=lines.slice(1).map(line=>{const row=csvCells(line,delimiter),lat=number(row[latIndex]),lon=number(row[lonIndex]),rawAlt=altIndex>=0?number(row[altIndex]):null,time=timeIndex>=0?combineCsvTimestamp(dateIndex>=0?row[dateIndex]:undefined,row[timeIndex]):dateIndex>=0?combineCsvTimestamp(row[dateIndex],undefined):null;if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;const alt=rawAlt!==null&&Number.isFinite(rawAlt)?rawAlt*(altitudeFeet?.3048:1):null;return{lat,lon,alt,time}}).filter(Boolean) as KmlPoint[];
+  return normalize(points);
+}
+
+export function trackFileFormat(source:string,fileName=""):TrackFileFormat{const lower=fileName.toLowerCase();if(lower.endsWith(".gpx")||/<(?:\w+:)?gpx\b/i.test(source))return"gpx";if(lower.endsWith(".csv")||(!source.includes("<")&&/[;,\t]/.test(source.split(/\r?\n/,1)[0])))return"csv";return"kml"}
+export function trackSource(source:string,fileName=""):TrackSource{const haystack=`${fileName}\n${source.slice(0,20000)}`.toLowerCase();if(/adsb\s*exchange|adsbexchange/.test(haystack))return"adsbexchange";if(/flightradar\s*24|flightradar24|\bfr24\b/.test(haystack))return"flightradar24";if(/skydemon/.test(haystack))return"skydemon";return"generic"}
+export function parseTrackFile(source:string,fileName=""){const format=trackFileFormat(source,fileName);return format==="gpx"?parseGpx(source):format==="csv"?parseCsv(source):parseKml(source)}
 
 export const haversineKm=(a:KmlPoint,b:KmlPoint)=>{const radius=6371.0088,p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p,q=Math.sin(dLat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)**2;return 2*radius*Math.asin(Math.sqrt(q))};
 const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value=(Date.parse(b.time)-Date.parse(a.time))/1000;return Number.isFinite(value)&&value>0?value:0};
@@ -42,6 +68,21 @@ export function hasAirborneMovement(points:KmlPoint[]){
   const speed=speeds(points),maxSpeed=speed.length?Math.max(...speed):0,alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),altRange=alts.length>1?Math.max(...alts)-Math.min(...alts):0;
   return (maxSpeed>=35||(maxSpeed>=18&&altRange>=35))&&(distance>=.7||duration>=60);
 }
+
+export function trackQuality(points:KmlPoint[]):TrackQuality{
+  const timedPoints=points.filter(point=>point.time&&Number.isFinite(Date.parse(point.time))).length,altitudePoints=points.filter(point=>point.alt!==null&&Number.isFinite(point.alt)).length;
+  let largestGapSeconds=0,implausibleJumps=0;
+  for(let index=1;index<points.length;index++){const duration=seconds(points[index-1],points[index]);if(duration>largestGapSeconds)largestGapSeconds=duration;if(duration>0){const distance=haversineKm(points[index-1],points[index]),speed=distance/(duration/3600);if(distance>=2&&speed>1200)implausibleJumps++}}
+  const timestampCoverage=points.length?timedPoints/points.length:0,altitudeCoverage=points.length?altitudePoints/points.length:0,warnings:string[]=[];
+  if(points.length<4)warnings.push("Very few GPS points; review the route, airports and times carefully.");
+  if(points.length>=2&&!hasAirborneMovement(points))warnings.push("No credible airborne movement was detected in this section.");
+  if(timestampCoverage<.5)warnings.push("Most GPS points have no usable timestamp; enter and review UTC times manually.");else if(timestampCoverage<.9)warnings.push("Some GPS points have no usable timestamp; review detected times.");
+  if(implausibleJumps)warnings.push(`${implausibleJumps} implausible position ${implausibleJumps===1?"jump was":"jumps were"} detected; review the map before saving.`);
+  const largestGapMinutes=Math.round(largestGapSeconds/6)/10;if(largestGapMinutes>=30)warnings.push(`The track contains a ${Math.round(largestGapMinutes)} minute coverage gap; verify whether it is one flight or multiple flights.`);
+  const status:TrackQualityStatus=points.length<2||!hasAirborneMovement(points)?"poor":warnings.length?"review":"good";
+  return{status,timedPoints,timestampCoverage,altitudeCoverage,largestGapMinutes,implausibleJumps,warnings};
+}
+export function inspectTrackFile(source:string,fileName=""):TrackInspection{const format=trackFileFormat(source,fileName),points=parseTrackFile(source,fileName);return{format,source:trackSource(source,fileName),points,quality:trackQuality(points)}}
 
 /**
  * Several import formats mark one stop both as a time gap and as a low-speed
@@ -61,21 +102,19 @@ export function suggestedSplits(points:KmlPoint[]){
   const out:number[]=[];
   for(let i=1;i<points.length;i++){
     const gap=seconds(points[i-1],points[i]),endpoint=haversineKm(points[i-1],points[i]);
-    // A coverage hole while the aircraft is moving must stay one flight. A
-    // substantial pause at (or close to) the same place is a flight boundary.
-    if((gap>=3600&&endpoint<=50)||(gap>=1200&&endpoint<=12)||(gap>=5400&&endpoint<=120))out.push(i-1);
+    // Be conservative: a long ADS-B/GPS outage while airborne is not a new
+    // flight. Automatic time-gap cuts require both a substantial pause and
+    // endpoints close enough to be compatible with a ground turnaround.
+    if((gap>=5400&&endpoint<=50)||(gap>=3600&&endpoint<=12)||(gap>=1200&&endpoint<=3))out.push(i-1);
   }
   for(const event of groundEvents(points))if(event.duration>=90)out.push(Math.round((event.start+event.end)/2));
-  // splitPoints() cuts after the selected point. Two points on each side are
-  // sufficient; the previous >2/<length-3 rule silently discarded valid
-  // short multi-flight exports and made the wizard show a single dot/flight.
   return consolidateGroundCuts(points,out);
 }
 export type SplitSuggestion={index:number;reason:string;gapMinutes:number|null;endpointKm:number|null};
 export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
   return suggestedSplits(points).map(index=>{
     const next=points[index+1],current=points[index],gap=next&&current?seconds(current,next):0,endpoint=next&&current?haversineKm(current,next):0;
-    if(gap>=1200)return{index,reason:`${Math.round(gap/60)} minute gap between credible flight sections.`,gapMinutes:Math.round(gap/60),endpointKm:Math.round(endpoint*10)/10};
+    if(gap>=1200)return{index,reason:`${Math.round(gap/60)} minute gap with endpoints ${endpoint.toFixed(1)} km apart.`,gapMinutes:Math.round(gap/60),endpointKm:Math.round(endpoint*10)/10};
     return{index,reason:"Extended ground stop between credible flight sections.",gapMinutes:null,endpointKm:null};
   });
 }
@@ -101,8 +140,8 @@ export function trackEndpointCandidates<T extends {lat:number;lon:number}>(point
 /** Rank an airport primarily against the actual edge of the track. */
 export function airportCandidateScore(candidates:Array<{lat:number;lon:number}>,airport:{lat:number;lon:number}){
   if(!candidates.length)return{distanceKm:Infinity,score:Infinity};
-  const distances=candidates.map(point=>haversineKm({lat:point.lat,lon:point.lon,alt:null,time:null},{lat:airport.lat,lon:airport.lon,alt:null,time:null})),distanceKm=distances[0],support=Math.min(...distances);
-  return{distanceKm,score:distanceKm*.88+support*.12};
+  const distances=candidates.map(point=>haversineKm({lat:point.lat,lon:point.lon,alt:null,time:null},{lat:airport.lat,lon:airport.lon,alt:null,time:null})),distanceKm=distances[0],support=Math.min(...distances),near=distances.slice(0,Math.min(4,distances.length)).sort((a,b)=>a-b),median=near[Math.floor(near.length/2)]??support;
+  return{distanceKm,score:distanceKm*.82+support*.10+median*.08};
 }
 
 /** Detect the airborne portion without assuming that the file starts/ends at an airport. */
