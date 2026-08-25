@@ -19,5 +19,5 @@
   .touch-event-list{justify-content:flex-start;width:100%}
   .kml-wizard{min-width:0;overflow-x:clip;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
   .flight-review-list,.flight-review-card,.review-grid,.review-grid>label,.review-grid>.airport-review-field{min-width:0;max-width:100%}
-  .review-grid input[type="date"],.review-grid input[type="time"],.review-grid input[type="number"],.review-grid textarea{-webkit-appearance:none;appearance:none;width:100%;min-width:0;max-width:100%}
+  .review-grid input[type="date"],.review-grid input[type="time"],.review-grid input[type="number"],.review-grid textarea{width:100%;min-width:0;max-width:100%}
 }
