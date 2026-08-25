@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { blockingComplianceIssues,complianceReady,fcl050FlightCompliance,fstdCompliance } from "../lib/fcl050-compliance.ts";
 
 const flight=(overrides:Record<string,unknown>={})=>({
-  evidence:"EASA",date:"2026-08-24",registration:"OK-ABC",aircraft_make:"Bristell",aircraft_model:"B23",aircraft_variant:"912iS",aircraft_type:"B23",aircraft_class:"SEP",
+  evidence:"EASA",date:"2026-08-24",registration:"OK-ABC",aircraft_make:"Bristell",aircraft_model:"B23",aircraft_variant:"",aircraft_type:"B23",aircraft_class:"SEP",
   departure:"LKLT",arrival:"LKBE",off_block:"08:00",takeoff:"08:05",landing:"08:55",on_block:"09:00",operation_type:"SP",engine_type:"SE",
   landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:0,pic_minutes:60,copilot_minutes:0,dual_minutes:0,instructor_minutes:0,
   commander:"",instructor:"",role:"PIC",task:"Local flight",note:"",verification_name:"",verification_reference:"",block_minutes:60,...overrides
@@ -24,7 +24,17 @@ test("aircraft variant is optional when no separate variant applies",()=>{
 test("SPIC and PICUS require countersignature details",()=>{
   for(const role of ["SPIC","PICUS"]){
     const issues=fcl050FlightCompliance(flight({role,verification_name:"",verification_reference:""}),"Test Pilot");
-    assert.deepEqual(blockingComplianceIssues(issues).map(item=>item.code).filter(code=>code.startsWith("supervising_")),["supervising_pilot","supervising_signature"]);
+    const codes=blockingComplianceIssues(issues).map(item=>item.code);
+    assert.ok(codes.includes("pic_name"));
+    assert.ok(codes.includes("supervising_pilot"));
+    assert.ok(codes.includes("supervising_signature"));
+  }
+});
+
+test("SPIC and PICUS are allocated to PIC when countersigned",()=>{
+  for(const role of ["SPIC","PICUS"]){
+    const issues=fcl050FlightCompliance(flight({role,verification_name:"Supervising PIC",verification_reference:"Signed ref 123"}),"Test Pilot");
+    assert.equal(blockingComplianceIssues(issues).length,0);
   }
 });
 
@@ -38,6 +48,17 @@ test("dual flight requires instructor PIC name",()=>{
   const issues=fcl050FlightCompliance(flight({role:"DUAL",pic_minutes:0,dual_minutes:60,instructor:"",commander:""}),"Student Pilot");
   assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="dual_instructor"));
   assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="pic_name"));
+});
+
+test("pilot role must match the FCL.050 function-time allocation",()=>{
+  const wrongPic=fcl050FlightCompliance(flight({role:"DUAL",pic_minutes:60,dual_minutes:0,instructor:"Instructor"}),"Student Pilot");
+  assert.ok(blockingComplianceIssues(wrongPic).some(item=>item.code==="function_time_allocation"));
+  const correctDual=fcl050FlightCompliance(flight({role:"DUAL",pic_minutes:0,dual_minutes:60,instructor:"Instructor"}),"Student Pilot");
+  assert.equal(blockingComplianceIssues(correctDual).some(item=>item.code==="function_time_allocation"),false);
+  const correctInstructor=fcl050FlightCompliance(flight({role:"INSTRUCTOR",pic_minutes:60,instructor_minutes:60}),"Instructor Pilot");
+  assert.equal(blockingComplianceIssues(correctInstructor).some(item=>item.code==="function_time_allocation"),false);
+  const wrongCrcp=fcl050FlightCompliance(flight({role:"CRUISE-RELIEF CO-PILOT",pic_minutes:60,copilot_minutes:0,commander:"Captain"}),"Relief Pilot");
+  assert.ok(blockingComplianceIssues(wrongCrcp).some(item=>item.code==="function_time_allocation"));
 });
 
 test("auxiliary safety pilot record can be certified but is non-creditable",()=>{

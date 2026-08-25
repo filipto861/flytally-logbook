@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {matchesLogbookPrintScope,normalizeLogbookPrintScope,parsePilotPreferences,pilotInCommandName,printIdentity,withAccumulatedFlightTime} from "../lib/logbook-print.ts";
+import {aircraftPrintCode,fullAircraftIdentity,matchesLogbookPrintScope,normalizeLogbookPrintScope,parsePilotPreferences,pilotInCommandName,printIdentity,withAccumulatedFlightTime} from "../lib/logbook-print.ts";
 
 test("print scope normalization keeps a stable four-option contract",()=>{
   assert.equal(normalizeLogbookPrintScope("easa"),"easa");
@@ -25,6 +25,16 @@ test("pilot preferences and PIC name remain safe for legacy rows",()=>{
   assert.equal(pilotInCommandName({role:"DUAL",commander:"Test Pilot",instructor:"Flight Instructor"},"Test Pilot"),"Flight Instructor");
   assert.equal(pilotInCommandName({role:"DUAL",commander:"Captain",instructor:""},"Test Pilot"),"Captain");
   assert.equal(pilotInCommandName({role:"CO-PILOT",commander:"Captain"},"Test Pilot"),"Captain");
+  assert.equal(pilotInCommandName({role:"PICUS",commander:"",verification_name:"Supervising PIC"},"Test Pilot"),"Supervising PIC");
+  assert.equal(pilotInCommandName({role:"SPIC",commander:"Captain",verification_name:"Instructor"},"Test Pilot"),"Captain");
+});
+
+test("print uses ICAO code while retaining full structured aircraft identity",()=>{
+  const row={icao_type:"br23",aircraft_type:"B23",aircraft_make:"BRM AERO",aircraft_model:"Bristell B23",aircraft_variant:""};
+  assert.equal(aircraftPrintCode(row),"BR23");
+  assert.equal(fullAircraftIdentity(row),"BRM AERO Bristell B23");
+  assert.equal(aircraftPrintCode({aircraft_type:"P2008JC",aircraft_make:"Tecnam",aircraft_model:"P2008JC"}),"P2008JC");
+  assert.equal(fullAircraftIdentity({aircraft_make:"nan",aircraft_model:"P2008JC",aircraft_variant:"undefined"}),"P2008JC");
 });
 
 test("print identity comes from the active licence record and combined print shows both",()=>{

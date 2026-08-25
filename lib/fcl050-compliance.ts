@@ -1,3 +1,4 @@
+import { allocatedFunctionTimes } from "./easa-logbook.ts";
 import { isAuxiliaryLogbookRole,pilotInCommandName } from "./logbook-print.ts";
 
 export type ComplianceSeverity="error"|"warning";
@@ -42,12 +43,18 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(auxiliary&&functionTotal>0)issues.push(issue("auxiliary_function_time","role",`${role} must not contain PIC, co-pilot, DUAL or instructor time because it is a non-creditable reference record.`));
   if(!auxiliary&&block>0&&functionTotal<=0)issues.push(issue("function_time","role","Pilot-function time is missing."));
   if(!auxiliary&&block>0&&functionTotal>block*2)issues.push(issue("function_time_excess","role","Pilot-function allocation is inconsistent with total flight time."));
+  if(!auxiliary&&block>0&&EASA_FUNCTIONS.includes(role)){
+    const expected=allocatedFunctionTimes(role,block),actual={picMinutes:number(row.pic_minutes),copilotMinutes:number(row.copilot_minutes),dualMinutes:number(row.dual_minutes),instructorMinutes:number(row.instructor_minutes)};
+    if(actual.picMinutes!==expected.picMinutes||actual.copilotMinutes!==expected.copilotMinutes||actual.dualMinutes!==expected.dualMinutes||actual.instructorMinutes!==expected.instructorMinutes){
+      issues.push(issue("function_time_allocation","role",`${role} time is allocated to the wrong FCL.050 pilot-function column. Re-save the role or correct the flight-time allocation.`));
+    }
+  }
   if(number(row.night_minutes)>block)issues.push(issue("night_time","night_minutes","Night time cannot exceed total flight time."));
   if(number(row.ifr_minutes)>block)issues.push(issue("ifr_time","ifr_minutes","IFR time cannot exceed total flight time."));
 
-  const testOrCheck=TEST_PATTERN.test(remarks),revalidation=REVALIDATION_PATTERN.test(remarks),instrumentTraining=INSTRUMENT_TRAINING_PATTERN.test(remarks)||(role==="DUAL"&&number(row.ifr_minutes)>0);
-  if(testOrCheck)issues.push(issue("test_endorsement","note","Skill/proficiency check detected. Keep the applicable examiner/instructor endorsement and signed evidence with the record.","warning"));
-  if(revalidation)issues.push(issue("revalidation_endorsement","note","Revalidation/recency activity detected. Keep the applicable instructor endorsement and signed evidence with the record.","warning"));
+  const testOrCheck=TEST_PATTERN.test(remarks),revalidation=REVALIDATION_PATTERN.test(remarks),instrumentTraining=INSTRUMENT_TRAINING_PATTERN.test(remarks)||(role==="DUAL"&&number(row.ifr_minutes)>0),verificationMissing=!text(row.verification_name)||!text(row.verification_reference);
+  if(testOrCheck)issues.push(issue("test_endorsement","note",verificationMissing?"Skill/proficiency check detected. Record the applicable examiner/instructor name and signed endorsement reference with the record.":"Skill/proficiency check detected. Keep the applicable examiner/instructor endorsement and signed evidence with the record.","warning"));
+  if(revalidation)issues.push(issue("revalidation_endorsement","note",verificationMissing?"Revalidation/recency activity detected. Record the applicable instructor name and signed endorsement reference with the record.":"Revalidation/recency activity detected. Keep the applicable instructor endorsement and signed evidence with the record.","warning"));
   if(instrumentTraining&&!remarks)issues.push(issue("instrument_training_remarks","note","Instrument flight time used for licence/rating training must be described in Remarks."));
   if(!task&&!note)issues.push(issue("remarks_recommended","note","Add a concise task or remark so the purpose of the flight is traceable.","warning"));
   return issues;

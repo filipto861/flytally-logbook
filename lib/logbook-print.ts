@@ -49,10 +49,18 @@ export function parsePilotPreferences(value:unknown):PilotPreferences{
   try{const parsed=JSON.parse(String(value||"{}"));return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{}}catch{return{}}
 }
 
-const clean=(value:unknown)=>String(value??"").trim();
+const clean=(value:unknown)=>{const result=String(value??"").trim();return ["nan","null","undefined"].includes(result.toLowerCase())?"":result};
 export function licenceProfileMap(preferences:PilotPreferences):Record<string,LicenceProfile>{
   const value=preferences.licence_profiles;
   return value&&typeof value==="object"&&!Array.isArray(value)?value:{};
+}
+
+export function fullAircraftIdentity(row:Record<string,unknown>){
+  return [clean(row.aircraft_make),clean(row.aircraft_model)||clean(row.aircraft_type),clean(row.aircraft_variant)].filter(Boolean).join(" ")||clean(row.aircraft_type);
+}
+
+export function aircraftPrintCode(row:Record<string,unknown>){
+  return (clean(row.icao_type)||clean(row.aircraft_type)||clean(row.aircraft_model)||fullAircraftIdentity(row)).toUpperCase();
 }
 
 function licenceForScope(preferences:PilotPreferences,licences:Array<Record<string,unknown>>,target:"EASA"|"ULL"){
@@ -80,10 +88,12 @@ export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintSco
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
   const role=String(row.role??"").trim().toUpperCase();
-  const instructor=String(row.instructor??"").trim();
-  const commander=String(row.commander??"").trim();
+  const instructor=clean(row.instructor);
+  const commander=clean(row.commander);
+  const verifier=clean(row.verification_name);
   if(role==="DUAL"&&instructor)return instructor;
   if(commander)return commander;
-  if(["PIC","SOLO","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
+  if(["SPIC","PICUS"].includes(role))return verifier;
+  if(["PIC","SOLO","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
   return "";
 }

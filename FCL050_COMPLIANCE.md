@@ -1,26 +1,26 @@
 # FlyTally — FCL.050 compliance baseline
 
-Regulatory baseline reviewed 24 August 2026:
+Regulatory baseline reviewed 25 August 2026:
 
 - EASA Easy Access Rules for Aircrew, current online publication February 2026.
 - FCL.050 — Recording of flight time.
-- AMC1 FCL.050 — ED Decision 2025/002/R.
-- Current Pilot Logbook instructions in the Easy Access Rules.
+- AMC1 FCL.050 — ED Decision 2025/002/R for the current AMC content.
+- Current Pilot Logbook specimen/instructions presented by EASA under ED Decision 2025/022/R in the online Easy Access Rules.
 
 The older August 2023 Easy Access Rules page must not be used as the sole compliance baseline.
 
 ## Mandatory flight-record content
 
-FlyTally must retain and print, where applicable:
+FlyTally must retain and make available, where applicable:
 
 - pilot name and address;
 - PIC name;
 - date;
 - departure place and UTC time;
 - arrival place and UTC time;
-- aircraft make, model, variant and registration;
+- aircraft type including make, model and variant where a distinct variant applies, plus registration;
 - SE / ME indication where applicable;
-- SP / MP allocation in the prescribed logbook format;
+- SP / MP allocation in the prescribed logbook structure;
 - total flight time;
 - accumulated total flight time;
 - day and night landings as pilot flying;
@@ -28,11 +28,11 @@ FlyTally must retain and print, where applicable:
 - pilot function: PIC including solo, SPIC and PICUS, co-pilot including cruise-relief co-pilot, dual, FI and FE;
 - applicable remarks, endorsements and countersignatures.
 
-AMC1 FCL.050 also requires applicable countersignatures/remarks for cases such as SPIC/PICUS, skill tests and proficiency checks, instrument training used for a licence/rating, and specified revalidation/recency entries.
+AMC1 FCL.050 also requires applicable countersignatures/remarks for SPIC/PICUS, skill tests and proficiency checks, instrument training used for a licence/rating, specified revalidation/recency entries, and CRCP entries.
 
 ## FSTD
 
-Where applicable the logbook must support FSTD records containing:
+Where applicable the logbook supports FSTD records containing:
 
 - type and qualification number of the device;
 - FSTD instruction / exercise;
@@ -42,66 +42,81 @@ Where applicable the logbook must support FSTD records containing:
 
 ## Electronic record requirements
 
-Electronic records must be readily available when requested by the competent authority, contain the relevant FCL.050 data, be certified by the pilot, and use a format acceptable to the competent authority.
+Electronic records must be readily available when requested by the competent authority, contain the relevant FCL.050 data, be certified by the pilot, and use a format acceptable by the competent authority.
 
-## v1.10 certification-readiness gate
+## Certification-readiness gate
 
 Before an EASA flight can be pilot-certified, FlyTally checks the stored record for mandatory FCL.050 data. Blocking checks include:
 
 - valid date, departure/arrival place and UTC departure/arrival times;
 - non-zero total flight time;
-- registration plus structured aircraft make/model/variant;
+- registration plus structured aircraft make/model and variant where applicable;
 - SP/MP and SE/ME classification;
 - PIC identity;
-- valid creditable pilot function and function-time allocation;
+- valid creditable pilot function;
+- role-to-column allocation: PIC/SOLO/SPIC/PICUS to PIC, co-pilot/CRCP to co-pilot, DUAL to DUAL, and FI/FE time to FI/FE with PIC where FlyTally records the user as instructor/examiner;
 - instructor/PIC identity for DUAL;
-- supervising pilot and countersignature reference for SPIC/PICUS;
+- supervising PIC/FI and countersignature reference for SPIC/PICUS;
 - mandatory instrument-training remarks where detected from the structured flight context.
 
-Non-creditable auxiliary roles (Safety Pilot, PAX and Observer) cannot be certified as FCL.050 pilot-function time. They may remain in FlyTally for reference and are excluded from official totals by default.
+Non-creditable auxiliary roles (Safety Pilot, PAX and Observer) may remain in FlyTally as certified reference records but are excluded from official creditable totals by default and may not contain PIC/co-pilot/DUAL/FI-FE time.
 
 FSTD certification is separately gated on date, device type, qualification number, instruction/exercise and non-zero session time.
 
 The checks run both in the UI and again server-side. Hiding or bypassing a disabled certification button therefore does not bypass the compliance gate.
 
-## v1.11 certified records and audit
+## Certified records and audit
 
-v1.11 extends certified-record integrity without adding a separate certification dashboard. Certification controls remain in the context where the record is managed.
+FlyTally uses certified-record revisions rather than silent mutation:
 
-Implemented concepts include:
-
-- shared canonical SHA-256 payload generation for certification and later verification;
+- canonical SHA-256 payload generation for certification and later verification;
 - verification states for current and archived certification fingerprints;
 - field-by-field comparison between superseded and current flight revisions;
 - printable per-flight certification audit report, separate from the official Pilot Logbook print;
 - FSTD Certified R1 → Correction R2 → Certified R2 workflow with mandatory correction reason;
 - immutable archived FSTD revision snapshots and database-level protection against silent certified-record edits;
-- integrity status and revision history shown directly on the relevant flight or FSTD record;
-- compact Draft / Locked / Certified / Correction status in the normal Flights workflow.
+- compact Draft / Locked / Certified / Correction status in the normal workflow.
 
 Integrity mismatches are surfaced for review and are never silently repaired.
+
+## v1.14 print rules
+
+The v1.14 print view keeps the established 1–12 logbook structure, A4 landscape format, fixed record rows, page totals, carried totals, pilot certification box and chronological FSTD integration.
+
+FlyTally intentionally displays a compact ICAO type designator in the main Aircraft type cell when an ICAO type is available. This is a FlyTally presentation choice, not an EASA requirement. Because AMC1 FCL.050 requires the electronic record to contain aircraft make/model/variant information, each printed page also carries an **Aircraft identity key** mapping the compact type code to the stored full make/model/variant identity. The full structured aircraft identity remains part of the electronic flight record and certification evidence.
+
+The print view also:
+
+- shows the actual/supervising PIC rather than SELF for SPIC/PICUS when the holder is not the designated aircraft PIC;
+- renders SPIC/PICUS countersignature information in Remarks;
+- automatically renders `CRCP` in Remarks for cruise-relief co-pilot records;
+- warns before printing when holder name, holder address or matching licence number is missing;
+- marks uncertified records as DRAFT;
+- keeps auxiliary reference records excluded from official totals by default.
 
 ## Implemented or substantially implemented
 
 - licence-linked pilot identity including separate EASA/ULL address and licence number;
-- PIC name logic including DUAL/instructor handling;
+- PIC name logic including DUAL/instructor and SPIC/PICUS handling;
 - structured aircraft make/model/variant snapshot on the flight;
+- compact ICAO print code plus printed full-aircraft identity key;
 - SE/ME and SP/MP metadata;
 - total and accumulated flight time;
 - PIC, co-pilot, dual and FI/FE allocation;
+- role-to-function-column validation before certification;
 - SOLO, SPIC, PICUS and cruise-relief co-pilot roles;
+- automatic CRCP print remark;
 - night / IFR time;
 - day / night landing counts;
 - dedicated FSTD session records and accumulated FSTD time;
-- EASA Pilot Logbook print structure using column groups 1–12, page totals and carried totals;
+- Pilot Logbook print structure using column groups 1–12, page totals and carried totals;
 - ten fixed-height record rows per A4 landscape page;
 - unified print scope for Complete / ULL / EASA / ULL+EASA;
 - explicit UTC handling for imported track timestamps with a known timezone;
 - pilot certification with SHA-256 record fingerprint;
 - immutable certified records;
 - traceable certified-record correction revisions with mandatory correction reason and retained prior fingerprints;
-- v1.10 FCL.050 certification-readiness gate;
-- v1.11 flight/FSTD revision comparison and certification integrity verification.
+- flight/FSTD revision comparison and certification integrity verification.
 
 ## Remaining before any approval claim
 
