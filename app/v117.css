@@ -1,0 +1,10 @@
+/* FlyTally v1.17 — GPS import review */
+.split-explanation{display:grid;gap:3px;min-width:0;align-content:center}
+.split-explanation strong{font-size:.76rem;font-variant-numeric:tabular-nums;color:#dbe8f3}
+.split-explanation small{display:block;max-width:620px;color:#8198ad;font-size:.68rem;line-height:1.4}
+.kml-wizard>.track-time-warning,.flight-review-card>.track-time-warning{margin:0;padding:10px 12px;border:1px solid #6c5424;border-left:3px solid #f59e0b;border-radius:8px;background:rgba(75,52,15,.18);color:#c6b083;font-size:.72rem;line-height:1.45}
+.kml-wizard>.track-time-warning b,.flight-review-card>.track-time-warning b{color:#f3c76a}
+.kml-wizard>.field-hint{margin:0;color:#7790a6;font-size:.68rem}
+.flight-review-card header p{text-transform:none}
+.review-status{white-space:nowrap}
+@media(max-width:700px){.split-explanation{grid-column:1/-1}.split-explanation small{max-width:none}.flight-review-card>.track-time-warning{font-size:.7rem}}
