@@ -10,14 +10,25 @@
 .touch-event-list b{color:#f0bd59;font-size:.65rem}
 .touch-event-list small{grid-column:1/-1;color:#74899a;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em}
 
-/* v1.19.1 — keep native iOS date/time controls inside the review card. */
-.review-grid,.review-grid>*{min-width:0}
-.review-grid input,.review-grid select,.review-grid textarea{min-width:0;max-width:100%}
+/* v1.19.2 — deterministic review grid on desktop, tablet and mobile. */
+.review-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:start}
+.review-grid,.review-grid>*{min-width:0;max-width:100%}
+.review-grid>*{width:100%}
+.review-grid .wide{grid-column:1/-1!important}
+.review-grid input,.review-grid select,.review-grid textarea{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%}
+.review-grid input[type="date"],.review-grid input[type="time"]{text-align:left}
+.review-grid input[type="date"]::-webkit-date-and-time-value,.review-grid input[type="time"]::-webkit-date-and-time-value{text-align:left}
+
+@media(max-width:1100px){
+  .review-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
 
 @media(max-width:700px){
   .touch-review{align-items:flex-start;flex-direction:column}
   .touch-event-list{justify-content:flex-start;width:100%}
-  .kml-wizard{min-width:0;overflow-x:clip;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .kml-wizard{min-width:0;overflow-x:clip;padding-bottom:env(safe-area-inset-bottom)}
   .flight-review-list,.flight-review-card,.review-grid,.review-grid>label,.review-grid>.airport-review-field{min-width:0;max-width:100%}
-  .review-grid input[type="date"],.review-grid input[type="time"],.review-grid input[type="number"],.review-grid textarea{width:100%;min-width:0;max-width:100%}
+  .review-grid{grid-template-columns:minmax(0,1fr)!important;width:100%}
+  .review-grid input[type="date"],.review-grid input[type="time"]{-webkit-appearance:none;appearance:none;inline-size:100%;min-inline-size:0;max-inline-size:100%}
+  .form-actions.field-actions{position:static;bottom:auto;z-index:auto;margin:0;padding:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
 }
