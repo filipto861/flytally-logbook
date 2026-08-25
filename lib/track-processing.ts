@@ -141,6 +141,7 @@ export function suggestedSplits(points:KmlPoint[]){
   return consolidateGroundCuts(points,out);
 }
 export type SplitSuggestion={index:number;reason:string;gapMinutes:number|null;endpointKm:number|null};
+export type TouchAndGoEvent={index:number;time:string|null;signal:"speed"|"altitude";confidence:"high"|"medium"};
 export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
   return suggestedSplits(points).map(index=>{
     const next=points[index+1],current=points[index],gap=next&&current?seconds(current,next):0,endpoint=next&&current?haversineKm(current,next):0;
@@ -148,11 +149,12 @@ export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
     return{index,reason:"Extended ground stop between credible flight sections.",gapMinutes:null,endpointKm:null};
   });
 }
-export function landingCount(points:KmlPoint[]){
-  const rolling=groundEvents(points).filter(event=>event.duration>5&&event.duration<90),touches=rolling.map(event=>Math.round((event.start+event.end)/2));
-  for(const index of altitudeTouchAndGoIndices(points))if(!touches.some(existing=>Math.abs(existing-index)<=10))touches.push(index);
-  return Math.max(1,1+touches.length);
+export function touchAndGoEvents(points:KmlPoint[]):TouchAndGoEvent[]{
+  const events=groundEvents(points).filter(event=>event.duration>5&&event.duration<90).map<TouchAndGoEvent>(event=>{const index=Math.round((event.start+event.end)/2);return{index,time:points[index]?.time||null,signal:"speed",confidence:"high"}});
+  for(const index of altitudeTouchAndGoIndices(points))if(!events.some(event=>Math.abs(event.index-index)<=10))events.push({index,time:points[index]?.time||null,signal:"altitude",confidence:"medium"});
+  return events.sort((a,b)=>a.index-b.index);
 }
+export function landingCount(points:KmlPoint[]){return Math.max(1,1+touchAndGoEvents(points).length)}
 export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.length)return[points];const parts:KmlPoint[][]=[];let start=0;for(const raw of indices){const index=Math.max(1,Math.min(points.length-2,raw)),part=points.slice(start,index+1);if(part.length>=2)parts.push(part);start=index+1}const tail=points.slice(start);if(tail.length>=2)parts.push(tail);return parts.length?parts:[points]}
 export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&value!==0),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}
 export function overview(points:KmlPoint[],max=180){if(points.length<=max)return points;const step=Math.ceil(points.length/max),out=points.filter((_,index)=>index===0||index===points.length-1||index%step===0);if(out.at(-1)!==points.at(-1))out.push(points.at(-1)!);return out.slice(0,max)}

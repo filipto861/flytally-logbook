@@ -1,0 +1,12 @@
+/* FlyTally v1.19 — GPS landing review */
+.touch-review{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 12px;border:1px solid #293e50;border-radius:9px;background:rgba(15,30,42,.54)}
+.touch-review>div:first-child{display:grid;gap:3px;min-width:0}
+.touch-review strong{font-size:.76rem;color:#dce9f4}
+.touch-review>div:first-child small{font-size:.68rem;line-height:1.35;color:#8097ab}
+.touch-review.detected{border-color:#705721;background:rgba(83,57,12,.16)}
+.touch-review.detected strong{color:#f2c66b}
+.touch-event-list{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.touch-event-list>span{display:grid;grid-template-columns:auto auto;column-gap:7px;align-items:center;padding:6px 8px;border:1px solid #5c4b27;border-radius:7px;background:#191b18;color:#dbe6ee;font-size:.68rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.touch-event-list b{color:#f0bd59;font-size:.65rem}
+.touch-event-list small{grid-column:1/-1;color:#74899a;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em}
+@media(max-width:700px){.touch-review{align-items:flex-start;flex-direction:column}.touch-event-list{justify-content:flex-start;width:100%}}

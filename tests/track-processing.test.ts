@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -94,8 +94,20 @@ test("a rolling touch-and-go is counted without splitting the flight",()=>{
   const points=circuitTrack();
   assert.deepEqual(suggestedSplits(points),[]);
   assert.equal(landingCount(points),2);
+  const events=touchAndGoEvents(points);
+  assert.equal(events.length,1);
+  assert.equal(events[0].signal,"altitude");
+  assert.match(events[0].time||"",/^2026-08-25T08:04:/);
 });
 
 test("a fast low pass is not misclassified as a touch-and-go",()=>{
   assert.equal(landingCount(circuitTrack(170)),1);
+  assert.deepEqual(touchAndGoEvents(circuitTrack(170)),[]);
+});
+
+test("touch-and-go detection is recalculated independently after a manual split",()=>{
+  const points=circuitTrack(),parts=splitPoints(points,[59]);
+  assert.equal(parts.length,2);
+  assert.deepEqual(parts.map(part=>touchAndGoEvents(part).length),[0,0]);
+  assert.deepEqual(parts.map(landingCount),[1,1]);
 });

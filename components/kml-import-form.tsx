@@ -6,7 +6,7 @@ import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
 import { TracksMap } from "@/components/tracks-map";
-import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
+import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 
@@ -112,17 +112,21 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
       <div className="flight-review-list">{parts.map((part,index)=>{
-        const review=reviews[index]||reviewFor(part),stats=trackStats(part),detected=flightEnvelope(part),credible=hasAirborneMovement(part),quality=trackQuality(part),options=airportOptions[index]||{departureCandidates:[],arrivalCandidates:[]};
+        const review=reviews[index]||reviewFor(part),stats=trackStats(part),detected=flightEnvelope(part),touches=touchAndGoEvents(part),detectedLandings=1+touches.length,credible=hasAirborneMovement(part),quality=trackQuality(part),options=airportOptions[index]||{departureCandidates:[],arrivalCandidates:[]};
         return <article className={`flight-review-card ${review.reviewed?"confirmed":""}${credible?"":" invalid-flight"}`} key={`${cuts.join("-")}-${index}`}>
-          <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km · GPS {quality.status.toUpperCase()}</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
+          <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km · {detectedLandings} {detectedLandings===1?"landing":"landings"} · GPS {quality.status.toUpperCase()}</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
           {!credible?<p className="ground-flight-warning">This section contains no credible flight movement. Adjust or remove the split.</p>:quality.status!=="good"?<p className="track-time-warning"><b>Check this GPS section.</b> {quality.warnings.join(" ")}</p>:null}
           <div className="kml-preview"><TracksMap tracks={[mapTrack(part,index,registration,review)]} height={260} detail/></div>
           <div className="kml-time-row"><span className="utc-chip">UTC</span><small className="field-hint">FCL.050 logbook times are reviewed and stored in UTC.</small></div>
+          <div className={`touch-review ${touches.length?"detected":"clear"}`}>
+            <div><strong>{touches.length?`${touches.length} touch-and-go ${touches.length===1?"event":"events"} detected`:"No touch-and-go detected"}</strong><small>Landings were prefilled to {detectedLandings}. Confirm or edit the value below before reviewing this flight.</small></div>
+            {touches.length?<div className="touch-event-list">{touches.map((event,eventIndex)=>{const stamp=utcParts(event.time);return <span key={`${event.index}-${eventIndex}`} title={`${event.confidence} confidence · ${event.signal} profile`}><b>T&amp;G {eventIndex+1}</b>{stamp?`${stamp.time} UTC`:`GPS point ${event.index+1}`}<small>{event.signal}</small></span>})}</div>:null}
+          </div>
           <div className="form-grid review-grid">
             <label>Date<input name={`part_${index}_date`} type="date" required value={review.date} onChange={event=>updateReview(index,{date:event.target.value,reviewed:false})}/></label>
             <AirportReviewField label="Departure" name={`part_${index}_departure`} value={review.departure} candidates={options.departureCandidates} onChange={value=>updateReview(index,{departure:value,reviewed:false})}/>
             <AirportReviewField label="Arrival" name={`part_${index}_arrival`} value={review.arrival} candidates={options.arrivalCandidates} onChange={value=>updateReview(index,{arrival:value,reviewed:false})}/>
-            <label>Landings<input name={`part_${index}_starts`} type="number" min="0" max="99" value={review.starts} onChange={event=>updateReview(index,{starts:event.target.value,reviewed:false})}/></label>
+            <label>Landings / starts<input name={`part_${index}_starts`} type="number" min="0" max="99" value={review.starts} onChange={event=>updateReview(index,{starts:event.target.value,reviewed:false})}/><small>GPS suggestion: {detectedLandings}</small></label>
             <label>Off-block <span className="field-hint">UTC</span><input name={`part_${index}_offBlock`} type="time" value={review.offBlock} onChange={event=>updateReview(index,{offBlock:event.target.value,reviewed:false})}/></label>
             <label>Takeoff <span className="field-hint">UTC</span><input name={`part_${index}_takeoff`} type="time" value={review.takeoff} onChange={event=>updateReview(index,{takeoff:event.target.value,reviewed:false})}/><small>GPS point {detected.takeoffIndex+1}</small></label>
             <label>Landing <span className="field-hint">UTC</span><input name={`part_${index}_landing`} type="time" value={review.landing} onChange={event=>updateReview(index,{landing:event.target.value,reviewed:false})}/><small>GPS point {detected.landingIndex+1}</small></label>
