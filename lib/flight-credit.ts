@@ -15,3 +15,7 @@ export function effectivePicMinutes(role:unknown,storedPicMinutes:unknown,blockM
   if(stored>0)return stored;
   return PIC_ROLES.has(normalizedPilotRole(role))?minutes(blockMinutes):0;
 }
+
+export function includedInDashboardTotal(role:unknown){
+  return !["PAX","OBSERVER"].includes(normalizedPilotRole(role));
+}

@@ -2,7 +2,7 @@ import "server-only";
 import { calculatedFlightPrice } from "@/lib/billing";
 import { sql } from "@/lib/db";
 import { flightDateKey,flightMinutes } from "@/lib/dashboard-math";
-import { effectivePicMinutes,normalizedPilotRole } from "@/lib/flight-credit";
+import { effectivePicMinutes,includedInDashboardTotal,normalizedPilotRole } from "@/lib/flight-credit";
 import { isAuxiliaryLogbookRole } from "@/lib/logbook-print";
 import { measureServerTask } from "@/lib/performance";
 
@@ -91,7 +91,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   const yearMap=new Map<number,{year:number;flights:number;minutes:number;landings:number}>();
 
   for(const flight of flights){
-    const auxiliary=isAuxiliaryLogbookRole(flight.role),safetyPilot=flight.role==="SAFETY PILOT",dashboardTotal=!auxiliary;
+    const auxiliary=isAuxiliaryLogbookRole(flight.role),safetyPilot=flight.role==="SAFETY PILOT",dashboardTotal=includedInDashboardTotal(flight.role);
     if(dashboardTotal){
       total.flights+=1;total.minutes+=flight.blockMinutes;
       if(!auxiliary)total.landings+=flight.landings;
@@ -139,7 +139,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
 
   const ordered=[...flights].sort((left,right)=>(right.dateKey??"").localeCompare(left.dateKey??"")||right.offBlock.localeCompare(left.offBlock)||right.id-left.id);
   const recentFlights=ordered.slice(0,8).map(({id,date,registration,departure,arrival})=>({id,date,registration,departure,arrival}));
-  const dashboardTotalFlights=flights.filter(flight=>!isAuxiliaryLogbookRole(flight.role));
+  const dashboardTotalFlights=flights.filter(flight=>includedInDashboardTotal(flight.role));
   return{
     displayName:text(userRows[0]?.display_name)||"Pilot",rangeLabel:label,total,ull,easa,picUll,picEasa,
     airMinutes,picMinutes,copilotMinutes,dualMinutes,instructorMinutes,nightMinutes,ifrMinutes,dayLandings,nightLandings,safetyMinutes,cost,tracks,gpsKm,
