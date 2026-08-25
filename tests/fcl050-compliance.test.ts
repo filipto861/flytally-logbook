@@ -5,7 +5,7 @@ import { blockingComplianceIssues,complianceReady,fcl050FlightCompliance,fstdCom
 const flight=(overrides:Record<string,unknown>={})=>({
   evidence:"EASA",date:"2026-08-24",registration:"OK-ABC",aircraft_make:"Bristell",aircraft_model:"B23",aircraft_variant:"",aircraft_type:"B23",aircraft_class:"SEP",
   departure:"LKLT",arrival:"LKBE",off_block:"08:00",takeoff:"08:05",landing:"08:55",on_block:"09:00",operation_type:"SP",engine_type:"SE",
-  landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:0,pic_minutes:60,copilot_minutes:0,dual_minutes:0,instructor_minutes:0,
+  starts:1,landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:0,pic_minutes:60,copilot_minutes:0,dual_minutes:0,instructor_minutes:0,
   commander:"",instructor:"",role:"PIC",task:"Local flight",note:"",verification_name:"",verification_reference:"",block_minutes:60,...overrides
 });
 
@@ -59,6 +59,11 @@ test("pilot role must match the FCL.050 function-time allocation",()=>{
   assert.equal(blockingComplianceIssues(correctInstructor).some(item=>item.code==="function_time_allocation"),false);
   const wrongCrcp=fcl050FlightCompliance(flight({role:"CRUISE-RELIEF CO-PILOT",pic_minutes:60,copilot_minutes:0,commander:"Captain"}),"Relief Pilot");
   assert.ok(blockingComplianceIssues(wrongCrcp).some(item=>item.code==="function_time_allocation"));
+});
+
+test("day and night landing columns must reconcile with the landing total",()=>{
+  const issues=fcl050FlightCompliance(flight({starts:2,landings_day:1,landings_night:0}),"Test Pilot");
+  assert.ok(blockingComplianceIssues(issues).some(item=>item.code==="landing_total"));
 });
 
 test("auxiliary safety pilot record can be certified but is non-creditable",()=>{
