@@ -6,20 +6,22 @@ import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
 import { TracksMap } from "@/components/tracks-map";
-import { flightEnvelope,hasAirborneMovement,landingCount,overview,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,trackStats,type KmlPoint,type SplitSuggestion } from "@/lib/track-processing";
+import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectionResult>;
-type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis};
+type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis;format:TrackFileFormat;source:TrackSource;quality:TrackQuality};
 type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;note:string;reviewed:boolean};
 type AirportOptions={departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]};
 
+const sourceLabel=(source:TrackSource)=>source==="adsbexchange"?"ADSBExchange":source==="flightradar24"?"Flightradar24":source==="skydemon"?"SkyDemon":"Generic GPS";
+
 function inspect(source:string,name:string):Analysis{
-  const points=parseTrackFile(source,name);
+  const inspection=inspectTrackFile(source,name),points=inspection.points;
   const registration=name.toUpperCase().replaceAll("_","-").match(/\bOK-?[A-Z]{3}\d{0,2}\b/)?.[0]?.replace(/^OK(?!-)/,"OK-")||"";
-  return{name,points,suggested:suggestedSplits(points),details:suggestedSplitDetails(points),registration,timeBasis:trackTimeBasis(points)};
+  return{name,points,suggested:suggestedSplits(points),details:suggestedSplitDetails(points),registration,timeBasis:trackTimeBasis(points),format:inspection.format,source:inspection.source,quality:inspection.quality};
 }
 
 function reviewFor(part:KmlPoint[]):Review{
@@ -83,15 +85,16 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
     <div className="import-step"><span>1</span><div><strong>Upload track</strong></div></div>
     <div className="upload-zone">
       <label>KML, GPX or CSV<input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const file=event.target.files?.[0];if(!file){setAnalysis(null);setReviews([]);return}const next=inspect(await file.text(),file.name);setAnalysis(next);setRegistration(next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"");resetParts(next.suggested,next)}}/></label>
-      {analysis?<p>{analysis.points.length>=2?"✓":"⚠"} {analysis.name} · {analysis.points.length} GPS points · {analysis.suggested.length+1} suggested {analysis.suggested.length?"flights":"flight"} · {analysis.timeBasis==="utc"?"UTC timestamps":analysis.timeBasis==="offset"?"offset timestamps → UTC":"timezone not explicit"}</p>:null}
+      {analysis?<p>{analysis.points.length>=2?"✓":"⚠"} {analysis.name} · {analysis.points.length} GPS points · {analysis.format.toUpperCase()} · {sourceLabel(analysis.source)} · {analysis.suggested.length+1} suggested {analysis.suggested.length?"flights":"flight"} · {analysis.timeBasis==="utc"?"UTC timestamps":analysis.timeBasis==="offset"?"offset timestamps → UTC":"timezone not explicit"}</p>:null}
     </div>
+    {analysis&&analysis.quality.status!=="good"?<p className="track-time-warning"><b>GPS track needs review.</b> {analysis.quality.warnings.join(" ")}</p>:analysis?<p className="field-hint">GPS track quality: good · {Math.round(analysis.quality.timestampCoverage*100)}% timestamp coverage.</p>:null}
     {analysis&&analysis.timeBasis==="ambiguous"?<p className="track-time-warning"><b>Time zone is missing in this track.</b> FlyTally will not guess from the iPad or computer clock. Review and enter UTC times manually before saving.</p>:null}
 
     {analysis&&analysis.points.length>=2?<>
       <div className="import-step"><span>2</span><div><strong>Flight split</strong><small>{parts.length} {parts.length===1?"flight":"flights"}</small></div></div>
       <section className="split-editor">
         <div className="split-toolbar"><button type="button" className="secondary-button" onClick={()=>resetParts(analysis.suggested)}>Reset suggestion</button><button type="button" className="secondary-button" onClick={()=>resetParts([])}>Single flight</button><button type="button" className="secondary-button" onClick={addCut} disabled={parts.length>=20}>＋ Add split</button></div>
-        {cuts.length?cuts.map((cut,index)=>{const stamp=utcParts(analysis.points[cut]?.time||null);return <div className="split-row" key={`${index}-${cut}`}><label>Split {index+1}<input type="range" min="2" max={Math.max(2,analysis.points.length-3)} value={cut} onChange={event=>resetParts(cuts.map((value,i)=>i===index?Number(event.target.value):value))}/></label><div className="split-explanation"><strong>{stamp?`${stamp.date} ${stamp.time} UTC`:`GPS point ${cut+1}`}</strong></div><button type="button" className="icon-danger" onClick={()=>resetParts(cuts.filter((_,i)=>i!==index))}>Delete</button></div>}):null}
+        {cuts.length?cuts.map((cut,index)=>{const stamp=utcParts(analysis.points[cut]?.time||null),detail=analysis.details.find(item=>item.index===cut);return <div className="split-row" key={`${index}-${cut}`}><label>Split {index+1}<input type="range" min="2" max={Math.max(2,analysis.points.length-3)} value={cut} onChange={event=>resetParts(cuts.map((value,i)=>i===index?Number(event.target.value):value))}/></label><div className="split-explanation"><strong>{stamp?`${stamp.date} ${stamp.time} UTC`:`GPS point ${cut+1}`}</strong><small>{detail?.reason||"Manual split point — verify both resulting flights."}</small></div><button type="button" className="icon-danger" onClick={()=>resetParts(cuts.filter((_,i)=>i!==index))}>Delete</button></div>}):null}
       </section>
       <input type="hidden" name="splitIndices" value={cuts.join(",")}/><input type="hidden" name="partCount" value={parts.length}/>
 
@@ -104,15 +107,15 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         <label>Role<select key={`role-${registration}`} name="role" defaultValue={selectedAircraft?.default_role||"PIC"}><option>PIC</option><option>DUAL</option><option value="INSTRUKTOR">INSTRUCTOR</option><option>SAFETY PILOT</option><option>CO-PILOT</option><option>PAX</option><option>OBSERVER</option></select></label>
         <label>Billing time<select key={`billing-${registration}`} name="billingBasis" defaultValue={selectedBilling.basis}><option>BLOCK</option><option>AIR</option></select></label>
         <label>Cost share<select key={`share-${registration}`} name="billingShare" defaultValue={selectedBilling.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
-        <label className="wide">Task<input name="task" defaultValue="KML import"/></label>
+        <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
       <div className="flight-review-list">{parts.map((part,index)=>{
-        const review=reviews[index]||reviewFor(part),stats=trackStats(part),detected=flightEnvelope(part),credible=hasAirborneMovement(part),options=airportOptions[index]||{departureCandidates:[],arrivalCandidates:[]};
+        const review=reviews[index]||reviewFor(part),stats=trackStats(part),detected=flightEnvelope(part),credible=hasAirborneMovement(part),quality=trackQuality(part),options=airportOptions[index]||{departureCandidates:[],arrivalCandidates:[]};
         return <article className={`flight-review-card ${review.reviewed?"confirmed":""}${credible?"":" invalid-flight"}`} key={`${cuts.join("-")}-${index}`}>
-          <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
-          {!credible?<p className="ground-flight-warning">This section contains no credible flight movement. Adjust or remove the split.</p>:null}
+          <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km · GPS {quality.status.toUpperCase()}</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
+          {!credible?<p className="ground-flight-warning">This section contains no credible flight movement. Adjust or remove the split.</p>:quality.status!=="good"?<p className="track-time-warning"><b>Check this GPS section.</b> {quality.warnings.join(" ")}</p>:null}
           <div className="kml-preview"><TracksMap tracks={[mapTrack(part,index,registration,review)]} height={260} detail/></div>
           <div className="kml-time-row"><span className="utc-chip">UTC</span><small className="field-hint">FCL.050 logbook times are reviewed and stored in UTC.</small></div>
           <div className="form-grid review-grid">
