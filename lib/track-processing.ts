@@ -62,6 +62,36 @@ const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
 
+/**
+ * Detect a rolling touch-and-go that never becomes slow enough to create a
+ * ground event. GPS altitude is deliberately only a secondary signal: the
+ * aircraft must descend at least 30 m, reach a local minimum while still at a
+ * plausible runway speed, and climb at least 30 m again. This keeps the first
+ * take-off and final landing out of the count.
+ */
+function altitudeTouchAndGoIndices(points:KmlPoint[]){
+  if(points.length<10||points.filter(point=>point.alt!==null&&Number.isFinite(point.alt)).length<8)return[];
+  const speed=speeds(points),candidates:Array<{index:number;altitude:number}>=[];
+  for(let index=4;index<points.length-4;index++){
+    const altitude=points[index].alt,rollingSpeed=speed[index];
+    if(altitude===null||!Number.isFinite(altitude)||rollingSpeed<28||rollingSpeed>145)continue;
+    const left=points.slice(Math.max(0,index-10),index).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+    const right=points.slice(index+1,Math.min(points.length,index+11)).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+    if(left.length<3||right.length<3)continue;
+    const local=points.slice(index-2,index+3).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+    if(!local.length||altitude>Math.min(...local)+2)continue;
+    if(Math.max(...left)-altitude<30||Math.max(...right)-altitude<30)continue;
+    candidates.push({index,altitude});
+  }
+  const events:number[]=[];
+  for(const candidate of candidates){
+    const previous=events.at(-1);
+    if(previous!==undefined&&candidate.index-previous<8){if(candidate.altitude<(points[previous].alt??Infinity))events[events.length-1]=candidate.index}
+    else events.push(candidate.index);
+  }
+  return events;
+}
+
 export function hasAirborneMovement(points:KmlPoint[]){
   if(points.length<2)return false;
   const distance=points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),duration=seconds(points[0],points.at(-1)!);
@@ -118,7 +148,11 @@ export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
     return{index,reason:"Extended ground stop between credible flight sections.",gapMinutes:null,endpointKm:null};
   });
 }
-export function landingCount(points:KmlPoint[]){return Math.max(1,1+groundEvents(points).filter(event=>event.duration>5&&event.duration<90).length)}
+export function landingCount(points:KmlPoint[]){
+  const rolling=groundEvents(points).filter(event=>event.duration>5&&event.duration<90),touches=rolling.map(event=>Math.round((event.start+event.end)/2));
+  for(const index of altitudeTouchAndGoIndices(points))if(!touches.some(existing=>Math.abs(existing-index)<=10))touches.push(index);
+  return Math.max(1,1+touches.length);
+}
 export function splitPoints(points:KmlPoint[],indices:number[]){if(!indices.length)return[points];const parts:KmlPoint[][]=[];let start=0;for(const raw of indices){const index=Math.max(1,Math.min(points.length-2,raw)),part=points.slice(start,index+1);if(part.length>=2)parts.push(part);start=index+1}const tail=points.slice(start);if(tail.length>=2)parts.push(tail);return parts.length?parts:[points]}
 export function trackStats(points:KmlPoint[]){const alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&value!==0),timed=points.filter(point=>point.time);return{pointCount:points.length,distanceKm:points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),startUtc:timed[0]?.time??null,endUtc:timed.at(-1)?.time??null,minAlt:alts.length?Math.min(...alts):null,maxAlt:alts.length?Math.max(...alts):null}}
 export function overview(points:KmlPoint[],max=180){if(points.length<=max)return points;const step=Math.ceil(points.length/max),out=points.filter((_,index)=>index===0||index===points.length-1||index%step===0);if(out.at(-1)!==points.at(-1))out.push(points.at(-1)!);return out.slice(0,max)}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -79,4 +79,23 @@ test("arrival candidates are ordered from the end and do not span a long route",
   const candidates=trackEndpointCandidates(points,true);
   assert.equal(candidates[0],points.at(-1));
   assert.ok(!candidates.includes(points[0]));
+});
+
+function circuitTrack(minimumSpeedKmh=75){
+  const start=Date.parse("2026-08-25T08:00:00Z"),points:KmlPoint[]=[];
+  const altitudes:number[]=[];
+  for(const [from,to,count] of [[250,500,30],[500,250,30],[250,500,30],[500,250,30]] as const)for(let index=0;index<count;index++)altitudes.push(from+(to-from)*index/(count-1));
+  const stepKm=minimumSpeedKmh*5/3600,latitudeStep=stepKm/111.2;
+  altitudes.forEach((alt,index)=>points.push({lat:50+latitudeStep*index,lon:14,alt,time:new Date(start+index*5000).toISOString()}));
+  return points;
+}
+
+test("a rolling touch-and-go is counted without splitting the flight",()=>{
+  const points=circuitTrack();
+  assert.deepEqual(suggestedSplits(points),[]);
+  assert.equal(landingCount(points),2);
+});
+
+test("a fast low pass is not misclassified as a touch-and-go",()=>{
+  assert.equal(landingCount(circuitTrack(170)),1);
 });
