@@ -9,4 +9,15 @@
 .touch-event-list>span{display:grid;grid-template-columns:auto auto;column-gap:7px;align-items:center;padding:6px 8px;border:1px solid #5c4b27;border-radius:7px;background:#191b18;color:#dbe6ee;font-size:.68rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .touch-event-list b{color:#f0bd59;font-size:.65rem}
 .touch-event-list small{grid-column:1/-1;color:#74899a;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em}
-@media(max-width:700px){.touch-review{align-items:flex-start;flex-direction:column}.touch-event-list{justify-content:flex-start;width:100%}}
+
+/* v1.19.1 — keep native iOS date/time controls inside the review card. */
+.review-grid,.review-grid>*{min-width:0}
+.review-grid input,.review-grid select,.review-grid textarea{min-width:0;max-width:100%}
+
+@media(max-width:700px){
+  .touch-review{align-items:flex-start;flex-direction:column}
+  .touch-event-list{justify-content:flex-start;width:100%}
+  .kml-wizard{min-width:0;overflow-x:clip;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .flight-review-list,.flight-review-card,.review-grid,.review-grid>label,.review-grid>.airport-review-field{min-width:0;max-width:100%}
+  .review-grid input[type="date"],.review-grid input[type="time"],.review-grid input[type="number"],.review-grid textarea{-webkit-appearance:none;appearance:none;width:100%;min-width:0;max-width:100%}
+}
