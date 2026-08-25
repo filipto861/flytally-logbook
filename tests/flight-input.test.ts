@@ -32,7 +32,14 @@ test("parser never silently downgrades missing edit choices to ULL or BLOCK",()=
 });
 
 test("an instructor name does not override the selected pilot role",()=>{
-  const form=validForm();form.set("instructor","Instructor Name");form.set("role","PICUS");form.set("verificationName","Supervising PIC");
+  const form=validForm();form.set("instructor","Instructor Name");form.set("role","PICUS");form.set("verificationName","Supervising PIC");form.set("verificationReference","Signed ref 123");
   const parsed=parseFlightInput(form);
   assert.equal(parsed.data?.role,"PICUS");
+});
+
+test("SPIC and PICUS cannot bypass the countersignature reference server-side",()=>{
+  const form=validForm();form.set("role","SPIC");form.set("verificationName","Instructor");
+  assert.equal(parseFlightInput(form).data,undefined);
+  form.set("verificationReference","Signed ref 123");
+  assert.equal(parseFlightInput(form).data?.role,"SPIC");
 });
