@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { flightRestoreKey,parsePortableBackup,portableBackupDigest,trackRestoreKey,validateBackupRelationships } from "../lib/portable-backup.ts";
+import { flightRestoreKey,parsePortableBackup,portableBackupDigest,trackRestoreKey,validateBackupArchiveRelationships,validateBackupRelationships } from "../lib/portable-backup.ts";
 
 test("restore keys ignore source database ids",()=>{
   const left={id:1,date:"2026-08-22",registration:"ok-bid",off_block:"10:00",departure:"lksz",arrival:"lkro"},right={id:999,date:"2026-08-22",registration:"OK-BID",off_block:"10:00",departure:"LKSZ",arrival:"LKRO"};
@@ -13,16 +13,31 @@ test("track restore key belongs to its natural flight",()=>{
 });
 
 async function backup(version:number){
-  const payload={format:"pilot-logbook-portable",version,exported_at:"2026-08-22T12:00:00.000Z",profile:{},counts:{flights:0,aircraft:0,rates:0,airports:0,expiries:0,flight_tracks:0,track_points:0,...(version>=5?{audit_log:1}:{})},flights:[],aircraft:[],rates:[],airports:[],expiries:[],settings:[],flight_tracks:[],track_points:[],...(version>=5?{audit_log:[{id:1,action:"updated"}]}:{})};
+  const core={flights:[],aircraft:[],rates:[],airports:[],expiries:[],settings:[],flight_tracks:[],track_points:[]};
+  const extra5=version>=5?{audit_log:[{id:1,user_id:7,action:"updated"}]}:{};
+  const extra6=version>=6?{fstd_sessions:[],flight_certified_revisions:[],fstd_certified_revisions:[],deleted_flights:[]}:{};
+  const arrays={...core,...extra5,...extra6} as Record<string,unknown[]>;
+  const counts=Object.fromEntries(Object.entries(arrays).map(([key,value])=>[key,value.length]));
+  const payload={format:"pilot-logbook-portable",version,...(version>=6?{schema_version:9}:{}),exported_at:"2026-08-22T12:00:00.000Z",profile:version>=6?{id:7}:{},counts,...arrays};
   return JSON.stringify({...payload,integrity:{algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))}});
 }
 
-test("version 4 backups remain compatible and receive an empty audit section",async()=>{
-  const parsed=await parsePortableBackup(await backup(4));assert.deepEqual(parsed.backup.audit_log,[]);
+test("version 4 backups remain compatible and receive empty modern sections",async()=>{
+  const parsed=await parsePortableBackup(await backup(4));assert.deepEqual(parsed.backup.audit_log,[]);assert.deepEqual(parsed.backup.fstd_sessions,[]);assert.deepEqual(parsed.backup.flight_certified_revisions,[]);
 });
 
 test("version 5 backup validates its audit history count",async()=>{
-  const parsed=await parsePortableBackup(await backup(5));assert.equal(parsed.backup.audit_log.length,1);
+  const parsed=await parsePortableBackup(await backup(5));assert.equal(parsed.backup.audit_log.length,1);assert.deepEqual(parsed.backup.fstd_sessions,[]);
+});
+
+test("version 6 requires complete recovery sections",async()=>{
+  const source=await backup(6),parsed=JSON.parse(source),{integrity:_integrity,...payload}=parsed;delete payload.fstd_sessions;parsed.integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
+  await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity:parsed.integrity})),/fstd_sessions is missing/);
+});
+
+test("version 6 rejects records owned by another account",async()=>{
+  const parsed=JSON.parse(await backup(6)),{integrity:_integrity,...payload}=parsed;payload.flights=[{id:10,user_id:99}];payload.counts.flights=1;const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
+  await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/another account/);
 });
 
 test("backup integrity rejects modified content",async()=>{
@@ -36,4 +51,9 @@ test("backup relationship check accepts a complete flight and track graph",()=>{
 test("backup relationship check rejects orphan tracks and points",()=>{
   assert.throws(()=>validateBackupRelationships({flights:[],flight_tracks:[{id:9,flight_id:7}],track_points:[]}),/missing flight/);
   assert.throws(()=>validateBackupRelationships({flights:[{id:7}],flight_tracks:[],track_points:[{track_id:9}]}),/missing track/);
+});
+
+test("archive relationship check rejects orphan certified revisions",()=>{
+  assert.throws(()=>validateBackupArchiveRelationships({flights:[],fstd_sessions:[],flight_certified_revisions:[{flight_id:7,revision_number:1}],fstd_certified_revisions:[]}),/missing flight/);
+  assert.throws(()=>validateBackupArchiveRelationships({flights:[],fstd_sessions:[],flight_certified_revisions:[],fstd_certified_revisions:[{fstd_session_id:8,revision_number:1}]}),/missing FSTD session/);
 });

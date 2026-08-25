@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { validateBackupCertificationHistory,type BackupCertificationSummary } from "@/lib/backup-certification";
-import { flightRestoreKey,trackRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { flightRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 
 export type ExactRestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number;accountBound:boolean;schemaVersion:number;certification:BackupCertificationSummary};
 export type ExactRestorePlan={preview:ExactRestorePreview;addRows:Record<string,BackupRow[]>};
@@ -39,22 +39,29 @@ function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>st
   return{add,skip};
 }
 
+function checkExistingCertification(source:BackupRow[],current:BackupRow[],label:string){
+  const byId=new Map(current.map(row=>[id(row),row]));
+  for(const row of source){const existing=byId.get(id(row));if(!existing)continue;const sourceRevision=Math.max(1,Number(row.record_revision||1)),currentRevision=Math.max(1,Number(existing.record_revision||1));if(currentRevision<sourceRevision)throw new Error(`${label} ${id(row)} exists at revision ${currentRevision}, but the backup contains newer revision ${sourceRevision}. Non-destructive recovery was stopped.`);if(currentRevision===sourceRevision&&text(row.certification_hash)&&text(existing.certification_hash)!==text(row.certification_hash))throw new Error(`${label} ${id(row)} has a different certification fingerprint at revision ${sourceRevision}. Exact recovery was stopped.`)}
+}
+function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],parentField:string,label:string){const byKey=new Map(current.map(row=>[`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,row]));for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(existing&&text(existing.certification_hash)!==text(row.certification_hash))throw new Error(`${label} ${key} has a different archived certification fingerprint. Exact recovery was stopped.`)}}
+
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string):Promise<ExactRestorePlan>{
   const certification=validateBackupCertificationHistory(backup,userId);
   const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted]=await Promise.all([
-    sql`SELECT id,date::text date,registration,off_block,departure,arrival FROM flights WHERE user_id=${userId}`,
+    sql`SELECT id,date::text date,registration,off_block,departure,arrival,record_revision,certified_at,certification_hash FROM flights WHERE user_id=${userId}`,
     sql`SELECT id,registration FROM aircraft WHERE user_id=${userId}`,
     sql`SELECT id,registration,COALESCE(valid_from,'') valid_from FROM rates WHERE user_id=${userId}`,
     sql`SELECT id,ident FROM airports WHERE user_id=${userId}`,
     sql`SELECT id,category,label,expiry_date::text expiry_date FROM user_expiries WHERE user_id=${userId}`,
     sql`SELECT id,flight_id,file_name,start_utc::text start_utc,end_utc::text end_utc,point_count FROM flight_tracks WHERE user_id=${userId}`,
     sql`SELECT track_id,seq FROM track_points WHERE user_id=${userId}`,
-    sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes FROM fstd_sessions WHERE user_id=${userId}`,
-    sql`SELECT id,flight_id,revision_number FROM flight_certified_revisions WHERE user_id=${userId}`,
-    sql`SELECT id,fstd_session_id,revision_number FROM fstd_certified_revisions WHERE user_id=${userId}`,
+    sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes,record_revision,certified_at,certification_hash FROM fstd_sessions WHERE user_id=${userId}`,
+    sql`SELECT id,flight_id,revision_number,certification_hash FROM flight_certified_revisions WHERE user_id=${userId}`,
+    sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_audit_log WHERE user_id=${userId}`,
     sql`SELECT id,delete_token FROM deleted_flights WHERE user_id=${userId}`,
   ]) as Array<Array<BackupRow>>;
+  checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
 
   const sections:[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,boolean][]=[
     ["flights",backup.flights,flights,flightKey,"Flight",true],
@@ -82,8 +89,8 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   validateBackupCertificationHistory(backup,userId);
   const maxAudit=await sql`SELECT COALESCE(MAX(id),0)::bigint id FROM flight_audit_log` as Array<{id:number|string}>;const auditFloor=Number(maxAudit[0]?.id||0);
   const queries:any[]=[];
-  const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId}`);
-  if(backup.settings[0]){queries.push(sql`DELETE FROM user_settings WHERE user_id=${userId}`);for(const batch of chunks(backup.settings,20))queries.push(sql`INSERT INTO user_settings SELECT (json_populate_record(NULL::user_settings,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`)}
+  const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId} AND COALESCE(TRIM(display_name),'')=''`);
+  for(const batch of chunks(backup.settings,20))queries.push(sql`INSERT INTO user_settings SELECT (json_populate_record(NULL::user_settings,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.aircraft??[],100))queries.push(sql`INSERT INTO aircraft SELECT (json_populate_record(NULL::aircraft,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.rates??[],150))queries.push(sql`INSERT INTO rates SELECT (json_populate_record(NULL::rates,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.airports??[],150))queries.push(sql`INSERT INTO airports SELECT (json_populate_record(NULL::airports,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);

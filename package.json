@@ -1,6 +1,6 @@
 {
   "name": "pilot-logbook-web",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/*.test.ts",
-    "verify": "npm run typecheck && npm run build"
+    "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
