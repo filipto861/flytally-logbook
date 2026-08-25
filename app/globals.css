@@ -1136,3 +1136,120 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
   .flight-empty-state{padding:45px 18px}.flight-empty-state>div{align-items:stretch;flex-direction:column;width:100%}.flight-empty-state>div a{text-align:center}
   .readonly-logbook-entry>header{align-items:flex-start;flex-direction:column}.readonly-fcl-table-wrap{display:none}.readonly-logbook-card.mobile-only{display:grid}.readonly-logbook-card{grid-template-columns:1fr}
 }
+
+/* FlyTally 1.23 — mobile ergonomics */
+.mobile-nav-backdrop,.mobile-only-signout{display:none}
+
+@media screen and (max-width:820px){
+  html{scroll-padding-top:calc(var(--mobile-shell-height) + env(safe-area-inset-top) + 12px)}
+  body{overflow-x:clip}
+  .content{padding-bottom:calc(28px + env(safe-area-inset-bottom))!important}
+
+  .mobile-nav-backdrop{
+    display:none;
+    position:fixed;
+    inset:calc(var(--mobile-shell-height) + env(safe-area-inset-top)) 0 0;
+    z-index:1399;
+    width:100%;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:rgba(0,6,11,.68);
+    backdrop-filter:blur(2px);
+  }
+  .sidebar.mobile-open .mobile-nav-backdrop{display:block}
+  .sidebar nav,.sidebar.collapsed nav{width:min(340px,88vw)}
+  .sidebar nav a,.sidebar .ghost-button,.sidebar.collapsed nav a{min-height:46px;height:46px}
+  .sidebar nav a.sidebar-sub-link,.sidebar.collapsed nav a.sidebar-sub-link{min-height:44px;height:44px}
+  .sidebar nav .mobile-only-signout{display:block;margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+  .sidebar nav .mobile-only-signout .ghost-button{display:flex!important}
+  .sidebar>.desktop-signout{display:none!important}
+  .mobile-toggle{font-size:1.35rem;line-height:1}
+
+  .page-header{gap:12px}.page-header .muted{max-width:68ch}
+  .page-header>.primary-link,.page-header>.primary-button{display:flex;align-items:center;justify-content:center;min-height:46px}
+  .detail-navigation{scroll-snap-type:x proximity}.detail-navigation>*{min-height:44px;scroll-snap-align:start}
+  .detail-tabs{top:calc(var(--mobile-shell-height) + env(safe-area-inset-top) + 8px)}
+
+  input,select,textarea{font-size:16px;min-height:48px}
+  textarea{min-height:96px}
+  .primary-button,.primary-link,.secondary-button,.secondary-link,.detail-button,.danger-button{min-height:44px}
+  .secondary-link,.detail-button{display:inline-flex;align-items:center;justify-content:center}
+  details>summary{min-height:44px;align-content:center}
+  .filter-grid,.map-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .filter-actions{grid-column:1/-1}
+
+  .modal-backdrop{z-index:1600;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+  .modal-card{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);overscroll-behavior:contain}
+  .modal-close{min-width:44px;min-height:44px}
+  .aircraft-modal-backdrop{z-index:1600;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+
+  .period-control,.segment-control,.settings-nav,.data-hub-nav,.scope-links{
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .period-control>*,.segment-control>*,.settings-nav>*,.data-hub-nav>*,.scope-links>*{scroll-snap-align:start}
+  .period-control::-webkit-scrollbar,.segment-control::-webkit-scrollbar,.settings-nav::-webkit-scrollbar,.data-hub-nav::-webkit-scrollbar,.scope-links::-webkit-scrollbar{display:none}
+
+  .table-scroll,.readonly-fcl-table-wrap{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-color:#355566 transparent}
+  .pagination{max-width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .pagination>*{flex:0 0 auto}
+  .pagination>span:first-child{margin-right:0}
+  .map-panel{max-width:100%}.responsive-map{height:min(56dvh,480px);min-height:300px}
+  .map-interaction-help{line-height:1.4}
+  .data-tabs>details>summary{overflow-wrap:anywhere}
+}
+
+@media screen and (max-width:600px){
+  .content{padding-left:12px!important;padding-right:12px!important}
+  .page-header h1{font-size:1.72rem}.page-header .muted{font-size:.78rem;line-height:1.45}
+  .panel{padding:17px 14px}
+
+  .dashboard-primary{grid-template-columns:1fr 1fr;gap:8px}
+  .hero-metric{grid-column:1/-1;min-height:164px;padding:20px}
+  .hero-metric strong{font-size:2.65rem}
+  .category-card{padding:14px}.category-card strong{font-size:1.35rem}.category-card>div{display:grid;gap:2px}
+  .quickline{grid-template-columns:1fr 1fr}
+  .quickline>div,.quickline>a{min-height:74px;padding:13px 14px}
+  .quickline>*:last-child:nth-child(odd){grid-column:1/-1}
+  .flight-summary>div:last-child:nth-child(odd){grid-column:1/-1}
+
+  .filter-grid,.map-filters{grid-template-columns:1fr}
+  .filter-actions{display:grid;grid-template-columns:1fr;gap:8px}.filter-actions>*{width:100%}
+  .advanced-flight-filters>summary{min-height:52px}
+  .advanced-flight-filters>summary small{max-width:52%;line-height:1.35}
+  .active-filter-bar{margin-left:-2px;margin-right:-2px}
+
+  .detail-tabs{top:calc(var(--mobile-shell-height) + env(safe-area-inset-top) + 6px)}
+  .detail-tabs button{min-height:44px}
+  .detail-navigation{display:grid;grid-template-columns:1fr;width:100%;overflow:visible}
+  .detail-navigation>*{width:100%;text-align:center}
+  .record-protection-actions{grid-template-columns:1fr}
+
+  .entry-mode-panel>header,.logbook-edit-panel>header,.readonly-logbook-entry>header{gap:12px}
+  .entry-section>summary{min-height:54px}
+  .entry-section-body,.entry-section-primary{padding:13px}
+  .form-actions:not(.field-actions){display:grid;grid-template-columns:1fr;width:100%}
+  .form-actions:not(.field-actions)>*{width:100%}
+  .settings-save{position:static;bottom:auto;margin-top:0;box-shadow:none;backdrop-filter:none}
+
+  .modal-backdrop{align-items:end;padding:env(safe-area-inset-top) 0 0}
+  .modal-card{max-height:calc(100dvh - env(safe-area-inset-top));padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
+  .aircraft-modal{height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));border-radius:0}
+  .aircraft-modal-content{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+
+  .map-mode-control,.map-scope-links{width:100%;margin-left:0}
+  .map-mode-control a,.map-scope-links a{flex:1;text-align:center}
+  .map-filter-expander .map-filters{padding:13px}
+  .responsive-map{height:min(52dvh,420px);min-height:280px}
+  .map-interaction-help{display:grid;grid-template-columns:1fr 1fr}.map-interaction-help small{grid-column:1/-1}
+
+  .airport-search>*{width:100%}
+  .airport-search .secondary-link{text-align:center}
+  .data-hub-nav{margin-left:-2px;margin-right:-2px}
+  .data-hub-nav button{min-height:46px}
+  .stored-backup-actions{display:grid;grid-template-columns:1fr;width:100%}
+  .stored-backup-actions>*{width:100%}
+  .pagination{justify-content:flex-start;padding-left:12px;padding-right:12px}
+}
