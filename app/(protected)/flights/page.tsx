@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration } from "@/lib/data/dashboard";
-import type { FlightRow } from "@/lib/data/flights";
-import { getFlightFilterOptionsFast as getFlightFilterOptions,getFlightsPageFast as getFlightsPage } from "@/lib/data/flights-fast";
+import { getFlightFilterOptions,getFlightsPage,type FlightRow } from "@/lib/data/flights";
 export const metadata={title:"Flights | FlyTally"};
 
 type Params={page?:string;size?:string;q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string};
