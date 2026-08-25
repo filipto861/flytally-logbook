@@ -8,6 +8,7 @@ import "./v113.css";
 import "./v113-licences.css";
 import "./v113-final.css";
 import "./v113-detail.css";
+import "./v1131-mobile.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
