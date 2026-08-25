@@ -58,7 +58,7 @@ export function parseFlightInput(form: FormData): { data?: FlightInput; error?: 
   const nightMinutes=durationMinutes(form.get("nightTime")),ifrMinutes=durationMinutes(form.get("ifrTime")),blockMinutes=block??0;
   if(block!==null&&(nightMinutes>blockMinutes||ifrMinutes>blockMinutes))return{error:"Night and IFR time cannot exceed BLOCK time."};
   const verificationName=text(form,"verificationName",160),verificationReference=text(form,"verificationReference",160);
-  if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&!verificationName)return{error:"SPIC and PICUS entries require the supervising pilot's name."};
+  if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&(!verificationName||!verificationReference))return{error:"SPIC and PICUS entries require the supervising pilot's name and countersignature reference."};
   const allocation=allocatedFunctionTimes(role,blockMinutes);
   return { data: {
     date, registration, aircraftType: text(form, "aircraftType", 80),
