@@ -35,5 +35,6 @@ test("v1.23 prevents accidental page overflow while preserving intentional scrol
   assert.match(css,/body\{overflow-x:clip\}/);
   assert.match(css,/\.table-scroll,\.readonly-fcl-table-wrap\{max-width:100%;overscroll-behavior-inline:contain/);
   assert.match(css,/scroll-snap-type:x proximity/);
+  assert.match(css,/\.settings-nav>\*,\.data-hub-nav>\*,\.scope-links>\*\{flex:0 0 auto;scroll-snap-align:start\}/);
   assert.match(css,/\.pagination\{max-width:100%;overflow-x:auto;flex-wrap:nowrap/);
 });
