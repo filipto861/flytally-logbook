@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState,useEffect,useMemo,useState } from "react";
+import { useActionState,useEffect,useMemo,useRef,useState } from "react";
 import { useFormStatus } from "react-dom";
 import dynamic from "next/dynamic";
 import type { AircraftOption } from "@/lib/data/aircraft";
@@ -9,6 +9,7 @@ import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
+import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 
 const TracksMap=dynamic(()=>import("@/components/tracks-map").then(module=>module.TracksMap),{ssr:false,loading:()=> <div className="track-map-loading">Loading GPS preview…</div>});
 
@@ -35,9 +36,9 @@ function mapTrack(part:KmlPoint[],index:number,registration:string,review:Review
   return{id:index,flightId:index,date:review.date,registration,departure:review.departure,arrival:review.arrival,evidence:"ULL",distanceKm:trackStats(part).distanceKm,points:overview(part,900).map(point=>({...point,alt:point.alt??undefined,time:point.time??undefined})) as TrackPoint[]};
 }
 
-function Submit({ready}:{ready:boolean}){
+function Submit({ready,hasTrack,onReview}:{ready:boolean;hasTrack:boolean;onReview:()=>void}){
   const {pending}=useFormStatus();
-  return <button className="primary-button" disabled={pending||!ready}>{pending?"Saving reviewed flights…":ready?"Save reviewed flights":"Review every flight first"}</button>;
+  return ready?<button className="primary-button" disabled={pending}>{pending?"Saving reviewed flights…":"Save reviewed flights"}</button>:<button type="button" className="primary-button" disabled={!hasTrack} onClick={onReview}>{hasTrack?"Review imported flights":"Upload track first"}</button>;
 }
 
 function AirportReviewField({label,name,value,candidates,onChange}:{label:string;name:string;value:string;candidates:AirportCandidate[];onChange:(value:string)=>void}){
@@ -49,14 +50,16 @@ function AirportReviewField({label,name,value,candidates,onChange}:{label:string
 
 export function KmlImportForm({action,airportAction,aircraft}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[]}){
   const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
+  const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
 
   const resetParts=(next:number[],source=analysis)=>{
     if(!source)return;
+    markDirty();
     const clean=[...new Set(next)].filter(value=>Number.isSafeInteger(value)&&value>0&&value<source.points.length-1).sort((a,b)=>a-b).slice(0,19);
     setCuts(clean);setReviews(splitPoints(source.points,clean).map(reviewFor));setAirportOptions([]);setAirportCount(null);
   };
-  const updateReview=(index:number,patch:Partial<Review>)=>setReviews(current=>current.map((review,i)=>i===index?{...review,...patch}:review));
+  const updateReview=(index:number,patch:Partial<Review>)=>{markDirty();setReviews(current=>current.map((review,i)=>i===index?{...review,...patch}:review))};
 
   useEffect(()=>{
     if(!analysis||!parts.length)return;
@@ -80,10 +83,14 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
   },[analysis,cuts,airportAction]);
 
   const ready=parts.length>0&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date);
+  const reviewedCount=reviews.filter(review=>review.reviewed).length;
   const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBilling=parseBilling(selectedAircraft?.billing_basis);
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
-  return <form action={formAction} className="flight-form kml-wizard">
+  const reviewImported=()=>{const target=document.querySelector<HTMLElement>(".flight-review-card:not(.confirmed)")||document.querySelector<HTMLElement>(".flight-review-card");target?.scrollIntoView({behavior:"smooth",block:"start"});target?.focus({preventScroll:true})};
+  useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
+  return <form action={formAction} className="flight-form kml-wizard" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
+    <nav className="entry-progress" aria-label="GPS import progress"><span className={analysis?"complete":"active"}>1 <b>Source</b></span><span className={analysis?"complete":""}>2 <b>Split</b></span><span className={analysis&&reviewedCount<parts.length?"active":analysis?"complete":""}>3 <b>Review</b></span><span className={ready?"active":""}>4 <b>Save</b></span></nav>
     <div className="import-step"><span>1</span><div><strong>Upload track</strong></div></div>
     <div className="upload-zone">
       <label>KML, GPX or CSV<input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const file=event.target.files?.[0];if(!file){setAnalysis(null);setReviews([]);return}const next=inspect(await file.text(),file.name);setAnalysis(next);setRegistration(next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"");resetParts(next.suggested,next)}}/></label>
@@ -111,11 +118,12 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         <label>Cost share<select key={`share-${registration}`} name="billingShare" defaultValue={selectedBilling.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
         <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
+      <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and billing defaults. Review fields remain editable.</p>
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
       <div className="flight-review-list">{parts.map((part,index)=>{
         const review=reviews[index]||reviewFor(part),stats=trackStats(part),detected=flightEnvelope(part),touches=touchAndGoEvents(part),detectedLandings=1+touches.length,credible=hasAirborneMovement(part),quality=trackQuality(part),options=airportOptions[index]||{departureCandidates:[],arrivalCandidates:[]};
-        return <article className={`flight-review-card ${review.reviewed?"confirmed":""}${credible?"":" invalid-flight"}`} key={`${cuts.join("-")}-${index}`}>
+        return <article className={`flight-review-card ${review.reviewed?"confirmed":""}${credible?"":" invalid-flight"}`} key={`${cuts.join("-")}-${index}`} tabIndex={-1}>
           <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km · {detectedLandings} {detectedLandings===1?"landing":"landings"} · GPS {quality.status.toUpperCase()}</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
           {!credible?<p className="ground-flight-warning">This section contains no credible flight movement. Adjust or remove the split.</p>:quality.status!=="good"?<p className="track-time-warning"><b>Check this GPS section.</b> {quality.warnings.join(" ")}</p>:null}
           <div className="kml-preview"><TracksMap tracks={[mapTrack(part,index,registration,review)]} height={260} detail/></div>
@@ -139,7 +147,8 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         </article>;
       })}</div>
     </>:null}
-    {state.error?<p className="form-error">{state.error}</p>:null}
-    <div className="form-actions field-actions"><Submit ready={ready}/></div>
+    {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{reviewedCount} of {parts.length} flights reviewed</strong><small>{ready?"All flights are ready to save.":"Open each flight, check the suggested values and confirm it."}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":`${Math.max(0,parts.length-reviewedCount)} remaining`}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
+    {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
+    <div className="form-actions field-actions"><Submit ready={ready} hasTrack={Boolean(analysis&&parts.length)} onReview={reviewImported}/></div>
   </form>;
 }

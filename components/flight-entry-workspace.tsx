@@ -15,7 +15,8 @@ export function FlightEntryWorkspace({gps,manual,aircraft,initialMode="gps"}:{gp
     </section>
     <section className="panel entry-mode-panel" aria-live="polite">
       <header><div><p className="eyebrow">{mode==="gps"?"GPS IMPORT":"MANUAL ENTRY"}</p><h2>{mode==="gps"?"Review a GPS track":"Enter flight details"}</h2><p className="muted">{mode==="gps"?"Upload the track first. You will review every detected flight before anything is saved.":"Complete the essentials first; training, EASA and cost fields appear only when needed."}</p></div><button type="button" className="secondary-link" onClick={()=>setAircraftOpen(true)}>＋ Add aircraft</button></header>
-      {mode==="gps"?gps:manual}
+      <div hidden={mode!=="gps"}>{gps}</div>
+      <div hidden={mode!=="manual"}>{manual}</div>
     </section>
     {aircraftOpen?<div className="modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setAircraftOpen(false)}}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="aircraft-dialog-title"><header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-dialog-title">Add aircraft</h2><p className="muted">The new aircraft will be available for future flight entries.</p></div><button ref={closeButton} type="button" className="modal-close" aria-label="Close" onClick={()=>setAircraftOpen(false)}>×</button></header>{aircraft}</section></div>:null}
   </div>;

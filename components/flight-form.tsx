@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState,useMemo,useState } from "react";
+import { useActionState,useEffect,useMemo,useRef,useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
@@ -10,12 +10,14 @@ import { BILLING,CLASSES,EVIDENCE,ROLES } from "@/lib/flight-input";
 import { defaultEngineType,ENGINE_TYPES,formatEasaDuration,OPERATION_TYPES } from "@/lib/easa-logbook";
 import { BILLING_SHARES,calculatedFlightPrice,parseBilling,serializeBilling } from "@/lib/billing";
 import { normalizeChoice,normalizeRegistration,shouldApplyAircraftProfileDefaults } from "@/lib/flight-form-rules";
+import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type Initial=Partial<FlightRow>&Record<string,unknown>;
 
 function addTime(value:string,minutes:number){if(!/^\d\d:\d\d$/.test(value))return"";const total=(Number(value.slice(0,2))*60+Number(value.slice(3))+minutes+1440)%1440;return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function minutesBetween(start:string,end:string){if(!/^\d\d:\d\d$/.test(start)||!/^\d\d:\d\d$/.test(end))return 0;const a=Number(start.slice(0,2))*60+Number(start.slice(3)),b=Number(end.slice(0,2))*60+Number(end.slice(3));return(b-a+1440)%1440}
+function durationLabel(minutes:number){return minutes?`${Math.floor(minutes/60)}:${String(minutes%60).padStart(2,"0")}`:"—"}
 const roleLabel=(value:string)=>value==="INSTRUKTOR"?"INSTRUCTOR":value;
 const validBilling=(value:string)=>/^(BLOCK|AIR)(?:\/\d+)?$/.test(value);
 
@@ -26,9 +28,11 @@ function Submit({another=false}:{another?:boolean}){
 
 export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
+  const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:normalizeRegistration(item.registration)})),[aircraft]);
   const initialRegistration=normalizeRegistration(field("registration",editing?"":normalizedAircraft[0]?.registration||""));
   const[registration,setRegistration]=useState(initialRegistration);
+  const[date,setDate]=useState(field("date",new Date().toISOString().slice(0,10)));
   const selected=useMemo(()=>normalizedAircraft.find(x=>x.registration===registration),[normalizedAircraft,registration]);
   const registrationOptions=useMemo(()=>initialRegistration&&!normalizedAircraft.some(item=>item.registration===initialRegistration)?[{registration:initialRegistration} as AircraftOption,...normalizedAircraft]:normalizedAircraft,[initialRegistration,normalizedAircraft]);
 
@@ -66,6 +70,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
   const[landingsNight,setLandingsNight]=useState(Number(field("landings_night","0"))||0);
 
   const pickAircraft=(reg:string)=>{
+    markDirty();
     const normalized=normalizeRegistration(reg);setRegistration(normalized);
     const a=normalizedAircraft.find(x=>x.registration===normalized);
     if(a&&shouldApplyAircraftProfileDefaults(editing,initialRegistration,normalized)){
@@ -73,16 +78,19 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
       setType(a.aircraft_type||"");setClass(nextClass);setEngineType(defaultEngineType(nextClass));setEvidence(nextEvidence);setRole(nextRole);setBilling(nextBilling.basis);setBillingShare(nextBilling.share);setHourlyRate(Number(a.price_per_hour)||0);
     }
   };
-  const fillTimes=()=>{const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
+  const fillTimes=()=>{markDirty();const start=off||new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});setOff(start);setTakeoff(addTime(start,5));setLanding(addTime(start,5+duration));setOn(addTime(start,10+duration))};
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:billing==="BLOCK"?blockMinutes:0,billingValue=billing?serializeBilling(billing,billingShare):"",flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
   const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),pilotSectionOpen=trainingRole||role==="SAFETY PILOT",countersignatureRequired=["SPIC","PICUS"].includes(role);
 
   const roleGuidance=role==="DUAL"?"Enter the instructor below. The instructor is recorded as PIC; your time is credited as DUAL.":role==="SAFETY PILOT"?"Enter the actual PIC below. Safety Pilot time is kept for reference and is not added to creditable logbook totals.":["SPIC","PICUS"].includes(role)?"Add the supervising PIC/FI and countersignature reference in the EASA section.":"";
-  return <form action={formAction} className="flight-form">
+  const missing=[!date&&"date",!registration&&"aircraft",!role&&"role",!evidence&&"logbook",!aircraftClass&&"class",!billing&&"billing"].filter(Boolean);
+  useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
+  return <form action={formAction} className="flight-form" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
+    <nav className="entry-progress" aria-label="Manual flight entry progress"><span className="complete">1 <b>Source</b></span><span className="active">2 <b>Details</b></span><span>3 <b>Review &amp; save</b></span></nav>
     <section className="entry-section entry-section-primary">
       <p className="section-kicker">Flight essentials</p>
       <div className="form-grid essential-grid">
-        <label>Date<input name="date" type="date" defaultValue={field("date",new Date().toISOString().slice(0,10))} required/></label>
+        <label>Date<input name="date" type="date" value={date} onChange={event=>setDate(event.target.value)} required/></label>
         <label>Registration<select name="registration" value={registration} onChange={e=>pickAircraft(e.target.value)} required><option value="">Select</option>{registrationOptions.map(a=><option key={a.registration} value={a.registration}>{a.registration}</option>)}</select><small><Link href="/database">Manage aircraft</Link></small></label>
         <label>Role<select name="role" value={role} onChange={e=>setRole(e.target.value)} required><option value="">Select role</option>{ROLES.map(x=><option key={x} value={x}>{roleLabel(x)}</option>)}</select>{roleGuidance?<small className="role-guidance">{roleGuidance}</small>:null}</label>
         <label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>
@@ -95,7 +103,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
       </div>
     </section>
 
-    {!editing?<details className="quick-tools"><summary>Speed up entry</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips"><small>Recent routes</small>{routes.slice(0,8).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
+    {!editing?<details className="quick-tools"><summary>Speed up entry</summary><div className="quick-tools-grid"><label>Flight duration (min)<input type="number" min="1" max="1440" value={duration} onChange={e=>setDuration(Number(e.target.value)||1)}/></label><button type="button" className="secondary-link" onClick={fillTimes}>Fill UTC times ±5 min</button><button type="button" className="secondary-link" onClick={()=>{markDirty();setDeparture(arrival);setArrival(departure)}}>Reverse route</button></div>{routes.length?<div className="route-chips"><small>Recent routes</small>{routes.slice(0,8).map((r,i)=><button type="button" key={`${r.departure}-${r.arrival}-${i}`} onClick={()=>{markDirty();setDeparture(r.departure);setArrival(r.arrival)}}>{r.departure}–{r.arrival}</button>)}</div>:null}</details>:null}
 
     <details className="entry-section" open={pilotSectionOpen}>
       <summary><span>Pilot & training</span><small>{role}{field("instructor")?` · ${field("instructor")}`:""}</small></summary>
@@ -129,7 +137,14 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
       </div><section className="price-preview compact-price" aria-live="polite"><div><span>Calculated flight cost</span><strong>{hourlyRate>0&&billableMinutes>0?`${Math.round(flightPrice).toLocaleString("en-GB")} CZK`:"—"}</strong></div><small>{hourlyRate>0&&billing?`${hourlyRate.toLocaleString("en-GB")} CZK/h · ${billing} ${billing==="AIR"?`${Math.floor(airMinutes/60)}:${String(airMinutes%60).padStart(2,"0")}`:`${Math.floor(blockMinutes/60)}:${String(blockMinutes%60).padStart(2,"0")}`} · 1/${billingShare}`:hourlyRate>0?"Select billing basis":"Hourly rate missing"}</small></section></div>
     </details>
 
-    {state.error?<p className="form-error" role="alert">{state.error}</p>:null}
+    <section className="entry-review-summary" aria-labelledby="flight-review-heading">
+      <header><div><p className="section-kicker">Review before save</p><h3 id="flight-review-heading">{departure||"?"} → {arrival||"?"}</h3></div><span className={missing.length?"needs-attention":"ready"}>{missing.length?`${missing.length} ${missing.length===1?"item":"items"} need attention`:"Ready to save"}</span></header>
+      <dl><div><dt>Date / aircraft</dt><dd>{date||"—"} · {registration||"—"}</dd></div><div><dt>Role / logbook</dt><dd>{roleLabel(role)||"—"} · {evidence||"—"}</dd></div><div><dt>BLOCK / AIR</dt><dd>{durationLabel(blockMinutes)} / {durationLabel(airMinutes)}</dd></div><div><dt>Landings</dt><dd>{landingsDay} day{landingsNight?` · ${landingsNight} night`:""}</dd></div><div><dt>Estimated cost</dt><dd>{hourlyRate>0&&billableMinutes>0?`${Math.round(flightPrice).toLocaleString("en-GB")} CZK`:"—"}</dd></div></dl>
+      {selected&&!editing?<p className="value-origin-note"><span>Automatic</span> Aircraft, logbook and billing defaults came from {registration}. You can change them above.</p>:null}
+      {dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}
+    </section>
+
+    {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
     {state.success?<p className="form-success" role="status">{state.success}</p>:null}
     <div className="form-actions field-actions"><Submit/>{!editing?<Submit another/>:null}</div>
   </form>;
