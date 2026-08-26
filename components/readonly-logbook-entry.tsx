@@ -13,6 +13,7 @@ function remarks(row:Record<string,unknown>){
   if(isAuxiliaryLogbookRole(role))parts.push(`${role} · NON-CREDITABLE`);
   if(text(row.task))parts.push(text(row.task));
   if(text(row.note))parts.push(text(row.note));
+  if(text(row.instructor_approval_name))parts.push(`FI APPROVED: ${text(row.instructor_approval_name)}`);
   return parts.join(" · ")||"—";
 }
 

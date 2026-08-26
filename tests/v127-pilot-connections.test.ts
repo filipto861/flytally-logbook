@@ -8,7 +8,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.27 creates one private connection per pilot pair",()=>{
   const migration=read("lib/db-optimization.ts"),plan=read("lib/migration-plan.ts");
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=10/);
+  assert.match(plan,/\{version:10,name:"private pilot connections"\}/);
   assert.match(plan,/private pilot connections/);
   assert.match(migration,/CREATE TABLE IF NOT EXISTS pilot_connections/);
   assert.match(migration,/LEAST\(requester_user_id,recipient_user_id\),GREATEST\(requester_user_id,recipient_user_id\)/);

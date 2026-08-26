@@ -18,6 +18,7 @@ const migrationNames:Record<number,string>={
   8:"certified FSTD correction revisions",
   9:"private beta authentication foundation",
   10:"private pilot connections",
+  11:"instructor flight approvals",
 };
 
 const migrationQueries=(version:number)=>{
@@ -336,6 +337,22 @@ const migrationQueries=(version:number)=>{
     sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_pilot_connections_pair ON pilot_connections(LEAST(requester_user_id,recipient_user_id),GREATEST(requester_user_id,recipient_user_id))`,
     sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_recipient_status ON pilot_connections(recipient_user_id,status,created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_requester_status ON pilot_connections(requester_user_id,status,created_at DESC)`,
+  ];
+  if(version===11)return[
+    sql`CREATE TABLE IF NOT EXISTS instructor_flight_approvals (
+      id BIGSERIAL PRIMARY KEY,
+      flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      student_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      instructor_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      record_revision INTEGER NOT NULL,
+      flight_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','declined')),
+      requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),decided_at TIMESTAMPTZ,
+      decision_note TEXT NOT NULL DEFAULT '',
+      CHECK(student_user_id<>instructor_user_id),UNIQUE(flight_id,record_revision)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_instructor_status ON instructor_flight_approvals(instructor_user_id,status,requested_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_student_flight ON instructor_flight_approvals(student_user_id,flight_id,record_revision DESC)`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

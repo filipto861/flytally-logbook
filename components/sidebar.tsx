@@ -4,20 +4,21 @@ import { usePathname } from "next/navigation";
 import { useEffect,useState } from "react";
 import { logout } from "@/app/login/actions";
 import styles from "./sidebar.module.css";
+import { NavIcon } from "./nav-icon";
 
 // Certification remains contextual on flight/FSTD records; there is no standalone sidebar destination.
 const mainLinks=[
-  {href:"/dashboard",icon:"⌂",label:"Dashboard"},
-  {href:"/flights",icon:"✈",label:"Flights"},
-  {href:"/fstd",icon:"↳",label:"FSTD sessions",sub:true},
-  {href:"/flights/new",icon:"＋",label:"Add flight"},
-  {href:"/map",icon:"◎",label:"Map"},
+  {href:"/dashboard",icon:"dashboard",label:"Dashboard"},
+  {href:"/flights",icon:"flights",label:"Flights"},
+  {href:"/fstd",icon:"simulator",label:"FSTD sessions",sub:true},
+  {href:"/flights/new",icon:"add",label:"Add flight"},
+  {href:"/map",icon:"map",label:"Map"},
 ] as const;
 const profileLinks=[
-  {href:"/connections",icon:"◇",label:"Connections"},
-  {href:"/profile",icon:"⚙",label:"Settings"},
-  {href:"/database",icon:"▤",label:"Aircraft & airports"},
-  {href:"/data",icon:"◆",label:"Print & data"},
+  {href:"/connections",icon:"connections",label:"Connections"},
+  {href:"/profile",icon:"settings",label:"Settings"},
+  {href:"/database",icon:"database",label:"Aircraft & airports"},
+  {href:"/data",icon:"data",label:"Print & data"},
 ] as const;
 
 export function Sidebar({role="user"}:{role?:"admin"|"user"}){
@@ -38,14 +39,14 @@ export function Sidebar({role="user"}:{role?:"admin"|"user"}){
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>setMobile(false)}/>
     <nav id="primary-navigation" aria-label="Main navigation">
-      {mainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i>{link.icon}</i><span>{link.label}</span></Link>})}
+      {mainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
       <div className={styles.group}>
-        <div className={styles.groupTitle}><i>●</i><span>Manage</span></div>
-        {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i>{link.icon}</i><span>{link.label}</span></Link>})}
+        <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Manage</span></div>
+        {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
       </div>
-      {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i>⚙</i><span>Administration</span></Link>:null}
-      <form action={logout} className="mobile-only-signout"><button className="ghost-button" title="Sign out"><i>↪</i><span>Sign out</span></button></form>
+      {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i><NavIcon name="admin"/></i><span>Administration</span></Link>:null}
+      <form action={logout} className="mobile-only-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
     </nav>
-    <form action={logout} className="desktop-signout"><button className="ghost-button" title="Sign out"><i>↪</i><span>Sign out</span></button></form>
+    <form action={logout} className="desktop-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
   </aside>;
 }
