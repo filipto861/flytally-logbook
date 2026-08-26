@@ -67,3 +67,9 @@ test("invitations and password resets use the verified transactional sender",()=
   assert.match(admin,/sendInvitationEmail/);
   assert.match(login,/Forgot password\?/);
 });
+
+test("admin user activity combines legacy and modern login timestamps as text",()=>{
+  const admin=read("app/(protected)/admin/page.tsx");
+  assert.match(admin,/COALESCE\(c\.last_login_at::text,\(SELECT MAX\(last_login_at\)::text FROM auth_identities/);
+  assert.doesNotMatch(admin,/COALESCE\(c\.last_login_at,\(SELECT MAX\(last_login_at\) FROM auth_identities/);
+});

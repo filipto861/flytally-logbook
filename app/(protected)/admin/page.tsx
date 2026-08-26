@@ -10,7 +10,7 @@ const t=(v:unknown)=>String(v??"");
 export default async function AdminPage(){
   const session=await requireUser();if(session.role!=="admin")redirect("/dashboard");
   const [users,health,invites]=await Promise.all([
-    sql`SELECT u.id,u.email,u.display_name,u.role,u.active,u.created_at,COALESCE(c.last_login_at,(SELECT MAX(last_login_at) FROM auth_identities i WHERE i.user_id=u.id)) last_login_at,(SELECT COUNT(*) FROM flights f WHERE f.user_id=u.id)::int flights,(SELECT COUNT(*) FROM flight_tracks ft WHERE ft.user_id=u.id)::int tracks FROM users u LEFT JOIN user_credentials c ON c.user_id=u.id ORDER BY u.active DESC,u.email` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT u.id,u.email,u.display_name,u.role,u.active,u.created_at,COALESCE(c.last_login_at::text,(SELECT MAX(last_login_at)::text FROM auth_identities i WHERE i.user_id=u.id)) last_login_at,(SELECT COUNT(*) FROM flights f WHERE f.user_id=u.id)::int flights,(SELECT COUNT(*) FROM flight_tracks ft WHERE ft.user_id=u.id)::int tracks FROM users u LEFT JOIN user_credentials c ON c.user_id=u.id ORDER BY u.active DESC,u.email` as Promise<Array<Record<string,unknown>>>,
     getSystemHealth(session.userId),
     sql`SELECT id,email,expires_at,created_at FROM auth_invites WHERE used_at IS NULL AND revoked_at IS NULL AND expires_at>NOW() ORDER BY created_at DESC` as Promise<Array<Record<string,unknown>>>,
   ]);
