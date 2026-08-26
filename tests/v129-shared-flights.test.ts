@@ -8,7 +8,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.29 stores one participant entry per protected source revision and role",()=>{
   const migration=read("lib/db-optimization.ts"),plan=read("lib/migration-plan.ts");
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=12/);
+  assert.match(plan,/\{version:12,name:"shared flight participation"\}/);
   assert.match(migration,/CREATE TABLE IF NOT EXISTS flight_participations/);
   assert.match(migration,/UNIQUE\(source_flight_id,source_revision,participant_role\)/);
   assert.match(migration,/UNIQUE\(participant_flight_id\)/);
@@ -16,10 +16,10 @@ test("v1.29 stores one participant entry per protected source revision and role"
 
 test("Safety Pilot invitations require a certified PIC flight and an accepted connection",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
-  assert.match(actions,/UPPER\(TRIM\(COALESCE\(f\.role,''\)\)\)='PIC'/);
+  assert.match(actions,/validCrewCombination\(source\[0\]\?\.role,role\)/);
   assert.match(actions,/f\.certified_at IS NOT NULL/);
   assert.match(actions,/c\.status='accepted'/);
-  assert.match(actions,/\$\{participantId\},'SAFETY PILOT'/);
+  assert.match(actions,/form\.set\("participant_role","SAFETY PILOT"\)/);
 });
 
 test("participant acceptance rechecks the exact certification fingerprint",()=>{

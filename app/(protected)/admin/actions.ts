@@ -25,3 +25,4 @@ export async function createInvitation(_:InviteState,form:FormData):Promise<Invi
   try{await sendInvitationEmail(email,url,Number(created[0]?.id));revalidatePath("/admin");return{url,sent:true};}catch(error){console.error("invitation-email-failed",error);revalidatePath("/admin");return{url,error:"Invitation was created, but the email could not be sent. Copy the private link below."};}
 }
 export async function revokeInvitation(form:FormData){await admin();const id=Number(form.get("id"));if(!Number.isSafeInteger(id)||id<=0)return;await sql`UPDATE auth_invites SET revoked_at=NOW() WHERE id=${id} AND used_at IS NULL`;revalidatePath("/admin")}
+export async function toggleFeature(form:FormData){const session=await admin(),key=String(form.get("key")??"");if(!["crew_sharing","verified_approvals"].includes(key))return;await sql`UPDATE feature_switches SET enabled=NOT enabled,updated_by_user_id=${session.userId},updated_at=NOW() WHERE key=${key}`;revalidatePath("/admin")}

@@ -4,11 +4,13 @@ export type PortableBackup={
   flights:BackupRow[];aircraft:BackupRow[];rates:BackupRow[];airports:BackupRow[];expiries:BackupRow[];
   settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];audit_log:BackupRow[];
   fstd_sessions:BackupRow[];flight_certified_revisions:BackupRow[];fstd_certified_revisions:BackupRow[];deleted_flights:BackupRow[];
+  pilot_connections?:BackupRow[];flight_participations?:BackupRow[];instructor_flight_approvals?:BackupRow[];pilot_licences?:BackupRow[];pilot_qualifications?:BackupRow[];user_notifications?:BackupRow[];flight_verifications?:BackupRow[];connection_audit_log?:BackupRow[];
   integrity:{algorithm:string;payload_sha256:string};
 };
 
 const legacyArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
 const v6Arrays=[...legacyArrays,"audit_log","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","deleted_flights"] as const;
+const v7Arrays=[...v6Arrays,"pilot_connections","flight_participations","instructor_flight_approvals","pilot_licences","pilot_qualifications","user_notifications","flight_verifications","connection_audit_log"] as const;
 export const portableBackupDigest=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
 const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?raw:date.toISOString()};
@@ -37,6 +39,13 @@ export function validateBackupArchiveRelationships(backup:Pick<PortableBackup,"f
 function validateOwnership(payload:Record<string,unknown>){
   const sourceUserId=Number((payload.profile as BackupRow|undefined)?.id||0);if(!Number.isSafeInteger(sourceUserId)||sourceUserId<=0)throw new Error("Version 6 backup profile has no valid source account identifier.");
   for(const key of v6Arrays)for(const row of payload[key] as BackupRow[])if("user_id" in row&&Number(row.user_id)!==sourceUserId)throw new Error(`Backup section ${key} contains a record from another account.`);
+  if(Number(payload.version||0)>=7){
+    for(const row of payload.pilot_connections as BackupRow[])if(Number(row.requester_user_id)!==sourceUserId&&Number(row.recipient_user_id)!==sourceUserId)throw new Error("Backup contains an unrelated connection.");
+    for(const row of payload.flight_participations as BackupRow[])if(Number(row.source_user_id)!==sourceUserId&&Number(row.participant_user_id)!==sourceUserId)throw new Error("Backup contains an unrelated flight participation.");
+    for(const row of payload.instructor_flight_approvals as BackupRow[])if(Number(row.student_user_id)!==sourceUserId&&Number(row.instructor_user_id)!==sourceUserId)throw new Error("Backup contains an unrelated approval.");
+    for(const row of payload.flight_verifications as BackupRow[])if(Number(row.flight_user_id)!==sourceUserId&&Number(row.signer_user_id)!==sourceUserId)throw new Error("Backup contains an unrelated verification.");
+    for(const key of ["pilot_licences","pilot_qualifications","user_notifications"] as const)for(const row of payload[key] as BackupRow[])if(Number(row.user_id)!==sourceUserId)throw new Error(`Backup section ${key} contains a record from another account.`);
+  }
   return sourceUserId;
 }
 
@@ -50,9 +59,10 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   for(const key of legacyArrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if(version>=5&&!Array.isArray(payload.audit_log))throw new Error("Backup section audit_log is missing.");
   if(version>=6)for(const key of ["fstd_sessions","flight_certified_revisions","fstd_certified_revisions","deleted_flights"] as const)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
+  if(version>=7)for(const key of v7Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Backup exceeds the safe number of flights or GPS tracks.");
-  if(!Array.isArray(payload.audit_log))payload.audit_log=[];if(!Array.isArray(payload.fstd_sessions))payload.fstd_sessions=[];if(!Array.isArray(payload.flight_certified_revisions))payload.flight_certified_revisions=[];if(!Array.isArray(payload.fstd_certified_revisions))payload.fstd_certified_revisions=[];if(!Array.isArray(payload.deleted_flights))payload.deleted_flights=[];
-  const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
+  if(!Array.isArray(payload.audit_log))payload.audit_log=[];if(!Array.isArray(payload.fstd_sessions))payload.fstd_sessions=[];if(!Array.isArray(payload.flight_certified_revisions))payload.flight_certified_revisions=[];if(!Array.isArray(payload.fstd_certified_revisions))payload.fstd_certified_revisions=[];if(!Array.isArray(payload.deleted_flights))payload.deleted_flights=[];for(const key of v7Arrays)if(!Array.isArray(payload[key]))payload[key]=[];
+  const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=7?v7Arrays:version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
   for(const key of countKeys)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(version>=6)validateOwnership(payload);
   const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}} as PortableBackup;

@@ -20,6 +20,7 @@ const migrationNames:Record<number,string>={
   10:"private pilot connections",
   11:"instructor flight approvals",
   12:"shared flight participation",
+  13:"crew connections and verified approvals",
 };
 
 const migrationQueries=(version:number)=>{
@@ -371,6 +372,74 @@ const migrationQueries=(version:number)=>{
     )`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_recipient_status ON flight_participations(participant_user_id,status,created_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_source ON flight_participations(source_user_id,source_flight_id,source_revision DESC)`,
+  ];
+  if(version===13)return[
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS requester_label TEXT NOT NULL DEFAULT 'pilot'`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS recipient_label TEXT NOT NULL DEFAULT 'pilot'`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS requester_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS recipient_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE`,
+    sql`ALTER TABLE pilot_connections ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ`,
+    sql`UPDATE pilot_connections SET requester_label='instructor' WHERE relationship='requester_instructor' AND requester_label='pilot'`,
+    sql`UPDATE pilot_connections SET recipient_label='instructor' WHERE relationship='recipient_instructor' AND recipient_label='pilot'`,
+    sql`ALTER TABLE pilot_connections DROP CONSTRAINT IF EXISTS pilot_connections_status_check`,
+    sql`ALTER TABLE pilot_connections ADD CONSTRAINT pilot_connections_status_check CHECK(status IN ('pending','accepted','declined','cancelled'))`,
+    sql`DROP INDEX IF EXISTS idx_pilot_connections_pair`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_pilot_connections_active_pair ON pilot_connections(LEAST(requester_user_id,recipient_user_id),GREATEST(requester_user_id,recipient_user_id)) WHERE status IN ('pending','accepted')`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_participant_role_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_participant_role_check CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER'))`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_status_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_status_check CHECK(status IN ('pending','accepted','declined','superseded','cancelled'))`,
+    sql`DO $$ DECLARE constraint_name text; BEGIN
+      SELECT conname INTO constraint_name FROM pg_constraint WHERE conrelid='flight_participations'::regclass AND contype='u' AND pg_get_constraintdef(oid) LIKE '%source_flight_id, source_revision, participant_role%';
+      IF constraint_name IS NOT NULL THEN EXECUTE format('ALTER TABLE flight_participations DROP CONSTRAINT %I',constraint_name); END IF;
+    END $$`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_flight_participations_revision_member ON flight_participations(source_flight_id,source_revision,participant_user_id)`,
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`,
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS superseded_at TIMESTAMPTZ`,
+    sql`ALTER TABLE instructor_flight_approvals DROP CONSTRAINT IF EXISTS instructor_flight_approvals_status_check`,
+    sql`ALTER TABLE instructor_flight_approvals ADD CONSTRAINT instructor_flight_approvals_status_check CHECK(status IN ('pending','approved','declined','superseded','cancelled','revoked'))`,
+    sql`CREATE TABLE IF NOT EXISTS pilot_licences (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      licence_type TEXT NOT NULL,licence_number TEXT NOT NULL,authority TEXT NOT NULL DEFAULT '',country TEXT NOT NULL DEFAULT '',
+      validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),valid_until DATE,recency_until DATE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id,licence_type,licence_number)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS pilot_qualifications (
+      id BIGSERIAL PRIMARY KEY,licence_id BIGINT NOT NULL REFERENCES pilot_licences(id) ON DELETE CASCADE,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      qualification_type TEXT NOT NULL,certificate_reference TEXT NOT NULL DEFAULT '',
+      validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),valid_until DATE,recency_until DATE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(licence_id,qualification_type,certificate_reference)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_qualifications_user_active ON pilot_qualifications(user_id,active,qualification_type)`,
+    sql`CREATE TABLE IF NOT EXISTS flight_verifications (
+      id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      flight_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,signer_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      verification_role TEXT NOT NULL CHECK(verification_role IN ('INSTRUCTOR','SUPERVISING PIC','EXAMINER')),
+      record_revision INTEGER NOT NULL,flight_hash TEXT NOT NULL,credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      payload_hash TEXT NOT NULL DEFAULT '',server_signature TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','signed','declined','superseded','cancelled','revoked')),
+      requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),signed_at TIMESTAMPTZ,declined_at TIMESTAMPTZ,cancelled_at TIMESTAMPTZ,revoked_at TIMESTAMPTZ,
+      decision_note TEXT NOT NULL DEFAULT '',revocation_reason TEXT NOT NULL DEFAULT '',
+      UNIQUE(flight_id,record_revision,signer_user_id,verification_role)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_verifications_signer_status ON flight_verifications(signer_user_id,status,requested_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_verifications_flight_revision ON flight_verifications(flight_user_id,flight_id,record_revision DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS user_notifications (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,title TEXT NOT NULL,body TEXT NOT NULL DEFAULT '',href TEXT NOT NULL DEFAULT '',dedupe_key TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),read_at TIMESTAMPTZ,
+      UNIQUE(user_id,dedupe_key)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON user_notifications(user_id,created_at DESC) WHERE read_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS connection_audit_log (
+      id BIGSERIAL PRIMARY KEY,actor_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,subject_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      entity_type TEXT NOT NULL,entity_id BIGINT,event_type TEXT NOT NULL,details JSONB NOT NULL DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_connection_audit_subject ON connection_audit_log(subject_user_id,created_at DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS feature_switches (key TEXT PRIMARY KEY,enabled BOOLEAN NOT NULL DEFAULT TRUE,updated_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+    sql`INSERT INTO feature_switches(key,enabled) VALUES('crew_sharing',TRUE),('verified_approvals',TRUE) ON CONFLICT(key) DO NOTHING`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

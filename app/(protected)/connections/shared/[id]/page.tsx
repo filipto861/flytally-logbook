@@ -5,6 +5,7 @@ import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { ReadonlyLogbookEntry } from "@/components/readonly-logbook-entry";
 import { acceptSharedFlight,declineSharedFlight } from "@/app/(protected)/flights/shared-actions";
+import { crewRoleCredits } from "@/lib/crew";
 
 const text=(value:unknown)=>String(value??"").trim();
 
@@ -18,7 +19,8 @@ export default async function SharedFlightReview({params,searchParams}:{params:P
     WHERE p.id=${participationId} AND p.participant_user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;
   const row=rows[0];if(!row)notFound();
   const current=Boolean(row.certified_at)&&Number(row.record_revision)===Number(row.source_revision)&&text(row.certification_hash)===text(row.source_hash),accept=acceptSharedFlight.bind(null,participationId),decline=declineSharedFlight.bind(null,participationId),accepted=Boolean(row.participant_flight_id);
-  const safeRow={...row,role:row.participant_role,commander:row.pilot_name,instructor:"",pic_minutes:0,copilot_minutes:0,dual_minutes:0,instructor_minutes:0,note:""};
+  const credit=crewRoleCredits(row.participant_role,Number(row.block_minutes));
+  const safeRow={...row,role:row.participant_role,commander:row.pilot_name,instructor:row.participant_role==="INSTRUCTOR"?row.pilot_name:"",pic_minutes:credit.pic,copilot_minutes:credit.copilot,dual_minutes:0,instructor_minutes:credit.instructor,note:""};
   return <>
     <header className="page-header"><div><p className="eyebrow">SHARED FLIGHT</p><h1>{text(row.registration)} · {text(row.date)}</h1><p className="muted">{text(row.pilot_name)} invites you as {text(row.participant_role)}.</p></div><Link className="secondary-link" href="/connections">← Connections</Link></header>
     {query.error?<p className="form-error">{query.error==="duplicate"?"A flight with the same date, time and route already exists with a different role.":"This invitation no longer matches the current certified flight."}</p>:null}
