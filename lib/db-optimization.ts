@@ -16,6 +16,7 @@ const migrationNames:Record<number,string>={
   6:"FCL.050 structured aircraft, FSTD and certification",
   7:"certified flight correction revisions",
   8:"certified FSTD correction revisions",
+  9:"private beta authentication foundation",
 };
 
 const migrationQueries=(version:number)=>{
@@ -280,6 +281,46 @@ const migrationQueries=(version:number)=>{
         RETURN NEW;
       END;
     $$ LANGUAGE plpgsql`,
+  ];
+  if(version===9)return[
+    sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_flytally_users_email_normalized ON users(LOWER(BTRIM(email)))`,
+    sql`CREATE TABLE IF NOT EXISTS auth_identities (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,provider_subject TEXT NOT NULL,provider_email TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),last_login_at TIMESTAMPTZ,
+      UNIQUE(provider,provider_subject),UNIQUE(user_id,provider)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS auth_sessions (
+      id UUID PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),expires_at TIMESTAMPTZ NOT NULL,
+      revoked_at TIMESTAMPTZ,user_agent TEXT NOT NULL DEFAULT '',ip_hash TEXT NOT NULL DEFAULT ''
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_active ON auth_sessions(user_id,expires_at DESC) WHERE revoked_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_invites (
+      id BIGSERIAL PRIMARY KEY,email TEXT NOT NULL,token_hash TEXT NOT NULL UNIQUE,role TEXT NOT NULL DEFAULT 'user',
+      expires_at TIMESTAMPTZ NOT NULL,created_by_user_id BIGINT NOT NULL REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),used_at TIMESTAMPTZ,used_by_user_id BIGINT REFERENCES users(id),revoked_at TIMESTAMPTZ
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_invites_email_active ON auth_invites(LOWER(BTRIM(email)),expires_at DESC) WHERE used_at IS NULL AND revoked_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_password_resets (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,requested_ip_hash TEXT NOT NULL DEFAULT ''
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_password_resets_user_active ON auth_password_resets(user_id,expires_at DESC) WHERE used_at IS NULL`,
+    sql`CREATE TABLE IF NOT EXISTS auth_login_attempts (
+      id BIGSERIAL PRIMARY KEY,email_hash TEXT NOT NULL,ip_hash TEXT NOT NULL,
+      attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),succeeded BOOLEAN NOT NULL DEFAULT FALSE
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_attempts_email_time ON auth_login_attempts(email_hash,attempted_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_attempts_ip_time ON auth_login_attempts(ip_hash,attempted_at DESC)`,
+    sql`CREATE TABLE IF NOT EXISTS auth_events (
+      id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,event_type TEXT NOT NULL,
+      event_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ip_hash TEXT NOT NULL DEFAULT '',user_agent TEXT NOT NULL DEFAULT '',details JSONB NOT NULL DEFAULT '{}'::jsonb
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_auth_events_user_time ON auth_events(user_id,event_at DESC)`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

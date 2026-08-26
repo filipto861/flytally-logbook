@@ -1,0 +1,4 @@
+"use client";
+import { useActionState } from "react";
+import { resetPassword } from "./actions";
+export function ResetPasswordForm({token}:{token:string}){const[state,action,pending]=useActionState(resetPassword,{});return <form action={action} className="login-form"><input type="hidden" name="token" value={token}/><label>New password<input name="password" type="password" minLength={12} maxLength={128} autoComplete="new-password" required autoFocus/><small>At least 12 characters.</small></label><label>Confirm new password<input name="confirm" type="password" minLength={12} maxLength={128} autoComplete="new-password" required/></label>{state.error?<p className="form-error" role="alert">{state.error}</p>:null}<button className="primary-button" disabled={pending}>{pending?"Saving…":"Set new password"}</button></form>}
