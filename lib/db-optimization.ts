@@ -19,6 +19,7 @@ const migrationNames:Record<number,string>={
   9:"private beta authentication foundation",
   10:"private pilot connections",
   11:"instructor flight approvals",
+  12:"shared flight participation",
 };
 
 const migrationQueries=(version:number)=>{
@@ -353,6 +354,23 @@ const migrationQueries=(version:number)=>{
     )`,
     sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_instructor_status ON instructor_flight_approvals(instructor_user_id,status,requested_at DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_instructor_approvals_student_flight ON instructor_flight_approvals(student_user_id,flight_id,record_revision DESC)`,
+  ];
+  if(version===12)return[
+    sql`CREATE TABLE IF NOT EXISTS flight_participations (
+      id BIGSERIAL PRIMARY KEY,
+      source_flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
+      source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participant_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participant_role TEXT NOT NULL CHECK(participant_role IN ('INSTRUCTOR','SAFETY PILOT')),
+      source_revision INTEGER NOT NULL,source_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','declined')),
+      participant_flight_id BIGINT REFERENCES flights(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),responded_at TIMESTAMPTZ,
+      CHECK(source_user_id<>participant_user_id),
+      UNIQUE(source_flight_id,source_revision,participant_role),UNIQUE(participant_flight_id)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_recipient_status ON flight_participations(participant_user_id,status,created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_participations_source ON flight_participations(source_user_id,source_flight_id,source_revision DESC)`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

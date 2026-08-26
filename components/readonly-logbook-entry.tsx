@@ -17,7 +17,7 @@ function remarks(row:Record<string,unknown>){
   return parts.join(" · ")||"—";
 }
 
-export function ReadonlyLogbookEntry({row,pilotName,certified,easa}:{row:Record<string,unknown>;pilotName:string;certified:boolean;easa:boolean}){
+export function ReadonlyLogbookEntry({row,pilotName,certified,easa,preview=false}:{row:Record<string,unknown>;pilotName:string;certified:boolean;easa:boolean;preview?:boolean}){
   const role=text(row.role).toUpperCase(),operation=text(row.operation_type).toUpperCase()||"SP",engine=text(row.engine_type).toUpperCase()||"SE",creditable=!isAuxiliaryLogbookRole(role),flight=creditable?minutes(row.block_minutes):0;
   const picName=pilotInCommandName(row,pilotName),displayPic=picName&&pilotName&&picName.localeCompare(pilotName,undefined,{sensitivity:"accent"})===0?"SELF":picName||"—";
   const spSe=creditable&&operation!=="MP"&&engine!=="ME"?hm(flight):"—",spMe=creditable&&operation!=="MP"&&engine==="ME"?hm(flight):"—",mp=creditable&&operation==="MP"?hm(flight):"—";
@@ -28,7 +28,7 @@ export function ReadonlyLogbookEntry({row,pilotName,certified,easa}:{row:Record<
     ["Pilot function",`PIC ${hm(row.pic_minutes)} · Co-pilot ${hm(row.copilot_minutes)} · DUAL ${hm(row.dual_minutes)} · FI/FE ${hm(row.instructor_minutes)}`],["Remarks",remarks(row)],
   ];
   return <section className="panel readonly-logbook-entry">
-    <header><div><p className="eyebrow">{certified?"PROTECTED RECORD":"READ-ONLY RECORD"}</p><h2>{easa?"FCL.050 logbook entry":"Logbook entry"}</h2><p className="muted">{certified?"This is the certified stored revision. It is displayed exactly as a logbook entry and cannot be edited here.":"This record is locked. Unlock it on the Overview tab to make changes."}</p></div><span className={certified?"status-on":"record-status"}>{certified?"CERTIFIED":"LOCKED"}</span></header>
+    <header><div><p className="eyebrow">{preview?"SHARED FLIGHT PREVIEW":certified?"PROTECTED RECORD":"READ-ONLY RECORD"}</p><h2>{easa?"FCL.050 logbook entry":"Logbook entry"}</h2><p className="muted">{preview?"This is the separate draft FlyTally will create in your logbook.":certified?"This is the certified stored revision. It is displayed exactly as a logbook entry and cannot be edited here.":"This record is locked. Unlock it on the Overview tab to make changes."}</p></div><span className={preview?"record-status":certified?"status-on":"record-status"}>{preview?"PREVIEW":certified?"CERTIFIED":"LOCKED"}</span></header>
     {easa?<div className="readonly-fcl-table-wrap"><table className="readonly-fcl-table"><caption>FCL.050 single-flight logbook preview</caption><thead>
       <tr><th rowSpan={2}>Date</th><th colSpan={2}>Departure</th><th colSpan={2}>Arrival</th><th colSpan={2}>Aircraft</th><th colSpan={2}>Single-pilot time</th><th rowSpan={2}>Multi-pilot</th><th rowSpan={2}>Total flight</th><th rowSpan={2}>Name PIC</th><th colSpan={2}>Landings</th><th colSpan={2}>Conditions</th><th colSpan={4}>Pilot function</th><th rowSpan={2}>Remarks</th></tr>
       <tr><th>Place</th><th>UTC</th><th>Place</th><th>UTC</th><th>Type</th><th>Registration</th><th>SE</th><th>ME</th><th>Day</th><th>Night</th><th>Night</th><th>IFR</th><th>PIC</th><th>Co-pilot</th><th>DUAL</th><th>FI/FE</th></tr>
