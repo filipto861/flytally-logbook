@@ -14,6 +14,7 @@ const mainLinks=[
   {href:"/map",icon:"◎",label:"Map"},
 ] as const;
 const profileLinks=[
+  {href:"/connections",icon:"◇",label:"Connections"},
   {href:"/profile",icon:"⚙",label:"Settings"},
   {href:"/database",icon:"▤",label:"Aircraft & airports"},
   {href:"/data",icon:"◆",label:"Print & data"},

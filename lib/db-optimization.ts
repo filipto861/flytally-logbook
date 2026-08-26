@@ -17,6 +17,7 @@ const migrationNames:Record<number,string>={
   7:"certified flight correction revisions",
   8:"certified FSTD correction revisions",
   9:"private beta authentication foundation",
+  10:"private pilot connections",
 };
 
 const migrationQueries=(version:number)=>{
@@ -321,6 +322,20 @@ const migrationQueries=(version:number)=>{
       event_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ip_hash TEXT NOT NULL DEFAULT '',user_agent TEXT NOT NULL DEFAULT '',details JSONB NOT NULL DEFAULT '{}'::jsonb
     )`,
     sql`CREATE INDEX IF NOT EXISTS idx_auth_events_user_time ON auth_events(user_id,event_at DESC)`,
+  ];
+  if(version===10)return[
+    sql`CREATE TABLE IF NOT EXISTS pilot_connections (
+      id BIGSERIAL PRIMARY KEY,
+      requester_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      relationship TEXT NOT NULL CHECK(relationship IN ('pilot','requester_instructor','recipient_instructor')),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),accepted_at TIMESTAMPTZ,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CHECK(requester_user_id<>recipient_user_id)
+    )`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_pilot_connections_pair ON pilot_connections(LEAST(requester_user_id,recipient_user_id),GREATEST(requester_user_id,recipient_user_id))`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_recipient_status ON pilot_connections(recipient_user_id,status,created_at DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_pilot_connections_requester_status ON pilot_connections(requester_user_id,status,created_at DESC)`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
