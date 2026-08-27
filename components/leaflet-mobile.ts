@@ -1,6 +1,23 @@
 import L from "leaflet";
 
+const CARTO_HOST="basemaps.cartocdn.com";
+const OSM_TILES="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+function replaceLegacyCartoBasemap(map:L.Map){
+  let replace=false;
+  map.eachLayer(layer=>{
+    if(!(layer instanceof L.TileLayer))return;
+    const url=String((layer as L.TileLayer&{_url?:string})._url??"");
+    if(url.includes(CARTO_HOST)){map.removeLayer(layer);replace=true}
+  });
+  if(!replace)return;
+  const tilePane=map.getPane("tilePane");
+  if(tilePane)tilePane.style.filter="brightness(.62) invert(1) contrast(2.15) hue-rotate(180deg) saturate(.28)";
+  L.tileLayer(OSM_TILES,{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+}
+
 export function installResponsiveMap(map:L.Map,target:HTMLElement){
+  replaceLegacyCartoBasemap(map);
   const observer=new ResizeObserver(()=>map.invalidateSize({pan:false}));observer.observe(target);
   const timer=window.setTimeout(()=>map.invalidateSize({pan:false}),0);
   let control:L.Control|null=null;

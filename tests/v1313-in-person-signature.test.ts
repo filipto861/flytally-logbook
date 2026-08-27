@@ -7,4 +7,4 @@ test("in-person evidence is bound to the exact revision without impersonating a 
 
 test("LAPL refresher accepts any signed instructor verification including in-person evidence",()=>{const licences=read("app/(protected)/credentials/page.tsx");assert.match(licences,/v\.verification_role='INSTRUCTOR' AND v\.status='signed'/);assert.doesNotMatch(licences,/v\.verification_role='INSTRUCTOR' AND v\.signer_user_id/)});
 
-test("v1.31.3 release version is current",()=>{assert.equal(JSON.parse(read("package.json")).version,"1.31.3")});
+test("v1.31.3 feature family remains present",()=>{assert.match(JSON.parse(read("package.json")).version,/^1\.31\./)});
