@@ -94,6 +94,6 @@ export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
   if(role==="DUAL"&&instructor)return instructor;
   if(["SPIC","PICUS"].includes(role)&&verifier)return verifier;
   if(commander)return commander;
-  if(["PIC","SOLO","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
+  if(["PIC","SOLO","FI","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
   return "";
 }
