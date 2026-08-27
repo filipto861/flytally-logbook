@@ -12,7 +12,7 @@ function replaceLegacyCartoBasemap(map:L.Map){
   });
   if(!replace)return;
   const tilePane=map.getPane("tilePane");
-  if(tilePane)tilePane.style.filter="brightness(.62) invert(1) contrast(2.15) hue-rotate(180deg) saturate(.28)";
+  if(tilePane)tilePane.style.filter="brightness(.38) invert(1) contrast(1.35) hue-rotate(180deg) saturate(.06)";
   L.tileLayer(OSM_TILES,{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 }
 
