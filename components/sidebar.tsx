@@ -15,7 +15,7 @@ const mainLinks=[
 ] as const;
 const profileLinks=[
   {href:"/connections",icon:"connections",label:"Connections"},
-  {href:"/credentials",icon:"credentials",label:"Credentials"},
+  {href:"/credentials",icon:"credentials",label:"Licences"},
   {href:"/profile",icon:"settings",label:"Settings"},
   {href:"/database",icon:"database",label:"Aircraft & airports"},
   {href:"/data",icon:"data",label:"Print & data"},
