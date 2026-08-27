@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { aircraftPrintCode,isAuxiliaryLogbookRole,pilotInCommandName } from "@/lib/logbook-print";
 
 const text=(value:unknown)=>String(value??"").trim();
@@ -17,7 +18,7 @@ function remarks(row:Record<string,unknown>){
   return parts.join(" · ")||"—";
 }
 
-export function ReadonlyLogbookEntry({row,pilotName,certified,easa,preview=false}:{row:Record<string,unknown>;pilotName:string;certified:boolean;easa:boolean;preview?:boolean}){
+export function ReadonlyLogbookEntry({row,pilotName,certified,easa,preview=false,hideInPersonSignatureLink=false}:{row:Record<string,unknown>;pilotName:string;certified:boolean;easa:boolean;preview?:boolean;hideInPersonSignatureLink?:boolean}){
   const role=text(row.role).toUpperCase(),operation=text(row.operation_type).toUpperCase()||"SP",engine=text(row.engine_type).toUpperCase()||"SE",creditable=!isAuxiliaryLogbookRole(role),flight=creditable?minutes(row.block_minutes):0;
   const picName=pilotInCommandName(row,pilotName),displayPic=picName&&pilotName&&picName.localeCompare(pilotName,undefined,{sensitivity:"accent"})===0?"SELF":picName||"—";
   const spSe=creditable&&operation!=="MP"&&engine!=="ME"?hm(flight):"—",spMe=creditable&&operation!=="MP"&&engine==="ME"?hm(flight):"—",mp=creditable&&operation==="MP"?hm(flight):"—";
@@ -27,6 +28,7 @@ export function ReadonlyLogbookEntry({row,pilotName,certified,easa,preview=false
     ["Landings",`${minutes(row.landings_day)} day · ${minutes(row.landings_night)} night`],["Night / IFR",`${hm(row.night_minutes)} / ${hm(row.ifr_minutes)}`],
     ["Pilot function",`PIC ${hm(row.pic_minutes)} · Co-pilot ${hm(row.copilot_minutes)} · DUAL ${hm(row.dual_minutes)} · FI/FE ${hm(row.instructor_minutes)}`],["Remarks",remarks(row)],
   ];
+  const canSignInPerson=certified&&!preview&&!hideInPersonSignatureLink&&["DUAL","SPIC","PICUS"].includes(role)&&!row.approval_id&&Number(row.id)>0;
   return <section className="panel readonly-logbook-entry">
     <header><div><p className="eyebrow">{preview?"SHARED FLIGHT PREVIEW":certified?"PROTECTED RECORD":"READ-ONLY RECORD"}</p><h2>{easa?"FCL.050 logbook entry":"ULL logbook entry"}</h2><p className="muted">{preview?"This is the separate draft FlyTally will create in your logbook.":certified?"This is the certified stored revision. It is displayed as a logbook entry and cannot be edited here.":"This record is locked. Unlock it on the Overview tab to make changes."}</p></div><span className={preview?"record-status":certified?"status-on":"record-status"}>{preview?"PREVIEW":certified?"CERTIFIED":"LOCKED"}</span></header>
     {easa?<div className="readonly-fcl-table-wrap"><table className="readonly-fcl-table"><caption>FCL.050 single-flight logbook preview</caption><thead>
@@ -38,5 +40,6 @@ export function ReadonlyLogbookEntry({row,pilotName,certified,easa,preview=false
       <td>{creditable?hm(row.night_minutes):"—"}</td><td>{creditable?hm(row.ifr_minutes):"—"}</td><td>{creditable?hm(row.pic_minutes):"—"}</td><td>{creditable?hm(row.copilot_minutes):"—"}</td><td>{creditable?hm(row.dual_minutes):"—"}</td><td>{creditable?hm(row.instructor_minutes):"—"}</td><td>{remarks(row)}</td>
     </tr></tbody></table></div>:<div className="readonly-fcl-table-wrap"><table className="readonly-fcl-table"><caption>ULL single-flight logbook preview</caption><thead><tr><th>Date</th><th>Route</th><th>Aircraft</th><th>Block UTC</th><th>Total time</th><th>Role</th><th>PIC</th><th>Landings</th><th>Remarks</th></tr></thead><tbody><tr><td>{date(row.date)}</td><td>{text(row.departure)||"—"} → {text(row.arrival)||"—"}</td><td>{text(row.registration)||"—"}<br/><small>{aircraftPrintCode(row)||text(row.aircraft_type)||"—"}</small></td><td>{utc(row.off_block)}–{utc(row.on_block)}</td><td>{creditable?hm(flight):"—"}</td><td>{role||"—"}</td><td>{displayPic}</td><td>{minutes(row.landings_day)+minutes(row.landings_night)||minutes(row.starts)||"—"}</td><td>{remarks(row)}</td></tr></tbody></table></div>}
     <dl className="readonly-logbook-card mobile-only">{fields.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+    {canSignInPerson?<div style={{display:"flex",justifyContent:"flex-end",marginTop:"14px"}}><Link className="secondary-button" href={`/flights/${Number(row.id)}/in-person-signature`}>Instructor without FlyTally · Sign on this device</Link></div>:null}
   </section>;
 }
