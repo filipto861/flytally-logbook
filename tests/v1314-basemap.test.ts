@@ -5,4 +5,4 @@ test("v1.31.4 replaces legacy CARTO raster tiles with a no-key OpenStreetMap bas
 
 test("v1.31.4 keeps the replacement dark to match FlyTally",()=>{const leaflet=read("components/leaflet-mobile.ts");assert.match(leaflet,/tilePane\.style\.filter/);assert.match(leaflet,/invert\(1\)/)});
 
-test("v1.31.4 release version is current",()=>{assert.equal(JSON.parse(read("package.json")).version,"1.31.4")});
+test("v1.31.4 basemap feature remains in the v1.31 release family",()=>{assert.match(JSON.parse(read("package.json")).version,/^1\.31\./)});
