@@ -23,11 +23,11 @@ test("Aircraft cards separate status from reversible management actions",()=>{
   assert.match(source,/<span className=\{active\?"status-on":"status-off"\}>\{active\?"Active":"Inactive"\}<\/span>/);
 });
 
-test("Permanent licence and rate deletion requires a disclosed second step",()=>{
-  const profile=read("app/(protected)/profile/page.tsx");
+test("Permanent credential and rate deletion requires a disclosed second step",()=>{
+  const credentials=read("app/(protected)/credentials/page.tsx");
   const aircraft=read("components/aircraft-manager.tsx");
-  assert.match(profile,/className="confirm-action"/);
-  assert.match(profile,/Delete permanently/);
+  assert.match(credentials,/className="confirm-action"/);
+  assert.match(credentials,/Delete permanently/);
   assert.match(aircraft,/className="confirm-action compact-confirm"/);
   assert.match(aircraft,/Delete rate/);
 });
