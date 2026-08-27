@@ -30,11 +30,11 @@ test("connection mutations enforce ownership and mutual approval",()=>{
   assert.match(actions,/status='accepted' AND \(requester_user_id=\$\{session\.userId\} OR recipient_user_id=\$\{session\.userId\}\)/);
 });
 
-test("connections disclose profile basics but no logbook data",()=>{
+test("connections disclose profile basics and keep logbook sharing explicit",()=>{
   const page=read("app/(protected)/connections/page.tsx");
   assert.match(page,/display_name/);
   assert.match(page,/home_airport/);
-  assert.match(page,/Flights, totals, licences and GPS tracks are never shared/);
+  assert.match(page,/explicitly enable read-only logbook sharing/);
   assert.doesNotMatch(page,/FROM flights/);
   assert.doesNotMatch(page,/flight_tracks/);
 });
