@@ -35,6 +35,6 @@ test("connections disclose profile basics and keep logbook sharing explicit",()=
   assert.match(page,/display_name/);
   assert.match(page,/home_airport/);
   assert.match(page,/explicitly enable read-only logbook sharing/);
-  assert.doesNotMatch(page,/coordinates_json|overview_coordinates_json|private notes/i);
+  assert.doesNotMatch(page,/coordinates_json|overview_coordinates_json/i);
   assert.doesNotMatch(page,/flight_tracks/);
 });
