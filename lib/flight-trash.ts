@@ -20,6 +20,7 @@ export async function moveFlightToTrash(userId:number,flightId:number):Promise<b
       FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.locked_at IS NULL AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1
         AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=f.user_id AND r.flight_id=f.id)
       RETURNING id`,
+    sql`UPDATE flight_participations SET participant_flight_id=NULL WHERE participant_user_id=${userId} AND participant_flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
     sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
     sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
     sql`DELETE FROM flights WHERE id=${flightId} AND user_id=${userId} AND locked_at IS NULL AND certified_at IS NULL AND COALESCE(record_revision,1)=1 AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=${userId} AND r.flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
