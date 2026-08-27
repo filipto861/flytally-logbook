@@ -6,7 +6,7 @@ function RequestForm({pilot}:{pilot:NonNullable<PilotSearchState["result"]>}){
   const[state,action,pending]=useActionState<ConnectionRequestState,FormData>(requestConnection,{});
   if(pilot.connected)return <p className="connection-notice">A connection or pending request already exists with this pilot.</p>;
   if(state.sent)return <p className="connection-success" role="status">Connection request sent.</p>;
-  return <form action={action} className="connection-request-form"><input type="hidden" name="target_user_id" value={pilot.id}/><input type="hidden" name="target_email" value={pilot.email}/><label>Relationship<select name="relationship" defaultValue="pilot"><option value="pilot">Fellow pilot</option><option value="requester_instructor">I am their instructor</option><option value="recipient_instructor">They are my instructor</option></select></label>{state.error?<p className="form-error" role="alert">{state.error}</p>:null}<button className="primary-button" disabled={pending}>{pending?"Sending…":"Send request"}</button></form>;
+  return <form action={action} className="connection-request-form"><input type="hidden" name="target_user_id" value={pilot.id}/><input type="hidden" name="target_email" value={pilot.email}/><label>Relationship<select name="relationship_label" defaultValue="friend"><option value="friend">Friend</option><option value="instructor">Instructor</option><option value="student">Student</option></select><small>Choose the other pilot&apos;s role in relation to you.</small></label>{state.error?<p className="form-error" role="alert">{state.error}</p>:null}<button className="primary-button" disabled={pending}>{pending?"Sending…":"Send request"}</button></form>;
 }
 
 export function PilotConnectionSearch(){

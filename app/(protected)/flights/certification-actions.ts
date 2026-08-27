@@ -6,9 +6,23 @@ import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { blockingComplianceIssues,fcl050FlightCompliance } from "@/lib/fcl050-compliance";
 import { flightCertificationHash } from "@/lib/certification-integrity";
+import { notifyUser } from "@/lib/notifications";
 
 const text=(value:unknown)=>String(value??"").trim();
-const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/flights");revalidatePath("/certification");revalidatePath("/print");revalidatePath("/database");};
+const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/flights");revalidatePath("/certification");revalidatePath("/print");revalidatePath("/database");revalidatePath("/connections");revalidatePath("/notifications");};
+
+async function autoRequestTrainingVerification(userId:number,flightId:number,row:Record<string,unknown>,certificationHash:string){
+  const role=text(row.role).toUpperCase();if(!["DUAL","SPIC","PICUS"].includes(role))return;
+  const verifierName=role==="DUAL"?text(row.instructor):text(row.verification_name);if(!verifierName)return;
+  const candidates=await sql`SELECT DISTINCT u.id,u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END
+    WHERE c.status='accepted' AND LOWER(TRIM(u.display_name))=LOWER(TRIM(${verifierName}))
+      AND ((c.requester_user_id=${userId} AND (c.requester_label='instructor' OR c.relationship='recipient_instructor')) OR (c.recipient_user_id=${userId} AND (c.recipient_label='instructor' OR c.relationship='requester_instructor'))) LIMIT 2` as Array<Record<string,unknown>>;
+  if(candidates.length!==1)return;
+  const instructorId=Number(candidates[0].id),revision=Math.max(1,Number(row.record_revision)||1);if(!instructorId||instructorId===userId)return;
+  const approvals=await sql`INSERT INTO instructor_flight_approvals(flight_id,student_user_id,instructor_user_id,record_revision,flight_hash,status,requested_at) VALUES(${flightId},${userId},${instructorId},${revision},${certificationHash},'pending',NOW())
+    ON CONFLICT(flight_id,record_revision) DO UPDATE SET instructor_user_id=EXCLUDED.instructor_user_id,flight_hash=EXCLUDED.flight_hash,status='pending',requested_at=NOW(),decided_at=NULL,decision_note='' RETURNING id` as Array<{id:number|string}>;
+  if(approvals[0])await notifyUser(instructorId,{kind:"signature_request",title:"Flight approval requested",body:`${role} · Review, sign and optionally add the flight to your logbook.`,href:`/connections/flight/${approvals[0].id}`,dedupeKey:`approval:${approvals[0].id}`});
+}
 
 export async function certifyFlight(flightId:number,form:FormData){
   const {userId}=await requireUser();await ensureDatabaseOptimizations();
@@ -21,6 +35,7 @@ export async function certifyFlight(flightId:number,form:FormData){
     sql`UPDATE flights SET locked_at=NULL,locked_by_user_id=NULL WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND locked_at IS NOT NULL`,
     sql`UPDATE flights SET certified_at=NOW(),certified_by_user_id=${userId},certification_hash=${certificationHash},certification_version=2,locked_at=NOW(),locked_by_user_id=${userId} WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL`,
   ]);
+  await autoRequestTrainingVerification(userId,flightId,row,certificationHash);
   revalidateFlight(flightId);
 }
 

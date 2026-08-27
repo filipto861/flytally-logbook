@@ -1,38 +1,36 @@
 # FlyTally roadmap
 
-## v1.10 — FCL.050 Compliance Gate
+## v1.31 — Workflow & Credentials
 
-- per-flight FCL.050 certification readiness status
-- server-side blocking of incomplete EASA certification
-- mandatory SPIC/PICUS countersignature details
-- checks for DUAL PIC/instructor identity and applicable test/check/revalidation remarks
-- complete FSTD data gate before certification
-- keep the official EASA column 1–12 print layout stable
+v1.31 consolidates the private-beta workflows introduced in v1.30 and removes duplicated pilot identity data.
 
-## v1.11 — Certified Records & Audit v2
+- Dashboard: merge Aircraft + Costs; show routes and individual visited airports together.
+- Map: both routes and airport markers are interactive and open the matching flight filter.
+- Certified ULL flights: use a proper read-only logbook-entry preview instead of a generic data list.
+- Flight invitations: Review & Add / Decline directly from notifications; keep Decline on the review screen.
+- DUAL / SPIC / PICUS: connected instructors can be selected in Logbook data; certification automatically sends the matching connected instructor a review/sign request.
+- Instructor review: one request carries the exact certified revision, tamper-evident signature evidence and the option to add the instructor's own logbook entry.
+- Crew overview: keep invitation state and verification state visible on the source flight.
+- Notifications: delete individual notifications and clear read notifications.
+- Connections: simplify the pilot-facing relationship model to Friend / Student / Instructor while preserving directional privacy controls.
+- Credentials: new top-level navigation destination combining licences, logbook identity, qualifications, signing identity and other documents.
+- Licence identity: holder address and printable-logbook identity live under the relevant licence rather than in duplicate settings fields.
+- Other credentials: Medical Class 1/2, LAPL Medical, ICAO English Language Proficiency, Radiotelephony Licence, Insurance and custom records; support dated or Unlimited validity.
+- Print & Data, FSTD and Administration retain their established functional behavior and receive regression coverage only in this release.
+- Production hardening: regression coverage for sharing, certification, print identity, permissions, mobile layout and previous production SQL/runtime issues.
 
-- refine revision comparison for corrected certified flights
-- exportable certification/audit report on the relevant flight
-- bring FSTD certified corrections to the same revision model as flights
-- integrity diagnostics directly on certified flights and FSTD records
-- compact Draft / Locked / Certified / Correction states in the normal flight workflow
-- keep certification and audit controls contextual instead of adding a separate certification dashboard
-- authority-review preparation for electronic countersignature evidence
+## v1.32 — Pilot messaging & richer collaboration
 
-## v1.12 — Field UX + PWA
+- simple private text chat between accepted connections;
+- unread message notifications;
+- start a conversation from a flight/instructor review when a data discrepancy needs discussion;
+- no public pilot directory, presence tracking or attachment system in the first messaging release;
+- richer actionable notifications where they improve existing flight workflows.
 
-PWA is the required v1.12 deliverable, but FlyTally remains intentionally online-first.
+## Later — Credential intelligence & authority readiness
 
-- installable FlyTally PWA for iPad/iPhone/Android/desktop
-- web app manifest, icons, standalone display mode and Apple PWA metadata
-- online-only service worker with no navigation/API/user-data caching
-- cleanup of the earlier offline-shell prototype and its local flight-draft layer
-- field-first Add Flight UX for iPad and mobile
-- 48 px coarse-pointer touch targets, 16 px mobile form controls and safe-area support
-- sticky mobile save actions and one-column entry/review grids on narrow screens
-- clearer GPS import / Manual Entry selection while preserving GPS import as the default Add Flight flow
-- `Save and add another` returns directly to Manual Entry
-- SkyDemon/KML/GPX/CSV mobile import polish
-- UTC regression coverage: explicit offsets convert to UTC and timezone-less track timestamps are never guessed from the device clock
-
-Offline flight entry and background synchronisation are deliberately out of scope. Certified records remain server-authoritative and immutable, and FlyTally requires a network connection for application data.
+- configurable 90/30/7-day expiry reminders;
+- deeper rating/recency logic where reliable structured rules are available;
+- documented FCL.050 data dictionary and evidence/test matrix;
+- authority test cases and review of electronic format/countersignature evidence;
+- no "EASA approved" or "EASA certified" product claim until accepted by the relevant competent authority.

@@ -17,7 +17,8 @@ export type DashboardData={
   lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string};monthly:MonthlyPoint[];
   recentFlights:Array<{id:number;date:string;registration:string;departure:string;arrival:string}>;
   topAircraft:Array<{registration:string;flights:number;minutes:number;cost:number}>;
-  topRoutes:Array<{route:string;flights:number;minutes:number}>;
+  topRoutes:Array<{route:string;departure:string;arrival:string;flights:number;minutes:number}>;
+  topAirports:Array<{airport:string;visits:number;departures:number;arrivals:number;lastDate:string}>;
   yearly:Array<{year:number;flights:number;minutes:number;landings:number}>;
 };
 
@@ -87,7 +88,8 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
   const airports=new Set<string>();
   const monthlyMap=new Map<string,MonthlyPoint>();
   const aircraftMap=new Map<string,{registration:string;flights:number;minutes:number;cost:number}>();
-  const routeMap=new Map<string,{route:string;flights:number;minutes:number}>();
+  const routeMap=new Map<string,{route:string;departure:string;arrival:string;flights:number;minutes:number}>();
+  const airportMap=new Map<string,{airport:string;visits:number;departures:number;arrivals:number;lastDate:string}>();
   const yearMap=new Map<number,{year:number;flights:number;minutes:number;landings:number}>();
 
   for(const flight of flights){
@@ -116,8 +118,19 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
     }
     if(!auxiliary&&flight.departure&&flight.arrival){
       const route=`${flight.departure}–${flight.arrival}`;
-      const value=routeMap.get(route)??{route,flights:0,minutes:0};
+      const value=routeMap.get(route)??{route,departure:flight.departure,arrival:flight.arrival,flights:0,minutes:0};
       value.flights+=1;value.minutes+=flight.blockMinutes;routeMap.set(route,value);
+    }
+    if(!auxiliary){
+      const touched=new Set([flight.departure,flight.arrival].filter(Boolean));
+      for(const airport of touched){
+        const value=airportMap.get(airport)??{airport,visits:0,departures:0,arrivals:0,lastDate:""};
+        value.visits+=1;
+        if(flight.departure===airport)value.departures+=1;
+        if(flight.arrival===airport)value.arrivals+=1;
+        if(flight.dateKey&&(flight.dateKey>value.lastDate))value.lastDate=flight.dateKey;
+        airportMap.set(airport,value);
+      }
     }
     if(dashboardTotal&&flight.dateKey){
       const month=flight.dateKey.slice(0,7);
@@ -148,7 +161,8 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
     lastFlight:recentFlights[0]??null,recentFlights,
     monthly:[...monthlyMap.values()].sort((left,right)=>left.month.localeCompare(right.month)),
     topAircraft:[...aircraftMap.values()].sort((left,right)=>right.minutes-left.minutes||left.registration.localeCompare(right.registration)),
-    topRoutes:[...routeMap.values()].sort((left,right)=>right.flights-left.flights||right.minutes-left.minutes).slice(0,8),
+    topRoutes:[...routeMap.values()].sort((left,right)=>right.flights-left.flights||right.minutes-left.minutes).slice(0,12),
+    topAirports:[...airportMap.values()].sort((left,right)=>right.visits-left.visits||right.lastDate.localeCompare(left.lastDate)||left.airport.localeCompare(right.airport)).slice(0,16),
     yearly:[...yearMap.values()].sort((left,right)=>right.year-left.year),
   };
 }

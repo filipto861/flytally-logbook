@@ -26,7 +26,7 @@ function Submit({another=false}:{another?:boolean}){
   return <button className={another?"secondary-link":"primary-button"} name="intent" value={another?"another":"save"} disabled={pending}>{pending?"Saving…":another?"Save and add another":"Save flight"}</button>;
 }
 
-export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>}){
+export function FlightForm({action,aircraft,initial={},routes=[],instructors=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;routes?:Array<{departure:string;arrival:string}>;instructors?:Array<{name:string}>}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:normalizeRegistration(item.registration)})),[aircraft]);
@@ -82,10 +82,11 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
   const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:billing==="BLOCK"?blockMinutes:0,billingValue=billing?serializeBilling(billing,billingShare):"",flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue);
   const trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),pilotSectionOpen=trainingRole||role==="SAFETY PILOT",countersignatureRequired=["SPIC","PICUS"].includes(role);
 
-  const roleGuidance=role==="DUAL"?"Enter the instructor below. The instructor is recorded as PIC; your time is credited as DUAL.":role==="SAFETY PILOT"?"Enter the actual PIC below. Safety Pilot time is kept for reference and is not added to creditable logbook totals.":["SPIC","PICUS"].includes(role)?"Add the supervising PIC/FI and countersignature reference in the EASA section.":"";
+  const roleGuidance=role==="DUAL"?"Choose a connected instructor when possible. They are recorded as PIC and will automatically receive a review/sign request after certification.":role==="SAFETY PILOT"?"Enter the actual PIC below. Safety Pilot time is kept for reference and is not added to creditable logbook totals.":["SPIC","PICUS"].includes(role)?"Choose the supervising PIC/FI when possible. A matching connected instructor will automatically receive the certified entry for review.":"";
   const missing=[!date&&"date",!registration&&"aircraft",!role&&"role",!evidence&&"logbook",!aircraftClass&&"class",!billing&&"billing"].filter(Boolean);
   useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
   return <form action={formAction} className="flight-form" onChangeCapture={markDirty} onSubmitCapture={beginSubmit}>
+    {instructors.length?<datalist id="connected-instructors">{instructors.map((item,index)=><option value={item.name} key={`${item.name}-${index}`}/>)}</datalist>:null}
     <nav className="entry-progress" aria-label="Manual flight entry progress"><span className="complete">1 <b>Source</b></span><span className="active">2 <b>Details</b></span><span>3 <b>Review &amp; save</b></span></nav>
     <section className="entry-section entry-section-primary">
       <p className="section-kicker">Flight essentials</p>
@@ -108,7 +109,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
     <details className="entry-section" open={pilotSectionOpen}>
       <summary><span>Pilot & training</span><small>{role}{field("instructor")?` · ${field("instructor")}`:""}</small></summary>
       <div className="entry-section-body"><div className="form-grid secondary-entry-grid">
-        {role==="DUAL"?<><input type="hidden" name="commander" value={field("commander")}/><label>Instructor / PIC<input name="instructor" defaultValue={field("instructor")} required={evidence==="EASA"}/><small>Required for a DUAL training record.</small></label></>:<><label>{role==="SAFETY PILOT"?"Actual PIC":"Commander / PIC"}<input name="commander" defaultValue={field("commander")} required={evidence==="EASA"&&role==="SAFETY PILOT"}/></label><label>Instructor<input name="instructor" defaultValue={field("instructor")}/></label></>}
+        {role==="DUAL"?<><input type="hidden" name="commander" value={field("commander")}/><label>Instructor / PIC<input name="instructor" list={instructors.length?"connected-instructors":undefined} defaultValue={field("instructor")} required={evidence==="EASA"}/><small>{instructors.length?"Select a connected instructor or enter a name manually.":"Required for a DUAL training record."}</small></label></>:<><label>{role==="SAFETY PILOT"?"Actual PIC":"Commander / PIC"}<input name="commander" defaultValue={field("commander")} required={evidence==="EASA"&&role==="SAFETY PILOT"}/></label><label>Instructor<input name="instructor" list={instructors.length?"connected-instructors":undefined} defaultValue={field("instructor")}/></label></>}
         <label className="wide">Task / exercise<input name="task" defaultValue={field("task")}/></label>
       </div></div>
     </details>
@@ -124,7 +125,7 @@ export function FlightForm({action,aircraft,initial={},routes=[]}:{action:Action
         <label>Night landings<input name="landingsNight" type="number" min="0" max="99" value={landingsNight} onChange={event=>setLandingsNight(Number(event.target.value)||0)}/></label>
         <label>Night time<input name="nightTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("night_minutes","0"))}/></label>
         <label>IFR time<input name="ifrTime" inputMode="numeric" placeholder="0:00" defaultValue={formatEasaDuration(field("ifr_minutes","0"))}/></label>
-        {countersignatureRequired?<><label>Supervising PIC / FI<input name="verificationName" defaultValue={field("verification_name")} required/><small>Required for {role} credit.</small></label><label>Countersignature reference<input name="verificationReference" defaultValue={field("verification_reference")} required/><small>Reference to the supervising PIC/FI countersignature or signed evidence.</small></label></>:<><input type="hidden" name="verificationName" value={field("verification_name")}/><input type="hidden" name="verificationReference" value={field("verification_reference")}/></>}
+        {countersignatureRequired?<><label>Supervising PIC / FI<input name="verificationName" list={instructors.length?"connected-instructors":undefined} defaultValue={field("verification_name")} required/><small>{instructors.length?`Select a connected instructor when applicable. Required for ${role} credit.`:`Required for ${role} credit.`}</small></label><label>Countersignature reference<input name="verificationReference" defaultValue={field("verification_reference")} required/><small>Reference to the supervising PIC/FI countersignature or signed evidence.</small></label></>:<><input type="hidden" name="verificationName" value={field("verification_name")}/><input type="hidden" name="verificationReference" value={field("verification_reference")}/></>}
       </div></div>
     </details>
 

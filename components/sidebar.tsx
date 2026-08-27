@@ -6,7 +6,6 @@ import { logout } from "@/app/login/actions";
 import styles from "./sidebar.module.css";
 import { NavIcon } from "./nav-icon";
 
-// Certification remains contextual on flight/FSTD records; there is no standalone sidebar destination.
 const mainLinks=[
   {href:"/dashboard",icon:"dashboard",label:"Dashboard"},
   {href:"/flights",icon:"flights",label:"Flights"},
@@ -16,6 +15,7 @@ const mainLinks=[
 ] as const;
 const profileLinks=[
   {href:"/connections",icon:"connections",label:"Connections"},
+  {href:"/credentials",icon:"credentials",label:"Credentials"},
   {href:"/profile",icon:"settings",label:"Settings"},
   {href:"/database",icon:"database",label:"Aircraft & airports"},
   {href:"/data",icon:"data",label:"Print & data"},
