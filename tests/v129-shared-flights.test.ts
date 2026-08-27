@@ -42,10 +42,11 @@ test("shared entries copy the certified flight facts into a separate draft",()=>
   assert.doesNotMatch(actions,/\$\{text\(row\.note\)\}/);
 });
 
-test("instructor and Safety Pilot use the same one-click Connections workflow",()=>{
+test("instructor and Safety Pilot keep one review workflow with owner-specific logbook actions",()=>{
   const connections=read("app/(protected)/connections/page.tsx"),instructor=read("app/(protected)/connections/flight/[id]/page.tsx"),shared=read("app/(protected)/connections/shared/[id]/page.tsx"),sidebar=read("components/sidebar.tsx");
   assert.match(connections,/Shared flights/);
-  assert.match(instructor,/Add to my logbook/);
+  assert.match(instructor,/Sign &amp; add FI entry/);
+  assert.match(instructor,/Sign only/);
   assert.match(shared,/Add to my logbook/);
   assert.doesNotMatch(sidebar,/shared|participation|approval/i);
 });
