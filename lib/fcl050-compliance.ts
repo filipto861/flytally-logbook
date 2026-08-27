@@ -12,9 +12,9 @@ const validTime=(value:unknown)=>/^([01]\d|2[0-3]):[0-5]\d$/.test(text(value));
 const duration=(start:unknown,end:unknown)=>{if(!validTime(start)||!validTime(end))return 0;const a=Number(text(start).slice(0,2))*60+Number(text(start).slice(3)),b=Number(text(end).slice(0,2))*60+Number(text(end).slice(3));return(b-a+1440)%1440};
 const issue=(code:string,field:string,message:string,severity:ComplianceSeverity="error"):ComplianceIssue=>({code,field,message,severity});
 
-const EASA_FUNCTIONS=["PIC","SOLO","SPIC","PICUS","CO-PILOT","CRUISE-RELIEF CO-PILOT","DUAL","INSTRUCTOR","EXAMINER"];
+const EASA_FUNCTIONS=["PIC","SOLO","SPIC","PICUS","CO-PILOT","CRUISE-RELIEF CO-PILOT","DUAL","FI","INSTRUCTOR","EXAMINER"];
 const TEST_PATTERN=/\b(skill test|proficiency check|assessment of competence)\b/i;
-const REVALIDATION_PATTERN=/\b(revalidation|lapl recency|recency flight|recency training)\b/i;
+const REVALIDATION_PATTERN=/\b(revalidation|lapl recency|fcl\.140\.a|recency flight|recency training|refresher training)\b/i;
 const INSTRUMENT_TRAINING_PATTERN=/\b(instrument training|ir training|instrument rating training)\b/i;
 
 export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):ComplianceIssue[]{
