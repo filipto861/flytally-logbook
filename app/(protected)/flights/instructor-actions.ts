@@ -45,6 +45,7 @@ async function decide(approvalId:number,status:"approved"|"declined",form:FormDa
         ((c.requester_user_id=${userId} AND c.recipient_user_id=a.student_user_id AND (c.requester_label='student' OR c.relationship='requester_instructor')) OR
          (c.recipient_user_id=${userId} AND c.requester_user_id=a.student_user_id AND (c.recipient_label='student' OR c.relationship='recipient_instructor'))))
     RETURNING a.flight_id,a.student_user_id` as Array<{flight_id:number|string;student_user_id:number|string}>;
+  await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${userId} AND href=${`/connections/flight/${approvalId}`}`;
   if(rows[0]){await notifyUser(Number(rows[0].student_user_id),{kind:`approval_${status}`,title:status==="approved"?"Flight approved":"Flight approval declined",body:note,href:`/flights/${rows[0].flight_id}`,dedupeKey:`approval-decision:${approvalId}:${status}`});refresh(Number(rows[0].flight_id),approvalId)}
 }
 
