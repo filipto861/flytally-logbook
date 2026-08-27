@@ -1,72 +1,25 @@
 import { serializeBilling } from "./billing.ts";
 import { flightDateKey } from "./dashboard-math.ts";
 import { allocatedFunctionTimes,defaultEngineType,durationMinutes,EASA_ROLES,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
+import { flightPurposeTask,normalizeFlightPurposeCode } from "./flight-purpose.ts";
 
 export const EVIDENCE = ["ULL", "EASA"] as const;
 export const CLASSES = ["ULL", "SEP", "TMG", "MEP", "SET", "OTHER", "GLIDER"] as const;
 export const ROLES = [...EASA_ROLES,"PAX","OBSERVER"] as const;
 export const BILLING = ["BLOCK", "AIR"] as const;
+export type FlightInput={date:string;registration:string;aircraftType:string;aircraftClass:string;evidence:string;departure:string;arrival:string;offBlock:string;takeoff:string;landing:string;onBlock:string;starts:number;operationType:string;engineType:string;landingsDay:number;landingsNight:number;nightMinutes:number;ifrMinutes:number;picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;verificationName:string;verificationReference:string;commander:string;instructor:string;role:string;task:string;purposeCode:string;billingBasis:string;note:string};
+function text(form:FormData,name:string,max:number){return String(form.get(name)??"").trim().slice(0,max)}
+function requiredOption<T extends readonly string[]>(value:string,values:T,label:string){if(!values.includes(value as T[number]))return{error:`Select a valid ${label}.`} as const;return{value:value as T[number]} as const}
+function option<T extends readonly string[]>(value:string,values:T,fallback:T[number]){return values.includes(value as T[number])?value:fallback}
+const REFRESHER=/\bFCL[.]140[.]A\s+refresher\s+training\b\s*(?:[·|\-]\s*)?/i;
 
-export type FlightInput = {
-  date: string; registration: string; aircraftType: string; aircraftClass: string;
-  evidence: string; departure: string; arrival: string; offBlock: string;
-  takeoff: string; landing: string; onBlock: string; starts: number;
-  operationType:string;engineType:string;landingsDay:number;landingsNight:number;nightMinutes:number;ifrMinutes:number;
-  picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;verificationName:string;verificationReference:string;
-  commander: string; instructor: string; role: string; task: string;
-  billingBasis: string; note: string;
-};
-
-function text(form: FormData, name: string, max: number) {
-  return String(form.get(name) ?? "").trim().slice(0, max);
-}
-
-function requiredOption<T extends readonly string[]>(value:string,values:T,label:string){
-  if(!values.includes(value as T[number]))return{error:`Select a valid ${label}.`} as const;
-  return{value:value as T[number]} as const;
-}
-
-function option<T extends readonly string[]>(value: string, values: T, fallback: T[number]) {
-  return values.includes(value as T[number]) ? value : fallback;
-}
-
-export function parseFlightInput(form: FormData): { data?: FlightInput; error?: string } {
-  const date = text(form, "date", 10);
-  if (flightDateKey(date)!==date) return { error: "Enter a valid date." };
-  const time = (name: string) => text(form, name, 5);
-  const times = [time("offBlock"), time("takeoff"), time("landing"), time("onBlock")];
-  if (times.some((value) => value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))) return { error: "Times must use HH:MM format." };
-  const minute=(value:string)=>value?Number(value.slice(0,2))*60+Number(value.slice(3)):null;
-  const delta=(a:string,b:string)=>{const start=minute(a),end=minute(b);return start===null||end===null?null:(end-start+1440)%1440};
-  const block=delta(times[0],times[3]),air=delta(times[1],times[2]),taxiOut=delta(times[0],times[1]),taxiIn=delta(times[2],times[3]);
-  if(block!==null&&block>18*60)return {error:"BLOCK time exceeds 18 hours. Check Off-block and On-block."};
-  if(air!==null&&block!==null&&air>block+5)return {error:"AIR time cannot exceed BLOCK time. Check the time order."};
-  if((taxiOut!==null&&taxiOut>180)||(taxiIn!==null&&taxiIn>180))return {error:"Taxi time exceeds 3 hours. Check Off-block, takeoff, landing and On-block."};
-  const legacyStarts=Math.max(0,Math.min(99,Number.parseInt(text(form,"starts",2)||"0",10)||0));
-  const hasEasaLandings=form.has("landingsDay")||form.has("landingsNight"),landingsDay=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsDay",2)||"0",10)||0)),landingsNight=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsNight",2)||"0",10)||0)),starts=hasEasaLandings?landingsDay+landingsNight:legacyStarts;
-  const registration = text(form, "registration", 32).toUpperCase();
-  if (!registration) return { error: "Select or enter an aircraft registration." };
-
-  const evidenceResult=requiredOption(text(form,"evidence",8).toUpperCase(),EVIDENCE,"logbook");if("error" in evidenceResult)return evidenceResult;
-  const classResult=requiredOption(text(form,"aircraftClass",16).toUpperCase(),CLASSES,"aircraft class");if("error" in classResult)return classResult;
-  const roleResult=requiredOption(text(form,"role",24).toUpperCase(),ROLES,"pilot role");if("error" in roleResult)return roleResult;
-  const billingResult=requiredOption(text(form,"billingBasis",8).toUpperCase(),BILLING,"billing time basis");if("error" in billingResult)return billingResult;
-
-  const evidence=evidenceResult.value,aircraftClass=classResult.value,role=roleResult.value,billingBasis=billingResult.value;
-  const instructor=text(form,"instructor",100);
-  const operationType=option(text(form,"operationType",2).toUpperCase(),OPERATION_TYPES,"SP"),engineType=option(text(form,"engineType",2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass));
-  const nightMinutes=durationMinutes(form.get("nightTime")),ifrMinutes=durationMinutes(form.get("ifrTime")),blockMinutes=block??0;
-  if(block!==null&&(nightMinutes>blockMinutes||ifrMinutes>blockMinutes))return{error:"Night and IFR time cannot exceed BLOCK time."};
-  const verificationName=text(form,"verificationName",160),verificationReference=text(form,"verificationReference",160);
-  if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&(!verificationName||!verificationReference))return{error:"SPIC and PICUS entries require the supervising pilot's name and countersignature reference."};
-  const allocation=allocatedFunctionTimes(role,blockMinutes);
-  return { data: {
-    date, registration, aircraftType: text(form, "aircraftType", 80),
-    aircraftClass,evidence,
-    departure: text(form, "departure", 16).toUpperCase(), arrival: text(form, "arrival", 16).toUpperCase(),
-    offBlock: times[0], takeoff: times[1], landing: times[2], onBlock: times[3], starts,
-    operationType,engineType,landingsDay:hasEasaLandings?landingsDay:starts,landingsNight:hasEasaLandings?landingsNight:0,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,
-    commander: text(form, "commander", 100), instructor,role,task: text(form, "task", 160),
-    billingBasis: serializeBilling(billingBasis,text(form,"billingShare",2)), note: text(form, "note", 2000),
-  }};
+export function parseFlightInput(form:FormData):{data?:FlightInput;error?:string}{
+  const date=text(form,"date",10);if(flightDateKey(date)!==date)return{error:"Enter a valid date."};const time=(name:string)=>text(form,name,5),times=[time("offBlock"),time("takeoff"),time("landing"),time("onBlock")];if(times.some(value=>value&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)))return{error:"Times must use HH:MM format."};
+  const minute=(value:string)=>value?Number(value.slice(0,2))*60+Number(value.slice(3)):null,delta=(a:string,b:string)=>{const start=minute(a),end=minute(b);return start===null||end===null?null:(end-start+1440)%1440},block=delta(times[0],times[3]),air=delta(times[1],times[2]),taxiOut=delta(times[0],times[1]),taxiIn=delta(times[2],times[3]);if(block!==null&&block>18*60)return{error:"BLOCK time exceeds 18 hours. Check Off-block and On-block."};if(air!==null&&block!==null&&air>block+5)return{error:"AIR time cannot exceed BLOCK time. Check the time order."};if((taxiOut!==null&&taxiOut>180)||(taxiIn!==null&&taxiIn>180))return{error:"Taxi time exceeds 3 hours. Check Off-block, takeoff, landing and On-block."};
+  const legacyStarts=Math.max(0,Math.min(99,Number.parseInt(text(form,"starts",2)||"0",10)||0)),hasEasaLandings=form.has("landingsDay")||form.has("landingsNight"),landingsDay=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsDay",2)||"0",10)||0)),landingsNight=Math.max(0,Math.min(99,Number.parseInt(text(form,"landingsNight",2)||"0",10)||0)),starts=hasEasaLandings?landingsDay+landingsNight:legacyStarts,registration=text(form,"registration",32).toUpperCase();if(!registration)return{error:"Select or enter an aircraft registration."};
+  const evidenceResult=requiredOption(text(form,"evidence",8).toUpperCase(),EVIDENCE,"logbook");if("error" in evidenceResult)return evidenceResult;const classResult=requiredOption(text(form,"aircraftClass",16).toUpperCase(),CLASSES,"aircraft class");if("error" in classResult)return classResult;const roleResult=requiredOption(text(form,"role",24).toUpperCase(),ROLES,"pilot role");if("error" in roleResult)return roleResult;const billingResult=requiredOption(text(form,"billingBasis",8).toUpperCase(),BILLING,"billing time basis");if("error" in billingResult)return billingResult;
+  const evidence=evidenceResult.value,aircraftClass=classResult.value,role=roleResult.value,billingBasis=billingResult.value,instructor=text(form,"instructor",100),operationType=option(text(form,"operationType",2).toUpperCase(),OPERATION_TYPES,"SP"),engineType=option(text(form,"engineType",2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass)),nightMinutes=durationMinutes(form.get("nightTime")),ifrMinutes=durationMinutes(form.get("ifrTime")),blockMinutes=block??0;if(block!==null&&(nightMinutes>blockMinutes||ifrMinutes>blockMinutes))return{error:"Night and IFR time cannot exceed BLOCK time."};
+  const verificationName=text(form,"verificationName",160),verificationReference=text(form,"verificationReference",160);if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&(!verificationName||!verificationReference))return{error:"SPIC and PICUS entries require the supervising pilot's name and countersignature reference."};
+  const allocation=allocatedFunctionTimes(role,blockMinutes),rawTask=text(form,"task",160),hasPurposeField=form.has("purposeCode"),selectedPurpose=normalizeFlightPurposeCode(form.get("purposeCode")),legacyPurpose=!hasPurposeField&&role==="DUAL"&&REFRESHER.test(rawTask)?"LAPL_FCL140A_REFRESHER":"",purposeCode=role==="DUAL"?(selectedPurpose||legacyPurpose):"",cleanTask=hasPurposeField?rawTask.replace(REFRESHER,"").trim():rawTask,purposeTask=flightPurposeTask(purposeCode),task=purposeTask?`${purposeTask}${cleanTask?` · ${cleanTask}`:""}`.slice(0,160):cleanTask;
+  return{data:{date,registration,aircraftType:text(form,"aircraftType",80),aircraftClass,evidence,departure:text(form,"departure",16).toUpperCase(),arrival:text(form,"arrival",16).toUpperCase(),offBlock:times[0],takeoff:times[1],landing:times[2],onBlock:times[3],starts,operationType,engineType,landingsDay:hasEasaLandings?landingsDay:starts,landingsNight:hasEasaLandings?landingsNight:0,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,commander:text(form,"commander",100),instructor,role,task,purposeCode,billingBasis:serializeBilling(billingBasis,text(form,"billingShare",2)),note:text(form,"note",2000)}};
 }

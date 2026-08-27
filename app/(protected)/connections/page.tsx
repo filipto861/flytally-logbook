@@ -7,55 +7,24 @@ import Link from "next/link";
 export const metadata={title:"Connections | FlyTally"};
 const text=(value:unknown)=>String(value??"");
 const roleLabel=(value:unknown)=>{const label=text(value).trim().toLowerCase();return label==="instructor"?"Instructor":label==="student"?"Student":"Friend"};
+const flightRoleLabel=(value:unknown)=>text(value).trim().toUpperCase()==="INSTRUCTOR"?"Instructor verification":`Flight request · ${text(value)}`;
 
 export default async function ConnectionsPage(){
   const session=await requireUser(),userId=session.userId;
-
-  // Repair instructor entries created by the earlier shared-flight workflow. The physical
-  // flight is the same, but the instructor owns a separate FI/PIC logbook record.
-  await sql`UPDATE flight_participations p SET participant_flight_id=own.id,status='accepted',responded_at=COALESCE(p.responded_at,NOW())
-    FROM instructor_flight_approvals a
-    JOIN flights source ON source.id=a.flight_id AND source.user_id=a.student_user_id
-    JOIN LATERAL (
-      SELECT f2.id FROM flights f2
-      WHERE f2.user_id=a.instructor_user_id
-        AND f2.date::text=source.date::text
-        AND UPPER(TRIM(f2.registration))=UPPER(TRIM(source.registration))
-        AND COALESCE(f2.off_block,'')=COALESCE(source.off_block,'')
-        AND UPPER(TRIM(COALESCE(f2.departure,'')))=UPPER(TRIM(COALESCE(source.departure,'')))
-        AND UPPER(TRIM(COALESCE(f2.arrival,'')))=UPPER(TRIM(COALESCE(source.arrival,'')))
-        AND UPPER(TRIM(COALESCE(f2.role,''))) IN ('FI','INSTRUCTOR')
-      ORDER BY f2.id DESC LIMIT 1
-    ) own ON TRUE
-    WHERE p.source_flight_id=a.flight_id AND p.source_revision=a.record_revision
-      AND p.participant_user_id=a.instructor_user_id AND p.participant_role='INSTRUCTOR'
-      AND p.participant_flight_id IS NULL AND a.instructor_user_id=${userId}`;
-
-  // A decided request is no longer unread action-required work.
-  await sql`UPDATE user_notifications n SET read_at=COALESCE(n.read_at,NOW())
-    WHERE n.user_id=${userId} AND n.read_at IS NULL AND n.href ~ '^/connections/flight/[0-9]+$'
-      AND EXISTS(SELECT 1 FROM instructor_flight_approvals a
-        WHERE a.id=substring(n.href from '([0-9]+)$')::bigint AND a.instructor_user_id=${userId} AND a.status<>'pending')`;
-
-  const[incoming,outgoing,connected,flightRequests,sharedInvites,approvedReady]=await Promise.all([
+  const[incoming,outgoing,connected,flightRequests]=await Promise.all([
     sql`SELECT c.id,c.relationship,c.requester_label,c.recipient_label,c.created_at,u.display_name,COALESCE(s.home_airport,'') home_airport FROM pilot_connections c JOIN users u ON u.id=c.requester_user_id LEFT JOIN user_settings s ON s.user_id=u.id WHERE c.recipient_user_id=${userId} AND c.status='pending' ORDER BY c.created_at DESC` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT c.id,c.relationship,c.requester_label,c.recipient_label,c.created_at,u.display_name,COALESCE(s.home_airport,'') home_airport FROM pilot_connections c JOIN users u ON u.id=c.recipient_user_id LEFT JOIN user_settings s ON s.user_id=u.id WHERE c.requester_user_id=${userId} AND c.status='pending' ORDER BY c.created_at DESC` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT c.id,c.requester_user_id,c.recipient_user_id,c.relationship,c.requester_label,c.recipient_label,c.requester_shares_logbook,c.recipient_shares_logbook,c.accepted_at,u.display_name,COALESCE(s.home_airport,'') home_airport FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END LEFT JOIN user_settings s ON s.user_id=u.id WHERE c.status='accepted' AND (c.requester_user_id=${userId} OR c.recipient_user_id=${userId}) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT a.id,f.date::text date,f.registration,f.departure,f.arrival,f.role,u.display_name FROM instructor_flight_approvals a JOIN flights f ON f.id=a.flight_id JOIN users u ON u.id=a.student_user_id
-      WHERE a.instructor_user_id=${userId} AND a.status='pending' AND f.certified_at IS NOT NULL AND COALESCE(f.record_revision,1)=a.record_revision AND f.certification_hash=a.flight_hash ORDER BY a.requested_at DESC` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT p.id,f.date::text date,f.registration,f.departure,f.arrival,p.participant_role,u.display_name FROM flight_participations p JOIN flights f ON f.id=p.source_flight_id JOIN users u ON u.id=p.source_user_id
-      WHERE p.participant_user_id=${userId} AND p.status='pending' AND f.certified_at IS NOT NULL AND COALESCE(f.record_revision,1)=p.source_revision AND f.certification_hash=p.source_hash ORDER BY p.created_at DESC` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT a.id,f.date::text date,f.registration,f.departure,f.arrival,f.role,u.display_name FROM instructor_flight_approvals a JOIN flights f ON f.id=a.flight_id JOIN users u ON u.id=a.student_user_id
-      JOIN flight_participations p ON p.source_flight_id=a.flight_id AND p.source_revision=a.record_revision AND p.participant_role='INSTRUCTOR' AND p.participant_user_id=a.instructor_user_id AND p.status='pending'
-      WHERE a.instructor_user_id=${userId} AND a.status='approved' AND p.participant_flight_id IS NULL AND f.certified_at IS NOT NULL AND COALESCE(f.record_revision,1)=a.record_revision AND f.certification_hash=a.flight_hash ORDER BY a.decided_at DESC` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT p.id,f.date::text date,f.registration,f.departure,f.arrival,p.participant_role,u.display_name
+      FROM flight_participations p JOIN flights f ON f.id=p.source_flight_id AND f.user_id=p.source_user_id JOIN users u ON u.id=p.source_user_id
+      WHERE p.participant_user_id=${userId} AND p.status='pending' AND f.certified_at IS NOT NULL
+        AND COALESCE(f.record_revision,1)=p.source_revision AND f.certification_hash=p.source_hash
+      ORDER BY p.created_at DESC` as Promise<Array<Record<string,unknown>>>,
   ]);
-  const reviewCount=flightRequests.length+sharedInvites.length+approvedReady.length;
   return <>
     <header className="page-header"><div><p className="eyebrow">PILOT NETWORK</p><h1>Connections</h1><p className="muted">Keep a simple private network of friends, students and instructors.</p></div></header>
-    {reviewCount?<section className="panel connection-inbox"><div className="section-heading"><div><p className="eyebrow">FLIGHTS TO REVIEW</p><h2>Shared flights</h2></div><span className="status-on">{reviewCount} pending</span></div><div className="connection-list">
-      {flightRequests.map(row=><article className="connection-card" key={`approval-${text(row.id)}`}><div className="pilot-avatar" aria-hidden="true">{text(row.display_name).slice(0,1).toUpperCase()||"P"}</div><div className="connection-identity"><strong>{text(row.display_name)}</strong><span>Instructor approval · {text(row.registration)} · {text(row.date)}</span><small>{text(row.departure)} → {text(row.arrival)} · {text(row.role)}</small></div><Link className="primary-button" href={`/connections/flight/${text(row.id)}`}>Review flight</Link></article>)}
-      {approvedReady.map(row=><article className="connection-card" key={`add-${text(row.id)}`}><div className="pilot-avatar" aria-hidden="true">{text(row.display_name).slice(0,1).toUpperCase()||"P"}</div><div className="connection-identity"><strong>{text(row.display_name)}</strong><span>Approved · FI entry still needs attention</span><small>{text(row.registration)} · {text(row.date)} · {text(row.departure)} → {text(row.arrival)}</small></div><Link className="primary-button" href={`/connections/flight/${text(row.id)}`}>Review</Link></article>)}
-      {sharedInvites.map(row=><article className="connection-card" key={`shared-${text(row.id)}`}><div className="pilot-avatar" aria-hidden="true">{text(row.display_name).slice(0,1).toUpperCase()||"P"}</div><div className="connection-identity"><strong>{text(row.display_name)}</strong><span>Invites you as {text(row.participant_role)}</span><small>{text(row.registration)} · {text(row.date)} · {text(row.departure)} → {text(row.arrival)}</small></div><Link className="primary-button" href={`/connections/shared/${text(row.id)}`}>Review &amp; add</Link></article>)}
+    {flightRequests.length?<section className="panel connection-inbox"><div className="section-heading"><div><p className="eyebrow">ACTION REQUIRED</p><h2>Flight requests</h2><p className="muted">Every crew request now uses one review workflow. Instructor requests can be signed with or without adding an FI entry.</p></div><span className="status-on">{flightRequests.length} pending</span></div><div className="connection-list">
+      {flightRequests.map(row=><article className="connection-card" key={`flight-${text(row.id)}`}><div className="pilot-avatar" aria-hidden="true">{text(row.display_name).slice(0,1).toUpperCase()||"P"}</div><div className="connection-identity"><strong>{text(row.display_name)}</strong><span>{flightRoleLabel(row.participant_role)}</span><small>{text(row.registration)} · {text(row.date)} · {text(row.departure)} → {text(row.arrival)}</small></div><Link className="primary-button" href={`/connections/shared/${text(row.id)}`}>Review flight</Link></article>)}
     </div></section>:null}
     {incoming.length?<section className="panel connection-inbox"><div className="section-heading"><div><p className="eyebrow">ACTION REQUIRED</p><h2>Connection requests</h2></div><span className="status-on">{incoming.length} pending</span></div><div className="connection-list">{incoming.map(row=><article className="connection-card" key={text(row.id)}><div className="pilot-avatar" aria-hidden="true">{text(row.display_name).slice(0,1).toUpperCase()||"P"}</div><div className="connection-identity"><strong>{text(row.display_name)||"Pilot"}</strong><span>Wants to connect as your {roleLabel(row.recipient_label).toLowerCase()}</span><small>{text(row.home_airport)?`Home airport ${text(row.home_airport)}`:"Home airport not set"}</small></div><div className="connection-actions"><form action={acceptConnection}><input type="hidden" name="connection_id" value={text(row.id)}/><button className="primary-button">Accept</button></form><form action={declineConnection}><input type="hidden" name="connection_id" value={text(row.id)}/><button className="secondary-button">Decline</button></form></div></article>)}</div></section>:null}
     <div className="connections-layout"><section className="panel"><p className="eyebrow">FIND A PILOT</p><h2>New connection</h2><p className="muted">Use the exact account email. Choose whether that person is your friend, student or instructor.</p><PilotConnectionSearch/></section><section className="panel connection-privacy"><p className="eyebrow">PRIVATE BY DEFAULT</p><h2>Your logbook stays private</h2><p className="muted">A connection sees only your display name, home airport and relationship until you explicitly enable read-only logbook sharing.</p></section></div>

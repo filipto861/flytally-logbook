@@ -7,7 +7,7 @@ const text=(value:unknown)=>String(value??"").trim();
 const number=(value:unknown)=>Number(value||0);
 const digest=(value:unknown)=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-export function flightCertificationPayload(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||2)){
+export function flightCertificationPayload(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||3)){
   const base={
     version,userId,id:Number(row.id),date:text(row.date),evidence:text(row.evidence),registration:text(row.registration),
     aircraft:{make:text(row.aircraft_make),model:text(row.aircraft_model)||text(row.aircraft_type),variant:text(row.aircraft_variant),legacyType:text(row.aircraft_type),class:text(row.aircraft_class)},
@@ -17,11 +17,13 @@ export function flightCertificationPayload(row:Record<string,unknown>,userId:num
     remarks:{task:text(row.task),note:text(row.note),verificationName:text(row.verification_name),verificationReference:text(row.verification_reference)}
   };
   if(version===1)return base;
-  if(version===2)return{version:2,userId,id:Number(row.id),recordRevision:Math.max(1,Number(row.record_revision||1)),correctionReason:text(row.correction_reason),date:base.date,evidence:base.evidence,registration:base.registration,aircraft:base.aircraft,route:base.route,times:base.times,operation:base.operation,function:base.function,remarks:base.remarks};
+  const v2={version:2,userId,id:Number(row.id),recordRevision:Math.max(1,Number(row.record_revision||1)),correctionReason:text(row.correction_reason),date:base.date,evidence:base.evidence,registration:base.registration,aircraft:base.aircraft,route:base.route,times:base.times,operation:base.operation,function:base.function,remarks:base.remarks};
+  if(version===2)return v2;
+  if(version===3)return{...v2,version:3,purposeCode:text(row.purpose_code)};
   return null;
 }
 
-export function flightCertificationHash(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||2)){
+export function flightCertificationHash(row:Record<string,unknown>,userId:number,version=Number(row.certification_version||3)){
   const payload=flightCertificationPayload(row,userId,version);return payload?digest(payload):"";
 }
 

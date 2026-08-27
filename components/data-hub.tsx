@@ -14,12 +14,7 @@ type RestoreAction=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
 type TrashAction=(state:TrashRestoreState,form:FormData)=>Promise<TrashRestoreState>;
 
 export function DataHub({backups,deletedFlights,createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
-  backups:StoredBackup[];
-  deletedFlights:DeletedFlight[];
-  createAction:()=>Promise<void>;
-  restoreStoredAction:RestoreAction;
-  restoreFileAction:RestoreAction;
-  restoreTrashAction:TrashAction;
+  backups:StoredBackup[];deletedFlights:DeletedFlight[];createAction:()=>Promise<void>;restoreStoredAction:RestoreAction;restoreFileAction:RestoreAction;restoreTrashAction:TrashAction;
 }){
   const [section,setSection]=useState<Section>("export");
   return <section className="data-hub">
@@ -33,20 +28,21 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
     <div className="data-hub-content">
       {section==="export"?<div className="export-hub-workspace" role="tabpanel" id="data-panel-export" aria-labelledby="data-tab-export"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose one output</h2><p className="muted">Use the printable logbook for an official record. Excel and CSV are for your own data processing.</p></header>
         <section className="panel export-workspace" aria-label="Printable pilot logbook">
-          <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">This is the single place for official print filters. Holder identity is taken automatically from Profile → Settings → Licences.</p></div></header>
+          <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">Keep the date range empty for the complete logbook, or limit large print jobs to a period. Holder identity comes from Licences.</p></div></header>
           <form className="export-filter" action="/print" method="get">
+            <label>From<input type="date" name="from"/><small>Optional</small></label>
+            <label>To<input type="date" name="to"/><small>Optional</small></label>
             <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes all selected records in one consistent logbook format.</small></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
             <div className="export-format-actions"><button className="primary-button">Open printable logbook</button></div>
           </form>
-          <p className="muted">EASA / ULL licence number, holder address and validity are maintained with the licence itself in Settings.</p>
+          <p className="muted">For very large career logbooks, a date range keeps the browser print preview fast. Leaving both dates empty still opens the complete logbook.</p>
         </section>
 
         <section className="panel export-workspace" aria-label="Export flight records">
           <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Create filtered Excel or CSV data without changing the official printable-logbook configuration.</p></div></header>
           <form className="export-filter" action="/api/export" method="get">
-            <label>From<input type="date" name="from"/></label>
-            <label>To<input type="date" name="to"/></label>
+            <label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label>
             <label>Logbook<select name="evidence"><option value="">All</option><option>ULL</option><option>EASA</option></select></label>
             <label>Registration<input name="registration" placeholder="OK-..."/></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
