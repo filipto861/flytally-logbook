@@ -30,7 +30,7 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const {userId}=await requireUser();const id=Number((await params).id),context=await searchParams,query=contextQuery(context),suffix=query?`?${query}`:"";
   if(!Number.isSafeInteger(id)||id<=0)notFound();
   await ensureDatabaseOptimizations();
-  const [flight,aircraft,tracks,navigation,instructors,approvalRows,crewOptions,safetyRows]=await Promise.all([
+  const [flight,aircraft,tracks,navigation,instructors,approvalRows,crewOptions,safetyRows,participantOwnRows]=await Promise.all([
     getFlight(userId,id),
     getAircraftOptions(userId),
     measureServerTask("flight-gps-tracks",()=>getFlightTracks(userId,id),750),
@@ -41,12 +41,13 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
       WHERE a.flight_id=${id} AND a.student_user_id=${userId} AND a.record_revision=COALESCE(f.record_revision,1) LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT u.id,u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END WHERE c.status='accepted' AND (${userId} IN (c.requester_user_id,c.recipient_user_id)) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT p.id,p.status,p.participant_role,p.participant_flight_id,u.display_name participant_name FROM flight_participations p JOIN users u ON u.id=p.participant_user_id JOIN flights f ON f.id=p.source_flight_id WHERE p.source_flight_id=${id} AND p.source_user_id=${userId} AND p.source_revision=COALESCE(f.record_revision,1) ORDER BY p.created_at` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT p.id,p.source_flight_id,p.source_user_id,p.participant_role FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=${id} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
   if(!flight)notFound();
   const raw=flight as unknown as Record<string,unknown>,pilotName=String(raw.pilot_name??"");
   const update=updateFlight.bind(null,id),remove=deleteFlight.bind(null,id);
   const certified=Boolean(flight.certified_at),recordRevision=Math.max(1,Number(flight.record_revision||1)),correctionReason=String(flight.correction_reason??"").trim(),correctionDraft=!certified&&recordRevision>1&&Boolean(correctionReason),certify=certifyFlight.bind(null,id),correct=startCertifiedCorrection.bind(null,id);
-  const hasCertifiedHistory=certified||recordRevision>1||Boolean(correctionReason);
+  const hasCertifiedHistory=certified||recordRevision>1||Boolean(correctionReason),participantOwned=Boolean(participantOwnRows[0]);
   const attach=attachKmlTrack.bind(null,id),apply=applyGpsTimes.bind(null,id),dropTrack=deleteTrack.bind(null,id),detect=redetectFlightAirports.bind(null,id),toggleLock=setFlightLock.bind(null,id),locked=Boolean(flight.locked_at)||certified;
   const compliance=fcl050FlightCompliance(raw,pilotName),blockers=blockingComplianceIssues(compliance),easa=String(flight.evidence??"").trim().toUpperCase()==="EASA";
   const badge=certified?<span className="flight-lock-badge">CERTIFIED R{recordRevision}</span>:correctionDraft?<span className="flight-lock-badge">CORRECTION R{recordRevision}</span>:locked?<span className="flight-lock-badge">LOCKED</span>:null;
@@ -67,7 +68,7 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const instructorOptions=instructors.map(row=>({name:String(row.display_name??"").trim()})).filter(item=>item.name);
   const logbook=!locked?<section className="panel logbook-edit-panel"><header><div><p className="eyebrow">LOGBOOK DATA</p><h2>Edit flight record</h2><p className="muted">Changes are saved only when you press Save flight at the end of the form.</p></div></header><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight} instructors={instructorOptions}/></section>:<ReadonlyLogbookEntry row={raw} pilotName={pilotName} certified={certified} easa={easa}/>;
   return <>
-    <header className="page-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation"><Link className="secondary-link" href={`/flights${suffix}`}>Back to flights</Link>{navigation.previousId?<Link className="secondary-link" href={`/flights/${navigation.previousId}${suffix}`}>← Previous</Link>:null}{navigation.nextId?<Link className="secondary-link" href={`/flights/${navigation.nextId}${suffix}`}>Next →</Link>:null}{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit report</Link>:null}{!locked&&!hasCertifiedHistory?<DeleteFlightButton action={remove}/>:null}</div></header>
+    <header className="page-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation"><Link className="secondary-link" href={`/flights${suffix}`}>Back to flights</Link>{navigation.previousId?<Link className="secondary-link" href={`/flights/${navigation.previousId}${suffix}`}>← Previous</Link>:null}{navigation.nextId?<Link className="secondary-link" href={`/flights/${navigation.nextId}${suffix}`}>Next →</Link>:null}{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit report</Link>:null}{participantOwned?<DeleteFlightButton action={remove} label="Remove from my logbook" confirmLabel="Remove my entry"/>:!locked&&!hasCertifiedHistory?<DeleteFlightButton action={remove}/>:null}</div></header>
     <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={tracks.length} initialTab={context.tab==="logbook"?"logbook":context.tab==="gps"?"gps":"overview"}/>
   </>;
 }
