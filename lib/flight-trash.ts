@@ -15,17 +15,18 @@ export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>
 export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{
   await ensureDatabaseOptimizations();const token=randomUUID();
   const results=await sql.transaction([
+    sql`UPDATE flights f SET locked_at=NULL,locked_by_user_id=NULL WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id) RETURNING f.id`,
     sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data)
       SELECT f.user_id,f.id,${token},to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb)
-      FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.locked_at IS NULL AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1
+      FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1
+        AND (f.locked_at IS NULL OR EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id))
         AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=f.user_id AND r.flight_id=f.id)
       RETURNING id`,
-    sql`UPDATE flight_participations SET participant_flight_id=NULL WHERE participant_user_id=${userId} AND participant_flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
     sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
     sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
-    sql`DELETE FROM flights WHERE id=${flightId} AND user_id=${userId} AND locked_at IS NULL AND certified_at IS NULL AND COALESCE(record_revision,1)=1 AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=${userId} AND r.flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
+    sql`DELETE FROM flights WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND COALESCE(record_revision,1)=1 AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=${userId} AND r.flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
   ]);
-  return Boolean((results[0] as Array<{id:number|string}>)[0]);
+  return Boolean((results[1] as Array<{id:number|string}>)[0]);
 }
 
 export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{
