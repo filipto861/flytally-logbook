@@ -20,12 +20,13 @@ async function applyV132Schema(){
     sql`SELECT pg_advisory_xact_lock(132032026)`,
     sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS purpose_code TEXT NOT NULL DEFAULT ''`,
     sql`UPDATE flights SET purpose_code='LAPL_FCL140A_REFRESHER'
-      WHERE UPPER(COALESCE(role,''))='DUAL'
+      WHERE certified_at IS NULL AND locked_at IS NULL
+        AND UPPER(COALESCE(role,''))='DUAL'
         AND CONCAT_WS(' ',COALESCE(task,''),COALESCE(note,''))~*'(FCL[.]140[.]A|LAPL[[:space:]]+recency|recency[[:space:]]+training|refresher[[:space:]]+training)'`,
     sql`CREATE OR REPLACE FUNCTION flytally_sync_flight_purpose() RETURNS TRIGGER AS $$
       BEGIN
         IF UPPER(COALESCE(NEW.role,''))='DUAL'
-          AND CONCAT_WS(' ',COALESCE(NEW.task,''),COALESCE(NEW.note,''))~*'(FCL[.]140[.]A|LAPL[[:space:]]+recency|recency[[:space:]]+training|refresher[[:space:]]+training)' THEN
+          AND UPPER(COALESCE(NEW.purpose_code,''))='LAPL_FCL140A_REFRESHER' THEN
           NEW.purpose_code:='LAPL_FCL140A_REFRESHER';
         ELSE
           NEW.purpose_code:='';
@@ -34,7 +35,7 @@ async function applyV132Schema(){
       END;
     $$ LANGUAGE plpgsql`,
     sql`DROP TRIGGER IF EXISTS trg_flytally_sync_flight_purpose ON flights`,
-    sql`CREATE TRIGGER trg_flytally_sync_flight_purpose BEFORE INSERT OR UPDATE OF role,task,note,purpose_code ON flights FOR EACH ROW EXECUTE FUNCTION flytally_sync_flight_purpose()`,
+    sql`CREATE TRIGGER trg_flytally_sync_flight_purpose BEFORE INSERT OR UPDATE OF role,purpose_code ON flights FOR EACH ROW EXECUTE FUNCTION flytally_sync_flight_purpose()`,
 
     sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS decision_note TEXT NOT NULL DEFAULT ''`,
     sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS approval_id BIGINT REFERENCES instructor_flight_approvals(id) ON DELETE SET NULL`,

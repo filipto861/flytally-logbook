@@ -1,6 +1,6 @@
 # FlyTally
 
-Current production application: **FlyTally v1.32.0 — Integrity & Performance**.
+Current production application: **FlyTally v1.32.1 — Integrity & Performance hotfix**.
 
 FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and deployed on Vercel. The active application lives in `app/`, `components/` and `lib/`.
 
@@ -21,6 +21,8 @@ FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and dep
 This release focuses on consolidating the verified-flight workflow and removing production repair logic from page rendering. Instructor requests now use `flight_participations` as the request/workflow record and `flight_verifications` as the signed evidence; `instructor_flight_approvals` remains temporarily as a compatibility projection for older records and views.
 
 Other v1.32 work includes structured LAPL FCL.140.A refresher-purpose tagging, SQL-side dashboard aggregation, date-scoped large print jobs, licence-type normalization, and an enforced web verification workflow in GitHub Actions.
+
+v1.32.1 hardens the initial release by keeping the one-time purpose backfill away from certified/locked flights and fixing PostgreSQL keyword collisions in dashboard time-series aliases.
 
 ## Legacy Streamlit code
 
