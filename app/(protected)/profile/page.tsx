@@ -4,6 +4,8 @@ import { getProfileData } from "@/lib/data/profile";
 import { EASA_ROLES } from "@/lib/easa-logbook";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { changePassword,deleteAccount,disconnectGoogle,logoutOtherDevices,revokeDevice,saveAccountSettings } from "./actions";
+import { saveAppearance } from "./appearance-actions";
+import { APPEARANCE_OPTIONS,normalizeAppearance } from "@/lib/ui-preferences";
 import { InstallAppControl } from "@/components/install-app-control";
 import { sql } from "@/lib/db";
 
@@ -17,10 +19,10 @@ export default async function ProfilePage(){
     sql`SELECT EXISTS(SELECT 1 FROM auth_identities WHERE user_id=${userId} AND provider='google') google_linked,EXISTS(SELECT 1 FROM user_credentials WHERE user_id=${userId}) has_password` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT id,created_at,last_seen_at,expires_at,user_agent FROM auth_sessions WHERE user_id=${userId} AND revoked_at IS NULL AND expires_at>NOW() ORDER BY last_seen_at DESC` as Promise<Array<Record<string,unknown>>>,
   ]);
-  const preferences=parsePilotPreferences(d.settings.preferences_json),googleLinked=Boolean(auth[0]?.google_linked),hasPassword=Boolean(auth[0]?.has_password);
+  const preferences=parsePilotPreferences(d.settings.preferences_json),appearance=normalizeAppearance(preferences.appearance),googleLinked=Boolean(auth[0]?.google_linked),hasPassword=Boolean(auth[0]?.has_password);
   return <>
     <header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted">Profile defaults, app installation and account security.</p></div><Link className="primary-link" href="/credentials">Open licences</Link></header>
-    <nav className="settings-nav" aria-label="Settings sections"><a href="#profile">Profile & defaults</a><a href="#app">App</a><a href="#security">Security</a></nav>
+    <nav className="settings-nav" aria-label="Settings sections"><a href="#profile">Profile & defaults</a><a href="#appearance">Appearance</a><a href="#app">App</a><a href="#security">Security</a></nav>
 
     <form action={saveAccountSettings} className="account-settings-form" id="profile">
       <div className="profile-grid">
@@ -29,6 +31,8 @@ export default async function ProfilePage(){
       </div>
       <div className="settings-save"><span>Profile and defaults are saved together.</span><button className="primary-button">Save changes</button></div>
     </form>
+
+    <section className="panel" id="appearance"><div className="section-heading"><div><p className="eyebrow">APPEARANCE</p><h2>Theme</h2></div></div><form action={saveAppearance} className="appearance-form"><label>Appearance<select name="appearance" defaultValue={appearance}>{APPEARANCE_OPTIONS.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><button className="primary-button">Save appearance</button></form></section>
 
     <section className="panel"><div className="section-heading"><div><p className="eyebrow">LICENCES</p><h2>Licences, qualifications & documents</h2><p className="muted">Logbook identity, licence validity, signing identity, medical, ICAO language proficiency and other documents live in the dedicated Licences section.</p></div><Link className="primary-button" href="/credentials">Manage licences</Link></div></section>
 

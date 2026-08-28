@@ -6,8 +6,13 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
+function releaseAtLeast(major:number,minor:number,patch:number){
+  const parts=String(JSON.parse(read("package.json")).version).split(".").map(Number),[a=0,b=0,c=0]=parts;
+  return a>major||(a===major&&(b>minor||(b===minor&&c>=patch)));
+}
+
 test("v1.33.5 closes certification-readiness with FI materialisation and 10k scale evidence",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.33.5");
+  assert.ok(releaseAtLeast(1,33,5));
   const fi=read("tests/integration/postgres-fi-materialization.test.ts");
   const scale=read("tests/integration/postgres-scale-readiness.test.ts");
   assert.match(fi,/AC-11/);

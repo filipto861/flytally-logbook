@@ -2,28 +2,28 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.32 · Integrity & Performance
+## Current release — v1.34 · Modular UI
 
 Focus:
-- one visible flight-request workflow backed by `flight_participations`
-- signed evidence backed by exact-revision `flight_verifications`
-- compatibility projection for legacy `instructor_flight_approvals`
-- structured training purpose for LAPL FCL.140.A refresher training
-- certification fingerprint v3 including structured purpose
-- PostgreSQL-side dashboard aggregation
-- scalable print date-range filtering while retaining complete-logbook output
-- licence type normalization
-- CI verification gate
-- removal of one-off production cleanup logic and render-time database self-repair
+- central dashboard widget registry and validated per-user layout model
+- dashboard preferences stored inside existing `user_settings.preferences_json`
+- shared appearance contract: System / Dark / Light
+- theme tokens layered over the existing UI without changing certified-flight data or certification payloads
+- theme-aware OpenStreetMap rendering
+- preparation for user-controlled widget visibility, ordering and sizing in v1.34.1
+
+## Certification baseline — v1.33.5
+
+The v1.33 certification-readiness baseline remains unchanged: exact revision/hash verification, immutable certified records, correction history, instructor evidence, cross-user isolation, backup/restore integrity, PostgreSQL acceptance evidence and 10k query benchmarks.
 
 ## Near term
 
+- v1.34.1: dashboard editor with show/hide, ordering, sizing and presets
+- v1.34.2: full visual pass across the application, including light-mode polish, graphs, maps and removal of unnecessary persistent explanatory copy
+- v1.35: generalized Recency Engine with predefined regulatory profiles and user-defined currency rules
 - replace remaining read-only legacy/fuzzy participant-link fallbacks after historical rows have been verified
-- add disposable PostgreSQL integration tests for cross-user ownership, correction/supersede and instructor workflows
-- profile production SQL with `EXPLAIN (ANALYZE, BUFFERS)` before adding more indexes
 - decide whether the legacy `track_points` compatibility table can be retired after backup/restore paths are migrated
-- continue print performance work for very large logbooks without removing complete-logbook export
 
 ## Product direction
 
-Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. New social or messaging features should not be added at the expense of record integrity or performance.
+Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Modular UI preferences must remain presentation-only and must never alter certified evidence or regulatory calculations.

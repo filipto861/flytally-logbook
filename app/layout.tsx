@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
+import "./theme.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
@@ -16,13 +17,16 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit:"cover",
-  colorScheme: "dark",
-  themeColor: "#071018",
+  colorScheme: "light dark",
+  themeColor:[
+    {media:"(prefers-color-scheme: dark)",color:"#071018"},
+    {media:"(prefers-color-scheme: light)",color:"#f4f7fb"},
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );
