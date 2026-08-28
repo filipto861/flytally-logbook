@@ -1,5 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
+import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { ensureV1353Schema } from "@/lib/v1353-schema";
 import { credentialValidity } from "@/lib/credential-validity";
 import { parsePilotPreferences,type PilotPreferences } from "@/lib/logbook-print";
 import { daysBetween,evaluateClassRevalidation,evaluateCustomRule,evaluateLaplA,evaluatePassengerCurrencyMode,flightMinutes,parseCustomRecencyRules,parseRecencyEvidence,type RecencyEvaluation,type RecencyFlight } from "@/lib/recency-engine";
@@ -20,6 +22,7 @@ function ratingForClass(rows:Array<Record<string,unknown>>,aircraftClass:"SEP"|"
 const daysUntil=(today:string,date?:string)=>date?daysBetween(today,date):Number.POSITIVE_INFINITY;
 
 export async function getRecencyStateForUser(userId:number,preferencesOverride?:PilotPreferences):Promise<RecencyState>{
+  await ensureDatabaseOptimizations();await ensureV1353Schema();
   const today=todayIso();
   const settingsPromise:Promise<Array<Record<string,unknown>>>=preferencesOverride?Promise.resolve([]):sql`SELECT preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>;
   const[settings,licences,qualifications,expiries]=await Promise.all([
@@ -29,16 +32,16 @@ export async function getRecencyStateForUser(userId:number,preferencesOverride?:
     sql`SELECT label,expiry_date::text expiry_date,warning_days FROM user_expiries WHERE user_id=${userId} AND UPPER(TRIM(category))<>'LICENCE' AND active=1 AND expiry_date<'9999-01-01' ORDER BY expiry_date` as Promise<Array<Record<string,unknown>>>,
   ]);
   const preferences=preferencesOverride??parsePilotPreferences(settings[0]?.preferences_json),customRules=parseCustomRecencyRules(preferences.recency_rules),evidence=parseRecencyEvidence(preferences.recency_evidence),maxDays=Math.max(730,...customRules.map(rule=>rule.windowDays));
-  const rows=await sql`SELECT f.date,f.evidence,f.aircraft_class,f.role,f.off_block,f.on_block,f.landings_day,f.landings_night,f.purpose_code,f.task,f.note,EXISTS(SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.verification_role='INSTRUCTOR' AND v.status='signed') instructor_signed FROM flights f WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::date ELSE NULL END>=CURRENT_DATE-(${maxDays}::int*INTERVAL '1 day') ORDER BY f.date DESC,f.id DESC` as Array<Record<string,unknown>>;
-  const flights:RecencyFlight[]=rows.map(row=>({date:t(row.date).slice(0,10),evidence:t(row.evidence),aircraftClass:t(row.aircraft_class),role:t(row.role),minutes:flightMinutes(row.off_block,row.on_block),landingsDay:Number(row.landings_day)||0,landingsNight:Number(row.landings_night)||0,purposeCode:t(row.purpose_code),task:t(row.task),note:t(row.note),instructorSigned:Boolean(row.instructor_signed)}));
+  const rows=await sql`SELECT f.date,f.evidence,f.aircraft_class,f.role,f.off_block,f.on_block,f.landings_day,f.landings_night,f.movement_evidence_recorded,f.takeoffs_day,f.takeoffs_night,f.approaches_day,f.approaches_night,f.purpose_code,f.task,f.note,EXISTS(SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.verification_role='INSTRUCTOR' AND v.status='signed') instructor_signed FROM flights f WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::date ELSE NULL END>=CURRENT_DATE-(${maxDays}::int*INTERVAL '1 day') ORDER BY f.date DESC,f.id DESC` as Array<Record<string,unknown>>;
+  const flights:RecencyFlight[]=rows.map(row=>({date:t(row.date).slice(0,10),evidence:t(row.evidence),aircraftClass:t(row.aircraft_class),role:t(row.role),minutes:flightMinutes(row.off_block,row.on_block),landingsDay:Number(row.landings_day)||0,landingsNight:Number(row.landings_night)||0,movementEvidenceRecorded:Boolean(row.movement_evidence_recorded),takeoffsDay:Number(row.takeoffs_day)||0,takeoffsNight:Number(row.takeoffs_night)||0,approachesDay:Number(row.approaches_day)||0,approachesNight:Number(row.approaches_night)||0,purposeCode:t(row.purpose_code),task:t(row.task),note:t(row.note),instructorSigned:Boolean(row.instructor_signed)}));
   const hasLapl=licences.some(row=>t(row.licence_type).toUpperCase()==="LAPL(A)"),hasSep=hasLapl||qualifications.some(row=>classOf(row.qualification_type)==="SEP"),hasTmg=qualifications.some(row=>classOf(row.qualification_type)==="TMG");
   const hasIr=qualifications.some(row=>t(row.qualification_type).toUpperCase().startsWith("IR")&&currentCredential(row,today)),hasNight=hasIr||qualifications.some(row=>t(row.qualification_type).toUpperCase().includes("NIGHT")&&currentCredential(row,today)),sepRating=ratingForClass(qualifications,"SEP"),tmgRating=ratingForClass(qualifications,"TMG");
   const availableMonitors:RecencyMonitor[]=[];
   if(hasLapl)availableMonitors.push({id:"lapl-fcl140a",label:"LAPL(A) flying privileges",detail:"FCL.140.A · rolling 2-year recency / proficiency check"});
-  if(hasSep)availableMonitors.push({id:"sep-passenger-day",label:"SEP passenger currency",detail:"FCL.060 · preceding 90 days"});
-  if(hasSep&&hasNight)availableMonitors.push({id:"sep-passenger-night",label:"SEP night passenger currency",detail:hasIr?"FCL.060 · current IR exemption applies":"FCL.060 · night take-off/landing currency"});
-  if(hasTmg)availableMonitors.push({id:"tmg-passenger-day",label:"TMG passenger currency",detail:"FCL.060 · preceding 90 days"});
-  if(hasTmg&&hasNight)availableMonitors.push({id:"tmg-passenger-night",label:"TMG night passenger currency",detail:hasIr?"FCL.060 · current IR exemption applies":"FCL.060 · night take-off/landing currency"});
+  if(hasSep)availableMonitors.push({id:"sep-passenger-day",label:"SEP passenger currency",detail:"FCL.060 · 3 take-offs, approaches and landings / 90 days"});
+  if(hasSep&&hasNight)availableMonitors.push({id:"sep-passenger-night",label:"SEP night passenger currency",detail:hasIr?"FCL.060 · base currency + current IR night exemption":"FCL.060 · base currency + night take-off, approach and landing"});
+  if(hasTmg)availableMonitors.push({id:"tmg-passenger-day",label:"TMG passenger currency",detail:"FCL.060 · 3 take-offs, approaches and landings / 90 days"});
+  if(hasTmg&&hasNight)availableMonitors.push({id:"tmg-passenger-night",label:"TMG night passenger currency",detail:hasIr?"FCL.060 · base currency + current IR night exemption":"FCL.060 · base currency + night take-off, approach and landing"});
   if(sepRating)availableMonitors.push({id:"sep-revalidation",label:"SEP class rating revalidation",detail:`FCL.740.A · expiry ${t(sepRating.valid_until).slice(0,10)}`});
   if(tmgRating)availableMonitors.push({id:"tmg-revalidation",label:"TMG class rating revalidation",detail:`FCL.740.A · expiry ${t(tmgRating.valid_until).slice(0,10)}`});
   availableMonitors.push({id:"credential-deadlines",label:"Licence & document deadlines",detail:"Expiry and warning-window monitoring"});

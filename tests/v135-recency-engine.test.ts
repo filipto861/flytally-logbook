@@ -6,7 +6,7 @@ import { credentialValidity } from "../lib/credential-validity.ts";
 import { evaluateCustomRule,evaluateLaplMetrics,evaluatePassengerCurrency,parseCustomRecencyRules,type RecencyFlight } from "../lib/recency-engine.ts";
 
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
-const flight=(partial:Partial<RecencyFlight>):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,...partial});
+const flight=(partial:Partial<RecencyFlight>):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 
 test("v1.35 selectable built-in monitors and custom rules remain supported",()=>{
   assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
@@ -25,10 +25,10 @@ test("LAPL FCL.140.A threshold evaluation reports exact missing requirements",()
 });
 
 test("FCL.060 profile distinguishes day passenger currency and night IR exemption",()=>{
-  const flights=[flight({landingsDay:1}),flight({date:"2026-08-19",landingsDay:1}),flight({date:"2026-08-18",landingsDay:1})];
+  const flights=[flight({}),flight({date:"2026-08-19"}),flight({date:"2026-08-18"})];
   const noIr=evaluatePassengerCurrency(flights,"SEP",false,"2026-08-28");assert.equal(noIr.status,"attention");
   const ir=evaluatePassengerCurrency(flights,"SEP",true,"2026-08-28");assert.equal(ir.status,"current");
-  const stale=evaluatePassengerCurrency([flight({date:"2026-01-01",landingsDay:5})],"SEP",false,"2026-08-28");assert.equal(stale.status,"not-current");
+  const stale=evaluatePassengerCurrency([flight({date:"2026-01-01",landingsDay:5,takeoffsDay:5,approachesDay:5})],"SEP",false,"2026-08-28");assert.equal(stale.status,"not-current");
 });
 
 test("custom rolling rules validate, filter and evaluate certified-flight metrics",()=>{

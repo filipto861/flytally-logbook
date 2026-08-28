@@ -23,10 +23,9 @@ test("PostgreSQL acceptance harness executes production certification DDL",()=>{
   assert.match(integration,/CREATE TABLE IF NOT EXISTS flight_verifications/);
 });
 
-test("certification payload remains on v3 until an explicit payload migration is introduced",()=>{
+test("certification v3 payload remains verifiable after explicit later payload migrations",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,33,1));
   const integrity=read("lib/certification-integrity.ts");
   assert.match(integrity,/if\(version===3\)return/);
   assert.match(integrity,/purposeCode:text\(row\.purpose_code\)/);
-  assert.doesNotMatch(integrity,/version===4/);
 });
