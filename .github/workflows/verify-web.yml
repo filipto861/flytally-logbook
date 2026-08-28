@@ -53,4 +53,12 @@ jobs:
           name: flytally-postgres-acceptance-${{ github.sha }}
           path: flytally-postgres-acceptance.txt
           retention-days: 90
+      - name: Preserve scale evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flytally-scale-evidence-${{ github.sha }}
+          path: flytally-scale-evidence.json
+          if-no-files-found: warn
+          retention-days: 90
       - run: npm run build
