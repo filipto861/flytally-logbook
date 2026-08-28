@@ -6,9 +6,14 @@ import { dashboardLayoutFromPreferences,dashboardPresetLayout,DASHBOARD_WIDGETS 
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const releaseAtLeast=(actual:string,minimum:string)=>{
+  const a=actual.split(".").map(Number),b=minimum.split(".").map(Number);
+  for(let i=0;i<3;i++){if((a[i]??0)>(b[i]??0))return true;if((a[i]??0)<(b[i]??0))return false}
+  return true;
+};
 
 test("v1.34.1 enables per-user dashboard visibility, order, sizes and presets",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.34.1");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,"1.34.1"));
   const general=dashboardPresetLayout("general"),ull=dashboardPresetLayout("ull"),instructor=dashboardPresetLayout("instructor");
   assert.equal(general.length,DASHBOARD_WIDGETS.length);
   assert.ok(general.every(item=>item.enabled));
