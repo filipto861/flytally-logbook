@@ -1,6 +1,6 @@
 # FlyTally
 
-Current production application: **FlyTally v1.32.1 — Integrity & Performance hotfix**.
+Current production-oriented release: **FlyTally v1.33.0 — Certification Readiness**.
 
 FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and deployed on Vercel. The active application lives in `app/`, `components/` and `lib/`.
 
@@ -16,13 +16,25 @@ FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and dep
 - GPS/KML/GPX/CSV track handling
 - printable EASA-style logbook, exports and account backups
 
-## v1.32 — Integrity & Performance
+## v1.33 — Certification Readiness
 
-This release focuses on consolidating the verified-flight workflow and removing production repair logic from page rendering. Instructor requests now use `flight_participations` as the request/workflow record and `flight_verifications` as the signed evidence; `instructor_flight_approvals` remains temporarily as a compatibility projection for older records and views.
+v1.33 adds an owner-authenticated, printable **Authority Verification Report** for a certified flight. The report independently recalculates each preserved certification SHA-256, identifies the exact revision/hash bound to instructor evidence, validates stored verification HMAC-SHA-256 evidence at report time, preserves revoked evidence in history, and displays same-device handwritten signature evidence without overstating identity assurance.
 
-Other v1.32 work includes structured LAPL FCL.140.A refresher-purpose tagging, SQL-side dashboard aggregation, date-scoped large print jobs, licence-type normalization, and an enforced web verification workflow in GitHub Actions.
+The release also establishes a controlled certification-readiness documentation set in `docs/certification-readiness/`:
 
-v1.32.1 hardens the initial release by keeping the one-time purpose backfill away from certified/locked flights and fixing PostgreSQL keyword collisions in dashboard time-series aliases.
+- data dictionary;
+- FCL.050-oriented compliance matrix;
+- certification/signature specification;
+- acceptance-test matrix;
+- change-control rules.
+
+These materials are engineering and authority-discussion aids. They do **not** state that FlyTally is EASA certified or approved by ÚCL.
+
+## v1.32 — Integrity & Performance baseline
+
+v1.32 consolidated verified-flight workflow around `flight_participations` as the workflow record and `flight_verifications` as signed evidence; `instructor_flight_approvals` remains temporarily as a compatibility projection.
+
+It also introduced structured LAPL FCL.140.A refresher-purpose tagging, SQL-side dashboard aggregation, date-scoped large print jobs, licence-type normalization, safer runtime migrations, ULL-aware Czech LAPL recency handling and a web verification workflow in GitHub Actions.
 
 ## Legacy Streamlit code
 

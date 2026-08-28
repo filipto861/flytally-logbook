@@ -1,0 +1,45 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { PrintButton } from "@/components/print-button";
+import { SignaturePreview } from "@/components/signature-preview";
+import { requireUser } from "@/lib/auth/require-user";
+import { sql } from "@/lib/db";
+import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { integrityLabel,verifyFlightCertification } from "@/lib/certification-integrity";
+import { authorityReportReference,credentialLines,storedObject,verificationCryptographicStatus,verificationIdentity,verificationSource } from "@/lib/authority-verification";
+
+export const metadata={title:"Verification report | FlyTally"};
+const text=(value:unknown)=>String(value??"").trim();
+const dateTime=(value:unknown)=>{const d=new Date(String(value??""));return Number.isNaN(d.getTime())?text(value):new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}).format(d)+" UTC"};
+const duration=(off:unknown,on:unknown)=>{const match=(value:unknown)=>text(value).match(/^([01][0-9]|2[0-3]):([0-5][0-9])$/),a=match(off),b=match(on);if(!a||!b)return"—";const value=((Number(b[1])*60+Number(b[2]))-(Number(a[1])*60+Number(a[2]))+1440)%1440;return`${Math.floor(value/60)}:${String(value%60).padStart(2,"0")}`};
+
+export default async function VerificationReport({params}:{params:Promise<{id:string}>}){
+  const {userId}=await requireUser(),id=Number((await params).id);if(!Number.isSafeInteger(id)||id<=0)notFound();await ensureDatabaseOptimizations();
+  const[currentRows,archiveRows,verificationRows]=await Promise.all([
+    sql`SELECT f.*,u.display_name pilot_name,u.email pilot_email FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT revision_number,certification_hash,certification_version,certified_at,superseded_at,correction_reason,snapshot_data FROM flight_certified_revisions WHERE flight_id=${id} AND user_id=${userId} ORDER BY revision_number` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT v.*,u.display_name signer_name FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id WHERE v.flight_id=${id} AND v.flight_user_id=${userId} ORDER BY v.record_revision,v.signed_at,v.id` as Promise<Array<Record<string,unknown>>>,
+  ]);
+  const current=currentRows[0];if(!current)notFound();
+  const currentRevision=Math.max(1,Number(current.record_revision||1)),currentCertified=Boolean(current.certified_at);
+  const versions=archiveRows.map(row=>{const data={...storedObject(row.snapshot_data),certification_hash:row.certification_hash,certification_version:row.certification_version};return{revision:Number(row.revision_number),data,certifiedAt:row.certified_at,supersededAt:row.superseded_at,reason:text(row.correction_reason),integrity:verifyFlightCertification(data,userId)}});
+  if(currentCertified)versions.push({revision:currentRevision,data:current,certifiedAt:current.certified_at,supersededAt:null,reason:text(current.correction_reason),integrity:verifyFlightCertification(current,userId)});
+  versions.sort((a,b)=>a.revision-b.revision);
+  const latest=versions.at(-1),reference=latest?authorityReportReference(id,latest.revision,latest.data.certification_hash):`FT-${id}-DRAFT`,integrityProblems=versions.filter(item=>item.integrity.status!=="verified").length;
+  const signed=verificationRows.filter(row=>text(row.status)==="signed"),revoked=verificationRows.filter(row=>text(row.status)==="revoked");
+  return <div className="print-logbook">
+    <header className="page-header print-trigger"><div><p className="eyebrow">AUTHORITY VERIFICATION REPORT</p><h1>{text(current.registration)||"Flight"} · {text(current.date)}</h1><p className="muted">Technical evidence report · {reference}</p></div><div className="detail-navigation"><Link className="secondary-link" href={`/flights/${id}/audit`}>← Certification audit</Link><Link className="secondary-link" href={`/flights/${id}`}>Flight detail</Link><PrintButton/></div></header>
+
+    <section className="flight-summary"><div><span>Record</span><strong>{currentCertified?`Certified R${currentRevision}`:`Correction draft R${currentRevision}`}</strong></div><div><span>Certified revisions</span><strong>{versions.length}</strong></div><div><span>Integrity</span><strong>{integrityProblems?`${integrityProblems} issue${integrityProblems===1?"":"s"}`:"Verified"}</strong></div><div><span>Signed verifications</span><strong>{signed.length}</strong></div></section>
+
+    <section className="panel"><p className="eyebrow">REPORT SCOPE</p><h2>Record identity</h2><div className="audit-changes"><div><b>Pilot</b><ins>{text(current.pilot_name)||"—"}</ins></div><div><b>Flight</b><ins>{text(current.registration)} · {text(current.aircraft_make)} {text(current.aircraft_model)||text(current.aircraft_type)}</ins></div><div><b>Route</b><ins>{text(current.departure)||"—"} → {text(current.arrival)||"—"}</ins></div><div><b>Block time</b><ins>{text(current.off_block)||"—"}–{text(current.on_block)||"—"} UTC · {duration(current.off_block,current.on_block)}</ins></div><div><b>Role</b><ins>{text(current.role)||"—"}</ins></div><div><b>Logbook scope</b><ins>{text(current.evidence)||"—"}</ins></div>{text(current.purpose_code)?<div><b>Structured purpose</b><ins>{text(current.purpose_code)}</ins></div>:null}<div><b>Report reference</b><ins>{reference}</ins></div></div><p className="muted">This report describes evidence stored by FlyTally. It does not state or imply approval of FlyTally, the flight, the licence holder or the signature by a competent authority.</p></section>
+
+    <section className="panel"><p className="eyebrow">CERTIFICATION EVIDENCE</p><h2>Revision integrity</h2>{versions.length?<div className="flight-audit-list">{versions.map(version=><article key={version.revision}><header><div><strong>Revision {version.revision}</strong><small>Certified {dateTime(version.certifiedAt)}{version.supersededAt?` · Superseded ${dateTime(version.supersededAt)}`:" · Current certified revision"}</small></div><span className={`audit-action ${version.integrity.status==="verified"?"created":"deleted"}`}>{integrityLabel(version.integrity)}</span></header><p className="muted">Certification format v{version.integrity.version} · SHA-256 {version.integrity.stored||"—"}</p>{version.integrity.status==="mismatch"?<p className="form-error">Calculated SHA-256 {version.integrity.calculated}</p>:null}{version.reason?<p><b>Correction reason:</b> {version.reason}</p>:null}</article>)}</div>:<p className="empty-state">This flight has no certified revision yet.</p>}</section>
+
+    <section className="panel"><p className="eyebrow">SIGNATURE EVIDENCE</p><h2>Instructor / supervising-pilot verification</h2>{verificationRows.length?<div className="flight-audit-list">{verificationRows.map(row=>{const credentials=storedObject(row.credential_snapshot),identity=verificationIdentity(row),source=verificationSource(row),crypto=verificationCryptographicStatus(row),lines=credentialLines(row.credential_snapshot);return <article key={text(row.id)}><header><div><strong>R{text(row.record_revision)} · {identity} · {text(row.verification_role)}</strong><small>{row.signed_at?`Signed ${dateTime(row.signed_at)}`:"Not signed"}{row.revoked_at?` · Revoked ${dateTime(row.revoked_at)}`:""}</small></div><span className={`audit-action ${text(row.status)==="signed"&&crypto==="verified"?"created":"deleted"}`}>{text(row.status)} · signature {crypto}</span></header><p><b>Identity source:</b> {source}</p>{lines.manual?<p><b>Credential:</b> {lines.manual}</p>:null}{lines.licences.map((line,index)=><p key={`lic-${index}`}><b>Licence:</b> {line}</p>)}{lines.qualifications.map((line,index)=><p key={`qual-${index}`}><b>Qualification:</b> {line}</p>)}<p className="muted">Bound to revision R{text(row.record_revision)} · flight SHA-256 {text(row.flight_hash)||"—"}</p><p className="muted">Server HMAC-SHA-256 {text(row.server_signature)||"—"}</p>{credentials.signature?<SignaturePreview signature={credentials.signature}/>:null}{row.revocation_reason?<p><b>Revocation reason:</b> {text(row.revocation_reason)}</p>:null}</article>})}</div>:<p className="empty-state">No instructor or supervising-pilot verification evidence is stored for this flight.</p>}</section>
+
+    <section className="panel"><p className="eyebrow">EVIDENCE SUMMARY</p><h2>Machine-verifiable status</h2><div className="audit-changes"><div><b>Certified revision integrity</b><ins>{versions.length&&!integrityProblems?"VERIFIED":"REVIEW REQUIRED"}</ins></div><div><b>Active signed verifications</b><ins>{signed.length}</ins></div><div><b>Revoked verifications</b><ins>{revoked.length}</ins></div><div><b>Current correction draft</b><ins>{currentCertified?"NO":"YES"}</ins></div></div></section>
+
+    <footer className="muted">FlyTally verification report · generated from the authenticated account's server-authoritative record, certified revision archive and stored verification evidence.</footer>
+  </div>;
+}
