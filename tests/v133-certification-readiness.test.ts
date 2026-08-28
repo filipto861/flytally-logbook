@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { authorityReportReference,verificationCryptographicStatus,verificationIdentity,verificationPayloadFromRow,verificationSource } from "../lib/authority-verification.ts";
 import { signVerificationPayload } from "../lib/verification-signature.ts";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
@@ -36,5 +37,5 @@ test("v1.33 certification-readiness documentation set is version controlled",()=
   for(const file of ["README.md","DATA_DICTIONARY.md","FCL050_COMPLIANCE_MATRIX.md","VERIFICATION_SPEC.md","ACCEPTANCE_MATRIX.md","CHANGE_CONTROL.md"]){
     const target=file==="README.md"?"docs/certification-readiness/README.md":`docs/certification-readiness/${file}`;assert.ok(read(target).length>200,target);
   }
-  assert.match(JSON.parse(read("package.json")).version,/^1\.33\./);
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,33,0));
 });
