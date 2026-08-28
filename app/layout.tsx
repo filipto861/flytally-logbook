@@ -3,6 +3,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import "./theme.css";
 import "./dashboard-customization.css";
+import "./light-interactions.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

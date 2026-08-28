@@ -1,0 +1,90 @@
+/* FlyTally v1.34.1 — light-mode interaction compatibility pass. Imported last. */
+html[data-theme="light"] .secondary-button:hover:not(:disabled),
+html[data-theme="light"] .detail-button:hover,
+html[data-theme="light"] .scope-links a:hover,
+html[data-theme="light"] .page-size-control a:hover,
+html[data-theme="light"] .page-number-list a:hover{
+  background:#eef4f8;
+  color:var(--text);
+  border-color:#8eabbf;
+}
+
+html[data-theme="light"] .detail-navigation .secondary-link:hover,
+html[data-theme="light"] .record-protection-actions .secondary-link:hover,
+html[data-theme="light"] .quality-issue .secondary-link:hover{
+  background:#eef4f8;
+  color:var(--text);
+  border-color:#9cb4c6;
+}
+
+html[data-theme="light"] .data-hub-nav button:hover,
+html[data-theme="light"] .database-task-nav a:hover,
+html[data-theme="light"] .settings-nav a:hover{
+  background:#eef4f8;
+  color:var(--text);
+}
+html[data-theme="light"] .data-hub-nav button.active{
+  background:#fff;
+  color:var(--text);
+  box-shadow:inset 0 0 0 1px #c8d5df;
+}
+html[data-theme="light"] .data-hub-links a:hover{
+  background:#f3f7fa;
+  color:var(--text);
+  border-color:#9cb4c6;
+}
+html[data-theme="light"] .active-filter-bar>a:hover{
+  background:#eaf4f8;
+  color:var(--text);
+  border-color:#72abc5;
+}
+
+html[data-theme="light"] .pwa-dismiss:hover,
+html[data-theme="light"] summary.credential-summary:hover,
+html[data-theme="light"] .licence-expiry-summary:hover{
+  background:#f3f7fa;
+  color:var(--text);
+  border-color:#b8c9d7;
+}
+html[data-theme="light"] .aircraft-manage-button:hover{
+  background:#e4f2f7;
+  color:#075f85;
+  border-color:#7daec2;
+}
+html[data-theme="light"] .modal-close:hover{
+  background:#fff3f5;
+  color:#a12d43;
+  border-color:#dfa0ac;
+}
+html[data-theme="light"] .play-button:hover,
+html[data-theme="light"] .map-touch-toggle:hover{
+  background:#e3f2f8;
+  color:#066b98;
+  border-color:#77abc1;
+}
+html[data-theme="light"] .quickline>a:hover{
+  background:#f2f7fa;
+  color:var(--text);
+}
+html[data-theme="light"] .route-chips button:hover{
+  background:#e4f2f7;
+  color:#075f85;
+  border-color:#7daec2;
+}
+
+/* Older GPS candidate rules use !important, so the light override must match it. */
+html[data-theme="light"] .airport-candidate-list button:hover,
+html[data-theme="light"] .airport-candidate-list button.selected{
+  background:#edf9f5!important;
+  color:var(--text)!important;
+  border-color:#69b29b!important;
+}
+
+html[data-theme="light"] .sidebar nav a:hover,
+html[data-theme="light"] .sidebar .ghost-button:hover,
+html[data-theme="light"] .sidebar-toggle:hover,
+html[data-theme="light"] .mobile-toggle:hover{
+  background:#eef4f8;
+  color:var(--text);
+  border-color:#b8c9d7;
+}
