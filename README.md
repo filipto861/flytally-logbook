@@ -1,6 +1,6 @@
 # FlyTally
 
-Current production-oriented release: **FlyTally v1.33.2 — Certification Readiness**.
+Current production-oriented release: **FlyTally v1.33.3 — Certification Readiness**.
 
 FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and deployed on Vercel. The active application lives in `app/`, `components/` and `lib/`.
 
@@ -30,7 +30,13 @@ The GitHub verification workflow starts an isolated PostgreSQL 16 service and ex
 
 v1.33.2 adds database-backed cross-user ownership tests using SQL templates read directly from the production server-action sources. It also adds a regulatory/evidence-focused portable-backup round trip: current R2 and archived R1 certification fingerprints, structured purpose, instructor HMAC evidence, participation binding and GPS data are restored using the production restore SQL and then re-verified.
 
-Backup certification-history validation now verifies stored HMAC-SHA-256 verification evidence as well as flight certification fingerprints. Recomputing the outer unkeyed portable-file checksum therefore cannot be used to forge signed instructor evidence.
+Backup certification-history validation verifies stored HMAC-SHA-256 verification evidence as well as flight certification fingerprints. Recomputing the outer unkeyed portable-file checksum therefore cannot be used to forge signed instructor evidence.
+
+### v1.33.3
+
+v1.33.3 adds a complete PostgreSQL-backed certified DUAL workflow: Draft R1 → Certified R1 → connected-instructor signature → Correction R2 → Certified R2 → new revision-bound signature. The harness executes production certification, correction, request and signing SQL, then executes the server-side read queries used by Flight detail, Certification Audit, Authority Verification Report and Print against the same final database state.
+
+The workflow proves that historical R1 signature evidence remains preserved but cannot appear as current evidence for R2; after R2 is signed, exactly one signed verification matches the current revision/hash while both R1 and R2 remain cryptographically verifiable in history.
 
 The controlled documents include:
 
@@ -39,6 +45,7 @@ The controlled documents include:
 - certification/signature specification;
 - acceptance-test matrix;
 - security and restore evidence specification;
+- full workflow acceptance evidence;
 - change-control rules.
 
 These materials are engineering and authority-discussion aids. They do **not** state that FlyTally is EASA certified or approved by ÚCL.

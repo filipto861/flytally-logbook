@@ -1,6 +1,6 @@
 # FlyTally Change Control
 
-Version: 1.33.2
+Version: 1.33.3
 
 ## Release principles
 
@@ -46,11 +46,25 @@ A scenario may be described as database-automated only when the test actually ex
 
 From v1.33.2, ownership/security tests may execute SQL templates read directly from production server-action sources. Documentation must clearly distinguish this from a full browser/session end-to-end test. Backup/restore evidence must also distinguish the unkeyed portable-file SHA-256 checksum from the keyed HMAC-SHA-256 used for verification evidence.
 
+From v1.33.3, a workflow may be called cross-view database-accepted when the same PostgreSQL scenario executes the exact server-side read queries used by the relevant views. This still does not constitute browser automation or visual-regression evidence; those layers must be described separately.
+
 ## Backup/restore evidence rule
 
 An exact restore containing certified flight history must fail closed when certification history does not verify. From v1.33.2, signed or revoked verification rows contained in a portable backup must also retain valid server HMAC evidence before certification-history validation succeeds.
 
 For a verification belonging to the restored pilot's own flight, its `record_revision` and `flight_hash` must bind to either the current certified fingerprint or the matching archived certified revision. Recomputing the outer portable-file checksum is not sufficient to replace this keyed evidence.
+
+## Full-workflow evidence rule
+
+The controlled R1→R2 acceptance scenario must preserve the distinction between historical and current evidence:
+
+- archived R1 remains verifiable after correction;
+- R1 instructor evidence remains historical and cannot satisfy current R2 verification;
+- R2 receives a distinct certification fingerprint and distinct revision-bound instructor verification;
+- current-detail and print projections may show only current revision/hash evidence;
+- Audit and Authority Verification Report may retain the complete historical evidence chain.
+
+Any future refactor of those read predicates must keep the full-workflow acceptance test green or explicitly update the documented semantics.
 
 ## Incident/hotfix rule
 
@@ -65,6 +79,6 @@ A production hotfix should:
 
 ## Current controlled baseline
 
-v1.33.2 extends the Certification Readiness baseline with PostgreSQL-backed cross-user ownership evidence and a regulatory/evidence-focused backup/restore round-trip. It also validates stored verification HMAC evidence before accepting certified backup history. v1.33.1 introduced the isolated PostgreSQL acceptance stage; v1.33.0 introduced the Authority Verification Report and the initial controlled documentation set.
+v1.33.3 extends the Certification Readiness baseline with a complete PostgreSQL-backed R1→R2 DUAL workflow and consistency checks for Flight detail, Certification Audit, Authority Verification Report and Print. v1.33.2 added cross-user ownership and backup/restore evidence; v1.33.1 introduced the isolated PostgreSQL acceptance stage; v1.33.0 introduced the Authority Verification Report and initial controlled documentation set.
 
 The certification-readiness documents and test evidence do not themselves confer regulatory approval. Any final authority-facing claim must be checked against the deployed implementation and the competent authority's guidance.

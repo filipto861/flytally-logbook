@@ -1,6 +1,6 @@
 # Certification and Verification Specification
 
-Version: 1.33.2
+Version: 1.33.3
 
 ## 1. Pilot record certification
 
@@ -117,7 +117,23 @@ Therefore, changing verification evidence and merely recalculating the outer por
 
 The v1.33.2 PostgreSQL restore acceptance test additionally confirms that current R2, archived R1, verification HMAC evidence, structured purpose, participation binding and GPS data survive the tested exact-restore path.
 
-## 10. Failure behavior
+## 10. Current versus historical verification semantics
+
+From v1.33.3, the complete R1→R2 acceptance scenario explicitly verifies the read semantics used across the application.
+
+A verification is **current** for Flight detail / operational print purposes only when all of the following match the live flight:
+
+- `flight_id` and `flight_user_id`;
+- `record_revision`;
+- `flight_hash = certification_hash`;
+- `status = signed`;
+- the applicable verification role.
+
+An earlier signed verification remains valid historical evidence for the certified revision it was bound to, but it must not become current evidence for a later correction revision.
+
+Audit and Authority Verification Report intentionally retain the complete revision/signature history. Flight detail and Print intentionally resolve the current revision/hash only. v1.33.3 executes those production read queries against the same PostgreSQL workflow state to verify that distinction.
+
+## 11. Failure behavior
 
 An integrity mismatch must be displayed or rejected as a problem. FlyTally must not silently rewrite the stored hash to make the mismatch disappear.
 

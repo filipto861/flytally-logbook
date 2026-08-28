@@ -1,6 +1,6 @@
 # FlyTally Acceptance Matrix
 
-Version: 1.33.2
+Version: 1.33.3
 
 This matrix is the target acceptance evidence set for certification-readiness work. Coverage is deliberately classified by evidence quality; a source-text assertion is not treated as equivalent to an isolated PostgreSQL integration test.
 
@@ -31,6 +31,7 @@ This matrix is the target acceptance evidence set for certification-readiness wo
 | AC-23 | Revoked verification in authority report | Historical verification visible as revoked and not counted active | High |
 | AC-24 | Large account dashboard | Aggregate SQL path remains responsive at 10k+ flight records | Medium |
 | AC-25 | Large print job | Date-scoped printing remains usable; full-logbook behavior documented | Medium |
+| AC-26 | Full R1→R2 workflow projection consistency | Flight detail, Audit, Verification Report and Print resolve the intended current/history state consistently | Critical |
 
 ## Automated PostgreSQL evidence
 
@@ -48,20 +49,34 @@ Automated PostgreSQL evidence exists for:
 
 ### v1.33.2 security and restore evidence
 
-The additional `postgres-security-restore` harness adds:
+The `postgres-security-restore` harness adds:
 
 - **AC-13** — exact SQL templates used by owner/participant actions are executed with owner, participant and unrelated actor identifiers. Cross-user correction lookup, verification revocation, participation cancellation and flight-lock mutations are denied by the same ownership predicates used by production actions;
 - **AC-19** — a portable v7 backup fixture contains a certified R2 flight, archived R1, in-person and authenticated verification evidence, participation binding and GPS track. Certification fingerprints and HMAC evidence are validated before restore;
 - **AC-20** — the production `json_populate_record` restore SQL blocks are replayed against PostgreSQL 16, after which current R2 SHA-256, archived R1 SHA-256, both verification HMAC values, structured purpose, participation source hash and GPS coordinates are re-verified. Replaying the restore remains idempotent for those evidence rows;
 - **AC-22** — ordinary backup damage fails the outer SHA-256 integrity check. If an attacker recomputes that unkeyed outer digest after modifying a stored verification signature, the keyed HMAC-SHA-256 validation still rejects the forged verification evidence.
 
+### v1.33.3 full workflow evidence
+
+The `postgres-full-workflow` harness executes a complete certified DUAL lifecycle and strengthens evidence for:
+
+- **AC-01** — a real PostgreSQL draft R1 is certified using the production certification UPDATE and the resulting certification-v3 SHA-256 is independently verified;
+- **AC-03 / AC-04** — R1 is archived with the production correction SQL, R2 opens as an editable correction, then R2 is certified with a distinct fingerprint while R1 remains verifiable;
+- **AC-05** — connected-instructor requests and signed verification evidence are created with SQL templates read from the production request/signing sources; the stored HMAC-SHA-256 is verified for both R1 and R2;
+- **AC-06** — after R2 opens, the exact Flight detail verification query returns no current signature and the exact Print query does not project the historical R1 signature. Once R2 is signed, exactly one signed verification matches the current revision/hash while R1 remains historical evidence;
+- **AC-26** — the exact server-side read queries used by Flight detail, Certification Audit, Authority Verification Report and Print are executed against the same final PostgreSQL state. Detail/Print select the current R2 evidence, while Audit/Report retain both R1 and R2 history.
+
+The v1.33.3 print assertion covers the revision-bound signed-instructor projection only; it does not by itself mark all of **AC-17** complete.
+
 Each CI run preserves the PostgreSQL acceptance output as a GitHub Actions artifact named `flytally-postgres-acceptance-<commit SHA>` for 90 days.
 
 ## Evidence limits
 
-v1.33.2 materially improves cross-user and restore evidence, but the AC-13 harness does **not** simulate a browser session or Next.js authentication handshake. It injects actor IDs into the exact production SQL templates after the production server action would obtain `userId` from `requireUser()`. Full HTTP/session-level end-to-end security testing remains a separate future layer.
+The AC-13 harness does **not** simulate a browser session or Next.js authentication handshake. It injects actor IDs into the exact production SQL templates after the production server action would obtain `userId` from `requireUser()`.
 
-Likewise, AC-20 currently proves the regulatory/evidence-critical restore sections (flight, certified revision archive, verification evidence, participation binding and GPS). It is not a claim that every optional account-preference field has a dedicated PostgreSQL round-trip assertion.
+Likewise, AC-20 proves the regulatory/evidence-critical restore sections (flight, certified revision archive, verification evidence, participation binding and GPS), not every optional account-preference field.
+
+The v1.33.3 full-workflow harness is also a server/database acceptance test rather than a browser automation test. It executes the production SQL used by the core actions and read projections, but it does not automate real UI clicks, OAuth/login, email delivery or visual rendering. Complete `Sign & add FI entry` materialisation under AC-11 remains a separate acceptance item; AC-12 already protects source-record independence after an instructor-owned draft exists.
 
 ## Evidence policy
 
