@@ -54,3 +54,18 @@ test("dashboard renders registered widget boundaries and maps follow the resolve
   assert.match(map,/dataset[.]theme/);
   assert.match(map,/DARK_TILE_FILTER/);
 });
+
+test("light appearance overrides legacy dark workspace surfaces across the application",()=>{
+  const theme=read("app/theme.css");
+  assert.match(theme,/--surface:#ffffff/);
+  assert.match(theme,/--border:#d5dee8/);
+  assert.match(theme,/\.dashboard-chart-v3\{background:#fff\}/);
+  assert.match(theme,/\.chart-summary>span\{background:#f8fafc/);
+  assert.match(theme,/\.chart-focus\{background:#f4f9fb/);
+  assert.match(theme,/\.credential-card\{background:#fff/);
+  assert.match(theme,/\.entry-section,/);
+  assert.match(theme,/\.flight-review-card\{background:#fff/);
+  assert.match(theme,/\.aircraft-card\{background:#fff/);
+  assert.match(theme,/\.data-hub-nav\{background:#fffffff2/);
+  assert.match(theme,/\.sidebar nav\{background:#f8fafc/);
+});
