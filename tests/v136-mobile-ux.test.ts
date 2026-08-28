@@ -5,8 +5,7 @@ import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v1.36.2 paints the iOS status area from saved appearance without touching navigation",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.36.2");
+test("v1.36.2 iOS status-area safeguards remain supported by later releases",()=>{
   const layout=read("app/layout.tsx"),protectedLayout=read("app/(protected)/layout.tsx"),manager=read("components/theme-manager.tsx"),shell=read("components/app-shell.tsx"),css=read("app/v136-mobile.css"),sidebar=read("components/sidebar.tsx");
   assert.match(layout,/statusBarStyle:"default"/);assert.match(layout,/v136-mobile[.]css/);
   assert.match(protectedLayout,/generateViewport/);assert.match(protectedLayout,/themeColor/);assert.match(protectedLayout,/appearance==="light"\?"#f4f7fb":"#071018"/);assert.match(protectedLayout,/cache\(async/);
@@ -17,10 +16,9 @@ test("v1.36.2 paints the iOS status area from saved appearance without touching 
   assert.match(sidebar,/onClick=\{\(\)=>setMobile\(false\)\}/);assert.match(sidebar,/setMobile\(false\)\},\[pathname\]\)/);
 });
 
-test("v1.36.2 keeps compact mobile recency without changing the engine",()=>{
-  const css=read("app/v136-mobile.css"),roadmap=read("ROADMAP.md"),service=read("lib/recency-service.ts");
+test("v1.36 compact mobile recency remains supported without changing the engine",()=>{
+  const css=read("app/v136-mobile.css"),service=read("lib/recency-service.ts");
   assert.match(css,/recency-card-v135 li[.]met>span:first-child>small\{display:none\}/);
   assert.match(css,/recency-overview-panel/);
-  assert.match(roadmap,/Recency Engine logic remains the v1[.]35[.]5 landing-based planning model/);
   assert.match(service,/evaluatePassengerLandingIndicator/);
 });

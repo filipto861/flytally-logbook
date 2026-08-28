@@ -1,0 +1,20 @@
+/* FlyTally v1.37.0 — shared-flight workflow clarity. */
+.shared-flight-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.shared-flight-step{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted)}
+.shared-flight-step>span{flex:0 0 28px;width:28px;height:28px;border:1px solid var(--line);border-radius:999px;display:grid;place-items:center;font-size:.72rem;font-weight:900}
+.shared-flight-step>div{display:grid;gap:2px;min-width:0}.shared-flight-step strong{font-size:.82rem;color:var(--text)}.shared-flight-step small{font-size:.68rem}
+.shared-flight-step.current{border-color:#2d8db4;background:color-mix(in srgb,var(--panel) 88%,var(--accent2) 12%)}
+.shared-flight-step.current>span{border-color:var(--accent2);color:var(--accent2)}
+.shared-flight-step.done{border-color:#4ba58b;background:color-mix(in srgb,var(--panel) 90%,var(--accent) 10%)}
+.shared-flight-step.done>span{border-color:var(--accent);background:var(--accent);color:#04131b}
+
+html[data-theme="light"] .shared-flight-step{background:#fff}
+html[data-theme="light"] .shared-flight-step.current{background:#eef7fb}
+html[data-theme="light"] .shared-flight-step.done{background:#edf9f5}
+
+@media(max-width:700px){
+  .shared-flight-progress{grid-template-columns:1fr;gap:6px}
+  .shared-flight-step{padding:9px 10px}
+  .notification-card .connection-actions,.instructor-decision-actions{display:grid;grid-template-columns:1fr;width:100%}
+  .notification-card .connection-actions>a,.notification-card .connection-actions form,.notification-card .connection-actions button,.instructor-decision-actions>a,.instructor-decision-actions form,.instructor-decision-actions button{width:100%}
+}

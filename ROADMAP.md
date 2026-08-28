@@ -2,16 +2,17 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.36.2 · iOS status-bar hotfix
+## Current release — v1.37.0 · Flights & shared-flight workflow polish
 
 Focus:
-- keep the v1.36.1 single-tap navigation behavior completely unchanged
-- set the protected route `theme-color` server-side from the user's saved FlyTally appearance instead of the device theme when Light or Dark is selected explicitly
-- make the initial `html` / `body` background match the server-rendered saved appearance before hydration, so iOS Home Screen status-area sampling does not start from the legacy dark root background
-- use CSS-only `:has()` appearance matching and the existing non-interactive safe-area paint; no bootstrap scripts, overlays or navigation geometry changes
-- preserve System appearance through `prefers-color-scheme`
-- retain the compact mobile Recency & currency presentation from v1.36.0
-- Recency Engine logic remains the v1.35.5 landing-based planning model; v1.36.2 changes only first-paint/status-area presentation
+- present certified ULL records with the same proper single-flight logbook-entry layout used for protected EASA records instead of a reduced generic data table
+- make current `flight_request` notifications expose the intended **Review & add** / **Review & sign** and **Decline** actions directly in Notifications
+- keep legacy `flight_invite` notifications compatible while centralising decline handling through the canonical shared-flight action
+- show the shared-flight path explicitly as **Review → Add → Certify** for non-instructor crew invitations
+- derive clear user-facing states from existing evidence: Pending, Accepted, Declined, Added and Certified, without adding a second source of truth to the database
+- keep source and participant logbooks independent: accepting a request creates/restores only the participant-owned draft, and certification remains an explicit later action by that pilot
+- retain the existing instructor sign-only / sign-and-add FI workflow and immutable certification/verification evidence
+- keep mobile actions stacked and touch-safe without changing the global navigation shell
 
 ## Certification baseline — v1.33.5
 
@@ -23,13 +24,13 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.34.1: per-user dashboard editor with show/hide, ordering, sizing and presets
 - v1.34.2: full application UI/UX consistency and responsive polish
 - v1.35.0–v1.35.5: selectable recency monitoring, forecasts, structured revalidation evidence, audit detail and simplified landing-based FCL.060 planning indicator
-- v1.36.0: initial mobile/iOS polish and compact recency presentation
-- v1.36.1: restore proven single-tap mobile navigation and remove unsafe first-paint/head manipulation
+- v1.36.0–v1.36.2: mobile/iOS presentation work, single-tap navigation hotfix and isolated status-area handling
 
 ## Near term
 
+- dashboard consolidation: Aircraft + Costs as one coherent area
+- redesign Airports & Routes around two distinct concepts: visited airports and flown airport-to-airport routes
 - keep FSTD recency evidence deferred until it becomes a product priority
-- extend predefined recency profiles only where the underlying logbook data can support the rule without unsafe inference
 - replace remaining read-only legacy/fuzzy participant-link fallbacks after historical rows have been verified
 - decide whether the legacy `track_points` compatibility table can be retired after backup/restore paths are migrated
 

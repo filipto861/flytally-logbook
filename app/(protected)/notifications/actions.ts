@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
-import { notifyUser } from "@/lib/notifications";
+import { declineSharedFlight } from "@/app/(protected)/flights/shared-actions";
 
 const id=(value:unknown)=>{const parsed=Number(value);return Number.isSafeInteger(parsed)&&parsed>0?parsed:0};
 const refresh=()=>{revalidatePath("/notifications");revalidatePath("/connections")};
@@ -14,13 +14,9 @@ export async function clearReadNotifications(){const{userId}=await requireUser()
 
 export async function declineFlightInvitationFromNotification(form:FormData){
   const{userId}=await requireUser(),notification=id(form.get("id"));if(!notification)return;
-  const notifications=await sql`SELECT href FROM user_notifications WHERE id=${notification} AND user_id=${userId} AND kind='flight_invite' LIMIT 1` as Array<{href:string}>;
+  const notifications=await sql`SELECT href FROM user_notifications WHERE id=${notification} AND user_id=${userId} AND kind IN ('flight_request','flight_invite') LIMIT 1` as Array<{href:string}>;
   const match=String(notifications[0]?.href??"").match(/^\/connections\/shared\/(\d+)$/),participation=id(match?.[1]);if(!participation)return;
-  const rows=await sql`UPDATE flight_participations SET status='declined',responded_at=NOW() WHERE id=${participation} AND participant_user_id=${userId} AND status='pending' RETURNING source_flight_id,source_user_id` as Array<{source_flight_id:number|string;source_user_id:number|string}>;
-  if(rows[0]){
-    await notifyUser(Number(rows[0].source_user_id),{kind:"flight_declined",title:"Flight invitation declined",href:`/flights/${rows[0].source_flight_id}`,dedupeKey:`flight-declined:${participation}`});
-    revalidatePath(`/flights/${rows[0].source_flight_id}`);
-  }
+  await declineSharedFlight(participation);
   await sql`DELETE FROM user_notifications WHERE id=${notification} AND user_id=${userId}`;
   refresh();
 }
