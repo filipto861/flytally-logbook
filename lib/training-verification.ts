@@ -8,7 +8,7 @@ const text=(value:unknown)=>String(value??"").trim();
 export async function upsertInstructorRequest(studentUserId:number,flightId:number,instructorUserId:number){
   await ensureV132Schema();
   if(!studentUserId||!flightId||!instructorUserId||studentUserId===instructorUserId)return null;
-  const old=await sql`SELECT id,participant_user_id FROM flight_participations p JOIN flights f ON f.id=p.source_flight_id AND f.user_id=p.source_user_id
+  const old=await sql`SELECT p.id,p.participant_user_id FROM flight_participations p JOIN flights f ON f.id=p.source_flight_id AND f.user_id=p.source_user_id
     WHERE p.source_flight_id=${flightId} AND p.source_user_id=${studentUserId} AND p.source_revision=COALESCE(f.record_revision,1)
       AND p.participant_role='INSTRUCTOR' AND p.participant_user_id<>${instructorUserId} AND p.status='pending'` as Array<{id:number|string;participant_user_id:number|string}>;
   if(old.length){

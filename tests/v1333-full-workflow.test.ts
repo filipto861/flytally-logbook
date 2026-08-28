@@ -7,7 +7,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.33.3 adds a PostgreSQL full-workflow acceptance chain",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.33.3");
+  assert.match(JSON.parse(read("package.json")).version,/^1[.]33[.]/);
   const integration=read("tests/integration/postgres-full-workflow.test.ts");
   assert.match(integration,/AC-01\/03\/04\/05\/06\/26/);
   assert.match(integration,/certification-actions[.]ts/);

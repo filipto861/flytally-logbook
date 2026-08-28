@@ -1,6 +1,6 @@
 # FlyTally Acceptance Matrix
 
-Version: 1.33.3
+Version: 1.33.4
 
 This matrix is the target acceptance evidence set for certification-readiness work. Coverage is deliberately classified by evidence quality; a source-text assertion is not treated as equivalent to an isolated PostgreSQL integration test.
 
@@ -32,6 +32,7 @@ This matrix is the target acceptance evidence set for certification-readiness wo
 | AC-24 | Large account dashboard | Aggregate SQL path remains responsive at 10k+ flight records | Medium |
 | AC-25 | Large print job | Date-scoped printing remains usable; full-logbook behavior documented | Medium |
 | AC-26 | Full R1→R2 workflow projection consistency | Flight detail, Audit, Verification Report and Print resolve the intended current/history state consistently | Critical |
+| AC-27 | Automatic/manual instructor request after certified DUAL flight | Joined preflight query resolves participant ID unambiguously and request creation does not fail after certification | Critical |
 
 ## Automated PostgreSQL evidence
 
@@ -67,6 +68,10 @@ The `postgres-full-workflow` harness executes a complete certified DUAL lifecycl
 - **AC-26** — the exact server-side read queries used by Flight detail, Certification Audit, Authority Verification Report and Print are executed against the same final PostgreSQL state. Detail/Print select the current R2 evidence, while Audit/Report retain both R1 and R2 history.
 
 The v1.33.3 print assertion covers the revision-bound signed-instructor projection only; it does not by itself mark all of **AC-17** complete.
+
+### v1.33.4 instructor-request hotfix evidence
+
+The `postgres-instructor-request` harness adds **AC-27**. It reads the exact preflight SELECT from `lib/training-verification.ts` and executes it against PostgreSQL with both `flight_participations` and `flights` present. This specifically prevents regression to an unqualified `SELECT id` across that JOIN, which produced PostgreSQL error `42702` during manual production acceptance testing.
 
 Each CI run preserves the PostgreSQL acceptance output as a GitHub Actions artifact named `flytally-postgres-acceptance-<commit SHA>` for 90 days.
 

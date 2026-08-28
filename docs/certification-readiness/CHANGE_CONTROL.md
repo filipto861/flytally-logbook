@@ -1,6 +1,6 @@
 # FlyTally Change Control
 
-Version: 1.33.3
+Version: 1.33.4
 
 ## Release principles
 
@@ -48,6 +48,8 @@ From v1.33.2, ownership/security tests may execute SQL templates read directly f
 
 From v1.33.3, a workflow may be called cross-view database-accepted when the same PostgreSQL scenario executes the exact server-side read queries used by the relevant views. This still does not constitute browser automation or visual-regression evidence; those layers must be described separately.
 
+From v1.33.4, the instructor-request preflight query is itself executed against PostgreSQL in CI. This regression specifically protects against ambiguous joined-column references that can otherwise fail only after a flight has already been successfully certified.
+
 ## Backup/restore evidence rule
 
 An exact restore containing certified flight history must fail closed when certification history does not verify. From v1.33.2, signed or revoked verification rows contained in a portable backup must also retain valid server HMAC evidence before certification-history validation succeeds.
@@ -77,8 +79,14 @@ A production hotfix should:
 5. receive a new patch version;
 6. update system documentation when the hotfix changes documented behavior.
 
+### v1.33.4 incident record
+
+During manual v1.33.3 acceptance testing, certification of a DUAL flight completed successfully but the subsequent automatic instructor-request step returned HTTP 500. Manual `Request approval` failed the same way. Production logs identified PostgreSQL error `42702` (`column reference "id" is ambiguous`) in `upsertInstructorRequest()`: a JOIN between `flight_participations p` and `flights f` selected unqualified `id`.
+
+The hotfix changes that projection to `p.id`, adds an isolated PostgreSQL regression (AC-27), and does not modify the already-certified flight, certification hash, revision history, signature model, or database schema.
+
 ## Current controlled baseline
 
-v1.33.3 extends the Certification Readiness baseline with a complete PostgreSQL-backed R1→R2 DUAL workflow and consistency checks for Flight detail, Certification Audit, Authority Verification Report and Print. v1.33.2 added cross-user ownership and backup/restore evidence; v1.33.1 introduced the isolated PostgreSQL acceptance stage; v1.33.0 introduced the Authority Verification Report and initial controlled documentation set.
+v1.33.4 is the current Certification Readiness hotfix baseline. It preserves the complete v1.33.3 R1→R2 workflow evidence while fixing instructor-request creation after certification. v1.33.2 added cross-user ownership and backup/restore evidence; v1.33.1 introduced the isolated PostgreSQL acceptance stage; v1.33.0 introduced the Authority Verification Report and initial controlled documentation set.
 
 The certification-readiness documents and test evidence do not themselves confer regulatory approval. Any final authority-facing claim must be checked against the deployed implementation and the competent authority's guidance.
