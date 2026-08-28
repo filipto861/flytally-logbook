@@ -1,8 +1,23 @@
-/* FlyTally v1.36.1 — safe iOS status-area paint and compact mobile recency without touching navigation interaction geometry. */
+/* FlyTally v1.36.2 — server-aligned iOS status-area paint; no navigation interaction changes. */
 .app-grid[data-appearance="dark"]{--flytally-chrome:#071018}
 .app-grid[data-appearance="light"]{--flytally-chrome:#f4f7fb}
 .app-grid[data-appearance="system"]{--flytally-chrome:#071018}
-@media(prefers-color-scheme:light){.app-grid[data-appearance="system"]{--flytally-chrome:#f4f7fb}}
+
+/* iOS Home Screen apps can sample the page background before hydration. Match the
+   server-rendered saved appearance without scripts or interactive overlays. */
+html:has(.app-grid[data-appearance="light"]),
+html:has(.app-grid[data-appearance="light"]) body{background:#f4f7fb;color-scheme:light}
+html:has(.app-grid[data-appearance="dark"]),
+html:has(.app-grid[data-appearance="dark"]) body{background:#07111f;color-scheme:dark}
+@media(prefers-color-scheme:light){
+  .app-grid[data-appearance="system"]{--flytally-chrome:#f4f7fb}
+  html:has(.app-grid[data-appearance="system"]),
+  html:has(.app-grid[data-appearance="system"]) body{background:#f4f7fb;color-scheme:light}
+}
+@media(prefers-color-scheme:dark){
+  html:has(.app-grid[data-appearance="system"]),
+  html:has(.app-grid[data-appearance="system"]) body{background:#07111f;color-scheme:dark}
+}
 
 @media screen and (max-width:820px){
   .app-grid::before{
