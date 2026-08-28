@@ -1,8 +1,8 @@
 # FlyTally Acceptance Matrix
 
-Version: 1.33.0
+Version: 1.33.1
 
-This matrix is the target acceptance evidence set for certification-readiness work. Some scenarios are currently covered by automated unit/source regression tests; database integration coverage is still being expanded.
+This matrix is the target acceptance evidence set for certification-readiness work. Coverage is deliberately classified by evidence quality; a source-text assertion is not treated as equivalent to an isolated PostgreSQL integration test.
 
 | ID | Scenario | Expected result | Priority |
 |---|---|---|---|
@@ -31,6 +31,22 @@ This matrix is the target acceptance evidence set for certification-readiness wo
 | AC-23 | Revoked verification in authority report | Historical verification visible as revoked and not counted active | High |
 | AC-24 | Large account dashboard | Aggregate SQL path remains responsive at 10k+ flight records | Medium |
 | AC-25 | Large print job | Date-scoped printing remains usable; full-logbook behavior documented | Medium |
+
+## Automated PostgreSQL evidence introduced in v1.33.1
+
+The GitHub verification workflow now starts an isolated PostgreSQL 16 service and executes `tests/integration/postgres-certification.test.ts` against it. The harness reads the relevant DDL and protection function from the production `lib/db-optimization.ts` implementation before executing the scenarios.
+
+The following scenarios now have automated PostgreSQL evidence:
+
+- **AC-02** — an ordinary UPDATE and DELETE of a certified flight are rejected by the production protection function;
+- **AC-03** — the certified-to-correction transition is rejected until the matching certified R1 archive exists, then the exact permitted transition succeeds;
+- **AC-04** — the R1 archive remains present while R2 can be edited, certified and becomes immutable again;
+- **AC-06** — a signed R1 verification does not match the current R2 revision/hash; a separate R2 verification is required;
+- **AC-12** — deleting an instructor-owned draft copy sets `participant_flight_id` to null while the student's source flight and signed verification remain.
+
+Each CI run preserves the PostgreSQL acceptance-test output as a GitHub Actions artifact named `flytally-postgres-acceptance-<commit SHA>` for 90 days.
+
+This is the first database-backed evidence layer, not completion of the full matrix. In particular, **AC-13 cross-user server-action isolation** and **AC-19/AC-20 complete backup/restore round-trip** still require dedicated end-to-end/integration coverage before they are marked automated.
 
 ## Evidence policy
 

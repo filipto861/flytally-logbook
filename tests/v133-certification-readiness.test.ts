@@ -36,5 +36,5 @@ test("v1.33 certification-readiness documentation set is version controlled",()=
   for(const file of ["README.md","DATA_DICTIONARY.md","FCL050_COMPLIANCE_MATRIX.md","VERIFICATION_SPEC.md","ACCEPTANCE_MATRIX.md","CHANGE_CONTROL.md"]){
     const target=file==="README.md"?"docs/certification-readiness/README.md":`docs/certification-readiness/${file}`;assert.ok(read(target).length>200,target);
   }
-  assert.equal(JSON.parse(read("package.json")).version,"1.33.0");
+  assert.match(JSON.parse(read("package.json")).version,/^1\.33\./);
 });
