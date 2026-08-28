@@ -2,18 +2,17 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.35.4 · Recency auditability & evidence detail
+## Current release — v1.35.5 · Recency simplification
 
 Focus:
 - generalized recency evaluation over certified FlyTally flight records
 - selectable FCL.140.A, FCL.060 and FCL.740.A monitoring with rolling-window forecasts
-- expandable per-monitor evidence detail showing the exact contributing flights and structured evidence
-- per-record window/drop-off date so rolling calculations can be traced forward in time
-- explicit CONFIRMED / LIMITED / REVIEW DATA evidence states without changing the underlying regulatory evaluation
-- data-quality checks for structured movement evidence, including take-off/landing reconciliation and impossible approach deficits
-- direct links from recency evidence back to the certified flight record
-- structured take-off and approach evidence for new/reviewed EASA flights; historical certified flights remain untouched and are never inferred
-- certification payload v4 continues to protect structured movement evidence while v1–v3 verification remains unchanged
+- FCL.060 is intentionally presented as a simple landing-based 90-day planning indicator
+- no separate take-off or approach counters are requested in the everyday flight-entry workflow
+- historical flights remain immediately useful because recorded landings are already available across the logbook
+- expandable evidence detail shows the certified flights that contributed landings, hours or structured proficiency/revalidation evidence
+- per-record window/drop-off dates remain available without exposing unnecessary movement-data complexity
+- certification payload v4 and the v1.35.3 database columns remain backward compatible; existing certified evidence is never rewritten
 - proactive in-app notifications with per-user 7/14/30-day warning windows
 - recency presentation remains advisory and never changes certified flight evidence or authority validity records
 

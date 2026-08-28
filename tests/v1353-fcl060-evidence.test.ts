@@ -10,13 +10,13 @@ const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.r
 const movementFlight=(partial:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 function form(){const f=new FormData();for(const [key,value] of Object.entries({date:"2026-08-28",registration:"OK-ABC",aircraftType:"BR23",aircraftClass:"SEP",evidence:"EASA",departure:"LKLT",arrival:"LKBE",offBlock:"10:00",takeoff:"10:05",landing:"10:55",onBlock:"11:00",role:"PIC",billingBasis:"BLOCK",landingsDay:"1",landingsNight:"0"}))f.set(key,value);return f}
 
-test("v1.35.3 structured FCL.060 movement evidence remains supported",()=>{
+test("v1.35.3 movement schema and certification compatibility remain supported",()=>{
   assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
   const schema=read("lib/v1353-schema.ts"),actions=read("app/(protected)/flights/actions.ts"),certification=read("app/(protected)/flights/certification-actions.ts"),ui=read("components/flight-form.tsx");
   assert.match(schema,/movement_evidence_recorded/);assert.match(schema,/takeoffs_day/);assert.match(schema,/approaches_day/);assert.doesNotMatch(schema,/UPDATE\s+flights\s+SET\s+(?:takeoffs|approaches)/i);
   assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);
   assert.match(certification,/certification_version=4/);assert.match(certification,/movement_evidence_recorded/);
-  assert.match(ui,/movementEvidenceRecorded/);assert.match(ui,/Day take-offs/);assert.match(ui,/Day approaches/);
+  assert.doesNotMatch(ui,/FCL[.]060 movement evidence/);assert.doesNotMatch(ui,/Day take-offs/);assert.doesNotMatch(ui,/Day approaches/);
   assert.match(read("app/(protected)/layout.tsx"),/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/);
 });
 
@@ -35,14 +35,13 @@ test("certification v4 protects movement evidence while v3 fingerprints remain b
   assert.equal("movementEvidence" in (flightCertificationPayload(row,4,4) as Record<string,unknown>),true);
 });
 
-test("FCL.060 current status requires explicit take-offs approaches and landings",()=>{
+test("legacy strict FCL.060 evaluator remains available for existing structured evidence",()=>{
   const complete=[movementFlight({date:"2026-08-01"}),movementFlight({date:"2026-08-10"}),movementFlight({date:"2026-08-20"})],current=evaluatePassengerCurrencyMode(complete,"SEP",false,"2026-08-28","day");
   assert.equal(current.status,"current");assert.deepEqual(current.requirements.map(item=>item.label),["Take-offs","Approaches","Landings"]);assert.equal(current.forecastDate,"2026-10-30");
   const explicitShort=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:2})],"SEP",false,"2026-08-28","day");assert.equal(explicitShort.status,"not-current");
-  const historical=evaluatePassengerCurrencyMode([{...movementFlight({takeoffsDay:0,approachesDay:0,landingsDay:3}),movementEvidenceRecorded:false}],"SEP",false,"2026-08-28","day");assert.equal(historical.status,"attention");assert.equal(historical.badge,"LIMITED DATA");
 });
 
-test("night FCL.060 keeps base currency and applies the IR exemption only to night movements",()=>{
+test("legacy night FCL.060 evaluator keeps the IR exemption semantics",()=>{
   const base=[movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:3})];
   const ir=evaluatePassengerCurrencyMode(base,"SEP",true,"2026-08-28","night");assert.equal(ir.status,"current");assert.equal(ir.requirements.some(item=>item.id==="ir-exemption"),true);
   const weak=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:2,approachesDay:2,landingsDay:2})],"SEP",true,"2026-08-28","night");assert.equal(weak.status,"not-current");

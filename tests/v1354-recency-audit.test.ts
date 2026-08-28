@@ -3,31 +3,32 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { buildCustomRecencyAudit,buildRecencyAudit,movementEvidenceIssue,type RecencyAuditFlight } from "../lib/recency-audit.ts";
-import { evaluateLaplA,evaluatePassengerCurrencyMode,parseRecencyEvidence,type CustomRecencyRule } from "../lib/recency-engine.ts";
+import { evaluateLaplA,parseRecencyEvidence,type CustomRecencyRule } from "../lib/recency-engine.ts";
+import { evaluatePassengerLandingIndicator } from "../lib/recency-landing-indicator.ts";
 
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const flight=(partial:Partial<RecencyAuditFlight>={}):RecencyAuditFlight=>({id:1,date:"2026-08-20",evidence:"EASA",registration:"OK-ABC",aircraftClass:"SEP",role:"PIC",departure:"LKLT",arrival:"LKBE",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 
-test("v1.35.4 wires expandable audit evidence into recency cards",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.35.4");
+test("v1.35.4 expandable audit evidence remains wired into recency cards",()=>{
+  assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
   const panel=read("components/recency-panel.tsx"),service=read("lib/recency-audit-service.ts"),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
   assert.match(panel,/Evidence detail/);assert.match(panel,/Leaves window/);assert.match(panel,/Open flight/);assert.match(panel,/getRecencyAuditForUser/);
   assert.match(service,/SELECT f[.]id,f[.]date/);assert.match(service,/f[.]certified_at IS NOT NULL/);
   assert.match(layout,/v1354-recency-audit[.]css/);assert.match(roadmap,/FSTD recency evidence deferred/i);
 });
 
-test("movement audit flags inconsistent structured evidence without altering the recency evaluation",()=>{
+test("legacy movement consistency helper remains available without driving the everyday UI",()=>{
   const inconsistent=flight({takeoffsDay:1,approachesDay:1,landingsDay:2});
   assert.match(movementEvidenceIssue(inconsistent),/do not reconcile/);
   assert.equal(movementEvidenceIssue(flight()),"");
   assert.match(movementEvidenceIssue(flight({takeoffsDay:2,approachesDay:1,landingsDay:2})),/Approaches/);
 });
 
-test("FCL.060 audit distinguishes confirmed limited and review rows and exposes drop-off dates",()=>{
-  const flights=[flight({id:1,date:"2026-08-20"}),flight({id:2,date:"2026-08-18"}),flight({id:3,date:"2026-08-15"}),flight({id:4,date:"2026-08-10",takeoffsDay:1,approachesDay:1,landingsDay:2}),flight({id:5,date:"2026-08-12",movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0})];
-  const evaluation=evaluatePassengerCurrencyMode(flights,"SEP",false,"2026-08-28","day"),audit=buildRecencyAudit(evaluation,flights,[],"2026-08-28");
-  assert.equal(evaluation.status,"current");assert.equal(audit.totalRows,5);assert.equal(audit.confirmedCount,3);assert.equal(audit.limitedCount,1);assert.equal(audit.issueCount,1);
-  const row=audit.rows.find(item=>item.id==="flight:1");assert.equal(row?.dropOffDate,"2026-11-18");assert.equal(row?.href,"/flights/1");
+test("FCL.060 audit now shows only contributing landing records and their drop-off dates",()=>{
+  const flights=[flight({id:1,date:"2026-08-20"}),flight({id:2,date:"2026-08-18"}),flight({id:3,date:"2026-08-15"}),flight({id:4,date:"2026-08-10",landingsDay:2}),flight({id:5,date:"2026-08-12",movementEvidenceRecorded:false})];
+  const evaluation=evaluatePassengerLandingIndicator(flights,"SEP",false,"2026-08-28","day"),audit=buildRecencyAudit(evaluation,flights,[],"2026-08-28");
+  assert.equal(evaluation.status,"current");assert.deepEqual(evaluation.requirements.map(item=>item.label),["Landings"]);assert.equal(audit.totalRows,5);assert.equal(audit.confirmedCount,5);assert.equal(audit.limitedCount,0);assert.equal(audit.issueCount,0);
+  const row=audit.rows.find(item=>item.id==="flight:1");assert.equal(row?.dropOffDate,"2026-11-18");assert.equal(row?.href,"/flights/1");assert.doesNotMatch(row?.detail??"",/T\/O|APP/);
 });
 
 test("LAPL audit exposes contributing flight and examiner evidence separately",()=>{

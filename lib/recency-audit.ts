@@ -50,12 +50,8 @@ function laplAudit(flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today
 function fcl060Audit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],today:string){
   const match=/^fcl060-(sep|tmg)-(day|night)$/.exec(evaluation.id),aircraftClass=match?.[1]?.toUpperCase(),mode=match?.[2];if(!aircraftClass||!mode)return bundle([]);
   const start=rollingDaysStart(today,90),window=flights.filter(f=>f.date>=start&&f.date<=today&&classKey(f.aircraftClass)===aircraftClass&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=[];
-  for(const f of window){
-    if(!f.movementEvidenceRecorded){rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:"Certified flight has no structured take-off / approach evidence and is not inferred for FCL.060.",status:"limited",dropOffDate:addDays(f.date,90),href:flightHref(f)});continue}
-    const takeoffs=movement(f,"takeoff"),approaches=movement(f,"approach"),landingCount=movement(f,"landing"),nightTakeoffs=movement(f,"takeoff",true),nightApproaches=movement(f,"approach",true),nightLandings=movement(f,"landing",true),issue=movementEvidenceIssue(f),nightDetail=mode==="night"?` · Night ${nightTakeoffs} T/O · ${nightApproaches} APP · ${nightLandings} LDG`:"";
-    rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${takeoffs} T/O · ${approaches} APP · ${landingCount} LDG${nightDetail} · ${upper(f.role)}`,status:issue?"review":"confirmed",dropOffDate:addDays(f.date,90),href:flightHref(f),issue:issue||undefined});
-  }
-  if(mode==="night"&&Boolean(evaluation.meta?.irExemption))rows.push({id:"credential:ir",source:"credential",date:today,title:"Current IR",detail:"Current IR is applied only to the additional night movement requirement; base FCL.060 currency still comes from recorded movements.",status:"confirmed"});
+  for(const f of window){const landingCount=landings(f),nightCount=landings(f,true);if(!landingCount)continue;const nightDetail=mode==="night"?` · ${plural(nightCount,"night landing")}`:"";rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}`,status:"confirmed",dropOffDate:addDays(f.date,90),href:flightHref(f)})}
+  if(mode==="night"&&Boolean(evaluation.meta?.irExemption))rows.push({id:"credential:ir",source:"credential",date:today,title:"Current IR",detail:"Current IR is included in the night planning indicator.",status:"confirmed"});
   return bundle(rows);
 }
 
