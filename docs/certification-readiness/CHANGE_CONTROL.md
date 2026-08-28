@@ -1,6 +1,6 @@
 # FlyTally Change Control
 
-Version: 1.33.1
+Version: 1.33.2
 
 ## Release principles
 
@@ -44,6 +44,14 @@ From v1.33.1, the main GitHub verification workflow includes an isolated Postgre
 
 A scenario may be described as database-automated only when the test actually executes against PostgreSQL. Source scanning and regex assertions remain useful regression guards but must not be represented as equivalent evidence.
 
+From v1.33.2, ownership/security tests may execute SQL templates read directly from production server-action sources. Documentation must clearly distinguish this from a full browser/session end-to-end test. Backup/restore evidence must also distinguish the unkeyed portable-file SHA-256 checksum from the keyed HMAC-SHA-256 used for verification evidence.
+
+## Backup/restore evidence rule
+
+An exact restore containing certified flight history must fail closed when certification history does not verify. From v1.33.2, signed or revoked verification rows contained in a portable backup must also retain valid server HMAC evidence before certification-history validation succeeds.
+
+For a verification belonging to the restored pilot's own flight, its `record_revision` and `flight_hash` must bind to either the current certified fingerprint or the matching archived certified revision. Recomputing the outer portable-file checksum is not sufficient to replace this keyed evidence.
+
 ## Incident/hotfix rule
 
 A production hotfix should:
@@ -57,6 +65,6 @@ A production hotfix should:
 
 ## Current controlled baseline
 
-v1.33.1 extends the Certification Readiness baseline with isolated PostgreSQL acceptance evidence for certified-record immutability, correction transitions, revision-bound verification and source/participant record independence. v1.33.0 introduced the authority verification report and the initial controlled documentation set.
+v1.33.2 extends the Certification Readiness baseline with PostgreSQL-backed cross-user ownership evidence and a regulatory/evidence-focused backup/restore round-trip. It also validates stored verification HMAC evidence before accepting certified backup history. v1.33.1 introduced the isolated PostgreSQL acceptance stage; v1.33.0 introduced the Authority Verification Report and the initial controlled documentation set.
 
 The certification-readiness documents and test evidence do not themselves confer regulatory approval. Any final authority-facing claim must be checked against the deployed implementation and the competent authority's guidance.

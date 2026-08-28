@@ -1,6 +1,6 @@
 # Certification and Verification Specification
 
-Version: 1.33.0
+Version: 1.33.2
 
 ## 1. Pilot record certification
 
@@ -50,7 +50,7 @@ The server signs the canonical, recursively key-sorted representation with **HMA
 - the SHA-256 fingerprint of the certified flight revision; and
 - a server-authenticated HMAC over the verification event payload.
 
-v1.33 introduces a report-time check of this stored HMAC instead of merely displaying the stored signature string.
+v1.33 introduced a report-time check of this stored HMAC instead of merely displaying the stored signature string.
 
 ## 5. Credential snapshot
 
@@ -101,8 +101,24 @@ The v1.33 authority verification report is owner-authenticated and printable. It
 
 The report is technical evidence only. It is not a certificate issued by an aviation authority.
 
-## 9. Failure behavior
+## 9. Backup and restore verification
 
-An integrity mismatch must be displayed as a problem. FlyTally must not silently rewrite the stored hash to make the mismatch disappear.
+The portable backup has an outer SHA-256 integrity checksum covering the JSON payload. This checksum detects ordinary corruption or modification, but it is not a secret-key authenticity mechanism.
 
-If the server signing secret is unavailable, verification-signature checking reports an unavailable state rather than claiming the stored HMAC is valid.
+Certified flight revisions retain their individual certification fingerprints independently of the outer backup checksum. During certification-history validation, current and archived flight revisions must still recalculate to their stored SHA-256 values.
+
+From v1.33.2, stored flight-verification evidence contained in a portable backup is also validated cryptographically before certified backup history is accepted:
+
+- a `signed` or `revoked` verification must contain a server signature;
+- any stored server signature must verify against the canonical verification payload using HMAC-SHA-256;
+- when the verification belongs to the restored account's own flight, `record_revision` and `flight_hash` must bind to the current certification fingerprint or the corresponding archived certified revision.
+
+Therefore, changing verification evidence and merely recalculating the outer portable-file SHA-256 does not create valid instructor verification evidence.
+
+The v1.33.2 PostgreSQL restore acceptance test additionally confirms that current R2, archived R1, verification HMAC evidence, structured purpose, participation binding and GPS data survive the tested exact-restore path.
+
+## 10. Failure behavior
+
+An integrity mismatch must be displayed or rejected as a problem. FlyTally must not silently rewrite the stored hash to make the mismatch disappear.
+
+If the server signing secret is unavailable, verification-signature checking reports an unavailable state rather than claiming the stored HMAC is valid. Exact restore of signed evidence should fail closed when that evidence cannot be cryptographically validated.

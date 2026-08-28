@@ -1,6 +1,6 @@
 # FlyTally
 
-Current production-oriented release: **FlyTally v1.33.0 — Certification Readiness**.
+Current production-oriented release: **FlyTally v1.33.2 — Certification Readiness**.
 
 FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and deployed on Vercel. The active application lives in `app/`, `components/` and `lib/`.
 
@@ -20,12 +20,25 @@ FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and dep
 
 v1.33 adds an owner-authenticated, printable **Authority Verification Report** for a certified flight. The report independently recalculates each preserved certification SHA-256, identifies the exact revision/hash bound to instructor evidence, validates stored verification HMAC-SHA-256 evidence at report time, preserves revoked evidence in history, and displays same-device handwritten signature evidence without overstating identity assurance.
 
-The release also establishes a controlled certification-readiness documentation set in `docs/certification-readiness/`:
+The release family also establishes a controlled certification-readiness documentation set in `docs/certification-readiness/` and progressively replaces source-only confidence with reproducible PostgreSQL acceptance evidence.
+
+### v1.33.1
+
+The GitHub verification workflow starts an isolated PostgreSQL 16 service and exercises the production certified-record protection/correction model, revision-bound verification and source/participant record independence. Acceptance output is retained as a commit-specific CI artifact.
+
+### v1.33.2
+
+v1.33.2 adds database-backed cross-user ownership tests using SQL templates read directly from the production server-action sources. It also adds a regulatory/evidence-focused portable-backup round trip: current R2 and archived R1 certification fingerprints, structured purpose, instructor HMAC evidence, participation binding and GPS data are restored using the production restore SQL and then re-verified.
+
+Backup certification-history validation now verifies stored HMAC-SHA-256 verification evidence as well as flight certification fingerprints. Recomputing the outer unkeyed portable-file checksum therefore cannot be used to forge signed instructor evidence.
+
+The controlled documents include:
 
 - data dictionary;
 - FCL.050-oriented compliance matrix;
 - certification/signature specification;
 - acceptance-test matrix;
+- security and restore evidence specification;
 - change-control rules.
 
 These materials are engineering and authority-discussion aids. They do **not** state that FlyTally is EASA certified or approved by ÚCL.
@@ -49,4 +62,4 @@ npm ci
 npm run verify
 ```
 
-`npm run build` also runs the TypeScript test suite before the Next.js production build.
+`npm run build` also runs the TypeScript test suite before the Next.js production build. The GitHub CI workflow additionally runs the isolated PostgreSQL acceptance suite under `tests/integration/`.

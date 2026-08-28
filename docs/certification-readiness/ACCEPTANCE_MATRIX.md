@@ -1,6 +1,6 @@
 # FlyTally Acceptance Matrix
 
-Version: 1.33.1
+Version: 1.33.2
 
 This matrix is the target acceptance evidence set for certification-readiness work. Coverage is deliberately classified by evidence quality; a source-text assertion is not treated as equivalent to an isolated PostgreSQL integration test.
 
@@ -18,35 +18,50 @@ This matrix is the target acceptance evidence set for certification-readiness wo
 | AC-10 | In-person identity assurance display | UI/report clearly distinguishes non-authenticated physical identity | High |
 | AC-11 | Sign & add FI entry | Instructor receives separate logbook entry; student source remains unchanged | Critical |
 | AC-12 | Delete instructor's own draft copy | Student source record and verification evidence remain | Critical |
-| AC-13 | Cross-user flight ID submitted to owner-only action | Action denied/no cross-user mutation | Critical |
+| AC-13 | Cross-user flight/participation/verification ID submitted to owner-only action | Action denied/no cross-user mutation | Critical |
 | AC-14 | Structured FCL.140.A purpose certified | `purpose_code` persists and is included in certification v3 hash | High |
 | AC-15 | LAPL rolling recency with eligible ULL contribution | Eligible ULL hours/landings count toward 12h/12; ULL does not satisfy 1h FI refresher | High |
 | AC-16 | Legacy pre-purpose refresher record | Legacy text fallback remains available without rewriting certified row | High |
 | AC-17 | Complete EASA print | Correct scope, PIC/DUAL allocation, totals and signed markers | Critical |
 | AC-18 | ULL-only / EASA-only / combined print | Same layout, filtering changes only selected records | High |
-| AC-19 | Backup certified signed training record | Flight, revision archive and verification evidence present in backup | Critical |
-| AC-20 | Restore certified signed training record | Functional/audit state equivalent after restore | Critical |
+| AC-19 | Backup certified signed training record | Flight, revision archive, verification evidence and GPS are present and integrity-checked | Critical |
+| AC-20 | Restore certified signed training record | R1/R2 fingerprints, verification HMAC, participation binding and GPS survive exact restore | Critical |
 | AC-21 | Authority verification report on valid record | All revision SHA-256 checks verified; stored verification HMAC reports verified | High |
-| AC-22 | Tamper test against snapshot/hash | Report displays mismatch; system does not self-heal the evidence | Critical |
+| AC-22 | Tamper test against backup/snapshot/signature | Damage or forged evidence is rejected/reported; system does not self-heal it | Critical |
 | AC-23 | Revoked verification in authority report | Historical verification visible as revoked and not counted active | High |
 | AC-24 | Large account dashboard | Aggregate SQL path remains responsive at 10k+ flight records | Medium |
 | AC-25 | Large print job | Date-scoped printing remains usable; full-logbook behavior documented | Medium |
 
-## Automated PostgreSQL evidence introduced in v1.33.1
+## Automated PostgreSQL evidence
 
-The GitHub verification workflow now starts an isolated PostgreSQL 16 service and executes `tests/integration/postgres-certification.test.ts` against it. The harness reads the relevant DDL and protection function from the production `lib/db-optimization.ts` implementation before executing the scenarios.
+The GitHub verification workflow starts an isolated PostgreSQL 16 service and executes the tests under `tests/integration/`. The harnesses intentionally use production DDL or production SQL template blocks rather than maintaining a second independent set of business rules.
 
-The following scenarios now have automated PostgreSQL evidence:
+### v1.33.1 database integrity baseline
 
-- **AC-02** — an ordinary UPDATE and DELETE of a certified flight are rejected by the production protection function;
-- **AC-03** — the certified-to-correction transition is rejected until the matching certified R1 archive exists, then the exact permitted transition succeeds;
-- **AC-04** — the R1 archive remains present while R2 can be edited, certified and becomes immutable again;
-- **AC-06** — a signed R1 verification does not match the current R2 revision/hash; a separate R2 verification is required;
-- **AC-12** — deleting an instructor-owned draft copy sets `participant_flight_id` to null while the student's source flight and signed verification remain.
+Automated PostgreSQL evidence exists for:
 
-Each CI run preserves the PostgreSQL acceptance-test output as a GitHub Actions artifact named `flytally-postgres-acceptance-<commit SHA>` for 90 days.
+- **AC-02** — ordinary UPDATE and DELETE of a certified flight are rejected by the production protection function;
+- **AC-03** — the certified-to-correction transition is rejected until the matching certified R1 archive exists;
+- **AC-04** — R1 remains preserved while R2 is edited, certified and becomes immutable again;
+- **AC-06** — R1 verification cannot match current R2 unless revision and certification hash both match;
+- **AC-12** — deleting the participant-owned draft copy leaves the student's source record and signed evidence intact.
 
-This is the first database-backed evidence layer, not completion of the full matrix. In particular, **AC-13 cross-user server-action isolation** and **AC-19/AC-20 complete backup/restore round-trip** still require dedicated end-to-end/integration coverage before they are marked automated.
+### v1.33.2 security and restore evidence
+
+The additional `postgres-security-restore` harness adds:
+
+- **AC-13** — exact SQL templates used by owner/participant actions are executed with owner, participant and unrelated actor identifiers. Cross-user correction lookup, verification revocation, participation cancellation and flight-lock mutations are denied by the same ownership predicates used by production actions;
+- **AC-19** — a portable v7 backup fixture contains a certified R2 flight, archived R1, in-person and authenticated verification evidence, participation binding and GPS track. Certification fingerprints and HMAC evidence are validated before restore;
+- **AC-20** — the production `json_populate_record` restore SQL blocks are replayed against PostgreSQL 16, after which current R2 SHA-256, archived R1 SHA-256, both verification HMAC values, structured purpose, participation source hash and GPS coordinates are re-verified. Replaying the restore remains idempotent for those evidence rows;
+- **AC-22** — ordinary backup damage fails the outer SHA-256 integrity check. If an attacker recomputes that unkeyed outer digest after modifying a stored verification signature, the keyed HMAC-SHA-256 validation still rejects the forged verification evidence.
+
+Each CI run preserves the PostgreSQL acceptance output as a GitHub Actions artifact named `flytally-postgres-acceptance-<commit SHA>` for 90 days.
+
+## Evidence limits
+
+v1.33.2 materially improves cross-user and restore evidence, but the AC-13 harness does **not** simulate a browser session or Next.js authentication handshake. It injects actor IDs into the exact production SQL templates after the production server action would obtain `userId` from `requireUser()`. Full HTTP/session-level end-to-end security testing remains a separate future layer.
+
+Likewise, AC-20 currently proves the regulatory/evidence-critical restore sections (flight, certified revision archive, verification evidence, participation binding and GPS). It is not a claim that every optional account-preference field has a dedicated PostgreSQL round-trip assertion.
 
 ## Evidence policy
 
@@ -57,7 +72,7 @@ For authority-facing readiness, the preferred evidence hierarchy is:
 3. reproducible acceptance demonstration with captured result;
 4. source-text regression assertion only as a supplemental guard.
 
-Source-regex tests are not sufficient evidence for mission-critical ownership, immutability or cross-user state transitions.
+Source-regex tests are not sufficient evidence for mission-critical ownership, immutability or cross-user state transitions by themselves.
 
 ## Demonstration set for an initial ÚCL meeting
 
@@ -70,4 +85,4 @@ A concise live demonstration should use a dedicated non-production test dataset 
 5. correction to R2 with preserved R1 history;
 6. inability of old R1 signature to become current for R2;
 7. print/export of the same record chain;
-8. backup evidence for the account.
+8. portable backup integrity and restore evidence for the account.
