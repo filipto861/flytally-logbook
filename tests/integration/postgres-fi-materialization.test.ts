@@ -25,7 +25,7 @@ function run(statement:string){
   return String(result.stdout??"").trim();
 }
 function rows(statement:string){
-  const clean=statement.trim().replace(/;\s*$/,"");
+  const clean=statement.trim().replace(/;\s*$/," ");
   return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>;
 }
 function literal(value:unknown){
@@ -48,7 +48,7 @@ function renderMaterialize(block:string,values:Record<string,unknown>){
   const normalized=block.replace(noteExpression,literal(values.materializeNote));
   const rendered=normalized.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{
     const key=String(expression).trim();
-    assert.oi(Object.prototype.hasOwnProperty.call(values,key),`No FI SQL test value for ${key}`);
+    assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No FI SQL test value for ${key}`);
     return literal(values[key]);
   });
   assert.doesNotMatch(rendered,/\$\{/);
