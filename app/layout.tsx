@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import "./theme.css";
 import "./dashboard-customization.css";
 import "./light-interactions.css";
+import "./v1342-ui-polish.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
