@@ -1,0 +1,21 @@
+/* FlyTally v1.35.4 — recency evidence audit trail */
+.recency-audit-detail{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:10px}
+.recency-audit-detail>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;color:var(--muted);font-size:.78rem;font-weight:750;list-style:none}
+.recency-audit-detail>summary::-webkit-details-marker{display:none}
+.recency-audit-detail>summary span{color:var(--text)}
+.recency-audit-detail.has-review>summary small{font-weight:800}
+.recency-audit-list{display:grid;gap:8px;margin-top:10px}
+.recency-audit-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 11px;border:1px solid var(--line-soft);border-radius:10px;background:var(--surface-raised)}
+.recency-audit-main{display:grid;gap:3px;min-width:0}
+.recency-audit-main>span{font-size:.68rem;font-weight:750;letter-spacing:.05em;color:var(--muted)}
+.recency-audit-main>strong{font-size:.82rem;line-height:1.25;overflow-wrap:anywhere}
+.recency-audit-main>small{color:var(--muted);line-height:1.35}
+.recency-audit-main .recency-audit-issue{color:var(--text);font-weight:750}
+.recency-audit-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:120px;text-align:right}
+.recency-audit-meta>b{font-size:.65rem;letter-spacing:.04em}
+.recency-audit-meta>small{color:var(--muted);white-space:nowrap}
+.recency-audit-meta>a{font-size:.72rem;font-weight:750}
+.recency-audit-row.audit-limited{border-style:dashed}
+.recency-audit-row.audit-review{box-shadow:inset 3px 0 0 var(--accent2)}
+.recency-audit-footer{margin:8px 0 0;font-size:.7rem}
+@media(max-width:720px){.recency-audit-detail>summary{align-items:flex-start;flex-direction:column;gap:2px}.recency-audit-row{grid-template-columns:1fr}.recency-audit-meta{align-items:flex-start;min-width:0;text-align:left}.recency-audit-meta>small{white-space:normal}}
