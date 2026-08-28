@@ -2,4 +2,4 @@ import assert from "node:assert/strict";import test from "node:test";import fs f
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("v1.31.2 Licences recency query casts legacy text dates safely",()=>{const page=read("app/(protected)/credentials/page.tsx");assert.match(page,/CASE WHEN f\.date~'\^\\\\d\{4\}-\\\\d\{2\}-\\\\d\{2\}\$' THEN f\.date::date ELSE NULL END>=CURRENT_DATE-INTERVAL '2 years'/)});
 test("v1.31.2 participant-owned draft keeps an explicit owner-only removal path",()=>{const page=read("app/(protected)/flights/[id]/page.tsx"),trash=read("lib/flight-trash.ts"),button=read("components/delete-flight-button.tsx");assert.match(page,/participantOwned/);assert.match(page,/Remove from my logbook/);assert.match(trash,/flight_participations p WHERE p\.participant_user_id/);assert.match(button,/confirmLabel/)});
-test("v1.31 baseline remains supported by v1.32",()=>{assert.match(JSON.parse(read("package.json")).version,/^1\.(31|32)\./)});
+test("v1.31 baseline remains supported by later releases",()=>{assert.match(JSON.parse(read("package.json")).version,/^1\.(31|32|33)\./)});
