@@ -2,17 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.36.0 · Mobile UX & iOS polish
+## Current release — v1.36.1 · Mobile navigation hotfix
 
 Focus:
-- fix iOS/PWA status-bar and safe-area theming so Light and Dark appearance extend consistently into the top system area
-- resolve manual Light/Dark preference before the protected shell paints instead of letting the device color scheme temporarily win
-- normalize runtime `theme-color` metadata after hydration and keep browser chrome synchronized with FlyTally appearance
-- preserve existing mobile safe-area offsets while adding left/right notch protection for narrow and landscape layouts
-- compact the mobile Recency & currency presentation without removing regulatory values, forecasts or audit detail
-- keep current recency requirements readable at a glance by removing redundant “Requirement met” sub-lines on small screens
-- maintain 44 px primary mobile touch targets and a stable fixed navigation shell
-- Recency Engine logic remains the v1.35.5 landing-based planning model; v1.36.0 is presentation/shell work only
+- restore the proven v1.35.5 single-tap navigation behavior on mobile and touch devices
+- remove the v1.36.0 first-paint script and direct Next-managed head/meta reconciliation that could interfere with touch navigation
+- keep the iOS status area non-interactive and paint-only, with `pointer-events: none`
+- do not override mobile menu, backdrop, tab or hamburger interaction geometry in the v1.36 layer
+- retain the compact mobile Recency & currency presentation from v1.36.0
+- keep the iOS/PWA status-bar style on the safe static metadata path while appearance continues to use the established ThemeManager
+- Recency Engine logic remains the v1.35.5 landing-based planning model; v1.36.1 changes shell/presentation behavior only
 
 ## Certification baseline — v1.33.5
 
@@ -24,6 +23,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.34.1: per-user dashboard editor with show/hide, ordering, sizing and presets
 - v1.34.2: full application UI/UX consistency and responsive polish
 - v1.35.0–v1.35.5: selectable recency monitoring, forecasts, structured revalidation evidence, audit detail and simplified landing-based FCL.060 planning indicator
+- v1.36.0: initial mobile/iOS polish and compact recency presentation
 
 ## Near term
 
