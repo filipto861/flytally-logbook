@@ -7,9 +7,10 @@ import { normalizeAppearance } from "../lib/ui-preferences.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const releaseAtLeast=(current:string,target:string)=>{const a=current.split(".").map(Number),b=target.split(".").map(Number);for(let i=0;i<3;i++){if((a[i]||0)>(b[i]||0))return true;if((a[i]||0)<(b[i]||0))return false}return true};
 
 test("v1.34.0 introduces a validated dashboard widget registry without changing default visibility",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.34.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,"1.34.0"));
   assert.equal(new Set(DASHBOARD_WIDGETS.map(widget=>widget.id)).size,DASHBOARD_WIDGETS.length);
   const layout=dashboardLayoutFromPreferences({});
   assert.equal(layout.length,DASHBOARD_WIDGETS.length);
@@ -21,14 +22,14 @@ test("v1.34.0 introduces a validated dashboard widget registry without changing 
 
 test("dashboard preference parser rejects unknown/duplicate widgets and preserves future missing defaults",()=>{
   const layout=dashboardLayoutFromPreferences({dashboard_widgets:[
-    {id:"cost",enabled:false,size:"wide"},
-    {id:"cost",enabled:true,size:"hero"},
+    {id:"aircraft-costs",enabled:false,size:"medium"},
+    {id:"aircraft-costs",enabled:true,size:"wide"},
     {id:"unknown",enabled:true},
     {id:"monthly-activity",size:"nonsense"},
   ]});
-  assert.equal(layout.filter(item=>item.id==="cost").length,1);
-  assert.equal(layout.find(item=>item.id==="cost")?.enabled,false);
-  assert.equal(layout.find(item=>item.id==="cost")?.size,"wide");
+  assert.equal(layout.filter(item=>item.id==="aircraft-costs").length,1);
+  assert.equal(layout.find(item=>item.id==="aircraft-costs")?.enabled,false);
+  assert.equal(layout.find(item=>item.id==="aircraft-costs")?.size,"medium");
   assert.equal(layout.find(item=>item.id==="monthly-activity")?.size,"wide");
   assert.ok(layout.some(item=>item.id==="total-time"));
 });
