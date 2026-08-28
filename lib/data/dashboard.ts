@@ -9,12 +9,12 @@ export type MonthlyPoint={month:string;total:number;ull:number;easa:number;picUl
 export type DashboardData={
   displayName:string;rangeLabel:string;total:PrimaryMetric;ull:PrimaryMetric;easa:PrimaryMetric;picUll:PrimaryMetric;picEasa:PrimaryMetric;
   airMinutes:number;picMinutes:number;copilotMinutes:number;dualMinutes:number;instructorMinutes:number;nightMinutes:number;ifrMinutes:number;dayLandings:number;nightLandings:number;safetyMinutes:number;cost:number;tracks:number;gpsKm:number;
-  uniqueAircraft:number;uniqueAirports:number;chartFlights:number;invalidDateFlights:number;
+  uniqueAircraft:number;uniqueAirports:number;uniqueRoutes:number;chartFlights:number;invalidDateFlights:number;
   lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string};monthly:MonthlyPoint[];
   recentFlights:Array<{id:number;date:string;registration:string;departure:string;arrival:string}>;
-  topAircraft:Array<{registration:string;flights:number;minutes:number;cost:number}>;
-  topRoutes:Array<{route:string;departure:string;arrival:string;flights:number;minutes:number}>;
-  topAirports:Array<{airport:string;visits:number;departures:number;arrivals:number;lastDate:string}>;
+  topAircraft:Array<{registration:string;flights:number;minutes:number;cost:number;lastDate:string}>;
+  topRoutes:Array<{route:string;departure:string;arrival:string;flights:number;minutes:number;firstDate:string;lastDate:string}>;
+  topAirports:Array<{airport:string;visits:number;departures:number;arrivals:number;firstDate:string;lastDate:string}>;
   yearly:Array<{year:number;flights:number;minutes:number;landings:number}>;
 };
 
@@ -69,23 +69,24 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
       FROM base
     )
     SELECT COALESCE((SELECT display_name FROM users WHERE id=${userId}),'Pilot') display_name,summary.*,
-      (SELECT COUNT(DISTINCT airport)::int FROM(SELECT NULLIF(departure,'') airport FROM base UNION SELECT NULLIF(arrival,'') FROM base)x WHERE airport IS NOT NULL) unique_airports,
+      (SELECT COUNT(DISTINCT airport)::int FROM(SELECT NULLIF(departure,'') airport FROM base WHERE dashboard_total UNION SELECT NULLIF(arrival,'') FROM base WHERE dashboard_total)x WHERE airport IS NOT NULL) unique_airports,
+      (SELECT COUNT(*)::int FROM(SELECT departure,arrival FROM base WHERE dashboard_total AND departure<>'' AND arrival<>'' GROUP BY departure,arrival)x) unique_routes,
       COALESCE((SELECT jsonb_agg(to_jsonb(x) ORDER BY x.date_key DESC NULLS LAST,x.off_block DESC,x.id DESC) FROM(SELECT id,date,date_key,off_block,registration,departure,arrival FROM base ORDER BY date_key DESC NULLS LAST,off_block DESC,id DESC LIMIT 8)x),'[]'::jsonb) recent,
       COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.month_key) FROM(SELECT LEFT(date_key,7) AS month_key,COALESCE(SUM(block_minutes) FILTER(WHERE dashboard_total),0)::int total,COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary AND evidence='ULL'),0)::int ull,COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary AND evidence='EASA'),0)::int easa,COALESCE(SUM(pic_minutes) FILTER(WHERE NOT auxiliary AND evidence='ULL' AND pic_minutes>0),0)::int pic_ull,COALESCE(SUM(pic_minutes) FILTER(WHERE NOT auxiliary AND evidence='EASA' AND pic_minutes>0),0)::int pic_easa,COALESCE(SUM(landings) FILTER(WHERE NOT auxiliary),0)::int landings FROM base WHERE dashboard_total AND date_key IS NOT NULL GROUP BY LEFT(date_key,7))m),'[]'::jsonb) monthly,
-      COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.minutes DESC,a.registration) FROM(SELECT registration,COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost FROM base WHERE registration<>'' GROUP BY registration)a),'[]'::jsonb) top_aircraft,
-      COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.flights DESC,r.minutes DESC) FROM(SELECT departure||'–'||arrival route,departure,arrival,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes FROM base WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(block_minutes) DESC LIMIT 12)r),'[]'::jsonb) top_routes,
-      COALESCE((SELECT jsonb_agg(to_jsonb(ap) ORDER BY ap.visits DESC,ap.last_date DESC,ap.airport) FROM(SELECT airport,COUNT(*)::int visits,COALESCE(SUM(dep),0)::int departures,COALESCE(SUM(arr),0)::int arrivals,COALESCE(MAX(date_key),'') last_date FROM(SELECT id,date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM base WHERE NOT auxiliary AND departure<>'' UNION ALL SELECT id,date_key,arrival airport,0 dep,1 arr FROM base WHERE NOT auxiliary AND arrival<>'' AND arrival<>departure)e GROUP BY airport ORDER BY COUNT(*) DESC,MAX(date_key) DESC,airport LIMIT 16)ap),'[]'::jsonb) top_airports,
+      COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.minutes DESC,a.registration) FROM(SELECT registration,COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost,COALESCE(MAX(date_key),'') last_date FROM base WHERE registration<>'' GROUP BY registration)a),'[]'::jsonb) top_aircraft,
+      COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.flights DESC,r.minutes DESC,r.last_date DESC,r.departure,r.arrival) FROM(SELECT departure||'→'||arrival route,departure,arrival,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes,COALESCE(MIN(date_key),'') first_date,COALESCE(MAX(date_key),'') last_date FROM base WHERE dashboard_total AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(block_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50)r),'[]'::jsonb) top_routes,
+      COALESCE((SELECT jsonb_agg(to_jsonb(ap) ORDER BY ap.visits DESC,ap.last_date DESC,ap.airport) FROM(SELECT airport,COUNT(*)::int visits,COALESCE(SUM(dep),0)::int departures,COALESCE(SUM(arr),0)::int arrivals,COALESCE(MIN(date_key),'') first_date,COALESCE(MAX(date_key),'') last_date FROM(SELECT date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM base WHERE dashboard_total AND departure<>'' UNION ALL SELECT date_key,arrival airport,0 dep,1 arr FROM base WHERE dashboard_total AND arrival<>'' AND arrival<>departure)e GROUP BY airport ORDER BY COUNT(*) DESC,MAX(date_key) DESC NULLS LAST,airport LIMIT 100)ap),'[]'::jsonb) top_airports,
       COALESCE((SELECT jsonb_agg(to_jsonb(y) ORDER BY y.year_key DESC) FROM(SELECT LEFT(date_key,4)::int AS year_key,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes,COALESCE(SUM(landings) FILTER(WHERE NOT auxiliary),0)::int landings FROM base WHERE dashboard_total AND date_key IS NOT NULL GROUP BY LEFT(date_key,4))y),'[]'::jsonb) yearly
     FROM summary`,650) as Array<Record<string,unknown>>;
   const row=rows[0]??{},recent=jsonObjects(row.recent).map(item=>({id:n(item.id),date:s(item.date),registration:s(item.registration),departure:s(item.departure),arrival:s(item.arrival)}));
   return{
     displayName:s(row.display_name)||"Pilot",rangeLabel:label,total:metric(row,"total"),ull:metric(row,"ull"),easa:metric(row,"easa"),picUll:metric(row,"pic_ull"),picEasa:metric(row,"pic_easa"),
     airMinutes:n(row.air_minutes),picMinutes:n(row.pic_minutes),copilotMinutes:n(row.copilot_minutes),dualMinutes:n(row.dual_minutes),instructorMinutes:n(row.instructor_minutes),nightMinutes:n(row.night_minutes),ifrMinutes:n(row.ifr_minutes),dayLandings:n(row.day_landings),nightLandings:n(row.night_landings),safetyMinutes:n(row.safety_minutes),cost:n(row.cost),tracks:n(row.tracks),gpsKm:n(row.gps_km),
-    uniqueAircraft:n(row.unique_aircraft),uniqueAirports:n(row.unique_airports),chartFlights:n(row.chart_flights),invalidDateFlights:n(row.invalid_date_flights),lastFlight:recent[0]??null,recentFlights:recent,
+    uniqueAircraft:n(row.unique_aircraft),uniqueAirports:n(row.unique_airports),uniqueRoutes:n(row.unique_routes),chartFlights:n(row.chart_flights),invalidDateFlights:n(row.invalid_date_flights),lastFlight:recent[0]??null,recentFlights:recent,
     monthly:jsonObjects(row.monthly).map(item=>({month:s(item.month_key),total:n(item.total),ull:n(item.ull),easa:n(item.easa),picUll:n(item.pic_ull),picEasa:n(item.pic_easa),landings:n(item.landings)})),
-    topAircraft:jsonObjects(row.top_aircraft).map(item=>({registration:s(item.registration),flights:n(item.flights),minutes:n(item.minutes),cost:n(item.cost)})),
-    topRoutes:jsonObjects(row.top_routes).map(item=>({route:s(item.route),departure:s(item.departure),arrival:s(item.arrival),flights:n(item.flights),minutes:n(item.minutes)})),
-    topAirports:jsonObjects(row.top_airports).map(item=>({airport:s(item.airport),visits:n(item.visits),departures:n(item.departures),arrivals:n(item.arrivals),lastDate:s(item.last_date)})),
+    topAircraft:jsonObjects(row.top_aircraft).map(item=>({registration:s(item.registration),flights:n(item.flights),minutes:n(item.minutes),cost:n(item.cost),lastDate:s(item.last_date)})),
+    topRoutes:jsonObjects(row.top_routes).map(item=>({route:s(item.route),departure:s(item.departure),arrival:s(item.arrival),flights:n(item.flights),minutes:n(item.minutes),firstDate:s(item.first_date),lastDate:s(item.last_date)})),
+    topAirports:jsonObjects(row.top_airports).map(item=>({airport:s(item.airport),visits:n(item.visits),departures:n(item.departures),arrivals:n(item.arrivals),firstDate:s(item.first_date),lastDate:s(item.last_date)})),
     yearly:jsonObjects(row.yearly).map(item=>({year:n(item.year_key),flights:n(item.flights),minutes:n(item.minutes),landings:n(item.landings)})),
   };
 }

@@ -11,6 +11,7 @@ import "./v1353-fcl060.css";
 import "./v1354-recency-audit.css";
 import "./v136-mobile.css";
 import "./v137-shared-flights.css";
+import "./v138-dashboard-insights.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

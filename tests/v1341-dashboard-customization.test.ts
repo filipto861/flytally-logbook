@@ -35,14 +35,14 @@ test("dashboard parser migrates v1.34 cost and aircraft widgets into one combine
   assert.equal(combined.enabled,true);
   assert.equal(combined.size,"wide");
   assert.equal(layout.some(item=>(item.id as string)==="cost"||(item.id as string)==="aircraft"),false);
-  assert.equal(layout.find(item=>item.id==="airports")?.size,"small");
+  assert.equal(layout.find(item=>item.id==="airports")?.size,"medium");
 });
 
 test("dashboard editor is wired to a user-scoped server action and responsive 12-column renderer",()=>{
   const page=read("app/(protected)/dashboard/page.tsx"),editor=read("components/dashboard-editor.tsx"),action=read("app/(protected)/dashboard/actions.ts"),css=read("app/dashboard-customization.css"),layout=read("app/layout.tsx");
   assert.match(page,/DashboardEditor layout=\{layout\}/);
   assert.ok(page.indexOf("dashboard-layout-grid")<page.lastIndexOf("<DashboardEditor layout={layout}/>"));
-  assert.match(page,/layout\.filter\(item=>item\.enabled\)\.map/);
+  assert.match(page,/visibleLayout=layout\.filter/);assert.match(page,/visibleLayout\.map/);
   assert.match(page,/Aircraft & costs/);
   assert.match(editor,/dashboardPresetLayout/);
   assert.match(editor,/<summary>Customize dashboard<\/summary>/);

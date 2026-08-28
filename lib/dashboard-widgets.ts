@@ -20,7 +20,7 @@ export const DASHBOARD_WIDGETS:readonly DashboardWidgetDefinition[]=[
   {id:"pic-ull",label:"PIC ULL",group:"primary",defaultSize:"medium",defaultEnabled:true,sizes:["small","medium"]},
   {id:"pic-easa",label:"PIC EASA",group:"primary",defaultSize:"medium",defaultEnabled:true,sizes:["small","medium"]},
   {id:"last-flight",label:"Last flight",group:"quick",defaultSize:"medium",defaultEnabled:true,sizes:["medium","wide"]},
-  {id:"airports",label:"Airports",group:"quick",defaultSize:"small",defaultEnabled:true,sizes:["small","medium"]},
+  {id:"airports",label:"Airports & routes",group:"quick",defaultSize:"medium",defaultEnabled:true,sizes:["medium","wide"]},
   {id:"gps-tracks",label:"GPS tracks",group:"quick",defaultSize:"small",defaultEnabled:true,sizes:["small","medium"]},
   {id:"aircraft-costs",label:"Aircraft & costs",group:"quick",defaultSize:"wide",defaultEnabled:true,sizes:["medium","wide"]},
   {id:"monthly-activity",label:"Monthly activity",group:"analysis",defaultSize:"wide",defaultEnabled:true,sizes:["wide"]},
