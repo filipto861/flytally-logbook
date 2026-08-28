@@ -68,6 +68,9 @@ before(()=>{
   const protectionFunction=productionSqlBlock(dbSource,"CREATE OR REPLACE FUNCTION logbook_protect_locked_flight()","last");
   const participationTable=productionSqlBlock(dbSource,"CREATE TABLE IF NOT EXISTS flight_participations");
   const verificationTable=productionSqlBlock(dbSource,"CREATE TABLE IF NOT EXISTS flight_verifications");
+  const participationCancelled=productionSqlBlock(dbSource,"ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS cancelled_at");
+  const participationSuperseded=productionSqlBlock(dbSource,"ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS superseded_at");
+  const participationMemberIndex=productionSqlBlock(dbSource,"CREATE UNIQUE INDEX IF NOT EXISTS idx_flight_participations_revision_member");
   const setup=`
     CREATE SCHEMA ${quotedSchema};
     SET search_path TO ${quotedSchema};
@@ -80,6 +83,9 @@ before(()=>{
     ${protectionFunction};
     CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();
     ${participationTable};
+    ${participationCancelled};
+    ${participationSuperseded};
+    ${participationMemberIndex};
     ${verificationTable};
     ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS decision_note TEXT NOT NULL DEFAULT '';
     ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS approval_id BIGINT;
