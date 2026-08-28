@@ -68,4 +68,10 @@ test("light appearance overrides legacy dark workspace surfaces across the appli
   assert.match(theme,/\.aircraft-card\{background:#fff/);
   assert.match(theme,/\.data-hub-nav\{background:#fffffff2/);
   assert.match(theme,/\.sidebar nav\{background:#f8fafc/);
+  assert.match(theme,/\.entry-progress\{background:#f8fafc/);
+  assert.match(theme,/\.connection-card\{background:#fff/);
+  assert.match(theme,/\.security-grid>section,/);
+  assert.match(theme,/\.session-list>div,/);
+  assert.match(theme,/\.invite-list>div\{background:#fff/);
+  assert.match(theme,/\.security-panel>summary\{color:var\(--text\)\}/);
 });
