@@ -35,9 +35,9 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   return <>
     <header className="page-header"><div><p className="eyebrow">LOGBOOK OVERVIEW</p><h1>Flight overview</h1><p className="muted page-lead">{data.displayName} · flying time, activity and costs.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
     <div className="period-control">{periods.map(([key,label])=><Link key={key} className={selected===key||(!periods.some(([p])=>p===selected)&&key==='all')?'active':''} href={`/dashboard?period=${key}`}>{label}</Link>)}</div>
-    <DashboardEditor layout={layout}/>
     <section className="dashboard-layout-grid" aria-label="Dashboard widgets">
       {layout.filter(item=>item.enabled).map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
     </section>
+    <DashboardEditor layout={layout}/>
   </>;
 }
