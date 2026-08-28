@@ -12,17 +12,18 @@ export const metadata={title:"Verification report | FlyTally"};
 const text=(value:unknown)=>String(value??"").trim();
 const dateTime=(value:unknown)=>{const d=new Date(String(value??""));return Number.isNaN(d.getTime())?text(value):new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}).format(d)+" UTC"};
 const duration=(off:unknown,on:unknown)=>{const match=(value:unknown)=>text(value).match(/^([01][0-9]|2[0-3]):([0-5][0-9])$/),a=match(off),b=match(on);if(!a||!b)return"—";const value=((Number(b[1])*60+Number(b[2]))-(Number(a[1])*60+Number(a[2]))+1440)%1440;return`${Math.floor(value/60)}:${String(value%60).padStart(2,"0")}`};
+type CertifiedRow=Record<string,unknown>&{certification_hash:unknown;certification_version:unknown};
 
 export default async function VerificationReport({params}:{params:Promise<{id:string}>}){
   const {userId}=await requireUser(),id=Number((await params).id);if(!Number.isSafeInteger(id)||id<=0)notFound();await ensureDatabaseOptimizations();
   const[currentRows,archiveRows,verificationRows]=await Promise.all([
-    sql`SELECT f.*,u.display_name pilot_name,u.email pilot_email FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT f.*,u.display_name pilot_name,u.email pilot_email FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<CertifiedRow>>,
     sql`SELECT revision_number,certification_hash,certification_version,certified_at,superseded_at,correction_reason,snapshot_data FROM flight_certified_revisions WHERE flight_id=${id} AND user_id=${userId} ORDER BY revision_number` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT v.*,u.display_name signer_name FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id WHERE v.flight_id=${id} AND v.flight_user_id=${userId} ORDER BY v.record_revision,v.signed_at,v.id` as Promise<Array<Record<string,unknown>>>,
   ]);
   const current=currentRows[0];if(!current)notFound();
   const currentRevision=Math.max(1,Number(current.record_revision||1)),currentCertified=Boolean(current.certified_at);
-  const versions=archiveRows.map(row=>{const data={...storedObject(row.snapshot_data),certification_hash:row.certification_hash,certification_version:row.certification_version};return{revision:Number(row.revision_number),data,certifiedAt:row.certified_at,supersededAt:row.superseded_at,reason:text(row.correction_reason),integrity:verifyFlightCertification(data,userId)}});
+  const versions=archiveRows.map(row=>{const data={...storedObject(row.snapshot_data),certification_hash:row.certification_hash,certification_version:row.certification_version} as CertifiedRow;return{revision:Number(row.revision_number),data,certifiedAt:row.certified_at,supersededAt:row.superseded_at,reason:text(row.correction_reason),integrity:verifyFlightCertification(data,userId)}});
   if(currentCertified)versions.push({revision:currentRevision,data:current,certifiedAt:current.certified_at,supersededAt:null,reason:text(current.correction_reason),integrity:verifyFlightCertification(current,userId)});
   versions.sort((a,b)=>a.revision-b.revision);
   const latest=versions.at(-1),reference=latest?authorityReportReference(id,latest.revision,latest.data.certification_hash):`FT-${id}-DRAFT`,integrityProblems=versions.filter(item=>item.integrity.status!=="verified").length;

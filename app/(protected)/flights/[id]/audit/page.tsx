@@ -12,18 +12,19 @@ export const metadata={title:"Certification audit | FlyTally"};
 const text=(value:unknown)=>String(value??"").trim();
 const dateTime=(value:unknown)=>{const d=new Date(String(value??""));return Number.isNaN(d.getTime())?text(value):new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}).format(d)+" UTC"};
 const metaFields=new Set(["record_revision","certified_at","correction_reason","locked_at"]);
+type CertifiedRow=Record<string,unknown>&{certification_hash:unknown;certification_version:unknown};
 
 export default async function FlightAuditReport({params}:{params:Promise<{id:string}>}){
   const {userId}=await requireUser();const id=Number((await params).id);if(!Number.isSafeInteger(id)||id<=0)notFound();await ensureDatabaseOptimizations();
   const [currentRows,archiveRows,approvalRows,verificationRows]=await Promise.all([
-    sql`SELECT f.*,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT f.*,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${id} AND f.user_id=${userId} LIMIT 1` as Promise<Array<CertifiedRow>>,
     sql`SELECT revision_number,certification_hash,certification_version,certified_at,superseded_at,correction_reason,snapshot_data FROM flight_certified_revisions WHERE flight_id=${id} AND user_id=${userId} ORDER BY revision_number ASC` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT a.record_revision,a.status,a.requested_at,a.decided_at,a.decision_note,u.display_name instructor_name FROM instructor_flight_approvals a JOIN users u ON u.id=a.instructor_user_id WHERE a.flight_id=${id} AND a.student_user_id=${userId} ORDER BY a.record_revision` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT v.*,u.display_name signer_name FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id WHERE v.flight_id=${id} AND v.flight_user_id=${userId} ORDER BY v.record_revision,v.id` as Promise<Array<Record<string,unknown>>>
   ]);
   const current=currentRows[0];if(!current)notFound();
   const currentRevision=Math.max(1,Number(current.record_revision||1)),currentCertified=Boolean(current.certified_at);
-  const versions=archiveRows.map(row=>({revision:Number(row.revision_number),snapshot:{...storedObject(row.snapshot_data),certification_hash:row.certification_hash,certification_version:row.certification_version},certifiedAt:row.certified_at,supersededAt:row.superseded_at,reason:text(row.correction_reason),archived:true}));
+  const versions=archiveRows.map(row=>({revision:Number(row.revision_number),snapshot:{...storedObject(row.snapshot_data),certification_hash:row.certification_hash,certification_version:row.certification_version} as CertifiedRow,certifiedAt:row.certified_at,supersededAt:row.superseded_at,reason:text(row.correction_reason),archived:true}));
   versions.push({revision:currentRevision,snapshot:current,certifiedAt:current.certified_at,supersededAt:null,reason:text(current.correction_reason),archived:false});
   versions.sort((a,b)=>a.revision-b.revision);
   const integrity=versions.map(version=>({...version,integrity:version.certifiedAt?verifyFlightCertification(version.snapshot,userId):null}));
