@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { paginateEasaRecords,type EasaPageTotals,type EasaPrintRecord } from "@/lib/easa-print-layout";
 import { aircraftPrintCode,fullAircraftIdentity,isAuxiliaryLogbookRole,logbookPrintScopeLabel,normalizeLogbookPrintScope,parsePilotPreferences,pilotInCommandName,printIdentity } from "@/lib/logbook-print";
+import { isLaplRefresherPurpose } from "@/lib/flight-purpose";
 import styles from "./print.module.css";
 
 export const metadata={title:"Print logbook | FlyTally"};
@@ -21,11 +22,12 @@ const validDate=(value:unknown)=>/^\d{4}-\d{2}-\d{2}$/.test(text(value))?text(va
 const columnWidths=["4.4%","4.0%","3.5%","4.0%","3.5%","6.1%","4.9%","3.5%","3.5%","3.5%","4.0%","5.7%","3.1%","3.1%","3.2%","3.2%","3.5%","3.6%","3.5%","3.9%","3.8%","5.0%","3.8%","9.8%"];
 
 function flightRemarks(row:Record<string,unknown>){
-  const role=text(row.role).toUpperCase(),verify=verification(row),parts=[] as string[];
+  const role=text(row.role).toUpperCase(),verify=verification(row),parts=[] as string[],task=text(row.task),refresher=isLaplRefresherPurpose(row.purpose_code);
   if(["SPIC","PICUS"].includes(role)&&verify)parts.push(`${role==="PICUS"?"PIC(US)":role}: ${verify}`);
   if(role==="CRUISE-RELIEF CO-PILOT")parts.push("CRCP");
   if(isAuxiliaryLogbookRole(role))parts.push(`${role} · NON-CREDITABLE`);
-  if(text(row.task))parts.push(text(row.task));if(text(row.note))parts.push(text(row.note));
+  if(refresher){parts.push("FCL.140.A REFRESHER");const detail=task.replace(/^FCL[.]140[.]A refresher training\s*(?:·\s*)?/i,"").trim();if(detail)parts.push(detail)}else if(task)parts.push(task);
+  if(text(row.note))parts.push(text(row.note));
   if(text(row.instructor_approval_name))parts.push(`FI SIGNED: ${text(row.instructor_approval_name)}`);
   if(!row.certified_at)parts.push("DRAFT");return parts.join(" · ");
 }
@@ -41,7 +43,7 @@ function BlankRow(){return <tr className={`${styles.dataRow} ${styles.blankRow}`
 export default async function PrintPage({searchParams}:{searchParams:Promise<Params>}){
   const {userId}=await requireUser(),params=await searchParams,scope=normalizeLogbookPrintScope(params.scope),includeAuxiliary=params.auxiliary==="include",from=validDate(params.from),to=validDate(params.to);
   const [rawFlights,fstdRows,profiles,licenceRows]=await Promise.all([
-    sql`SELECT f.date,f.evidence,f.registration,f.aircraft_type,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_class,f.operation_type,f.engine_type,f.departure,f.arrival,f.off_block,f.on_block,f.landings_day,f.landings_night,f.night_minutes,f.ifr_minutes,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.role,f.verification_name,f.verification_reference,f.task,f.note,f.certified_at,ac.icao_type,verify.instructor_approval_name,
+    sql`SELECT f.date,f.evidence,f.registration,f.aircraft_type,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_class,f.operation_type,f.engine_type,f.departure,f.arrival,f.off_block,f.on_block,f.landings_day,f.landings_night,f.night_minutes,f.ifr_minutes,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.role,f.verification_name,f.verification_reference,f.task,f.purpose_code,f.note,f.certified_at,ac.icao_type,verify.instructor_approval_name,
       CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes
       FROM flights f
       LEFT JOIN LATERAL(SELECT NULLIF(TRIM(a.icao_type),'') icao_type FROM aircraft a WHERE a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)) ORDER BY a.id DESC LIMIT 1) ac ON TRUE
