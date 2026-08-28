@@ -25,7 +25,7 @@ function run(statement:string){
   return String(result.stdout??"").trim();
 }
 function rows(statement:string){
-  const clean=statement.trim().replace(/;\s*$/," ");
+  const clean=statement.trim().replace(/;\s*$/,"");
   return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>;
 }
 function literal(value:unknown){
@@ -126,8 +126,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
     "text(row.operation_type)||\"SP\"":"SP","text(row.engine_type)||\"SE\"":"SE","Number(row.landings_day)||0":1,"Number(row.landings_night)||0":0,"Number(row.night_minutes)||0":0,"Number(row.ifr_minutes)||0":0,
     "credit.pic":65,"credit.copilot":0,"credit.instructor":65,participationId:9001,materializeNote:"FI entry linked to Test Student's verified training flight"
   };
-  const linked=rows(renderMaterialize(materialize,values))[0];
-  const fiFlightId=Number(linked.participant_flight_id);assert.ok(fiFlightId>0);
+  const fiFlightId=Number(run(renderMaterialize(materialize,values)));assert.ok(fiFlightId>0);
   const fi=rows(`SELECT * FROM flights WHERE id=${fiFlightId} AND user_id=82`)[0];
   assert.equal(String(fi.role),"FI");assert.equal(String(fi.commander),"Test Instructor");assert.equal(Number(fi.pic_minutes),65);assert.equal(Number(fi.instructor_minutes),65);assert.equal(Number(fi.dual_minutes),0);
   assert.equal(String(fi.note),"FI entry linked to Test Student's verified training flight");
