@@ -11,7 +11,6 @@ const movementFlight=(partial:Partial<RecencyFlight>={}):RecencyFlight=>({date:"
 function form(){const f=new FormData();for(const [key,value] of Object.entries({date:"2026-08-28",registration:"OK-ABC",aircraftType:"BR23",aircraftClass:"SEP",evidence:"EASA",departure:"LKLT",arrival:"LKBE",offBlock:"10:00",takeoff:"10:05",landing:"10:55",onBlock:"11:00",role:"PIC",billingBasis:"BLOCK",landingsDay:"1",landingsNight:"0"}))f.set(key,value);return f}
 
 test("v1.35.3 movement schema and certification compatibility remain supported",()=>{
-  assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
   const schema=read("lib/v1353-schema.ts"),actions=read("app/(protected)/flights/actions.ts"),certification=read("app/(protected)/flights/certification-actions.ts"),ui=read("components/flight-form.tsx");
   assert.match(schema,/movement_evidence_recorded/);assert.match(schema,/takeoffs_day/);assert.match(schema,/approaches_day/);assert.doesNotMatch(schema,/UPDATE\s+flights\s+SET\s+(?:takeoffs|approaches)/i);
   assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);

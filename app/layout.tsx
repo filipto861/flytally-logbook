@@ -9,6 +9,7 @@ import "./v135-recency.css";
 import "./v1352-recency.css";
 import "./v1353-fcl060.css";
 import "./v1354-recency-audit.css";
+import "./v136-mobile.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   applicationName:"FlyTally",
   manifest:"/manifest.webmanifest",
   icons:{icon:"/logbook_icon_32.png",shortcut:"/logbook_icon_32.png",apple:"/logbook_icon.png"},
-  appleWebApp:{capable:true,statusBarStyle:"black-translucent",title:"FlyTally"},
+  appleWebApp:{capable:true,statusBarStyle:"default",title:"FlyTally"},
   formatDetection:{telephone:false},
 };
 

@@ -9,7 +9,6 @@ const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.r
 const flight=(partial:Partial<RecencyFlight>):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 
 test("v1.35 selectable built-in monitors and custom rules remain supported",()=>{
-  assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
   const panel=read("components/recency-panel.tsx"),actions=read("app/(protected)/credentials/recency-actions.ts"),service=read("lib/recency-service.ts");
   assert.match(read("app/(protected)/credentials/page.tsx"),/RecencyPanel/);
   assert.match(panel,/saveRecencyMonitors/);

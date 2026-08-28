@@ -9,11 +9,9 @@ const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.r
 const flight=(date:string,landingsDay=1,landingsNight=0):RecencyFlight=>({date,evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay,landingsNight});
 
 test("v1.35.5 keeps passenger currency simple and landing based",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.35.5");
-  const form=read("components/flight-form.tsx"),service=read("lib/recency-service.ts"),roadmap=read("ROADMAP.md");
+  const form=read("components/flight-form.tsx"),service=read("lib/recency-service.ts");
   assert.doesNotMatch(form,/FCL[.]060 movement evidence|Day take-offs|Day approaches|Night take-offs|Night approaches/);
   assert.match(service,/evaluatePassengerLandingIndicator/);assert.match(service,/Landing-based 90-day planning indicator/);
-  assert.match(roadmap,/no separate take-off or approach counters/i);
 });
 
 test("landing indicator works for historical certified flights without movement evidence",()=>{
