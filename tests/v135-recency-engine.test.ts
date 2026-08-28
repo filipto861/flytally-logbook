@@ -8,13 +8,13 @@ import { evaluateCustomRule,evaluateLaplMetrics,evaluatePassengerCurrency,parseC
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const flight=(partial:Partial<RecencyFlight>):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,...partial});
 
-test("v1.35.1 introduces selectable built-in monitors and custom rules",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.35.1");
-  const panel=read("components/recency-panel.tsx"),actions=read("app/(protected)/credentials/recency-actions.ts");
+test("v1.35 selectable built-in monitors and custom rules remain supported",()=>{
+  assert.match(JSON.parse(read("package.json")).version,/^1[.]35[.]/);
+  const panel=read("components/recency-panel.tsx"),actions=read("app/(protected)/credentials/recency-actions.ts"),service=read("lib/recency-service.ts");
   assert.match(read("app/(protected)/credentials/page.tsx"),/RecencyPanel/);
   assert.match(panel,/saveRecencyMonitors/);
-  assert.match(panel,/hasSep&&hasNight/);
-  assert.match(panel,/sep-passenger-night/);
+  assert.match(service,/hasSep&&hasNight/);
+  assert.match(service,/sep-passenger-night/);
   assert.match(actions,/recency_monitors/);
   assert.match(read("app/layout.tsx"),/v135-recency[.]css/);
 });

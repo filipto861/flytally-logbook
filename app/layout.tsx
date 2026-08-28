@@ -6,6 +6,7 @@ import "./dashboard-customization.css";
 import "./light-interactions.css";
 import "./v1342-ui-polish.css";
 import "./v135-recency.css";
+import "./v1352-recency.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

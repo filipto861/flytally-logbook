@@ -7,6 +7,7 @@ import { formatDuration,getDashboardData } from "@/lib/data/dashboard";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { dashboardLayoutFromPreferences,type DashboardWidgetId } from "@/lib/dashboard-widgets";
+import { parseRecencySnapshot } from "@/lib/recency-service";
 
 export const metadata={title:"Dashboard | FlyTally"};
 const periods=[['all','All time'],['year','This year'],['12m','Last 12 months'],['previous','Previous year']] as const;
@@ -18,7 +19,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     getDashboardData(session.userId,selected),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
-  const layout=dashboardLayoutFromPreferences(parsePilotPreferences(settings[0]?.preferences_json));
+  const preferences=parsePilotPreferences(settings[0]?.preferences_json),layout=dashboardLayoutFromPreferences(preferences),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Total time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
     if(id==="ull-time")return <CategoryCard title="ULL" data={data.ull}/>;
@@ -38,6 +39,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     <section className="dashboard-layout-grid" aria-label="Dashboard widgets">
       {layout.filter(item=>item.enabled).map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
     </section>
+    {recencySnapshot?<Link href="/credentials" className={`dashboard-recency-status dashboard-recency-${recencySnapshot.status}`}><span>Recency</span><strong>{recencySnapshot.label}</strong>{recencySnapshot.nextDate?<small>Next date {recencySnapshot.nextDate}</small>:<small>Open details</small>}</Link>:null}
     <DashboardEditor layout={layout}/>
   </>;
 }
