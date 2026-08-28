@@ -25,7 +25,7 @@ function run(statement:string){
   return String(result.stdout??"").trim();
 }
 function rows(statement:string){
-  const clean=statement.trim().replace(/;\s*$/," ");
+  const clean=statement.trim().replace(/;\s*$/,"");
   return JSON.parse(run(`WITH q AS (${clean}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`)||"[]") as Array<Record<string,unknown>>;
 }
 function literal(value:unknown){
@@ -48,7 +48,7 @@ function renderMaterialize(block:string,values:Record<string,unknown>){
   const normalized=block.replace(noteExpression,literal(values.materializeNote));
   const rendered=normalized.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{
     const key=String(expression).trim();
-    assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No FI SQL test value for ${key}`);
+    assert.oi(Object.prototype.hasOwnProperty.call(values,key),`No FI SQL test value for ${key}`);
     return literal(values[key]);
   });
   assert.doesNotMatch(rendered,/\$\{/);
@@ -120,7 +120,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
     "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"FI","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1",
-    "text(row.date)":"2026-08-28","text(row.off_block)":"08:00","text(row.registration).toUpperCase()":"OK-FI1","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
+    "text(row.date)":"2026-08-28","text(row.departure)":"LKPR","text(row.arrival)":"LKBE","text(row.off_block)":"08:00","text(row.registration).toUpperCase()":"OK-FI1","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
     "participantRole===\"INSTRUCTOR\"":true,"text(row.takeoff)":"08:05","text(row.landing)":"09:00","text(row.on_block)":"09:05","Number(row.starts)||0":1,
     commander:"Test Instructor",instructorName:"","text(row.task)":"FCL.140.A refresher training","text(row.purpose_code)":"LAPL_FCL140A_REFRESHER",
     "text(row.operation_type)||\"SP\"":"SP","text(row.engine_type)||\"SE\"":"SE","Number(row.landings_day)||0":1,"Number(row.landings_night)||0":0,"Number(row.night_minutes)||0":0,"Number(row.ifr_minutes)||0":0,
