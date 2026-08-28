@@ -16,7 +16,7 @@ export function DashboardEditor({layout}:{layout:DashboardLayoutItem[]}){
   const move=(index:number,direction:-1|1)=>setItems(current=>{const target=index+direction;if(target<0||target>=current.length)return current;const next=[...current];[next[index],next[target]]=[next[target],next[index]];return next});
   const applyPreset=(preset:DashboardPresetId)=>setItems(dashboardPresetLayout(preset));
   return <details className="dashboard-editor">
-    <summary><span>Customize dashboard</span><small>Show, order and resize widgets</small></summary>
+    <summary>Customize dashboard</summary>
     <form action={formAction} className="dashboard-editor-form">
       <input type="hidden" name="layout" value={JSON.stringify(items)}/>
       <div className="dashboard-preset-row" aria-label="Dashboard presets"><span>Preset</span><button type="button" onClick={()=>applyPreset("general")}>General</button><button type="button" onClick={()=>applyPreset("ull")}>ULL</button><button type="button" onClick={()=>applyPreset("instructor")}>Instructor</button></div>
