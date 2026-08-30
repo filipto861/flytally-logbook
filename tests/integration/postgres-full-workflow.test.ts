@@ -57,7 +57,7 @@ function productionSqlBlock(source:string,needle:string,which:"first"|"last"="fi
 }
 
 const flightColumns=`
-  id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,date DATE,evidence TEXT NOT NULL DEFAULT '',registration TEXT NOT NULL DEFAULT '',aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',starts INTEGER NOT NULL DEFAULT 0,operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,pic_minutes INTEGER NOT NULL DEFAULT 0,copilot_minutes INTEGER NOT NULL DEFAULT 0,dual_minutes INTEGER NOT NULL DEFAULT 0,instructor_minutes INTEGER NOT NULL DEFAULT 0,commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',verification_name TEXT NOT NULL DEFAULT '',verification_reference TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certified_by_user_id BIGINT,certification_hash TEXT NOT NULL DEFAULT '',certification_version INTEGER NOT NULL DEFAULT 3,locked_at TIMESTAMPTZ,locked_by_user_id BIGINT,record_revision INTEGER NOT NULL DEFAULT 1,correction_reason TEXT NOT NULL DEFAULT '',correction_opened_at TIMESTAMPTZ,correction_opened_by_user_id BIGINT
+  id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,date DATE,evidence TEXT NOT NULL DEFAULT '',registration TEXT NOT NULL DEFAULT '',aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',starts INTEGER NOT NULL DEFAULT 0,operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,pic_minutes INTEGER NOT NULL DEFAULT 0,copilot_minutes INTEGER NOT NULL DEFAULT 0,dual_minutes INTEGER NOT NULL DEFAULT 0,instructor_minutes INTEGER NOT NULL DEFAULT 0,commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',verification_name TEXT NOT NULL DEFAULT '',verification_reference TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certified_by_user_id BIGINT,certification_hash TEXT NOT NULL DEFAULT '',certification_version INTEGER NOT NULL DEFAULT 4,locked_at TIMESTAMPTZ,locked_by_user_id BIGINT,record_revision INTEGER NOT NULL DEFAULT 1,correction_reason TEXT NOT NULL DEFAULT '',correction_opened_at TIMESTAMPTZ,correction_opened_by_user_id BIGINT
 `;
 
 before(()=>{
@@ -109,27 +109,25 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   const report=read("app/(protected)/flights/[id]/verification-report/page.tsx");
   const print=read("app/(protected)/print/page.tsx");
 
-  const draft={id:401,user_id:41,date:"2026-08-28",evidence:"EASA",registration:"OK-WF1",aircraft_make:"Bristell",aircraft_model:"B23",aircraft_variant:"",aircraft_type:"B23",aircraft_class:"SEP",departure:"LKPR",arrival:"LKBE",off_block:"08:00",takeoff:"08:05",landing:"09:00",on_block:"09:05",starts:1,operation_type:"SP",engine_type:"SE",landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:0,pic_minutes:0,copilot_minutes:0,dual_minutes:65,instructor_minutes:0,commander:"Test Instructor",instructor:"Test Instructor",role:"DUAL",task:"Training exercise",note:"",purpose_code:"",verification_name:"",verification_reference:"",certification_version:3,record_revision:1,correction_reason:""};
+  const draft={id:401,user_id:41,date:"2026-08-28",evidence:"EASA",registration:"OK-WF1",aircraft_make:"Bristell",aircraft_model:"B23",aircraft_variant:"",aircraft_type:"B23",aircraft_class:"SEP",departure:"LKPR",arrival:"LKBE",off_block:"08:00",takeoff:"08:05",landing:"09:00",on_block:"09:05",starts:1,operation_type:"SP",engine_type:"SE",landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:0,pic_minutes:0,copilot_minutes:0,dual_minutes:65,instructor_minutes:0,commander:"Test Instructor",instructor:"Test Instructor",role:"DUAL",task:"Training exercise",note:"",purpose_code:"",verification_name:"",verification_reference:"",certification_version:4,record_revision:1,correction_reason:""};
   run(`INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_make,aircraft_model,aircraft_variant,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,operation_type,engine_type,landings_day,landings_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,commander,instructor,role,task,note,purpose_code,verification_name,verification_reference,certification_version,record_revision,correction_reason)
-    VALUES(401,41,'2026-08-28','EASA','OK-WF1','Bristell','B23','','B23','SEP','LKPR','LKBE','08:00','08:05','09:00','09:05',1,'SP','SE',1,0,0,0,0,0,65,0,'Test Instructor','Test Instructor','DUAL','Training exercise','','','','',3,1,'')`);
+    VALUES(401,41,'2026-08-28','EASA','OK-WF1','Bristell','B23','','B23','SEP','LKPR','LKBE','08:00','08:05','09:00','09:05',1,'SP','SE',1,0,0,0,0,0,65,0,'Test Instructor','Test Instructor','DUAL','Training exercise','','','','',4,1,'')`);
 
   const certifyUpdate=sqlBlock(certification,"UPDATE flights SET certified_at=NOW(),certified_by_user_id=");
-  const r1Hash=flightCertificationHash(draft,41,3);
+  const r1Hash=flightCertificationHash(draft,41,4);
   run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r1Hash}));
   const certifiedR1=rows(`SELECT * FROM flights WHERE id=401 AND user_id=41`)[0];
   assert.equal(verifyFlightCertification(certifiedR1,41).status,"verified");
 
   const requestInsert=sqlBlock(training,"INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role");
-  const approvalInsert=sqlBlock(training,"INSERT INTO instructor_flight_approvals(flight_id,student_user_id,instructor_user_id,record_revision,flight_hash,status");
-  const approvalLink=sqlBlock(training,"UPDATE flight_participations SET approval_id=");
   function requestRevision(revision:number,hash:string){
-    const participation=rows(render(requestInsert,{flightId:401,studentUserId:41,instructorUserId:42}))[0];
+    const inserted=rows(render(requestInsert,{flightId:401,studentUserId:41,instructorUserId:42}))[0];
+    const participationId=Number(inserted.id);
+    const participation=rows(`SELECT * FROM flight_participations WHERE id=${participationId}`)[0];
     assert.equal(Number(participation.source_revision),revision);
     assert.equal(String(participation.source_hash),hash);
-    const approval=rows(render(approvalInsert,{flightId:401,studentUserId:41,instructorUserId:42,"Number(participation.source_revision)":revision,"text(participation.source_hash)":hash}))[0];
-    const participationId=Number(participation.id),approvalId=Number(approval.id);
-    run(render(approvalLink,{approvalId,participationId,instructorUserId:42}));
-    return{participationId,approvalId};
+    assert.equal(participation.approval_id,null,"Modern instructor requests must remain participation-only");
+    return{participationId,approvalId:0};
   }
 
   const signInsert=sqlBlock(shared,"INSERT INTO flight_verifications(flight_id,flight_user_id,signer_user_id,verification_role,record_revision,flight_hash");
@@ -141,7 +139,7 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
     const signature=signVerificationPayload(payload);
     run(render(signInsert,{"payload.flightId":401,"payload.flightUserId":41,"session.userId":42,verificationRole:"INSTRUCTOR","payload.recordRevision":revision,"payload.flightHash":hash,"JSON.stringify(credentialSnapshot)":JSON.stringify(credentialSnapshot),signature,note}));
     run(render(signParticipation,{note,participationId,"session.userId":42}));
-    run(render(signApproval,{note,"Number(row.approval_id)||0":approvalId,"payload.flightId":401,"session.userId":42,"payload.recordRevision":revision}));
+    run(render(signApproval,{note,"Number(row.approval_id)||0":approvalId,"payload.flightId":401,"payload.flightUserId":41,"session.userId":42,"payload.recordRevision":revision,"payload.flightHash":hash}));
     const verification=rows(`SELECT * FROM flight_verifications WHERE flight_id=401 AND flight_user_id=41 AND signer_user_id=42 AND record_revision=${revision}`)[0];
     assert.equal(verificationCryptographicStatus(verification),"verified");
     return Number(verification.id);
@@ -169,7 +167,7 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   const r2Draft=rows(`SELECT * FROM flights WHERE id=401 AND user_id=41`)[0];
   assert.equal(Number(r2Draft.record_revision),2);
   assert.equal(String(r2Draft.correction_reason),correctionReason);
-  const r2Hash=flightCertificationHash(r2Draft,41,3);
+  const r2Hash=flightCertificationHash(r2Draft,41,4);
   run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r2Hash}));
 
   const r2Request=requestRevision(2,r2Hash);
@@ -213,6 +211,7 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   assert.equal(String(finalPrint[0].instructor_approval_name),"Test Instructor");
   assert.equal(String(finalPrint[0].arrival),"LKMB");
 
+  assert.equal(run(`SELECT COUNT(*) FROM instructor_flight_approvals WHERE flight_id=401`),"0","Modern workflow must not recreate legacy approvals");
   assert.equal(run(`SELECT COUNT(*) FROM flight_verifications WHERE flight_id=401 AND flight_user_id=41 AND status='signed'`),"2");
   assert.equal(run(`SELECT COUNT(*) FROM flight_verifications v JOIN flights f ON f.id=v.flight_id AND f.user_id=v.flight_user_id WHERE v.flight_id=401 AND v.status='signed' AND v.record_revision=f.record_revision AND v.flight_hash=f.certification_hash`),"1");
 });

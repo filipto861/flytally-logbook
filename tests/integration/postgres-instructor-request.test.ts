@@ -40,7 +40,7 @@ before(()=>{
     CREATE SCHEMA ${quotedSchema};
     SET search_path TO ${quotedSchema};
     CREATE TABLE flights(id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL,record_revision INTEGER NOT NULL DEFAULT 1);
-    CREATE TABLE flight_participations(id BIGSERIAL PRIMARY KEY,source_flight_id BIGINT NOT NULL,source_user_id BIGINT NOT NULL,participant_user_id BIGINT NOT NULL,participant_role TEXT NOT NULL,source_revision INTEGER NOT NULL,status TEXT NOT NULL);
+    CREATE TABLE flight_participations(id BIGSERIAL PRIMARY KEY,source_flight_id BIGINT NOT NULL,source_user_id BIGINT NOT NULL,participant_user_id BIGINT NOT NULL,participant_role TEXT NOT NULL,source_revision INTEGER NOT NULL,status TEXT NOT NULL,approval_id BIGINT);
     INSERT INTO flights(id,user_id,record_revision) VALUES(388,41,1);
   `;
   const result=rawPsql(setup);
@@ -49,9 +49,9 @@ before(()=>{
 
 after(()=>{if(enabled)rawPsql(`DROP SCHEMA IF EXISTS ${quotedSchema} CASCADE`)});
 
-test("AC-27 instructor request preflight query qualifies joined id columns",{skip:!enabled},()=>{
+test("AC-27 instructor request preflight query qualifies joined id columns and preserves legacy projection link",{skip:!enabled},()=>{
   const source=fs.readFileSync(path.join(root,"lib/training-verification.ts"),"utf8");
-  const query=sqlBlock(source,"SELECT p.id,p.participant_user_id FROM flight_participations p JOIN flights f");
+  const query=sqlBlock(source,"SELECT p.id,p.participant_user_id,p.approval_id FROM flight_participations p JOIN flights f");
   const rendered=render(query,{flightId:388,studentUserId:41,instructorUserId:42});
   const result=rawPsql(`SET search_path TO ${quotedSchema};\n${rendered}`);
   assert.equal(result.status,0,result.stderr||result.stdout);

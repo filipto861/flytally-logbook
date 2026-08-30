@@ -2,6 +2,8 @@ name: Verify FlyTally web
 
 on:
   pull_request:
+    branches:
+      - main
   push:
     branches:
       - codex/vercel-migration-v080
@@ -9,8 +11,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   verify:
+    if: github.event_name != 'pull_request' || github.head_ref != 'codex/vercel-migration-v080'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:

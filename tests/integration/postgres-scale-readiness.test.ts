@@ -12,7 +12,7 @@ const schema=`ft_scale_${randomUUID().replaceAll("-","")}`;
 const quotedSchema=`"${schema}"`;
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const evidencePath=path.join(root,"flytally-scale-evidence.json");
-const evidence:Record<string,unknown>={version:"1.33.5",dataset:{targetFlights:10000,noiseFlights:10000}};
+const evidence:Record<string,unknown>={version:"1.44.0",dataset:{targetFlights:10000,noiseFlights:10000}};
 
 function rawPsql(statement:string){
   const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:16*1024*1024});
@@ -70,6 +70,8 @@ before(()=>{
     sqlBlock(dbSource,"CREATE INDEX IF NOT EXISTS idx_logbook_tracks_user_flight"),
     sqlBlock(dbSource,"CREATE INDEX IF NOT EXISTS idx_logbook_flights_user_easa"),
     sqlBlock(dbSource,"CREATE INDEX IF NOT EXISTS idx_flight_verifications_flight_revision"),
+    sqlBlock(dbSource,"CREATE INDEX IF NOT EXISTS idx_flight_participations_recipient_status"),
+    sqlBlock(dbSource,"CREATE INDEX IF NOT EXISTS idx_flight_participations_source"),
   ];
   const setup=`
     CREATE SCHEMA ${quotedSchema};
@@ -81,10 +83,14 @@ before(()=>{
       starts INTEGER NOT NULL DEFAULT 0,commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',
       price_per_hour NUMERIC,billing_basis TEXT NOT NULL DEFAULT 'BLOCK',operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,
       night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,pic_minutes INTEGER NOT NULL DEFAULT 0,copilot_minutes INTEGER NOT NULL DEFAULT 0,dual_minutes INTEGER NOT NULL DEFAULT 0,instructor_minutes INTEGER NOT NULL DEFAULT 0,
-      verification_name TEXT NOT NULL DEFAULT '',verification_reference TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certification_hash TEXT NOT NULL DEFAULT '',record_revision INTEGER NOT NULL DEFAULT 1,locked_at TIMESTAMPTZ
+      verification_name TEXT NOT NULL DEFAULT '',verification_reference TEXT NOT NULL DEFAULT '',certified_at TIMESTAMPTZ,certification_hash TEXT NOT NULL DEFAULT '',record_revision INTEGER NOT NULL DEFAULT 1,correction_reason TEXT NOT NULL DEFAULT '',locked_at TIMESTAMPTZ
     );
     CREATE TABLE flight_tracks(id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,flight_id BIGINT NOT NULL,file_name TEXT NOT NULL DEFAULT '',distance_km NUMERIC NOT NULL DEFAULT 0);
     CREATE TABLE aircraft(id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,registration TEXT NOT NULL,icao_type TEXT NOT NULL DEFAULT '');
+    CREATE TABLE flight_participations(
+      id BIGSERIAL PRIMARY KEY,source_flight_id BIGINT NOT NULL,source_user_id BIGINT NOT NULL,participant_user_id BIGINT NOT NULL,participant_role TEXT NOT NULL,
+      source_revision INTEGER NOT NULL,source_hash TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending',participant_flight_id BIGINT,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE flight_verifications(
       id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL,flight_user_id BIGINT NOT NULL,signer_user_id BIGINT,verification_role TEXT NOT NULL,record_revision INTEGER NOT NULL,flight_hash TEXT NOT NULL,
       credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,status TEXT NOT NULL DEFAULT 'signed',signed_at TIMESTAMPTZ
@@ -129,8 +135,8 @@ test("AC-24 dashboard production query remains bounded with 10,000 pilot flights
 
 test("AC-24 flight list production query returns a responsive first page over 10,000 flights",{skip:!enabled},()=>{
   const source=read("lib/data/flights-fast.ts");
-  const query=render(sqlBlock(source,"WITH track AS MATERIALIZED(SELECT flight_id"),{
-    userId:71,q:null,e:null,r:null,reg:null,from:null,to:null,c:null,a:null,route:null,rf:null,rt:null,y:null,g:null,sort:"newest",size:50,offset:0
+  const query=render(sqlBlock(source,"track AS MATERIALIZED(SELECT flight_id,COUNT(*)::int track_count"),{
+    userId:71,q:null,e:null,r:null,reg:null,from:null,to:null,c:null,a:null,route:null,rf:null,rt:null,y:null,g:null,status:null,workflow:null,sort:"newest",size:50,offset:0
   });
   const result=explain(query);recordMetric("flightListFirstPage10k",result,1500);
   const data=rows(query);

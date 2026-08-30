@@ -2,9 +2,20 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.43.0 · Print & Export finalisation
+## Current release — v1.44.0 · Production hardening & cleanup
 
 Focus:
+- restore the PostgreSQL acceptance gate to the current certification v4 and participation-only instructor workflow instead of testing obsolete v1.33/v1.38 SQL shapes
+- close the stale v1.17 draft PR that duplicated every production verification run and add CI concurrency/branch guards so the production branch cannot create a second PR verification for the same SHA
+- add targeted hot-path indexes for shared-flight lookups, exact verification evidence, notification links, licence lookups and the retained legacy `track_points` backup path
+- make backup ownership validation cover `connection_audit_log` as well as connections, participations, approvals, verifications, licences, qualifications and notifications
+- keep `track_points` deliberately present because portable backup/restore still round-trips it; removal requires a future backup-format migration rather than an ad-hoc table cleanup
+- keep `instructor_flight_approvals` compatibility-only for historical backups/links while all new instructor requests remain canonical `flight_participations` records
+- re-run the controlled 10k-flight Dashboard, Flights and Print acceptance benchmarks against the current query shapes
+- preserve certification payloads/hashes/revisions, Recency Engine, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.43.0 · Print & Export finalisation
+
 - use one scope vocabulary across printable logbook and flight export: Complete logbook, ULL only, EASA only and ULL + EASA
 - validate calendar dates and reject invalid or reversed From/To ranges instead of silently producing empty output or a PostgreSQL date-cast error
 - keep Excel FSTD content aligned with the selected print scope and date range; ULL-only exports exclude FSTD while Complete, EASA and ULL + EASA include the matching FSTD period
@@ -87,12 +98,14 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
 - v1.42.0–v1.42.1: visual GPS import player with take-off, landing, touch-and-go and split markers, followed by removal of the redundant per-flight map
 - v1.43: Print & Export finalisation — shared scope/range semantics, filtered FSTD exports and large-logbook guidance
+- v1.44.0: CI/acceptance hardening, backup ownership validation and targeted production indexes
 
 ## Near term
 
+- v1.45: Licences & Pilot Profile finalisation — structured licence/qualification UX, FI/FE presentation, unlimited/date/recency validity and consistent identity/signature use
 - observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
 - keep FSTD recency evidence deferred until it becomes a product priority
-- retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated
+- retire `instructor_flight_approvals` only after historical backup/restore consumers and old links are fully migrated
 - migrate backup/restore away from `track_points` before considering removal of that compatibility table
 
 ## Product direction

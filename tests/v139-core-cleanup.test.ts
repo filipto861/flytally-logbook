@@ -11,7 +11,7 @@ test("v1.39.0 uses one retryable runtime schema gate",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,39,0));
   const runtime=read("lib/runtime-schema.ts"),layout=read("app/(protected)/layout.tsx"),shared=read("app/(protected)/flights/shared-actions.ts");
   assert.match(runtime,/await ensureDatabaseOptimizations\(\)/);
-  assert.match(runtime,/Promise\.all\(\[ensureV132Schema\(\),ensureV1353Schema\(\)\]\)/);
+  assert.match(runtime,/Promise\.all\(\[[^\]]*ensureV132Schema\(\)[^\]]*ensureV1353Schema\(\)[^\]]*\]\)/);
   assert.match(runtime,/__logbookRuntimeSchema=undefined/);
   assert.match(layout,/ensureRuntimeSchema/);
   assert.doesNotMatch(layout,/ensureDatabaseOptimizations|ensureV132Schema|ensureV1353Schema/);
