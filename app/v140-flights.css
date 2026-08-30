@@ -1,0 +1,57 @@
+/* FlyTally v1.40 — Flights UX & logbook polish */
+.flight-quick-filters{display:flex;align-items:center;gap:7px;margin:0 0 12px;padding:7px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;scrollbar-width:none}
+.flight-quick-filters::-webkit-scrollbar{display:none}
+.flight-quick-filters>span{flex:0 0 auto;padding:0 7px;color:var(--muted);font-size:.66rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.flight-quick-filters>a{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-height:36px;padding:7px 11px;border:1px solid transparent;border-radius:8px;color:var(--muted);font-size:.72rem;font-weight:800;white-space:nowrap}
+.flight-quick-filters>a:hover{border-color:var(--line);background:var(--panel2);color:var(--text)}
+.flight-quick-filters>a.active{border-color:color-mix(in srgb,var(--accent2) 48%,var(--line));background:color-mix(in srgb,var(--accent2) 12%,var(--panel2));color:var(--text)}
+
+.flights-table .flight-list-row{transition:background .14s ease}
+.flights-table .flight-list-row:hover{background:color-mix(in srgb,var(--panel2) 54%,transparent)}
+.flights-table .flight-list-row[data-record-state="draft"]{box-shadow:inset 3px 0 color-mix(in srgb,var(--muted) 45%,transparent)}
+.flights-table .flight-list-row[data-record-state="certified"]{box-shadow:inset 3px 0 color-mix(in srgb,var(--accent) 70%,transparent)}
+.flights-table .flight-list-row[data-record-state="correction"]{box-shadow:inset 3px 0 #b28a3c}
+.flights-table .flight-list-row[data-record-state="locked"]{box-shadow:inset 3px 0 color-mix(in srgb,var(--accent2) 55%,transparent)}
+.flight-date{font-variant-numeric:tabular-nums}
+.flight-role-stack{display:grid;justify-items:start;gap:5px}
+.flight-role-stack>small{margin-top:0}
+.workflow-status{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 7px;border:1px solid var(--line);border-radius:999px;font-size:.61rem;font-weight:800;line-height:1.2;white-space:normal}
+.workflow-status.waiting{border-color:#80662c;background:color-mix(in srgb,#b98b2e 14%,var(--panel));color:#e2bd66}
+.workflow-status.shared{border-color:#2f6958;background:color-mix(in srgb,var(--accent) 10%,var(--panel));color:#77d4b8}
+.workflow-status.received{border-color:#2b6079;background:color-mix(in srgb,var(--accent2) 10%,var(--panel));color:#91d6f1}
+.flight-open-button{white-space:nowrap}
+
+@media(max-width:760px){
+  .flight-quick-filters{margin-left:-2px;margin-right:-2px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  .flight-quick-filters>*{scroll-snap-align:start}
+  .flights-table{overflow:visible;background:transparent;border:0}
+  .flights-table>.list-toolbar{margin-bottom:9px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .flights-table>.table-scroll{overflow:visible}
+  .flights-table table{display:block;white-space:normal}
+  .flights-table thead{display:none}
+  .flights-table tbody{display:grid;gap:10px}
+  .flights-table .flight-list-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:none!important}
+  .flights-table .flight-list-row[data-record-state="certified"]{border-left:3px solid color-mix(in srgb,var(--accent) 70%,var(--line))}
+  .flights-table .flight-list-row[data-record-state="correction"]{border-left:3px solid #b28a3c}
+  .flights-table .flight-list-row[data-record-state="locked"]{border-left:3px solid color-mix(in srgb,var(--accent2) 55%,var(--line))}
+  .flights-table .flight-list-row td{display:grid;align-content:start;gap:4px;min-width:0;padding:10px 12px;border:0;border-bottom:1px solid var(--line);white-space:normal}
+  .flights-table .flight-list-row td:before{content:attr(data-label);color:var(--muted);font-size:.58rem;font-weight:850;letter-spacing:.07em;text-transform:uppercase}
+  .flights-table .flight-list-row td[data-label="Flight"],.flights-table .flight-list-row td[data-label="Route"],.flights-table .flight-list-row td[data-label="Times"],.flights-table .flight-list-row td[data-label="Role / status"]{grid-column:1/-1}
+  .flights-table .flight-list-row td[data-label="Flight"]{grid-template-columns:1fr auto;align-items:center;background:color-mix(in srgb,var(--panel2) 60%,var(--panel))}
+  .flights-table .flight-list-row td[data-label="Flight"]:before{align-self:center}
+  .flights-table .flight-list-row td[data-label="Flight"] .flight-open-button{grid-column:2;grid-row:1;min-height:38px}
+  .flights-table .flight-list-row td[data-label="Route"] strong{font-size:1rem}
+  .flights-table .flight-list-row td[data-label="Times"]{grid-template-columns:auto 1fr 1fr;column-gap:12px}
+  .flights-table .flight-list-row td[data-label="Times"]:before{grid-column:1/-1}
+  .flights-table .flight-list-row td[data-label="Role / status"]{border-bottom:0}
+  .flights-table .flight-list-row td[data-label="Landings"],.flights-table .flight-list-row td[data-label="GPS"]{border-bottom:0}
+  .flights-table>.pagination{margin-top:9px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+}
+
+@media(max-width:520px){
+  .flights-table .flight-list-row{grid-template-columns:1fr 1fr}
+  .flights-table .flight-list-row td[data-label="Aircraft"],.flights-table .flight-list-row td[data-label="Date"]{min-height:67px}
+  .flights-table .flight-list-row td[data-label="Times"]{grid-template-columns:1fr 1fr}
+  .flights-table .flight-list-row td[data-label="Times"]:before{grid-column:1/-1}
+  .flights-table .flight-list-row td[data-label="Duration"],.flights-table .flight-list-row td[data-label="Cost"]{min-height:68px}
+}

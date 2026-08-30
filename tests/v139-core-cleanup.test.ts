@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.39.0 uses one retryable runtime schema gate",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.39.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,39,0));
   const runtime=read("lib/runtime-schema.ts"),layout=read("app/(protected)/layout.tsx"),shared=read("app/(protected)/flights/shared-actions.ts");
   assert.match(runtime,/await ensureDatabaseOptimizations\(\)/);
   assert.match(runtime,/Promise\.all\(\[ensureV132Schema\(\),ensureV1353Schema\(\)\]\)/);

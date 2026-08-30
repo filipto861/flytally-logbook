@@ -2,16 +2,27 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.39.0 · Core cleanup & performance
+## Current release — v1.40.0 · Flights UX & logbook polish
 
 Focus:
-- make `flight_participations` the canonical model for all **new** instructor requests; the legacy `instructor_flight_approvals` table is no longer populated by the modern request path
-- retain `instructor_flight_approvals` as compatibility evidence for historical backups and old links, but redirect any legacy approval that already has a participation mapping into the canonical `/connections/shared/...` workflow
-- remove fuzzy legacy approval status updates from the shared-flight workflow: compatibility projection updates now require the exact approval id, source owner, instructor, certified revision and flight hash
-- detach an old `approval_id` whenever an instructor request is re-opened through the modern participation path so stale legacy projections cannot drive a new decision
-- consolidate protected-runtime schema initialization behind one cached `ensureRuntimeSchema()` gate; base database migrations complete first and independent v1.32/v1.35.3 compatibility schemas then initialize in parallel
-- use the same runtime-schema gate in shared-flight actions and instructor-request code, reducing repeated sequential schema initialization on cold server instances
-- explicitly retain legacy `track_points`: current portable backup/restore still round-trips it, so removing the table would risk historical restore fidelity
+- make the Flights list an operational workspace rather than a raw table: quick views now expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
+- add exact record-state filters for Draft, Certified, Correction and Locked records without changing certification state or evidence
+- add user-scoped shared-flight filters for Waiting, Shared/accepted, Shared with me and Not shared
+- surface shared-flight state directly beside each flight's role and certification badge so routine review does not require opening every record
+- preserve all existing search, ULL/EASA, role, aircraft, airport, route, GPS, date and sort filters and keep them combinable with the new record/workflow filters
+- keep Previous/Next navigation consistent when a record or shared-workflow filter is active
+- keep the fast Flights path N+1-free: track and participation state are aggregated in user-scoped CTEs inside the existing list query
+- narrow the list projection to the fields required by the Flights workspace instead of selecting every column from `flights`; GPS coordinate JSON remains outside the list query
+- present flight rows as compact mobile cards below 760 px while leaving the global mobile shell/navigation untouched
+- keep certification payloads/hashes/revisions, Recency Engine, GPS inference, dashboard behavior and backup/restore unchanged
+
+## v1.39.0 · Core cleanup & performance
+
+- make `flight_participations` the canonical model for all new instructor requests; `instructor_flight_approvals` is no longer populated by the modern request path
+- retain `instructor_flight_approvals` as compatibility evidence for historical backups and old links
+- make legacy approval synchronization exact by approval id, source owner, instructor, certified revision and flight hash
+- consolidate protected-runtime schema initialization behind the retryable `ensureRuntimeSchema()` gate
+- explicitly retain legacy `track_points`: portable backup/restore still round-trips it
 - preserve backup/restore support for existing instructor approval rows while stopping creation of new duplicates
 - keep certification payloads/hashes/revisions, Recency Engine, GPS inference, dashboard behavior and global mobile navigation unchanged
 
@@ -29,7 +40,7 @@ Focus:
 
 ## v1.38.0 · Dashboard, Airports & Routes overhaul
 
-- Claude audit hardening: scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing
+- scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing
 - certified ULL and EASA records share one read-only field structure
 - Aircraft and Costs are one coherent dashboard area
 - Airports and Routes are separate period-aware statistics with direct drill-down to Flights
@@ -47,15 +58,15 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.38.0: dashboard consolidation, distinct airport/route analytics, ULL/EASA field-parity regression guard and fail-closed cron authentication
 - v1.38.1–v1.38.2: conservative GPS split/landing/take-off inference based on real SkyDemon failure cases
 - v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
+- v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
 
 ## Near term
 
-- v1.40: Flights UX & logbook polish — clearer filters, review/import provenance and faster everyday flight workflow
-- v1.41: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
+- v1.41: Map & GPS UX — lazy-load full-resolution track data on the flight detail, improve track review provenance and keep inference explicitly reviewable
+- v1.42: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated
 - migrate backup/restore away from `track_points` before considering removal of that compatibility table
-- add a large-logbook print warning or range guidance before unrestricted print size becomes a practical performance issue
 
 ## Product direction
 
