@@ -3,7 +3,8 @@ import { PrintButton } from "@/components/print-button";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { paginateEasaRecords,type EasaPageTotals,type EasaPrintRecord } from "@/lib/easa-print-layout";
-import { aircraftPrintCode,fullAircraftIdentity,isAuxiliaryLogbookRole,logbookPrintScopeLabel,normalizeLogbookPrintScope,parsePilotPreferences,pilotInCommandName,printIdentity } from "@/lib/logbook-print";
+import { aircraftPrintCode,fullAircraftIdentity,isAuxiliaryLogbookRole,logbookPrintScopeLabel,logbookScopeIncludesFstd,normalizeLogbookPrintScope,parsePilotPreferences,pilotInCommandName,printIdentity } from "@/lib/logbook-print";
+import { normalizeOutputDateRange } from "@/lib/output-range";
 import { isLaplRefresherPurpose } from "@/lib/flight-purpose";
 import styles from "./print.module.css";
 
@@ -18,7 +19,6 @@ const date=(value:unknown)=>{const match=text(value).match(/^(\d{4})-(\d{2})-(\d
 const verification=(row:Record<string,unknown>)=>[text(row.verification_name),text(row.verification_reference)].filter(Boolean).join(" · ");
 const displayPic=(row:Record<string,unknown>,pilotName:string)=>{const value=pilotInCommandName(row,pilotName);return value&&pilotName&&value.localeCompare(pilotName,undefined,{sensitivity:"accent"})===0?"SELF":value};
 const fstdType=(row:Record<string,unknown>)=>{const type=text(row.device_type),qualification=text(row.qualification_number);return qualification?`${type} (${qualification})`:type};
-const validDate=(value:unknown)=>/^\d{4}-\d{2}-\d{2}$/.test(text(value))?text(value):null;
 const columnWidths=["4.4%","4.0%","3.5%","4.0%","3.5%","6.1%","4.9%","3.5%","3.5%","3.5%","4.0%","5.7%","3.1%","3.1%","3.2%","3.2%","3.5%","3.6%","3.5%","3.9%","3.8%","5.0%","3.8%","9.8%"];
 
 function flightRemarks(row:Record<string,unknown>){
@@ -41,7 +41,9 @@ function FstdRow({row}:{row:EasaPrintRecord}){return <tr className={`${styles.da
 function BlankRow(){return <tr className={`${styles.dataRow} ${styles.blankRow}`}>{Array.from({length:24},(_,index)=><td key={index}></td>)}</tr>}
 
 export default async function PrintPage({searchParams}:{searchParams:Promise<Params>}){
-  const {userId}=await requireUser(),params=await searchParams,scope=normalizeLogbookPrintScope(params.scope),includeAuxiliary=params.auxiliary==="include",from=validDate(params.from),to=validDate(params.to);
+  const {userId}=await requireUser(),params=await searchParams,scope=normalizeLogbookPrintScope(params.scope),includeAuxiliary=params.auxiliary==="include",range=normalizeOutputDateRange(params.from,params.to);
+  if(range.error)return <div className="print-logbook easa-print"><section className={`${styles.controls} print-trigger`} aria-label="Print actions"><Link className="secondary-link" href="/data">← Back to Export</Link><div className={styles.controlMeta}><span>{logbookPrintScopeLabel(scope)} · {range.label}</span><span>Correct the date range before opening the printable logbook.</span></div></section><p className={`${styles.missing} print-trigger`}>{range.error}</p></div>;
+  const {from,to}=range,includeFstd=logbookScopeIncludesFstd(scope);
   const [rawFlights,fstdRows,profiles,licenceRows]=await Promise.all([
     sql`SELECT f.date,f.evidence,f.registration,f.aircraft_type,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_class,f.operation_type,f.engine_type,f.departure,f.arrival,f.off_block,f.on_block,f.landings_day,f.landings_night,f.night_minutes,f.ifr_minutes,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.role,f.verification_name,f.verification_reference,f.task,f.purpose_code,f.note,f.certified_at,ac.icao_type,verify.instructor_approval_name,
       CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes
@@ -53,20 +55,22 @@ export default async function PrintPage({searchParams}:{searchParams:Promise<Par
         AND (${from}::text IS NULL OR f.date::text>=${from}::text) AND (${to}::text IS NULL OR f.date::text<=${to}::text)
         AND (${includeAuxiliary}::boolean OR UPPER(TRIM(COALESCE(f.role,''))) NOT IN ('SAFETY PILOT','PAX','OBSERVER'))
       ORDER BY f.date,f.off_block,f.id` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT session_date::text session_date,device_type,qualification_number,instruction,total_minutes,remarks,certified_at FROM fstd_sessions WHERE user_id=${userId} AND ${scope}<>'ull' AND (${from}::text IS NULL OR session_date>=${from}::date) AND (${to}::text IS NULL OR session_date<=${to}::date) ORDER BY session_date,id` as Promise<Array<Record<string,unknown>>>,
+    sql`SELECT session_date::text session_date,device_type,qualification_number,instruction,total_minutes,remarks,certified_at FROM fstd_sessions WHERE user_id=${userId} AND ${includeFstd}::boolean AND (${from}::text IS NULL OR session_date::text>=${from}::text) AND (${to}::text IS NULL OR session_date::text<=${to}::text) ORDER BY session_date,id` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT u.display_name,u.email,s.preferences_json FROM users u LEFT JOIN user_settings s ON s.user_id=u.id WHERE u.id=${userId}` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT id,category,label,expiry_date::text expiry_date,warning_days,note,active FROM user_expiries WHERE user_id=${userId} AND UPPER(TRIM(category))='LICENCE' ORDER BY active DESC,expiry_date DESC,id DESC` as Promise<Array<Record<string,unknown>>>,
   ]);
   const profile=profiles[0]??{},preferences=parsePilotPreferences(profile.preferences_json),pilotName=text(profile.display_name),identity=printIdentity(preferences,scope,licenceRows);
   const flights:EasaPrintRecord[]=rawFlights.map(row=>({...row,kind:"flight",sortKey:`${text(row.date)}T${text(row.off_block)||"00:00"}`}));
   const fstd:EasaPrintRecord[]=fstdRows.map(row=>({...row,kind:"fstd",sortKey:`${text(row.session_date)}T23:59`}));
-  const records=[...flights,...fstd].sort((a,b)=>a.sortKey.localeCompare(b.sortKey)),pages=paginateEasaRecords(records,10),uncertified=records.filter(row=>!row.certified_at).length,range=[from,to].filter(Boolean).join(" → ");
+  const records=[...flights,...fstd].sort((a,b)=>a.sortKey.localeCompare(b.sortKey)),pages=records.length?paginateEasaRecords(records,10):[],uncertified=records.filter(row=>!row.certified_at).length,largeSelection=records.length>=250||pages.length>=25;
   return <div className="print-logbook easa-print">
-    <section className={`${styles.controls} print-trigger`} aria-label="Print actions"><Link className="secondary-link" href="/data">← Back to Export</Link><div className={styles.controlMeta}><span>{logbookPrintScopeLabel(scope)}{range?` · ${range}`:" · complete date range"} · {includeAuxiliary?"auxiliary roles included for reference":"auxiliary roles excluded"}</span><span>FCL.050 electronic record print · columns 1–12 · 10 fixed-height records per A4 landscape page</span><span>Aircraft column uses ICAO type code; full make/model/variant is retained in the identity key below each page.</span></div><PrintButton/></section>
-    {!pilotName?<p className={`${styles.missing} print-trigger`}>The pilot profile has no holder name. Add it in Profile before producing an official copy.</p>:null}
-    {!identity.address?<p className={`${styles.missing} print-trigger`}>The selected logbook has no holder address. Add the address to its licence in Licences.</p>:null}
-    {!identity.licence?<p className={`${styles.missing} print-trigger`}>The selected logbook has no holder licence number. Add it in Licences.</p>:null}
-    {identity.warnings.map((warning,index)=><p key={index} className={`${styles.missing} print-trigger`}>{warning} Update the record in Licences before producing an official copy.</p>)}{uncertified?<p className={`${styles.missing} print-trigger`}>{uncertified} selected records are not yet pilot-certified. They are marked DRAFT in Remarks.</p>:null}
+    <section className={`${styles.controls} print-trigger`} aria-label="Print actions"><Link className="secondary-link" href="/data">← Back to Export</Link><div className={styles.controlMeta}><span>{logbookPrintScopeLabel(scope)} · {range.label} · {includeAuxiliary?"auxiliary roles included for reference":"auxiliary roles excluded"}</span><span>{records.length} selected records · {pages.length} {pages.length===1?"page":"pages"} · FCL.050 electronic record print · columns 1–12 · 10 fixed-height records per A4 landscape page</span><span>Aircraft column uses ICAO type code; full make/model/variant is retained in the identity key below each page.</span></div>{records.length?<PrintButton/>:null}</section>
+    {!records.length?<p className={`${styles.missing} print-trigger`}>No records match the selected logbook scope and date range. Return to Print & export and adjust the filters.</p>:null}
+    {largeSelection?<p className={`${styles.missing} print-trigger`}>Large print selection: {records.length} records across {pages.length} pages. Browser print preview can take longer; use a date range if you only need part of the logbook.</p>:null}
+    {records.length&&!pilotName?<p className={`${styles.missing} print-trigger`}>The pilot profile has no holder name. Add it in Profile before producing an official copy.</p>:null}
+    {records.length&&!identity.address?<p className={`${styles.missing} print-trigger`}>The selected logbook has no holder address. Add the address to its licence in Licences.</p>:null}
+    {records.length&&!identity.licence?<p className={`${styles.missing} print-trigger`}>The selected logbook has no holder licence number. Add it in Licences.</p>:null}
+    {records.length?identity.warnings.map((warning,index)=><p key={index} className={`${styles.missing} print-trigger`}>{warning} Update the record in Licences before producing an official copy.</p>):null}{uncertified?<p className={`${styles.missing} print-trigger`}>{uncertified} selected records are not yet pilot-certified. They are marked DRAFT in Remarks.</p>:null}
     {pages.map((page,pageIndex)=>{const typeKey=aircraftIdentityKey(page.records);return <section className={styles.logbookPage} key={pageIndex}><header className={styles.header}><div><h1>PILOT LOGBOOK</h1><p className={styles.scope}>{logbookPrintScopeLabel(scope)}</p></div><strong>Page {pageIndex+1} / {pages.length}</strong></header><section className={styles.identity}><div><span>Holder&apos;s name(s)</span><strong>{pilotName||"—"}</strong></div><div><span>{identity.addressLabel}</span><strong className={styles.address}>{identity.address||"—"}</strong></div><div><span>{identity.licenceLabel}</span><strong className={styles.address}>{identity.licence||"—"}</strong></div></section><div className={styles.tableWrap}><table className={styles.table}><colgroup>{columnWidths.map((width,index)=><col key={index} style={{width}}/>)}</colgroup><Header/><tbody>{page.records.map((row,index)=>row.kind==="fstd"?<FstdRow key={`fstd-${row.sortKey}-${index}`} row={row}/>:<FlightRow key={`flight-${row.sortKey}-${index}`} row={row} pilotName={pilotName}/>)}{Array.from({length:page.blankRows},(_,index)=><BlankRow key={`blank-${index}`}/>)}<TotalsRow label="TOTAL THIS PAGE" total={page.pageTotal}/><TotalsRow label="TOTAL FROM PREVIOUS PAGES" total={page.previousTotal}/><TotalsRow label="TOTAL TIME" total={page.runningTotal} certify/></tbody></table></div>{typeKey?<div className={styles.aircraftKey}><b>Aircraft identity key:</b> {typeKey}</div>:null}<footer>FlyTally · FCL.050 electronic record print view · flight times UTC</footer></section>})}
   </div>;
 }

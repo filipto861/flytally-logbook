@@ -2,18 +2,23 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.42.1 · GPS import review player polish
+## Current release — v1.43.0 · Print & Export finalisation
 
 Focus:
-- put a synchronized GPS player directly into the add-flight import workflow so the pilot can verify the track before saving any logbook record
-- show the route map together with altitude and speed profiles and the moving aircraft marker
-- mark detected take-off, landing, touch-and-go and current split boundaries directly on the profile
-- make event markers interactive: selecting a marker or event chip moves the player to that position on the track
-- keep one authoritative visual map/player for the import and remove the redundant static map repeated inside each flight review card
-- remove internal GPS-point numbers from the normal review UI; the pilot reviews time and position visually instead of reasoning about parser indices
-- keep the existing editable UTC fields and landing count confirmation as the authoritative review step before save
-- retain the v1.38.1–v1.38.2 split/landing/take-off heuristics unchanged; v1.42 only exposes their current result more clearly
-- preserve certification payloads/hashes/revisions, Recency Engine, shared-flight workflow, backup/restore and global mobile navigation
+- use one scope vocabulary across printable logbook and flight export: Complete logbook, ULL only, EASA only and ULL + EASA
+- validate calendar dates and reject invalid or reversed From/To ranges instead of silently producing empty output or a PostgreSQL date-cast error
+- keep Excel FSTD content aligned with the selected print scope and date range; ULL-only exports exclude FSTD while Complete, EASA and ULL + EASA include the matching FSTD period
+- keep CSV deliberately flight-row only and make the Excel/CSV difference explicit in the UI
+- narrow the export flight query to the fields actually written instead of loading the complete flight record payload
+- show selected record/page counts before printing, warn for large browser print jobs and show a clear empty-selection state
+- keep the same FCL.050 columns 1–12, 10-row A4 landscape renderer and running-total logic for Complete, ULL, EASA and ULL + EASA
+- preserve certification payloads/hashes/revisions, Recency Engine, GPS inference/review, shared-flight workflow and portable backup/restore
+
+## v1.42.1 · GPS import review player polish
+
+- keep one authoritative synchronized GPS map/player in the import workflow instead of repeating a static map in every flight review card
+- retain altitude/speed profiles and interactive take-off, landing, touch-and-go and split markers
+- retain the v1.38.1–v1.38.2 split/landing/take-off heuristics unchanged
 
 ## v1.41.0 · Map & GPS UX
 
@@ -81,10 +86,11 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
 - v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
 - v1.42.0–v1.42.1: visual GPS import player with take-off, landing, touch-and-go and split markers, followed by removal of the redundant per-flight map
+- v1.43: Print & Export finalisation — shared scope/range semantics, filtered FSTD exports and large-logbook guidance
 
 ## Near term
 
-- v1.43: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
+- observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated
 - migrate backup/restore away from `track_points` before considering removal of that compatibility table

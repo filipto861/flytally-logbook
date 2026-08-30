@@ -13,6 +13,7 @@ export function normalizeLogbookPrintScope(value:unknown):LogbookPrintScope{
 }
 
 export function logbookPrintScopeLabel(scope:LogbookPrintScope){return LOGBOOK_PRINT_SCOPES.find(item=>item.value===scope)?.label??LOGBOOK_PRINT_SCOPES[0].label}
+export function logbookScopeIncludesFstd(scope:LogbookPrintScope){return scope!=="ull"}
 
 export function matchesLogbookPrintScope(evidence:unknown,scope:LogbookPrintScope){
   const value=String(evidence??"").trim().toUpperCase();

@@ -2,6 +2,8 @@ import { getSession } from "@/lib/auth/session";
 import { sql } from "@/lib/db";
 import { buildAccountBackup } from "@/lib/account-backup";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { logbookScopeIncludesFstd,normalizeLogbookPrintScope } from "@/lib/logbook-print";
+import { normalizeOutputDateRange,outputRangeFileToken } from "@/lib/output-range";
 
 export const dynamic="force-dynamic";
 
@@ -28,7 +30,8 @@ export async function GET(request:Request){
   if(!session)return new Response("Unauthorized",{status:401});
   await ensureDatabaseOptimizations();
 
-  const url=new URL(request.url),format=url.searchParams.get("format")||"csv",from=url.searchParams.get("from")||null,to=url.searchParams.get("to")||null,evidence=url.searchParams.get("evidence")||null,registration=url.searchParams.get("registration")?.trim().toUpperCase()||null,auxiliary=url.searchParams.get("auxiliary")==="include"?"include":"exclude";
+  const url=new URL(request.url),format=(url.searchParams.get("format")||"csv").toLowerCase();
+  if(!["csv","xls","json"].includes(format))return new Response("Unsupported export format.",{status:400,headers:{"content-type":"text/plain; charset=utf-8"}});
   const stamp=new Date().toISOString().slice(0,10);
 
   if(format==="json"){
@@ -36,33 +39,44 @@ export async function GET(request:Request){
     return new Response(json,{headers:{"content-type":"application/json; charset=utf-8","content-disposition":`attachment; filename=flytally-backup-${stamp}.json`,"cache-control":"private, no-store"}});
   }
 
+  const range=normalizeOutputDateRange(url.searchParams.get("from"),url.searchParams.get("to"));
+  if(range.error)return new Response(range.error,{status:400,headers:{"content-type":"text/plain; charset=utf-8","cache-control":"private, no-store"}});
+  const legacyEvidence=clean(url.searchParams.get("evidence")).toUpperCase(),requestedScope=url.searchParams.has("scope")?url.searchParams.get("scope"):(legacyEvidence==="ULL"?"ull":legacyEvidence==="EASA"?"easa":"all"),scope=normalizeLogbookPrintScope(requestedScope),includeFstd=logbookScopeIncludesFstd(scope),registration=url.searchParams.get("registration")?.trim().toUpperCase()||null,auxiliary=url.searchParams.get("auxiliary")==="include"?"include":"exclude",from=range.from,to=range.to;
+
   const rows=await sql`
     WITH t AS (
       SELECT flight_id,COUNT(*)::int track_count,COALESCE(SUM(distance_km),0) gps_km
       FROM flight_tracks WHERE user_id=${session.userId} GROUP BY flight_id
     )
-    SELECT f.*,
-      CASE WHEN off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
-        THEN (MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440)/60)::text||':'||LPAD((MOD((split_part(on_block,':',1)::int*60+split_part(on_block,':',2)::int)-(split_part(off_block,':',1)::int*60+split_part(off_block,':',2)::int)+1440,1440)%60)::text,2,'0')
+    SELECT f.date,f.evidence,f.registration,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_type,f.aircraft_class,f.operation_type,f.engine_type,
+      f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,
+      CASE WHEN f.off_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        THEN (MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440)/60)::text||':'||LPAD((MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440)%60)::text,2,'0')
         ELSE '' END block_time,
-      CASE WHEN takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
-        THEN (MOD((split_part(landing,':',1)::int*60+split_part(landing,':',2)::int)-(split_part(takeoff,':',1)::int*60+split_part(takeoff,':',2)::int)+1440,1440)/60)::text||':'||LPAD((MOD((split_part(landing,':',1)::int*60+split_part(landing,':',2)::int)-(split_part(takeoff,':',1)::int*60+split_part(takeoff,':',2)::int)+1440,1440)%60)::text,2,'0')
+      CASE WHEN f.takeoff ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        THEN (MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440)/60)::text||':'||LPAD((MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440)%60)::text,2,'0')
         ELSE '' END air_time,
+      f.landings_day,f.landings_night,f.night_minutes,f.ifr_minutes,f.role,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.verification_name,f.verification_reference,f.task,f.note,f.certified_at,f.record_revision,f.correction_reason,f.price_per_hour,f.billing_basis,
       COALESCE(t.track_count,0) track_count,COALESCE(t.gps_km,0) gps_km
     FROM flights f LEFT JOIN t ON t.flight_id=f.id
     WHERE f.user_id=${session.userId}
-      AND (${from}::date IS NULL OR f.date::date>=${from}::date)
-      AND (${to}::date IS NULL OR f.date::date<=${to}::date)
-      AND (${evidence}::text IS NULL OR UPPER(TRIM(f.evidence))=UPPER(${evidence}::text))
+      AND (${scope}='all' OR (${scope}='ull' AND UPPER(TRIM(f.evidence))='ULL') OR (${scope}='easa' AND UPPER(TRIM(f.evidence))='EASA') OR (${scope}='ull-easa' AND UPPER(TRIM(f.evidence)) IN ('ULL','EASA')))
+      AND (${from}::text IS NULL OR f.date::text>=${from}::text)
+      AND (${to}::text IS NULL OR f.date::text<=${to}::text)
       AND (${registration}::text IS NULL OR UPPER(TRIM(f.registration))=${registration}::text)
       AND (${auxiliary}='include' OR UPPER(TRIM(COALESCE(f.role,''))) NOT IN ('SAFETY PILOT','PAX','OBSERVER'))
-    ORDER BY date,off_block,id
+    ORDER BY f.date,f.off_block,f.id
   ` as Array<Record<string,unknown>>;
 
+  const fileBase=`flytally-logbook-${scope}-${outputRangeFileToken(range)}`;
   if(format==="xls"){
     const fstdRaw=await sql`
       SELECT session_date::text session_date,device_type,qualification_number,instruction,total_minutes,remarks,certified_at,record_revision,correction_reason
-      FROM fstd_sessions WHERE user_id=${session.userId} ORDER BY session_date,id
+      FROM fstd_sessions
+      WHERE user_id=${session.userId} AND ${includeFstd}::boolean
+        AND (${from}::text IS NULL OR session_date::text>=${from}::text)
+        AND (${to}::text IS NULL OR session_date::text<=${to}::text)
+      ORDER BY session_date,id
     ` as Array<Record<string,unknown>>;
     let accumulatedFstd=0;
     const fstdRows=fstdRaw.map(row=>{const minutes=Math.max(0,Math.round(Number(row.total_minutes)||0));accumulatedFstd+=minutes;return{...row,total_time:hm(minutes),accumulated_time:hm(accumulatedFstd)}});
@@ -80,9 +94,9 @@ export async function GET(request:Request){
       {metric:"GPS km",value:rows.reduce((total,row)=>total+Number(row.gps_km||0),0).toFixed(1)}
     ];
     const data=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${worksheet("Flights",flightColumns,rows)}${worksheet("FSTD",fstdColumns,fstdRows)}${worksheet("Summary",["metric","value"],summary)}${worksheet("Aircraft",["registration","flights","landings"],aircraftSummary)}${worksheet("Routes",["departure","arrival","flights","landings"],routeSummary)}${worksheet("Airports",["airport","movements"],airportSummary)}</Workbook>`;
-    return new Response(data,{headers:{"content-type":"application/vnd.ms-excel; charset=utf-8","content-disposition":`attachment; filename=logbook-${stamp}.xls`,"cache-control":"private, no-store"}});
+    return new Response(data,{headers:{"content-type":"application/vnd.ms-excel; charset=utf-8","content-disposition":`attachment; filename=${fileBase}.xls`,"cache-control":"private, no-store"}});
   }
 
   const csv='\ufeff'+flightColumns.join(';')+'\n'+rows.map(row=>flightColumns.map(column=>esc(row[column])).join(';')).join('\n');
-  return new Response(csv,{headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename=logbook-${stamp}.csv`,"cache-control":"private, no-store"}});
+  return new Response(csv,{headers:{"content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename=${fileBase}.csv`,"cache-control":"private, no-store"}});
 }

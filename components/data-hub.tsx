@@ -32,7 +32,7 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
           <form className="export-filter" action="/print" method="get">
             <label>From<input type="date" name="from"/><small>Optional</small></label>
             <label>To<input type="date" name="to"/><small>Optional</small></label>
-            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes all selected records in one consistent logbook format.</small></label>
+            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes every logbook category; ULL + EASA excludes other categories.</small></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
             <div className="export-format-actions"><button className="primary-button">Open printable logbook</button></div>
           </form>
@@ -40,14 +40,15 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
         </section>
 
         <section className="panel export-workspace" aria-label="Export flight records">
-          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Create filtered Excel or CSV data without changing the official printable-logbook configuration.</p></div></header>
+          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV now use the same logbook scope, date range and auxiliary-role rules as the printable logbook.</p></div></header>
           <form className="export-filter" action="/api/export" method="get">
             <label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label>
-            <label>Logbook<select name="evidence"><option value="">All</option><option>ULL</option><option>EASA</option></select></label>
-            <label>Registration<input name="registration" placeholder="OK-..."/></label>
+            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
+            <label>Registration<input name="registration" placeholder="OK-..."/><small>Filters flight rows only</small></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
             <div className="export-format-actions"><button className="primary-button" name="format" value="xls">Excel</button><button name="format" value="csv">CSV</button></div>
           </form>
+          <p className="muted">Excel includes filtered flight rows plus an FSTD sheet for Complete, EASA and ULL + EASA. CSV contains filtered flight rows only. Invalid or reversed date ranges are rejected instead of silently returning an empty export.</p>
         </section>
 
         <section className="panel export-workspace" aria-label="Complete account backup"><header><div><p className="eyebrow">BACKUP EXPORT</p><h2>Complete JSON backup</h2><p className="muted">Unfiltered portable account backup. Safety Pilot and all other records are always retained.</p></div></header><div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a></div></section>

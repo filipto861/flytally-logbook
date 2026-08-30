@@ -50,13 +50,13 @@ test("v1.42.0 keeps stabilized GPS inference unchanged",()=>{
   assert.match(roadmap,/retain the v1\.38\.1–v1\.38\.2 split\/landing\/take-off heuristics unchanged/);
 });
 
-test("v1.42.0 import-player styling is scoped away from global navigation",()=>{
+test("v1.42 import-player styling stays isolated in later releases",()=>{
   const css=read("app/v142-gps-import.css"),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
   assert.match(layout,/v142-gps-import\.css/);
   assert.match(css,/\.import-player-review/);
   assert.match(css,/\.profile-event-marker/);
   assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
-  assert.match(roadmap,/Current release — v1\.42\.1 · GPS import review player polish/);
+  assert.match(roadmap,/v1\.42\.0–v1\.42\.1: visual GPS import player/);
   assert.match(roadmap,/v1\.43: Print & Export finalisation/);
 });
 
