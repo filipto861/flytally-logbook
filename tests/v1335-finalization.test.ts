@@ -29,7 +29,7 @@ test("v1.33.5 preserves explicit aliases on critical joined action projections",
   const shared=read("app/(protected)/flights/shared-actions.ts");
   const certification=read("app/(protected)/flights/certification-actions.ts");
   const instructor=read("app/(protected)/flights/instructor-actions.ts");
-  assert.match(training,/SELECT p[.]id,p[.]participant_user_id FROM flight_participations p JOIN flights f/);
+  assert.match(training,/SELECT p[.]id,p[.]participant_user_id(?:,p[.]approval_id)? FROM flight_participations p JOIN flights f/);
   assert.match(shared,/SELECT p[.]id,p[.]source_flight_id,p[.]source_user_id/);
   assert.match(certification,/SELECT f[.]id,f[.]date::text date/);
   assert.match(instructor,/SELECT a[.]flight_id,a[.]student_user_id,a[.]record_revision/);

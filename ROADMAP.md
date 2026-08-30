@@ -2,31 +2,37 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.38.2 · GPS take-off time hardening
+## Current release — v1.39.0 · Core cleanup & performance
 
 Focus:
-- stop `flightEnvelope()` from treating one early taxi/runway speed spike as the take-off time
-- require a sustained fast movement segment and, when usable altitude data is present, a real climb before accepting the automatic take-off timestamp
-- anchor the suggested take-off to the first point clearly above the local ground-altitude baseline instead of the first isolated high-speed point
-- keep a speed-only fallback for tracks without useful altitude data so older/generic GPS imports still work
-- retain v1.38.1 conservative split validation and impossible-altitude-jump rejection for touch-and-go detection
-- keep landing-time inference, airport inference, manual review/editability, dashboard, certification, Recency Engine and global mobile navigation unchanged
+- make `flight_participations` the canonical model for all **new** instructor requests; the legacy `instructor_flight_approvals` table is no longer populated by the modern request path
+- retain `instructor_flight_approvals` as compatibility evidence for historical backups and old links, but redirect any legacy approval that already has a participation mapping into the canonical `/connections/shared/...` workflow
+- remove fuzzy legacy approval status updates from the shared-flight workflow: compatibility projection updates now require the exact approval id, source owner, instructor, certified revision and flight hash
+- detach an old `approval_id` whenever an instructor request is re-opened through the modern participation path so stale legacy projections cannot drive a new decision
+- consolidate protected-runtime schema initialization behind one cached `ensureRuntimeSchema()` gate; base database migrations complete first and independent v1.32/v1.35.3 compatibility schemas then initialize in parallel
+- use the same runtime-schema gate in shared-flight actions and instructor-request code, reducing repeated sequential schema initialization on cold server instances
+- explicitly retain legacy `track_points`: current portable backup/restore still round-trips it, so removing the table would risk historical restore fidelity
+- preserve backup/restore support for existing instructor approval rows while stopping creation of new duplicates
+- keep certification payloads/hashes/revisions, Recency Engine, GPS inference, dashboard behavior and global mobile navigation unchanged
+
+## v1.38.2 · GPS take-off time hardening
+
+- `flightEnvelope()` ignores isolated taxi/runway speed spikes and requires sustained movement plus real climb when altitude evidence is usable
+- automatic take-off is anchored to the first point clearly above the local ground baseline
+- speed-only fallback remains available for tracks without useful altitude data
 
 ## v1.38.1 · GPS split & landing detection hardening
 
 - automatic GPS splitting is stricter than generic track validation: both proposed flight sections must contain credible airborne movement and at least 1 km of actual tracked movement
-- a short taxi/GPS speed burst followed by a long ground wait is not promoted to a separate suggested flight
-- altitude-based touch-and-go candidates are rejected when local evidence depends on a physically implausible GPS altitude discontinuity above 25 m/s (about 4,900 ft/min)
-- genuine rolling touch-and-go detection, manual split controls and time-gap split logic remain supported
+- short taxi/GPS bursts followed by ground waits are not promoted to separate flights
+- altitude-based touch-and-go candidates reject physically implausible GPS altitude discontinuities
 
 ## v1.38.0 · Dashboard, Airports & Routes overhaul
 
-- Claude audit hardening: scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing and never trust a spoofable `vercel-cron` User-Agent fallback
-- certified ULL and EASA records share one read-only field structure; only the evidence label differs
-- Aircraft and Costs are one coherent dashboard area with aircraft count, period cost, average cost per hour and per-aircraft breakdown
-- Airports and Routes are separate detailed statistics with period-aware direct drill-down to Flights
-- Routes retain directional A → B semantics plus explicit A ↔ B pair filtering
-- airport/route insights are computed inside the existing user-scoped dashboard aggregation
+- Claude audit hardening: scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing
+- certified ULL and EASA records share one read-only field structure
+- Aircraft and Costs are one coherent dashboard area
+- Airports and Routes are separate period-aware statistics with direct drill-down to Flights
 
 ## Certification baseline — v1.33.5
 
@@ -39,17 +45,18 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.36.0–v1.36.2: mobile/iOS presentation work, single-tap navigation hotfix and isolated status-area handling
 - v1.37.0: unified shared-flight notification/review workflow, explicit Review → Add → Certify states and protected ULL logbook-entry presentation
 - v1.38.0: dashboard consolidation, distinct airport/route analytics, ULL/EASA field-parity regression guard and fail-closed cron authentication
-- v1.38.1: conservative GPS split validation and altitude-glitch rejection for landing suggestions
-- v1.38.2: sustained-flight/climb evidence for automatic take-off timestamps
+- v1.38.1–v1.38.2: conservative GPS split/landing/take-off inference based on real SkyDemon failure cases
+- v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
 
 ## Near term
 
+- v1.40: Flights UX & logbook polish — clearer filters, review/import provenance and faster everyday flight workflow
+- v1.41: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
 - keep FSTD recency evidence deferred until it becomes a product priority
-- replace remaining read-only legacy/fuzzy participant-link fallbacks after historical rows have been verified
-- retire the compatibility `instructor_flight_approvals` projection only after all historical consumers are proven migrated
-- decide whether the legacy `track_points` compatibility table can be retired after backup/restore paths are migrated
+- retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated
+- migrate backup/restore away from `track_points` before considering removal of that compatibility table
 - add a large-logbook print warning or range guidance before unrestricted print size becomes a practical performance issue
 
 ## Product direction
 
-Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics and advisory recency evidence must never alter certified evidence or regulatory records automatically.
+Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Compatibility cleanup must never rewrite certified evidence. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics and advisory recency evidence must never alter certified evidence or regulatory records automatically.

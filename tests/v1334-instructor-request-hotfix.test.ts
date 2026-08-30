@@ -10,7 +10,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("v1.33.4 qualifies the instructor-request preflight id after joining flights",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,33,4));
   const source=read("lib/training-verification.ts");
-  assert.match(source,/SELECT p[.]id,p[.]participant_user_id FROM flight_participations p JOIN flights f/);
+  assert.match(source,/SELECT p[.]id,p[.]participant_user_id(?:,p[.]approval_id)? FROM flight_participations p JOIN flights f/);
   assert.doesNotMatch(source,/SELECT id,participant_user_id FROM flight_participations p JOIN flights f/);
 });
 

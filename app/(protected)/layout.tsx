@@ -2,9 +2,7 @@ import type { Viewport } from "next";
 import { cache } from "react";
 import { AppShell } from "@/components/app-shell";
 import { requireUser } from "@/lib/auth/require-user";
-import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
-import { ensureV132Schema } from "@/lib/v132-schema";
-import { ensureV1353Schema } from "@/lib/v1353-schema";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 import { unreadNotificationCount } from "@/lib/notifications";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
@@ -33,9 +31,7 @@ export async function generateViewport():Promise<Viewport>{
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const{session,appearance}=await getShellContext();
-  await ensureDatabaseOptimizations();
-  await ensureV132Schema();
-  await ensureV1353Schema();
+  await ensureRuntimeSchema();
   const unreadNotifications=await unreadNotificationCount(session.userId);
   return <AppShell role={session.role} unreadNotifications={unreadNotifications} appearance={appearance}>{children}</AppShell>;
 }

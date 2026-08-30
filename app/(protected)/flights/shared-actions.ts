@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
-import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
-import { ensureV132Schema } from "@/lib/v132-schema";
+import { ensureRuntimeSchema } from "@/lib/runtime-schema";
 import { flightMinutes } from "@/lib/dashboard-math";
 import { flightFingerprint } from "@/lib/flight-dedup";
 import { crewRoleCredits,normalizeCrewRole,validCrewCombination,type CrewRole } from "@/lib/crew";
@@ -53,7 +52,7 @@ async function materializeParticipation(participationId:number,userId:number){
 }
 
 export async function inviteCrewMember(sourceFlightId:number,form:FormData){
-  const {userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();const participantId=id(form.get("participant_id")),role=normalizeCrewRole(form.get("participant_role"));
+  const {userId}=await requireUser();await ensureRuntimeSchema();const participantId=id(form.get("participant_id")),role=normalizeCrewRole(form.get("participant_role"));
   if(!Number.isSafeInteger(sourceFlightId)||sourceFlightId<=0||!participantId||participantId===userId)return;
   const enabled=await sql`SELECT enabled FROM feature_switches WHERE key='crew_sharing' LIMIT 1` as Array<{enabled:boolean}>;if(enabled[0]&&!enabled[0].enabled)return;
   const source=await sql`SELECT role FROM flights WHERE id=${sourceFlightId} AND user_id=${userId} LIMIT 1` as Array<{role:string}>;if(!role||!validCrewCombination(source[0]?.role,role))return;
@@ -70,25 +69,27 @@ export async function inviteCrewMember(sourceFlightId:number,form:FormData){
 export async function inviteSafetyPilot(sourceFlightId:number,form:FormData){if(!form.get("participant_role"))form.set("participant_role","SAFETY PILOT");return inviteCrewMember(sourceFlightId,form)}
 
 export async function cancelSafetyInvitation(sourceFlightId:number,form:FormData){
-  const {userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();const participationId=id(form.get("participation_id"));if(!participationId)return;
+  const {userId}=await requireUser();await ensureRuntimeSchema();const participationId=id(form.get("participation_id"));if(!participationId)return;
   const rows=await sql`UPDATE flight_participations SET status='cancelled',cancelled_at=NOW(),responded_at=NOW(),decision_note='Cancelled by source pilot.' WHERE id=${participationId} AND source_flight_id=${sourceFlightId} AND source_user_id=${userId} AND status='pending' RETURNING participant_user_id` as Array<{participant_user_id:number|string}>;
   if(rows[0])await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${Number(rows[0].participant_user_id)} AND href=${`/connections/shared/${participationId}`}`;
   refresh(sourceFlightId);
 }
 
 export async function declineSharedFlight(participationId:number,form?:FormData){
-  const {userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();if(!Number.isSafeInteger(participationId)||participationId<=0)return;
+  const {userId}=await requireUser();await ensureRuntimeSchema();if(!Number.isSafeInteger(participationId)||participationId<=0)return;
   const note=text(form?.get("note")).slice(0,500);
-  const rows=await sql`UPDATE flight_participations SET status='declined',responded_at=NOW(),decision_note=${note} WHERE id=${participationId} AND participant_user_id=${userId} AND status='pending' RETURNING source_flight_id,source_user_id,participant_role,approval_id` as Array<Record<string,unknown>>;
+  const rows=await sql`UPDATE flight_participations SET status='declined',responded_at=NOW(),decision_note=${note} WHERE id=${participationId} AND participant_user_id=${userId} AND status='pending' RETURNING source_flight_id,source_user_id,source_revision,source_hash,participant_role,approval_id` as Array<Record<string,unknown>>;
   await markRequestRead(userId,participationId);
   if(rows[0]){
-    if(text(rows[0].participant_role).toUpperCase()==="INSTRUCTOR")await sql`UPDATE instructor_flight_approvals SET status='declined',decided_at=NOW(),decision_note=${note} WHERE id=${Number(rows[0].approval_id)||0} OR (flight_id=${Number(rows[0].source_flight_id)} AND instructor_user_id=${userId} AND status='pending')`;
+    if(text(rows[0].participant_role).toUpperCase()==="INSTRUCTOR")await sql`UPDATE instructor_flight_approvals SET status='declined',decided_at=NOW(),decision_note=${note}
+      WHERE id=${Number(rows[0].approval_id)||0} AND flight_id=${Number(rows[0].source_flight_id)} AND student_user_id=${Number(rows[0].source_user_id)} AND instructor_user_id=${userId}
+        AND record_revision=${Number(rows[0].source_revision)} AND flight_hash=${text(rows[0].source_hash)} AND status='pending'`;
     await notifyUser(Number(rows[0].source_user_id),{kind:"flight_declined",title:text(rows[0].participant_role).toUpperCase()==="INSTRUCTOR"?"Instructor verification declined":"Flight invitation declined",body:note,href:`/flights/${rows[0].source_flight_id}`,dedupeKey:`flight-declined:${participationId}`});refresh(Number(rows[0].source_flight_id));
   }
 }
 
 async function signInstructorParticipation(participationId:number,addToLogbook:boolean,form:FormData){
-  const session=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();
+  const session=await requireUser();await ensureRuntimeSchema();
   const note=text(form.get("note")).slice(0,500);
   const rows=await sql`SELECT p.id,p.source_flight_id,p.source_user_id,p.participant_user_id,p.source_revision,p.source_hash,p.status,p.approval_id,f.role,f.certified_at,f.certification_hash,f.record_revision,u.display_name
     FROM flight_participations p JOIN flights f ON f.id=p.source_flight_id AND f.user_id=p.source_user_id JOIN users u ON u.id=p.participant_user_id
@@ -107,7 +108,9 @@ async function signInstructorParticipation(participationId:number,addToLogbook:b
       VALUES(${payload.flightId},${payload.flightUserId},${session.userId},${verificationRole},${payload.recordRevision},${payload.flightHash},${JSON.stringify(credentialSnapshot)}::jsonb,${payload.flightHash},${signature},'signed',NOW(),${note})
       ON CONFLICT(flight_id,record_revision,signer_user_id,verification_role) DO UPDATE SET credential_snapshot=EXCLUDED.credential_snapshot,payload_hash=EXCLUDED.payload_hash,server_signature=EXCLUDED.server_signature,status='signed',signed_at=NOW(),revoked_at=NULL,revocation_reason='',decision_note=EXCLUDED.decision_note`,
     sql`UPDATE flight_participations SET status='accepted',responded_at=NOW(),decision_note=${note} WHERE id=${participationId} AND participant_user_id=${session.userId} AND participant_role='INSTRUCTOR'`,
-    sql`UPDATE instructor_flight_approvals SET status='approved',decided_at=NOW(),decision_note=${note} WHERE id=${Number(row.approval_id)||0} OR (flight_id=${payload.flightId} AND instructor_user_id=${session.userId} AND record_revision=${payload.recordRevision})`,
+    sql`UPDATE instructor_flight_approvals SET status='approved',decided_at=NOW(),decision_note=${note}
+      WHERE id=${Number(row.approval_id)||0} AND flight_id=${payload.flightId} AND student_user_id=${payload.flightUserId} AND instructor_user_id=${session.userId}
+        AND record_revision=${payload.recordRevision} AND flight_hash=${payload.flightHash}`,
     markRequestRead(session.userId,participationId),
   ]);
   await notifyUser(payload.flightUserId,{kind:"signature_completed",title:"Flight approved and signed",body:`${String(row.display_name)} signed revision ${payload.recordRevision}.`,href:`/flights/${payload.flightId}`,dedupeKey:`participation-signed:${participationId}`});
@@ -120,7 +123,7 @@ export async function signOnlyInstructorParticipation(participationId:number,for
 export async function signAndAddInstructorParticipation(participationId:number,form:FormData){return signInstructorParticipation(participationId,true,form)}
 
 export async function acceptSharedFlight(participationId:number){
-  const {userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();
+  const {userId}=await requireUser();await ensureRuntimeSchema();
   const type=await sql`SELECT participant_role FROM flight_participations WHERE id=${participationId} AND participant_user_id=${userId} LIMIT 1` as Array<{participant_role:string}>;
   if(text(type[0]?.participant_role).toUpperCase()==="INSTRUCTOR")redirect(`/connections/shared/${participationId}?error=signature-required`);
   const flightId=await materializeParticipation(participationId,userId);await markRequestRead(userId,participationId);
@@ -130,7 +133,7 @@ export async function acceptSharedFlight(participationId:number){
 }
 
 export async function addApprovedFlightToLogbook(approvalId:number){
-  const {userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV132Schema();if(!Number.isSafeInteger(approvalId)||approvalId<=0)return;
+  const {userId}=await requireUser();await ensureRuntimeSchema();if(!Number.isSafeInteger(approvalId)||approvalId<=0)return;
   let rows=await sql`SELECT id FROM flight_participations WHERE approval_id=${approvalId} AND participant_user_id=${userId} LIMIT 1` as Array<{id:number|string}>;
   if(!rows[0])rows=await sql`INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status,approval_id)
     SELECT a.flight_id,a.student_user_id,a.instructor_user_id,'INSTRUCTOR',a.record_revision,a.flight_hash,'accepted',a.id FROM instructor_flight_approvals a JOIN flights f ON f.id=a.flight_id

@@ -16,7 +16,8 @@ test("v1.35.3 movement schema and certification compatibility remain supported",
   assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);
   assert.match(certification,/certification_version=4/);assert.match(certification,/movement_evidence_recorded/);
   assert.doesNotMatch(ui,/FCL[.]060 movement evidence/);assert.doesNotMatch(ui,/Day take-offs/);assert.doesNotMatch(ui,/Day approaches/);
-  assert.match(read("app/(protected)/layout.tsx"),/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/);
+  const layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
+  assert.match(layout,/ensureRuntimeSchema/);assert.match(runtime,/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/);
 });
 
 test("flight input persists movement evidence only when explicitly recorded",()=>{
