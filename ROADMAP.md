@@ -2,9 +2,20 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.41.0 · Map & GPS UX
+## Current release — v1.42.0 · GPS import review player
 
 Focus:
+- put a synchronized GPS player directly into the add-flight import workflow so the pilot can verify the track before saving any logbook record
+- show the route map together with altitude and speed profiles and the moving aircraft marker
+- mark detected take-off, landing, touch-and-go and current split boundaries directly on the profile
+- make event markers interactive: selecting a marker or event chip moves the player to that position on the track
+- remove internal GPS-point numbers from the normal review UI; the pilot reviews time and position visually instead of reasoning about parser indices
+- keep the existing editable UTC fields and landing count confirmation as the authoritative review step before save
+- retain the v1.38.1–v1.38.2 split/landing/take-off heuristics unchanged; v1.42 only exposes their current result more clearly
+- preserve certification payloads/hashes/revisions, Recency Engine, shared-flight workflow, backup/restore and global mobile navigation
+
+## v1.41.0 · Map & GPS UX
+
 - keep ordinary flight-detail loads lightweight by fetching only GPS track summaries on the server; detailed player coordinates are requested only when the GPS tab is actually opened
 - expose a dedicated authenticated, user-scoped, no-store GPS review endpoint for the detailed track/player payload
 - compare saved BLOCK/AIR values with the current GPS-derived suggestion before the pilot chooses to apply it
@@ -12,7 +23,6 @@ Focus:
 - make provenance explicit: GPS suggestions remain derived/reviewable data until the pilot deliberately applies them, and certified records remain immutable
 - show source file name, stored point count, distance and start time for each attached track in the GPS manager
 - retain the existing synchronized map/altitude/speed player and the v1.38.1–v1.38.2 GPS split/landing/take-off heuristics unchanged
-- preserve certification payloads/hashes/revisions, Recency Engine, shared-flight workflow, dashboard behavior and global mobile navigation
 
 ## v1.40.0 · Flights UX & logbook polish
 
@@ -69,10 +79,11 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
 - v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
 - v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
+- v1.42.0: visual GPS import player with take-off, landing, touch-and-go and split markers
 
 ## Near term
 
-- v1.42: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
+- v1.43: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated
 - migrate backup/restore away from `track_points` before considering removal of that compatibility table

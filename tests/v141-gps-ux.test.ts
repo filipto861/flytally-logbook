@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.41.0 lazy-loads detailed GPS data from the flight detail",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.41.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,41,0));
   const page=read("app/(protected)/flights/[id]/page.tsx");
   assert.match(page,/getFlightTrackSummaries/);
   assert.match(page,/LazyFlightTrackReview/);
@@ -54,6 +55,6 @@ test("v1.41.0 GPS polish stays isolated from global navigation",()=>{
   assert.match(css,/\.gps-review-grid/);
   assert.match(css,/\.track-source-row/);
   assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
-  assert.match(roadmap,/Current release — v1\.41\.0/);
-  assert.match(roadmap,/v1\.42: Print & Export finalisation/);
+  assert.match(roadmap,/v1\.41\.0 · Map & GPS UX/);
+  assert.match(roadmap,/v1\.43: Print & Export finalisation/);
 });

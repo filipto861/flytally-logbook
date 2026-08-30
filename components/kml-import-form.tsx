@@ -6,12 +6,14 @@ import dynamic from "next/dynamic";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
 import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
+import type { ImportReviewEvent } from "@/components/gps-import-review-player";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 
 const TracksMap=dynamic(()=>import("@/components/tracks-map").then(module=>module.TracksMap),{ssr:false,loading:()=> <div className="track-map-loading">Loading GPS preview…</div>});
+const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectionResult>;
@@ -32,8 +34,22 @@ function reviewFor(part:KmlPoint[]):Review{
   return{date:off?.date||takeoff?.date||fallbackStart?.date||"",offBlock:off?.time||"",takeoff:takeoff?.time||"",landing:landing?.time||"",onBlock:on?.time||"",departure:"",arrival:"",starts:String(landingCount(part)),note:"",reviewed:false};
 }
 
-function mapTrack(part:KmlPoint[],index:number,registration:string,review:Review):MapTrack{
-  return{id:index,flightId:index,date:review.date,registration,departure:review.departure,arrival:review.arrival,evidence:"ULL",distanceKm:trackStats(part).distanceKm,points:overview(part,900).map(point=>({...point,alt:point.alt??undefined,time:point.time??undefined})) as TrackPoint[]};
+function mapTrack(part:KmlPoint[],index:number,registration:string,review?:Review,maxPoints=900):MapTrack{
+  return{id:index,flightId:index,date:review?.date||"",registration,departure:review?.departure||"",arrival:review?.arrival||"",evidence:"ULL",distanceKm:trackStats(part).distanceKm,points:overview(part,maxPoints).map(point=>({...point,alt:point.alt??undefined,time:point.time??undefined})) as TrackPoint[]};
+}
+
+function eventTime(point:KmlPoint|undefined){const stamp=utcParts(point?.time||null);return stamp?`${stamp.time} UTC`:"Detected on profile"}
+function importReviewEvents(analysis:Analysis,cuts:number[]):ImportReviewEvent[]{
+  const denominator=Math.max(1,analysis.points.length-1),boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],events:ImportReviewEvent[]=[];
+  cuts.forEach((cut,index)=>{const detail=analysis.details.find(item=>item.index===cut);events.push({position:Math.max(0,Math.min(1,(cut+.5)/denominator)),label:cuts.length>1?`Split ${index+1}`:"Split",kind:"split",detail:detail?.reason||eventTime(analysis.points[cut])})});
+  for(let partIndex=0;partIndex<boundaries.length-1;partIndex++){
+    const start=boundaries[partIndex],end=boundaries[partIndex+1],part=analysis.points.slice(start,end);if(part.length<2)continue;
+    const envelope=flightEnvelope(part),prefix=boundaries.length>2?`F${partIndex+1} `:"",touches=touchAndGoEvents(part);
+    events.push({position:(start+envelope.takeoffIndex)/denominator,label:`${prefix}Takeoff`,kind:"takeoff",detail:eventTime(part[envelope.takeoffIndex])});
+    touches.forEach((touch,index)=>events.push({position:(start+touch.index)/denominator,label:`${prefix}T&G${touches.length>1?` ${index+1}`:""}`,kind:"touch-and-go",detail:`${eventTime(part[touch.index])} · ${touch.signal}`}));
+    events.push({position:(start+envelope.landingIndex)/denominator,label:`${prefix}Landing`,kind:"landing",detail:eventTime(part[envelope.landingIndex])});
+  }
+  return events.sort((a,b)=>a.position-b.position);
 }
 
 function Submit({ready,hasTrack,onReview}:{ready:boolean;hasTrack:boolean;onReview:()=>void}){
@@ -52,6 +68,8 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
   const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
+  const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
+  const visualEvents=useMemo(()=>analysis?importReviewEvents(analysis,cuts):[],[analysis,cuts]);
 
   const resetParts=(next:number[],source=analysis)=>{
     if(!source)return;
@@ -103,8 +121,9 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
       <div className="import-step"><span>2</span><div><strong>Flight split</strong><small>{parts.length} {parts.length===1?"flight":"flights"}</small></div></div>
       <section className="split-editor">
         <div className="split-toolbar"><button type="button" className="secondary-button" onClick={()=>resetParts(analysis.suggested)}>Reset suggestion</button><button type="button" className="secondary-button" onClick={()=>resetParts([])}>Single flight</button><button type="button" className="secondary-button" onClick={addCut} disabled={parts.length>=20}>＋ Add split</button></div>
-        {cuts.length?cuts.map((cut,index)=>{const stamp=utcParts(analysis.points[cut]?.time||null),detail=analysis.details.find(item=>item.index===cut);return <div className="split-row" key={`${index}-${cut}`}><label>Split {index+1}<input type="range" min="2" max={Math.max(2,analysis.points.length-3)} value={cut} onChange={event=>resetParts(cuts.map((value,i)=>i===index?Number(event.target.value):value))}/></label><div className="split-explanation"><strong>{stamp?`${stamp.date} ${stamp.time} UTC`:`GPS point ${cut+1}`}</strong><small>{detail?.reason||"Manual split point — verify both resulting flights."}</small></div><button type="button" className="icon-danger" onClick={()=>resetParts(cuts.filter((_,i)=>i!==index))}>Delete</button></div>}):null}
+        {cuts.length?cuts.map((cut,index)=>{const stamp=utcParts(analysis.points[cut]?.time||null),detail=analysis.details.find(item=>item.index===cut);return <div className="split-row" key={`${index}-${cut}`}><label>Split {index+1}<input type="range" min="2" max={Math.max(2,analysis.points.length-3)} value={cut} onChange={event=>resetParts(cuts.map((value,i)=>i===index?Number(event.target.value):value))}/></label><div className="split-explanation"><strong>{stamp?`${stamp.date} ${stamp.time} UTC`:"Position on track"}</strong><small>{detail?.reason||"Manual split point — verify both resulting flights."}</small></div><button type="button" className="icon-danger" onClick={()=>resetParts(cuts.filter((_,i)=>i!==index))}>Delete</button></div>}):null}
       </section>
+      {visualTrack?<section className="import-player-review"><div className="section-heading"><div><p className="eyebrow">GPS REVIEW</p><h2>Check the detected flight visually</h2><p className="muted">Takeoff, landing, touch-and-go and split detections are marked directly on the altitude/speed profile.</p></div></div><GpsImportReviewPlayer track={visualTrack} events={visualEvents}/><p className="import-player-note">These markers explain the current automatic suggestion. Move the split sliders or edit the final fields below if the GPS interpretation is not correct.</p></section>:null}
       <input type="hidden" name="splitIndices" value={cuts.join(",")}/><input type="hidden" name="partCount" value={parts.length}/>
 
       <div className="import-step"><span>3</span><div><strong>Common details</strong></div></div>
@@ -130,7 +149,7 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
           <div className="kml-time-row"><span className="utc-chip">UTC</span><small className="field-hint">FCL.050 logbook times are reviewed and stored in UTC.</small></div>
           <div className={`touch-review ${touches.length?"detected":"clear"}`}>
             <div><strong>{touches.length?`${touches.length} touch-and-go ${touches.length===1?"event":"events"} detected`:"No touch-and-go detected"}</strong><small>Landings were prefilled to {detectedLandings}. Confirm or edit the value below before reviewing this flight.</small></div>
-            {touches.length?<div className="touch-event-list">{touches.map((event,eventIndex)=>{const stamp=utcParts(event.time);return <span key={`${event.index}-${eventIndex}`} title={`${event.confidence} confidence · ${event.signal} profile`}><b>T&amp;G {eventIndex+1}</b>{stamp?`${stamp.time} UTC`:`GPS point ${event.index+1}`}<small>{event.signal}</small></span>})}</div>:null}
+            {touches.length?<div className="touch-event-list">{touches.map((event,eventIndex)=>{const stamp=utcParts(event.time);return <span key={`${event.index}-${eventIndex}`} title={`${event.confidence} confidence · ${event.signal} profile`}><b>T&amp;G {eventIndex+1}</b>{stamp?`${stamp.time} UTC`:"Detected on profile"}<small>{event.signal}</small></span>})}</div>:null}
           </div>
           <div className="form-grid review-grid">
             <label>Date<input name={`part_${index}_date`} type="date" required value={review.date} onChange={event=>updateReview(index,{date:event.target.value,reviewed:false})}/></label>
@@ -138,8 +157,8 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
             <AirportReviewField label="Arrival" name={`part_${index}_arrival`} value={review.arrival} candidates={options.arrivalCandidates} onChange={value=>updateReview(index,{arrival:value,reviewed:false})}/>
             <label>Landings / starts<input name={`part_${index}_starts`} type="number" min="0" max="99" value={review.starts} onChange={event=>updateReview(index,{starts:event.target.value,reviewed:false})}/><small>GPS suggestion: {detectedLandings}</small></label>
             <label>Off-block <span className="field-hint">UTC</span><input name={`part_${index}_offBlock`} type="time" value={review.offBlock} onChange={event=>updateReview(index,{offBlock:event.target.value,reviewed:false})}/></label>
-            <label>Takeoff <span className="field-hint">UTC</span><input name={`part_${index}_takeoff`} type="time" value={review.takeoff} onChange={event=>updateReview(index,{takeoff:event.target.value,reviewed:false})}/><small>GPS point {detected.takeoffIndex+1}</small></label>
-            <label>Landing <span className="field-hint">UTC</span><input name={`part_${index}_landing`} type="time" value={review.landing} onChange={event=>updateReview(index,{landing:event.target.value,reviewed:false})}/><small>GPS point {detected.landingIndex+1}</small></label>
+            <label>Takeoff <span className="field-hint">UTC</span><input name={`part_${index}_takeoff`} type="time" value={review.takeoff} onChange={event=>updateReview(index,{takeoff:event.target.value,reviewed:false})}/><small>See takeoff marker above</small></label>
+            <label>Landing <span className="field-hint">UTC</span><input name={`part_${index}_landing`} type="time" value={review.landing} onChange={event=>updateReview(index,{landing:event.target.value,reviewed:false})}/><small>See landing marker above</small></label>
             <label>On-block <span className="field-hint">UTC</span><input name={`part_${index}_onBlock`} type="time" value={review.onBlock} onChange={event=>updateReview(index,{onBlock:event.target.value,reviewed:false})}/></label>
             <label className="wide">Notes<textarea name={`part_${index}_note`} rows={2} value={review.note} onChange={event=>updateReview(index,{note:event.target.value,reviewed:false})}/></label>
           </div>

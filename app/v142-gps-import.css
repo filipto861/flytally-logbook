@@ -1,0 +1,28 @@
+/* FlyTally v1.42 — GPS import review player */
+.import-player-review{display:grid;gap:10px;margin:14px 0 22px}
+.import-player-review>.section-heading{margin-bottom:0}
+.import-review-player{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.import-review-player>.track-profile{border:0;border-top:1px solid var(--line);border-radius:0;padding:20px}
+.import-review-map{min-height:300px;max-height:none}
+.import-profile-chart{overflow:visible}
+.profile-chart-stage{position:relative;margin-top:10px}
+.profile-chart-stage>svg{margin-top:0!important}
+.profile-event-layer{position:absolute;inset:0;pointer-events:none}
+.profile-event-marker{position:absolute;top:0;bottom:0;width:48px;transform:translateX(-24px);padding:0;border:0;background:transparent;color:var(--text);cursor:pointer;pointer-events:auto;z-index:3}
+.profile-event-marker::after{content:"";position:absolute;left:50%;top:27px;bottom:0;border-left:2px dashed currentColor;opacity:.82}
+.profile-event-marker>span{position:absolute;top:2px;left:50%;transform:translateX(-50%);max-width:72px;padding:3px 6px;border:1px solid currentColor;border-radius:6px;background:var(--panel);font-size:.56rem;font-weight:900;line-height:1.1;white-space:nowrap;box-shadow:0 2px 8px #0007}
+.profile-event-marker.takeoff{color:#67e8f9}.profile-event-marker.landing{color:#86efac}.profile-event-marker.touch-and-go{color:#fbbf24}.profile-event-marker.split{color:#f0abfc}
+.profile-event-marker.touch-and-go>span{top:22px}.profile-event-marker.touch-and-go::after{top:46px}
+.import-event-strip{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}
+.import-event-strip button{flex:0 0 auto;display:grid;gap:2px;min-width:82px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);text-align:left;cursor:pointer}
+.import-event-strip button b{font-size:.67rem}.import-event-strip button small{color:var(--muted);font-size:.61rem;white-space:nowrap}
+.import-event-strip button.takeoff{border-left:3px solid #67e8f9}.import-event-strip button.landing{border-left:3px solid #86efac}.import-event-strip button.touch-and-go{border-left:3px solid #fbbf24}.import-event-strip button.split{border-left:3px solid #f0abfc}
+.import-player-note{margin:0;color:var(--muted);font-size:.72rem;line-height:1.5}
+
+@media(max-width:760px){
+  .import-review-map{--map-height:320px!important;min-height:280px}
+  .import-review-player>.track-profile{padding:15px 12px}
+  .profile-event-marker{width:38px;transform:translateX(-19px)}
+  .profile-event-marker>span{font-size:.5rem;padding:3px 4px}
+  .import-event-strip button{min-width:76px}
+}

@@ -14,6 +14,7 @@ import "./v137-shared-flights.css";
 import "./v138-dashboard-insights.css";
 import "./v140-flights.css";
 import "./v141-gps-review.css";
+import "./v142-gps-import.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
