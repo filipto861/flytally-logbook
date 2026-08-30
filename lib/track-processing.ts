@@ -62,6 +62,18 @@ const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
 
+/** GPS barometric/altitude discontinuities must never become landing evidence. */
+function hasImplausibleAltitudeJump(points:KmlPoint[],index:number){
+  for(let cursor=Math.max(1,index-10);cursor<=Math.min(points.length-1,index+10);cursor++){
+    const before=points[cursor-1].alt,after=points[cursor].alt,duration=seconds(points[cursor-1],points[cursor]);
+    if(before===null||after===null||!Number.isFinite(before)||!Number.isFinite(after)||duration<=0||duration>15)continue;
+    // 25 m/s is roughly 4,900 ft/min. A GA touch-and-go candidate depending
+    // on a larger instantaneous GPS altitude step is sensor discontinuity, not a landing.
+    if(Math.abs(after-before)/duration>25)return true;
+  }
+  return false;
+}
+
 /**
  * Detect a rolling touch-and-go that never becomes slow enough to create a
  * ground event. GPS altitude is deliberately only a secondary signal: the
@@ -81,6 +93,7 @@ function altitudeTouchAndGoIndices(points:KmlPoint[]){
     const local=points.slice(index-2,index+3).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
     if(!local.length||altitude>Math.min(...local)+2)continue;
     if(Math.max(...left)-altitude<30||Math.max(...right)-altitude<30)continue;
+    if(hasImplausibleAltitudeJump(points,index))continue;
     candidates.push({index,altitude});
   }
   const events:number[]=[];
@@ -97,6 +110,16 @@ export function hasAirborneMovement(points:KmlPoint[]){
   const distance=points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0),duration=seconds(points[0],points.at(-1)!);
   const speed=speeds(points),maxSpeed=speed.length?Math.max(...speed):0,alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),altRange=alts.length>1?Math.max(...alts)-Math.min(...alts):0;
   return (maxSpeed>=35||(maxSpeed>=18&&altRange>=35))&&(distance>=.7||duration>=60);
+}
+
+/** Automatic splitting is deliberately stricter than generic track validation. */
+function hasCredibleSplitSection(points:KmlPoint[]){
+  if(!hasAirborneMovement(points))return false;
+  const distance=points.slice(1).reduce((total,point,index)=>total+haversineKm(points[index],point),0);
+  // A short taxi/GPS speed burst followed by waiting can satisfy the generic
+  // duration test. Do not turn it into a separate flight unless the section
+  // contains at least one kilometre of actual tracked movement.
+  return distance>=1;
 }
 
 export function trackQuality(points:KmlPoint[]):TrackQuality{
@@ -123,9 +146,9 @@ export function inspectTrackFile(source:string,fileName=""):TrackInspection{cons
 function consolidateGroundCuts(points:KmlPoint[],rawCuts:number[]){
   const cuts=[...new Set(rawCuts)].sort((a,b)=>a-b).filter(value=>value>=1&&value<=points.length-3);if(!cuts.length)return cuts;
   const merged:number[]=[];
-  for(const cut of cuts){const previous=merged.at(-1);if(previous!==undefined&&!hasAirborneMovement(points.slice(previous+1,cut+1))){merged[merged.length-1]=Math.round((previous+cut)/2)}else merged.push(cut)}
-  while(merged.length&&!hasAirborneMovement(points.slice(0,merged[0]+1)))merged.shift();
-  while(merged.length&&!hasAirborneMovement(points.slice(merged.at(-1)!+1)))merged.pop();
+  for(const cut of cuts){const previous=merged.at(-1);if(previous!==undefined&&!hasCredibleSplitSection(points.slice(previous+1,cut+1))){merged[merged.length-1]=Math.round((previous+cut)/2)}else merged.push(cut)}
+  while(merged.length&&!hasCredibleSplitSection(points.slice(0,merged[0]+1)))merged.shift();
+  while(merged.length&&!hasCredibleSplitSection(points.slice(merged.at(-1)!+1)))merged.pop();
   return merged;
 }
 export function suggestedSplits(points:KmlPoint[]){

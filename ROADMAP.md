@@ -2,18 +2,24 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.38.0 · Dashboard, Airports & Routes overhaul
+## Current release — v1.38.1 · GPS split & landing detection hardening
 
 Focus:
-- make the Claude audit hardening part of the release: both scheduled backup and recency endpoints now **fail closed** when `CRON_SECRET` is missing and never trust a spoofable `vercel-cron` User-Agent fallback
-- keep certified ULL and EASA records on one read-only logbook structure with the same field set: departure/arrival UTC, aircraft type/registration, SP SE/ME, multi-pilot, total, PIC, day/night landings, night/IFR, PIC/co-pilot/DUAL/FI-FE and remarks; only the evidence label differs
-- consolidate Aircraft and Costs as one coherent dashboard area with aircraft count, period cost, average cost per hour and per-aircraft flight/time/cost breakdown
-- separate **Airports** from **Routes** in detailed statistics instead of mixing two different concepts in one table
-- Airports shows visited airport, visits, departures, arrivals, first visit and last visit with direct drill-down to matching flights
-- Routes shows directional A → B flight count, total time, first flown and last flown with a direct directional drill-down plus an explicit A ↔ B pair option
-- compute airport/route insight data inside the existing user-scoped dashboard aggregation rather than adding per-row/N+1 queries
-- keep period filtering consistent across the summary widget and detailed statistics
-- keep v1.37 shared-flight workflow, certification evidence, Recency Engine behavior and global mobile navigation unchanged
+- make automatic GPS splitting more conservative than generic track validation: both proposed flight sections must contain credible airborne movement **and at least 1 km of actual tracked movement**
+- prevent a short taxi/GPS speed burst followed by a long ground wait from being promoted to a separate suggested flight
+- reject altitude-based touch-and-go candidates when the local evidence depends on a physically implausible GPS altitude discontinuity above 25 m/s (about 4,900 ft/min)
+- keep genuine rolling touch-and-go detection, manual split controls, time-gap split logic, airport inference and editable import review unchanged
+- add regression cases derived from the two real SkyDemon false positives reported after v1.38.0 without storing the user's raw KML files in the repository
+- keep dashboard, shared-flight, certification, Recency Engine and global mobile navigation behavior unchanged
+
+## v1.38.0 · Dashboard, Airports & Routes overhaul
+
+- Claude audit hardening: scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing and never trust a spoofable `vercel-cron` User-Agent fallback
+- certified ULL and EASA records share one read-only field structure; only the evidence label differs
+- Aircraft and Costs are one coherent dashboard area with aircraft count, period cost, average cost per hour and per-aircraft breakdown
+- Airports and Routes are separate detailed statistics with period-aware direct drill-down to Flights
+- Routes retain directional A → B semantics plus explicit A ↔ B pair filtering
+- airport/route insights are computed inside the existing user-scoped dashboard aggregation
 
 ## Certification baseline — v1.33.5
 
@@ -26,6 +32,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.36.0–v1.36.2: mobile/iOS presentation work, single-tap navigation hotfix and isolated status-area handling
 - v1.37.0: unified shared-flight notification/review workflow, explicit Review → Add → Certify states and protected ULL logbook-entry presentation
 - v1.38.0: dashboard consolidation, distinct airport/route analytics, ULL/EASA field-parity regression guard and fail-closed cron authentication
+- v1.38.1: conservative GPS split validation and altitude-glitch rejection for landing suggestions
 
 ## Near term
 
@@ -37,4 +44,4 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 
 ## Product direction
 
-Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Presentation preferences, dashboard analytics and advisory recency evidence must never alter certified evidence or regulatory records automatically.
+Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics and advisory recency evidence must never alter certified evidence or regulatory records automatically.

@@ -6,9 +6,14 @@ import { cronRequestAuthorized } from "../lib/cron-auth.ts";
 import { directionalRouteHref,directionalRouteKey,routePairHref,routePairKey } from "../lib/route-filter.ts";
 
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const releaseAtLeast=(actual:string,minimum:string)=>{
+  const a=actual.split(".").map(Number),b=minimum.split(".").map(Number);
+  for(let i=0;i<3;i++){if((a[i]??0)>(b[i]??0))return true;if((a[i]??0)<(b[i]??0))return false}
+  return true;
+};
 
 test("v1.38.0 closes spoofable cron fallback and fails closed without CRON_SECRET",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.38.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,"1.38.0"));
   assert.equal(cronRequestAuthorized(undefined,"Bearer anything"),false);
   assert.equal(cronRequestAuthorized("","Bearer anything"),false);
   assert.equal(cronRequestAuthorized("secret",null),false);
