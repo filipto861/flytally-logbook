@@ -6,8 +6,8 @@ import { getAircraftOptions } from "@/lib/data/aircraft";
 import { getFlightDetailFast as getFlight,getFlightNavigationFast as getFlightNavigation } from "@/lib/data/flights-fast";
 import Link from "next/link";
 import { deleteFlight,setFlightLock,updateFlight,attachKmlTrack,applyGpsTimes,deleteTrack,redetectFlightAirports } from "../actions";
-import { getFlightTracks } from "@/lib/data/tracks";
-import { FlightTrackPlayer } from "@/components/flight-track-player";
+import { getFlightTrackSummaries } from "@/lib/data/flight-track-review";
+import { LazyFlightTrackReview } from "@/components/lazy-flight-track-review";
 import { TrackManager } from "@/components/track-manager";
 import { formatDuration } from "@/lib/data/dashboard";
 import { AirportDetectionControl } from "@/components/airport-detection-control";
@@ -32,10 +32,10 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const {userId}=await requireUser();const id=Number((await params).id),context=await searchParams,query=contextQuery(context),suffix=query?`?${query}`:"";
   if(!Number.isSafeInteger(id)||id<=0)notFound();
   await ensureDatabaseOptimizations();
-  const [flight,aircraft,tracks,navigation,instructors,approvalRows,crewOptions,safetyRows,participantOwnRows,verificationRows]=await Promise.all([
+  const [flight,aircraft,trackSummaries,navigation,instructors,approvalRows,crewOptions,safetyRows,participantOwnRows,verificationRows]=await Promise.all([
     getFlight(userId,id),
     getAircraftOptions(userId),
-    measureServerTask("flight-gps-tracks",()=>getFlightTracks(userId,id),750),
+    measureServerTask("flight-gps-summaries",()=>getFlightTrackSummaries(userId,id),400),
     getFlightNavigation(userId,id,context),
     sql`SELECT DISTINCT u.id,u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END
       WHERE c.status='accepted' AND ((c.requester_user_id=${userId} AND (c.requester_label='instructor' OR c.relationship='recipient_instructor')) OR (c.recipient_user_id=${userId} AND (c.recipient_label='instructor' OR c.relationship='requester_instructor'))) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,
@@ -92,12 +92,12 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
     {approvalPanel}
     {crewPanel}
   </>;
-  const gps=<>{tracks.length?<>{!locked?<AirportDetectionControl action={detect} departure={flight.departure} arrival={flight.arrival}/>:null}<FlightTrackPlayer tracks={tracks}/></>:<section className="panel no-track"><p className="eyebrow">GPS</p><h2>No GPS track</h2><p className="muted">This flight has no attached GPS data.</p></section>}{!locked?<TrackManager flightId={id} tracks={tracks} attachAction={attach} applyAction={apply} deleteAction={dropTrack}/>:null}</>;
+  const gps=<>{trackSummaries.length?<>{!locked?<AirportDetectionControl action={detect} departure={flight.departure} arrival={flight.arrival}/>:null}<LazyFlightTrackReview flightId={id} current={{offBlock:String(flight.off_block??""),takeoff:String(flight.takeoff??""),landing:String(flight.landing??""),onBlock:String(flight.on_block??""),landings:Number(flight.starts??0)}}/></>:<section className="panel no-track"><p className="eyebrow">GPS</p><h2>No GPS track</h2><p className="muted">This flight has no attached GPS data.</p></section>}{!locked?<TrackManager flightId={id} tracks={trackSummaries} attachAction={attach} applyAction={apply} deleteAction={dropTrack}/>:null}</>;
   const instructorOptions=instructors.map(row=>({name:String(row.display_name??"").trim()})).filter(item=>item.name);
   const logbookRaw=verification?{...raw,approval_id:verification.id,instructor_approval_name:verificationName}:raw;
   const logbook=!locked?<section className="panel logbook-edit-panel"><header><div><p className="eyebrow">LOGBOOK DATA</p><h2>Edit flight record</h2><p className="muted">Changes are saved only when you press Save flight at the end of the form.</p></div></header><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight} instructors={instructorOptions}/></section>:<ReadonlyLogbookEntry row={logbookRaw} pilotName={pilotName} certified={certified} easa={easa}/>;
   return <>
     <header className="page-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation"><Link className="secondary-link" href={`/flights${suffix}`}>Back to flights</Link>{navigation.previousId?<Link className="secondary-link" href={`/flights/${navigation.previousId}${suffix}`}>← Previous</Link>:null}{navigation.nextId?<Link className="secondary-link" href={`/flights/${navigation.nextId}${suffix}`}>Next →</Link>:null}{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit report</Link>:null}{participantOwned&&!certified?<DeleteFlightButton action={removeParticipant} label="Remove from my logbook" confirmLabel="Remove my entry"/>:!locked&&!hasCertifiedHistory?<DeleteFlightButton action={remove}/>:null}</div></header>
-    <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={tracks.length} initialTab={context.tab==="logbook"?"logbook":context.tab==="gps"?"gps":"overview"}/>
+    <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={trackSummaries.length} initialTab={context.tab==="logbook"?"logbook":context.tab==="gps"?"gps":"overview"}/>
   </>;
 }

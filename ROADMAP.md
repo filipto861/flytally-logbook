@@ -2,19 +2,28 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.40.0 · Flights UX & logbook polish
+## Current release — v1.41.0 · Map & GPS UX
 
 Focus:
-- make the Flights list an operational workspace rather than a raw table: quick views now expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
+- keep ordinary flight-detail loads lightweight by fetching only GPS track summaries on the server; detailed player coordinates are requested only when the GPS tab is actually opened
+- expose a dedicated authenticated, user-scoped, no-store GPS review endpoint for the detailed track/player payload
+- compare saved BLOCK/AIR values with the current GPS-derived suggestion before the pilot chooses to apply it
+- show detected landing count as advisory evidence only; it is never written by the Apply GPS time suggestions action
+- make provenance explicit: GPS suggestions remain derived/reviewable data until the pilot deliberately applies them, and certified records remain immutable
+- show source file name, stored point count, distance and start time for each attached track in the GPS manager
+- retain the existing synchronized map/altitude/speed player and the v1.38.1–v1.38.2 GPS split/landing/take-off heuristics unchanged
+- preserve certification payloads/hashes/revisions, Recency Engine, shared-flight workflow, dashboard behavior and global mobile navigation
+
+## v1.40.0 · Flights UX & logbook polish
+
+- make the Flights list an operational workspace rather than a raw table: quick views expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
 - add exact record-state filters for Draft, Certified, Correction and Locked records without changing certification state or evidence
 - add user-scoped shared-flight filters for Waiting, Shared/accepted, Shared with me and Not shared
-- surface shared-flight state directly beside each flight's role and certification badge so routine review does not require opening every record
-- preserve all existing search, ULL/EASA, role, aircraft, airport, route, GPS, date and sort filters and keep them combinable with the new record/workflow filters
+- surface shared-flight state directly beside each flight's role and certification badge
+- preserve existing search, ULL/EASA, role, aircraft, airport, route, GPS, date and sort filters and keep them combinable
 - keep Previous/Next navigation consistent when a record or shared-workflow filter is active
-- keep the fast Flights path N+1-free: track and participation state are aggregated in user-scoped CTEs inside the existing list query
-- narrow the list projection to the fields required by the Flights workspace instead of selecting every column from `flights`; GPS coordinate JSON remains outside the list query
+- keep the fast Flights path N+1-free and exclude GPS coordinate JSON from the list query
 - present flight rows as compact mobile cards below 760 px while leaving the global mobile shell/navigation untouched
-- keep certification payloads/hashes/revisions, Recency Engine, GPS inference, dashboard behavior and backup/restore unchanged
 
 ## v1.39.0 · Core cleanup & performance
 
@@ -59,10 +68,10 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.38.1–v1.38.2: conservative GPS split/landing/take-off inference based on real SkyDemon failure cases
 - v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
 - v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
+- v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
 
 ## Near term
 
-- v1.41: Map & GPS UX — lazy-load full-resolution track data on the flight detail, improve track review provenance and keep inference explicitly reviewable
 - v1.42: Print & Export finalisation — large-logbook guidance, range handling and complete/EASA/ULL consistency
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers are fully migrated

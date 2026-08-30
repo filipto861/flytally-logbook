@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.40.0 exposes record and shared-workflow views on Flights",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.40.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,40,0));
   const page=read("app/(protected)/flights/page.tsx");
   assert.match(page,/name="status"/);
   assert.match(page,/name="workflow"/);
@@ -54,8 +55,8 @@ test("v1.40.0 mobile flight cards are scoped away from global navigation",()=>{
 
 test("v1.40.0 leaves stabilized GPS inference and certification direction unchanged",()=>{
   const roadmap=read("ROADMAP.md"),gps=read("lib/track-processing.ts");
-  assert.match(roadmap,/v1\.41: Map & GPS UX/);
-  assert.match(roadmap,/keep certification payloads\/hashes\/revisions, Recency Engine, GPS inference/);
+  assert.match(roadmap,/v1\.41\.0: lazy GPS detail payload|v1\.41\.0: lazy GPS detail payload/i);
+  assert.match(roadmap,/certification baseline remains unchanged|Certification baseline/i);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(gps,/hasImplausibleAltitudeJump/);
 });

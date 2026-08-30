@@ -1,0 +1,26 @@
+/* FlyTally v1.41 — Map & GPS UX */
+.gps-lazy-state{min-height:180px;display:grid;align-content:center;justify-items:start;gap:8px}
+.gps-review-panel{display:grid;gap:14px}
+.gps-review-panel .section-heading{margin-bottom:0}
+.gps-demand-badge{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid color-mix(in srgb,var(--accent2) 45%,var(--line));border-radius:999px;background:color-mix(in srgb,var(--accent2) 9%,var(--panel));font-size:.66rem;font-weight:850;letter-spacing:.03em;color:var(--text)}
+.gps-review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.gps-review-grid article{display:grid;gap:3px;padding:12px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel2) 68%,var(--panel))}
+.gps-review-grid article>span{font-size:.62rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.gps-review-grid article>strong,.gps-review-grid article>b{font-variant-numeric:tabular-nums}
+.gps-review-grid article>strong{font-size:1rem}
+.gps-review-grid article>b{margin-top:6px;color:var(--accent2);font-size:.94rem}
+.gps-review-grid article>small{color:var(--muted);line-height:1.35}
+.gps-provenance-note{margin:0;padding:11px 12px;border-left:3px solid color-mix(in srgb,var(--accent2) 65%,var(--line));border-radius:0 9px 9px 0;background:color-mix(in srgb,var(--accent2) 7%,transparent);color:var(--muted);font-size:.76rem;line-height:1.55}
+.gps-provenance-note strong{color:var(--text)}
+.gps-apply-block{display:grid;gap:5px;padding:10px 0}
+.gps-apply-block>small{max-width:520px;color:var(--muted);line-height:1.4}
+.track-source-row>span{display:grid;gap:3px;min-width:0}
+.track-source-row>span>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-source-row>span>small{color:var(--muted);font-size:.68rem;line-height:1.35}
+
+@media(max-width:760px){
+  .gps-review-grid{grid-template-columns:1fr}
+  .gps-review-panel .section-heading{align-items:flex-start;gap:10px}
+  .gps-demand-badge{align-self:flex-start}
+  .track-source-row{align-items:start}
+}
