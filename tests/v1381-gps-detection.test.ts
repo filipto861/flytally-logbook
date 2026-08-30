@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { landingCount,suggestedSplits,touchAndGoEvents,type KmlPoint } from "../lib/track-processing.ts";
+import { flightEnvelope,landingCount,suggestedSplits,touchAndGoEvents,type KmlPoint } from "../lib/track-processing.ts";
 
 const at=(start:number,seconds:number,lat:number,alt:number):KmlPoint=>({
   lat,lon:14,alt,time:new Date(start+seconds*1000).toISOString(),
@@ -23,4 +23,21 @@ test("v1.38.1 rejects an impossible GPS altitude discontinuity as touch-and-go e
   const points=altitudes.map((alt,index):KmlPoint=>({lat:50+index*.0008,lon:14,alt,time:new Date(start+index*2500).toISOString()}));
   assert.deepEqual(touchAndGoEvents(points),[]);
   assert.equal(landingCount(points),1);
+});
+
+test("v1.38.2 flight envelope ignores an early taxi speed spike and anchors takeoff to the sustained climb",()=>{
+  const start=Date.parse("2026-08-29T07:53:00Z"),points:KmlPoint[]=[];
+  let latitude=50;
+  for(let seconds=0;seconds<=720;seconds+=10){
+    let speedKmh=10,altitude=366;
+    if(seconds>=60&&seconds<=80)speedKmh=90;
+    else if(seconds>=460&&seconds<480)speedKmh=65;
+    else if(seconds>=480)speedKmh=100;
+    if(seconds>=480)altitude=366+(seconds-480)*1.5;
+    if(points.length)latitude+=(speedKmh*10/3600)/111.2;
+    points.push(at(start,seconds,latitude,altitude));
+  }
+  const envelope=flightEnvelope(points);
+  assert.match(envelope.takeoffUtc||"",/^2026-08-29T08:01:/);
+  assert.match(envelope.offBlockUtc||"",/^2026-08-29T07:56:/);
 });

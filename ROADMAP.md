@@ -2,15 +2,22 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.38.1 · GPS split & landing detection hardening
+## Current release — v1.38.2 · GPS take-off time hardening
 
 Focus:
-- make automatic GPS splitting more conservative than generic track validation: both proposed flight sections must contain credible airborne movement **and at least 1 km of actual tracked movement**
-- prevent a short taxi/GPS speed burst followed by a long ground wait from being promoted to a separate suggested flight
-- reject altitude-based touch-and-go candidates when the local evidence depends on a physically implausible GPS altitude discontinuity above 25 m/s (about 4,900 ft/min)
-- keep genuine rolling touch-and-go detection, manual split controls, time-gap split logic, airport inference and editable import review unchanged
-- add regression cases derived from the two real SkyDemon false positives reported after v1.38.0 without storing the user's raw KML files in the repository
-- keep dashboard, shared-flight, certification, Recency Engine and global mobile navigation behavior unchanged
+- stop `flightEnvelope()` from treating one early taxi/runway speed spike as the take-off time
+- require a sustained fast movement segment and, when usable altitude data is present, a real climb before accepting the automatic take-off timestamp
+- anchor the suggested take-off to the first point clearly above the local ground-altitude baseline instead of the first isolated high-speed point
+- keep a speed-only fallback for tracks without useful altitude data so older/generic GPS imports still work
+- retain v1.38.1 conservative split validation and impossible-altitude-jump rejection for touch-and-go detection
+- keep landing-time inference, airport inference, manual review/editability, dashboard, certification, Recency Engine and global mobile navigation unchanged
+
+## v1.38.1 · GPS split & landing detection hardening
+
+- automatic GPS splitting is stricter than generic track validation: both proposed flight sections must contain credible airborne movement and at least 1 km of actual tracked movement
+- a short taxi/GPS speed burst followed by a long ground wait is not promoted to a separate suggested flight
+- altitude-based touch-and-go candidates are rejected when local evidence depends on a physically implausible GPS altitude discontinuity above 25 m/s (about 4,900 ft/min)
+- genuine rolling touch-and-go detection, manual split controls and time-gap split logic remain supported
 
 ## v1.38.0 · Dashboard, Airports & Routes overhaul
 
@@ -33,6 +40,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.37.0: unified shared-flight notification/review workflow, explicit Review → Add → Certify states and protected ULL logbook-entry presentation
 - v1.38.0: dashboard consolidation, distinct airport/route analytics, ULL/EASA field-parity regression guard and fail-closed cron authentication
 - v1.38.1: conservative GPS split validation and altitude-glitch rejection for landing suggestions
+- v1.38.2: sustained-flight/climb evidence for automatic take-off timestamps
 
 ## Near term
 

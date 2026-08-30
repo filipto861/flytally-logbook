@@ -184,6 +184,43 @@ export function overview(points:KmlPoint[],max=180){if(points.length<=max)return
 export function localParts(iso:string|null){if(!iso)return null;const date=new Date(iso);if(Number.isNaN(date.getTime()))return null;const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map(part=>[part.type,part.value]));return{date:`${parts.year}-${parts.month}-${parts.day}`,time:`${parts.hour}:${parts.minute}`}}
 
 function shiftedIso(iso:string|null,minutes:number){if(!iso)return null;const date=new Date(iso);if(Number.isNaN(date.getTime()))return null;return new Date(date.getTime()+minutes*60_000).toISOString()}
+function median(values:number[]){const sorted=[...values].sort((a,b)=>a-b);return sorted[Math.floor(sorted.length/2)]}
+
+/**
+ * A take-off time needs more evidence than one fast GPS point. When altitude
+ * data is usable, require a sustained fast run followed by a real climb and
+ * return the first point clearly above the local ground baseline. This keeps
+ * taxi/runway speed spikes out of the logbook time while retaining a speed-only
+ * fallback for tracks without useful altitude data.
+ */
+function takeoffEvidenceIndex(points:KmlPoint[],speed:number[]){
+  const altitudePoints=points.filter(point=>point.alt!==null&&Number.isFinite(point.alt)).length,altitudeCoverage=points.length?altitudePoints/points.length:0;
+  for(let index=0;index<points.length;index++){
+    if(speed[index]<40)continue;
+    let end=index;
+    while(end+1<points.length&&end-index<18){const elapsed=seconds(points[index],points[end+1]);if(elapsed>60)break;end++;if(elapsed===0&&end-index>=8)break}
+    if(end===index)end=Math.min(points.length-1,index+8);
+    const fastIndices:number[]=[];for(let cursor=index;cursor<=end;cursor++)if(speed[cursor]>=45)fastIndices.push(cursor);
+    if(fastIndices.length<3)continue;
+    const lastFast=fastIndices.at(-1)!,fastSpan=seconds(points[index],points[lastFast]);
+    if(fastSpan<15&&fastIndices.length<5)continue;
+    if(altitudeCoverage>=.35){
+      const before=points.slice(Math.max(0,index-18),index+1).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+      const future=points.slice(index,end+1).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+      if(before.length>=3&&future.length>=3){
+        const baseline=median(before);
+        if(Math.max(...future)-baseline<25)continue;
+        for(let cursor=index;cursor<=end;cursor++){
+          const altitude=points[cursor].alt;
+          if(speed[cursor]>=40&&altitude!==null&&Number.isFinite(altitude)&&altitude>=baseline+8&&!hasImplausibleAltitudeJump(points,cursor))return cursor;
+        }
+        continue;
+      }
+    }
+    return index;
+  }
+  return -1;
+}
 
 export type FlightEnvelope={
   takeoffIndex:number;landingIndex:number;offBlockUtc:string|null;takeoffUtc:string|null;
@@ -208,7 +245,7 @@ export function flightEnvelope(points:KmlPoint[]):FlightEnvelope{
   if(points.length<2)return{takeoffIndex:0,landingIndex:0,offBlockUtc:null,takeoffUtc:null,landingUtc:null,onBlockUtc:null,departureCandidates:points,arrivalCandidates:points};
   const speed=speeds(points),alts=points.map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value)),floor=alts.length?Math.min(...alts):null;
   const active=speed.map((value,index)=>value>=50||(value>=18&&floor!==null&&points[index].alt!==null&&points[index].alt!-floor>=45));
-  let first=active.findIndex(Boolean),last=-1;for(let index=active.length-1;index>=0;index--)if(active[index]){last=index;break}
+  let first=takeoffEvidenceIndex(points,speed),last=-1;if(first<0)first=active.findIndex(Boolean);for(let index=active.length-1;index>=0;index--)if(active[index]){last=index;break}
   if(first<0||last<first){first=0;last=points.length-1}
   const takeoffIndex=Math.max(0,first),landingIndex=Math.min(points.length-1,last),takeoffUtc=points[takeoffIndex].time||points.find(point=>point.time)?.time||null,landingUtc=points[landingIndex].time||[...points].reverse().find(point=>point.time)?.time||null;
   // The logbook convention is five minutes before take-off / after landing.
