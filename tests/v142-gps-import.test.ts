@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.42.0 puts an interactive GPS player into add-flight review",()=>{
-  assert.equal(JSON.parse(read("package.json")).version,"1.42.0");
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,42,0));
   const form=read("components/kml-import-form.tsx"),player=read("components/gps-import-review-player.tsx");
   assert.match(form,/GpsImportReviewPlayer/);
   assert.match(form,/Check the detected flight visually/);
@@ -55,6 +56,17 @@ test("v1.42.0 import-player styling is scoped away from global navigation",()=>{
   assert.match(css,/\.import-player-review/);
   assert.match(css,/\.profile-event-marker/);
   assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
-  assert.match(roadmap,/Current release — v1\.42\.0 · GPS import review player/);
+  assert.match(roadmap,/Current release — v1\.42\.1 · GPS import review player polish/);
   assert.match(roadmap,/v1\.43: Print & Export finalisation/);
+});
+
+test("v1.42.1 keeps only the authoritative import player map",()=>{
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,42,1));
+  const form=read("components/kml-import-form.tsx");
+  assert.match(form,/GpsImportReviewPlayer/);
+  assert.doesNotMatch(form,/const TracksMap=/);
+  assert.doesNotMatch(form,/className="kml-preview"/);
+  assert.match(form,/Review flights/);
+  assert.match(form,/touch-review/);
+  assert.match(form,/review-grid/);
 });

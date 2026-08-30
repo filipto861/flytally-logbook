@@ -5,14 +5,16 @@ import { readFileSync } from "node:fs";
 const read=(path:string)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
 test("flight entry exposes one selected workflow and a dedicated aircraft dialog",()=>{
-  const page=read("app/(protected)/flights/new/page.tsx"),workspace=read("components/flight-entry-workspace.tsx"),importer=read("components/kml-import-form.tsx");
+  const page=read("app/(protected)/flights/new/page.tsx"),workspace=read("components/flight-entry-workspace.tsx"),importer=read("components/kml-import-form.tsx"),player=read("components/gps-import-review-player.tsx");
   assert.match(page,/FlightEntryWorkspace/);
   assert.match(workspace,/Import GPS track/);
   assert.match(workspace,/Manual entry/);
   assert.match(workspace,/role="dialog"/);
   assert.match(workspace,/event\.key==="Escape"/);
-  assert.match(importer,/dynamic\(\(\)=>import\("@\/components\/tracks-map"\)/);
+  assert.match(importer,/dynamic\(\(\)=>import\("@\/components\/gps-import-review-player"\)/);
   assert.match(importer,/ssr:false/);
+  assert.match(player,/GPS import review map/);
+  assert.doesNotMatch(importer,/@\/components\/tracks-map/);
 });
 
 test("flight detail, data and settings use task-focused workspaces",()=>{

@@ -12,7 +12,6 @@ import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 
-const TracksMap=dynamic(()=>import("@/components/tracks-map").then(module=>module.TracksMap),{ssr:false,loading:()=> <div className="track-map-loading">Loading GPS preview…</div>});
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
@@ -145,7 +144,6 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         return <article className={`flight-review-card ${review.reviewed?"confirmed":""}${credible?"":" invalid-flight"}`} key={`${cuts.join("-")}-${index}`} tabIndex={-1}>
           <header><div><span>FLIGHT {index+1} OF {parts.length}</span><h2>{review.departure||"?"} → {review.arrival||"?"}</h2><p>{stats.pointCount} points · {stats.distanceKm.toFixed(1)} km · {detectedLandings} {detectedLandings===1?"landing":"landings"} · GPS {quality.status.toUpperCase()}</p></div><div className="review-status">{review.reviewed?"✓ reviewed":"review required"}</div></header>
           {!credible?<p className="ground-flight-warning">This section contains no credible flight movement. Adjust or remove the split.</p>:quality.status!=="good"?<p className="track-time-warning"><b>Check this GPS section.</b> {quality.warnings.join(" ")}</p>:null}
-          <div className="kml-preview"><TracksMap tracks={[mapTrack(part,index,registration,review)]} height={260} detail/></div>
           <div className="kml-time-row"><span className="utc-chip">UTC</span><small className="field-hint">FCL.050 logbook times are reviewed and stored in UTC.</small></div>
           <div className={`touch-review ${touches.length?"detected":"clear"}`}>
             <div><strong>{touches.length?`${touches.length} touch-and-go ${touches.length===1?"event":"events"} detected`:"No touch-and-go detected"}</strong><small>Landings were prefilled to {detectedLandings}. Confirm or edit the value below before reviewing this flight.</small></div>

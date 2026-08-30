@@ -2,13 +2,14 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.42.0 · GPS import review player
+## Current release — v1.42.1 · GPS import review player polish
 
 Focus:
 - put a synchronized GPS player directly into the add-flight import workflow so the pilot can verify the track before saving any logbook record
 - show the route map together with altitude and speed profiles and the moving aircraft marker
 - mark detected take-off, landing, touch-and-go and current split boundaries directly on the profile
 - make event markers interactive: selecting a marker or event chip moves the player to that position on the track
+- keep one authoritative visual map/player for the import and remove the redundant static map repeated inside each flight review card
 - remove internal GPS-point numbers from the normal review UI; the pilot reviews time and position visually instead of reasoning about parser indices
 - keep the existing editable UTC fields and landing count confirmation as the authoritative review step before save
 - retain the v1.38.1–v1.38.2 split/landing/take-off heuristics unchanged; v1.42 only exposes their current result more clearly
@@ -79,7 +80,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
 - v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
 - v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
-- v1.42.0: visual GPS import player with take-off, landing, touch-and-go and split markers
+- v1.42.0–v1.42.1: visual GPS import player with take-off, landing, touch-and-go and split markers, followed by removal of the redundant per-flight map
 
 ## Near term
 
