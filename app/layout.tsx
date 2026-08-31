@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ThemeBootstrap } from "@/components/theme-bootstrap";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import "./theme.css";
@@ -18,8 +19,9 @@ import "./v142-gps-import.css";
 import "./v145-credentials.css";
 import "./v146-credentials.css";
 import "./v147-everyday.css";
-import "./v149-linkage.css";
 import "./v148-training.css";
+import "./v149-linkage.css";
+import "./v150-ui-system.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
@@ -45,6 +47,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+        <head><ThemeBootstrap preference="system" /></head>
       <body>{children}</body>
     </html>
   );

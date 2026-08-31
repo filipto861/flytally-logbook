@@ -2,7 +2,19 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.49.0 · Training & recency linkage
+## Current release — v1.50.0 · UI system & theme convergence
+
+Focus:
+- converge the application on one semantic color contract for backgrounds, panels, controls, text, borders, status states, focus and chart surfaces instead of accumulating page-specific Light-mode patches
+- resolve System / Light / Dark before normal page content paints; public authentication pages follow the device scheme and protected pages apply the saved preference server-side before hydration
+- keep appearance reactive when the operating-system scheme changes while System is selected, with one runtime theme event for non-CSS surfaces
+- use one no-key OpenStreetMap basemap path across route, track and GPS review maps and adapt map treatment plus overlay contrast to the resolved appearance
+- move dashboard and GPS SVG colors to semantic chart tokens so cursors, lines and active values remain legible in both themes
+- unify hover, focus-visible, disabled, success, warning, danger and informational states without changing their semantic meaning between themes
+- keep mobile layout, reduced-motion behavior and the existing shared page/panel/control geometry intact while tightening visual consistency across Dashboard, Flights, Licences, Connections, Aircraft & airports, Map and Data
+- keep printable FCL.050 logbook output theme-independent and preserve certification, recency, GPS inference, ownership and signed evidence behavior unchanged
+
+## v1.49.0 · Training & recency linkage
 
 Focus:
 - make a certified, instructor-signed DUAL flight tagged **FCL.140.A** or **FCL.740.A** feed the matching Recency calculation directly, without duplicating the same refresher as manual evidence

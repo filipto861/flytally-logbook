@@ -3,16 +3,20 @@
 import { useEffect } from "react";
 import type { AppearancePreference } from "@/lib/ui-preferences";
 
-const DARK_COLOR="#071018",LIGHT_COLOR="#f4f7fb";
+export type ResolvedTheme="light"|"dark";
+
+function resolve(preference:AppearancePreference):ResolvedTheme{
+  if(preference!=="system")return preference;
+  return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
+}
 
 function applyTheme(preference:AppearancePreference){
-  const resolved=preference==="system"?(window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):preference;
-  const root=document.documentElement;
+  const resolved=resolve(preference),root=document.documentElement;
+  const changed=root.dataset.theme!==resolved||root.dataset.themePreference!==preference;
   root.dataset.theme=resolved;
   root.dataset.themePreference=preference;
   root.style.colorScheme=resolved;
-  const themeMeta=document.querySelector('meta[name="theme-color"]');
-  if(themeMeta)themeMeta.setAttribute("content",resolved==="light"?LIGHT_COLOR:DARK_COLOR);
+  if(changed)window.dispatchEvent(new CustomEvent("flytally:themechange",{detail:{theme:resolved,preference}}));
 }
 
 export function ThemeManager({preference}:{preference:AppearancePreference}){
