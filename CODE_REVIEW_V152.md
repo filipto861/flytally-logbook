@@ -6,7 +6,7 @@ Scope: full repository review after the v1.51.x regulatory release family. The o
 
 ## Review result
 
-The active Next.js application is structurally sound enough to continue development. The largest cleanup issue was not a newly discovered production bug; it was that the repository still shipped the complete pre-Vercel Streamlit/Python runtime, migration utilities, frozen transactional SQLite data and obsolete deployment documents next to the current application.
+The active Next.js application is structurally sound enough to continue development. The largest cleanup issue was not a newly discovered production bug; it was that the repository still shipped the complete pre-Vercel Streamlit/Python runtime, its retired Python test suite, migration utilities, frozen transactional SQLite data and obsolete deployment documents next to the current application.
 
 v1.52 removes that ambiguity and makes the current runtime boundary explicit.
 
@@ -15,6 +15,7 @@ v1.52 removes that ambiguity and makes the current runtime boundary explicit.
 - legacy Streamlit entry point and `.streamlit` configuration;
 - legacy `logbook_core/` and `logbook_ui/` Python packages;
 - legacy Python dependency manifest;
+- retired Python `tests/test_*.py` suite that only exercised the removed Streamlit/Python runtime;
 - old Python/SQLite migration and shadow-verification scripts;
 - old SQL bootstrap material no longer used by the runtime migration system;
 - frozen `data/logbook.sqlite` transactional database;
@@ -69,11 +70,11 @@ The application still imports a sequence of release-layer CSS files. This is rec
 
 ## Documentation review
 
-`README.md`, `ARCHITECTURE.md` and `ROADMAP.md` are rewritten around the current Next.js/Vercel application rather than the old Streamlit architecture. Historical release archaeology belongs in Git, not in the top-level operational documentation.
+`README.md` and `ARCHITECTURE.md` now describe the current Next.js/Vercel application. `ROADMAP.md` has a current v1.52/v1.51 top section while deliberately retaining the historical release anchors used by regression contracts. Historical implementation files themselves belong in Git history, not in the active runtime tree.
 
 ## Version/reproducibility review
 
-`package.json` and `package-lock.json` must carry the same v1.52.0 root package version. CI/build validation is required after the lockfile is synchronized.
+`package.json` and `package-lock.json` carry the same v1.52.0 root package version. CI/build validation is required from the cleaned tree.
 
 ## Required release gates
 
