@@ -2,7 +2,7 @@ import type { CustomRecencyRule,RecencyEvaluation,RecencyEvidence,RecencyFlight 
 import { isClassRefresherFlight,rollingDaysStart,rollingYearsStart } from "./recency-engine.ts";
 
 export type RecencyAuditStatus="confirmed"|"limited"|"review";
-export type RecencyAuditFlight=RecencyFlight&{id:number;registration:string;departure:string;arrival:string};
+export type RecencyAuditFlight=RecencyFlight&{id:number;registration:string;departure:string;arrival:string;legacyMovementInferred?:boolean};
 export type RecencyAuditRow={id:string;source:"flight"|"evidence"|"credential";date:string;title:string;detail:string;status:RecencyAuditStatus;dropOffDate?:string;href?:string;issue?:string};
 export type RecencyAuditBundle={rows:RecencyAuditRow[];totalRows:number;confirmedCount:number;limitedCount:number;issueCount:number};
 
@@ -42,26 +42,31 @@ function bundle(rows:RecencyAuditRow[]):RecencyAuditBundle{
 
 function laplAudit(flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today:string){
   const start=rollingYearsStart(today,2),eligible=flights.filter(f=>f.date>=start&&f.date<=today&&laplRole(f.role)&&(classKey(f.aircraftClass)==="SEP"||classKey(f.aircraftClass)==="TMG"||(upper(f.evidence)==="ULL"&&classKey(f.aircraftClass)==="ULL")));
-  const rows:RecencyAuditRow[]=eligible.map(f=>{const landingCount=landings(f),refresher=isLaplRefresher(f);return{id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landingCount,"landing")} · ${upper(f.role)} · ${upper(f.evidence)}${refresher?" · signed FI refresher":""}`,status:"confirmed",dropOffDate:addDays(addYears(f.date,2),1),href:flightHref(f)}});
+  const rows:RecencyAuditRow[]=eligible.map(f=>{const landingCount=landings(f),refresher=isLaplRefresher(f),legacy=f.legacyMovementInferred?" · legacy PF movements reconstructed":"";return{id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landingCount,"landing")} · ${upper(f.role)} · ${upper(f.evidence)}${legacy}${refresher?" · signed FI refresher":""}`,status:"confirmed",dropOffDate:addDays(addYears(f.date,2),1),href:flightHref(f)}});
   for(const item of evidence.filter(item=>item.kind==="LAPL_PROFICIENCY_CHECK"&&item.date>=start&&item.date<=today))rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"LAPL(A) proficiency check",detail:`${item.aircraftClass} · ${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:addDays(addYears(item.date,2),1)});
   return bundle(rows);
 }
 
 function fcl060Audit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],today:string){
   const match=/^fcl060-(sep|tmg)-(day|night)$/.exec(evaluation.id),aircraftClass=match?.[1]?.toUpperCase(),mode=match?.[2];if(!aircraftClass||!mode)return bundle([]);
-  const start=rollingDaysStart(today,90),window=flights.filter(f=>f.date>=start&&f.date<=today&&classKey(f.aircraftClass)===aircraftClass&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=[];
-  for(const f of window){const landingCount=landings(f),nightCount=landings(f,true);if(!landingCount)continue;const nightDetail=mode==="night"?` · ${plural(nightCount,"night landing")}`:"";rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}`,status:"confirmed",dropOffDate:addDays(f.date,90),href:flightHref(f)})}
+  const start=rollingDaysStart(today,90),window=flights.filter(f=>f.date>=start&&f.date<=today&&classKey(f.aircraftClass)===aircraftClass&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=[],landingIndicator=Boolean(evaluation.meta?.landingIndicator);
+  for(const f of window){
+    const takeoffs=movement(f,"takeoff"),approaches=movement(f,"approach"),landingCount=landings(f),nightTakeoffs=movement(f,"takeoff",true),nightApproaches=movement(f,"approach",true),nightCount=landings(f,true);
+    if(landingIndicator){if(!landingCount)continue;const nightDetail=mode==="night"?` · ${plural(nightCount,"night landing")}`:"";rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}`,status:"confirmed",dropOffDate:addDays(f.date,90),href:flightHref(f)});continue}
+    if(takeoffs+approaches+landingCount===0)continue;
+    const structured=Boolean(f.movementEvidenceRecorded),consistencyIssue=structured?movementEvidenceIssue(f):"",status:RecencyAuditStatus=!structured?"limited":consistencyIssue?"review":"confirmed",legacy=f.legacyMovementInferred?" · legacy landing compatibility":"",nightDetail=mode==="night"?` · night ${nightTakeoffs} T/O · ${nightApproaches} approach${nightApproaches===1?"":"es"} · ${nightCount} landing${nightCount===1?"":"s"}`:"",issue=!structured?"Take-off and approach evidence is unavailable for this certified structured-era flight":consistencyIssue||undefined;
+    rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(takeoffs,"take-off")} · ${plural(approaches,"approach")} · ${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}${legacy}`,status,dropOffDate:addDays(f.date,90),href:flightHref(f),issue});
+  }
   if(mode==="night"&&Boolean(evaluation.meta?.irExemption))rows.push({id:"credential:ir",source:"credential",date:today,title:"Current IR",detail:"Current IR is included in the night planning indicator.",status:"confirmed"});
   return bundle(rows);
 }
 
 function classRevalidationAudit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today:string){
   const match=/^fcl740a-(sep|tmg)$/.exec(evaluation.id),aircraftClass=match?.[1]?.toUpperCase(),validUntil=evaluation.deadline;if(!aircraftClass||!validUntil)return bundle([]);
-  const start=addMonths(validUntil,-12),checkStart=addMonths(validUntil,-3),combineSepTmg=Boolean(evaluation.meta?.combineSepTmg),eligibleClasses=combineSepTmg?["SEP","TMG"]:[aircraftClass],window=flights.filter(f=>f.date>=start&&f.date<=today&&eligibleClasses.includes(classKey(f.aircraftClass))&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=window.map(f=>{const refresher=isClassRefresherFlight(f);return{id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landings(f),"landing")} · ${upper(f.role)}${picRole(f.role)?" · PIC credit":""}${refresher?" · signed FI / CRI refresher":""}`,status:"confirmed",dropOffDate:validUntil,href:flightHref(f)}});
+  const start=addMonths(validUntil,-12),checkStart=addMonths(validUntil,-3),combineSepTmg=Boolean(evaluation.meta?.combineSepTmg),eligibleClasses=combineSepTmg?["SEP","TMG"]:[aircraftClass],window=flights.filter(f=>f.date>=start&&f.date<=today&&eligibleClasses.includes(classKey(f.aircraftClass))&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=window.map(f=>{const refresher=isClassRefresherFlight(f),legacy=f.legacyMovementInferred?" · legacy PF movements reconstructed":"";return{id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landings(f),"landing")} · ${upper(f.role)}${picRole(f.role)?" · PIC credit":""}${legacy}${refresher?" · signed FI / CRI refresher":""}`,status:"confirmed",dropOffDate:validUntil,href:flightHref(f)}});
   for(const item of evidence.filter(item=>eligibleClasses.includes(item.aircraftClass)&&item.date>=start&&item.date<=today)){if(item.kind==="CLASS_REFRESHER")rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"External / historical FI / CRI refresher",detail:`${hm(item.minutes)} · ${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil});if(item.kind==="CLASS_REFRESHER_EXEMPTION")rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"FCL.740.A refresher exemption",detail:`${item.signer} · ${item.reference}${item.note?` · ${item.note}`:""}`,status:"confirmed",dropOffDate:validUntil});if(item.kind==="CLASS_PROFICIENCY_CHECK"&&item.aircraftClass===aircraftClass&&item.date>=checkStart)rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"Class proficiency check",detail:`${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil})}
   return bundle(rows);
 }
-
 
 export function buildRecencyAudit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today:string):RecencyAuditBundle{
   if(evaluation.id==="lapl-a-fcl140a")return laplAudit(flights,evidence,today);
