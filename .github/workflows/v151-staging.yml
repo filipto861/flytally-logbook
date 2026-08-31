@@ -58,7 +58,20 @@ jobs:
           set -o pipefail
           python3 scripts/v151_apply.py 2>&1 | tee v151-transform.log
       - name: Apply Czech ULL / LAPL credit correction
-        run: python3 scripts/v151_lapl_ull_correction.py
+        run: |
+          python3 scripts/v151_lapl_ull_correction.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('lib/recency-engine.ts'); s=p.read_text()
+          if 'starts?:number' not in s.split('\n',1)[0]:
+              s,n=re.subn(r'(export type RecencyFlight=\{[^\n]*?landingsNight:number;)',r'\1starts?:number;',s,count=1)
+              if n!=1: raise SystemExit('RecencyFlight starts typing guard failed')
+              p.write_text(s)
+          service=Path('lib/recency-service.ts').read_text()
+          if 'SELECT f.date,f.starts,f.evidence' not in service or 'starts:Number(row.starts)||0' not in service:
+              raise SystemExit('native ULL starts service mapping missing')
+          PY
       - name: Align historical regression guards with the audited rule engine
         run: |
           python3 - <<'PY'
