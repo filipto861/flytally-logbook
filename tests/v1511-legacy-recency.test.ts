@@ -10,11 +10,14 @@ const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFil
 const base=(o:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:false,takeoffsDay:0,takeoffsNight:0,approachesDay:0,approachesNight:0,...o});
 const compatible=(flight:RecencyFlight,legacyMovementCandidate:boolean)=>{const movement=resolveMovementCompatibility({evidence:flight.evidence,movementEvidenceRecorded:flight.movementEvidenceRecorded,legacyMovementCandidate,landingsDay:flight.landingsDay,landingsNight:flight.landingsNight,takeoffsDay:flight.takeoffsDay,takeoffsNight:flight.takeoffsNight,approachesDay:flight.approachesDay,approachesNight:flight.approachesNight});return{...flight,...movement} as RecencyFlight&{legacyMovementInferred:boolean}};
 
-test("v1.51.1 release identifies legacy records from audit provenance",()=>{
+test("v1.51.1 legacy compatibility remains grounded in record creation provenance",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,51,1));
   const service=read("lib/recency-service.ts");
-  assert.match(service,/flight_audit_log movement_audit/);
-  assert.match(service,/new_data \? 'movement_evidence_recorded'/);
+  assert.match(service,/flight_audit_log created_audit/);
+  assert.match(service,/flytally_feature_migrations movement_migration/);
+  assert.match(service,/created_audit[.]action='created'/);
+  assert.match(service,/v1[.]35[.]3-fcl060-structured-movements/);
+  assert.doesNotMatch(service,/new_data \? 'movement_evidence_recorded'/);
   assert.match(service,/resolveMovementCompatibility/);
 });
 
