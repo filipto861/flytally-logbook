@@ -83,6 +83,6 @@ test("v1.45.0 keeps flight certification GPS and mobile shell direction untouche
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(layout,/viewportFit:"cover"/);
   assert.match(rootLayout,/v145-credentials\.css/);
-  assert.match(roadmap,/Current release — v1\.45\.0/);
+  assert.match(roadmap,/## v1\.45\.0 · Licences, pilot profile & aircraft training/);
   assert.match(roadmap,/preserve flight certification payloads\/hashes\/revisions/);
 });
