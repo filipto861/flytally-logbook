@@ -46,7 +46,7 @@ test("v1.47.0 only surfaces technical data checks when action is required",()=>{
 test("v1.47.0 remains presentation-only around protected flight evidence",()=>{
   const layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md"),certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts");
   assert.match(layout,/v147-everyday\.css/);
-  assert.match(roadmap,/Current release — v1\.47\.0/);
+  assert.match(roadmap,/## v1\.47\.0 · Everyday UX refinement/);
   assert.match(certification,/flightCertificationHash/);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(roadmap,/does not change flight ownership, certification, recency or GPS inference/i);

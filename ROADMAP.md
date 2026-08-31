@@ -2,7 +2,18 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.47.0 · Everyday UX refinement
+## Current release — v1.48.0 · Modular training evidence
+
+Focus:
+- replace free-form aircraft-equipment entry with selectable standard endorsement codes **VP, RU, T, P, TW, EFIS and SLPC**, while retaining an explicit Other / custom field
+- do not invent negative endorsement codes such as NON-EFIS or NON-SLPC
+- allow instructor flights to carry more than one structured purpose at the same time, including aircraft differences/familiarisation, LAPL(A) FCL.140.A refresher training and SEP/TMG FCL.740.A refresher training
+- keep Task / exercise as independent free text and preserve all selected purposes in the certified flight remarks
+- retain one compatibility `purpose_code` marker for existing Recency Engine queries, with LAPL FCL.140.A taking priority when purposes are combined
+- treat FCL.740.A refresher training as evidence contributing to revalidation by experience, never as an automatic rating revalidation
+- keep aircraft-training signatures bound to the exact selected endorsements and preserve certified-flight hashes/revisions
+
+## v1.47.0 · Everyday UX refinement
 
 Focus:
 - keep everyday workflows compact instead of adding another flight-entry mode or duplicating controls that already exist elsewhere
@@ -138,6 +149,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.45.0: licence/profile finalisation plus aircraft-flown overview and signed type/variant/differences-training evidence
 - v1.46.0: compact sectioned Licences workspace with status-only Overview and validity separated from Recency
 - v1.47.0: everyday UX refinement with less duplicated flight-list chrome, quieter certified-flight sharing and action-only data-quality alerts
+- v1.48.0: selectable aircraft endorsement codes and modular instructor-flight purpose evidence without automatic privilege/revalidation claims
 
 ## Near term
 
