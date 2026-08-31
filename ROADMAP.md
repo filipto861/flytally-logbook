@@ -38,7 +38,7 @@ Simplified everyday flight entry and flight browsing without weakening certified
 
 ## v1.48.0 · Modular training evidence
 
-Introduced modular aircraft endorsement/purpose evidence while preserving certification and recency separation.
+Introduced modular aircraft endorsement/purpose evidence while preserving certification and recency separation. FCL.740.A refresher training remains evidence for the experience route, **never as an automatic rating revalidation**.
 
 ## v1.50.0 · UI system & theme convergence
 
