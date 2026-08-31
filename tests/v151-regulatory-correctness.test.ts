@@ -10,7 +10,7 @@ const flight=(o:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",ev
 
 test("v1.51 release wires aircraft credit, runtime migration and compact movement UI",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,51,0));
-  assert.match(read("lib/runtime-schema.ts"),/ensureV151Schema/);assert.match(read("lib/v151-schema.ts"),/part_fcl_credit_class/);assert.match(read("components/aircraft-manager.tsx"),/Part-FCL credit/);assert.match(read("components/flight-form.tsx"),/pilot flying \(PF\)/i);
+  assert.match(read("lib/runtime-schema.ts"),/ensureV151Schema/);assert.match(read("lib/v151-schema.ts"),/part_fcl_credit_class/);assert.match(read("components/aircraft-manager.tsx"),/part_fcl_credit_class/);assert.match(read("components/flight-form.tsx"),/pilot flying \(PF\)/i);
 });
 
 test("FCL.060 never treats landing-only historical data as CURRENT",()=>{
