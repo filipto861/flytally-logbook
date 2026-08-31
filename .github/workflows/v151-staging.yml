@@ -46,6 +46,15 @@ jobs:
       - name: Apply guarded v1.51 transform
         shell: bash
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/v151_apply.py')
+          s=p.read_text()
+          bad='replace_once(\'lib/recency-service.ts\',\'detail:"Landing-based 90-day planning indicator"\',\'detail:"FCL.060 · 3 take-offs, approaches and landings as PF"\')\n'
+          if s.count(bad)!=1:
+              raise SystemExit(f'expected one duplicate-label guard, found {s.count(bad)}')
+          p.write_text(s.replace(bad,''))
+          PY
           set -o pipefail
           python3 scripts/v151_apply.py 2>&1 | tee v151-transform.log
       - name: Preserve transform diagnostics
