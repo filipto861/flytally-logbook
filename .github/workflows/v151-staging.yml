@@ -65,17 +65,13 @@ jobs:
               p=Path(path); s=p.read_text()
               if s.count(old)!=1: raise SystemExit(f'{path}: expected one occurrence of {old!r}, got {s.count(old)}')
               p.write_text(s.replace(old,new,1))
-          # v1.35.5 intentionally hid movement evidence; v1.51 reintroduces it in one compact, optional PF card.
           patch('tests/v1355-recency-simplification.test.ts',
                 'assert.doesNotMatch(form,/FCL[.]060 movement evidence|Day take-offs|Day approaches|Night take-offs|Night approaches/);',
                 'assert.match(form,/pilot flying \\(PF\\)/i);assert.match(form,/Day take-offs/);assert.match(form,/Day approaches/);')
-          # Mobile layout remains unchanged; only the authoritative engine underneath changed.
           patch('tests/v136-mobile-ux.test.ts','assert.match(service,/evaluatePassengerLandingIndicator/);','assert.match(service,/evaluatePassengerCurrencyMode/);')
-          # v1.50 remains the historical UI-system release; v1.51 is now current.
           patch('tests/v150-ui-theme.test.ts','assert.match(roadmap,/Current release — v1\\.50\\.0 · UI system & theme convergence/);','assert.match(roadmap,/## v1\\.50\\.0 · UI system & theme convergence/);')
-          # Keep the FCL.740 negative fixture genuinely one take-off short after the refresher flight contributes one movement.
           patch('tests/v151-regulatory-correctness.test.ts','minutes:660,landingsDay:12,takeoffsDay:11','minutes:660,landingsDay:12,takeoffsDay:10')
-          # Never replace an explicitly stored zero movement count with the landing count when editing historical evidence.
+          patch('tests/v151-regulatory-correctness.test.ts','assert.equal(ready.meta?.takeoffs,12);','assert.equal(ready.meta?.takeoffs,13);')
           p=Path('components/flight-form.tsx'); s=p.read_text()
           for name, fallback in [('takeoffs_day','initialLandingsDay'),('takeoffs_night','initialLandingsNight'),('approaches_day','initialLandingsDay'),('approaches_night','initialLandingsNight')]:
               old=f'editing?Number(field("{name}"))||{fallback}:{fallback}'
