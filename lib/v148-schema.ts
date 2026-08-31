@@ -24,20 +24,27 @@ async function applyV148Schema(){
     sql`CREATE OR REPLACE FUNCTION flytally_sync_flight_purpose() RETURNS TRIGGER AS $$
       DECLARE purpose_text TEXT;
       BEGIN
-        IF UPPER(COALESCE(NEW.role,''))<>'DUAL' AND BTRIM(COALESCE(NEW.instructor,''))='' THEN
-          NEW.purpose_code:='';
-          RETURN NEW;
-        END IF;
-
         purpose_text:=' · '||UPPER(BTRIM(COALESCE(NEW.task,'')))||' · ';
-        IF purpose_text LIKE '% · FCL.140.A REFRESHER TRAINING · %' THEN
-          NEW.purpose_code:='LAPL_FCL140A_REFRESHER';
-        ELSIF purpose_text LIKE '% · FCL.740.A REFRESHER TRAINING · %' THEN
-          NEW.purpose_code:='SEP_TMG_FCL740A_REFRESHER';
-        ELSIF purpose_text LIKE '% · DIFFERENCES TRAINING · %' THEN
-          NEW.purpose_code:='AIRCRAFT_DIFFERENCES';
-        ELSIF purpose_text LIKE '% · FAMILIARISATION · %' THEN
-          NEW.purpose_code:='AIRCRAFT_FAMILIARISATION';
+        IF UPPER(COALESCE(NEW.role,''))='DUAL' THEN
+          IF purpose_text LIKE '% · FCL.140.A REFRESHER TRAINING · %' THEN
+            NEW.purpose_code:='LAPL_FCL140A_REFRESHER';
+          ELSIF purpose_text LIKE '% · FCL.740.A REFRESHER TRAINING · %' THEN
+            NEW.purpose_code:='SEP_TMG_FCL740A_REFRESHER';
+          ELSIF purpose_text LIKE '% · DIFFERENCES TRAINING · %' THEN
+            NEW.purpose_code:='AIRCRAFT_DIFFERENCES';
+          ELSIF purpose_text LIKE '% · FAMILIARISATION · %' THEN
+            NEW.purpose_code:='AIRCRAFT_FAMILIARISATION';
+          ELSE
+            NEW.purpose_code:='';
+          END IF;
+        ELSIF BTRIM(COALESCE(NEW.instructor,''))<>'' THEN
+          IF purpose_text LIKE '% · DIFFERENCES TRAINING · %' THEN
+            NEW.purpose_code:='AIRCRAFT_DIFFERENCES';
+          ELSIF purpose_text LIKE '% · FAMILIARISATION · %' THEN
+            NEW.purpose_code:='AIRCRAFT_FAMILIARISATION';
+          ELSE
+            NEW.purpose_code:='';
+          END IF;
         ELSE
           NEW.purpose_code:='';
         END IF;
