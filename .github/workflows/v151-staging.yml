@@ -1,4 +1,4 @@
-name: Assemble FlyTally v1.51 staging
+name: Validate FlyTally v1.51 staging
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
       - codex/v151-regulatory-correctness
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: v151-staging
   cancel-in-progress: true
 
 jobs:
-  assemble:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -36,51 +36,10 @@ jobs:
       SIGNING_SECRET: flytally-ci-signing-secret-with-enough-entropy
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Apply guarded v1.51 transform
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('scripts/v151_apply.py')
-          s=p.read_text()
-          bad='replace_once(\'lib/recency-service.ts\',\'detail:"Landing-based 90-day planning indicator"\',\'detail:"FCL.060 · 3 take-offs, approaches and landings as PF"\')\n'
-          if s.count(bad)!=1:
-              raise SystemExit(f'expected one duplicate-label guard, found {s.count(bad)}')
-          p.write_text(s.replace(bad,''))
-          PY
-          set -o pipefail
-          python3 scripts/v151_apply.py 2>&1 | tee v151-transform.log
-      - name: Apply Czech ULL / LAPL credit correction
-        run: |
-          python3 scripts/v151_lapl_ull_correction.py
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('lib/recency-engine.ts'); s=p.read_text()
-          if 'starts?:number' not in s.split('\n',1)[0]:
-              s,n=re.subn(r'(export type RecencyFlight=\{[^\n]*?landingsNight:number;)',r'\1starts?:number;',s,count=1)
-              if n!=1: raise SystemExit('RecencyFlight starts typing guard failed')
-              p.write_text(s)
-          service=Path('lib/recency-service.ts').read_text()
-          if 'SELECT f.date,f.starts,f.evidence' not in service or 'starts:Number(row.starts)||0' not in service:
-              raise SystemExit('native ULL starts service mapping missing')
-          PY
-      - name: Finalize v1.51 source logic and migrate intentional regression contracts
-        run: python3 scripts/v151_finalize.py
-      - name: Preserve transform diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: v151-transform-diagnostics-${{ github.sha }}
-          path: v151-transform.log
-          retention-days: 7
       - run: npm ci
       - run: npm run typecheck
       - name: Unit and regression tests
@@ -100,24 +59,3 @@ jobs:
           FLYTALLY_POSTGRES_INTEGRATION: "1"
         run: npm run test:postgres
       - run: npm run build
-      - name: Sanitize release tree
-        shell: bash
-        run: |
-          rm -rf .next
-          find . -maxdepth 2 -type f -name '*.tsbuildinfo' -delete
-          rm -f flytally-scale-evidence.json v151-transform.log v151-tests.log
-      - name: Stage clean release source
-        shell: bash
-        run: |
-          git rm -f --ignore-unmatch scripts/v151_apply.py scripts/v151_lapl_ull_correction.py scripts/v151_finalize.py
-          git config user.name "filipto861"
-          git config user.email "120219642+filipto861@users.noreply.github.com"
-          git add -A
-          git status --short
-          git diff --cached --stat
-      - name: Commit clean release source
-        shell: bash
-        run: git commit -m "v1.51.0 regulatory correctness core [skip ci]"
-      - name: Push clean release source
-        shell: bash
-        run: git push origin HEAD:codex/v151-regulatory-correctness
