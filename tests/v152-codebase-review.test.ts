@@ -17,6 +17,8 @@ test("v1.52 active tree is the Next.js runtime rather than the retired Streamlit
   for(const active of ["app","components","lib","tests","next.config.ts","vercel.json"]){
     assert.equal(exists(active),true,`${active} is part of the active production tree`);
   }
+  const retiredPythonTests=fs.readdirSync(path.join(root,"tests")).filter(name=>name.endsWith(".py"));
+  assert.deepEqual(retiredPythonTests,[],"retired Streamlit/Python tests must not remain beside the active TypeScript suite");
 });
 
 test("v1.52 repository no longer ships transactional or generated legacy data artifacts",()=>{
