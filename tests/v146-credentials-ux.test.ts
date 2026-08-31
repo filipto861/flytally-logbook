@@ -19,10 +19,16 @@ test("v1.46.0 makes Licences a compact sectioned workspace",()=>{
   assert.match(page,/view==="training"\?<AircraftQualificationsSection/);
 });
 
-test("v1.46.0 keeps summaries short and removes the old embedded LAPL explanation",()=>{
+test("v1.46 overview is status-only instead of an inventory dashboard",()=>{
   const page=read("app/(protected)/credentials/page.tsx"),css=read("app/v146-credentials.css");
   assert.match(page,/At a glance/);
+  assert.match(page,/<span>Validity<\/span>/);
+  assert.match(page,/<span>Recency<\/span>/);
+  assert.match(page,/ALL CURRENT/);
   assert.match(page,/NEED ATTENTION/);
+  assert.doesNotMatch(page,/trainingTotal|trainingPending/);
+  assert.doesNotMatch(page,/\{licences\.length\} licence/);
+  assert.doesNotMatch(page,/\{documents\.length\} document/);
   assert.doesNotMatch(page,/Under CAA-ZLP-165/);
   assert.doesNotMatch(page,/Structured purpose/);
   assert.doesNotMatch(page,/rolling 2-year check determines/);
@@ -31,10 +37,17 @@ test("v1.46.0 keeps summaries short and removes the old embedded LAPL explanatio
   assert.match(css,/aircraft-training-panel/);
 });
 
+test("v1.46 overview keeps validity separate from recency",()=>{
+  const page=read("app/(protected)/credentials/page.tsx");
+  assert.match(page,/licenceValidityAttention/);
+  assert.match(page,/qualificationValidityAttention/);
+  assert.match(page,/validityAttention=licenceValidityAttention\+qualificationValidityAttention\+documentAttention/);
+  assert.match(page,/parent\?\.isLapl&&\/\^\(SEP\|TMG\)\//);
+});
+
 test("v1.46.0 preserves credential data boundaries and adds only UI structure",()=>{
   const page=read("app/(protected)/credentials/page.tsx"),layout=read("app/layout.tsx");
   assert.match(page,/active=TRUE AND COALESCE\(record_kind,''\)<>'aircraft_training'/);
-  assert.match(page,/record_kind='aircraft_training' AND record_active IS TRUE/);
   assert.match(page,/addPilotLicence/);
   assert.match(page,/addQualification/);
   assert.match(page,/saveDocumentCredential/);
