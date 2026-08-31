@@ -57,5 +57,5 @@ test("v1.52 cleanup does not remove the v1.51 regulatory regression safety net",
 
   const regulatory=read("REGULATORY_CORE_V151.md");
   assert.match(regulatory,/automatically treated as SEP experience/);
-  assert.match(regulatory,/does not automatically satisfy FCL[.]060 passenger currency/i);
+  assert.match(regulatory,/ULL \/ Annex-I experience is not imported automatically into this 90-day passenger-currency rule/i);
 });
