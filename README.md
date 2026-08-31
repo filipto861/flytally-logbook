@@ -1,72 +1,65 @@
 # FlyTally
 
-Current production-oriented release: **FlyTally v1.33.3 — Certification Readiness**.
+Current production-oriented release: **FlyTally v1.52.0 — Codebase Review & Cleanup**.
 
-FlyTally is a Next.js electronic pilot logbook backed by Neon PostgreSQL and deployed on Vercel. The active application lives in `app/`, `components/` and `lib/`.
+FlyTally is a private multi-user electronic pilot logbook built with Next.js, React, Neon PostgreSQL and Vercel. The production source of truth lives in `app/`, `components/` and `lib/`; regression and PostgreSQL acceptance coverage lives in `tests/`.
 
-## Current architecture
+## Runtime architecture
 
-- Next.js 16 App Router
-- React 19
-- Neon PostgreSQL
-- Vercel production deployment
+- Next.js 16 App Router and React 19
+- Neon PostgreSQL as the transactional production database
+- Vercel deployment in the European region
+- server actions and authenticated API routes for mutations and private data
+- idempotent runtime schema gates for compatibility migrations
+- certified flight revisions, audit history and revision-bound verification evidence
 - EASA / FCL.050 and ULL logbook workflows
-- certification revisions and audit history
-- pilot connections, crew participation and instructor verification
-- GPS/KML/GPX/CSV track handling
-- printable EASA-style logbook, exports and account backups
+- LAPL / SEP / TMG recency planning with explicit regulatory evidence boundaries
+- pilot connections, shared flights and instructor verification
+- GPS/KML/GPX/CSV import, track review and playback
+- printable logbook, export and portable account backup
 
-## v1.33 — Certification Readiness
+## Regulatory model
 
-v1.33 adds an owner-authenticated, printable **Authority Verification Report** for a certified flight. The report independently recalculates each preserved certification SHA-256, identifies the exact revision/hash bound to instructor evidence, validates stored verification HMAC-SHA-256 evidence at report time, preserves revoked evidence in history, and displays same-device handwritten signature evidence without overstating identity assurance.
+The logbook record and the recency planner are deliberately separate layers. Certified records are not silently rewritten to make a recency result green.
 
-The release family also establishes a controlled certification-readiness documentation set in `docs/certification-readiness/` and progressively replaces source-only confidence with reproducible PostgreSQL acceptance evidence.
+The v1.51 regulatory core established the current rules used by v1.52:
 
-### v1.33.1
+- FCL.060 passenger currency uses structured pilot-flying movement evidence; legacy EASA records are handled only through the bounded legacy-compatibility path.
+- Eligible certified ULL aeroplane PIC experience is automatically treated as SEP experience for FCL.140.A and the FCL.740.A experience route; ULL does not automatically satisfy FCL.060 passenger currency or the mandatory FI/CRI refresher element.
+- explicit structured zeroes remain authoritative.
+- recency calculation and Evidence detail use the same eligibility rules.
+- FlyTally may report a planning/readiness state but does not alter licence or rating validity automatically.
 
-The GitHub verification workflow starts an isolated PostgreSQL 16 service and exercises the production certified-record protection/correction model, revision-bound verification and source/participant record independence. Acceptance output is retained as a commit-specific CI artifact.
+`REGULATORY_CORE_V151.md` documents the final v1.51.x regulatory baseline. These materials are engineering aids and do **not** claim that FlyTally is approved or certified by EASA or a national authority.
 
-### v1.33.2
+## Repository layout
 
-v1.33.2 adds database-backed cross-user ownership tests using SQL templates read directly from the production server-action sources. It also adds a regulatory/evidence-focused portable-backup round trip: current R2 and archived R1 certification fingerprints, structured purpose, instructor HMAC evidence, participation binding and GPS data are restored using the production restore SQL and then re-verified.
+- `app/` — routes, pages, server actions and API endpoints
+- `components/` — shared client/server UI
+- `lib/` — database, regulatory, certification, backup, GPS and domain services
+- `tests/` — TypeScript regression tests and isolated PostgreSQL acceptance tests
+- `data/airports.csv` — read-only airport reference catalogue used by the current runtime
+- `docs/certification-readiness/` — controlled engineering/evidence documentation
 
-Backup certification-history validation verifies stored HMAC-SHA-256 verification evidence as well as flight certification fingerprints. Recomputing the outer unkeyed portable-file checksum therefore cannot be used to forge signed instructor evidence.
-
-### v1.33.3
-
-v1.33.3 adds a complete PostgreSQL-backed certified DUAL workflow: Draft R1 → Certified R1 → connected-instructor signature → Correction R2 → Certified R2 → new revision-bound signature. The harness executes production certification, correction, request and signing SQL, then executes the server-side read queries used by Flight detail, Certification Audit, Authority Verification Report and Print against the same final database state.
-
-The workflow proves that historical R1 signature evidence remains preserved but cannot appear as current evidence for R2; after R2 is signed, exactly one signed verification matches the current revision/hash while both R1 and R2 remain cryptographically verifiable in history.
-
-The controlled documents include:
-
-- data dictionary;
-- FCL.050-oriented compliance matrix;
-- certification/signature specification;
-- acceptance-test matrix;
-- security and restore evidence specification;
-- full workflow acceptance evidence;
-- change-control rules.
-
-These materials are engineering and authority-discussion aids. They do **not** state that FlyTally is EASA certified or approved by ÚCL.
-
-## v1.32 — Integrity & Performance baseline
-
-v1.32 consolidated verified-flight workflow around `flight_participations` as the workflow record and `flight_verifications` as signed evidence; `instructor_flight_approvals` remains temporarily as a compatibility projection.
-
-It also introduced structured LAPL FCL.140.A refresher-purpose tagging, SQL-side dashboard aggregation, date-scoped large print jobs, licence-type normalization, safer runtime migrations, ULL-aware Czech LAPL recency handling and a web verification workflow in GitHub Actions.
-
-## Legacy Streamlit code
-
-`app.py`, `logbook_core/`, `logbook_ui/` and older PostgreSQL/Streamlit migration documents are **historical legacy code and documentation**. They are retained only for reference/recovery and are **not the current FlyTally production runtime or source of truth**.
-
-When auditing or developing the current product, use the Next.js/Vercel codebase and current migrations as the authoritative implementation.
+Historical Streamlit/Python runtime files, frozen SQLite data and one-off migration tooling were removed from the active tree in v1.52.0. Their history remains available in Git rather than being shipped alongside the production application.
 
 ## Verification
 
 ```bash
 npm ci
-npm run verify
+npm run typecheck
+npm test
+npm run test:postgres   # requires the PostgreSQL acceptance environment
+npm run build
 ```
 
-`npm run build` also runs the TypeScript test suite before the Next.js production build. The GitHub CI workflow additionally runs the isolated PostgreSQL acceptance suite under `tests/integration/`.
+GitHub CI runs TypeScript validation, isolated PostgreSQL acceptance and a full production build for the production branch. Vercel performs an independent production build on deployment.
+
+## Development principles
+
+- preserve user ownership boundaries on every query and mutation;
+- preserve certified revisions and signed evidence rather than mutating history;
+- prefer `LIMITED DATA` to invented regulatory evidence;
+- keep compatibility migrations idempotent and retryable;
+- keep GPS payloads out of list/dashboard hot paths;
+- retain regression tests when a release is closed — old release-numbered tests are part of the current safety net, not obsolete code.
