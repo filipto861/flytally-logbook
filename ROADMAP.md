@@ -2,7 +2,20 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.44.0 · Production hardening & cleanup
+## Current release — v1.45.0 · Licences, pilot profile & aircraft training
+
+Focus:
+- keep licences, ratings/qualifications, validity, recency and logbook signing identity in the existing credential model instead of creating a parallel profile system
+- add a separate **Types, variants & differences training** evidence layer for class/type training, differences training, familiarisation and national/ULL authorisations
+- derive **Aircraft flown** from the pilot's own flight history as an informational overview only; flying an aircraft never creates or validates a privilege automatically
+- preserve FCL.710-style training evidence with completion date, class/type, make/model/variant, differences/equipment, organisation, instructor/examiner, reference and notes
+- allow a connected instructor/examiner to review and cryptographically sign the exact aircraft-training record using a credential snapshot, with decline and revocation states
+- allow an instructor/examiner who is physically present to sign the same exact evidence on the device with a stored handwritten signature
+- keep aircraft-training rows outside ordinary active rating, Recency Engine and flight-signature credential queries while retaining them in the existing portable `pilot_qualifications` backup/restore graph
+- lock signed or pending aircraft-training contents against normal edits; corrections use a new evidence record rather than overwriting signed evidence
+- preserve flight certification payloads/hashes/revisions, Recency calculations, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.44.0 · Production hardening & cleanup
 
 Focus:
 - restore the PostgreSQL acceptance gate to the current certification v4 and participation-only instructor workflow instead of testing obsolete v1.33/v1.38 SQL shapes
@@ -99,10 +112,11 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.42.0–v1.42.1: visual GPS import player with take-off, landing, touch-and-go and split markers, followed by removal of the redundant per-flight map
 - v1.43: Print & Export finalisation — shared scope/range semantics, filtered FSTD exports and large-logbook guidance
 - v1.44.0: CI/acceptance hardening, backup ownership validation and targeted production indexes
+- v1.45.0: licence/profile finalisation plus aircraft-flown overview and signed type/variant/differences-training evidence
 
 ## Near term
 
-- v1.45: Licences & Pilot Profile finalisation — structured licence/qualification UX, FI/FE presentation, unlimited/date/recency validity and consistent identity/signature use
+- observe real-world use of signed aircraft-training records before expanding regulatory automation around them
 - observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers and old links are fully migrated
@@ -110,4 +124,4 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 
 ## Product direction
 
-Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Compatibility cleanup must never rewrite certified evidence. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics and advisory recency evidence must never alter certified evidence or regulatory records automatically.
+Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Compatibility cleanup must never rewrite certified evidence. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics, advisory recency evidence and aircraft-flown summaries must never alter certified evidence or regulatory records automatically.

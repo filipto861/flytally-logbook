@@ -61,10 +61,10 @@ test("v1.44.0 PostgreSQL acceptance fixtures follow certification v4 and canonic
 
 test("v1.44.0 keeps stabilized regulatory and mobile direction unchanged",()=>{
   const roadmap=read("ROADMAP.md"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx");
-  assert.match(roadmap,/Current release — v1\.44\.0/);
+  assert.match(roadmap,/## v1\.44\.0 · Production hardening & cleanup/);
   assert.match(roadmap,/preserve certification payloads\/hashes\/revisions/);
   assert.match(roadmap,/FCL\.050 print layout and global mobile navigation/);
-  assert.match(roadmap,/v1\.45: Licences & Pilot Profile finalisation/);
+  assert.match(roadmap,/Current release — v1\.45\.0/);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(layout,/viewportFit:"cover"/);
 });
