@@ -125,10 +125,10 @@ jobs:
         shell: bash
         run: |
           rm -f tsconfig.tsbuildinfo flytally-scale-evidence.json v151-transform.log v151-tests.log
-          git rm scripts/v151_apply.py scripts/v151_lapl_ull_correction.py .github/workflows/v151-staging.yml
+          git rm scripts/v151_apply.py scripts/v151_lapl_ull_correction.py
           git config user.name "filipto861"
           git config user.email "120219642+filipto861@users.noreply.github.com"
           git add -A
           git status --short
-          git commit -m "v1.51.0 regulatory correctness core"
+          git commit -m "v1.51.0 regulatory correctness core [skip ci]"
           git push origin HEAD:codex/v151-regulatory-correctness
