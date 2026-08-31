@@ -124,7 +124,12 @@ jobs:
       - name: Commit clean staging source
         shell: bash
         run: |
-          rm -f tsconfig.tsbuildinfo flytally-scale-evidence.json v151-transform.log v151-tests.log
+          # Build/typecheck output must never enter Git history. Besides keeping the
+          # release tree clean, this prevents diagnostic files from serializing CI
+          # environment values and tripping GitHub push protection.
+          rm -rf .next
+          find . -maxdepth 2 -type f -name '*.tsbuildinfo' -delete
+          rm -f flytally-scale-evidence.json v151-transform.log v151-tests.log
           git rm scripts/v151_apply.py scripts/v151_lapl_ull_correction.py
           git config user.name "filipto861"
           git config user.email "120219642+filipto861@users.noreply.github.com"
