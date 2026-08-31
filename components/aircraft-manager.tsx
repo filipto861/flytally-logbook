@@ -19,9 +19,9 @@ const roles=[
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
-  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),creditClass=t(aircraft?.part_fcl_credit_class).toUpperCase();
+  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft);
   return <div className="aircraft-form-grid">
-    {editing?<input type="hidden" name="id" value={t(aircraft?.id)}/>:null}
+    {editing?<><input type="hidden" name="id" value={t(aircraft?.id)}/><input type="hidden" name="part_fcl_credit_class" value={t(aircraft?.part_fcl_credit_class)}/><input type="hidden" name="part_fcl_credit_basis" value={t(aircraft?.part_fcl_credit_basis)}/><input type="hidden" name="part_fcl_credit_from" value={t(aircraft?.part_fcl_credit_from).slice(0,10)}/></>:null}
     <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/></label>
     <label>Make<input name="aircraft_make" defaultValue={t(aircraft?.aircraft_make)} placeholder="Tecnam"/><small>FCL.050 aircraft identity</small></label>
     <label>Model<input name="aircraft_model" defaultValue={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} placeholder="P2008 JC"/><small>Required for an EASA record</small></label>
@@ -31,14 +31,6 @@ function AircraftFields({aircraft}:{aircraft?:Row}){
     <label>Class<select name="aircraft_class" defaultValue={t(aircraft?.aircraft_class)||"ULL"}>{classes.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Logbook<select name="evidence" defaultValue={t(aircraft?.evidence)||"ULL"}>{evidence.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
-    <details className="aircraft-credit-card">
-      <summary>Part-FCL credit override <small>optional · ULL defaults to SEP</small></summary>
-      <div className="aircraft-credit-grid">
-        <label>Credit as<select name="part_fcl_credit_class" defaultValue={creditClass}><option value="">Automatic · ULL as SEP</option><option value="SEP">SEP</option><option value="TMG">TMG</option></select><small>Certified ULL aeroplane PIC experience is automatically treated as SEP for FCL.140.A and the FCL.740.A experience route under FCL.035(a)(4). Use this override only for an atypical class mapping such as a genuine TMG. ULL is never imported into FCL.060, and ULL flights do not satisfy the mandatory FI/CRI refresher.</small></label>
-        <label>Credit valid from<input name="part_fcl_credit_from" type="date" defaultValue={t(aircraft?.part_fcl_credit_from).slice(0,10)}/><small>Optional boundary for an explicit override. Leave blank to credit the eligible ULL history.</small></label>
-        <label className="wide">Basis / reference<input name="part_fcl_credit_basis" defaultValue={t(aircraft?.part_fcl_credit_basis)} placeholder="e.g. Annex I aircraft matching SEP(land), authority/DTO reference"/><small>Optional reference for an override or audit note. Ordinary ULL aeroplane PIC credit no longer depends on this field.</small></label>
-      </div>
-    </details>
     <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
     <label>Default share<select name="billing_share" defaultValue={billing.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
     {!editing?<><label>Initial hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="0"/></label><label>Valid from<input name="initial_valid_from" type="date" defaultValue={today}/></label></>:null}
