@@ -2,17 +2,29 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.51.0 · Regulatory correctness core
+## Current release — v1.52.0 · Codebase Review & Cleanup
 
 Focus:
-- replace landing-only FCL.060 planning with explicit certified take-off, approach and landing evidence recorded as pilot flying (PF); historical records without that evidence show **LIMITED DATA** rather than a false CURRENT
-- keep everyday entry light: normal new SP PIC/SOLO EASA entries preselect one compact PF confirmation and mirror movement counts from landings; unusual counts stay behind **Adjust movement counts**
-- make FCL.140.A require signed DUAL / supervised-SOLO evidence and actual recorded take-off + landing evidence; no blanket ULL credit
-- model FCL.035(a)(4) Annex-I / Article 2(8) credit once on the aircraft profile, with target class, basis/reference and valid-from date; eligible ULL hours and native start/landing counts may contribute; ULL flights never satisfy the mandatory FI/CRI refresher element
-- use Annex-I credit only for FCL.140.A / FCL.740.A planning, never for FCL.060 passenger currency, and use the native ULL start and landing counters for qualified aircraft instead of manufacturing movements from flight hours
-- make FCL.740.A require both take-offs and landings instead of a landing proxy while preserving the rule that FlyTally never extends a saved rating validity automatically
-- recognise aeroplane IR precisely so instructor certificates such as IRI(A) cannot trigger an IR-based night recency exemption
-- make the Licences overview consume the same authoritative LAPL recency result as the Recency page rather than a second independent legal calculation
+- freeze the validated v1.51.x regulatory behavior as the release baseline rather than combining cleanup with another rules rewrite
+- remove the inactive Streamlit/Python runtime, frozen SQLite/source-import artifacts, generated airport SQLite copy and obsolete migration/deployment tooling from the active production checkout
+- keep `data/airports.csv` as the single airport catalogue consumed by the current Next.js runtime
+- synchronize package metadata and replace stale operational architecture/documentation with the current Next.js / Vercel / Neon model
+- preserve certification payloads/hashes/revisions, shared-flight ownership, Recency Engine behavior, GPS evidence, print/export semantics and portable backup/restore
+- retain release-numbered TypeScript regression tests as the safety net for later refactors
+- defer broad CSS consolidation, destructive database cleanup and speculative hot-path rewrites until they can be isolated and measured
+
+## v1.51.x · Regulatory correctness core — final baseline
+
+Focus:
+- FCL.060 uses structured certified PF take-off, approach and landing evidence; explicit structured zeroes remain authoritative
+- certified EASA records created before the v1.35.3 structured-movement boundary may use the bounded legacy compatibility path based on record-creation provenance, not later edits
+- FCL.140.A counts eligible certified ordinary ULL / Annex-I aeroplane PIC experience automatically as SEP experience, including native ULL starts/landings
+- ULL / Annex-I experience is not imported automatically into FCL.060 passenger currency and does not automatically satisfy the mandatory FI/CRI refresher element
+- FCL.740.A experience planning can use eligible ULL PIC experience while retaining the separate FI/CRI refresher/exemption requirement
+- Part-FCL DUAL and supervised-SOLO contribution requires current instructor-signed evidence for the certified revision
+- Recency Evidence detail uses the same eligibility and effective-movement interpretation as the calculation
+- IR(A) qualification detection remains distinct from instructor certificates such as IRI(A)
+- the optional internal Part-FCL class override is retained only for atypical mappings such as a genuine TMG and is not exposed in the normal Aircraft UI
 - preserve certification fingerprints, revision history, instructor signatures, shared-flight ownership, print/export, GPS evidence and backup/restore behavior
 
 ## v1.50.0 · UI system & theme convergence
