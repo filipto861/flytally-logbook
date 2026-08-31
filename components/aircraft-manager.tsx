@@ -19,7 +19,7 @@ const roles=[
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
-  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft);
+  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),creditClass=t(aircraft?.part_fcl_credit_class).toUpperCase();
   return <div className="aircraft-form-grid">
     {editing?<input type="hidden" name="id" value={t(aircraft?.id)}/>:null}
     <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/></label>
@@ -31,6 +31,14 @@ function AircraftFields({aircraft}:{aircraft?:Row}){
     <label>Class<select name="aircraft_class" defaultValue={t(aircraft?.aircraft_class)||"ULL"}>{classes.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Logbook<select name="evidence" defaultValue={t(aircraft?.evidence)||"ULL"}>{evidence.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
+    <details className="aircraft-credit-card">
+      <summary>Part-FCL credit <small>optional · set once per aircraft</small></summary>
+      <div className="aircraft-credit-grid">
+        <label>Credit as<select name="part_fcl_credit_class" defaultValue={creditClass}><option value="">Do not count</option><option value="SEP">SEP</option><option value="TMG">TMG</option></select><small>For Annex-I / Article 2(8) aircraft only. Eligible ULL hours and take-offs/landings can support FCL.140.A and FCL.740.A; never FCL.060. The mandatory FI/CRI refresher is not credited from ULL.</small></label>
+        <label>Credit valid from<input name="part_fcl_credit_from" type="date" defaultValue={t(aircraft?.part_fcl_credit_from).slice(0,10)}/><small>Prevents historical flights being credited before the basis applied.</small></label>
+        <label className="wide">Basis / reference<input name="part_fcl_credit_basis" defaultValue={t(aircraft?.part_fcl_credit_basis)} placeholder="e.g. Annex I aircraft matching SEP(land), authority/DTO reference"/><small>Required when credit is enabled. FlyTally never decides eligibility from ULL status alone.</small></label>
+      </div>
+    </details>
     <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
     <label>Default share<select name="billing_share" defaultValue={billing.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
     {!editing?<><label>Initial hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="0"/></label><label>Valid from<input name="initial_valid_from" type="date" defaultValue={today}/></label></>:null}

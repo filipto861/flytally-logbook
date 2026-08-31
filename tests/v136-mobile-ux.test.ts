@@ -20,5 +20,5 @@ test("v1.36 compact mobile recency remains supported without changing the engine
   const css=read("app/v136-mobile.css"),service=read("lib/recency-service.ts");
   assert.match(css,/recency-card-v135 li[.]met>span:first-child>small\{display:none\}/);
   assert.match(css,/recency-overview-panel/);
-  assert.match(service,/evaluatePassengerLandingIndicator/);
+  assert.match(service,/evaluatePassengerCurrencyMode/);
 });

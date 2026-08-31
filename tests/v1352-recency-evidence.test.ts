@@ -29,7 +29,7 @@ test("structured LAPL proficiency-check evidence activates the alternative FCL.1
 });
 
 test("FCL.740.A experience route combines flight, PIC, landing and structured refresher evidence",()=>{
-  const flights=[flight({date:"2026-08-20",minutes:720,landingsDay:12,role:"PIC"})],evidence=parseRecencyEvidence([{id:"ref1",kind:"CLASS_REFRESHER",aircraftClass:"SEP",date:"2026-08-15",minutes:60,signer:"FI Example",reference:"REF-1"}]);
+  const flights=[flight({date:"2026-08-20",minutes:720,landingsDay:12,takeoffsDay:12,approachesDay:12,role:"PIC"})],evidence=parseRecencyEvidence([{id:"ref1",kind:"CLASS_REFRESHER",aircraftClass:"SEP",date:"2026-08-15",minutes:60,signer:"FI Example",reference:"REF-1"}]);
   const result=evaluateClassRevalidation({aircraftClass:"SEP",validUntil:"2026-12-31",flights,evidence,today:"2026-08-28"});assert.equal(result.status,"current");assert.equal(result.badge,"READY");assert.equal(result.requirements.find(item=>item.id==="landings")?.label,"Take-offs / landings");
 });
 

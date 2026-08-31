@@ -8,10 +8,10 @@ import type { RecencyFlight } from "../lib/recency-engine.ts";
 const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const flight=(date:string,landingsDay=1,landingsNight=0):RecencyFlight=>({date,evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay,landingsNight});
 
-test("v1.35.5 keeps passenger currency simple and landing based",()=>{
+test("v1.35.5 historical landing helper remains isolated while current service is strict",()=>{
   const form=read("components/flight-form.tsx"),service=read("lib/recency-service.ts");
-  assert.doesNotMatch(form,/FCL[.]060 movement evidence|Day take-offs|Day approaches|Night take-offs|Night approaches/);
-  assert.match(service,/evaluatePassengerLandingIndicator/);assert.match(service,/Landing-based 90-day planning indicator/);
+  assert.match(form,/pilot flying \(PF\)/i);assert.match(form,/Day take-offs/);assert.match(form,/Day approaches/);
+  assert.doesNotMatch(service,/evaluatePassengerLandingIndicator/);assert.match(service,/evaluatePassengerCurrencyMode/);
 });
 
 test("landing indicator works for historical certified flights without movement evidence",()=>{

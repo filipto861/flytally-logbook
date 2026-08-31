@@ -2,7 +2,20 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.50.0 · UI system & theme convergence
+## Current release — v1.51.0 · Regulatory correctness core
+
+Focus:
+- replace landing-only FCL.060 planning with explicit certified take-off, approach and landing evidence recorded as pilot flying (PF); historical records without that evidence show **LIMITED DATA** rather than a false CURRENT
+- keep everyday entry light: normal new SP PIC/SOLO EASA entries preselect one compact PF confirmation and mirror movement counts from landings; unusual counts stay behind **Adjust movement counts**
+- make FCL.140.A require signed DUAL / supervised-SOLO evidence and actual recorded take-off + landing evidence; no blanket ULL credit
+- model FCL.035(a)(4) Annex-I / Article 2(8) credit once on the aircraft profile, with target class, basis/reference and valid-from date; eligible ULL hours and native start/landing counts may contribute; ULL flights never satisfy the mandatory FI/CRI refresher element
+- use Annex-I credit only for FCL.140.A / FCL.740.A planning, never for FCL.060 passenger currency, and use the native ULL start and landing counters for qualified aircraft instead of manufacturing movements from flight hours
+- make FCL.740.A require both take-offs and landings instead of a landing proxy while preserving the rule that FlyTally never extends a saved rating validity automatically
+- recognise aeroplane IR precisely so instructor certificates such as IRI(A) cannot trigger an IR-based night recency exemption
+- make the Licences overview consume the same authoritative LAPL recency result as the Recency page rather than a second independent legal calculation
+- preserve certification fingerprints, revision history, instructor signatures, shared-flight ownership, print/export, GPS evidence and backup/restore behavior
+
+## v1.50.0 · UI system & theme convergence
 
 Focus:
 - converge the application on one semantic color contract for backgrounds, panels, controls, text, borders, status states, focus and chart surfaces instead of accumulating page-specific Light-mode patches

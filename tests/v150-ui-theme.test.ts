@@ -8,7 +8,7 @@ const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFil
 test("v1.50 is the current UI system release and its CSS is the final application layer",()=>{
   const pkg=JSON.parse(read("package.json")),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
   assert.ok(releaseAtLeast(pkg.version,1,50,0));
-  assert.match(roadmap,/Current release — v1\.50\.0 · UI system & theme convergence/);
+  assert.match(roadmap,/## v1\.50\.0 · UI system & theme convergence/);
   assert.ok(layout.indexOf('v148-training.css')<layout.indexOf('v149-linkage.css'));
   assert.ok(layout.indexOf('v149-linkage.css')<layout.indexOf('v150-ui-system.css'));
 });
