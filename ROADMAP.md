@@ -30,7 +30,7 @@ These concise anchors intentionally retain the names and invariants used by regr
 
 ## v1.45.0 · Licences, pilot profile & aircraft training
 
-Established the separate aircraft-training evidence model and exact signed-content binding. Later work must **preserve flight certification payloads/hashes/revisions** and the boundary between training evidence, ratings and ordinary aircraft-flown information.
+Established the separate aircraft-training evidence model and exact signed-content binding. Signed/pending evidence is append-only: **corrections use a new evidence record rather than overwriting signed evidence**. Later work must **preserve flight certification payloads/hashes/revisions** and the boundary between training evidence, ratings and ordinary aircraft-flown information.
 
 ## v1.47.0 · Everyday UX refinement
 
