@@ -72,29 +72,8 @@ jobs:
           if 'SELECT f.date,f.starts,f.evidence' not in service or 'starts:Number(row.starts)||0' not in service:
               raise SystemExit('native ULL starts service mapping missing')
           PY
-      - name: Align historical regression guards with the audited rule engine
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          def patch(path, old, new):
-              p=Path(path); s=p.read_text()
-              if s.count(old)!=1: raise SystemExit(f'{path}: expected one occurrence of {old!r}, got {s.count(old)}')
-              p.write_text(s.replace(old,new,1))
-          patch('tests/v1355-recency-simplification.test.ts',
-                'assert.doesNotMatch(form,/FCL[.]060 movement evidence|Day take-offs|Day approaches|Night take-offs|Night approaches/);',
-                'assert.match(form,/pilot flying \\(PF\\)/i);assert.match(form,/Day take-offs/);assert.match(form,/Day approaches/);')
-          patch('tests/v136-mobile-ux.test.ts','assert.match(service,/evaluatePassengerLandingIndicator/);','assert.match(service,/evaluatePassengerCurrencyMode/);')
-          patch('tests/v150-ui-theme.test.ts','assert.match(roadmap,/Current release — v1\\.50\\.0 · UI system & theme convergence/);','assert.match(roadmap,/## v1\\.50\\.0 · UI system & theme convergence/);')
-          patch('tests/v151-regulatory-correctness.test.ts','minutes:660,landingsDay:12,takeoffsDay:11','minutes:660,landingsDay:12,takeoffsDay:10')
-          patch('tests/v151-regulatory-correctness.test.ts','assert.equal(ready.meta?.takeoffs,12);','assert.equal(ready.meta?.takeoffs,13);')
-          p=Path('components/flight-form.tsx'); s=p.read_text()
-          for name, fallback in [('takeoffs_day','initialLandingsDay'),('takeoffs_night','initialLandingsNight'),('approaches_day','initialLandingsDay'),('approaches_night','initialLandingsNight')]:
-              old=f'editing?Number(field("{name}"))||{fallback}:{fallback}'
-              new=f'editing?(Number(field("{name}","0"))||0):{fallback}'
-              if s.count(old)!=1: raise SystemExit(f'flight-form movement init guard failed for {name}: {s.count(old)}')
-              s=s.replace(old,new,1)
-          p.write_text(s)
-          PY
+      - name: Finalize v1.51 source logic and migrate intentional regression contracts
+        run: python3 scripts/v151_finalize.py
       - name: Preserve transform diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -130,7 +109,7 @@ jobs:
           rm -rf .next
           find . -maxdepth 2 -type f -name '*.tsbuildinfo' -delete
           rm -f flytally-scale-evidence.json v151-transform.log v151-tests.log
-          git rm scripts/v151_apply.py scripts/v151_lapl_ull_correction.py
+          git rm scripts/v151_apply.py scripts/v151_lapl_ull_correction.py scripts/v151_finalize.py
           git config user.name "filipto861"
           git config user.email "120219642+filipto861@users.noreply.github.com"
           git add -A
