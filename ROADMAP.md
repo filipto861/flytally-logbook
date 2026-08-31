@@ -1,68 +1,219 @@
 # FlyTally roadmap
 
-This roadmap applies only to the current Next.js / Vercel / Neon application. Detailed historical release prose is preserved by Git history; a small set of release anchors remains below because current regression tests use them to protect architectural boundaries.
+This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.52.0 · Codebase Review & Cleanup
+## Current release — v1.51.0 · Regulatory correctness core
 
-Goals:
-
-- freeze the validated v1.51.x regulatory behavior as the baseline;
-- remove inactive Streamlit/Python runtime, obsolete migration tooling and stale repository data artifacts;
-- remove obsolete generated airport SQLite infrastructure while retaining the active CSV catalogue;
-- synchronize project version metadata;
-- replace outdated v0.x architecture/deployment documentation with current Next.js architecture documentation;
-- keep current certification, backup, ownership, recency, GPS, print/export and shared-flight behavior unchanged;
-- retain all release regression tests that protect current behavior;
-- record deferred technical debt instead of combining risky visual/business refactors into the cleanup release.
-
-## Stable baseline carried forward from v1.51.x
-
-- legacy EASA movement compatibility is provenance-aware;
-- structured movement zeroes remain authoritative;
-- FCL.060 calculation and Evidence detail are aligned;
-- eligible certified ULL aeroplane PIC experience is automatically credited as SEP for FCL.140.A and the FCL.740.A experience route;
-- ULL remains excluded from automatic FCL.060 passenger currency and the mandatory FI/CRI refresher element;
-- normal Aircraft UI no longer exposes the optional Part-FCL override metadata.
-
-## Historical architecture anchors
-
-These concise anchors intentionally retain the names and invariants used by regression contracts; they are not a second release-history document.
-
-## v1.45.0 · Licences, pilot profile & aircraft training
-
-Established the separate aircraft-training evidence model and exact signed-content binding. Signed/pending evidence is append-only: **corrections use a new evidence record rather than overwriting signed evidence**. Later work must **preserve flight certification payloads/hashes/revisions** and the boundary between training evidence, ratings and ordinary aircraft-flown information.
-
-## v1.47.0 · Everyday UX refinement
-
-Simplified everyday flight entry and flight browsing. This presentation refinement **does not change flight ownership, certification, recency or GPS inference** and must not weaken shared-workflow evidence boundaries.
-
-## v1.48.0 · Modular training evidence
-
-Introduced modular aircraft endorsement/purpose evidence while preserving certification and recency separation. FCL.740.A refresher training remains evidence for the experience route, **never as an automatic rating revalidation**.
+Focus:
+- replace landing-only FCL.060 planning with explicit certified take-off, approach and landing evidence recorded as pilot flying (PF); historical records without that evidence show **LIMITED DATA** rather than a false CURRENT
+- keep everyday entry light: normal new SP PIC/SOLO EASA entries preselect one compact PF confirmation and mirror movement counts from landings; unusual counts stay behind **Adjust movement counts**
+- make FCL.140.A require signed DUAL / supervised-SOLO evidence and actual recorded take-off + landing evidence; no blanket ULL credit
+- model FCL.035(a)(4) Annex-I / Article 2(8) credit once on the aircraft profile, with target class, basis/reference and valid-from date; eligible ULL hours and native start/landing counts may contribute; ULL flights never satisfy the mandatory FI/CRI refresher element
+- use Annex-I credit only for FCL.140.A / FCL.740.A planning, never for FCL.060 passenger currency, and use the native ULL start and landing counters for qualified aircraft instead of manufacturing movements from flight hours
+- make FCL.740.A require both take-offs and landings instead of a landing proxy while preserving the rule that FlyTally never extends a saved rating validity automatically
+- recognise aeroplane IR precisely so instructor certificates such as IRI(A) cannot trigger an IR-based night recency exemption
+- make the Licences overview consume the same authoritative LAPL recency result as the Recency page rather than a second independent legal calculation
+- preserve certification fingerprints, revision history, instructor signatures, shared-flight ownership, print/export, GPS evidence and backup/restore behavior
 
 ## v1.50.0 · UI system & theme convergence
 
-Established the semantic application theme layer while keeping printable logbook output and regulatory/certification behavior independent of appearance.
+Focus:
+- converge the application on one semantic color contract for backgrounds, panels, controls, text, borders, status states, focus and chart surfaces instead of accumulating page-specific Light-mode patches
+- resolve System / Light / Dark before normal page content paints; public authentication pages follow the device scheme and protected pages apply the saved preference server-side before hydration
+- keep appearance reactive when the operating-system scheme changes while System is selected, with one runtime theme event for non-CSS surfaces
+- use one no-key OpenStreetMap basemap path across route, track and GPS review maps and adapt map treatment plus overlay contrast to the resolved appearance
+- move dashboard and GPS SVG colors to semantic chart tokens so cursors, lines and active values remain legible in both themes
+- unify hover, focus-visible, disabled, success, warning, danger and informational states without changing their semantic meaning between themes
+- keep mobile layout, reduced-motion behavior and the existing shared page/panel/control geometry intact while tightening visual consistency across Dashboard, Flights, Licences, Connections, Aircraft & airports, Map and Data
+- keep printable FCL.050 logbook output theme-independent and preserve certification, recency, GPS inference, ownership and signed evidence behavior unchanged
 
-## Next development priorities
+## v1.49.0 · Training & recency linkage
 
-After v1.52 is stable, future releases should return to product development rather than repository archaeology. Candidate priorities:
+Focus:
+- make a certified, instructor-signed DUAL flight tagged **FCL.140.A** or **FCL.740.A** feed the matching Recency calculation directly, without duplicating the same refresher as manual evidence
+- recalculate stored recency/dashboard state whenever a flight becomes certified, a certified flight is opened for correction, or instructor verification is signed or revoked
+- support the current FCL.740.A SEP/TMG combined-experience route when both ratings are held and preserve explicit fallback evidence for external/historical refresher training or a valid refresher exemption
+- keep FCL.740.A **READY** as a planning/evidence state only; never write a new SEP/TMG validity date automatically
+- provide a direct handoff from a READY recency card to the saved rating where the pilot can record the actual new validity after revalidation is completed
+- surface certified differences/familiarisation flights as candidates in Aircraft training; signed differences flights prefill the evidence record while exact VP/RU/T/P/TW/EFIS/SLPC or custom endorsements remain an explicit pilot selection
+- preserve exact flight revision/hash signatures, append-only correction history, separate aircraft-training evidence and FCL.050 print/export semantics
 
-1. continue UX simplification where real workflows remain unnecessarily dense;
-2. continue measured performance work on authenticated hot paths;
-3. extend EASA/ULL regulatory coverage only with explicit rule/evidence boundaries and regression tests;
-4. consolidate CSS/module structure incrementally, with visual checks, rather than through one large rewrite;
-5. keep certification, ownership and portable-backup evidence compatible across every schema change.
+## v1.48.0 · Modular training evidence
 
-## Release discipline
+Focus:
+- replace free-form aircraft-equipment entry with selectable standard endorsement codes **VP, RU, T, P, TW, EFIS and SLPC**, while retaining an explicit Other / custom field
+- do not invent negative endorsement codes such as NON-EFIS or NON-SLPC
+- allow instructor flights to carry more than one structured purpose at the same time, including aircraft differences/familiarisation, LAPL(A) FCL.140.A refresher training and SEP/TMG FCL.740.A refresher training
+- keep Task / exercise as independent free text and preserve all selected purposes in the certified flight remarks
+- retain one compatibility `purpose_code` marker for existing Recency Engine queries, with LAPL FCL.140.A taking priority when purposes are combined
+- treat FCL.740.A refresher training as evidence contributing to revalidation by experience, never as an automatic rating revalidation
+- keep aircraft-training signatures bound to the exact selected endorsements and preserve certified-flight hashes/revisions
 
-Every production release should pass:
+## v1.47.0 · Everyday UX refinement
 
-- TypeScript typecheck;
-- complete TypeScript regression suite;
-- isolated PostgreSQL acceptance suite;
-- Next.js production build;
-- Vercel preview/production build;
-- production smoke check and runtime-error review.
+Focus:
+- keep everyday workflows compact instead of adding another flight-entry mode or duplicating controls that already exist elsewhere
+- remove the separate Flights **Quick view** row while retaining the same Draft/Certified/Correction/Locked and sharing states inside Advanced filters and active filter chips
+- make **Save and add another** close the feedback loop with a clear saved-state message while reusing the existing aircraft, departure and pilot defaults rather than introducing a multi-leg editor
+- keep instructor/supervising-PIC verification prominent when it can require action, but move ordinary **Crew & logbook sharing** into a collapsed secondary section on certified flight detail
+- show the top-level Aircraft & airports technical-data panel only when actionable data-quality issues exist; keep the optional Data health summary available for deeper inspection
+- remove the retired quick-view CSS rather than hiding obsolete controls
+- keep the release presentation-only around protected evidence: it does not change flight ownership, certification, recency or GPS inference
+- preserve FCL.050 print/export semantics, ULL/EASA evidence boundaries, signed aircraft-training evidence and global mobile navigation
 
-Tests are corrected only when the product requirement itself intentionally changes; they are never weakened merely to make a release green.
+## v1.46.0 · Compact licences workspace
+
+Focus:
+- keep the Licences area split into clear sections: **Overview**, **Licences & ratings**, **Recency**, **Aircraft training** and **Medical & documents**
+- keep Overview as a status panel rather than an inventory dashboard: show only whether credentials/documents are valid and whether monitored recency is current
+- do not show counts of licences, ratings, aircraft-training records or documents on Overview
+- keep licence/rating/document validity separate from flying recency; an unlimited licence can remain valid while its associated flying privileges are not current
+- keep detailed regulatory calculations and evidence inside the Recency section instead of repeating long legislative explanations in the normal Licences UI
+- preserve the v1.45 aircraft-training evidence/signature model and the existing licence, rating and document data boundaries
+- preserve flight certification payloads/hashes/revisions, Recency calculations, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.45.0 · Licences, pilot profile & aircraft training
+
+Focus:
+- keep licences, ratings/qualifications, validity, recency and logbook signing identity in the existing credential model instead of creating a parallel profile system
+- add a separate **Types, variants & differences training** evidence layer for class/type training, differences training, familiarisation and national/ULL authorisations
+- derive **Aircraft flown** from the pilot's own flight history as an informational overview only; flying an aircraft never creates or validates a privilege automatically
+- preserve FCL.710-style training evidence with completion date, class/type, make/model/variant, differences/equipment, organisation, instructor/examiner, reference and notes
+- allow a connected instructor/examiner to review and cryptographically sign the exact aircraft-training record using a credential snapshot, with decline and revocation states
+- allow an instructor/examiner who is physically present to sign the same exact evidence on the device with a stored handwritten signature
+- keep aircraft-training rows outside ordinary active rating, Recency Engine and flight-signature credential queries while retaining them in the existing portable `pilot_qualifications` backup/restore graph
+- lock signed or pending aircraft-training contents against normal edits; corrections use a new evidence record rather than overwriting signed evidence
+- preserve flight certification payloads/hashes/revisions, Recency calculations, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.44.0 · Production hardening & cleanup
+
+Focus:
+- restore the PostgreSQL acceptance gate to the current certification v4 and participation-only instructor workflow instead of testing obsolete v1.33/v1.38 SQL shapes
+- close the stale v1.17 draft PR that duplicated every production verification run and add CI concurrency/branch guards so the production branch cannot create a second PR verification for the same SHA
+- add targeted hot-path indexes for shared-flight lookups, exact verification evidence, notification links, licence lookups and the retained legacy `track_points` backup path
+- make backup ownership validation cover `connection_audit_log` as well as connections, participations, approvals, verifications, licences, qualifications and notifications
+- keep `track_points` deliberately present because portable backup/restore still round-trips it; removal requires a future backup-format migration rather than an ad-hoc table cleanup
+- keep `instructor_flight_approvals` compatibility-only for historical backups/links while all new instructor requests remain canonical `flight_participations` records
+- re-run the controlled 10k-flight Dashboard, Flights and Print acceptance benchmarks against the current query shapes
+- preserve certification payloads/hashes/revisions, Recency Engine, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.43.0 · Print & Export finalisation
+
+- use one scope vocabulary across printable logbook and flight export: Complete logbook, ULL only, EASA only and ULL + EASA
+- validate calendar dates and reject invalid or reversed From/To ranges instead of silently producing empty output or a PostgreSQL date-cast error
+- keep Excel FSTD content aligned with the selected print scope and date range; ULL-only exports exclude FSTD while Complete, EASA and ULL + EASA include the matching FSTD period
+- keep CSV deliberately flight-row only and make the Excel/CSV difference explicit in the UI
+- narrow the export flight query to the fields actually written instead of loading the complete flight record payload
+- show selected record/page counts before printing, warn for large browser print jobs and show a clear empty-selection state
+- keep the same FCL.050 columns 1–12, 10-row A4 landscape renderer and running-total logic for Complete, ULL, EASA and ULL + EASA
+- preserve certification payloads/hashes/revisions, Recency Engine, GPS inference/review, shared-flight workflow and portable backup/restore
+
+## v1.42.1 · GPS import review player polish
+
+- keep one authoritative synchronized GPS map/player in the import workflow instead of repeating a static map in every flight review card
+- retain altitude/speed profiles and interactive take-off, landing, touch-and-go and split markers
+- retain the v1.38.1–v1.38.2 split/landing/take-off heuristics unchanged
+
+## v1.41.0 · Map & GPS UX
+
+- keep ordinary flight-detail loads lightweight by fetching only GPS track summaries on the server; detailed player coordinates are requested only when the GPS tab is actually opened
+- expose a dedicated authenticated, user-scoped, no-store GPS review endpoint for the detailed track/player payload
+- compare saved BLOCK/AIR values with the current GPS-derived suggestion before the pilot chooses to apply it
+- show detected landing count as advisory evidence only; it is never written by the Apply GPS time suggestions action
+- make provenance explicit: GPS suggestions remain derived/reviewable data until the pilot deliberately applies them, and certified records remain immutable
+- show source file name, stored point count, distance and start time for each attached track in the GPS manager
+- retain the existing synchronized map/altitude/speed player and the v1.38.1–v1.38.2 GPS split/landing/take-off heuristics unchanged
+
+## v1.40.0 · Flights UX & logbook polish
+
+- make the Flights list an operational workspace rather than a raw table: record and sharing views expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
+- add exact record-state filters for Draft, Certified, Correction and Locked records without changing certification state or evidence
+- add user-scoped shared-flight filters for Waiting, Shared/accepted, Shared with me and Not shared
+- surface shared-flight state directly beside each flight's role and certification badge
+- preserve existing search, ULL/EASA, role, aircraft, airport, route, GPS, date and sort filters and keep them combinable
+- keep Previous/Next navigation consistent when a record or shared-workflow filter is active
+- keep the fast Flights path N+1-free and exclude GPS coordinate JSON from the list query
+- present flight rows as compact mobile cards below 760 px while leaving the global mobile shell/navigation untouched
+
+## v1.39.0 · Core cleanup & performance
+
+- make `flight_participations` the canonical model for all new instructor requests; `instructor_flight_approvals` is no longer populated by the modern request path
+- retain `instructor_flight_approvals` as compatibility evidence for historical backups and old links
+- make legacy approval synchronization exact by approval id, source owner, instructor, certified revision and flight hash
+- consolidate protected-runtime schema initialization behind the retryable `ensureRuntimeSchema()` gate
+- explicitly retain legacy `track_points`: portable backup/restore still round-trips it
+- preserve backup/restore support for existing instructor approval rows while stopping creation of new duplicates
+- keep certification payloads/hashes/revisions, Recency Engine, GPS inference, dashboard behavior and global mobile navigation unchanged
+
+## v1.38.2 · GPS take-off time hardening
+
+- `flightEnvelope()` ignores isolated taxi/runway speed spikes and requires sustained movement plus real climb when altitude evidence is usable
+- automatic take-off is anchored to the first point clearly above the local ground baseline
+- speed-only fallback remains available for tracks without useful altitude data
+
+## v1.38.1 · GPS split & landing detection hardening
+
+- automatic GPS splitting is stricter than generic track validation: both proposed flight sections must contain credible airborne movement and at least 1 km of actual tracked movement
+- short taxi/GPS bursts followed by ground waits are not promoted to separate flights
+- altitude-based touch-and-go candidates reject physically implausible GPS altitude discontinuities
+
+## v1.38.0 · Dashboard, Airports & Routes overhaul
+
+- scheduled backup and recency endpoints fail closed when `CRON_SECRET` is missing
+- certified ULL and EASA records share one read-only field structure
+- Aircraft and Costs are one coherent dashboard area
+- Airports and Routes are separate period-aware statistics with direct drill-down to Flights
+
+## Certification baseline — v1.33.5
+
+The v1.33 certification-readiness baseline remains unchanged: exact revision/hash verification, immutable certified records, correction history, instructor evidence, cross-user isolation, backup/restore integrity, PostgreSQL acceptance evidence and 10k query benchmarks.
+
+## Completed product foundation
+
+- v1.34.0–v1.34.2: modular dashboard, per-user layout, System/Dark/Light appearance and responsive UI consistency
+- v1.35.0–v1.35.5: selectable recency monitoring, forecasts, structured revalidation evidence, audit detail and simplified landing-based FCL.060 planning indicator
+- v1.36.0–v1.36.2: mobile/iOS presentation work, single-tap navigation hotfix and isolated status-area handling
+- v1.37.0: unified shared-flight notification/review workflow, explicit Review → Add → Certify states and protected ULL logbook-entry presentation
+- v1.38.0: dashboard consolidation, distinct airport/route analytics, ULL/EASA field-parity regression guard and fail-closed cron authentication
+- v1.38.1–v1.38.2: conservative GPS split/landing/take-off inference based on real SkyDemon failure cases
+- v1.39.0: canonical participation workflow, exact legacy compatibility updates and cached runtime schema initialization
+- v1.40.0: record/workflow-aware Flights filtering, shared-flight status in the list, narrowed list payload and mobile flight cards
+- v1.41.0: lazy GPS detail payload, saved-vs-derived review and explicit track provenance
+- v1.42.0–v1.42.1: visual GPS import player with take-off, landing, touch-and-go and split markers, followed by removal of the redundant per-flight map
+- v1.43: Print & Export finalisation — shared scope/range semantics, filtered FSTD exports and large-logbook guidance
+- v1.44.0: CI/acceptance hardening, backup ownership validation and targeted production indexes
+- v1.45.0: licence/profile finalisation plus aircraft-flown overview and signed type/variant/differences-training evidence
+- v1.46.0: compact sectioned Licences workspace with status-only Overview and validity separated from Recency
+- v1.47.0: everyday UX refinement with less duplicated flight-list chrome, quieter certified-flight sharing and action-only data-quality alerts
+- v1.48.0: selectable aircraft endorsement codes and modular instructor-flight purpose evidence without automatic privilege/revalidation claims
+- v1.49.0: signed training-flight linkage into Recency, explicit rating-validity handoff and flight-backed aircraft-training candidates
+
+## Near term
+
+- observe the simplified everyday workflows in real use before adding further flight-entry helpers or new modes
+- observe real-world use of signed aircraft-training records before expanding regulatory automation around them
+- observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
+- keep FSTD recency evidence deferred until it becomes a product priority
+- retire `instructor_flight_approvals` only after historical backup/restore consumers and old links are fully migrated
+- migrate backup/restore away from `track_points` before considering removal of that compatibility table
+
+## Later / research — Automatic Flight Capture
+
+Do not treat this as a near-term implementation until the data-source and background-recording constraints are resolved.
+
+- support historical ADS-B flight discovery by saved aircraft / ICAO 24-bit address plus date, with a provider-neutral integration rather than coupling FlyTally to one vendor
+- keep ADS-B as reviewable source evidence only; imported data must pass through the existing flight-review workflow and must never create or certify a logbook entry automatically
+- defer paid historical ADS-B providers until their cost and long-term data-retention/licensing terms make sense for FlyTally
+- investigate open ADS-B data only if lookup can be made operationally practical without downloading or indexing multi-gigabyte daily archives inside normal Vercel requests
+- revisit direct FlyTally GPS recording only when reliable background recording with a locked display is available; a browser/PWA recorder that requires the screen to remain awake is not considered a production-quality solution
+- prefer a small native iOS/Android companion recorder if necessary, with offline/local-first recording and sync into the existing `flight_tracks` review pipeline
+- preserve track provenance by source and keep externally sourced tracks separate from pilot-owned device GPS evidence
+
+Prerequisites before implementation:
+- acceptable historical ADS-B provider cost/licensing or a sustainable open-data backend
+- reliable background GPS recording with the phone locked
+- one normalized track-source contract feeding the existing conservative GPS inference/review engine
+
+## Product direction
+
+Preserve FCL.050-style logbook correctness, exact revision history, clear ULL/EASA filtering, separate pilot-owned records for the same physical flight, and simple mobile-first workflows. Compatibility cleanup must never rewrite certified evidence. GPS inference must remain conservative and reviewable; presentation preferences, dashboard analytics, advisory recency evidence and aircraft-flown summaries must never alter certified evidence or regulatory records automatically.
