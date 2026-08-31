@@ -56,8 +56,6 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
       </details>
     </section>
 
-    <nav className="flight-quick-filters" aria-label="Quick flight views"><span>Quick view</span><Link className={!params.status&&!params.workflow?"active":""} href={href(params,{status:undefined,workflow:undefined,page:"1"})}>All</Link><Link className={params.status==="draft"?"active":""} href={href(params,{status:"draft",workflow:undefined,page:"1"})}>Drafts</Link><Link className={params.status==="certified"?"active":""} href={href(params,{status:"certified",workflow:undefined,page:"1"})}>Certified</Link><Link className={params.workflow==="waiting"?"active":""} href={href(params,{status:undefined,workflow:"waiting",page:"1"})}>Waiting</Link><Link className={params.workflow==="received"?"active":""} href={href(params,{status:undefined,workflow:"received",page:"1"})}>Shared with me</Link></nav>
-
     {activeFilters.length?<nav className="active-filter-bar" aria-label="Active flight filters"><span>Showing:</span>{activeFilters.map(([key,value])=><Link key={key} title={`Remove ${labels[key]||key} filter`} href={href(params,{[key]:undefined,page:"1"})}><small>{labels[key]||key}</small>{filterValue(key,value!)} <b aria-hidden="true">×</b></Link>)}<Link className="clear-all-filters" href="/flights">Clear all</Link></nav>:null}
 
     <div className="flight-results-heading"><div><p className="eyebrow">CURRENT VIEW</p><h2>{result.total===1?"1 flight":`${result.total} flights`}</h2></div><p>Totals below reflect {activeFilters.length?"the selected filters":"your complete logbook"}.</p></div>

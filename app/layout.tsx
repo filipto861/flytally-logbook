@@ -17,6 +17,7 @@ import "./v141-gps-review.css";
 import "./v142-gps-import.css";
 import "./v145-credentials.css";
 import "./v146-credentials.css";
+import "./v147-everyday.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

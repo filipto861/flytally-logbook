@@ -2,7 +2,19 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.46.0 · Compact licences workspace
+## Current release — v1.47.0 · Everyday UX refinement
+
+Focus:
+- keep everyday workflows compact instead of adding another flight-entry mode or duplicating controls that already exist elsewhere
+- remove the separate Flights **Quick view** row while retaining the same Draft/Certified/Correction/Locked and sharing states inside Advanced filters and active filter chips
+- make **Save and add another** close the feedback loop with a clear saved-state message while reusing the existing aircraft, departure and pilot defaults rather than introducing a multi-leg editor
+- keep instructor/supervising-PIC verification prominent when it can require action, but move ordinary **Crew & logbook sharing** into a collapsed secondary section on certified flight detail
+- show the top-level Aircraft & airports technical-data panel only when actionable data-quality issues exist; keep the optional Data health summary available for deeper inspection
+- remove the retired quick-view CSS rather than hiding obsolete controls
+- keep the release presentation-only around protected evidence: it does not change flight ownership, certification, recency or GPS inference
+- preserve FCL.050 print/export semantics, ULL/EASA evidence boundaries, signed aircraft-training evidence and global mobile navigation
+
+## v1.46.0 · Compact licences workspace
 
 Focus:
 - keep the Licences area split into clear sections: **Overview**, **Licences & ratings**, **Recency**, **Aircraft training** and **Medical & documents**
@@ -67,7 +79,7 @@ Focus:
 
 ## v1.40.0 · Flights UX & logbook polish
 
-- make the Flights list an operational workspace rather than a raw table: quick views expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
+- make the Flights list an operational workspace rather than a raw table: record and sharing views expose Drafts, Certified records, waiting shared-flight requests and records shared with the current pilot
 - add exact record-state filters for Draft, Certified, Correction and Locked records without changing certification state or evidence
 - add user-scoped shared-flight filters for Waiting, Shared/accepted, Shared with me and Not shared
 - surface shared-flight state directly beside each flight's role and certification badge
@@ -125,10 +137,11 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.44.0: CI/acceptance hardening, backup ownership validation and targeted production indexes
 - v1.45.0: licence/profile finalisation plus aircraft-flown overview and signed type/variant/differences-training evidence
 - v1.46.0: compact sectioned Licences workspace with status-only Overview and validity separated from Recency
+- v1.47.0: everyday UX refinement with less duplicated flight-list chrome, quieter certified-flight sharing and action-only data-quality alerts
 
 ## Near term
 
-- improve the everyday flight-entry workflow without weakening the current reviewed GPS-import path or certification model
+- observe the simplified everyday workflows in real use before adding further flight-entry helpers or new modes
 - observe real-world use of signed aircraft-training records before expanding regulatory automation around them
 - observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
 - keep FSTD recency evidence deferred until it becomes a product priority

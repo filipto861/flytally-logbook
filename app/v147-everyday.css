@@ -1,0 +1,18 @@
+/* FlyTally v1.47 — Everyday UX refinement */
+.saved-next-flight{display:flex;align-items:center;gap:8px;margin:-8px 0 18px;padding:10px 13px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--accent) 8%,var(--panel));font-size:.78rem}
+.saved-next-flight strong{color:var(--accent)}
+.saved-next-flight span{color:var(--muted)}
+
+.flight-secondary-panel{margin-top:0}
+.flight-secondary-panel>summary{cursor:pointer}
+.flight-secondary-panel>summary>span{display:grid;gap:3px;min-width:0}
+.flight-secondary-panel>summary strong{font-size:.94rem}
+.flight-secondary-panel>summary small{color:var(--muted);font-size:.7rem;font-weight:600}
+.flight-secondary-panel-body{display:grid;gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.flight-secondary-panel-body>p{margin:0}
+
+@media(max-width:600px){
+  .saved-next-flight{margin-top:-4px;margin-bottom:14px}
+  .flight-secondary-panel-body .instructor-request-form{grid-template-columns:1fr}
+  .flight-secondary-panel-body .instructor-request-form button{width:100%}
+}

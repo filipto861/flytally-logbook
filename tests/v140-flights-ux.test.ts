@@ -7,16 +7,16 @@ import { releaseAtLeast } from "./release-version.ts";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v1.40.0 exposes record and shared-workflow views on Flights",()=>{
+test("v1.40.0 record and shared-workflow views remain available on Flights",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,40,0));
   const page=read("app/(protected)/flights/page.tsx");
+  assert.match(page,/Advanced filters/);
   assert.match(page,/name="status"/);
   assert.match(page,/name="workflow"/);
-  assert.match(page,/Quick view/);
-  assert.match(page,/Drafts/);
-  assert.match(page,/Certified/);
-  assert.match(page,/Waiting/);
-  assert.match(page,/Shared with me/);
+  assert.match(page,/<option value="draft">Draft<\/option>/);
+  assert.match(page,/<option value="certified">Certified<\/option>/);
+  assert.match(page,/<option value="waiting">Waiting for response<\/option>/);
+  assert.match(page,/<option value="received">Shared with me<\/option>/);
   assert.match(page,/Official locked logbook record/);
   assert.match(page,/Editable record not yet certified/);
   assert.match(page,/View flight/);
@@ -47,9 +47,9 @@ test("v1.40.0 record and workflow filters remain consistent in detail navigation
 test("v1.40.0 mobile flight cards are scoped away from global navigation",()=>{
   const css=read("app/v140-flights.css"),layout=read("app/layout.tsx");
   assert.match(layout,/v140-flights\.css/);
-  assert.match(css,/\.flight-quick-filters/);
   assert.match(css,/@media\(max-width:760px\)/);
   assert.match(css,/\.flights-table \.flight-list-row/);
+  assert.doesNotMatch(css,/flight-quick-filters/);
   assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|sidebar nav|\.sidebar/);
 });
 
