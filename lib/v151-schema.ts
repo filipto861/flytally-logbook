@@ -19,7 +19,7 @@ async function applyV151Schema(){
     sql`SELECT pg_advisory_xact_lock(151020260)`,
     sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS part_fcl_credit_class TEXT NOT NULL DEFAULT ''`,
     sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS part_fcl_credit_basis TEXT NOT NULL DEFAULT ''`,
-    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS part_fcl_training_authorised BOOLEAN NOT NULL DEFAULT FALSE`,
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS part_fcl_credit_from TEXT NOT NULL DEFAULT ''`,
     sql`INSERT INTO flytally_feature_migrations(migration_key) VALUES(${MIGRATION_KEY}) ON CONFLICT(migration_key) DO NOTHING`,
   ]);
 }
