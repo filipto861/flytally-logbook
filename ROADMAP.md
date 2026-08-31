@@ -2,7 +2,18 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.45.0 · Licences, pilot profile & aircraft training
+## Current release — v1.46.0 · Compact licences workspace
+
+Focus:
+- keep the Licences area split into clear sections: **Overview**, **Licences & ratings**, **Recency**, **Aircraft training** and **Medical & documents**
+- keep Overview as a status panel rather than an inventory dashboard: show only whether credentials/documents are valid and whether monitored recency is current
+- do not show counts of licences, ratings, aircraft-training records or documents on Overview
+- keep licence/rating/document validity separate from flying recency; an unlimited licence can remain valid while its associated flying privileges are not current
+- keep detailed regulatory calculations and evidence inside the Recency section instead of repeating long legislative explanations in the normal Licences UI
+- preserve the v1.45 aircraft-training evidence/signature model and the existing licence, rating and document data boundaries
+- preserve flight certification payloads/hashes/revisions, Recency calculations, GPS inference/review, FCL.050 print layout and global mobile navigation
+
+## v1.45.0 · Licences, pilot profile & aircraft training
 
 Focus:
 - keep licences, ratings/qualifications, validity, recency and logbook signing identity in the existing credential model instead of creating a parallel profile system
@@ -113,14 +124,33 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.43: Print & Export finalisation — shared scope/range semantics, filtered FSTD exports and large-logbook guidance
 - v1.44.0: CI/acceptance hardening, backup ownership validation and targeted production indexes
 - v1.45.0: licence/profile finalisation plus aircraft-flown overview and signed type/variant/differences-training evidence
+- v1.46.0: compact sectioned Licences workspace with status-only Overview and validity separated from Recency
 
 ## Near term
 
+- improve the everyday flight-entry workflow without weakening the current reviewed GPS-import path or certification model
 - observe real-world use of signed aircraft-training records before expanding regulatory automation around them
 - observe large career-logbook browser print performance before changing the fixed FCL.050 page renderer
 - keep FSTD recency evidence deferred until it becomes a product priority
 - retire `instructor_flight_approvals` only after historical backup/restore consumers and old links are fully migrated
 - migrate backup/restore away from `track_points` before considering removal of that compatibility table
+
+## Later / research — Automatic Flight Capture
+
+Do not treat this as a near-term implementation until the data-source and background-recording constraints are resolved.
+
+- support historical ADS-B flight discovery by saved aircraft / ICAO 24-bit address plus date, with a provider-neutral integration rather than coupling FlyTally to one vendor
+- keep ADS-B as reviewable source evidence only; imported data must pass through the existing flight-review workflow and must never create or certify a logbook entry automatically
+- defer paid historical ADS-B providers until their cost and long-term data-retention/licensing terms make sense for FlyTally
+- investigate open ADS-B data only if lookup can be made operationally practical without downloading or indexing multi-gigabyte daily archives inside normal Vercel requests
+- revisit direct FlyTally GPS recording only when reliable background recording with a locked display is available; a browser/PWA recorder that requires the screen to remain awake is not considered a production-quality solution
+- prefer a small native iOS/Android companion recorder if necessary, with offline/local-first recording and sync into the existing `flight_tracks` review pipeline
+- preserve track provenance by source and keep externally sourced tracks separate from pilot-owned device GPS evidence
+
+Prerequisites before implementation:
+- acceptable historical ADS-B provider cost/licensing or a sustainable open-data backend
+- reliable background GPS recording with the phone locked
+- one normalized track-source contract feeding the existing conservative GPS inference/review engine
 
 ## Product direction
 
