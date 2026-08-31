@@ -25,14 +25,17 @@ test("LAPL dual and supervised solo need instructor evidence and real movement e
   const missingMovements=evaluateLaplA([flight({role:"PIC",minutes:720,landingsDay:12,movementEvidenceRecorded:false,takeoffsDay:0}) ,flight({role:"DUAL",minutes:60,purposeCode:"LAPL_FCL140A_REFRESHER",instructorSigned:true})],"2026-08-31");assert.equal(missingMovements.badge,"LIMITED DATA");
 });
 
-test("ULL is never blanket LAPL credit; explicit aircraft profile credit affects hours only",()=>{
-  const plain=evaluateLaplA([flight({evidence:"ULL",aircraftClass:"ULL",minutes:720,landingsDay:12,takeoffsDay:12})],"2026-08-31");assert.notEqual(plain.status,"current");
-  const credited=evaluateLaplA([flight({evidence:"ULL",aircraftClass:"ULL",minutes:720,landingsDay:12,takeoffsDay:12,partFclCreditClass:"SEP",partFclCreditBasis:"Annex I same class",partFclCreditFrom:"2026-01-01"}),flight({minutes:60,takeoffsDay:12,landingsDay:12}),flight({role:"DUAL",minutes:60,purposeCode:"LAPL_FCL140A_REFRESHER",instructorSigned:true})],"2026-08-31");assert.equal(credited.status,"current");assert.equal(credited.meta?.ullMinutes,720);
+test("ULL aeroplane PIC experience is automatic LAPL credit while FCL.060 stays separate",()=>{
+  const ull=flight({evidence:"ULL",aircraftClass:"ULL",role:"PIC",minutes:720,starts:12,landingsDay:12,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0});
+  const refresher=flight({role:"DUAL",minutes:60,purposeCode:"LAPL_FCL140A_REFRESHER",instructorSigned:true});
+  const credited=evaluateLaplA([ull,refresher],"2026-08-31");
+  assert.equal(credited.status,"current");assert.equal(credited.meta?.ullMinutes,720);
+  assert.notEqual(evaluatePassengerCurrencyMode([ull],"SEP",false,"2026-08-31","day").status,"current");
 });
 
-test("FCL.740.A needs both take-offs and landings and does not use Annex-I movements",()=>{
+test("FCL.740.A keeps movement integrity and automatically accepts eligible ULL experience",()=>{
   const weak=[flight({minutes:660,landingsDay:12,takeoffsDay:11}),flight({role:"DUAL",minutes:60,landingsDay:0,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0,purposeCode:"SEP_TMG_FCL740A_REFRESHER",instructorSigned:true})];const result=evaluateClassRevalidation({aircraftClass:"SEP",validUntil:"2026-09-30",today:"2026-08-31",flights:weak});assert.notEqual(result.badge,"READY");
-  const annex=[flight({evidence:"ULL",aircraftClass:"ULL",minutes:720,landingsDay:30,takeoffsDay:30,partFclCreditClass:"SEP",partFclCreditBasis:"Annex I",partFclCreditFrom:"2026-01-01"}),flight({minutes:60,takeoffsDay:12,landingsDay:12}),flight({role:"DUAL",minutes:60,landingsDay:0,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0,purposeCode:"SEP_TMG_FCL740A_REFRESHER",instructorSigned:true})];const ready=evaluateClassRevalidation({aircraftClass:"SEP",validUntil:"2026-09-30",today:"2026-08-31",flights:annex});assert.equal(ready.badge,"READY");assert.equal(ready.meta?.takeoffs,12);
+  const ull=flight({evidence:"ULL",aircraftClass:"ULL",role:"PIC",minutes:720,starts:12,landingsDay:12,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0}),refresher=flight({role:"DUAL",minutes:60,landingsDay:0,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0,purposeCode:"SEP_TMG_FCL740A_REFRESHER",instructorSigned:true});const ready=evaluateClassRevalidation({aircraftClass:"SEP",validUntil:"2026-09-30",today:"2026-08-31",flights:[ull,refresher]});assert.equal(ready.badge,"READY");assert.equal(ready.meta?.takeoffs,12);
 });
 
 test("IR detection cannot confuse IRI instructor certificate with IR(A)",()=>{assert.equal(isAeroplaneIrQualification("IR(A)"),true);assert.equal(isAeroplaneIrQualification("SE-IR(A)"),true);assert.equal(isAeroplaneIrQualification("IRI(A)"),false);assert.equal(isAeroplaneIrQualification("FI(A)"),false)});

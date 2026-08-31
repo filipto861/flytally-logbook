@@ -32,11 +32,11 @@ function AircraftFields({aircraft}:{aircraft?:Row}){
     <label>Logbook<select name="evidence" defaultValue={t(aircraft?.evidence)||"ULL"}>{evidence.map(value=><option key={value}>{value}</option>)}</select></label>
     <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
     <details className="aircraft-credit-card">
-      <summary>Part-FCL credit <small>optional · set once per aircraft</small></summary>
+      <summary>Part-FCL credit override <small>optional · ULL defaults to SEP</small></summary>
       <div className="aircraft-credit-grid">
-        <label>Credit as<select name="part_fcl_credit_class" defaultValue={creditClass}><option value="">Do not count</option><option value="SEP">SEP</option><option value="TMG">TMG</option></select><small>For Annex-I / Article 2(8) aircraft only. Eligible ULL hours and take-offs/landings can support FCL.140.A and FCL.740.A; never FCL.060. The mandatory FI/CRI refresher is not credited from ULL.</small></label>
-        <label>Credit valid from<input name="part_fcl_credit_from" type="date" defaultValue={t(aircraft?.part_fcl_credit_from).slice(0,10)}/><small>Prevents historical flights being credited before the basis applied.</small></label>
-        <label className="wide">Basis / reference<input name="part_fcl_credit_basis" defaultValue={t(aircraft?.part_fcl_credit_basis)} placeholder="e.g. Annex I aircraft matching SEP(land), authority/DTO reference"/><small>Required when credit is enabled. FlyTally never decides eligibility from ULL status alone.</small></label>
+        <label>Credit as<select name="part_fcl_credit_class" defaultValue={creditClass}><option value="">Automatic · ULL as SEP</option><option value="SEP">SEP</option><option value="TMG">TMG</option></select><small>Certified ULL aeroplane PIC experience is automatically treated as SEP for FCL.140.A and the FCL.740.A experience route under FCL.035(a)(4). Use this override only for an atypical class mapping such as a genuine TMG. ULL is never imported into FCL.060, and ULL flights do not satisfy the mandatory FI/CRI refresher.</small></label>
+        <label>Credit valid from<input name="part_fcl_credit_from" type="date" defaultValue={t(aircraft?.part_fcl_credit_from).slice(0,10)}/><small>Optional boundary for an explicit override. Leave blank to credit the eligible ULL history.</small></label>
+        <label className="wide">Basis / reference<input name="part_fcl_credit_basis" defaultValue={t(aircraft?.part_fcl_credit_basis)} placeholder="e.g. Annex I aircraft matching SEP(land), authority/DTO reference"/><small>Optional reference for an override or audit note. Ordinary ULL aeroplane PIC credit no longer depends on this field.</small></label>
       </div>
     </details>
     <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
