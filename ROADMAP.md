@@ -26,15 +26,15 @@ Goals:
 
 ## Historical architecture anchors
 
-These concise anchors intentionally retain the names used by regression contracts; they are not a second release-history document.
+These concise anchors intentionally retain the names and invariants used by regression contracts; they are not a second release-history document.
 
 ## v1.45.0 · Licences, pilot profile & aircraft training
 
-Established the separate aircraft-training evidence model, exact signed-content binding and the boundary between training evidence, ratings and ordinary aircraft-flown information.
+Established the separate aircraft-training evidence model and exact signed-content binding. Later work must **preserve flight certification payloads/hashes/revisions** and the boundary between training evidence, ratings and ordinary aircraft-flown information.
 
 ## v1.47.0 · Everyday UX refinement
 
-Simplified everyday flight entry and flight browsing without weakening certified-record, shared-workflow or GPS evidence boundaries.
+Simplified everyday flight entry and flight browsing. This presentation refinement **does not change flight ownership, certification, recency or GPS inference** and must not weaken shared-workflow evidence boundaries.
 
 ## v1.48.0 · Modular training evidence
 
