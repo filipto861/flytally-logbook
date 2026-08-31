@@ -20,8 +20,8 @@ jobs:
           ref: codex/v1520-full-code-review
           persist-credentials: true
       - name: Replace current release section and retain historical anchors
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
           import re
 
@@ -29,34 +29,36 @@ jobs:
           text = path.read_text()
           replacement = '''## Current release — v1.52.0 · Codebase Review & Cleanup
 
-Focus:
-- freeze the validated v1.51.x regulatory behavior as the release baseline rather than combining cleanup with another rules rewrite
-- remove the inactive Streamlit/Python runtime, frozen SQLite/source-import artifacts, generated airport SQLite copy and obsolete migration/deployment tooling from the active production checkout
-- keep `data/airports.csv` as the single airport catalogue consumed by the current Next.js runtime
-- synchronize package metadata and replace stale operational architecture/documentation with the current Next.js / Vercel / Neon model
-- preserve certification payloads/hashes/revisions, shared-flight ownership, Recency Engine behavior, GPS evidence, print/export semantics and portable backup/restore
-- retain release-numbered TypeScript regression tests as the safety net for later refactors
-- defer broad CSS consolidation, destructive database cleanup and speculative hot-path rewrites until they can be isolated and measured
+          Focus:
+          - freeze the validated v1.51.x regulatory behavior as the release baseline rather than combining cleanup with another rules rewrite
+          - remove the inactive Streamlit/Python runtime, frozen SQLite/source-import artifacts, generated airport SQLite copy and obsolete migration/deployment tooling from the active production checkout
+          - keep `data/airports.csv` as the single airport catalogue consumed by the current Next.js runtime
+          - synchronize package metadata and replace stale operational architecture/documentation with the current Next.js / Vercel / Neon model
+          - preserve certification payloads/hashes/revisions, shared-flight ownership, Recency Engine behavior, GPS evidence, print/export semantics and portable backup/restore
+          - retain release-numbered TypeScript regression tests as the safety net for later refactors
+          - defer broad CSS consolidation, destructive database cleanup and speculative hot-path rewrites until they can be isolated and measured
 
-## v1.51.x · Regulatory correctness core — final baseline
+          ## v1.51.x · Regulatory correctness core — final baseline
 
-Focus:
-- FCL.060 uses structured certified PF take-off, approach and landing evidence; explicit structured zeroes remain authoritative
-- certified EASA records created before the v1.35.3 structured-movement boundary may use the bounded legacy compatibility path based on record-creation provenance, not later edits
-- FCL.140.A counts eligible certified ordinary ULL / Annex-I aeroplane PIC experience automatically as SEP experience, including native ULL starts/landings
-- ULL / Annex-I experience is not imported automatically into FCL.060 passenger currency and does not automatically satisfy the mandatory FI/CRI refresher element
-- FCL.740.A experience planning can use eligible ULL PIC experience while retaining the separate FI/CRI refresher/exemption requirement
-- Part-FCL DUAL and supervised-SOLO contribution requires current instructor-signed evidence for the certified revision
-- Recency Evidence detail uses the same eligibility and effective-movement interpretation as the calculation
-- IR(A) qualification detection remains distinct from instructor certificates such as IRI(A)
-- the optional internal Part-FCL class override is retained only for atypical mappings such as a genuine TMG and is not exposed in the normal Aircraft UI
-- preserve certification fingerprints, revision history, instructor signatures, shared-flight ownership, print/export, GPS evidence and backup/restore behavior
+          Focus:
+          - FCL.060 uses structured certified PF take-off, approach and landing evidence; explicit structured zeroes remain authoritative
+          - certified EASA records created before the v1.35.3 structured-movement boundary may use the bounded legacy compatibility path based on record-creation provenance, not later edits
+          - FCL.140.A counts eligible certified ordinary ULL / Annex-I aeroplane PIC experience automatically as SEP experience, including native ULL starts/landings
+          - ULL / Annex-I experience is not imported automatically into FCL.060 passenger currency and does not automatically satisfy the mandatory FI/CRI refresher element
+          - FCL.740.A experience planning can use eligible ULL PIC experience while retaining the separate FI/CRI refresher/exemption requirement
+          - Part-FCL DUAL and supervised-SOLO contribution requires current instructor-signed evidence for the certified revision
+          - Recency Evidence detail uses the same eligibility and effective-movement interpretation as the calculation
+          - IR(A) qualification detection remains distinct from instructor certificates such as IRI(A)
+          - the optional internal Part-FCL class override is retained only for atypical mappings such as a genuine TMG and is not exposed in the normal Aircraft UI
+          - preserve certification fingerprints, revision history, instructor signatures, shared-flight ownership, print/export, GPS evidence and backup/restore behavior
 
-'''
+          '''
+          replacement = "\n".join(line[10:] if line.startswith("          ") else line for line in replacement.splitlines()) + "\n"
           updated, count = re.subn(r"## Current release —.*?(?=## v1\.50\.0)", replacement, text, count=1, flags=re.S)
           if count != 1:
               raise SystemExit("Could not locate the current-release section in ROADMAP.md")
           path.write_text(updated)
+          PY
       - name: Commit synchronized roadmap
         run: |
           git config user.name "github-actions[bot]"
