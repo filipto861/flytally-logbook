@@ -57,12 +57,13 @@ test("LAPL audit lists only records that actually contribute under the same rule
   assert.deepEqual(new Set(audit.rows.map(row=>row.id)),new Set(["flight:1","flight:4"]));
 });
 
-test("v1.51.3 keeps audit service and aircraft UI aligned with automatic ULL policy",()=>{
-  const auditService=read("lib/recency-audit-service.ts"),aircraft=read("components/aircraft-manager.tsx"),engine=read("lib/recency-engine.ts");
-  assert.match(auditService,/part_fcl_credit_class/);
-  assert.match(auditService,/LEFT JOIN aircraft a/);
-  assert.match(aircraft,/ULL defaults to SEP/);
-  assert.match(aircraft,/Automatic · ULL as SEP/);
+test("v1.51.4 hides the Part-FCL override UI without deleting stored override metadata",()=>{
+  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,51,4));
+  const aircraft=read("components/aircraft-manager.tsx"),engine=read("lib/recency-engine.ts");
+  assert.doesNotMatch(aircraft,/>Part-FCL credit override</);
+  assert.doesNotMatch(aircraft,/Automatic · ULL as SEP/);
+  assert.match(aircraft,/type="hidden" name="part_fcl_credit_class"/);
+  assert.match(aircraft,/type="hidden" name="part_fcl_credit_basis"/);
+  assert.match(aircraft,/type="hidden" name="part_fcl_credit_from"/);
   assert.match(engine,/automaticClass=classKey\(flight[.]aircraftClass\)==="ULL"\?"SEP"/);
-  assert.doesNotMatch(engine,/contains an explicit FCL[.]035\(a\)\(4\) credit basis/);
 });
