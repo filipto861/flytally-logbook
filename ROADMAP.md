@@ -2,7 +2,18 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.48.0 · Modular training evidence
+## Current release — v1.49.0 · Training & recency linkage
+
+Focus:
+- make a certified, instructor-signed DUAL flight tagged **FCL.140.A** or **FCL.740.A** feed the matching Recency calculation directly, without duplicating the same refresher as manual evidence
+- recalculate stored recency/dashboard state whenever a flight becomes certified, a certified flight is opened for correction, or instructor verification is signed or revoked
+- support the current FCL.740.A SEP/TMG combined-experience route when both ratings are held and preserve explicit fallback evidence for external/historical refresher training or a valid refresher exemption
+- keep FCL.740.A **READY** as a planning/evidence state only; never write a new SEP/TMG validity date automatically
+- provide a direct handoff from a READY recency card to the saved rating where the pilot can record the actual new validity after revalidation is completed
+- surface certified differences/familiarisation flights as candidates in Aircraft training; signed differences flights prefill the evidence record while exact VP/RU/T/P/TW/EFIS/SLPC or custom endorsements remain an explicit pilot selection
+- preserve exact flight revision/hash signatures, append-only correction history, separate aircraft-training evidence and FCL.050 print/export semantics
+
+## v1.48.0 · Modular training evidence
 
 Focus:
 - replace free-form aircraft-equipment entry with selectable standard endorsement codes **VP, RU, T, P, TW, EFIS and SLPC**, while retaining an explicit Other / custom field
@@ -150,6 +161,7 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.46.0: compact sectioned Licences workspace with status-only Overview and validity separated from Recency
 - v1.47.0: everyday UX refinement with less duplicated flight-list chrome, quieter certified-flight sharing and action-only data-quality alerts
 - v1.48.0: selectable aircraft endorsement codes and modular instructor-flight purpose evidence without automatic privilege/revalidation claims
+- v1.49.0: signed training-flight linkage into Recency, explicit rating-validity handoff and flight-backed aircraft-training candidates
 
 ## Near term
 

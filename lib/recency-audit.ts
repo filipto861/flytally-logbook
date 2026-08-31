@@ -1,5 +1,5 @@
 import type { CustomRecencyRule,RecencyEvaluation,RecencyEvidence,RecencyFlight } from "./recency-engine.ts";
-import { rollingDaysStart,rollingYearsStart } from "./recency-engine.ts";
+import { isClassRefresherFlight,rollingDaysStart,rollingYearsStart } from "./recency-engine.ts";
 
 export type RecencyAuditStatus="confirmed"|"limited"|"review";
 export type RecencyAuditFlight=RecencyFlight&{id:number;registration:string;departure:string;arrival:string};
@@ -57,10 +57,11 @@ function fcl060Audit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],t
 
 function classRevalidationAudit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today:string){
   const match=/^fcl740a-(sep|tmg)$/.exec(evaluation.id),aircraftClass=match?.[1]?.toUpperCase(),validUntil=evaluation.deadline;if(!aircraftClass||!validUntil)return bundle([]);
-  const start=addMonths(validUntil,-12),checkStart=addMonths(validUntil,-3),window=flights.filter(f=>f.date>=start&&f.date<=today&&classKey(f.aircraftClass)===aircraftClass&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=window.map(f=>({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landings(f),"landing")} · ${upper(f.role)}${picRole(f.role)?" · PIC credit":""}`,status:"confirmed",dropOffDate:validUntil,href:flightHref(f)}));
-  for(const item of evidence.filter(item=>item.aircraftClass===aircraftClass&&item.date>=start&&item.date<=today)){if(item.kind==="CLASS_REFRESHER")rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"FI / CRI refresher",detail:`${hm(item.minutes)} · ${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil});if(item.kind==="CLASS_PROFICIENCY_CHECK"&&item.date>=checkStart)rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"Class proficiency check",detail:`${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil})}
+  const start=addMonths(validUntil,-12),checkStart=addMonths(validUntil,-3),combineSepTmg=Boolean(evaluation.meta?.combineSepTmg),eligibleClasses=combineSepTmg?["SEP","TMG"]:[aircraftClass],window=flights.filter(f=>f.date>=start&&f.date<=today&&eligibleClasses.includes(classKey(f.aircraftClass))&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=window.map(f=>{const refresher=isClassRefresherFlight(f);return{id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${hm(f.minutes)} flight time · ${plural(landings(f),"landing")} · ${upper(f.role)}${picRole(f.role)?" · PIC credit":""}${refresher?" · signed FI / CRI refresher":""}`,status:"confirmed",dropOffDate:validUntil,href:flightHref(f)}});
+  for(const item of evidence.filter(item=>eligibleClasses.includes(item.aircraftClass)&&item.date>=start&&item.date<=today)){if(item.kind==="CLASS_REFRESHER")rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"External / historical FI / CRI refresher",detail:`${hm(item.minutes)} · ${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil});if(item.kind==="CLASS_REFRESHER_EXEMPTION")rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"FCL.740.A refresher exemption",detail:`${item.signer} · ${item.reference}${item.note?` · ${item.note}`:""}`,status:"confirmed",dropOffDate:validUntil});if(item.kind==="CLASS_PROFICIENCY_CHECK"&&item.aircraftClass===aircraftClass&&item.date>=checkStart)rows.push({id:`evidence:${item.id}`,source:"evidence",date:item.date,title:"Class proficiency check",detail:`${item.signer} · ${item.reference}`,status:"confirmed",dropOffDate:validUntil})}
   return bundle(rows);
 }
+
 
 export function buildRecencyAudit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today:string):RecencyAuditBundle{
   if(evaluation.id==="lapl-a-fcl140a")return laplAudit(flights,evidence,today);

@@ -10,6 +10,7 @@ import { flightFingerprint } from "@/lib/flight-dedup";
 import { crewRoleCredits,normalizeCrewRole,validCrewCombination,type CrewRole } from "@/lib/crew";
 import { notifyUser } from "@/lib/notifications";
 import { signVerificationPayload } from "@/lib/verification-signature";
+import { refreshRecencySnapshot } from "@/lib/recency-service";
 
 const id=(value:unknown)=>{const parsed=Number(value);return Number.isSafeInteger(parsed)&&parsed>0?parsed:0};
 const text=(value:unknown)=>String(value??"").trim();
@@ -114,6 +115,7 @@ async function signInstructorParticipation(participationId:number,addToLogbook:b
     markRequestRead(session.userId,participationId),
   ]);
   await notifyUser(payload.flightUserId,{kind:"signature_completed",title:"Flight approved and signed",body:`${String(row.display_name)} signed revision ${payload.recordRevision}.`,href:`/flights/${payload.flightId}`,dedupeKey:`participation-signed:${participationId}`});
+  await refreshRecencySnapshot(payload.flightUserId);
   refresh(payload.flightId);
   if(addToLogbook){const flightId=await materializeParticipation(participationId,session.userId);if(flightId){revalidatePath(`/flights/${flightId}`);redirect(`/flights/${flightId}`)}redirect(`/connections/shared/${participationId}?error=duplicate`)}
   redirect("/connections");

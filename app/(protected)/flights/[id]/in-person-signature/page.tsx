@@ -9,6 +9,7 @@ import { signVerificationPayload } from "@/lib/verification-signature";
 import { ReadonlyLogbookEntry } from "@/components/readonly-logbook-entry";
 import { InPersonSignaturePad } from "@/components/in-person-signature-pad";
 import { parseStoredSignature,SignaturePreview } from "@/components/signature-preview";
+import { refreshRecencySnapshot } from "@/lib/recency-service";
 
 const text=(value:unknown)=>String(value??"").trim();
 const snapshot=(value:unknown)=>{if(value&&typeof value==="object"&&!Array.isArray(value))return value as Record<string,unknown>;try{const parsed=JSON.parse(String(value||"{}"));return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed as Record<string,unknown>:{} }catch{return{}}};
@@ -34,7 +35,8 @@ async function signInPersonInstructorFlight(flightId:number,form:FormData){
     sql`UPDATE instructor_flight_approvals SET status='cancelled',decided_at=NOW(),decision_note='Completed with an in-person signature on the pilot device.' WHERE flight_id=${flightId} AND student_user_id=${userId} AND record_revision=${recordRevision} AND status='pending'`,
     sql`INSERT INTO flight_verifications(flight_id,flight_user_id,signer_user_id,verification_role,record_revision,flight_hash,credential_snapshot,payload_hash,server_signature,status,signed_at) VALUES(${flightId},${userId},NULL,${verificationRole},${recordRevision},${flightHash},${JSON.stringify(credentialSnapshot)}::jsonb,${flightHash},${serverSignature},'signed',NOW())`,
   ]);
-  revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath(`/flights/${flightId}/in-person-signature`);revalidatePath("/credentials");revalidatePath("/connections");revalidatePath("/notifications");revalidatePath("/print");redirect(`/flights/${flightId}/in-person-signature`);
+  await refreshRecencySnapshot(userId);
+  revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath(`/flights/${flightId}/in-person-signature`);revalidatePath("/credentials");revalidatePath("/dashboard");revalidatePath("/connections");revalidatePath("/notifications");revalidatePath("/print");redirect(`/flights/${flightId}/in-person-signature`);
 }
 
 export default async function InPersonInstructorSignaturePage({params}:{params:Promise<{id:string}>}){

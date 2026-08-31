@@ -9,11 +9,12 @@ import { signVerificationPayload } from "@/lib/verification-signature";
 import { notifyUser } from "@/lib/notifications";
 import { addApprovedFlightToLogbook } from "./shared-actions";
 import { cancelInstructorRequest,upsertInstructorRequest } from "@/lib/training-verification";
+import { refreshRecencySnapshot } from "@/lib/recency-service";
 
 const id=(value:unknown)=>{const parsed=Number(value);return Number.isSafeInteger(parsed)&&parsed>0?parsed:0};
 const text=(value:unknown)=>String(value??"").trim();
 const refresh=(flightId:number,approvalId?:number)=>{
-  revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/connections");revalidatePath("/print");revalidatePath("/notifications");
+  revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/connections");revalidatePath("/print");revalidatePath("/notifications");revalidatePath("/credentials");revalidatePath("/dashboard");
   if(approvalId)revalidatePath(`/connections/flight/${approvalId}`);
 };
 
@@ -62,11 +63,13 @@ export async function approveInstructorFlight(approvalId:number,form:FormData){
   await sql`INSERT INTO flight_verifications(flight_id,flight_user_id,signer_user_id,verification_role,record_revision,flight_hash,credential_snapshot,payload_hash,server_signature,status,signed_at) VALUES(${payload.flightId},${payload.flightUserId},${session.userId},${verificationRole},${payload.recordRevision},${payload.flightHash},${JSON.stringify(credentialSnapshot)}::jsonb,${payload.flightHash},${signature},'signed',NOW()) ON CONFLICT(flight_id,record_revision,signer_user_id,verification_role) DO UPDATE SET credential_snapshot=EXCLUDED.credential_snapshot,payload_hash=EXCLUDED.payload_hash,server_signature=EXCLUDED.server_signature,status='signed',signed_at=NOW(),revoked_at=NULL,revocation_reason=''`;
   await sql`UPDATE flight_participations SET status='accepted',responded_at=COALESCE(responded_at,NOW()) WHERE approval_id=${approvalId} AND participant_user_id=${session.userId}`;
   await notifyUser(payload.flightUserId,{kind:"signature_completed",title:"Flight approved and signed",body:`${String(row.display_name)} signed revision ${payload.recordRevision}.`,href:`/flights/${payload.flightId}`,dedupeKey:`approval-signed:${approvalId}`});
+  await refreshRecencySnapshot(payload.flightUserId);
+  refresh(payload.flightId,approvalId);
 }
 
 export async function approveAndAddInstructorFlight(approvalId:number,form:FormData){form.set("confirm","approve");await approveInstructorFlight(approvalId,form);return addApprovedFlightToLogbook(approvalId);}
 
-export async function revokeFlightVerification(form:FormData){const session=await requireUser(),verificationId=id(form.get("verification_id")),reason=text(form.get("reason")).slice(0,500);if(!verificationId||reason.length<5)return;const rows=await sql`UPDATE flight_verifications SET status='revoked',revoked_at=NOW(),revocation_reason=${reason} WHERE id=${verificationId} AND signer_user_id=${session.userId} AND status='signed' RETURNING flight_id,flight_user_id` as Array<{flight_id:number|string;flight_user_id:number|string}>;if(rows[0]){await notifyUser(Number(rows[0].flight_user_id),{kind:"signature_revoked",title:"Flight approval revoked",body:reason,href:`/flights/${rows[0].flight_id}/audit`,dedupeKey:`verification-revoked:${verificationId}`});refresh(Number(rows[0].flight_id))}}
+export async function revokeFlightVerification(form:FormData){const session=await requireUser(),verificationId=id(form.get("verification_id")),reason=text(form.get("reason")).slice(0,500);if(!verificationId||reason.length<5)return;const rows=await sql`UPDATE flight_verifications SET status='revoked',revoked_at=NOW(),revocation_reason=${reason} WHERE id=${verificationId} AND signer_user_id=${session.userId} AND status='signed' RETURNING flight_id,flight_user_id` as Array<{flight_id:number|string;flight_user_id:number|string}>;if(rows[0]){await notifyUser(Number(rows[0].flight_user_id),{kind:"signature_revoked",title:"Flight approval revoked",body:reason,href:`/flights/${rows[0].flight_id}/audit`,dedupeKey:`verification-revoked:${verificationId}`});await refreshRecencySnapshot(Number(rows[0].flight_user_id));refresh(Number(rows[0].flight_id))}}
 export async function declineInstructorFlight(approvalId:number,form:FormData){await decide(approvalId,"declined",form);}
 export async function cancelInstructorApproval(flightId:number,form:FormData){
   const{userId}=await requireUser();await ensureV132Schema();const approvalId=id(form.get("approval_id")),participationId=id(form.get("participation_id"));

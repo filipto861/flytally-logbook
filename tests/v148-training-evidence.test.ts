@@ -37,5 +37,5 @@ test("refresher markers require DUAL while differences remain modular with an in
 
 test("v1.48 keeps purposes and endorsements inside existing evidence boundaries",()=>{
   const form=read("components/flight-form.tsx"),schema=read("lib/v148-schema.ts"),runtime=read("lib/runtime-schema.ts"),roadmap=read("ROADMAP.md");
-  assert.match(form,/FlightPurposePicker/);assert.match(form,/Task \/ exercise/);assert.match(schema,/trg_flytally_sync_flight_purpose/);assert.match(schema,/SEP_TMG_FCL740A_REFRESHER/);assert.match(runtime,/ensureV148Schema/);assert.match(roadmap,/Current release — v1\.48\.0/);assert.match(roadmap,/never as an automatic rating revalidation/);
+  assert.match(form,/FlightPurposePicker/);assert.match(form,/Task \/ exercise/);assert.match(schema,/trg_flytally_sync_flight_purpose/);assert.match(schema,/SEP_TMG_FCL740A_REFRESHER/);assert.match(runtime,/ensureV148Schema/);assert.match(roadmap,/## v1\.48\.0 · Modular training evidence/);assert.match(roadmap,/never as an automatic rating revalidation/);
 });

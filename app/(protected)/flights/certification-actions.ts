@@ -8,9 +8,10 @@ import { ensureV132Schema } from "@/lib/v132-schema";
 import { blockingComplianceIssues,fcl050FlightCompliance } from "@/lib/fcl050-compliance";
 import { flightCertificationHash } from "@/lib/certification-integrity";
 import { upsertInstructorRequest } from "@/lib/training-verification";
+import { refreshRecencySnapshot } from "@/lib/recency-service";
 
 const text=(value:unknown)=>String(value??"").trim();
-const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/flights");revalidatePath("/certification");revalidatePath("/print");revalidatePath("/database");revalidatePath("/connections");revalidatePath("/notifications");};
+const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/flights");revalidatePath("/certification");revalidatePath("/print");revalidatePath("/database");revalidatePath("/connections");revalidatePath("/notifications");revalidatePath("/credentials");revalidatePath("/dashboard");};
 
 async function autoRequestTrainingVerification(userId:number,flightId:number,row:Record<string,unknown>){
   const role=text(row.role).toUpperCase();if(!["DUAL","SPIC","PICUS"].includes(role))return;
@@ -35,6 +36,7 @@ export async function certifyFlight(flightId:number,form:FormData){
     sql`UPDATE flights SET certified_at=NOW(),certified_by_user_id=${userId},certification_hash=${certificationHash},certification_version=4,locked_at=NOW(),locked_by_user_id=${userId} WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL`,
   ]);
   await autoRequestTrainingVerification(userId,flightId,row);
+  await refreshRecencySnapshot(userId);
   revalidateFlight(flightId);
 }
 
@@ -56,5 +58,6 @@ export async function startCertifiedCorrection(flightId:number,form:FormData){
     sql`UPDATE instructor_flight_approvals SET status='superseded',decided_at=NOW(),decision_note='Source flight opened for correction.' WHERE flight_id=${flightId} AND student_user_id=${userId} AND record_revision=${Number(current.record_revision)||1} AND status='pending'`,
     sql`UPDATE flight_verifications SET status='superseded' WHERE flight_id=${flightId} AND flight_user_id=${userId} AND record_revision=${Number(current.record_revision)||1} AND status='pending'`,
   ]);
+  await refreshRecencySnapshot(userId);
   revalidateFlight(flightId);
 }

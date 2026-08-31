@@ -18,6 +18,7 @@ import "./v142-gps-import.css";
 import "./v145-credentials.css";
 import "./v146-credentials.css";
 import "./v147-everyday.css";
+import "./v149-linkage.css";
 import "./v148-training.css";
 
 export const metadata: Metadata = {
