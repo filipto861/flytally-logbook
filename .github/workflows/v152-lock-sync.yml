@@ -1,0 +1,37 @@
+name: v1.52 lockfile synchronization
+
+on:
+  push:
+    branches:
+      - codex/v1520-full-code-review
+    paths:
+      - package.json
+      - .github/workflows/v152-lock-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1520-full-code-review
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm version 1.52.0 --no-git-tag-version --allow-same-version
+      - name: Commit synchronized lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "Package metadata already synchronized."
+          else
+            git commit -m "v1.52 synchronize package lock metadata"
+            git push
+          fi
