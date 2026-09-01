@@ -1,0 +1,48 @@
+name: v1.54.3 inspect FAA designator catalogue
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 record FAA designator sample') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - name: Extract current FAA designator order
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          curl -fsSL https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf -o /tmp/faa7360.pdf
+          pdftotext -layout /tmp/faa7360.pdf /tmp/faa7360.txt
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('/tmp/faa7360.txt').read_text(errors='replace')
+          needles=['CESSNA','BRM','BRISTELL','TECNAM','P2008','P208','VL3','DYNAMIC','WT9','C172','AIRBUS','A320']
+          out=[]
+          lines=text.splitlines()
+          for needle in needles:
+              hits=[i for i,line in enumerate(lines) if needle.lower() in line.lower()]
+              out.append(f'\n===== {needle} ({len(hits)} hits) =====')
+              for i in hits[:4]:
+                  out.extend(lines[max(0,i-3):min(len(lines),i+5)])
+          Path('data/FAA_7360_SAMPLE.txt').write_text('\n'.join(out))
+          PY
+      - name: Commit sample
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/FAA_7360_SAMPLE.txt
+          git commit -m "v1.54.3 record FAA designator sample"
+          git push origin HEAD:codex/v1543-aircraft-catalog
