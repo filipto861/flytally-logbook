@@ -1,0 +1,65 @@
+name: v1.53.1 aircraft state patch
+
+on:
+  push:
+    branches:
+      - codex/v1531-aircraft-state
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.53.1 apply aircraft state fix') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1531-aircraft-state
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply aircraft-state fix and regression contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          form = Path('components/flight-form.tsx')
+          text = form.read_text()
+          old = '''  const pickAircraft=(reg:string)=>{markDirty();const normalized=normalizeRegistration(reg);setRegistration(normalized);const a=normalizedAircraft.find(x=>x.registration===normalized);if(a&&shouldApplyAircraftProfileDefaults(editing,initialRegistration,normalized)){const nextBilling=parseBilling(a.billing_basis),nextClass=normalizeChoice(a.aircraft_class,CLASSES,"ULL"),nextEvidence=normalizeChoice(a.evidence,EVIDENCE,"ULL"),nextRole=normalizeChoice(a.default_role==="INSTRUKTOR"?"INSTRUCTOR":a.default_role,ROLES,"PIC");setType(a.aircraft_type||"");setClass(nextClass);setEngineType(defaultEngineType(nextClass));setEvidence(nextEvidence);setRole(nextRole);setBilling(nextBilling.basis);setBillingShare(nextBilling.share);setHourlyRate(Number(a.price_per_hour)||0)}};'''
+          new = '''  const pickAircraft=(reg:string)=>{markDirty();const normalized=normalizeRegistration(reg);setRegistration(normalized);const a=normalizedAircraft.find(x=>x.registration===normalized);if(a&&shouldApplyAircraftProfileDefaults(editing,initialRegistration,normalized)){const nextBilling=parseBilling(a.billing_basis),nextClass=normalizeChoice(a.aircraft_class,CLASSES,"ULL"),nextEvidence=normalizeChoice(a.evidence,EVIDENCE,"ULL");setType(a.aircraft_type||"");setClass(nextClass);setEngineType(defaultEngineType(nextClass));setOperationType("SP");setEvidence(nextEvidence);setBilling(nextBilling.basis);setBillingShare(nextBilling.share);setHourlyRate(Number(a.price_per_hour)||0)}};'''
+          if old not in text:
+              raise SystemExit('pickAircraft anchor not found')
+          text = text.replace(old, new, 1)
+
+          old_type = '''<label>Aircraft type<input name="aircraftType" value={type} onChange={e=>setType(e.target.value)}/></label>'''
+          new_type = '''<label>Aircraft type<input name="aircraftType" value={type} onChange={e=>setType(e.target.value)} readOnly={Boolean(selected)}/><small>{selected?"From the selected aircraft profile. Change the aircraft profile if the type is wrong.":"No active aircraft profile is available for this registration; enter the stored type manually."}</small></label>'''
+          if old_type not in text:
+              raise SystemExit('aircraft type input anchor not found')
+          text = text.replace(old_type, new_type, 1)
+          form.write_text(text)
+
+          test = Path('tests/v1531-aircraft-state.test.ts')
+          test.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nimport path from "node:path";\nimport test from "node:test";\nimport { releaseAtLeast } from "./release-version.ts";\n\nconst root=path.resolve(import.meta.dirname,"..");\nconst read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");\n\ntest("v1.53.1 registration changes refresh aircraft state without changing the flight role",()=>{\n  assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,53,1));\n  const form=read("components/flight-form.tsx");\n  const start=form.indexOf("const pickAircraft=");\n  const end=form.indexOf("const blockMinutes=",start);\n  assert.ok(start>=0&&end>start);\n  const pick=form.slice(start,end);\n  assert.match(pick,/setType\\(a[.]aircraft_type\\|\\|""\\)/);\n  assert.match(pick,/setClass\\(nextClass\\)/);\n  assert.match(pick,/setEngineType\\(defaultEngineType\\(nextClass\\)\\)/);\n  assert.match(pick,/setOperationType\\("SP"\\)/);\n  assert.match(pick,/setEvidence\\(nextEvidence\\)/);\n  assert.match(pick,/setBilling\\(nextBilling[.]basis\\)/);\n  assert.match(pick,/setBillingShare\\(nextBilling[.]share\\)/);\n  assert.match(pick,/setHourlyRate\\(Number\\(a[.]price_per_hour\\)\\|\\|0\\)/);\n  assert.doesNotMatch(pick,/setRole\\(/);\n  assert.doesNotMatch(pick,/nextRole/);\n});\n\ntest("v1.53.1 known aircraft type cannot be independently mixed with another profile",()=>{\n  const form=read("components/flight-form.tsx");\n  assert.match(form,/name="aircraftType"[^>]*readOnly=\\{Boolean\\(selected\\)\\}/);\n  assert.match(form,/From the selected aircraft profile/);\n  assert.match(form,/No active aircraft profile is available/);\n});\n\ntest("v1.53.1 keeps regulatory parsing and certification boundaries unchanged",()=>{\n  const input=read("lib/flight-input.ts"),cert=read("lib/certification-integrity.ts");\n  assert.match(input,/movementEvidenceRecorded/);\n  assert.match(input,/allocatedFunctionTimes/);\n  assert.match(cert,/flightCertificationHash/);\n});\n''')
+
+          roadmap = Path('ROADMAP.md')
+          rt = roadmap.read_text()
+          marker = '## Current development — v1.53.0 · Guided everyday entry\n'
+          section = '''## Current development — v1.53.1 · Aircraft state integrity\n\nFocus:\n- audit and prevent stale aircraft-dependent state when a flight registration changes\n- refresh type, class, logbook, engine, operation mode, billing and rate from the newly selected aircraft profile\n- preserve flight-specific role and training/crew semantics during a registration correction\n- prevent a known aircraft type from being edited independently into a mixed profile; manual type entry remains available only when no active aircraft profile exists\n- evaluate a worldwide aircraft-type catalogue with manual fallback as a follow-up, without introducing an unlicensed ICAO data dependency\n\n'''
+          if '## Current development — v1.53.1 · Aircraft state integrity' not in rt:
+              if marker not in rt:
+                  raise SystemExit('roadmap marker not found')
+              roadmap.write_text(rt.replace(marker, section + marker, 1))
+          PY
+      - name: Bump patch version
+        run: npm version 1.53.1 --no-git-tag-version
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/flight-form.tsx tests/v1531-aircraft-state.test.ts ROADMAP.md package.json package-lock.json
+          git commit -m "v1.53.1 apply aircraft state fix"
+          git push origin HEAD:codex/v1531-aircraft-state
