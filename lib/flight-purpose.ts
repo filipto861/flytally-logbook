@@ -3,6 +3,7 @@ export const FLIGHT_PURPOSES=[
   {code:"AIRCRAFT_FAMILIARISATION",label:"Aircraft familiarisation",task:"Familiarisation"},
   {code:"LAPL_FCL140A_REFRESHER",label:"LAPL(A) · FCL.140.A refresher training",task:"FCL.140.A refresher training"},
   {code:"SEP_TMG_FCL740A_REFRESHER",label:"SEP/TMG · FCL.740.A refresher training",task:"FCL.740.A refresher training"},
+  {code:"SPL_SFCL160_TRAINING",label:"SPL · SFCL.160 recency training",task:"SFCL.160 training flight"},
 ] as const;
 
 export type FlightPurposeCode=(typeof FLIGHT_PURPOSES)[number]["code"];
@@ -25,7 +26,7 @@ export function normalizeFlightPurposeCode(value:unknown):FlightPurposeCode|""{r
 
 export function primaryFlightPurposeCode(value:unknown):FlightPurposeCode|""{
   const selected=new Set(normalizeFlightPurposeCodes(value));
-  for(const code of ["LAPL_FCL140A_REFRESHER","SEP_TMG_FCL740A_REFRESHER","AIRCRAFT_DIFFERENCES","AIRCRAFT_FAMILIARISATION"] as const)if(selected.has(code))return code;
+  for(const code of ["LAPL_FCL140A_REFRESHER","SEP_TMG_FCL740A_REFRESHER","SPL_SFCL160_TRAINING","AIRCRAFT_DIFFERENCES","AIRCRAFT_FAMILIARISATION"] as const)if(selected.has(code))return code;
   return "";
 }
 
@@ -33,7 +34,6 @@ export function flightPurposeTask(value:unknown){
   const selected=new Set(normalizeFlightPurposeCodes(value));
   return FLIGHT_PURPOSES.filter(item=>selected.has(item.code)).map(item=>item.task).join(" · ");
 }
-
 
 export function flightPurposeCodesFromTask(value:unknown):FlightPurposeCode[]{
   let text=String(value??"").trim();
