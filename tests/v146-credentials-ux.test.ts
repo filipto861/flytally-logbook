@@ -6,10 +6,11 @@ import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx");
 
 test("v1.46.0 makes Licences a compact sectioned workspace",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,46,0));
-  const page=read("app/(protected)/credentials/page.tsx");
+  const page=credentialsSource();
   assert.match(page,/credentials-tabs/);
   assert.match(page,/Overview/);
   assert.match(page,/Licences & ratings/);
@@ -20,7 +21,7 @@ test("v1.46.0 makes Licences a compact sectioned workspace",()=>{
 });
 
 test("v1.46 overview is status-only instead of an inventory dashboard",()=>{
-  const page=read("app/(protected)/credentials/page.tsx"),css=read("app/v146-credentials.css");
+  const page=credentialsSource(),css=read("app/v146-credentials.css");
   assert.match(page,/At a glance/);
   assert.match(page,/<span>Validity<\/span>/);
   assert.match(page,/<span>Recency<\/span>/);
@@ -38,7 +39,7 @@ test("v1.46 overview is status-only instead of an inventory dashboard",()=>{
 });
 
 test("v1.46 overview keeps validity separate from recency",()=>{
-  const page=read("app/(protected)/credentials/page.tsx");
+  const page=credentialsSource();
   assert.match(page,/licenceValidityAttention/);
   assert.match(page,/qualificationValidityAttention/);
   assert.match(page,/validityAttention=licenceValidityAttention\+qualificationValidityAttention\+documentAttention/);
@@ -46,7 +47,7 @@ test("v1.46 overview keeps validity separate from recency",()=>{
 });
 
 test("v1.46.0 preserves credential data boundaries and adds only UI structure",()=>{
-  const page=read("app/(protected)/credentials/page.tsx"),layout=read("app/layout.tsx");
+  const page=credentialsSource(),layout=read("app/layout.tsx");
   assert.match(page,/active=TRUE AND COALESCE\(record_kind,''\)<>'aircraft_training'/);
   assert.match(page,/addPilotLicence/);
   assert.match(page,/addQualification/);
