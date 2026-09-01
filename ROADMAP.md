@@ -2,6 +2,14 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+
+## v1.55.0 — Flight Entry Layout & Responsive UX
+
+- Align Flight essentials into predictable two-column pairs on desktop.
+- Keep Departure/Arrival, Off-block/On-block and Takeoff/Landing on matching rows.
+- Use consistent control sizing and spacing.
+- Collapse to one logical single-column sequence on mobile without changing flight data semantics.
+
 ## Current development — v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
 
 Focus:
