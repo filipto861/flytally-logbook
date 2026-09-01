@@ -1,15 +1,11 @@
 # FlyTally aircraft type catalogue
 
-FlyTally bundles a normalized aircraft-type catalogue derived from the public **whatisflying-db** aircraft type database.
+FlyTally's bundled aircraft identity catalogue is generated from **FAA Order JO 7360.1K — Aircraft Type Designators**, a public FAA directive containing aircraft type designators, manufacturers and models used for air traffic services.
 
-- Upstream: https://github.com/laegsgaardTroels/whatisflying-db
-- Source file: `data/aircraft_types.csv`
-- Upstream commit imported: `e168f2a591bcddeabd6c9830e0fcd482a050b13f`
-- Database license: **Open Data Commons Open Database License (ODbL)**
-- A copy of the upstream database license is stored at `data/licenses/WHATSFLYING_ODBL.txt`.
+Source: https://www.faa.gov/regulations_policies/orders_notices/index.cfm/go/document.current/documentNumber/7360.1
 
-This derived aircraft catalogue is distributed under the same ODbL terms. Attribution applies to the catalogue/database data; it does not change the license of FlyTally application code.
+The catalogue is a convenience/search layer, not a regulatory determination. The original FAA/ICAO source remains authoritative for type-designator use.
 
-FlyTally uses the catalogue only as an identity/search aid. ICAO descriptors such as `L1P` are not Part-FCL aircraft classes. A catalogue entry may expose a non-binding class hint (for example `L1P → SEP`) to reduce typing, but the pilot must separately confirm the actual Part-FCL class. The hint is never certification evidence.
+`classHint` is deliberately non-binding. FlyTally may suggest SEP/MEP/SET only from an unambiguous fixed-wing engine configuration in the source (for example one piston engine), but Part-FCL class is a separate pilot-confirmed field and the suggestion is never certification evidence.
 
-Aircraft missing from the catalogue are always supported through manual entry. User-entered Make, Model and ICAO values remain editable even after a catalogue choice.
+Some ultralight or newly introduced aircraft may not have an individual designator. FlyTally always supports manual Make/Model/ICAO entry and must never block aircraft creation merely because a type is absent from this catalogue.
