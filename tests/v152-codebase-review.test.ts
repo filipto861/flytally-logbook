@@ -31,9 +31,9 @@ test("v1.52 repository no longer ships transactional or generated legacy data ar
   assert.doesNotMatch(catalog,/airports_full[.]sqlite/);
 });
 
-test("v1.52 package and lockfile versions are synchronized",()=>{
+test("v1.52 package and lockfile versions remain synchronized in later releases",()=>{
   const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
-  assert.equal(pkg.version,"1.52.0");
+  assert.ok(releaseAtLeast(pkg.version,1,52,0));
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages?.[""]?.version,pkg.version);
 });
