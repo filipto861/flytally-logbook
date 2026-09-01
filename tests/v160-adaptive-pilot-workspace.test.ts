@@ -38,7 +38,7 @@ test("v1.60 Overview is adaptive and delegates authoritative LAPL recency to the
   assert.match(overview,/lapl-a-fcl140a/);
   assert.match(overview,/Licence validity/);
   assert.match(overview,/Flying privilege/);
-  assert.match(overview,/Details stay one tap away/);
+  assert.match(overview,/Open a section above for details/);
   assert.match(overview,/What matters now/);
   assert.doesNotMatch(overview,/Under CAA|regulation requires|FCL[.]035/);
   assert.match(legacy,/view==="recency"\?<RecencyPanel/);
