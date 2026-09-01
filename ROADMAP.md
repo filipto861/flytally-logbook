@@ -3,6 +3,14 @@
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
 
+## v1.56.0 — Mobile Layout Audit & Responsive Hardening
+
+- Fix iOS/WebKit native date and time controls at the shared responsive layer instead of clipping page overflow.
+- Audit every primary navigation destination for intrinsic-width, grid, card, action and intentional-scroll behavior.
+- Keep forms and cards shrinkable with a reusable inline-size containment contract.
+- Preserve internal scrolling for wide tables and horizontal navigation strips.
+- Keep v1.51 regulatory semantics, certification, aircraft identity, GPS, print/export and backup/restore behavior unchanged.
+
 ## v1.55.0 — Flight Entry Layout & Responsive UX
 
 - Align Flight essentials into predictable two-column pairs on desktop.
