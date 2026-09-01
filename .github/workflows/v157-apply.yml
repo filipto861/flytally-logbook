@@ -1,0 +1,291 @@
+name: Apply FlyTally v1.57 workflow
+
+on:
+  push:
+    branches:
+      - codex/v1570-flight-entry-workflow
+    paths:
+      - .github/workflows/v157-apply.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_test
+      AUTH_SECRET: flytally-ci-auth-secret-not-for-production
+      SIGNING_SECRET: flytally-ci-signing-secret-with-enough-entropy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1570-flight-entry-workflow
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply v1.57 source changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p=Path(path); text=p.read_text()
+              found=text.count(old)
+              if found < count:
+                  raise SystemExit(f"{path}: expected at least {count} occurrence(s), found {found}: {old[:120]!r}")
+              p.write_text(text.replace(old,new,count))
+
+          # Version metadata.
+          replace('package.json','"version": "1.56.0"','"version": "1.57.0"')
+          replace('package-lock.json','"version": "1.56.0"','"version": "1.57.0"',2)
+
+          # Load v1.57 as the final product UX layer.
+          replace('app/layout.tsx','import "./v156-mobile-hardening.css";','import "./v156-mobile-hardening.css";\nimport "./v157-flight-entry-workflow.css";')
+
+          # New-flight page: reuse existing recent-route query for quick entry.
+          replace('app/(protected)/flights/new/page.tsx','import { getManualEntryDefaults } from "@/lib/data/flights";','import { getManualEntryDefaults,getRecentRoutes } from "@/lib/data/flights";')
+          replace('app/(protected)/flights/new/page.tsx','const [aircraft,defaults,instructorRows]=await Promise.all([','const [aircraft,defaults,instructorRows,recentRoutes]=await Promise.all([')
+          replace('app/(protected)/flights/new/page.tsx','sql`SELECT DISTINCT u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END WHERE c.status=\'accepted\' AND ((c.requester_user_id=${userId} AND c.requester_label=\'instructor\') OR (c.recipient_user_id=${userId} AND c.recipient_label=\'instructor\')) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,\n  ]);','sql`SELECT DISTINCT u.display_name FROM pilot_connections c JOIN users u ON u.id=CASE WHEN c.requester_user_id=${userId} THEN c.recipient_user_id ELSE c.requester_user_id END WHERE c.status=\'accepted\' AND ((c.requester_user_id=${userId} AND c.requester_label=\'instructor\') OR (c.recipient_user_id=${userId} AND c.recipient_label=\'instructor\')) ORDER BY u.display_name` as Promise<Array<Record<string,unknown>>>,\n    getRecentRoutes(userId),\n  ]);')
+          replace('app/(protected)/flights/new/page.tsx','manual={<FlightForm action={createFlight} aircraft={aircraft} initial={defaults} instructors={instructors}/>}','manual={<FlightForm action={createFlight} aircraft={aircraft} initial={defaults} instructors={instructors} recentRoutes={recentRoutes}/>}')
+
+          # Flight form: add optional recent routes without affecting edit callers.
+          replace('components/flight-form.tsx','type Initial=Partial<FlightRow>&Record<string,unknown>;','type Initial=Partial<FlightRow>&Record<string,unknown>;\ntype RecentRoute={departure:string;arrival:string};')
+          replace('components/flight-form.tsx','export function FlightForm({action,aircraft,initial={},instructors=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>}){','export function FlightForm({action,aircraft,initial={},instructors=[],recentRoutes=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>;recentRoutes?:RecentRoute[]}){')
+
+          old='const blockMinutes=minutesBetween(off,on),airMinutes=minutesBetween(takeoff,landing),billableMinutes=billing==="AIR"?airMinutes:billing==="BLOCK"?blockMinutes:0,billingValue=billing?serializeBilling(billing,billingShare):"",flightPrice=calculatedFlightPrice(hourlyRate,blockMinutes,airMinutes,billingValue),trainingRole=["DUAL","SPIC","PICUS","INSTRUCTOR","EXAMINER"].includes(role),pilotSectionOpen=trainingRole||role==="SAFETY PILOT",countersignatureRequired=["SPIC","PICUS"].includes(role);'
+          new=old+'\n  const logbookSectionOpen=evidence==="EASA"||!evidence||!aircraftClass||countersignatureRequired,costSectionOpen=!billing;'
+          replace('components/flight-form.tsx',old,new)
+
+          old='const changeDayLandings=(value:number)=>{setLandingsDay(value);if(!movementCustom){setTakeoffsDay(value);setApproachesDay(value)}},changeNightLandings=(value:number)=>{setLandingsNight(value);if(!movementCustom){setTakeoffsNight(value);setApproachesNight(value)}};'
+          new=old+'\n  const applyRoute=(from:string,to:string)=>{markDirty();setDeparture(from.toUpperCase());setArrival(to.toUpperCase())};'
+          replace('components/flight-form.tsx',old,new)
+
+          old='const missing=[!date&&"date",!registration&&"aircraft",!role&&"role",!evidence&&"logbook",!aircraftClass&&"class",!billing&&"billing"].filter(Boolean);useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);'
+          new='const missing=[!date&&"date",!registration&&"aircraft",!role&&"role",!evidence&&"logbook",!aircraftClass&&"class",!billing&&"billing"].filter(Boolean) as string[],missingLabel={date:"Date",aircraft:"Aircraft",role:"Role",logbook:"Logbook",class:"Aircraft class",billing:"Billing"} as Record<string,string>;useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);'
+          replace('components/flight-form.tsx',old,new)
+
+          replace('components/flight-form.tsx','<nav className="entry-progress" aria-label="Manual flight entry progress"><span className="complete">1 <b>Source</b></span><span className="active">2 <b>Details</b></span><span>3 <b>Review &amp; save</b></span></nav>','<nav className="entry-progress" aria-label="Manual flight entry progress"><span className="complete">✓ <b>Source selected</b></span><span className="active">2 <b>Flight details</b></span><span>3 <b>Review below</b></span></nav>')
+
+          old='<label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>\n      <label>Arrival<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters"/></label>'
+          new=old+'\n      {!editing&&(departure||recentRoutes.length)?<div className="route-shortcuts wide" aria-label="Route shortcuts"><span>Quick route</span><div className="route-shortcuts-list">{departure?<button type="button" onClick={()=>applyRoute(departure,departure)} disabled={Boolean(arrival)&&arrival===departure}>Local · {departure} → {departure}</button>:null}{recentRoutes.slice(0,4).map(route=><button type="button" key={`${route.departure}-${route.arrival}`} onClick={()=>applyRoute(route.departure,route.arrival)}>{route.departure} → {route.arrival}</button>)}</div></div>:null}'
+          replace('components/flight-form.tsx',old,new)
+
+          old='<label>Takeoff <span className="field-hint">UTC</span><input name="takeoff" type="time" value={takeoff} onChange={e=>setTakeoff(e.target.value)}/></label>\n      <label>Landing <span className="field-hint">UTC</span><input name="landing" type="time" value={landing} onChange={e=>setLanding(e.target.value)}/></label>'
+          new=old+'\n      <div className="flight-time-summary" aria-live="polite"><div><span>BLOCK</span><strong>{durationLabel(blockMinutes)}</strong></div><div><span>AIR</span><strong>{durationLabel(airMinutes)}</strong></div><small>{blockMinutes||airMinutes?"Calculated automatically from the timeline above.":"Enter the timeline above; FlyTally calculates BLOCK and AIR automatically."}</small></div>'
+          replace('components/flight-form.tsx',old,new)
+
+          replace('components/flight-form.tsx','<details className="entry-section" open={evidence==="EASA"}><summary><span>Logbook details</span>','<details className="entry-section" open={logbookSectionOpen}><summary><span>Logbook details</span>')
+          replace('components/flight-form.tsx','<details className="entry-section"><summary><span>Cost &amp; notes</span>','<details className="entry-section" open={costSectionOpen}><summary><span>Cost &amp; notes</span>')
+
+          replace('components/flight-form.tsx','</span></header><dl><div><dt>Date / aircraft</dt>','</span></header>{missing.length?<p className="review-missing-list">Complete before save: {missing.map(item=>missingLabel[item]||item).join(" · ")}</p>:null}<dl><div><dt>Date / aircraft</dt>')
+
+          # Dedicated final UX layer.
+          Path('app/v157-flight-entry-workflow.css').write_text('''/* FlyTally v1.57 — flight entry workflow simplification. */
+.route-shortcuts{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-muted,var(--panel2))}.route-shortcuts>span{flex:0 0 auto;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.route-shortcuts-list{display:flex;flex-wrap:wrap;gap:7px;min-width:0}.route-shortcuts button{min-height:34px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);font-size:.72rem;font-weight:750;cursor:pointer}.route-shortcuts button:hover,.route-shortcuts button:focus-visible{border-color:var(--accent2);color:var(--accent2)}.route-shortcuts button:disabled{opacity:.45;cursor:default}
+.flight-time-summary{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:color-mix(in srgb,var(--surface-muted,var(--panel2)) 70%,transparent)}.flight-time-summary>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.flight-time-summary span{color:var(--muted);font-size:.68rem;font-weight:800;letter-spacing:.08em}.flight-time-summary strong{font-size:1rem}.flight-time-summary small{grid-column:1/-1;color:var(--muted);font-size:.68rem;line-height:1.35}
+.review-missing-list{margin:0 0 12px;padding:9px 11px;border:1px solid color-mix(in srgb,#f59e0b 45%,var(--line));border-radius:9px;background:color-mix(in srgb,#f59e0b 8%,transparent);color:var(--text);font-size:.75rem;font-weight:700}
+@media(max-width:700px){.entry-choice{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.entry-choice button{grid-template-columns:1fr;justify-items:center;padding:11px 10px;text-align:center}.entry-choice button>span,.entry-choice button small{display:none}.entry-choice button strong{font-size:.82rem}.route-shortcuts{display:grid;gap:7px}.route-shortcuts-list{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.route-shortcuts-list::-webkit-scrollbar{display:none}.route-shortcuts button{flex:0 0 auto;min-height:40px}.flight-time-summary{padding:10px}.flight-time-summary small{font-size:.66rem}}
+''')
+
+          # Release-specific regression contract.
+          Path('tests/v157-flight-entry-workflow.test.ts').write_text('''import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const form=fs.readFileSync("components/flight-form.tsx","utf8");
+const page=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
+const css=fs.readFileSync("app/v157-flight-entry-workflow.css","utf8");
+const layout=fs.readFileSync("app/layout.tsx","utf8");
+const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
+const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
+
+test("v1.57 package metadata and final UX layer are synchronized",()=>{
+  assert.equal(pkg.version,"1.57.0");
+  assert.equal(lock.version,pkg.version);
+  assert.equal(lock.packages[""].version,pkg.version);
+  assert.ok(layout.indexOf('v157-flight-entry-workflow.css')>layout.indexOf('v156-mobile-hardening.css'));
+});
+
+test("v1.57 reuses recent routes and offers an explicit local-flight shortcut",()=>{
+  assert.match(page,/getManualEntryDefaults,getRecentRoutes/);
+  assert.match(page,/getRecentRoutes\(userId\)/);
+  assert.match(page,/recentRoutes=\{recentRoutes\}/);
+  assert.match(form,/Quick route/);
+  assert.match(form,/Local · \{departure\} → \{departure\}/);
+  assert.match(form,/recentRoutes\.slice\(0,4\)/);
+  assert.match(form,/const applyRoute=/);
+});
+
+test("v1.57 exposes live block and air duration feedback without changing parsing",()=>{
+  assert.match(form,/className="flight-time-summary"/);
+  assert.match(form,/>BLOCK</);
+  assert.match(form,/>AIR</);
+  assert.match(form,/durationLabel\(blockMinutes\)/);
+  assert.match(form,/durationLabel\(airMinutes\)/);
+  assert.equal(fs.readFileSync("lib/flight-input.ts","utf8").includes("FlyTally v1.57"),false);
+});
+
+test("v1.57 never hides missing required choices inside collapsed sections",()=>{
+  assert.match(form,/logbookSectionOpen=evidence==="EASA"\|\|!evidence\|\|!aircraftClass\|\|countersignatureRequired/);
+  assert.match(form,/costSectionOpen=!billing/);
+  assert.match(form,/open=\{logbookSectionOpen\}/);
+  assert.match(form,/open=\{costSectionOpen\}/);
+  assert.match(form,/Complete before save:/);
+  for(const label of ["Date","Aircraft","Role","Logbook","Aircraft class","Billing"])assert.ok(form.includes(`\"${label}\"`));
+});
+
+test("v1.57 keeps mobile source selection compact and route shortcuts scrollable",()=>{
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.match(css,/\.entry-choice\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.route-shortcuts-list\{flex-wrap:nowrap;overflow-x:auto/);
+});
+
+test("v1.57 retains prior regulatory, aircraft and responsive safety nets",()=>{
+  for(const path of [
+    "tests/v151-regulatory-correctness.test.ts",
+    "tests/v1511-legacy-recency.test.ts",
+    "tests/v1512-recency-provenance.test.ts",
+    "tests/v1513-automatic-ull-credit.test.ts",
+    "tests/v1531-aircraft-state.test.ts",
+    "tests/v1543-aircraft-catalog.test.ts",
+    "tests/v155-flight-entry-layout.test.ts",
+    "tests/v156-mobile-layout-audit.test.ts",
+  ])assert.equal(fs.existsSync(path),true,`${path} must remain`);
+});
+''')
+
+          # Detailed UX audit / release record.
+          Path('FLIGHT_ENTRY_UX_V157.md').write_text('''# FlyTally v1.57.0 — Flight Entry Workflow Simplification
+
+## Objective
+
+Make normal flight entry understandable without requiring the pilot to know FlyTally's internal data model. The release is intentionally workflow-focused: fewer repeated inputs, earlier feedback and no required choice hidden inside a collapsed section.
+
+## UX audit findings
+
+1. **Route repetition:** consecutive and frequently flown routes still required retyping both airports even though FlyTally already stores recent-route statistics.
+2. **Local flights:** a departure-equals-arrival flight required entering the same airport twice.
+3. **Duration feedback:** BLOCK and AIR were calculated only in the lower review/cost area, so a timing mistake was easy to miss while entering the timeline.
+4. **Progressive disclosure edge case:** Logbook or Cost sections could be collapsed while containing a required choice. Native validation then had to explain a field the user could not immediately see.
+5. **Review feedback:** the review badge reported only a count of missing fields rather than naming them.
+6. **Mobile source choice:** Manual/GPS source cards were vertically expensive before the user reached the form.
+
+## Changes
+
+- Reuse the existing `getRecentRoutes()` query in New flight and expose up to four frequent/recent route shortcuts.
+- Add an explicit local-flight shortcut that copies the current departure into arrival only when the pilot chooses it.
+- Show live BLOCK and AIR durations immediately below the four timeline fields.
+- Automatically open Logbook details when EASA, class/logbook completion or countersignature requirements make that section relevant.
+- Automatically open Cost & notes when the required billing basis is missing.
+- Name missing required fields in Review before save.
+- Keep Manual entry / GPS import source selection compact on mobile while preserving both modes.
+
+## Deliberately unchanged
+
+- `parseFlightInput()` and all stored flight field semantics.
+- FCL.050/FCL.060, LAPL, FCL.740.A and ULL-credit behavior.
+- aircraft registration/profile authority and v1.53.1 stale-state protection.
+- certification fingerprints, revisions, signatures and shared-flight ownership.
+- GPS evidence/import semantics, print/export and backup/restore.
+- existing EASA movement evidence logic and countersignature rules.
+
+## Validation gates
+
+The release must pass TypeScript, the full TypeScript regression suite, PostgreSQL acceptance and a Next.js production build before a production merge. A clean Vercel preview and post-deploy runtime-error check are required after temporary tooling is removed.
+''')
+
+          # Durable changelog starts here instead of relying on chat history.
+          Path('CHANGELOG.md').write_text('''# FlyTally changelog
+
+This file records production-facing behavior changes. Detailed regulatory and audit rationale remains in the version-specific review documents.
+
+## 1.57.0 — Flight Entry Workflow Simplification — 2026-09-01
+
+### Added
+- Recent-route shortcuts in manual New flight using the existing route history query.
+- Explicit local-flight shortcut to set arrival equal to the current departure.
+- Live BLOCK/AIR duration feedback directly below the timeline.
+- Human-readable missing-field list in the final review card.
+
+### Changed
+- Logbook and Cost sections open automatically when they contain a required/relevant choice.
+- Manual/GPS source selector is more compact on mobile.
+- Entry progress wording now reflects that review is inline on the same page.
+
+### Preserved
+- No change to flight parsing/storage semantics, regulatory calculations, certification/revisions, aircraft identity authority, GPS evidence, sharing, print/export or backup/restore.
+
+### Verification
+- Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + post-deploy runtime audit.
+- Detailed record: `FLIGHT_ENTRY_UX_V157.md`.
+
+## 1.56.0 — Mobile Layout Audit & Responsive Hardening
+- Added the shared iOS/WebKit native date/time sizing fix and full primary-navigation responsive containment audit.
+- Preserved local scrolling for wide tables/navigation rather than hiding page overflow.
+
+## 1.55.0 — Flight Entry Layout & Responsive UX
+- Paired Date/Registration, Departure/Arrival, Off-block/On-block, Takeoff/Landing and Role/Day landings into an aligned desktop grid with logical single-column mobile flow.
+
+## 1.54.4 — Aircraft Picker Selection Close Fix
+- Prevented a confirmed aircraft catalogue selection from immediately reopening because of the debounced search effect.
+
+## 1.54.3 — Aircraft Type Catalogue & Smart Aircraft Setup
+- Added the structured FAA aircraft type catalogue, searchable Make/Model/ICAO picker and manual fallback while keeping Part-FCL class pilot-confirmed.
+
+## 1.53.1 — Aircraft State Integrity
+- Prevented mixed/stale aircraft state when changing registration or aircraft type in flight entry.
+
+## 1.53.0 — Guided Everyday Entry
+- Made normal manual entry the default and simplified first-aircraft/profile setup through progressive disclosure.
+
+## 1.52.0 — Codebase Review & Cleanup
+- Removed the retired Streamlit/Python runtime and legacy generated artifacts while preserving the validated v1.51 regulatory baseline.
+
+## 1.51.x — Regulatory Correctness Core
+- Established the tested FCL.060, LAPL/FCL.740.A, legacy movement, automatic ULL-credit and certification-evidence baseline used by later releases.
+''')
+
+          # Roadmap: current version at the top, keep all historical contract text below intact.
+          p=Path('ROADMAP.md'); roadmap=p.read_text()
+          anchor='## v1.56.0 — Mobile Layout Audit & Responsive Hardening\n'
+          section='''## v1.57.0 — Flight Entry Workflow Simplification\n\n- Reuse recent route history and provide an explicit local-flight route shortcut.\n- Show BLOCK/AIR feedback while entering the timeline instead of only at final review.\n- Never leave a missing required choice hidden inside a collapsed Logbook or Cost section.\n- Make final review name the exact missing fields and keep the mobile source selector compact.\n- Preserve v1.51 regulatory semantics, v1.53.1 aircraft-state integrity and v1.56 responsive containment.\n\n'''
+          if anchor not in roadmap: raise SystemExit('ROADMAP v1.56 anchor missing')
+          p.write_text(roadmap.replace(anchor,section+anchor,1))
+          PY
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: PostgreSQL acceptance tests
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "1"
+        run: npm run test:postgres
+      - run: npm run build
+      - name: Commit validated v1.57 changes and remove temporary workflow
+        shell: bash
+        run: |
+          rm -f flytally-postgres-acceptance.txt flytally-scale-evidence.json
+          rm -f .github/workflows/v157-apply.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json app/layout.tsx app/v157-flight-entry-workflow.css 'app/(protected)/flights/new/page.tsx' components/flight-form.tsx tests/v157-flight-entry-workflow.test.ts FLIGHT_ENTRY_UX_V157.md CHANGELOG.md ROADMAP.md .github/workflows/v157-apply.yml
+          git commit -m "v1.57.0 flight entry workflow simplification"
+          git push origin HEAD:codex/v1570-flight-entry-workflow
