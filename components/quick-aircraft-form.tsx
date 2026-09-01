@@ -27,14 +27,14 @@ export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:(
   const changeLogbook=(value:string)=>{setLogbook(value);setAircraftClass(value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass)};
   const submit=async(form:FormData)=>{setSaving(true);setStatus(null);try{const result=await action(form);setStatus(result);if(result.ok){router.refresh();onSaved?.()}}catch{setStatus({ok:false,message:"Aircraft could not be saved."})}finally{setSaving(false)}};
   return <form action={submit} className="aircraft-dialog-form quick-aircraft-form">
-    <div className="quick-aircraft-intro wide"><strong>Only the basics are needed.</strong><span>You can add technical details, pricing and defaults later.</span></div>
+    <div className="quick-aircraft-intro wide"><strong>Start with the aircraft identity.</strong><span>ULL needs registration and type. EASA also needs the manufacturer and class; pricing and technical defaults stay optional.</span></div>
     <label>Registration<input name="registration" placeholder="OK-ABC" autoCapitalize="characters" required autoFocus/><small>The registration shown in your logbook.</small></label>
+    <label>Make<input name="aircraft_make" placeholder="BRM Aero" required={logbook==="EASA"}/><small>{logbook==="EASA"?"Required for the EASA aircraft identity.":"Manufacturer, when known."}</small></label>
     <label>Aircraft type / model<input name="aircraft_model" placeholder="Bristell B23" required/><small>A simple name is enough to get started.</small></label>
     <label>Logbook<select name="evidence" value={logbook} onChange={event=>changeLogbook(event.target.value)}><option value="ULL">ULL</option><option value="EASA">EASA</option></select><small>Choose where flights with this aircraft normally belong.</small></label>
     {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>setAircraftClass(event.target.value)}>{classes.map(value=><option key={value}>{value}</option>)}</select><small>SEP is the normal single-engine aeroplane choice.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
     <input type="hidden" name="billing_share" value="1"/>
     <details className="quick-aircraft-advanced wide"><summary>More aircraft settings <small>optional</small></summary><div className="quick-aircraft-advanced-grid">
-      <label>Make<input name="aircraft_make" placeholder="BRM Aero"/></label>
       <label>Variant<input name="aircraft_variant" placeholder="Optional variant"/></label>
       <label>ICAO type<input name="icao_type" placeholder="BR23" autoCapitalize="characters"/></label>
       <label>Default role<select name="default_role" defaultValue="PIC">{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
