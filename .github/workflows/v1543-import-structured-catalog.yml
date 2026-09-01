@@ -1,0 +1,92 @@
+name: v1.54.3 import structured aircraft catalogue
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 import structured aircraft catalogue') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - name: Build structured catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/flytally-catalog data/licenses
+          curl -fsSL https://raw.githubusercontent.com/laegsgaardTroels/whatisflying-db/master/data/aircraft_types.csv -o /tmp/flytally-catalog/aircraft_types.csv
+          curl -fsSL https://raw.githubusercontent.com/laegsgaardTroels/whatisflying-db/master/LICENSE -o data/licenses/WHATSFLYING_ODBL.txt
+          python - <<'PY'
+          import csv,json,pathlib,re
+          src=pathlib.Path('/tmp/flytally-catalog/aircraft_types.csv')
+          def clean(value): return re.sub(r'\s+',' ',str(value or '')).strip()
+          def hint(desc):
+              d=clean(desc).upper()
+              if d=='L1P': return 'SEP'
+              if d=='L2P': return 'MEP'
+              if d=='L1T': return 'SET'
+              return ''
+          rows=[]
+          seen=set()
+          with src.open(newline='',encoding='utf-8-sig') as handle:
+              for row in csv.DictReader(handle):
+                  icao=clean(row.get('icao_code')).upper()
+                  make=clean(row.get('manufacturer'))
+                  model=clean(row.get('name'))
+                  if not icao or not make or not model or icao in seen: continue
+                  seen.add(icao)
+                  rows.append({
+                    'icao':icao,
+                    'make':make,
+                    'model':model,
+                    'label':f'{make} {model}',
+                    'descriptor':clean(row.get('description')).upper(),
+                    'wtc':clean(row.get('wtc')).upper(),
+                    'classHint':hint(row.get('description'))
+                  })
+          rows.sort(key=lambda item:(item['make'].casefold(),item['model'].casefold(),item['icao']))
+          pathlib.Path('data/aircraft-type-catalog.json').write_text(json.dumps(rows,separators=(',',':'),ensure_ascii=False)+'\n')
+          stats={
+            'entries':len(rows),
+            'manufacturers':len({r['make'].casefold() for r in rows}),
+            'sepHints':sum(r['classHint']=='SEP' for r in rows),
+            'mepHints':sum(r['classHint']=='MEP' for r in rows),
+            'setHints':sum(r['classHint']=='SET' for r in rows)
+          }
+          pathlib.Path('data/aircraft-type-catalog-stats.json').write_text(json.dumps(stats,indent=2)+'\n')
+          PY
+          UPSTREAM_SHA=$(git ls-remote https://github.com/laegsgaardTroels/whatisflying-db.git refs/heads/master | cut -f1)
+          cat > data/AIRCRAFT_TYPES_SOURCE.md <<EOF
+          # FlyTally aircraft type catalogue
+
+          FlyTally bundles a normalized aircraft-type catalogue derived from the public **whatisflying-db** aircraft type database.
+
+          - Upstream: https://github.com/laegsgaardTroels/whatisflying-db
+          - Source file: \`data/aircraft_types.csv\`
+          - Upstream commit imported: \`${UPSTREAM_SHA}\`
+          - Database license: **Open Data Commons Open Database License (ODbL)**
+          - A copy of the upstream database license is stored at \`data/licenses/WHATSFLYING_ODBL.txt\`.
+
+          This derived aircraft catalogue is distributed under the same ODbL terms. Attribution applies to the catalogue/database data; it does not change the license of FlyTally application code.
+
+          FlyTally uses the catalogue only as an identity/search aid. ICAO descriptors such as \`L1P\` are not Part-FCL aircraft classes. A catalogue entry may expose a non-binding class hint (for example \`L1P → SEP\`) to reduce typing, but the pilot must separately confirm the actual Part-FCL class. The hint is never certification evidence.
+
+          Aircraft missing from the catalogue are always supported through manual entry. User-entered Make, Model and ICAO values remain editable even after a catalogue choice.
+          EOF
+          rm -f data/MICRONICS_SCHEMA_SAMPLE.json data/aircraft-types-mictronics.json
+      - name: Commit structured catalogue
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "v1.54.3 import structured aircraft catalogue"
+          git push origin HEAD:codex/v1543-aircraft-catalog
