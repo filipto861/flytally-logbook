@@ -26,6 +26,7 @@ import "./v151-regulatory.css";
 import "./v153-everyday-ux.css";
 import "./v156-mobile-hardening.css";
 import "./v157-flight-entry-workflow.css";
+import "./v158-flight-entry-polish.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
