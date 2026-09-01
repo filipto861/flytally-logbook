@@ -12,6 +12,13 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const baseForm=()=>{const form=new FormData();for(const [key,value] of Object.entries({date:"2026-09-01",registration:"OK-GLD",aircraftType:"Test sailplane",departure:"LKLT",arrival:"LKLT",offBlock:"10:00",takeoff:"10:05",landing:"10:55",onBlock:"11:00",role:"PIC",evidence:"EASA",billingBasis:"AIR",billingShare:"1",operationType:"SP",engineType:"SE"}))form.set(key,value);return form};
 const splFlight=(overrides:Partial<SplFlight>={}):SplFlight=>({date:"2026-08-01",regulatoryCategory:"SAILPLANE",aircraftClass:"GLIDER",role:"PIC",minutes:60,airMinutes:60,launches:1,launchMethod:"WINCH",landingsDay:1,landingsNight:0,takeoffsDay:0,takeoffsNight:0,purposeCode:"",instructorSigned:false,...overrides});
 
+test("v1.62 release metadata and production PR acceptance gate are synchronized",()=>{
+  const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
+  assert.equal(pkg.version,"1.62.0");assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
+  assert.match(read("ROADMAP.md"),/v1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);assert.match(read("CHANGELOG.md"),/1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);
+  const workflow=read(".github/workflows/verify-web.yml");assert.match(workflow,/pull_request:[\s\S]*codex\/vercel-migration-v080/);assert.match(workflow,/PostgreSQL acceptance tests/);
+});
+
 test("v1.62 keeps legacy TMG in Part-FCL unless SPL context is explicit",()=>{
   assert.equal(regulatoryAircraftCategory({aircraftClass:"TMG",evidence:"EASA"}),"AEROPLANE");
   assert.equal(regulatoryAircraftCategory({regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"}),"SAILPLANE");

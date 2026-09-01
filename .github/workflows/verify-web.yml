@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - codex/vercel-migration-v080
   push:
     branches:
       - codex/vercel-migration-v080

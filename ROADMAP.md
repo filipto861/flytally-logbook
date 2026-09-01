@@ -2,6 +2,36 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+## v1.62.0 — Sailplane / SPL / TMG support
+
+- Extend the single flight-entry workflow with explicit `AEROPLANE`, `SAILPLANE`, `ULL` and `OTHER` regulatory context instead of deriving legal meaning from aircraft class alone.
+- Keep legacy TMG records in Part-FCL unless SPL / Part-SFCL context is explicitly selected.
+- Record non-TMG sailplane launch method/count and SPL TMG day/night take-offs as explicit evidence; GPS never invents launch methods.
+- Add SPL recency evaluation for SFCL.160 sailplane/TMG privileges, passenger currency and SFCL.155 launch-method recency, including the explicit Part-FCL TMG route.
+- Add SPL proficiency-check evidence and preserve the new regulatory/launch evidence through sharing, trash/restore and portable backup v9.
+- Bind regulatory category and launch evidence into flight certification fingerprint v5 while preserving verification of historical v1-v4 fingerprints.
+- Present sailplane protected records as Part-SFCL rather than mislabelling them FCL.050; do not fabricate a new official-looking SPL print template.
+
+## v1.61.0 — Category-aware Flight Entry
+
+- Keep blank New flight neutral until an aircraft is explicitly selected.
+- Derive a presentation category from the selected aircraft profile and reveal only the aircraft-dependent experience controls relevant to that category.
+- Keep one Add flight workflow for Aeroplane, ULL, Sailplane and future categories rather than branching into separate entry pages.
+- Preserve Role as flight-specific state and keep the category helper presentation-only; existing regulatory calculations remain authoritative.
+
+## v1.60.1 — Licences navigation cleanup
+
+- Keep the Licences section tabs as the single normal navigation layer.
+- Keep status rows compact and read-only, with detailed regulatory evidence one level deeper.
+- Avoid duplicating navigation or long regulatory explanations in the everyday Overview.
+
+## v1.60.0 — Adaptive Pilot Workspace
+
+- Replace the normal Licences Overview with an adaptive status workspace showing only credentials, privileges and documents present in the pilot account.
+- Keep items needing attention prominent while separating licence/document validity from flying recency.
+- Delegate authoritative LAPL(A) SEP/TMG recency to the existing Recency Engine rather than duplicating legal calculations in the UI.
+- Add presentation-only pilot-category classification as groundwork for aeroplane, ULL, sailplane, helicopter and balloon support.
+- Preserve detailed Licences & ratings, Recency, Aircraft training and Medical & documents workspaces below Overview.
 
 ## v1.59.0 — Flight Entry Structure & Expenses
 
@@ -42,7 +72,7 @@ This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** appli
 - Use consistent control sizing and spacing.
 - Collapse to one logical single-column sequence on mobile without changing flight data semantics.
 
-## Current development — v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
+## v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
 
 Focus:
 - searchable aircraft catalogue by manufacturer, model and ICAO type designator
@@ -52,7 +82,7 @@ Focus:
 - use registration/profile identity as the authoritative source for later flight snapshots
 - preserve v1.53.1 stale-state protections and the complete v1.51 regulatory safety net
 
-## Current development — v1.53.1 · Aircraft state integrity
+## v1.53.1 · Aircraft state integrity
 
 Focus:
 - audit and prevent stale aircraft-dependent state when a flight registration changes
@@ -61,7 +91,7 @@ Focus:
 - prevent a known aircraft type from being edited independently into a mixed profile; manual type entry remains available only when no active aircraft profile exists
 - evaluate a worldwide aircraft-type catalogue with manual fallback as a follow-up, without introducing an unlicensed ICAO data dependency
 
-## Current development — v1.53.0 · Guided everyday entry
+## v1.53.0 · Guided everyday entry
 
 Focus:
 - make normal manual entry the default New flight path while keeping GPS import one click away and directly addressable with `?mode=gps`
@@ -71,7 +101,7 @@ Focus:
 - make flight role choices self-explanatory while preserving the exact stored role codes and all certification/recency semantics
 - keep v1.51 regulatory rules, certification revisions/hashes, signatures, GPS evidence, ownership, print/export and backup/restore behavior unchanged
 
-## Current release — v1.52.0 · Codebase Review & Cleanup
+## v1.52.0 · Codebase Review & Cleanup
 
 Focus:
 - freeze the validated v1.51.x regulatory behavior as the release baseline rather than combining cleanup with another rules rewrite
@@ -268,6 +298,15 @@ The v1.33 certification-readiness baseline remains unchanged: exact revision/has
 - v1.47.0: everyday UX refinement with less duplicated flight-list chrome, quieter certified-flight sharing and action-only data-quality alerts
 - v1.48.0: selectable aircraft endorsement codes and modular instructor-flight purpose evidence without automatic privilege/revalidation claims
 - v1.49.0: signed training-flight linkage into Recency, explicit rating-validity handoff and flight-backed aircraft-training candidates
+- v1.50.0: semantic theme convergence with server-resolved appearance, adaptive maps/charts and stable printable output
+- v1.51.x: regulatory correctness core with structured PF evidence, bounded legacy compatibility and automatic eligible ULL credit
+- v1.52.0: retired Streamlit/Python cleanup and current-runtime documentation
+- v1.53.0–v1.53.1: guided everyday entry and aircraft-state integrity
+- v1.54.3–v1.54.4: aircraft catalogue and picker close fix
+- v1.55.0–v1.59.2: flight-entry/mobile workflow hardening, structured expenses and manual-entry default integrity
+- v1.60.0–v1.60.1: adaptive pilot workspace and Licences navigation cleanup
+- v1.61.0: category-aware flight-entry presentation layer
+- v1.62.0: Sailplane / SPL / TMG regulatory context and Part-SFCL recency core
 
 ## Near term
 
