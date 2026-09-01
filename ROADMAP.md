@@ -2,7 +2,7 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## v1.62.0 — Sailplane / SPL / TMG support
+## Current release — v1.62.0 — Sailplane / SPL / TMG support
 
 - Extend the single flight-entry workflow with explicit `AEROPLANE`, `SAILPLANE`, `ULL` and `OTHER` regulatory context instead of deriving legal meaning from aircraft class alone.
 - Keep legacy TMG records in Part-FCL unless SPL / Part-SFCL context is explicitly selected.
@@ -72,7 +72,7 @@ This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** appli
 - Use consistent control sizing and spacing.
 - Collapse to one logical single-column sequence on mobile without changing flight data semantics.
 
-## v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
+## Current development — v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
 
 Focus:
 - searchable aircraft catalogue by manufacturer, model and ICAO type designator
@@ -82,7 +82,7 @@ Focus:
 - use registration/profile identity as the authoritative source for later flight snapshots
 - preserve v1.53.1 stale-state protections and the complete v1.51 regulatory safety net
 
-## v1.53.1 · Aircraft state integrity
+## Current development — v1.53.1 · Aircraft state integrity
 
 Focus:
 - audit and prevent stale aircraft-dependent state when a flight registration changes
@@ -91,7 +91,7 @@ Focus:
 - prevent a known aircraft type from being edited independently into a mixed profile; manual type entry remains available only when no active aircraft profile exists
 - evaluate a worldwide aircraft-type catalogue with manual fallback as a follow-up, without introducing an unlicensed ICAO data dependency
 
-## v1.53.0 · Guided everyday entry
+## Current development — v1.53.0 · Guided everyday entry
 
 Focus:
 - make normal manual entry the default New flight path while keeping GPS import one click away and directly addressable with `?mode=gps`
