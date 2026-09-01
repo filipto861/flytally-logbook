@@ -45,12 +45,14 @@ test("v1.56 audit covers every primary navigation destination",()=>{
   assert.match(audit,/does \*\*not\*\* change flight semantics/i);
 });
 
-test("v1.56 retains the regulatory regression safety net",()=>{
+test("v1.56 retains the regulatory and aircraft-integrity regression safety net",()=>{
   for(const path of [
-    "tests/v151-regulatory-core.test.ts",
-    "tests/v1511-regulatory-compatibility.test.ts",
-    "tests/v1514-regulatory-hardening.test.ts",
-    "tests/v1531-aircraft-state-integrity.test.ts",
+    "tests/v151-regulatory-correctness.test.ts",
+    "tests/v1511-legacy-recency.test.ts",
+    "tests/v1512-recency-provenance.test.ts",
+    "tests/v1513-automatic-ull-credit.test.ts",
+    "tests/v1531-aircraft-state.test.ts",
     "tests/v1543-aircraft-catalog.test.ts",
+    "tests/v155-flight-entry-layout.test.ts",
   ])assert.equal(fs.existsSync(path),true,`${path} must remain`);
 });
