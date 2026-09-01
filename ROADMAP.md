@@ -2,6 +2,15 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+## Current development — v1.53.1 · Aircraft state integrity
+
+Focus:
+- audit and prevent stale aircraft-dependent state when a flight registration changes
+- refresh type, class, logbook, engine, operation mode, billing and rate from the newly selected aircraft profile
+- preserve flight-specific role and training/crew semantics during a registration correction
+- prevent a known aircraft type from being edited independently into a mixed profile; manual type entry remains available only when no active aircraft profile exists
+- evaluate a worldwide aircraft-type catalogue with manual fallback as a follow-up, without introducing an unlicensed ICAO data dependency
+
 ## Current development — v1.53.0 · Guided everyday entry
 
 Focus:
