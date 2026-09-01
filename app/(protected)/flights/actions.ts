@@ -17,6 +17,8 @@ import { allocatedFunctionTimes,defaultEngineType } from "@/lib/easa-logbook";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { moveFlightToTrash } from "@/lib/flight-trash";
 import { createStoredBackup } from "@/lib/backup-center";
+import { parseFlightExpenses } from "@/lib/flight-expenses";
+import { ensureV159Schema } from "@/lib/v159-schema";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -75,15 +77,20 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
 }
 
 export async function createFlight(_: FlightActionState, form: FormData): Promise<FlightActionState> {
-  const { userId } = await requireUser(); await ensureDatabaseOptimizations(); const parsed = parseFlightInput(form);
-  if (!parsed.data) return { error: parsed.error }; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival);
+  const { userId } = await requireUser(); await ensureDatabaseOptimizations();await ensureV159Schema(); const parsed = parseFlightInput(form),expenseResult=parseFlightExpenses(form);
+  if (!parsed.data) return { error: parsed.error };if(!expenseResult.data)return{error:expenseResult.error}; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency})));
   const price = await resolvedPrice(userId, f.registration, f.date);
   const fingerprint=flightFingerprint(userId,{date:f.date,registration:f.registration,offBlock:f.offBlock,departure,arrival});
   const results=await sql.transaction([
     sql`SELECT pg_advisory_xact_lock(hashtextextended(${fingerprint},0))`,
-    sql`INSERT INTO flights (user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note,operation_type,engine_type,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,verification_name,verification_reference)
+    sql`WITH inserted AS (
+      INSERT INTO flights (user_id,date,evidence,registration,aircraft_type,aircraft_class,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,price_per_hour,billing_basis,note,operation_type,engine_type,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,verification_name,verification_reference)
       SELECT ${userId},${f.date},${f.evidence},${f.registration},${f.aircraftType},${f.aircraftClass},${departure},${arrival},${f.offBlock},${f.takeoff},${f.landing},${f.onBlock},${f.starts},${f.commander},${f.instructor},${f.role},${f.task},${price},${f.billingBasis},${f.note},${f.operationType},${f.engineType},${f.landingsDay},${f.landingsNight},${f.movementEvidenceRecorded},${f.takeoffsDay},${f.takeoffsNight},${f.approachesDay},${f.approachesNight},${f.nightMinutes},${f.ifrMinutes},${f.picMinutes},${f.copilotMinutes},${f.dualMinutes},${f.instructorMinutes},${f.verificationName},${f.verificationReference}
-      WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival}) RETURNING id`,
+      WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival}) RETURNING id
+    ), expense_rows AS (
+      INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency)
+      SELECT ${userId},inserted.id,e.category,e.label,e.amount_minor,e.currency FROM inserted CROSS JOIN LATERAL jsonb_to_recordset(${expenseJson}::jsonb) AS e(category text,label text,amount_minor bigint,currency text) RETURNING id
+    ) SELECT id FROM inserted`,
   ]);
   const rows=results[1] as Array<{id:number|string}>;
   if(!rows[0])return{error:"This flight already exists. Duplicate submission was blocked."};
@@ -107,18 +114,27 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
 }
 
 export async function updateFlight(id: number, _: FlightActionState, form: FormData): Promise<FlightActionState> {
-  const { userId } = await requireUser(); await ensureDatabaseOptimizations(); if (!Number.isSafeInteger(id) || id <= 0) return { error: "Invalid record." };
-  const parsed = parseFlightInput(form); if (!parsed.data) return { error: parsed.error }; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival);
+  const { userId } = await requireUser(); await ensureDatabaseOptimizations();await ensureV159Schema(); if (!Number.isSafeInteger(id) || id <= 0) return { error: "Invalid record." };
+  const parsed = parseFlightInput(form),expenseResult=parseFlightExpenses(form); if (!parsed.data) return { error: parsed.error };if(!expenseResult.data)return{error:expenseResult.error}; const f = parsed.data,departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency})));
   const existingRows=await sql`SELECT registration,date::text date,price_per_hour,locked_at FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<{registration:string;date:string;price_per_hour:number|null;locked_at:string|null}>;
   const existing=existingRows[0];if(!existing)return { error: "Flight not found or access denied." };
   if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};
   const price=shouldResolveStoredPrice(existing,f.registration,f.date)?await resolvedPrice(userId,f.registration,f.date):existing.price_per_hour;
-  const result = await sql`
-    UPDATE flights SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${f.commander},instructor=${f.instructor},role=${f.role},task=${f.task},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note},operation_type=${f.operationType},engine_type=${f.engineType},landings_day=${f.landingsDay},landings_night=${f.landingsNight},movement_evidence_recorded=${f.movementEvidenceRecorded},takeoffs_day=${f.takeoffsDay},takeoffs_night=${f.takeoffsNight},approaches_day=${f.approachesDay},approaches_night=${f.approachesNight},night_minutes=${f.nightMinutes},ifr_minutes=${f.ifrMinutes},pic_minutes=${f.picMinutes},copilot_minutes=${f.copilotMinutes},dual_minutes=${f.dualMinutes},instructor_minutes=${f.instructorMinutes},verification_name=${f.verificationName},verification_reference=${f.verificationReference}
-    WHERE id=${id} AND user_id=${userId} RETURNING id
-  ` as Array<{ id: number | string }>;
-  if (!result[0]) return { error: "Flight not found or access denied." };
+  const results=await sql.transaction([
+    sql`UPDATE flights SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${f.commander},instructor=${f.instructor},role=${f.role},task=${f.task},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note},operation_type=${f.operationType},engine_type=${f.engineType},landings_day=${f.landingsDay},landings_night=${f.landingsNight},movement_evidence_recorded=${f.movementEvidenceRecorded},takeoffs_day=${f.takeoffsDay},takeoffs_night=${f.takeoffsNight},approaches_day=${f.approachesDay},approaches_night=${f.approachesNight},night_minutes=${f.nightMinutes},ifr_minutes=${f.ifrMinutes},pic_minutes=${f.picMinutes},copilot_minutes=${f.copilotMinutes},dual_minutes=${f.dualMinutes},instructor_minutes=${f.instructorMinutes},verification_name=${f.verificationName},verification_reference=${f.verificationReference} WHERE id=${id} AND user_id=${userId} RETURNING id`,
+    sql`DELETE FROM flight_expenses WHERE flight_id=${id} AND user_id=${userId}`,
+    sql`INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency) SELECT ${userId},${id},e.category,e.label,e.amount_minor,e.currency FROM jsonb_to_recordset(${expenseJson}::jsonb) AS e(category text,label text,amount_minor bigint,currency text) WHERE EXISTS(SELECT 1 FROM flights WHERE id=${id} AND user_id=${userId})`,
+  ]);
+  const result=results[0] as Array<{id:number|string}>;if (!result[0]) return { error: "Flight not found or access denied." };
   revalidatePath("/dashboard"); revalidatePath("/flights"); revalidatePath(`/flights/${id}`); return {success:"Flight saved."};
+}
+
+export async function saveFlightExpenses(id:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{
+  const{userId}=await requireUser();await ensureDatabaseOptimizations();await ensureV159Schema();if(!Number.isSafeInteger(id)||id<=0)return{error:"Invalid flight."};
+  const owned=await sql`SELECT id FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1`;if(!owned[0])return{error:"Flight not found or access denied."};
+  const parsed=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};const expenseJson=JSON.stringify(parsed.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency})));
+  await sql.transaction([sql`DELETE FROM flight_expenses WHERE flight_id=${id} AND user_id=${userId}`,sql`INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency) SELECT ${userId},${id},e.category,e.label,e.amount_minor,e.currency FROM jsonb_to_recordset(${expenseJson}::jsonb) AS e(category text,label text,amount_minor bigint,currency text)`]);
+  revalidatePath(`/flights/${id}`);revalidatePath("/flights");revalidatePath("/dashboard");return{success:"Expenses saved."};
 }
 
 export async function deleteFlight(id: number) {

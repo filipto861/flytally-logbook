@@ -22,6 +22,7 @@ const flightRevisionKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${Number(
 const fstdRevisionKey=(row:BackupRow)=>`${String(row.fstd_session_id??"")}|${Number(row.revision_number||0)}`;
 const auditKey=(row:BackupRow)=>id(row);
 const deletedKey=(row:BackupRow)=>text(row.delete_token);
+const expenseKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${upper(row.category)}|${upper(row.label)}|${Number(row.amount_minor||0)}|${upper(row.currency)}`;
 
 function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,requireStableId=true){
   const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
@@ -47,7 +48,7 @@ function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],pare
 
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string):Promise<ExactRestorePlan>{
   const certification=validateBackupCertificationHistory(backup,userId);
-  const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted]=await Promise.all([
+  const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses]=await Promise.all([
     sql`SELECT id,date::text date,registration,off_block,departure,arrival,record_revision,certified_at,certification_hash FROM flights WHERE user_id=${userId}`,
     sql`SELECT id,registration FROM aircraft WHERE user_id=${userId}`,
     sql`SELECT id,registration,COALESCE(valid_from,'') valid_from FROM rates WHERE user_id=${userId}`,
@@ -60,6 +61,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_audit_log WHERE user_id=${userId}`,
     sql`SELECT id,delete_token FROM deleted_flights WHERE user_id=${userId}`,
+    sql`SELECT id,flight_id,category,label,amount_minor,currency FROM flight_expenses WHERE user_id=${userId}`,
   ]) as Array<Array<BackupRow>>;
   checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
 
@@ -76,6 +78,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     ["fstd_certified_revisions",backup.fstd_certified_revisions,fstdRevisions,fstdRevisionKey,"Certified FSTD revision",true],
     ["audit_log",backup.audit_log,audit,auditKey,"Audit event",true],
     ["deleted_flights",backup.deleted_flights,deleted,deletedKey,"Trash record",true],
+    ["flight_expenses",backup.flight_expenses??[],expenses,expenseKey,"Flight expense",true],
   ];
   const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
   for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable);source[name]=backupRows.length;add[name]=result.add.length;skip[name]=result.skip;addRows[name]=result.add}
@@ -100,6 +103,8 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   for(const batch of chunks(newFlights.map(stageFlight),75))queries.push(sql`INSERT INTO flights SELECT (json_populate_record(NULL::flights,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(newFlights,75))queries.push(sql`UPDATE flights f SET aircraft_make=COALESCE(item->>'aircraft_make',''),aircraft_model=COALESCE(item->>'aircraft_model',item->>'aircraft_type',''),aircraft_variant=COALESCE(item->>'aircraft_variant',''),certified_at=NULLIF(item->>'certified_at','')::timestamptz,certified_by_user_id=NULLIF(item->>'certified_by_user_id','')::bigint,certification_hash=COALESCE(item->>'certification_hash',''),certification_version=COALESCE(NULLIF(item->>'certification_version','')::int,1),locked_at=NULLIF(item->>'locked_at','')::timestamptz,locked_by_user_id=NULLIF(item->>'locked_by_user_id','')::bigint FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) WHERE f.user_id=${userId} AND f.id=(item->>'id')::bigint`);
 
+  for(const batch of chunks(plan.addRows.flight_expenses??[],150))queries.push(sql`INSERT INTO flight_expenses SELECT (json_populate_record(NULL::flight_expenses,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
+
   const newFstd=plan.addRows.fstd_sessions??[];
   for(const batch of chunks(newFstd.map(stageFstd),100))queries.push(sql`INSERT INTO fstd_sessions SELECT (json_populate_record(NULL::fstd_sessions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(newFstd,100))queries.push(sql`UPDATE fstd_sessions s SET certified_at=NULLIF(item->>'certified_at','')::timestamptz,certified_by_user_id=NULLIF(item->>'certified_by_user_id','')::bigint,certification_hash=COALESCE(item->>'certification_hash',''),certification_version=COALESCE(NULLIF(item->>'certification_version','')::int,1) FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) WHERE s.user_id=${userId} AND s.id=(item->>'id')::bigint`);
@@ -123,7 +128,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
     for(const batch of chunks(backup.connection_audit_log??[],150))queries.push(sql`INSERT INTO connection_audit_log SELECT (json_populate_record(NULL::connection_audit_log,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   }
 
-  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
+  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log'),('flight_expenses')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
   if(queries.length>1000)throw new Error("Backup restore plan is too large for one atomic database transaction.");
   await sql.transaction(queries);
   return{added:Object.values(plan.preview.add).reduce((sum,value)=>sum+value,0),queries:queries.length};
