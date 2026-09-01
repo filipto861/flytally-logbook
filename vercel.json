@@ -1,14 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["fra1"],
-  "git": {
-    "deploymentEnabled": {
-      "codex/v1592-empty-defaults-aircraft-profile": false
-    }
-  },
+  "regions": [
+    "fra1"
+  ],
   "crons": [
-    {"path":"/api/cron/backups","schedule":"15 2 * * *"},
-    {"path":"/api/cron/recency","schedule":"15 5 * * *"}
+    {
+      "path": "/api/cron/backups",
+      "schedule": "15 2 * * *"
+    },
+    {
+      "path": "/api/cron/recency",
+      "schedule": "15 5 * * *"
+    }
   ]
 }
