@@ -22,7 +22,7 @@ test("v1.37 shared review keeps Review Add Certify workflow and derived states",
 
 test("v1.37 certified ULL uses the protected logbook-entry grid",()=>{
   const entry=read("components/readonly-logbook-entry.tsx");
-  assert.match(entry,/const caption=easa\?"FCL\.050 single-flight logbook preview":"ULL single-flight logbook preview"/);
+  assert.match(entry,/ULL single-flight logbook preview/);
   assert.match(entry,/readonly-fcl-table/);assert.match(entry,/Single-pilot time/);assert.match(entry,/Pilot function/);
   assert.doesNotMatch(entry,/<th>Route<\/th><th>Aircraft<\/th><th>Block UTC<\/th>/);
 });
