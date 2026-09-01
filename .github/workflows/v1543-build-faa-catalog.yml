@@ -1,0 +1,87 @@
+name: v1.54.3 build FAA aircraft catalogue
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 build FAA aircraft catalogue') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - name: Parse public FAA aircraft type order
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          curl -fsSL https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf -o /tmp/faa7360.pdf
+          pdftotext -layout /tmp/faa7360.pdf /tmp/faa7360.txt
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          lines=Path('/tmp/faa7360.txt').read_text(errors='replace').splitlines()
+          categories=r'(?:Fixed-wing|Helicopter|Gyroplane|Tiltrotor|Glider|Balloon|Airship)'
+          rx=re.compile(r'^\s*(?P<model>\S.{0,58}?\S|\S)\s{2,}(?P<make>[A-Z0-9][A-Z0-9 &()/.,\'’+\-]{1,45}?)\s{2,}(?P<icao>[A-Z0-9]{2,5}\*?)\s{2,}(?P<category>'+categories+r')\s+(?P<engine>\S+)')
+          def clean(v):return re.sub(r'\s+',' ',v).strip(' ,')
+          def hint(category,engine):
+              if category!='Fixed-wing':return ''
+              e=engine.upper()
+              if e.startswith('1P/'):return 'SEP'
+              if e.startswith('2P/'):return 'MEP'
+              if e.startswith('1T/'):return 'SET'
+              return ''
+          out=[]; seen=set()
+          for line in lines:
+              m=rx.match(line)
+              if not m:continue
+              model=clean(m.group('model')); make=clean(m.group('make')); icao=m.group('icao').rstrip('*').upper()
+              category=m.group('category'); engine=clean(m.group('engine'))
+              if model.upper() in {'MODEL','AIRCRAFT','MANUFACTURER'} or make in {'FAA','ICAO'}:continue
+              key=(icao,make.casefold(),model.casefold())
+              if key in seen:continue
+              seen.add(key)
+              out.append({'icao':icao,'make':make,'model':model,'label':f'{make} {model}','category':category,'engine':engine,'classHint':hint(category,engine)})
+          out.sort(key=lambda x:(x['make'].casefold(),x['model'].casefold(),x['icao']))
+          # Hard quality gates for the GA/European use cases FlyTally cares about.
+          required=[('BR23','BRM AERO','Bristell B23'),('P208','TECNAM','P-2008'),('WT9','AEROSPOOL','WT-9 Dynamic')]
+          for icao,make,model in required:
+              if not any(x['icao']==icao and x['make']==make and x['model']==model for x in out):
+                  raise SystemExit(f'missing required FAA mapping: {icao} {make} {model}')
+          if len(out)<1500:raise SystemExit(f'FAA parser coverage too small: {len(out)}')
+          Path('data/aircraft-type-catalog.json').write_text(json.dumps(out,separators=(',',':'),ensure_ascii=False)+'\n')
+          stats={'entries':len(out),'designators':len({x['icao'] for x in out}),'manufacturers':len({x['make'] for x in out}),'sepHints':sum(x['classHint']=='SEP' for x in out),'mepHints':sum(x['classHint']=='MEP' for x in out),'setHints':sum(x['classHint']=='SET' for x in out)}
+          Path('data/aircraft-type-catalog-stats.json').write_text(json.dumps(stats,indent=2)+'\n')
+          PY
+          cat > data/AIRCRAFT_TYPES_SOURCE.md <<'EOF'
+          # FlyTally aircraft type catalogue
+
+          FlyTally's bundled aircraft identity catalogue is generated from **FAA Order JO 7360.1K — Aircraft Type Designators**, a public FAA directive containing aircraft type designators, manufacturers and models used for air traffic services.
+
+          Source: https://www.faa.gov/regulations_policies/orders_notices/index.cfm/go/document.current/documentNumber/7360.1
+
+          The catalogue is a convenience/search layer, not a regulatory determination. The original FAA/ICAO source remains authoritative for type-designator use.
+
+          `classHint` is deliberately non-binding. FlyTally may suggest SEP/MEP/SET only from an unambiguous fixed-wing engine configuration in the source (for example one piston engine), but Part-FCL class is a separate pilot-confirmed field and the suggestion is never certification evidence.
+
+          Some ultralight or newly introduced aircraft may not have an individual designator. FlyTally always supports manual Make/Model/ICAO entry and must never block aircraft creation merely because a type is absent from this catalogue.
+          EOF
+          rm -f data/FAA_7360_SAMPLE.txt data/licenses/WHATSFLYING_ODBL.txt
+          rmdir data/licenses 2>/dev/null || true
+      - name: Commit catalogue
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git add -u data
+          git commit -m "v1.54.3 build FAA aircraft catalogue"
+          git push origin HEAD:codex/v1543-aircraft-catalog
