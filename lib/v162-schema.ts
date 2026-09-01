@@ -45,7 +45,7 @@ async function applyV162Schema(){
       WHEN UPPER(COALESCE(aircraft_class,''))='GLIDER' THEN 'SAILPLANE'
       WHEN UPPER(COALESCE(aircraft_class,'')) IN ('SEP','TMG','MEP','SET') THEN 'AEROPLANE'
       ELSE 'OTHER' END
-      WHERE COALESCE(regulatory_category,'')=''`,
+      WHERE COALESCE(regulatory_category,'')='' AND certified_at IS NULL`,
     sql`CREATE INDEX IF NOT EXISTS idx_flights_user_regulatory_category_date ON flights(user_id,regulatory_category,date DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_spl_recency_evidence_user_date ON spl_recency_evidence(user_id,evidence_date DESC)`,
     sql`INSERT INTO flytally_feature_migrations(migration_key) VALUES(${MIGRATION_KEY}) ON CONFLICT(migration_key) DO NOTHING`,
