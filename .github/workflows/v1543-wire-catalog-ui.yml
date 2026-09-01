@@ -1,0 +1,54 @@
+name: v1.54.3 wire aircraft catalogue UI
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 wire aircraft catalogue UI') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - name: Wire picker and styles
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('components/aircraft-manager.tsx')
+          t=p.read_text()
+          anchor='import { BILLING_SHARES,parseBilling } from "@/lib/billing";\n'
+          if 'AircraftTypePicker' not in t:
+              if anchor not in t: raise SystemExit('manager import anchor missing')
+              t=t.replace(anchor,anchor+'import { AircraftTypePicker } from "@/components/aircraft-type-picker";\n',1)
+          old='''    <label>Make<input name="aircraft_make" defaultValue={t(aircraft?.aircraft_make)} placeholder="Tecnam" required={logbook==="EASA"}/><small>{logbook==="EASA"?"Required for the EASA aircraft identity.":"Manufacturer, when known."}</small></label>\n    <label>Aircraft type / model<input name="aircraft_model" defaultValue={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} placeholder="P2008 JC" required={logbook==="EASA"}/><small>{logbook==="EASA"?"Required for an EASA aircraft profile.":"A simple model name is enough."}</small></label>'''
+          new='''    <AircraftTypePicker initialMake={t(aircraft?.aircraft_make)} initialModel={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} initialIcao={t(aircraft?.icao_type)} requireMake={logbook==="EASA"} requireModel/>'''
+          if old in t:t=t.replace(old,new,1)
+          elif '<AircraftTypePicker initialMake=' not in t:raise SystemExit('manager identity anchor missing')
+          t=t.replace('<small>SEP is the common single-engine aeroplane class.</small>','<small>Confirm the actual Part-FCL class. Catalogue hints are informational only.</small>',1)
+          t=t.replace('      <label>ICAO type<input name="icao_type" defaultValue={t(aircraft?.icao_type)} placeholder="P208"/></label>\n','',1)
+          t=t.replace('<span>Pricing and technical defaults can be added later.</span>','<span>Search the aircraft catalogue first; pricing and technical defaults can be added later.</span>',1)
+          p.write_text(t)
+
+          css=Path('app/globals.css')
+          text=css.read_text()
+          marker='/* FlyTally v1.54.3 — aircraft type catalogue */'
+          if marker not in text:
+              text += '''\n\n/* FlyTally v1.54.3 — aircraft type catalogue */\n.aircraft-type-picker{grid-column:1/-1;position:relative;display:grid;gap:12px;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--surface-muted,var(--panel2))}.aircraft-catalog-search{position:relative}.aircraft-catalog-results{position:absolute;z-index:60;left:14px;right:14px;top:82px;max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:0 16px 36px #0006}.aircraft-catalog-results button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 13px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;cursor:pointer}.aircraft-catalog-results button:last-of-type{border-bottom:0}.aircraft-catalog-results button:hover,.aircraft-catalog-results button:focus{background:var(--panel2);outline:none}.aircraft-catalog-results button span{display:grid;gap:2px}.aircraft-catalog-results button small,.aircraft-catalog-empty small,.aircraft-catalog-help{color:var(--muted)}.aircraft-catalog-results button>b{flex:0 0 auto;padding:4px 7px;border:1px solid var(--line);border-radius:7px;color:var(--accent2);font-size:.72rem}.aircraft-catalog-empty{display:grid;gap:3px;padding:13px}.aircraft-identity-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.aircraft-catalog-help{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;font-size:.72rem}.aircraft-class-hint{color:var(--accent2);font-weight:750}@media(max-width:760px){.aircraft-identity-fields{grid-template-columns:1fr}.aircraft-catalog-results{top:82px}.aircraft-catalog-help{display:grid}}\n'''
+              css.write_text(text)
+          PY
+      - name: Commit UI wiring
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/aircraft-manager.tsx app/globals.css
+          git commit -m "v1.54.3 wire aircraft catalogue UI"
+          git push origin HEAD:codex/v1543-aircraft-catalog
