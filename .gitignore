@@ -8,6 +8,7 @@ node_modules/
 .next/
 .vercel/
 npm-debug.log*
+*.tsbuildinfo
 
 # Runtime exports / temporary files
 exports/
