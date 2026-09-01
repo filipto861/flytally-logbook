@@ -21,6 +21,7 @@ const migrationNames:Record<number,string>={
   11:"instructor flight approvals",
   12:"shared flight participation",
   13:"crew connections and verified approvals",
+  14:"user-owned structured flight expenses",
 };
 
 const migrationQueries=(version:number)=>{
@@ -440,6 +441,22 @@ const migrationQueries=(version:number)=>{
     sql`CREATE INDEX IF NOT EXISTS idx_connection_audit_subject ON connection_audit_log(subject_user_id,created_at DESC)`,
     sql`CREATE TABLE IF NOT EXISTS feature_switches (key TEXT PRIMARY KEY,enabled BOOLEAN NOT NULL DEFAULT TRUE,updated_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
     sql`INSERT INTO feature_switches(key,enabled) VALUES('crew_sharing',TRUE),('verified_approvals',TRUE) ON CONFLICT(key) DO NOTHING`,
+  ];
+  if(version===14)return[
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS flights_id_user_owner_uq ON flights(id,user_id)`,
+    sql`CREATE TABLE IF NOT EXISTS flight_expenses (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      flight_id BIGINT NOT NULL,
+      category TEXT NOT NULL,
+      label TEXT NOT NULL DEFAULT '',
+      amount_minor BIGINT NOT NULL CHECK(amount_minor>0 AND amount_minor<=1000000000),
+      currency TEXT NOT NULL CHECK(currency ~ '^[A-Z]{3}$'),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_expenses_owner_flight_fk FOREIGN KEY(flight_id,user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_expenses_user_flight ON flight_expenses(user_id,flight_id,id)`,
+    sql`ALTER TABLE deleted_flights ADD COLUMN IF NOT EXISTS expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

@@ -2,6 +2,12 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 1.59.1 — Database Migration Hotfix — 2026-09-01
+
+- Fixed production startup failure `Unknown database migration 14`.
+- Added the v1.59 structured-expense schema to the primary sequential database migration runner.
+- No flight, regulatory, certification, expense ownership or currency semantics changed.
+
 ## 1.59.0 — Flight Entry Structure & Expenses — 2026-09-01
 
 ### Added
