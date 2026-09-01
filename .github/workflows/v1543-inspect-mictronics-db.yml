@@ -1,0 +1,63 @@
+name: v1.54.3 inspect Mictronics aircraft database
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 record Mictronics schema sample') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - name: Inspect full aircraft export
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/flytally-mictronics
+          mkdir -p /tmp/flytally-mictronics/unpacked data
+          curl -fsSL https://raw.githubusercontent.com/Mictronics/aircraft-database/main/aircraft_db.zip -o /tmp/flytally-mictronics/db.zip
+          unzip -q /tmp/flytally-mictronics/db.zip -d /tmp/flytally-mictronics/unpacked
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('/tmp/flytally-mictronics/unpacked')
+          report={'files':[], 'samples':[], 'keys':{}}
+          for path in sorted(root.rglob('*.json')):
+              rel=str(path.relative_to(root))
+              try:
+                  obj=json.loads(path.read_text(errors='replace'))
+              except Exception as exc:
+                  report['files'].append({'path':rel,'error':str(exc)})
+                  continue
+              kind=type(obj).__name__
+              size=len(obj) if isinstance(obj,(dict,list)) else None
+              report['files'].append({'path':rel,'kind':kind,'size':size})
+              records=[]
+              if isinstance(obj,dict):
+                  for k,v in list(obj.items())[:10]:
+                      records.append({'key':k,'value':v})
+              elif isinstance(obj,list):
+                  records=[{'value':v} for v in obj[:10]]
+              for record in records:
+                  v=record.get('value')
+                  if isinstance(v,dict):
+                      report['keys'].setdefault(rel,sorted(v.keys()))
+                  if len(report['samples'])<40:
+                      report['samples'].append({'file':rel,**record})
+          pathlib.Path('data/MICRONICS_SCHEMA_SAMPLE.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
+          PY
+      - name: Commit schema sample
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/MICRONICS_SCHEMA_SAMPLE.json
+          git commit -m "v1.54.3 record Mictronics schema sample"
+          git push origin HEAD:codex/v1543-aircraft-catalog
