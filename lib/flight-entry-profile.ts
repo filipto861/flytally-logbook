@@ -1,38 +1,61 @@
 export type FlightAircraftCategory="aeroplane"|"ull"|"sailplane"|"other";
+export type RegulatoryAircraftCategory="AEROPLANE"|"SAILPLANE"|"ULL"|"OTHER";
 
 export type FlightEntryProfile={
   category:FlightAircraftCategory;
+  regulatoryCategory:RegulatoryAircraftCategory;
   label:string;
   selected:boolean;
   context:string;
+  isTmg:boolean;
   showStandardExperience:boolean;
+  showSailplaneExperience:boolean;
   showRegulatoryMovements:boolean;
 };
 
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
 const AEROPLANE_CLASSES=new Set(["SEP","TMG","MEP","SET"]);
+const REGULATORY_CATEGORIES=new Set<RegulatoryAircraftCategory>(["AEROPLANE","SAILPLANE","ULL","OTHER"]);
 
-export function flightAircraftCategory(input:{aircraftClass?:unknown;evidence?:unknown}):FlightAircraftCategory{
+export function regulatoryAircraftCategory(input:{regulatoryCategory?:unknown;aircraftClass?:unknown;evidence?:unknown}):RegulatoryAircraftCategory{
+  const explicit=clean(input.regulatoryCategory) as RegulatoryAircraftCategory;
+  if(REGULATORY_CATEGORIES.has(explicit))return explicit;
   const aircraftClass=clean(input.aircraftClass),evidence=clean(input.evidence);
-  if(aircraftClass==="GLIDER")return "sailplane";
-  if(aircraftClass==="ULL"||evidence==="ULL")return "ull";
-  if(AEROPLANE_CLASSES.has(aircraftClass))return "aeroplane";
+  if(aircraftClass==="ULL"||evidence==="ULL")return "ULL";
+  if(aircraftClass==="GLIDER")return "SAILPLANE";
+  // Legacy TMG records stay in the existing Part-FCL aeroplane context unless an
+  // explicit v1.62 regulatory category says otherwise. This avoids silently
+  // reclassifying historical TMG evidence into SPL/SFCL calculations.
+  if(AEROPLANE_CLASSES.has(aircraftClass))return "AEROPLANE";
+  return "OTHER";
+}
+
+export function flightAircraftCategory(input:{regulatoryCategory?:unknown;aircraftClass?:unknown;evidence?:unknown}):FlightAircraftCategory{
+  const regulatoryCategory=regulatoryAircraftCategory(input);
+  if(regulatoryCategory==="SAILPLANE")return "sailplane";
+  if(regulatoryCategory==="ULL")return "ull";
+  if(regulatoryCategory==="AEROPLANE")return "aeroplane";
   return "other";
 }
 
 const LABELS:Record<FlightAircraftCategory,string>={aeroplane:"Aeroplane",ull:"ULL",sailplane:"Sailplane",other:"Aircraft"};
 
-export function flightEntryProfile(input:{hasAircraft:boolean;aircraftClass?:unknown;evidence?:unknown}):FlightEntryProfile{
-  const category=flightAircraftCategory(input),label=LABELS[category],aircraftClass=clean(input.aircraftClass),evidence=clean(input.evidence);
+export function flightEntryProfile(input:{hasAircraft:boolean;regulatoryCategory?:unknown;aircraftClass?:unknown;evidence?:unknown}):FlightEntryProfile{
+  const regulatoryCategory=regulatoryAircraftCategory(input),category=flightAircraftCategory(input),label=LABELS[category],aircraftClass=clean(input.aircraftClass),evidence=clean(input.evidence),isTmg=aircraftClass==="TMG",sailplane=regulatoryCategory==="SAILPLANE";
   const context=[label,evidence,aircraftClass].filter((value,index,items)=>Boolean(value)&&items.indexOf(value)===index).join(" · ");
   return {
     category,
+    regulatoryCategory,
     label,
     selected:input.hasAircraft,
     context,
-    showStandardExperience:input.hasAircraft,
-    // Preserve the existing EASA movement-entry behaviour in v1.61. Category-specific
-    // regulatory semantics are intentionally deferred to the category releases.
-    showRegulatoryMovements:input.hasAircraft&&evidence==="EASA",
+    isTmg,
+    // A non-TMG sailplane uses launch/landing evidence instead of the aeroplane
+    // Night/IFR/PF movement block. TMG keeps the normal time/landing controls.
+    showStandardExperience:input.hasAircraft&&(!sailplane||isTmg),
+    showSailplaneExperience:input.hasAircraft&&sailplane&&!isTmg,
+    // FCL.060 movement evidence belongs to the Part-FCL aeroplane context. SPL
+    // TMG flights use SFCL.160 take-off/landing evidence instead.
+    showRegulatoryMovements:input.hasAircraft&&regulatoryCategory==="AEROPLANE"&&evidence==="EASA",
   };
 }
