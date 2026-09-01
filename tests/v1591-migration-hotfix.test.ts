@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { releaseAtLeast } from "./release-version.ts";
 
 const db=fs.readFileSync("lib/db-optimization.ts","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
 test("v1.59.1 package metadata is synchronized",()=>{
-  assert.equal(pkg.version,"1.59.1");
+  assert.ok(releaseAtLeast(pkg.version,1,59,1));
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
 });

@@ -2,6 +2,15 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 1.59.2 — Manual Entry Defaults & Aircraft Profile Integrity — 2026-09-01
+
+- New manual flights no longer preselect the previous aircraft registration.
+- Departure no longer inherits the previous arrival or configured home airport.
+- Aircraft-dependent logbook/class/billing state remains neutral until the pilot explicitly selects an aircraft.
+- Explicit aircraft selection reapplies the complete aircraft-dependent profile state (type, logbook, class, engine derivation, operation mode baseline, billing/share and hourly rate) in one interaction.
+- Flight-specific role remains untouched when changing aircraft, preserving the v1.53.1 state-integrity boundary.
+- Additional expenses and all v1.59 financial behavior are unchanged.
+
 ## 1.59.1 — Database Migration Hotfix — 2026-09-01
 
 - Fixed production startup failure `Unknown database migration 14`.

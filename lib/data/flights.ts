@@ -45,15 +45,13 @@ export async function getFlightFilterOptions(userId:number){const [regs,evidence
 export async function getRecentRoutes(userId:number){const rows=await sql`SELECT UPPER(TRIM(departure)) departure,UPPER(TRIM(arrival)) arrival,COUNT(*) uses,MAX(date) last_date FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(departure),'') IS NOT NULL AND NULLIF(TRIM(arrival),'') IS NOT NULL GROUP BY 1,2 ORDER BY uses DESC,last_date DESC LIMIT 18` as Array<{departure:string;arrival:string}>;return rows.map(r=>({departure:String(r.departure),arrival:String(r.arrival)}));}
 
 export async function getManualEntryDefaults(userId:number){
-  const [latest,settings,user]=await Promise.all([
-    sql`SELECT registration,arrival,evidence,role,commander FROM flights WHERE user_id=${userId} ORDER BY date DESC,off_block DESC NULLS LAST,id DESC LIMIT 1`,
-    sql`SELECT home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1`,
+  const [settings,user]=await Promise.all([
+    sql`SELECT default_role FROM user_settings WHERE user_id=${userId} LIMIT 1`,
     sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
   ]) as Array<Array<Record<string,unknown>>>;
-  const last=latest[0]??{},cfg=settings[0]??{};let preferences:Record<string,unknown>={};
-  try{preferences=JSON.parse(String(cfg.preferences_json||"{}"))}catch{}
+  const cfg=settings[0]??{};
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  return {date:today,registration:String(last.registration||""),departure:String(last.arrival||cfg.home_airport||"").toUpperCase(),arrival:"",evidence:String(preferences.default_evidence||last.evidence||"ULL").toUpperCase(),role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||last.commander||""),starts:1};
+  return {date:today,registration:"",departure:"",arrival:"",evidence:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1};
 }
 
 export async function getFlightNavigation(userId:number,id:number,filters:FlightFilters={}){
