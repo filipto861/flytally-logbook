@@ -28,9 +28,13 @@ test("v1.53.1 registration changes refresh aircraft state without changing the f
 
 test("v1.53.1 known aircraft type cannot be independently mixed with another profile",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/name="aircraftType"[^>]*readOnly=\{Boolean\(selected\)\}/);
-  assert.match(form,/From the selected aircraft profile/);
-  assert.match(form,/No active aircraft profile is available/);
+  const fieldStart=form.indexOf('<label>Aircraft type<input name="aircraftType"');
+  const fieldEnd=form.indexOf('</label>',fieldStart);
+  assert.ok(fieldStart>=0&&fieldEnd>fieldStart);
+  const aircraftTypeField=form.slice(fieldStart,fieldEnd);
+  assert.match(aircraftTypeField,/readOnly=\{Boolean\(selected\)\}/);
+  assert.match(aircraftTypeField,/From the selected aircraft profile/);
+  assert.match(aircraftTypeField,/No active aircraft profile is available/);
 });
 
 test("v1.53.1 keeps regulatory parsing and certification boundaries unchanged",()=>{
