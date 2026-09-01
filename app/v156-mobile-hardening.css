@@ -1,0 +1,57 @@
+/* FlyTally v1.56 — mobile layout audit & responsive hardening.
+   This layer fixes reusable containment primitives instead of masking overflow at body level. */
+
+/* Grid/flex children are allowed to shrink inside the protected application shell. */
+.app-grid :where(
+  .content,.content>*,.panel,.metric,.table-panel,.map-panel,.entry-section,
+  .form-grid,.stack-form,.inline-editor,.filter-grid,.map-filters,.profile-grid,
+  .connections-layout,.connection-card,.notification-card,.security-grid,.session-list,
+  .data-hub,.data-hub-content,.export-filter,.fstd-form,.settings-grid,
+  .guided-aircraft-fields,.quick-aircraft-form,.quick-aircraft-advanced-grid,
+  .aircraft-advanced-grid,.aircraft-dialog-form,.credential-card,.credential-editor,
+  .dashboard-layout-grid,.dashboard-widget,.flight-finder,.flight-search-form
+){min-inline-size:0;max-inline-size:100%}
+
+.app-grid :where(label,fieldset,summary,.section-heading>*,.page-header>*,.connection-card>*,.notification-card>*){min-inline-size:0}
+
+/* Native form controls must obey their containing grid/card. WebKit date/time inputs
+   otherwise keep an intrinsic inline size that can extend beyond a mobile card. */
+.app-grid :where(
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,textarea
+){box-sizing:border-box;min-inline-size:0;max-inline-size:100%}
+
+/* Horizontal navigation and tables may scroll internally, but must never widen the page. */
+.app-grid :where(.period-control,.segment-control,.settings-nav,.credentials-tabs,.data-hub-nav,.scope-links,.details-navigation,.table-scroll,.pagination){max-inline-size:100%}
+.app-grid :where(.table-scroll,.readonly-fcl-table-wrap){overflow-x:auto}
+
+/* Long identities/status text may wrap instead of forcing cards wider than the viewport. */
+.app-grid :where(.connection-identity,.notification-card,.credential-main,.credential-validity,.session-list,.workspace-heading,.flight-results-heading){overflow-wrap:anywhere}
+
+@media screen and (max-width:820px),screen and (pointer:coarse){
+  /* iOS Safari needs logical inline sizing plus appearance reset for date/time controls.
+     The same proven rule was already used by GPS review; v1.56 applies it consistently. */
+  .app-grid :where(input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]){
+    -webkit-appearance:none;
+    appearance:none;
+    display:block;
+    inline-size:100%;
+    width:100%;
+    min-inline-size:0;
+    max-inline-size:100%;
+    overflow:hidden;
+    text-align:left;
+  }
+  .app-grid input[type="date"]::-webkit-date-and-time-value,
+  .app-grid input[type="time"]::-webkit-date-and-time-value,
+  .app-grid input[type="datetime-local"]::-webkit-date-and-time-value,
+  .app-grid input[type="month"]::-webkit-date-and-time-value{text-align:left}
+
+  /* Keep mobile action/header rows contained when labels or translated text become long. */
+  .app-grid :where(.page-header,.section-heading,.connection-actions,.filter-actions,.export-format-actions){max-inline-size:100%}
+}
+
+@media screen and (max-width:600px){
+  /* Full-width mobile forms should never inherit an intrinsic desktop minimum. */
+  .app-grid :where(.form-grid,.stack-form,.inline-editor,.filter-grid,.map-filters,.export-filter,.fstd-form,.settings-grid,.profile-grid,.security-grid,.connections-layout){min-inline-size:0;max-inline-size:100%}
+}
