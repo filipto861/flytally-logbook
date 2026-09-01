@@ -18,7 +18,7 @@ test("v1.53 makes normal manual entry the default while keeping GPS explicit",()
 });
 
 test("v1.53 guides an empty account to a minimal first-aircraft flow",()=>{
-  const page=read("app/(protected)/flights/new/page.tsx"),workspace=read("components/flight-entry-workspace.tsx"),quick=read("components/quick-aircraft-form.tsx");
+  const page=read("app/(protected)/flights/new/page.tsx"),workspace=read("components/flight-entry-workspace.tsx"),quick=read("components/quick-aircraft-form.tsx"),picker=read("components/aircraft-type-picker.tsx");
   assert.match(page,/aircraftCount=\{aircraft\.length\}/);
   assert.match(page,/aircraftAction=\{saveAircraftWithResult\}/);
   assert.doesNotMatch(page,/aircraftForm=<form/);
@@ -26,7 +26,9 @@ test("v1.53 guides an empty account to a minimal first-aircraft flow",()=>{
   assert.match(workspace,/Add first aircraft/);
   assert.match(workspace,/QuickAircraftForm/);
   assert.match(quick,/name="registration"/);
-  assert.match(quick,/name="aircraft_model"/);
+  assert.match(quick,/AircraftTypePicker/);
+  assert.match(picker,/name="aircraft_model"/);
+  assert.match(picker,/name="aircraft_make"/);
   assert.match(quick,/name="evidence"/);
   assert.match(quick,/logbook==="EASA"/);
   assert.match(quick,/type="hidden" name="aircraft_class" value="ULL"/);
@@ -34,13 +36,17 @@ test("v1.53 guides an empty account to a minimal first-aircraft flow",()=>{
 });
 
 test("v1.53 keeps full aircraft profiles approachable through progressive disclosure",()=>{
-  const aircraft=read("components/aircraft-manager.tsx");
+  const aircraft=read("components/aircraft-manager.tsx"),picker=read("components/aircraft-type-picker.tsx");
   assert.match(aircraft,/Normal logbook/);
   assert.match(aircraft,/More aircraft settings/);
   assert.match(aircraft,/open=\{!aircraft\.length\}/);
   assert.match(aircraft,/Add your first aircraft/);
-  assert.match(aircraft,/Pricing and technical defaults can be added later/);
-  assert.match(aircraft,/required=\{logbook==="EASA"\}/);
+  assert.match(aircraft,/Search the aircraft catalogue first; pricing and technical defaults can be added later/);
+  const pickerAt=aircraft.indexOf('<AircraftTypePicker'),advancedAt=aircraft.indexOf('<details className="aircraft-advanced-fields');
+  assert.ok(pickerAt>=0&&advancedAt>pickerAt);
+  assert.match(aircraft,/AircraftTypePicker[^\n]*requireMake=\{logbook==="EASA"\}[^\n]*requireModel/);
+  assert.match(picker,/required=\{requireMake\}/);
+  assert.match(picker,/required=\{requireModel\}/);
   assert.match(aircraft,/type="hidden" name="part_fcl_credit_class"/);
   assert.match(aircraft,/type="hidden" name="part_fcl_credit_basis"/);
   assert.match(aircraft,/type="hidden" name="part_fcl_credit_from"/);

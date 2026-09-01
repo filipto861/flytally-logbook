@@ -2,6 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+## Current development — v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup
+
+Focus:
+- searchable aircraft catalogue by manufacturer, model and ICAO type designator
+- auto-fill Make, Model and ICAO identity from a selected catalogue result
+- always preserve manual aircraft identity entry for missing/new/ultralight types
+- keep Part-FCL class separate and pilot-confirmed; catalogue class hints are informational only
+- use registration/profile identity as the authoritative source for later flight snapshots
+- preserve v1.53.1 stale-state protections and the complete v1.51 regulatory safety net
+
 ## Current development — v1.53.1 · Aircraft state integrity
 
 Focus:

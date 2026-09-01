@@ -46,12 +46,17 @@ test("v1.53.1 keeps regulatory parsing and certification boundaries unchanged",(
 
 
 test("v1.53.1 keeps required EASA aircraft identity out of the optional settings drawer",()=>{
-  const quick=read("components/quick-aircraft-form.tsx"),manager=read("components/aircraft-manager.tsx"),actions=read("app/(protected)/database/actions.ts");
-  const quickDrawer=quick.indexOf('<details className="quick-aircraft-advanced');
-  const quickMake=quick.indexOf('name="aircraft_make"');
-  assert.ok(quickMake>=0&&quickDrawer>quickMake);
-  assert.match(quick,/name="aircraft_make"[^\n]*required=\{logbook==="EASA"\}/);
-  assert.match(manager,/name="aircraft_make"[^\n]*required=\{logbook==="EASA"\}/);
+  const quick=read("components/quick-aircraft-form.tsx"),manager=read("components/aircraft-manager.tsx"),picker=read("components/aircraft-type-picker.tsx"),actions=read("app/(protected)/database/actions.ts");
+  const quickPicker=quick.indexOf('<AircraftTypePicker'),quickDrawer=quick.indexOf('<details className="quick-aircraft-advanced');
+  const managerPicker=manager.indexOf('<AircraftTypePicker'),managerDrawer=manager.indexOf('<details className="aircraft-advanced-fields');
+  assert.ok(quickPicker>=0&&quickDrawer>quickPicker);
+  assert.ok(managerPicker>=0&&managerDrawer>managerPicker);
+  assert.match(quick,/AircraftTypePicker[^\n]*requireMake=\{logbook==="EASA"\}[^\n]*requireModel/);
+  assert.match(manager,/AircraftTypePicker[^\n]*requireMake=\{logbook==="EASA"\}[^\n]*requireModel/);
+  assert.match(picker,/name="aircraft_make"/);
+  assert.match(picker,/required=\{requireMake\}/);
+  assert.match(picker,/name="aircraft_model"/);
+  assert.match(picker,/required=\{requireModel\}/);
   assert.match(actions,/evidence==="EASA"&&\(!make\|\|!model\)/);
   assert.match(actions,/evidence==="ULL"\?"ULL":requestedClass/);
 });
