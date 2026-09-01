@@ -1,0 +1,43 @@
+name: v1.54.3 release metadata
+
+on:
+  push:
+    branches:
+      - codex/v1543-aircraft-catalog
+
+permissions:
+  contents: write
+
+jobs:
+  metadata:
+    if: ${{ !contains(github.event.head_commit.message, 'v1.54.3 set release metadata') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1543-aircraft-catalog
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm version 1.54.3 --no-git-tag-version
+      - name: Update roadmap
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ROADMAP.md');t=p.read_text()
+          marker='## Current development — v1.53.1 · Aircraft state integrity\n'
+          section='''## Current development — v1.54.3 · Aircraft Type Catalogue & Smart Aircraft Setup\n\nFocus:\n- searchable aircraft catalogue by manufacturer, model and ICAO type designator\n- auto-fill Make, Model and ICAO identity from a selected catalogue result\n- always preserve manual aircraft identity entry for missing/new/ultralight types\n- keep Part-FCL class separate and pilot-confirmed; catalogue class hints are informational only\n- use registration/profile identity as the authoritative source for later flight snapshots\n- preserve v1.53.1 stale-state protections and the complete v1.51 regulatory safety net\n\n'''
+          if '## Current development — v1.54.3' not in t:
+              if marker not in t: raise SystemExit('roadmap marker missing')
+              p.write_text(t.replace(marker,section+marker,1))
+          PY
+      - name: Commit metadata
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json ROADMAP.md
+          git commit -m "v1.54.3 set release metadata"
+          git push origin HEAD:codex/v1543-aircraft-catalog
