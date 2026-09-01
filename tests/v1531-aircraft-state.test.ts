@@ -43,3 +43,15 @@ test("v1.53.1 keeps regulatory parsing and certification boundaries unchanged",(
   assert.match(input,/allocatedFunctionTimes/);
   assert.match(cert,/flightCertificationHash/);
 });
+
+
+test("v1.53.1 keeps required EASA aircraft identity out of the optional settings drawer",()=>{
+  const quick=read("components/quick-aircraft-form.tsx"),manager=read("components/aircraft-manager.tsx"),actions=read("app/(protected)/database/actions.ts");
+  const quickDrawer=quick.indexOf('<details className="quick-aircraft-advanced');
+  const quickMake=quick.indexOf('name="aircraft_make"');
+  assert.ok(quickMake>=0&&quickDrawer>quickMake);
+  assert.match(quick,/name="aircraft_make"[^\n]*required=\{logbook==="EASA"\}/);
+  assert.match(manager,/name="aircraft_make"[^\n]*required=\{logbook==="EASA"\}/);
+  assert.match(actions,/evidence==="EASA"&&\(!make\|\|!model\)/);
+  assert.match(actions,/evidence==="ULL"\?"ULL":requestedClass/);
+});
