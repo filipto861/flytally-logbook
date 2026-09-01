@@ -1,0 +1,73 @@
+name: Run FlyTally v1.57 transform
+
+on:
+  push:
+    branches:
+      - codex/v1570-flight-entry-workflow
+    paths:
+      - .github/workflows/v157-run.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_test
+      AUTH_SECRET: flytally-ci-auth-secret-not-for-production
+      SIGNING_SECRET: flytally-ci-signing-secret-with-enough-entropy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1570-flight-entry-workflow
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply corrected v1.57 transform
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+          workflow=Path('.github/workflows/v157-apply.yml').read_text()
+          marker="python - <<'PY'\n"
+          block=workflow.split(marker,1)[1].split("\n          PY",1)[0]
+          block=textwrap.dedent(block).replace('Cost &amp; notes','Cost & notes')
+          exec(compile(block,'v157-transform.py','exec'))
+          PY
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: PostgreSQL acceptance tests
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "1"
+        run: npm run test:postgres
+      - run: npm run build
+      - name: Commit validated source changes
+        shell: bash
+        run: |
+          rm -f flytally-postgres-acceptance.txt flytally-scale-evidence.json
+          rm -f .github/workflows/v157-apply.yml .github/workflows/v157-run.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v1.57.0 flight entry workflow simplification"
+          git push origin HEAD:codex/v1570-flight-entry-workflow
