@@ -16,7 +16,9 @@ async function backup(version:number){
   const core={flights:[],aircraft:[],rates:[],airports:[],expiries:[],settings:[],flight_tracks:[],track_points:[]};
   const extra5=version>=5?{audit_log:[{id:1,user_id:7,action:"updated"}]}:{};
   const extra6=version>=6?{fstd_sessions:[],flight_certified_revisions:[],fstd_certified_revisions:[],deleted_flights:[]}:{};
-  const arrays={...core,...extra5,...extra6} as Record<string,unknown[]>;
+  const extra7=version>=7?{pilot_connections:[],flight_participations:[],instructor_flight_approvals:[],pilot_licences:[],pilot_qualifications:[],user_notifications:[],flight_verifications:[],connection_audit_log:[]}:{};
+  const extra8=version>=8?{flight_expenses:[]}:{};
+  const arrays={...core,...extra5,...extra6,...extra7,...extra8} as Record<string,unknown[]>;
   const counts=Object.fromEntries(Object.entries(arrays).map(([key,value])=>[key,value.length]));
   const payload={format:"pilot-logbook-portable",version,...(version>=6?{schema_version:9}:{}),exported_at:"2026-08-22T12:00:00.000Z",profile:version>=6?{id:7}:{},counts,...arrays};
   return JSON.stringify({...payload,integrity:{algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))}});
@@ -38,6 +40,10 @@ test("version 6 requires complete recovery sections",async()=>{
 test("version 6 rejects records owned by another account",async()=>{
   const parsed=JSON.parse(await backup(6)),{integrity:_integrity,...payload}=parsed;payload.flights=[{id:10,user_id:99}];payload.counts.flights=1;const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
   await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/another account/);
+});
+
+test("version 8 rejects orphan or cross-account expenses",async()=>{
+  const parsed=JSON.parse(await backup(8)),{integrity:_integrity,...payload}=parsed;payload.flights=[{id:10,user_id:7,date:"2026-09-01",registration:"OK-TST",off_block:"10:00",departure:"LKPR",arrival:"LKPR"}];payload.flight_expenses=[{id:1,user_id:7,flight_id:999,category:"LANDING",label:"",amount_minor:1000,currency:"CZK"}];payload.counts.flights=1;payload.counts.flight_expenses=1;let integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/expense refers to a missing flight/);payload.flight_expenses[0].flight_id=10;payload.flight_expenses[0].user_id=99;integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/expense from another account/);
 });
 
 test("backup integrity rejects modified content",async()=>{

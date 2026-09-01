@@ -12,7 +12,8 @@ const changelog=fs.readFileSync("CHANGELOG.md","utf8");
 const audit=fs.readFileSync("FLIGHT_ENTRY_UX_V158.md","utf8");
 
 test("v1.58 metadata and final UX layer are synchronized",()=>{
-  assert.equal(pkg.version,"1.58.0");
+  const [major,minor]=String(pkg.version).split(".").map(Number);
+  assert.ok(major>1||(major===1&&minor>=58));
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.ok(layout.indexOf("v158-flight-entry-polish.css")>layout.indexOf("v157-flight-entry-workflow.css"));

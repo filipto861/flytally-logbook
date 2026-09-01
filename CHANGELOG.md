@@ -2,6 +2,26 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 1.59.0 — Flight Entry Structure & Expenses — 2026-09-01
+
+### Added
+- Structured personal flight expenses: Landing fee, Handling, Parking, Fuel or a custom Other item, each with amount and currency.
+- Currency-grouped totals with no implicit FX conversion.
+- Portable backup v8 and trash/restore coverage for personal expenses.
+
+### Changed
+- Reorganized manual entry into Flight essentials, Flight experience, Crew & training, Aircraft & logbook, Costs and Notes.
+- Day/night landings, Night/IFR time and EASA PF/movement evidence now live together under Flight experience.
+- SPIC/PICUS countersignature evidence now lives with Crew & training.
+- Notes are no longer mixed into Costs.
+
+### Privacy & certification boundary
+- Additional expenses are owned by the current user and are not copied to shared-flight participants.
+- Expenses remain outside the certified flight fingerprint/revision, so financial metadata can be maintained without rewriting regulatory evidence.
+
+### Verification
+- Detailed record: `FLIGHT_ENTRY_UX_V159.md`.
+
 ## 1.58.0 — Flight Entry Polish & Smart Defaults — 2026-09-01
 
 ### Removed

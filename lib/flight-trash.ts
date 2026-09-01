@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { ensureV159Schema } from "@/lib/v159-schema";
 
 export type DeletedFlight={id:number;originalFlightId:number;date:string;registration:string;departure:string;arrival:string;deletedAt:string;purgeAfter:string;trackCount:number};
 
@@ -13,11 +14,11 @@ export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>
 }
 
 export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{
-  await ensureDatabaseOptimizations();const token=randomUUID();
+  await ensureDatabaseOptimizations();await ensureV159Schema();const token=randomUUID();
   const results=await sql.transaction([
     sql`UPDATE flights f SET locked_at=NULL,locked_by_user_id=NULL WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id) RETURNING f.id`,
-    sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data)
-      SELECT f.user_id,f.id,${token},to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb)
+    sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data)
+      SELECT f.user_id,f.id,${token},to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb),COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM flight_expenses e WHERE e.user_id=f.user_id AND e.flight_id=f.id),'[]'::jsonb)
       FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1
         AND (f.locked_at IS NULL OR EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id))
         AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=f.user_id AND r.flight_id=f.id)
@@ -30,7 +31,7 @@ export async function moveFlightToTrash(userId:number,flightId:number):Promise<b
 }
 
 export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{
-  await ensureDatabaseOptimizations();
+  await ensureDatabaseOptimizations();await ensureV159Schema();
   const rows=await sql`WITH candidate AS MATERIALIZED (
       SELECT * FROM deleted_flights WHERE id=${trashId} AND user_id=${userId} AND restored_at IS NULL AND purge_after>NOW() LIMIT 1
     ), restored_flight AS (
@@ -42,6 +43,8 @@ export async function restoreDeletedFlightRecord(userId:number,trashId:number):P
     ), restored_tracks AS (
       INSERT INTO flight_tracks(id,user_id,flight_id,file_name,imported_at,point_count,distance_km,start_utc,end_utc,min_alt_m,max_alt_m,coordinates_json,overview_coordinates_json,overview_version)
       SELECT s.new_id,${userId},f.id,COALESCE(s.track->>'file_name','restored-track'),COALESCE(NULLIF(s.track->>'imported_at','')::timestamptz,NOW()),COALESCE(NULLIF(s.track->>'point_count','')::int,0),COALESCE(NULLIF(s.track->>'distance_km','')::numeric,0),NULLIF(s.track->>'start_utc','')::timestamptz,NULLIF(s.track->>'end_utc','')::timestamptz,NULLIF(s.track->>'min_alt_m','')::numeric,NULLIF(s.track->>'max_alt_m','')::numeric,COALESCE(s.track->>'coordinates_json','[]'),COALESCE(s.track->>'overview_coordinates_json','[]'),COALESCE(NULLIF(s.track->>'overview_version','')::int,1) FROM track_source s CROSS JOIN restored_flight f RETURNING id
+    ), restored_expenses AS (
+      INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency,created_at) SELECT ${userId},f.id,COALESCE(e->>'category','OTHER'),COALESCE(e->>'label',''),COALESCE(NULLIF(e->>'amount_minor','')::bigint,0),UPPER(COALESCE(e->>'currency','CZK')),COALESCE(NULLIF(e->>'created_at','')::timestamptz,NOW()) FROM candidate c CROSS JOIN restored_flight f CROSS JOIN LATERAL jsonb_array_elements(c.expenses_data) e WHERE COALESCE(NULLIF(e->>'amount_minor','')::bigint,0)>0 RETURNING id
     ), marked AS (
       UPDATE deleted_flights SET restored_at=NOW(),restored_flight_id=(SELECT id FROM restored_flight) WHERE id=${trashId} AND user_id=${userId} AND EXISTS(SELECT 1 FROM restored_flight) RETURNING restored_flight_id
     ) SELECT restored_flight_id FROM marked` as Array<{restored_flight_id:number|string}>;

@@ -3,6 +3,14 @@
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
 
+## v1.59.0 — Flight Entry Structure & Expenses
+
+- Reorganize New flight around pilot workflow rather than EASA implementation groups.
+- Keep landings, night/IFR and PF movement evidence together in Flight experience.
+- Add user-owned structured expenses with explicit currency and no automatic FX conversion.
+- Preserve expenses in portable backup and trash/restore while keeping them outside regulatory certification fingerprints.
+- Preserve v1.51 regulatory semantics, v1.53.1 aircraft-state integrity and v1.56 mobile containment.
+
 ## v1.58.0 — Flight Entry Polish & Smart Defaults
 
 - Remove Quick Routes from New flight and keep only a compact explicit local-flight helper.
