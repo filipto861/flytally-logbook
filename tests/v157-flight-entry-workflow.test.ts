@@ -12,22 +12,19 @@ const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
 test("v1.57 package metadata, UX layer and release records remain synchronized",()=>{
-  assert.equal(pkg.version,"1.57.0");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
+  const [major,minor]=String(pkg.version).split(".").map(Number);
+  assert.ok(major>1||(major===1&&minor>=57));
   assert.ok(layout.indexOf('v157-flight-entry-workflow.css')>layout.indexOf('v156-mobile-hardening.css'));
   assert.match(changelog,/## 1\.57\.0 — Flight Entry Workflow Simplification/);
   assert.match(audit,/## Deliberately unchanged/);
 });
 
-test("v1.57 reuses recent routes and offers an explicit local-flight shortcut",()=>{
-  assert.match(page,/getManualEntryDefaults,getRecentRoutes/);
-  assert.match(page,/getRecentRoutes\(userId\)/);
-  assert.match(page,/recentRoutes=\{recentRoutes\}/);
-  assert.match(form,/Quick route/);
-  assert.match(form,/Local · \{departure\} → \{departure\}/);
-  assert.match(form,/recentRoutes\.slice\(0,4\)/);
-  assert.match(form,/const applyRoute=/);
+test("v1.57 release record preserves the original route-shortcut rationale",()=>{
+  assert.match(changelog,/Recent-route shortcuts/);
+  assert.match(audit,/Route repetition/);
+  assert.match(audit,/Local · DEP → DEP/);
 });
 
 test("v1.57 exposes live BLOCK and AIR feedback without changing flight parsing",()=>{
@@ -46,10 +43,9 @@ test("v1.57 names missing required choices and keeps them discoverable",()=>{
   assert.match(audit,/Auto-open is one-way assistance/);
 });
 
-test("v1.57 keeps mobile source selection compact and route shortcuts locally scrollable",()=>{
+test("v1.57 keeps mobile source selection compact",()=>{
   assert.match(css,/@media\(max-width:700px\)/);
   assert.match(css,/\.entry-choice\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(css,/\.route-shortcuts-list\{flex-wrap:nowrap;overflow-x:auto/);
 });
 
 test("v1.57 retains prior regulatory, aircraft and responsive safety nets",()=>{

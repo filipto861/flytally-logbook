@@ -2,6 +2,24 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 1.58.0 — Flight Entry Polish & Smart Defaults — 2026-09-01
+
+### Removed
+- Quick Routes from New flight, including the unnecessary recent-route query on that page.
+
+### Changed
+- Local flight is now a small contextual `Use DEP for local flight` action below Arrival rather than a separate route-shortcut block.
+- Aircraft-profile defaults are explained next to Registration and the initial role, so automatic values are visible rather than surprising.
+- Existing required selectors show inline missing-state guidance in addition to the final Review summary.
+- Departure and Arrival disable mobile autocorrect/spellcheck for cleaner airport-code entry.
+
+### Preserved
+- No new regulatory inference and no change to flight parsing/storage, recency, movements, certification, aircraft identity, GPS evidence, sharing, export or backup semantics.
+
+### Verification
+- Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + production CI/runtime audit.
+- Detailed record: `FLIGHT_ENTRY_UX_V158.md`.
+
 ## 1.57.0 — Flight Entry Workflow Simplification — 2026-09-01
 
 ### Added

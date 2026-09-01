@@ -3,6 +3,14 @@
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
 
+## v1.58.0 — Flight Entry Polish & Smart Defaults
+
+- Remove Quick Routes from New flight and keep only a compact explicit local-flight helper.
+- Make existing aircraft-profile defaults understandable without adding regulatory guesses.
+- Move missing-state guidance next to selectors that are already required.
+- Harden airport-code typing on mobile and keep the v1.57 live BLOCK/AIR + inline Review workflow.
+- Preserve v1.51 regulatory semantics, v1.53.1 aircraft-state integrity and v1.56 responsive containment.
+
 ## v1.57.0 — Flight Entry Workflow Simplification
 
 - Reuse recent route history and provide an explicit local-flight route shortcut.
