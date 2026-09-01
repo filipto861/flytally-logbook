@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { evaluateClassRevalidation,type RecencyFlight,type RecencyEvidence } from "../lib/recency-engine.ts";
 import { releaseAtLeast } from "./release-version.ts";
-const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8"),credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx")+read("app/(protected)/credentials/adaptive-overview.tsx");
 const flight=(overrides:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:660,landingsDay:11,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:11,takeoffsNight:0,approachesDay:11,approachesNight:0,...overrides});
 
 test("v1.49 signed FCL.740.A DUAL flight satisfies the refresher element directly",()=>{
@@ -43,7 +43,7 @@ test("v1.49 refreshes recency when authoritative flight evidence changes",()=>{
 });
 
 test("v1.49 links READY recency to explicit rating validity instead of mutating it",()=>{
-  const panel=read("components/recency-panel.tsx"),actions=read("app/(protected)/profile/actions.ts"),credentials=read("app/(protected)/credentials/page.tsx"),engine=read("lib/recency-engine.ts");
+  const panel=read("components/recency-panel.tsx"),actions=read("app/(protected)/profile/actions.ts"),credentials=credentialsSource(),engine=read("lib/recency-engine.ts");
   assert.match(panel,/Record new rating validity/);assert.match(actions,/export async function saveQualification/);assert.match(credentials,/Save rating validity/);assert.doesNotMatch(engine,/UPDATE pilot_qualifications/);
 });
 

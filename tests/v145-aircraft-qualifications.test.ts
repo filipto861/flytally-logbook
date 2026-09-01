@@ -6,6 +6,7 @@ import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx")+read("app/(protected)/credentials/adaptive-overview.tsx");
 
 test("v1.45.0 adds aircraft training without creating a parallel credential graph",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,45,0));
@@ -23,7 +24,7 @@ test("v1.45.0 adds aircraft training without creating a parallel credential grap
 });
 
 test("v1.45.0 aircraft-training evidence stays outside active ratings and recency credentials",()=>{
-  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),credentials=read("app/(protected)/credentials/page.tsx");
+  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),credentials=credentialsSource();
   const recency=read("lib/recency-service.ts"),shared=read("app/(protected)/flights/shared-actions.ts"),legacy=read("app/(protected)/flights/instructor-actions.ts");
   assert.match(actions,/NULL,\$\{userId\}[^\n]+FALSE,/);
   assert.match(actions,/'aircraft_training',TRUE/);
@@ -34,7 +35,7 @@ test("v1.45.0 aircraft-training evidence stays outside active ratings and recenc
 });
 
 test("v1.45.0 separates FCL.710-style evidence from informational aircraft flown",()=>{
-  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),credentials=read("app/(protected)/credentials/page.tsx");
+  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),credentials=credentialsSource();
   assert.match(actions,/WHERE id=\$\{requested\} AND user_id=\$\{userId\} AND active=TRUE/);
   assert.match(actions,/record_kind='aircraft_training'/);
   assert.match(section,/A recorded flight never creates a privilege automatically/);
