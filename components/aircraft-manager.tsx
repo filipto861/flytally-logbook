@@ -10,31 +10,34 @@ type AircraftSaveResult={ok:boolean;message:string};
 type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
 
 const t=(value:unknown)=>String(value??"");
-const classes=["ULL","SEP","TMG","MEP","SET","OTHER","GLIDER"];
-const evidence=["ULL","EASA"];
+const classes=["SEP","TMG","MEP","SET","OTHER","GLIDER"];
 const roles=[
-  {value:"PIC",label:"PIC"},{value:"SOLO",label:"SOLO"},{value:"DUAL",label:"DUAL"},{value:"SPIC",label:"SPIC"},{value:"PICUS",label:"PICUS"},
-  {value:"INSTRUCTOR",label:"INSTRUCTOR"},{value:"EXAMINER",label:"EXAMINER"},{value:"SAFETY PILOT",label:"SAFETY PILOT"},{value:"CO-PILOT",label:"CO-PILOT"},{value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},{value:"PAX",label:"PAX"},{value:"OBSERVER",label:"OBSERVER"}
+  {value:"PIC",label:"PIC — Pilot in command"},{value:"SOLO",label:"SOLO — Supervised solo"},{value:"DUAL",label:"DUAL — Training with instructor"},{value:"SPIC",label:"SPIC — Student pilot in command"},{value:"PICUS",label:"PICUS — PIC under supervision"},
+  {value:"INSTRUCTOR",label:"INSTRUCTOR — Giving instruction"},{value:"EXAMINER",label:"EXAMINER"},{value:"SAFETY PILOT",label:"SAFETY PILOT"},{value:"CO-PILOT",label:"CO-PILOT"},{value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},{value:"PAX",label:"PAX"},{value:"OBSERVER",label:"OBSERVER"}
 ];
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
-  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft);
-  return <div className="aircraft-form-grid">
+  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),initialLogbook=t(aircraft?.evidence)||"ULL",initialClass=t(aircraft?.aircraft_class)||(initialLogbook==="EASA"?"SEP":"ULL");
+  const[logbook,setLogbook]=useState(initialLogbook),[aircraftClass,setAircraftClass]=useState(initialClass);
+  const changeLogbook=(value:string)=>{setLogbook(value);setAircraftClass(value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass)};
+  return <div className="aircraft-form-grid guided-aircraft-fields">
     {editing?<><input type="hidden" name="id" value={t(aircraft?.id)}/><input type="hidden" name="part_fcl_credit_class" value={t(aircraft?.part_fcl_credit_class)}/><input type="hidden" name="part_fcl_credit_basis" value={t(aircraft?.part_fcl_credit_basis)}/><input type="hidden" name="part_fcl_credit_from" value={t(aircraft?.part_fcl_credit_from).slice(0,10)}/></>:null}
-    <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/></label>
-    <label>Make<input name="aircraft_make" defaultValue={t(aircraft?.aircraft_make)} placeholder="Tecnam"/><small>FCL.050 aircraft identity</small></label>
-    <label>Model<input name="aircraft_model" defaultValue={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} placeholder="P2008 JC"/><small>Required for an EASA record</small></label>
-    <label>Variant<input name="aircraft_variant" defaultValue={t(aircraft?.aircraft_variant)} placeholder="Optional variant"/></label>
-    <label>Display type<input name="aircraft_type" defaultValue={t(aircraft?.aircraft_type)} placeholder="P2008 JC"/><small>Short label used elsewhere in FlyTally</small></label>
-    <label>ICAO type<input name="icao_type" defaultValue={t(aircraft?.icao_type)} placeholder="P208"/></label>
-    <label>Class<select name="aircraft_class" defaultValue={t(aircraft?.aircraft_class)||"ULL"}>{classes.map(value=><option key={value}>{value}</option>)}</select></label>
-    <label>Logbook<select name="evidence" defaultValue={t(aircraft?.evidence)||"ULL"}>{evidence.map(value=><option key={value}>{value}</option>)}</select></label>
-    <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
-    <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
-    <label>Default share<select name="billing_share" defaultValue={billing.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
-    {!editing?<><label>Initial hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="0"/></label><label>Valid from<input name="initial_valid_from" type="date" defaultValue={today}/></label></>:null}
-    <label className="aircraft-note">Notes<textarea name="note" rows={2} defaultValue={t(aircraft?.note)}/></label>
+    <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/><small>The registration used in flight entries.</small></label>
+    <label>Make<input name="aircraft_make" defaultValue={t(aircraft?.aircraft_make)} placeholder="Tecnam"/><small>Manufacturer, when known.</small></label>
+    <label>Aircraft type / model<input name="aircraft_model" defaultValue={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} placeholder="P2008 JC" required={logbook==="EASA"}/><small>{logbook==="EASA"?"Required for an EASA aircraft profile.":"A simple model name is enough."}</small></label>
+    <label>Normal logbook<select name="evidence" value={logbook} onChange={event=>changeLogbook(event.target.value)}><option value="ULL">ULL</option><option value="EASA">EASA</option></select><small>Flights will use this by default.</small></label>
+    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>setAircraftClass(event.target.value)}>{classes.map(value=><option key={value}>{value}</option>)}</select><small>SEP is the common single-engine aeroplane class.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
+    <details className="aircraft-advanced-fields"><summary><span>More aircraft settings</span><small>Optional defaults, identity details and pricing</small></summary><div className="aircraft-advanced-grid">
+      <label>Variant<input name="aircraft_variant" defaultValue={t(aircraft?.aircraft_variant)} placeholder="Optional variant"/></label>
+      <label>Display name<input name="aircraft_type" defaultValue={t(aircraft?.aircraft_type)} placeholder="Leave blank to use model"/><small>Optional short label used elsewhere in FlyTally.</small></label>
+      <label>ICAO type<input name="icao_type" defaultValue={t(aircraft?.icao_type)} placeholder="P208"/></label>
+      <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
+      <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
+      <label>Default share<select name="billing_share" defaultValue={billing.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
+      {!editing?<><label>Initial hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="Optional"/></label><label>Valid from<input name="initial_valid_from" type="date" defaultValue={today}/></label></>:null}
+      <label className="aircraft-note">Notes<textarea name="note" rows={2} defaultValue={t(aircraft?.note)} placeholder="Optional"/></label>
+    </div></details>
   </div>;
 }
 
@@ -48,24 +51,25 @@ function RateTimeline({aircraft,rates,saveAction,deleteAction}:{aircraft:Row;rat
 
 export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRateAction,deleteRateAction}:{aircraft:Row[];rates:Row[];saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
-  const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null);
-  const [savingProfile,setSavingProfile]=useState(false);
+  const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null),[newStatus,setNewStatus]=useState<{ok:boolean;message:string}|null>(null);
+  const [savingProfile,setSavingProfile]=useState(false),[savingNew,setSavingNew]=useState(false);
   const selected=aircraft.find(item=>t(item.id)===selectedId)??null;
   useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedId(null)};document.addEventListener("keydown",close);return()=>document.removeEventListener("keydown",close)},[]);
   useEffect(()=>{document.body.style.overflow=selected?"hidden":"";return()=>{document.body.style.overflow=""}},[selected]);
   useEffect(()=>{setProfileStatus(null)},[selectedId]);
   const saveSelected=async(form:FormData)=>{setSavingProfile(true);setProfileStatus(null);try{setProfileStatus(await saveAction(form))}catch{setProfileStatus({ok:false,message:"Aircraft profile could not be saved."})}finally{setSavingProfile(false)}};
+  const saveNew=async(form:FormData)=>{setSavingNew(true);setNewStatus(null);try{setNewStatus(await saveAction(form))}catch{setNewStatus({ok:false,message:"Aircraft could not be added."})}finally{setSavingNew(false)}};
   return <div className="aircraft-manager">
-    <details className="add-aircraft-card"><summary>＋ Add aircraft</summary><form action={async form=>{await saveAction(form)}}><AircraftFields/><div className="form-actions"><button className="primary-button">Add aircraft</button></div></form></details>
+    <details className="add-aircraft-card" open={!aircraft.length}><summary>{aircraft.length?"＋ Add aircraft":"＋ Add your first aircraft"}</summary><div className="aircraft-add-guidance"><strong>Start with the aircraft identity and normal logbook.</strong><span>Pricing and technical defaults can be added later.</span></div><form action={saveNew}><AircraftFields/><div className="form-actions"><button className="primary-button" disabled={savingNew}>{savingNew?"Saving…":"Add aircraft"}</button></div>{newStatus?<p className={newStatus.ok?"form-success":"form-error"} role="status">{newStatus.message}</p>:null}</form></details>
     <div className="aircraft-card-list">{aircraft.map(item=>{const billing=parseBilling(item.billing_basis),active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" ");return <article className={`aircraft-card${active?"":" inactive"}`} key={t(item.id)}>
       <header><div><strong>{t(item.registration)}</strong><span>{identity||"Type not set"} · {t(item.aircraft_class)||"—"} · {t(item.evidence)||"—"}</span></div><span className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</span></header>
       <div className="aircraft-card-metrics"><span><small>ICAO</small><b>{t(item.icao_type)||"—"}</b></span><span><small>Current rate</small><b>{Number(item.current_price_per_hour||0).toLocaleString("en-GB")} CZK/h</b><em>{t(item.current_price_valid_from)?`from ${t(item.current_price_valid_from)}`:"default rate"}</em></span><span><small>Billing</small><b>{billing.basis} · 1/{billing.share}</b></span><span><small>Role</small><b>{t(item.default_role)||"PIC"}</b></span></div>
       <button type="button" className="aircraft-manage-button" onClick={()=>setSelectedId(t(item.id))}>Edit aircraft & rates</button>
-    </article>})}{!aircraft.length?<div className="guided-empty-state"><span aria-hidden="true">✈</span><h3>No aircraft yet</h3><p>Add the aircraft you fly. It will then be available in manual entry and GPS import.</p></div>:null}</div>
+    </article>})}{!aircraft.length?<div className="guided-empty-state"><span aria-hidden="true">✈</span><h3>No aircraft yet</h3><p>Add the aircraft you fly. FlyTally will remember its normal logbook and defaults for future flights.</p></div>:null}</div>
     {selected?createPortal(<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
       <header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{[t(selected.aircraft_make),t(selected.aircraft_model)||t(selected.aircraft_type),t(selected.aircraft_variant)].filter(Boolean).join(" ")||"Type not set"} · {t(selected.aircraft_class)||"—"} · {t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Close" onClick={()=>setSelectedId(null)}>×</button></header>
       <div className="aircraft-modal-content">
-        <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3></div></div><form action={saveSelected}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button" disabled={savingProfile}>{savingProfile?"Saving…":"Save profile"}</button></div>{profileStatus?<p className={profileStatus.ok?"form-success":"form-error"} role="status">{profileStatus.message}</p>:null}</form><div className="aircraft-state-action"><div><strong>{Number(selected.active)?"Aircraft is active":"Aircraft is inactive"}</strong><small>{Number(selected.active)?"Deactivate it to hide it from new-flight choices.":"Activate it to make it available for new flights."}</small></div><form action={toggleAction}><input type="hidden" name="id" value={t(selected.id)}/><button className="secondary-button">{Number(selected.active)?"Deactivate aircraft":"Activate aircraft"}</button></form></div></section>
+        <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3><p className="muted">The everyday fields are shown first. Open More aircraft settings only when you need them.</p></div></div><form action={saveSelected}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button" disabled={savingProfile}>{savingProfile?"Saving…":"Save profile"}</button></div>{profileStatus?<p className={profileStatus.ok?"form-success":"form-error"} role="status">{profileStatus.message}</p>:null}</form><div className="aircraft-state-action"><div><strong>{Number(selected.active)?"Aircraft is active":"Aircraft is inactive"}</strong><small>{Number(selected.active)?"Deactivate it to hide it from new-flight choices.":"Activate it to make it available for new flights."}</small></div><form action={toggleAction}><input type="hidden" name="id" value={t(selected.id)}/><button className="secondary-button">{Number(selected.active)?"Deactivate aircraft":"Activate aircraft"}</button></form></div></section>
         <RateTimeline aircraft={selected} rates={rates} saveAction={saveRateAction} deleteAction={deleteRateAction}/>
       </div>
     </section></div>,document.body):null}

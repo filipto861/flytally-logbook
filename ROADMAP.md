@@ -2,6 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+## Current development — v1.53.0 · Guided everyday entry
+
+Focus:
+- make normal manual entry the default New flight path while keeping GPS import one click away and directly addressable with `?mode=gps`
+- guide an empty account to add its first aircraft before presenting an unusable aircraft selector
+- reduce first-time aircraft creation to registration, type/model and normal logbook; reveal class only for EASA and keep pricing/technical defaults optional
+- simplify the full Aircraft profile with the same progressive-disclosure model so ordinary pilots do not need to understand every technical field before saving
+- make flight role choices self-explanatory while preserving the exact stored role codes and all certification/recency semantics
+- keep v1.51 regulatory rules, certification revisions/hashes, signatures, GPS evidence, ownership, print/export and backup/restore behavior unchanged
+
 ## Current release — v1.52.0 · Codebase Review & Cleanup
 
 Focus:
