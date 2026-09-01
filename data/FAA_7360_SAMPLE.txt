@@ -1,0 +1,360 @@
+
+===== CESSNA (388 hits) =====
+   A16       AVIADESIGN, A-16 Sport Falcon                          HPTR       IDEA, Hydropteron
+  CEGL       CELAIR, Eagle 300                                      HT32       HINDUSTAN, HPT-32 Deepak
+ CHGO        KOREAN AIR, CHK-91 Chang-Gong 91                       HT34       HINDUSTAN, HTT-34
+ CNGP        CESSNA, NGP                                           HUMM        AEROTEK, Hummingbird
+ CRAC        PLUMB, CJ-3 Cracker Jack                                          DINFIA, IA-51 Tehuelche
+                                                                    IA51
+  CYCL       CARLSON, Skycycle                                                 FMA, IA-51 Tehuelche
+  DIJ3       DIJKMAN-DULKES, Dijkhastar 3                           IR21       ICA, IAR-821
+                                                              AIRBUS, A-350-1000 XWB
+  A35K       Fixed-wing    2J/H    Heavy     D    III     9   AIRBUS, A-350-1000 XWB Prestige
+                                                              AIRBUS, ACJ-350-1000
+                                                              CESSNA, 318D Dragonfly
+                                                              CESSNA, 318E Dragonfly
+  A37*       Fixed-wing    2J/S+    Light    I    III
+                                                              CESSNA, A-37 Dragonfly
+                                                              CESSNA, OA-37 Dragonfly
+  A35K       Fixed-wing    2J/H    Heavy     D    III     9   AIRBUS, A-350-1000 XWB Prestige
+                                                              AIRBUS, ACJ-350-1000
+                                                              CESSNA, 318D Dragonfly
+                                                              CESSNA, 318E Dragonfly
+  A37*       Fixed-wing    2J/S+    Light    I    III
+                                                              CESSNA, A-37 Dragonfly
+                                                              CESSNA, OA-37 Dragonfly
+                                                              AIRBUS, A-380-800
+                                                              CESSNA, 318D Dragonfly
+                                                              CESSNA, 318E Dragonfly
+  A37*       Fixed-wing    2J/S+    Light    I    III
+                                                              CESSNA, A-37 Dragonfly
+                                                              CESSNA, OA-37 Dragonfly
+                                                              AIRBUS, A-380-800
+  A388       Fixed-wing    4J/J    Super     A    III    10
+                                                              AIRBUS, A-380-800 Prestige
+
+===== BRM (28 hits) =====
+   B23       Fixed-wing     2P/L       Medium        F    III
+                                                                       DOUGLAS, UC-67 Dragon
+  B230       Helicopter     2T/S        Light        I     I           BELL, 230
+  B23E       Fixed-wing     1E/S        Light        I     I           BRM AERO, Bristell B23 Energic
+                                                                       CONSOLIDATED, B-24 Liberator
+                                                                       CONSOLIDATED, C-87 Liberator Express
+   B24       Fixed-wing     4P/L       Medium        F    III          CONSOLIDATED, LB-30 Liberator
+                                                                       CONVAIR, B-24 Liberator
+  BPUM       Fixed-wing     1P/S      Light    I     I
+                                                                 BORTOLANZA, Puma
+  BR14       Fixed-wing     1P/S      Light    I     I           BREGUET, 14 Replica
+  BR23       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell B23
+  BR54       Gyroplane      1P/S      Light    I     I           BARNETT, BRC-540
+                                                                 BRUMBY, 600
+  BR60       Fixed-wing     1P/S      Light    I     I
+                                                                 BRUMBY, Brumby
+  BR60       Fixed-wing     1P/S      Light    I     I
+                                                                 BRUMBY, Brumby
+  BR61       Fixed-wing     1P/S      Light    I     I           BRUMBY, 610 Evolution
+   BR8       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell B8
+  BRAV       Fixed-wing     1P/S      Light    I     I           TECNAM, P-2004 Bravo
+                                                                 BRANTLY, B-2
+                                                                 BRANTLY-HYNES, B-2
+  BRB2       Helicopter     1P/S      Light    I     I
+                                                                 NORMAN, Nordic 6
+                                                                 NORMAN, Nordic 7
+  NFEX       Fixed-wing     1T/S      Light    I     I           NF-AIRCRAFT, Explorer
+                                                                 BRM AERO, NG-4
+   NG4       Fixed-wing     1P/S      Light    I     I           ROKO AERO, NG-4
+                                                                 ROKO AERO, NG-4 Prodigy 4
+                                                                 BRM AERO, Bristell E-LSA
+                                                                 BRM AERO, Bristell HD
+
+===== BRISTELL (36 hits) =====
+   B23       Fixed-wing     2P/L       Medium        F    III
+                                                                       DOUGLAS, UC-67 Dragon
+  B230       Helicopter     2T/S        Light        I     I           BELL, 230
+  B23E       Fixed-wing     1E/S        Light        I     I           BRM AERO, Bristell B23 Energic
+                                                                       CONSOLIDATED, B-24 Liberator
+                                                                       CONSOLIDATED, C-87 Liberator Express
+   B24       Fixed-wing     4P/L       Medium        F    III          CONSOLIDATED, LB-30 Liberator
+                                                                       CONVAIR, B-24 Liberator
+  BPUM       Fixed-wing     1P/S      Light    I     I
+                                                                 BORTOLANZA, Puma
+  BR14       Fixed-wing     1P/S      Light    I     I           BREGUET, 14 Replica
+  BR23       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell B23
+  BR54       Gyroplane      1P/S      Light    I     I           BARNETT, BRC-540
+                                                                 BRUMBY, 600
+  BR60       Fixed-wing     1P/S      Light    I     I
+                                                                 BRUMBY, Brumby
+  BR60       Fixed-wing     1P/S      Light    I     I
+                                                                 BRUMBY, Brumby
+  BR61       Fixed-wing     1P/S      Light    I     I           BRUMBY, 610 Evolution
+   BR8       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell B8
+  BRAV       Fixed-wing     1P/S      Light    I     I           TECNAM, P-2004 Bravo
+                                                                 BRANTLY, B-2
+                                                                 BRANTLY-HYNES, B-2
+  BRB2       Helicopter     1P/S      Light    I     I
+                                                                 BRM AERO, NG-4
+   NG4       Fixed-wing     1P/S      Light    I     I           ROKO AERO, NG-4
+                                                                 ROKO AERO, NG-4 Prodigy 4
+                                                                 BRM AERO, Bristell E-LSA
+                                                                 BRM AERO, Bristell HD
+                                                                 BRM AERO, Bristell LSA
+                                                                 BRM AERO, Bristell NG-5
+   NG5       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell RG
+
+===== TECNAM (34 hits) =====
+                                                                 ASSO AEREI, Asso 10 Jewel
+  ASOX       Fixed-wing     1P/S      Light    I     I
+                                                                 VIDOR, Asso 10 Jewel
+  ASTO       Fixed-wing     1P/S      Light    I     I           TECNAM, Astore
+                                                                 GULFSTREAM AEROSPACE, Gulfstream G100
+                                                                 IAI, 1125 Astra
+  ASTR       Fixed-wing    2J/S+     Medium    H    III     7
+                                                                 IAI, 1125 Gulfstream G100
+                                                                 BRUMBY, Brumby
+  BR61       Fixed-wing     1P/S      Light    I     I           BRUMBY, 610 Evolution
+   BR8       Fixed-wing     1P/S      Light    I     I           BRM AERO, Bristell B8
+  BRAV       Fixed-wing     1P/S      Light    I     I           TECNAM, P-2004 Bravo
+                                                                 BRANTLY, B-2
+                                                                 BRANTLY-HYNES, B-2
+  BRB2       Helicopter     1P/S      Light    I     I
+                                                                 HYNES, H-2
+  EC75       Helicopter    2T/S+     Medium    I     I           AIRBUS HELICOPTERS-HARBIN, Z-15
+                                                                 EUROCOPTER-HARBIN, EC-175
+                                                                 EUROCOPTER-HARBIN, Z-15
+                                                                 TECNAM, P-92 Eaglet
+  ECHO       Fixed-wing     1P/S      Light    I     I           TECNAM, P-92 Echo
+                                                                 TECNAM, P-92 SeaSky
+                                                                 ZIVKO, Edge 540
+  EDGE       Fixed-wing     1P/S      Light    I     I
+                                                                 EUROCOPTER-HARBIN, EC-175
+                                                                 EUROCOPTER-HARBIN, Z-15
+                                                                 TECNAM, P-92 Eaglet
+  ECHO       Fixed-wing     1P/S      Light    I     I           TECNAM, P-92 Echo
+                                                                 TECNAM, P-92 SeaSky
+                                                                 ZIVKO, Edge 540
+  EDGE       Fixed-wing     1P/S      Light    I     I
+                                                                 ZIVKO, Edge 540A
+
+===== P2008 (0 hits) =====
+
+===== P208 (3 hits) =====
+                                                                 LOCKHEED, P-2 Neptune
+                                                                 LOCKHEED, P2V Neptune
+                                                                 LOCKHEED, SP-2 Neptune
+  P208       Fixed-wing     1P/S      Light    I     I           TECNAM, P-2008
+                                                                 AVIONES COLOMBIA, P210
+                                                                 CESSNA, P210 Pressurized Centurion
+  P210       Fixed-wing     1P/S      Light    I     I      2
+                                                                 RILEY, Rocket P210
+   P-92 SeaSky
+   P-96 Golf              GOLF       Fixed-wing   1P/S     Light    I   I
+   P-2006T                P06T       Fixed-wing   2P/S     Light    I   II
+   P-2008                 P208       Fixed-wing   1P/S     Light    I   I
+   P-2012 Traveller       P212       Fixed-wing   2P/S     Light    I   II   3
+   P-2002
+   P-2002 Sierra          SIRA       Fixed-wing   1P/S     Light    I   I
+   P-Mentor
+P-2002 Sierra                TECNAM                       SIRA       Fixed-wing     1P/S     Light    I    I
+P-2004 Bravo                 TECNAM                      BRAV        Fixed-wing     1P/S     Light    I    I
+P-2006T                      TECNAM                      P06T        Fixed-wing     2P/S     Light    I   II
+P-2008                       TECNAM                       P208       Fixed-wing     1P/S     Light    I    I
+P-2010 Gran Lusso            TECNAM                      TWEN        Fixed-wing     1P/S     Light    I    I
+P-2010 Twenty-Ten            TECNAM                      TWEN        Fixed-wing     1P/S     Light    I    I
+P-2012 Traveller             TECNAM                       P212       Fixed-wing     2P/S     Light    I   II    3
+P206 Super Skylane           CESSNA                      C206        Fixed-wing     1P/S     Light    I    I    2
+
+===== VL3 (15 hits) =====
+             Bearhawk LSA                                          OCNR        TISSOT-CHARBONNIER, TC-160 Océanair
+  BLSA       Bearhawk LSA                                                      TISSOT-CHARBONNIER, TC-180 Océanair
+             Bearhawk LSA                                           SPKR       TL ULTRALIGHT, Sparker
+  CUDA       LANCAIR, NLA-275 Barracuda                             VL3T       JMB AIRCRAFT, VL-3 Evolution Turbine
+
+
+
+
+                                                                   AVEKO, VL-3 Flamingo
+                                                                   AVEKO, VL-3 Sprint
+                                                                   GOBOSH, G-800
+   VL3       Fixed-wing      1P/S      Light    I     I            JMB AIRCRAFT, VL-3 Evolution
+                                                                   KLN, VL-3
+                                                                   KLN, VL-3 Flamingo
+                                                                   VANESSA AIR, VL-3
+                                                                   VANESSA AIR, VL-3 Flamingo
+                                                                   KLN, VL-3 Flamingo
+                                                                   VANESSA AIR, VL-3
+                                                                   VANESSA AIR, VL-3 Flamingo
+  VL3T       Fixed-wing      1T/S      Light    I     I            JMB AIRCRAFT, VL-3 Evolution Turbine
+  VLOT       Fixed-wing      1T/S      Light    I     I            VELOCITY, Velocity XL (turbine)
+  VLTT       Fixed-wing      2T/S      Light    I     II           VELOCITY, Velocity V-Twin (turbine)
+  VM1        Fixed-wing      1P/S      Light    I     I            VOL MEDITERRANI, VM-1 Esqual
+                                                                   DE HAVILLAND, DH-112 Venom
+
+AVEKO
+   VL-3
+   VL-3 Flamingo              VL3       Fixed-wing     1P/S      Light    I    I
+   VL-3 Sprint
+
+AVIA (1)
+   L-3 Aviastarlet            FL3       Fixed-wing     1P/S      Light    I    I
+
+===== DYNAMIC (21 hits) =====
+                                                                 MORANE-SAULNIER, MS-506 Criquet
+                                                                 MRAZ, K-65 Cap
+                                                                 FOKKER, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Barak
+                                                                 GENERAL DYNAMICS, F-16 Brakeet
+                                                                 GENERAL DYNAMICS, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Netz
+                                                                 GENERAL DYNAMICS, NF-16 Fighting Falcon
+                                                                 MRAZ, K-65 Cap
+                                                                 FOKKER, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Barak
+                                                                 GENERAL DYNAMICS, F-16 Brakeet
+                                                                 GENERAL DYNAMICS, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Netz
+                                                                 GENERAL DYNAMICS, NF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, QF-16 Fighting Falcon
+                                                                 FOKKER, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Barak
+                                                                 GENERAL DYNAMICS, F-16 Brakeet
+                                                                 GENERAL DYNAMICS, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Netz
+                                                                 GENERAL DYNAMICS, NF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, QF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, TF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Barak
+                                                                 GENERAL DYNAMICS, F-16 Brakeet
+                                                                 GENERAL DYNAMICS, F-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, F-16 Netz
+                                                                 GENERAL DYNAMICS, NF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, QF-16 Fighting Falcon
+                                                                 GENERAL DYNAMICS, TF-16 Fighting Falcon
+  F16*       Fixed-wing     1J/L     Medium   G     III
+
+===== WT9 (3 hits) =====
+  WS22       Fixed-wing    1P/S     Light    I     I            SPRING, WS-202 Sprint
+  WSP        Fixed-wing    1P/S     Light    I     I            AAK, Wasp
+  WT10       Fixed-wing    1P/S     Light    I     I            AEROSPOOL, WT-10 Advantic
+  WT9        Fixed-wing    1P/S     Light    I     I            AEROSPOOL, WT-9 Dynamic
+                                                                WÜST, Seagle
+  WUSH       @Fixed-wing   1P/S     Light    I     I            WÜST, Seahawk
+                                                                WÜST, Shark
+  WW1        Fixed-wing    1P/S     Light    I     I            WHITE, WW-1 Der Jäger D-9
+
+AEROSPOOL
+   WT-10 Advantic              WT10       Fixed-wing     1P/S      Light    I    I
+   WT-9 Dynamic                WT9        Fixed-wing     1P/S      Light    I    I
+
+
+
+
+WT-02 Wild Thing     AIR-LIGHT              WILT       Fixed-wing     1P/S      Light    I   I
+                     ULTRALEICHTBAU
+WT-10 Advantic       AEROSPOOL             WT10        Fixed-wing    1P/S       Light    I    I
+WT-9 Dynamic         AEROSPOOL             WT9         Fixed-wing    1P/S       Light    I    I
+WV Warning Star      LOCKHEED              CONI        Fixed-wing     4P/L     Medium    F   III   9
+WW-1 Der Jäger D-9   WHITE                 WW1         Fixed-wing    1P/S       Light    I    I
+WZ-10                CHANGHE               WZ10        Helicopter    2T/S+      Light    I    I
+WZ-9 Haitun          HARBIN                AS65        Helicopter     2T/S      Light    I    I
+
+===== C172 (18 hits) =====
+                                                                 CESSNA, P172 Skyhawk Powermatic
+                                                                 CESSNA, R172
+                                                                 CESSNA, R172 Hawk XP
+  C172       Fixed-wing     1P/S      Light    I     I      1
+                                                                 CESSNA, T-41 Mescalero
+                                                                 FMA, P-172
+                                                                 REIMS, F172
+                                                                 REIMS, F172 Skyhawk
+AVIONES COLOMBIA
+   150                     C150       Fixed-wing      1P/S      Light    I    I    1
+   152                     C152       Fixed-wing      1P/S      Light    I    I    1
+   172                     C172       Fixed-wing      1P/S      Light    I    I    1
+   182                     C182       Fixed-wing      1P/S      Light    I    I    2
+   185                     C185       Fixed-wing      1P/S      Light    I    I    2
+   188
+   AC-05 AgWagon
+  172
+  172 Cutlass
+  172 Skyhawk
+  P172 Skyhawk Powermatic      C172       Fixed-wing   1P/S      Light    I    I    1
+  R172
+  R172 Hawk XP
+  T-41 Mescalero
+  175
+  A-150
+                               C150       Fixed-wing    1P/S     Light    I    I    1
+  A-A150 Aerobat
+  P-172                        C172       Fixed-wing    1P/S     Light    I    I    1
+  A-182                        C182       Fixed-wing    1P/S     Light    I    I    2
+  A-A188 AgTruck               C188       Fixed-wing    1P/S     Light    I    I    1
+  20 El Boyero                 EBOY       Fixed-wing    1P/S     Light    I    I
+  Fw-44 Stieglitz              FW44       Fixed-wing    1P/S     Light    I    I
+
+===== AIRBUS (238 hits) =====
+  A189        Helicopter    2T/S+     Medium    H     I          FINMECCANICA, AW-189
+                                                                 LEONARDO, AW-189
+   A19       Fixed-wing      1P/S      Light    I     I          AEROPRACT, A-19
+                                                                 AIRBUS, A-319neo
+  A19N       Fixed-wing      2J/L     Medium    F    III     7
+                                                                 AIRBUS, ACJ-319neo
+  A20        Fixed-wing     2P/S+     Medium    H    III         DOUGLAS, A-20 Havoc
+  A205       Gyroplane       1P/S      Light    I     I          OSKBES-MAI, MAI-205
+   A19       Fixed-wing      1P/S      Light    I     I          AEROPRACT, A-19
+                                                                 AIRBUS, A-319neo
+  A19N       Fixed-wing      2J/L     Medium    F    III     7
+                                                                 AIRBUS, ACJ-319neo
+  A20        Fixed-wing     2P/S+     Medium    H    III         DOUGLAS, A-20 Havoc
+  A205       Gyroplane       1P/S      Light    I     I          OSKBES-MAI, MAI-205
+  A20J       Fixed-wing      1J/S      Light    I    III         SCHLEICHER, ASW-20J
+                                                                 AIRBUS, A-320neo
+  A20        Fixed-wing     2P/S+     Medium    H    III         DOUGLAS, A-20 Havoc
+  A205       Gyroplane       1P/S      Light    I     I          OSKBES-MAI, MAI-205
+  A20J       Fixed-wing      1J/S      Light    I    III         SCHLEICHER, ASW-20J
+                                                                 AIRBUS, A-320neo
+  A20N       Fixed-wing      2J/L     Medium    F    III     7
+                                                                 AIRBUS, ACJ-320neo
+   A21       Fixed-wing      1P/S      Light    I     I          AEROPRACT, A-21 Solo
+                                                                 AQUILA, A-210
+  A20J       Fixed-wing      1J/S      Light    I    III         SCHLEICHER, ASW-20J
+                                                                 AIRBUS, A-320neo
+  A20N       Fixed-wing      2J/L     Medium    F    III     7
+                                                                 AIRBUS, ACJ-320neo
+   A21       Fixed-wing      1P/S      Light    I     I          AEROPRACT, A-21 Solo
+                                                                 AQUILA, A-210
+                                                                 AQUILA, A-211
+  A210       Fixed-wing      1P/S      Light    I     I
+
+===== A320 (4 hits) =====
+  A319       Fixed-wing      2J/L     Medium    F    III     7   AIRBUS, A-319 ACJ
+                                                                 AIRBUS, VC-1 ACJ
+                                                                 AIRBUS, A-320
+  A320       Fixed-wing      2J/L     Medium    F    III     7
+                                                                 AIRBUS, A-320 Prestige
+  A321       Fixed-wing      2J/L     Medium    F    III     7   AIRBUS, A-321
+  A32E       Fixed-wing      1E/S      Light    I     I          SCHLEICHER, ASG-32EL
+  A32P       Fixed-wing      1P/S      Light    I     I          SCHLEICHER, ASG-32Mi
+  A-319 ACJ                      A319       Fixed-wing   2J/L     Medium    F   III   7
+  VC-1 ACJ
+  A-320
+                                 A320       Fixed-wing   2J/L     Medium    F   III   7
+  A-320 Prestige
+  A-321                          A321       Fixed-wing   2J/L     Medium    F   III   7
+  A-330-200
+  A-330-200 Prestige
+A-319 ACJ                   AIRBUS             A319       Fixed-wing   2J/L     Medium    F   III   7
+A-319neo                    AIRBUS             A19N       Fixed-wing   2J/L     Medium    F   III   7
+A-32 Vixxen                 AEROPRAKT          AP32       Fixed-wing   1P/S      Light    I    I
+A-320                       AIRBUS             A320       Fixed-wing   2J/L     Medium    F   III   7
+A-320 Prestige              AIRBUS             A320       Fixed-wing   2J/L     Medium    F   III   7
+A-320neo                    AIRBUS             A20N       Fixed-wing   2J/L     Medium    F   III   7
+A-321                       AIRBUS             A321       Fixed-wing   2J/L     Medium    F   III   7
+A-321neo                    AIRBUS             A21N       Fixed-wing   2J/L     Medium    F   III   7
+A-319neo                    AIRBUS             A19N       Fixed-wing   2J/L     Medium    F   III   7
+A-32 Vixxen                 AEROPRAKT          AP32       Fixed-wing   1P/S      Light    I    I
+A-320                       AIRBUS             A320       Fixed-wing   2J/L     Medium    F   III   7
+A-320 Prestige              AIRBUS             A320       Fixed-wing   2J/L     Medium    F   III   7
+A-320neo                    AIRBUS             A20N       Fixed-wing   2J/L     Medium    F   III   7
+A-321                       AIRBUS             A321       Fixed-wing   2J/L     Medium    F   III   7
+A-321neo                    AIRBUS             A21N       Fixed-wing   2J/L     Medium    F   III   7
+A-33                        AEROPRACT           A33       Fixed-wing   1P/S      Light    I    I
