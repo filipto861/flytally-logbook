@@ -2,14 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { shouldApplyAircraftProfileDefaults } from "../lib/flight-form-rules.ts";
+import { releaseAtLeast } from "./release-version.ts";
 
 const form=fs.readFileSync("components/flight-form.tsx","utf8");
 const data=fs.readFileSync("lib/data/flights.ts","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
-test("v1.59.2 package metadata is synchronized",()=>{
-  assert.equal(pkg.version,"1.59.2");
+test("v1.59.2 package metadata remains synchronized in later releases",()=>{
+  assert.ok(releaseAtLeast(pkg.version,1,59,2));
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
 });
