@@ -1,0 +1,131 @@
+name: Finalize FlyTally v1.59.2
+
+on:
+  push:
+    branches:
+      - codex/v1592-empty-defaults-aircraft-profile
+    paths:
+      - .github/workflows/v1592-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_test
+      AUTH_SECRET: flytally-ci-auth-secret-not-for-production
+      SIGNING_SECRET: flytally-ci-signing-secret-with-enough-entropy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v1592-empty-defaults-aircraft-profile
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply v1.59.2 changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def rep(path, old, new, count=1):
+              p=Path(path); text=p.read_text(); found=text.count(old)
+              if found < count:
+                  raise SystemExit(f"{path}: expected {count}, found {found}: {old[:120]!r}")
+              p.write_text(text.replace(old,new,count))
+
+          # Restore normal Vercel behavior in the actual candidate commit.
+          Path('vercel.json').write_text('''{\n  "$schema": "https://openapi.vercel.sh/vercel.json",\n  "framework": "nextjs",\n  "regions": ["fra1"],\n  "crons": [\n    {"path":"/api/cron/backups","schedule":"15 2 * * *"},\n    {"path":"/api/cron/recency","schedule":"15 5 * * *"}\n  ]\n}\n''')
+
+          rep('package.json','"version": "1.59.1"','"version": "1.59.2"')
+          rep('package-lock.json','"version": "1.59.1"','"version": "1.59.2"',2)
+
+          p=Path('lib/data/flights.ts'); text=p.read_text()
+          old='''export async function getManualEntryDefaults(userId:number){
+  const [latest,settings,user]=await Promise.all([
+    sql`SELECT registration,arrival,evidence,role,commander FROM flights WHERE user_id=${userId} ORDER BY date DESC,off_block DESC NULLS LAST,id DESC LIMIT 1`,
+    sql`SELECT home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1`,
+    sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
+  ]) as Array<Array<Record<string,unknown>>>;
+  const last=latest[0]??{},cfg=settings[0]??{};let preferences:Record<string,unknown>={};
+  try{preferences=JSON.parse(String(cfg.preferences_json||"{}"))}catch{}
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  return {date:today,registration:String(last.registration||""),departure:String(last.arrival||cfg.home_airport||"").toUpperCase(),arrival:"",evidence:String(preferences.default_evidence||last.evidence||"ULL").toUpperCase(),role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||last.commander||""),starts:1};
+}'''
+          new='''export async function getManualEntryDefaults(userId:number){
+  const [settings,user]=await Promise.all([
+    sql`SELECT default_role FROM user_settings WHERE user_id=${userId} LIMIT 1`,
+    sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
+  ]) as Array<Array<Record<string,unknown>>>;
+  const cfg=settings[0]??{};
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  return {date:today,registration:"",departure:"",arrival:"",evidence:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1};
+}'''
+          if old not in text: raise SystemExit('getManualEntryDefaults anchor missing')
+          p.write_text(text.replace(old,new,1))
+
+          rep('components/flight-form.tsx',
+              'const initialRegistration=normalizeRegistration(field("registration",editing?"":normalizedAircraft[0]?.registration||""));',
+              'const initialRegistration=normalizeRegistration(field("registration"));')
+          rep('components/flight-form.tsx',
+              'const profileEvidence=normalizeChoice(selected?.evidence,EVIDENCE,"ULL"),profileClass=normalizeChoice(selected?.aircraft_class,CLASSES,"ULL"),profileRole=normalizeChoice(selected?.default_role==="INSTRUKTOR"?"INSTRUCTOR":selected?.default_role,ROLES,"PIC");',
+              'const profileEvidence=selected?normalizeChoice(selected.evidence,EVIDENCE,"ULL"):"",profileClass=selected?normalizeChoice(selected.aircraft_class,CLASSES,"ULL"):"",profileRole=normalizeChoice(selected?.default_role==="INSTRUKTOR"?"INSTRUCTOR":selected?.default_role,ROLES,"PIC");')
+          rep('components/flight-form.tsx',
+              'const storedBillingRaw=String(field("billing_basis")).trim().toUpperCase(),billingSource=editing?storedBillingRaw:(storedBillingRaw||String(selected?.billing_basis||"BLOCK")),initialBilling=parseBilling(billingSource),initialBillingBasis:""|"BLOCK"|"AIR"=editing&&!validBilling(storedBillingRaw)?"":initialBilling.basis;',
+              'const storedBillingRaw=String(field("billing_basis")).trim().toUpperCase(),billingSource=editing?storedBillingRaw:(storedBillingRaw||String(selected?.billing_basis||"")),initialBilling=parseBilling(billingSource),initialBillingBasis:""|"BLOCK"|"AIR"=validBilling(billingSource)?initialBilling.basis:"";')
+          rep('components/flight-form.tsx',
+              'const[logbookOpen,setLogbookOpen]=useState(!initialEvidence||!initialClass),[costOpen,setCostOpen]=useState(!initialBillingBasis);',
+              'const[logbookOpen,setLogbookOpen]=useState(editing&&(!initialEvidence||!initialClass)),[costOpen,setCostOpen]=useState(editing&&!initialBillingBasis);')
+          rep('components/flight-form.tsx',
+              'useEffect(()=>{if(!evidence||!aircraftClass)setLogbookOpen(true)},[evidence,aircraftClass]);\n  useEffect(()=>{if(!billing)setCostOpen(true)},[billing]);',
+              'useEffect(()=>{if(registration&&(!evidence||!aircraftClass))setLogbookOpen(true)},[registration,evidence,aircraftClass]);\n  useEffect(()=>{if(registration&&!billing)setCostOpen(true)},[registration,billing]);')
+
+          p=Path('tests/v1591-migration-hotfix.test.ts'); t=p.read_text()
+          t=t.replace('import fs from "node:fs";','import fs from "node:fs";\nimport { releaseAtLeast } from "./release-version.ts";')
+          t=t.replace('assert.equal(pkg.version,"1.59.1");','assert.ok(releaseAtLeast(pkg.version,1,59,1));')
+          p.write_text(t)
+
+          Path('tests/v1592-manual-entry-defaults.test.ts').write_text('''import test from "node:test";\nimport assert from "node:assert/strict";\nimport fs from "node:fs";\nimport { shouldApplyAircraftProfileDefaults } from "../lib/flight-form-rules.ts";\n\nconst form=fs.readFileSync("components/flight-form.tsx","utf8");\nconst data=fs.readFileSync("lib/data/flights.ts","utf8");\nconst pkg=JSON.parse(fs.readFileSync("package.json","utf8"));\nconst lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));\n\ntest("v1.59.2 package metadata is synchronized",()=>{\n  assert.equal(pkg.version,"1.59.2");\n  assert.equal(lock.version,pkg.version);\n  assert.equal(lock.packages[""].version,pkg.version);\n});\n\ntest("new manual flight starts without previous aircraft or airport defaults",()=>{\n  const start=data.indexOf("export async function getManualEntryDefaults");\n  const end=data.indexOf("export async function getFlightNavigation",start);\n  const block=data.slice(start,end);\n  assert.match(block,/registration:\"\"/);\n  assert.match(block,/departure:\"\"/);\n  assert.match(block,/arrival:\"\"/);\n  assert.match(block,/evidence:\"\"/);\n  assert.doesNotMatch(block,/ORDER BY date DESC/);\n  assert.doesNotMatch(block,/home_airport/);\n});\n\ntest("blank New flight does not silently choose first aircraft or ULL/BLOCK defaults",()=>{\n  assert.match(form,/initialRegistration=normalizeRegistration\(field\(\"registration\"\)\)/);\n  assert.doesNotMatch(form,/normalizedAircraft\[0\]\?\.registration/);\n  assert.match(form,/profileEvidence=selected\?normalizeChoice\(selected\.evidence,EVIDENCE,\"ULL\"\):\"\"/);\n  assert.match(form,/profileClass=selected\?normalizeChoice\(selected\.aircraft_class,CLASSES,\"ULL\"\):\"\"/);\n  assert.match(form,/selected\?\.billing_basis\|\|\"\"/);\n  assert.match(form,/validBilling\(billingSource\)\?initialBilling\.basis:\"\"/);\n});\n\ntest("explicit aircraft selection atomically refreshes aircraft-dependent defaults",()=>{\n  assert.equal(shouldApplyAircraftProfileDefaults(false,"","OK-RTK"),true);\n  const start=form.indexOf("const pickAircraft=");\n  const end=form.indexOf("const blockMinutes=",start);\n  const pick=form.slice(start,end);\n  for(const pattern of [/setType\(a\.aircraft_type\|\|\"\"\)/,/setClass\(nextClass\)/,/setEngineType\(defaultEngineType\(nextClass\)\)/,/setOperationType\(\"SP\"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.basis\)/,/setBillingShare\(nextBilling\.share\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);\n  assert.doesNotMatch(pick,/setRole\(/);\n});\n\ntest("blank aircraft state does not force open aircraft-dependent sections",()=>{\n  assert.match(form,/useState\(editing&&\(!initialEvidence\|\|!initialClass\)\)/);\n  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\)\)setLogbookOpen\(true\)/);\n  assert.match(form,/if\(registration&&!billing\)setCostOpen\(true\)/);\n});\n''')
+
+          p=Path('CHANGELOG.md'); text=p.read_text(); anchor='## 1.59.1 — Database Migration Hotfix'
+          section='''## 1.59.2 — Manual Entry Defaults & Aircraft Profile Integrity — 2026-09-01\n\n- New manual flights no longer preselect the previous aircraft registration.\n- Departure no longer inherits the previous arrival or configured home airport.\n- Aircraft-dependent logbook/class/billing state remains neutral until the pilot explicitly selects an aircraft.\n- Explicit aircraft selection reapplies the complete aircraft-dependent profile state (type, logbook, class, engine derivation, operation mode baseline, billing/share and hourly rate) in one interaction.\n- Flight-specific role remains untouched when changing aircraft, preserving the v1.53.1 state-integrity boundary.\n- Additional expenses and all v1.59 financial behavior are unchanged.\n\n'''
+          if anchor not in text: raise SystemExit('CHANGELOG v1.59.1 anchor missing')
+          p.write_text(text.replace(anchor,section+anchor,1))
+          PY
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: PostgreSQL acceptance tests
+        env:
+          FLYTALLY_POSTGRES_INTEGRATION: "1"
+        run: npm run test:postgres
+      - run: npm run build
+      - name: Commit validated v1.59.2 candidate
+        shell: bash
+        run: |
+          rm -f flytally-postgres-acceptance.txt flytally-scale-evidence.json
+          rm -f .github/workflows/v1592-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v1.59.2 — manual defaults and aircraft profile integrity"
+          git push origin HEAD:codex/v1592-empty-defaults-aircraft-profile
