@@ -5,7 +5,7 @@ import test from "node:test";
 import { evaluateClassRevalidation,evaluateLaplA,evaluatePassengerCurrencyMode,type RecencyFlight } from "../lib/recency-engine.ts";
 import { isAeroplaneIrQualification } from "../lib/regulatory-qualification.ts";
 import { releaseAtLeast } from "./release-version.ts";
-const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8"),credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx")+read("app/(protected)/credentials/adaptive-overview.tsx");
 const flight=(o:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...o});
 
 test("v1.51 release wires aircraft credit, runtime migration and compact movement UI",()=>{
@@ -40,7 +40,7 @@ test("FCL.740.A keeps movement integrity and automatically accepts eligible ULL 
 
 test("IR detection cannot confuse IRI instructor certificate with IR(A)",()=>{assert.equal(isAeroplaneIrQualification("IR(A)"),true);assert.equal(isAeroplaneIrQualification("SE-IR(A)"),true);assert.equal(isAeroplaneIrQualification("IRI(A)"),false);assert.equal(isAeroplaneIrQualification("FI(A)"),false)});
 
-test("licence overview consumes the central recency service instead of trusting its legacy LAPL SQL result",()=>{const page=read("app/(protected)/credentials/page.tsx");assert.match(page,/getRecencyStateForUser/);assert.match(page,/laplEvaluation/)});
+test("licence overview consumes the central recency service instead of trusting its legacy LAPL SQL result",()=>{const page=credentialsSource();assert.match(page,/getRecencyStateForUser/);assert.match(page,/laplEvaluation/)});
 
 
 test("qualified Czech ULL counts LAPL hours and native starts/landings but never the FI refresher",()=>{
