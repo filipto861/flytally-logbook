@@ -3,6 +3,14 @@
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
 
+## v1.57.0 — Flight Entry Workflow Simplification
+
+- Reuse recent route history and provide an explicit local-flight route shortcut.
+- Show BLOCK/AIR feedback while entering the timeline instead of only at final review.
+- Never leave a missing required choice hidden inside a collapsed Logbook or Cost section.
+- Make final review name the exact missing fields and keep the mobile source selector compact.
+- Preserve v1.51 regulatory semantics, v1.53.1 aircraft-state integrity and v1.56 responsive containment.
+
 ## v1.56.0 — Mobile Layout Audit & Responsive Hardening
 
 - Fix iOS/WebKit native date and time controls at the shared responsive layer instead of clipping page overflow.
