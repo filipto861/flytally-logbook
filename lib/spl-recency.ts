@@ -33,14 +33,14 @@ const missing=(requirements:RecencyRequirement[])=>requirements.filter(item=>!it
 const latestCheck=(evidence:SplProficiencyEvidence[],context:"SAILPLANE"|"TMG",start:string,today:string)=>evidence.filter(item=>item.aircraftContext===context&&item.date>=start&&item.date<=today).sort((a,b)=>b.date.localeCompare(a.date))[0];
 
 export function evaluateSplSailplane(flights:SplFlight[],today:string,evidence:SplProficiencyEvidence[]=[]):RecencyEvaluation{
-  const start=rollingYearsStart(today,2),window=flights.filter(f=>within(f,start,today)&&upper(f.regulatoryCategory)==="SAILPLANE"&&upper(f.aircraftClass)!=="TMG"),eligible=window.filter(experienceRole),training=window.filter(f=>upper(f.role)==="DUAL"&&f.instructorSigned&&upper(f.purposeCode)==="SPL_SFCL160_TRAINING"),check=latestCheck(evidence,"SAILPLANE",start,today);
+  const start=rollingYearsStart(today,2),allSailplanes=flights.filter(f=>within(f,start,today)&&upper(f.regulatoryCategory)==="SAILPLANE"),eligible=allSailplanes.filter(experienceRole),nonTmg=eligible.filter(f=>upper(f.aircraftClass)!=="TMG"),training=nonTmg.filter(f=>upper(f.role)==="DUAL"&&f.instructorSigned&&upper(f.purposeCode)==="SPL_SFCL160_TRAINING"),check=latestCheck(evidence,"SAILPLANE",start,today);
   const requirements=[
     requirement("flight-time","Flight time",eligible.reduce((sum,f)=>sum+flightTime(f),0)/60,5,"hours"),
-    requirement("launches","Launches",eligible.reduce((sum,f)=>sum+Math.max(0,f.launches),0),15,"count"),
+    requirement("launches","Launches",nonTmg.reduce((sum,f)=>sum+Math.max(0,f.launches),0),15,"count"),
     requirement("training-flights","FI(S) training flights",training.length,2,"count"),
   ],experienceCurrent=currentFrom(requirements);
   if(check)return{id:"spl-sailplane-sfcl160",code:"SFCL.160(a)",title:"SPL · Sailplanes",status:"current",badge:"CURRENT",summary:`Current via proficiency check passed ${check.date}`,windowLabel:"Last 24 months",requirements,note:`FE(S) evidence: ${check.signer} · ${check.reference}. The proficiency-check route is an alternative to the experience requirements shown below.`,meta:{proficiencyCheck:true}};
-  return{id:"spl-sailplane-sfcl160",code:"SFCL.160(a)",title:"SPL · Sailplanes",status:experienceCurrent?"current":"not-current",badge:experienceCurrent?"CURRENT":"NOT CURRENT",summary:experienceCurrent?"Current on the 24-month experience route":`Remaining — ${missing(requirements)}`,windowLabel:"Last 24 months",requirements,note:"Counts only explicit SPL / Part-SFCL sailplane records. Dual and supervised solo experience, including the two training flights, counts only when current instructor-signed evidence is present."};
+  return{id:"spl-sailplane-sfcl160",code:"SFCL.160(a)",title:"SPL · Sailplanes",status:experienceCurrent?"current":"not-current",badge:experienceCurrent?"CURRENT":"NOT CURRENT",summary:experienceCurrent?"Current on the 24-month experience route":`Remaining — ${missing(requirements)}`,windowLabel:"Last 24 months",requirements,note:"The 5-hour total may include qualifying SPL sailplane experience including TMG time. The 15 launches and two FI(S) training flights must be in sailplanes excluding TMGs. Dual and supervised-solo experience counts only with current instructor-signed evidence."};
 }
 
 export function evaluateSplTmg(flights:SplFlight[],today:string,evidence:SplProficiencyEvidence[]=[],partFclTmgPrivilege=false):RecencyEvaluation{
