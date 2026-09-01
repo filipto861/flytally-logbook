@@ -2,6 +2,43 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 1.62.0 — Sailplane / SPL / TMG support — 2026-09-01
+
+### Added
+- Explicit aeroplane/sailplane regulatory context so TMG records are not silently reclassified between Part-FCL and Part-SFCL.
+- Non-TMG sailplane launch method/count evidence and explicit SPL TMG day/night take-off evidence.
+- SPL recency evaluation for sailplane/TMG privileges, passenger currency, launch-method recency and proficiency-check evidence.
+- Portable backup v9 coverage for SPL proficiency-check evidence.
+
+### Integrity
+- Flight certification fingerprint v5 protects regulatory category and launch evidence while historical v1-v4 fingerprints remain verifiable.
+- Sharing and trash/restore preserve the new regulatory/launch fields.
+- Sailplane protected-record presentation is labelled Part-SFCL rather than FCL.050.
+
+### Preserved
+- Existing TMG history remains Part-FCL unless SPL context is explicit.
+- GPS never invents launch methods.
+- SPL TMG take-offs remain separate from Part-FCL FCL.060 PF movement evidence.
+
+## 1.61.0 — Category-aware Flight Entry — 2026-09-01
+
+- Blank New flight remains neutral until an aircraft is selected.
+- Aircraft-dependent experience controls adapt to the selected profile category inside the existing Add flight workflow.
+- Role remains flight-specific and is never replaced by aircraft selection.
+- The category layer is presentation-only; existing regulatory calculations remain authoritative.
+
+## 1.60.1 — Licences Navigation Cleanup — 2026-09-01
+
+- Kept section tabs as the single normal Licences navigation layer.
+- Kept status rows compact and read-only while detailed evidence remains in dedicated sections.
+
+## 1.60.0 — Adaptive Pilot Workspace — 2026-09-01
+
+- Added an adaptive Licences Overview that shows only relevant credentials, privileges and documents.
+- Separated credential validity from flying recency and kept items needing attention prominent.
+- Continued to delegate LAPL(A) recency to the existing authoritative Recency Engine.
+- Added presentation-only pilot-category classification as groundwork for additional aircraft/licence categories.
+
 ## 1.59.2 — Manual Entry Defaults & Aircraft Profile Integrity — 2026-09-01
 
 - New manual flights no longer preselect the previous aircraft registration.

@@ -7,14 +7,14 @@ import { flightAircraftCategory,flightEntryProfile } from "../lib/flight-entry-p
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v1.61 derives aircraft category for presentation without deciding regulatory eligibility",()=>{
+test("v1.61 derives aircraft category for presentation without performing persistence",()=>{
   assert.equal(flightAircraftCategory({aircraftClass:"SEP",evidence:"EASA"}),"aeroplane");
   assert.equal(flightAircraftCategory({aircraftClass:"TMG",evidence:"EASA"}),"aeroplane");
   assert.equal(flightAircraftCategory({aircraftClass:"ULL",evidence:"ULL"}),"ull");
   assert.equal(flightAircraftCategory({aircraftClass:"GLIDER",evidence:"EASA"}),"sailplane");
   assert.equal(flightAircraftCategory({aircraftClass:"OTHER",evidence:"EASA"}),"other");
   const model=read("lib/flight-entry-profile.ts");
-  assert.doesNotMatch(model,/FCL[.]|certified_at|sql`|\bINSERT\b|\bUPDATE\b|\bDELETE\b/);
+  assert.doesNotMatch(model,/certified_at|sql`|\bINSERT\b|\bUPDATE\b|\bDELETE\b/);
 });
 
 test("v1.61 waits for aircraft selection before showing aircraft-dependent experience controls",()=>{
@@ -48,9 +48,9 @@ test("v1.61 FlightForm adapts after aircraft selection while Role stays flight-s
   assert.doesNotMatch(picker,/setRole/);
 });
 
-test("v1.61 adds only a final presentation layer around the existing flight parser",()=>{
+test("v1.61 category helper remains a pure layer while v1.62 may extend its regulatory vocabulary",()=>{
   assert.match(read("app/layout.tsx"),/v161-category-flight-entry[.]css/);
   const profile=read("lib/flight-entry-profile.ts"),parser=read("lib/flight-input.ts");
-  assert.doesNotMatch(profile,/parseFlightInput|FlightCertification|recency/);
+  assert.doesNotMatch(profile,/parseFlightInput|FlightCertification|sql`/);
   assert.match(parser,/export function parseFlightInput/);
 });

@@ -64,16 +64,16 @@ before(()=>{
     CREATE TABLE users(id BIGINT PRIMARY KEY,display_name TEXT NOT NULL DEFAULT '');
     CREATE TABLE flights(
       id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,date DATE,evidence TEXT NOT NULL DEFAULT '',registration TEXT NOT NULL DEFAULT '',
-      aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
+      aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',launch_method TEXT NOT NULL DEFAULT '',launches INTEGER NOT NULL DEFAULT 0,aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
       departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',starts INTEGER NOT NULL DEFAULT 0,
       commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',price_per_hour NUMERIC,billing_basis TEXT NOT NULL DEFAULT 'BLOCK',note TEXT NOT NULL DEFAULT '',
-      operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,
+      operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,movement_evidence_recorded BOOLEAN NOT NULL DEFAULT FALSE,takeoffs_day INTEGER NOT NULL DEFAULT 0,takeoffs_night INTEGER NOT NULL DEFAULT 0,approaches_day INTEGER NOT NULL DEFAULT 0,approaches_night INTEGER NOT NULL DEFAULT 0,night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,
       pic_minutes INTEGER NOT NULL DEFAULT 0,copilot_minutes INTEGER NOT NULL DEFAULT 0,dual_minutes INTEGER NOT NULL DEFAULT 0,instructor_minutes INTEGER NOT NULL DEFAULT 0,verification_name TEXT NOT NULL DEFAULT '',verification_reference TEXT NOT NULL DEFAULT '',
       certified_at TIMESTAMPTZ,certification_hash TEXT NOT NULL DEFAULT '',record_revision INTEGER NOT NULL DEFAULT 1
     );
     CREATE TABLE aircraft(
       id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,registration TEXT NOT NULL,aircraft_type TEXT NOT NULL DEFAULT '',aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
-      icao_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',evidence TEXT NOT NULL DEFAULT '',default_price_per_hour NUMERIC,default_role TEXT NOT NULL DEFAULT '',billing_basis TEXT NOT NULL DEFAULT 'BLOCK',active INTEGER NOT NULL DEFAULT 1,
+      icao_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',evidence TEXT NOT NULL DEFAULT '',default_price_per_hour NUMERIC,default_role TEXT NOT NULL DEFAULT '',billing_basis TEXT NOT NULL DEFAULT 'BLOCK',active INTEGER NOT NULL DEFAULT 1,
       note TEXT NOT NULL DEFAULT '',created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(user_id,registration)
     );
     CREATE TABLE flight_tracks(
@@ -89,10 +89,10 @@ before(()=>{
       verification_role TEXT NOT NULL,record_revision INTEGER NOT NULL,flight_hash TEXT NOT NULL,credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,payload_hash TEXT NOT NULL DEFAULT '',server_signature TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending',signed_at TIMESTAMPTZ
     );
     INSERT INTO users(id,display_name) VALUES(81,'Test Student'),(82,'Test Instructor');
-    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,aircraft_make,aircraft_model,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,operation_type,engine_type,landings_day,dual_minutes,certified_at,certification_hash,record_revision)
-      VALUES(901,81,'2026-08-28','EASA','OK-FI1','B23','SEP','Bristell','B23','LKPR','LKBE','08:00','08:05','09:00','09:05',1,'Test Instructor','Test Instructor','DUAL','FCL.140.A refresher training','LAPL_FCL140A_REFRESHER',3000,'BLOCK','SP','SE',1,65,NOW(),'hash-r1',1);
-    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,icao_type,aircraft_class,evidence,default_price_per_hour,default_role,billing_basis)
-      VALUES(81,'OK-FI1','B23','Bristell','B23','BR23','SEP','EASA',3000,'DUAL','BLOCK');
+    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,aircraft_make,aircraft_model,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,operation_type,engine_type,landings_day,dual_minutes,certified_at,certification_hash,record_revision)
+      VALUES(901,81,'2026-08-28','EASA','OK-FI1','B23','SEP','AEROPLANE','Bristell','B23','LKPR','LKBE','08:00','08:05','09:00','09:05',1,'Test Instructor','Test Instructor','DUAL','FCL.140.A refresher training','LAPL_FCL140A_REFRESHER',3000,'BLOCK','SP','SE',1,65,NOW(),'hash-r1',1);
+    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,icao_type,aircraft_class,regulatory_category,evidence,default_price_per_hour,default_role,billing_basis)
+      VALUES(81,'OK-FI1','B23','Bristell','B23','BR23','SEP','AEROPLANE','EASA',3000,'DUAL','BLOCK');
     INSERT INTO flight_tracks(user_id,flight_id,file_name,point_count,distance_km,start_utc,end_utc,coordinates_json,overview_coordinates_json,overview_version)
       VALUES(81,901,'source.kml',120,42.5,'2026-08-28T08:00:00Z','2026-08-28T09:05:00Z','[{"lat":50.1,"lon":14.3}]','[{"lat":50.1,"lon":14.3}]',1);
     INSERT INTO flight_participations(id,source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status)
@@ -117,18 +117,19 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
   const materialize=materializeSql(shared);
   const values:Record<string,unknown>={
     fingerprint:"fi-materialize-901-82",userId:82,
-    "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.evidence)":"EASA",
+    "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"FI","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1",
     "text(row.date)":"2026-08-28","text(row.departure)":"LKPR","text(row.arrival)":"LKBE","text(row.off_block)":"08:00","text(row.registration).toUpperCase()":"OK-FI1","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
     "participantRole===\"INSTRUCTOR\"":true,"text(row.takeoff)":"08:05","text(row.landing)":"09:00","text(row.on_block)":"09:05","Number(row.starts)||0":1,
     commander:"Test Instructor",instructorName:"","text(row.task)":"FCL.140.A refresher training","text(row.purpose_code)":"LAPL_FCL140A_REFRESHER",
-    "text(row.operation_type)||\"SP\"":"SP","text(row.engine_type)||\"SE\"":"SE","Number(row.landings_day)||0":1,"Number(row.landings_night)||0":0,"Number(row.night_minutes)||0":0,"Number(row.ifr_minutes)||0":0,
+    "text(row.operation_type)||\"SP\"":"SP","text(row.engine_type)||\"SE\"":"SE","Number(row.landings_day)||0":1,"Number(row.landings_night)||0":0,"Boolean(row.movement_evidence_recorded)":false,"Number(row.takeoffs_day)||0":0,"Number(row.takeoffs_night)||0":0,"Number(row.approaches_day)||0":0,"Number(row.approaches_night)||0":0,"Number(row.night_minutes)||0":0,"Number(row.ifr_minutes)||0":0,
     "credit.pic":65,"credit.copilot":0,"credit.instructor":65,participationId:9001,materializeNote:"FI entry linked to Test Student's verified training flight"
   };
   const fiFlightId=Number(run(renderMaterialize(materialize,values)));assert.ok(fiFlightId>0);
   const fi=rows(`SELECT * FROM flights WHERE id=${fiFlightId} AND user_id=82`)[0];
   assert.equal(String(fi.role),"FI");assert.equal(String(fi.commander),"Test Instructor");assert.equal(Number(fi.pic_minutes),65);assert.equal(Number(fi.instructor_minutes),65);assert.equal(Number(fi.dual_minutes),0);
+  assert.equal(String(fi.regulatory_category),"AEROPLANE");assert.equal(String(fi.launch_method),"");assert.equal(Number(fi.launches),0);
   assert.equal(String(fi.note),"FI entry linked to Test Student's verified training flight");
   assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_tracks WHERE user_id=82 AND flight_id=${fiFlightId}`)[0].count),1);
   assert.equal(String(rows("SELECT certification_hash FROM flights WHERE id=901 AND user_id=81")[0].certification_hash),"hash-r1");

@@ -30,6 +30,7 @@ import "./v158-flight-entry-polish.css";
 import "./v159-flight-entry-structure.css";
 import "./v160-adaptive-pilot-workspace.css";
 import "./v161-category-flight-entry.css";
+import "./v162-sailplane.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

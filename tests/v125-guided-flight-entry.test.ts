@@ -18,7 +18,7 @@ test("manual entry has progress, a live pre-save summary and explicit save actio
   assert.match(source,/Review before save/);
   assert.match(source,/BLOCK \/ AIR/);
   assert.match(source,/Save flight/);
-  assert.match(source,/Aircraft, logbook and billing defaults came from/);
+  assert.match(source,/Aircraft, logbook.*billing defaults came from/);
 });
 
 test("GPS import guides review before enabling the final save",()=>{

@@ -22,10 +22,11 @@ test("v1.38.0 closes spoofable cron fallback and fails closed without CRON_SECRE
   for(const file of ["app/api/cron/recency/route.ts","app/api/cron/backups/route.ts"]){const source=read(file);assert.match(source,/cronRequestAuthorized/);assert.doesNotMatch(source,/user-agent|vercel-cron/i)}
 });
 
-test("v1.38.0 guarantees ULL and EASA read-only field parity",()=>{
+test("v1.38.0 guarantees ULL and EASA read-only field parity while allowing later category-specific labels",()=>{
   const entry=read("components/readonly-logbook-entry.tsx");
   assert.equal(entry.split('<table className="readonly-fcl-table">').length-1,1);
-  assert.match(entry,/caption=easa\?"FCL\.050 single-flight logbook preview":"ULL single-flight logbook preview"/);
+  assert.match(entry,/FCL\.050 single-flight logbook preview/);
+  assert.match(entry,/ULL single-flight logbook preview/);
   for(const field of ["Departure","Arrival","Aircraft","Single-pilot time","Multi-pilot","Total flight","Name PIC","Landings","Conditions","Pilot function","Co-pilot","DUAL","FI/FE","Remarks"])assert.ok(entry.includes(field),`missing ${field}`);
   assert.doesNotMatch(entry,/easa\?<div className="readonly-fcl-table-wrap"/);
 });

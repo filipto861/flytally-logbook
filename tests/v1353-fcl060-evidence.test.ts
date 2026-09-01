@@ -14,7 +14,7 @@ test("v1.35.3 movement schema and certification compatibility remain supported",
   const schema=read("lib/v1353-schema.ts"),actions=read("app/(protected)/flights/actions.ts"),certification=read("app/(protected)/flights/certification-actions.ts"),ui=read("components/flight-form.tsx");
   assert.match(schema,/movement_evidence_recorded/);assert.match(schema,/takeoffs_day/);assert.match(schema,/approaches_day/);assert.doesNotMatch(schema,/UPDATE\s+flights\s+SET\s+(?:takeoffs|approaches)/i);
   assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);
-  assert.match(certification,/certification_version=4/);assert.match(certification,/movement_evidence_recorded/);
+  assert.match(certification,/certification_version=5/);assert.match(certification,/movement_evidence_recorded/);
   assert.match(ui,/pilot flying \(PF\)/i);assert.match(ui,/Day take-offs/);assert.match(ui,/Day approaches/);
   const layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
   assert.match(layout,/ensureRuntimeSchema/);assert.match(runtime,/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/);

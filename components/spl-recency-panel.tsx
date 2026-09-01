@@ -1,0 +1,21 @@
+import { requireUser } from "@/lib/auth/require-user";
+import { getSplRecencyStateForUser } from "@/lib/spl-recency-service";
+import { addSplProficiencyEvidence,deleteSplProficiencyEvidence } from "@/app/(protected)/credentials/spl-actions";
+import type { RecencyEvaluation,RecencyRequirement } from "@/lib/recency-engine";
+
+const statusClass=(status:RecencyEvaluation["status"])=>status==="current"?"status-on":status==="attention"?"status-warning":"status-off";
+const requirementValue=(item:RecencyRequirement)=>item.unit==="hours"?`${item.current.toFixed(item.current%1?1:0)} / ${item.target} h`:`${Math.round(item.current)} / ${Math.round(item.target)}`;
+
+function EvaluationCard({item}:{item:RecencyEvaluation}){
+  return <article className="spl-recency-card"><header><div><span>{item.code}</span><strong>{item.title}</strong><small>{item.windowLabel}</small></div><b className={statusClass(item.status)}>{item.badge||item.status.toUpperCase()}</b></header><p>{item.summary}</p><div className="spl-requirements">{item.requirements.map(requirement=><div key={requirement.id} className={requirement.met?"met":"missing"}><span>{requirement.label}</span><strong>{requirementValue(requirement)}</strong></div>)}</div>{item.note?<small className="spl-recency-note">{item.note}</small>:null}</article>;
+}
+
+export async function SplRecencyPanel(){
+  const{userId}=await requireUser();const state=await getSplRecencyStateForUser(userId);if(!state)return null;
+  return <section className="panel spl-recency-panel"><div className="section-heading"><div><p className="eyebrow">PART-SFCL</p><h2>SPL recency</h2><p className="muted">Only the privileges and launch methods present in your SPL profile or certified logbook are shown.</p></div><span>{state.evaluations.length+state.launchEvaluations.length}</span></div>
+    {!state.hasSailplanePrivilege&&!state.hasTmgPrivilege?<div className="guided-empty-state"><h3>Add your SPL privileges</h3><p>Add <b>Sailplane</b> and/or <b>TMG</b> as qualifications under your SPL. FlyTally will then show only the relevant Part-SFCL recency.</p></div>:null}
+    {state.evaluations.length?<><h3 className="spl-recency-group-title">Flying privileges</h3><div className="spl-recency-grid">{state.evaluations.map(item=><EvaluationCard key={item.id} item={item}/>)}</div></>:null}
+    {state.launchEvaluations.length?<><h3 className="spl-recency-group-title">Launching methods</h3><div className="spl-recency-grid">{state.launchEvaluations.map(item=><EvaluationCard key={item.id} item={item}/>)}</div></>:state.hasSailplanePrivilege?<p className="spl-recency-setup-note">Launch-method monitoring appears automatically after you add a launch privilege such as Winch, Aerotow or Self-launch under the SPL, or after certified flights contain that launch method.</p>:null}
+    <details className="spl-evidence"><summary>Examiner proficiency-check evidence</summary><div className="spl-evidence-body"><p className="muted">A proficiency check is an alternative route under SFCL.160. Record it here only from signed examiner evidence; FlyTally does not infer it from a flight.</p><form action={addSplProficiencyEvidence} className="form-grid settings-grid"><label>Context<select name="aircraft_context" defaultValue="SAILPLANE"><option value="SAILPLANE">Sailplane excluding TMG</option><option value="TMG">TMG</option></select></label><label>Date<input type="date" name="evidence_date" required/></label><label>Examiner / FE(S)<input name="signer" required/></label><label>Reference<input name="reference" required/></label><label className="wide">Notes<input name="note"/></label><div className="form-actions wide"><button className="primary-button">Add evidence</button></div></form>{state.evidence.length?<div className="spl-evidence-list">{state.evidence.map(item=><div key={item.id}><span><strong>{item.aircraftContext==="TMG"?"TMG":"Sailplane"} · {item.date}</strong><small>{item.signer} · {item.reference}{item.note?` · ${item.note}`:""}</small></span><form action={deleteSplProficiencyEvidence}><input type="hidden" name="id" value={item.id}/><button className="secondary-link">Remove</button></form></div>)}</div>:null}</div></details>
+  </section>;
+}
