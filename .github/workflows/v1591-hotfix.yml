@@ -54,6 +54,7 @@ jobs:
 
           rep('package.json','"version": "1.59.0"','"version": "1.59.1"')
           rep('package-lock.json','"version": "1.59.0"','"version": "1.59.1"',2)
+          rep('tests/v159-flight-entry-structure-expenses.test.ts','assert.equal(pkg.version,"1.59.0");','const [major,minor]=String(pkg.version).split(".").map(Number);assert.ok(major>1||(major===1&&minor>=59));')
 
           rep('lib/db-optimization.ts','  13:"crew connections and verified approvals",\n};','  13:"crew connections and verified approvals",\n  14:"user-owned structured flight expenses",\n};')
           anchor='  throw new Error(`Unknown database migration ${version}`);\n};'
