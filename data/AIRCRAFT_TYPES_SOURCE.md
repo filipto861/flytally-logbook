@@ -1,16 +1,15 @@
-# Aircraft type catalogue source
+# FlyTally aircraft type catalogue
 
-FlyTally's bundled aircraft-type catalogue is derived from **Mictronics/aircraft-database**.
+FlyTally bundles a normalized aircraft-type catalogue derived from the public **whatisflying-db** aircraft type database.
 
-- Upstream: https://github.com/Mictronics/aircraft-database
-- Source exports: `aircraft_db.zip` and `icao_aircraft_types.zip`
-- License: **Open Data Commons Attribution License (ODC-By)**
-- Upstream states that exports are updated once per week.
-- Imported upstream commit: `6c0da300e67d6f4363322ce740ff7121e5d97d51`
-- Imported: 2026-09-01T07:22:43Z
+- Upstream: https://github.com/laegsgaardTroels/whatisflying-db
+- Source file: `data/aircraft_types.csv`
+- Upstream commit imported: `e168f2a591bcddeabd6c9830e0fcd482a050b13f`
+- Database license: **Open Data Commons Open Database License (ODbL)**
+- A copy of the upstream database license is stored at `data/licenses/WHATSFLYING_ODBL.txt`.
 
-FlyTally uses the catalogue only as an identity/search aid. Manufacturer/model strings are derived from the most frequently observed non-empty description for each ICAO type in the upstream export and remain editable by the pilot.
+This derived aircraft catalogue is distributed under the same ODbL terms. Attribution applies to the catalogue/database data; it does not change the license of FlyTally application code.
 
-ICAO aircraft descriptors (for example `L1P`) are **not** Part-FCL aircraft classes. FlyTally may display a non-binding class hint for common landplane combinations, but the pilot must confirm the Part-FCL class separately. No class hint is certification evidence.
+FlyTally uses the catalogue only as an identity/search aid. ICAO descriptors such as `L1P` are not Part-FCL aircraft classes. A catalogue entry may expose a non-binding class hint (for example `L1P → SEP`) to reduce typing, but the pilot must separately confirm the actual Part-FCL class. The hint is never certification evidence.
 
-Aircraft absent from the catalogue can always be entered manually.
+Aircraft missing from the catalogue are always supported through manual entry. User-entered Make, Model and ICAO values remain editable even after a catalogue choice.
