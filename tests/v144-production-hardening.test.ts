@@ -49,8 +49,8 @@ test("v1.44.0 rejects unrelated connection audit evidence even with a recomputed
 
 test("v1.44.0 PostgreSQL acceptance keeps certification lineage and canonical participations",()=>{
   const workflow=read("tests/integration/postgres-full-workflow.test.ts"),instructor=read("tests/integration/postgres-instructor-request.test.ts"),scale=read("tests/integration/postgres-scale-readiness.test.ts"),movement=read("tests/v1353-fcl060-evidence.test.ts");
-  assert.match(workflow,/certification_version:5/);
-  assert.match(workflow,/flightCertificationHash\(draft,41,5\)/);
+  assert.match(workflow,/certification_version:7/);
+  assert.match(workflow,/flightCertificationHash\(draft,41,7\)/);
   assert.match(movement,/flightCertificationPayload\(row,4,4\)/);
   assert.match(workflow,/Modern instructor requests must remain participation-only/);
   assert.doesNotMatch(workflow,/const approvalInsert=sqlBlock/);

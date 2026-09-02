@@ -1,6 +1,6 @@
-export const AIRCRAFT_PROFILE_CLASSES=["SEP","TMG","MEP","SET","HELICOPTER","OTHER","GLIDER"] as const;
+export const AIRCRAFT_PROFILE_CLASSES=["SEP","TMG","MEP","SET","HELICOPTER","BALLOON","OTHER","GLIDER"] as const;
 export type AircraftProfileClass=(typeof AIRCRAFT_PROFILE_CLASSES)[number]|"ULL";
-export type AircraftRegulatoryCategory="AEROPLANE"|"HELICOPTER"|"SAILPLANE"|"ULL"|"OTHER";
+export type AircraftRegulatoryCategory="AEROPLANE"|"HELICOPTER"|"BALLOON"|"SAILPLANE"|"ULL"|"OTHER";
 
 const upper=(value:string)=>String(value??"").trim().toUpperCase();
 
@@ -9,6 +9,7 @@ export function aircraftProfileRegulatoryCategory(evidenceInput:string,aircraftC
   if(evidence==="ULL")return "ULL";
   if(aircraftClass==="GLIDER")return "SAILPLANE";
   if(aircraftClass==="HELICOPTER")return "HELICOPTER";
+  if(aircraftClass==="BALLOON")return "BALLOON";
   if(["SEP","MEP","SET"].includes(aircraftClass))return "AEROPLANE";
   if(aircraftClass==="TMG")return current==="SAILPLANE"?"SAILPLANE":"AEROPLANE";
   if(aircraftClass==="OTHER"&&["AEROPLANE","SAILPLANE","OTHER"].includes(current))return current as AircraftRegulatoryCategory;

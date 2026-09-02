@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth/require-user";
-import { getDatabaseData } from "@/lib/data/database";
+import { getDatabaseDataV164 as getDatabaseData } from "@/lib/data/database-v164";
 import { canonicalizeFlightAirportCodes,deleteRate,saveAircraft,saveAircraftWithResult,saveAirport,saveRate,toggleAircraft,toggleAirport } from "./actions";
 import { DataQualityPanel } from "@/components/data-quality-panel";
 import Link from "next/link";

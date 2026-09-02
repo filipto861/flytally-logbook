@@ -17,7 +17,7 @@ const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-p
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectionResult>;
 type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis;format:TrackFileFormat;source:TrackSource;quality:TrackQuality};
-type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;note:string;reviewed:boolean};
+type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;takeoffs:string;note:string;reviewed:boolean};
 type AirportOptions={departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]};
 
 const sourceLabel=(source:TrackSource)=>source==="adsbexchange"?"ADSBExchange":source==="flightradar24"?"Flightradar24":source==="skydemon"?"SkyDemon":"Generic GPS";
@@ -29,8 +29,8 @@ function inspect(source:string,name:string):Analysis{
 }
 
 function reviewFor(part:KmlPoint[]):Review{
-  const envelope=flightEnvelope(part),stats=trackStats(part),fallbackStart=utcParts(stats.startUtc),off=utcParts(envelope.offBlockUtc),takeoff=utcParts(envelope.takeoffUtc),landing=utcParts(envelope.landingUtc),on=utcParts(envelope.onBlockUtc);
-  return{date:off?.date||takeoff?.date||fallbackStart?.date||"",offBlock:off?.time||"",takeoff:takeoff?.time||"",landing:landing?.time||"",onBlock:on?.time||"",departure:"",arrival:"",starts:String(landingCount(part)),note:"",reviewed:false};
+  const envelope=flightEnvelope(part),stats=trackStats(part),fallbackStart=utcParts(stats.startUtc),off=utcParts(envelope.offBlockUtc),takeoff=utcParts(envelope.takeoffUtc),landing=utcParts(envelope.landingUtc),on=utcParts(envelope.onBlockUtc),movements=String(landingCount(part));
+  return{date:off?.date||takeoff?.date||fallbackStart?.date||"",offBlock:off?.time||"",takeoff:takeoff?.time||"",landing:landing?.time||"",onBlock:on?.time||"",departure:"",arrival:"",starts:movements,takeoffs:movements,note:"",reviewed:false};
 }
 
 function mapTrack(part:KmlPoint[],index:number,registration:string,review?:Review,maxPoints=900):MapTrack{
@@ -64,7 +64,7 @@ function AirportReviewField({label,name,value,candidates,onChange}:{label:string
 }
 
 export function KmlImportForm({action,airportAction,aircraft}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[]}){
-  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
+  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[balloonOperation,setBalloonOperation]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
@@ -99,9 +99,9 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
     return()=>{cancelled=true;clearTimeout(timer)};
   },[analysis,cuts,airportAction]);
 
-  const ready=parts.length>0&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date);
+  const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBilling=parseBilling(selectedAircraft?.billing_basis),selectedBalloon=String(selectedAircraft?.regulatory_category||"").toUpperCase()==="BALLOON"||String(selectedAircraft?.aircraft_class||"").toUpperCase()==="BALLOON";
+  const ready=parts.length>0&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&(!selectedBalloon||(Number(review.takeoffs)>0&&Number(review.starts)>0)))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
   const reviewedCount=reviews.filter(review=>review.reviewed).length;
-  const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBilling=parseBilling(selectedAircraft?.billing_basis);
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
   const reviewImported=()=>{const target=document.querySelector<HTMLElement>(".flight-review-card:not(.confirmed)")||document.querySelector<HTMLElement>(".flight-review-card");target?.scrollIntoView({behavior:"smooth",block:"start"});target?.focus({preventScroll:true})};
@@ -110,7 +110,7 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
     <nav className="entry-progress" aria-label="GPS import progress"><span className={analysis?"complete":"active"}>1 <b>Source</b></span><span className={analysis?"complete":""}>2 <b>Split</b></span><span className={analysis&&reviewedCount<parts.length?"active":analysis?"complete":""}>3 <b>Review</b></span><span className={ready?"active":""}>4 <b>Save</b></span></nav>
     <div className="import-step"><span>1</span><div><strong>Upload track</strong></div></div>
     <div className="upload-zone">
-      <label>KML, GPX or CSV<input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const file=event.target.files?.[0];if(!file){setAnalysis(null);setReviews([]);return}const next=inspect(await file.text(),file.name);setAnalysis(next);setRegistration(next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"");resetParts(next.suggested,next)}}/></label>
+      <label>KML, GPX or CSV<input name="kml" type="file" accept=".kml,.gpx,.csv,application/vnd.google-earth.kml+xml,application/xml,text/xml,text/csv" required onChange={async event=>{const file=event.target.files?.[0];if(!file){setAnalysis(null);setReviews([]);return}const next=inspect(await file.text(),file.name);setAnalysis(next);const suggestedRegistration=next.registration&&aircraft.some(item=>item.registration===next.registration)?next.registration:"";setRegistration(suggestedRegistration);setBalloonOperation("");resetParts(next.suggested,next)}}/></label>
       {analysis?<p>{analysis.points.length>=2?"✓":"⚠"} {analysis.name} · {analysis.points.length} GPS points · {analysis.format.toUpperCase()} · {sourceLabel(analysis.source)} · {analysis.suggested.length+1} suggested {analysis.suggested.length?"flights":"flight"} · {analysis.timeBasis==="utc"?"UTC timestamps":analysis.timeBasis==="offset"?"offset timestamps → UTC":"timezone not explicit"}</p>:null}
     </div>
     {analysis&&analysis.quality.status!=="good"?<p className="track-time-warning"><b>GPS track needs review.</b> {analysis.quality.warnings.join(" ")}</p>:analysis?<p className="field-hint">GPS track quality: good · {Math.round(analysis.quality.timestampCoverage*100)}% timestamp coverage.</p>:null}
@@ -127,13 +127,14 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
 
       <div className="import-step"><span>3</span><div><strong>Common details</strong></div></div>
       <div className="form-grid secondary-entry-grid">
-        <label>Registration<select name="registration" required value={registration} onChange={event=>setRegistration(event.target.value)}><option value="">Select</option>{aircraft.map(item=><option key={item.registration}>{item.registration}</option>)}</select>{analysis.registration?<small>Suggested: {analysis.registration}</small>:null}</label>
+        <label>Registration<select name="registration" required value={registration} onChange={event=>{setRegistration(event.target.value);setBalloonOperation("")}}><option value="">Select</option>{aircraft.map(item=><option key={item.registration}>{item.registration}</option>)}</select>{analysis.registration?<small>Suggested: {analysis.registration}</small>:null}</label>
         <label>Aircraft type<input key={`type-${registration}`} name="aircraftType" defaultValue={selectedAircraft?.aircraft_type||""}/></label>
-        <label>Class<select key={`class-${registration}`} name="aircraftClass" defaultValue={selectedAircraft?.aircraft_class||"ULL"}><option>ULL</option><option>SEP</option><option>TMG</option><option>MEP</option><option>SET</option><option>OTHER</option><option>GLIDER</option></select></label>
+        <label>Class<select key={`class-${registration}`} name="aircraftClass" defaultValue={selectedAircraft?.aircraft_class||"ULL"}><option>ULL</option><option>SEP</option><option>TMG</option><option>MEP</option><option>SET</option><option>HELICOPTER</option><option>BALLOON</option><option>OTHER</option><option>GLIDER</option></select></label>
         <label>Logbook<select key={`evidence-${registration}`} name="evidence" defaultValue={selectedAircraft?.evidence||"ULL"}><option>ULL</option><option>EASA</option></select></label>
         <label>Role<select key={`role-${registration}`} name="role" defaultValue={selectedAircraft?.default_role||"PIC"}><option>PIC</option><option>DUAL</option><option value="INSTRUKTOR">INSTRUCTOR</option><option>SAFETY PILOT</option><option>CO-PILOT</option><option>PAX</option><option>OBSERVER</option></select></label>
         <label>Billing time<select key={`billing-${registration}`} name="billingBasis" defaultValue={selectedBilling.basis}><option>BLOCK</option><option>AIR</option></select></label>
         <label>Cost share<select key={`share-${registration}`} name="billingShare" defaultValue={selectedBilling.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
+        {selectedBalloon?<label>Balloon operation<select name="balloonOperation" value={balloonOperation} onChange={event=>setBalloonOperation(event.target.value)} required><option value="">Select free / tethered</option><option value="FREE">Free flight</option><option value="TETHERED">Tethered flight</option></select><small>Required BFCL evidence. GPS cannot determine whether the operation was free or tethered.</small></label>:<input type="hidden" name="balloonOperation" value=""/>}
         <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
       <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and billing defaults. Review fields remain editable.</p>
@@ -153,7 +154,8 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
             <label>Date<input name={`part_${index}_date`} type="date" required value={review.date} onChange={event=>updateReview(index,{date:event.target.value,reviewed:false})}/></label>
             <AirportReviewField label="Departure" name={`part_${index}_departure`} value={review.departure} candidates={options.departureCandidates} onChange={value=>updateReview(index,{departure:value,reviewed:false})}/>
             <AirportReviewField label="Arrival" name={`part_${index}_arrival`} value={review.arrival} candidates={options.arrivalCandidates} onChange={value=>updateReview(index,{arrival:value,reviewed:false})}/>
-            <label>Landings / starts<input name={`part_${index}_starts`} type="number" min="0" max="99" value={review.starts} onChange={event=>updateReview(index,{starts:event.target.value,reviewed:false})}/><small>GPS suggestion: {detectedLandings}</small></label>
+            <label>{selectedBalloon?"Landings":"Landings / starts"}<input name={`part_${index}_starts`} type="number" min="0" max="99" value={review.starts} onChange={event=>updateReview(index,{starts:event.target.value,reviewed:false})}/><small>GPS suggestion: {detectedLandings}</small></label>
+            {selectedBalloon?<label>Take-offs<input name={`part_${index}_takeoffs`} type="number" min="0" max="99" value={review.takeoffs} onChange={event=>updateReview(index,{takeoffs:event.target.value,reviewed:false})}/><small>Review explicitly for BFCL recency; do not rely on landing inference.</small></label>:null}
             <label>Off-block <span className="field-hint">UTC</span><input name={`part_${index}_offBlock`} type="time" value={review.offBlock} onChange={event=>updateReview(index,{offBlock:event.target.value,reviewed:false})}/></label>
             <label>Takeoff <span className="field-hint">UTC</span><input name={`part_${index}_takeoff`} type="time" value={review.takeoff} onChange={event=>updateReview(index,{takeoff:event.target.value,reviewed:false})}/><small>See takeoff marker above</small></label>
             <label>Landing <span className="field-hint">UTC</span><input name={`part_${index}_landing`} type="time" value={review.landing} onChange={event=>updateReview(index,{landing:event.target.value,reviewed:false})}/><small>See landing marker above</small></label>
@@ -164,7 +166,7 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         </article>;
       })}</div>
     </>:null}
-    {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{reviewedCount} of {parts.length} flights reviewed</strong><small>{ready?"All flights are ready to save.":"Open each flight, check the suggested values and confirm it."}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":`${Math.max(0,parts.length-reviewedCount)} remaining`}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
+    {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{reviewedCount} of {parts.length} flights reviewed</strong><small>{ready?"All flights are ready to save.":selectedBalloon&&!balloonOperation?"Select free / tethered operation and review each flight.":"Open each flight, check the suggested values and confirm it."}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":`${Math.max(0,parts.length-reviewedCount)} remaining`}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
     <div className="form-actions field-actions"><Submit ready={ready} hasTrack={Boolean(analysis&&parts.length)} onReview={reviewImported}/></div>
   </form>;

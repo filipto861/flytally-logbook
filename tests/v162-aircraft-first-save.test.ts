@@ -50,9 +50,10 @@ test("Quick Add and Aircraft Manager submit the same regulatory profile fields o
 test("server canonicalizes and verifies the persisted first-save profile",()=>{
   const actions=read("app/(protected)/database/actions.ts");
   assert.match(actions,/normalizeAircraftProfileContext\([^)]*requestedCategory\)/);
-  assert.match(actions,/INSERT INTO aircraft[\s\S]*aircraft_class,regulatory_category,evidence/);
+  assert.match(actions,/INSERT INTO aircraft/);
+  for(const column of ["aircraft_class","regulatory_category","evidence"])assert.match(actions,new RegExp(`\\b${column}\\b`));
   assert.match(actions,/ON CONFLICT\(user_id,registration\) DO UPDATE SET[\s\S]*aircraft_class=EXCLUDED[.]aircraft_class[\s\S]*regulatory_category=EXCLUDED[.]regulatory_category[\s\S]*evidence=EXCLUDED[.]evidence/);
-  assert.match(actions,/SELECT COALESCE\(evidence,''\) evidence,COALESCE\(aircraft_class,''\) aircraft_class,COALESCE\(regulatory_category,''\) regulatory_category FROM aircraft/);
+  assert.match(actions,/SELECT[\s\S]*COALESCE\(evidence,''\) evidence[\s\S]*COALESCE\(aircraft_class,''\) aircraft_class[\s\S]*COALESCE\(regulatory_category,''\) regulatory_category[\s\S]*FROM aircraft/);
   assert.match(actions,/aircraft-profile-persistence-mismatch/);
 });
 

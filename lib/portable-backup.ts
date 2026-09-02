@@ -4,7 +4,7 @@ export type PortableBackup={
   flights:BackupRow[];aircraft:BackupRow[];rates:BackupRow[];airports:BackupRow[];expiries:BackupRow[];
   settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];audit_log:BackupRow[];
   fstd_sessions:BackupRow[];flight_certified_revisions:BackupRow[];fstd_certified_revisions:BackupRow[];deleted_flights:BackupRow[];
-  pilot_connections?:BackupRow[];flight_participations?:BackupRow[];instructor_flight_approvals?:BackupRow[];pilot_licences?:BackupRow[];pilot_qualifications?:BackupRow[];user_notifications?:BackupRow[];flight_verifications?:BackupRow[];connection_audit_log?:BackupRow[];flight_expenses?:BackupRow[];spl_recency_evidence?:BackupRow[];helicopter_recency_evidence?:BackupRow[];
+  pilot_connections?:BackupRow[];flight_participations?:BackupRow[];instructor_flight_approvals?:BackupRow[];pilot_licences?:BackupRow[];pilot_qualifications?:BackupRow[];user_notifications?:BackupRow[];flight_verifications?:BackupRow[];connection_audit_log?:BackupRow[];flight_expenses?:BackupRow[];spl_recency_evidence?:BackupRow[];helicopter_recency_evidence?:BackupRow[];bpl_recency_evidence?:BackupRow[];
   integrity:{algorithm:string;payload_sha256:string};
 };
 
@@ -14,6 +14,7 @@ const v7Arrays=[...v6Arrays,"pilot_connections","flight_participations","instruc
 const v8Arrays=[...v7Arrays,"flight_expenses"] as const;
 const v9Arrays=[...v8Arrays,"spl_recency_evidence"] as const;
 const v10Arrays=[...v9Arrays,"helicopter_recency_evidence"] as const;
+const v11Arrays=[...v10Arrays,"bpl_recency_evidence"] as const;
 export const portableBackupDigest=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
 const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?raw:date.toISOString()};
@@ -54,6 +55,7 @@ function validateOwnership(payload:Record<string,unknown>){
   if(Number(payload.version||0)>=8)for(const row of payload.flight_expenses as BackupRow[])if(Number(row.user_id)!==sourceUserId)throw new Error("Backup contains a flight expense from another account.");
   if(Number(payload.version||0)>=9)for(const row of payload.spl_recency_evidence as BackupRow[])if(Number(row.user_id)!==sourceUserId)throw new Error("Backup contains SPL recency evidence from another account.");
   if(Number(payload.version||0)>=10)for(const row of payload.helicopter_recency_evidence as BackupRow[])if(Number(row.user_id)!==sourceUserId)throw new Error("Backup contains helicopter recency evidence from another account.");
+  if(Number(payload.version||0)>=11)for(const row of payload.bpl_recency_evidence as BackupRow[])if(Number(row.user_id)!==sourceUserId)throw new Error("Backup contains BPL recency evidence from another account.");
   return sourceUserId;
 }
 
@@ -71,9 +73,10 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   if(version>=8)for(const key of v8Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if(version>=9)for(const key of v9Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if(version>=10)for(const key of v10Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
+  if(version>=11)for(const key of v11Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Backup exceeds the safe number of flights or GPS tracks.");
-  if(!Array.isArray(payload.audit_log))payload.audit_log=[];if(!Array.isArray(payload.fstd_sessions))payload.fstd_sessions=[];if(!Array.isArray(payload.flight_certified_revisions))payload.flight_certified_revisions=[];if(!Array.isArray(payload.fstd_certified_revisions))payload.fstd_certified_revisions=[];if(!Array.isArray(payload.deleted_flights))payload.deleted_flights=[];for(const key of v7Arrays)if(!Array.isArray(payload[key]))payload[key]=[];if(!Array.isArray(payload.flight_expenses))payload.flight_expenses=[];if(!Array.isArray(payload.spl_recency_evidence))payload.spl_recency_evidence=[];if(!Array.isArray(payload.helicopter_recency_evidence))payload.helicopter_recency_evidence=[];
-  const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=10?v10Arrays:version>=9?v9Arrays:version>=8?v8Arrays:version>=7?v7Arrays:version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
+  if(!Array.isArray(payload.audit_log))payload.audit_log=[];if(!Array.isArray(payload.fstd_sessions))payload.fstd_sessions=[];if(!Array.isArray(payload.flight_certified_revisions))payload.flight_certified_revisions=[];if(!Array.isArray(payload.fstd_certified_revisions))payload.fstd_certified_revisions=[];if(!Array.isArray(payload.deleted_flights))payload.deleted_flights=[];for(const key of v7Arrays)if(!Array.isArray(payload[key]))payload[key]=[];if(!Array.isArray(payload.flight_expenses))payload.flight_expenses=[];if(!Array.isArray(payload.spl_recency_evidence))payload.spl_recency_evidence=[];if(!Array.isArray(payload.helicopter_recency_evidence))payload.helicopter_recency_evidence=[];if(!Array.isArray(payload.bpl_recency_evidence))payload.bpl_recency_evidence=[];
+  const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=11?v11Arrays:version>=10?v10Arrays:version>=9?v9Arrays:version>=8?v8Arrays:version>=7?v7Arrays:version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
   for(const key of countKeys)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(version>=6)validateOwnership(payload);
   const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}} as PortableBackup;

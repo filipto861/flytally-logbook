@@ -64,7 +64,7 @@ before(()=>{
     CREATE TABLE users(id BIGINT PRIMARY KEY,display_name TEXT NOT NULL DEFAULT '');
     CREATE TABLE flights(
       id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,date DATE,evidence TEXT NOT NULL DEFAULT '',registration TEXT NOT NULL DEFAULT '',
-      aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',launch_method TEXT NOT NULL DEFAULT '',launches INTEGER NOT NULL DEFAULT 0,aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
+      aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',balloon_class TEXT NOT NULL DEFAULT '',balloon_group TEXT NOT NULL DEFAULT '',balloon_operation TEXT NOT NULL DEFAULT '',launch_method TEXT NOT NULL DEFAULT '',launches INTEGER NOT NULL DEFAULT 0,aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
       departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',starts INTEGER NOT NULL DEFAULT 0,
       commander TEXT NOT NULL DEFAULT '',instructor TEXT NOT NULL DEFAULT '',role TEXT NOT NULL DEFAULT '',task TEXT NOT NULL DEFAULT '',purpose_code TEXT NOT NULL DEFAULT '',price_per_hour NUMERIC,billing_basis TEXT NOT NULL DEFAULT 'BLOCK',note TEXT NOT NULL DEFAULT '',
       operation_type TEXT NOT NULL DEFAULT 'SP',engine_type TEXT NOT NULL DEFAULT 'SE',landings_day INTEGER NOT NULL DEFAULT 0,landings_night INTEGER NOT NULL DEFAULT 0,movement_evidence_recorded BOOLEAN NOT NULL DEFAULT FALSE,takeoffs_day INTEGER NOT NULL DEFAULT 0,takeoffs_night INTEGER NOT NULL DEFAULT 0,approaches_day INTEGER NOT NULL DEFAULT 0,approaches_night INTEGER NOT NULL DEFAULT 0,night_minutes INTEGER NOT NULL DEFAULT 0,ifr_minutes INTEGER NOT NULL DEFAULT 0,
@@ -73,7 +73,7 @@ before(()=>{
     );
     CREATE TABLE aircraft(
       id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,registration TEXT NOT NULL,aircraft_type TEXT NOT NULL DEFAULT '',aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',
-      icao_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',evidence TEXT NOT NULL DEFAULT '',default_price_per_hour NUMERIC,default_role TEXT NOT NULL DEFAULT '',billing_basis TEXT NOT NULL DEFAULT 'BLOCK',active INTEGER NOT NULL DEFAULT 1,
+      icao_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',balloon_class TEXT NOT NULL DEFAULT '',balloon_group TEXT NOT NULL DEFAULT '',evidence TEXT NOT NULL DEFAULT '',default_price_per_hour NUMERIC,default_role TEXT NOT NULL DEFAULT '',billing_basis TEXT NOT NULL DEFAULT 'BLOCK',active INTEGER NOT NULL DEFAULT 1,
       note TEXT NOT NULL DEFAULT '',created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),UNIQUE(user_id,registration)
     );
     CREATE TABLE flight_tracks(
@@ -117,7 +117,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
   const materialize=materializeSql(shared);
   const values:Record<string,unknown>={
     fingerprint:"fi-materialize-901-82",userId:82,
-    "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
+    "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"FI","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1",
     "text(row.date)":"2026-08-28","text(row.departure)":"LKPR","text(row.arrival)":"LKBE","text(row.off_block)":"08:00","text(row.registration).toUpperCase()":"OK-FI1","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
@@ -129,7 +129,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
   const fiFlightId=Number(run(renderMaterialize(materialize,values)));assert.ok(fiFlightId>0);
   const fi=rows(`SELECT * FROM flights WHERE id=${fiFlightId} AND user_id=82`)[0];
   assert.equal(String(fi.role),"FI");assert.equal(String(fi.commander),"Test Instructor");assert.equal(Number(fi.pic_minutes),65);assert.equal(Number(fi.instructor_minutes),65);assert.equal(Number(fi.dual_minutes),0);
-  assert.equal(String(fi.regulatory_category),"AEROPLANE");assert.equal(String(fi.launch_method),"");assert.equal(Number(fi.launches),0);
+  assert.equal(String(fi.regulatory_category),"AEROPLANE");assert.equal(String(fi.balloon_class),"");assert.equal(String(fi.balloon_group),"");assert.equal(String(fi.balloon_operation),"");assert.equal(String(fi.launch_method),"");assert.equal(Number(fi.launches),0);
   assert.equal(String(fi.note),"FI entry linked to Test Student's verified training flight");
   assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_tracks WHERE user_id=82 AND flight_id=${fiFlightId}`)[0].count),1);
   assert.equal(String(rows("SELECT certification_hash FROM flights WHERE id=901 AND user_id=81")[0].certification_hash),"hash-r1");

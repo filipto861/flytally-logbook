@@ -9,6 +9,7 @@ import { ensureV151Schema } from "@/lib/v151-schema";
 import { ensureV159Schema } from "@/lib/v159-schema";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
+import { ensureV164Schema } from "@/lib/v164-schema";
 
 declare global{
   // eslint-disable-next-line no-var
@@ -19,7 +20,7 @@ async function applyRuntimeSchema(){
   // Base migrations own the dependency graph. Compatibility and feature
   // schemas can then initialize in parallel instead of adding cold-start latency.
   await ensureDatabaseOptimizations();
-  await Promise.all([ensureV132Schema(),ensureV1353Schema(),ensureV144Schema(),ensureV145Schema(),ensureV148Schema(),ensureV151Schema(),ensureV159Schema(),ensureV162Schema(),ensureV163Schema()]);
+  await Promise.all([ensureV132Schema(),ensureV1353Schema(),ensureV144Schema(),ensureV145Schema(),ensureV148Schema(),ensureV151Schema(),ensureV159Schema(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema()]);
 }
 
 export function ensureRuntimeSchema(){
