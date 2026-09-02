@@ -3,6 +3,7 @@
 import { FLIGHT_PURPOSES,normalizeFlightPurposeCodes } from "@/lib/flight-purpose";
 
 const visiblePurpose=(code:string,category:string)=>{
+  if(!category||category==="OTHER")return true;
   if(code==="LAPL_FCL140A_REFRESHER"||code==="SEP_TMG_FCL740A_REFRESHER")return category==="AEROPLANE";
   if(code==="LAPL_H_FCL140H_REFRESHER")return category==="HELICOPTER";
   if(code==="SPL_SFCL160_TRAINING")return category==="SAILPLANE";
