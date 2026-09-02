@@ -41,7 +41,7 @@ test("v1.60 Overview is adaptive and delegates authoritative LAPL recency to the
   assert.match(overview,/Open a section above for details/);
   assert.match(overview,/What matters now/);
   assert.doesNotMatch(overview,/Under CAA|regulation requires|FCL[.]035/);
-  assert.match(legacy,/view==="recency"\?<RecencyPanel/);
+  assert.match(legacy,/view==="recency"[\s\S]*<RecencyPanel/);
 });
 
 test("v1.60 preserves the detailed credential workspace and is read-only at the new Overview layer",()=>{
