@@ -2,6 +2,7 @@ export const FLIGHT_PURPOSES=[
   {code:"AIRCRAFT_DIFFERENCES",label:"Aircraft differences training / endorsement",task:"Differences training"},
   {code:"AIRCRAFT_FAMILIARISATION",label:"Aircraft familiarisation",task:"Familiarisation"},
   {code:"LAPL_FCL140A_REFRESHER",label:"LAPL(A) · FCL.140.A refresher training",task:"FCL.140.A refresher training"},
+  {code:"LAPL_H_FCL140H_REFRESHER",label:"LAPL(H) · FCL.140.H refresher training",task:"FCL.140.H refresher training"},
   {code:"SEP_TMG_FCL740A_REFRESHER",label:"SEP/TMG · FCL.740.A refresher training",task:"FCL.740.A refresher training"},
   {code:"SPL_SFCL160_TRAINING",label:"SPL · SFCL.160 recency training",task:"SFCL.160 training flight"},
 ] as const;
@@ -26,7 +27,7 @@ export function normalizeFlightPurposeCode(value:unknown):FlightPurposeCode|""{r
 
 export function primaryFlightPurposeCode(value:unknown):FlightPurposeCode|""{
   const selected=new Set(normalizeFlightPurposeCodes(value));
-  for(const code of ["LAPL_FCL140A_REFRESHER","SEP_TMG_FCL740A_REFRESHER","SPL_SFCL160_TRAINING","AIRCRAFT_DIFFERENCES","AIRCRAFT_FAMILIARISATION"] as const)if(selected.has(code))return code;
+  for(const code of ["LAPL_FCL140A_REFRESHER","LAPL_H_FCL140H_REFRESHER","SEP_TMG_FCL740A_REFRESHER","SPL_SFCL160_TRAINING","AIRCRAFT_DIFFERENCES","AIRCRAFT_FAMILIARISATION"] as const)if(selected.has(code))return code;
   return "";
 }
 
@@ -67,3 +68,4 @@ export function stripFlightPurposeTasks(value:unknown){
 
 export function hasFlightPurpose(value:unknown,code:FlightPurposeCode){return normalizeFlightPurposeCodes(value).includes(code)}
 export function isLaplRefresherPurpose(value:unknown){return hasFlightPurpose(value,"LAPL_FCL140A_REFRESHER")}
+export function isLaplHRefresherPurpose(value:unknown){return hasFlightPurpose(value,"LAPL_H_FCL140H_REFRESHER")}
