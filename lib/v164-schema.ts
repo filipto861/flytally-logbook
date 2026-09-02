@@ -6,7 +6,7 @@ declare global{
   var __flytallyV164Schema:Promise<void>|undefined;
 }
 
-const MIGRATION_KEY="v1.64-balloon-bpl-core";
+const MIGRATION_KEY="v1.64-balloon-bpl-free-tethered";
 
 async function applyV164Schema(){
   await sql`CREATE TABLE IF NOT EXISTS flytally_feature_migrations (
@@ -21,6 +21,7 @@ async function applyV164Schema(){
     sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS balloon_group TEXT NOT NULL DEFAULT ''`,
     sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS balloon_class TEXT NOT NULL DEFAULT ''`,
     sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS balloon_group TEXT NOT NULL DEFAULT ''`,
+    sql`ALTER TABLE flights ADD COLUMN IF NOT EXISTS balloon_operation TEXT NOT NULL DEFAULT ''`,
     sql`CREATE TABLE IF NOT EXISTS bpl_recency_evidence (
       id BIGSERIAL PRIMARY KEY,
       user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -38,6 +39,7 @@ async function applyV164Schema(){
     )`,
     sql`CREATE INDEX IF NOT EXISTS idx_bpl_recency_evidence_user_class_date ON bpl_recency_evidence(user_id,balloon_class,evidence_date DESC)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flights_user_balloon_context_date ON flights(user_id,balloon_class,balloon_group,date)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flights_user_balloon_operation_date ON flights(user_id,balloon_class,balloon_operation,date)`,
     sql`INSERT INTO flytally_feature_migrations(migration_key) VALUES(${MIGRATION_KEY}) ON CONFLICT(migration_key) DO NOTHING`,
   ]);
 }

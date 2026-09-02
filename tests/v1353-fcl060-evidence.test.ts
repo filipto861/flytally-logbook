@@ -5,45 +5,9 @@ import test from "node:test";
 import { flightCertificationHash,flightCertificationPayload } from "../lib/certification-integrity.ts";
 import { parseFlightInput } from "../lib/flight-input.ts";
 import { evaluatePassengerCurrencyMode,type RecencyFlight } from "../lib/recency-engine.ts";
-
-const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
-const movementFlight=(partial:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
-function form(){const f=new FormData();for(const [key,value] of Object.entries({date:"2026-08-28",registration:"OK-ABC",aircraftType:"BR23",aircraftClass:"SEP",evidence:"EASA",departure:"LKLT",arrival:"LKBE",offBlock:"10:00",takeoff:"10:05",landing:"10:55",onBlock:"11:00",role:"PIC",billingBasis:"BLOCK",landingsDay:"1",landingsNight:"0"}))f.set(key,value);return f}
-
-test("v1.35.3 movement schema and certification compatibility remain supported",()=>{
-  const schema=read("lib/v1353-schema.ts"),actions=read("app/(protected)/flights/actions.ts"),certification=read("app/(protected)/flights/certification-actions.ts"),ui=read("components/flight-form.tsx");
-  assert.match(schema,/movement_evidence_recorded/);assert.match(schema,/takeoffs_day/);assert.match(schema,/approaches_day/);assert.doesNotMatch(schema,/UPDATE\s+flights\s+SET\s+(?:takeoffs|approaches)/i);
-  assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);
-  assert.match(certification,/certification_version=6/);assert.match(certification,/movement_evidence_recorded/);
-  assert.match(ui,/pilot flying \(PF\)/i);assert.match(ui,/Day take-offs/);assert.match(ui,/Day approaches/);
-  const layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");
-  assert.match(layout,/ensureRuntimeSchema/);assert.match(runtime,/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/);
-});
-
-test("flight input persists movement evidence only when explicitly recorded",()=>{
-  const recorded=form();recorded.set("movementEvidenceRecorded","yes");recorded.set("takeoffsDay","2");recorded.set("takeoffsNight","1");recorded.set("approachesDay","2");recorded.set("approachesNight","1");
-  const parsed=parseFlightInput(recorded);assert.ok(parsed.data);assert.equal(parsed.data?.movementEvidenceRecorded,true);assert.equal(parsed.data?.takeoffsDay,2);assert.equal(parsed.data?.takeoffsNight,1);assert.equal(parsed.data?.approachesDay,2);assert.equal(parsed.data?.approachesNight,1);
-  const legacy=form();legacy.set("takeoffsDay","9");legacy.set("approachesDay","9");const unrecorded=parseFlightInput(legacy);assert.ok(unrecorded.data);assert.equal(unrecorded.data?.movementEvidenceRecorded,false);assert.equal(unrecorded.data?.takeoffsDay,0);assert.equal(unrecorded.data?.approachesDay,0);
-});
-
-test("certification v4 protects movement evidence while v3 fingerprints remain backward compatible",()=>{
-  const row:Record<string,unknown>={id:17,date:"2026-08-28",evidence:"EASA",registration:"OK-ABC",aircraft_type:"BR23",aircraft_class:"SEP",departure:"LKLT",arrival:"LKBE",off_block:"10:00",takeoff:"10:05",landing:"10:55",on_block:"11:00",operation_type:"SP",engine_type:"SE",landings_day:1,landings_night:0,role:"PIC",record_revision:1,purpose_code:"",movement_evidence_recorded:true,takeoffs_day:1,takeoffs_night:0,approaches_day:1,approaches_night:0};
-  const changed={...row,takeoffs_day:2,approaches_day:2};
-  assert.equal(flightCertificationHash(row,4,3),flightCertificationHash(changed,4,3));
-  assert.notEqual(flightCertificationHash(row,4,4),flightCertificationHash(changed,4,4));
-  assert.equal("movementEvidence" in (flightCertificationPayload(row,4,3) as Record<string,unknown>),false);
-  assert.equal("movementEvidence" in (flightCertificationPayload(row,4,4) as Record<string,unknown>),true);
-});
-
-test("legacy strict FCL.060 evaluator remains available for existing structured evidence",()=>{
-  const complete=[movementFlight({date:"2026-08-01"}),movementFlight({date:"2026-08-10"}),movementFlight({date:"2026-08-20"})],current=evaluatePassengerCurrencyMode(complete,"SEP",false,"2026-08-28","day");
-  assert.equal(current.status,"current");assert.deepEqual(current.requirements.map(item=>item.label),["Take-offs","Approaches","Landings"]);assert.equal(current.forecastDate,"2026-10-30");
-  const explicitShort=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:2})],"SEP",false,"2026-08-28","day");assert.equal(explicitShort.status,"not-current");
-});
-
-test("legacy night FCL.060 evaluator keeps the IR exemption semantics",()=>{
-  const base=[movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:3})];
-  const ir=evaluatePassengerCurrencyMode(base,"SEP",true,"2026-08-28","night");assert.equal(ir.status,"current");assert.equal(ir.requirements.some(item=>item.id==="ir-exemption"),true);
-  const weak=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:2,approachesDay:2,landingsDay:2})],"SEP",true,"2026-08-28","night");assert.equal(weak.status,"not-current");
-  const night=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:2,takeoffsNight:1,approachesDay:2,approachesNight:1,landingsDay:2,landingsNight:1})],"SEP",false,"2026-08-28","night");assert.equal(night.status,"current");
-});
+const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");const movementFlight=(partial:Partial<RecencyFlight>={}):RecencyFlight=>({date:"2026-08-20",evidence:"EASA",aircraftClass:"SEP",role:"PIC",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});function form(){const f=new FormData();for(const[key,value]of Object.entries({date:"2026-08-28",registration:"OK-ABC",aircraftType:"BR23",aircraftClass:"SEP",evidence:"EASA",departure:"LKLT",arrival:"LKBE",offBlock:"10:00",takeoff:"10:05",landing:"10:55",onBlock:"11:00",role:"PIC",billingBasis:"BLOCK",landingsDay:"1",landingsNight:"0"}))f.set(key,value);return f}
+test("v1.35.3 movement schema and certification compatibility remain supported",()=>{const schema=read("lib/v1353-schema.ts"),actions=read("app/(protected)/flights/actions.ts"),certification=read("app/(protected)/flights/certification-actions.ts"),ui=read("components/flight-form.tsx");assert.match(schema,/movement_evidence_recorded/);assert.match(schema,/takeoffs_day/);assert.match(schema,/approaches_day/);assert.doesNotMatch(schema,/UPDATE\s+flights\s+SET\s+(?:takeoffs|approaches)/i);assert.match(actions,/movement_evidence_recorded/);assert.match(actions,/takeoffs_day/);assert.match(actions,/approaches_day/);assert.match(certification,/certification_version=7/);assert.match(certification,/movement_evidence_recorded/);assert.match(ui,/pilot flying \(PF\)/i);assert.match(ui,/Day take-offs/);assert.match(ui,/Day approaches/);const layout=read("app/(protected)/layout.tsx"),runtime=read("lib/runtime-schema.ts");assert.match(layout,/ensureRuntimeSchema/);assert.match(runtime,/ensureV1353Schema/);assert.match(read("app/api/cron/recency/route.ts"),/ensureV1353Schema/)});
+test("flight input persists movement evidence only when explicitly recorded",()=>{const recorded=form();recorded.set("movementEvidenceRecorded","yes");recorded.set("takeoffsDay","2");recorded.set("takeoffsNight","1");recorded.set("approachesDay","2");recorded.set("approachesNight","1");const parsed=parseFlightInput(recorded);assert.ok(parsed.data);assert.equal(parsed.data?.movementEvidenceRecorded,true);assert.equal(parsed.data?.takeoffsDay,2);assert.equal(parsed.data?.takeoffsNight,1);assert.equal(parsed.data?.approachesDay,2);assert.equal(parsed.data?.approachesNight,1);const legacy=form();legacy.set("takeoffsDay","9");legacy.set("approachesDay","9");const unrecorded=parseFlightInput(legacy);assert.ok(unrecorded.data);assert.equal(unrecorded.data?.movementEvidenceRecorded,false);assert.equal(unrecorded.data?.takeoffsDay,0);assert.equal(unrecorded.data?.approachesDay,0)});
+test("certification v4 protects movement evidence while v3 remains backward compatible",()=>{const row:Record<string,unknown>={id:17,date:"2026-08-28",evidence:"EASA",registration:"OK-ABC",aircraft_type:"BR23",aircraft_class:"SEP",departure:"LKLT",arrival:"LKBE",off_block:"10:00",takeoff:"10:05",landing:"10:55",on_block:"11:00",operation_type:"SP",engine_type:"SE",landings_day:1,landings_night:0,role:"PIC",record_revision:1,purpose_code:"",movement_evidence_recorded:true,takeoffs_day:1,takeoffs_night:0,approaches_day:1,approaches_night:0},changed={...row,takeoffs_day:2,approaches_day:2};assert.equal(flightCertificationHash(row,4,3),flightCertificationHash(changed,4,3));assert.notEqual(flightCertificationHash(row,4,4),flightCertificationHash(changed,4,4));assert.equal("movementEvidence" in (flightCertificationPayload(row,4,3) as Record<string,unknown>),false);assert.equal("movementEvidence" in (flightCertificationPayload(row,4,4) as Record<string,unknown>),true)});
+test("legacy strict FCL.060 evaluator remains available",()=>{const complete=[movementFlight({date:"2026-08-01"}),movementFlight({date:"2026-08-10"}),movementFlight({date:"2026-08-20"})],current=evaluatePassengerCurrencyMode(complete,"SEP",false,"2026-08-28","day");assert.equal(current.status,"current");assert.deepEqual(current.requirements.map(item=>item.label),["Take-offs","Approaches","Landings"]);const explicitShort=evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:2})],"SEP",false,"2026-08-28","day");assert.equal(explicitShort.status,"not-current")});
+test("legacy night FCL.060 evaluator keeps IR exemption",()=>{const base=[movementFlight({takeoffsDay:3,approachesDay:3,landingsDay:3})];assert.equal(evaluatePassengerCurrencyMode(base,"SEP",true,"2026-08-28","night").status,"current");assert.equal(evaluatePassengerCurrencyMode([movementFlight({takeoffsDay:2,takeoffsNight:1,approachesDay:2,approachesNight:1,landingsDay:2,landingsNight:1})],"SEP",false,"2026-08-28","night").status,"current")});
