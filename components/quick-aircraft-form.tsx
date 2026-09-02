@@ -21,6 +21,7 @@ const roles=[
   {value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},
 ];
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const classLabel=(value:string)=>value==="HELICOPTER"?"Helicopter":value;
 
 export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:()=>void}){
   const router=useRouter();
@@ -33,8 +34,8 @@ export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:(
     <label>Registration<input name="registration" placeholder="OK-ABC" autoCapitalize="characters" required autoFocus/><small>The registration shown in your logbook.</small></label>
     <label>Logbook<select name="evidence" value={logbook} onChange={event=>changeLogbook(event.target.value)}><option value="ULL">ULL</option><option value="EASA">EASA</option></select><small>Choose where flights with this aircraft normally belong.</small></label>
     <AircraftTypePicker requireMake={logbook==="EASA"} requireModel/>
-    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>changeClass(event.target.value)}>{AIRCRAFT_PROFILE_CLASSES.map(value=><option key={value}>{value}</option>)}</select><small>Confirm the actual Part-FCL class. Catalogue hints are informational only.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
-    {logbook==="EASA"&&aircraftClass==="TMG"?<label>Regulatory context<select name="regulatory_category" value={regulatoryCategory} onChange={event=>setRegulatoryCategory(event.target.value)}><option value="AEROPLANE">Aeroplane · Part-FCL</option><option value="SAILPLANE">Sailplane · SPL / Part-SFCL</option></select><small>Choose the normal regulatory context for this TMG.</small></label>:<><input type="hidden" name="regulatory_category" value={regulatoryCategory}/>{logbook==="EASA"&&aircraftClass==="GLIDER"?<div><strong>Regulatory context</strong><small>Sailplane · SPL / Part-SFCL</small></div>:null}</>}
+    {logbook==="EASA"?<label>Class / category<select name="aircraft_class" value={aircraftClass} onChange={event=>changeClass(event.target.value)}>{AIRCRAFT_PROFILE_CLASSES.map(value=><option key={value} value={value}>{classLabel(value)}</option>)}</select><small>For helicopters choose Helicopter; the actual Part-FCL type remains the aircraft type/model above. Catalogue hints are informational only.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
+    {logbook==="EASA"&&aircraftClass==="TMG"?<label>Regulatory context<select name="regulatory_category" value={regulatoryCategory} onChange={event=>setRegulatoryCategory(event.target.value)}><option value="AEROPLANE">Aeroplane · Part-FCL</option><option value="SAILPLANE">Sailplane · SPL / Part-SFCL</option></select><small>Choose the normal regulatory context for this TMG.</small></label>:<><input type="hidden" name="regulatory_category" value={regulatoryCategory}/>{logbook==="EASA"&&aircraftClass==="GLIDER"?<div><strong>Regulatory context</strong><small>Sailplane · SPL / Part-SFCL</small></div>:logbook==="EASA"&&aircraftClass==="HELICOPTER"?<div><strong>Regulatory context</strong><small>Helicopter · Part-FCL · type-specific</small></div>:null}</>}
     <input type="hidden" name="billing_share" value="1"/>
     <details className="quick-aircraft-advanced wide"><summary>More aircraft settings <small>optional</small></summary><div className="quick-aircraft-advanced-grid">
       <label>Variant<input name="aircraft_variant" placeholder="Optional variant"/></label>
