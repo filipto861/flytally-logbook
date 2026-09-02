@@ -2,6 +2,7 @@
 
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 import { AircraftTypePicker } from "@/components/aircraft-type-picker";
+import { AIRCRAFT_PROFILE_CLASSES,aircraftProfileRegulatoryCategory } from "@/lib/aircraft-profile-context";
 import { useEffect,useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -11,25 +12,23 @@ type AircraftSaveResult={ok:boolean;message:string};
 type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
 
 const t=(value:unknown)=>String(value??"");
-const classes=["SEP","TMG","MEP","SET","OTHER","GLIDER"];
 const roles=[
   {value:"PIC",label:"PIC — Pilot in command"},{value:"SOLO",label:"SOLO — Supervised solo"},{value:"DUAL",label:"DUAL — Training with instructor"},{value:"SPIC",label:"SPIC — Student pilot in command"},{value:"PICUS",label:"PICUS — PIC under supervision"},
   {value:"INSTRUCTOR",label:"INSTRUCTOR — Giving instruction"},{value:"EXAMINER",label:"EXAMINER"},{value:"SAFETY PILOT",label:"SAFETY PILOT"},{value:"CO-PILOT",label:"CO-PILOT"},{value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},{value:"PAX",label:"PAX"},{value:"OBSERVER",label:"OBSERVER"}
 ];
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-const categoryFor=(logbook:string,aircraftClass:string,current="")=>logbook==="ULL"?"ULL":aircraftClass==="GLIDER"?"SAILPLANE":["SEP","MEP","SET"].includes(aircraftClass)?"AEROPLANE":aircraftClass==="TMG"&&["AEROPLANE","SAILPLANE"].includes(current)?current:aircraftClass==="TMG"?"AEROPLANE":"OTHER";
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
-  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),initialLogbook=t(aircraft?.evidence)||"ULL",initialClass=t(aircraft?.aircraft_class)||(initialLogbook==="EASA"?"SEP":"ULL"),initialCategory=t(aircraft?.regulatory_category)||categoryFor(initialLogbook,initialClass);
+  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),initialLogbook=t(aircraft?.evidence)||"ULL",initialClass=t(aircraft?.aircraft_class)||(initialLogbook==="EASA"?"SEP":"ULL"),initialCategory=t(aircraft?.regulatory_category)||aircraftProfileRegulatoryCategory(initialLogbook,initialClass);
   const[logbook,setLogbook]=useState(initialLogbook),[aircraftClass,setAircraftClass]=useState(initialClass),[regulatoryCategory,setRegulatoryCategory]=useState(initialCategory);
-  const changeLogbook=(value:string)=>{const nextClass=value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass;setLogbook(value);setAircraftClass(nextClass);setRegulatoryCategory(categoryFor(value,nextClass,regulatoryCategory))};
-  const changeClass=(value:string)=>{setAircraftClass(value);setRegulatoryCategory(categoryFor(logbook,value,regulatoryCategory))};
+  const changeLogbook=(value:string)=>{const nextClass=value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass;setLogbook(value);setAircraftClass(nextClass);setRegulatoryCategory(aircraftProfileRegulatoryCategory(value,nextClass,regulatoryCategory))};
+  const changeClass=(value:string)=>{setAircraftClass(value);setRegulatoryCategory(aircraftProfileRegulatoryCategory(logbook,value,regulatoryCategory))};
   return <div className="aircraft-form-grid guided-aircraft-fields">
     {editing?<><input type="hidden" name="id" value={t(aircraft?.id)}/><input type="hidden" name="part_fcl_credit_class" value={t(aircraft?.part_fcl_credit_class)}/><input type="hidden" name="part_fcl_credit_basis" value={t(aircraft?.part_fcl_credit_basis)}/><input type="hidden" name="part_fcl_credit_from" value={t(aircraft?.part_fcl_credit_from).slice(0,10)}/></>:null}
     <label>Registration<input name="registration" defaultValue={t(aircraft?.registration)} placeholder="OK-ABC" required readOnly={editing}/><small>The registration used in flight entries.</small></label>
     <AircraftTypePicker initialMake={t(aircraft?.aircraft_make)} initialModel={t(aircraft?.aircraft_model)||t(aircraft?.aircraft_type)} initialIcao={t(aircraft?.icao_type)} requireMake={logbook==="EASA"} requireModel/>
     <label>Normal logbook<select name="evidence" value={logbook} onChange={event=>changeLogbook(event.target.value)}><option value="ULL">ULL</option><option value="EASA">EASA</option></select><small>Flights will use this by default.</small></label>
-    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>changeClass(event.target.value)}>{classes.map(value=><option key={value}>{value}</option>)}</select><small>Confirm the actual class separately. Catalogue hints are informational only; this class and regulatory context control the relevant flight fields.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
+    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>changeClass(event.target.value)}>{AIRCRAFT_PROFILE_CLASSES.map(value=><option key={value}>{value}</option>)}</select><small>Confirm the actual class separately. Catalogue hints are informational only; this class and regulatory context control the relevant flight fields.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
     {aircraftClass==="TMG"&&logbook==="EASA"?<label>Regulatory context<select name="regulatory_category" value={regulatoryCategory} onChange={event=>setRegulatoryCategory(event.target.value)}><option value="AEROPLANE">Aeroplane · Part-FCL</option><option value="SAILPLANE">Sailplane · SPL / Part-SFCL</option></select><small>TMG can support either regulatory context. This is the normal default and can be changed per flight.</small></label>:<><input type="hidden" name="regulatory_category" value={regulatoryCategory}/>{logbook==="EASA"&&aircraftClass==="GLIDER"?<div><strong>Regulatory context</strong><small>Sailplane · SPL / Part-SFCL</small></div>:null}</>}
     <details className="aircraft-advanced-fields"><summary><span>More aircraft settings</span><small>Optional defaults, identity details and pricing</small></summary><div className="aircraft-advanced-grid">
       <label>Variant<input name="aircraft_variant" defaultValue={t(aircraft?.aircraft_variant)} placeholder="Optional variant"/></label>

@@ -6,6 +6,7 @@ import { serializeBilling } from "@/lib/billing";
 import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
 import { ensureV162Schema } from "@/lib/v162-schema";
+import { normalizeAircraftProfileContext } from "@/lib/aircraft-profile-context";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
 function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print");}
 export type AircraftSaveResult={ok:boolean;message:string};
@@ -16,8 +17,9 @@ async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
   const easaClasses=["SEP","TMG","MEP","SET","OTHER","GLIDER"],aircraftClass=evidence==="ULL"?"ULL":requestedClass;
   if(evidence==="EASA"&&(!make||!model))return{ok:false,message:"An EASA aircraft profile requires both manufacturer (Make) and aircraft type/model."};
   if(evidence==="EASA"&&!easaClasses.includes(aircraftClass))return{ok:false,message:"Select a valid EASA aircraft class."};
-  const requestedCategory=s(form,"regulatory_category").toUpperCase(),allowedCategories=["AEROPLANE","SAILPLANE","ULL","OTHER"],regulatoryCategory=evidence==="ULL"?"ULL":aircraftClass==="GLIDER"?"SAILPLANE":["SEP","MEP","SET"].includes(aircraftClass)?"AEROPLANE":aircraftClass==="TMG"&&["AEROPLANE","SAILPLANE"].includes(requestedCategory)?requestedCategory:aircraftClass==="OTHER"&&allowedCategories.includes(requestedCategory)?requestedCategory:"OTHER";
-  if(aircraftClass==="TMG"&&!["AEROPLANE","SAILPLANE"].includes(regulatoryCategory))return{ok:false,message:"Choose whether this TMG normally belongs to the Part-FCL aeroplane or SPL sailplane context."};
+  const requestedCategory=s(form,"regulatory_category").toUpperCase(),normalizedContext=normalizeAircraftProfileContext(evidence,aircraftClass,requestedCategory);
+  if(!normalizedContext.context)return{ok:false,message:normalizedContext.error||"Select a valid aircraft profile."};
+  const regulatoryCategory=normalizedContext.context.regulatoryCategory;
   const creditRaw=s(form,"part_fcl_credit_class").toUpperCase(),creditClass=["SEP","TMG"].includes(creditRaw)?creditRaw:"",creditBasis=s(form,"part_fcl_credit_basis").slice(0,300),creditFrom=s(form,"part_fcl_credit_from");
   if(creditClass&&(!creditBasis||!validIsoDate(creditFrom)))return{ok:false,message:"Part-FCL credit needs a basis/reference and a valid-from date."};
   if(id){
@@ -27,6 +29,9 @@ async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
     if(initialPrice!==null&&initialPrice>0&&validIsoDate(validFrom))queries.push(sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) VALUES(${userId},${reg},${displayType},${validFrom},${initialPrice},NULL,'Initial rate') ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,source=EXCLUDED.source`);
     await sql.transaction(queries);
   }
+  const persisted=await sql`SELECT COALESCE(evidence,'') evidence,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1` as Array<{evidence:string;aircraft_class:string;regulatory_category:string}>;
+  const saved=persisted[0];
+  if(!saved||saved.evidence.toUpperCase()!==evidence||saved.aircraft_class.toUpperCase()!==aircraftClass||saved.regulatory_category.toUpperCase()!==regulatoryCategory){console.error("aircraft-profile-persistence-mismatch",{userId,reg,expected:{evidence,aircraftClass,regulatoryCategory},saved});return{ok:false,message:"Aircraft profile could not be verified after save. Please try again."};}
   refreshPricing();
   return{ok:true,message:id?"Aircraft profile saved.":"Aircraft added."};
 }

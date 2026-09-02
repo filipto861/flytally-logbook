@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AircraftTypePicker } from "@/components/aircraft-type-picker";
+import { AIRCRAFT_PROFILE_CLASSES,aircraftProfileRegulatoryCategory } from "@/lib/aircraft-profile-context";
 
 type AircraftSaveResult={ok:boolean;message:string};
 type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
 
-const classes=["SEP","TMG","MEP","SET","OTHER","GLIDER"];
 const roles=[
   {value:"PIC",label:"PIC — Pilot in command"},
   {value:"SOLO",label:"SOLO — Supervised solo"},
@@ -24,15 +24,17 @@ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"nume
 
 export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:()=>void}){
   const router=useRouter();
-  const[logbook,setLogbook]=useState("ULL"),[aircraftClass,setAircraftClass]=useState("ULL"),[saving,setSaving]=useState(false),[status,setStatus]=useState<AircraftSaveResult|null>(null);
-  const changeLogbook=(value:string)=>{setLogbook(value);setAircraftClass(value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass)};
+  const[logbook,setLogbook]=useState("ULL"),[aircraftClass,setAircraftClass]=useState("ULL"),[regulatoryCategory,setRegulatoryCategory]=useState("ULL"),[saving,setSaving]=useState(false),[status,setStatus]=useState<AircraftSaveResult|null>(null);
+  const changeLogbook=(value:string)=>{const nextClass=value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass;setLogbook(value);setAircraftClass(nextClass);setRegulatoryCategory(aircraftProfileRegulatoryCategory(value,nextClass,regulatoryCategory))};
+  const changeClass=(value:string)=>{setAircraftClass(value);setRegulatoryCategory(aircraftProfileRegulatoryCategory(logbook,value,regulatoryCategory))};
   const submit=async(form:FormData)=>{setSaving(true);setStatus(null);try{const result=await action(form);setStatus(result);if(result.ok){router.refresh();onSaved?.()}}catch{setStatus({ok:false,message:"Aircraft could not be saved."})}finally{setSaving(false)}};
   return <form action={submit} className="aircraft-dialog-form quick-aircraft-form">
     <div className="quick-aircraft-intro wide"><strong>Start with the aircraft identity.</strong><span>Search the aircraft catalogue first. If the type is missing, enter it manually below.</span></div>
     <label>Registration<input name="registration" placeholder="OK-ABC" autoCapitalize="characters" required autoFocus/><small>The registration shown in your logbook.</small></label>
     <label>Logbook<select name="evidence" value={logbook} onChange={event=>changeLogbook(event.target.value)}><option value="ULL">ULL</option><option value="EASA">EASA</option></select><small>Choose where flights with this aircraft normally belong.</small></label>
     <AircraftTypePicker requireMake={logbook==="EASA"} requireModel/>
-    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>setAircraftClass(event.target.value)}>{classes.map(value=><option key={value}>{value}</option>)}</select><small>Confirm the actual Part-FCL class. Catalogue hints are informational only.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
+    {logbook==="EASA"?<label>Class<select name="aircraft_class" value={aircraftClass} onChange={event=>changeClass(event.target.value)}>{AIRCRAFT_PROFILE_CLASSES.map(value=><option key={value}>{value}</option>)}</select><small>Confirm the actual Part-FCL class. Catalogue hints are informational only.</small></label>:<input type="hidden" name="aircraft_class" value="ULL"/>}
+    {logbook==="EASA"&&aircraftClass==="TMG"?<label>Regulatory context<select name="regulatory_category" value={regulatoryCategory} onChange={event=>setRegulatoryCategory(event.target.value)}><option value="AEROPLANE">Aeroplane · Part-FCL</option><option value="SAILPLANE">Sailplane · SPL / Part-SFCL</option></select><small>Choose the normal regulatory context for this TMG.</small></label>:<><input type="hidden" name="regulatory_category" value={regulatoryCategory}/>{logbook==="EASA"&&aircraftClass==="GLIDER"?<div><strong>Regulatory context</strong><small>Sailplane · SPL / Part-SFCL</small></div>:null}</>}
     <input type="hidden" name="billing_share" value="1"/>
     <details className="quick-aircraft-advanced wide"><summary>More aircraft settings <small>optional</small></summary><div className="quick-aircraft-advanced-grid">
       <label>Variant<input name="aircraft_variant" placeholder="Optional variant"/></label>
