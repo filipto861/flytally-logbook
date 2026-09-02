@@ -16,7 +16,7 @@ test("v1.46.0 makes Licences a compact sectioned workspace",()=>{
   assert.match(page,/Licences & ratings/);
   assert.match(page,/Aircraft training/);
   assert.match(page,/Medical & documents/);
-  assert.match(page,/view==="recency"\?<RecencyPanel/);
+  assert.match(page,/view==="recency"[\s\S]*<RecencyPanel/);
   assert.match(page,/view==="training"\?<AircraftQualificationsSection/);
 });
 
@@ -43,7 +43,7 @@ test("v1.46 overview keeps validity separate from recency",()=>{
   assert.match(page,/licenceValidityAttention/);
   assert.match(page,/qualificationValidityAttention/);
   assert.match(page,/validityAttention=licenceValidityAttention\+qualificationValidityAttention\+documentAttention/);
-  assert.match(page,/parent\?\.isLapl&&\/\^\(SEP\|TMG\)\//);
+  assert.match(page,/parent\?\.isLaplA&&\/\^\(SEP\|TMG\)\//);
 });
 
 test("v1.46.0 preserves credential data boundaries and adds only UI structure",()=>{

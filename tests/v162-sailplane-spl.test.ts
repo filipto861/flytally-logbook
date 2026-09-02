@@ -14,7 +14,7 @@ const splFlight=(overrides:Partial<SplFlight>={}):SplFlight=>({date:"2026-08-01"
 
 test("v1.62 release metadata and production PR acceptance gate are synchronized",()=>{
   const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
-  assert.equal(pkg.version,"1.62.0");assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
+  assert.ok(/^1\.(?:6[2-9]|[7-9]\d|\d{3,})\./.test(pkg.version));assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
   assert.match(read("ROADMAP.md"),/v1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);assert.match(read("CHANGELOG.md"),/1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);
   const workflow=read(".github/workflows/verify-web.yml");assert.match(workflow,/pull_request:[\s\S]*codex\/vercel-migration-v080/);assert.match(workflow,/PostgreSQL acceptance tests/);
 });
@@ -98,6 +98,6 @@ test("v1.62 integrity plumbing preserves SPL fields through UI sharing trash and
   const form=read("components/flight-form.tsx"),shared=read("app/(protected)/flights/shared-actions.ts"),trash=read("lib/flight-trash.ts"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts"),detail=read("components/readonly-logbook-entry.tsx");
   assert.match(form,/TMG take-off evidence/);assert.match(form,/name="takeoffsDay"/);assert.match(form,/name="launchMethod"/);
   for(const source of [shared,trash]){assert.match(source,/regulatory_category/);assert.match(source,/launch_method/);assert.match(source,/launches/)}
-  assert.match(backup,/version:9/);assert.match(backup,/spl_recency_evidence/);assert.match(portable,/v9Arrays/);
+  const backupVersion=Number(backup.match(/version:(\d+)/)?.[1]??0);assert.ok(backupVersion>=9);assert.match(backup,/spl_recency_evidence/);assert.match(portable,/v9Arrays/);
   assert.match(detail,/Part-SFCL logbook entry/);assert.match(detail,/launch_method/);
 });

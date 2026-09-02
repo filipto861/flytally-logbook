@@ -12,14 +12,10 @@ function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/n
 export type AircraftSaveResult={ok:boolean;message:string};
 async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
   const {userId}=await requireUser();await ensureV162Schema();const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return{ok:false,message:"Aircraft registration is required."};
-  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),evidence=s(form,"evidence").toUpperCase(),requestedClass=s(form,"aircraft_class").toUpperCase();
-  if(!["ULL","EASA"].includes(evidence))return{ok:false,message:"Select a valid normal logbook."};
-  const easaClasses=["SEP","TMG","MEP","SET","OTHER","GLIDER"],aircraftClass=evidence==="ULL"?"ULL":requestedClass;
+  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),requestedEvidence=s(form,"evidence").toUpperCase(),requestedClass=s(form,"aircraft_class").toUpperCase(),requestedCategory=s(form,"regulatory_category").toUpperCase(),normalized=normalizeAircraftProfileContext(requestedEvidence,requestedClass,requestedCategory);
+  if(!normalized.context)return{ok:false,message:normalized.error||"Select a valid aircraft profile."};
+  const {evidence,aircraftClass,regulatoryCategory}=normalized.context;
   if(evidence==="EASA"&&(!make||!model))return{ok:false,message:"An EASA aircraft profile requires both manufacturer (Make) and aircraft type/model."};
-  if(evidence==="EASA"&&!easaClasses.includes(aircraftClass))return{ok:false,message:"Select a valid EASA aircraft class."};
-  const requestedCategory=s(form,"regulatory_category").toUpperCase(),normalizedContext=normalizeAircraftProfileContext(evidence,aircraftClass,requestedCategory);
-  if(!normalizedContext.context)return{ok:false,message:normalizedContext.error||"Select a valid aircraft profile."};
-  const regulatoryCategory=normalizedContext.context.regulatoryCategory;
   const creditRaw=s(form,"part_fcl_credit_class").toUpperCase(),creditClass=["SEP","TMG"].includes(creditRaw)?creditRaw:"",creditBasis=s(form,"part_fcl_credit_basis").slice(0,300),creditFrom=s(form,"part_fcl_credit_from");
   if(creditClass&&(!creditBasis||!validIsoDate(creditFrom)))return{ok:false,message:"Part-FCL credit needs a basis/reference and a valid-from date."};
   if(id){

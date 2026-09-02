@@ -3,10 +3,11 @@ import { sql } from "@/lib/db";
 import { DATABASE_SCHEMA_VERSION } from "@/lib/migration-plan";
 import { portableBackupDigest,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { ensureV162Schema } from "@/lib/v162-schema";
+import { ensureV163Schema } from "@/lib/v163-schema";
 
 export async function buildAccountBackup(userId:number):Promise<{backup:PortableBackup;json:string;digest:string}>{
-  await ensureV162Schema();
-  const [flights,aircraft,rates,airports,expiries,settings,tracks,trackPoints,audit,fstdSessions,flightRevisions,fstdRevisions,deletedFlights,connections,participations,approvals,licences,qualifications,notifications,verifications,connectionAudit,expenses,splEvidence,user]=await Promise.all([
+  await Promise.all([ensureV162Schema(),ensureV163Schema()]);
+  const [flights,aircraft,rates,airports,expiries,settings,tracks,trackPoints,audit,fstdSessions,flightRevisions,fstdRevisions,deletedFlights,connections,participations,approvals,licences,qualifications,notifications,verifications,connectionAudit,expenses,splEvidence,helicopterEvidence,user]=await Promise.all([
     sql`SELECT * FROM flights WHERE user_id=${userId} ORDER BY date,off_block,id`,
     sql`SELECT * FROM aircraft WHERE user_id=${userId} ORDER BY registration,id`,
     sql`SELECT * FROM rates WHERE user_id=${userId} ORDER BY registration,valid_from,id`,
@@ -30,10 +31,11 @@ export async function buildAccountBackup(userId:number):Promise<{backup:Portable
     sql`SELECT * FROM connection_audit_log WHERE actor_user_id=${userId} OR subject_user_id=${userId} ORDER BY id`,
     sql`SELECT * FROM flight_expenses WHERE user_id=${userId} ORDER BY flight_id,id`,
     sql`SELECT * FROM spl_recency_evidence WHERE user_id=${userId} ORDER BY evidence_date,id`,
+    sql`SELECT * FROM helicopter_recency_evidence WHERE user_id=${userId} ORDER BY helicopter_type,evidence_date,id`,
     sql`SELECT id,email,display_name,slug,role,created_at,updated_at FROM users WHERE id=${userId}`,
   ]) as Array<Array<BackupRow>>;
-  const counts={flights:flights.length,aircraft:aircraft.length,rates:rates.length,airports:airports.length,expiries:expiries.length,settings:settings.length,flight_tracks:tracks.length,track_points:trackPoints.length,audit_log:audit.length,fstd_sessions:fstdSessions.length,flight_certified_revisions:flightRevisions.length,fstd_certified_revisions:fstdRevisions.length,deleted_flights:deletedFlights.length,pilot_connections:connections.length,flight_participations:participations.length,instructor_flight_approvals:approvals.length,pilot_licences:licences.length,pilot_qualifications:qualifications.length,user_notifications:notifications.length,flight_verifications:verifications.length,connection_audit_log:connectionAudit.length,flight_expenses:expenses.length,spl_recency_evidence:splEvidence.length};
-  const payload={format:"pilot-logbook-portable",version:9,schema_version:DATABASE_SCHEMA_VERSION,exported_at:new Date().toISOString(),profile:user[0]??{},counts,flights,aircraft,rates,airports,expiries,settings,flight_tracks:tracks,track_points:trackPoints,audit_log:audit,fstd_sessions:fstdSessions,flight_certified_revisions:flightRevisions,fstd_certified_revisions:fstdRevisions,deleted_flights:deletedFlights,pilot_connections:connections,flight_participations:participations,instructor_flight_approvals:approvals,pilot_licences:licences,pilot_qualifications:qualifications,user_notifications:notifications,flight_verifications:verifications,connection_audit_log:connectionAudit,flight_expenses:expenses,spl_recency_evidence:splEvidence};
+  const counts={flights:flights.length,aircraft:aircraft.length,rates:rates.length,airports:airports.length,expiries:expiries.length,settings:settings.length,flight_tracks:tracks.length,track_points:trackPoints.length,audit_log:audit.length,fstd_sessions:fstdSessions.length,flight_certified_revisions:flightRevisions.length,fstd_certified_revisions:fstdRevisions.length,deleted_flights:deletedFlights.length,pilot_connections:connections.length,flight_participations:participations.length,instructor_flight_approvals:approvals.length,pilot_licences:licences.length,pilot_qualifications:qualifications.length,user_notifications:notifications.length,flight_verifications:verifications.length,connection_audit_log:connectionAudit.length,flight_expenses:expenses.length,spl_recency_evidence:splEvidence.length,helicopter_recency_evidence:helicopterEvidence.length};
+  const payload={format:"pilot-logbook-portable",version:10,schema_version:DATABASE_SCHEMA_VERSION,exported_at:new Date().toISOString(),profile:user[0]??{},counts,flights,aircraft,rates,airports,expiries,settings,flight_tracks:tracks,track_points:trackPoints,audit_log:audit,fstd_sessions:fstdSessions,flight_certified_revisions:flightRevisions,fstd_certified_revisions:fstdRevisions,deleted_flights:deletedFlights,pilot_connections:connections,flight_participations:participations,instructor_flight_approvals:approvals,pilot_licences:licences,pilot_qualifications:qualifications,user_notifications:notifications,flight_verifications:verifications,connection_audit_log:connectionAudit,flight_expenses:expenses,spl_recency_evidence:splEvidence,helicopter_recency_evidence:helicopterEvidence};
   const digest=await portableBackupDigest(JSON.stringify(payload)),backup={...payload,integrity:{algorithm:"SHA-256",payload_sha256:digest}} satisfies PortableBackup;
   return{backup,json:JSON.stringify(backup,null,2),digest};
 }

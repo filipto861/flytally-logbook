@@ -39,7 +39,7 @@ test("v1.57 exposes live BLOCK and AIR feedback without changing flight parsing"
 
 test("v1.57 names missing required choices and keeps them discoverable",()=>{
   assert.match(form,/Complete before save:/);
-  for(const label of ["Date","Aircraft","Role","Logbook","Aircraft class","Billing"])assert.ok(form.includes(`"${label}"`));
+  for(const label of ["Date","Aircraft","Role","Logbook","Aircraft class / category","Billing"])assert.ok(form.includes(`"${label}"`));
   assert.match(audit,/Auto-open is one-way assistance/);
 });
 

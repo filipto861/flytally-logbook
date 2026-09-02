@@ -14,6 +14,7 @@ test("v1.62 aircraft first-save normalization covers every supported profile cla
     {evidence:"EASA",aircraftClass:"MEP",category:"",expected:{evidence:"EASA",aircraftClass:"MEP",regulatoryCategory:"AEROPLANE"}},
     {evidence:"EASA",aircraftClass:"SET",category:"",expected:{evidence:"EASA",aircraftClass:"SET",regulatoryCategory:"AEROPLANE"}},
     {evidence:"EASA",aircraftClass:"GLIDER",category:"",expected:{evidence:"EASA",aircraftClass:"GLIDER",regulatoryCategory:"SAILPLANE"}},
+    {evidence:"EASA",aircraftClass:"HELICOPTER",category:"",expected:{evidence:"EASA",aircraftClass:"HELICOPTER",regulatoryCategory:"HELICOPTER"}},
     {evidence:"EASA",aircraftClass:"TMG",category:"AEROPLANE",expected:{evidence:"EASA",aircraftClass:"TMG",regulatoryCategory:"AEROPLANE"}},
     {evidence:"EASA",aircraftClass:"TMG",category:"SAILPLANE",expected:{evidence:"EASA",aircraftClass:"TMG",regulatoryCategory:"SAILPLANE"}},
     {evidence:"EASA",aircraftClass:"OTHER",category:"OTHER",expected:{evidence:"EASA",aircraftClass:"OTHER",regulatoryCategory:"OTHER"}},
@@ -48,7 +49,7 @@ test("Quick Add and Aircraft Manager submit the same regulatory profile fields o
 
 test("server canonicalizes and verifies the persisted first-save profile",()=>{
   const actions=read("app/(protected)/database/actions.ts");
-  assert.match(actions,/normalizeAircraftProfileContext\(evidence,aircraftClass,requestedCategory\)/);
+  assert.match(actions,/normalizeAircraftProfileContext\([^)]*requestedCategory\)/);
   assert.match(actions,/INSERT INTO aircraft[\s\S]*aircraft_class,regulatory_category,evidence/);
   assert.match(actions,/ON CONFLICT\(user_id,registration\) DO UPDATE SET[\s\S]*aircraft_class=EXCLUDED[.]aircraft_class[\s\S]*regulatory_category=EXCLUDED[.]regulatory_category[\s\S]*evidence=EXCLUDED[.]evidence/);
   assert.match(actions,/SELECT COALESCE\(evidence,''\) evidence,COALESCE\(aircraft_class,''\) aircraft_class,COALESCE\(regulatory_category,''\) regulatory_category FROM aircraft/);
@@ -56,7 +57,7 @@ test("server canonicalizes and verifies the persisted first-save profile",()=>{
 });
 
 test("first-save normalization rejects invalid combinations rather than silently falling back to ULL",()=>{
-  assert.match(normalizeAircraftProfileContext("EASA","ULL","").error??"",/EASA aircraft class/i);
+  assert.match(normalizeAircraftProfileContext("EASA","ULL","").error??"",/aircraft class or category/i);
   assert.match(normalizeAircraftProfileContext("","SEP","").error??"",/normal logbook/i);
   assert.equal(normalizeAircraftProfileContext("EASA","GLIDER","SAILPLANE").context?.evidence,"EASA");
 });
