@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { fcl050FlightCompliance } from "../lib/fcl050-compliance.ts";
 import { normalizeProfessionalOperationContext,roleRequiresMultiPilotOperation,supportsProfessionalContext } from "../lib/professional-context.ts";
 import { professionalCreditableMinutes,professionalExperienceSummary } from "../lib/professional-experience.ts";
 
@@ -23,6 +24,9 @@ test("v1.66 co-pilot functions require an explicit multi-pilot operation",()=>{
   assert.equal(roleRequiresMultiPilotOperation("CRUISE-RELIEF CO-PILOT"),true);
   assert.equal(roleRequiresMultiPilotOperation("PIC"),false);
   assert.equal(roleRequiresMultiPilotOperation("PICUS"),false);
+  const base={evidence:"EASA",date:"2026-09-03",departure:"LKPR",arrival:"EDDF",off_block:"10:00",on_block:"11:00",registration:"OK-ABC",aircraft_make:"Test",aircraft_model:"Jet",engine_type:"ME",operation_type:"SP",role:"CO-PILOT",commander:"Captain",copilot_minutes:60,pic_minutes:0,dual_minutes:0,instructor_minutes:0,landings_day:1,landings_night:0,starts:1};
+  assert.ok(fcl050FlightCompliance(base).some(item=>item.code==="copilot_requires_mp"&&item.severity==="error"));
+  assert.ok(!fcl050FlightCompliance({...base,operation_type:"MP"}).some(item=>item.code==="copilot_requires_mp"));
 });
 
 test("v1.66 professional experience excludes uncertified and non-Part-FCL records",()=>{
