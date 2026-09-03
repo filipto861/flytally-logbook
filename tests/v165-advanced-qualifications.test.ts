@@ -13,6 +13,7 @@ const read=(relative:string)=>fs.readFileSync(path.join(root,relative),"utf8");
 test("v1.65 separates pilot IR from IRI instructor privileges",()=>{
   assert.equal(isAeroplaneIrQualification("IR(A)"),true);
   assert.equal(isAeroplaneIrQualification("IRI(A)"),false);
+  assert.equal(isAeroplaneIrQualification("BIR(A)"),false);
   assert.deepEqual(classifyQualificationLabel("IR(A)").family,"INSTRUMENT");
   assert.deepEqual(classifyQualificationLabel("IRI(A)").family,"INSTRUCTOR");
 });
@@ -75,8 +76,15 @@ test("v1.65 structured qualification fields stay inside the existing portable qu
   assert.match(panel,/does not issue, extend, revalidate or renew/i);
 });
 
-test("v1.65 helicopter and balloon recency services understand confirmed structure",()=>{
-  const helicopter=read("lib/helicopter-recency-service.ts"),balloon=read("lib/balloon-recency-service.ts");
+test("v1.65 category recency services understand confirmed structure",()=>{
+  const aeroplane=read("lib/recency-service.ts"),spl=read("lib/spl-recency-service.ts"),helicopter=read("lib/helicopter-recency-service.ts"),balloon=read("lib/balloon-recency-service.ts");
+  assert.match(aeroplane,/confirmedQualificationMatches\(row,"INSTRUMENT","AEROPLANE","PILOT"\)/);
+  assert.match(aeroplane,/isAeroplaneIrQualification\(qualificationLogicScope\(row\)\)/);
+  assert.match(aeroplane,/classForRecord/);
+  assert.match(aeroplane,/ensureV165Schema/);
+  assert.match(spl,/confirmedQualificationMatches\(row,"CLASS_TYPE","SAILPLANE","PILOT"\)/);
+  assert.match(spl,/confirmedQualificationMatches\(row,"CLASS_TYPE","AEROPLANE","PILOT"\)/);
+  assert.match(spl,/ensureV165Schema/);
   assert.match(helicopter,/confirmedQualificationMatches\(row,"INSTRUMENT","HELICOPTER","PILOT"\)/);
   assert.match(helicopter,/classification_source/);
   assert.match(balloon,/confirmedQualificationMatches\(row,"BALLOON_PRIVILEGE","BALLOON","PILOT"\)/);
