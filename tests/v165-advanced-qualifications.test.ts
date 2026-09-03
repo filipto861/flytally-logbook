@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { classifyQualificationLabel } from "../lib/qualification-structure.ts";
 import { QUALIFICATION_CATALOG,qualificationCatalogEntry } from "../lib/qualification-catalog.ts";
+import { confirmedQualificationMatches,qualificationLogicScope } from "../lib/qualification-record.ts";
 import { isAeroplaneIrQualification } from "../lib/regulatory-qualification.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
@@ -28,6 +29,8 @@ test("v1.65 recognises exact instructor examiner and balloon privilege families"
   assert.deepEqual(classifyQualificationLabel("FE(A)"),{family:"EXAMINER",category:"AEROPLANE",role:"EXAMINER",scope:"FE(A)",confidence:"exact"});
   assert.equal(classifyQualificationLabel("Hot-air balloon","BPL").family,"BALLOON_PRIVILEGE");
   assert.equal(classifyQualificationLabel("Tethered balloon","BPL").family,"OPERATIONAL");
+  assert.equal(classifyQualificationLabel("Advanced aerobatic (S)","SPL").category,"SAILPLANE");
+  assert.equal(classifyQualificationLabel("Commercial(B)","BPL").category,"BALLOON");
 });
 
 test("v1.65 never guesses an unknown aircraft type privilege from its label",()=>{
@@ -39,6 +42,13 @@ test("v1.65 never guesses an unknown aircraft type privilege from its label",()=
   assert.equal(contextual.family,"OTHER");
   assert.equal(contextual.category,"HELICOPTER");
   assert.equal(contextual.confidence,"context");
+});
+
+test("v1.65 confirmed structure takes precedence over a legacy label without changing validity",()=>{
+  const row={qualification_type:"CUSTOM",classification_source:"USER_CONFIRMED",qualification_family:"INSTRUMENT",regulatory_category:"HELICOPTER",qualification_scope:"IR(H)",privilege_role:"PILOT"};
+  assert.equal(qualificationLogicScope(row),"IR(H)");
+  assert.equal(confirmedQualificationMatches(row,"INSTRUMENT","HELICOPTER","PILOT"),true);
+  assert.equal(confirmedQualificationMatches(row,"INSTRUCTOR","HELICOPTER"),false);
 });
 
 test("v1.65 regulatory catalog covers advanced Part-FCL, SFCL and BFCL families",()=>{
@@ -63,4 +73,12 @@ test("v1.65 structured qualification fields stay inside the existing portable qu
   assert.match(layout,/await ensureRuntimeSchema\(\)/);
   assert.match(panel,/USER_CONFIRMED/);
   assert.match(panel,/does not issue, extend, revalidate or renew/i);
+});
+
+test("v1.65 helicopter and balloon recency services understand confirmed structure",()=>{
+  const helicopter=read("lib/helicopter-recency-service.ts"),balloon=read("lib/balloon-recency-service.ts");
+  assert.match(helicopter,/confirmedQualificationMatches\(row,"INSTRUMENT","HELICOPTER","PILOT"\)/);
+  assert.match(helicopter,/classification_source/);
+  assert.match(balloon,/confirmedQualificationMatches\(row,"BALLOON_PRIVILEGE","BALLOON","PILOT"\)/);
+  assert.match(balloon,/qualificationLogicScope/);
 });
