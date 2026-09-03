@@ -5,9 +5,10 @@ import { portableBackupDigest,type BackupRow,type PortableBackup } from "@/lib/p
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
+import { ensureV165Schema } from "@/lib/v165-schema";
 
 export async function buildAccountBackup(userId:number):Promise<{backup:PortableBackup;json:string;digest:string}>{
-  await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema()]);
+  await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema()]);
   const [flights,aircraft,rates,airports,expiries,settings,tracks,trackPoints,audit,fstdSessions,flightRevisions,fstdRevisions,deletedFlights,connections,participations,approvals,licences,qualifications,notifications,verifications,connectionAudit,expenses,splEvidence,helicopterEvidence,bplEvidence,user]=await Promise.all([
     sql`SELECT * FROM flights WHERE user_id=${userId} ORDER BY date,off_block,id`,
     sql`SELECT * FROM aircraft WHERE user_id=${userId} ORDER BY registration,id`,

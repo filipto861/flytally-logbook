@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -14,7 +15,8 @@ test("global shell exposes the package version and support feedback link",()=>{
   assert.match(shell,/FlyTally feedback · v/);
 });
 
-test("v1.64 development metadata is synchronized",()=>{
+test("v1.64+ development metadata remains synchronized with the global shell",()=>{
   const pkg=JSON.parse(read("package.json")) as {version?:string};
-  assert.equal(pkg.version,"1.64.0");
+  assert.match(String(pkg.version??""),/^\d+\.\d+\.\d+$/);
+  assert.equal(releaseAtLeast(String(pkg.version??"0.0.0"),1,64,0),true);
 });
