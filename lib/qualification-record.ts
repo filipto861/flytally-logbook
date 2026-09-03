@@ -1,4 +1,4 @@
-import { classifyQualificationLabel,type QualificationCategory,type QualificationFamily,type QualificationRole } from "@/lib/qualification-structure";
+import { classifyQualificationLabel,type QualificationCategory,type QualificationFamily,type QualificationRole } from "./qualification-structure.ts";
 
 const t=(value:unknown)=>String(value??"").trim();
 const upper=(value:unknown)=>t(value).toUpperCase();
