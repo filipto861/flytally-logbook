@@ -12,11 +12,7 @@ const categoryFromSuffix=(value:string):QualificationCategory=>value.endsWith("(
 const licenceCategory=(value:unknown):QualificationCategory=>{const v=compact(value);if(/\(A\)$/.test(v))return"AEROPLANE";if(/\(H\)$/.test(v))return"HELICOPTER";if(v==="SPL")return"SAILPLANE";if(v==="BPL")return"BALLOON";if(/\(G\)$/.test(v)||v==="GPL")return"GYROPLANE";return"OTHER"};
 const normalizedScope=(value:unknown)=>text(value).replace(/_/g," ").replace(/\s+/g," ");
 
-/**
- * Conservative display classifier for legacy qualification labels.
- * It never creates or extends a legal privilege. Unknown aircraft/type labels stay OTHER
- * until the pilot explicitly confirms their structured classification.
- */
+/** Conservative display classifier for legacy labels. It never creates or extends a legal privilege. */
 export function classifyQualificationLabel(value:unknown,parentLicence?:unknown):QualificationClassification{
   const raw=compact(value),scope=normalizedScope(value),parent=licenceCategory(parentLicence);
   if(!raw)return{family:"OTHER",category:parent,role:"OTHER",scope:"",confidence:"unknown"};
@@ -27,19 +23,23 @@ export function classifyQualificationLabel(value:unknown,parentLicence?:unknown)
   if(raw==="IR"||raw==="IR(A)"||/^(?:SE|ME)[-\/]?IR\(A\)$/.test(raw)||/^IR\(A\)[-\/]?(?:SE|ME)$/.test(raw)||raw==="BIR"||raw==="BIR(A)")return{family:"INSTRUMENT",category:"AEROPLANE",role:"PILOT",scope,confidence:"exact"};
   if(raw==="IR(H)")return{family:"INSTRUMENT",category:"HELICOPTER",role:"PILOT",scope,confidence:"exact"};
 
-  const instructor=raw.match(/^(FI|CRI|IRI|TRI|SFI|MCCI|STI)\(([AHSBG])\)$/);
-  if(instructor)return{family:"INSTRUCTOR",category:categoryFromSuffix(raw),role:"INSTRUCTOR",scope,confidence:"exact"};
-  const examiner=raw.match(/^(FE|CRE|IRE|TRE|SFE|FIE)\(([AHSBG])\)$/);
-  if(examiner)return{family:"EXAMINER",category:categoryFromSuffix(raw),role:"EXAMINER",scope,confidence:"exact"};
+  if(/^(FI|CRI|IRI|TRI|SFI|MCCI|STI)\(([AHSBG])\)$/.test(raw))return{family:"INSTRUCTOR",category:categoryFromSuffix(raw),role:"INSTRUCTOR",scope,confidence:"exact"};
+  if(/^(FE|CRE|IRE|TRE|SFE|FIE)\(([AHSBG])\)$/.test(raw))return{family:"EXAMINER",category:categoryFromSuffix(raw),role:"EXAMINER",scope,confidence:"exact"};
 
-  if(/^NIGHT\(([AH])\)$/.test(raw))return{family:"OPERATIONAL",category:categoryFromSuffix(raw),role:"PILOT",scope,confidence:"exact"};
+  if(/^NIGHT\(([AHB])\)$/.test(raw))return{family:"OPERATIONAL",category:categoryFromSuffix(raw),role:"PILOT",scope,confidence:"exact"};
+  if(raw==="NIGHT"&&parent==="BALLOON")return{family:"OPERATIONAL",category:"BALLOON",role:"PILOT",scope,confidence:"context"};
+  if(raw==="NIGHT"&&parent==="SAILPLANE")return{family:"OPERATIONAL",category:"SAILPLANE",role:"PILOT",scope,confidence:"context"};
   if(/^(AEROBATIC|AEROBATICS)(\([AS]\))?$/.test(raw))return{family:"OPERATIONAL",category:raw.includes("(A)")?"AEROPLANE":raw.includes("(S)")?"SAILPLANE":"MULTI_CATEGORY",role:"PILOT",scope,confidence:"exact"};
+  if(/^(BASIC|ADVANCED)AEROBATIC(\(S\))?$/.test(raw))return{family:"OPERATIONAL",category:"SAILPLANE",role:"PILOT",scope,confidence:"exact"};
+  if(raw==="TMGNIGHT"||raw==="SAILPLANECLOUD"||raw==="CLOUD"&&parent==="SAILPLANE")return{family:"OPERATIONAL",category:"SAILPLANE",role:"PILOT",scope,confidence:raw==="CLOUD"?"context":"exact"};
+  if(/^(SAILPLANE-TOWING|BANNER-TOWING)\(S\)$/.test(raw))return{family:"OPERATIONAL",category:"SAILPLANE",role:"PILOT",scope,confidence:"exact"};
   if(/^(TOWING|SAILPLANE-TOWING|BANNER-TOWING)(\(A\))?$/.test(raw))return{family:"OPERATIONAL",category:"AEROPLANE",role:"PILOT",scope,confidence:"exact"};
   if(/^MOUNTAIN(\(A\))?$/.test(raw))return{family:"OPERATIONAL",category:"AEROPLANE",role:"PILOT",scope,confidence:"exact"};
 
   const balloon=scope.replace(/[-_]/g," ").replace(/\s+/g," ");
-  if(["HOT AIR BALLOON","GAS BALLOON","HOT AIR AIRSHIP","MIXED BALLOON"].includes(balloon))return{family:"BALLOON_PRIVILEGE",category:"BALLOON",role:"PILOT",scope:balloon,confidence:"exact"};
+  if(["HOT AIR BALLOON","GAS BALLOON","HOT AIR AIRSHIP","MIXED BALLOON"].includes(balloon)||/^HAB[- ]?[ABCD]$/.test(balloon))return{family:"BALLOON_PRIVILEGE",category:"BALLOON",role:"PILOT",scope:balloon,confidence:"exact"};
   if(balloon==="TETHERED"||balloon.includes("TETHERED BALLOON"))return{family:"OPERATIONAL",category:"BALLOON",role:"PILOT",scope,confidence:"exact"};
+  if((raw==="COMMERCIAL"||raw==="COMMERCIAL(B)"||raw==="COMMERCIALOPERATIONRATING")&&parent==="BALLOON")return{family:"OPERATIONAL",category:"BALLOON",role:"PILOT",scope,confidence:raw==="COMMERCIAL(B)"?"exact":"context"};
 
   return{family:"OTHER",category:parent,role:"OTHER",scope,confidence:parent!=="OTHER"?"context":"unknown"};
 }
