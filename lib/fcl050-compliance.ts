@@ -1,5 +1,6 @@
 import { allocatedFunctionTimes } from "./easa-logbook.ts";
 import { isAuxiliaryLogbookRole,pilotInCommandName } from "./logbook-print.ts";
+import { roleRequiresMultiPilotOperation } from "./professional-context.ts";
 
 export type ComplianceSeverity="error"|"warning";
 export type ComplianceIssue={code:string;field:string;message:string;severity:ComplianceSeverity};
@@ -31,6 +32,7 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(!text(row.aircraft_model)&&!text(row.aircraft_type))issues.push(issue("aircraft_model","aircraft","Aircraft model is required for the FCL.050 aircraft identity."));
   if(!["SE","ME"].includes(upper(row.engine_type)))issues.push(issue("engine_type","engine_type","Select SE or ME."));
   if(!["SP","MP"].includes(upper(row.operation_type)))issues.push(issue("operation_type","operation_type","Select single-pilot or multi-pilot operation."));
+  if(roleRequiresMultiPilotOperation(role)&&upper(row.operation_type)!=="MP")issues.push(issue("copilot_requires_mp","operation_type",`${role} time requires an explicitly recorded multi-pilot operation.`));
   if(auxiliary)issues.push(issue("non_creditable_role","role",`${role} is retained as a certified reference record but is excluded from creditable FCL.050 flight-time totals.`,"warning"));
   else if(!EASA_FUNCTIONS.includes(role))issues.push(issue("pilot_function","role","Select a creditable AMC1 FCL.050 pilot function before certification."));
   if(!pilotInCommandName(row,pilotName))issues.push(issue("pic_name","commander","Name of PIC is required."));
