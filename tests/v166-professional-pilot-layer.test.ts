@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { flightCertificationHash,flightCertificationPayload } from "../lib/certification-integrity.ts";
 import { fcl050FlightCompliance } from "../lib/fcl050-compliance.ts";
 import { normalizeProfessionalOperationContext,roleRequiresMultiPilotOperation,supportsProfessionalContext } from "../lib/professional-context.ts";
 import { professionalCreditableMinutes,professionalExperienceSummary } from "../lib/professional-experience.ts";
@@ -27,6 +28,15 @@ test("v1.66 co-pilot functions require an explicit multi-pilot operation",()=>{
   const base={evidence:"EASA",date:"2026-09-03",departure:"LKPR",arrival:"EDDF",off_block:"10:00",on_block:"11:00",registration:"OK-ABC",aircraft_make:"Test",aircraft_model:"Jet",engine_type:"ME",operation_type:"SP",role:"CO-PILOT",commander:"Captain",copilot_minutes:60,pic_minutes:0,dual_minutes:0,instructor_minutes:0,landings_day:1,landings_night:0,starts:1};
   assert.ok(fcl050FlightCompliance(base).some(item=>item.code==="copilot_requires_mp"&&item.severity==="error"));
   assert.ok(!fcl050FlightCompliance({...base,operation_type:"MP"}).some(item=>item.code==="copilot_requires_mp"));
+});
+
+test("v1.66 certification v8 protects professional context while v7 remains bit-compatible",()=>{
+  const row:Record<string,unknown>={id:166,date:"2026-09-03",evidence:"EASA",registration:"OK-JET",aircraft_make:"Example",aircraft_model:"Jet",aircraft_type:"JET",aircraft_class:"MEP",regulatory_category:"AEROPLANE",departure:"LKPR",arrival:"EDDF",off_block:"10:00",takeoff:"10:10",landing:"11:20",on_block:"11:30",operation_type:"MP",engine_type:"ME",landings_day:1,landings_night:0,night_minutes:0,ifr_minutes:80,pic_minutes:0,copilot_minutes:90,dual_minutes:0,instructor_minutes:0,commander:"Captain",role:"CO-PILOT",purpose_code:"",movement_evidence_recorded:true,takeoffs_day:1,takeoffs_night:0,approaches_day:1,approaches_night:0,launch_method:"",launches:0,balloon_class:"",balloon_group:"",balloon_operation:"",record_revision:1,operator_name:"Example Air",flight_number:"EX166",operation_context:"CAT"};
+  const changed={...row,flight_number:"EX167"};
+  assert.equal(flightCertificationHash(row,7,7),flightCertificationHash(changed,7,7));
+  assert.notEqual(flightCertificationHash(row,7,8),flightCertificationHash(changed,7,8));
+  assert.deepEqual((flightCertificationPayload(row,7,8) as Record<string,unknown>).professionalContext,{operatorName:"Example Air",flightNumber:"EX166",operationContext:"CAT"});
+  assert.match(read("app/(protected)/flights/certification-actions.ts"),/certification_version=8/);
 });
 
 test("v1.66 professional experience excludes uncertified and non-Part-FCL records",()=>{
