@@ -27,7 +27,7 @@ async function loadIntelligentHistory(userId:number,limit:number):Promise<Intell
     regulatoryCategory:text(row.regulatory_category).toUpperCase(),
     evidence:text(row.evidence).toUpperCase(),
     role:text(row.role).toUpperCase(),
-    operationType:text(row.operation_type).toUpperCase()||"SP",
+    operationType:text(row.operation_type).toUpperCase(),
     engineType:text(row.engine_type).toUpperCase(),
     operatorName:text(row.operator_name),
     flightNumber:text(row.flight_number).toUpperCase(),
