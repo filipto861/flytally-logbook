@@ -9,7 +9,7 @@ export type PilotRoleBreakdown={role:string;flights:number;minutes:number};
 export type PilotAircraftTypeBreakdown={aircraftType:string;registrations:number;flights:number;minutes:number;picMinutes:number;lastDate:string};
 export type PilotAircraftClassBreakdown={aircraftClass:string;flights:number;minutes:number;picMinutes:number;lastDate:string};
 export type RollingYearSummary={flights:number;minutes:number;picMinutes:number;landings:number;activeMonths:number};
-export type PilotCareerSummary={firstDate:string;lastDate:string;flights:number;minutes:number;activeYears:number};
+export type PilotCareerSummary={firstDate:string;lastDate:string;flights:number;minutes:number;activeYears:number;busiestYear:number;busiestYearMinutes:number;busiestYearFlights:number};
 export type PilotInsightsData={
   dashboard:DashboardData;
   rangeLabel:string;
@@ -63,6 +63,14 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
           COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,
           COUNT(DISTINCT LEFT(date_key,4)) FILTER(WHERE NOT auxiliary AND date_key IS NOT NULL)::int active_years
         FROM base
+      ),career_years AS(
+        SELECT LEFT(date_key,4)::int year_key,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes
+        FROM base WHERE NOT auxiliary AND date_key IS NOT NULL GROUP BY LEFT(date_key,4)
+      ),career_best AS(
+        SELECT
+          COALESCE((SELECT year_key FROM career_years ORDER BY minutes DESC,flights DESC,year_key DESC LIMIT 1),0)::int busiest_year,
+          COALESCE((SELECT minutes FROM career_years ORDER BY minutes DESC,flights DESC,year_key DESC LIMIT 1),0)::int busiest_year_minutes,
+          COALESCE((SELECT flights FROM career_years ORDER BY minutes DESC,flights DESC,year_key DESC LIMIT 1),0)::int busiest_year_flights
       ),rolling_summary AS(
         SELECT
           COUNT(*) FILTER(WHERE NOT auxiliary AND date_key BETWEEN ${rolling.currentStart} AND ${rolling.currentEnd})::int current_flights,
@@ -77,7 +85,7 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
           COUNT(DISTINCT LEFT(date_key,7)) FILTER(WHERE NOT auxiliary AND date_key BETWEEN ${rolling.previousStart} AND ${rolling.previousEnd})::int previous_active_months
         FROM base
       )
-      SELECT career.*,rolling_summary.*,
+      SELECT career.*,career_best.*,rolling_summary.*,
         COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.month_key) FROM(
           SELECT LEFT(date_key,7) month_key,
             COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,
@@ -102,7 +110,7 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
             COALESCE(SUM(block_minutes),0)::int minutes,COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(MAX(date_key),'') last_date
           FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_class,''),'Unspecified')
         )c),'[]'::jsonb) aircraft_classes
-      FROM career CROSS JOIN rolling_summary
+      FROM career CROSS JOIN career_best CROSS JOIN rolling_summary
     `,650) as Promise<Array<Record<string,unknown>>>,
   ]);
   const row=rows[0]??{};
@@ -115,6 +123,6 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
     aircraftClasses:jsonObjects(row.aircraft_classes).map(item=>({aircraftClass:s(item.aircraft_class),flights:n(item.flights),minutes:n(item.minutes),picMinutes:n(item.pic_minutes),lastDate:s(item.last_date)})),
     current12m:{flights:n(row.current_flights),minutes:n(row.current_minutes),picMinutes:n(row.current_pic_minutes),landings:n(row.current_landings),activeMonths:n(row.current_active_months)},
     previous12m:{flights:n(row.previous_flights),minutes:n(row.previous_minutes),picMinutes:n(row.previous_pic_minutes),landings:n(row.previous_landings),activeMonths:n(row.previous_active_months)},
-    career:{firstDate:s(row.first_date),lastDate:s(row.last_date),flights:n(row.flights),minutes:n(row.minutes),activeYears:n(row.active_years)},
+    career:{firstDate:s(row.first_date),lastDate:s(row.last_date),flights:n(row.flights),minutes:n(row.minutes),activeYears:n(row.active_years),busiestYear:n(row.busiest_year),busiestYearMinutes:n(row.busiest_year_minutes),busiestYearFlights:n(row.busiest_year_flights)},
   };
 }
