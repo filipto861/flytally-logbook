@@ -26,6 +26,7 @@ before(()=>{
       (1,'2026-08-01','DUAL','FI Example','OK-BBB','DA40','SEP',1,0,10,0,'10:00','11:30'),
       (1,'2025-08-01','PIC','','OK-AAA','C172','SEP',1,0,0,60,'08:00','09:00'),
       (1,'2026-07-01','PAX','','OK-CCC','PA28','SEP',1,0,0,0,'09:00','10:00'),
+      (1,'2026-09-03','PAX','','OK-CCC','PA28','SEP',1,0,0,0,'09:00','10:00'),
       (2,'2026-09-01','PIC','','OTHER','C172','SEP',1,0,0,60,'10:00','11:00');
   `;
   const result=raw(setup);if(result.status!==0)throw new Error(result.stderr||result.stdout);
@@ -48,8 +49,11 @@ test("v1.68 pilot insights SQL executes and keeps auxiliary activity out of logg
   assert.equal(Number(row.previous_flights),1);
   assert.equal(Number(row.previous_minutes),60);
   const roles=typeof row.roles==="string"?JSON.parse(row.roles):row.roles as Array<Record<string,unknown>>;
+  const monthly=typeof row.monthly==="string"?JSON.parse(row.monthly):row.monthly as Array<Record<string,unknown>>;
   assert.ok(Array.isArray(roles));
+  assert.ok(Array.isArray(monthly));
   assert.ok(roles.some(item=>item.role==="PIC"&&Number(item.flights)===2));
   assert.ok(roles.some(item=>item.role==="DUAL"&&Number(item.flights)===1));
   assert.ok(!roles.some(item=>item.role==="PAX"));
+  assert.ok(!monthly.some(item=>item.month_key==="2026-07"));
 });
