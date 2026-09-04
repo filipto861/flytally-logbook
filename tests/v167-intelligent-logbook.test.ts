@@ -46,11 +46,13 @@ test("v1.67 duration outlier requires enough same-aircraft history and remains a
   assert.ok(!sparse.some(item=>item.code==="duration_outlier"));
 });
 
-test("v1.67 checks explicit pilot role against SP/MP without rewriting either field",()=>{
+test("v1.67 checks explicit pilot role against SP/MP without rewriting or inferring either field",()=>{
   const result=intelligentFlightReview({date:"2026-09-03",registration:"OK-AAA",regulatoryCategory:"AEROPLANE",role:"Co-pilot",operationType:"SP",departure:"LKPR",arrival:"LKBE",offBlock:"08:00",onBlock:"09:00"},history),issue=result.find(item=>item.code==="copilot_single_pilot");
   assert.equal(issue?.tone,"attention");
   assert.ok(issue?.evidence?.some(item=>item.label==="Role"&&item.value==="CO-PILOT"));
   assert.ok(issue?.message.includes("will not change"));
+  const missingOperation=intelligentFlightReview({date:"2026-09-03",registration:"OK-AAA",regulatoryCategory:"AEROPLANE",role:"Co-pilot",operationType:"",departure:"LKPR",arrival:"LKBE",offBlock:"08:00",onBlock:"09:00"},history);
+  assert.ok(!missingOperation.some(item=>item.code==="copilot_single_pilot"));
 });
 
 test("v1.67 movement review catches implausible T/O/L patterns and history outliers",()=>{
