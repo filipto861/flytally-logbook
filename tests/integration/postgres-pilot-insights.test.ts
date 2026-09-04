@@ -9,7 +9,7 @@ const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1",databaseUrl=proces
 function raw(statement:string){return spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
 function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim()}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);return`'${String(value).replaceAll("'","''")}'`}
-function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/pilot-insights.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH base0 AS MATERIALIZED"));assert.ok(block,"v1.68 pilot insights SQL block not found");return block}
+function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/pilot-insights.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH base0 AS MATERIALIZED"));assert.ok(block,"v1.68 pilot insights SQL block not found");return block.replaceAll("\\\\","\\")}
 function render(block:string){const values:Record<string,unknown>={userId:1,"bounds.start":null,"bounds.end":null,"rolling.currentStart":"2025-09-05","rolling.currentEnd":"2026-09-04","rolling.previousStart":"2024-09-05","rolling.previousEnd":"2025-09-04"};const rendered=block.replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No SQL fixture for ${key}`);return literal(values[key])});assert.doesNotMatch(rendered,/\$\{/);return rendered}
 
 before(()=>{
@@ -38,6 +38,9 @@ test("v1.68 pilot insights SQL executes and keeps auxiliary activity out of logg
   assert.equal(Number(row.minutes),210);
   assert.equal(String(row.first_date),"2025-08-01");
   assert.equal(String(row.last_date),"2026-09-01");
+  assert.equal(Number(row.busiest_year),2026);
+  assert.equal(Number(row.busiest_year_minutes),150);
+  assert.equal(Number(row.busiest_year_flights),2);
   assert.equal(Number(row.current_flights),2);
   assert.equal(Number(row.current_minutes),150);
   assert.equal(Number(row.current_pic_minutes),60);
