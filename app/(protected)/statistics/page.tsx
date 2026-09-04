@@ -8,7 +8,7 @@ import { directionalRouteHref,routePairHref } from "@/lib/route-filter";
 export const metadata={title:"Statistics & Pilot Insights | FlyTally"};
 const periods=[["all","All time"],["year","This year"],["12m","Last 12 months"],["previous","Previous year"]] as const;
 const sections=[["overview","Overview"],["experience","Experience"],["aircraft","Aircraft"],["places","Airports & routes"]] as const;
-const sectionKeys=new Set(sections.map(([key])=>key));
+const sectionKeys=new Set<string>(sections.map(([key])=>key));
 const periodHref=(period:string,section:string)=>`/statistics?period=${encodeURIComponent(period)}&section=${encodeURIComponent(section)}`;
 const sectionHref=(period:string,section:string)=>`/statistics?period=${encodeURIComponent(period)}&section=${encodeURIComponent(section)}`;
 const roleLabel=(value:string)=>value==="INSTRUKTOR"?"INSTRUCTOR":value||"Unspecified";
