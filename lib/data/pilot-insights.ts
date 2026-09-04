@@ -58,7 +58,7 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
         WHERE (${bounds.start}::text IS NULL OR date_key>=${bounds.start}::text)
           AND (${bounds.end}::text IS NULL OR date_key<=${bounds.end}::text)
       ),career AS(
-        SELECT COALESCE(MIN(date_key),'') first_date,COALESCE(MAX(date_key),'') last_date,
+        SELECT COALESCE(MIN(date_key) FILTER(WHERE NOT auxiliary),'') first_date,COALESCE(MAX(date_key) FILTER(WHERE NOT auxiliary),'') last_date,
           COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,
           COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,
           COUNT(DISTINCT LEFT(date_key,4)) FILTER(WHERE NOT auxiliary AND date_key IS NOT NULL)::int active_years
@@ -87,14 +87,10 @@ export async function getPilotInsightsData(userId:number,requested:string):Promi
       )
       SELECT career.*,career_best.*,rolling_summary.*,
         COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.month_key) FROM(
-          SELECT LEFT(date_key,7) month_key,
-            COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,
-            COALESCE(SUM(block_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,
-            COALESCE(SUM(pic_minutes) FILTER(WHERE NOT auxiliary),0)::int pic_minutes,
-            COALESCE(SUM(night_minutes) FILTER(WHERE NOT auxiliary),0)::int night_minutes,
-            COALESCE(SUM(ifr_minutes) FILTER(WHERE NOT auxiliary),0)::int ifr_minutes,
-            COALESCE(SUM(landings) FILTER(WHERE NOT auxiliary),0)::int landings
-          FROM selected WHERE date_key IS NOT NULL GROUP BY LEFT(date_key,7)
+          SELECT LEFT(date_key,7) month_key,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes,
+            COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(SUM(night_minutes),0)::int night_minutes,
+            COALESCE(SUM(ifr_minutes),0)::int ifr_minutes,COALESCE(SUM(landings),0)::int landings
+          FROM selected WHERE date_key IS NOT NULL AND NOT auxiliary GROUP BY LEFT(date_key,7)
         )m),'[]'::jsonb) monthly,
         COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.minutes DESC,r.flights DESC,r.role) FROM(
           SELECT COALESCE(NULLIF(role,''),'UNSPECIFIED') role,COUNT(*)::int flights,COALESCE(SUM(block_minutes),0)::int minutes
