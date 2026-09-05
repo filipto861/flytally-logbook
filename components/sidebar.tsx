@@ -8,6 +8,7 @@ import { NavIcon } from "./nav-icon";
 
 const mainLinks=[
   {href:"/dashboard",icon:"dashboard",label:"Dashboard"},
+  {href:"/statistics",icon:"dashboard",label:"Statistics"},
   {href:"/flights",icon:"flights",label:"Flights"},
   {href:"/flights/needs-attention",icon:"flights",label:"Needs attention",sub:true},
   {href:"/fstd",icon:"simulator",label:"FSTD sessions",sub:true},
