@@ -17,8 +17,11 @@ export type AircraftCategoryCapabilities={
   timeEntryMode:CategoryTimeEntryMode;
   movementEvidenceMode:CategoryMovementEvidenceMode;
   recencyFamily:CategoryRecencyFamily;
+  regulatoryLabel:string;
   requiresTypeSpecificRecency:boolean;
   supportsFcl060MovementEvidence:boolean;
+  supportsProfessionalContext:boolean;
+  showOperationEngineControls:boolean;
 };
 
 const LABELS:Record<FlightAircraftCategory,string>={
@@ -28,6 +31,15 @@ const LABELS:Record<FlightAircraftCategory,string>={
   ull:"ULL",
   sailplane:"Sailplane",
   other:"Aircraft",
+};
+
+const REGULATORY_LABELS:Record<RegulatoryAircraftCategory,string>={
+  AEROPLANE:"Part-FCL",
+  HELICOPTER:"Part-FCL",
+  BALLOON:"Part-BFCL",
+  SAILPLANE:"Part-SFCL",
+  ULL:"ULL",
+  OTHER:"Other",
 };
 
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
@@ -112,7 +124,10 @@ export function aircraftCategoryCapabilities(input:{regulatoryCategory?:unknown;
     timeEntryMode,
     movementEvidenceMode,
     recencyFamily,
+    regulatoryLabel:REGULATORY_LABELS[regulatoryCategory],
     requiresTypeSpecificRecency,
     supportsFcl060MovementEvidence:movementEvidenceMode==="FCL060_PF",
+    supportsProfessionalContext:evidence==="EASA"&&(regulatoryCategory==="AEROPLANE"||regulatoryCategory==="HELICOPTER"),
+    showOperationEngineControls:regulatoryCategory!=="BALLOON"&&!(regulatoryCategory==="SAILPLANE"&&!isTmg),
   };
 }
