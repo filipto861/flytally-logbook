@@ -191,7 +191,7 @@ test("v1.69 dashboard and flight-list production SQL remain bounded at 50k",{ski
 test("v1.69 pilot insights exclude auxiliary modes on the mixed-category 50k account",{skip:!enabled},()=>{
   const source=read("lib/data/pilot-insights.ts");
   const query=render(sqlBlock(source,"WITH base0 AS MATERIALIZED("),{
-    userId:SCALE_USER,"bounds.start":null,"bounds.end":null,
+    userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,
     "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06"
   });
   const result=explain(query);recordMetric("pilotInsights50k",result,3000);
