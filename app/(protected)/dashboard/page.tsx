@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration,getDashboardData } from "@/lib/data/dashboard";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
-import { dashboardOverviewLayoutFromPreferences,type DashboardWidgetId } from "@/lib/dashboard-widgets";
+import { dashboardLayoutFromPreferences,dashboardOverviewLayout,type DashboardWidgetId } from "@/lib/dashboard-widgets";
 import { parseRecencySnapshot } from "@/lib/recency-service";
 
 export const metadata={title:"Dashboard | FlyTally"};
@@ -36,7 +36,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     getDashboardData(session.userId,selected),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
-  const preferences=parsePilotPreferences(settings[0]?.preferences_json),layout=dashboardOverviewLayoutFromPreferences(preferences),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
+  const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),layout=dashboardOverviewLayout(savedLayout),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   const renderWidget=(id:DashboardWidgetId)=>{
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
     if(id==="ull-time")return <CategoryCard title="ULL" data={data.ull}/>;
