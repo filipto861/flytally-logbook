@@ -40,3 +40,10 @@ test("v2.0-C uses category-aware logged time in totals and rows",()=>{
   assert.match(page,/usesAir=category[.]category==="sailplane"\|\|category[.]category==="balloon"/);
   assert.match(page,/loggedMinutes=usesAir\?\(f[.]air_minutes\|\|f[.]block_minutes\):f[.]block_minutes/);
 });
+
+test("v2.0-C scale fixtures mirror the regulatory category schema used by Flights",()=>{
+  const scale=read("tests/integration/postgres-scale-readiness.test.ts"),hardening=read("tests/integration/postgres-v169-production-hardening.test.ts");
+  assert.match(scale,/regulatory_category TEXT NOT NULL DEFAULT ''/);
+  assert.match(scale,/workflow:null,category:null,sort:/);
+  assert.match(hardening,/workflow:null,category:null,sort:/);
+});
