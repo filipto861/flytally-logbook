@@ -8,12 +8,12 @@ import type { AppearancePreference } from "@/lib/ui-preferences";
 const appVersion=packageMetadata.version;
 const feedbackHref=`mailto:support@fly-tally.com?subject=${encodeURIComponent(`FlyTally feedback · v${appVersion}`)}`;
 
-export function AppShell({ children,role,unreadNotifications=0,appearance="system" }: { children: React.ReactNode;role:"admin"|"user";unreadNotifications?:number;appearance?:AppearancePreference }) {
+export function AppShell({ children,role,unreadNotifications=0,attentionCount=0,appearance="system" }: { children: React.ReactNode;role:"admin"|"user";unreadNotifications?:number;attentionCount?:number;appearance?:AppearancePreference }) {
   return (
     <div className="app-grid" data-appearance={appearance}>
       <ThemeBootstrap preference={appearance}/>
       <ThemeManager preference={appearance}/>
-      <Sidebar role={role} unreadNotifications={unreadNotifications}/>
+      <Sidebar role={role} unreadNotifications={unreadNotifications} attentionCount={attentionCount}/>
       <main className="content" style={{display:"flex",minHeight:"100vh",flexDirection:"column"}}>
         <div>{children}</div>
         <footer style={{marginTop:"auto",paddingTop:"28px",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",fontSize:".68rem",color:"var(--muted)",opacity:.62}}>

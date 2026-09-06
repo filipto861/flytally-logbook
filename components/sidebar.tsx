@@ -23,7 +23,7 @@ const profileLinks=[
   {href:"/data",icon:"data",label:"Print & data"},
 ] as const;
 
-export function Sidebar({role="user",unreadNotifications=0}:{role?:"admin"|"user";unreadNotifications?:number}){
+export function Sidebar({role="user",unreadNotifications=0,attentionCount=0}:{role?:"admin"|"user";unreadNotifications?:number;attentionCount?:number}){
   const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
   useEffect(()=>{setCollapsed(localStorage.getItem("logbook-sidebar")==="collapsed")},[]);
   useEffect(()=>{setMobile(false)},[pathname]);
@@ -37,11 +37,12 @@ export function Sidebar({role="user",unreadNotifications=0}:{role?:"admin"|"user
   },[mobile]);
   const toggle=()=>{const next=!collapsed;setCollapsed(next);localStorage.setItem("logbook-sidebar",next?"collapsed":"open")};
   const activeFor=(href:string)=>href==="/dashboard"?pathname===href:href==="/flights"?(pathname===href||/^\/flights\/\d/.test(pathname)||pathname==="/fstd"):pathname===href||pathname.startsWith(`${href}/`);
+  const visibleMainLinks=mainLinks.filter(link=>link.href!=="/flights/needs-attention"||attentionCount>0);
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>setMobile(false)}/>
     <nav id="primary-navigation" aria-label="Main navigation">
-      {mainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
+      {visibleMainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href),attentionLink=link.href==="/flights/needs-attention";return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{attentionLink?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>})}
       <Link className={activeFor("/notifications")?"active":""} href="/notifications" title="Notifications" aria-current={activeFor("/notifications")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="notifications"/></i><span>Notifications</span>{unreadNotifications?<b className="notification-badge" aria-label={`${unreadNotifications} unread`}>{Math.min(unreadNotifications,99)}</b>:null}</Link>
       <div className={styles.group}>
         <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Manage</span></div>

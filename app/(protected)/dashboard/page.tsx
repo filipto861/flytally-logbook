@@ -7,6 +7,7 @@ import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { dashboardLayoutFromPreferences,dashboardOverviewLayout,defaultDashboardOverviewLayout,type DashboardWidgetId } from "@/lib/dashboard-widgets";
 import { parseRecencySnapshot } from "@/lib/recency-service";
+import { getIntelligentLogbookAttention } from "@/lib/intelligent-logbook-service";
 
 export const metadata={title:"Dashboard | FlyTally"};
 const periods=[["all","All time"],["year","This year"],["12m","Last 12 months"],["previous","Previous year"]] as const;
@@ -32,9 +33,10 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   }
 
   const session=await requireUser();
-  const[data,settings]=await Promise.all([
+  const[data,settings,attentionItems]=await Promise.all([
     getDashboardData(session.userId,selected),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
+    getIntelligentLogbookAttention(session.userId),
   ]);
   const preferences=parsePilotPreferences(settings[0]?.preferences_json),savedLayout=dashboardLayoutFromPreferences(preferences),hasSavedLayout=Array.isArray(preferences.dashboard_widgets)&&preferences.dashboard_widgets.length>0,layout=hasSavedLayout?dashboardOverviewLayout(savedLayout):defaultDashboardOverviewLayout(),recencySnapshot=parseRecencySnapshot(preferences.recency_snapshot);
   const renderWidget=(id:DashboardWidgetId)=>{
@@ -59,7 +61,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       <div className="section-heading"><div><p className="eyebrow">QUICK ACTIONS</p><h2>Where next?</h2><p className="muted">Everyday actions stay here. Historical analysis stays in Statistics.</p></div></div>
       <div className="mini-metrics">
         <div><span>Logbook</span><b><Link className="row-link" href="/flights/new">Add flight →</Link></b><small>Record a new flight</small></div>
-        <div><span>Data quality</span><b><Link className="row-link" href="/flights/needs-attention">Needs attention →</Link></b><small>Review warnings and incomplete records</small></div>
+        {attentionItems.length?<div><span>Data quality</span><b><Link className="row-link" href="/flights/needs-attention">Needs attention →</Link></b><small>{attentionItems.length} {attentionItems.length===1?"flight requires":"flights require"} review</small></div>:null}
         <div><span>Analysis</span><b><Link className="row-link" href={`/statistics?period=${encodeURIComponent(selected)}&section=overview`}>Statistics →</Link></b><small>Trends, experience, aircraft and routes</small></div>
         <div><span>Records</span><b><Link className="row-link" href="/data">Print & data →</Link></b><small>Print, export and backup tools</small></div>
       </div>

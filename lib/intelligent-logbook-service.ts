@@ -1,7 +1,9 @@
 import "server-only";
+import { cache } from "react";
 import { sql } from "@/lib/db";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { intelligentLogbookAttention,intelligentMinutes,latestContinuationSuggestion,type IntelligentAttentionFlight,type IntelligentFlightHistory } from "@/lib/intelligent-logbook";
+import { actionableIntelligentAttention } from "@/lib/actionable-intelligent-attention";
 import type { IntelligentEntryContext } from "@/lib/intelligent-logbook-client-types";
 
 const text=(value:unknown)=>String(value??"").trim();
@@ -56,7 +58,7 @@ export async function getIntelligentEntryContext(userId:number):Promise<Intellig
   return{history,continuation:latestContinuationSuggestion(history)};
 }
 
-export async function getIntelligentLogbookAttention(userId:number):Promise<IntelligentAttentionFlight[]>{
+export const getIntelligentLogbookAttention=cache(async(userId:number):Promise<IntelligentAttentionFlight[]>=>{
   const history=await loadIntelligentHistory(userId,500);
-  return intelligentLogbookAttention(history).filter(item=>item.insights.some(insight=>insight.tone!=="info"));
-}
+  return actionableIntelligentAttention(intelligentLogbookAttention(history));
+});
