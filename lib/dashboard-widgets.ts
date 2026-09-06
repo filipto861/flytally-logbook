@@ -102,8 +102,12 @@ export function defaultDashboardOverviewLayout():DashboardLayoutItem[]{
   });
 }
 
-export function dashboardOverviewLayoutFromPreferences(preferences:PilotPreferences):DashboardLayoutItem[]{
-  const source=dashboardLayoutFromPreferences(preferences),filtered=source.filter(item=>overviewIds.has(item.id));
+export function dashboardOverviewLayout(layout:DashboardLayoutItem[]):DashboardLayoutItem[]{
+  const filtered=layout.filter(item=>overviewIds.has(item.id));
   if(!filtered.some(item=>item.enabled))return defaultDashboardOverviewLayout();
   return filtered;
+}
+
+export function dashboardOverviewLayoutFromPreferences(preferences:PilotPreferences):DashboardLayoutItem[]{
+  return dashboardOverviewLayout(dashboardLayoutFromPreferences(preferences));
 }
