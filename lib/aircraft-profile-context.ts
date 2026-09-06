@@ -3,7 +3,7 @@ import {
   explicitRegulatoryAircraftCategory,
   type EasaAircraftProfileClass,
   type RegulatoryAircraftCategory,
-} from "./aircraft-category";
+} from "./aircraft-category.ts";
 
 export const AIRCRAFT_PROFILE_CLASSES=EASA_AIRCRAFT_PROFILE_CLASSES;
 export type AircraftProfileClass=EasaAircraftProfileClass|"ULL";
