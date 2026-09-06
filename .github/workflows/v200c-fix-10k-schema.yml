@@ -1,0 +1,34 @@
+name: Fix v2.0-C 10k fixture schema
+
+on:
+  push:
+    branches:
+      - codex/v200-multicategory-logbook-ux
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add current regulatory category column to legacy scale fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/integration/postgres-scale-readiness.test.ts')
+          s=p.read_text()
+          old="aircraft_class TEXT NOT NULL DEFAULT '',departure TEXT"
+          new="aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT '',departure TEXT"
+          if s.count(old)!=1:
+              raise SystemExit(f'expected one fixture schema anchor, found {s.count(old)}')
+          p.write_text(s.replace(old,new,1))
+          PY
+          rm .github/workflows/v200c-fix-10k-schema.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v2.0-C align 10k scale fixture with regulatory category schema"
+          git push origin HEAD:codex/v200-multicategory-logbook-ux
