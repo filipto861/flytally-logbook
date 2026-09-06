@@ -20,10 +20,12 @@ test("v2.0-D Statistics exposes persistent regulatory category scope",()=>{
 });
 
 test("v2.0-D Statistics uses one category-aware summary instead of dashboard totals",()=>{
-  const page=read("app/(protected)/statistics/page.tsx");
+  const page=read("app/(protected)/statistics/page.tsx"),source=read("lib/data/pilot-insights.ts");
   assert.match(page,/s=data[.]summary/);
   assert.match(page,/loggedMinutes=s[.]minutes/);
   assert.doesNotMatch(page,/d=data[.]dashboard/);
+  assert.doesNotMatch(source,/getDashboardData/);
+  assert.doesNotMatch(source,/dashboard:DashboardData/);
   assert.match(page,/Sailplane and balloon totals use AIR flight time/);
   assert.match(page,/Regulatory category experience/);
   assert.match(page,/Logged time/);
