@@ -1,3 +1,5 @@
+import {aircraftCategoryCapabilities} from "./aircraft-category.ts";
+
 export const PROFESSIONAL_OPERATION_CONTEXTS=["","PRIVATE","TRAINING","COMMERCIAL","CAT","NCC","SPO","OTHER"] as const;
 export type ProfessionalOperationContext=(typeof PROFESSIONAL_OPERATION_CONTEXTS)[number];
 
@@ -12,8 +14,7 @@ export function normalizeProfessionalOperationContext(value:unknown):Professiona
 }
 
 export function supportsProfessionalContext(input:{evidence?:unknown;regulatoryCategory?:unknown}){
-  const evidence=String(input.evidence??"").trim().toUpperCase(),category=String(input.regulatoryCategory??"").trim().toUpperCase();
-  return evidence==="EASA"&&(category==="AEROPLANE"||category==="HELICOPTER");
+  return aircraftCategoryCapabilities(input).supportsProfessionalContext;
 }
 
 export function roleRequiresMultiPilotOperation(role:unknown){
