@@ -26,7 +26,7 @@ import { CREW_ROLES } from "@/lib/crew";
 import { costTotalsLabel,type FlightExpenseRecord } from "@/lib/flight-expenses";
 import { FlightExpensesStandalone } from "@/components/flight-expenses-standalone";
 
-type Context={q?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string};
+type Context={q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string};
 const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value&&key!=="tab")query.set(key,value);return query.toString()};
 const storedObject=(value:unknown)=>{if(value&&typeof value==="object"&&!Array.isArray(value))return value as Record<string,unknown>;try{const parsed=JSON.parse(String(value||"{}"));return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed as Record<string,unknown>:{} }catch{return{}}};
 

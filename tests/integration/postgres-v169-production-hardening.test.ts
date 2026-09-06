@@ -182,7 +182,7 @@ test("v1.69 dashboard and flight-list production SQL remain bounded at 50k",{ski
 
   const flightsSource=read("lib/data/flights-fast.ts");
   const listQuery=render(sqlBlock(flightsSource,"track AS MATERIALIZED(SELECT flight_id,COUNT(*)::int track_count"),{
-    userId:SCALE_USER,q:null,e:null,r:null,reg:null,from:null,to:null,c:null,a:null,route:null,rf:null,rt:null,y:null,g:null,status:null,workflow:null,sort:"newest",size:50,offset:0
+    userId:SCALE_USER,q:null,e:null,r:null,reg:null,from:null,to:null,c:null,a:null,route:null,rf:null,rt:null,y:null,g:null,status:null,workflow:null,category:null,sort:"newest",size:50,offset:0
   });
   const listResult=explain(listQuery);recordMetric("flightListFirstPage50k",listResult,2500);
   const data=rows(listQuery);assert.equal(data.length,50);assert.equal(Number(data[0].total_count),SCALE_ROWS);
