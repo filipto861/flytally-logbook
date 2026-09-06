@@ -15,7 +15,10 @@ const evidencePath=path.join(root,"flytally-v169-scale-evidence.json");
 const SCALE_USER=74;
 const SCALE_ROWS=50_000;
 const AUXILIARY_ROWS=6_000;
-const evidence:Record<string,unknown>={release:"v1.69-candidate",dataset:{mixedCategoryFlights:SCALE_ROWS,auxiliaryFlights:AUXILIARY_ROWS,categories:["AEROPLANE","SAILPLANE","HELICOPTER","BALLOON"]}};
+const SAFETY_ROWS=2_000;
+const DASHBOARD_ROWS=SCALE_ROWS-AUXILIARY_ROWS+SAFETY_ROWS;
+const LOGGED_ROWS=SCALE_ROWS-AUXILIARY_ROWS;
+const evidence:Record<string,unknown>={release:"v1.69-candidate",dataset:{mixedCategoryFlights:SCALE_ROWS,dashboardActivityFlights:DASHBOARD_ROWS,loggedFlights:LOGGED_ROWS,auxiliaryFlights:AUXILIARY_ROWS,categories:["AEROPLANE","SAILPLANE","HELICOPTER","BALLOON"]}};
 
 function rawPsql(statement:string){
   const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:32*1024*1024});
@@ -173,7 +176,9 @@ test("v1.69 dashboard and flight-list production SQL remain bounded at 50k",{ski
   const dashboardSource=read("lib/data/dashboard.ts");
   const dashboardQuery=render(sqlBlock(dashboardSource,"WITH track AS MATERIALIZED("),{userId:SCALE_USER,start:null,end:null});
   const dashboardResult=explain(dashboardQuery);recordMetric("dashboardAllTime50k",dashboardResult,3500);
-  assert.equal(Number(rows(dashboardQuery)[0]?.total_flights),SCALE_ROWS);
+  const dashboardRow=rows(dashboardQuery)[0]??{};
+  assert.equal(Number(dashboardRow.total_flights),DASHBOARD_ROWS);
+  assert.equal(Number(dashboardRow.safety_minutes),SAFETY_ROWS*65);
 
   const flightsSource=read("lib/data/flights-fast.ts");
   const listQuery=render(sqlBlock(flightsSource,"track AS MATERIALIZED(SELECT flight_id,COUNT(*)::int track_count"),{
@@ -191,7 +196,7 @@ test("v1.69 pilot insights exclude auxiliary modes on the mixed-category 50k acc
   });
   const result=explain(query);recordMetric("pilotInsights50k",result,3000);
   const row=rows(query)[0]??{};
-  assert.equal(Number(row.flights),SCALE_ROWS-AUXILIARY_ROWS);
+  assert.equal(Number(row.flights),LOGGED_ROWS);
   const roleRows=jsonArray(row.roles);
   const roles=new Set(roleRows.map(item=>String(item.role)));
   assert.equal(roles.has("PAX"),false);assert.equal(roles.has("SAFETY PILOT"),false);assert.equal(roles.has("OBSERVER"),false);
@@ -203,5 +208,5 @@ test("v1.69 complete print selection remains bounded at 50k without auxiliary-ro
   const block=sqlBlock(source,"SELECT f.date,f.evidence,f.registration,f.aircraft_type");
   const complete=render(block,{userId:SCALE_USER,scope:"all",from:null,to:null,includeAuxiliary:false});
   const result=explain(complete);recordMetric("printCompleteSql50k",result,4000);
-  assert.equal(Number(run(`SELECT COUNT(*) FROM (${complete}) q`)),SCALE_ROWS-AUXILIARY_ROWS);
+  assert.equal(Number(run(`SELECT COUNT(*) FROM (${complete}) q`)),LOGGED_ROWS);
 });
