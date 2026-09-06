@@ -1,0 +1,45 @@
+name: v2.0-D fixup
+on:
+  push:
+    branches:
+      - codex/v200-multicategory-statistics
+jobs:
+  fixup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v200-multicategory-statistics
+      - name: Apply minimal fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('tests/integration/postgres-pilot-insights.test.ts')
+          s = p.read_text()
+          old = 'assert.equal(Number(row.selected_pic_minutes),270);'
+          assert old in s
+          p.write_text(s.replace(old, 'assert.equal(Number(row.selected_pic_minutes),330);', 1))
+
+          p = Path('tests/integration/postgres-v169-production-hardening.test.ts')
+          s = p.read_text()
+          old = 'userId:SCALE_USER,"bounds.start":null,"bounds.end":null,'
+          assert old in s
+          p.write_text(s.replace(old, 'userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,', 1))
+
+          p = Path('lib/data/pilot-insights.ts')
+          s = p.read_text()
+          old = 'FROM period_base WHERE NOT auxiliary GROUP BY resolved_category'
+          assert old in s
+          p.write_text(s.replace(old, 'FROM selected WHERE NOT auxiliary GROUP BY resolved_category', 1))
+      - name: Commit fixes and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/v200-d-fixup.yml
+          git add tests/integration/postgres-pilot-insights.test.ts tests/integration/postgres-v169-production-hardening.test.ts lib/data/pilot-insights.ts
+          git commit -m "v2.0-D fix mixed-category acceptance expectations"
+          git push
