@@ -17,6 +17,7 @@ test("v2.0-C Flights exposes category as a first-class persistent filter",()=>{
   assert.match(page,/category\?:string/);
   assert.match(page,/aria-label="Logbook category"/);
   assert.match(page,/AEROPLANE","ULL","SAILPLANE","HELICOPTER","BALLOON/);
+  assert.match(page,/params[.]q\|\|params[.]category\?href\(\{\}, \{q:params[.]q,category:params[.]category\}\)/);
   assert.match(detail,/category\?:string/);
   assert.match(core,/FlightFilters=\{q\?:string;category\?:string/);
 });
