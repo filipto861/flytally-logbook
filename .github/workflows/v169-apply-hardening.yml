@@ -1,0 +1,82 @@
+name: Apply v1.69 hardening batch
+
+on:
+  push:
+    branches:
+      - codex/v169-production-hardening-ii
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v169-production-hardening-ii
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply deterministic hardening patches
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          scale=Path('tests/integration/postgres-v169-production-hardening.test.ts')
+          source=scale.read_text()
+          source=source.replace(
+            'const AUXILIARY_ROWS=6_000;\nconst evidence:Record<string,unknown>={release:"v1.69-candidate",dataset:{mixedCategoryFlights:SCALE_ROWS,auxiliaryFlights:AUXILIARY_ROWS,categories:["AEROPLANE","SAILPLANE","HELICOPTER","BALLOON"]}};',
+            'const AUXILIARY_ROWS=6_000;\nconst SAFETY_ROWS=2_000;\nconst DASHBOARD_ROWS=SCALE_ROWS-AUXILIARY_ROWS+SAFETY_ROWS;\nconst LOGGED_ROWS=SCALE_ROWS-AUXILIARY_ROWS;\nconst evidence:Record<string,unknown>={release:"v1.69-candidate",dataset:{mixedCategoryFlights:SCALE_ROWS,dashboardActivityFlights:DASHBOARD_ROWS,loggedFlights:LOGGED_ROWS,auxiliaryFlights:AUXILIARY_ROWS,categories:["AEROPLANE","SAILPLANE","HELICOPTER","BALLOON"]}};'
+          )
+          source=source.replace(
+            '  assert.equal(Number(rows(dashboardQuery)[0]?.total_flights),SCALE_ROWS);',
+            '  const dashboardRow=rows(dashboardQuery)[0]??{};\n  assert.equal(Number(dashboardRow.total_flights),DASHBOARD_ROWS);\n  assert.equal(Number(dashboardRow.safety_minutes),SAFETY_ROWS*65);'
+          )
+          source=source.replace('assert.equal(Number(row.flights),SCALE_ROWS-AUXILIARY_ROWS);','assert.equal(Number(row.flights),LOGGED_ROWS);')
+          source=source.replace('assert.equal(Number(run(`SELECT COUNT(*) FROM (${complete}) q`)),SCALE_ROWS-AUXILIARY_ROWS);','assert.equal(Number(run(`SELECT COUNT(*) FROM (${complete}) q`)),LOGGED_ROWS);')
+          scale.write_text(source)
+
+          restore=Path('lib/account-restore-v6.ts')
+          source=restore.read_text()
+          source=source.replace(
+            'import { ensureV164Schema } from "@/lib/v164-schema";',
+            'import { ensureV164Schema } from "@/lib/v164-schema";\nimport { ensureV165Schema } from "@/lib/v165-schema";\nimport { ensureV166Schema } from "@/lib/v166-schema";'
+          )
+          source=source.replace(
+            'const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;',
+            'const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;\nconst stableIdKey=(row:BackupRow)=>id(row);'
+          )
+          source=source.replace(
+            'await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema()]);',
+            'await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);'
+          )
+          old='const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence]=await Promise.all(['
+          new='const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit]=await Promise.all(['
+          if old not in source: raise SystemExit('restore promise tuple anchor missing')
+          source=source.replace(old,new,1)
+          old="    sql`SELECT id,balloon_class,balloon_group,evidence_date::text evidence_date,signer,reference FROM bpl_recency_evidence WHERE user_id=${userId}`,\n  ]) as Array<Array<BackupRow>>;"
+          new="    sql`SELECT id,balloon_class,balloon_group,evidence_date::text evidence_date,signer,reference FROM bpl_recency_evidence WHERE user_id=${userId}`,\n    sql`SELECT id FROM pilot_licences WHERE user_id=${userId}`,\n    sql`SELECT id FROM pilot_qualifications WHERE user_id=${userId}`,\n    sql`SELECT id FROM pilot_connections WHERE requester_user_id=${userId} OR recipient_user_id=${userId}`,\n    sql`SELECT id FROM instructor_flight_approvals WHERE student_user_id=${userId} OR instructor_user_id=${userId}`,\n    sql`SELECT id FROM flight_participations WHERE source_user_id=${userId} OR participant_user_id=${userId}`,\n    sql`SELECT id FROM user_notifications WHERE user_id=${userId}`,\n    sql`SELECT id FROM flight_verifications WHERE flight_user_id=${userId} OR signer_user_id=${userId}`,\n    sql`SELECT id FROM connection_audit_log WHERE actor_user_id=${userId} OR subject_user_id=${userId}`,\n  ]) as Array<Array<BackupRow>>;"
+          if old not in source: raise SystemExit('restore query anchor missing')
+          source=source.replace(old,new,1)
+          old='    ["bpl_recency_evidence",backup.bpl_recency_evidence??[],bplEvidence,bplEvidenceKey,"BPL recency evidence",true],\n  ];'
+          new='    ["bpl_recency_evidence",backup.bpl_recency_evidence??[],bplEvidence,bplEvidenceKey,"BPL recency evidence",true],\n    ["pilot_licences",backup.pilot_licences??[],licences,stableIdKey,"Pilot licence",true],\n    ["pilot_qualifications",backup.pilot_qualifications??[],qualifications,stableIdKey,"Pilot qualification",true],\n    ["pilot_connections",backup.pilot_connections??[],connections,stableIdKey,"Pilot connection",true],\n    ["instructor_flight_approvals",backup.instructor_flight_approvals??[],approvals,stableIdKey,"Instructor approval",true],\n    ["flight_participations",backup.flight_participations??[],participations,stableIdKey,"Flight participation",true],\n    ["user_notifications",backup.user_notifications??[],notifications,stableIdKey,"Notification",true],\n    ["flight_verifications",backup.flight_verifications??[],verifications,stableIdKey,"Flight verification",true],\n    ["connection_audit_log",backup.connection_audit_log??[],connectionAudit,stableIdKey,"Connection audit event",true],\n  ];'
+          if old not in source: raise SystemExit('restore sections anchor missing')
+          source=source.replace(old,new,1)
+          for section in ['pilot_licences','pilot_qualifications','pilot_connections','instructor_flight_approvals','flight_participations','flight_verifications','user_notifications','connection_audit_log']:
+            source=source.replace(f'chunks(backup.{section}??[]',f'chunks(plan.addRows.{section}??[]')
+          restore.write_text(source)
+
+          test=Path('tests/v169-production-hardening-ii.test.ts')
+          test.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nimport path from "node:path";\nimport test from "node:test";\n\nconst root=path.resolve(import.meta.dirname,"..");\nconst read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");\nconst graph=["pilot_licences","pilot_qualifications","pilot_connections","instructor_flight_approvals","flight_participations","user_notifications","flight_verifications","connection_audit_log"] as const;\n\ntest("v1.69 exact restore preview and execution use one classified v7+ graph",()=>{\n  const source=read("lib/account-restore-v6.ts");\n  for(const section of graph){\n    assert.match(source,new RegExp(`\\[\\"${section}\\",backup[.]${section}`));\n    assert.match(source,new RegExp(`chunks\\(plan[.]addRows[.]${section}`));\n    assert.doesNotMatch(source,new RegExp(`chunks\\(backup[.]${section}`));\n  }\n});\n\ntest("v1.69 exact restore explicitly prepares the latest additive feature schemas",()=>{\n  const source=read("lib/account-restore-v6.ts");\n  for(const version of ["162","163","164","165","166"]){\n    assert.match(source,new RegExp(`ensureV${version}Schema`));\n  }\n  assert.match(source,/ensureV165Schema\\(\\),ensureV166Schema\\(\\)/);\n});\n\ntest("v1.69 keeps safety-pilot time dashboard-only and all auxiliary roles out of logged analytics",()=>{\n  const dashboard=read("lib/data/dashboard.ts"),insights=read("lib/data/pilot-insights.ts"),page=read("app/(protected)/dashboard/page.tsx");\n  assert.match(dashboard,/role IN \\('SAFETY PILOT','PAX','OBSERVER'\\) auxiliary,role NOT IN \\('PAX','OBSERVER'\\) dashboard_total/);\n  assert.match(insights,/role IN \\('SAFETY PILOT','PAX','OBSERVER'\\) auxiliary/);\n  assert.match(page,/safety pilot time · dashboard only/);\n});\n\ntest("v1.69 CI retains both 10k and 50k PostgreSQL scale evidence",()=>{\n  const workflow=read(".github/workflows/verify-web.yml");\n  assert.match(workflow,/flytally-scale-evidence[.]json/);\n  assert.match(workflow,/flytally-v169-scale-evidence[.]json/);\n  assert.match(workflow,/retention-days: 90/);\n});\n''')
+          PY
+          git diff --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/account-restore-v6.ts tests/integration/postgres-v169-production-hardening.test.ts tests/v169-production-hardening-ii.test.ts
+          git diff --cached --check
+          git commit -m "fix(v1.69): align restore preview and execution"
+          git push origin HEAD:codex/v169-production-hardening-ii
