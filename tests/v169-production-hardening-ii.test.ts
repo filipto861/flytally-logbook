@@ -46,6 +46,19 @@ test("v1.69 keeps safety-pilot time dashboard-only and all auxiliary roles out o
   assert.match(page,/safety pilot time · dashboard only/);
 });
 
+test("v1.69 production responses carry baseline transport and browser hardening headers",()=>{
+  const config=read("next.config.ts");
+  assert.match(config,/Strict-Transport-Security/);
+  assert.match(config,/max-age=31536000; includeSubDomains/);
+  assert.match(config,/X-Content-Type-Options/);
+  assert.match(config,/nosniff/);
+  assert.match(config,/X-Frame-Options/);
+  assert.match(config,/DENY/);
+  assert.match(config,/Referrer-Policy/);
+  assert.match(config,/strict-origin-when-cross-origin/);
+  assert.match(config,/source:\"\/:path\*\"/);
+});
+
 test("v1.69 CI retains both 10k and 50k PostgreSQL scale evidence",()=>{
   const workflow=read(".github/workflows/verify-web.yml");
   assert.match(workflow,/flytally-scale-evidence[.]json/);
