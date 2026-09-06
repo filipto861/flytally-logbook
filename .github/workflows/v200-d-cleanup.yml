@@ -1,0 +1,40 @@
+name: v2.0-D query cleanup
+on:
+  push:
+    branches:
+      - codex/v200-multicategory-statistics
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v200-multicategory-statistics
+      - name: Remove redundant Dashboard query
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('lib/data/pilot-insights.ts')
+          s=p.read_text()
+          replacements=[
+            ('import { getDashboardData,type DashboardData } from "@/lib/data/dashboard";\n',''),
+            ('  dashboard:DashboardData;\n',''),
+            ('  const [dashboard,rows]=await Promise.all([\n    getDashboardData(userId,requested),\n    measureServerTask("pilot-insights-data",()=>sql`','  const rows=await measureServerTask("pilot-insights-data",()=>sql`'),
+            ('    `,650) as Promise<Array<Record<string,unknown>>>,\n  ]);','    `,650) as Promise<Array<Record<string,unknown>>>;'),
+            ('    dashboard,\n',''),
+          ]
+          for old,new in replacements:
+            assert old in s, old
+            s=s.replace(old,new,1)
+          p.write_text(s)
+      - name: Commit cleanup and remove helper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/v200-d-cleanup.yml
+          git add lib/data/pilot-insights.ts
+          git commit -m "v2.0-D remove redundant Statistics dashboard query"
+          git push
