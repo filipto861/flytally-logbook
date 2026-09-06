@@ -1,6 +1,5 @@
 import "server-only";
 import { sql } from "@/lib/db";
-import { getDashboardData,type DashboardData } from "@/lib/data/dashboard";
 import { measureServerTask } from "@/lib/performance";
 import { pilotInsightBounds,rollingYearBounds } from "@/lib/pilot-insights";
 import { REGULATORY_AIRCRAFT_CATEGORIES,type RegulatoryAircraftCategory } from "@/lib/aircraft-category";
@@ -17,7 +16,6 @@ export type PilotInsightsSummary={flights:number;minutes:number;picMinutes:numbe
 export type RollingYearSummary={flights:number;minutes:number;picMinutes:number;landings:number;activeMonths:number};
 export type PilotCareerSummary={firstDate:string;lastDate:string;flights:number;minutes:number;activeYears:number;busiestYear:number;busiestYearMinutes:number;busiestYearFlights:number};
 export type PilotInsightsData={
-  dashboard:DashboardData;
   rangeLabel:string;
   scopeCategory:RegulatoryAircraftCategory|null;
   summary:PilotInsightsSummary;
@@ -41,9 +39,7 @@ const normalizedCategory=(value:unknown):RegulatoryAircraftCategory|null=>{const
 
 export async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string):Promise<PilotInsightsData>{
   const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory);
-  const [dashboard,rows]=await Promise.all([
-    getDashboardData(userId,requested),
-    measureServerTask("pilot-insights-data",()=>sql`
+  const rows=await measureServerTask("pilot-insights-data",()=>sql`
       WITH base0 AS MATERIALIZED(
         SELECT f.id,
           CASE WHEN f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::text ELSE NULL END date_key,
@@ -190,11 +186,9 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50
         )r),'[]'::jsonb) routes
       FROM career CROSS JOIN career_best CROSS JOIN rolling_summary CROSS JOIN selected_summary
-    `,650) as Promise<Array<Record<string,unknown>>>,
-  ]);
+    `,650) as Promise<Array<Record<string,unknown>>>;
   const row=rows[0]??{};
   return{
-    dashboard,
     rangeLabel:bounds.label,
     scopeCategory,
     summary:{flights:n(row.selected_flights),minutes:n(row.selected_minutes),picMinutes:n(row.selected_pic_minutes),copilotMinutes:n(row.selected_copilot_minutes),dualMinutes:n(row.selected_dual_minutes),instructorMinutes:n(row.selected_instructor_minutes),nightMinutes:n(row.selected_night_minutes),ifrMinutes:n(row.selected_ifr_minutes),dayLandings:n(row.selected_day_landings),nightLandings:n(row.selected_night_landings),safetyMinutes:n(row.selected_safety_minutes),cost:n(row.selected_cost),uniqueAircraft:n(row.selected_unique_aircraft),uniqueAirports:n(row.selected_unique_airports),uniqueRoutes:n(row.selected_unique_routes)},
