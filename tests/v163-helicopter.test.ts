@@ -91,7 +91,7 @@ test("v1.63 credentials and backup plumbing expose helicopter support without re
   assert.match(credentials,/SplRecencyPanel/);assert.match(credentials,/HelicopterRecencyPanel/);assert.match(credentials,/LAPL\(H\)/);assert.match(credentials,/PPL\(H\)/);
   assert.match(schema,/CREATE TABLE IF NOT EXISTS helicopter_recency_evidence/);assert.doesNotMatch(schema,/UPDATE\s+flights/i);
   assert.match(backup,/version:11/);assert.match(backup,/helicopter_recency_evidence/);assert.match(portable,/v10Arrays/);assert.match(restore,/helicopter_recency_evidence/);
-  assert.match(form,/\["AEROPLANE","HELICOPTER"\][.]includes\(category\)/);
+  assert.match(form,/entryProfile[.]showRegulatoryMovements/);
 });
 
 test("v1.63 keeps the first-save aircraft integrity contract shared by all profile types",()=>{
