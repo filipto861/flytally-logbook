@@ -20,8 +20,8 @@ jobs:
           from pathlib import Path
           p=Path('tests/integration/postgres-scale-readiness.test.ts')
           s=p.read_text()
-          old="aircraft_class TEXT NOT NULL DEFAULT '',departure TEXT"
-          new="aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT '',departure TEXT"
+          old="aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',\n      aircraft_make"
+          new="aircraft_type TEXT NOT NULL DEFAULT '',aircraft_class TEXT NOT NULL DEFAULT '',regulatory_category TEXT NOT NULL DEFAULT '',\n      aircraft_make"
           if s.count(old)!=1:
               raise SystemExit(f'expected one fixture schema anchor, found {s.count(old)}')
           p.write_text(s.replace(old,new,1))
