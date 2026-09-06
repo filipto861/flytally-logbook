@@ -1,0 +1,189 @@
+name: Apply v2.0-C multi-category logbook UX
+
+on:
+  push:
+    branches:
+      - codex/v200-multicategory-logbook-ux
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply category logbook batch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p=Path(path); text=p.read_text()
+              found=text.count(old)
+              if found < count:
+                  raise SystemExit(f"{path}: expected at least {count} occurrence(s), found {found}: {old[:120]!r}")
+              text=text.replace(old,new,count)
+              p.write_text(text)
+
+          # Shared filter/summary contract. Optional loggedMinutes keeps older consumers source-compatible.
+          replace("lib/data/flights.ts",
+            'export type FlightFilters={q?:string;evidence?:string;',
+            'export type FlightFilters={q?:string;category?:string;evidence?:string;')
+          replace("lib/data/flights.ts",
+            'export type FlightsSummary={flights:number;blockMinutes:number;picMinutes:number;',
+            'export type FlightsSummary={flights:number;blockMinutes:number;loggedMinutes?:number;picMinutes:number;')
+
+          fast=Path("lib/data/flights-fast.ts")
+          text=fast.read_text()
+          old='const f=(filters:FastFlightFilters)=>{const p=parseRoutePair(filters.routePair),status=String(filters.status??"").trim().toLowerCase(),workflow=String(filters.workflow??"").trim().toLowerCase();return{'
+          new='const f=(filters:FastFlightFilters)=>{const p=parseRoutePair(filters.routePair),status=String(filters.status??"").trim().toLowerCase(),workflow=String(filters.workflow??"").trim().toLowerCase(),category=String(filters.category??"").trim().toUpperCase();return{'
+          if old not in text: raise SystemExit("flights-fast f() prefix missing")
+          text=text.replace(old,new,1)
+          old='workflow:["waiting","shared","received","none"].includes(workflow)?workflow:null};};'
+          new='workflow:["waiting","shared","received","none"].includes(workflow)?workflow:null,category:["AEROPLANE","HELICOPTER","BALLOON","SAILPLANE","ULL","OTHER"].includes(category)?category:null};};'
+          if old not in text: raise SystemExit("flights-fast f() tail missing")
+          text=text.replace(old,new,1)
+          text=text.replace('{rf,rt,q,e,r,reg,c,a,route,g,y,sort,from,to,status,workflow}=f(filters);','{rf,rt,q,e,r,reg,c,a,route,g,y,sort,from,to,status,workflow,category}=f(filters);',1)
+
+          resolved="""CASE
+    WHEN UPPER(TRIM(COALESCE(f.regulatory_category,''))) IN ('AEROPLANE','HELICOPTER','BALLOON','SAILPLANE','ULL','OTHER') THEN UPPER(TRIM(COALESCE(f.regulatory_category,'')))
+    WHEN UPPER(COALESCE(f.aircraft_class,''))='ULL' OR UPPER(COALESCE(f.evidence,''))='ULL' THEN 'ULL'
+    WHEN UPPER(COALESCE(f.aircraft_class,''))='GLIDER' THEN 'SAILPLANE'
+    WHEN UPPER(COALESCE(f.aircraft_class,''))='HELICOPTER' THEN 'HELICOPTER'
+    WHEN UPPER(COALESCE(f.aircraft_class,''))='BALLOON' THEN 'BALLOON'
+    WHEN UPPER(COALESCE(f.aircraft_class,'')) IN ('SEP','TMG','MEP','SET') THEN 'AEROPLANE'
+    ELSE 'OTHER' END resolved_category"""
+          old='SELECT f.id,f.date::text date,f.evidence,f.registration,f.aircraft_type,f.aircraft_class,f.departure'
+          new='SELECT f.id,f.date::text date,f.evidence,f.registration,f.aircraft_type,f.aircraft_class,f.regulatory_category,\n   '+resolved+',f.departure'
+          if old not in text: raise SystemExit("list select anchor missing")
+          text=text.replace(old,new,1)
+          old='SELECT *,COUNT(*) OVER()::int total_count,COALESCE(SUM(block_minutes) OVER(),0)::int summary_block,COALESCE(SUM(CASE WHEN COALESCE(pic_minutes,0)>0'
+          new="SELECT *,COUNT(*) OVER()::int total_count,COALESCE(SUM(block_minutes) OVER(),0)::int summary_block,COALESCE(SUM(CASE WHEN resolved_category IN ('SAILPLANE','BALLOON') THEN CASE WHEN air_minutes>0 THEN air_minutes ELSE block_minutes END ELSE block_minutes END) OVER(),0)::int summary_logged,COALESCE(SUM(CASE WHEN COALESCE(pic_minutes,0)>0"
+          if old not in text: raise SystemExit("summary anchor missing")
+          text=text.replace(old,new,1)
+          old='FROM b ORDER BY CASE WHEN ${sort}=\'oldest\''
+          new='FROM b WHERE (${category}::text IS NULL OR resolved_category=${category}::text) ORDER BY CASE WHEN ${sort}=\'oldest\''
+          if old not in text: raise SystemExit("list FROM b anchor missing")
+          text=text.replace(old,new,1)
+          old='summary:{flights:n(x.total_count),blockMinutes:n(x.summary_block),picMinutes:n(x.summary_pic)'
+          new='summary:{flights:n(x.total_count),blockMinutes:n(x.summary_block),loggedMinutes:n(x.summary_logged),picMinutes:n(x.summary_pic)'
+          if old not in text: raise SystemExit("summary return anchor missing")
+          text=text.replace(old,new,1)
+
+          old="const v=f(filters),simple=!v.q&&!v.e&&!v.r&&!v.reg&&!v.c&&!v.a&&!v.route&&!v.rf&&!v.g&&!v.y&&!v.from&&!v.to&&!v.status&&!v.workflow&&v.sort==='newest';"
+          new="const v=f(filters),simple=!v.q&&!v.e&&!v.r&&!v.reg&&!v.c&&!v.a&&!v.route&&!v.rf&&!v.g&&!v.y&&!v.from&&!v.to&&!v.status&&!v.workflow&&!v.category&&v.sort==='newest';"
+          if old not in text: raise SystemExit("navigation simple anchor missing")
+          text=text.replace(old,new,1)
+          text=text.replace('if(!v.status&&!v.workflow)return getFlightNavigation(userId,id,filters);','if(!v.status&&!v.workflow&&!v.category)return getFlightNavigation(userId,id,filters);',1)
+          text=text.replace('const {rf,rt,q,e,r,reg,c,a,route,g,y,sort,from,to,status,workflow}=v;','const {rf,rt,q,e,r,reg,c,a,route,g,y,sort,from,to,status,workflow,category}=v;',1)
+          old='filtered AS(SELECT f.id,f.date::text date,f.off_block,f.price_per_hour,f.billing_basis,\n   CASE WHEN f.off_block'
+          new='filtered AS(SELECT f.id,f.date::text date,f.off_block,f.price_per_hour,f.billing_basis,\n   '+resolved+',\n   CASE WHEN f.off_block'
+          if old not in text: raise SystemExit("navigation filtered select anchor missing")
+          text=text.replace(old,new,1)
+          old='::int total FROM filtered)\n  SELECT * FROM ordered WHERE id=${id}`'
+          new='::int total FROM filtered WHERE (${category}::text IS NULL OR resolved_category=${category}::text))\n  SELECT * FROM ordered WHERE id=${id}`'
+          if old not in text: raise SystemExit("navigation ordered anchor missing")
+          text=text.replace(old,new,1)
+          fast.write_text(text)
+
+          # Flights page: first-class category scope + category-aware logged time.
+          page=Path("app/(protected)/flights/page.tsx")
+          text=page.read_text()
+          text=text.replace('import { formatDuration } from "@/lib/data/dashboard";','import { formatDuration } from "@/lib/data/dashboard";\nimport { aircraftCategoryCapabilities } from "@/lib/aircraft-category";',1)
+          text=text.replace('type Params={page?:string;size?:string;q?:string;evidence?:string;','type Params={page?:string;size?:string;q?:string;category?:string;evidence?:string;',1)
+          text=text.replace('const labels:Partial<Record<FilterKey,string>>={q:"Search",year:"Year",','const labels:Partial<Record<FilterKey,string>>={q:"Search",category:"Category",year:"Year",',1)
+          marker='const workflowLabels:Record<string,string>={waiting:"Waiting for response",shared:"Shared / accepted",received:"Shared with me",none:"Not shared"};\n'
+          insert='const workflowLabels:Record<string,string>={waiting:"Waiting for response",shared:"Shared / accepted",received:"Shared with me",none:"Not shared"};\nconst categoryLabels:Record<string,string>={AEROPLANE:"Aeroplane",ULL:"ULL",SAILPLANE:"Sailplane",HELICOPTER:"Helicopter",BALLOON:"Balloon",OTHER:"Other"};\nconst categoryTabs=["", "AEROPLANE","ULL","SAILPLANE","HELICOPTER","BALLOON"] as const;\n'
+          if marker not in text: raise SystemExit("workflowLabels anchor missing")
+          text=text.replace(marker,insert,1)
+          old='const filterValue=(key:FilterKey,value:string)=>key==="gps"?'
+          new='const filterValue=(key:FilterKey,value:string)=>key==="category"?(categoryLabels[value]||value):key==="gps"?'
+          if old not in text: raise SystemExit("filterValue anchor missing")
+          text=text.replace(old,new,1)
+          text=text.replace('const advancedActive=activeFilters.filter(([key])=>key!=="q").length;','const advancedActive=activeFilters.filter(([key])=>key!=="q"&&key!=="category").length;',1)
+          old='<Link className="secondary-link" href={params.q?href({}, {q:params.q}):"/flights"}>Reset advanced</Link>'
+          new='<Link className="secondary-link" href={params.q||params.category?href({}, {q:params.q,category:params.category}):"/flights"}>Reset advanced</Link>'
+          if old not in text: raise SystemExit("reset advanced anchor missing")
+          text=text.replace(old,new,1)
+          old='    </section>\n\n    {activeFilters.length?'
+          new='    </section>\n\n    <nav className="period-control" aria-label="Logbook category">{categoryTabs.map(value=><Link key={value||"ALL"} className={(params.category||"")===value?"active":""} href={href(params,{category:value||undefined,page:"1"})}>{value?categoryLabels[value]:"All"}</Link>)}</nav>\n\n    {activeFilters.length?'
+          if old not in text: raise SystemExit("category nav insertion anchor missing")
+          text=text.replace(old,new,1)
+          old='<section className="flight-summary"><div><span>Flights</span><strong>{result.summary.flights}</strong><small>{result.summary.tracks} GPS tracks</small></div><div><span>BLOCK</span><strong>{formatDuration(result.summary.blockMinutes)}</strong></div>'
+          new='<section className="flight-summary"><div><span>Flights</span><strong>{result.summary.flights}</strong><small>{result.summary.tracks} GPS tracks</small></div><div><span>Logged time</span><strong>{formatDuration(result.summary.loggedMinutes??result.summary.blockMinutes)}</strong><small>{["SAILPLANE","BALLOON"].includes(params.category||"")?"AIR where available":"BLOCK for powered categories · AIR for Sailplane/Balloon"}</small></div>'
+          if old not in text: raise SystemExit("summary UI anchor missing")
+          text=text.replace(old,new,1)
+          text=text.replace('<th>BLOCK</th><th>Cost</th>','<th>Logged time</th><th>Cost</th>',1)
+          old='result.rows.map(f=>{const status=recordStatus(f),workflow=workflowStatus(f);return <tr'
+          new='result.rows.map(f=>{const status=recordStatus(f),workflow=workflowStatus(f),category=aircraftCategoryCapabilities({regulatoryCategory:f.regulatory_category,aircraftClass:f.aircraft_class,evidence:f.evidence}),usesAir=category.category==="sailplane"||category.category==="balloon",loggedMinutes=usesAir?(f.air_minutes||f.block_minutes):f.block_minutes;return <tr'
+          if old not in text: raise SystemExit("row mapper anchor missing")
+          text=text.replace(old,new,1)
+          old='<td data-label="Aircraft"><strong>{f.registration||"—"}</strong><small>{f.aircraft_type||f.evidence}</small></td>'
+          new='<td data-label="Aircraft"><strong>{f.registration||"—"}</strong><small>{f.aircraft_type||f.evidence}</small><small>{category.label} · {category.regulatoryLabel}</small></td>'
+          if old not in text: raise SystemExit("aircraft cell anchor missing")
+          text=text.replace(old,new,1)
+          old='<td data-label="Duration"><strong>{formatDuration(f.block_minutes)}</strong><small>AIR {formatDuration(f.air_minutes)}</small></td>'
+          new='<td data-label="Logged time"><strong>{formatDuration(loggedMinutes)}</strong><small>{usesAir?`FLIGHT · AIR ${formatDuration(f.air_minutes)} · BLOCK ${formatDuration(f.block_minutes)}`:`BLOCK · AIR ${formatDuration(f.air_minutes)}`}</small></td>'
+          if old not in text: raise SystemExit("duration cell anchor missing")
+          text=text.replace(old,new,1)
+          page.write_text(text)
+
+          # Preserve category scope when opening a detail and using previous/next navigation.
+          replace("app/(protected)/flights/[id]/page.tsx",
+            'type Context={q?:string;evidence?:string;',
+            'type Context={q?:string;category?:string;evidence?:string;')
+
+          Path("tests/v200-multicategory-logbook-ux.test.ts").write_text(r'''import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+import {aircraftCategoryCapabilities} from "../lib/aircraft-category.ts";
+
+const root=path.resolve(import.meta.dirname,"..");
+const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+
+test("v2.0-C keeps explicit and legacy TMG category semantics distinct",()=>{
+  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"}).category,"sailplane");
+  assert.equal(aircraftCategoryCapabilities({aircraftClass:"TMG",evidence:"EASA"}).category,"aeroplane");
+});
+
+test("v2.0-C Flights exposes category as a first-class persistent filter",()=>{
+  const page=read("app/(protected)/flights/page.tsx"),detail=read("app/(protected)/flights/[id]/page.tsx"),core=read("lib/data/flights.ts");
+  assert.match(page,/category\?:string/);
+  assert.match(page,/aria-label="Logbook category"/);
+  assert.match(page,/AEROPLANE","ULL","SAILPLANE","HELICOPTER","BALLOON/);
+  assert.match(detail,/category\?:string/);
+  assert.match(core,/FlightFilters=\{q\?:string;category\?:string/);
+});
+
+test("v2.0-C fast list resolves category without rewriting historical rows",()=>{
+  const source=read("lib/data/flights-fast.ts");
+  assert.match(source,/resolved_category/);
+  assert.match(source,/regulatory_category/);
+  assert.match(source,/aircraft_class.*GLIDER/s);
+  assert.match(source,/aircraft_class.*TMG.*AEROPLANE/s);
+  assert.match(source,/resolved_category=\$\{category\}/);
+  assert.match(source,/!v[.]category/);
+});
+
+test("v2.0-C uses category-aware logged time in totals and rows",()=>{
+  const fast=read("lib/data/flights-fast.ts"),page=read("app/(protected)/flights/page.tsx");
+  assert.match(fast,/summary_logged/);
+  assert.match(fast,/resolved_category IN \('SAILPLANE','BALLOON'\)/);
+  assert.match(page,/Logged time/);
+  assert.match(page,/usesAir=category[.]category==="sailplane"\|\|category[.]category==="balloon"/);
+  assert.match(page,/loggedMinutes=usesAir\?\(f[.]air_minutes\|\|f[.]block_minutes\):f[.]block_minutes/);
+});
+''')
+          PY
+          rm .github/workflows/v200c-apply.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v2.0-C — Multi-category Flights scope and logged time"
+          git push origin HEAD:codex/v200-multicategory-logbook-ux
