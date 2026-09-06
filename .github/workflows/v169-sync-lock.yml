@@ -1,5 +1,6 @@
 name: Sync v1.69 lock metadata
 
+# One-shot release metadata helper. Removed before merge.
 on:
   push:
     branches:
