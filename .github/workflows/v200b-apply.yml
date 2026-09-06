@@ -1,0 +1,107 @@
+name: Apply v2.0-B category flight entry
+
+on:
+  push:
+    branches:
+      - codex/v200-category-flight-entry
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply category-aware flight entry batch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p=Path(path)
+              text=p.read_text()
+              count=text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, got {count}: {old[:100]!r}")
+              p.write_text(text.replace(old,new,1))
+
+          replace_once("lib/aircraft-category.ts",
+          '''  recencyFamily:CategoryRecencyFamily;\n  requiresTypeSpecificRecency:boolean;\n  supportsFcl060MovementEvidence:boolean;\n};''',
+          '''  recencyFamily:CategoryRecencyFamily;\n  regulatoryLabel:string;\n  requiresTypeSpecificRecency:boolean;\n  supportsFcl060MovementEvidence:boolean;\n  supportsProfessionalContext:boolean;\n  showOperationEngineControls:boolean;\n};''')
+
+          replace_once("lib/aircraft-category.ts",
+          '''const LABELS:Record<FlightAircraftCategory,string>={\n  aeroplane:"Aeroplane",\n  helicopter:"Helicopter",\n  balloon:"Balloon",\n  ull:"ULL",\n  sailplane:"Sailplane",\n  other:"Aircraft",\n};''',
+          '''const LABELS:Record<FlightAircraftCategory,string>={\n  aeroplane:"Aeroplane",\n  helicopter:"Helicopter",\n  balloon:"Balloon",\n  ull:"ULL",\n  sailplane:"Sailplane",\n  other:"Aircraft",\n};\n\nconst REGULATORY_LABELS:Record<RegulatoryAircraftCategory,string>={\n  AEROPLANE:"Part-FCL",\n  HELICOPTER:"Part-FCL",\n  BALLOON:"Part-BFCL",\n  SAILPLANE:"Part-SFCL",\n  ULL:"ULL",\n  OTHER:"Other",\n};''')
+
+          replace_once("lib/aircraft-category.ts",
+          '''    label:LABELS[category],\n    isTmg,\n    timeEntryMode,\n    movementEvidenceMode,\n    recencyFamily,\n    requiresTypeSpecificRecency,\n    supportsFcl060MovementEvidence:movementEvidenceMode==="FCL060_PF",\n  };''',
+          '''    label:LABELS[category],\n    isTmg,\n    timeEntryMode,\n    movementEvidenceMode,\n    recencyFamily,\n    regulatoryLabel:REGULATORY_LABELS[regulatoryCategory],\n    requiresTypeSpecificRecency,\n    supportsFcl060MovementEvidence:movementEvidenceMode==="FCL060_PF",\n    supportsProfessionalContext:evidence==="EASA"&&(regulatoryCategory==="AEROPLANE"||regulatoryCategory==="HELICOPTER"),\n    showOperationEngineControls:regulatoryCategory!=="BALLOON"&&!(regulatoryCategory==="SAILPLANE"&&!isTmg),\n  };''')
+
+          replace_once("lib/flight-entry-profile.ts",
+          '''  type FlightAircraftCategory,\n  type RegulatoryAircraftCategory,''',
+          '''  type CategoryMovementEvidenceMode,\n  type CategoryRecencyFamily,\n  type FlightAircraftCategory,\n  type RegulatoryAircraftCategory,''')
+
+          replace_once("lib/flight-entry-profile.ts",
+          '''  isTmg:boolean;\n  showStandardExperience:boolean;\n  showSailplaneExperience:boolean;\n  showRegulatoryMovements:boolean;''',
+          '''  isTmg:boolean;\n  movementEvidenceMode:CategoryMovementEvidenceMode;\n  recencyFamily:CategoryRecencyFamily;\n  regulatoryLabel:string;\n  supportsProfessionalContext:boolean;\n  showOperationEngineControls:boolean;\n  showStandardExperience:boolean;\n  showSailplaneExperience:boolean;\n  showRegulatoryMovements:boolean;''')
+
+          replace_once("lib/flight-entry-profile.ts",
+          '''  const aircraftClass=clean(input.aircraftClass),evidence=clean(input.evidence);\n  const context=[capabilities.label,evidence,aircraftClass].filter((value,index,items)=>Boolean(value)&&items.indexOf(value)===index).join(" · ");''',
+          '''  const aircraftClass=clean(input.aircraftClass);\n  const context=[capabilities.regulatoryLabel,aircraftClass].filter((value,index,items)=>Boolean(value)&&items.indexOf(value)===index).join(" · ");''')
+
+          replace_once("lib/flight-entry-profile.ts",
+          '''    isTmg:capabilities.isTmg,\n    showStandardExperience:input.hasAircraft&&capabilities.timeEntryMode==="STANDARD",''',
+          '''    isTmg:capabilities.isTmg,\n    movementEvidenceMode:capabilities.movementEvidenceMode,\n    recencyFamily:capabilities.recencyFamily,\n    regulatoryLabel:capabilities.regulatoryLabel,\n    supportsProfessionalContext:input.hasAircraft&&capabilities.supportsProfessionalContext,\n    showOperationEngineControls:input.hasAircraft&&capabilities.showOperationEngineControls,\n    showStandardExperience:input.hasAircraft&&capabilities.timeEntryMode==="STANDARD",''')
+
+          replace_once("lib/professional-context.ts",
+          '''export const PROFESSIONAL_OPERATION_CONTEXTS=''',
+          '''import {aircraftCategoryCapabilities} from "./aircraft-category.ts";\n\nexport const PROFESSIONAL_OPERATION_CONTEXTS=''')
+
+          replace_once("lib/professional-context.ts",
+          '''export function supportsProfessionalContext(input:{evidence?:unknown;regulatoryCategory?:unknown}){\n  const evidence=String(input.evidence??"").trim().toUpperCase(),category=String(input.regulatoryCategory??"").trim().toUpperCase();\n  return evidence==="EASA"&&(category==="AEROPLANE"||category==="HELICOPTER");\n}''',
+          '''export function supportsProfessionalContext(input:{evidence?:unknown;regulatoryCategory?:unknown}){\n  return aircraftCategoryCapabilities(input).supportsProfessionalContext;\n}''')
+
+          replace_once("components/flight-form.tsx",
+          '''autoMovement=(ev:string,rl:string,op:string,category:string)=>ev==="EASA"&&["AEROPLANE","HELICOPER"].includes(category)&&op==="SP"&&["PIC","SOLO"].includes(rl)'''.replace('HELICOPER','HELICOPTER'),
+          '''autoMovement=(ev:string,rl:string,op:string,category:string,cls:string)=>flightEntryProfile({hasAircraft:true,regulatoryCategory:category,aircraftClass:cls,evidence:ev}).showRegulatoryMovements&&op==="SP"&&["PIC","SOLO"].includes(rl)''')
+
+          replace_once("components/flight-form.tsx",
+          '''autoMovement(initialEvidence,initialRole,initialOperationType,initialRegulatory)''',
+          '''autoMovement(initialEvidence,initialRole,initialOperationType,initialRegulatory,initialClass)''')
+
+          replace_once("components/flight-form.tsx",
+          '''autoMovement(evidence,role,operationType,regulatoryCategory)''',
+          '''autoMovement(evidence,role,operationType,regulatoryCategory,aircraftClass)''')
+
+          replace_once("components/flight-form.tsx",
+          '''const entryProfile=flightEntryProfile({hasAircraft:Boolean(registration),regulatoryCategory,aircraftClass,evidence}),splTmg=regulatoryCategory==="SAILPLANE"&&aircraftClass==="TMG",balloonFlight=regulatoryCategory==="BALLOON",professionalVisible=evidence==="EASA"&&["AEROPLANE","HELICOPTER"].includes(regulatoryCategory);''',
+          '''const entryProfile=flightEntryProfile({hasAircraft:Boolean(registration),regulatoryCategory,aircraftClass,evidence}),splTmg=entryProfile.movementEvidenceMode==="SFCL_TMG",balloonFlight=entryProfile.movementEvidenceMode==="BFCL_TAKEOFF_LANDING",professionalVisible=entryProfile.supportsProfessionalContext;''')
+
+          replace_once("components/flight-form.tsx",
+          '''<section className="entry-section entry-section-experience"><div className="experience-section-heading"><div><p className="section-kicker">Flight experience</p>{entryProfile.selected?<strong>{entryProfile.label}</strong>:null}</div>{entryProfile.selected?<small>{entryProfile.context}</small>:null}</div>''',
+          '''<section className="entry-section entry-section-experience"><div className="experience-section-heading"><div><p className="section-kicker">{entryProfile.category==="balloon"?"Balloon experience":entryProfile.category==="sailplane"?"Sailplane experience":"Flight experience"}</p>{entryProfile.selected?<strong>{entryProfile.label}</strong>:null}</div>{entryProfile.selected?<small>{entryProfile.context}</small>:null}</div>''')
+
+          replace_once("components/flight-form.tsx",
+          '''<details className="entry-section" open={logbookOpen} onToggle={event=>setLogbookOpen(event.currentTarget.open)}><summary><span>Aircraft & logbook</span><small>{entryProfile.label} · {evidence||"Select logbook"} · {operationType} · {engineType}</small></summary>''',
+          '''<details className="entry-section" open={logbookOpen} onToggle={event=>setLogbookOpen(event.currentTarget.open)}><summary><span>Aircraft & logbook</span><small>{entryProfile.label} · {entryProfile.context||evidence||"Select logbook"}{entryProfile.showOperationEngineControls?` · ${operationType} · ${engineType}`:""}</small></summary>''')
+
+          old='''<label>Operation<select name="operationType" value={operationType} onChange={event=>setOperationType(event.target.value)}>{OPERATION_TYPES.map(value=><option key={value}>{value}</option>)}</select><small>Single-pilot / multi-pilot</small></label><label>Engine<select name="engineType" value={engineType} onChange={event=>setEngineType(event.target.value)}>{ENGINE_TYPES.map(value=><option key={value}>{value}</option>)}</select><small>Single-engine / multi-engine</small></label>'''
+          new='''{entryProfile.showOperationEngineControls?<><label>Operation<select name="operationType" value={operationType} onChange={event=>setOperationType(event.target.value)}>{OPERATION_TYPES.map(value=><option key={value}>{value}</option>)}</select><small>Single-pilot / multi-pilot</small></label><label>Engine<select name="engineType" value={engineType} onChange={event=>setEngineType(event.target.value)}>{ENGINE_TYPES.map(value=><option key={value}>{value}</option>)}</select><small>Single-engine / multi-engine</small></label></>:<><input type="hidden" name="operationType" value={operationType}/><input type="hidden" name="engineType" value={engineType}/><div className="sailplane-evidence-note wide"><strong>{entryProfile.regulatoryLabel} category fields</strong><span>{balloonFlight?"Free/tethered operation and BFCL movement evidence are recorded in Balloon experience above.":"Launch method, launches and landings are recorded in Sailplane experience above."}</span></div></>}'''
+          replace_once("components/flight-form.tsx",old,new)
+
+          Path("tests/v200-category-flight-entry.test.ts").write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nimport path from "node:path";\nimport test from "node:test";\nimport {aircraftCategoryCapabilities} from "../lib/aircraft-category.ts";\nimport {flightEntryProfile} from "../lib/flight-entry-profile.ts";\nimport {supportsProfessionalContext} from "../lib/professional-context.ts";\n\nconst root=path.resolve(import.meta.dirname,"..");\nconst read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");\n\ntest("v2.0-B exposes regulatory labels and category-specific technical controls",()=>{\n  const aeroplane=flightEntryProfile({hasAircraft:true,regulatoryCategory:"AEROPLANE",aircraftClass:"SEP",evidence:"EASA"});\n  assert.equal(aeroplane.regulatoryLabel,"Part-FCL");\n  assert.equal(aeroplane.showOperationEngineControls,true);\n  const helicopter=flightEntryProfile({hasAircraft:true,regulatoryCategory:"HELICOPTER",aircraftClass:"HELICOPTER",evidence:"EASA"});\n  assert.equal(helicopter.showOperationEngineControls,true);\n  const balloon=flightEntryProfile({hasAircraft:true,regulatoryCategory:"BALLOON",aircraftClass:"BALLOON",evidence:"EASA"});\n  assert.equal(balloon.regulatoryLabel,"Part-BFCL");\n  assert.equal(balloon.showOperationEngineControls,false);\n  const glider=flightEntryProfile({hasAircraft:true,regulatoryCategory:"SAILPLANE",aircraftClass:"GLIDER",evidence:"EASA"});\n  assert.equal(glider.regulatoryLabel,"Part-SFCL");\n  assert.equal(glider.showOperationEngineControls,false);\n  const tmg=flightEntryProfile({hasAircraft:true,regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"});\n  assert.equal(tmg.showOperationEngineControls,true);\n});\n\ntest("v2.0-B keeps professional context category-aware without guessing",()=>{\n  assert.equal(supportsProfessionalContext({evidence:"EASA",regulatoryCategory:"AEROPLANE"}),true);\n  assert.equal(supportsProfessionalContext({evidence:"EASA",regulatoryCategory:"HELICOPTER"}),true);\n  assert.equal(supportsProfessionalContext({evidence:"EASA",regulatoryCategory:"SAILPLANE"}),false);\n  assert.equal(supportsProfessionalContext({evidence:"EASA",regulatoryCategory:"BALLOON"}),false);\n  assert.equal(supportsProfessionalContext({evidence:"ULL",regulatoryCategory:"ULL"}),false);\n});\n\ntest("v2.0-B preserves distinct movement evidence modes in the entry workspace",()=>{\n  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"AEROPLANE",aircraftClass:"SEP",evidence:"EASA"}).movementEvidenceMode,"FCL060_PF");\n  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"GLIDER",evidence:"EASA"}).movementEvidenceMode,"SFCL_LAUNCH");\n  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"}).movementEvidenceMode,"SFCL_TMG");\n  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"BALLOON",aircraftClass:"BALLOON",evidence:"EASA"}).movementEvidenceMode,"BFCL_TAKEOFF_LANDING");\n});\n\ntest("v2.0-B FlightForm consumes capabilities instead of duplicating the main category branches",()=>{\n  const form=read("components/flight-form.tsx");\n  assert.match(form,/entryProfile[.]movementEvidenceMode==="SFCL_TMG"/);\n  assert.match(form,/entryProfile[.]movementEvidenceMode==="BFCL_TAKEOFF_LANDING"/);\n  assert.match(form,/entryProfile[.]supportsProfessionalContext/);\n  assert.match(form,/entryProfile[.]showOperationEngineControls/);\n  assert.match(form,/type="hidden" name="operationType"/);\n  assert.match(form,/Part-BFCL/);\n  assert.match(form,/Part-SFCL/);\n});\n''')
+
+          Path("V200_CATEGORY_FLIGHT_ENTRY_SCOPE.md").write_text('''# v2.0-B — Category-specific flight entry\n\nThis stage keeps one Add/Edit flight workflow while making category-specific evidence and terminology explicit.\n\n## UX contract\n\n- Aeroplane and Helicopter retain Part-FCL PF movement evidence and SP/MP + SE/ME controls.\n- ULL retains the existing standard controls without gaining EASA movement semantics.\n- SPL TMG retains standard time/take-off controls while staying outside FCL.060 PF evidence.\n- Non-TMG Sailplane focuses on launch method, launches and landings; generic SP/MP + SE/ME selectors are hidden from normal entry.\n- Balloon focuses on BFCL free/tethered operation and explicit take-off/landing evidence; generic SP/MP + SE/ME selectors are hidden from normal entry.\n- Hidden legacy technical values are preserved on edit for backward compatibility; this stage does not rewrite historical records.\n- Professional operation context remains available only for explicitly supported EASA Aeroplane/Helicopter contexts.\n\n## Safety\n\nNo schema changes, no certification changes, no category inference beyond the v2.0-A contract, and no privilege calculation changes. Existing authoritative recency engines remain unchanged.\n''')
+          PY
+      - name: Commit batch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/aircraft-category.ts lib/flight-entry-profile.ts lib/professional-context.ts components/flight-form.tsx tests/v200-category-flight-entry.test.ts V200_CATEGORY_FLIGHT_ENTRY_SCOPE.md
+          git diff --cached --quiet && exit 0
+          git commit -m "v2.0-B — Category-specific flight entry foundation"
+          git push
