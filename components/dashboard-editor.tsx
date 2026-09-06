@@ -7,7 +7,7 @@ import { DASHBOARD_OVERVIEW_WIDGET_IDS,dashboardPresetLayout,dashboardWidgetDefi
 const initialState:DashboardSaveState={ok:false,message:""};
 const sizeLabels:Record<DashboardWidgetSize,string>={small:"Small",medium:"Medium",wide:"Wide",hero:"Hero"};
 const groupLabels={primary:"Flying summary",quick:"At a glance",analysis:"Analysis"} as const;
-const overviewIds=new Set(DASHBOARD_OVERVIEW_WIDGET_IDS);
+const overviewIds=new Set<DashboardLayoutItem["id"]>(DASHBOARD_OVERVIEW_WIDGET_IDS);
 
 export function DashboardEditor({layout}:{layout:DashboardLayoutItem[]}){
   const[items,setItems]=useState<DashboardLayoutItem[]>(()=>layout.map(item=>({...item}))),[state,formAction,pending]=useActionState(saveDashboardLayout,initialState);
