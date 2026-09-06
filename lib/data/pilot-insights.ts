@@ -186,7 +186,7 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50
         )r),'[]'::jsonb) routes
       FROM career CROSS JOIN career_best CROSS JOIN rolling_summary CROSS JOIN selected_summary
-    `,650) as Promise<Array<Record<string,unknown>>>;
+    `,650) as Array<Record<string,unknown>>;
   const row=rows[0]??{};
   return{
     rangeLabel:bounds.label,
