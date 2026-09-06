@@ -3,9 +3,9 @@ import {
   resolveRegulatoryAircraftCategory,
   type FlightAircraftCategory,
   type RegulatoryAircraftCategory,
-} from "./aircraft-category";
+} from "./aircraft-category.ts";
 
-export type {FlightAircraftCategory,RegulatoryAircraftCategory} from "./aircraft-category";
+export type {FlightAircraftCategory,RegulatoryAircraftCategory} from "./aircraft-category.ts";
 
 export type FlightEntryProfile={
   category:FlightAircraftCategory;
