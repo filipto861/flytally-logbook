@@ -1,0 +1,29 @@
+name: Fix v2.0-C scale harness
+
+on:
+  push:
+    branches:
+      - codex/v200-multicategory-logbook-ux
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore and minimally patch scale harnesses
+        run: |
+          git show e222fba00b24824e57bc41e4284b5ede399f700c:tests/integration/postgres-scale-readiness.test.ts > tests/integration/postgres-scale-readiness.test.ts
+          sed -i 's/status:null,workflow:null,sort:/status:null,workflow:null,category:null,sort:/' tests/integration/postgres-scale-readiness.test.ts
+          sed -i 's/status:null,workflow:null,sort:/status:null,workflow:null,category:null,sort:/' tests/integration/postgres-v169-production-hardening.test.ts
+          rm .github/workflows/v200c-fix-scale.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "v2.0-C align scale SQL renderers with category filter"
+          git push origin HEAD:codex/v200-multicategory-logbook-ux
