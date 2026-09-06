@@ -41,11 +41,12 @@ test("v2.0-D analytics SQL resolves legacy category before deriving logged time"
   assert.match(source,/scopeCategory/);
 });
 
-test("v2.0-D secondary analytics use the same logged-time measure",()=>{
+test("v2.0-D secondary analytics use the same logged-time measure and active scope",()=>{
   const source=read("lib/data/pilot-insights.ts");
   for(const token of ["categories","registrations","airports","routes"])assert.match(source,new RegExp(token));
   assert.match(source,/SUM\(logged_minutes\)/);
   assert.match(source,/selected_unique_airports/);
   assert.match(source,/selected_unique_routes/);
   assert.match(source,/stored_day_landings\+stored_night_landings/);
+  assert.match(source,/FROM selected WHERE NOT auxiliary GROUP BY resolved_category/);
 });
