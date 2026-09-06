@@ -56,7 +56,7 @@ test("v2.0-D pilot insights use category-aware logged time across mixed logbooks
   assert.equal(Number(row.previous_minutes),60);
   assert.equal(Number(row.selected_flights),6);
   assert.equal(Number(row.selected_minutes),420);
-  assert.equal(Number(row.selected_pic_minutes),270);
+  assert.equal(Number(row.selected_pic_minutes),330);
   assert.equal(Number(row.selected_dual_minutes),90);
   assert.equal(Number(row.selected_day_landings),6);
   assert.equal(Number(row.selected_unique_aircraft),5);

@@ -171,7 +171,7 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
         COALESCE((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.minutes DESC,c.flights DESC,c.category) FROM(
           SELECT resolved_category category,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,
             COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(MAX(date_key),'') last_date
-          FROM period_base WHERE NOT auxiliary GROUP BY resolved_category
+          FROM selected WHERE NOT auxiliary GROUP BY resolved_category
         )c),'[]'::jsonb) categories,
         COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.minutes DESC,a.flights DESC,a.registration) FROM(
           SELECT registration,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost,COALESCE(MAX(date_key),'') last_date
