@@ -89,3 +89,25 @@ export function dashboardPresetLayout(preset:DashboardPresetId):DashboardLayoutI
   const ordered=DASHBOARD_PRESETS[preset];
   return ordered.map(id=>{const definition=dashboardWidgetDefinition(id);return{id,enabled:enabled.has(id),size:definition.defaultSize}});
 }
+
+// v1.70 keeps historical dashboard definitions readable for saved preferences and
+// regression compatibility, while the normal Dashboard exposes only at-a-glance items.
+export const DASHBOARD_OVERVIEW_WIDGET_IDS=["total-time","ull-time","easa-time","last-flight","gps-tracks"] as const satisfies readonly DashboardWidgetId[];
+const overviewIds=new Set<DashboardWidgetId>(DASHBOARD_OVERVIEW_WIDGET_IDS);
+
+export function defaultDashboardOverviewLayout():DashboardLayoutItem[]{
+  return DASHBOARD_OVERVIEW_WIDGET_IDS.map(id=>{
+    const definition=dashboardWidgetDefinition(id);
+    return{id,enabled:id!=="gps-tracks",size:definition.defaultSize};
+  });
+}
+
+export function dashboardOverviewLayout(layout:DashboardLayoutItem[]):DashboardLayoutItem[]{
+  const filtered=layout.filter(item=>overviewIds.has(item.id));
+  if(!filtered.some(item=>item.enabled))return defaultDashboardOverviewLayout();
+  return filtered;
+}
+
+export function dashboardOverviewLayoutFromPreferences(preferences:PilotPreferences):DashboardLayoutItem[]{
+  return dashboardOverviewLayout(dashboardLayoutFromPreferences(preferences));
+}

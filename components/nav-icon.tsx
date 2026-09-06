@@ -1,7 +1,8 @@
-type IconName="dashboard"|"flights"|"simulator"|"add"|"map"|"connections"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage";
+type IconName="dashboard"|"statistics"|"flights"|"simulator"|"add"|"map"|"connections"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage";
 
 const paths:Record<IconName,React.ReactNode>={
   dashboard:<><path d="M3.5 10.2 12 3.5l8.5 6.7"/><path d="M5.5 9v11h13V9M9 20v-6h6v6"/></>,
+  statistics:<><path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/><path d="M3 20h20"/></>,
   flights:<><path d="m3 13 7.5-2.5V5.8c0-1.4.7-2.8 1.5-2.8s1.5 1.4 1.5 2.8v4.7L21 13v2l-7.5-.7V19l2.5 1.5V22L12 21l-4 1v-1.5l2.5-1.5v-4.7L3 15z"/></>,
   simulator:<><rect x="3.5" y="5" width="17" height="12" rx="2"/><path d="M8 21h8M12 17v4M7.5 11h3m-1.5-1.5v3M15 10.5h.01M17.5 12.5h.01"/></>,
   add:<><path d="M12 4v16M4 12h16"/></>,

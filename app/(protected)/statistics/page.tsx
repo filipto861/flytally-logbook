@@ -5,7 +5,7 @@ import { formatInsightDuration,paceComparison,sharePercent } from "@/lib/pilot-i
 import { PilotInsightsChart } from "@/components/pilot-insights-chart";
 import { directionalRouteHref,routePairHref } from "@/lib/route-filter";
 
-export const metadata={title:"Statistics & Pilot Insights | FlyTally"};
+export const metadata={title:"Statistics | FlyTally"};
 const periods=[["all","All time"],["year","This year"],["12m","Last 12 months"],["previous","Previous year"]] as const;
 const sections=[["overview","Overview"],["experience","Experience"],["aircraft","Aircraft"],["places","Airports & routes"]] as const;
 const sectionKeys=new Set<string>(sections.map(([key])=>key));
@@ -18,7 +18,7 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
   const data=await getPilotInsightsData(session.userId,period),d=data.dashboard,loggedMinutes=Math.max(0,d.total.minutes-d.safetyMinutes),pace=paceComparison(data.current12m.minutes,data.previous12m.minutes),picShare=sharePercent(d.picMinutes,loggedMinutes),nightShare=sharePercent(d.nightMinutes,loggedMinutes),ifrShare=sharePercent(d.ifrMinutes,loggedMinutes),topAircraft=d.topAircraft[0],topType=data.aircraftTypes[0];
   const paceLabel=pace.direction==="new"?"New activity vs prior 12m":pace.direction==="none"?"No rolling-year activity":pace.direction==="flat"?"Stable vs prior 12m":`${pace.percent&&pace.percent>0?"+":""}${pace.percent}% vs prior 12m`;
   return <>
-    <header className="page-header"><div><p className="eyebrow">STATISTICS & PILOT INSIGHTS</p><h1>Pilot experience</h1><p className="muted page-lead">Long-term trends and breakdowns from your own logbook records. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Dashboard</Link></header>
+    <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Trends and detailed breakdowns from your logbook: experience, aircraft, airports and routes. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
     <div className="period-control">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} href={periodHref(key,section)}>{label}</Link>)}</div>
     <div className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} href={sectionHref(period,key)}>{label}</Link>)}</div>
 
