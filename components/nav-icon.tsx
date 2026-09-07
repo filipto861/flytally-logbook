@@ -1,4 +1,4 @@
-type IconName="dashboard"|"statistics"|"flights"|"simulator"|"add"|"map"|"connections"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage";
+type IconName="dashboard"|"statistics"|"flights"|"simulator"|"add"|"map"|"connections"|"actions"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage";
 
 const paths:Record<IconName,React.ReactNode>={
   dashboard:<><path d="M3.5 10.2 12 3.5l8.5 6.7"/><path d="M5.5 9v11h13V9M9 20v-6h6v6"/></>,
@@ -8,6 +8,7 @@ const paths:Record<IconName,React.ReactNode>={
   add:<><path d="M12 4v16M4 12h16"/></>,
   map:<><path d="m3 6 5-2 8 2 5-2v14l-5 2-8-2-5 2zM8 4v14M16 6v14"/></>,
   connections:<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+  actions:<><path d="M9 5h10v16H5V5h4"/><path d="M9 3h6v4H9zM8 12l2 2 4-4M8 18h7"/></>,
   notifications:<><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M9.5 21h5"/></>,
   credentials:<><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h5M8 16h3"/><circle cx="16.5" cy="15.5" r="2"/></>,
   settings:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,

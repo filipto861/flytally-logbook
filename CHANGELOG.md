@@ -2,6 +2,23 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 2.2.0 — Action Center & Shared Flight Workflow — 2026-09-07
+
+### Added
+- Added an authoritative Action Center for unresolved flight invitations, instructor verification requests, aircraft-training signatures and incoming pilot connection requests.
+- Sidebar and Dashboard now surface Actions only while a real workflow decision is pending; the badge is derived from workflow state rather than unread notification state.
+
+### Changed
+- Notifications remain the update/history inbox and no longer act as the global pending-work signal.
+- Needs attention remains separate and continues to contain only actionable data-quality findings from the pilot's own logbook.
+- Shared-flight and signature requests reuse the existing Review & add, Review & sign and Decline workflows; inline Action Center decisions disappear immediately after completion.
+
+### Integrity
+- Pending shared-flight actions require the exact current certified source revision and hash, so stale requests do not create ghost actions.
+- Legacy instructor approvals are de-duplicated when the canonical instructor participation exists, while that participation still counts once as the real action.
+- Modern `signature_request` notifications now support the same direct Decline path as other shared-flight requests.
+- No database schema, certification fingerprint, verification payload, sharing ownership or audit-trail semantics changed.
+
 ## 2.1.0 — Dashboard & Statistics consolidation — 2026-09-07
 
 ### Changed

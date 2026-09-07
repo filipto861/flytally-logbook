@@ -2,7 +2,15 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.1.0 — Dashboard & Statistics consolidation
+## Current release — v2.2.0 — Action Center & Shared Flight Workflow
+
+- Keep unresolved workflow decisions in one authoritative Actions inbox sourced from the underlying workflow tables rather than notification read state.
+- Show Actions in global navigation and Dashboard only while a genuine pending decision exists, while keeping Notifications as update/history and Needs attention as data-quality work.
+- Require shared-flight actions to match the current certified source revision/hash and de-duplicate legacy instructor approvals behind canonical participations.
+- Reuse the established Review & add, Review & sign, Accept and Decline workflows so certification fingerprints, verification payloads, sharing ownership and audit trails stay authoritative.
+- Preserve v2.1 Dashboard/Statistics information architecture and all v2.0 multi-category semantics without a schema change.
+
+## v2.1.0 — Dashboard & Statistics consolidation
 
 - Keep Dashboard as a concise, stable all-time snapshot for total flying, category totals, last flight, recency and quick actions.
 - Keep historical period selection and analytical trends exclusively in Statistics while redirecting legacy Dashboard period URLs safely.
