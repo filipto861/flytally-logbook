@@ -254,12 +254,21 @@ test("v2.3 global production reads remain bounded on 100k flights",{skip:!enable
   const listResult=explain(listQuery);recordMetric("flightListFirstPage100k",listResult,4_500);
   const listRows=rows(listQuery);assert.equal(listRows.length,50);assert.equal(Number(listRows[0].total_count),SCALE_ROWS);
 
-  const insightsQuery=render(sqlBlock(read("lib/data/pilot-insights.ts"),"WITH base0 AS MATERIALIZED("),{
+  const insightsBlock=sqlBlock(read("lib/data/pilot-insights.ts"),"WITH base0 AS MATERIALIZED(");
+  const insightValues={
     userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,
     "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06",
-  });
+  };
+  const insightsQuery=render(insightsBlock,{...insightValues,section:"all"});
   const insightsResult=explain(insightsQuery);recordMetric("pilotInsights100k",insightsResult,7_000);
   const insight=rows(insightsQuery)[0]??{};assert.equal(Number(insight.flights),LOGGED_ROWS);
+  for(const section of ["overview","experience","aircraft","places","career"] as const){
+    const query=render(insightsBlock,{...insightValues,section});
+    const result=explain(query);recordMetric(`pilotInsights${section[0].toUpperCase()}${section.slice(1)}100k`,result,4_000);
+    const row=rows(query)[0]??{};
+    if(section==="career")assert.equal(Number(row.flights),LOGGED_ROWS);
+    else assert.equal(Number(row.selected_flights),LOGGED_ROWS);
+  }
 });
 
 test("v2.3 print and export production SQL remain bounded on a complete 100k logbook",{skip:!enabled},()=>{

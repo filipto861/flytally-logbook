@@ -14,6 +14,11 @@ test("v2.3 keeps a retained 100k read-performance gate over production hot paths
     "dashboardAllTime100k",
     "flightListFirstPage100k",
     "pilotInsights100k",
+    "pilotInsightsOverview100k",
+    "pilotInsightsExperience100k",
+    "pilotInsightsAircraft100k",
+    "pilotInsightsPlaces100k",
+    "pilotInsightsCareer100k",
     "printCompleteSql100k",
     "exportCompleteSql100k",
     "pendingActionCount4500",
@@ -53,6 +58,13 @@ test("v2.3 Print resolves latest aircraft and verification metadata once instead
   assert.match(page,/ORDER BY v\.flight_id,v\.record_revision,v\.flight_hash,v\.signed_at DESC NULLS LAST,v\.id DESC/);
   assert.match(page,/verify\.flight_id=f\.id AND verify\.record_revision=COALESCE\(f\.record_revision,1\) AND verify\.flight_hash=f\.certification_hash/);
   assert.match(page,/v\.verification_role IN \('INSTRUCTOR','SUPERVISING PIC'\)/);
+});
+
+test("v2.3 Statistics only computes aggregates required by the active section",()=>{
+  const source=read("lib/data/pilot-insights.ts"),page=read("app/(protected)/statistics/page.tsx");
+  assert.match(page,/getPilotInsightsData\(session\.userId,period,category,section\)/);
+  assert.match(source,/normalizedAnalyticsSection/);
+  for(const name of ["overview","experience","aircraft","places","career"])assert.ok(source.includes(`'all','${name}'`));
 });
 
 test("v2.3 remains a performance-only roadmap stage",()=>{
