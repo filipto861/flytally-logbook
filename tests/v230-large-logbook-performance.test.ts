@@ -44,6 +44,17 @@ test("v2.3 Dashboard uses a lean at-a-glance read model instead of recalculating
     assert.equal(overviewSql.includes(deadAggregate),false,`Dashboard overview must not compute ${deadAggregate}`);
 });
 
+test("v2.3 Print resolves latest aircraft and verification metadata once instead of per flight row",()=>{
+  const page=read("app/(protected)/print/page.tsx");
+  assert.doesNotMatch(page,/LEFT JOIN LATERAL\(/);
+  assert.match(page,/DISTINCT ON\(UPPER\(TRIM\(a\.registration\)\)\)/);
+  assert.match(page,/ORDER BY UPPER\(TRIM\(a\.registration\)\),a\.id DESC/);
+  assert.match(page,/DISTINCT ON\(v\.flight_id,v\.record_revision,v\.flight_hash\)/);
+  assert.match(page,/ORDER BY v\.flight_id,v\.record_revision,v\.flight_hash,v\.signed_at DESC NULLS LAST,v\.id DESC/);
+  assert.match(page,/verify\.flight_id=f\.id AND verify\.record_revision=COALESCE\(f\.record_revision,1\) AND verify\.flight_hash=f\.certification_hash/);
+  assert.match(page,/v\.verification_role IN \('INSTRUCTOR','SUPERVISING PIC'\)/);
+});
+
 test("v2.3 remains a performance-only roadmap stage",()=>{
   const roadmap=read("ROADMAP.md");
   assert.match(roadmap,/### v2\.3 — Large Logbook Performance & Scalability/);
