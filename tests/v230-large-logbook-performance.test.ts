@@ -30,6 +30,20 @@ test("v2.3 keeps a retained 100k read-performance gate over production hot paths
   assert.match(workflow,/retention-days: 90/);
 });
 
+test("v2.3 Dashboard uses a lean at-a-glance read model instead of recalculating Statistics",()=>{
+  const source=read("lib/data/dashboard.ts"),page=read("app/(protected)/dashboard/page.tsx");
+  assert.match(page,/getDashboardOverviewData\(session\.userId,"all"\)/);
+  const match=source.match(/getDashboardOverviewData[\s\S]*?sql`([\s\S]*?)`,650/);
+  assert.ok(match,"Dashboard overview production SQL must remain directly measurable");
+  const overviewSql=match[1];
+  assert.match(overviewSql,/SUM\(activity_minutes\).*total_minutes/s);
+  assert.match(overviewSql,/SUM\(logged_minutes\).*ull_minutes/s);
+  assert.match(overviewSql,/SUM\(logged_minutes\).*easa_minutes/s);
+  assert.match(overviewSql,/SUM\(block_minutes\) FILTER\(WHERE role='SAFETY PILOT'\).*safety_minutes/s);
+  for(const deadAggregate of ["jsonb_agg","top_aircraft","top_routes","top_airports","month_key","year_key"])
+    assert.equal(overviewSql.includes(deadAggregate),false,`Dashboard overview must not compute ${deadAggregate}`);
+});
+
 test("v2.3 remains a performance-only roadmap stage",()=>{
   const roadmap=read("ROADMAP.md");
   assert.match(roadmap,/### v2\.3 — Large Logbook Performance & Scalability/);
