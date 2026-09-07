@@ -5,14 +5,32 @@ export const LOGBOOK_PRINT_SCOPES=[
   {value:"ull-easa",label:"ULL + EASA"},
 ] as const;
 
+export const LOGBOOK_OUTPUT_CATEGORIES=[
+  {value:"all",label:"All categories"},
+  {value:"AEROPLANE",label:"Aeroplane"},
+  {value:"ULL",label:"ULL"},
+  {value:"SAILPLANE",label:"Sailplane"},
+  {value:"HELICOPTER",label:"Helicopter"},
+  {value:"BALLOON",label:"Balloon"},
+  {value:"OTHER",label:"Other"},
+] as const;
+
 export type LogbookPrintScope=(typeof LOGBOOK_PRINT_SCOPES)[number]["value"];
+export type LogbookOutputCategory=(typeof LOGBOOK_OUTPUT_CATEGORIES)[number]["value"];
 
 export function normalizeLogbookPrintScope(value:unknown):LogbookPrintScope{
   const normalized=String(value??"").trim().toLowerCase();
   return LOGBOOK_PRINT_SCOPES.some(item=>item.value===normalized)?normalized as LogbookPrintScope:"all";
 }
 
+export function normalizeLogbookOutputCategory(value:unknown):LogbookOutputCategory{
+  const normalized=String(value??"").trim().toUpperCase();
+  if(!normalized||normalized==="ALL")return"all";
+  return LOGBOOK_OUTPUT_CATEGORIES.some(item=>item.value===normalized)?normalized as LogbookOutputCategory:"all";
+}
+
 export function logbookPrintScopeLabel(scope:LogbookPrintScope){return LOGBOOK_PRINT_SCOPES.find(item=>item.value===scope)?.label??LOGBOOK_PRINT_SCOPES[0].label}
+export function logbookOutputCategoryLabel(category:LogbookOutputCategory){return LOGBOOK_OUTPUT_CATEGORIES.find(item=>item.value===category)?.label??LOGBOOK_OUTPUT_CATEGORIES[0].label}
 export function logbookScopeIncludesFstd(scope:LogbookPrintScope){return scope!=="ull"}
 
 export function matchesLogbookPrintScope(evidence:unknown,scope:LogbookPrintScope){

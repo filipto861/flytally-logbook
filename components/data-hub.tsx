@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BackupCenter } from "@/components/backup-center";
 import { BackupRestore } from "@/components/backup-restore";
 import { FlightTrash } from "@/components/flight-trash";
-import { LOGBOOK_PRINT_SCOPES } from "@/lib/logbook-print";
+import { LOGBOOK_OUTPUT_CATEGORIES,LOGBOOK_PRINT_SCOPES } from "@/lib/logbook-print";
 import type { StoredBackup } from "@/lib/backup-center";
 import type { DeletedFlight } from "@/lib/flight-trash";
 import type { RestoreState,TrashRestoreState } from "@/app/(protected)/export/actions";
@@ -40,15 +40,16 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
         </section>
 
         <section className="panel export-workspace" aria-label="Export flight records">
-          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV now use the same logbook scope, date range and auxiliary-role rules as the printable logbook.</p></div></header>
+          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV preserve the stored logbook evidence and now also expose the regulatory category plus category-specific movement evidence.</p></div></header>
           <form className="export-filter" action="/api/export" method="get">
             <label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label>
             <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
+            <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select><small>Optional category scope; legacy records use the same conservative resolver as Flights and Statistics.</small></label>
             <label>Registration<input name="registration" placeholder="OK-..."/><small>Filters flight rows only</small></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
             <div className="export-format-actions"><button className="primary-button" name="format" value="xls">Excel</button><button name="format" value="csv">CSV</button></div>
           </form>
-          <p className="muted">Excel includes filtered flight rows plus an FSTD sheet for Complete, EASA and ULL + EASA. CSV contains filtered flight rows only. Invalid or reversed date ranges are rejected instead of silently returning an empty export.</p>
+          <p className="muted">Excel includes filtered flight rows and a category-aware summary. FSTD is included only when no regulatory-category filter is active, because FSTD sessions do not store a flight regulatory-category snapshot. CSV contains filtered flight rows only.</p>
         </section>
 
         <section className="panel export-workspace" aria-label="Complete account backup"><header><div><p className="eyebrow">BACKUP EXPORT</p><h2>Complete JSON backup</h2><p className="muted">Unfiltered portable account backup. Safety Pilot and all other records are always retained.</p></div></header><div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a></div></section>
