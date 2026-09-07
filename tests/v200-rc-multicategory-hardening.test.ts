@@ -61,8 +61,8 @@ test("v2.0-RC certification action uses the category router and revision archive
 });
 
 test("v2.0-RC portable backup, restore and trash paths preserve category evidence",()=>{
-  const backup=read("lib/portable-backup.ts"),restore=read("lib/account-restore-v6.ts"),trash=read("lib/flight-trash.ts");
-  assert.match(backup,/formatVersion:11/);
+  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),trash=read("lib/flight-trash.ts");
+  assert.match(backup,/format:"pilot-logbook-portable",version:11/);
   assert.match(backup,/SELECT \* FROM flights WHERE user_id=/);
   assert.match(restore,/jsonb_populate_record\(NULL::flights/);
   assert.match(restore,/flight_certified_revisions/);
