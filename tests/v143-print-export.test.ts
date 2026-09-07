@@ -50,7 +50,7 @@ test("v1.43.0 print preview reports size and handles empty or invalid selections
   assert.match(page,/records\.length\?paginateEasaRecords\(records,10\):\[\]/);
   assert.match(page,/selected records/);
   assert.match(page,/Large print selection/);
-  assert.match(page,/No records match the selected logbook scope and date range/);
+  assert.match(page,/No records match the selected logbook scope.*date range/);
   assert.match(page,/Correct the date range before opening the printable logbook/);
   assert.match(page,/logbookScopeIncludesFstd/);
   assert.match(page,/<Header\/>/);

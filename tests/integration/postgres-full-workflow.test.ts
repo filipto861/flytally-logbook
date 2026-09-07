@@ -158,7 +158,7 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   const detailVerification=sqlBlock(detail,"SELECT v.id,v.signer_user_id,v.signed_at,v.credential_snapshot");
   assert.equal(rows(render(detailVerification,{id:401,userId:41})).length,0,"R1 signature must not appear as current after opening R2");
 
-  const printQuery=sqlBlock(print,"SELECT f.date,f.evidence,f.registration,f.aircraft_type");
+  const printQuery=sqlBlock(print,"SELECT f.date,f.evidence,f.regulatory_category,f.registration,f.aircraft_type");
   const draftPrint=rows(render(printQuery,{userId:41,scope:"easa",from:null,to:null,includeAuxiliary:false}));
   assert.equal(draftPrint.length,1);
   assert.equal(draftPrint[0].certified_at,null);

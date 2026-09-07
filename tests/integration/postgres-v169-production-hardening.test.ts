@@ -205,7 +205,7 @@ test("v1.69 pilot insights exclude auxiliary modes on the mixed-category 50k acc
 
 test("v1.69 complete print selection remains bounded at 50k without auxiliary-role pollution",{skip:!enabled},()=>{
   const source=read("app/(protected)/print/page.tsx");
-  const block=sqlBlock(source,"SELECT f.date,f.evidence,f.registration,f.aircraft_type");
+  const block=sqlBlock(source,"SELECT f.date,f.evidence,f.regulatory_category,f.registration,f.aircraft_type");
   const complete=render(block,{userId:SCALE_USER,scope:"all",from:null,to:null,includeAuxiliary:false});
   const result=explain(complete);recordMetric("printCompleteSql50k",result,4000);
   assert.equal(Number(run(`SELECT COUNT(*) FROM (${complete}) q`)),LOGGED_ROWS);
