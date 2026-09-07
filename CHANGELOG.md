@@ -2,6 +2,18 @@
 
 This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
 
+## 2.1.0 — Dashboard & Statistics consolidation — 2026-09-07
+
+### Changed
+- Dashboard is a stable all-time at-a-glance home without historical period controls; period analysis lives in Statistics.
+- Historical Dashboard period URLs hand off to the equivalent Statistics scope instead of silently losing the selected period.
+- Career snapshot is a dedicated Statistics workspace and no longer lengthens Overview; its all-time nature is explicit and its period selector is hidden.
+- Existing Dashboard saved-layout migration/customization remains intact and analytical widgets cannot be re-added to Dashboard.
+
+### Preserved
+- v2.0 category-aware logged-time, certification, sharing, print/export and Dashboard Safety Pilot semantics are unchanged.
+- No database schema, regulatory calculation or credential workflow changed in this release.
+
 ## 2.0.0 — Multi-category Pilot Logbook — 2026-09-07
 
 ### Added

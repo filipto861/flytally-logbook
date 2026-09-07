@@ -2,7 +2,14 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.0.0 — Multi-category Pilot Logbook
+## Current release — v2.1.0 — Dashboard & Statistics consolidation
+
+- Keep Dashboard as a concise, stable all-time snapshot for total flying, category totals, last flight, recency and quick actions.
+- Keep historical period selection and analytical trends exclusively in Statistics while redirecting legacy Dashboard period URLs safely.
+- Give Career its own Statistics workspace and make its all-time scope explicit rather than embedding it in Overview.
+- Preserve saved Dashboard layouts through the v1.70 compatibility projection and keep analytical widgets out of normal Dashboard customization.
+- Preserve all v2.0 category-aware time, certification, sharing, print/export and data-integrity semantics without a schema change.
+## v2.0.0 — Multi-category Pilot Logbook
 
 - Use one canonical category/capability contract for `AEROPLANE`, `HELICOPTER`, `SAILPLANE`, `BALLOON`, `ULL` and conservative `OTHER` records.
 - Keep one Add/Edit flight workflow while exposing category-appropriate evidence: Part-FCL PF movements, SFCL launch/TMG evidence and BFCL take-off/landing operation context.
