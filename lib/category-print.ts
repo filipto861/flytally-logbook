@@ -1,5 +1,5 @@
-import { resolveRegulatoryAircraftCategory,type RegulatoryAircraftCategory } from "./aircraft-category";
-import { isAuxiliaryLogbookRole,type LogbookOutputCategory } from "./logbook-print";
+import { resolveRegulatoryAircraftCategory,type RegulatoryAircraftCategory } from "./aircraft-category.ts";
+import { isAuxiliaryLogbookRole,type LogbookOutputCategory } from "./logbook-print.ts";
 
 export type CategoryPrintRecord=Record<string,unknown>&{regulatory_category:RegulatoryAircraftCategory};
 export type CategoryPrintTotals={flights:number;minutes:number;picMinutes:number;dualMinutes:number;instructorMinutes:number;movements:number;landings:number};
