@@ -1,0 +1,39 @@
+name: v2.0-E2 anchor fixup
+on:
+  push:
+    branches:
+      - codex/v200-category-print
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v200-category-print
+      - name: Update print SQL anchors and remove helper
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('tests/integration/postgres-full-workflow.test.ts'),
+              Path('tests/integration/postgres-scale-readiness.test.ts'),
+              Path('tests/integration/postgres-v169-production-hardening.test.ts'),
+          ]
+          old = 'SELECT f.date,f.evidence,f.registration,f.aircraft_type'
+          new = 'SELECT f.date,f.evidence,f.regulatory_category,f.registration,f.aircraft_type'
+          for path in files:
+              text = path.read_text()
+              if old not in text:
+                  raise SystemExit(f'anchor not found in {path}')
+              path.write_text(text.replace(old, new))
+          Path('.github/workflows/v200-e2-anchor-fix.yml').unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/integration/postgres-full-workflow.test.ts tests/integration/postgres-scale-readiness.test.ts tests/integration/postgres-v169-production-hardening.test.ts .github/workflows/v200-e2-anchor-fix.yml
+          git commit -m "v2.0-E2 align PostgreSQL print query anchors"
+          git push origin HEAD:codex/v200-category-print
