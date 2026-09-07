@@ -62,8 +62,18 @@ export default async function PrintPage({searchParams}:{searchParams:Promise<Par
       CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END block_minutes,
       CASE WHEN f.takeoff~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END air_minutes
       FROM flights f
-      LEFT JOIN LATERAL(SELECT NULLIF(TRIM(a.icao_type),'') icao_type FROM aircraft a WHERE a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)) ORDER BY a.id DESC LIMIT 1) ac ON TRUE
-      LEFT JOIN LATERAL(SELECT COALESCE(NULLIF(TRIM(u.display_name),''),NULLIF(TRIM(v.credential_snapshot->>'identity'),'')) instructor_approval_name FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.status='signed' AND v.verification_role IN ('INSTRUCTOR','SUPERVISING PIC') ORDER BY v.signed_at DESC NULLS LAST,v.id DESC LIMIT 1) verify ON TRUE
+      LEFT JOIN(
+        SELECT DISTINCT ON(UPPER(TRIM(a.registration))) UPPER(TRIM(a.registration)) registration_key,NULLIF(TRIM(a.icao_type),'') icao_type
+        FROM aircraft a WHERE a.user_id=${userId}
+        ORDER BY UPPER(TRIM(a.registration)),a.id DESC
+      ) ac ON ac.registration_key=UPPER(TRIM(f.registration))
+      LEFT JOIN(
+        SELECT DISTINCT ON(v.flight_id,v.record_revision,v.flight_hash) v.flight_id,v.record_revision,v.flight_hash,
+          COALESCE(NULLIF(TRIM(u.display_name),''),NULLIF(TRIM(v.credential_snapshot->>'identity'),'')) instructor_approval_name
+        FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id
+        WHERE v.flight_user_id=${userId} AND v.status='signed' AND v.verification_role IN ('INSTRUCTOR','SUPERVISING PIC')
+        ORDER BY v.flight_id,v.record_revision,v.flight_hash,v.signed_at DESC NULLS LAST,v.id DESC
+      ) verify ON verify.flight_id=f.id AND verify.record_revision=COALESCE(f.record_revision,1) AND verify.flight_hash=f.certification_hash
       WHERE f.user_id=${userId}
         AND (${scope}='all' OR (${scope}='ull' AND UPPER(f.evidence)='ULL') OR (${scope}='easa' AND UPPER(f.evidence)='EASA') OR (${scope}='ull-easa' AND UPPER(f.evidence) IN ('ULL','EASA')))
         AND (${from}::text IS NULL OR f.date::text>=${from}::text) AND (${to}::text IS NULL OR f.date::text<=${to}::text)
