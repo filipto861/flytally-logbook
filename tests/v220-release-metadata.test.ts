@@ -13,4 +13,5 @@ test("v2.2 release metadata is aligned",()=>{
   assert.equal(lock.packages[""].version,"2.2.0");
   assert.match(read("CHANGELOG.md"),/## 2\.2\.0 — Action Center & Shared Flight Workflow/);
   assert.match(read("ROADMAP.md"),/## Current release — v2\.2\.0 — Action Center & Shared Flight Workflow/);
+  assert.equal(fs.existsSync(path.join(root,".github/workflows/v220-release-cut.yml")),false);
 });
