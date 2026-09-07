@@ -46,3 +46,12 @@ test("v2.0-E2 printable page keeps FCL.050 only for powered context and exposes 
   assert.match(page,/category===\"all\"/);
   assert.ok((hub.match(/name="category"/g)||[]).length>=2);
 });
+
+test("v2.0-E2 print query projects category evidence before partitioning FCL and neutral pages",()=>{
+  const page=read("app/(protected)/print/page.tsx");
+  for(const field of ["f.regulatory_category","f.takeoff","f.landing","f.launch_method","f.launches","f.takeoffs_day","f.takeoffs_night","f.balloon_class","f.balloon_group","f.balloon_operation","air_minutes"])assert.match(page,new RegExp(field.replace(".","\\.")));
+  assert.match(page,/const selectedFlights=selectCategoryPrintRecords\(rawFlights,category\),partitioned=partitionCategoryPrintRecords\(selectedFlights\)/);
+  assert.match(page,/const fclFlights:EasaPrintRecord\[\]=partitioned\.fcl\.map/);
+  assert.doesNotMatch(page,/partitioned\.sailplane\.map\(row=>\(\{\.\.\.row,kind:\"flight\"/);
+  assert.match(page,/includeFstd=logbookScopeIncludesFstd\(scope\)&&category===\"all\"/);
+});
