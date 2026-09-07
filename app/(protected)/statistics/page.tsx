@@ -7,7 +7,7 @@ import { directionalRouteHref,routePairHref } from "@/lib/route-filter";
 
 export const metadata={title:"Statistics | FlyTally"};
 const periods=[["all","All time"],["year","This year"],["12m","Last 12 months"],["previous","Previous year"]] as const;
-const sections=[["overview","Overview"],["experience","Experience"],["aircraft","Aircraft"],["places","Airports & routes"]] as const;
+const sections=[["overview","Overview"],["experience","Experience"],["aircraft","Aircraft"],["places","Airports & routes"],["career","Career"]] as const;
 const categories=[["","All"],["AEROPLANE","Aeroplane"],["ULL","ULL"],["SAILPLANE","Sailplane"],["HELICOPTER","Helicopter"],["BALLOON","Balloon"]] as const;
 const categoryLabels:Record<string,string>={AEROPLANE:"Aeroplane",ULL:"ULL",SAILPLANE:"Sailplane",HELICOPTER:"Helicopter",BALLOON:"Balloon",OTHER:"Other"};
 const sectionKeys=new Set<string>(sections.map(([key])=>key)),categoryKeys=new Set<string>(categories.map(([key])=>key));
@@ -22,7 +22,7 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
   return <>
     <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
     <nav className="period-control" aria-label="Statistics category">{categories.map(([key,label])=><Link key={key||"ALL"} className={category===key?"active":""} href={statisticsHref(period,section,key)}>{label}</Link>)}</nav>
-    <div className="period-control">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} href={statisticsHref(key,section,category)}>{label}</Link>)}</div>
+    {section!=="career"?<div className="period-control" aria-label="Statistics period">{periods.map(([key,label])=><Link key={key} className={period===key?"active":""} href={statisticsHref(key,section,category)}>{label}</Link>)}</div>:null}
     <div className="period-control" aria-label="Statistics section">{sections.map(([key,label])=><Link key={key} className={section===key?"active":""} href={statisticsHref(period,key,category)}>{label}</Link>)}</div>
 
     {section==="overview"?<>
@@ -42,12 +42,12 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
       </section>
 
       <PilotInsightsChart data={data.monthly}/>
-
-      <section className="panel">
-        <div className="section-heading"><div><p className="eyebrow">LONG-TERM OVERVIEW</p><h2>Career snapshot</h2><p className="muted">Always all-time within the selected category scope, independent of the period filter above.</p></div></div>
-        <div className="mini-metrics"><div><span>First recorded flight</span><b>{data.career.firstDate||"—"}</b></div><div><span>Latest recorded flight</span><b>{data.career.lastDate||"—"}</b></div><div><span>Active years</span><b>{data.career.activeYears}</b></div><div><span>Career logged time</span><b>{formatInsightDuration(data.career.minutes)}</b></div><div><span>Career flights</span><b>{data.career.flights}</b></div><div><span>Busiest year</span><b>{data.career.busiestYear||"—"}</b><small>{data.career.busiestYear?`${formatInsightDuration(data.career.busiestYearMinutes)} · ${data.career.busiestYearFlights} flights`:"No data"}</small></div></div>
-      </section>
     </>:null}
+
+    {section==="career"?<section className="panel">
+      <div className="section-heading"><div><p className="eyebrow">LONG-TERM OVERVIEW</p><h2>Career snapshot</h2><p className="muted">All-time history within {scopeLabel.toLowerCase()}. Period filters do not apply to Career.</p></div></div>
+      <div className="mini-metrics"><div><span>First recorded flight</span><b>{data.career.firstDate||"—"}</b></div><div><span>Latest recorded flight</span><b>{data.career.lastDate||"—"}</b></div><div><span>Active years</span><b>{data.career.activeYears}</b></div><div><span>Career logged time</span><b>{formatInsightDuration(data.career.minutes)}</b></div><div><span>Career flights</span><b>{data.career.flights}</b></div><div><span>Busiest year</span><b>{data.career.busiestYear||"—"}</b><small>{data.career.busiestYear?`${formatInsightDuration(data.career.busiestYearMinutes)} · ${data.career.busiestYearFlights} flights`:"No data"}</small></div></div>
+    </section>:null}
 
     {section==="experience"?<>
       <section className="panel">

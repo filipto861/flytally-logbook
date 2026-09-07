@@ -22,19 +22,21 @@ const legacyDashboardDetails={
 
 type LegacyDashboardDetail=keyof typeof legacyDashboardDetails;
 const isLegacyDetail=(value:string):value is LegacyDashboardDetail=>Object.prototype.hasOwnProperty.call(legacyDashboardDetails,value);
+const isLegacyPeriod=(value:string)=>periods.some(([key])=>key===value);
 function CategoryCard({title,data}:{title:string;data:{minutes:number;landings:number;flights:number}}){return <article className="metric category-card"><span>{title}</span><strong>{formatDuration(data.minutes)}</strong><div><small>{data.flights} flights</small><small>{data.landings} landings</small></div></article>}
 
 export default async function DashboardPage({searchParams}:{searchParams:Promise<{period?:string;detail?:string}>}){
-  const params=await searchParams,requestedPeriod=params.period??"all",selected=periods.some(([key])=>key===requestedPeriod)?requestedPeriod:"all",detail=params.detail??"";
+  const params=await searchParams,requestedPeriod=params.period??"all",legacyPeriod=isLegacyPeriod(requestedPeriod)?requestedPeriod:"all",detail=params.detail??"";
   if(isLegacyDetail(detail)){
     const target=legacyDashboardDetails[detail];
     if(target.section==="flights")redirect("/flights");
-    redirect(`/statistics?period=${encodeURIComponent(selected)}&section=${target.section}`);
+    redirect(`/statistics?period=${encodeURIComponent(legacyPeriod)}&section=${target.section}`);
   }
+  if(!detail&&params.period&&isLegacyPeriod(requestedPeriod))redirect(`/statistics?period=${encodeURIComponent(legacyPeriod)}&section=overview`);
 
   const session=await requireUser();
   const[data,settings,attentionItems]=await Promise.all([
-    getDashboardData(session.userId,selected),
+    getDashboardData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
   ]);
@@ -49,8 +51,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
   };
   const visibleLayout=layout.filter(item=>item.enabled);
   return <>
-    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · your flying summary and the next places to go. Trends and detailed breakdowns live in Statistics.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
-    <div className="period-control" aria-label="Dashboard period">{periods.map(([key,label])=><Link key={key} className={selected===key?"active":""} href={`/dashboard?period=${key}`}>{label}</Link>)}</div>
+    <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · your all-time flying snapshot and the next places to go. Historical periods, trends and detailed breakdowns live in Statistics.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
     <section className="dashboard-layout-grid" aria-label="Dashboard overview">
       {visibleLayout.map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
     </section>
@@ -62,7 +63,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       <div className="mini-metrics">
         <div><span>Logbook</span><b><Link className="row-link" href="/flights/new">Add flight →</Link></b><small>Record a new flight</small></div>
         {attentionItems.length?<div><span>Data quality</span><b><Link className="row-link" href="/flights/needs-attention">Needs attention →</Link></b><small>{attentionItems.length} {attentionItems.length===1?"flight requires":"flights require"} review</small></div>:null}
-        <div><span>Analysis</span><b><Link className="row-link" href={`/statistics?period=${encodeURIComponent(selected)}&section=overview`}>Statistics →</Link></b><small>Trends, experience, aircraft and routes</small></div>
+        <div><span>Analysis</span><b><Link className="row-link" href="/statistics?period=all&section=overview">Statistics →</Link></b><small>Periods, trends, experience, aircraft and routes</small></div>
         <div><span>Records</span><b><Link className="row-link" href="/data">Print & data →</Link></b><small>Print, export and backup tools</small></div>
       </div>
     </section>
