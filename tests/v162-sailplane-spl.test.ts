@@ -14,7 +14,7 @@ const splFlight=(overrides:Partial<SplFlight>={}):SplFlight=>({date:"2026-08-01"
 
 test("v1.62 release metadata and production PR acceptance gate are synchronized",()=>{
   const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
-  assert.ok(/^1\.(?:6[2-9]|[7-9]\d|\d{3,})\./.test(pkg.version));assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
+  const [major,minor]=String(pkg.version).split(".").map(Number);assert.ok(major>1||(major===1&&minor>=62));assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
   assert.match(read("ROADMAP.md"),/v1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);assert.match(read("CHANGELOG.md"),/1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);
   const workflow=read(".github/workflows/verify-web.yml");assert.match(workflow,/pull_request:[\s\S]*codex\/vercel-migration-v080/);assert.match(workflow,/PostgreSQL acceptance tests/);
 });

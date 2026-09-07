@@ -67,7 +67,7 @@ test("v1.44.0 keeps stabilized regulatory and mobile direction unchanged",()=>{
   assert.match(roadmap,/## v1\.44\.0 · Production hardening & cleanup/);
   assert.match(roadmap,/preserve certification payloads\/hashes\/revisions/);
   assert.match(roadmap,/FCL\.050 print layout and global mobile navigation/);
-  assert.match(roadmap,/## Current release — v1\.\d+\.\d+/);
+  assert.match(roadmap,/## Current release — v\d+\.\d+\.\d+/);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(layout,/viewportFit:"cover"/);
 });

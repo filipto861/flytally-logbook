@@ -2,7 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v1.62.0 — Sailplane / SPL / TMG support
+## Current release — v2.0.0 — Multi-category Pilot Logbook
+
+- Use one canonical category/capability contract for `AEROPLANE`, `HELICOPTER`, `SAILPLANE`, `BALLOON`, `ULL` and conservative `OTHER` records.
+- Keep one Add/Edit flight workflow while exposing category-appropriate evidence: Part-FCL PF movements, SFCL launch/TMG evidence and BFCL take-off/landing operation context.
+- Keep historical TMG in Part-FCL unless Sailplane context is explicit and never rewrite certified category evidence during compatibility migrations.
+- Apply coherent category-aware time semantics across Flights, Dashboard, Statistics, Print/Export and sharing while keeping auxiliary roles out of regulatory pilot-experience totals.
+- Route certification by resolved regulatory family so Part-FCL keeps FCL.050 safeguards without applying aeroplane SP/MP, SE/ME or BLOCK-time assumptions to SFCL/BFCL records.
+- Preserve category, launch and BFCL evidence through certification revisions, sharing, trash/restore and portable backup, with PostgreSQL plus 10k/50k release gates.
+
+## v1.62.0 — Sailplane / SPL / TMG support
 
 - Extend the single flight-entry workflow with explicit `AEROPLANE`, `SAILPLANE`, `ULL` and `OTHER` regulatory context instead of deriving legal meaning from aircraft class alone.
 - Keep legacy TMG records in Part-FCL unless SPL / Part-SFCL context is explicitly selected.
