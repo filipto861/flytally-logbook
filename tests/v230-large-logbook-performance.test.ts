@@ -14,17 +14,14 @@ test("v2.3 keeps a retained 100k read-performance gate over production hot paths
     "dashboardAllTime100k",
     "flightListFirstPage100k",
     "pilotInsights100k",
-    "pilotInsightsOverview100k",
-    "pilotInsightsExperience100k",
-    "pilotInsightsAircraft100k",
-    "pilotInsightsPlaces100k",
-    "pilotInsightsCareer100k",
     "printCompleteSql100k",
     "exportCompleteSql100k",
     "pendingActionCount4500",
     "auditArchivedRevisions500",
     "flightAuditLatest100Of5000",
   ])assert.ok(integration.includes(metric),`missing v2.3 performance metric ${metric}`);
+  assert.match(integration,/\["overview","experience","aircraft","places","career"\] as const/);
+  assert.match(integration,/recordMetric\(`pilotInsights\$\{section\[0\]\.toUpperCase\(\)\}\$\{section\.slice\(1\)\}100k`/);
   assert.match(integration,/read\("lib\/data\/dashboard\.ts"\)/);
   assert.match(integration,/read\("lib\/data\/flights-fast\.ts"\)/);
   assert.match(integration,/read\("lib\/data\/pilot-insights\.ts"\)/);
