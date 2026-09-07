@@ -1,0 +1,34 @@
+name: v2.0-E2 scale schema fixup
+on:
+  push:
+    branches:
+      - codex/v200-category-print
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v200-category-print
+      - name: Align 10k print fixture schema and remove helper
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('tests/integration/postgres-scale-readiness.test.ts')
+          text=path.read_text()
+          old="aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',"
+          new="aircraft_make TEXT NOT NULL DEFAULT '',aircraft_model TEXT NOT NULL DEFAULT '',aircraft_variant TEXT NOT NULL DEFAULT '',departure TEXT NOT NULL DEFAULT '',arrival TEXT NOT NULL DEFAULT '',off_block TEXT NOT NULL DEFAULT '',takeoff TEXT NOT NULL DEFAULT '',landing TEXT NOT NULL DEFAULT '',on_block TEXT NOT NULL DEFAULT '',launch_method TEXT NOT NULL DEFAULT '',launches INTEGER NOT NULL DEFAULT 0,takeoffs_day INTEGER NOT NULL DEFAULT 0,takeoffs_night INTEGER NOT NULL DEFAULT 0,balloon_class TEXT NOT NULL DEFAULT '',balloon_group TEXT NOT NULL DEFAULT '',balloon_operation TEXT NOT NULL DEFAULT '',"
+          if old not in text:
+              raise SystemExit('10k flights schema anchor not found')
+          path.write_text(text.replace(old,new,1))
+          Path('.github/workflows/v200-e2-scale-schema-fix.yml').unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/integration/postgres-scale-readiness.test.ts .github/workflows/v200-e2-scale-schema-fix.yml
+          git commit -m "v2.0-E2 align 10k print fixture category schema"
+          git push origin HEAD:codex/v200-category-print
