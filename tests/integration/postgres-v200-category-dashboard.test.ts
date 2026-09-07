@@ -21,6 +21,7 @@ function render(){
   assert.doesNotMatch(rendered,/\$\{/);return rendered;
 }
 function rows(statement:string){const json=run(`WITH q AS (${statement}) SELECT COALESCE(json_agg(row_to_json(q)),'[]'::json)::text FROM q`);return JSON.parse(json||"[]") as Array<Record<string,unknown>>}
+function jsonObjects(value:unknown):Array<Record<string,unknown>>{if(Array.isArray(value))return value as Array<Record<string,unknown>>;if(typeof value==="string")try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[]}catch{}return[]}
 
 before(()=>{
   if(!enabled)return;
@@ -74,9 +75,7 @@ test("v2.0-F Dashboard uses category-aware logged time while preserving Safety P
 
 test("v2.0-F Dashboard trend and aircraft aggregates use the same category-aware basis",{skip:!enabled},()=>{
   const row=rows(render())[0]??{};
-  const monthly=Array.isArray(row.monthly)?row.monthly as Array<Record<string,unknown>>:[];
-  const yearly=Array.isArray(row.yearly)?row.yearly as Array<Record<string,unknown>>:[];
-  const aircraft=Array.isArray(row.top_aircraft)?row.top_aircraft as Array<Record<string,unknown>>:[];
+  const monthly=jsonObjects(row.monthly),yearly=jsonObjects(row.yearly),aircraft=jsonObjects(row.top_aircraft);
   assert.equal(monthly.length,1);
   assert.equal(Number(monthly[0].total),380);
   assert.equal(Number(monthly[0].easa),260);
