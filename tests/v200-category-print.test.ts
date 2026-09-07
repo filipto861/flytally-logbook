@@ -55,3 +55,9 @@ test("v2.0-E2 print query projects category evidence before partitioning FCL and
   assert.doesNotMatch(page,/partitioned\.sailplane\.map\(row=>\(\{\.\.\.row,kind:\"flight\"/);
   assert.match(page,/includeFstd=logbookScopeIncludesFstd\(scope\)&&category===\"all\"/);
 });
+
+test("v2.0-E2 10k print fixture follows the category evidence projection",()=>{
+  const scale=read("tests/integration/postgres-scale-readiness.test.ts");
+  for(const field of ["regulatory_category","launch_method","launches","takeoffs_day","takeoffs_night","balloon_class","balloon_group","balloon_operation"])assert.match(scale,new RegExp(field));
+  assert.match(scale,/SELECT f\.date,f\.evidence,f\.regulatory_category,f\.registration,f\.aircraft_type/);
+});
