@@ -8,7 +8,7 @@ import { ensureV132Schema } from "@/lib/v132-schema";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
-import { blockingComplianceIssues,fcl050FlightCompliance } from "@/lib/fcl050-compliance";
+import { blockingComplianceIssues,flightCertificationCompliance } from "@/lib/fcl050-compliance";
 import { flightCertificationHash } from "@/lib/certification-integrity";
 import { upsertInstructorRequest } from "@/lib/training-verification";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
@@ -19,8 +19,8 @@ async function autoRequestTrainingVerification(userId:number,flightId:number,row
 export async function certifyFlight(flightId:number,form:FormData){
   const {userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV132Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);if(!Number.isSafeInteger(flightId)||flightId<=0||text(form.get("confirm"))!=="certify")return;
   const rows=await sql`SELECT f.id,f.date::text date,f.evidence,f.registration,f.aircraft_make,f.aircraft_model,f.aircraft_variant,f.aircraft_type,f.aircraft_class,f.regulatory_category,f.balloon_class,f.balloon_group,f.balloon_operation,f.launch_method,f.launches,f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,f.starts,f.operation_type,f.engine_type,f.operator_name,f.flight_number,f.operation_context,f.landings_day,f.landings_night,f.movement_evidence_recorded,f.takeoffs_day,f.takeoffs_night,f.approaches_day,f.approaches_night,f.night_minutes,f.ifr_minutes,f.pic_minutes,f.copilot_minutes,f.dual_minutes,f.instructor_minutes,f.commander,f.instructor,f.role,f.task,f.note,f.purpose_code,f.verification_name,f.verification_reference,f.certified_at,f.certification_version,f.record_revision,f.correction_reason,u.display_name pilot_name FROM flights f JOIN users u ON u.id=f.user_id WHERE f.id=${flightId} AND f.user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;
-  const row=rows[0];if(!row||row.certified_at)return;if(text(row.regulatory_category).toUpperCase()==="BALLOON"&&!["FREE","TETHERED"].includes(text(row.balloon_operation).toUpperCase()))return;
-  const compliance=fcl050FlightCompliance(row,text(row.pilot_name));if(blockingComplianceIssues(compliance).length)return;
+  const row=rows[0];if(!row||row.certified_at)return;
+  const compliance=flightCertificationCompliance(row,text(row.pilot_name));if(blockingComplianceIssues(compliance).length)return;
   const certificationHash=flightCertificationHash({...row,certification_version:8},userId,8);
   await sql.transaction([sql`UPDATE flights SET locked_at=NULL,locked_by_user_id=NULL WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND locked_at IS NOT NULL`,sql`UPDATE flights SET certified_at=NOW(),certified_by_user_id=${userId},certification_hash=${certificationHash},certification_version=8,locked_at=NOW(),locked_by_user_id=${userId} WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL`]);
   await autoRequestTrainingVerification(userId,flightId,row);await refreshRecencySnapshot(userId);revalidateFlight(flightId);
