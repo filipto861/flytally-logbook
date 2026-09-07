@@ -1,0 +1,57 @@
+name: v2.3 Print query optimizer
+
+on:
+  push:
+    branches:
+      - codex/v230-large-logbook-performance
+    paths:
+      - .github/workflows/v230-print-query-optimizer.yml
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v230-large-logbook-performance
+          fetch-depth: 0
+      - name: Replace per-row print lookups
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path("app/(protected)/print/page.tsx")
+          source=path.read_text()
+          old="""      FROM flights f
+                LEFT JOIN LATERAL(SELECT NULLIF(TRIM(a.icao_type),'') icao_type FROM aircraft a WHERE a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)) ORDER BY a.id DESC LIMIT 1) ac ON TRUE
+                LEFT JOIN LATERAL(SELECT COALESCE(NULLIF(TRIM(u.display_name),''),NULLIF(TRIM(v.credential_snapshot->>'identity'),'')) instructor_approval_name FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.status='signed' AND v.verification_role IN ('INSTRUCTOR','SUPERVISING PIC') ORDER BY v.signed_at DESC NULLS LAST,v.id DESC LIMIT 1) verify ON TRUE
+                WHERE f.user_id=${userId}"""
+          new="""      FROM flights f
+                LEFT JOIN(
+                  SELECT DISTINCT ON(UPPER(TRIM(a.registration))) UPPER(TRIM(a.registration)) registration_key,NULLIF(TRIM(a.icao_type),'') icao_type
+                  FROM aircraft a WHERE a.user_id=${userId}
+                  ORDER BY UPPER(TRIM(a.registration)),a.id DESC
+                ) ac ON ac.registration_key=UPPER(TRIM(f.registration))
+                LEFT JOIN(
+                  SELECT DISTINCT ON(v.flight_id,v.record_revision,v.flight_hash) v.flight_id,v.record_revision,v.flight_hash,
+                    COALESCE(NULLIF(TRIM(u.display_name),''),NULLIF(TRIM(v.credential_snapshot->>'identity'),'')) instructor_approval_name
+                  FROM flight_verifications v LEFT JOIN users u ON u.id=v.signer_user_id
+                  WHERE v.flight_user_id=${userId} AND v.status='signed' AND v.verification_role IN ('INSTRUCTOR','SUPERVISING PIC')
+                  ORDER BY v.flight_id,v.record_revision,v.flight_hash,v.signed_at DESC NULLS LAST,v.id DESC
+                ) verify ON verify.flight_id=f.id AND verify.record_revision=COALESCE(f.record_revision,1) AND verify.flight_hash=f.certification_hash
+                WHERE f.user_id=${userId}"""
+          if source.count(old)!=1:
+              raise SystemExit(f"expected one print lookup block, found {source.count(old)}")
+          path.write_text(source.replace(old,new))
+          PY
+      - name: Commit optimized production query
+        run: |
+          git rm .github/workflows/v230-print-query-optimizer.yml
+          git add 'app/(protected)/print/page.tsx'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'perf(v2.3): precompute print lookup maps'
+          git push origin HEAD:codex/v230-large-logbook-performance
