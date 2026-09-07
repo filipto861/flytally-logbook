@@ -82,7 +82,7 @@ export async function GET(request:Request){
       AND (${auxiliary}='include' OR UPPER(TRIM(COALESCE(role,''))) NOT IN ('SAFETY PILOT','PAX','OBSERVER'))
     ORDER BY date,off_block,registration
   ` as Array<Record<string,unknown>>;
-  const rows=rawRows.map(({block_minutes,air_minutes,logged_minutes,...row})=>({...row,block_time:hm(block_minutes),air_time:hm(air_minutes),logged_time:hm(logged_minutes)}));
+  const rows:Array<Record<string,unknown>>=rawRows.map(row=>{const {block_minutes,air_minutes,logged_minutes,...rest}=row;return{...rest,block_time:hm(block_minutes),air_time:hm(air_minutes),logged_time:hm(logged_minutes)}});
 
   const fileBase=`flytally-logbook-${scope}-${outputRangeFileToken(range)}`;
   if(format==="xls"){
