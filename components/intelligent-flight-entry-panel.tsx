@@ -52,7 +52,7 @@ function applyFieldValue(form:HTMLFormElement,name:string,value:string){
 
 function InlineInsight({item}:{item:IntelligentInsight}){
   const attention=item.tone==="attention";
-  return <small className={attention?"field-message-error":"role-guidance"} data-intelligent-review={item.code}>
+  return <small className={attention?"form-error":"role-guidance"} data-intelligent-review={item.code} role={attention?"alert":undefined}>
     <strong>{attention?"Check before save: ":item.tone==="warning"?"History check: ":"Suggestion: "}{item.title}</strong> {item.message}
   </small>;
 }
@@ -73,7 +73,7 @@ export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryC
 
   return <>
     {continuation&&form&&departureTarget?createPortal(<small className="role-guidance" data-intelligent-review="continuation">
-      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
+      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="detail-button" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
     </small>,departureTarget):null}
     {inline.map(({item,target})=>target?createPortal(<InlineInsight item={item}/>,target,`intelligent-${item.code}`):null)}
     {fallback.length?<section className="panel" aria-live="polite" data-intelligent-review="fallback">
