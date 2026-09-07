@@ -2,27 +2,17 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.2.0 — Action Center & Shared Flight Workflow
+## Current release — v2.3.0 — Large Logbook Performance & Scalability
 
-- Keep unresolved workflow decisions in one authoritative Actions inbox sourced from the underlying workflow tables rather than notification read state.
-- Show Actions in global navigation and Dashboard only while a genuine pending decision exists, while keeping Notifications as update/history and Needs attention as data-quality work.
-- Require shared-flight actions to match the current certified source revision/hash and de-duplicate legacy instructor approvals behind canonical participations.
-- Reuse the established Review & add, Review & sign, Accept and Decline workflows so certification fingerprints, verification payloads, sharing ownership and audit trails stay authoritative.
-- Preserve v2.1 Dashboard/Statistics information architecture and all v2.0 multi-category semantics without a schema change.
+- Retain 10k/50k release gates and add a controlled 100k-flight read-performance gate for production hot paths.
+- Keep Dashboard concise with a lean at-a-glance read model instead of recomputing Statistics aggregates.
+- Keep complete Print preparation bounded by resolving latest aircraft and signed-verification metadata set-wise rather than once per flight row.
+- Compute only the aggregates required by the active Statistics section while preserving the canonical multi-category time/category engine and backward-compatible all-section mode.
+- Preserve v2.2 Action Center workflows, v2.1 Dashboard/Statistics information architecture, v2.0 regulatory semantics and certified-data integrity without a schema change or historical-row rewrite.
 
-## Post-v2.2 roadmap
+## Post-v2.3 roadmap
 
-The next roadmap phase prioritizes performance, workflow quality and product consistency before another major expansion of regulatory scope.
-
-### v2.3 — Large Logbook Performance & Scalability
-
-- Audit and benchmark Dashboard, Flights, Statistics, Action Center, Print/Export and certified-history reads on 10k, 50k and a read-only 100k-flight dataset.
-- Measure real server response times and browser rendering cost rather than relying only on build success.
-- Keep pagination, filtering, search and analytics fast on large mixed-category accounts.
-- Measure large career-logbook browser print behavior and optimize only demonstrated bottlenecks.
-- Remove redundant reads, duplicate aggregation work and avoidable serial data dependencies where evidence shows a measurable benefit.
-- Consider chunked or streaming output only where ordinary CSV/XLS/print generation becomes a proven bottleneck.
-- Keep this release performance-only: no new regulatory semantics or parallel user workflows.
+The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
 
 ### v2.4 — Flight Entry & Review 2.0
 
