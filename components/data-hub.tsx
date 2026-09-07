@@ -26,21 +26,22 @@ export function DataHub({backups,deletedFlights,createAction,restoreStoredAction
     </nav>
 
     <div className="data-hub-content">
-      {section==="export"?<div className="export-hub-workspace" role="tabpanel" id="data-panel-export" aria-labelledby="data-tab-export"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose one output</h2><p className="muted">Use the printable logbook for an official record. Excel and CSV are for your own data processing.</p></header>
+      {section==="export"?<div className="export-hub-workspace" role="tabpanel" id="data-panel-export" aria-labelledby="data-tab-export"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose one output</h2><p className="muted">Use the printable logbook for a structured pilot record. Excel and CSV are for your own data processing.</p></header>
         <section className="panel export-workspace" aria-label="Printable pilot logbook">
           <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">Keep the date range empty for the complete logbook, or limit large print jobs to a period. Holder identity comes from Licences.</p></div></header>
           <form className="export-filter" action="/print" method="get">
             <label>From<input type="date" name="from"/><small>Optional</small></label>
             <label>To<input type="date" name="to"/><small>Optional</small></label>
-            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes every logbook category; ULL + EASA excludes other categories.</small></label>
+            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes every logbook category; ULL + EASA excludes other evidence.</small></label>
+            <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select><small>Part-FCL/powered records keep the established FCL.050 view; Sailplane and Balloon use category-specific FlyTally print views.</small></label>
             <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
             <div className="export-format-actions"><button className="primary-button">Open printable logbook</button></div>
           </form>
-          <p className="muted">For very large career logbooks, a date range keeps the browser print preview fast. Leaving both dates empty still opens the complete logbook.</p>
+          <p className="muted">Category-specific Sailplane, Balloon and Other views are structured FlyTally records, not authority-issued forms. FSTD is shown only when no regulatory-category filter is active.</p>
         </section>
 
         <section className="panel export-workspace" aria-label="Export flight records">
-          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV preserve the stored logbook evidence and now also expose the regulatory category plus category-specific movement evidence.</p></div></header>
+          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV preserve the stored logbook evidence and expose the regulatory category plus category-specific movement evidence.</p></div></header>
           <form className="export-filter" action="/api/export" method="get">
             <label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label>
             <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
