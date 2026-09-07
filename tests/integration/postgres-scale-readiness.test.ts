@@ -126,7 +126,7 @@ after(()=>{
 
 test("AC-24 dashboard production query remains bounded with 10,000 pilot flights",{skip:!enabled},()=>{
   const source=read("lib/data/dashboard.ts");
-  const query=render(sqlBlock(source,"WITH track AS MATERIALIZED("),{userId:71,start:null,end:null});
+  const query=render(sqlBlock(source,"WITH track AS MATERIALIZED(","last"),{userId:71,start:null,end:null});
   const result=explain(query);recordMetric("dashboardAllTime10k",result,2000);
   const row=rows(query)[0];
   assert.equal(Number(row.total_flights),10000);

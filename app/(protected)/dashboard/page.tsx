@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardEditor } from "@/components/dashboard-editor";
 import { requireUser } from "@/lib/auth/require-user";
-import { formatDuration,getDashboardData } from "@/lib/data/dashboard";
+import { formatDuration,getDashboardOverviewData } from "@/lib/data/dashboard";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
 import { dashboardLayoutFromPreferences,dashboardOverviewLayout,defaultDashboardOverviewLayout,type DashboardWidgetId } from "@/lib/dashboard-widgets";
@@ -37,7 +37,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
 
   const session=await requireUser();
   const[data,settings,attentionItems,actionCount]=await Promise.all([
-    getDashboardData(session.userId,"all"),
+    getDashboardOverviewData(session.userId,"all"),
     sql`SELECT preferences_json FROM user_settings WHERE user_id=${session.userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     getIntelligentLogbookAttention(session.userId),
     getPendingActionCount(session.userId),

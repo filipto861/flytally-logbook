@@ -36,9 +36,11 @@ const n=(value:unknown)=>Number(value??0)||0;
 const s=(value:unknown)=>String(value??"").trim();
 const jsonObjects=(value:unknown):Array<Record<string,unknown>>=>{if(Array.isArray(value))return value as Array<Record<string,unknown>>;if(typeof value==="string")try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[]}catch{}return[]};
 const normalizedCategory=(value:unknown):RegulatoryAircraftCategory|null=>{const normalized=s(value).toUpperCase();return REGULATORY_AIRCRAFT_CATEGORIES.includes(normalized as RegulatoryAircraftCategory)?normalized as RegulatoryAircraftCategory:null};
+const analyticsSections=["all","overview","experience","aircraft","places","career"] as const;
+const normalizedAnalyticsSection=(value:unknown)=>(analyticsSections.includes(s(value).toLowerCase() as (typeof analyticsSections)[number])?s(value).toLowerCase():"all") as (typeof analyticsSections)[number];
 
-export async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string):Promise<PilotInsightsData>{
-  const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory);
+export async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string,requestedSection?:string):Promise<PilotInsightsData>{
+  const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory),section=normalizedAnalyticsSection(requestedSection);
   const rows=await measureServerTask("pilot-insights-data",()=>sql`
       WITH base0 AS MATERIALIZED(
         SELECT f.id,
@@ -103,10 +105,10 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           COUNT(*) FILTER(WHERE NOT auxiliary)::int flights,
           COALESCE(SUM(logged_minutes) FILTER(WHERE NOT auxiliary),0)::int minutes,
           COUNT(DISTINCT LEFT(date_key,4)) FILTER(WHERE NOT auxiliary AND date_key IS NOT NULL)::int active_years
-        FROM scope_base
+        FROM scope_base WHERE ${section}::text IN ('all','career')
       ),career_years AS(
         SELECT LEFT(date_key,4)::int year_key,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes
-        FROM scope_base WHERE NOT auxiliary AND date_key IS NOT NULL GROUP BY LEFT(date_key,4)
+        FROM scope_base WHERE ${section}::text IN ('all','career') AND NOT auxiliary AND date_key IS NOT NULL GROUP BY LEFT(date_key,4)
       ),career_best AS(
         SELECT
           COALESCE((SELECT year_key FROM career_years ORDER BY minutes DESC,flights DESC,year_key DESC LIMIT 1),0)::int busiest_year,
@@ -124,7 +126,7 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           COALESCE(SUM(pic_minutes) FILTER(WHERE NOT auxiliary AND date_key BETWEEN ${rolling.previousStart} AND ${rolling.previousEnd}),0)::int previous_pic_minutes,
           COALESCE(SUM(landings) FILTER(WHERE NOT auxiliary AND date_key BETWEEN ${rolling.previousStart} AND ${rolling.previousEnd}),0)::int previous_landings,
           COUNT(DISTINCT LEFT(date_key,7)) FILTER(WHERE NOT auxiliary AND date_key BETWEEN ${rolling.previousStart} AND ${rolling.previousEnd})::int previous_active_months
-        FROM scope_base
+        FROM scope_base WHERE ${section}::text IN ('all','overview')
       ),selected_summary AS(
         SELECT COUNT(*) FILTER(WHERE NOT auxiliary)::int selected_flights,
           COALESCE(SUM(logged_minutes) FILTER(WHERE NOT auxiliary),0)::int selected_minutes,
@@ -139,51 +141,51 @@ export async function getPilotInsightsData(userId:number,requested:string,reques
           COALESCE(SUM(logged_minutes) FILTER(WHERE role='SAFETY PILOT'),0)::int selected_safety_minutes,
           COALESCE(SUM(cost) FILTER(WHERE NOT auxiliary),0)::double precision selected_cost,
           COUNT(DISTINCT NULLIF(registration,'')) FILTER(WHERE NOT auxiliary)::int selected_unique_aircraft
-        FROM selected
+        FROM selected WHERE ${section}::text IN ('all','overview','experience','aircraft','places')
       )
       SELECT career.*,career_best.*,rolling_summary.*,selected_summary.*,
-        (SELECT COUNT(DISTINCT airport)::int FROM(SELECT NULLIF(departure,'') airport FROM selected WHERE NOT auxiliary UNION SELECT NULLIF(arrival,'') FROM selected WHERE NOT auxiliary)x WHERE airport IS NOT NULL) selected_unique_airports,
-        (SELECT COUNT(*)::int FROM(SELECT departure,arrival FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival)x) selected_unique_routes,
+        (SELECT COUNT(DISTINCT airport)::int FROM(SELECT NULLIF(departure,'') airport FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary UNION SELECT NULLIF(arrival,'') FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary)x WHERE airport IS NOT NULL) selected_unique_airports,
+        (SELECT COUNT(*)::int FROM(SELECT departure,arrival FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival)x) selected_unique_routes,
         COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.month_key) FROM(
           SELECT LEFT(date_key,7) month_key,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,
             COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(SUM(night_minutes),0)::int night_minutes,
             COALESCE(SUM(ifr_minutes),0)::int ifr_minutes,COALESCE(SUM(landings),0)::int landings
-          FROM selected WHERE date_key IS NOT NULL AND NOT auxiliary GROUP BY LEFT(date_key,7)
+          FROM selected WHERE ${section}::text IN ('all','overview') AND date_key IS NOT NULL AND NOT auxiliary GROUP BY LEFT(date_key,7)
         )m),'[]'::jsonb) monthly,
         COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.minutes DESC,r.flights DESC,r.role) FROM(
           SELECT COALESCE(NULLIF(role,''),'UNSPECIFIED') role,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes
-          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(role,''),'UNSPECIFIED')
+          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY COALESCE(NULLIF(role,''),'UNSPECIFIED')
         )r),'[]'::jsonb) roles,
         COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.minutes DESC,t.flights DESC,t.aircraft_type) FROM(
           SELECT COALESCE(NULLIF(aircraft_type,''),'Unknown') aircraft_type,COUNT(DISTINCT NULLIF(registration,''))::int registrations,
             COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(MAX(date_key),'') last_date
-          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_type,''),'Unknown')
+          FROM selected WHERE ${section}::text IN ('all','aircraft') AND NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_type,''),'Unknown')
         )t),'[]'::jsonb) aircraft_types,
         COALESCE((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.minutes DESC,c.flights DESC,c.aircraft_class) FROM(
           SELECT COALESCE(NULLIF(aircraft_class,''),'Unspecified') aircraft_class,COUNT(*)::int flights,
             COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(MAX(date_key),'') last_date
-          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_class,''),'Unspecified')
+          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_class,''),'Unspecified')
         )c),'[]'::jsonb) aircraft_classes,
         COALESCE((SELECT jsonb_agg(to_jsonb(c) ORDER BY c.minutes DESC,c.flights DESC,c.category) FROM(
           SELECT resolved_category category,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,
             COALESCE(SUM(pic_minutes),0)::int pic_minutes,COALESCE(MAX(date_key),'') last_date
-          FROM selected WHERE NOT auxiliary GROUP BY resolved_category
+          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY resolved_category
         )c),'[]'::jsonb) categories,
         COALESCE((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.minutes DESC,a.flights DESC,a.registration) FROM(
           SELECT registration,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(SUM(cost),0)::double precision cost,COALESCE(MAX(date_key),'') last_date
-          FROM selected WHERE NOT auxiliary AND registration<>'' GROUP BY registration
+          FROM selected WHERE ${section}::text IN ('all','aircraft') AND NOT auxiliary AND registration<>'' GROUP BY registration
         )a),'[]'::jsonb) registrations,
         COALESCE((SELECT jsonb_agg(to_jsonb(ap) ORDER BY ap.visits DESC,ap.last_date DESC,ap.airport) FROM(
           SELECT airport,COUNT(*)::int visits,COALESCE(SUM(dep),0)::int departures,COALESCE(SUM(arr),0)::int arrivals,COALESCE(MIN(date_key),'') first_date,COALESCE(MAX(date_key),'') last_date
           FROM(
-            SELECT date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM selected WHERE NOT auxiliary AND departure<>''
+            SELECT date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND departure<>''
             UNION ALL
-            SELECT date_key,arrival airport,0 dep,1 arr FROM selected WHERE NOT auxiliary AND arrival<>'' AND arrival<>departure
+            SELECT date_key,arrival airport,0 dep,1 arr FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND arrival<>'' AND arrival<>departure
           )e GROUP BY airport ORDER BY COUNT(*) DESC,MAX(date_key) DESC NULLS LAST,airport LIMIT 100
         )ap),'[]'::jsonb) airports,
         COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.flights DESC,r.minutes DESC,r.last_date DESC,r.departure,r.arrival) FROM(
           SELECT departure||'→'||arrival route,departure,arrival,COUNT(*)::int flights,COALESCE(SUM(logged_minutes),0)::int minutes,COALESCE(MIN(date_key),'') first_date,COALESCE(MAX(date_key),'') last_date
-          FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50
+          FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50
         )r),'[]'::jsonb) routes
       FROM career CROSS JOIN career_best CROSS JOIN rolling_summary CROSS JOIN selected_summary
     `,650) as Array<Record<string,unknown>>;

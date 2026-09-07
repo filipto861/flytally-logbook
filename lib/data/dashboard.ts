@@ -17,6 +17,10 @@ export type DashboardData={
   topAirports:Array<{airport:string;visits:number;departures:number;arrivals:number;firstDate:string;lastDate:string}>;
   yearly:Array<{year:number;flights:number;minutes:number;landings:number}>;
 };
+export type DashboardOverviewData={
+  displayName:string;rangeLabel:string;total:PrimaryMetric;ull:PrimaryMetric;easa:PrimaryMetric;safetyMinutes:number;tracks:number;gpsKm:number;
+  lastFlight:null|{id:number;date:string;registration:string;departure:string;arrival:string};
+};
 
 const n=(value:unknown)=>Number(value??0)||0;
 const s=(value:unknown)=>String(value??"").trim();
@@ -30,6 +34,61 @@ function bounds(period:DashboardPeriod,today=new Date()){
   if(period==="previous")return{start:`${year-1}-01-01`,end:`${year-1}-12-31`,label:String(year-1)};
   if(period==="12m"){const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1));return{start:iso(start),end:iso(today),label:`${start.toLocaleDateString("en-GB")}–${today.toLocaleDateString("en-GB")}`}}
   return{start:null,end:null,label:"all time"};
+}
+
+export async function getDashboardOverviewData(userId:number,requested:string):Promise<DashboardOverviewData>{
+  const period:DashboardPeriod=PERIODS.includes(requested as DashboardPeriod)?requested as DashboardPeriod:"all",{start,end,label}=bounds(period);
+  const rows=await measureServerTask("dashboard-overview-data",()=>sql`WITH track AS MATERIALIZED(
+      SELECT COUNT(*)::int tracks,COALESCE(SUM(t.distance_km),0)::double precision gps_km
+      FROM flight_tracks t JOIN flights tf ON tf.id=t.flight_id AND tf.user_id=${userId}
+      WHERE t.user_id=${userId}
+        AND (${start}::text IS NULL OR (tf.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND tf.date::text>=${start}::text))
+        AND (${end}::text IS NULL OR (tf.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND tf.date::text<=${end}::text))
+    ),base0 AS MATERIALIZED(
+      SELECT UPPER(TRIM(COALESCE(f.evidence,''))) evidence,
+        CASE
+          WHEN UPPER(TRIM(COALESCE(f.regulatory_category,''))) IN ('AEROPLANE','HELICOPTER','BALLOON','SAILPLANE','ULL','OTHER') THEN UPPER(TRIM(COALESCE(f.regulatory_category,'')))
+          WHEN UPPER(TRIM(COALESCE(f.aircraft_class,'')))='ULL' OR UPPER(TRIM(COALESCE(f.evidence,'')))='ULL' THEN 'ULL'
+          WHEN UPPER(TRIM(COALESCE(f.aircraft_class,'')))='GLIDER' THEN 'SAILPLANE'
+          WHEN UPPER(TRIM(COALESCE(f.aircraft_class,'')))='HELICOPTER' THEN 'HELICOPTER'
+          WHEN UPPER(TRIM(COALESCE(f.aircraft_class,'')))='BALLOON' THEN 'BALLOON'
+          WHEN UPPER(TRIM(COALESCE(f.aircraft_class,''))) IN ('SEP','TMG','MEP','SET') THEN 'AEROPLANE'
+          ELSE 'OTHER' END resolved_category,
+        CASE WHEN UPPER(TRIM(COALESCE(f.role,'')))='INSTRUKTOR' THEN 'INSTRUCTOR' WHEN UPPER(TRIM(COALESCE(f.role,'')))='STUDENT' OR (TRIM(COALESCE(f.role,''))='' AND TRIM(COALESCE(f.instructor,''))<>'') THEN 'DUAL' ELSE UPPER(TRIM(COALESCE(f.role,''))) END role,
+        GREATEST(COALESCE(f.starts,0),0)::int legacy_starts,GREATEST(COALESCE(f.landings_day,0),0)::int stored_day_landings,GREATEST(COALESCE(f.landings_night,0),0)::int stored_night_landings,
+        CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END::int block_minutes,
+        CASE WHEN f.takeoff~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END::int air_minutes
+      FROM flights f WHERE f.user_id=${userId}
+        AND (${start}::text IS NULL OR (f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND f.date::text>=${start}::text))
+        AND (${end}::text IS NULL OR (f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND f.date::text<=${end}::text))
+    ),base1 AS MATERIALIZED(
+      SELECT *,role IN ('SAFETY PILOT','PAX','OBSERVER') auxiliary,role NOT IN ('PAX','OBSERVER') dashboard_total,
+        CASE WHEN resolved_category IN ('SAILPLANE','BALLOON') THEN CASE WHEN air_minutes>0 THEN air_minutes ELSE block_minutes END ELSE block_minutes END::int logged_minutes,
+        CASE WHEN stored_day_landings+stored_night_landings>0 THEN stored_day_landings+stored_night_landings ELSE legacy_starts END::int landings
+      FROM base0
+    ),base AS MATERIALIZED(
+      SELECT *,CASE WHEN role='SAFETY PILOT' THEN block_minutes ELSE logged_minutes END::int activity_minutes FROM base1
+    ),summary AS(
+      SELECT COUNT(*) FILTER(WHERE dashboard_total)::int total_flights,COALESCE(SUM(activity_minutes) FILTER(WHERE dashboard_total),0)::int total_minutes,COALESCE(SUM(landings) FILTER(WHERE dashboard_total AND NOT auxiliary),0)::int total_landings,
+        COUNT(*) FILTER(WHERE evidence='ULL' AND NOT auxiliary)::int ull_flights,COALESCE(SUM(logged_minutes) FILTER(WHERE evidence='ULL' AND NOT auxiliary),0)::int ull_minutes,COALESCE(SUM(landings) FILTER(WHERE evidence='ULL' AND NOT auxiliary),0)::int ull_landings,
+        COUNT(*) FILTER(WHERE evidence='EASA' AND NOT auxiliary)::int easa_flights,COALESCE(SUM(logged_minutes) FILTER(WHERE evidence='EASA' AND NOT auxiliary),0)::int easa_minutes,COALESCE(SUM(landings) FILTER(WHERE evidence='EASA' AND NOT auxiliary),0)::int easa_landings,
+        COALESCE(SUM(block_minutes) FILTER(WHERE role='SAFETY PILOT'),0)::int safety_minutes
+      FROM base
+    ),last_flight AS(
+      SELECT f.id,f.date::text date,UPPER(TRIM(COALESCE(f.registration,''))) registration,UPPER(TRIM(COALESCE(f.departure,''))) departure,UPPER(TRIM(COALESCE(f.arrival,''))) arrival
+      FROM flights f WHERE f.user_id=${userId}
+        AND (${start}::text IS NULL OR (f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND f.date::text>=${start}::text))
+        AND (${end}::text IS NULL OR (f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND f.date::text<=${end}::text))
+      ORDER BY CASE WHEN f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::text ELSE NULL END DESC NULLS LAST,COALESCE(f.off_block,'') DESC,f.id DESC LIMIT 1
+    )
+    SELECT COALESCE((SELECT display_name FROM users WHERE id=${userId}),'Pilot') display_name,summary.*,track.tracks,track.gps_km,
+      last_flight.id last_id,last_flight.date last_date,last_flight.registration last_registration,last_flight.departure last_departure,last_flight.arrival last_arrival
+    FROM summary CROSS JOIN track LEFT JOIN last_flight ON TRUE`,650) as Array<Record<string,unknown>>;
+  const row=rows[0]??{},lastId=n(row.last_id);
+  return{
+    displayName:s(row.display_name)||"Pilot",rangeLabel:label,total:metric(row,"total"),ull:metric(row,"ull"),easa:metric(row,"easa"),safetyMinutes:n(row.safety_minutes),tracks:n(row.tracks),gpsKm:n(row.gps_km),
+    lastFlight:lastId?{id:lastId,date:s(row.last_date),registration:s(row.last_registration),departure:s(row.last_departure),arrival:s(row.last_arrival)}:null,
+  };
 }
 
 export async function getDashboardData(userId:number,requested:string):Promise<DashboardData>{
