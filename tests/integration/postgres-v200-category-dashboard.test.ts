@@ -14,7 +14,7 @@ const quoted=`"${schema}"`;
 function raw(statement:string){return spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
 function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim()}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);if(typeof value==="boolean")return value?"TRUE":"FALSE";return`'${String(value).replaceAll("'","''")}'`}
-function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/dashboard.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH track AS MATERIALIZED("));assert.ok(block,"v2.0-F Dashboard SQL block not found");return block}
+function queryBlock(){const source=fs.readFileSync(path.join(root,"lib/data/dashboard.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH track AS MATERIALIZED("));assert.ok(block,"v2.0-F Dashboard SQL block not found");return block.replaceAll("\\\\d","\\d")}
 function render(){
   const values:Record<string,unknown>={userId:1,start:null,end:null};
   const rendered=queryBlock().replace(/\$\{([^}]+)\}/g,(_all,expression)=>{const key=String(expression).trim();assert.ok(Object.prototype.hasOwnProperty.call(values,key),`No v2.0-F Dashboard SQL fixture for ${key}`);return literal(values[key])});
