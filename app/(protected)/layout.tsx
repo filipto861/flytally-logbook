@@ -3,7 +3,7 @@ import { cache } from "react";
 import { AppShell } from "@/components/app-shell";
 import { requireUser } from "@/lib/auth/require-user";
 import { ensureRuntimeSchema } from "@/lib/runtime-schema";
-import { unreadNotificationCount } from "@/lib/notifications";
+import { getPendingActionCount } from "@/lib/pending-actions";
 import { getIntelligentLogbookAttention } from "@/lib/intelligent-logbook-service";
 import { sql } from "@/lib/db";
 import { parsePilotPreferences } from "@/lib/logbook-print";
@@ -33,6 +33,6 @@ export async function generateViewport():Promise<Viewport>{
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const{session,appearance}=await getShellContext();
   await ensureRuntimeSchema();
-  const[unreadNotifications,attentionItems]=await Promise.all([unreadNotificationCount(session.userId),getIntelligentLogbookAttention(session.userId)]);
-  return <AppShell role={session.role} unreadNotifications={unreadNotifications} attentionCount={attentionItems.length} appearance={appearance}>{children}</AppShell>;
+  const[actionCount,attentionItems]=await Promise.all([getPendingActionCount(session.userId),getIntelligentLogbookAttention(session.userId)]);
+  return <AppShell role={session.role} actionCount={actionCount} attentionCount={attentionItems.length} appearance={appearance}>{children}</AppShell>;
 }

@@ -23,7 +23,7 @@ const profileLinks=[
   {href:"/data",icon:"data",label:"Print & data"},
 ] as const;
 
-export function Sidebar({role="user",unreadNotifications=0,attentionCount=0}:{role?:"admin"|"user";unreadNotifications?:number;attentionCount?:number}){
+export function Sidebar({role="user",actionCount=0,attentionCount=0}:{role?:"admin"|"user";actionCount?:number;attentionCount?:number}){
   const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
   useEffect(()=>{setCollapsed(localStorage.getItem("logbook-sidebar")==="collapsed")},[]);
   useEffect(()=>{setMobile(false)},[pathname]);
@@ -43,7 +43,8 @@ export function Sidebar({role="user",unreadNotifications=0,attentionCount=0}:{ro
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>setMobile(false)}/>
     <nav id="primary-navigation" aria-label="Main navigation">
       {visibleMainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href),attentionLink=link.href==="/flights/needs-attention";return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{attentionLink?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>})}
-      <Link className={activeFor("/notifications")?"active":""} href="/notifications" title="Notifications" aria-current={activeFor("/notifications")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="notifications"/></i><span>Notifications</span>{unreadNotifications?<b className="notification-badge" aria-label={`${unreadNotifications} unread`}>{Math.min(unreadNotifications,99)}</b>:null}</Link>
+      {actionCount>0?<Link className={activeFor("/actions")?"active":""} href="/actions" title="Actions" aria-current={activeFor("/actions")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="actions"/></i><span>Actions</span><b className="notification-badge" aria-label={`${actionCount} pending actions`}>{Math.min(actionCount,99)}</b></Link>:null}
+      <Link className={activeFor("/notifications")?"active":""} href="/notifications" title="Notifications" aria-current={activeFor("/notifications")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="notifications"/></i><span>Notifications</span></Link>
       <div className={styles.group}>
         <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Manage</span></div>
         {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
