@@ -17,81 +17,31 @@ jobs:
       - name: Apply v2.2.0 release metadata
         shell: bash
         run: |
+          npm version 2.2.0 --no-git-tag-version
           python3 - <<'PY'
           from pathlib import Path
-
-          pkg=Path('package.json')
-          text=pkg.read_text()
-          old='"version": "2.1.0"'
-          assert text.count(old)>=1
-          pkg.write_text(text.replace(old,'"version": "2.2.0"',1))
-
-          lock=Path('package-lock.json')
-          text=lock.read_text()
-          assert text.count(old)>=2
-          lock.write_text(text.replace(old,'"version": "2.2.0"',2))
+          from base64 import b64decode
 
           changelog=Path('CHANGELOG.md')
           text=changelog.read_text()
           anchor='## 2.1.0 — Dashboard & Statistics consolidation — 2026-09-07'
           assert anchor in text
-          section='''## 2.2.0 — Action Center & Shared Flight Workflow — 2026-09-07
-
-### Added
-- Added an authoritative Action Center for unresolved flight invitations, instructor verification requests, aircraft-training signatures and incoming pilot connection requests.
-- Sidebar and Dashboard now surface Actions only while a real workflow decision is pending; the badge is derived from workflow state rather than unread notification state.
-
-### Changed
-- Notifications remain the update/history inbox and no longer act as the global pending-work signal.
-- Needs attention remains separate and continues to contain only actionable data-quality findings from the pilot's own logbook.
-- Shared-flight and signature requests reuse the existing Review & add, Review & sign and Decline workflows; inline Action Center decisions disappear immediately after completion.
-
-### Integrity
-- Pending shared-flight actions require the exact current certified source revision and hash, so stale requests do not create ghost actions.
-- Legacy instructor approvals are de-duplicated when the canonical instructor participation exists, while that participation still counts once as the real action.
-- Modern `signature_request` notifications now support the same direct Decline path as other shared-flight requests.
-- No database schema, certification fingerprint, verification payload, sharing ownership or audit-trail semantics changed.
-
-'''
+          section=b64decode('IyMgMi4yLjAg4oCUIEFjdGlvbiBDZW50ZXIgJiBTaGFyZWQgRmxpZ2h0IFdvcmtmbG93IOKAlCAyMDI2LTA5LTA3CgojIyMgQWRkZWQKLSBBZGRlZCBhbiBhdXRob3JpdGF0aXZlIEFjdGlvbiBDZW50ZXIgZm9yIHVucmVzb2x2ZWQgZmxpZ2h0IGludml0YXRpb25zLCBpbnN0cnVjdG9yIHZlcmlmaWNhdGlvbiByZXF1ZXN0cywgYWlyY3JhZnQtdHJhaW5pbmcgc2lnbmF0dXJlcyBhbmQgaW5jb21pbmcgcGlsb3QgY29ubmVjdGlvbiByZXF1ZXN0cy4KLSBTaWRlYmFyIGFuZCBEYXNoYm9hcmQgbm93IHN1cmZhY2UgQWN0aW9ucyBvbmx5IHdoaWxlIGEgcmVhbCB3b3JrZmxvdyBkZWNpc2lvbiBpcyBwZW5kaW5nOyB0aGUgYmFkZ2UgaXMgZGVyaXZlZCBmcm9tIHdvcmtmbG93IHN0YXRlIHJhdGhlciB0aGFuIHVucmVhZCBub3RpZmljYXRpb24gc3RhdGUuCgojIyMgQ2hhbmdlZAotIE5vdGlmaWNhdGlvbnMgcmVtYWluIHRoZSB1cGRhdGUvaGlzdG9yeSBpbmJveCBhbmQgbm8gbG9uZ2VyIGFjdCBhcyB0aGUgZ2xvYmFsIHBlbmRpbmctd29yayBzaWduYWwuCi0gTmVlZHMgYXR0ZW50aW9uIHJlbWFpbnMgc2VwYXJhdGUgYW5kIGNvbnRpbnVlcyB0byBjb250YWluIG9ubHkgYWN0aW9uYWJsZSBkYXRhLXF1YWxpdHkgZmluZGluZ3MgZnJvbSB0aGUgcGlsb3QncyBvd24gbG9nYm9vay4KLSBTaGFyZWQtZmxpZ2h0IGFuZCBzaWduYXR1cmUgcmVxdWVzdHMgcmV1c2UgdGhlIGV4aXN0aW5nIFJldmlldyAmIGFkZCwgUmV2aWV3ICYgc2lnbiBhbmQgRGVjbGluZSB3b3JrZmxvd3M7IGlubGluZSBBY3Rpb24gQ2VudGVyIGRlY2lzaW9ucyBkaXNhcHBlYXIgaW1tZWRpYXRlbHkgYWZ0ZXIgY29tcGxldGlvbi4KCiMjIyBJbnRlZ3JpdHkKLSBQZW5kaW5nIHNoYXJlZC1mbGlnaHQgYWN0aW9ucyByZXF1aXJlIHRoZSBleGFjdCBjdXJyZW50IGNlcnRpZmllZCBzb3VyY2UgcmV2aXNpb24gYW5kIGhhc2gsIHNvIHN0YWxlIHJlcXVlc3RzIGRvIG5vdCBjcmVhdGUgZ2hvc3QgYWN0aW9ucy4KLSBMZWdhY3kgaW5zdHJ1Y3RvciBhcHByb3ZhbHMgYXJlIGRlLWR1cGxpY2F0ZWQgd2hlbiB0aGUgY2Fub25pY2FsIGluc3RydWN0b3IgcGFydGljaXBhdGlvbiBleGlzdHMsIHdoaWxlIHRoYXQgcGFydGljaXBhdGlvbiBzdGlsbCBjb3VudHMgb25jZSBhcyB0aGUgcmVhbCBhY3Rpb24uCi0gTW9kZXJuIGBzaWduYXR1cmVfcmVxdWVzdGAgbm90aWZpY2F0aW9ucyBub3cgc3VwcG9ydCB0aGUgc2FtZSBkaXJlY3QgRGVjbGluZSBwYXRoIGFzIG90aGVyIHNoYXJlZC1mbGlnaHQgcmVxdWVzdHMuCi0gTm8gZGF0YWJhc2Ugc2NoZW1hLCBjZXJ0aWZpY2F0aW9uIGZpbmdlcnByaW50LCB2ZXJpZmljYXRpb24gcGF5bG9hZCwgc2hhcmluZyBvd25lcnNoaXAgb3IgYXVkaXQtdHJhaWwgc2VtYW50aWNzIGNoYW5nZWQuCgo=').decode()
           changelog.write_text(text.replace(anchor,section+anchor,1))
 
           roadmap=Path('ROADMAP.md')
           text=roadmap.read_text()
-          old_header='## Current release — v2.1.0 — Dashboard & Statistics consolidation'
-          assert old_header in text
-          current='''## Current release — v2.2.0 — Action Center & Shared Flight Workflow
+          old='## Current release — v2.1.0 — Dashboard & Statistics consolidation'
+          assert old in text
+          current=b64decode('IyMgQ3VycmVudCByZWxlYXNlIOKAlCB2Mi4yLjAg4oCUIEFjdGlvbiBDZW50ZXIgJiBTaGFyZWQgRmxpZ2h0IFdvcmtmbG93CgotIEtlZXAgdW5yZXNvbHZlZCB3b3JrZmxvdyBkZWNpc2lvbnMgaW4gb25lIGF1dGhvcml0YXRpdmUgQWN0aW9ucyBpbmJveCBzb3VyY2VkIGZyb20gdGhlIHVuZGVybHlpbmcgd29ya2Zsb3cgdGFibGVzIHJhdGhlciB0aGFuIG5vdGlmaWNhdGlvbiByZWFkIHN0YXRlLgotIFNob3cgQWN0aW9ucyBpbiBnbG9iYWwgbmF2aWdhdGlvbiBhbmQgRGFzaGJvYXJkIG9ubHkgd2hpbGUgYSBnZW51aW5lIHBlbmRpbmcgZGVjaXNpb24gZXhpc3RzLCB3aGlsZSBrZWVwaW5nIE5vdGlmaWNhdGlvbnMgYXMgdXBkYXRlL2hpc3RvcnkgYW5kIE5lZWRzIGF0dGVudGlvbiBhcyBkYXRhLXF1YWxpdHkgd29yay4KLSBSZXF1aXJlIHNoYXJlZC1mbGlnaHQgYWN0aW9ucyB0byBtYXRjaCB0aGUgY3VycmVudCBjZXJ0aWZpZWQgc291cmNlIHJldmlzaW9uL2hhc2ggYW5kIGRlLWR1cGxpY2F0ZSBsZWdhY3kgaW5zdHJ1Y3RvciBhcHByb3ZhbHMgYmVoaW5kIGNhbm9uaWNhbCBwYXJ0aWNpcGF0aW9ucy4KLSBSZXVzZSB0aGUgZXN0YWJsaXNoZWQgUmV2aWV3ICYgYWRkLCBSZXZpZXcgJiBzaWduLCBBY2NlcHQgYW5kIERlY2xpbmUgd29ya2Zsb3dzIHNvIGNlcnRpZmljYXRpb24gZmluZ2VycHJpbnRzLCB2ZXJpZmljYXRpb24gcGF5bG9hZHMsIHNoYXJpbmcgb3duZXJzaGlwIGFuZCBhdWRpdCB0cmFpbHMgc3RheSBhdXRob3JpdGF0aXZlLgotIFByZXNlcnZlIHYyLjEgRGFzaGJvYXJkL1N0YXRpc3RpY3MgaW5mb3JtYXRpb24gYXJjaGl0ZWN0dXJlIGFuZCBhbGwgdjIuMCBtdWx0aS1jYXRlZ29yeSBzZW1hbnRpY3Mgd2l0aG91dCBhIHNjaGVtYSBjaGFuZ2UuCgojIyB2Mi4xLjAg4oCUIERhc2hib2FyZCAmIFN0YXRpc3RpY3MgY29uc29saWRhdGlvbg==').decode()
+          roadmap.write_text(text.replace(old,current,1))
 
-- Keep unresolved workflow decisions in one authoritative Actions inbox sourced from the underlying workflow tables rather than notification read state.
-- Show Actions in global navigation and Dashboard only while a genuine pending decision exists, while keeping Notifications as update/history and Needs attention as data-quality work.
-- Require shared-flight actions to match the current certified source revision/hash and de-duplicate legacy instructor approvals behind canonical participations.
-- Reuse the established Review & add, Review & sign, Accept and Decline workflows so certification fingerprints, verification payloads, sharing ownership and audit trails stay authoritative.
-- Preserve v2.1 Dashboard/Statistics information architecture and all v2.0 multi-category semantics without a schema change.
-
-## v2.1.0 — Dashboard & Statistics consolidation'''
-          roadmap.write_text(text.replace(old_header,current,1))
-
-          Path('tests/v210-release-metadata.test.ts').write_text('''import assert from "node:assert/strict";
-          import fs from "node:fs";
-          import path from "node:path";
-          import test from "node:test";
-
-          const root=path.resolve(import.meta.dirname,"..");
-          const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
-
-          test("v2.1 release remains a preserved baseline for later v2.x releases",()=>{
-            const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
-            const [major,minor]=String(pkg.version).split(".").map(Number);
-            assert.ok(major>2||(major===2&&minor>=1));
-            assert.equal(lock.version,pkg.version);
-            assert.equal(lock.packages[""].version,pkg.version);
-            assert.match(read("CHANGELOG.md"),/## 2\\.1\\.0 — Dashboard & Statistics consolidation/);
-            assert.match(read("ROADMAP.md"),/## v2\\.1\\.0 — Dashboard & Statistics consolidation/);
-          });
-          '''.replace('          ',''))
+          Path('tests/v210-release-metadata.test.ts').write_bytes(b64decode('aW1wb3J0IGFzc2VydCBmcm9tICJub2RlOmFzc2VydC9zdHJpY3QiOwppbXBvcnQgZnMgZnJvbSAibm9kZTpmcyI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0aCI7CmltcG9ydCB0ZXN0IGZyb20gIm5vZGU6dGVzdCI7Cgpjb25zdCByb290PXBhdGgucmVzb2x2ZShpbXBvcnQubWV0YS5kaXJuYW1lLCIuLiIpOwpjb25zdCByZWFkPShmaWxlOnN0cmluZyk9PmZzLnJlYWRGaWxlU3luYyhwYXRoLmpvaW4ocm9vdCxmaWxlKSwidXRmOCIpOwoKdGVzdCgidjIuMSByZWxlYXNlIHJlbWFpbnMgYSBwcmVzZXJ2ZWQgYmFzZWxpbmUgZm9yIGxhdGVyIHYyLnggcmVsZWFzZXMiLCgpPT57CiAgY29uc3QgcGtnPUpTT04ucGFyc2UocmVhZCgicGFja2FnZS5qc29uIikpLGxvY2s9SlNPTi5wYXJzZShyZWFkKCJwYWNrYWdlLWxvY2suanNvbiIpKTsKICBjb25zdCBbbWFqb3IsbWlub3JdPVN0cmluZyhwa2cudmVyc2lvbikuc3BsaXQoIi4iKS5tYXAoTnVtYmVyKTsKICBhc3NlcnQub2sobWFqb3I+Mnx8KG1ham9yPT09MiYmbWlub3I+PTEpKTsKICBhc3NlcnQuZXF1YWwobG9jay52ZXJzaW9uLHBrZy52ZXJzaW9uKTsKICBhc3NlcnQuZXF1YWwobG9jay5wYWNrYWdlc1siIl0udmVyc2lvbixwa2cudmVyc2lvbik7CiAgYXNzZXJ0Lm1hdGNoKHJlYWQoIkNIQU5HRUxPRy5tZCIpLC8jIyAyXC4xXC4wIOKAlCBEYXNoYm9hcmQgJiBTdGF0aXN0aWNzIGNvbnNvbGlkYXRpb24vKTsKICBhc3NlcnQubWF0Y2gocmVhZCgiUk9BRE1BUC5tZCIpLC8jIyB2MlwuMVwuMCDigJQgRGFzaGJvYXJkICYgU3RhdGlzdGljcyBjb25zb2xpZGF0aW9uLyk7Cn0pOwo='))
+          Path('tests/v220-release-metadata.test.ts').write_bytes(b64decode('aW1wb3J0IGFzc2VydCBmcm9tICJub2RlOmFzc2VydC9zdHJpY3QiOwppbXBvcnQgZnMgZnJvbSAibm9kZTpmcyI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0aCI7CmltcG9ydCB0ZXN0IGZyb20gIm5vZGU6dGVzdCI7Cgpjb25zdCByb290PXBhdGgucmVzb2x2ZShpbXBvcnQubWV0YS5kaXJuYW1lLCIuLiIpOwpjb25zdCByZWFkPShmaWxlOnN0cmluZyk9PmZzLnJlYWRGaWxlU3luYyhwYXRoLmpvaW4ocm9vdCxmaWxlKSwidXRmOCIpOwoKdGVzdCgidjIuMiByZWxlYXNlIG1ldGFkYXRhIGlzIGFsaWduZWQiLCgpPT57CiAgY29uc3QgcGtnPUpTT04ucGFyc2UocmVhZCgicGFja2FnZS5qc29uIikpLGxvY2s9SlNPTi5wYXJzZShyZWFkKCJwYWNrYWdlLWxvY2suanNvbiIpKTsKICBhc3NlcnQuZXF1YWwocGtnLnZlcnNpb24sIjIuMi4wIik7CiAgYXNzZXJ0LmVxdWFsKGxvY2sudmVyc2lvbiwiMi4yLjAiKTsKICBhc3NlcnQuZXF1YWwobG9jay5wYWNrYWdlc1siIl0udmVyc2lvbiwiMi4yLjAiKTsKICBhc3NlcnQubWF0Y2gocmVhZCgiQ0hBTkdFTE9HLm1kIiksLyMjIDJcLjJcLjAg4oCUIEFjdGlvbiBDZW50ZXIgJiBTaGFyZWQgRmxpZ2h0IFdvcmtmbG93Lyk7CiAgYXNzZXJ0Lm1hdGNoKHJlYWQoIlJPQURNQVAubWQiKSwvIyMgQ3VycmVudCByZWxlYXNlIOKAlCB2MlwuMlwuMCDigJQgQWN0aW9uIENlbnRlciAmIFNoYXJlZCBGbGlnaHQgV29ya2Zsb3cvKTsKfSk7Cg=='))
           PY
           git rm .github/workflows/v220-release-cut.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json CHANGELOG.md ROADMAP.md tests/v210-release-metadata.test.ts
+          git add package.json package-lock.json CHANGELOG.md ROADMAP.md tests/v210-release-metadata.test.ts tests/v220-release-metadata.test.ts
           git commit -m "v2.2.0 release cut"
           git push origin HEAD:codex/v220-action-center
