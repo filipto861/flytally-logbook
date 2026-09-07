@@ -32,7 +32,7 @@ test("v1.70 migrates historical dashboard preferences without showing analytics 
 test("v1.70 dashboard is action-oriented and hands historical analysis to Statistics",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
   assert.match(page,/<h1>At a glance<\/h1>/);
-  assert.match(page,/Trends and detailed breakdowns live in Statistics/);
+  assert.match(page,/Historical periods, trends and detailed breakdowns live in Statistics/);
   assert.match(page,/QUICK ACTIONS/);
   assert.match(page,/href="\/flights\/needs-attention"/);
   assert.match(page,/\/statistics\?period=/);
@@ -64,6 +64,6 @@ test("v1.70 navigation visually separates Dashboard and Statistics",()=>{
   assert.match(sidebar,/href:"\/dashboard",icon:"dashboard",label:"Dashboard"/);
   assert.match(sidebar,/href:"\/statistics",icon:"statistics",label:"Statistics"/);
   assert.match(icons,/statistics:/);
-  assert.match(statistics,/const sections=\[\["overview","Overview"\],\["experience","Experience"\],\["aircraft","Aircraft"\],\["places","Airports & routes"\]\]/);
+  assert.match(statistics,/const sections=\[\["overview","Overview"\],\["experience","Experience"\],\["aircraft","Aircraft"\],\["places","Airports & routes"\],\["career","Career"\]\]/);
   assert.match(statistics,/PilotInsightsChart/);
 });
