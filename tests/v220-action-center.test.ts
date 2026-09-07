@@ -23,15 +23,19 @@ test("v2.2 separates authoritative pending actions from notification read state"
   assert.doesNotMatch(sidebar,/unreadNotifications/);
 });
 
-test("v2.2 Action Center reuses existing decision workflows",()=>{
-  const page=read("app/(protected)/actions/page.tsx"),pending=read("lib/pending-actions.ts");
+test("v2.2 Action Center reuses existing decision workflows and refreshes inline decisions",()=>{
+  const page=read("app/(protected)/actions/page.tsx"),pending=read("lib/pending-actions.ts"),actions=read("app/(protected)/actions/actions.ts");
   assert.match(page,/getPendingActions/);
-  assert.match(page,/acceptConnection/);
-  assert.match(page,/declineConnection/);
-  assert.match(page,/declineSharedFlight/);
+  assert.match(page,/acceptConnectionAction/);
+  assert.match(page,/declineConnectionAction/);
+  assert.match(page,/declineSharedFlightAction/);
   assert.match(page,/action[.]primaryLabel/);
   assert.match(pending,/primaryLabel:instructor\?"Review & sign":"Review & add"/);
   assert.match(pending,/primaryLabel:"Review & sign"/);
+  assert.match(actions,/acceptConnection\(form\)/);
+  assert.match(actions,/declineConnection\(form\)/);
+  assert.match(actions,/declineSharedFlight\(participationId,form\)/);
+  assert.match(actions,/revalidatePath\("\/actions"\)/);
   assert.match(page,/You’re all caught up/);
   assert.match(page,/Data-quality problems stay in Needs attention/);
 });

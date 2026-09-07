@@ -72,5 +72,5 @@ test("v2.2 pending-action count follows authoritative workflow state",{skip:!ena
   const rendered=render(query,{userId:42});
   const result=rawPsql(`SET search_path TO ${quotedSchema};\n${rendered}`);
   assert.equal(result.status,0,result.stderr||result.stdout);
-  assert.equal(Number(result.stdout.trim()),4,"expected current shared flight + incoming connection + connected training signature + non-duplicated legacy approval");
+  assert.equal(Number(result.stdout.trim()),5,"expected current shared flight + canonical instructor participation + incoming connection + connected training signature + non-duplicated legacy approval");
 });
