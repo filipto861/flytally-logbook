@@ -37,7 +37,7 @@ test("v1.43.0 keeps export scope and range aligned with print",()=>{
   assert.match(route,/normalizeLogbookPrintScope/);
   assert.match(route,/logbookScopeIncludesFstd/);
   assert.match(route,/Unsupported export format/);
-  assert.match(route,/AND \(\$\{scope\}='all'/);
+  assert.match(route,/(?:WHERE|AND) \(\$\{scope\}='all'/);
   assert.match(route,/session_date::text>=\$\{from\}/);
   assert.match(route,/session_date::text<=\$\{to\}/);
   assert.doesNotMatch(route,/SELECT f\.\*/);
