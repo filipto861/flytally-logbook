@@ -146,7 +146,7 @@ test("AC-24 flight list production query returns a responsive first page over 10
 
 test("AC-25 print production query remains bounded for date-scoped and complete 10,000-flight selection",{skip:!enabled},()=>{
   const source=read("app/(protected)/print/page.tsx");
-  const block=sqlBlock(source,"SELECT f.date,f.evidence,f.registration,f.aircraft_type");
+  const block=sqlBlock(source,"SELECT f.date,f.evidence,f.regulatory_category,f.registration,f.aircraft_type");
   const scoped=render(block,{userId:71,scope:"easa",from:"2025-01-01",to:"2026-12-31",includeAuxiliary:false});
   const scopedResult=explain(scoped);recordMetric("printDateScoped10k",scopedResult,1500);
   const scopedCount=Number(run(`SELECT COUNT(*) FROM (${scoped}) q`));
