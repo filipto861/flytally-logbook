@@ -15,12 +15,15 @@ test("v2.0-E1 exposes a stable output category vocabulary",()=>{
   assert.equal(normalizeLogbookOutputCategory(null),"all");
 });
 
-test("v2.0-E1 Data export exposes category scope without pretending Print is finished",()=>{
+test("v2.0-E2 Print and data export share the regulatory category scope",()=>{
   const hub=read("components/data-hub.tsx");
   assert.match(hub,/LOGBOOK_OUTPUT_CATEGORIES/);
-  assert.equal((hub.match(/name="category"/g)||[]).length,1);
+  assert.equal((hub.match(/name="category"/g)||[]).length,2);
+  assert.match(hub,/action="\/print"/);
+  assert.match(hub,/action="\/api\/export"/);
   assert.match(hub,/legacy records use the same conservative resolver as Flights and Statistics/);
   assert.match(hub,/FSTD is included only when no regulatory-category filter is active/);
+  assert.match(hub,/not authority-issued forms/);
 });
 
 test("v2.0-E1 export carries category-specific evidence and category-aware logged time",()=>{
