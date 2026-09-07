@@ -56,7 +56,7 @@ test("v2.0-RC certification action uses the category router and revision archive
   const action=read("app/(protected)/flights/certification-actions.ts"),integrity=read("lib/certification-integrity.ts");
   assert.match(action,/flightCertificationCompliance\(row,text\(row\.pilot_name\)\)/);
   assert.doesNotMatch(action,/const compliance=fcl050FlightCompliance/);
-  assert.match(action,/to_jsonb\(f\).*flight_certified_revisions/s);
+  assert.match(action,/flight_certified_revisions.*to_jsonb\(f\)/s);
   for(const field of ["regulatory_category","balloon_class","balloon_group","balloon_operation","launch_method","launches"])assert.match(integrity,new RegExp(field));
 });
 
