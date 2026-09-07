@@ -64,7 +64,7 @@ test("v2.0-RC portable backup, restore and trash paths preserve category evidenc
   const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),trash=read("lib/flight-trash.ts");
   assert.match(backup,/format:"pilot-logbook-portable",version:11/);
   assert.match(backup,/SELECT \* FROM flights WHERE user_id=/);
-  assert.match(restore,/jsonb_populate_record\(NULL::flights/);
+  assert.match(restore,/json_populate_record\(NULL::flights,item\)/);
   assert.match(restore,/flight_certified_revisions/);
   for(const field of ["regulatory_category","balloon_class","balloon_group","balloon_operation","launch_method","launches"])assert.match(trash,new RegExp(field));
 });
