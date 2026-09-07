@@ -1,0 +1,40 @@
+name: v2.0 GA major-version compatibility scan
+on:
+  push:
+    branches: [codex/v200-ga-release]
+    paths: [.github/workflows/v200-ga-major-scan.yml]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v200-ga-release
+      - shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/v144-production-hardening.test.ts')
+          s=p.read_text()
+          old='assert.match(roadmap,/## Current release — v1\\.\\d+\\.\\d+/);'
+          new='assert.match(roadmap,/## Current release — v\\d+\\.\\d+\\.\\d+/);'
+          assert old in s
+          p.write_text(s.replace(old,new,1))
+
+          print('--- remaining current-release major-1 assumptions ---')
+          for f in sorted(Path('tests').glob('**/*.ts')):
+              text=f.read_text()
+              for i,line in enumerate(text.splitlines(),1):
+                  if 'Current release' in line and ('v1\\.' in line or 'v1.' in line):
+                      print(f'{f}:{i}:{line}')
+                  if 'pkg.version' in line and ('^1\\.' in line or '^1.' in line):
+                      print(f'{f}:{i}:{line}')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/v144-production-hardening.test.ts
+          git rm .github/workflows/v200-ga-major-scan.yml
+          git commit -m "v2.0.0 allow major-version roadmap metadata"
+          git push origin HEAD:codex/v200-ga-release
