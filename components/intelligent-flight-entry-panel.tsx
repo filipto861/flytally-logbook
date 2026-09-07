@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect,useMemo,useState } from "react";
-import { intelligentFlightReview,type IntelligentEntryContext,type IntelligentFlightDraft } from "@/lib/intelligent-logbook-client-types";
+import { createPortal } from "react-dom";
+import { intelligentFlightReview,type IntelligentEntryContext,type IntelligentFlightDraft,type IntelligentInsight } from "@/lib/intelligent-logbook-client-types";
 
 function formDraft(form:HTMLFormElement):IntelligentFlightDraft{
   const data=new FormData(form),value=(name:string)=>String(data.get(name)??"");
@@ -11,23 +11,77 @@ function formDraft(form:HTMLFormElement):IntelligentFlightDraft{
   };
 }
 
+function preferredField(code:string){
+  if(code==="exact_duplicate")return"registration";
+  if(code==="incomplete_block_pair"||code==="missing_block_times"||code==="zero_block"||code==="duration_outlier")return"offBlock";
+  if(code==="incomplete_air_pair")return"takeoff";
+  if(code==="air_exceeds_block")return"landing";
+  if(code==="takeoff_outside_block"||code==="taxi_out_long")return"takeoff";
+  if(code==="landing_outside_block"||code==="taxi_in_long")return"landing";
+  if(code.startsWith("invalid_time_off_block"))return"offBlock";
+  if(code.startsWith("invalid_time_on_block"))return"onBlock";
+  if(code.startsWith("invalid_time_take_off"))return"takeoff";
+  if(code.startsWith("invalid_time_landing"))return"landing";
+  if(code.startsWith("movement_"))return"landingsDay";
+  if(code==="copilot_single_pilot"||code==="solo_multi_pilot")return"role";
+  if(code==="professional_context_scope")return"operationContext";
+  if(code==="professional_operator_missing")return"operatorName";
+  if(code==="professional_operation_missing")return"operationContext";
+  if(code==="registration_profile_aircraft_class")return"aircraftClass";
+  if(code==="registration_profile_regulatory_category")return"regulatoryCategory";
+  if(code==="registration_profile_evidence")return"evidence";
+  if(code==="registration_profile_engine_type")return"engineType";
+  return"";
+}
+
+function fieldTarget(form:HTMLFormElement|null,name:string){
+  if(!form||!name)return null;
+  const control=form.querySelector<HTMLElement>(`[name="${name}"]`);
+  return control?.closest<HTMLElement>("label")||control?.parentElement||null;
+}
+
+function applyFieldValue(form:HTMLFormElement,name:string,value:string){
+  const control=form.querySelector<HTMLInputElement>(`input[name="${name}"]`);
+  if(!control)return;
+  const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+  if(setter)setter.call(control,value);else control.value=value;
+  control.dispatchEvent(new Event("input",{bubbles:true}));
+  control.dispatchEvent(new Event("change",{bubbles:true}));
+  control.focus();
+}
+
+function InlineInsight({item}:{item:IntelligentInsight}){
+  const attention=item.tone==="attention";
+  return <small className={attention?"field-message-error":"role-guidance"} data-intelligent-review={item.code}>
+    <strong>{attention?"Check before save: ":item.tone==="warning"?"History check: ":"Suggestion: "}{item.title}</strong> {item.message}
+  </small>;
+}
+
 export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryContext}){
-  const[draft,setDraft]=useState<IntelligentFlightDraft>({});
+  const[draft,setDraft]=useState<IntelligentFlightDraft>({}),[form,setForm]=useState<HTMLFormElement|null>(null);
   useEffect(()=>{
-    const form=document.querySelector<HTMLFormElement>("form.flight-form");if(!form)return;
-    const sync=()=>setDraft(formDraft(form));sync();
-    form.addEventListener("input",sync);form.addEventListener("change",sync);
-    return()=>{form.removeEventListener("input",sync);form.removeEventListener("change",sync)};
+    const node=document.querySelector<HTMLFormElement>("form.flight-form");if(!node)return;
+    setForm(node);
+    const sync=()=>setDraft(formDraft(node));sync();
+    node.addEventListener("input",sync);node.addEventListener("change",sync);
+    return()=>{node.removeEventListener("input",sync);node.removeEventListener("change",sync)};
   },[]);
   const insights=useMemo(()=>intelligentFlightReview(draft,context.history),[draft,context.history]);
   const departure=String(draft.departure??"").trim().toUpperCase(),continuation=!departure?context.continuation:null;
-  if(!continuation&&!insights.length)return null;
-  return <section className="panel" aria-live="polite">
-    <div className="section-heading"><div><p className="eyebrow">INTELLIGENT REVIEW</p><h2>Worth checking</h2></div><span>{insights.length+(continuation?1:0)}</span></div>
-    <div className="credential-list">
-      {continuation?<div className="credential-card" style={{padding:"14px 16px"}}><div className="credential-main"><span>CONTINUITY SUGGESTION</span><strong>Last flight ended at {continuation.airport}</strong><small>{continuation.date} · {continuation.registration}. Use it only if this flight continues that sequence.</small></div><div className="form-actions"><Link className="secondary-button" href={`/flights/new?departure=${encodeURIComponent(continuation.airport)}`}>Use {continuation.airport} as departure</Link></div></div>:null}
-      {insights.map(item=><div className="credential-card" style={{padding:"14px 16px"}} key={item.code}><div className="credential-main"><span>{item.tone==="attention"?"CHECK BEFORE SAVE":item.tone==="warning"?"HISTORY / CONSISTENCY CHECK":"CONTEXT NOTE"}</span><strong>{item.title}</strong><small>{item.message}</small>{item.evidence?.length?<small><b>Based on:</b> {item.evidence.map(source=>`${source.label}: ${source.value}`).join(" · ")}</small>:null}</div><b className={item.tone==="attention"?"status-off":"status-warning"}>{item.tone==="attention"?"REVIEW":item.tone==="warning"?"CHECK":"INFO"}</b></div>)}
-    </div>
-    <p className="muted" style={{marginBottom:0}}>Every suggestion comes only from this form and your own stored flights. FlyTally never rewrites regulatory fields and never infers CAT, NCC, SPO, PICUS or other privileges for you.</p>
-  </section>;
+  const inline=insights.map(item=>({item,target:fieldTarget(form,preferredField(item.code))})),fallback=inline.filter(entry=>!entry.target).map(entry=>entry.item);
+  const departureTarget=fieldTarget(form,"departure");
+
+  return <>
+    {continuation&&form&&departureTarget?createPortal(<small className="role-guidance" data-intelligent-review="continuation">
+      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
+    </small>,departureTarget):null}
+    {inline.map(({item,target})=>target?createPortal(<InlineInsight item={item}/>,target,`intelligent-${item.code}`):null)}
+    {fallback.length?<section className="panel" aria-live="polite" data-intelligent-review="fallback">
+      <div className="section-heading"><div><p className="eyebrow">INTELLIGENT REVIEW</p><h2>Worth checking</h2></div><span>{fallback.length}</span></div>
+      <div className="credential-list">
+        {fallback.map(item=><div className="credential-card" style={{padding:"14px 16px"}} key={item.code}><div className="credential-main"><span>{item.tone==="attention"?"CHECK BEFORE SAVE":item.tone==="warning"?"HISTORY / CONSISTENCY CHECK":"CONTEXT NOTE"}</span><strong>{item.title}</strong><small>{item.message}</small>{item.evidence?.length?<small><b>Based on:</b> {item.evidence.map(source=>`${source.label}: ${source.value}`).join(" · ")}</small>:null}</div><b className={item.tone==="attention"?"status-off":"status-warning"}>{item.tone==="attention"?"REVIEW":item.tone==="warning"?"CHECK":"INFO"}</b></div>)}
+      </div>
+      <p className="muted" style={{marginBottom:0}}>Suggestions use only this form and your own stored flights. FlyTally never rewrites regulatory fields or infers privileges.</p>
+    </section>:null}
+  </>;
 }
