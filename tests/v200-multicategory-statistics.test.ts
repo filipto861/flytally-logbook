@@ -15,7 +15,7 @@ test("v2.0-D Statistics exposes persistent regulatory category scope",()=>{
   assert.match(page,/\[\"BALLOON\",\"Balloon\"\]/);
   assert.match(page,/statisticsHref\(key,section,category\)/);
   assert.match(page,/statisticsHref\(period,key,category\)/);
-  assert.match(page,/getPilotInsightsData\(session[.]userId,period,category\)/);
+  assert.match(page,/getPilotInsightsData\(session[.]userId,period,category(?:,section)?\)/);
   assert.match(page,/scopedFlightHref/);
 });
 
@@ -52,5 +52,5 @@ test("v2.0-D secondary analytics use the same logged-time measure and active sco
   assert.match(source,/selected_unique_airports/);
   assert.match(source,/selected_unique_routes/);
   assert.match(source,/stored_day_landings\+stored_night_landings/);
-  assert.match(source,/FROM selected WHERE NOT auxiliary GROUP BY resolved_category/);
+  assert.match(source,/FROM selected WHERE [^\n]*NOT auxiliary GROUP BY resolved_category/);
 });
