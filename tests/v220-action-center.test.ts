@@ -24,13 +24,14 @@ test("v2.2 separates authoritative pending actions from notification read state"
 });
 
 test("v2.2 Action Center reuses existing decision workflows",()=>{
-  const page=read("app/(protected)/actions/page.tsx");
+  const page=read("app/(protected)/actions/page.tsx"),pending=read("lib/pending-actions.ts");
   assert.match(page,/getPendingActions/);
   assert.match(page,/acceptConnection/);
   assert.match(page,/declineConnection/);
   assert.match(page,/declineSharedFlight/);
-  assert.match(page,/Review & sign/);
-  assert.match(page,/Review & add/);
+  assert.match(page,/action[.]primaryLabel/);
+  assert.match(pending,/primaryLabel:instructor\?"Review & sign":"Review & add"/);
+  assert.match(pending,/primaryLabel:"Review & sign"/);
   assert.match(page,/You’re all caught up/);
   assert.match(page,/Data-quality problems stay in Needs attention/);
 });
