@@ -1,3 +1,4 @@
+import { resolveRegulatoryAircraftCategory } from "./aircraft-category.ts";
 import { allocatedFunctionTimes } from "./easa-logbook.ts";
 import { isAuxiliaryLogbookRole,pilotInCommandName } from "./logbook-print.ts";
 import { roleRequiresMultiPilotOperation } from "./professional-context.ts";
@@ -61,6 +62,52 @@ export function fcl050FlightCompliance(row:Record<string,unknown>,pilotName=""):
   if(instrumentTraining&&!remarks)issues.push(issue("instrument_training_remarks","note","Instrument flight time used for licence/rating training must be described in Remarks."));
   if(!task&&!note)issues.push(issue("remarks_recommended","note","Add a concise task or remark so the purpose of the flight is traceable.","warning"));
   return issues;
+}
+
+function categorySpecificFlightCompliance(row:Record<string,unknown>,pilotName:string,category:"SAILPLANE"|"BALLOON"):ComplianceIssue[]{
+  const issues:ComplianceIssue[]=[],role=upper(row.role),auxiliary=isAuxiliaryLogbookRole(role),block=number(row.block_minutes)||duration(row.off_block,row.on_block),air=number(row.air_minutes)||duration(row.takeoff,row.landing),credited=air||block;
+  if(!validDate(row.date))issues.push(issue("date","date","A valid flight date is required."));
+  if(!text(row.registration))issues.push(issue("registration","registration","Aircraft registration is required."));
+  if(!text(row.departure))issues.push(issue("departure","departure","Departure place is required."));
+  if(!text(row.arrival))issues.push(issue("arrival","arrival","Arrival place is required."));
+  if(credited<=0)issues.push(issue("flight_time",air?"landing":"on_block","Creditable flight time must be greater than zero."));
+  if(auxiliary)issues.push(issue("non_creditable_role","role",`${role} is retained as a certified reference record but is excluded from creditable flight-time totals.`,"warning"));
+  else if(!EASA_FUNCTIONS.includes(role))issues.push(issue("pilot_function","role","Select a creditable pilot function before certification."));
+  if(!pilotInCommandName(row,pilotName))issues.push(issue("pic_name","commander","Name of PIC is required."));
+  if(role==="DUAL"&&!text(row.instructor))issues.push(issue("dual_instructor","instructor","A DUAL flight requires the instructor/PIC name."));
+  if(["SPIC","PICUS"].includes(role)){
+    if(!text(row.verification_name))issues.push(issue("supervising_pilot","verification_name",`${role} time requires the supervising PIC/FI name.`));
+    if(!text(row.verification_reference))issues.push(issue("supervising_signature","verification_reference",`${role} time must be countersigned; add the countersignature reference.`));
+  }
+  const functionTotal=number(row.pic_minutes)+number(row.copilot_minutes)+number(row.dual_minutes)+number(row.instructor_minutes);
+  if(auxiliary&&functionTotal>0)issues.push(issue("auxiliary_function_time","role",`${role} must not contain creditable pilot-function time.`));
+  if(!auxiliary&&credited>0&&functionTotal<=0)issues.push(issue("function_time","role","Pilot-function time is missing."));
+  if(!auxiliary&&credited>0&&functionTotal>credited*2)issues.push(issue("function_time_excess","role","Pilot-function allocation is inconsistent with credited flight time."));
+  if(!auxiliary&&credited>0&&EASA_FUNCTIONS.includes(role)){
+    const expected=allocatedFunctionTimes(role,credited),actual={picMinutes:number(row.pic_minutes),copilotMinutes:number(row.copilot_minutes),dualMinutes:number(row.dual_minutes),instructorMinutes:number(row.instructor_minutes)};
+    if(actual.picMinutes!==expected.picMinutes||actual.copilotMinutes!==expected.copilotMinutes||actual.dualMinutes!==expected.dualMinutes||actual.instructorMinutes!==expected.instructorMinutes)issues.push(issue("function_time_allocation","role",`${role} time is allocated inconsistently with the category-aware credited flight time.`));
+  }
+  if(block>0&&number(row.night_minutes)>block)issues.push(issue("night_time","night_minutes","Night time cannot exceed BLOCK time."));
+  if(block>0&&number(row.ifr_minutes)>block)issues.push(issue("ifr_time","ifr_minutes","IFR time cannot exceed BLOCK time."));
+  if(category==="SAILPLANE"&&upper(row.aircraft_class)!=="TMG"){
+    if(number(row.launches)<1)issues.push(issue("launches","launches","Record at least one sailplane launch before certification."));
+    if(number(row.launches)>0&&!text(row.launch_method))issues.push(issue("launch_method","launch_method","Record the sailplane launch method before certification."));
+  }
+  if(category==="BALLOON"){
+    const balloonClass=upper(row.balloon_class),balloonGroup=upper(row.balloon_group),operation=upper(row.balloon_operation);
+    if(!["HOT_AIR_BALLOON","GAS_BALLOON","HOT_AIR_AIRSHIP","MIXED_BALLOON"].includes(balloonClass))issues.push(issue("balloon_class","balloon_class","Record the Part-BFCL balloon class before certification."));
+    if(balloonClass==="HOT_AIR_BALLOON"&&!["A","B","C","D"].includes(balloonGroup))issues.push(issue("balloon_group","balloon_group","Record hot-air balloon group A, B, C or D before certification."));
+    if(!["FREE","TETHERED"].includes(operation))issues.push(issue("balloon_operation","balloon_operation","Record whether the balloon flight was free or tethered before certification."));
+  }
+  return issues;
+}
+
+/** Category-aware certification gate. Part-FCL behavior remains delegated to the established FCL.050 engine. */
+export function flightCertificationCompliance(row:Record<string,unknown>,pilotName=""):ComplianceIssue[]{
+  if(upper(row.evidence)!=="EASA")return[];
+  const category=resolveRegulatoryAircraftCategory({regulatoryCategory:row.regulatory_category,aircraftClass:row.aircraft_class,evidence:row.evidence});
+  if(category==="SAILPLANE"||category==="BALLOON")return categorySpecificFlightCompliance(row,pilotName,category);
+  return fcl050FlightCompliance(row,pilotName);
 }
 
 export function fstdCompliance(row:Record<string,unknown>):ComplianceIssue[]{
