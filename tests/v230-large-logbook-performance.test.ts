@@ -66,8 +66,9 @@ test("v2.3 Statistics only computes aggregates required by the active section",(
   for(const name of ["overview","experience","aircraft","places","career"])assert.ok(source.includes(`'all','${name}'`));
 });
 
-test("v2.3 remains a performance-only roadmap stage",()=>{
+test("v2.3 remains the performance-only current release",()=>{
   const roadmap=read("ROADMAP.md");
-  assert.match(roadmap,/### v2\.3 — Large Logbook Performance & Scalability/);
-  assert.match(roadmap,/Keep this release performance-only: no new regulatory semantics or parallel user workflows\./);
+  assert.match(roadmap,/## Current release — v2\.3\.0 — Large Logbook Performance & Scalability/);
+  assert.match(roadmap,/100k-flight read-performance gate/);
+  assert.match(roadmap,/without a schema change or historical-row rewrite/);
 });
