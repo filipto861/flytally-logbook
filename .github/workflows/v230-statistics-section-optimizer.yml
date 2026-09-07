@@ -1,0 +1,86 @@
+name: v2.3 Statistics section optimizer
+on:
+  push:
+    branches: [codex/v230-large-logbook-performance]
+    paths: [.github/workflows/v230-statistics-section-optimizer.yml]
+permissions:
+  contents: write
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/v230-large-logbook-performance
+      - name: Make Statistics analytics section-aware
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p=Path('lib/data/pilot-insights.ts')
+          s=p.read_text()
+          old='const normalizedCategory=(value:unknown):RegulatoryAircraftCategory|null=>{const normalized=s(value).toUpperCase();return REGULATORY_AIRCRAFT_CATEGORIES.includes(normalized as RegulatoryAircraftCategory)?normalized as RegulatoryAircraftCategory:null};\n\nexport async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string):Promise<PilotInsightsData>{\n  const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory);'
+          new='const normalizedCategory=(value:unknown):RegulatoryAircraftCategory|null=>{const normalized=s(value).toUpperCase();return REGULATORY_AIRCRAFT_CATEGORIES.includes(normalized as RegulatoryAircraftCategory)?normalized as RegulatoryAircraftCategory:null};\nconst analyticsSections=["all","overview","experience","aircraft","places","career"] as const;\nconst normalizedAnalyticsSection=(value:unknown)=>(analyticsSections.includes(s(value).toLowerCase() as (typeof analyticsSections)[number])?s(value).toLowerCase():"all") as (typeof analyticsSections)[number];\n\nexport async function getPilotInsightsData(userId:number,requested:string,requestedCategory?:string,requestedSection?:string):Promise<PilotInsightsData>{\n  const bounds=pilotInsightBounds(requested),rolling=rollingYearBounds(),scopeCategory=normalizedCategory(requestedCategory),section=normalizedAnalyticsSection(requestedSection);'
+          assert old in s
+          s=s.replace(old,new,1)
+
+          replacements={
+            '        FROM scope_base\n      ),career_years AS(': '        FROM scope_base WHERE ${section}::text IN (\'all\',\'career\')\n      ),career_years AS(',
+            '        FROM scope_base WHERE NOT auxiliary AND date_key IS NOT NULL GROUP BY LEFT(date_key,4)': '        FROM scope_base WHERE ${section}::text IN (\'all\',\'career\') AND NOT auxiliary AND date_key IS NOT NULL GROUP BY LEFT(date_key,4)',
+            '        FROM scope_base\n      ),selected_summary AS(': '        FROM scope_base WHERE ${section}::text IN (\'all\',\'overview\')\n      ),selected_summary AS(',
+            '        FROM selected\n      )\n      SELECT career.*': '        FROM selected WHERE ${section}::text IN (\'all\',\'overview\',\'experience\',\'aircraft\',\'places\')\n      )\n      SELECT career.*',
+            "SELECT NULLIF(departure,'') airport FROM selected WHERE NOT auxiliary UNION SELECT NULLIF(arrival,'') FROM selected WHERE NOT auxiliary": "SELECT NULLIF(departure,'') airport FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary UNION SELECT NULLIF(arrival,'') FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary",
+            "FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival": "FROM selected WHERE ${section}::text IN ('all','overview','places') AND NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival",
+            '          FROM selected WHERE date_key IS NOT NULL AND NOT auxiliary GROUP BY LEFT(date_key,7)': "          FROM selected WHERE ${section}::text IN ('all','overview') AND date_key IS NOT NULL AND NOT auxiliary GROUP BY LEFT(date_key,7)",
+            "          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(role,''),'UNSPECIFIED')": "          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY COALESCE(NULLIF(role,''),'UNSPECIFIED')",
+            "          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_type,''),'Unknown')": "          FROM selected WHERE ${section}::text IN ('all','aircraft') AND NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_type,''),'Unknown')",
+            "          FROM selected WHERE NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_class,''),'Unspecified')": "          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY COALESCE(NULLIF(aircraft_class,''),'Unspecified')",
+            '          FROM selected WHERE NOT auxiliary GROUP BY resolved_category': "          FROM selected WHERE ${section}::text IN ('all','experience') AND NOT auxiliary GROUP BY resolved_category",
+            "          FROM selected WHERE NOT auxiliary AND registration<>'' GROUP BY registration": "          FROM selected WHERE ${section}::text IN ('all','aircraft') AND NOT auxiliary AND registration<>'' GROUP BY registration",
+            "            SELECT date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM selected WHERE NOT auxiliary AND departure<>''": "            SELECT date_key,departure airport,1 dep,CASE WHEN arrival=departure AND arrival<>'' THEN 1 ELSE 0 END arr FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND departure<>''",
+            "            SELECT date_key,arrival airport,0 dep,1 arr FROM selected WHERE NOT auxiliary AND arrival<>'' AND arrival<>departure": "            SELECT date_key,arrival airport,0 dep,1 arr FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND arrival<>'' AND arrival<>departure",
+            "          FROM selected WHERE NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50": "          FROM selected WHERE ${section}::text IN ('all','places') AND NOT auxiliary AND departure<>'' AND arrival<>'' GROUP BY departure,arrival ORDER BY COUNT(*) DESC,SUM(logged_minutes) DESC,MAX(date_key) DESC NULLS LAST LIMIT 50",
+          }
+          for old,new in replacements.items():
+            assert old in s, old
+            s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('app/(protected)/statistics/page.tsx')
+          s=p.read_text()
+          old='const data=await getPilotInsightsData(session.userId,period,category),s=data.summary'
+          new='const data=await getPilotInsightsData(session.userId,period,category,section),s=data.summary'
+          assert old in s
+          p.write_text(s.replace(old,new,1))
+
+          for file in ['tests/integration/postgres-pilot-insights.test.ts','tests/integration/postgres-v169-production-hardening.test.ts']:
+            p=Path(file);s=p.read_text()
+            needle='scopeCategory,'
+            assert needle in s
+            s=s.replace(needle,'scopeCategory,section:"all",',1)
+            p.write_text(s)
+
+          p=Path('tests/integration/postgres-v230-large-logbook-performance.test.ts')
+          s=p.read_text()
+          old='''  const insightsQuery=render(sqlBlock(read("lib/data/pilot-insights.ts"),"WITH base0 AS MATERIALIZED("),{\n    userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,\n    "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06",\n  });\n  const insightsResult=explain(insightsQuery);recordMetric("pilotInsights100k",insightsResult,7_000);\n  const insight=rows(insightsQuery)[0]??{};assert.equal(Number(insight.flights),LOGGED_ROWS);'''
+          new='''  const insightsBlock=sqlBlock(read("lib/data/pilot-insights.ts"),"WITH base0 AS MATERIALIZED(");\n  const insightValues={\n    userId:SCALE_USER,"bounds.start":null,"bounds.end":null,scopeCategory:null,\n    "rolling.currentStart":"2025-09-07","rolling.currentEnd":"2026-09-06","rolling.previousStart":"2024-09-07","rolling.previousEnd":"2025-09-06",\n  };\n  const insightsQuery=render(insightsBlock,{...insightValues,section:"all"});\n  const insightsResult=explain(insightsQuery);recordMetric("pilotInsights100k",insightsResult,7_000);\n  const insight=rows(insightsQuery)[0]??{};assert.equal(Number(insight.flights),LOGGED_ROWS);\n  for(const section of ["overview","experience","aircraft","places","career"] as const){\n    const query=render(insightsBlock,{...insightValues,section});\n    const result=explain(query);recordMetric(`pilotInsights${section[0].toUpperCase()}${section.slice(1)}100k`,result,4_000);\n    const row=rows(query)[0]??{};\n    if(section==="career")assert.equal(Number(row.flights),LOGGED_ROWS);\n    else assert.equal(Number(row.selected_flights),LOGGED_ROWS);\n  }'''
+          assert old in s
+          p.write_text(s.replace(old,new,1))
+
+          p=Path('tests/v230-large-logbook-performance.test.ts')
+          s=p.read_text()
+          needle='    "pilotInsights100k",\n'
+          assert needle in s
+          s=s.replace(needle,needle+'    "pilotInsightsOverview100k",\n    "pilotInsightsExperience100k",\n    "pilotInsightsAircraft100k",\n    "pilotInsightsPlaces100k",\n    "pilotInsightsCareer100k",\n',1)
+          marker='test("v2.3 remains a performance-only roadmap stage",()=>{'
+          guard='''test("v2.3 Statistics only computes aggregates required by the active section",()=>{\n  const source=read("lib/data/pilot-insights.ts"),page=read("app/(protected)/statistics/page.tsx");\n  assert.match(page,/getPilotInsightsData\\(session\\.userId,period,category,section\\)/);\n  assert.match(source,/normalizedAnalyticsSection/);\n  assert.match(source,/\\$\\{section\\}::text IN \\('all','overview'\\)/);\n  assert.match(source,/\\$\\{section\\}::text IN \\('all','experience'\\)/);\n  assert.match(source,/\\$\\{section\\}::text IN \\('all','aircraft'\\)/);\n  assert.match(source,/\\$\\{section\\}::text IN \\('all','places'\\)/);\n  assert.match(source,/\\$\\{section\\}::text IN \\('all','career'\\)/);\n});\n\n'''
+          assert marker in s
+          p.write_text(s.replace(marker,guard+marker,1))
+      - name: Remove temporary updater and commit
+        run: |
+          rm .github/workflows/v230-statistics-section-optimizer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "perf(v2.3): scope Statistics analytics to active section"
+          git push origin HEAD:codex/v230-large-logbook-performance
