@@ -8,7 +8,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v2.1 keeps Dashboard a stable at-a-glance home instead of a period analytics view",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
-  assert.match(page,/getDashboardData\(session\.userId,"all"\)/);
+  assert.match(page,/getDashboardOverviewData\(session\.userId,"all"\)/);
   assert.doesNotMatch(page,/aria-label="Dashboard period"/);
   assert.doesNotMatch(page,/href={`\/dashboard\?period=/);
   assert.match(page,/your all-time flying snapshot/);
