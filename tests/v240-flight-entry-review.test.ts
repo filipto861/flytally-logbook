@@ -22,6 +22,7 @@ test("v2.4 continuation edits the existing Departure control without navigation"
   assert.ok(panel.includes('dispatchEvent(new Event("input",{bubbles:true}))'));
   assert.ok(panel.includes('dispatchEvent(new Event("change",{bubbles:true}))'));
   assert.ok(panel.includes("control.focus()"));
+  assert.ok(panel.includes('className="detail-button"'));
   assert.doesNotMatch(panel,/\/flights\/new\?departure=/);
   assert.doesNotMatch(panel,/import Link from "next\/link"/);
 });
@@ -46,7 +47,8 @@ test("v2.4 maps intelligent findings to the fields that own the review",()=>{
 
 test("v2.4 keeps hard required-state review and advisory intelligence separate",()=>{
   assert.match(form,/Complete before save:/);
-  assert.match(panel,/attention\?"field-message-error":"role-guidance"/);
+  assert.match(panel,/attention\?"form-error":"role-guidance"/);
+  assert.match(panel,/role=\{attention\?"alert":undefined\}/);
   assert.match(panel,/Suggestions use only this form and your own stored flights/);
   assert.match(panel,/FlyTally never rewrites regulatory fields or infers privileges/);
 });
