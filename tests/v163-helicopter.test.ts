@@ -101,7 +101,7 @@ test("v1.63 credentials and backup plumbing expose helicopter support without re
   const credentials=read("app/(protected)/credentials/legacy-page.tsx"),schema=read("lib/v163-schema.ts"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts"),restore=read("lib/account-restore-v6.ts"),form=read("components/flight-form.tsx");
   assert.match(credentials,/SplRecencyPanel/);assert.match(credentials,/HelicopterRecencyPanel/);assert.match(credentials,/LAPL\(H\)/);assert.match(credentials,/PPL\(H\)/);
   assert.match(schema,/CREATE TABLE IF NOT EXISTS helicopter_recency_evidence/);assert.doesNotMatch(schema,/UPDATE\s+flights/i);
-  assert.match(backup,/version:11/);assert.match(backup,/helicopter_recency_evidence/);assert.match(portable,/v10Arrays/);assert.match(restore,/helicopter_recency_evidence/);
+  assert.match(backup,/version:12/);assert.match(backup,/helicopter_recency_evidence/);assert.match(backup,/server_signature:signature/);assert.match(portable,/v10Arrays/);assert.match(restore,/helicopter_recency_evidence/);
   assert.match(form,/entryProfile[.]showRegulatoryMovements/);
 });
 

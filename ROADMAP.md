@@ -2,23 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.6.0 — Professional Pilot Workspace 2.0
+## Current release — v2.7.0 — Data Integrity & Recovery 2.0
 
-- Expand operator/operation context, PICUS/supervised time, commander/copilot/instructor reporting and professional experience summaries.
-- Improve aircraft-type and employer-oriented career reporting and exportable professional experience summaries.
-- Keep CAT/NCC/SPO and other professional context explicit evidence, never inferred silently.
-- Preserve the distinction between recorded evidence and a claimed regulatory or employment status.
+- Keep restore non-destructive and reviewable with grouped missing/present/protected-evidence preview and explicit duplicate/conflict reasons before mutation.
+- Authenticate portable backup v12 with server HMAC while retaining legacy backup compatibility and withholding untrusted cross-account workflow state.
+- Preserve certified revisions, signatures, GPS, sharing evidence, audit history, licences, expenses and recency evidence through the canonical recovery path.
+- Keep large-account recovery atomic with a tested batch policy that stays within the existing 1,000-statement transaction safety limit for the v2.7 scale fixture.
 
-## Post-v2.6 roadmap
+## Post-v2.7 roadmap
 
 The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
-
-### v2.7 — Data Integrity & Recovery 2.0
-
-- Re-audit portable backup/restore, certified revisions, signatures, sharing and audit history against the current multi-category model.
-- Add clearer restore preview/diff and duplicate classification where this can be done without weakening deterministic restore behavior.
-- Validate large-account disaster recovery and end-to-end data portability.
-- Keep destructive cleanup and migration separate from ordinary product changes.
 
 ### v2.8 — Mobile & PWA Hardening
 
@@ -44,6 +37,13 @@ Do not schedule v3.0 from a single feature request. Treat it as a research bound
 - **Certified-data integrity:** certification fingerprints, revisions, signatures, sharing and restore behavior remain regression-protected.
 - **One workflow principle:** do not create parallel Quick/Simple/Advanced versions of the same core task.
 - **Mobile as a release gate:** core mobile workflows are part of release acceptance, not a later cleanup step.
+
+## v2.6.0 — Professional Pilot Workspace 2.0
+
+- Expand operator/operation context, PICUS/supervised time, commander/copilot/instructor reporting and professional experience summaries.
+- Improve aircraft-type and employer-oriented career reporting and exportable professional experience summaries.
+- Keep CAT/NCC/SPO and other professional context explicit evidence, never inferred silently.
+- Preserve the distinction between recorded evidence and a claimed regulatory or employment status.
 
 ## v2.5.0 — Recency & Compliance Workspace
 
