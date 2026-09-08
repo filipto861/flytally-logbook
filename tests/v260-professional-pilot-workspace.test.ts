@@ -64,3 +64,11 @@ test("v2.6 preserves the v1.66 evidence-vs-claim safety boundary",()=>{
   assert.match(scope,/Professional summaries are derived views, not licences, qualifications, operator records, duty-time records or regulatory approvals/);
   assert.match(component,/does not treat them as employment or operator-qualification verification/);
 });
+
+test("v2.6 keeps Licences professional reporting compact and routes detail to Career",()=>{
+  const panel=read("components/professional-experience-panel.tsx");
+  assert.match(panel,/href="\/statistics\?section=career"/);
+  assert.match(panel,/Career summary/);
+  assert.match(panel,/Detailed role, operator and type reporting in Career/);
+  assert.doesNotMatch(panel,/credentials-overview-grid/);
+});
