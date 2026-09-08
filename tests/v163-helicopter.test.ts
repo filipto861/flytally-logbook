@@ -65,6 +65,16 @@ test("FCL.140.H does not credit unsigned dual or supervised-solo experience",()=
   assert.equal(result.requirements.find(item=>item.id==="refresher")?.current,0);
 });
 
+test("FCL.140.H uses LIMITED DATA only when movement evidence is the unresolved element",()=>{
+  const incomplete=evaluateLaplH([
+    flight({id:71,minutes:300,movementEvidenceRecorded:false,takeoffsDay:0,approachesDay:0,landingsDay:0}),
+    flight({id:72,date:"2026-08-02",role:"DUAL",minutes:60,purposeCode:"LAPL_H_FCL140H_REFRESHER",instructorSigned:true}),
+  ],"2026-09-01","R44 Raven II");
+  assert.equal(incomplete.status,"attention");assert.equal(incomplete.badge,"LIMITED DATA");assert.equal(incomplete.meta?.incompleteMovementFlights,1);assert.equal(incomplete.meta?.incompleteMovementFlightIds,"71");
+  const definitelyShort=evaluateLaplH([flight({minutes:60,movementEvidenceRecorded:false})],"2026-09-01","R44 Raven II");
+  assert.equal(definitelyShort.status,"not-current");
+});
+
 test("FCL.140.H proficiency check is an explicit alternative route on the specific type",()=>{
   const result=evaluateLaplH([],"2026-09-01","R44 Raven II",[{id:1,helicopterType:"R44 Raven II",date:"2026-08-20",signer:"FE(H) Test",reference:"PC-44",note:""}]);
   assert.equal(result.status,"current");
@@ -72,11 +82,12 @@ test("FCL.140.H proficiency check is an explicit alternative route on the specif
   assert.equal(evaluateLaplH([],"2026-09-01","R22 Beta II",[{id:1,helicopterType:"R44 Raven II",date:"2026-08-20",signer:"FE(H) Test",reference:"PC-44",note:""}]).status,"not-current");
 });
 
-test("FCL.060 helicopter passenger currency requires three explicit PF movement triples on the stored type",()=>{
+test("FCL.060 helicopter passenger currency distinguishes missing movement evidence from a known shortfall",()=>{
   const flights=[flight(),flight({date:"2026-08-02"}),flight({date:"2026-08-03"}),flight({date:"2026-08-04",helicopterType:"R22 Beta II"})];
   assert.equal(evaluateHelicopterPassengerCurrency(flights,"2026-09-01","R44 Raven II").status,"current");
   assert.equal(evaluateHelicopterPassengerCurrency(flights.slice(0,2),"2026-09-01","R44 Raven II").status,"not-current");
-  assert.equal(evaluateHelicopterPassengerCurrency([flight({movementEvidenceRecorded:false,takeoffsDay:3,approachesDay:3,landingsDay:3})],"2026-09-01","R44 Raven II").status,"not-current");
+  const incomplete=evaluateHelicopterPassengerCurrency([flight({id:81,movementEvidenceRecorded:false,takeoffsDay:3,approachesDay:3,landingsDay:3})],"2026-09-01","R44 Raven II");
+  assert.equal(incomplete.status,"attention");assert.equal(incomplete.badge,"LIMITED DATA");assert.equal(incomplete.meta?.incompleteMovementFlights,1);assert.equal(incomplete.meta?.incompleteMovementFlightIds,"81");
 });
 
 test("FCL.060 helicopter night passenger condition requires a night movement unless IR(H) is current",()=>{

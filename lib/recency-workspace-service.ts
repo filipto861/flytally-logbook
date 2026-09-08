@@ -27,10 +27,11 @@ export type RecencyComplianceWorkspaceState={today:string;items:ComplianceWorksp
 const parseIds=(value:unknown)=>[...new Set(String(value??"").split(",").map(item=>Number(item.trim())||0).filter(Boolean))];
 const routeLabel=(flight:ProvenanceFlight)=>`${t(flight.registration)||"Flight"} · ${t(flight.departure)||"?"} → ${t(flight.arrival)||"?"}`;
 function evaluationProvenance(evaluation:RecencyEvaluation,flights:ProvenanceFlight[],evidence:ProvenanceEvidence[],detailHref="/credentials?view=recency&detail=1"){
-  const ids=parseIds(evaluation.meta?.evidenceFlightIds),byId=new Map(flights.map(flight=>[Number(flight.id)||0,flight])),flightLinks:ComplianceEvidenceLink[]=ids.flatMap(id=>{const flight=byId.get(id);return flight?[{id:`flight:${id}`,label:routeLabel(flight),detail:flight.date,href:`/flights/${id}`}]:[]});
+  const ids=parseIds(evaluation.meta?.evidenceFlightIds),trainingIds=new Set(parseIds(evaluation.meta?.trainingFlightIds)),incompleteMovementIds=new Set(parseIds(evaluation.meta?.incompleteMovementFlightIds)),byId=new Map(flights.map(flight=>[Number(flight.id)||0,flight]));
+  const flightLinks:ComplianceEvidenceLink[]=ids.flatMap(id=>{const flight=byId.get(id);if(!flight)return[];const flags=[trainingIds.has(id)?"instructor-signed training":"",incompleteMovementIds.has(id)?"movement evidence incomplete":""].filter(Boolean);return[{id:`flight:${id}`,label:routeLabel(flight),detail:`${flight.date}${flags.length?` · ${flags.join(" · ")}`:""}`,href:`/flights/${id}`}];});
   const proficiencyId=Math.max(0,Number(evaluation.meta?.proficiencyEvidenceId)||0),proficiency=proficiencyId?evidence.find(item=>item.id===proficiencyId):undefined,links=[...flightLinks];
   if(proficiency)links.unshift({id:`evidence:${proficiency.id}`,label:"Proficiency check",detail:`${proficiency.date} · ${proficiency.signer} · ${proficiency.reference}`,href:detailHref});
-  const parts=[flightLinks.length?`${flightLinks.length} qualifying flight${flightLinks.length===1?"":"s"}`:"",proficiency?"1 proficiency check":""].filter(Boolean);
+  const trainingCount=ids.filter(id=>trainingIds.has(id)).length,incompleteCount=ids.filter(id=>incompleteMovementIds.has(id)).length,parts=[flightLinks.length?`${flightLinks.length} flight record${flightLinks.length===1?"":"s"}`:"",trainingCount?`${trainingCount} signed training`:"",incompleteCount?`${incompleteCount} incomplete movement`:"",proficiency?"1 proficiency check":""].filter(Boolean);
   return{links:links.slice(0,4),summary:parts.join(" · ")||undefined};
 }
 
