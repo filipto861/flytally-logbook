@@ -7,7 +7,8 @@ import { getSplRecencyStateForUser } from "@/lib/spl-recency-service";
 import { getHelicopterRecencyStateForUser } from "@/lib/helicopter-recency-service";
 import { getBalloonRecencyStateForUser } from "@/lib/balloon-recency-service";
 import { pilotWorkspaceCategory } from "@/lib/pilot-workspace";
-import { credentialWorkspaceItem,evaluationWorkspaceItem,setupWorkspaceItem,sortComplianceWorkspaceItems,type ComplianceWorkspaceCategory,type ComplianceWorkspaceItem,type ComplianceWorkspaceStatus } from "@/lib/recency-workspace";
+import { credentialWorkspaceItem,evaluationWorkspaceItem,setupWorkspaceItem,sortComplianceWorkspaceItems,type ComplianceEvidenceLink,type ComplianceWorkspaceCategory,type ComplianceWorkspaceItem,type ComplianceWorkspaceStatus } from "@/lib/recency-workspace";
+import type { RecencyEvaluation } from "@/lib/recency-engine";
 
 const t=(value:unknown)=>String(value??"").trim();
 const category=(value:unknown):ComplianceWorkspaceCategory=>{
@@ -19,7 +20,19 @@ const category=(value:unknown):ComplianceWorkspaceCategory=>{
   return pilotWorkspaceCategory(value);
 };
 type CredentialRow={kind:string;id:unknown;label:unknown;category_basis:unknown;validity_mode:unknown;valid_until:unknown;recency_until:unknown;warning_days:unknown};
+type ProvenanceFlight={id?:number;date:string;registration?:string;departure?:string;arrival?:string};
+type ProvenanceEvidence={id:number;date:string;signer:string;reference:string;note?:string};
 export type RecencyComplianceWorkspaceState={today:string;items:ComplianceWorkspaceItem[];counts:Record<ComplianceWorkspaceStatus,number>;activeCategories:ComplianceWorkspaceCategory[];currentCredentialCount:number;credentialCount:number;recencyCount:number};
+
+const parseIds=(value:unknown)=>[...new Set(String(value??"").split(",").map(item=>Number(item.trim())||0).filter(Boolean))];
+const routeLabel=(flight:ProvenanceFlight)=>`${t(flight.registration)||"Flight"} · ${t(flight.departure)||"?"} → ${t(flight.arrival)||"?"}`;
+function evaluationProvenance(evaluation:RecencyEvaluation,flights:ProvenanceFlight[],evidence:ProvenanceEvidence[],detailHref="/credentials?view=recency&detail=1"){
+  const ids=parseIds(evaluation.meta?.evidenceFlightIds),byId=new Map(flights.map(flight=>[Number(flight.id)||0,flight])),flightLinks:ComplianceEvidenceLink[]=ids.flatMap(id=>{const flight=byId.get(id);return flight?[{id:`flight:${id}`,label:routeLabel(flight),detail:flight.date,href:`/flights/${id}`}]:[]});
+  const proficiencyId=Math.max(0,Number(evaluation.meta?.proficiencyEvidenceId)||0),proficiency=proficiencyId?evidence.find(item=>item.id===proficiencyId):undefined,links=[...flightLinks];
+  if(proficiency)links.unshift({id:`evidence:${proficiency.id}`,label:"Proficiency check",detail:`${proficiency.date} · ${proficiency.signer} · ${proficiency.reference}`,href:detailHref});
+  const parts=[flightLinks.length?`${flightLinks.length} qualifying flight${flightLinks.length===1?"":"s"}`:"",proficiency?"1 proficiency check":""].filter(Boolean);
+  return{links:links.slice(0,4),summary:parts.join(" · ")||undefined};
+}
 
 export async function getRecencyComplianceWorkspaceForUser(userId:number):Promise<RecencyComplianceWorkspaceState>{
   const credentialRowsPromise=sql`
@@ -50,19 +63,19 @@ export async function getRecencyComplianceWorkspaceForUser(userId:number):Promis
   }
 
   if(spl){
-    for(const evaluation of[...spl.evaluations,...spl.launchEvaluations])items.push(evaluationWorkspaceItem({evaluation,today:spl.today,category:"sailplane",family:"Part-SFCL"}));
+    for(const evaluation of[...spl.evaluations,...spl.launchEvaluations]){const provenance=evaluationProvenance(evaluation,spl.sourceFlights,spl.evidence);items.push(evaluationWorkspaceItem({evaluation,today:spl.today,category:"sailplane",family:"Part-SFCL",evidenceLinks:provenance.links,evidenceSummary:provenance.summary}))}
     if(!spl.hasSailplanePrivilege&&!spl.hasTmgPrivilege)items.push(setupWorkspaceItem({id:"spl-privileges",category:"sailplane",family:"Part-SFCL",title:"SPL privilege evidence",summary:"Record the Sailplane and/or TMG privileges actually held before FlyTally evaluates Part-SFCL recency.",href:"/credentials?view=licences"}));
   }
 
   if(helicopter){
-    for(const evaluation of[...helicopter.evaluations,...helicopter.passengerEvaluations])items.push(evaluationWorkspaceItem({evaluation,today:helicopter.today,category:"helicopter",family:"Part-FCL"}));
+    for(const evaluation of[...helicopter.evaluations,...helicopter.passengerEvaluations]){const provenance=evaluationProvenance(evaluation,helicopter.sourceFlights,helicopter.evidence);items.push(evaluationWorkspaceItem({evaluation,today:helicopter.today,category:"helicopter",family:"Part-FCL",evidenceLinks:provenance.links,evidenceSummary:provenance.summary}))}
     if(helicopter.hasHelicopterLicence&&!helicopter.helicopterTypes.length)items.push(setupWorkspaceItem({id:"helicopter-types",category:"helicopter",family:"Part-FCL",title:"Helicopter type evidence",summary:"Add an active helicopter aircraft profile so type-specific recency can be evaluated without pooling different types.",href:"/aircraft"}));
   }
 
   if(balloon){
     const evaluations=balloon.anchor?[balloon.anchor,...balloon.additional]:[...balloon.candidates.map(item=>item.evaluation),...balloon.additional];
     if(balloon.tethered)evaluations.push(balloon.tethered);
-    for(const evaluation of evaluations)items.push(evaluationWorkspaceItem({evaluation,today:balloon.today,category:"balloon",family:"Part-BFCL"}));
+    for(const evaluation of evaluations){const provenance=evaluationProvenance(evaluation,balloon.sourceFlights,balloon.evidence);items.push(evaluationWorkspaceItem({evaluation,today:balloon.today,category:"balloon",family:"Part-BFCL",evidenceLinks:provenance.links,evidenceSummary:provenance.summary}))}
     if(!balloon.hasBpl)items.push(setupWorkspaceItem({id:"bpl-licence",category:"balloon",family:"Part-BFCL",title:"BPL licence evidence",summary:"Balloon activity exists, but FlyTally will not infer a BPL licence or privilege from flight history.",href:"/credentials?view=licences"}));
     else if(!balloon.heldClasses.length)items.push(setupWorkspaceItem({id:"bpl-classes",category:"balloon",family:"Part-BFCL",title:"BPL class privileges",summary:"Record the balloon classes actually held before BFCL.160 recency is evaluated.",href:"/credentials?view=licences"}));
   }
