@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildRecoveryPreviewSummary,RECOVERY_PREVIEW_SECTION_KEYS } from "../lib/recovery-preview.ts";
 import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "../lib/recovery-conflict.ts";
+import { portableBackupAuthenticity,SERVER_AUTHORITATIVE_BACKUP_SECTIONS,signPortableBackup } from "../lib/backup-authenticity.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 
@@ -69,5 +70,30 @@ test("v2.7 stored backups reuse the canonical recovery preview and conflict cont
   assert.match(center,/state\.conflict/);
   assert.match(center,/summary\.protectedEvidence/);
   assert.match(center,/summary\.missing===0/);
-  assert.match(actions,/return restorePortableBackup\(\{\},forwarded\)/);
+  assert.match(actions,/restoreParsedBackup\(userId,stored,form,\{trustedSharedState:true,authenticity:"stored"\}\)/);
+});
+
+
+test("v2.7 authenticates new portable backups with a domain-separated server signature",()=>{
+  const previous=process.env.SIGNING_SECRET;process.env.SIGNING_SECRET="v2.7-test-signing-secret-0123456789abcdef";
+  try{
+    const digest="a".repeat(64),signature=signPortableBackup(12,7,digest),verified={version:12,profile:{id:7},integrity:{signature_version:1,server_signature:signature}};
+    assert.equal(portableBackupAuthenticity(verified,digest),"verified");
+    assert.equal(portableBackupAuthenticity(verified,"b".repeat(64)),"invalid");
+    assert.equal(portableBackupAuthenticity({version:11,profile:{id:7},integrity:{}},digest),"unsigned");
+    assert.equal(portableBackupAuthenticity({version:12,profile:{id:7},integrity:{}},digest),"invalid");
+  }finally{if(previous===undefined)delete process.env.SIGNING_SECRET;else process.env.SIGNING_SECRET=previous}
+});
+
+test("v2.7 keeps cross-account workflow state server-authoritative for unsigned uploads",()=>{
+  assert.deepEqual([...SERVER_AUTHORITATIVE_BACKUP_SECTIONS].sort(),["connection_audit_log","flight_participations","flight_verifications","instructor_flight_approvals","pilot_connections"].sort());
+  const summary=buildRecoveryPreviewSummary({source:{flights:1,pilot_connections:2},add:{flights:1,pilot_connections:0},skip:{flights:0,pilot_connections:0},withheld:{pilot_connections:2}});
+  assert.equal(summary.missing,1);assert.equal(summary.withheld,2);assert.equal(summary.present,0);
+  assert.equal(summary.groups.find(group=>group.id==="pilot")?.withheld,2);
+});
+
+test("v2.7 release backup builder emits signed portable format v12",()=>{
+  const builder=fs.readFileSync(path.join(root,"lib/account-backup.ts"),"utf8"),portable=fs.readFileSync(path.join(root,"lib/portable-backup.ts"),"utf8");
+  assert.match(builder,/version:12/);assert.match(builder,/signPortableBackup/);assert.match(builder,/server_signature/);
+  assert.match(portable,/signature_version/);assert.match(portable,/server_signature/);
 });

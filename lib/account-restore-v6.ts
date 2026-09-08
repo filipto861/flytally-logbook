@@ -8,8 +8,11 @@ import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
+import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 
-export type ExactRestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number;accountBound:boolean;schemaVersion:number;certification:BackupCertificationSummary};
+export type ExactRestoreAuthenticity="verified"|"unsigned"|"invalid"|"stored";
+export type ExactRestoreOptions={trustedSharedState?:boolean;authenticity?:ExactRestoreAuthenticity};
+export type ExactRestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;withheld:Record<string,number>;settings:boolean;legacyPoints:number;accountBound:boolean;schemaVersion:number;authenticity:ExactRestoreAuthenticity;certification:BackupCertificationSummary};
 export type ExactRestorePlan={preview:ExactRestorePreview;addRows:Record<string,BackupRow[]>};
 
 const text=(value:unknown)=>String(value??"").trim();
@@ -59,7 +62,7 @@ function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],pare
   for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(!existing)continue;const conflict=archivedCertificationConflict(row,existing,parentField,label);if(conflict)throw new AccountRestoreConflictError(conflict)}
 }
 
-export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string):Promise<ExactRestorePlan>{
+export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
   const certification=validateBackupCertificationHistory(backup,userId);
   const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit]=await Promise.all([
@@ -116,9 +119,9 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     ["flight_verifications",backup.flight_verifications??[],verifications,stableIdKey,"Flight verification",true],
     ["connection_audit_log",backup.connection_audit_log??[],connectionAudit,stableIdKey,"Connection audit event",true],
   ];
-  const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
-  for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable);source[name]=backupRows.length;add[name]=result.add.length;skip[name]=result.skip;addRows[name]=result.add}
-  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,settings:Boolean(backup.settings[0]),legacyPoints:backup.track_points.length,accountBound:true,schemaVersion:Number(backup.schema_version||0),certification},addRows};
+  const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},withheld:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
+  for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
+  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:backup.track_points.length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
 }
 
 function stageFlight(row:BackupRow):BackupRow{return{...row,aircraft_make:"",aircraft_model:"",aircraft_variant:"",certified_at:null,certified_by_user_id:null,certification_hash:"",locked_at:null,locked_by_user_id:null}}

@@ -5,7 +5,7 @@ export type PortableBackup={
   settings:BackupRow[];flight_tracks:BackupRow[];track_points:BackupRow[];audit_log:BackupRow[];
   fstd_sessions:BackupRow[];flight_certified_revisions:BackupRow[];fstd_certified_revisions:BackupRow[];deleted_flights:BackupRow[];
   pilot_connections?:BackupRow[];flight_participations?:BackupRow[];instructor_flight_approvals?:BackupRow[];pilot_licences?:BackupRow[];pilot_qualifications?:BackupRow[];user_notifications?:BackupRow[];flight_verifications?:BackupRow[];connection_audit_log?:BackupRow[];flight_expenses?:BackupRow[];spl_recency_evidence?:BackupRow[];helicopter_recency_evidence?:BackupRow[];bpl_recency_evidence?:BackupRow[];
-  integrity:{algorithm:string;payload_sha256:string};
+  integrity:{algorithm:string;payload_sha256:string;signature_version?:number;server_signature?:string};
 };
 
 const legacyArrays=["flights","aircraft","rates","airports","expiries","settings","flight_tracks","track_points"] as const;
@@ -79,7 +79,7 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=11?v11Arrays:version>=10?v10Arrays:version>=9?v9Arrays:version>=8?v8Arrays:version>=7?v7Arrays:version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
   for(const key of countKeys)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(version>=6)validateOwnership(payload);
-  const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected}} as PortableBackup;
+  const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected,signature_version:Number(integrity?.signature_version||0)||undefined,server_signature:String(integrity?.server_signature??"").trim()||undefined}} as PortableBackup;
   validateBackupRelationships(backup);if(version>=6)validateBackupArchiveRelationships(backup);
   return{backup,digest};
 }

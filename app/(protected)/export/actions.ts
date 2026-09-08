@@ -8,8 +8,9 @@ import { createStoredBackup,loadStoredBackup } from "@/lib/backup-center";
 import { restoreDeletedFlightRecord } from "@/lib/flight-trash";
 import { executeExactAccountRestore,prepareExactAccountRestore,type ExactRestorePreview } from "@/lib/account-restore-v6";
 import { AccountRestoreConflictError,type RecoveryConflict } from "@/lib/recovery-conflict";
+import { portableBackupAuthenticity } from "@/lib/backup-authenticity";
 
-export type RestorePreview=ExactRestorePreview|{digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number;accountBound?:boolean;schemaVersion?:number;certification?:{certifiedFlights:number;flightRevisions:number;certifiedFstd:number;fstdRevisions:number}};
+export type RestorePreview=ExactRestorePreview|{digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;withheld?:Record<string,number>;settings:boolean;legacyPoints:number;accountBound?:boolean;schemaVersion?:number;authenticity?:"verified"|"unsigned"|"invalid"|"stored";certification?:{certifiedFlights:number;flightRevisions:number;certifiedFstd:number;fstdRevisions:number}};
 export type RestoreState={error?:string;success?:string;preview?:RestorePreview;conflict?:RecoveryConflict};
 export type TrashRestoreState={error?:string;success?:string};
 const text=(row:BackupRow,key:string,max=2000)=>String(row[key]??"").trim().slice(0,max),upper=(row:BackupRow,key:string,max=120)=>text(row,key,max).toUpperCase();
@@ -54,11 +55,13 @@ async function restoreLegacy(userId:number,backup:PortableBackup,preview:Restore
   return Object.values(preview.add).reduce((sum,value)=>sum+value,0);
 }
 
-export async function restorePortableBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
-  const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
+type ParsedPortableBackup=Awaited<ReturnType<typeof parsePortableBackup>>;
+type RestoreTrust={trustedSharedState:boolean;authenticity:"verified"|"unsigned"|"invalid"|"stored"};
+
+async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,form:FormData,trust:RestoreTrust):Promise<RestoreState>{
   const intent=String(form.get("intent")||"preview");
   if(parsed.backup.version>=6){
-    let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest)}catch(error){return restorePreflightFailure(error,"Backup recovery preflight failed.")}
+    let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest,{trustedSharedState:trust.trustedSharedState,authenticity:trust.authenticity})}catch(error){return restorePreflightFailure(error,"Backup recovery preflight failed.")}
     if(intent!=="restore")return{preview:prepared.preview};
     if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview:prepared.preview};
     try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview:prepared.preview}}
@@ -69,8 +72,14 @@ export async function restorePortableBackup(_:RestoreState,form:FormData):Promis
   try{const added=await restoreLegacy(userId,parsed.backup,preview);revalidateRestore();return{success:`Legacy restore completed. Added ${added} missing records; existing flights and historical rates were not changed.`}}catch(error){console.error("legacy-portable-backup-restore-failed",error);return{error:"Legacy restore stopped after a database error. Use the pre-restore safety backup if needed.",preview}}
 }
 
+export async function restorePortableBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
+  const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
+  const authenticity=portableBackupAuthenticity(parsed.backup,parsed.digest);
+  return restoreParsedBackup(userId,parsed,form,{trustedSharedState:authenticity==="verified",authenticity});
+}
+
 export async function createManualBackup(){const {userId}=await requireUser();await createStoredBackup(userId,"manual");revalidatePath("/data");revalidatePath("/export")}
 
-export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{const {userId}=await requireUser(),id=Number(form.get("backup_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};let stored;try{stored=await loadStoredBackup(userId,id)}catch(error){return{error:error instanceof Error?error.message:"Stored backup could not be read."}}const forwarded=new FormData();forwarded.set("backup",new File([stored.json],`stored-backup-${id}.json`,{type:"application/json"}));forwarded.set("intent",String(form.get("intent")||"preview"));forwarded.set("preview_digest",String(form.get("preview_digest")||""));forwarded.set("confirm",String(form.get("confirm")||""));return restorePortableBackup({},forwarded)}
+export async function restoreStoredBackup(_:RestoreState,form:FormData):Promise<RestoreState>{const {userId}=await requireUser(),id=Number(form.get("backup_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a stored backup."};let stored;try{stored=await loadStoredBackup(userId,id)}catch(error){return{error:error instanceof Error?error.message:"Stored backup could not be read."}}return restoreParsedBackup(userId,stored,form,{trustedSharedState:true,authenticity:"stored"})}
 
 export async function restoreDeletedFlight(_:TrashRestoreState,form:FormData):Promise<TrashRestoreState>{const {userId}=await requireUser(),id=Number(form.get("trash_id"));if(!Number.isSafeInteger(id)||id<=0)return{error:"Select a deleted flight."};let result;try{result=await restoreDeletedFlightRecord(userId,id)}catch(error){console.error("flight-trash-restore-failed",error);return{error:"The flight could not be restored. Existing data is unchanged."}}if(result.error)return{error:result.error};revalidateRestore();return{success:`Flight restored as record ${result.flightId}.`}}

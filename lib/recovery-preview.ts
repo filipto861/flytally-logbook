@@ -1,5 +1,5 @@
 export type RecoveryCountMap=Record<string,number>;
-export type RecoveryPreviewLike={source:RecoveryCountMap;add:RecoveryCountMap;skip:RecoveryCountMap;settings?:boolean};
+export type RecoveryPreviewLike={source:RecoveryCountMap;add:RecoveryCountMap;skip:RecoveryCountMap;withheld?:RecoveryCountMap;settings?:boolean};
 export type RecoveryGroupId="logbook"|"history"|"pilot"|"recency"|"support"|"other";
 
 export type RecoveryPreviewItem={
@@ -8,6 +8,7 @@ export type RecoveryPreviewItem={
   source:number;
   missing:number;
   present:number;
+  withheld:number;
   protectedEvidence:boolean;
 };
 export type RecoveryPreviewGroup={
@@ -18,12 +19,14 @@ export type RecoveryPreviewGroup={
   source:number;
   missing:number;
   present:number;
+  withheld:number;
   items:RecoveryPreviewItem[];
 };
 export type RecoveryPreviewSummary={
   source:number;
   missing:number;
   present:number;
+  withheld:number;
   protectedEvidence:number;
   settingsIncluded:boolean;
   groups:RecoveryPreviewGroup[];
@@ -81,21 +84,21 @@ const fallbackLabel=(key:string)=>key.replaceAll("_"," ").replace(/\b\w/g,char=>
 export function buildRecoveryPreviewSummary(preview:RecoveryPreviewLike):RecoveryPreviewSummary{
   const keys=[...definitions.map(item=>item.key),...Object.keys(preview.source).filter(key=>!definitionByKey.has(key)).sort()];
   const grouped=new Map<RecoveryGroupId,RecoveryPreviewItem[]>();
-  let source=0,missing=0,present=0,protectedEvidence=0;
+  let source=0,missing=0,present=0,withheld=0,protectedEvidence=0;
 
   for(const key of keys){
-    const definition=definitionByKey.get(key),itemSource=count(preview.source,key),itemMissing=count(preview.add,key),itemPresent=count(preview.skip,key);
+    const definition=definitionByKey.get(key),itemSource=count(preview.source,key),itemMissing=count(preview.add,key),itemPresent=count(preview.skip,key),itemWithheld=count(preview.withheld??{},key);
     if(itemSource===0&&itemMissing===0&&itemPresent===0)continue;
-    const protectedItem=Boolean(definition?.protectedEvidence),item:RecoveryPreviewItem={key,label:definition?.label||fallbackLabel(key),source:itemSource,missing:itemMissing,present:itemPresent,protectedEvidence:protectedItem};
+    const protectedItem=Boolean(definition?.protectedEvidence),item:RecoveryPreviewItem={key,label:definition?.label||fallbackLabel(key),source:itemSource,missing:itemMissing,present:itemPresent,withheld:itemWithheld,protectedEvidence:protectedItem};
     const group=definition?.group||"other",items=grouped.get(group)??[];items.push(item);grouped.set(group,items);
-    source+=itemSource;missing+=itemMissing;present+=itemPresent;if(protectedItem)protectedEvidence+=itemSource;
+    source+=itemSource;missing+=itemMissing;present+=itemPresent;withheld+=itemWithheld;if(protectedItem)protectedEvidence+=itemSource;
   }
 
   const groups:RecoveryPreviewGroup[]=groupOrder.flatMap(id=>{
     const items=grouped.get(id);if(!items?.length)return[];
     const meta=groupMeta[id];
-    return[{id,label:meta.label,description:meta.description,protectedEvidence:meta.protectedEvidence,source:items.reduce((sum,item)=>sum+item.source,0),missing:items.reduce((sum,item)=>sum+item.missing,0),present:items.reduce((sum,item)=>sum+item.present,0),items}];
+    return[{id,label:meta.label,description:meta.description,protectedEvidence:meta.protectedEvidence,source:items.reduce((sum,item)=>sum+item.source,0),missing:items.reduce((sum,item)=>sum+item.missing,0),present:items.reduce((sum,item)=>sum+item.present,0),withheld:items.reduce((sum,item)=>sum+item.withheld,0),items}];
   });
 
-  return{source,missing,present,protectedEvidence,settingsIncluded:Boolean(preview.settings),groups};
+  return{source,missing,present,withheld,protectedEvidence,settingsIncluded:Boolean(preview.settings),groups};
 }
