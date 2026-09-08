@@ -27,7 +27,7 @@ test("v1.41.0 GPS review endpoint is authenticated user scoped and non-cacheable
   assert.match(data,/JOIN flights f ON f\.id=t\.flight_id AND f\.user_id=t\.user_id/);
 });
 
-test("v1.41.0 makes derived GPS evidence explicit and reviewable",()=>{
+test("v1.41.0 keeps derived GPS evidence explicit and reviewable in later releases",()=>{
   const component=read("components/lazy-flight-track-review.tsx"),manager=read("components/track-manager.tsx");
   assert.match(component,/Saved values vs GPS suggestion/);
   assert.match(component,/Saved logbook value/);
@@ -35,7 +35,8 @@ test("v1.41.0 makes derived GPS evidence explicit and reviewable",()=>{
   assert.match(component,/advisory only/);
   assert.match(component,/never become logbook values automatically/);
   assert.match(manager,/Apply GPS time suggestions/);
-  assert.match(manager,/Review the comparison above first/);
+  assert.match(manager,/I reviewed the current vs GPS comparison/);
+  assert.match(manager,/disabled=\{!reviewed\|\|pending\}/);
   assert.match(manager,/pointCount/);
   assert.match(manager,/fileName/);
 });
