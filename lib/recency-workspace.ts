@@ -39,7 +39,7 @@ export function complianceStatusLabel(status:ComplianceWorkspaceStatus){return s
 export function complianceStatusFromEvaluation(item:RecencyEvaluation,today:string,actionSoonDays=30):ComplianceWorkspaceStatus{
   if(item.status==="not-current")return"not-current";
   if(item.status==="attention")return incompleteEvaluation(item)?"incomplete-evidence":"action-soon";
-  const candidateDates=[item.forecastDate,item.deadline].filter((value):value is string=>Boolean(value));
+  const candidateDates=[item.forecastDate,item.deadline].filter((value):value is string=>typeof value==="string");
   const soon=candidateDates.some(value=>{const days=daysUntil(today,value);return days!==null&&days>=0&&days<=Math.max(0,actionSoonDays)});
   return soon?"action-soon":"current";
 }
@@ -52,7 +52,7 @@ export function complianceStatusFromValidity(state:ValidityLike):ComplianceWorks
 }
 
 export function evaluationWorkspaceItem(input:{evaluation:RecencyEvaluation;today:string;category:ComplianceWorkspaceCategory;family:ComplianceWorkspaceFamily;href?:string;evidenceLinks?:ComplianceEvidenceLink[];evidenceSummary?:string;actionSoonDays?:number}):ComplianceWorkspaceItem{
-  const{evaluation,today}=input,status=complianceStatusFromEvaluation(evaluation,today,input.actionSoonDays),dates=[evaluation.forecastDate,evaluation.deadline].filter((value):value is string=>Boolean(value)&&value>=today).sort();
+  const{evaluation,today}=input,status=complianceStatusFromEvaluation(evaluation,today,input.actionSoonDays),dates=[evaluation.forecastDate,evaluation.deadline].filter((value):value is string=>typeof value==="string"&&value>=today).sort();
   return{id:`${input.family}:${evaluation.id}`,sourceId:evaluation.id,kind:"recency",category:input.category,family:input.family,code:evaluation.code,title:evaluation.title,status,statusLabel:complianceStatusLabel(status),summary:evaluation.summary,windowLabel:evaluation.windowLabel,requirements:evaluation.requirements,forecastDate:evaluation.forecastDate,deadline:evaluation.deadline,nextDate:dates[0],href:input.href??"/credentials?view=recency&detail=1",evidenceLinks:input.evidenceLinks??[],evidenceSummary:input.evidenceSummary};
 }
 

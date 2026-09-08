@@ -33,7 +33,7 @@ export async function getRecencyComplianceWorkspaceForUser(userId:number):Promis
     SELECT 'document'::text kind,id,label,'OTHER'::text category_basis,CASE WHEN expiry_date>=DATE '9999-01-01' THEN 'unlimited' ELSE 'date' END validity_mode,expiry_date::text valid_until,NULL::text recency_until,warning_days
     FROM user_expiries WHERE user_id=${userId} AND UPPER(TRIM(category))<>'LICENCE' AND active=1
     ORDER BY kind,label,id
-  ` as Promise<CredentialRow[]>;
+  ` as unknown as Promise<CredentialRow[]>;
   const[partFcl,spl,helicopter,balloon,credentialRows]=await Promise.all([
     getRecencyStateForUser(userId),
     getSplRecencyStateForUser(userId),
