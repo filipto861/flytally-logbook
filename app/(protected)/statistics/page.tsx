@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { getPilotInsightsData } from "@/lib/data/pilot-insights";
+import { getProfessionalExperienceForUser } from "@/lib/professional-experience-service";
+import { ProfessionalPilotWorkspace } from "@/components/professional-pilot-workspace";
 import { formatInsightDuration,paceComparison,sharePercent } from "@/lib/pilot-insights";
 import { PilotInsightsChart } from "@/components/pilot-insights-chart";
 import { directionalRouteHref,routePairHref } from "@/lib/route-filter";
@@ -17,7 +19,7 @@ const roleLabel=(value:string)=>value==="INSTRUKTOR"?"INSTRUCTOR":value||"Unspec
 
 export default async function StatisticsPage({searchParams}:{searchParams:Promise<{period?:string;section?:string;category?:string}>}){
   const session=await requireUser(),params=await searchParams,requestedPeriod=params.period??"all",period=periods.some(([key])=>key===requestedPeriod)?requestedPeriod:"all",section=sectionKeys.has(params.section??"")?params.section??"overview":"overview",requestedCategory=String(params.category??"").toUpperCase(),category=categoryKeys.has(requestedCategory)?requestedCategory:"";
-  const data=await getPilotInsightsData(session.userId,period,category,section),s=data.summary,loggedMinutes=s.minutes,pace=paceComparison(data.current12m.minutes,data.previous12m.minutes),picShare=sharePercent(s.picMinutes,loggedMinutes),nightShare=sharePercent(s.nightMinutes,loggedMinutes),ifrShare=sharePercent(s.ifrMinutes,loggedMinutes),scopeLabel=category?categoryLabels[category]||category:"All categories";
+  const[data,professional]=await Promise.all([getPilotInsightsData(session.userId,period,category,section),section==="career"?getProfessionalExperienceForUser(session.userId,category):Promise.resolve(null)]),s=data.summary,loggedMinutes=s.minutes,pace=paceComparison(data.current12m.minutes,data.previous12m.minutes),picShare=sharePercent(s.picMinutes,loggedMinutes),nightShare=sharePercent(s.nightMinutes,loggedMinutes),ifrShare=sharePercent(s.ifrMinutes,loggedMinutes),scopeLabel=category?categoryLabels[category]||category:"All categories";
   const paceLabel=pace.direction==="new"?"New activity vs prior 12m":pace.direction==="none"?"No rolling-year activity":pace.direction==="flat"?"Stable vs prior 12m":`${pace.percent&&pace.percent>0?"+":""}${pace.percent}% vs prior 12m`;
   return <>
     <header className="page-header"><div><p className="eyebrow">STATISTICS</p><h1>Your flying over time</h1><p className="muted page-lead">Category-aware trends and breakdowns from your logbook. Sailplane and balloon totals use AIR flight time; powered categories use BLOCK time. No regulatory status is inferred here.</p></div><Link className="secondary-link" href="/dashboard">Back to dashboard</Link></header>
@@ -48,6 +50,7 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
       <div className="section-heading"><div><p className="eyebrow">LONG-TERM OVERVIEW</p><h2>Career snapshot</h2><p className="muted">All-time history within {scopeLabel.toLowerCase()}. Period filters do not apply to Career.</p></div></div>
       <div className="mini-metrics"><div><span>First recorded flight</span><b>{data.career.firstDate||"—"}</b></div><div><span>Latest recorded flight</span><b>{data.career.lastDate||"—"}</b></div><div><span>Active years</span><b>{data.career.activeYears}</b></div><div><span>Career logged time</span><b>{formatInsightDuration(data.career.minutes)}</b></div><div><span>Career flights</span><b>{data.career.flights}</b></div><div><span>Busiest year</span><b>{data.career.busiestYear||"—"}</b><small>{data.career.busiestYear?`${formatInsightDuration(data.career.busiestYearMinutes)} · ${data.career.busiestYearFlights} flights`:"No data"}</small></div></div>
     </section>:null}
+    {section==="career"&&professional?.visible?<ProfessionalPilotWorkspace data={professional}/>:null}
 
     {section==="experience"?<>
       <section className="panel">

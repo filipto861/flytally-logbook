@@ -2,24 +2,16 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.5.0 — Recency & Compliance Workspace
-
-- Consolidate licence/rating validity, flying recency and supporting evidence into one planning-oriented workspace.
-- Keep explicit states such as CURRENT, ACTION SOON, NOT CURRENT and INCOMPLETE EVIDENCE evidence-driven and explainable.
-- Improve SEP/TMG, LAPL, SPL, Balloon and supported Helicopter planning without making unsupported legal-status inferences.
-- Link recency requirements to the exact flights, training, signatures and saved credentials that support them.
-- Keep FSTD recency evidence deferred unless it becomes an explicit product priority during this phase.
-
-## Post-v2.5 roadmap
-
-The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
-
-### v2.6 — Professional Pilot Workspace 2.0
+## Current release — v2.6.0 — Professional Pilot Workspace 2.0
 
 - Expand operator/operation context, PICUS/supervised time, commander/copilot/instructor reporting and professional experience summaries.
 - Improve aircraft-type and employer-oriented career reporting and exportable professional experience summaries.
 - Keep CAT/NCC/SPO and other professional context explicit evidence, never inferred silently.
 - Preserve the distinction between recorded evidence and a claimed regulatory or employment status.
+
+## Post-v2.6 roadmap
+
+The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
 
 ### v2.7 — Data Integrity & Recovery 2.0
 
@@ -52,6 +44,14 @@ Do not schedule v3.0 from a single feature request. Treat it as a research bound
 - **Certified-data integrity:** certification fingerprints, revisions, signatures, sharing and restore behavior remain regression-protected.
 - **One workflow principle:** do not create parallel Quick/Simple/Advanced versions of the same core task.
 - **Mobile as a release gate:** core mobile workflows are part of release acceptance, not a later cleanup step.
+
+## v2.5.0 — Recency & Compliance Workspace
+
+- Consolidate licence/rating validity, flying recency and supporting evidence into one planning-oriented workspace.
+- Keep explicit states such as CURRENT, ACTION SOON, NOT CURRENT and INCOMPLETE EVIDENCE evidence-driven and explainable.
+- Improve SEP/TMG, LAPL, SPL, Balloon and supported Helicopter planning without making unsupported legal-status inferences.
+- Link recency requirements to the exact flights, training, signatures and saved credentials that support them.
+- Keep FSTD recency evidence deferred unless it becomes an explicit product priority during this phase.
 
 ## v2.4.0 — Flight Entry & Review 2.0
 
