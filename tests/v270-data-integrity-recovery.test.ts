@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { buildRecoveryPreviewSummary,RECOVERY_PREVIEW_SECTION_KEYS } from "../lib/recovery-preview.ts";
 import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "../lib/recovery-conflict.ts";
+
+const root=path.resolve(import.meta.dirname,"..");
 
 test("v2.7 recovery preview covers every modern exact-restore section",()=>{
   const expected=["flights","aircraft","rates","airports","expiries","flight_tracks","track_points","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","audit_log","deleted_flights","flight_expenses","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence","pilot_licences","pilot_qualifications","pilot_connections","instructor_flight_approvals","flight_participations","user_notifications","flight_verifications","connection_audit_log"];
@@ -43,7 +47,6 @@ test("v2.7 recovery preview omits empty sections and reports a complete backup c
   assert.equal(summary.present,2);
 });
 
-
 test("v2.7 exposes authoritative-history conflicts as stable recovery reasons",()=>{
   const newer=currentCertificationConflict({id:7,record_revision:3,certification_hash:"new"},{id:7,record_revision:2,certification_hash:"old"},"Flight");
   assert.equal(newer?.code,"newer-backup-revision");
@@ -58,4 +61,13 @@ test("v2.7 keeps record identity conflicts structured and serializable",()=>{
   assert.equal(error.conflict.code,"record-identity");
   assert.match(error.conflict.detail,/will not merge two identities/i);
   assert.deepEqual(JSON.parse(JSON.stringify(error.conflict)),conflict);
+});
+
+test("v2.7 stored backups reuse the canonical recovery preview and conflict contract",()=>{
+  const center=fs.readFileSync(path.join(root,"components/backup-center.tsx"),"utf8"),actions=fs.readFileSync(path.join(root,"app/(protected)/export/actions.ts"),"utf8");
+  assert.match(center,/buildRecoveryPreviewSummary/);
+  assert.match(center,/state\.conflict/);
+  assert.match(center,/summary\.protectedEvidence/);
+  assert.match(center,/summary\.missing===0/);
+  assert.match(actions,/return restorePortableBackup\(\{\},forwarded\)/);
 });
