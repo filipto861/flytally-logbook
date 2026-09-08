@@ -1,5 +1,5 @@
 "use client";
-import { useActionState,useState } from "react";
+import { useActionState,useEffect,useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { FlightTrackSummary } from "@/lib/data/flight-track-review";
@@ -10,6 +10,7 @@ function UploadButton(){const {pending}=useFormStatus();return <button className
 function ApplyButton({reviewed}:{reviewed:boolean}){const{pending}=useFormStatus();return <button className="secondary-link" disabled={!reviewed||pending}>{pending?"Applying…":"Apply GPS time suggestions"}</button>}
 function stamp(value:string){if(!value)return"";const parsed=new Date(value);return Number.isFinite(parsed.getTime())?parsed.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):value}
 export function TrackManager({flightId,tracks,attachAction,applyAction,deleteAction}:{flightId:number;tracks:FlightTrackSummary[];attachAction:UploadAction;applyAction:SimpleAction;deleteAction:SimpleAction}){
- const [state,action]=useActionState(attachAction,{}),[reviewed,setReviewed]=useState(false);
+ const [state,action]=useActionState(attachAction,{}),[reviewed,setReviewed]=useState(false),trackEvidenceKey=tracks.map(track=>[track.id,track.pointCount,track.startUtc,track.endUtc,track.distanceKm].join(":" )).join("|");
+ useEffect(()=>setReviewed(false),[trackEvidenceKey,state.success]);
  return <details className="panel track-manager"><summary>GPS tracks <b>{tracks.length}</b></summary><div className="track-manager-grid"><form action={action} className="stack-form"><label>KML, GPX or CSV<input type="file" name="kml" accept=".kml,.gpx,.csv,application/xml,text/xml,text/csv" required/></label><label className="check-row"><input type="checkbox" name="replace"/> Replace existing tracks</label>{state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">{state.success}</p>:null}<UploadButton/></form><div className="stack-form">{tracks.length?<><div className="gps-apply-block"><p><strong>Review before applying GPS times</strong></p><small>Compare the current record with the GPS-derived BLOCK and AIR suggestions above. Applying them replaces all four time fields.</small><label className="check-row"><input type="checkbox" checked={reviewed} onChange={event=>setReviewed(event.target.checked)}/> I reviewed the current vs GPS comparison</label><form action={applyAction}><ApplyButton reviewed={reviewed}/></form><Link className="secondary-link" href={`/flights/${flightId}?tab=logbook`}>Review Logbook data</Link></div>{tracks.map(t=><form action={deleteAction} key={t.id} className="track-row track-source-row"><input type="hidden" name="trackId" value={t.id}/><span><strong>{t.fileName||`Track #${t.id}`}</strong><small>{t.distanceKm.toFixed(1)} km · {t.pointCount.toLocaleString("en-GB")} points{t.startUtc?` · ${stamp(t.startUtc)}`:""}</small></span><button className="icon-danger">Delete</button></form>)}</>:<p className="empty-state">No GPS tracks.</p>}</div></div></details>
 }
