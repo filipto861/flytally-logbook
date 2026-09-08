@@ -3,6 +3,7 @@
 import { useEffect,useMemo,useState } from "react";
 import { createPortal } from "react-dom";
 import { intelligentFlightReview,type IntelligentEntryContext,type IntelligentFlightDraft,type IntelligentInsight } from "@/lib/intelligent-logbook-client-types";
+import { POST_SAVE_REVIEW_KEY } from "@/lib/flight-review-navigation";
 
 function formDraft(form:HTMLFormElement):IntelligentFlightDraft{
   const data=new FormData(form),value=(name:string)=>String(data.get(name)??"");
@@ -62,9 +63,15 @@ export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryC
   useEffect(()=>{
     const node=document.querySelector<HTMLFormElement>("form.flight-form");if(!node)return;
     setForm(node);
-    const sync=()=>setDraft(formDraft(node));sync();
-    node.addEventListener("input",sync);node.addEventListener("change",sync);
-    return()=>{node.removeEventListener("input",sync);node.removeEventListener("change",sync)};
+    const sync=()=>setDraft(formDraft(node));
+    const markPostSaveReview=(event:SubmitEvent)=>{
+      const submitter=event.submitter instanceof HTMLButtonElement?event.submitter:null,intent=submitter?.name==="intent"?submitter.value:"";
+      if(intent==="save")sessionStorage.setItem(POST_SAVE_REVIEW_KEY,String(Date.now()));else sessionStorage.removeItem(POST_SAVE_REVIEW_KEY);
+    };
+    const clearRejectedReview=()=>{if(node.querySelector('.form-error[role="alert"]'))sessionStorage.removeItem(POST_SAVE_REVIEW_KEY)};
+    const observer=new MutationObserver(clearRejectedReview);
+    sync();node.addEventListener("input",sync);node.addEventListener("change",sync);node.addEventListener("submit",markPostSaveReview);observer.observe(node,{childList:true,subtree:true});
+    return()=>{node.removeEventListener("input",sync);node.removeEventListener("change",sync);node.removeEventListener("submit",markPostSaveReview);observer.disconnect()};
   },[]);
   const insights=useMemo(()=>intelligentFlightReview(draft,context.history),[draft,context.history]);
   const departure=String(draft.departure??"").trim().toUpperCase(),continuation=!departure?context.continuation:null;
