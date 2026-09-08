@@ -2,19 +2,30 @@
 
 import { useState } from "react";
 import type { RestoreState } from "@/app/(protected)/export/actions";
+import { buildRecoveryPreviewSummary } from "@/lib/recovery-preview";
 
 type Action=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
-const labels:Record<string,string>={flights:"Flights",aircraft:"Aircraft",rates:"Rates",airports:"Custom airports",expiries:"Licences / documents",flight_tracks:"GPS tracks",track_points:"Legacy GPS points",audit_log:"Audit events",fstd_sessions:"FSTD sessions",flight_certified_revisions:"Flight revisions",fstd_certified_revisions:"FSTD revisions",deleted_flights:"Trash records"};
 
 export function BackupRestore({action}:{action:Action}){
   const [file,setFile]=useState<File|null>(null),[state,setState]=useState<RestoreState>({}),[confirm,setConfirm]=useState(""),[pending,setPending]=useState(false);
-  const preview=state.preview;
+  const preview=state.preview,summary=preview?buildRecoveryPreviewSummary(preview):null;
   const run=async(intent:"preview"|"restore")=>{if(!file){setState({error:"Select a complete JSON backup."});return}const data=new FormData();data.set("backup",file);data.set("intent",intent);if(intent==="restore"){data.set("preview_digest",state.preview?.digest||"");data.set("confirm",confirm)}setPending(true);try{const next=await action({},data);setState(next);if(next.success){setConfirm("");setFile(null)}}finally{setPending(false)}};
   const certified=preview?.certification;
-  return <section className="panel backup-restore"><div><p className="eyebrow">SAFE RESTORE</p><h2>{preview?.accountBound?"Backup is ready":"Select a backup"}</h2><p className="muted">FlyTally checks the file and shows exactly what can be restored. Existing records are never overwritten.</p></div>
+  return <section className="panel backup-restore"><div><p className="eyebrow">SAFE RESTORE</p><h2>{preview?.accountBound?"Backup is ready":"Select a backup"}</h2><p className="muted">FlyTally validates the backup first, compares it with this account and restores only missing records. Existing records are never overwritten.</p></div>
     <label className="backup-file">Backup file<input type="file" accept="application/json,.json" onChange={event=>{setFile(event.target.files?.[0]||null);setState({});setConfirm("")}}/></label>
     <div className="backup-actions"><button type="button" className="secondary-button" disabled={pending||!file} onClick={()=>run("preview")}>{pending?"Checking…":"Check backup"}</button></div>
     {state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">✓ {state.success}</p>:null}
-    {preview?<div className="restore-preview"><header><div><strong>✓ Backup validated</strong><small>Created {preview.exportedAt?new Date(preview.exportedAt).toLocaleString("en-GB"):"date unavailable"}</small></div><span>Integrity verified</span></header>{certified?<p className="form-success">✓ Certified records and revision history are valid.</p>:null}<div className="restore-grid">{Object.keys(preview.source).map(key=><article key={key}><strong>{labels[key]||key.replaceAll("_"," ")}</strong><span><b>{preview.add[key]||0}</b> to restore</span><small>{preview.skip[key]||0} already present</small></article>)}</div><div className="restore-confirm"><label>Type RESTORE to confirm<input value={confirm} onChange={event=>setConfirm(event.target.value)} autoComplete="off"/></label><button type="button" className="primary-button" disabled={pending||confirm.trim().toUpperCase()!=="RESTORE"} onClick={()=>run("restore")}>{pending?"Restoring…":"Restore missing data"}</button></div></div>:null}
+    {preview&&summary?<div className="restore-preview">
+      <header><div><strong>✓ Backup validated</strong><small>Created {preview.exportedAt?new Date(preview.exportedAt).toLocaleString("en-GB"):"date unavailable"}</small></div><span>Integrity verified</span></header>
+      {preview.accountBound?<p className="muted">This is non-destructive recovery. FlyTally will add missing records only; matching records remain unchanged and any authoritative-history conflict stops recovery before data is changed.</p>:null}
+      {certified?<p className="form-success">✓ Certified evidence verified: {certified.certifiedFlights} certified flight{certified.certifiedFlights===1?"":"s"}, {certified.flightRevisions} archived flight revision{certified.flightRevisions===1?"":"s"}, {certified.certifiedFstd} certified FSTD session{certified.certifiedFstd===1?"":"s"}.</p>:null}
+      <div className="mini-metrics"><div><span>Missing data</span><b>{summary.missing}</b><small>{summary.missing?"Can be recovered":"Nothing missing"}</small></div><div><span>Already present</span><b>{summary.present}</b><small>Will not be overwritten</small></div><div><span>Protected evidence</span><b>{summary.protectedEvidence}</b><small>Revision, signature & audit records</small></div>{summary.settingsIncluded?<div><span>Account settings</span><b>Included</b><small>Recovered conservatively</small></div>:null}</div>
+      <div className="credential-list">{summary.groups.map((group,index)=><details className="credential-card" key={group.id} open={index===0||group.protectedEvidence}>
+        <summary className="credential-summary"><div className="credential-main"><span>{group.protectedEvidence?"PROTECTED EVIDENCE":"RECOVERY DATA"}</span><strong>{group.label}</strong><small>{group.description}</small></div><div className="credential-validity"><b className={group.missing?"status-warning":"status-on"}>{group.missing?`${group.missing} TO RESTORE`:"COMPLETE"}</b><small>{group.present} already present</small></div><span className="credential-chevron" aria-hidden="true">⌄</span></summary>
+        <div className="entry-section-body"><div className="restore-grid">{group.items.map(item=><article key={item.key}><strong>{item.label}</strong><span><b>{item.missing}</b> to restore</span><small>{item.present} already present · {item.source} in backup{item.protectedEvidence?" · protected evidence":""}</small></article>)}</div></div>
+      </details>)}</div>
+      {summary.missing===0?<p className="form-success">✓ All recoverable records from this backup are already present. Running restore would not add data.</p>:null}
+      <div className="restore-confirm"><label>Type RESTORE to confirm<input value={confirm} onChange={event=>setConfirm(event.target.value)} autoComplete="off"/></label><button type="button" className="primary-button" disabled={pending||confirm.trim().toUpperCase()!=="RESTORE"||summary.missing===0} onClick={()=>run("restore")}>{pending?"Restoring…":summary.missing?"Restore missing data":"Nothing to restore"}</button></div>
+    </div>:null}
   </section>;
 }
