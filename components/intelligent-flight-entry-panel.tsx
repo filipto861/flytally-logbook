@@ -74,14 +74,19 @@ export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryC
     return()=>{node.removeEventListener("input",sync);node.removeEventListener("change",sync);node.removeEventListener("submit",markPostSaveReview);observer.disconnect()};
   },[]);
   const insights=useMemo(()=>intelligentFlightReview(draft,context.history),[draft,context.history]);
-  const departure=String(draft.departure??"").trim().toUpperCase(),continuation=!departure?context.continuation:null;
+  const departure=String(draft.departure??"").trim().toUpperCase(),arrival=String(draft.arrival??"").trim().toUpperCase(),continuation=!departure?context.continuation:null;
+  const latest=context.history[0],latestDeparture=String(latest?.departure??"").trim().toUpperCase(),latestArrival=String(latest?.arrival??"").trim().toUpperCase();
+  const returnLeg=departure&&!arrival&&latestArrival===departure&&latestDeparture&&latestDeparture!==departure?latest:null;
   const inline=insights.map(item=>({item,target:fieldTarget(form,preferredField(item.code))})),fallback=inline.filter(entry=>!entry.target).map(entry=>entry.item);
-  const departureTarget=fieldTarget(form,"departure");
+  const departureTarget=fieldTarget(form,"departure"),arrivalTarget=fieldTarget(form,"arrival");
 
   return <>
     {continuation&&form&&departureTarget?createPortal(<small className="role-guidance" data-intelligent-review="continuation">
-      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="detail-button" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
+      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
     </small>,departureTarget):null}
+    {returnLeg&&form&&arrivalTarget?createPortal(<small className="role-guidance" data-intelligent-review="return-leg">
+      <strong>Return to {latestDeparture}?</strong> Your latest flight was {latestDeparture} → {latestArrival} on {String(returnLeg.date).slice(0,10)}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"arrival",latestDeparture)}>Use {latestDeparture}</button>
+    </small>,arrivalTarget):null}
     {inline.map(({item,target})=>target?createPortal(<InlineInsight item={item}/>,target,`intelligent-${item.code}`):null)}
     {fallback.length?<section className="panel" aria-live="polite" data-intelligent-review="fallback">
       <div className="section-heading"><div><p className="eyebrow">INTELLIGENT REVIEW</p><h2>Worth checking</h2></div><span>{fallback.length}</span></div>
