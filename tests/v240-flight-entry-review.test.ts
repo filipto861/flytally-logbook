@@ -9,8 +9,10 @@ const panel=fs.readFileSync("components/intelligent-flight-entry-panel.tsx","utf
 
 test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(page,/FlightEntryWorkspace/);
-  assert.match(workspace,/<FlightForm action=\{createFlight\}/);
-  assert.match(workspace,/<IntelligentFlightEntryPanel context=\{intelligentContext\}/);
+  assert.match(page,/<FlightForm action=\{createFlight\}/);
+  assert.match(page,/<IntelligentFlightEntryPanel context=\{intelligentContext\}/);
+  assert.match(workspace,/manual:ReactNode/);
+  assert.match(workspace,/\{manual\}/);
   assert.match(panel,/createPortal/);
   assert.match(panel,/fieldTarget\(form,preferredField\(item\.code\)\)/);
   assert.match(panel,/data-intelligent-review=\{item\.code\}/);
