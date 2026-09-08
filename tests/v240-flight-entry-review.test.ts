@@ -64,3 +64,15 @@ test("v2.4 requires explicit review before applying GPS-derived times",()=>{
   assert.match(trackManager,/href=\{`\/flights\/\$\{flightId\}\?tab=logbook`\}/);
   assert.match(trackManager,/Review Logbook data/);
 });
+
+test("v2.4 keeps quick-aircraft keyboard focus inside the dialog and restores the opener",()=>{
+  assert.match(workspace,/opener=useRef<HTMLButtonElement\|null>\(null\)/);
+  assert.match(workspace,/event\.key==="Escape"/);
+  assert.match(workspace,/event\.key!=="Tab"/);
+  assert.match(workspace,/document\.activeElement===first/);
+  assert.match(workspace,/document\.activeElement===last/);
+  assert.match(workspace,/requestAnimationFrame\(\(\)=>opener\.current\?\.focus\(\)\)/);
+  assert.match(workspace,/aria-haspopup="dialog"/);
+  assert.match(workspace,/aria-controls="quick-aircraft-dialog"/);
+  assert.match(workspace,/id="quick-aircraft-dialog"/);
+});
