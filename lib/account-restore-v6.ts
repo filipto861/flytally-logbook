@@ -7,6 +7,7 @@ import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
+import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
 
 export type ExactRestorePreview={digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number;accountBound:boolean;schemaVersion:number;certification:BackupCertificationSummary};
 export type ExactRestorePlan={preview:ExactRestorePreview;addRows:Record<string,BackupRow[]>};
@@ -41,7 +42,7 @@ function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>st
     if(requireStableId&&sourceId&&byId.has(sourceId)){skip++;continue}
     const match=natural?byKey.get(natural):undefined;
     if(match){
-      if(requireStableId&&sourceId&&id(match)!==sourceId)throw new Error(`${label} restore conflict: ${natural} already exists under record ${id(match)} instead of source record ${sourceId}. Exact recovery was stopped.`);
+      if(requireStableId&&sourceId&&id(match)!==sourceId)throw new AccountRestoreConflictError(recordIdentityConflict(label,natural,sourceId,id(match)));
       skip++;continue;
     }
     add.push(row);
@@ -51,9 +52,12 @@ function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>st
 
 function checkExistingCertification(source:BackupRow[],current:BackupRow[],label:string){
   const byId=new Map(current.map(row=>[id(row),row]));
-  for(const row of source){const existing=byId.get(id(row));if(!existing)continue;const sourceRevision=Math.max(1,Number(row.record_revision||1)),currentRevision=Math.max(1,Number(existing.record_revision||1));if(currentRevision<sourceRevision)throw new Error(`${label} ${id(row)} exists at revision ${currentRevision}, but the backup contains newer revision ${sourceRevision}. Non-destructive recovery was stopped.`);if(currentRevision===sourceRevision&&text(row.certification_hash)&&text(existing.certification_hash)!==text(row.certification_hash))throw new Error(`${label} ${id(row)} has a different certification fingerprint at revision ${sourceRevision}. Exact recovery was stopped.`)}
+  for(const row of source){const existing=byId.get(id(row));if(!existing)continue;const conflict=currentCertificationConflict(row,existing,label);if(conflict)throw new AccountRestoreConflictError(conflict)}
 }
-function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],parentField:string,label:string){const byKey=new Map(current.map(row=>[`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,row]));for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(existing&&text(existing.certification_hash)!==text(row.certification_hash))throw new Error(`${label} ${key} has a different archived certification fingerprint. Exact recovery was stopped.`)}}
+function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],parentField:string,label:string){
+  const byKey=new Map(current.map(row=>[`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,row]));
+  for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(!existing)continue;const conflict=archivedCertificationConflict(row,existing,parentField,label);if(conflict)throw new AccountRestoreConflictError(conflict)}
+}
 
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string):Promise<ExactRestorePlan>{
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);

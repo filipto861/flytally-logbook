@@ -7,9 +7,10 @@ import { flightRestoreKey,parsePortableBackup,trackRestoreKey,type BackupRow,typ
 import { createStoredBackup,loadStoredBackup } from "@/lib/backup-center";
 import { restoreDeletedFlightRecord } from "@/lib/flight-trash";
 import { executeExactAccountRestore,prepareExactAccountRestore,type ExactRestorePreview } from "@/lib/account-restore-v6";
+import { AccountRestoreConflictError,type RecoveryConflict } from "@/lib/recovery-conflict";
 
 export type RestorePreview=ExactRestorePreview|{digest:string;exportedAt:string;source:Record<string,number>;add:Record<string,number>;skip:Record<string,number>;settings:boolean;legacyPoints:number;accountBound?:boolean;schemaVersion?:number;certification?:{certifiedFlights:number;flightRevisions:number;certifiedFstd:number;fstdRevisions:number}};
-export type RestoreState={error?:string;success?:string;preview?:RestorePreview};
+export type RestoreState={error?:string;success?:string;preview?:RestorePreview;conflict?:RecoveryConflict};
 export type TrashRestoreState={error?:string;success?:string};
 const text=(row:BackupRow,key:string,max=2000)=>String(row[key]??"").trim().slice(0,max),upper=(row:BackupRow,key:string,max=120)=>text(row,key,max).toUpperCase();
 const nullableNumber=(value:unknown)=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Number(value):null;
@@ -17,6 +18,7 @@ const integer=(value:unknown,fallback=0)=>Number.isFinite(Number(value))?Math.tr
 const jsonText=(value:unknown,fallback="[]")=>{if(typeof value==="string"){try{JSON.parse(value);return value}catch{return fallback}}try{return JSON.stringify(value??JSON.parse(fallback))}catch{return fallback}};
 const isoTime=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?"":date.toISOString()};
 const revalidateRestore=()=>{for(const path of ["/data","/export","/dashboard","/flights","/database","/profile","/map","/print","/fstd"])revalidatePath(path)};
+const restorePreflightFailure=(error:unknown,fallback:string):RestoreState=>error instanceof AccountRestoreConflictError?{error:"Restore blocked before any data changes.",conflict:error.conflict}:{error:error instanceof Error?error.message:fallback};
 
 async function readBackup(form:FormData){const file=form.get("backup");if(!(file instanceof File)||!file.size)throw new Error("Select a complete JSON backup.");if(file.size>150*1024*1024)throw new Error("File exceeds the 150 MB safety limit.");return parsePortableBackup(await file.text())}
 
@@ -56,7 +58,7 @@ export async function restorePortableBackup(_:RestoreState,form:FormData):Promis
   const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
   const intent=String(form.get("intent")||"preview");
   if(parsed.backup.version>=6){
-    let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest)}catch(error){return{error:error instanceof Error?error.message:"Backup recovery preflight failed."}}
+    let prepared;try{prepared=await prepareExactAccountRestore(userId,parsed.backup,parsed.digest)}catch(error){return restorePreflightFailure(error,"Backup recovery preflight failed.")}
     if(intent!=="restore")return{preview:prepared.preview};
     if(String(form.get("preview_digest")||"")!==parsed.digest)return{error:"The file changed after preview. Validate it again."};if(String(form.get("confirm")||"").trim().toUpperCase()!=="RESTORE")return{error:"Type RESTORE to confirm.",preview:prepared.preview};
     try{await createStoredBackup(userId,"pre_restore")}catch(error){console.error("pre-restore-backup-failed",error);return{error:"Restore was stopped because the safety backup could not be created. Existing data is unchanged.",preview:prepared.preview}}

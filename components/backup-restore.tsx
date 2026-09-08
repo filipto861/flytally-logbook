@@ -15,6 +15,7 @@ export function BackupRestore({action}:{action:Action}){
     <label className="backup-file">Backup file<input type="file" accept="application/json,.json" onChange={event=>{setFile(event.target.files?.[0]||null);setState({});setConfirm("")}}/></label>
     <div className="backup-actions"><button type="button" className="secondary-button" disabled={pending||!file} onClick={()=>run("preview")}>{pending?"Checking…":"Check backup"}</button></div>
     {state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">✓ {state.success}</p>:null}
+    {state.conflict?<div className="credential-card"><div className="entry-section-body"><p className="eyebrow">RECOVERY BLOCKED</p><strong>{state.conflict.title}</strong><p className="muted">{state.conflict.detail}</p><small>{state.conflict.record}</small></div></div>:null}
     {preview&&summary?<div className="restore-preview">
       <header><div><strong>✓ Backup validated</strong><small>Created {preview.exportedAt?new Date(preview.exportedAt).toLocaleString("en-GB"):"date unavailable"}</small></div><span>Integrity verified</span></header>
       {preview.accountBound?<p className="muted">This is non-destructive recovery. FlyTally will add missing records only; matching records remain unchanged and any authoritative-history conflict stops recovery before data is changed.</p>:null}
