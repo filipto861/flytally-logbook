@@ -66,9 +66,10 @@ test("v2.3 Statistics only computes aggregates required by the active section",(
   for(const name of ["overview","experience","aircraft","places","career"])assert.ok(source.includes(`'all','${name}'`));
 });
 
-test("v2.3 remains the performance-only current release",()=>{
+test("v2.3 performance baseline remains documented after v2.4 release",()=>{
   const roadmap=read("ROADMAP.md");
-  assert.match(roadmap,/## Current release — v2\.3\.0 — Large Logbook Performance & Scalability/);
+  assert.match(roadmap,/## Current release — v2\.4\.0 — Flight Entry & Review 2\.0/);
+  assert.match(roadmap,/## v2\.3\.0 — Large Logbook Performance & Scalability/);
   assert.match(roadmap,/100k-flight read-performance gate/);
   assert.match(roadmap,/without a schema change or historical-row rewrite/);
 });

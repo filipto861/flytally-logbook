@@ -2,25 +2,17 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.3.0 — Large Logbook Performance & Scalability
+## Current release — v2.4.0 — Flight Entry & Review 2.0
 
-- Retain 10k/50k release gates and add a controlled 100k-flight read-performance gate for production hot paths.
-- Keep Dashboard concise with a lean at-a-glance read model instead of recomputing Statistics aggregates.
-- Keep complete Print preparation bounded by resolving latest aircraft and signed-verification metadata set-wise rather than once per flight row.
-- Compute only the aggregates required by the active Statistics section while preserving the canonical multi-category time/category engine and backward-compatible all-section mode.
-- Preserve v2.2 Action Center workflows, v2.1 Dashboard/Statistics information architecture, v2.0 regulatory semantics and certified-data integrity without a schema change or historical-row rewrite.
+- Keep one canonical Add flight workflow while surfacing Intelligent Logbook findings next to the fields that own them.
+- Keep continuation, return and local-flight assistance explicit and inside the existing Departure/Arrival controls.
+- Require an explicit saved-vs-GPS review before GPS-derived time suggestions can overwrite an existing flight record.
+- Hand a successful normal Save into final Logbook data review before certification and sharing, without changing certification hashes, revisions or regulatory calculations.
+- Harden Quick Aircraft keyboard/focus behavior and retain the existing mobile and large-logbook release gates.
 
-## Post-v2.3 roadmap
+## Post-v2.4 roadmap
 
 The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
-
-### v2.4 — Flight Entry & Review 2.0
-
-- Treat Add flight → Review → Save → Certification → Sharing as one coherent workflow.
-- Improve inline validation, required-state explanations and progressive disclosure without adding a separate Quick/Simple/Advanced entry mode.
-- Surface Intelligent Logbook findings where the relevant field is being edited and keep statistical observations informational.
-- Improve continuation, return and local-flight assistance only by reusing the single canonical flight-entry flow.
-- Audit GPS import → correction → certification and mobile keyboard/focus behavior end to end.
 
 ### v2.5 — Recency & Compliance Workspace
 
@@ -68,6 +60,14 @@ Do not schedule v3.0 from a single feature request. Treat it as a research bound
 - **Certified-data integrity:** certification fingerprints, revisions, signatures, sharing and restore behavior remain regression-protected.
 - **One workflow principle:** do not create parallel Quick/Simple/Advanced versions of the same core task.
 - **Mobile as a release gate:** core mobile workflows are part of release acceptance, not a later cleanup step.
+
+## v2.3.0 — Large Logbook Performance & Scalability
+
+- Retain 10k/50k release gates and add a controlled 100k-flight read-performance gate for production hot paths.
+- Keep Dashboard concise with a lean at-a-glance read model instead of recomputing Statistics aggregates.
+- Keep complete Print preparation bounded by resolving latest aircraft and signed-verification metadata set-wise rather than once per flight row.
+- Compute only the aggregates required by the active Statistics section while preserving the canonical multi-category time/category engine and backward-compatible all-section mode.
+- Preserve v2.2 Action Center workflows, v2.1 Dashboard/Statistics information architecture, v2.0 regulatory semantics and certified-data integrity without a schema change or historical-row rewrite.
 
 ## v2.1.0 — Dashboard & Statistics consolidation
 
