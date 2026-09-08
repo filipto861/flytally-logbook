@@ -38,7 +38,8 @@ function preferredField(code:string){
 function fieldTarget(form:HTMLFormElement|null,name:string){
   if(!form||!name)return null;
   const control=form.querySelector<HTMLElement>(`[name="${name}"]`);
-  return control?.closest<HTMLElement>("label")||control?.parentElement||null;
+  if(!control||control instanceof HTMLInputElement&&control.type==="hidden"||control.closest("[hidden]"))return null;
+  return control.closest<HTMLElement>("label")||control.parentElement;
 }
 
 function applyFieldValue(form:HTMLFormElement,name:string,value:string){
