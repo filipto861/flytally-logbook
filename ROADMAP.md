@@ -2,25 +2,17 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
-## Current release — v2.4.0 — Flight Entry & Review 2.0
-
-- Keep one canonical Add flight workflow while surfacing Intelligent Logbook findings next to the fields that own them.
-- Keep continuation, return and local-flight assistance explicit and inside the existing Departure/Arrival controls.
-- Require an explicit saved-vs-GPS review before GPS-derived time suggestions can overwrite an existing flight record.
-- Hand a successful normal Save into final Logbook data review before certification and sharing, without changing certification hashes, revisions or regulatory calculations.
-- Harden Quick Aircraft keyboard/focus behavior and retain the existing mobile and large-logbook release gates.
-
-## Post-v2.4 roadmap
-
-The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
-
-### v2.5 — Recency & Compliance Workspace
+## Current release — v2.5.0 — Recency & Compliance Workspace
 
 - Consolidate licence/rating validity, flying recency and supporting evidence into one planning-oriented workspace.
 - Keep explicit states such as CURRENT, ACTION SOON, NOT CURRENT and INCOMPLETE EVIDENCE evidence-driven and explainable.
 - Improve SEP/TMG, LAPL, SPL, Balloon and supported Helicopter planning without making unsupported legal-status inferences.
 - Link recency requirements to the exact flights, training, signatures and saved credentials that support them.
 - Keep FSTD recency evidence deferred unless it becomes an explicit product priority during this phase.
+
+## Post-v2.5 roadmap
+
+The next roadmap phase prioritizes workflow quality and product consistency before another major expansion of regulatory scope.
 
 ### v2.6 — Professional Pilot Workspace 2.0
 
@@ -60,6 +52,14 @@ Do not schedule v3.0 from a single feature request. Treat it as a research bound
 - **Certified-data integrity:** certification fingerprints, revisions, signatures, sharing and restore behavior remain regression-protected.
 - **One workflow principle:** do not create parallel Quick/Simple/Advanced versions of the same core task.
 - **Mobile as a release gate:** core mobile workflows are part of release acceptance, not a later cleanup step.
+
+## v2.4.0 — Flight Entry & Review 2.0
+
+- Keep one canonical Add flight workflow while surfacing Intelligent Logbook findings next to the fields that own them.
+- Keep continuation, return and local-flight assistance explicit and inside the existing Departure/Arrival controls.
+- Require an explicit saved-vs-GPS review before GPS-derived time suggestions can overwrite an existing flight record.
+- Hand a successful normal Save into final Logbook data review before certification and sharing, without changing certification hashes, revisions or regulatory calculations.
+- Harden Quick Aircraft keyboard/focus behavior and retain the existing mobile and large-logbook release gates.
 
 ## v2.3.0 — Large Logbook Performance & Scalability
 
