@@ -22,12 +22,18 @@ test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(form,/className="entry-review-summary"/);
 });
 
-test("v2.4 continuation edits the existing Departure control without navigation",()=>{
+test("v2.4 continuation and return assistance edit the same canonical route fields",()=>{
   assert.ok(panel.includes('applyFieldValue(form,"departure",continuation.airport)'));
+  assert.ok(panel.includes('applyFieldValue(form,"arrival",latestDeparture)'));
+  assert.ok(panel.includes('latestArrival===departure'));
+  assert.ok(panel.includes('latestDeparture!==departure'));
+  assert.ok(panel.includes('data-intelligent-review="return-leg"'));
+  assert.ok(panel.includes('className="field-inline-action"'));
+  assert.ok(form.includes('setArrival(departure)'));
+  assert.ok(form.includes('Use {departure} for local flight'));
   assert.ok(panel.includes('dispatchEvent(new Event("input",{bubbles:true}))'));
   assert.ok(panel.includes('dispatchEvent(new Event("change",{bubbles:true}))'));
   assert.ok(panel.includes("control.focus()"));
-  assert.ok(panel.includes('className="detail-button"'));
   assert.doesNotMatch(panel,/\/flights\/new\?departure=/);
   assert.doesNotMatch(panel,/import Link from "next\/link"/);
 });
