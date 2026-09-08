@@ -28,7 +28,9 @@ test("v2.4 continuation and return assistance edit the same canonical route fiel
   assert.ok(panel.includes('latestArrival===departure'));
   assert.ok(panel.includes('latestDeparture!==departure'));
   assert.ok(panel.includes('data-intelligent-review="return-leg"'));
-  assert.ok(panel.includes('className="field-inline-action"'));
+  assert.ok(panel.includes('className="detail-button"'));
+  assert.ok(panel.includes('background:"transparent"'));
+  assert.ok(panel.includes('cursor:"pointer"'));
   assert.ok(form.includes('setArrival(departure)'));
   assert.ok(form.includes('Use {departure} for local flight'));
   assert.ok(panel.includes('dispatchEvent(new Event("input",{bubbles:true}))'));
