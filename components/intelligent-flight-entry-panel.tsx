@@ -59,6 +59,8 @@ function InlineInsight({item}:{item:IntelligentInsight}){
   </small>;
 }
 
+const inlineActionStyle={marginLeft:6,background:"transparent",cursor:"pointer"} as const;
+
 export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryContext}){
   const[draft,setDraft]=useState<IntelligentFlightDraft>({}),[form,setForm]=useState<HTMLFormElement|null>(null);
   useEffect(()=>{
@@ -83,10 +85,10 @@ export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryC
 
   return <>
     {continuation&&form&&departureTarget?createPortal(<small className="role-guidance" data-intelligent-review="continuation">
-      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
+      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
     </small>,departureTarget):null}
     {returnLeg&&form&&arrivalTarget?createPortal(<small className="role-guidance" data-intelligent-review="return-leg">
-      <strong>Return to {latestDeparture}?</strong> Your latest flight was {latestDeparture} → {latestArrival} on {String(returnLeg.date).slice(0,10)}. <button className="field-inline-action" type="button" onClick={()=>applyFieldValue(form,"arrival",latestDeparture)}>Use {latestDeparture}</button>
+      <strong>Return to {latestDeparture}?</strong> Your latest flight was {latestDeparture} → {latestArrival} on {String(returnLeg.date).slice(0,10)}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"arrival",latestDeparture)}>Use {latestDeparture}</button>
     </small>,arrivalTarget):null}
     {inline.map(({item,target})=>target?createPortal(<InlineInsight item={item}/>,target,`intelligent-${item.code}`):null)}
     {fallback.length?<section className="panel" aria-live="polite" data-intelligent-review="fallback">
