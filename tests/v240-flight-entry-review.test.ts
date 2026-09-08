@@ -6,6 +6,7 @@ const page=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const workspace=fs.readFileSync("components/flight-entry-workspace.tsx","utf8");
 const form=fs.readFileSync("components/flight-form.tsx","utf8");
 const panel=fs.readFileSync("components/intelligent-flight-entry-panel.tsx","utf8");
+const trackManager=fs.readFileSync("components/track-manager.tsx","utf8");
 
 test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(page,/FlightEntryWorkspace/);
@@ -53,4 +54,13 @@ test("v2.4 keeps hard required-state review and advisory intelligence separate",
   assert.match(panel,/role=\{attention\?"alert":undefined\}/);
   assert.match(panel,/Suggestions use only this form and your own stored flights/);
   assert.match(panel,/FlyTally never rewrites regulatory fields or infers privileges/);
+});
+
+test("v2.4 requires explicit review before applying GPS-derived times",()=>{
+  assert.match(trackManager,/const \[state,action\]=useActionState\(attachAction,\{\}\),\[reviewed,setReviewed\]=useState\(false\)/);
+  assert.match(trackManager,/disabled=\{!reviewed\|\|pending\}/);
+  assert.match(trackManager,/I reviewed the current vs GPS comparison/);
+  assert.match(trackManager,/Applying…/);
+  assert.match(trackManager,/href=\{`\/flights\/\$\{flightId\}\?tab=logbook`\}/);
+  assert.match(trackManager,/Review Logbook data/);
 });
