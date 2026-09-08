@@ -4,9 +4,11 @@ import test from "node:test";
 
 const page=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const workspace=fs.readFileSync("components/flight-entry-workspace.tsx","utf8");
+const detailWorkspace=fs.readFileSync("components/flight-detail-workspace.tsx","utf8");
 const form=fs.readFileSync("components/flight-form.tsx","utf8");
 const panel=fs.readFileSync("components/intelligent-flight-entry-panel.tsx","utf8");
 const trackManager=fs.readFileSync("components/track-manager.tsx","utf8");
+const reviewNavigation=fs.readFileSync("lib/flight-review-navigation.ts","utf8");
 
 test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(page,/FlightEntryWorkspace/);
@@ -75,4 +77,21 @@ test("v2.4 keeps quick-aircraft keyboard focus inside the dialog and restores th
   assert.match(workspace,/aria-haspopup="dialog"/);
   assert.match(workspace,/aria-controls="quick-aircraft-dialog"/);
   assert.match(workspace,/id="quick-aircraft-dialog"/);
+});
+
+test("v2.4 hands a successful manual Save into final Logbook review exactly once",()=>{
+  assert.match(reviewNavigation,/POST_SAVE_REVIEW_KEY/);
+  assert.match(reviewNavigation,/POST_SAVE_REVIEW_MAX_AGE_MS=2\*60\*1000/);
+  assert.match(panel,/event:SubmitEvent/);
+  assert.match(panel,/intent==="save"/);
+  assert.match(panel,/sessionStorage\.setItem\(POST_SAVE_REVIEW_KEY,String\(Date\.now\(\)\)\)/);
+  assert.match(panel,/\.form-error\[role="alert"\]/);
+  assert.match(panel,/sessionStorage\.removeItem\(POST_SAVE_REVIEW_KEY\)/);
+  assert.match(detailWorkspace,/sessionStorage\.getItem\(POST_SAVE_REVIEW_KEY\)/);
+  assert.match(detailWorkspace,/sessionStorage\.removeItem\(POST_SAVE_REVIEW_KEY\)/);
+  assert.match(detailWorkspace,/age<=POST_SAVE_REVIEW_MAX_AGE_MS/);
+  assert.match(detailWorkspace,/setTab\("logbook"\)/);
+  assert.match(detailWorkspace,/Flight saved\./);
+  assert.match(detailWorkspace,/open Overview to certify the record/);
+  assert.match(detailWorkspace,/sharing becomes available after certification/);
 });
