@@ -38,7 +38,7 @@ test("v2.4 continuation and return assistance edit the same canonical route fiel
   assert.doesNotMatch(panel,/import Link from "next\/link"/);
 });
 
-test("v2.4 maps intelligent findings to the fields that own the review",()=>{
+test("v2.4 maps intelligent findings only to visible fields",()=>{
   const mappings=[
     ['code==="exact_duplicate"','return"registration"'],
     ['code==="incomplete_block_pair"','return"offBlock"'],
@@ -54,6 +54,9 @@ test("v2.4 maps intelligent findings to the fields that own the review",()=>{
     assert.ok(panel.includes(condition),`missing intelligent mapping condition ${condition}`);
     assert.ok(panel.includes(target),`missing intelligent mapping target ${target}`);
   }
+  assert.ok(panel.includes('control instanceof HTMLInputElement&&control.type==="hidden"'));
+  assert.ok(panel.includes('control.closest("[hidden]")'));
+  assert.match(panel,/fallback=inline\.filter\(entry=>!entry\.target\)/);
 });
 
 test("v2.4 keeps hard required-state review and advisory intelligence separate",()=>{
