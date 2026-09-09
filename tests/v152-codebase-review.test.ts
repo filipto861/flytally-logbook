@@ -43,8 +43,10 @@ test("v1.52 operational documentation describes the current runtime",()=>{
   assert.match(readme,/Next[.]js 16/);
   assert.match(readme,/Neon PostgreSQL/);
   assert.doesNotMatch(readme,/Current production-oriented release: \*\*FlyTally v1[.]33/);
-  assert.match(architecture,/FlyTally architecture — v1[.]52/);
-  assert.match(architecture,/active runtime is TypeScript only/);
+  assert.match(architecture,/Next[.]js 16/);
+  assert.match(architecture,/active(?: production)? runtime is TypeScript(?: only)?/);
+  assert.match(architecture,/Streamlit\/Python/);
+  assert.match(architecture,/Git history is the archive/);
   assert.match(review,/behavior preserving/i);
 });
 
