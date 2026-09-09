@@ -7,7 +7,7 @@ import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,"..");
 const script=path.join(root,"tooling/vercel-ignore-build.mjs");
-const productionBranch="codex/vercel-migration-v080";
+const productionBranch="main";
 
 function run(command:string,args:string[],cwd:string){
   const result=spawnSync(command,args,{cwd,encoding:"utf8"});
