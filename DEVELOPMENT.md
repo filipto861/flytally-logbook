@@ -13,6 +13,19 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 4. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
 5. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build when the released commit can affect runtime output.
 
+## Branch model
+
+`main` is the only long-lived branch and the canonical production branch.
+
+Normal work uses short-lived branches only:
+
+- `feat/<scope>` for product work;
+- `fix/<scope>` for defects and production hotfixes;
+- `chore/<scope>` for development infrastructure and maintenance;
+- `docs/<scope>` for documentation-only work.
+
+A branch is disposable after its pull request is merged. Release history belongs in commits, pull requests, tags and GitHub Releases rather than permanent version branches. Do not create product branches such as `training`, `school` or `v2.x`; separate FlyTally products should live in separate repositories when they become real applications.
+
 ## Module scope registry
 
 `tooling/development-modules.json` is the single development-only registry for module ownership and CI risk metadata. It does not participate in runtime application behaviour and existing runtime files should not be moved merely to satisfy the registry.
@@ -48,4 +61,4 @@ The retained 10k/50k/100k scale tests run only when a known production hot path,
 
 ## Deployment discipline
 
-The production branch is `codex/vercel-migration-v080`. Development changes should reach it through a reviewed candidate PR, not by direct iterative pushes. `npm run build` is deliberately build-only so Vercel does not rerun the application test suite on every preview or production deployment.
+The production branch is `main`. Development changes should reach it through a reviewed candidate PR, not by direct iterative pushes. `npm run build` is deliberately build-only so Vercel does not rerun the application test suite on every preview or production deployment.

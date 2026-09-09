@@ -17,9 +17,11 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
-test("CI runs one fast PR gate and delegates risk selection to the module registry",()=>{
+test("CI runs one fast PR gate and targets only canonical main",()=>{
   const workflow=read(".github/workflows/verify-web.yml");
   assert.match(workflow,/cancel-in-progress: true/);
+  assert.match(workflow,/branches:\s*\n\s*- main/);
+  assert.doesNotMatch(workflow,/codex\/vercel-migration-v080/);
   assert.match(workflow,/Classify CI risk/);
   assert.match(workflow,/node tooling\/development-scope[.]mjs --files changed-files[.]txt/);
   assert.match(workflow,/Fast application gate/);
@@ -43,7 +45,7 @@ test("large PostgreSQL fixtures are isolated from the normal core acceptance loo
   assert.match(runner,/mode === "scale" \? isScale : !isScale/);
 });
 
-test("development policy documents candidate-first iteration, module scope and release verification",()=>{
+test("development policy documents candidate-first iteration, branch hygiene and release verification",()=>{
   const doc=read("DEVELOPMENT.md");
   assert.match(doc,/candidate-first development workflow/);
   assert.match(doc,/one coherent candidate commit/);
@@ -51,5 +53,11 @@ test("development policy documents candidate-first iteration, module scope and r
   assert.match(doc,/tooling\/development-modules[.]json/);
   assert.match(doc,/unknown code remains conservative|previously unknown code remains conservative/i);
   assert.match(doc,/npm run verify:release/);
-  assert.match(doc,/codex\/vercel-migration-v080/);
+  assert.match(doc,/production branch is `main`/i);
+  assert.match(doc,/short-lived branches/i);
+  assert.match(doc,/feat\/<scope>/);
+  assert.match(doc,/fix\/<scope>/);
+  assert.match(doc,/chore\/<scope>/);
+  assert.match(doc,/docs\/<scope>/);
+  assert.doesNotMatch(doc,/codex\/vercel-migration-v080/);
 });

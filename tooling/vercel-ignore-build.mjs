@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 
-const PRODUCTION_BRANCH = "codex/vercel-migration-v080";
+const PRODUCTION_BRANCH = "main";
 const normalize = (value) => String(value ?? "").replaceAll("\\", "/").replace(/^\.\/+/, "");
 
 function git(args) {
