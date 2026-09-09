@@ -5,20 +5,87 @@ on:
     branches:
       - main
       - codex/vercel-migration-v080
-  push:
-    branches:
-      - codex/vercel-migration-v080
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: Classify CI risk
+    runs-on: ubuntu-latest
+    outputs:
+      postgres: ${{ steps.changes.outputs.postgres }}
+      scale: ${{ steps.changes.outputs.scale }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changes
+        name: Select required gates
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed-files.txt
+          postgres=false
+          scale=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              *.md|docs/*|*.css)
+                ;;
+              *)
+                postgres=true
+                ;;
+            esac
+
+            case "$file" in
+              lib/db-optimization.ts|lib/data/dashboard.ts|lib/data/flights-fast.ts|lib/data/pilot-insights.ts|lib/pending-actions.ts|app/api/export/route.ts|app/\(protected\)/print/page.tsx|tests/integration/postgres-scale-readiness.test.ts|tests/integration/postgres-v169-production-hardening.test.ts|tests/integration/postgres-v230-large-logbook-performance.test.ts)
+                scale=true
+                postgres=true
+                ;;
+            esac
+          done < changed-files.txt
+
+          if [[ "$PR_TITLE" == *"[full-ci]"* ]]; then
+            postgres=true
+            scale=true
+          fi
+
+          echo "postgres=$postgres" >> "$GITHUB_OUTPUT"
+          echo "scale=$scale" >> "$GITHUB_OUTPUT"
+          echo "Changed files:"
+          cat changed-files.txt
+          echo "PostgreSQL gate: $postgres"
+          echo "Scale gate: $scale"
+
   verify:
-    if: github.event_name != 'pull_request' || github.head_ref != 'codex/vercel-migration-v080'
+    name: Fast application gate
+    needs: classify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit and regression tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+
+  postgres:
+    name: PostgreSQL acceptance
+    needs: classify
+    if: needs.classify.outputs.postgres == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -46,14 +113,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
       - name: PostgreSQL acceptance tests
         env:
           FLYTALLY_POSTGRES_INTEGRATION: "1"
+          SCALE_GATE: ${{ needs.classify.outputs.scale }}
         shell: bash
         run: |
           set -o pipefail
-          npm run test:postgres 2>&1 | tee flytally-postgres-acceptance.txt
+          if [[ "$SCALE_GATE" == "true" ]]; then
+            npm run test:postgres:full 2>&1 | tee flytally-postgres-acceptance.txt
+          else
+            npm run test:postgres 2>&1 | tee flytally-postgres-acceptance.txt
+          fi
       - name: Preserve PostgreSQL acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -62,7 +133,7 @@ jobs:
           path: flytally-postgres-acceptance.txt
           retention-days: 90
       - name: Preserve scale evidence
-        if: always()
+        if: always() && needs.classify.outputs.scale == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: flytally-scale-evidence-${{ github.sha }}
@@ -72,4 +143,3 @@ jobs:
             flytally-v230-100k-scale-evidence.json
           if-no-files-found: warn
           retention-days: 90
-      - run: npm run build

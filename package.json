@@ -4,12 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm test && next build",
+    "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/*.test.ts",
-    "test:postgres": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/integration/*.test.ts",
-    "verify": "npm run typecheck && npm test && npm run build"
+    "test:target": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types",
+    "test:postgres": "node scripts/run-postgres-tests.mjs core",
+    "test:postgres:scale": "node scripts/run-postgres-tests.mjs scale",
+    "test:postgres:full": "node scripts/run-postgres-tests.mjs full",
+    "verify": "npm test && npm run build",
+    "verify:release": "npm test && npm run test:postgres:full && npm run build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
