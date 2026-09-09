@@ -23,11 +23,13 @@ When a new product module is added, register its stable path prefixes there. Sha
 
 ## Vercel build filtering
 
-`vercel.json` delegates the Ignored Build Step to `tooling/vercel-ignore-build.mjs`. The guard skips a deployment only when every changed file is development-only: Markdown documentation, `docs/`, `.github/`, `tests/`, or `tooling/`.
+`vercel.json` delegates the Ignored Build Step to `tooling/vercel-ignore-build.mjs`. The guard skips a deployment only when every changed file is development-only: Markdown documentation, `docs/`, `.github/`, `tests/`, or non-deployment `tooling/` files. The ignored-build guard itself is never treated as development-only because changing it must always exercise a real Vercel build.
 
-Anything that may affect runtime or the build environment continues to deploy. This includes `app/`, `components/`, `lib/`, dependency metadata, TypeScript/Next configuration and `vercel.json` itself. If Vercel does not provide a valid previous deployment SHA or Git cannot calculate the diff, the guard fails safe and requires the build.
+Anything that may affect runtime or the build environment continues to deploy. This includes `app/`, `components/`, `lib/`, dependency metadata, TypeScript/Next configuration, `vercel.json` and `tooling/vercel-ignore-build.mjs` itself.
 
-Do not broaden the development-only allowlist merely to save a preview. A path should be added only when it is structurally impossible for that path to affect the deployed application.
+The guard first uses `VERCEL_GIT_PREVIOUS_SHA` when Vercel provides a usable commit. In this project Vercel preview checkouts may omit that variable and may not expose an `origin` remote. The safe fallback therefore matches the candidate-first workflow: production deployments compare the released commit with its first parent, while a preview without `VERCEL_GIT_PREVIOUS_SHA` may use its parent only when that parent is a GitHub-created merge commit from the normal production history. A preview with additional candidate commits after that production merge fails safe and requires the build rather than comparing only the latest commit.
+
+If a safe diff base cannot be established, the guard requires the build. Do not broaden the development-only allowlist or weaken the trusted-parent rule merely to save a preview.
 
 ## CI risk levels
 
