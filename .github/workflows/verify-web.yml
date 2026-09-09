@@ -77,6 +77,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: TypeScript check
+        run: npm run typecheck
       - name: Unit and regression tests
         run: npm test
       - name: Production build

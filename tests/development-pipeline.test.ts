@@ -9,9 +9,10 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("development pipeline keeps Vercel build separate from tests",()=>{
   const pkg=JSON.parse(read("package.json"));
   assert.equal(pkg.scripts.build,"next build");
-  assert.equal(pkg.scripts.verify,"npm test && npm run build");
+  assert.equal(pkg.scripts.verify,"npm run typecheck && npm test && npm run build");
   assert.equal(typeof pkg.scripts["test:target"],"string");
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
+  assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
@@ -20,17 +21,18 @@ test("CI runs one fast PR gate and adds PostgreSQL work according to risk",()=>{
   assert.match(workflow,/cancel-in-progress: true/);
   assert.match(workflow,/Classify CI risk/);
   assert.match(workflow,/Fast application gate/);
+  assert.match(workflow,/TypeScript check/);
+  assert.match(workflow,/npm run typecheck/);
   assert.match(workflow,/Unit and regression tests/);
   assert.match(workflow,/Production build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/test:postgres:full/);
   assert.match(workflow,/\[full-ci\]/);
-  assert.doesNotMatch(workflow,/npm run typecheck/);
   assert.doesNotMatch(workflow,/\n  push:/);
 });
 
 test("large PostgreSQL fixtures are isolated from the normal core acceptance loop",()=>{
-  const runner=read("scripts/run-postgres-tests.mjs");
+  const runner=read("tooling/run-postgres-tests.mjs");
   for(const file of [
     "postgres-scale-readiness.test.ts",
     "postgres-v169-production-hardening.test.ts",
