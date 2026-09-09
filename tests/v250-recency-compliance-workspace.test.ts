@@ -66,5 +66,7 @@ test("v2.5 workspace is read-only and has a dedicated responsive stylesheet",()=
   assert.doesNotMatch(workspace,/\bINSERT\b|\bUPDATE\b|\bDELETE\b/i);
   assert.doesNotMatch(service,/\bINSERT\b|\bUPDATE\b|\bDELETE\b/i);
   assert.match(layout,/v250-recency-workspace[.]css/);assert.match(css,/compliance-current-monitoring/);
+  assert.doesNotMatch(css,/#0b1727|#081522/);
+  assert.match(css,/html\[data-theme="light"\] \.compliance-hero/);
   assert.ok(fs.existsSync(path.join(root,"app/v250-recency-workspace.css")));
 });
