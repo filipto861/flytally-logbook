@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "lightweight": {
+    "extensions": [".md", ".css"],
+    "prefixes": ["docs/"]
+  },
+  "scalePaths": [
+    "lib/db-optimization.ts",
+    "lib/data/dashboard.ts",
+    "lib/data/flights-fast.ts",
+    "lib/data/pilot-insights.ts",
+    "lib/pending-actions.ts",
+    "app/api/export/route.ts",
+    "app/(protected)/print/page.tsx",
+    "tests/integration/postgres-scale-readiness.test.ts",
+    "tests/integration/postgres-v169-production-hardening.test.ts",
+    "tests/integration/postgres-v230-large-logbook-performance.test.ts"
+  ],
+  "modules": [
+    {
+      "id": "flight-records",
+      "prefixes": ["app/(protected)/flights/", "components/flight", "lib/flight", "lib/data/flights"],
+      "files": []
+    },
+    {
+      "id": "credentials-compliance",
+      "prefixes": ["app/(protected)/credentials/", "components/recency", "lib/recency", "lib/sfcl", "lib/bfcl", "lib/helicopter"],
+      "files": []
+    },
+    {
+      "id": "connections-workflows",
+      "prefixes": ["app/(protected)/connections/", "app/(protected)/actions/", "app/(protected)/notifications/", "lib/pending-actions", "lib/training-verification"],
+      "files": []
+    },
+    {
+      "id": "analytics",
+      "prefixes": ["app/(protected)/dashboard/", "app/(protected)/statistics/", "app/(protected)/map/", "lib/data/dashboard", "lib/data/pilot-insights"],
+      "files": []
+    },
+    {
+      "id": "data-recovery",
+      "prefixes": ["app/(protected)/data/", "app/(protected)/database/", "app/(protected)/export/", "app/(protected)/print/", "app/api/export/", "lib/account-backup", "lib/account-restore", "lib/portable-backup"],
+      "files": []
+    },
+    {
+      "id": "fstd",
+      "prefixes": ["app/(protected)/fstd/", "lib/fstd"],
+      "files": []
+    },
+    {
+      "id": "platform",
+      "prefixes": ["app/(protected)/admin/", "app/(protected)/profile/", "app/(protected)/settings/", "app/api/auth/", "lib/auth", "lib/runtime-schema", "lib/db"],
+      "files": []
+    },
+    {
+      "id": "development-infrastructure",
+      "prefixes": [".github/", "tooling/"],
+      "files": ["package.json", "package-lock.json", "tsconfig.json", "next.config.ts", "vercel.json", "DEVELOPMENT.md"]
+    }
+  ]
+}

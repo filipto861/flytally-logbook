@@ -11,15 +11,17 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(pkg.scripts.build,"next build");
   assert.equal(pkg.scripts.verify,"npm run typecheck && npm test && npm run build");
   assert.equal(typeof pkg.scripts["test:target"],"string");
+  assert.equal(pkg.scripts["scope:changed"],"node tooling/development-scope.mjs");
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
-test("CI runs one fast PR gate and adds PostgreSQL work according to risk",()=>{
+test("CI runs one fast PR gate and delegates risk selection to the module registry",()=>{
   const workflow=read(".github/workflows/verify-web.yml");
   assert.match(workflow,/cancel-in-progress: true/);
   assert.match(workflow,/Classify CI risk/);
+  assert.match(workflow,/node tooling\/development-scope[.]mjs --files changed-files[.]txt/);
   assert.match(workflow,/Fast application gate/);
   assert.match(workflow,/TypeScript check/);
   assert.match(workflow,/npm run typecheck/);
@@ -27,7 +29,7 @@ test("CI runs one fast PR gate and adds PostgreSQL work according to risk",()=>{
   assert.match(workflow,/Production build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/test:postgres:full/);
-  assert.match(workflow,/\[full-ci\]/);
+  assert.doesNotMatch(workflow,/lib\/db-optimization[.]ts\|lib\/data\/dashboard[.]ts/);
   assert.doesNotMatch(workflow,/\n  push:/);
 });
 
@@ -41,11 +43,13 @@ test("large PostgreSQL fixtures are isolated from the normal core acceptance loo
   assert.match(runner,/mode === "scale" \? isScale : !isScale/);
 });
 
-test("development policy documents candidate-first iteration and release verification",()=>{
+test("development policy documents candidate-first iteration, module scope and release verification",()=>{
   const doc=read("DEVELOPMENT.md");
   assert.match(doc,/candidate-first development workflow/);
   assert.match(doc,/one coherent candidate commit/);
   assert.match(doc,/npm run test:target/);
+  assert.match(doc,/tooling\/development-modules[.]json/);
+  assert.match(doc,/unknown code remains conservative|previously unknown code remains conservative/i);
   assert.match(doc,/npm run verify:release/);
   assert.match(doc,/codex\/vercel-migration-v080/);
 });
