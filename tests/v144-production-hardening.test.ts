@@ -22,8 +22,9 @@ test("v1.44.0 prevents duplicate production verification runs",()=>{
   const workflow=read(".github/workflows/verify-web.yml");
   assert.match(workflow,/pull_request:\s*\n\s*branches:\s*\n\s*- main/);
   assert.match(workflow,/concurrency:/);
-  assert.match(workflow,/github\.event\.pull_request\.head\.sha \|\| github\.sha/);
-  assert.match(workflow,/github\.head_ref != 'codex\/vercel-migration-v080'/);
+  assert.match(workflow,/github\.event\.pull_request\.number \|\| github\.ref/);
+  assert.match(workflow,/cancel-in-progress: true/);
+  assert.doesNotMatch(workflow,/\n  push:/);
   assert.match(workflow,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
 });
 
