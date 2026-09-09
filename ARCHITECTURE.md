@@ -1,114 +1,163 @@
-# FlyTally architecture — v1.52
+# FlyTally architecture — current v2.7 generation
+
+This document describes the active Next.js application and the architectural rules that should guide new work. Historical release-specific design documents remain useful as regression context, but they are not the current system map.
 
 ## Production stack
 
-FlyTally is a Next.js 16 / React 19 application deployed on Vercel and backed by Neon PostgreSQL. The active runtime is TypeScript only.
+FlyTally is a Next.js 16 / React 19 application deployed on Vercel and backed by Neon PostgreSQL. The active production runtime is TypeScript.
 
-Production code boundaries:
+Primary runtime boundaries:
 
-- `app/` — App Router pages, server actions and API routes
-- `components/` — reusable UI and interaction components
-- `lib/` — domain, data, regulatory, certification, GPS and backup services
-- `tests/` — TypeScript regression coverage and PostgreSQL acceptance tests
+- `app/` — App Router pages, server actions and API routes;
+- `components/` — reusable UI and interaction components;
+- `lib/` — domain rules, authenticated data services, regulatory engines, certification, GPS, collaboration and recovery logic;
+- `data/` — repository-owned static reference data such as the airport catalogue;
+- `tests/` — TypeScript regression coverage and PostgreSQL acceptance/scale evidence;
+- `tooling/` — development and CI tooling only; it must not become a second application runtime.
 
-The pre-Vercel Streamlit/Python application is not part of the active tree from v1.52.0 onward. Git history is the archive for that implementation.
+The pre-Vercel Streamlit/Python implementation is historical. Git history is the archive for that runtime.
 
-## Database and tenancy
+## Product-domain map
 
-Neon PostgreSQL is the transactional source of truth. Queries and mutations are scoped by authenticated `user_id`; cross-user workflows use explicit participation/verification records rather than weakening ownership filters.
+The physical runtime layout remains `app/` / `components/` / `lib/`. We deliberately do not mass-move mature code merely to make directory names look modular.
 
-`lib/db.ts` owns the Neon client and initializes it lazily so build-time module imports do not require a live production database connection.
+For development planning and CI risk classification, `tooling/development-modules.json` maps stable path prefixes into these product domains:
 
-Schema compatibility is runtime-gated through `lib/runtime-schema.ts`:
+- **flight-records** — Add/Edit flight, flight detail/list data and flight-entry behavior;
+- **credentials-compliance** — licences, ratings, recency, SFCL/BFCL/helicopter compliance and supporting evidence;
+- **connections-workflows** — Actions, notifications, participations, verification and training workflows;
+- **analytics** — Dashboard, Statistics, Map and their read models;
+- **data-recovery** — Data, Database, Export, Print, portable backup and restore;
+- **fstd** — simulator/FSTD evidence;
+- **platform** — authentication, profile/settings, administration, runtime schema and shared database infrastructure;
+- **development-infrastructure** — GitHub Actions, local tooling and build/deployment configuration.
 
-1. base database migrations/optimizations run first;
-2. compatible feature schema gates then initialize in parallel;
-3. each gate is idempotent;
-4. a failed gate clears the process-local promise so a later request can retry instead of leaving the runtime permanently poisoned.
+This registry is development metadata, not a runtime dependency graph. Unknown application code is intentionally classified conservatively as shared code until its ownership is made explicit.
 
-Current feature schema gates include the certification/workflow foundation and the structured movement, training and aircraft-credit additions introduced through v1.51.
+When adding a new product module, prefer one clear canonical workflow and stable domain boundary. Register the module's path prefixes only after that boundary is real. Do not introduce parallel Quick/Simple/Advanced implementations of the same task merely to isolate code.
 
-## Certified record model
+## Database, tenancy and schema compatibility
 
-Flights remain ordinary editable records until certification. Certification establishes a protected revision/fingerprint boundary. Corrections create a new revision instead of mutating the meaning of previously certified/signed evidence.
+Neon PostgreSQL is the transactional source of truth. Queries and mutations are scoped by authenticated `user_id`; cross-user workflows use explicit participation and verification records rather than weakening ownership filters.
 
-Important separations:
+`lib/db.ts` owns the Neon client and initializes it lazily so build-time imports do not require a live production connection.
 
-- `flights` contains the pilot's record;
-- certification history preserves revision fingerprints;
-- `flight_participations` represents shared-flight workflow/ownership linkage;
-- `flight_verifications` represents signed verification evidence bound to an exact flight revision/hash;
-- audit records preserve material changes independently of the UI.
+Schema compatibility is runtime-gated through `lib/runtime-schema.ts`. Schema gates must remain:
 
-The current application must not make a signed historical verification appear valid for a later corrected revision.
+1. idempotent;
+2. safe to retry after failure;
+3. compatible with already-deployed historical records;
+4. separated from presentation-only changes.
 
-## Regulatory and recency architecture
+Database migrations, certification semantics and regulatory thresholds must not be changed as incidental cleanup.
 
-Regulatory planning is separated into four layers:
+## Certified and protected evidence
 
-- `lib/recency-engine.ts` — deterministic rule evaluation from normalized evidence;
-- `lib/recency-service.ts` — authenticated database projection and compatibility normalization;
-- `lib/recency-audit.ts` — explanation/evidence rows for an evaluation;
-- `lib/recency-audit-service.ts` — database projection used by the audit layer.
+Ordinary flight records remain editable until certification. Certification creates a protected revision/fingerprint boundary; later corrections must not silently mutate the meaning of previously certified or signed evidence.
 
-The engine itself remains strict. Compatibility rules are applied only where provenance makes them safe, before evaluation.
+Important separations include:
 
-### Structured movements
+- `flights` — the pilot's operational record;
+- certification history — protected revision fingerprints;
+- `flight_participations` — shared-flight workflow and ownership linkage;
+- `flight_verifications` — signed evidence bound to an exact flight revision/hash;
+- audit history — material change evidence independent of UI presentation.
 
-Modern EASA records can carry explicit PF take-off, approach and landing counters. Explicit zero is authoritative. A structured-era record without movement evidence is not silently reconstructed.
+A historical signature or verification must never appear valid for a later corrected revision unless the underlying protected evidence contract explicitly allows it.
 
-Certified EASA flights created before the v1.35.3 structured-movement boundary can use the bounded legacy compatibility layer, based on creation provenance rather than later edits.
+## Multi-category regulatory model
 
-### ULL / Annex-I experience
+FlyTally is one pilot logbook across `AEROPLANE`, `HELICOPTER`, `SAILPLANE`, `BALLOON`, `ULL` and conservative `OTHER` records. Category-specific evidence is explicit; category meaning must not be inferred from a convenient display label when the regulatory provenance is unknown.
 
-Ordinary certified ULL aeroplane PIC experience defaults to SEP credit for the FCL.140.A and FCL.740.A experience routes. Native ULL starts/landings are used rather than manufacturing movement counts from hours.
+The central architectural rule is **shared workflow, specialized authoritative engines**:
 
-ULL remains separate from FCL.060 passenger currency and does not automatically satisfy the mandatory FI/CRI refresher element. Optional internal class metadata is retained only for atypical mappings such as a genuine TMG; it is not exposed in the normal Aircraft UI.
+- flight entry remains one canonical workflow;
+- certification and protected-evidence rules are category-aware;
+- Part-FCL, SFCL, BFCL and supported helicopter calculations retain their own rule boundaries;
+- presentation layers may normalize statuses and explanations, but must not merge distinct legal engines into a new untested super-engine.
 
-### Audit alignment
+Structured movements, launch evidence, BFCL operation context, training evidence and other regulatory inputs remain explicit evidence. Missing evidence is not silently manufactured from hours or GPS geometry.
 
-Evidence detail must use the same eligibility helpers as the calculation. A record that does not contribute to a requirement must not be labelled as a confirmed contributor merely because it is a valid flight record.
+## Recency & Compliance Workspace
+
+The Recency workspace is a planning/read-model layer over authoritative category services. It can normalize presentation into states such as CURRENT, ACTION SOON, NOT CURRENT and INCOMPLETE EVIDENCE only when the underlying evidence supports that distinction.
+
+Evidence links should point to the exact flights, training records, signatures or credentials already used by the authoritative engine. A row that did not contribute to the calculation must not be presented as confirmed provenance merely because it exists in the logbook.
+
+## Flight entry and review
+
+Add flight remains one canonical form. Intelligent review findings, continuation/return/local-flight assistance and GPS-derived suggestions are integrated into that workflow rather than creating duplicate entry modes.
+
+GPS suggestions for an existing saved flight require explicit review before overwriting saved values. A successful normal Save hands the pilot into final logbook-data review without bypassing certification, sharing or protected-record boundaries.
+
+## Collaboration and professional evidence
+
+Connections, Actions, notifications, shared-flight participation, instructor/training verification and professional pilot context are workflow layers over the pilot's own records. They may add evidence and review state, but they do not transfer ownership implicitly or rewrite protected records.
+
+Professional context such as operator/operation, supervised time or employment-oriented reporting remains recorded evidence unless a separate tested rule explicitly establishes a regulatory or employment conclusion.
+
+## Data integrity and recovery
+
+Portable backup/restore is an application-level disaster-recovery feature, separate from provider-managed PostgreSQL recovery.
+
+The v2.7 recovery path is intentionally review-first and atomic:
+
+- restore preview groups missing, present and protected/conflicting evidence before mutation;
+- authenticated current-format backups use server-side integrity protection while legacy backups remain bounded by compatibility rules;
+- certified revisions, signatures, GPS, sharing evidence, audit history, licences, expenses and recency evidence are preserved through the canonical recovery path;
+- large-account recovery uses tested batching while preserving transaction safety.
+
+Restore must remain non-destructive by default. A convenience cleanup must never weaken protected-evidence conflict detection.
 
 ## Data access and performance
 
-List/dashboard routes use compact SQL projections and aggregation where practical. Large GPS geometry is excluded from routine list payloads and loaded for detail/review workflows only.
+High-frequency routes use compact SQL projections, set-wise lookup and aggregation where practical. Large GPS geometry is excluded from routine list payloads and loaded only by detail/review workflows that require it.
 
-Performance principles:
+Performance rules:
 
-- avoid user-data caching across tenants;
+- never cache user data across tenants;
 - avoid N+1 queries on high-frequency pages;
-- aggregate in PostgreSQL when transferring raw rows would be wasteful;
-- load detailed GPS data only when a route actually needs it;
-- keep runtime schema initialization process-local and idempotent.
+- aggregate in PostgreSQL when transferring raw rows is wasteful;
+- keep Dashboard read models lean and leave historical analysis to Statistics;
+- load detailed GPS only when required;
+- retain 10k/50k scale gates and the controlled 100k read benchmark for registered hot paths.
+
+Known performance-sensitive paths are centralized in `tooling/development-modules.json`; CI uses that metadata rather than duplicating path lists in workflow YAML.
 
 ## Airport reference data
 
-`data/airports.csv` is the single repository airport catalogue used by the Next.js runtime. `lib/airport-catalog.ts` loads it server-side, normalizes aliases and keeps a process-local read-only index.
+`data/airports.csv` is the repository airport catalogue used by the Next.js runtime. `lib/airport-catalog.ts` loads and normalizes it server-side and maintains a process-local read-only index.
 
-The previously generated `airports_full.sqlite` copy and Python seed workflow were removed in v1.52.0 because the production runtime did not consume them.
+Transactional database copies and personal source spreadsheets do not belong in the active repository.
 
-## Backups and exports
+## Development verification and deployment
 
-Portable account backup is an application feature; it is not implemented by committing a production database copy to Git. Provider-managed PostgreSQL recovery remains separate from user portable export/restore.
+The development loop is candidate-first:
 
-Repository cleanup therefore deliberately excludes frozen transactional SQLite databases and personal source spreadsheets from the active tree.
+1. iterate locally with targeted tests and explicit TypeScript checks;
+2. use `npm run scope:changed -- <path> [...]` to inspect module/CI risk when useful;
+3. run `npm run verify` before publishing a coherent candidate;
+4. push one candidate commit when practical and let the pull request run the shared safety gates;
+5. merge only after the exact candidate SHA is green.
 
-## Build and verification gates
+Every normal PR keeps the fast application gate: TypeScript, the complete unit/regression suite and a real Next.js production build. PostgreSQL acceptance runs for application-impacting work, while registered performance hot paths and `[full-ci]` candidates retain the scale gates.
 
-Local/current verification:
+Vercel build filtering is deliberately conservative. `tooling/vercel-ignore-build.mjs` can skip a deployment only when every changed file is structurally development-only: documentation, GitHub workflow metadata, tests or non-deployment tooling. Runtime code, dependency metadata, TypeScript/Next/Vercel configuration and `tooling/vercel-ignore-build.mjs` itself are always build-relevant.
 
-```bash
-npm ci
-npm run typecheck
-npm test
-npm run test:postgres
-npm run build
-```
+The guard uses `VERCEL_GIT_PREVIOUS_SHA` when Vercel supplies a usable commit. When preview checkouts omit that value, a one-commit candidate may fall back to its parent only when that parent is a GitHub-created production merge commit. Multi-commit or otherwise untrusted preview history fails safe toward a real build rather than inspecting only the latest commit. Production deployments compare against the previous production state, using the supplied previous SHA when available and the first parent as the safe merge/direct-push fallback.
 
-The production GitHub workflow runs TypeScript validation, isolated PostgreSQL acceptance and a production build. Vercel performs another production build from the released commit.
+Release-numbered regression tests are retained after their release closes. They are historical behavior contracts, not disposable scaffolding.
 
-Release-numbered regression tests are intentionally retained after their release is closed. They define behavior that later cleanup/refactoring must continue to preserve.
+## Architectural rules for future work
 
-## Deferred technical debt
+- Prefer extending an existing canonical workflow over adding a parallel implementation.
+- Keep legal/regulatory rule engines deterministic, evidence-driven and independently testable.
+- Treat protected evidence, certification fingerprints and restore semantics as high-risk boundaries.
+- Make new database work tenant-safe and idempotent before optimizing it.
+- Add scale coverage only where the production read/write path justifies it; do not run expensive fixtures on unrelated changes.
+- Refactor large modules incrementally behind behavior tests rather than combining broad code movement with feature delivery.
+- Use the development module registry to make ownership and CI risk clearer, but do not distort runtime architecture merely to satisfy the registry.
 
-The application still has version-layered CSS imports and several deliberately large domain/UI modules. v1.52.0 does not mass-consolidate these because a broad visual or business-logic rewrite would add regression risk without improving correctness. Future refactors should be isolated, measurable and covered by behavior/visual checks rather than mixed into a repository hygiene release.
+## Deferred structural debt
+
+The codebase still contains several deliberately large UI/domain modules and historical version-layered styling. They should be reduced incrementally where a concrete feature or measured maintenance problem justifies it. A repository-wide folder rewrite, CSS rewrite or regulatory-engine merge would create substantial regression risk without equivalent user value and is therefore not a default cleanup strategy.
