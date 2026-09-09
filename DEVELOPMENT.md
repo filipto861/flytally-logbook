@@ -10,8 +10,8 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
    - `npm run test:target -- tests/<relevant-file>.test.ts` for targeted regression tests.
    - `npm run scope:changed -- <path> [<path> ...]` to see the development modules and CI risk selected for a set of changed files.
 3. Before publishing a candidate, run `npm run verify`. This runs the explicit TypeScript gate, the complete unit/regression suite once, and then the real Next.js production build.
-4. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview.
-5. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build.
+4. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
+5. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build when the released commit can affect runtime output.
 
 ## Module scope registry
 
@@ -20,6 +20,14 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 When a new product module is added, register its stable path prefixes there. Shared or previously unknown code remains conservative: it is reported as `shared` and receives the normal PostgreSQL gate. Documentation and CSS remain lightweight. Known performance hot paths are also registered centrally and trigger the retained scale gate.
 
 `tooling/development-scope.mjs` consumes this registry both locally and in GitHub Actions. This keeps CI path logic out of workflow YAML and prevents future module additions from requiring another set of duplicated shell conditions.
+
+## Vercel build filtering
+
+`vercel.json` delegates the Ignored Build Step to `tooling/vercel-ignore-build.mjs`. The guard skips a deployment only when every changed file is development-only: Markdown documentation, `docs/`, `.github/`, `tests/`, or `tooling/`.
+
+Anything that may affect runtime or the build environment continues to deploy. This includes `app/`, `components/`, `lib/`, dependency metadata, TypeScript/Next configuration and `vercel.json` itself. If Vercel does not provide a valid previous deployment SHA or Git cannot calculate the diff, the guard fails safe and requires the build.
+
+Do not broaden the development-only allowlist merely to save a preview. A path should be added only when it is structurally impossible for that path to affect the deployed application.
 
 ## CI risk levels
 

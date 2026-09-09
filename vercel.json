@@ -4,6 +4,7 @@
   "regions": [
     "fra1"
   ],
+  "ignoreCommand": "node tooling/vercel-ignore-build.mjs",
   "crons": [
     {
       "path": "/api/cron/backups",
