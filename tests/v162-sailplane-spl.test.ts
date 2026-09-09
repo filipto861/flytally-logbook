@@ -16,7 +16,7 @@ test("v1.62 release metadata and production PR acceptance gate are synchronized"
   const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json"));
   const [major,minor]=String(pkg.version).split(".").map(Number);assert.ok(major>1||(major===1&&minor>=62));assert.equal(lock.version,pkg.version);assert.equal(lock.packages?.[""]?.version,pkg.version);
   assert.match(read("ROADMAP.md"),/v1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);assert.match(read("CHANGELOG.md"),/1[.]62[.]0 — Sailplane \/ SPL \/ TMG support/);
-  const workflow=read(".github/workflows/verify-web.yml");assert.match(workflow,/pull_request:[\s\S]*codex\/vercel-migration-v080/);assert.match(workflow,/PostgreSQL acceptance tests/);
+  const workflow=read(".github/workflows/verify-web.yml");assert.match(workflow,/pull_request:[\s\S]*branches:[\s\S]*- main/);assert.match(workflow,/PostgreSQL acceptance tests/);
 });
 
 test("v1.62 keeps legacy TMG in Part-FCL unless SPL context is explicit",()=>{

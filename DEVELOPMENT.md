@@ -48,4 +48,4 @@ The retained 10k/50k/100k scale tests run only when a known production hot path,
 
 ## Deployment discipline
 
-The production branch is `codex/vercel-migration-v080`. Development changes should reach it through a reviewed candidate PR, not by direct iterative pushes. `npm run build` is deliberately build-only so Vercel does not rerun the application test suite on every preview or production deployment.
+The canonical production branch is `main`. Development changes should reach it through a reviewed candidate PR, not by direct iterative pushes. `npm run build` is deliberately build-only so Vercel does not rerun the application test suite on every preview or production deployment. Feature branches are temporary and should be deleted after merge; release history belongs in commits, tags, and GitHub Releases rather than long-lived version branches.
