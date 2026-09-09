@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/*.test.ts",
     "test:target": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types",
+    "scope:changed": "node tooling/development-scope.mjs",
     "test:postgres": "node tooling/run-postgres-tests.mjs core",
     "test:postgres:scale": "node tooling/run-postgres-tests.mjs scale",
     "test:postgres:full": "node tooling/run-postgres-tests.mjs full",

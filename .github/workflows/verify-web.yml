@@ -20,6 +20,7 @@ jobs:
     outputs:
       postgres: ${{ steps.changes.outputs.postgres }}
       scale: ${{ steps.changes.outputs.scale }}
+      modules: ${{ steps.changes.outputs.modules }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,37 +34,9 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed-files.txt
-          postgres=false
-          scale=false
-
-          while IFS= read -r file; do
-            case "$file" in
-              *.md|docs/*|*.css)
-                ;;
-              *)
-                postgres=true
-                ;;
-            esac
-
-            case "$file" in
-              lib/db-optimization.ts|lib/data/dashboard.ts|lib/data/flights-fast.ts|lib/data/pilot-insights.ts|lib/pending-actions.ts|app/api/export/route.ts|app/\(protected\)/print/page.tsx|tests/integration/postgres-scale-readiness.test.ts|tests/integration/postgres-v169-production-hardening.test.ts|tests/integration/postgres-v230-large-logbook-performance.test.ts)
-                scale=true
-                postgres=true
-                ;;
-            esac
-          done < changed-files.txt
-
-          if [[ "$PR_TITLE" == *"[full-ci]"* ]]; then
-            postgres=true
-            scale=true
-          fi
-
-          echo "postgres=$postgres" >> "$GITHUB_OUTPUT"
-          echo "scale=$scale" >> "$GITHUB_OUTPUT"
+          node tooling/development-scope.mjs --files changed-files.txt --title "$PR_TITLE" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
           cat changed-files.txt
-          echo "PostgreSQL gate: $postgres"
-          echo "Scale gate: $scale"
 
   verify:
     name: Fast application gate

@@ -8,9 +8,18 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 2. During iteration, run only the tests that cover the changed behaviour:
    - `npm run typecheck` for a quick TypeScript-only check.
    - `npm run test:target -- tests/<relevant-file>.test.ts` for targeted regression tests.
+   - `npm run scope:changed -- <path> [<path> ...]` to see the development modules and CI risk selected for a set of changed files.
 3. Before publishing a candidate, run `npm run verify`. This runs the explicit TypeScript gate, the complete unit/regression suite once, and then the real Next.js production build.
 4. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview.
 5. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build.
+
+## Module scope registry
+
+`tooling/development-modules.json` is the single development-only registry for module ownership and CI risk metadata. It does not participate in runtime application behaviour and existing runtime files should not be moved merely to satisfy the registry.
+
+When a new product module is added, register its stable path prefixes there. Shared or previously unknown code remains conservative: it is reported as `shared` and receives the normal PostgreSQL gate. Documentation and CSS remain lightweight. Known performance hot paths are also registered centrally and trigger the retained scale gate.
+
+`tooling/development-scope.mjs` consumes this registry both locally and in GitHub Actions. This keeps CI path logic out of workflow YAML and prevents future module additions from requiring another set of duplicated shell conditions.
 
 ## CI risk levels
 
