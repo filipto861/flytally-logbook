@@ -44,7 +44,7 @@ export async function getRecencyComplianceWorkspaceForUser(userId:number):Promis
     FROM pilot_qualifications q JOIN pilot_licences l ON l.id=q.licence_id AND l.user_id=q.user_id
     WHERE q.user_id=${userId} AND q.active=TRUE AND l.active=TRUE AND COALESCE(q.record_kind,'')<>'aircraft_training'
     UNION ALL
-    SELECT 'document'::text kind,id,label,'OTHER'::text category_basis,CASE WHEN expiry_date>=DATE '9999-01-01' THEN 'unlimited' ELSE 'date' END validity_mode,expiry_date::text valid_until,NULL::text recency_until,warning_days
+    SELECT 'document'::text kind,id,label,'OTHER'::text category_basis,CASE WHEN expiry_date>='9999-01-01' THEN 'unlimited' ELSE 'date' END validity_mode,expiry_date::text valid_until,NULL::text recency_until,warning_days
     FROM user_expiries WHERE user_id=${userId} AND UPPER(TRIM(category))<>'LICENCE' AND active=1
     ORDER BY kind,label,id
   ` as unknown as Promise<CredentialRow[]>;
