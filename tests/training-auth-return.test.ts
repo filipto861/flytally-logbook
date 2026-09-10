@@ -26,6 +26,13 @@ test("Training provider sends unauthenticated pilots to login with a resumable l
   assert.doesNotMatch(trainingStart, /searchParams\.set\("returnTo",\s*source\.searchParams\.get/);
 });
 
+test("Training provider normalizes the final next target before crossing the application boundary", () => {
+  assert.match(trainingStart, /safeLocalReturnTo\(source\.searchParams\.get\("next"\), "\/"\)/);
+  assert.doesNotMatch(trainingStart, /function localPath/);
+  assert.match(trainingStart, /referrer-policy/);
+  assert.match(trainingStart, /no-store/);
+});
+
 test("password login sanitizes and resumes the requested local auth flow", () => {
   assert.match(loginPage, /safeLocalReturnTo\(params\.returnTo\)/);
   assert.match(loginPage, /redirect\(returnTo\)/);
