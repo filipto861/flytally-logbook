@@ -3,7 +3,7 @@ import { createHmac,timingSafeEqual } from "node:crypto";
 import * as oidc from "openid-client";
 
 export const GOOGLE_FLOW_COOKIE="flytally_google_flow";
-export type GoogleFlow={state:string;nonce:string;verifier:string;intent:"login"|"link";userId?:number;invite?:string;exp:number};
+export type GoogleFlow={state:string;nonce:string;verifier:string;intent:"login"|"link";userId?:number;invite?:string;returnTo?:string;exp:number};
 
 function clientId(){const value=process.env.GOOGLE_CLIENT_ID?.trim();if(!value)throw new Error("GOOGLE_CLIENT_ID is not configured.");return value;}
 function clientSecret(){const value=process.env.GOOGLE_CLIENT_SECRET?.trim();if(!value)throw new Error("GOOGLE_CLIENT_SECRET is not configured.");return value;}
