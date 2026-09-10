@@ -16,8 +16,13 @@ function trainingOrigin(): URL {
 }
 
 export async function GET(request: Request) {
+  const source = new URL(request.url);
   const session = await getSession();
-  if (!session) return NextResponse.redirect(new URL("/login", request.url));
+  if (!session) {
+    const login = new URL("/login", source);
+    login.searchParams.set("returnTo", `${source.pathname}${source.search}`);
+    return NextResponse.redirect(login);
+  }
 
   let targetBase: URL;
   try { targetBase = trainingOrigin(); } catch {
@@ -27,6 +32,6 @@ export async function GET(request: Request) {
   const assertion = createTrainingIdentityAssertion(String(session.userId), session.role);
   const target = new URL("/api/auth/flytally/callback", targetBase);
   target.searchParams.set("assertion", assertion);
-  target.searchParams.set("next", localPath(new URL(request.url).searchParams.get("next")));
+  target.searchParams.set("next", localPath(source.searchParams.get("next")));
   return NextResponse.redirect(target);
 }
