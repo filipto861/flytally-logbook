@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { safeLocalReturnTo } from "@/lib/auth/return-to";
 import { getSession } from "@/lib/auth/session";
 import { createTrainingIdentityAssertion } from "@/lib/auth/training-identity";
-
-function localPath(value: string | null): string {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
 
 function trainingOrigin(): URL {
   const configured = process.env.TRAINING_APP_URL?.trim();
@@ -21,17 +18,23 @@ export async function GET(request: Request) {
   if (!session) {
     const login = new URL("/login", source);
     login.searchParams.set("returnTo", `${source.pathname}${source.search}`);
-    return NextResponse.redirect(login);
+    const response = NextResponse.redirect(login);
+    response.headers.set("cache-control", "no-store");
+    response.headers.set("referrer-policy", "no-referrer");
+    return response;
   }
 
   let targetBase: URL;
   try { targetBase = trainingOrigin(); } catch {
-    return NextResponse.json({ error: "training_identity_not_configured" }, { status: 503 });
+    return NextResponse.json({ error: "training_identity_not_configured" }, { status: 503, headers: { "cache-control": "no-store" } });
   }
 
   const assertion = createTrainingIdentityAssertion(String(session.userId), session.role);
   const target = new URL("/api/auth/flytally/callback", targetBase);
   target.searchParams.set("assertion", assertion);
-  target.searchParams.set("next", localPath(source.searchParams.get("next")));
-  return NextResponse.redirect(target);
+  target.searchParams.set("next", safeLocalReturnTo(source.searchParams.get("next"), "/"));
+  const response = NextResponse.redirect(target);
+  response.headers.set("cache-control", "no-store");
+  response.headers.set("referrer-policy", "no-referrer");
+  return response;
 }
