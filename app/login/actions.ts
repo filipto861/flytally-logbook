@@ -6,12 +6,14 @@ import { hashPassword,passwordNeedsRehash,verifyPassword } from "@/lib/auth/pass
 import { createSession, destroySession } from "@/lib/auth/session";
 import { isLoginLimited,loginContext,recordAuthEvent,recordLoginAttempt } from "@/lib/auth/security";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
+import { safeLocalReturnTo } from "@/lib/auth/return-to";
 
 type LoginState = { error?: string };
 
 export async function login(_: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase().slice(0, 254);
   const password = String(formData.get("password") ?? "");
+  const returnTo = safeLocalReturnTo(formData.get("returnTo"));
   if (!email || !password) return { error: "Enter your email and password." };
   await ensureDatabaseOptimizations();
   const context=await loginContext(email);
@@ -38,7 +40,7 @@ export async function login(_: LoginState, formData: FormData): Promise<LoginSta
   await recordLoginAttempt(context.emailHash,context.ipHash,true);
   await createSession(userId, user.role === "admin" ? "admin" : "user");
   await recordAuthEvent(userId,"password_login");
-  redirect("/dashboard");
+  redirect(returnTo);
 }
 
 export async function logout() {
