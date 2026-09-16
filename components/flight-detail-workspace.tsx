@@ -15,7 +15,7 @@ export function FlightDetailWorkspace({ overview, gps, logbook, gpsCount = 0, in
     const raw = sessionStorage.getItem(POST_SAVE_REVIEW_KEY); if (!raw) return;
     sessionStorage.removeItem(POST_SAVE_REVIEW_KEY);
     const savedAt = Number(raw), age = Date.now() - savedAt;
-    if (initialTab === "overview" && Number.isFinite(savedAt) && age >= 0 && age <= POST_SAVE_REVIEW_MAX_AGE_MS) { setTab("logbook"); setPostSaveReview(true); }
+    if (initialTab === "overview" && Number.isFinite(savedAt) && age>=0 && age<=POST_SAVE_REVIEW_MAX_AGE_MS) { setTab("logbook"); setPostSaveReview(true); }
   }, [initialTab]);
   const selectTab = (value: Tab) => { setTab(value); setPostSaveReview(false); };
   const item = (value: Tab, label: string, badge?: number) => <button type="button" role="tab" id={`flight-tab-${value}`} aria-controls={`flight-panel-${value}`} className={tab === value ? "active" : ""} aria-selected={tab === value} onClick={() => selectTab(value)}><span>{label}</span>{badge !== undefined ? <b>{badge}</b> : null}</button>;
