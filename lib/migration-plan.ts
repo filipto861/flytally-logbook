@@ -1,4 +1,4 @@
-export const DATABASE_SCHEMA_VERSION=15;
+export const DATABASE_SCHEMA_VERSION=14;
 
 export const DATABASE_MIGRATIONS=[
   {version:1,name:"flight audit and locking"},
@@ -15,7 +15,6 @@ export const DATABASE_MIGRATIONS=[
   {version:12,name:"shared flight participation"},
   {version:13,name:"crew connections and verified approvals"},
   {version:14,name:"user-owned structured flight expenses"},
-  {version:15,name:"revocable public flight sharing"},
 ] as const;
 
 export function pendingMigrationVersions(applied:Iterable<number>){
