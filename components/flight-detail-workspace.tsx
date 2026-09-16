@@ -19,7 +19,7 @@ export function FlightDetailWorkspace({overview,gps,logbook,gpsCount=0,initialTa
   const item=(value:Tab,label:string,badge?:number)=><button type="button" role="tab" id={`flight-tab-${value}`} aria-controls={`flight-panel-${value}`} className={tab===value?"active":""} aria-selected={tab===value} onClick={()=>selectTab(value)}><span>{label}</span>{badge!==undefined?<b>{badge}</b>:null}</button>;
   return <section className="flight-detail-workspace">
     <nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}<Link className="flight-share-tab" href={`${pathname}/share`}>Share</Link></nav>
-    {postSaveReview&&tab==="logbook"?<div className="saved-next-flight" role="status"><strong>Flight saved.</strong><span>Review the final Logbook data below. When it is correct, open Overview to certify the record.</span></div>:null}
+    {postSaveReview&&tab==="logbook"?<div className="saved-next-flight" role="status"><strong>Flight saved.</strong><span>Review the final Logbook data below. When it is correct, open Overview to certify the record; sharing becomes available after certification.</span></div>:null}
     <div className="detail-tab-content" role="tabpanel" id={`flight-panel-${tab}`} aria-labelledby={`flight-tab-${tab}`}>{tab==="overview"?overview:tab==="gps"?gps:logbook}</div>
   </section>;
 }
