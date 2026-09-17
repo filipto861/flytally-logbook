@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
-const ARCGIS_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
+const ARCGIS_STATIC_IMAGERY_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/imagery/static/tile";
 
 export async function GET(request: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
   const { z: zs, x: xs, y: ys } = await params;
@@ -22,11 +22,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
   const satellite = wantsSatellite;
   const upstreamUrl = satellite
-    ? `${ARCGIS_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(arcgisToken!)}`
+    ? `${ARCGIS_STATIC_IMAGERY_HOST}/${z}/${y}/${x}`
     : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
 
   const upstream = await fetch(upstreamUrl, {
-    headers: satellite ? undefined : { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
+    headers: satellite
+      ? { Authorization: `Bearer ${arcgisToken}` }
+      : { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
     next: { revalidate: 60 * 60 * 24 * 7 },
   });
   if (!upstream.ok) return new NextResponse("Map tile unavailable", { status: upstream.status, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": satellite ? "unavailable" : "map" } });
