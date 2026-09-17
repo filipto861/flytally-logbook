@@ -19,10 +19,6 @@ function git(cwd:string,...args:string[]){
   return run("git",args,cwd);
 }
 
-function gitValue(cwd:string,...args:string[]){
-  return git(cwd,...args).stdout.trim();
-}
-
 function initRepo(){
   const repo=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-vercel-ignore-"));
   git(repo,"init");
@@ -45,7 +41,13 @@ function initRepo(){
 }
 
 function decision(files:string[]){
-  return spawnSync(process.execPath,[script,"--files",...files],{cwd:root,encoding:"utf8"});
+  const env={
+    ...process.env,
+    VERCEL_ENV:"production",
+    VERCEL_TARGET_ENV:"production",
+    VERCEL_GIT_COMMIT_REF:productionBranch,
+  };
+  return spawnSync(process.execPath,[script,"--files",...files],{cwd:root,encoding:"utf8",env});
 }
 
 function gitDecision(repo:string,envOverrides:Record<string,string|undefined>){
@@ -54,7 +56,12 @@ function gitDecision(repo:string,envOverrides:Record<string,string|undefined>){
   return spawnSync(process.execPath,[script],{cwd:repo,encoding:"utf8",env});
 }
 
-test("Vercel skips only pure development-only changes",()=>{
+function assertPreviewSkipped(result:ReturnType<typeof spawnSync>){
+  assert.equal(result.status,0,String(result.stderr||result.stdout));
+  assert.match(String(result.stdout),/Skipping Vercel preview build/);
+}
+
+test("Vercel skips only pure development-only changes in production",()=>{
   const result=decision([
     "DEVELOPMENT.md",
     "docs/module-guide.md",
@@ -66,7 +73,7 @@ test("Vercel skips only pure development-only changes",()=>{
   assert.match(result.stdout,/Skipping Vercel build/);
 });
 
-test("Vercel still builds for runtime, dependency and deployment configuration changes",()=>{
+test("Vercel still builds production for runtime, dependency and deployment configuration changes",()=>{
   for(const file of [
     "app/(protected)/flights/page.tsx",
     "components/flight-form.tsx",
@@ -83,12 +90,12 @@ test("Vercel still builds for runtime, dependency and deployment configuration c
   }
 });
 
-test("one runtime file prevents a mixed change from being skipped",()=>{
+test("one runtime file prevents a mixed production change from being skipped",()=>{
   const result=decision(["README.md","tests/development-scope.test.ts","lib/db.ts"]);
   assert.equal(result.status,1);
 });
 
-test("single candidate commit may use a trusted GitHub production merge parent",()=>{
+test("single-commit preview is skipped before diff resolution",()=>{
   const repo=initRepo();
   try{
     git(repo,"checkout","-b","feature/docs");
@@ -102,14 +109,13 @@ test("single candidate commit may use a trusted GitHub production merge parent",
       VERCEL_TARGET_ENV:"preview",
       VERCEL_GIT_COMMIT_REF:"feature/docs",
     });
-    assert.equal(result.status,0,result.stderr||result.stdout);
-    assert.match(result.stderr,/trusted candidate parent/);
+    assertPreviewSkipped(result);
   }finally{
     fs.rmSync(repo,{recursive:true,force:true});
   }
 });
 
-test("multi-commit preview without previous SHA fails safe instead of checking only HEAD parent",()=>{
+test("multi-commit preview is skipped without spending a Vercel build",()=>{
   const repo=initRepo();
   try{
     git(repo,"checkout","-b","feature/mixed");
@@ -127,18 +133,16 @@ test("multi-commit preview without previous SHA fails safe instead of checking o
       VERCEL_TARGET_ENV:"preview",
       VERCEL_GIT_COMMIT_REF:"feature/mixed",
     });
-    assert.equal(result.status,1,result.stderr||result.stdout);
-    assert.match(result.stderr,/fallback rejected/);
-    assert.match(result.stderr,/unable to establish a safe Git diff base/);
+    assertPreviewSkipped(result);
   }finally{
     fs.rmSync(repo,{recursive:true,force:true});
   }
 });
 
-test("valid previous deployment SHA remains authoritative for a multi-commit preview",()=>{
+test("previous deployment SHA does not cause a preview build",()=>{
   const repo=initRepo();
   try{
-    const base=gitValue(repo,"rev-parse",productionBranch);
+    const base=git(repo,"rev-parse",productionBranch).stdout.trim();
     git(repo,"checkout","-b","feature/previous-sha");
     fs.mkdirSync(path.join(repo,"lib"),{recursive:true});
     fs.writeFileSync(path.join(repo,"lib","runtime.ts"),"export const runtime = true;\n");
@@ -154,8 +158,7 @@ test("valid previous deployment SHA remains authoritative for a multi-commit pre
       VERCEL_TARGET_ENV:"preview",
       VERCEL_GIT_COMMIT_REF:"feature/previous-sha",
     });
-    assert.equal(result.status,1,result.stderr||result.stdout);
-    assert.match(result.stderr,/VERCEL_GIT_PREVIOUS_SHA/);
+    assertPreviewSkipped(result);
   }finally{
     fs.rmSync(repo,{recursive:true,force:true});
   }
@@ -200,7 +203,7 @@ test("production fallback compares a merge commit with its first parent",()=>{
   }
 });
 
-test("untrusted preview parent fails safe toward building",()=>{
+test("untrusted preview parent is still skipped before diff resolution",()=>{
   const repo=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-vercel-failsafe-"));
   try{
     git(repo,"init");
@@ -220,8 +223,7 @@ test("untrusted preview parent fails safe toward building",()=>{
       VERCEL_TARGET_ENV:"preview",
       VERCEL_GIT_COMMIT_REF:"feature/no-trusted-base",
     });
-    assert.equal(result.status,1);
-    assert.match(result.stderr,/fallback rejected/);
+    assertPreviewSkipped(result);
   }finally{
     fs.rmSync(repo,{recursive:true,force:true});
   }
