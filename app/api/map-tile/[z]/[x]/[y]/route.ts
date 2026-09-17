@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
-const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
+const ARCGIS_IMAGERY_LABELS_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/imagery/labels/static/tile";
 
 export async function GET(request: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
   const { z: zs, x: xs, y: ys } = await params;
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
 
   const upstreamUrl = wantsSatellite
-    ? `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(arcgisToken!)}`
+    ? `${ARCGIS_IMAGERY_LABELS_HOST}/${z}/${y}/${x}?language=en&token=${encodeURIComponent(arcgisToken!)}`
     : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
 
   const upstream = await fetch(upstreamUrl, {
