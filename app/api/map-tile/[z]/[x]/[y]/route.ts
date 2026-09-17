@@ -11,31 +11,31 @@ function isImage(response: Response) {
   return response.ok && (response.headers.get("content-type") || "").startsWith("image/");
 }
 
+function publicReferer(request: Request) {
+  const raw = request.headers.get("referer");
+  if (!raw) return "https://fly-tally.com/";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol === "https:" && (parsed.hostname === "fly-tally.com" || parsed.hostname.endsWith(".fly-tally.com") || parsed.hostname.endsWith(".vercel.app"))) return parsed.href;
+  } catch {}
+  return "https://fly-tally.com/";
+}
+
 async function imageDataUrl(response: Response) {
   const contentType = response.headers.get("content-type") || "image/png";
   const bytes = Buffer.from(await response.arrayBuffer()).toString("base64");
   return `data:${contentType};base64,${bytes}`;
 }
 
-async function satelliteTile(z: number, x: number, y: number, token: string) {
+async function satelliteTile(z: number, x: number, y: number, token: string, referer: string) {
   const common = { next: { revalidate: CACHE_SECONDS } } as const;
   const basePromise = fetch(
     `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(token)}`,
-    {
-      headers: { Referer: "https://fly-tally.com/", "User-Agent": USER_AGENT },
-      ...common,
-    },
+    { headers: { Referer: referer, "User-Agent": USER_AGENT }, ...common },
   );
   const labelsPromise = fetch(
     `${ARCGIS_IMAGERY_LABELS_HOST}/${z}/${y}/${x}?language=en`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Referer: "https://fly-tally.com/",
-        "User-Agent": USER_AGENT,
-      },
-      ...common,
-    },
+    { headers: { Authorization: `Bearer ${token}`, Referer: referer, "User-Agent": USER_AGENT }, ...common },
   );
 
   const [base, preferredLabels] = await Promise.all([basePromise, labelsPromise]);
@@ -44,7 +44,7 @@ async function satelliteTile(z: number, x: number, y: number, token: string) {
   let labels = preferredLabels;
   if (!isImage(labels)) {
     labels = await fetch(`${ARCGIS_REFERENCE_HOST}/${z}/${y}/${x}`, {
-      headers: { "User-Agent": USER_AGENT },
+      headers: { Referer: referer, "User-Agent": USER_AGENT },
       ...common,
     });
   }
@@ -68,6 +68,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   const style = new URL(request.url).searchParams.get("style");
   const wantsSatellite = style === "satellite";
   const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN;
+  const referer = publicReferer(request);
   if (wantsSatellite && !arcgisToken) {
     return new NextResponse("Satellite imagery is not configured", {
       status: 503,
@@ -76,7 +77,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
 
   if (wantsSatellite) {
-    const svg = await satelliteTile(z, x, y, arcgisToken!);
+    const svg = await satelliteTile(z, x, y, arcgisToken!, referer);
     if (!svg) {
       return new NextResponse("Map tile unavailable", {
         status: 502,
@@ -93,8 +94,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     });
   }
 
+  // OSM standard tiles remain a transitional fallback for the normal map style.
+  // Preserve the browser's FlyTally Referer end-to-end and identify the application;
+  // v2.8 tracks migration away from the community tile service in MAP_LICENSING.md.
   const upstream = await fetch(`${OSM_TILE_HOST}/${z}/${x}/${y}.png`, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: { Referer: referer, "User-Agent": USER_AGENT },
     next: { revalidate: CACHE_SECONDS },
   });
   if (!upstream.ok) {

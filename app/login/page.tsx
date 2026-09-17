@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { LoginForm } from "./login-form";
 import { googleConfigured } from "@/lib/auth/google";
 import { safeLocalReturnTo } from "@/lib/auth/return-to";
+import { LegalFooter } from "@/components/legal-footer";
 
 export const metadata = { title: "Sign in | FlyTally" };
 
@@ -18,6 +19,7 @@ export default async function LoginPage({searchParams}:{searchParams:Promise<{er
         <h1>FlyTally</h1>
         <p className="login-lead">Your flights stay private. Sign in to continue.</p>
         <LoginForm google={googleConfigured()} externalError={error} success={success} returnTo={returnTo}/>
+        <div style={{marginTop:"18px"}}><LegalFooter compact/></div>
       </section>
     </main>
   );
