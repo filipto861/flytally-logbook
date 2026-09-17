@@ -12,8 +12,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
 
   const style = new URL(request.url).searchParams.get("style");
+  const wantsSatellite = style === "satellite";
   const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN;
-  const satellite = style === "satellite" && Boolean(arcgisToken);
+  if (wantsSatellite && !arcgisToken) {
+    return new NextResponse("Satellite imagery is not configured", {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" },
+    });
+  }
+  const satellite = wantsSatellite;
   const upstreamUrl = satellite
     ? `${ARCGIS_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(arcgisToken!)}`
     : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
@@ -22,7 +29,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     headers: satellite ? undefined : { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
     next: { revalidate: 60 * 60 * 24 * 7 },
   });
-  if (!upstream.ok) return new NextResponse("Map tile unavailable", { status: upstream.status });
+  if (!upstream.ok) return new NextResponse("Map tile unavailable", { status: upstream.status, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": satellite ? "unavailable" : "map" } });
   return new NextResponse(await upstream.arrayBuffer(), {
     headers: {
       "Content-Type": upstream.headers.get("content-type") || "image/png",
