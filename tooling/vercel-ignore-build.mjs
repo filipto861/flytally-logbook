@@ -31,27 +31,21 @@ export function shouldIgnoreVercelBuild(files) {
   return normalized.length > 0 && normalized.every(isDevelopmentOnlyPath);
 }
 
+function currentGitRef() {
+  return String(process.env.VERCEL_GIT_COMMIT_REF ?? gitValue(["branch", "--show-current"])).trim();
+}
+
+function isProductionBuild() {
+  const currentRef = currentGitRef();
+  return process.env.VERCEL_ENV === "production" ||
+    process.env.VERCEL_TARGET_ENV === "production" ||
+    currentRef === PRODUCTION_BRANCH;
+}
+
 function resolveProductionBase() {
   const parent = gitValue(["rev-parse", "HEAD^1"]);
   if (!commitExists(parent)) return "";
   console.error(`Vercel diff base: production first parent ${parent.slice(0, 12)}.`);
-  return parent;
-}
-
-function isTrustedCandidateBase(ref) {
-  if (!commitExists(ref)) return false;
-  const parents = gitValue(["show", "-s", "--format=%P", ref]).split(/\s+/).filter(Boolean);
-  const committerEmail = gitValue(["show", "-s", "--format=%ce", ref]).toLowerCase();
-  return parents.length >= 2 && committerEmail === "noreply@github.com";
-}
-
-function resolvePreviewBase() {
-  const parent = gitValue(["rev-parse", "HEAD^1"]);
-  if (!isTrustedCandidateBase(parent)) {
-    console.error("Vercel preview fallback rejected: candidate parent is not a trusted GitHub production merge commit.");
-    return "";
-  }
-  console.error(`Vercel diff base: trusted candidate parent ${parent.slice(0, 12)}.`);
   return parent;
 }
 
@@ -62,12 +56,7 @@ function resolveDiffBase() {
     return previous;
   }
 
-  const currentRef = String(process.env.VERCEL_GIT_COMMIT_REF ?? gitValue(["branch", "--show-current"])).trim();
-  const production = process.env.VERCEL_ENV === "production" ||
-    process.env.VERCEL_TARGET_ENV === "production" ||
-    currentRef === PRODUCTION_BRANCH;
-
-  return production ? resolveProductionBase() : resolvePreviewBase();
+  return resolveProductionBase();
 }
 
 function changedFilesFromGit() {
@@ -89,6 +78,12 @@ function changedFilesFromGit() {
 function filesFromArguments(argv) {
   const marker = argv.indexOf("--files");
   return marker === -1 ? null : argv.slice(marker + 1).filter(Boolean);
+}
+
+if (!isProductionBuild()) {
+  const ref = currentGitRef() || "non-production ref";
+  console.log(`Skipping Vercel preview build for ${ref}. Feature branches are validated by GitHub Actions; Vercel builds production only.`);
+  process.exit(0);
 }
 
 const argumentFiles = filesFromArguments(process.argv.slice(2));
