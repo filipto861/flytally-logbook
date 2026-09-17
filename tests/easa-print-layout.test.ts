@@ -36,7 +36,7 @@ test("last running total equals the selected-record grand total across all FCL c
     flight({sortKey:"2026-08-24T09:00",block_minutes:55,role:"INSTRUCTOR",pic_minutes:55,instructor_minutes:55,landings_day:1}),
     {kind:"fstd",sortKey:"2026-08-25T12:00",total_minutes:74},
   ];
-  const expected=sumEasaRecords(records),pages=paginateEasaRecords(records,2),grand=pages.at(-1)?.runningTotal;
+  const expected=sumEasaRecords(records),pages=paginateEasaRecords(records,2),grand=pages[pages.length-1]?.runningTotal;
   assert.ok(grand);
   assert.deepEqual(grand,expected);
   assert.deepEqual(expected,{spSe:102,spMe:63,mp:82,flight:247,landingsDay:4,landingsNight:1,night:75,ifr:55,pic:102,copilot:82,dual:63,instructor:55,fstd:74});
