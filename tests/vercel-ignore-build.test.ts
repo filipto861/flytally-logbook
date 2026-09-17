@@ -57,7 +57,7 @@ function gitDecision(repo:string,envOverrides:Record<string,string|undefined>){
 }
 
 function assertPreviewSkipped(result:ReturnType<typeof spawnSync>){
-  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.equal(result.status,0,String(result.stderr||result.stdout));
   assert.match(String(result.stdout),/Skipping Vercel preview build/);
 }
 
