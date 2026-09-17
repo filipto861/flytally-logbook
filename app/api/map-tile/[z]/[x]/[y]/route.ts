@@ -1,16 +1,25 @@
 import { NextResponse } from "next/server";
 
-const TILE_HOST = "https://tile.openstreetmap.org";
+const OSM_TILE_HOST = "https://tile.openstreetmap.org";
+const ARCGIS_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
   const { z: zs, x: xs, y: ys } = await params;
   const z = Number(zs), x = Number(xs), y = Number(ys);
   const max = 2 ** z;
   if (!Number.isInteger(z) || z < 0 || z > 18 || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= max || y >= max) {
     return new NextResponse("Invalid tile", { status: 400 });
   }
-  const upstream = await fetch(`${TILE_HOST}/${z}/${x}/${y}.png`, {
-    headers: { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
+
+  const style = new URL(request.url).searchParams.get("style");
+  const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN;
+  const satellite = style === "satellite" && Boolean(arcgisToken);
+  const upstreamUrl = satellite
+    ? `${ARCGIS_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(arcgisToken!)}`
+    : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
+
+  const upstream = await fetch(upstreamUrl, {
+    headers: satellite ? undefined : { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
     next: { revalidate: 60 * 60 * 24 * 7 },
   });
   if (!upstream.ok) return new NextResponse("Map tile unavailable", { status: upstream.status });
@@ -19,6 +28,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ z: 
       "Content-Type": upstream.headers.get("content-type") || "image/png",
       "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
       "Access-Control-Allow-Origin": "*",
+      "X-FlyTally-Map-Style": satellite ? "satellite" : "map",
     },
   });
 }
