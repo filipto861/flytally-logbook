@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
-const ARCGIS_STATIC_IMAGERY_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/imagery/static/tile";
+const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
 
 export async function GET(request: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
   const { z: zs, x: xs, y: ys } = await params;
@@ -20,24 +20,38 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
       headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" },
     });
   }
-  const satellite = wantsSatellite;
-  const upstreamUrl = satellite
-    ? `${ARCGIS_STATIC_IMAGERY_HOST}/${z}/${y}/${x}`
+
+  const upstreamUrl = wantsSatellite
+    ? `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}`
     : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
 
   const upstream = await fetch(upstreamUrl, {
-    headers: satellite
-      ? { Authorization: `Bearer ${arcgisToken}` }
+    headers: wantsSatellite
+      ? {
+          Authorization: `Bearer ${arcgisToken}`,
+          Referer: "https://fly-tally.com/",
+          "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)",
+        }
       : { "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)" },
     next: { revalidate: 60 * 60 * 24 * 7 },
   });
-  if (!upstream.ok) return new NextResponse("Map tile unavailable", { status: upstream.status, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": satellite ? "unavailable" : "map" } });
+
+  if (!upstream.ok) {
+    return new NextResponse("Map tile unavailable", {
+      status: upstream.status,
+      headers: {
+        "Cache-Control": "no-store",
+        "X-FlyTally-Map-Style": wantsSatellite ? "unavailable" : "map",
+      },
+    });
+  }
+
   return new NextResponse(await upstream.arrayBuffer(), {
     headers: {
-      "Content-Type": upstream.headers.get("content-type") || "image/png",
+      "Content-Type": upstream.headers.get("content-type") || "image/jpeg",
       "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
       "Access-Control-Allow-Origin": "*",
-      "X-FlyTally-Map-Style": satellite ? "satellite" : "map",
+      "X-FlyTally-Map-Style": wantsSatellite ? "satellite" : "map",
     },
   });
 }
