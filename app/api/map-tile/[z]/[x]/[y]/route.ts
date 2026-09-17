@@ -22,13 +22,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
 
   const upstreamUrl = wantsSatellite
-    ? `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}`
+    ? `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(arcgisToken!)}`
     : `${OSM_TILE_HOST}/${z}/${x}/${y}.png`;
 
   const upstream = await fetch(upstreamUrl, {
     headers: wantsSatellite
       ? {
-          Authorization: `Bearer ${arcgisToken}`,
           Referer: "https://fly-tally.com/",
           "User-Agent": "FlyTally/1.0 (https://fly-tally.com; flight story map)",
         }
@@ -36,9 +35,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     next: { revalidate: 60 * 60 * 24 * 7 },
   });
 
-  if (!upstream.ok) {
+  const contentType = upstream.headers.get("content-type") || "";
+  if (!upstream.ok || (wantsSatellite && !contentType.startsWith("image/"))) {
     return new NextResponse("Map tile unavailable", {
-      status: upstream.status,
+      status: upstream.ok ? 502 : upstream.status,
       headers: {
         "Cache-Control": "no-store",
         "X-FlyTally-Map-Style": wantsSatellite ? "unavailable" : "map",
@@ -48,7 +48,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
 
   return new NextResponse(await upstream.arrayBuffer(), {
     headers: {
-      "Content-Type": upstream.headers.get("content-type") || "image/jpeg",
+      "Content-Type": contentType || "image/jpeg",
       "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
       "Access-Control-Allow-Origin": "*",
       "X-FlyTally-Map-Style": wantsSatellite ? "satellite" : "map",
