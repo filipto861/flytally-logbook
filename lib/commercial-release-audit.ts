@@ -17,9 +17,10 @@ export type CommercialReleaseAuditSection=Readonly<{
 
 export type CommercialReleaseAudit=Readonly<{
   auditVersion:string;
-  verdict:"CLEARED"|"BLOCKED";
+  verdict:"CLEARED"|"READY_FOR_TRANSITION"|"BLOCKED";
   effectiveStage:"private-beta"|"external-validation"|"commercial";
   technicalFoundationComplete:true;
+  releaseGatesReady:boolean;
   commercialLaunchEnabled:boolean;
   sections:readonly CommercialReleaseAuditSection[];
   blockers:readonly string[];
@@ -85,11 +86,14 @@ export function getCommercialReleaseAudit(env:Env=process.env):CommercialRelease
     },
   ];
 
+  const releaseGatesReady=readiness.configurationValid&&sections.every(section=>section.releaseReady);
+
   return{
     auditVersion:releaseControl.auditVersion,
-    verdict:readiness.commercialEnabled?"CLEARED":"BLOCKED",
+    verdict:readiness.commercialEnabled?"CLEARED":releaseGatesReady?"READY_FOR_TRANSITION":"BLOCKED",
     effectiveStage:readiness.effectiveStage,
     technicalFoundationComplete:true,
+    releaseGatesReady,
     commercialLaunchEnabled:readiness.commercialEnabled,
     sections,
     blockers:readiness.blockers,
