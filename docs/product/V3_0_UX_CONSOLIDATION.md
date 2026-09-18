@@ -1,6 +1,6 @@
 # FlyTally v3.0 — UX & Product Consolidation
 
-Status: **current product track**  
+Status: **v3.0 complete**  
 Scope: FlyTally Logbook + FlyTally Training  
 Principle: improve the workflows already in production before adding new product capability.
 
@@ -111,8 +111,8 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - **U3.3 ✅ Settings:** General, Account & security and Privacy are separate task workspaces; security/privacy queries load only in their own workspace, licence management is no longer duplicated in Settings, portable backup is handed off to Print & data, and access/data-retention detail uses progressive disclosure.
 - **Cross-cutting UX ✅ Push notifications:** the existing notification inbox remains the source of truth while standards-based Web Push adds per-device delivery. Opt-in is discoverable through onboarding, Recency and the notification inbox, with persistent account preferences in Settings. Compliance reminders reuse the existing rule engines and advance through staged reminder dedupe rather than creating a second regulatory evaluator.
 - **U4 ✅ Flight workflow clarity:** Save now hands both manual and GPS entries directly into final Logbook review; flight detail shows one durable Saved → Review → Certify → Share progression with the next safe action; public sharing is restricted to certified revisions and is invalidated when a correction is opened.
-- **U5 — Training learner polish — next**
-- **U6 — Mobile, accessibility and final UX acceptance**
+- **U5 ✅ Training learner polish:** Training now exposes Continue learning, a practical Start here path, repaired Quick Start / Cockpit orientation hierarchy, faster Reference and secondary progress/source detail while preserving Home / Fly / Learn / Reference.
+- **U6 ✅ Mobile, accessibility and final UX acceptance:** both products have keyboard skip navigation, safe-area and touch-target hardening, overflow containment, reduced-motion / forced-colors fallbacks; Logbook mobile navigation and the aircraft management dialog additionally receive explicit focus management and keyboard trapping.
 
 ## Explicit non-goals
 

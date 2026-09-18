@@ -70,7 +70,8 @@ test("v3.0 U3.3 ships responsive light-theme presentation and advances roadmap t
   assert.match(roadmap,/U3 ✅ management hierarchy/);
   assert.match(roadmap,/U3\.3 ✅ Settings hierarchy/);
   assert.match(roadmap,/U4 ✅ flight save/);
-  assert.match(roadmap,/U5 next: Training learner polish/);
+  assert.match(roadmap,/U5 ✅ Training learner polish/);
+  assert.match(roadmap,/U6 ✅ mobile, accessibility and final UX acceptance/);
   assert.match(audit,/U3\.3 ✅ Settings/);
   assert.match(audit,/U4 ✅ Flight workflow clarity/);
 });

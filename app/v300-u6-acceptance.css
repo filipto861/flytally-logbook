@@ -1,0 +1,50 @@
+/* FlyTally v3.0 U6 — mobile, accessibility and final UX acceptance. */
+.skip-link{
+  position:fixed;top:max(8px,env(safe-area-inset-top));left:12px;z-index:5000;
+  padding:10px 14px;border:2px solid var(--accent2);border-radius:9px;
+  background:var(--panel);color:var(--text);font-weight:850;text-decoration:none;
+  transform:translateY(calc(-100% - 20px));transition:transform .14s ease;
+}
+.skip-link:focus{transform:translateY(0)}
+#main-content{min-inline-size:0;outline:none}
+#main-content:focus-visible{outline:none}
+
+:where(.content,.content>*,.page-header,.panel,.table-panel,.flight-detail-workspace,.data-hub,.aircraft-manager){min-inline-size:0;max-inline-size:100%}
+:where(.table-scroll,.readonly-fcl-table-wrap){overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+
+.aircraft-modal-backdrop{padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+.aircraft-modal{max-height:calc(100dvh - max(36px,env(safe-area-inset-top) + env(safe-area-inset-bottom) + 20px));overscroll-behavior:contain}
+.aircraft-modal :where(input,select,textarea,button,summary,a[href]):focus-visible{scroll-margin:90px 0}
+
+@media (max-width:820px){
+  html{scroll-padding-top:calc(var(--mobile-shell-height,64px) + env(safe-area-inset-top) + 10px)}
+  body{min-height:100dvh;overflow-x:clip}
+  .content{padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+  .sidebar nav{padding-bottom:calc(20px + env(safe-area-inset-bottom))!important}
+  .aircraft-modal-backdrop{place-items:stretch;padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom))}
+  .aircraft-modal{width:100%;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);border-radius:16px}
+  .aircraft-modal>header{position:sticky;top:0;z-index:3}
+  :where(.page-header,.workspace-heading,.section-heading){scroll-margin-top:calc(var(--mobile-shell-height,64px) + env(safe-area-inset-top) + 12px)}
+}
+
+@media (max-width:820px),(pointer:coarse){
+  :where(button,.primary-button,.secondary-button,.danger-button,.detail-button,.primary-link,.aircraft-manage-button,summary){
+    min-height:44px;
+  }
+  :where(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea){
+    font-size:16px;
+  }
+  :where(input[type="checkbox"],input[type="radio"]){min-width:20px;min-height:20px}
+  .sidebar-brand a[aria-label^="Notifications"]{min-width:44px;min-height:44px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .skip-link{transition:none}
+  html:focus-within{scroll-behavior:auto}
+}
+
+@media (forced-colors:active){
+  .skip-link,.primary-button,.secondary-button,.danger-button,.modal-close,.mobile-toggle,.aircraft-manage-button{forced-color-adjust:auto;border:1px solid ButtonText}
+  .sidebar nav a.active{outline:2px solid Highlight;outline-offset:-2px}
+  .notification-badge{border:1px solid ButtonText}
+}

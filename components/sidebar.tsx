@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect,useState } from "react";
+import { useEffect,useRef,useState } from "react";
 import { logout } from "@/app/login/actions";
 import styles from "./sidebar.module.css";
 import { NavIcon } from "./nav-icon";
@@ -23,16 +23,26 @@ const recordLinks=[
 ] as const;
 
 export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role?:"admin"|"user";attentionCount?:number;notificationCount?:number}){
-  const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false);
+  const pathname=usePathname(); const [collapsed,setCollapsed]=useState(false); const [mobile,setMobile]=useState(false); const menuRef=useRef<HTMLElement|null>(null); const toggleRef=useRef<HTMLButtonElement|null>(null);
   useEffect(()=>{setCollapsed(localStorage.getItem("logbook-sidebar")==="collapsed")},[]);
   useEffect(()=>{setMobile(false)},[pathname]);
   useEffect(()=>{
     if(!mobile)return;
     const previous=document.body.style.overflow;
-    const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobile(false)};
+    const menu=menuRef.current;
+    const focusables=()=>Array.from(menu?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])')??[]);
+    requestAnimationFrame(()=>focusables()[0]?.focus());
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){event.preventDefault();setMobile(false);requestAnimationFrame(()=>toggleRef.current?.focus());return}
+      if(event.key!=="Tab")return;
+      const items=focusables();if(!items.length)return;
+      const first=items[0],last=items[items.length-1],active=document.activeElement;
+      if(event.shiftKey&&active===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&active===last){event.preventDefault();first.focus()}
+    };
     document.body.style.overflow="hidden";
-    window.addEventListener("keydown",close);
-    return()=>{document.body.style.overflow=previous;window.removeEventListener("keydown",close)};
+    window.addEventListener("keydown",keydown);
+    return()=>{document.body.style.overflow=previous;window.removeEventListener("keydown",keydown)};
   },[mobile]);
   const toggle=()=>{const next=!collapsed;setCollapsed(next);localStorage.setItem("logbook-sidebar",next?"collapsed":"open")};
   const activeFor=(href:string)=>href==="/dashboard"
@@ -42,9 +52,9 @@ export function Sidebar({role="user",attentionCount=0,notificationCount=0}:{role
       : pathname===href||pathname.startsWith(`${href}/`);
 
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
-    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button></div>
-    <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>setMobile(false)}/>
-    <nav id="primary-navigation" aria-label="Main navigation">
+    <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><span className={styles.headerActions}><NotificationBell initialCount={notificationCount} onNavigate={()=>setMobile(false)}/><button ref={toggleRef} className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></span><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button></div>
+    <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>{setMobile(false);requestAnimationFrame(()=>toggleRef.current?.focus())}}/>
+    <nav ref={menuRef} id="primary-navigation" aria-label="Main navigation">
       <Link className={styles.primaryAction} href="/flights/new" title="Add flight" onClick={()=>setMobile(false)}><i><NavIcon name="add"/></i><span>Add flight</span></Link>
 
       {mainLinks.map(link=>{

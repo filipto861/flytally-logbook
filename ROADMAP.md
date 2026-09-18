@@ -21,7 +21,7 @@ Completed technical foundation across Logbook and Training: GDPR/privacy self-se
 
 No environment flag, payment integration or marketing copy may be treated as evidence of lawyer, regulator, rights-holder or trademark approval.
 
-### v3.0 — UX & Product Consolidation — current
+### v3.0 — UX & Product Consolidation ✅
 
 Before adding further capability, audit and simplify the workflows already in production across Logbook and Training.
 
@@ -35,8 +35,8 @@ Before adding further capability, audit and simplify the workflows already in pr
   - U3.3 ✅ Settings hierarchy.
 - Cross-cutting UX ✅ Web Push delivery and notification discovery: session-bound device subscriptions, compliance/activity/security preferences, onboarding + contextual opt-in, and staged 30/7/1-day compliance reminders using existing recency/credential logic.
 - U4 ✅ flight save → review → certify → share clarity.
-- U5 next: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
-- U6: mobile, accessibility and final UX acceptance.
+- U5 ✅ Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
+- U6 ✅ mobile, accessibility and final UX acceptance: keyboard skip navigation, focus-managed mobile navigation and aircraft modal, safe-area/touch hardening, overflow containment, reduced-motion and forced-colors fallbacks.
 
 The detailed cross-product audit is in `docs/product/V3_0_UX_CONSOLIDATION.md`.
 

@@ -60,6 +60,7 @@ test("v3.0 U3.1 ships responsive workspace presentation and advances the roadmap
   assert.match(roadmap,/U3\.2 ✅ Print & data/);
   assert.match(roadmap,/U3\.3 ✅ Settings/);
   assert.match(roadmap,/U4 ✅ flight save/);
-  assert.match(roadmap,/U5 next: Training learner polish/);
+  assert.match(roadmap,/U5 ✅ Training learner polish/);
+  assert.match(roadmap,/U6 ✅ mobile, accessibility and final UX acceptance/);
   assert.match(audit,/U3\.1 ✅ Aircraft & airports/);
 });
