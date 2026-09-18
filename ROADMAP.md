@@ -10,18 +10,18 @@ This cross-product track supersedes the older v2.8/v2.9 labels further below whi
 
 Completed technical foundation across Logbook and Training: GDPR/privacy self-service, legal/storage/provider boundaries, map/licensing hardening, EASA-facing evidence safeguards, Training source authority and performance fail-closed behavior, public-sharing boundaries, security and release regressions.
 
-### v2.9 — Commercial & External Validation — current
+### v2.9 — Commercial & External Validation — technical implementation complete ✅
 
 - C1 ✅ commercial launch contract and external-validation ledger.
 - C2 ✅ technical commercial legal/consumer publication structure with exact-version review/publish gating; externally reviewed content remains pending.
 - C3 ✅ technical billing/entitlement foundation: provider-neutral durable grants, signed Logbook → Training entitlement snapshot and user-visible access state; payment provider, plans and prices remain an external/business decision.
 - C4 ✅ technical signature/QES and regulatory-validation foundation: explicit assurance taxonomy, public authority-status surface and fail-closed external-evidence gate; ÚCL/LAA decisions remain external.
 - C5 ✅ technical brand/claims foundation: canonical claim registry, trademark-status boundary, public claims surface and fail-closed external-evidence gate; trademark clearance and claims review remain external.
-- C6 final commercial release audit and deliberate launch-stage transition.
+- C6 ✅ final commercial release audit, administrator/public release status and production build guard. Current verdict remains BLOCKED until real external evidence and commercial runtime requirements are completed.
 
 No environment flag, payment integration or marketing copy may be treated as evidence of lawyer, regulator, rights-holder or trademark approval.
 
-### v3.0 — Product scale
+### v3.0 — Product scale — next
 
 Return to product development, led by multi-aircraft scaling in FlyTally Training and broader platform capability once v2.9 external launch decisions are resolved.
 
