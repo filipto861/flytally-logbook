@@ -3,7 +3,7 @@ import L from "leaflet";
 const CARTO_HOST="basemaps.cartocdn.com";
 const FLYTALLY_MAP_TILES="/api/map-tile/{z}/{x}/{y}?style=map";
 const DARK_TILE_FILTER="invert(.78) hue-rotate(180deg) saturate(.12) brightness(.92) contrast(1.08)";
-const MAP_ATTRIBUTION='Map &copy; <a href="https://www.esri.com/">Esri</a> · data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Microsoft, Esri Community Maps';
+const MAP_ATTRIBUTION='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 function resolvedTheme(){const root=document.documentElement.dataset.theme;if(root==="light"||root==="dark")return root;const shell=document.querySelector<HTMLElement>(".app-grid[data-appearance]")?.dataset.appearance;if(shell==="light"||shell==="dark")return shell;return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}
 function applyTileTheme(map:L.Map){const tilePane=map.getPane("tilePane");if(tilePane)tilePane.style.filter=resolvedTheme()==="light"?"none":DARK_TILE_FILTER;}
