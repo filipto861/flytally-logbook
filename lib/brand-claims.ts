@@ -72,8 +72,11 @@ export const publicClaimRegistry:readonly PublicClaim[]=[
 ] as const;
 
 const prohibitedPublicMarketingPatterns=[
-  /\bFlyTally\b[^.\n]{0,80}\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,40}\b(?:approved|certified|endorsed|official)\b/i,
-  /\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,80}\bFlyTally\b[^.\n]{0,40}\b(?:approved|certified|endorsed|official)\b/i,
+  /\bFlyTally\b[^.\n]{0,80}\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,40}\b(?:approved|certified|endorsed|official|compliant)\b/i,
+  /\bFlyTally\b[^.\n]{0,60}\b(?:approved|certified|endorsed|official|compliant)\b[^.\n]{0,60}\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b/i,
+  /\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,40}\b(?:approved|certified|endorsed|official|compliant)\b[^.\n]{0,80}\bFlyTally\b/i,
+  /\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,80}\bFlyTally\b[^.\n]{0,40}\b(?:approved|certified|endorsed|official|compliant)\b/i,
+  /\bofficial\b[^.\n]{0,40}\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,40}\blogbook\b/i,
   /\bFlyTally\b[^.\n]{0,80}\b(?:qualified electronic signature|QES|advanced electronic signature|AES)\b/i,
   /\bFlyTally\b[^.\n]{0,80}\b(?:registered trademark|registered trade mark)\b/i,
   /\bFlyTally®\b/i,
