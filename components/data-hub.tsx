@@ -48,7 +48,7 @@ export function DataHub({view,backups=[],deletedFlights=[],createAction,restoreS
           <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
           <button className="primary-button">Open printable logbook</button>
         </form>
-        <details className="u32-output-details"><summary>Output details</summary><p className="muted">Holder identity comes from Licences. Part-FCL/powered records keep the established FCL.050 view. Sailplane, Balloon and Other are structured FlyTally print views rather than authority-issued forms. FSTD is shown only when no regulatory-category filter is active.</p></details>
+        <details className="u32-output-details"><summary>Output details</summary><p className="muted">Holder identity comes from Licences. Part-FCL/powered records keep the established FCL.050 view. Sailplane, Balloon and Other are structured FlyTally print views, not authority-issued forms. FSTD is shown only when no regulatory-category filter is active.</p></details>
       </article>
 
       <article className="panel u32-output-card">
