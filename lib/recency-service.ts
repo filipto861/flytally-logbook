@@ -83,4 +83,40 @@ export async function getRecencyStateForUser(userId:number,preferencesOverride?:
 
 export function recencySnapshotFromState(state:RecencyState):RecencySnapshot{const dates=[...state.evaluations.map(item=>item.forecastDate||item.deadline),...state.deadlineItems.map(item=>item.state.until)].filter((value):value is string=>typeof value==="string"&&value>=state.today).sort(),status:RecencySnapshot["status"]=state.reviewCount?"attention":state.dueSoonCount?"warning":"ok",label=state.reviewCount?`${state.reviewCount} item${state.reviewCount===1?"":"s"} need review`:state.dueSoonCount?`${state.dueSoonCount} item${state.dueSoonCount===1?"":"s"} due soon`:"Recency OK";return{generatedAt:new Date().toISOString(),status,reviewCount:state.reviewCount,dueSoonCount:state.dueSoonCount,nextDate:dates[0],label}}
 export async function refreshRecencySnapshot(userId:number){const state=await getRecencyStateForUser(userId),snapshot=recencySnapshotFromState(state),preferences={...state.preferences,recency_snapshot:snapshot};await sql`UPDATE user_settings SET preferences_json=${JSON.stringify(preferences)},updated_at=NOW() WHERE user_id=${userId}`;return snapshot}
-export function recencyAlertsFromState(state:RecencyState){if(!state.notificationDays)return[] as Array<{title:string;body:string;dedupeKey:string}>;const alerts:Array<{title:string;body:string;dedupeKey:string}>=[];for(const item of state.evaluations){const days=item.forecastDate?daysUntil(state.today,item.forecastDate):Number.POSITIVE_INFINITY,deadlineDays=item.deadline?daysUntil(state.today,item.deadline):Number.POSITIVE_INFINITY;if(item.status==="not-current"||(item.status==="attention"&&deadlineDays<=state.notificationDays)){alerts.push({title:item.title,body:item.summary,dedupeKey:`recency:${item.id}:${item.status}:${item.deadline||item.summary}`})}else if(item.status==="current"&&item.forecastDate&&days>=0&&days<=state.notificationDays){alerts.push({title:`${item.title} due soon`,body:`If no new qualifying activity is recorded, the current indication changes on ${item.forecastDate}.`,dedupeKey:`recency:${item.id}:forecast:${item.forecastDate}`})}}if(state.monitorDeadlines){for(const item of state.deadlineItems){const days=item.state.daysRemaining??Number.POSITIVE_INFINITY;if(item.state.status==="expired"||days<=state.notificationDays)alerts.push({title:`${item.label} ${item.state.status==="expired"?"expired":"due soon"}`,body:item.state.label,dedupeKey:`recency:deadline:${item.label}:${item.state.status}:${item.state.until||"unknown"}`})}}return alerts}
+function reminderStage(days:number,maxDays:number){
+  if(days<0)return"expired";
+  const thresholds=[...new Set([maxDays,7,1,0].filter(value=>value>=0&&value<=maxDays))].sort((a,b)=>a-b);
+  return String(thresholds.find(value=>days<=value)??maxDays);
+}
+function reminderTitle(label:string,days:number){
+  if(days<0)return`${label} expired`;
+  if(days===0)return`${label} due today`;
+  if(days===1)return`${label} due tomorrow`;
+  return`${label} due in ${days} days`;
+}
+export function recencyAlertsFromState(state:RecencyState){
+  if(!state.notificationDays)return[] as Array<{title:string;body:string;dedupeKey:string}>;
+  const alerts:Array<{title:string;body:string;dedupeKey:string}>=[];
+  for(const item of state.evaluations){
+    const forecastDays=item.forecastDate?daysUntil(state.today,item.forecastDate):Number.POSITIVE_INFINITY,deadlineDays=item.deadline?daysUntil(state.today,item.deadline):Number.POSITIVE_INFINITY;
+    if(item.status==="not-current"){
+      alerts.push({title:item.title,body:item.summary,dedupeKey:`recency:${item.id}:not-current:${item.deadline||item.summary}`});
+    }else if(item.status==="attention"&&deadlineDays<=state.notificationDays){
+      const stage=reminderStage(deadlineDays,state.notificationDays);
+      alerts.push({title:reminderTitle(item.title,deadlineDays),body:item.summary,dedupeKey:`recency:${item.id}:attention:${stage}:${item.deadline||"unknown"}`});
+    }else if(item.status==="current"&&item.forecastDate&&forecastDays>=0&&forecastDays<=state.notificationDays){
+      const stage=reminderStage(forecastDays,state.notificationDays);
+      alerts.push({title:reminderTitle(item.title,forecastDays),body:`If no new qualifying activity is recorded, the current indication changes on ${item.forecastDate}.`,dedupeKey:`recency:${item.id}:forecast:${stage}:${item.forecastDate}`});
+    }
+  }
+  if(state.monitorDeadlines){
+    for(const item of state.deadlineItems){
+      const days=item.state.daysRemaining??Number.POSITIVE_INFINITY;
+      if(item.state.status==="expired"||days<=state.notificationDays){
+        const stage=reminderStage(days,state.notificationDays);
+        alerts.push({title:reminderTitle(item.label,days),body:item.state.label,dedupeKey:`recency:deadline:${item.label}:${stage}:${item.state.until||"unknown"}`});
+      }
+    }
+  }
+  return alerts;
+}

@@ -8,6 +8,7 @@ import { RecencyPanel } from "@/components/recency-panel";
 import { SplRecencyPanel } from "@/components/spl-recency-panel";
 import { HelicopterRecencyPanel } from "@/components/helicopter-recency-panel";
 import { BalloonRecencyPanel } from "@/components/balloon-recency-panel";
+import { PushNotificationInline } from "@/components/push-notification-controls";
 
 const categoryLabels:Record<string,string>={aeroplane:"Aeroplane",helicopter:"Helicopter",sailplane:"Sailplane",balloon:"Balloon",ull:"ULL",other:"Other"};
 const categoryLabel=(value:string)=>categoryLabels[value]??value;
@@ -31,6 +32,7 @@ export async function RecencyComplianceWorkspace({detailed=false}:{detailed?:boo
 
   return <><CredentialsNavigation active="recency"/><main className="compliance-workspace">
     <section className="compliance-hero"><div><p className="eyebrow">FLYING RECENCY</p><h2>{!flyingItems.length?"No active recency monitoring":attention.length?attention.length===1?"1 recency item needs attention":`${attention.length} recency items need attention`:"Your monitored recency is current"}</h2><p className="muted">{!flyingItems.length?"Add the relevant licence, qualification or aircraft profile, then configure only the monitoring you actually need.":attention.length?"Open an item below to see the requirement and supporting evidence.":"Current privileges stay collapsed below; evidence and monitor editing are available only when you open them."}</p></div><div className="compliance-hero-actions"><b className={heroClass}>{heroLabel}</b><Link className="secondary-button" href="/credentials?view=recency&detail=1">Evidence & settings</Link></div></section>
+    <PushNotificationInline context="recency"/>
 
     {attention.length?<section className="compliance-section"><div className="compliance-section-heading"><div><p className="eyebrow">NEEDS ATTENTION</p><h2>{attention.length===1?"Review this item":`Review ${attention.length} items`}</h2></div><span>Most important first</span></div><div className="compliance-list">{attention.map(item=><WorkspaceRow item={item} key={item.id}/>)}</div></section>:null}
 

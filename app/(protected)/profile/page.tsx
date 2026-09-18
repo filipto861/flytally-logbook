@@ -10,6 +10,7 @@ import { SettingsWorkspaceNavigation,type SettingsWorkspaceView } from "@/compon
 import { sql } from "@/lib/db";
 import { getAccountPrivacySummary } from "@/lib/privacy-account";
 import { resolveAccountEntitlementSnapshot } from "@/lib/entitlement-ledger";
+import { PushNotificationSettings } from "@/components/push-notification-controls";
 
 export const metadata={title:"Settings | FlyTally"};
 const t=(v:unknown)=>String(v??"");
@@ -44,6 +45,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
         <section className="u33-preference-grid">
           <section className="panel u33-preference-card"><div><p className="eyebrow">APPEARANCE</p><h2>Theme</h2><p className="muted">Choose how FlyTally follows your device or a fixed light/dark appearance.</p></div><form action={saveAppearance} className="appearance-form"><label>Appearance<select name="appearance" defaultValue={appearance}>{APPEARANCE_OPTIONS.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><button className="primary-button">Save appearance</button></form></section>
           <section className="panel install-app-panel u33-preference-card"><div><p className="eyebrow">APP</p><h2>Install FlyTally</h2><p className="muted">Install FlyTally as a standalone app on this device.</p></div><InstallAppControl/></section>
+          <PushNotificationSettings/>
         </section>
       </main>
     </>;

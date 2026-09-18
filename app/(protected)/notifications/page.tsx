@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { clearReadNotifications,declineFlightInvitationFromNotification,deleteNotification,markAllNotificationsRead,markNotificationRead } from "./actions";
 import styles from "./notifications.module.css";
+import { PushNotificationInline } from "@/components/push-notification-controls";
 
 export const metadata={title:"Notifications | FlyTally"};
 const t=(v:unknown)=>String(v??"");
@@ -17,6 +18,7 @@ export default async function NotificationsPage(){
   const unread=rows.filter(row=>!row.read_at).length,read=rows.length-unread;
   return <div className={styles.inbox}>
     <header className="page-header"><div><p className="eyebrow">INBOX</p><h1>Notifications</h1><p className="muted">Updates, completed decisions and reminders. Anything still waiting for your decision is collected in Actions.</p></div><div className="connection-actions"><Link className="secondary-button" href="/actions">Open actions</Link>{unread?<form action={markAllNotificationsRead}><button className="secondary-button">Mark all read</button></form>:null}{read?<form action={clearReadNotifications}><button className="secondary-button">Clear read</button></form>:null}</div></header>
+    <PushNotificationInline context="updates"/>
     <section className="panel"><div className="notification-list">{rows.map(row=>{
       const requestKind=["flight_request","flight_invite","signature_request"].includes(t(row.kind))&&Boolean(row.participation_id),status=t(row.request_status).toLowerCase(),pending=requestKind&&status==="pending",instructor=t(row.participant_role).toUpperCase()==="INSTRUCTOR";
       const workflowStatus=!requestKind?"":row.participant_flight_id?(row.participant_certified_at?"CERTIFIED":"ADDED"):status==="accepted"?"ACCEPTED":status==="declined"?"DECLINED":status==="cancelled"?"CANCELLED":"PENDING";
