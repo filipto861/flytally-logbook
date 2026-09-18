@@ -44,7 +44,7 @@ test("C4 requires the exact strategy version and explicit decision statuses",()=
 
 test("C4 public legal page makes assurance and authority limits explicit",()=>{
   const page=read("app/legal/regulatory/page.tsx");
-  assert.match(page,/does not currently represent any of these mechanisms as an eIDAS qualified electronic signature/i);
+  assert.match(page,/eIDAS qualified electronic signature \(QES\)/i);\n  assert.match(page,/advanced electronic signature/i);\n  assert.match(page,/does <strong>not<\/strong> currently represent/i);
   assert.match(page,/No authority approval is implied/);
   assert.match(page,/External validation incomplete/);
 });
@@ -55,5 +55,5 @@ test("C4 evidence UI labels HMAC as integrity evidence rather than QES/signature
   const pad=read("components/in-person-signature-pad.tsx");
   assert.match(report,/evidence integrity/);
   assert.match(audit,/integrity HMAC/);
-  assert.match(pad,/not represented as a qualified electronic signature/i);
+  assert.match(pad,/does not represent this capture as a qualified electronic signature \(QES\)/i);
 });
