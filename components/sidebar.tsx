@@ -52,14 +52,11 @@ export function Sidebar({role="user",actionCount=0,attentionCount=0,notification
         return <Link key={link.href} className={active?"active":""} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{flights&&attentionCount>0?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>
       })}
 
-      {actionCount>0?<div className={styles.group}>
-        <div className={styles.groupTitle}><i><NavIcon name="actions"/></i><span>Activity</span></div>
-        <Link className={`${activeFor("/actions")?"active":""} sidebar-sub-link ${styles.profileLink}`} href="/actions" title="Actions" aria-current={activeFor("/actions")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="actions"/></i><span>Actions</span><b className="notification-badge" aria-label={`${actionCount} pending actions`}>{Math.min(actionCount,99)}</b></Link>
-      </div>:null}
+      {actionCount>0?<Link className={`${activeFor("/actions")?"active":""} ${styles.actionLink}`} href="/actions" title="Actions" aria-current={activeFor("/actions")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="actions"/></i><span>Actions</span><b className="notification-badge" aria-label={`${actionCount} pending actions`}>{Math.min(actionCount,99)}</b></Link>:null}
 
       <div className={styles.group}>
         <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Pilot & records</span></div>
-        {recordLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
+        {recordLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} ${styles.recordLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
       </div>
 
       {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i><NavIcon name="admin"/></i><span>Administration</span></Link>:null}
