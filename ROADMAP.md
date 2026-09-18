@@ -12,9 +12,9 @@ Completed technical foundation across Logbook and Training: GDPR/privacy self-se
 
 ### v2.9 — Commercial & External Validation — current
 
-- C1 commercial launch contract and external-validation ledger.
-- C2 externally reviewed commercial/consumer terms structure, cancellation/refund and ADR surfaces.
-- C3 billing/subscription architecture after the business model is explicitly chosen.
+- C1 ✅ commercial launch contract and external-validation ledger.
+- C2 ✅ technical commercial legal/consumer publication structure with exact-version review/publish gating; externally reviewed content remains pending.
+- C3 next: billing/subscription architecture after the business model is explicitly chosen.
 - C4 electronic-signature/QES and ÚCL/LAA/regulatory validation strategy.
 - C5 trademark/brand and marketing/regulatory claims review.
 - C6 final commercial release audit and deliberate launch-stage transition.
