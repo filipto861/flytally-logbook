@@ -1,4 +1,4 @@
-export const LEGAL_EFFECTIVE_DATE = "17 September 2026";
+export const LEGAL_EFFECTIVE_DATE = "18 September 2026";
 export const LEGAL_CONTACT_EMAIL = process.env.LEGAL_CONTACT_EMAIL?.trim() || "support@fly-tally.com";
 export const LEGAL_OPERATOR_NAME = process.env.LEGAL_OPERATOR_NAME?.trim() || "FlyTally private beta";
 export const LEGAL_OPERATOR_ADDRESS = process.env.LEGAL_OPERATOR_ADDRESS?.trim() || "Operator identification pending before public commercial launch";
@@ -11,14 +11,14 @@ export type LegalDocument = Readonly<{ title: string; summary: string; sections:
 export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
   privacy: {
     title: "Privacy notice",
-    summary: "How FlyTally handles account, logbook, flight-track and security data during the private beta.",
+    summary: "How FlyTally handles account, logbook, Training progress, flight-track and security data during the private beta.",
     sections: [
       { heading: "Controller and contact", paragraphs: [
         `${LEGAL_OPERATOR_NAME} is responsible for the FlyTally private-beta service. Contact: ${LEGAL_CONTACT_EMAIL}.`,
         `Operator address: ${LEGAL_OPERATOR_ADDRESS}. Operator registration/ID: ${LEGAL_OPERATOR_ID}. Formal operator identification is a release blocker before a public commercial launch.`,
       ]},
       { heading: "Data we process", paragraphs: [
-        "FlyTally processes account and authentication data, pilot-profile and licence data you choose to enter, flight and aircraft records, GPS tracks you import, signatures and certification audit data, sharing preferences, support communications, and limited security/session metadata.",
+        "FlyTally processes account and authentication data, pilot-profile and licence data you choose to enter, flight and aircraft records, FlyTally Training learner progress and aircraft learning state, GPS tracks you import, signatures and certification audit data, sharing preferences, support communications, and limited security/session metadata.",
         "A public flight share exposes only the fields you deliberately select. Private remarks, licence data, costs, signatures, certification details and crew identity are excluded from the public share payload.",
       ]},
       { heading: "Why and on what basis", paragraphs: [
@@ -31,7 +31,7 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
       ]},
       { heading: "Retention and your rights", paragraphs: [
         "Core logbook records are retained while your account is active because continuity is a primary purpose of the service. Revoked public-share metadata is removed after 30 days; expired or revoked authentication sessions and password-reset records use a 30-day cleanup window, and authentication security events use a 90-day baseline unless an incident requires a justified hold.",
-        "Self-service account deletion removes authentication data, public-sharing metadata, stored backups, GPS tracks, expenses, live profile/settings, licences/documents and recency evidence. Historical flight/FSTD records and signed or approved integrity evidence may remain under a pseudonymised deleted-pilot identity so an existing aviation record or another pilot’s signed evidence is not silently destroyed.",
+        "Training learner progress can be exported or erased independently in FlyTally Training. Main FlyTally account deletion first requests erasure of Training learner progress; if Training cannot confirm that erasure, the main account remains active so the user can retry or contact support. After confirmation, account deletion removes authentication data, public-sharing metadata, stored backups, GPS tracks, expenses, live profile/settings, licences/documents and recency evidence. Historical flight/FSTD records and signed or approved integrity evidence may remain under a pseudonymised deleted-pilot identity so an existing aviation record or another pilot’s signed evidence is not silently destroyed.",
         `Requests for access, correction, portability, restriction or a broader erasure review can be sent to ${LEGAL_CONTACT_EMAIL}. Identity may be verified before a request is fulfilled, and any retained record must have a documented integrity or legal reason.`,
       ]},
     ],

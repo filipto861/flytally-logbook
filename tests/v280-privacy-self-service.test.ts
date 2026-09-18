@@ -34,3 +34,15 @@ test("v2.8 retention sweep removes stale share and auth artifacts on a documente
   assert.match(legal,/Revoked public-share metadata is removed after 30 days/);
   assert.match(legal,/90-day baseline/);
 });
+
+test("v2.8 canonical privacy notice covers Training progress and cross-product account erasure",()=>{
+  const legal=read("lib/legal.ts"),actions=read("app/(protected)/profile/actions.ts"),client=read("lib/training-privacy.ts"),page=read("app/(protected)/profile/page.tsx");
+  assert.match(legal,/Training learner progress/);
+  assert.match(legal,/main account remains active/);
+  assert.match(actions,/eraseTrainingDataForAccount\(String\(session\.userId\)\)/);
+  assert.ok(actions.indexOf("eraseTrainingDataForAccount")<actions.lastIndexOf("eraseAccountForPrivacy(session.userId)"));
+  assert.match(client,/FlyTally-Privacy/);
+  assert.match(client,/cache:"no-store"/);
+  assert.match(client,/if\(!response\.ok\)throw/);
+  assert.match(page,/Account deletion was not completed because Training-progress erasure could not be confirmed/);
+});
