@@ -27,8 +27,8 @@ Before adding further capability, audit and simplify the workflows already in pr
 
 - U0 ✅ product UX audit and primary-task model.
 - U1 ✅ navigation and task hierarchy.
-- U2 next: Licences & recency progressive disclosure.
-- U3: Aircraft / Data / Settings management hierarchy.
+- U2 ✅ Licences & recency progressive disclosure.
+- U3 next: Aircraft / Data / Settings management hierarchy.
 - U4: flight save → review → certify → share clarity.
 - U5: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
 - U6: mobile, accessibility and final UX acceptance.

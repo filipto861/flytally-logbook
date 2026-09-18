@@ -30,16 +30,17 @@ test("v1.60 keeps attention prominent while leaving legal calculations outside t
   assert.doesNotMatch(model,/FCL[.]140|FCL[.]060|flightMinutes|certified_at|sql`/);
 });
 
-test("v1.60 Overview is adaptive and delegates authoritative LAPL recency to the existing engine",()=>{
-  const page=read("app/(protected)/credentials/page.tsx"),overview=read("app/(protected)/credentials/adaptive-overview.tsx"),legacy=read("app/(protected)/credentials/legacy-page.tsx");
+test("v1.60 Overview stays adaptive while U2 delegates status to the consolidated authoritative workspace",()=>{
+  const page=read("app/(protected)/credentials/page.tsx"),overview=read("app/(protected)/credentials/adaptive-overview.tsx"),service=read("lib/recency-workspace-service.ts"),legacy=read("app/(protected)/credentials/legacy-page.tsx");
   assert.match(page,/AdaptivePilotOverview/);
   assert.match(page,/LegacyCredentialsPage/);
-  assert.match(overview,/getRecencyStateForUser/);
-  assert.match(overview,/lapl-a-fcl140a/);
-  assert.match(overview,/Licence validity/);
-  assert.match(overview,/Flying privilege/);
-  assert.match(overview,/Open a section above for details/);
-  assert.match(overview,/What matters now/);
+  assert.match(overview,/getRecencyComplianceWorkspaceForUser/);
+  assert.match(overview,/RECORDED STATUS/);
+  assert.match(overview,/WHAT MATTERS NOW/);
+  assert.match(service,/getRecencyStateForUser/);
+  assert.match(service,/getSplRecencyStateForUser/);
+  assert.match(service,/getHelicopterRecencyStateForUser/);
+  assert.match(service,/getBalloonRecencyStateForUser/);
   assert.doesNotMatch(overview,/Under CAA|regulation requires|FCL[.]035/);
   assert.match(legacy,/view==="recency"[\s\S]*<RecencyPanel/);
 });

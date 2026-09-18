@@ -8,6 +8,7 @@ import { SplRecencyPanel } from "@/components/spl-recency-panel";
 import { HelicopterRecencyPanel } from "@/components/helicopter-recency-panel";
 import { getRecencyStateForUser } from "@/lib/recency-service";
 import { AircraftQualificationsSection } from "@/components/aircraft-qualifications-section";
+import { CredentialsNavigation,CredentialsRecordsNav } from "@/components/credentials-navigation";
 import { addDocumentCredential,addPilotLicence,addQualification,archivePilotCredential,deleteExpiry,saveDocumentCredential,savePilotLicence,saveQualification,toggleExpiry } from "@/app/(protected)/profile/actions";
 
 export const metadata={title:"Licences | FlyTally"};
@@ -16,9 +17,8 @@ const today=new Date().toISOString().slice(0,10);
 type DocMeta={kind?:string;number?:string;authority?:string;issuedDate?:string;detail?:string;validityMode?:string;note?:string};
 function docMeta(value:unknown):DocMeta{try{const parsed=JSON.parse(t(value));return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{note:t(value)}}catch{return{note:t(value)}}}
 const badge=(status:string)=>status==="expired"?"status-off":status==="warning"?"status-warning":status==="incomplete"?"record-status":"status-on";
-type View="overview"|"licences"|"recency"|"training"|"documents";
-const views:View[]=["overview","licences","recency","training","documents"];
-const tabs:[View,string][]=[["overview","Overview"],["licences","Licences & ratings"],["recency","Recency"],["training","Aircraft training"],["documents","Medical & documents"]];
+type View="overview"|"records"|"licences"|"recency"|"training"|"documents";
+const views:View[]=["overview","records","licences","recency","training","documents"];
 type PageProps={searchParams?:Promise<Record<string,string|string[]|undefined>>};
 
 export default async function CredentialsPage({searchParams}:PageProps){
@@ -44,9 +44,8 @@ export default async function CredentialsPage({searchParams}:PageProps){
   const documentCards=documents.map(item=>{const meta=docMeta(item.note),mode=meta.validityMode==="unlimited"||t(item.expiry_date)==="9999-12-31"?"unlimited":"date",validity=credentialValidity({mode,validUntil:item.expiry_date,warningDays:item.warning_days},today);return{item,meta,mode,validity}}),documentAttention=documentCards.filter(card=>card.validity.status!=="valid").length;
   const hasLaplA=licenceCards.some(card=>card.isLaplA),validityAttention=licenceValidityAttention+qualificationValidityAttention+documentAttention;
   return <>
-    <header className="page-header"><div><p className="eyebrow">PILOT PROFILE</p><h1>Licences</h1><p className="muted">Licences, ratings and pilot documents.</p></div></header>
-
-    <nav className="credentials-tabs" aria-label="Licence sections">{tabs.map(([key,label])=><Link key={key} href={`/credentials?view=${key}`} className={view===key?"active":""}>{label}</Link>)}</nav>
+    <CredentialsNavigation active={view==="overview"?"overview":view==="recency"?"recency":"records"}/>
+    {view==="licences"||view==="documents"||view==="training"?<CredentialsRecordsNav active={view}/>:null}
 
     {view==="overview"?<section className="panel credentials-overview"><div className="section-heading"><div><p className="eyebrow">OVERVIEW</p><h2>At a glance</h2></div></div><div className="credentials-overview-grid">
       <article className="credentials-overview-card"><span>Validity</span><strong>Licences & documents</strong><b className={validityAttention?"status-warning":"status-on"}>{validityAttention?"NEED ATTENTION":"ALL CURRENT"}</b></article>

@@ -55,8 +55,9 @@ test("v2.5 Recency defaults to one open action queue and keeps current privilege
   const route=read("app/(protected)/credentials/page.tsx"),workspace=read("components/recency-compliance-workspace.tsx"),legacy=read("app/(protected)/credentials/legacy-page.tsx");
   assert.match(route,/rawView==="recency"[\s\S]*RecencyComplianceWorkspace/);
   assert.match(route,/rawDetail==="1"/);
-  assert.match(workspace,/What needs action/);assert.match(workspace,/Action queue/i);assert.match(workspace,/Credential validity/i);assert.match(workspace,/Recorded evidence/);
-  assert.match(workspace,/currentFlying=flyingItems\.filter\(item=>item\.status==="current"\)/);assert.match(workspace,/<details className="compliance-current-monitoring">/);assert.match(workspace,/currentFlying\.map/);
+  assert.match(workspace,/FLYING RECENCY/);assert.match(workspace,/NEEDS ATTENTION/);assert.match(workspace,/Recorded evidence/);
+  assert.match(workspace,/attention=flyingItems\.filter\(item=>item\.status!=="current"\)/);assert.match(workspace,/currentFlying=flyingItems\.filter\(item=>item\.status==="current"\)/);assert.match(workspace,/<details className="compliance-current-monitoring">/);assert.match(workspace,/currentFlying\.map/);
+  assert.doesNotMatch(workspace,/compliance-credential-summary/);
   for(const panel of ["RecencyPanel","SplRecencyPanel","HelicopterRecencyPanel","BalloonRecencyPanel"])assert.match(workspace,new RegExp(`<${panel}`));
   assert.match(legacy,/view==="recency"[\s\S]*<RecencyPanel/);
 });
