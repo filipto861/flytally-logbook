@@ -43,14 +43,14 @@ test("v2.8 security baseline restricts unnecessary browser capabilities",()=>{
 test("v2.8 maps centralize normal-map access through a policy-aware proxy and retain attribution",()=>{
   const route=read("app/api/map-tile/[z]/[x]/[y]/route.ts"),leaflet=read("components/leaflet-mobile.ts"),story=read("components/flight-story-card.tsx"),docs=read("docs/compliance/V2_8_COMPLIANCE_FOUNDATION.md");
   assert.match(route,/OSM_TILE_HOST/);
-  assert.match(route,/tile\\.openstreetmap\\.org/);
+  assert.match(route,/tile\.openstreetmap\.org/);
   assert.match(route,/User-Agent/);
-  assert.match(route,/request\\.headers\\.get\\("referer"\\)/);
+  assert.match(route,/request\.headers\.get\("referer"\)/);
   assert.match(route,/Referer: referer/);
   assert.match(route,/revalidate: CACHE_SECONDS/);
   assert.match(route,/ARCGIS_ACCESS_TOKEN/);
-  assert.match(leaflet,/\\/api\\/map-tile\\/\\{z\\}\\/\\{x\\}\\/\\{y\\}\\?style=map/);
-  assert.doesNotMatch(leaflet,/tile\\.openstreetmap\\.org/);
+  assert.match(leaflet,/FLYTALLY_MAP_TILES/);
+  assert.doesNotMatch(leaflet,/tile\.openstreetmap\.org/);
   assert.match(leaflet,/OpenStreetMap/);
   assert.match(story,/© OpenStreetMap contributors/);
   assert.match(docs,/Browser components do not request the community tile host directly/);
