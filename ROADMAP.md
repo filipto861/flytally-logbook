@@ -2,6 +2,29 @@
 
 This roadmap applies to the current **Next.js / Vercel / Neon PostgreSQL** application. Historical Streamlit release notes elsewhere in the repository are legacy references only.
 
+## Cross-product release track — authoritative from 18 September 2026
+
+This cross-product track supersedes the older v2.8/v2.9 labels further below while preserving those sections as historical Logbook product-planning context.
+
+### v2.8 — Compliance & Safety Foundation ✅
+
+Completed technical foundation across Logbook and Training: GDPR/privacy self-service, legal/storage/provider boundaries, map/licensing hardening, EASA-facing evidence safeguards, Training source authority and performance fail-closed behavior, public-sharing boundaries, security and release regressions.
+
+### v2.9 — Commercial & External Validation — current
+
+- C1 commercial launch contract and external-validation ledger.
+- C2 externally reviewed commercial/consumer terms structure, cancellation/refund and ADR surfaces.
+- C3 billing/subscription architecture after the business model is explicitly chosen.
+- C4 electronic-signature/QES and ÚCL/LAA/regulatory validation strategy.
+- C5 trademark/brand and marketing/regulatory claims review.
+- C6 final commercial release audit and deliberate launch-stage transition.
+
+No environment flag, payment integration or marketing copy may be treated as evidence of lawyer, regulator, rights-holder or trademark approval.
+
+### v3.0 — Product scale
+
+Return to product development, led by multi-aircraft scaling in FlyTally Training and broader platform capability once v2.9 external launch decisions are resolved.
+
 ## Current release — v2.7.0 — Data Integrity & Recovery 2.0
 
 - Keep restore non-destructive and reviewable with grouped missing/present/protected-evidence preview and explicit duplicate/conflict reasons before mutation.
