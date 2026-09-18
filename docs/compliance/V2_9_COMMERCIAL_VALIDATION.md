@@ -24,7 +24,7 @@ Allowed requested stages:
 
 The default is `private-beta`. An invalid value fails closed to the private-beta behavior.
 
-Requesting `commercial` is not sufficient. The effective stage becomes commercial only after every required gate is explicitly cleared **and** the final commercial legal surface has been implemented in code. C1 deliberately keeps that code gate closed, so even a fully cleared external ledger remains `external-validation` until C2 replaces the private-beta terms with the externally reviewed commercial surface.
+Requesting `commercial` is not sufficient. The effective stage becomes commercial only after every required gate is explicitly cleared **and** the exact commercial legal bundle committed in code is the same version that was externally reviewed and explicitly published.
 
 ### Approval-required gates
 
@@ -59,15 +59,39 @@ Future paid-plan, checkout, commercial-marketing or authority-approval features 
 
 The public legal centre may display the effective release stage, but it must not expose the internal validation checklist or represent an environment flag as legal/regulatory approval.
 
-## C2–C6 planned sequence
+## C2 — Commercial legal / consumer publication structure
 
-- **C2 — Commercial legal/consumer structure:** final Terms architecture, withdrawal/cancellation/refund and ADR surfaces after lawyer-reviewed policy decisions.
+C2 is technically implemented as a versioned, fail-closed publication boundary.
+
+The required bundle contains five artifacts:
+
+- Commercial Terms;
+- Pricing & billing disclosure;
+- Cancellation & refunds;
+- Withdrawal rights;
+- Dispute resolution / ADR.
+
+The public `/legal/commercial` page exposes only the fact that these documents are not yet effective and describes the required document set. It does not expose the internal validation ledger or invent the missing legal substance.
+
+Publication requires an exact version chain:
+
+1. `COMMERCIAL_LEGAL_BUNDLE_VERSION` — the intended candidate;
+2. the commercial content version actually committed in code;
+3. `COMMERCIAL_LEGAL_REVIEWED_VERSION` — the exact version externally reviewed;
+4. `COMMERCIAL_LEGAL_PUBLISHED_VERSION` — the exact version deliberately released.
+
+All four must match. C2 intentionally leaves the committed commercial content version empty because lawyer-reviewed content does not yet exist. Therefore commercial mode remains blocked even if somebody incorrectly fills only environment variables.
+
+The current Private beta terms remain the only effective Terms until that exact reviewed bundle is committed and published.
+
+## C3–C6 planned sequence
+
 - **C3 — Billing:** provider and subscription model only after the commercial model is chosen; entitlement logic must remain product-agnostic across Logbook/Training.
 - **C4 — Signatures & regulator validation:** determine whether current attestations are sufficient and whether advanced/QES or authority-specific workflows are actually required.
 - **C5 — Brand & claims:** trademark decision, marketing claim registry and explicit authority-approval wording.
 - **C6 — Commercial release audit:** technical regression, external evidence checklist and one deliberate transition from external-validation to commercial.
 
-## Non-goals of C1
+## Non-goals of C1/C2
 
 - choosing a payment provider;
 - inventing prices or subscription tiers;
