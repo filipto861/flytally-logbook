@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect,useState,type ReactNode } from "react";
 import { FlightWorkflowProgress,type FlightWorkflowState } from "@/components/flight-workflow-progress";
 
@@ -20,7 +19,7 @@ export function FlightDetailWorkspace({overview,gps,logbook,gpsCount=0,initialTa
   return <section className="flight-detail-workspace">
     <FlightWorkflowProgress state={workflow} activeTab={tab} onSelectTab={selectTab}/>
     {postSaveReview&&tab==="logbook"?<div className="flight-post-save" role="status"><div><strong>Flight saved as an editable draft.</strong><span>Review the final Logbook data below. Certification is the next step and protects the finished record.</span></div></div>:null}
-    <div className="flight-detail-tabs-row"><nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}</nav>{workflow.certified?<Link className="flight-share-shortcut" href={workflow.shareHref}>Share</Link>:null}</div>
+    <nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}</nav>
     <div className="detail-tab-content" role="tabpanel" id={`flight-panel-${tab}`} aria-labelledby={`flight-tab-${tab}`}>{tab==="overview"?overview:tab==="gps"?gps:logbook}</div>
   </section>;
 }
