@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "training_identity_not_configured" }, { status: 503, headers: { "cache-control": "no-store" } });
   }
 
-  const assertion = createTrainingIdentityAssertion(String(session.userId), session.role);
+  const assertion = await createTrainingIdentityAssertion(String(session.userId), session.role);
   const target = new URL("/api/auth/flytally/callback", targetBase);
   target.searchParams.set("assertion", assertion);
   target.searchParams.set("next", safeLocalReturnTo(source.searchParams.get("next"), "/"));
