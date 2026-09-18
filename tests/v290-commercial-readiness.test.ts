@@ -28,7 +28,7 @@ test("v2.9 commercial launch defaults fail closed to private beta", () => {
   assert.equal(readiness.effectiveStage, "private-beta");
   assert.equal(readiness.commercialEnabled, false);
   assert.ok(readiness.blockers.includes("operator-identity"));
-  assert.ok(readiness.blockers.includes("commercial-legal-surface"));
+  assert.ok(readiness.blockers.includes("commercial-legal-publication"));
 });
 
 test("v2.9 cannot enable commercial mode merely by requesting it", () => {
@@ -50,12 +50,12 @@ test("v2.9 treats mandatory NOT_REQUIRED as unresolved but allows it for reviewe
   assert.ok(!readiness.blockers.includes("qes"));
 });
 
-test("v2.9 can record complete external validation while C1 still blocks public commercial mode", () => {
+test("v2.9 can record complete external validation while C2 legal publication remains incomplete", () => {
   const readiness = getCommercialReadiness(clearedEnv);
   assert.equal(readiness.configurationValid, true);
   assert.equal(readiness.operatorIdentityComplete, true);
   assert.equal(readiness.externalValidationComplete, true);
-  assert.deepEqual(readiness.blockers, ["commercial-legal-surface"]);
+  assert.deepEqual(readiness.blockers, ["commercial-legal-publication"]);
   assert.equal(readiness.effectiveStage, "external-validation");
   assert.equal(readiness.commercialEnabled, false);
 });
