@@ -15,12 +15,12 @@ test("v2.2 separates authoritative pending actions from notification read state"
   assert.match(pending,/p[.]status='pending'/);
   assert.match(pending,/q[.]signature_status='pending'/);
   assert.doesNotMatch(pending,/user_notifications/);
-  assert.match(layout,/getPendingActionCount/);
+  assert.doesNotMatch(layout,/getPendingActionCount/);
   assert.match(layout,/unreadNotificationCount/);
-  assert.match(layout,/const\[actionCount,attentionItems,notificationCount\]=await Promise\.all/);
-  assert.match(sidebar,/actionCount>0/);
-  assert.match(sidebar,/href="\/actions"/);
-  assert.match(sidebar,/pending actions/);
+  assert.match(layout,/const\[attentionItems,notificationCount\]=await Promise\.all/);
+  assert.doesNotMatch(sidebar,/actionCount/);
+  assert.doesNotMatch(sidebar,/href="\/actions"/);
+  assert.match(sidebar,/NotificationBell/);
   assert.match(sidebar,/notificationCount/);
   assert.doesNotMatch(pending,/read_at|unreadNotificationCount/);
 });

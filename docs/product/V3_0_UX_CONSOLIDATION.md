@@ -42,7 +42,7 @@ Before v3.0 U1 the sidebar mixed:
 
 That makes the global navigation encode implementation structure rather than user intent.
 
-**U1 decision:** keep only durable destinations global. Make Add flight a visually distinct action. Move Needs attention and FSTD into a local Flights workspace. Keep Actions as a contextual workflow only when something is waiting. Notifications are application chrome, not navigation: expose a bell with a live unread badge. Keep account/data destinations in Pilot & records.
+**U1 decision:** keep only durable destinations global. Make Add flight a visually distinct action. Move Needs attention and FSTD into a local Flights workspace. Notifications are application chrome, not navigation: expose one bell with a live unread badge. The Action Center remains available from contextual entry points such as Notifications and Dashboard, but it is not a second global navigation signal. Keep account/data destinations in Pilot & records.
 
 ### Dashboard — generally correct, review later
 
@@ -91,13 +91,15 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
 ## v3.0 sequence
 
 - **U0 ✅ Product UX audit and task model**
-- **U1 — Navigation & task hierarchy — current**
+- **U1 ✅ Navigation & task hierarchy**
   - simplify Logbook global navigation;
   - contextualize Flights sub-workflows;
   - preserve Training task navigation;
   - keep installation secondary to aircraft selection;
-  - move Notifications out of navigation into a live unread bell;\n  - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox.
-- **U2 — Licences & recency**
+  - move Notifications out of navigation into a live unread bell;
+  - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox;
+  - U1.3: use the notification bell as the only global activity signal, group bell + mobile menu together in the top-right chrome, and visually separate Administration from pilot records.
+- **U2 — Licences & recency — next**
 - **U3 — Aircraft / Data / Settings**
 - **U4 — Flight workflow clarity**
 - **U5 — Training learner polish**
