@@ -1,0 +1,2 @@
+.inbox{width:min(100%,1180px);margin:0 auto}
+@media(max-width:820px){.inbox{width:100%}}
