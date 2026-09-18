@@ -16,11 +16,13 @@ test("v2.2 separates authoritative pending actions from notification read state"
   assert.match(pending,/q[.]signature_status='pending'/);
   assert.doesNotMatch(pending,/user_notifications/);
   assert.match(layout,/getPendingActionCount/);
-  assert.doesNotMatch(layout,/unreadNotificationCount/);
+  assert.match(layout,/unreadNotificationCount/);
+  assert.match(layout,/const\[actionCount,attentionItems,notificationCount\]=await Promise\.all/);
   assert.match(sidebar,/actionCount>0/);
   assert.match(sidebar,/href="\/actions"/);
   assert.match(sidebar,/pending actions/);
-  assert.doesNotMatch(sidebar,/unreadNotifications/);
+  assert.match(sidebar,/notificationCount/);
+  assert.doesNotMatch(pending,/read_at|unreadNotificationCount/);
 });
 
 test("v2.2 Action Center reuses existing decision workflows and refreshes inline decisions",()=>{
