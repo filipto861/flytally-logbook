@@ -38,6 +38,7 @@ import "./v300-aircraft-sharing.css";
 import "./v300-u32-data.css";
 import "./v300-u33-settings.css";
 import "./v300-push.css";
+import "./v300-u4-flight-workflow.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",

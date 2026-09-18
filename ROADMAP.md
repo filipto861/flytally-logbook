@@ -34,8 +34,8 @@ Before adding further capability, audit and simplify the workflows already in pr
   - U3.2 ✅ Print & data task hierarchy.
   - U3.3 ✅ Settings hierarchy.
 - Cross-cutting UX ✅ Web Push delivery and notification discovery: session-bound device subscriptions, compliance/activity/security preferences, onboarding + contextual opt-in, and staged 30/7/1-day compliance reminders using existing recency/credential logic.
-- U4 next: flight save → review → certify → share clarity.
-- U5: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
+- U4 ✅ flight save → review → certify → share clarity.
+- U5 next: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
 - U6: mobile, accessibility and final UX acceptance.
 
 The detailed cross-product audit is in `docs/product/V3_0_UX_CONSOLIDATION.md`.
