@@ -1,3 +1,4 @@
+import { commercialBillingRuntime } from "./billing-readiness.ts";
 import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
 
 export type FlyTallyLaunchStage = "private-beta" | "external-validation" | "commercial";
@@ -112,6 +113,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   const blockers = [...externalBlockers];
 
   if (!commercialLegal.publicationReady) blockers.push("commercial-legal-publication");
+  if (!commercialBillingRuntime.commercialReady) blockers.push("commercial-billing-runtime");
   if (!requested.valid) blockers.unshift("launch-stage-configuration");
 
   const commercialEnabled = requested.valid

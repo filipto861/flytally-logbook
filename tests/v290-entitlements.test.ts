@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+import {
+  entitlementPolicyForStage,
+  mergeEntitlementGrants,
+} from "../lib/entitlements.ts";
+
+const root=path.resolve(import.meta.dirname,"..");
+const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
+
+test("C3 grants current beta users provider-agnostic Logbook and Training access",()=>{
+  const grants=entitlementPolicyForStage("external-validation","user");
+  assert.deepEqual(grants.map(item=>item.key),["logbook.access","training.access"]);
+  assert.ok(grants.every(item=>item.source==="private-beta"));
+});
+
+test("C3 admin access is independent of a future commercial billing provider",()=>{
+  const grants=entitlementPolicyForStage("commercial","admin");
+  assert.deepEqual(grants.map(item=>item.key),["logbook.access","training.access"]);
+  assert.ok(grants.every(item=>item.source==="admin"));
+});
+
+test("C3 regular commercial access fails closed until a durable grant exists",()=>{
+  assert.deepEqual(entitlementPolicyForStage("commercial","user"),[]);
+  const merged=mergeEntitlementGrants([],[
+    {key:"training.access",source:"billing",validUntil:1_900_000_000},
+  ]);
+  assert.deepEqual(merged,[{key:"training.access",source:"billing",validUntil:1_900_000_000}]);
+});
+
+test("C3 durable entitlement ledger stays provider-neutral and revocable",()=>{
+  const schema=read("lib/v290-schema.ts");
+  const ledger=read("lib/entitlement-ledger.ts");
+  assert.match(schema,/account_entitlements/);
+  assert.match(schema,/source IN \('billing','organization','manual'\)/);
+  assert.match(schema,/revoked_at/);
+  assert.match(ledger,/upsertDurableEntitlement/);
+  assert.match(ledger,/revokeDurableEntitlement/);
+  assert.doesNotMatch(ledger,/stripe|paddle|braintree/i);
+});
+
+test("C3 Training SSO emits ft2 entitlement-bearing assertions",()=>{
+  const identity=read("lib/auth/training-identity.ts");
+  const contract=read("lib/auth/training-identity-contract.ts");
+  const route=read("app/api/auth/training/start/route.ts");
+  assert.match(contract,/TRAINING_IDENTITY_VERSION = "ft2"/);
+  assert.match(contract,/entitlementVersion: FLYTALLY_ENTITLEMENT_VERSION/);
+  assert.match(identity,/resolveAccountEntitlementSnapshot/);
+  assert.match(identity,/createTrainingIdentityAssertionFromGrants/);
+  assert.match(route,/await createTrainingIdentityAssertion/);
+});
+
+
+test("C3 access UI is user-visible and privacy deletion removes durable grants",()=>{
+  const profile=read("app/(protected)/profile/page.tsx");
+  const privacy=read("lib/privacy-account.ts");
+  assert.match(profile,/Access & billing/);
+  assert.match(profile,/Billing provider:<\/strong> not configured/);
+  assert.match(profile,/does not currently store a payment method or charge this account/);
+  assert.match(privacy,/DELETE FROM account_entitlements WHERE user_id=/);
+});
+
+
+test("C3 cannot unlock commercial launch without an implemented billing runtime",()=>{
+  const billing=read("lib/billing-readiness.ts");
+  const readiness=read("lib/commercial-readiness.ts");
+  assert.match(billing,/commercialReady: false/);
+  assert.match(readiness,/commercial-billing-runtime/);
+});

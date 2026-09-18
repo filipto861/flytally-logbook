@@ -3,12 +3,13 @@ import { createHmac } from "node:crypto";
 import test from "node:test";
 
 import {
-  createTrainingIdentityAssertion,
+  createTrainingIdentityAssertionFromGrants,
+  TRAINING_IDENTITY_VERSION,
   createTrainingPrivacyErasureAssertion,
   TRAINING_PRIVACY_ERASURE_VERSION,
   type TrainingIdentityClaims,
   type TrainingPrivacyErasureClaims,
-} from "../lib/auth/training-identity.ts";
+} from "../lib/auth/training-identity-contract.ts";
 
 const secret = "0123456789abcdef0123456789abcdef";
 process.env.FLYTALLY_IDENTITY_SECRET = secret;
@@ -21,13 +22,16 @@ function decode<T>(token:string,expectedVersion:string):T {
   return JSON.parse(Buffer.from(payload,"base64url").toString("utf8")) as T;
 }
 
-test("Logbook emits a short-lived Training identity assertion with stable account subject", () => {
+test("Logbook emits a short-lived entitlement-bearing Training identity assertion", () => {
   const now = 1_800_000_000;
-  const claims = decode<TrainingIdentityClaims>(createTrainingIdentityAssertion("42", "user", now),"ft1");
+  const token=createTrainingIdentityAssertionFromGrants("42","user",[{key:"training.access",source:"private-beta",validUntil:null}],now);
+  const claims = decode<TrainingIdentityClaims>(token,TRAINING_IDENTITY_VERSION);
   assert.equal(claims.iss, "flytally-logbook");
   assert.equal(claims.aud, "flytally-training");
   assert.equal(claims.sub, "42");
   assert.equal(claims.role, "user");
+  assert.equal(claims.entitlementVersion,1);
+  assert.deepEqual(claims.entitlements,[{key:"training.access",source:"private-beta",validUntil:null}]);
   assert.equal(claims.iat, now);
   assert.equal(claims.exp, now + 120);
   assert.ok(claims.jti.length >= 8);

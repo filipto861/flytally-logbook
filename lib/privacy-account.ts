@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { countActiveFlightShares, ensureFlightSharingSchema, purgeRevokedFlightShares, revokeAllFlightShares } from "@/lib/flight-sharing";
+import { ensureV290Schema } from "@/lib/v290-schema";
 
 export type AccountPrivacySummary=Readonly<{
   activePublicShares:number;
@@ -51,7 +52,7 @@ export async function runPrivacyRetentionSweep(){
 }
 
 export async function eraseAccountForPrivacy(userId:number){
-  await Promise.all([ensureDatabaseOptimizations(),ensureFlightSharingSchema()]);
+  await Promise.all([ensureDatabaseOptimizations(),ensureFlightSharingSchema(),ensureV290Schema()]);
   const replacement=`deleted-${userId}@flytally.invalid`;
   await sql.transaction([
     sql`UPDATE pilot_connections SET status='cancelled',revoked_at=COALESCE(revoked_at,NOW()),updated_at=NOW(),requester_shares_logbook=CASE WHEN requester_user_id=${userId} THEN FALSE ELSE requester_shares_logbook END,recipient_shares_logbook=CASE WHEN recipient_user_id=${userId} THEN FALSE ELSE recipient_shares_logbook END,requester_label=CASE WHEN requester_user_id=${userId} THEN 'Deleted pilot' ELSE requester_label END,recipient_label=CASE WHEN recipient_user_id=${userId} THEN 'Deleted pilot' ELSE recipient_label END WHERE requester_user_id=${userId} OR recipient_user_id=${userId}`,
@@ -61,6 +62,7 @@ export async function eraseAccountForPrivacy(userId:number){
     sql`UPDATE connection_audit_log SET details='{}'::jsonb WHERE actor_user_id=${userId} OR subject_user_id=${userId}`,
     sql`DELETE FROM flight_public_shares WHERE user_id=${userId}`,
     sql`DELETE FROM account_backups WHERE user_id=${userId}`,
+    sql`DELETE FROM account_entitlements WHERE user_id=${userId}`,
     sql`DELETE FROM deleted_flights WHERE user_id=${userId}`,
     sql`DELETE FROM track_points WHERE user_id=${userId}`,
     sql`DELETE FROM flight_tracks WHERE user_id=${userId}`,
