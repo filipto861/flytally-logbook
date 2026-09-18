@@ -1,3 +1,4 @@
+import { getBrandClaimsReadiness } from "./brand-claims.ts";
 import { commercialBillingRuntime } from "./billing-readiness.ts";
 import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
 import { getRegulatoryReadiness } from "./regulatory-validation.ts";
@@ -77,6 +78,7 @@ function hasOperatorIdentity(env: Env): boolean {
 export function getCommercialReadiness(env: Env = process.env): CommercialReadiness {
   const requested = readRequestedStage(env.FLYTALLY_LAUNCH_STAGE);
   const operatorIdentityComplete = hasOperatorIdentity(env);
+  const brandClaims = getBrandClaimsReadiness(env);
   const commercialLegal = getCommercialLegalPublicationState(env);
   const regulatory = getRegulatoryReadiness(env);
 
@@ -117,6 +119,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   if (!commercialLegal.publicationReady) blockers.push("commercial-legal-publication");
   if (!commercialBillingRuntime.commercialReady) blockers.push("commercial-billing-runtime");
   if (!regulatory.commercialReady) blockers.push("signature-regulatory-evidence");
+  if (!brandClaims.commercialReady) blockers.push("brand-claims-evidence");
   if (!requested.valid) blockers.unshift("launch-stage-configuration");
 
   const commercialEnabled = requested.valid
