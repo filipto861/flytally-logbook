@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const ARCGIS_OPEN_STREETS_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/open/streets/static/tile";
+const OSM_TILE_HOST = "https://tile.openstreetmap.org";
 const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
 const ARCGIS_IMAGERY_LABELS_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/imagery/labels/static/tile";
 const ARCGIS_REFERENCE_HOST = "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile";
@@ -58,11 +58,11 @@ async function satelliteTile(z: number, x: number, y: number, token: string, ref
   return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><image href="${baseHref}" x="0" y="0" width="256" height="256" preserveAspectRatio="none"/>${overlay}</svg>`;
 }
 
-async function streetTile(z: number, x: number, y: number, token: string, referer: string) {
-  const upstream = await fetch(
-    `${ARCGIS_OPEN_STREETS_HOST}/${z}/${y}/${x}?token=${encodeURIComponent(token)}`,
-    { headers: { Referer: referer, "User-Agent": USER_AGENT }, next: { revalidate: CACHE_SECONDS } },
-  );
+async function standardMapTile(z: number, x: number, y: number, referer: string) {
+  const upstream = await fetch(`${OSM_TILE_HOST}/${z}/${x}/${y}.png`, {
+    headers: { Referer: referer, "User-Agent": USER_AGENT },
+    next: { revalidate: CACHE_SECONDS },
+  });
   return isImage(upstream) ? upstream : null;
 }
 
@@ -77,15 +77,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   const wantsSatellite = new URL(request.url).searchParams.get("style") === "satellite";
   const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN?.trim();
   const referer = publicReferer(request);
-  if (!arcgisToken) {
-    return new NextResponse("Map service is not configured", {
+  if (wantsSatellite && !arcgisToken) {
+    return new NextResponse("Satellite imagery is not configured", {
       status: 503,
       headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" },
     });
   }
 
   if (wantsSatellite) {
-    const svg = await satelliteTile(z, x, y, arcgisToken, referer);
+    const svg = await satelliteTile(z, x, y, arcgisToken!, referer);
     if (!svg) return new NextResponse("Map tile unavailable", { status: 502, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" } });
     return new NextResponse(svg, { headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
@@ -95,7 +95,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     }});
   }
 
-  const upstream = await streetTile(z, x, y, arcgisToken, referer);
+  const upstream = await standardMapTile(z, x, y, referer);
   if (!upstream) return new NextResponse("Map tile unavailable", { status: 502, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" } });
   return new NextResponse(await upstream.arrayBuffer(), { headers: {
     "Content-Type": upstream.headers.get("content-type") || "image/png",

@@ -27,9 +27,9 @@ test("semantic theme tokens cover surfaces controls states focus and charts in b
   assert.match(css,/html\[data-theme="dark"\]/);assert.match(css,/html\[data-theme="light"\]/);assert.match(css,/@media\(prefers-color-scheme:light\)/);assert.match(css,/app-grid\[data-appearance="system"\]/);assert.match(css,/:focus-visible/);
 });
 
-test("maps use one provider-backed FlyTally basemap and adapt overlays when theme changes",()=>{
+test("maps use one FlyTally-proxied basemap and adapt overlays when theme changes",()=>{
   const helper=read("components/leaflet-mobile.ts"),runtime=read("components/theme-runtime.ts"),proxy=read("app/api/map-tile/[z]/[x]/[y]/route.ts");
-  assert.match(helper,/addFlyTallyBasemap/);assert.match(helper,/FLYTALLY_MAP_TILES/);assert.doesNotMatch(helper,/tile\.openstreetmap\.org/);assert.match(proxy,/ARCGIS_OPEN_STREETS_HOST/);assert.match(helper,/DARK_TILE_FILTER/);assert.match(helper,/MutationObserver/);
+  assert.match(helper,/addFlyTallyBasemap/);assert.match(helper,/FLYTALLY_MAP_TILES/);assert.doesNotMatch(helper,/tile\.openstreetmap\.org/);assert.match(proxy,/OSM_TILE_HOST/);assert.match(proxy,/Referer: referer/);assert.match(helper,/DARK_TILE_FILTER/);assert.match(helper,/MutationObserver/);
   assert.match(runtime,/useResolvedTheme/);assert.match(runtime,/mapThemePalette/);assert.match(runtime,/flytally:themechange/);
   for(const file of ["components/route-overview-map.tsx","components/tracks-map.tsx","components/flight-track-player.tsx","components/gps-import-review-player.tsx"]){const source=read(file);assert.match(source,/addFlyTallyBasemap/);assert.doesNotMatch(source,/dark_all/)}
 });

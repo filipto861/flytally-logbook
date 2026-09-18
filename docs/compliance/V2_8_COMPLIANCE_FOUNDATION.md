@@ -14,10 +14,10 @@ v2.8 is not complete until C1–C6 are green. Public commercial launch is blocke
 
 ### C2 — Maps & third-party licensing
 - Satellite: ArcGIS World Imagery with ArcGIS imagery labels/reference overlay; the ArcGIS credential remains server-side.
-- Normal map: ArcGIS Static Basemap Tiles Open Streets, proxied through FlyTally so provider credentials never reach the browser.
-- Direct use of the community `tile.openstreetmap.org` service has been removed from FlyTally map surfaces.
-- Required Esri/data attribution remains visible in interactive Leaflet maps and exported Story maps.
-- Map responses are cached through the application/provider path; a missing provider credential fails closed rather than silently switching to an unreviewed tile source.
+- Normal map: OSM Standard tiles are requested only through the FlyTally server proxy. The proxy identifies FlyTally, forwards an allowed FlyTally Referer upstream and applies cache headers in line with the current tile-use policy.
+- Browser components do not request the community tile host directly; all normal-map access is centralized through the reviewed FlyTally route.
+- Required OSM attribution remains visible in interactive Leaflet maps and exported Story maps. Satellite attribution remains Esri/data-provider specific.
+- Satellite map requests fail closed when the ArcGIS credential is unavailable; normal-map requests never silently switch to an unreviewed provider.
 
 ### C3 — Aviation records
 - Maintain an auditable mapping of AMC1 FCL.050 requirements to stored fields, export columns, page/running totals and signature workflow.
