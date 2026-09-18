@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback,useEffect,useState } from "react";
 import { NavIcon } from "@/components/nav-icon";
 import styles from "./sidebar.module.css";
@@ -9,6 +10,7 @@ const POLL_MS=30_000;
 
 export function NotificationBell({initialCount=0,onNavigate}:{initialCount?:number;onNavigate?:()=>void}){
   const[count,setCount]=useState(Math.max(0,initialCount));
+  const pathname=usePathname();
 
   useEffect(()=>{setCount(Math.max(0,initialCount))},[initialCount]);
 
@@ -24,15 +26,20 @@ export function NotificationBell({initialCount=0,onNavigate}:{initialCount?:numb
     }
   },[]);
 
+  useEffect(()=>{void refresh()},[pathname,refresh]);
+
   useEffect(()=>{
     const timer=window.setInterval(refresh,POLL_MS);
     const onFocus=()=>{void refresh()};
     const onVisibility=()=>{if(document.visibilityState==="visible")void refresh()};
+    const onNotificationRefresh=()=>{void refresh()};
     window.addEventListener("focus",onFocus);
+    window.addEventListener("flytally:notifications-refresh",onNotificationRefresh);
     document.addEventListener("visibilitychange",onVisibility);
     return()=>{
       window.clearInterval(timer);
       window.removeEventListener("focus",onFocus);
+      window.removeEventListener("flytally:notifications-refresh",onNotificationRefresh);
       document.removeEventListener("visibilitychange",onVisibility);
     };
   },[refresh]);

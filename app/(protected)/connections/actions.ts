@@ -46,13 +46,17 @@ export async function requestConnection(_:ConnectionRequestState,form:FormData):
 export async function acceptConnection(form:FormData){
   const session=await requireUser(),connection=id(form.get("connection_id"));if(!connection)return;
   const rows=await sql`UPDATE pilot_connections SET status='accepted',accepted_at=NOW(),updated_at=NOW() WHERE id=${connection} AND recipient_user_id=${session.userId} AND status='pending' RETURNING requester_user_id` as Array<{requester_user_id:number|string}>;
-  if(rows[0])await notifyUser(Number(rows[0].requester_user_id),{kind:"connection_accepted",title:"Connection accepted",body:"Your connection request was accepted.",href:"/connections",dedupeKey:`connection-accepted:${connection}`});
+  if(rows[0]){
+    await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${session.userId} AND dedupe_key=${`connection:${connection}`}`;
+    await notifyUser(Number(rows[0].requester_user_id),{kind:"connection_accepted",title:"Connection accepted",body:"Your connection request was accepted.",href:"/connections",dedupeKey:`connection-accepted:${connection}`});
+  }
   revalidatePath("/connections");
 }
 
 export async function declineConnection(form:FormData){
   const session=await requireUser(),connection=id(form.get("connection_id"));if(!connection)return;
-  await sql`UPDATE pilot_connections SET status='declined',updated_at=NOW() WHERE id=${connection} AND recipient_user_id=${session.userId} AND status='pending'`;
+  const rows=await sql`UPDATE pilot_connections SET status='declined',updated_at=NOW() WHERE id=${connection} AND recipient_user_id=${session.userId} AND status='pending' RETURNING id` as Array<{id:number|string}>;
+  if(rows[0])await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE user_id=${session.userId} AND dedupe_key=${`connection:${connection}`}`;
   revalidatePath("/connections");
 }
 
