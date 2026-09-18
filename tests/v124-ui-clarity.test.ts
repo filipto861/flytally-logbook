@@ -7,13 +7,16 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx")+read("app/(protected)/credentials/adaptive-overview.tsx");
 
-test("Print and data exposes one accessible task panel at a time",()=>{
+test("Print and data exposes one durable task workspace at a time",()=>{
   const source=read("components/data-hub.tsx");
-  assert.match(source,/role="tablist"/);
-  assert.match(source,/role="tabpanel"/);
-  assert.match(source,/aria-controls="data-panel-export"/);
-  assert.match(source,/className="export-hub-workspace"/);
-  assert.match(source,/Deleted flights/);
+  const navigation=read("components/data-workspace-navigation.tsx");
+  assert.match(navigation,/aria-label="Print and data sections"/);
+  assert.match(navigation,/aria-current=\{active===item\.id\?"page":undefined\}/);
+  assert.match(navigation,/Print & export/);
+  assert.match(navigation,/Backup & restore/);
+  assert.match(navigation,/Deleted flights/);
+  assert.match(source,/view==="recovery"/);
+  assert.match(source,/view==="deleted"/);
 });
 
 test("Aircraft cards separate status from reversible management actions",()=>{

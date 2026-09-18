@@ -21,7 +21,9 @@ test("v2.0-E2 Print and data export share the regulatory category scope",()=>{
   assert.equal((hub.match(/name="category"/g)||[]).length,2);
   assert.match(hub,/action="\/print"/);
   assert.match(hub,/action="\/api\/export"/);
-  assert.match(hub,/legacy records use the same conservative resolver as Flights and Statistics/);
+  const route=read("app/api/export/route.ts");
+  assert.match(route,/aircraft_class.*TMG.*AEROPLANE/s);
+  assert.match(route,/aircraft_class.*ULL.*evidence.*ULL.*ULL/s);
   assert.match(hub,/FSTD is included only when no regulatory-category filter is active/);
   assert.match(hub,/not authority-issued forms/);
 });
