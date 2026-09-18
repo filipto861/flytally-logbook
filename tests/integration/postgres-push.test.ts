@@ -43,5 +43,5 @@ test("push subscriptions cascade with auth session deletion",{skip:!enabled},()=
 
 test("push preferences are account-owned with safe defaults",{skip:!enabled},()=>{
   run("INSERT INTO push_preferences(user_id) VALUES(1)");
-  assert.equal(run("SELECT enabled||'|'||compliance||'|'||activity||'|'||security FROM push_preferences WHERE user_id=1"),"t|t|t|t");
+  assert.equal(run("SELECT enabled||'|'||compliance||'|'||activity||'|'||security FROM push_preferences WHERE user_id=1"),"true|true|true|true");
 });

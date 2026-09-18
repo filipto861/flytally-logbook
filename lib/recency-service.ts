@@ -1,4 +1,5 @@
 import "server-only";
+import { reminderStage,reminderTitle } from "@/lib/notification-reminders";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { ensureV1353Schema } from "@/lib/v1353-schema";
@@ -83,17 +84,6 @@ export async function getRecencyStateForUser(userId:number,preferencesOverride?:
 
 export function recencySnapshotFromState(state:RecencyState):RecencySnapshot{const dates=[...state.evaluations.map(item=>item.forecastDate||item.deadline),...state.deadlineItems.map(item=>item.state.until)].filter((value):value is string=>typeof value==="string"&&value>=state.today).sort(),status:RecencySnapshot["status"]=state.reviewCount?"attention":state.dueSoonCount?"warning":"ok",label=state.reviewCount?`${state.reviewCount} item${state.reviewCount===1?"":"s"} need review`:state.dueSoonCount?`${state.dueSoonCount} item${state.dueSoonCount===1?"":"s"} due soon`:"Recency OK";return{generatedAt:new Date().toISOString(),status,reviewCount:state.reviewCount,dueSoonCount:state.dueSoonCount,nextDate:dates[0],label}}
 export async function refreshRecencySnapshot(userId:number){const state=await getRecencyStateForUser(userId),snapshot=recencySnapshotFromState(state),preferences={...state.preferences,recency_snapshot:snapshot};await sql`UPDATE user_settings SET preferences_json=${JSON.stringify(preferences)},updated_at=NOW() WHERE user_id=${userId}`;return snapshot}
-function reminderStage(days:number,maxDays:number){
-  if(days<0)return"expired";
-  const thresholds=[...new Set([maxDays,7,1,0].filter(value=>value>=0&&value<=maxDays))].sort((a,b)=>a-b);
-  return String(thresholds.find(value=>days<=value)??maxDays);
-}
-function reminderTitle(label:string,days:number){
-  if(days<0)return`${label} expired`;
-  if(days===0)return`${label} due today`;
-  if(days===1)return`${label} due tomorrow`;
-  return`${label} due in ${days} days`;
-}
 export function recencyAlertsFromState(state:RecencyState){
   if(!state.notificationDays)return[] as Array<{title:string;body:string;dedupeKey:string}>;
   const alerts:Array<{title:string;body:string;dedupeKey:string}>=[];

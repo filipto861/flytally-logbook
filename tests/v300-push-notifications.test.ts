@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { recencyAlertsFromState } from "../lib/recency-service.ts";
+import { reminderStage,reminderTitle } from "../lib/notification-reminders.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -73,18 +73,19 @@ test("existing browser subscriptions are rebound to the current signed-in sessio
 });
 
 test("recency push reminders step through notification thresholds instead of repeating daily",()=>{
-  const base:any={notificationDays:30,today:"2026-09-18",evaluations:[{id:"sep",title:"SEP passenger currency",summary:"Current",status:"current",forecastDate:"2026-10-18"}],monitorDeadlines:false,deadlineItems:[]};
-  const at30=recencyAlertsFromState(base);
-  const at7=recencyAlertsFromState({...base,today:"2026-10-11"});
-  const at1=recencyAlertsFromState({...base,today:"2026-10-17"});
-  const today=recencyAlertsFromState({...base,today:"2026-10-18"});
-  assert.match(at30[0].dedupeKey,/:30:/);
-  assert.match(at7[0].dedupeKey,/:7:/);
-  assert.match(at1[0].dedupeKey,/:1:/);
-  assert.match(today[0].dedupeKey,/:0:/);
-  assert.equal(new Set([at30[0].dedupeKey,at7[0].dedupeKey,at1[0].dedupeKey,today[0].dedupeKey]).size,4);
+  assert.equal(reminderStage(30,30),"30");
+  assert.equal(reminderStage(20,30),"30");
+  assert.equal(reminderStage(7,30),"7");
+  assert.equal(reminderStage(2,30),"7");
+  assert.equal(reminderStage(1,30),"1");
+  assert.equal(reminderStage(0,30),"0");
+  assert.equal(reminderStage(-1,30),"expired");
+  assert.equal(reminderStage(14,14),"14");
+  assert.equal(reminderTitle("Medical",1),"Medical due tomorrow");
+  const source=read("lib/recency-service.ts");
+  assert.match(source,/reminderStage\(forecastDays,state\.notificationDays\)/);
+  assert.match(source,/forecast:\$\{stage\}:/);
 });
-
 test("first push registration defaults compliance reminder window to 30 days without overwriting an existing choice",()=>{
   const route=read("app/api/push/subscription/route.ts");
   assert.match(route,/parseRecencyNotificationDays\(preferences\.recency_notification_days\)>0/);
