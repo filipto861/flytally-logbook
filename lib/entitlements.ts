@@ -23,6 +23,17 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 const BASE_ACCESS: readonly FlyTallyEntitlementKey[] = ["logbook.access", "training.access"];
 
+export function entitlementPolicyForStage(
+  stage: FlyTallyLaunchStage,
+  role: "admin" | "user",
+): readonly FlyTallyEntitlementGrant[] {
+  const source: FlyTallyEntitlementSource | null =
+    role === "admin" ? "admin" : stage === "commercial" ? null : "private-beta";
+  return source
+    ? BASE_ACCESS.map((key) => ({ key, source, validUntil: null } satisfies FlyTallyEntitlementGrant))
+    : [];
+}
+
 export function resolveAccountEntitlementSnapshot(
   subject: string,
   role: "admin" | "user",
@@ -32,12 +43,7 @@ export function resolveAccountEntitlementSnapshot(
   if (!subject || subject.length > 128) throw new Error("Invalid FlyTally account subject.");
 
   const stage = getCommercialReadiness(env).effectiveStage;
-  const source: FlyTallyEntitlementSource | null =
-    role === "admin" ? "admin" : stage === "commercial" ? null : "private-beta";
-
-  const grants = source
-    ? BASE_ACCESS.map((key) => ({ key, source, validUntil: null } satisfies FlyTallyEntitlementGrant))
-    : [];
+  const grants = entitlementPolicyForStage(stage, role);
 
   return {
     version: FLYTALLY_ENTITLEMENT_VERSION,
