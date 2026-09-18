@@ -15,10 +15,10 @@ before(()=>{
   assert.ok(databaseUrl);
   const setup=raw(`CREATE SCHEMA ${quoted};SET search_path TO ${quoted};
     CREATE TABLE users(id BIGINT PRIMARY KEY);
-    CREATE TABLE auth_sessions(id TEXT PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id),expires_at TIMESTAMPTZ NOT NULL,revoked_at TIMESTAMPTZ);
+    CREATE TABLE auth_sessions(id UUID PRIMARY KEY,user_id BIGINT NOT NULL REFERENCES users(id),expires_at TIMESTAMPTZ NOT NULL,revoked_at TIMESTAMPTZ);
     CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
     INSERT INTO users(id) VALUES(1),(2);
-    INSERT INTO auth_sessions(id,user_id,expires_at) VALUES('s1',1,NOW()+INTERVAL '7 days'),('s2',2,NOW()+INTERVAL '7 days');`);
+    INSERT INTO auth_sessions(id,user_id,expires_at) VALUES('11111111-1111-4111-8111-111111111111',1,NOW()+INTERVAL '7 days'),('22222222-2222-4222-8222-222222222222',2,NOW()+INTERVAL '7 days');`);
   if(setup.status!==0)throw new Error(setup.stderr||setup.stdout);
   const source=fs.readFileSync(path.join(root,"lib/push-schema.ts"),"utf8");
   const blocks=[...source.matchAll(/sql\`([\s\S]*?)\`/g)].map(match=>match[1]).filter(value=>value.startsWith("CREATE TABLE IF NOT EXISTS push_preferences")||value.startsWith("CREATE TABLE IF NOT EXISTS push_subscriptions")||value.startsWith("CREATE INDEX IF NOT EXISTS idx_push_subscriptions_"));
@@ -28,16 +28,16 @@ before(()=>{
 after(()=>{if(enabled)raw(`DROP SCHEMA IF EXISTS ${quoted} CASCADE`)});
 
 test("push endpoints are unique and can move to a new authenticated session",{skip:!enabled},()=>{
-  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(1,'s1','https://fcm.googleapis.com/fcm/send/device')");
-  const duplicate=raw(`SET search_path TO ${quoted};INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(2,'s2','https://fcm.googleapis.com/fcm/send/device')`);
+  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(1,'11111111-1111-4111-8111-111111111111','https://fcm.googleapis.com/fcm/send/device')");
+  const duplicate=raw(`SET search_path TO ${quoted};INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(2,'22222222-2222-4222-8222-222222222222','https://fcm.googleapis.com/fcm/send/device')`);
   assert.notEqual(duplicate.status,0);
-  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(2,'s2','https://fcm.googleapis.com/fcm/send/device') ON CONFLICT(endpoint) DO UPDATE SET user_id=EXCLUDED.user_id,session_id=EXCLUDED.session_id");
-  assert.equal(run("SELECT user_id||'|'||session_id FROM push_subscriptions WHERE endpoint='https://fcm.googleapis.com/fcm/send/device'"),"2|s2");
+  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(2,'22222222-2222-4222-8222-222222222222','https://fcm.googleapis.com/fcm/send/device') ON CONFLICT(endpoint) DO UPDATE SET user_id=EXCLUDED.user_id,session_id=EXCLUDED.session_id");
+  assert.equal(run("SELECT user_id||'|'||session_id FROM push_subscriptions WHERE endpoint='https://fcm.googleapis.com/fcm/send/device'"),"2|22222222-2222-4222-8222-222222222222");
 });
 
 test("push subscriptions cascade with auth session deletion",{skip:!enabled},()=>{
-  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(1,'s1','https://updates.push.services.mozilla.com/wpush/v2/device')");
-  run("DELETE FROM auth_sessions WHERE id='s1'");
+  run("INSERT INTO push_subscriptions(user_id,session_id,endpoint) VALUES(1,'11111111-1111-4111-8111-111111111111','https://updates.push.services.mozilla.com/wpush/v2/device')");
+  run("DELETE FROM auth_sessions WHERE id='11111111-1111-4111-8111-111111111111'");
   assert.equal(run("SELECT COUNT(*) FROM push_subscriptions WHERE user_id=1"),"0");
 });
 
