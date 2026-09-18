@@ -9,7 +9,7 @@ import {
   TRAINING_PRIVACY_ERASURE_VERSION,
   type TrainingIdentityClaims,
   type TrainingPrivacyErasureClaims,
-} from "../lib/auth/training-identity.ts";
+} from "../lib/auth/training-identity-contract.ts";
 
 const secret = "0123456789abcdef0123456789abcdef";
 process.env.FLYTALLY_IDENTITY_SECRET = secret;
