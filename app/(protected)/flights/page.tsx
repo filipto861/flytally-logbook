@@ -33,6 +33,8 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
   return <>
     <header className="page-header"><div><p className="eyebrow">LOGBOOK</p><h1>Flights</h1><p className="muted">Find a flight, see whether it is editable or certified, and check shared-flight status without opening every record.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
 
+    <nav className="flight-task-nav" aria-label="Flight tools"><Link aria-current="page" href="/flights">All flights</Link><Link href="/flights/needs-attention">Needs attention</Link><Link href="/fstd">FSTD sessions</Link></nav>
+
     <section className="flight-finder" aria-label="Find a flight">
       <form method="get" className="flight-search-form">
         <HiddenParams params={params} exclude={["q","page"]}/>
