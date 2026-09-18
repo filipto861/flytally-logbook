@@ -1,36 +1,15 @@
 import L from "leaflet";
 
 const CARTO_HOST="basemaps.cartocdn.com";
-const OSM_TILES="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const FLYTALLY_MAP_TILES="/api/map-tile/{z}/{x}/{y}?style=map";
 const DARK_TILE_FILTER="invert(.78) hue-rotate(180deg) saturate(.12) brightness(.92) contrast(1.08)";
-const OSM_ATTRIBUTION='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const MAP_ATTRIBUTION='Map &copy; <a href="https://www.esri.com/">Esri</a> · data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Microsoft, Esri Community Maps';
 
-function resolvedTheme(){
-  const root=document.documentElement.dataset.theme;
-  if(root==="light"||root==="dark")return root;
-  const shell=document.querySelector<HTMLElement>(".app-grid[data-appearance]")?.dataset.appearance;
-  if(shell==="light"||shell==="dark")return shell;
-  return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
-}
-function applyTileTheme(map:L.Map){
-  const tilePane=map.getPane("tilePane");
-  if(tilePane)tilePane.style.filter=resolvedTheme()==="light"?"none":DARK_TILE_FILTER;
-}
-export function addFlyTallyBasemap(map:L.Map){
-  const layer=L.tileLayer(OSM_TILES,{maxZoom:19,attribution:OSM_ATTRIBUTION}).addTo(map);
-  applyTileTheme(map);
-  return layer;
-}
-function replaceLegacyCartoBasemap(map:L.Map){
-  let replace=false;
-  map.eachLayer(layer=>{
-    if(!(layer instanceof L.TileLayer))return;
-    const url=String((layer as L.TileLayer&{_url?:string})._url??"");
-    if(url.includes(CARTO_HOST)){map.removeLayer(layer);replace=true}
-  });
-  if(replace)L.tileLayer(OSM_TILES,{maxZoom:19,attribution:OSM_ATTRIBUTION}).addTo(map);
-  applyTileTheme(map);
-}
+function resolvedTheme(){const root=document.documentElement.dataset.theme;if(root==="light"||root==="dark")return root;const shell=document.querySelector<HTMLElement>(".app-grid[data-appearance]")?.dataset.appearance;if(shell==="light"||shell==="dark")return shell;return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}
+function applyTileTheme(map:L.Map){const tilePane=map.getPane("tilePane");if(tilePane)tilePane.style.filter=resolvedTheme()==="light"?"none":DARK_TILE_FILTER;}
+function flyTallyBasemap(){return L.tileLayer(FLYTALLY_MAP_TILES,{maxZoom:18,attribution:MAP_ATTRIBUTION});}
+export function addFlyTallyBasemap(map:L.Map){const layer=flyTallyBasemap().addTo(map);applyTileTheme(map);return layer;}
+function replaceLegacyCartoBasemap(map:L.Map){let replace=false;map.eachLayer(layer=>{if(!(layer instanceof L.TileLayer))return;const url=String((layer as L.TileLayer&{_url?:string})._url??"");if(url.includes(CARTO_HOST)){map.removeLayer(layer);replace=true}});if(replace)flyTallyBasemap().addTo(map);applyTileTheme(map);}
 
 export function installResponsiveMap(map:L.Map,target:HTMLElement){
   replaceLegacyCartoBasemap(map);
