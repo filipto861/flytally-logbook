@@ -17,7 +17,8 @@ test("manual entry has progress, a live pre-save summary and explicit save actio
   assert.match(source,/Manual flight entry progress/);
   assert.match(source,/Review before save/);
   assert.match(source,/BLOCK \/ AIR/);
-  assert.match(source,/Save flight/);
+  assert.match(source,/Save & review/);
+  assert.match(source,/Save changes/);
   assert.match(source,/Aircraft, logbook.*billing defaults came from/);
 });
 
