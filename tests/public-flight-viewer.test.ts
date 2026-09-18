@@ -22,13 +22,15 @@ test("public GPS payload removes hidden logbook metadata before client serializa
   assert.match(sharing,/evidence:""/);
   assert.match(sharing,/Boolean\(r\.show_track\)\?await getFlightTracks/);
   assert.match(sharing,/remaining=1800/);
+  assert.match(sharing,/Date\.UTC\(2000,0,1\)/);
+  assert.match(sharing,/parsed-Number\(first\)/);
 });
 
 test("shared replay mode does not expose exact GPS point timestamps",()=>{
   const player=read("components/flight-track-player.tsx");
   assert.match(player,/publicView=false/);
   assert.match(player,/publicView\?"FLIGHT REPLAY":"GPS PLAYER"/);
-  assert.match(player,/publicView\?\`\$\{Math\.round/);
+  assert.match(player,/of route/);
 });
 
 test("public viewer ships responsive standalone presentation while final accessibility CSS remains last",()=>{
