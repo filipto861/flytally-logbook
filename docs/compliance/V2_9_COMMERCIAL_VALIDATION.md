@@ -113,13 +113,37 @@ The technical entitlement foundation is complete. The following remain intention
 - webhook/provider adapter implementation;
 - exact mapping from purchased products to entitlement grants.
 
-## C4–C6 planned sequence
+## C4 — Signatures & regulatory validation
 
-- **C4 — Signatures & regulator validation:** determine whether current attestations are sufficient and whether advanced/QES or authority-specific workflows are actually required.
+C4 establishes an explicit assurance taxonomy instead of treating every cryptographic artifact as a "signature".
+
+Current evidence classes are:
+
+- **FlyTally account attestation** — the signer acted through an authenticated FlyTally account; the action is bound to the exact record/revision by server integrity evidence.
+- **In-person handwritten capture** — a drawing plus manually entered signer/credential details is captured on the pilot's device and bound to the exact record/revision.
+- **FlyTally server integrity binding** — HMAC-SHA-256 detects modification of the exact verification payload; it is a platform-integrity mechanism, not a signer credential.
+
+None of those mechanisms is represented as an eIDAS advanced electronic signature or qualified electronic signature (QES).
+
+The public `/legal/regulatory` surface exposes the same distinction and the current authority-validation status. The authority verification report now labels HMAC as **evidence integrity**, not as a verified/QES signature.
+
+C4 uses strategy version `2026-09-18-c4-v1`. The commercial release requires:
+
+1. the exact regulatory strategy version;
+2. an explicit reviewed QES/signature decision;
+3. an explicit aviation-authority validation decision;
+4. external evidence with matching scope committed into the release record.
+
+The fourth condition is deliberately impossible today because `REGULATORY_EXTERNAL_EVIDENCE_VERSION` remains null. Environment variables alone cannot clear C4.
+
+The source snapshot and engineering interpretation are recorded in `docs/compliance/C4_REGULATORY_SOURCE_SNAPSHOT.md`. ÚCL acceptance and LAA ČR scope remain external validation items; no EASA, ÚCL or LAA approval is claimed.
+
+## C5–C6 planned sequence
+
 - **C5 — Brand & claims:** trademark decision, marketing claim registry and explicit authority-approval wording.
 - **C6 — Commercial release audit:** technical regression, external evidence checklist and one deliberate transition from external-validation to commercial.
 
-## Non-goals of C1/C2/C3
+## Non-goals of C1/C2/C3/C4
 
 - choosing a payment provider;
 - inventing prices or subscription tiers;
