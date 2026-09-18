@@ -2,9 +2,9 @@ import { createHmac, randomUUID } from "node:crypto";
 
 import {
   FLYTALLY_ENTITLEMENT_VERSION,
-  resolveAccountEntitlementSnapshot,
   type FlyTallyEntitlementGrant,
 } from "../entitlements.ts";
+import { resolveAccountEntitlementSnapshot } from "../entitlement-ledger.ts";
 
 export type TrainingIdentityRole = "admin" | "user";
 
@@ -50,13 +50,15 @@ function encode(version:string,payload:object):string {
   return `${input}.${sign(input)}`;
 }
 
-export function createTrainingIdentityAssertion(
+export async function createTrainingIdentityAssertion(
   subject: string,
   role: TrainingIdentityRole,
   nowSeconds = Math.floor(Date.now() / 1000),
-): string {
+): Promise<string> {
   if (!subject || subject.length > 128) throw new Error("Invalid FlyTally account subject.");
-  const snapshot=resolveAccountEntitlementSnapshot(subject,role,process.env,nowSeconds);
+  const userId=Number(subject);
+  if(!Number.isSafeInteger(userId)||userId<1)throw new Error("Invalid FlyTally account subject.");
+  const snapshot=await resolveAccountEntitlementSnapshot(userId,role,process.env,nowSeconds);
   const claims: TrainingIdentityClaims = {
     iss: "flytally-logbook",
     aud: "flytally-training",
