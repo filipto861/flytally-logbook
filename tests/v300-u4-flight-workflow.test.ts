@@ -69,7 +69,9 @@ test("v3.0 U4 ships responsive light-theme workflow UI and advances roadmap to U
   assert.match(css,/html\[data-theme="light"\] \.flight-workflow/);
   assert.match(css,/@media\(max-width:520px\)/);
   assert.match(roadmap,/U4 ✅ flight save → review → certify → share clarity/);
-  assert.match(roadmap,/U5 next: Training learner polish/);
+  assert.match(roadmap,/U5 ✅ Training learner polish/);
+  assert.match(roadmap,/U6 ✅ mobile, accessibility and final UX acceptance/);
   assert.match(audit,/U4 ✅ Flight workflow clarity/);
-  assert.match(audit,/U5 — Training learner polish — next/);
+  assert.match(audit,/U5 ✅ Training learner polish/);
+  assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
 });

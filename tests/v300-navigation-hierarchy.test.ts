@@ -45,7 +45,7 @@ test("v3.0 U1 rolls flight attention into the Flights destination",()=>{
 test("v3.0 roadmap prioritizes UX consolidation before multi-aircraft scale",()=>{
   const roadmap=read("ROADMAP.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
-  assert.match(roadmap,/v3\.0 — UX & Product Consolidation — current/);
+  assert.match(roadmap,/v3\.0 — UX & Product Consolidation ✅/);
   assert.match(roadmap,/v3\.1 — Multi-aircraft Product Scale/);
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
@@ -55,5 +55,6 @@ test("v3.0 roadmap prioritizes UX consolidation before multi-aircraft scale",()=
   assert.match(audit,/U3\.2 ✅ Print & data/);
   assert.match(audit,/U3\.3 ✅ Settings/);
   assert.match(audit,/U4 ✅ Flight workflow clarity/);
-  assert.match(audit,/U5 — Training learner polish — next/);
+  assert.match(audit,/U5 ✅ Training learner polish/);
+  assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
 });
