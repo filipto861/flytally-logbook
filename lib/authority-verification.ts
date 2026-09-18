@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { verifyVerificationSignature } from "./verification-signature.ts";
+import { signatureAssuranceForSource } from "./regulatory-validation.ts";
 
 const text=(value:unknown)=>String(value??"").trim();
 
@@ -43,4 +44,9 @@ export function credentialLines(value:unknown){
   const qualificationLines=qualifications.map(item=>{const row=storedObject(item);return[text(row.qualification_type),text(row.certificate_reference)].filter(Boolean).join(" · ")}).filter(Boolean);
   const manual=[text(credentials.licenceNumber),text(credentials.qualification),text(credentials.qualificationReference)].filter(Boolean).join(" · ");
   return{licences:licenceLines,qualifications:qualificationLines,manual};
+}
+
+
+export function verificationAssurance(row:Record<string,unknown>){
+  return signatureAssuranceForSource(verificationSource(row),row.signer_user_id);
 }

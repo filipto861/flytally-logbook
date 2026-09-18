@@ -1,5 +1,6 @@
 import { commercialBillingRuntime } from "./billing-readiness.ts";
 import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
+import { getRegulatoryReadiness } from "./regulatory-validation.ts";
 
 export type FlyTallyLaunchStage = "private-beta" | "external-validation" | "commercial";
 export type ExternalValidationStatus = "PENDING" | "APPROVED" | "NOT_REQUIRED";
@@ -77,6 +78,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   const requested = readRequestedStage(env.FLYTALLY_LAUNCH_STAGE);
   const operatorIdentityComplete = hasOperatorIdentity(env);
   const commercialLegal = getCommercialLegalPublicationState(env);
+  const regulatory = getRegulatoryReadiness(env);
 
   const gates: CommercialReadinessGate[] = [
     {
@@ -114,6 +116,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
 
   if (!commercialLegal.publicationReady) blockers.push("commercial-legal-publication");
   if (!commercialBillingRuntime.commercialReady) blockers.push("commercial-billing-runtime");
+  if (!regulatory.commercialReady) blockers.push("signature-regulatory-evidence");
   if (!requested.valid) blockers.unshift("launch-stage-configuration");
 
   const commercialEnabled = requested.valid
