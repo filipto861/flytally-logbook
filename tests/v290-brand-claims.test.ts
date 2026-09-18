@@ -22,6 +22,9 @@ test("C5 never claims a registered FlyTally trademark without evidence",()=>{
 test("C5 rejects high-risk positive public claims",()=>{
   for(const value of [
     "FlyTally is EASA approved.",
+    "FlyTally is approved by EASA.",
+    "EASA-certified FlyTally.",
+    "Official EASA logbook.",
     "FlyTally is a qualified electronic signature platform.",
     "FlyTally is a registered trademark.",
     "FlyTally® digital logbook",
