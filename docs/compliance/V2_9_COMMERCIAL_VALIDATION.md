@@ -138,12 +138,32 @@ The fourth condition is deliberately impossible today because `REGULATORY_EXTERN
 
 The source snapshot and engineering interpretation are recorded in `docs/compliance/C4_REGULATORY_SOURCE_SNAPSHOT.md`. ÚCL acceptance and LAA ČR scope remain external validation items; no EASA, ÚCL or LAA approval is claimed.
 
-## C5–C6 planned sequence
+## C5 — Brand & public claims
 
-- **C5 — Brand & claims:** trademark decision, marketing claim registry and explicit authority-approval wording.
+C5 establishes a canonical registry for public FlyTally product, regulatory, manufacturer and trademark claims.
+
+The policy explicitly allows neutral scoped wording such as **Digital pilot logbook**, **Source-backed aircraft training** and **FCL.050-style logbook records**. Those phrases describe product functionality or engineering alignment only.
+
+Positive claims that FlyTally is EASA/ÚCL/LAA approved, certified, endorsed or official; manufacturer/operator approved; an advanced/QES product; fully or guaranteed regulator-compliant; or a registered trademark require exact external evidence before publication.
+
+FlyTally is currently used as the product/service brand, but no registered-trademark status is claimed and the `®` symbol is not permitted by the current policy.
+
+C5 uses policy version `2026-09-18-c5-v1`. Commercial release requires:
+
+1. the exact brand/claims policy version;
+2. an explicit trademark/brand-protection decision;
+3. an explicit marketing/regulatory-claims review decision;
+4. matching external evidence committed into the release record.
+
+The fourth condition intentionally remains incomplete because `BRAND_CLAIMS_EXTERNAL_EVIDENCE_VERSION` is null. Environment variables alone therefore cannot clear C5.
+
+The detailed policy and required external work are recorded in `docs/compliance/C5_BRAND_CLAIMS_POLICY.md`.
+
+## C6 planned sequence
+
 - **C6 — Commercial release audit:** technical regression, external evidence checklist and one deliberate transition from external-validation to commercial.
 
-## Non-goals of C1/C2/C3/C4
+## Non-goals of C1/C2/C3/C4/C5
 
 - choosing a payment provider;
 - inventing prices or subscription tiers;

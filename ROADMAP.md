@@ -16,7 +16,7 @@ Completed technical foundation across Logbook and Training: GDPR/privacy self-se
 - C2 ✅ technical commercial legal/consumer publication structure with exact-version review/publish gating; externally reviewed content remains pending.
 - C3 ✅ technical billing/entitlement foundation: provider-neutral durable grants, signed Logbook → Training entitlement snapshot and user-visible access state; payment provider, plans and prices remain an external/business decision.
 - C4 ✅ technical signature/QES and regulatory-validation foundation: explicit assurance taxonomy, public authority-status surface and fail-closed external-evidence gate; ÚCL/LAA decisions remain external.
-- C5 trademark/brand and marketing/regulatory claims review.
+- C5 ✅ technical brand/claims foundation: canonical claim registry, trademark-status boundary, public claims surface and fail-closed external-evidence gate; trademark clearance and claims review remain external.
 - C6 final commercial release audit and deliberate launch-stage transition.
 
 No environment flag, payment integration or marketing copy may be treated as evidence of lawyer, regulator, rights-holder or trademark approval.
