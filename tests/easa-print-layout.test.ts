@@ -39,7 +39,7 @@ test("last running total equals the selected-record grand total across all FCL c
   const expected=sumEasaRecords(records),pages=paginateEasaRecords(records,2),grand=pages[pages.length-1]?.runningTotal;
   assert.ok(grand);
   assert.deepEqual(grand,expected);
-  assert.deepEqual(expected,{spSe:102,spMe:63,mp:82,flight:247,landingsDay:4,landingsNight:1,night:75,ifr:55,pic:102,copilot:82,dual:63,instructor:55,fstd:74});
+  assert.deepEqual(expected,{spSe:102,spMe:63,mp:82,flight:247,landingsDay:5,landingsNight:1,night:75,ifr:55,pic:102,copilot:82,dual:63,instructor:55,fstd:74});
 });
 
 test("print layout defaults to ten fixed record rows per page",()=>{

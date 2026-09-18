@@ -23,7 +23,7 @@ test("legacy licence mirror remains fallback-only",()=>{
 
 test("print output keeps holder identity and page carry-forward fields",()=>{
   assert.match(printPage,/Holder&apos;s name\(s\)/);
-  assert.match(printPage,/Holder&apos;s licence number/);
+  assert.match(printPage,/identity\.licenceLabel/);
   assert.match(printPage,/TOTAL THIS PAGE/);
   assert.match(printPage,/TOTAL FROM PREVIOUS PAGES/);
   assert.match(printPage,/TOTAL TIME/);
