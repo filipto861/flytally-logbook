@@ -9,6 +9,7 @@ import { sql } from "@/lib/db";
 import { licenceProfileMap,parsePilotPreferences,type PilotPreferences } from "@/lib/logbook-print";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
 import { eraseAccountForPrivacy,revokeAccountPublicShares } from "@/lib/privacy-account";
+import { eraseTrainingDataForAccount } from "@/lib/training-privacy";
 
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim();
 async function currentSettings(userId:number){const rows=await sql`SELECT timezone,currency,home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId}` as Array<Record<string,unknown>>;const row=rows[0]??{};return{row,preferences:parsePilotPreferences(row.preferences_json)}}
@@ -110,4 +111,4 @@ export async function revokeDevice(f:FormData){const session=await requireUser()
 export async function logoutOtherDevices(){const session=await requireUser();await revokeOtherSessions(session.userId,session.sessionId);await recordAuthEvent(session.userId,"other_sessions_revoked");revalidatePath("/profile");}
 export async function disconnectGoogle(){const session=await requireUser();const credentials=await sql`SELECT 1 FROM user_credentials WHERE user_id=${session.userId} LIMIT 1`;if(!credentials[0])return;await sql`DELETE FROM auth_identities WHERE user_id=${session.userId} AND provider='google'`;await recordAuthEvent(session.userId,"google_disconnected");revalidatePath("/profile");}
 export async function revokeAllPublicShares(){const session=await requireUser();await revokeAccountPublicShares(session.userId);revalidatePath("/profile");}
-export async function deleteAccount(f:FormData){const session=await requireUser();if(s(f,"confirm")!=="DELETE MY ACCOUNT")return;await eraseAccountForPrivacy(session.userId);redirect("/login")}
+export async function deleteAccount(f:FormData){const session=await requireUser();if(s(f,"confirm")!=="DELETE MY ACCOUNT")return;try{await eraseTrainingDataForAccount(String(session.userId))}catch{redirect("/profile?privacyError=training-erasure#privacy")}await eraseAccountForPrivacy(session.userId);redirect("/login")}
