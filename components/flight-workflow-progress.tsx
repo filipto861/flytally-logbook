@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export type FlightWorkflowState={
   certified:boolean;
   correctionDraft:boolean;
@@ -22,9 +20,9 @@ export function FlightWorkflowProgress({state,activeTab,onSelectTab}:{state:Flig
   const description=state.certified?"The protected record is ready for sharing. Corrections create a new revision and preserve this one.":state.correctionDraft?"Review the corrected Logbook data before certifying this new revision.":state.locked?"Unlock the record from Overview before editing or certification.":state.blockers?"Resolve the blocking Logbook data below. Certification stays unavailable until those issues are fixed.":"Check the final Logbook data, then certify when the record is complete.";
   return <section className="flight-workflow" aria-label="Flight record workflow">
     <header><div><p className="eyebrow">RECORD WORKFLOW</p><h2>{heading}</h2><p className="muted">{description}</p></div>
-      <div className="flight-workflow-primary">
-        {state.certified?<Link className="primary-button" href={state.shareHref}>Share flight</Link>:state.locked?<button className="secondary-button" type="button" onClick={()=>onSelectTab("overview")}>Open record controls</button>:activeTab==="logbook"&&state.blockers?<span className="flight-workflow-hint">Fix the highlighted issues below</span>:activeTab==="logbook"?<button className="primary-button" type="button" onClick={()=>onSelectTab("overview")}>Continue to certification</button>:<button className="primary-button" type="button" onClick={()=>onSelectTab("logbook")}>{state.blockers?"Review issues":"Review Logbook data"}</button>}
-      </div>
+      {!state.certified?<div className="flight-workflow-primary">
+        {state.locked?<button className="secondary-button" type="button" onClick={()=>onSelectTab("overview")}>Open record controls</button>:activeTab==="logbook"&&state.blockers?<span className="flight-workflow-hint">Fix the highlighted issues below</span>:activeTab==="logbook"?<button className="primary-button" type="button" onClick={()=>onSelectTab("overview")}>Continue to certification</button>:<button className="primary-button" type="button" onClick={()=>onSelectTab("logbook")}>{state.blockers?"Review issues":"Review Logbook data"}</button>}
+      </div>:null}
     </header>
     <div className="flight-workflow-steps">
       {stage("Saved","done",state.correctionDraft?`Correction R${state.recordRevision} is editable`:"Flight record created")}
