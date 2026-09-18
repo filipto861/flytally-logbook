@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { formatDuration } from "@/lib/data/dashboard";
 import { aircraftCategoryCapabilities } from "@/lib/aircraft-category";
+import { FlightWorkspaceNav } from "@/components/flight-workspace-nav";
 import { getFlightFilterOptionsFast as getFlightFilterOptions,getFlightsPageFast as getFlightsPage,type FlightListRow } from "@/lib/data/flights-fast";
 
 export const metadata={title:"Flights | FlyTally"};
@@ -32,6 +33,8 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
   const advancedActive=activeFilters.filter(([key])=>key!=="q"&&key!=="category").length;
   return <>
     <header className="page-header"><div><p className="eyebrow">LOGBOOK</p><h1>Flights</h1><p className="muted">Find a flight, see whether it is editable or certified, and check shared-flight status without opening every record.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
+
+    <FlightWorkspaceNav active="flights"/>
 
     <section className="flight-finder" aria-label="Find a flight">
       <form method="get" className="flight-search-form">

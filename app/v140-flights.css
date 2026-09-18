@@ -1,4 +1,9 @@
 /* FlyTally v1.40 — Flights UX & logbook polish */
+.flight-task-nav{display:flex;gap:6px;overflow-x:auto;margin:-4px 0 16px;padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--panel);scrollbar-width:none}
+.flight-task-nav::-webkit-scrollbar{display:none}
+.flight-task-nav a{flex:0 0 auto;display:flex;align-items:center;min-height:38px;padding:7px 11px;border-radius:7px;color:var(--muted);font-size:.72rem;font-weight:800;text-decoration:none;white-space:nowrap}
+.flight-task-nav a:hover{background:var(--panel2);color:var(--text)}
+.flight-task-nav a.active{background:color-mix(in srgb,var(--accent) 13%,var(--panel2));color:var(--accent2)}
 .flights-table .flight-list-row{transition:background .14s ease}
 .flights-table .flight-list-row:hover{background:color-mix(in srgb,var(--panel2) 54%,transparent)}
 .flights-table .flight-list-row[data-record-state="draft"]{box-shadow:inset 3px 0 color-mix(in srgb,var(--muted) 45%,transparent)}

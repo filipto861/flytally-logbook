@@ -21,9 +21,23 @@ Completed technical foundation across Logbook and Training: GDPR/privacy self-se
 
 No environment flag, payment integration or marketing copy may be treated as evidence of lawyer, regulator, rights-holder or trademark approval.
 
-### v3.0 — Product scale — next
+### v3.0 — UX & Product Consolidation — current
 
-Return to product development, led by multi-aircraft scaling in FlyTally Training and broader platform capability once v2.9 external launch decisions are resolved.
+Before adding further capability, audit and simplify the workflows already in production across Logbook and Training.
+
+- U0 ✅ product UX audit and primary-task model.
+- U1 current: navigation and task hierarchy.
+- U2: Licences & recency progressive disclosure.
+- U3: Aircraft / Data / Settings management hierarchy.
+- U4: flight save → review → certify → share clarity.
+- U5: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
+- U6: mobile, accessibility and final UX acceptance.
+
+The detailed cross-product audit is in `docs/product/V3_0_UX_CONSOLIDATION.md`.
+
+### v3.1 — Multi-aircraft Product Scale — next after v3.0
+
+Prove repeatable no-code multi-aircraft onboarding only after the existing product hierarchy and everyday workflows are consolidated.
 
 ## Current release — v2.7.0 — Data Integrity & Recovery 2.0
 
