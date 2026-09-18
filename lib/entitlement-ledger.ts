@@ -31,7 +31,7 @@ export async function loadDurableEntitlements(
       AND revoked_at IS NULL
       AND valid_from<=to_timestamp(${nowSeconds})
       AND (valid_until IS NULL OR valid_until>to_timestamp(${nowSeconds}))
-    ORDER BY created_at,id
+    ORDER BY entitlement_key,valid_until DESC NULLS FIRST,created_at DESC,id DESC
   ` as LedgerRow[];
 
   const grants:FlyTallyEntitlementGrant[]=[];
