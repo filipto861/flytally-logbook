@@ -99,8 +99,12 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - move Notifications out of navigation into a live unread bell;
   - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox;
   - U1.3: use the notification bell as the only global activity signal, group bell + mobile menu together in the top-right chrome, and visually separate Administration from pilot records.
-- **U2 — Licences & recency — next**
-- **U3 — Aircraft / Data / Settings**
+- **U2 ✅ Licences & recency**
+  - Overview now answers only current status / required action;
+  - Recency shows flying recency only and keeps evidence/settings one level deeper;
+  - licence, document and aircraft-training editors live under a dedicated Records layer;
+  - professional experience is no longer mixed into the Licences overview.
+- **U3 — Aircraft / Data / Settings — next**
 - **U4 — Flight workflow clarity**
 - **U5 — Training learner polish**
 - **U6 — Mobile, accessibility and final UX acceptance**

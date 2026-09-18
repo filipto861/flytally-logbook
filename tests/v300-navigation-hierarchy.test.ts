@@ -49,5 +49,6 @@ test("v3.0 roadmap prioritizes UX consolidation before multi-aircraft scale",()=
   assert.match(roadmap,/v3\.1 — Multi-aircraft Product Scale/);
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
-  assert.match(audit,/U2 — Licences & recency — next/);
+  assert.match(audit,/U2 ✅ Licences & recency/);
+  assert.match(audit,/U3 — Aircraft \/ Data \/ Settings — next/);
 });

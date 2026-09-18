@@ -6,7 +6,7 @@ import { releaseAtLeast } from "./release-version.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
-const credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx");
+const credentialsSource=()=>read("app/(protected)/credentials/page.tsx")+read("app/(protected)/credentials/legacy-page.tsx")+read("components/credentials-navigation.tsx")+read("app/(protected)/credentials/records-hub.tsx");
 
 test("v1.46.0 makes Licences a compact sectioned workspace",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,46,0));

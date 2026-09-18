@@ -8,7 +8,8 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.60.1 keeps Licences section tabs as the single normal navigation layer",()=>{
   const overview=read("app/(protected)/credentials/adaptive-overview.tsx");
-  assert.match(overview,/className="credentials-tabs"/);
+  const nav=read("components/credentials-navigation.tsx");
+  assert.match(nav,/className="credentials-tabs credentials-primary-tabs"/);
   assert.doesNotMatch(overview,/adaptive-detail-links/);
   assert.doesNotMatch(overview,/adaptive-chevron/);
   assert.doesNotMatch(overview,/<Link className="adaptive-status-row"/);
@@ -19,8 +20,8 @@ test("v1.60.1 keeps Licences section tabs as the single normal navigation layer"
 
 test("v1.60.1 status rows remain compact read-only summaries",()=>{
   const overview=read("app/(protected)/credentials/adaptive-overview.tsx"),css=read("app/v160-adaptive-pilot-workspace.css");
-  assert.match(overview,/What matters now/);
-  assert.match(overview,/toneClass\(item\.tone\)/);
+  assert.match(overview,/WHAT MATTERS NOW/);
+  assert.match(overview,/statusClass\(item\.status\)/);
   assert.doesNotMatch(css,/adaptive-status-row:hover/);
   assert.doesNotMatch(css,/adaptive-detail-links/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
