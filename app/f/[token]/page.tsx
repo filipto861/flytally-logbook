@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import {getPublicFlight} from "@/lib/flight-sharing";
 import {FlightTrackPlayer} from "@/components/flight-track-player";
 import {LegalFooter} from "@/components/legal-footer";
+import {PublicThemeToggle} from "@/components/public-theme-toggle";
 
 export const metadata:Metadata={robots:{index:false,follow:false,nocache:true},title:"Shared flight · FlyTally"};
 const duration=(minutes:number)=>minutes?`${Math.floor(minutes/60)}:${String(minutes%60).padStart(2,"0")}`:"—";
@@ -17,7 +18,7 @@ export default async function PublicFlightPage({params}:{params:Promise<{token:s
   return <main className="public-flight-viewer-page">
     <header className="public-flight-viewer-header">
       <a className="public-flight-brand" href="/" aria-label="FlyTally home"><img src="/logbook_icon.png" alt=""/><span><b>FlyTally</b><small>Shared flight</small></span></a>
-      <span className="public-flight-viewonly">View only</span>
+      <div className="public-flight-viewer-actions"><PublicThemeToggle/><span className="public-flight-viewonly">View only</span></div>
     </header>
 
     <section className="public-flight-viewer-hero">

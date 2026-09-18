@@ -42,3 +42,16 @@ test("public viewer ships responsive standalone presentation while final accessi
   assert.match(css,/@media\(max-width:700px\)/);
   assert.match(css,/safe-area-inset-bottom/);
 });
+
+
+test("public viewer supports persistent Light and Dark modes without changing protected app preference",()=>{
+  const page=read("app/f/[token]/page.tsx"),toggle=read("components/public-theme-toggle.tsx"),bootstrap=read("components/theme-bootstrap.tsx"),css=read("app/v301-public-flight-viewer.css");
+  assert.match(page,/PublicThemeToggle/);
+  assert.match(toggle,/Light<\/button>/);
+  assert.match(toggle,/Dark<\/button>/);
+  assert.match(toggle,/flytally-public-theme/);
+  assert.match(toggle,/flytally:themechange/);
+  assert.match(bootstrap,/location\.pathname\.startsWith\("\/f\/"\)/);
+  assert.match(bootstrap,/flytally-public-theme/);
+  assert.match(css,/public-flight-theme-toggle/);
+});
