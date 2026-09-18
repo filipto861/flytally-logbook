@@ -26,6 +26,10 @@ export type CommercialReleaseAudit=Readonly<{
   blockers:readonly string[];
 }>;
 
+export function deriveCommercialReleaseVerdict(commercialEnabled:boolean,releaseGatesReady:boolean):CommercialReleaseAudit["verdict"]{
+  return commercialEnabled?"CLEARED":releaseGatesReady?"READY_FOR_TRANSITION":"BLOCKED";
+}
+
 export function getCommercialReleaseAudit(env:Env=process.env):CommercialReleaseAudit{
   const readiness=getCommercialReadiness(env);
   const legal=getCommercialLegalPublicationState(env);
@@ -90,7 +94,7 @@ export function getCommercialReleaseAudit(env:Env=process.env):CommercialRelease
 
   return{
     auditVersion:releaseControl.auditVersion,
-    verdict:readiness.commercialEnabled?"CLEARED":releaseGatesReady?"READY_FOR_TRANSITION":"BLOCKED",
+    verdict:deriveCommercialReleaseVerdict(readiness.commercialEnabled,releaseGatesReady),
     effectiveStage:readiness.effectiveStage,
     technicalFoundationComplete:true,
     releaseGatesReady,
