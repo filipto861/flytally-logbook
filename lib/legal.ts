@@ -30,8 +30,9 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
         "Where a provider processes data outside the EEA, FlyTally requires an applicable transfer mechanism or other lawful safeguard before production use.",
       ]},
       { heading: "Retention and your rights", paragraphs: [
-        "Core logbook records are retained while your account is active because continuity is a primary purpose of the service. Security/session records, revoked share metadata and support records use shorter retention periods documented in the internal retention schedule.",
-        `During private beta, requests for access, correction, portability, restriction or deletion can be sent to ${LEGAL_CONTACT_EMAIL}. Identity may be verified before a request is fulfilled. Some records may need to be retained where law or the integrity of an aviation record requires it.`,
+        "Core logbook records are retained while your account is active because continuity is a primary purpose of the service. Revoked public-share metadata is removed after 30 days; expired or revoked authentication sessions and password-reset records use a 30-day cleanup window, and authentication security events use a 90-day baseline unless an incident requires a justified hold.",
+        "Self-service account deletion removes authentication data, public-sharing metadata, stored backups, GPS tracks, expenses, live profile/settings, licences/documents and recency evidence. Historical flight/FSTD records and signed or approved integrity evidence may remain under a pseudonymised deleted-pilot identity so an existing aviation record or another pilot’s signed evidence is not silently destroyed.",
+        `Requests for access, correction, portability, restriction or a broader erasure review can be sent to ${LEGAL_CONTACT_EMAIL}. Identity may be verified before a request is fulfilled, and any retained record must have a documented integrity or legal reason.`,
       ]},
     ],
   },

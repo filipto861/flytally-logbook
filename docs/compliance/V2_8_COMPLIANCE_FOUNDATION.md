@@ -11,6 +11,7 @@ v2.8 is not complete until C1–C6 are green. Public commercial launch is blocke
 - Legal links on sign-in, join, authenticated shell and public share pages.
 - No consent banner while only essential storage is used. Introducing non-essential analytics/advertising requires a consent design review before loading it.
 - Operator identity is environment-backed. Missing formal operator details are a public-launch blocker.
+- Settings exposes a self-service portable export, all-share revocation and account deletion with an explicit retained-record boundary.
 
 ### C2 — Maps & third-party licensing
 - Satellite: ArcGIS World Imagery with ArcGIS imagery labels/reference overlay; the ArcGIS credential remains server-side.
@@ -69,13 +70,15 @@ Adding a processor requires updating the public provider notice, this register, 
 
 - Active account and core logbook: retained while requested by the user, subject to aviation-record integrity requirements.
 - Authentication sessions: expire automatically; stale/revoked sessions are periodically removed.
-- Public share: revoke immediately disables access; v2.8 must establish a short deletion schedule for orphaned/revoked share metadata.
-- Support/security records: retain only as long as required to resolve the case and defend the service.
-- Backups: retention and deletion propagation must be documented from Neon/Vercel provider settings before public launch.
+- Public share: revocation immediately disables access; revoked metadata is purged after 30 days.
+- Authentication sessions/password-reset records are purged 30 days after expiry/revocation/use; authentication security events use a 90-day baseline unless an incident requires a documented hold.
+- Deleted-flight recovery copies are purged at their existing `purge_after` deadline.
+- Account deletion removes stored backups, GPS tracks, expenses, live settings/credentials/licences/recency data and public-sharing metadata immediately; historical flight/FSTD and signed/approved integrity evidence remains only under the pseudonymised deleted-pilot boundary.
+- Provider-level backup retention/deletion propagation must still be documented from Neon/Vercel settings before public commercial launch.
 
 ## Data-subject request procedure
 
-Private beta requests go to `support@fly-tally.com`. Verify identity proportionately; log request date/type; search relevant application/provider stores; respond/export/correct/delete as applicable; record exemptions or retained regulated records; close with an audit entry. Self-service export/delete is a v2.8 target, not a reason to delay a valid manual request.
+Private beta requests go to `support@fly-tally.com`. Verify identity proportionately; log request date/type; search relevant application/provider stores; respond/export/correct/delete as applicable; record exemptions or retained regulated records; close with an audit entry. Logbook self-service export, public-share revocation and account deletion are implemented; broader erasure review remains available where retained aviation evidence is challenged.
 
 ## Incident response
 
