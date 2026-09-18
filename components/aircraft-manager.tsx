@@ -5,11 +5,17 @@ import { AircraftTypePicker } from "@/components/aircraft-type-picker";
 import { AIRCRAFT_PROFILE_CLASSES,aircraftProfileRegulatoryCategory } from "@/lib/aircraft-profile-context";
 import { useEffect,useState } from "react";
 import { createPortal } from "react-dom";
+import { AircraftPhotoEditor } from "@/components/aircraft-photo-editor";
+import { AircraftSharePanel } from "@/components/aircraft-share-panel";
 
 type Row=Record<string,unknown>;
 type Action=(form:FormData)=>Promise<void>;
 type AircraftSaveResult={ok:boolean;message:string};
 type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
+type PhotoState={ok:boolean;message:string};
+type PhotoSaveAction=(state:PhotoState,form:FormData)=>Promise<PhotoState>;
+type ShareState={ok:boolean;message:string};
+type ShareAction=(state:ShareState,form:FormData)=>Promise<ShareState>;
 
 const t=(value:unknown)=>String(value??"");
 const classLabel=(value:string)=>value==="HELICOPTER"?"Helicopter":value==="BALLOON"?"Balloon":value;
@@ -54,7 +60,7 @@ function RateTimeline({aircraft,rates,saveAction,deleteAction}:{aircraft:Row;rat
   </section>;
 }
 
-export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRateAction,deleteRateAction}:{aircraft:Row[];rates:Row[];saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action}){
+export function AircraftManager({aircraft,rates,connections,saveAction,toggleAction,saveRateAction,deleteRateAction,savePhotoAction,removePhotoAction,shareAction}:{aircraft:Row[];rates:Row[];connections:Row[];saveAction:SaveAction;toggleAction:Action;saveRateAction:Action;deleteRateAction:Action;savePhotoAction:PhotoSaveAction;removePhotoAction:Action;shareAction:ShareAction}){
   const [selectedId,setSelectedId]=useState<string|null>(null);
   const [profileStatus,setProfileStatus]=useState<{ok:boolean;message:string}|null>(null),[newStatus,setNewStatus]=useState<{ok:boolean;message:string}|null>(null);
   const [savingProfile,setSavingProfile]=useState(false),[savingNew,setSavingNew]=useState(false);
@@ -66,7 +72,7 @@ export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRate
   const saveNew=async(form:FormData)=>{setSavingNew(true);setNewStatus(null);try{setNewStatus(await saveAction(form))}catch{setNewStatus({ok:false,message:"Aircraft could not be added."})}finally{setSavingNew(false)}};
   return <div className="aircraft-manager">
     <details className="add-aircraft-card" open={!aircraft.length}><summary>{aircraft.length?"＋ Add aircraft":"＋ Add your first aircraft"}</summary><div className="aircraft-add-guidance"><strong>Start with the aircraft identity and normal logbook.</strong><span>Search the aircraft catalogue first; pricing and technical defaults can be added later.</span></div><form action={saveNew}><AircraftFields/><div className="form-actions"><button className="primary-button" disabled={savingNew}>{savingNew?"Saving…":"Add aircraft"}</button></div>{newStatus?<p className={newStatus.ok?"form-success":"form-error"} role="status">{newStatus.message}</p>:null}</form></details>
-    <div className="aircraft-card-list">{aircraft.map(item=>{const active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" "),currentRate=Number(item.current_price_per_hour||0),aircraftClass=classLabel(t(item.aircraft_class))||t(item.regulatory_category)||"—";return <article className={`aircraft-card${active?"":" inactive"}`} key={t(item.id)}>
+    <div className="aircraft-card-list">{aircraft.map(item=>{const active=Boolean(Number(item.active)),identity=[t(item.aircraft_make),t(item.aircraft_model)||t(item.aircraft_type),t(item.aircraft_variant)].filter(Boolean).join(" "),currentRate=Number(item.current_price_per_hour||0),aircraftClass=classLabel(t(item.aircraft_class))||t(item.regulatory_category)||"—",hasPhoto=Boolean(item.has_photo),photoUrl=hasPhoto?`/api/aircraft-photo/${t(item.id)}?v=${encodeURIComponent(t(item.photo_updated_at))}`:"";return <article className={`aircraft-card${active?"":" inactive"}${hasPhoto?" with-photo":""}`} style={hasPhoto?{backgroundImage:`linear-gradient(180deg,rgba(4,12,22,.18),rgba(4,12,22,.86)),url("${photoUrl}")`}:undefined} key={t(item.id)}>
       <header><div><strong>{t(item.registration)}</strong><span>{identity||"Type not set"}</span></div><span className={active?"status-on":"status-off"}>{active?"Active":"Inactive"}</span></header>
       <div className="aircraft-card-summary"><span><small>Logbook</small><b>{t(item.evidence)||"—"}</b></span><span><small>Class / category</small><b>{aircraftClass}</b></span><span><small>Current rate</small><b>{currentRate>0?`${currentRate.toLocaleString("en-GB")} CZK/h`:"Not set"}</b>{currentRate>0?<em>{t(item.current_price_valid_from)?`from ${t(item.current_price_valid_from)}`:"default rate"}</em>:null}</span></div>
       <button type="button" className="aircraft-manage-button" onClick={()=>setSelectedId(t(item.id))}>Manage aircraft</button>
@@ -74,8 +80,10 @@ export function AircraftManager({aircraft,rates,saveAction,toggleAction,saveRate
     {selected?createPortal(<div className="aircraft-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSelectedId(null)}}><section className="aircraft-modal" role="dialog" aria-modal="true" aria-labelledby="aircraft-modal-title">
       <header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-modal-title">{t(selected.registration)}</h2><p>{[t(selected.aircraft_make),t(selected.aircraft_model)||t(selected.aircraft_type),t(selected.aircraft_variant)].filter(Boolean).join(" ")||"Type not set"} · {classLabel(t(selected.aircraft_class))||"—"} · {t(selected.regulatory_category)||t(selected.evidence)||"—"}</p></div><button type="button" className="modal-close" aria-label="Close" onClick={()=>setSelectedId(null)}>×</button></header>
       <div className="aircraft-modal-content">
+        <AircraftPhotoEditor aircraftId={Number(selected.id)} hasPhoto={Boolean(selected.has_photo)} photoUpdatedAt={t(selected.photo_updated_at)} saveAction={savePhotoAction} removeAction={removePhotoAction}/>
         <section className="aircraft-profile-editor"><div className="modal-section-heading"><div><p className="eyebrow">SETTINGS</p><h3>Aircraft profile</h3><p className="muted">The everyday fields are shown first. Open More aircraft settings only when you need them.</p></div></div><form action={saveSelected}><AircraftFields aircraft={selected}/><div className="form-actions"><button className="primary-button" disabled={savingProfile}>{savingProfile?"Saving…":"Save profile"}</button></div>{profileStatus?<p className={profileStatus.ok?"form-success":"form-error"} role="status">{profileStatus.message}</p>:null}</form><div className="aircraft-state-action"><div><strong>{Number(selected.active)?"Aircraft is active":"Aircraft is inactive"}</strong><small>{Number(selected.active)?"Deactivate it to hide it from new-flight choices.":"Activate it to make it available for new flights."}</small></div><form action={toggleAction}><input type="hidden" name="id" value={t(selected.id)}/><button className="secondary-button">{Number(selected.active)?"Deactivate aircraft":"Activate aircraft"}</button></form></div></section>
         <RateTimeline aircraft={selected} rates={rates} saveAction={saveRateAction} deleteAction={deleteRateAction}/>
+        <AircraftSharePanel aircraft={selected} connections={connections} action={shareAction}/>
       </div>
     </section></div>,document.body):null}
   </div>;

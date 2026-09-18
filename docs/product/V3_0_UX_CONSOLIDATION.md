@@ -106,6 +106,7 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - professional experience is no longer mixed into the Licences overview.
 - **U3 — Aircraft / Data / Settings — in progress**
   - **U3.1 ✅ Aircraft & airports:** Aircraft, Airports and Data health are now separate workspaces; the default page shows only aircraft management, the worldwide airport catalogue is search-on-demand, and diagnostics / historical code maintenance no longer interrupt everyday management.
+  - **U3.1a ✅ Personal aircraft sharing & identity:** an aircraft profile can be sent to an accepted Connection as a one-time copy with sender-selected photo, defaults, current rate, rate history and notes. Existing recipient registrations are merged by explicit import choices instead of duplicated; no fleet ownership or ongoing synchronization is introduced.
   - **U3.2 — Print & data — next**
   - **U3.3 — Settings**
 - **U4 — Flight workflow clarity**
