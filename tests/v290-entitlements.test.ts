@@ -44,10 +44,12 @@ test("C3 durable entitlement ledger stays provider-neutral and revocable",()=>{
 
 test("C3 Training SSO emits ft2 entitlement-bearing assertions",()=>{
   const identity=read("lib/auth/training-identity.ts");
+  const contract=read("lib/auth/training-identity-contract.ts");
   const route=read("app/api/auth/training/start/route.ts");
-  assert.match(identity,/TRAINING_IDENTITY_VERSION = "ft2"/);
-  assert.match(identity,/entitlementVersion: FLYTALLY_ENTITLEMENT_VERSION/);
+  assert.match(contract,/TRAINING_IDENTITY_VERSION = "ft2"/);
+  assert.match(contract,/entitlementVersion: FLYTALLY_ENTITLEMENT_VERSION/);
   assert.match(identity,/resolveAccountEntitlementSnapshot/);
+  assert.match(identity,/createTrainingIdentityAssertionFromGrants/);
   assert.match(route,/await createTrainingIdentityAssertion/);
 });
 
