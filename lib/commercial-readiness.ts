@@ -21,7 +21,7 @@ export type CommercialReadiness = Readonly<{
   blockers: readonly string[];
 }>;
 
-const mandatoryApprovalGates = [
+const COMMERCIAL_LEGAL_SURFACE_IMPLEMENTED = false;\n\nconst mandatoryApprovalGates = [
   ["legal-review", "Jurisdiction-appropriate lawyer review", "COMMERCIAL_LEGAL_REVIEW_STATUS"],
   ["consumer-law-adr", "Consumer law, cancellation/refund and ADR review", "COMMERCIAL_CONSUMER_LAW_ADR_STATUS"],
   ["privacy-processors", "Privacy, processor/DPA and international-transfer review", "COMMERCIAL_PRIVACY_PROCESSOR_STATUS"],
