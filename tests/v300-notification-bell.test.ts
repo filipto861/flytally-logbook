@@ -10,7 +10,9 @@ test("v3.0 U1.1 keeps notifications out of the navigation hierarchy",()=>{
   const sidebar=read("components/sidebar.tsx");
   assert.match(sidebar,/NotificationBell initialCount=\{notificationCount\}/);
   assert.doesNotMatch(sidebar,/<span>Notifications<\/span>/);
-  assert.match(sidebar,/actionCount>0\?<Link/);\n  assert.match(sidebar,/styles\.actionLink/);\n  assert.doesNotMatch(sidebar,/>Activity<\/span>/);
+  assert.match(sidebar,/actionCount>0\?<Link/);
+  assert.match(sidebar,/styles\.actionLink/);
+  assert.doesNotMatch(sidebar,/>Activity<\/span>/);
 });
 
 test("v3.0 U1.1 badge represents unread notifications, not all notifications",()=>{
