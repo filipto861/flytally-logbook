@@ -10,6 +10,7 @@ export const metadata={
 export default function ReleaseStatusPage(){
   const audit=getCommercialReleaseAudit();
   const enabled=audit.commercialLaunchEnabled;
+  const transitionReady=audit.verdict==="READY_FOR_TRANSITION";
 
   return <main className="page-shell" style={{maxWidth:"900px",margin:"0 auto"}}>
     <div className="page-heading">
@@ -23,11 +24,13 @@ export default function ReleaseStatusPage(){
 
     <section className="panel">
       <p className="eyebrow">CURRENT STATE</p>
-      <h2>{enabled?"Commercial release gate cleared":"Commercial launch not cleared"}</h2>
+      <h2>{enabled?"Commercial release gate cleared":transitionReady?"Validated and ready for deliberate transition":"Commercial launch not cleared"}</h2>
       <p>Effective release stage: <strong>{audit.effectiveStage.replaceAll("-"," ")}</strong>.</p>
       <p className="muted">{enabled
         ?"The canonical release gate is currently clear for commercial operation."
-        :"FlyTally remains outside commercial launch while required legal, operational, billing, regulatory, rights and brand evidence is incomplete. No approval or commercial clearance should be inferred from the technical implementation alone."}</p>
+        :transitionReady
+          ?"All release gates are validated, but commercial mode is not enabled until a separate deliberate launch-stage transition is deployed."
+          :"FlyTally remains outside commercial launch while required legal, operational, billing, regulatory, rights and brand evidence is incomplete. No approval or commercial clearance should be inferred from the technical implementation alone."}</p>
     </section>
 
     <section className="panel">
