@@ -1,4 +1,4 @@
-import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
+import { getCommercialLegalPublicationState } from "./commercial-legal";
 
 export type FlyTallyLaunchStage = "private-beta" | "external-validation" | "commercial";
 export type ExternalValidationStatus = "PENDING" | "APPROVED" | "NOT_REQUIRED";
