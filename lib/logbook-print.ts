@@ -82,27 +82,58 @@ export function aircraftPrintCode(row:Record<string,unknown>){
   return (clean(row.icao_type)||clean(row.aircraft_type)||clean(row.aircraft_model)||fullAircraftIdentity(row)).toUpperCase();
 }
 
-function licenceForScope(preferences:PilotPreferences,licences:Array<Record<string,unknown>>,target:"EASA"|"ULL"){
-  const profiles=licenceProfileMap(preferences),today=new Date().toISOString().slice(0,10);
-  const candidates=licences.filter(row=>String(row.category??"").trim().toUpperCase()==="LICENCE"&&Number(row.active??1)!==0).map(row=>{
+type PrintLicence={address:string;number:string;expiry:string;expired:boolean;label:string;source:"pilot_licences"|"legacy"|"preferences"};
+const legacyIdentity=(preferences:PilotPreferences,target:"EASA"|"ULL")=>({
+  address:target==="EASA"?(clean(preferences.easa_address)||clean(preferences.pilot_address)):(clean(preferences.ull_address)||clean(preferences.pilot_address)),
+  number:target==="EASA"?(clean(preferences.easa_licence_number)||clean(preferences.licence_number)):clean(preferences.ull_licence_number),
+});
+const validityExpiry=(row:Record<string,unknown>)=>{
+  const mode=clean(row.validity_mode).toLowerCase();
+  if(mode==="unlimited")return"";
+  if(mode==="recency")return clean(row.recency_until);
+  return clean(row.valid_until)||clean(row.expiry_date);
+};
+
+function licenceForScope(preferences:PilotPreferences,licences:Array<Record<string,unknown>>,target:"EASA"|"ULL"):PrintLicence{
+  const profiles=licenceProfileMap(preferences),today=new Date().toISOString().slice(0,10),legacy=legacyIdentity(preferences,target);
+  const primary=licences.filter(row=>clean(row.licence_type)&&Number(row.active??1)!==0).map(row=>{
+    const id=String(row.id??""),profile=profiles[`pilot-${id}`]??{},type=clean(row.licence_type),profileScope=clean(profile.scope).toUpperCase(),scope=profileScope||(type.toUpperCase().includes("ULL")?"ULL":"EASA"),expiry=validityExpiry(row),valid=!expiry||expiry>=today;
+    return{row,profile,type,scope,expiry,valid};
+  }).filter(item=>item.scope===target).sort((a,b)=>Number(b.valid)-Number(a.valid)||b.expiry.localeCompare(a.expiry)||Number(b.row.id??0)-Number(a.row.id??0));
+  const selectedPrimary=primary[0];
+  if(selectedPrimary)return{
+    address:clean(selectedPrimary.profile.address)||legacy.address,
+    number:clean(selectedPrimary.row.licence_number)||clean(selectedPrimary.profile.number)||legacy.number,
+    expiry:selectedPrimary.expiry,
+    expired:Boolean(selectedPrimary.expiry&&selectedPrimary.expiry<today),
+    label:selectedPrimary.type,
+    source:"pilot_licences",
+  };
+
+  const fallback=licences.filter(row=>!clean(row.licence_type)&&String(row.category??"").trim().toUpperCase()==="LICENCE"&&Number(row.active??1)!==0).map(row=>{
     const profile=profiles[String(row.id??"")]??{},expiry=clean(row.expiry_date),scope=clean(profile.scope).toUpperCase();
     return{row,profile,expiry,scope,valid:!expiry||expiry>=today};
   }).filter(item=>item.scope===target).sort((a,b)=>Number(b.valid)-Number(a.valid)||b.expiry.localeCompare(a.expiry));
-  const selected=candidates[0];
-  const legacyAddress=target==="EASA"?(clean(preferences.easa_address)||clean(preferences.pilot_address)):(clean(preferences.ull_address)||clean(preferences.pilot_address));
-  const legacyNumber=target==="EASA"?(clean(preferences.easa_licence_number)||clean(preferences.licence_number)):clean(preferences.ull_licence_number);
-  if(!selected)return{address:legacyAddress,number:legacyNumber,expiry:"",expired:false,label:""};
-  return{address:clean(selected.profile.address)||legacyAddress,number:clean(selected.profile.number)||legacyNumber,expiry:selected.expiry,expired:Boolean(selected.expiry&&selected.expiry<today),label:clean(selected.row.label)};
+  const selectedFallback=fallback[0];
+  if(selectedFallback)return{
+    address:clean(selectedFallback.profile.address)||legacy.address,
+    number:clean(selectedFallback.profile.number)||legacy.number,
+    expiry:selectedFallback.expiry,
+    expired:Boolean(selectedFallback.expiry&&selectedFallback.expiry<today),
+    label:clean(selectedFallback.row.label),
+    source:"legacy",
+  };
+  return{address:legacy.address,number:legacy.number,expiry:"",expired:false,label:"",source:"preferences"};
 }
 
-const expiryWarning=(prefix:string,entry:{expired:boolean;label:string;number:string;expiry:string})=>entry.expired?`${prefix} licence ${entry.label||entry.number||"record"} is expired (${entry.expiry}).`:"";
+const expiryWarning=(prefix:string,entry:PrintLicence)=>entry.expired?`${prefix} licence ${entry.label||entry.number||"record"} is expired (${entry.expiry}).`:"";
 export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintScope,licences:Array<Record<string,unknown>>=[]){
   const easa=licenceForScope(preferences,licences,"EASA"),ull=licenceForScope(preferences,licences,"ULL");
-  if(scope==="easa")return{address:easa.address,licence:easa.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("EASA",easa)].filter(Boolean)};
-  if(scope==="ull")return{address:ull.address,licence:ull.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("ULL",ull)].filter(Boolean)};
+  if(scope==="easa")return{address:easa.address,licence:easa.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("EASA",easa)].filter(Boolean),sources:{easa:easa.source,ull:ull.source}};
+  if(scope==="ull")return{address:ull.address,licence:ull.number,addressLabel:"Holder's address",licenceLabel:"Holder's licence number",warnings:[expiryWarning("ULL",ull)].filter(Boolean),sources:{easa:easa.source,ull:ull.source}};
   const addresses=[easa.address?`EASA: ${easa.address}`:"",ull.address?`ULL: ${ull.address}`:""].filter(Boolean).join("\n");
   const numbers=[easa.number?`EASA: ${easa.number}`:"",ull.number?`ULL: ${ull.number}`:""].filter(Boolean).join("\n");
-  return{address:addresses,licence:numbers,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers",warnings:[expiryWarning("EASA",easa),expiryWarning("ULL",ull)].filter(Boolean)};
+  return{address:addresses,licence:numbers,addressLabel:"Holder's addresses",licenceLabel:"Holder's licence numbers",warnings:[expiryWarning("EASA",easa),expiryWarning("ULL",ull)].filter(Boolean),sources:{easa:easa.source,ull:ull.source}};
 }
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){

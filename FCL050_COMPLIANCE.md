@@ -94,9 +94,18 @@ The print view also:
 - marks uncertified records as DRAFT;
 - keeps auxiliary reference records excluded from official totals by default.
 
+## v2.8 print identity source of truth
+
+The regulator-facing print path now treats `pilot_licences` as the authoritative licence record. The printed holder licence number and current validity are taken from the active `pilot_licences` row, while the holder address and print scope remain licence-linked profile attributes. The former `user_expiries` licence mirror remains only as a backwards-compatible fallback for accounts that still contain legacy records.
+
+This avoids a split source of truth between the Licences UI and the printable logbook. A stale legacy mirror cannot override a current active `pilot_licences` record. Unlimited, date-based and recency-based validity modes are interpreted from the authoritative licence row before the print warning state is produced.
+
+Regression coverage explicitly verifies EASA/ULL scope selection, canonical licence-number precedence, legacy fallback, inactive-record handling and expiry warnings.
+
 ## Implemented or substantially implemented
 
 - licence-linked pilot identity including separate EASA/ULL address and licence number;
+- authoritative `pilot_licences` source for regulator-facing printed licence identity, with legacy fallback only;
 - PIC name logic including DUAL/instructor and SPIC/PICUS handling;
 - structured aircraft make/model/variant snapshot on the flight;
 - compact ICAO print code plus printed full-aircraft identity key;
