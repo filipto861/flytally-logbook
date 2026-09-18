@@ -114,6 +114,9 @@ export function aircraftCategoryCapabilities(input:{regulatoryCategory?:unknown;
     movementEvidenceMode="BFCL_TAKEOFF_LANDING";
   }else if(regulatoryCategory==="ULL"){
     recencyFamily="ULL";
+    // Keep ULL as its own regulatory family, but capture explicit PF movements so
+    // a separately mapped same-class Part-FCL recency rule can use the evidence.
+    if(evidence==="ULL")movementEvidenceMode="FCL060_PF";
   }
 
   return {

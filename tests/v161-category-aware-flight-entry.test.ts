@@ -28,7 +28,7 @@ test("v1.61 waits for aircraft selection before showing aircraft-dependent exper
   const ull=flightEntryProfile({hasAircraft:true,aircraftClass:"ULL",evidence:"ULL"});
   assert.equal(ull.category,"ull");
   assert.equal(ull.showStandardExperience,true);
-  assert.equal(ull.showRegulatoryMovements,false);
+  assert.equal(ull.showRegulatoryMovements,true);
 });
 
 test("v1.61 FlightForm adapts after aircraft selection while Role stays flight-specific",()=>{

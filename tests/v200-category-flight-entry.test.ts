@@ -35,6 +35,8 @@ test("v2.0-B keeps professional context category-aware without guessing",()=>{
 
 test("v2.0-B preserves distinct movement evidence modes in the entry workspace",()=>{
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"AEROPLANE",aircraftClass:"SEP",evidence:"EASA"}).movementEvidenceMode,"FCL060_PF");
+  assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"ULL",aircraftClass:"ULL",evidence:"ULL"}).movementEvidenceMode,"FCL060_PF");
+  assert.equal(flightEntryProfile({hasAircraft:true,regulatoryCategory:"ULL",aircraftClass:"ULL",evidence:"ULL"}).showRegulatoryMovements,true);
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"GLIDER",evidence:"EASA"}).movementEvidenceMode,"SFCL_LAUNCH");
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"SAILPLANE",aircraftClass:"TMG",evidence:"EASA"}).movementEvidenceMode,"SFCL_TMG");
   assert.equal(aircraftCategoryCapabilities({regulatoryCategory:"BALLOON",aircraftClass:"BALLOON",evidence:"EASA"}).movementEvidenceMode,"BFCL_TAKEOFF_LANDING");
