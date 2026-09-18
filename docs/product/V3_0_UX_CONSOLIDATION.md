@@ -91,13 +91,13 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
 ## v3.0 sequence
 
 - **U0 ✅ Product UX audit and task model**
-- **U1 — Navigation & task hierarchy — current**
+- **U1 ✅ Navigation & task hierarchy**
   - simplify Logbook global navigation;
   - contextualize Flights sub-workflows;
   - preserve Training task navigation;
   - keep installation secondary to aircraft selection;
-  - move Notifications out of navigation into a live unread bell;\n  - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox.
-- **U2 — Licences & recency**
+  - move Notifications out of navigation into a live unread bell;\n  - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox;\n  - U1.3: visually separate Administration from pilot records in expanded desktop/mobile navigation.
+- **U2 — Licences & recency — next**
 - **U3 — Aircraft / Data / Settings**
 - **U4 — Flight workflow clarity**
 - **U5 — Training learner polish**
