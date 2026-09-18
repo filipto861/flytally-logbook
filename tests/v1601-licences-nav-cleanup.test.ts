@@ -15,7 +15,8 @@ test("v1.60.1 keeps Licences section tabs as the single normal navigation layer"
   assert.doesNotMatch(overview,/<Link className="adaptive-status-row"/);
   assert.match(overview,/<div className="adaptive-status-row"/);
   assert.doesNotMatch(overview,/adaptive-attention-links/);
-  assert.match(overview,/adaptive-attention-items/);
+  assert.match(overview,/u2-attention-section/);
+  assert.match(overview,/u2-inline-action/);
 });
 
 test("v1.60.1 status rows remain compact read-only summaries",()=>{
