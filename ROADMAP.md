@@ -31,8 +31,8 @@ Before adding further capability, audit and simplify the workflows already in pr
 - U3 in progress: management hierarchy.
   - U3.1 ✅ Aircraft & airports progressive workspace.
   - U3.1a ✅ Personal aircraft profile sharing + optional cover photos. Shares are one-time copies between accepted Connections; recipient-owned values remain independent after import.
-  - U3.2 next: Print & data hierarchy.
-  - U3.3: Settings hierarchy.
+  - U3.2 ✅ Print & data task hierarchy.
+  - U3.3 next: Settings hierarchy.
 - U4: flight save → review → certify → share clarity.
 - U5: Training learner polish without rebuilding the existing Home / Fly / Learn / Reference model.
 - U6: mobile, accessibility and final UX acceptance.
