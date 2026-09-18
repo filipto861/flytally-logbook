@@ -59,7 +59,7 @@ export function Sidebar({role="user",actionCount=0,attentionCount=0,notification
         {recordLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} ${styles.recordLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
       </div>
 
-      {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i><NavIcon name="admin"/></i><span>Administration</span></Link>:null}
+      {role==="admin"?<Link className={`${pathname.startsWith("/admin")?"active":""} ${styles.adminLink}`} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i><NavIcon name="admin"/></i><span>Administration</span></Link>:null}
       <form action={logout} className="mobile-only-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
     </nav>
     <form action={logout} className="desktop-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
