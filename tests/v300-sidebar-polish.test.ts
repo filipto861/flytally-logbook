@@ -42,3 +42,12 @@ test("v3.0 U1.2 constrains the desktop notification inbox without shrinking mobi
   assert.match(css,/width:min\(100%,1180px\)/);
   assert.match(css,/@media\(max-width:820px\)\{\.inbox\{width:100%\}\}/);
 });
+
+
+test("v3.0 U1.3 keeps Administration visually separate from Pilot & records",()=>{
+  const sidebar=read("components/sidebar.tsx");
+  const css=read("components/sidebar.module.css");
+  assert.match(sidebar,/styles\.adminLink/);
+  assert.match(css,/\.adminLink\{[^}]*border-top:1px solid var\(--line\)/s);
+  assert.match(css,/sidebar\.collapsed[\s\S]*\.adminLink[\s\S]*border-top:0/s);
+});
