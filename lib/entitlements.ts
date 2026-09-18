@@ -1,9 +1,8 @@
-import { getCommercialReadiness, type FlyTallyLaunchStage } from "./commercial-readiness.ts";
-
 export const FLYTALLY_ENTITLEMENT_VERSION = 1 as const;
 
 export type FlyTallyEntitlementKey = "logbook.access" | "training.access";
 export type FlyTallyEntitlementSource = "private-beta" | "admin" | "billing" | "organization" | "manual";
+export type FlyTallyEntitlementStage = "private-beta" | "external-validation" | "commercial";
 
 export type FlyTallyEntitlementGrant = Readonly<{
   key: FlyTallyEntitlementKey;
@@ -14,17 +13,15 @@ export type FlyTallyEntitlementGrant = Readonly<{
 export type AccountEntitlementSnapshot = Readonly<{
   version: typeof FLYTALLY_ENTITLEMENT_VERSION;
   subject: string;
-  stage: FlyTallyLaunchStage;
+  stage: FlyTallyEntitlementStage;
   issuedAt: number;
   grants: readonly FlyTallyEntitlementGrant[];
 }>;
 
-type Env = Readonly<Record<string, string | undefined>>;
-
 const BASE_ACCESS: readonly FlyTallyEntitlementKey[] = ["logbook.access", "training.access"];
 
 export function entitlementPolicyForStage(
-  stage: FlyTallyLaunchStage,
+  stage: FlyTallyEntitlementStage,
   role: "admin" | "user",
 ): readonly FlyTallyEntitlementGrant[] {
   const source: FlyTallyEntitlementSource | null =
@@ -34,24 +31,14 @@ export function entitlementPolicyForStage(
     : [];
 }
 
-export function resolveAccountEntitlementSnapshot(
-  subject: string,
-  role: "admin" | "user",
-  env: Env = process.env,
-  nowSeconds = Math.floor(Date.now() / 1000),
-): AccountEntitlementSnapshot {
-  if (!subject || subject.length > 128) throw new Error("Invalid FlyTally account subject.");
-
-  const stage = getCommercialReadiness(env).effectiveStage;
-  const grants = entitlementPolicyForStage(stage, role);
-
-  return {
-    version: FLYTALLY_ENTITLEMENT_VERSION,
-    subject,
-    stage,
-    issuedAt: nowSeconds,
-    grants,
-  };
+export function mergeEntitlementGrants(
+  ...sets: readonly (readonly FlyTallyEntitlementGrant[])[]
+): readonly FlyTallyEntitlementGrant[] {
+  const merged = new Map<FlyTallyEntitlementKey, FlyTallyEntitlementGrant>();
+  for (const set of sets) {
+    for (const grant of set) if (!merged.has(grant.key)) merged.set(grant.key, grant);
+  }
+  return [...merged.values()];
 }
 
 export function hasAccountEntitlement(
