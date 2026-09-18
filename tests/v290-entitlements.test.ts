@@ -57,7 +57,7 @@ test("C3 Training SSO emits ft2 entitlement-bearing assertions",()=>{
 test("C3 access UI is user-visible and privacy deletion removes durable grants",()=>{
   const profile=read("app/(protected)/profile/page.tsx");
   const privacy=read("lib/privacy-account.ts");
-  assert.match(profile,/Access & billing/);
+  assert.match(profile,/FlyTally access/);
   assert.match(profile,/Billing provider:<\/strong> not configured/);
   assert.match(profile,/does not currently store a payment method or charge this account/);
   assert.match(privacy,/DELETE FROM account_entitlements WHERE user_id=/);

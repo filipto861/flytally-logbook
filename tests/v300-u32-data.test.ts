@@ -56,6 +56,7 @@ test("v3.0 U3.2 has responsive and light-theme presentation",()=>{
   assert.match(css,/html\[data-theme="light"\] \.data-workspace-nav/);
   assert.match(css,/@media\(max-width:620px\)/);
   assert.match(roadmap,/U3\.2 ✅ Print & data task hierarchy/);
-  assert.match(roadmap,/U3\.3 next: Settings hierarchy/);
+  assert.match(roadmap,/U3\.3 ✅ Settings hierarchy/);
+  assert.match(roadmap,/U4 next: flight save/);
   assert.match(audit,/U3\.2 ✅ Print & data/);
 });

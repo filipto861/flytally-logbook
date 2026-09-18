@@ -1,0 +1,50 @@
+/* FlyTally v3.0 U3.3 — task-oriented Settings hierarchy. */
+.settings-workspace-nav{display:flex;gap:6px;width:max-content;max-width:100%;margin:-6px 0 22px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--panel);overflow-x:auto;scrollbar-width:none}
+.settings-workspace-nav::-webkit-scrollbar{display:none}
+.settings-workspace-nav a{display:flex;align-items:center;justify-content:center;min-height:38px;padding:8px 12px;border-radius:9px;color:var(--muted);font-size:.82rem;font-weight:800;text-decoration:none;white-space:nowrap}
+.settings-workspace-nav a:hover{background:var(--panel2);color:var(--text)}
+.settings-workspace-nav a.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.14)}
+
+.u33-settings-workspace{display:grid;gap:16px}
+.u33-workspace-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:4px 2px 2px}
+.u33-workspace-heading h2{margin:2px 0 5px}.u33-workspace-heading p{margin:0;max-width:760px}
+.u33-general-form{gap:12px}.u33-general-form .profile-grid{margin:0}
+.u33-preference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.u33-preference-card{margin:0;min-width:0}
+.u33-preference-card.install-app-panel{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.u33-preference-card .appearance-form{margin-top:14px;max-width:none}
+
+.u33-security-panel,.u33-session-panel{margin:0}
+.u33-access-details,.u33-data-footprint{margin:0;padding:0;overflow:hidden}
+.u33-access-details>summary,.u33-data-footprint>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;cursor:pointer;list-style:none}
+.u33-access-details>summary::-webkit-details-marker,.u33-data-footprint>summary::-webkit-details-marker{display:none}
+.u33-access-details>summary>span:first-child,.u33-data-footprint>summary>span:first-child{display:grid;gap:3px}
+.u33-access-details>summary small,.u33-data-footprint>summary small{color:var(--muted);font-weight:500}
+.u33-access-details[open]>summary,.u33-data-footprint[open]>summary{border-bottom:1px solid var(--line)}
+.u33-access-body,.u33-footprint-body{display:grid;gap:14px;padding:18px 20px}
+.u33-access-body>p{margin:0}
+.u33-access-body>.secondary-button{justify-self:start}
+
+.u33-privacy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.u33-privacy-grid>.panel{display:flex;flex-direction:column;align-items:flex-start;margin:0}
+.u33-privacy-grid>.panel p.muted{flex:1}
+.u33-privacy-error{margin:0;padding:12px 14px;border:1px solid #9b5c67;border-radius:10px;background:color-mix(in srgb,#7f1d1d 20%,var(--panel));color:var(--text)}
+.u33-footprint-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.u33-footprint-grid>div{display:grid;gap:4px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised)}
+.u33-footprint-grid span{color:var(--muted);font-size:.68rem}.u33-footprint-grid b{font-size:1.12rem}
+.u33-delete-account{margin:0}.u33-delete-account>form{padding-top:16px}
+
+html[data-theme="light"] .settings-workspace-nav{background:#fff}
+html[data-theme="light"] .u33-footprint-grid>div{background:#fff}
+html[data-theme="light"] .u33-privacy-error{background:#fff3f4;color:#7a2431;border-color:#d8a0a8}
+
+@media(max-width:900px){
+  .u33-preference-grid,.u33-privacy-grid{grid-template-columns:1fr}
+  .u33-footprint-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .settings-workspace-nav{width:100%}.settings-workspace-nav a{flex:1 0 auto}
+  .u33-workspace-heading{align-items:stretch;flex-direction:column}.u33-workspace-heading>.secondary-button{width:100%;text-align:center}
+  .u33-preference-card.install-app-panel{grid-template-columns:1fr}
+}
+@media(max-width:520px){.u33-footprint-grid{grid-template-columns:1fr}}

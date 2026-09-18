@@ -5,10 +5,11 @@ import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v2.8 exposes self-service privacy controls with portable export and global share revocation",()=>{
-  const page=read("app/(protected)/profile/page.tsx"),actions=read("app/(protected)/profile/actions.ts");
-  assert.match(page,/Privacy & data/);
-  assert.match(page,/\/api\/export\?format=json/);
+test("v2.8 exposes self-service privacy controls with portable export handoff and global share revocation",()=>{
+  const page=read("app/(protected)/profile/page.tsx"),data=read("components/data-hub.tsx"),actions=read("app/(protected)/profile/actions.ts");
+  assert.match(page,/Your data controls/);
+  assert.match(page,/\/data\?view=recovery/);
+  assert.match(data,/\/api\/export\?format=json/);
   assert.match(page,/Revoke all public links/);
   assert.match(actions,/revokeAccountPublicShares/);
   assert.match(actions,/eraseAccountForPrivacy/);
