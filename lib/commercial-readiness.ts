@@ -2,6 +2,7 @@ import { getBrandClaimsReadiness } from "./brand-claims.ts";
 import { commercialBillingRuntime } from "./billing-readiness.ts";
 import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
 import { getRegulatoryReadiness } from "./regulatory-validation.ts";
+import { getCommercialReleaseControl } from "./commercial-release-control.ts";
 
 export type FlyTallyLaunchStage = "private-beta" | "external-validation" | "commercial";
 export type ExternalValidationStatus = "PENDING" | "APPROVED" | "NOT_REQUIRED";
@@ -81,6 +82,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   const brandClaims = getBrandClaimsReadiness(env);
   const commercialLegal = getCommercialLegalPublicationState(env);
   const regulatory = getRegulatoryReadiness(env);
+  const releaseControl = getCommercialReleaseControl(env);
 
   const gates: CommercialReadinessGate[] = [
     {
@@ -120,6 +122,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   if (!commercialBillingRuntime.commercialReady) blockers.push("commercial-billing-runtime");
   if (!regulatory.commercialReady) blockers.push("signature-regulatory-evidence");
   if (!brandClaims.commercialReady) blockers.push("brand-claims-evidence");
+  if (!releaseControl.commercialReady) blockers.push("commercial-release-audit");
   if (!requested.valid) blockers.unshift("launch-stage-configuration");
 
   const commercialEnabled = requested.valid
