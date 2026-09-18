@@ -60,3 +60,11 @@ test("C3 access UI is user-visible and privacy deletion removes durable grants",
   assert.match(profile,/does not currently store a payment method or charge this account/);
   assert.match(privacy,/DELETE FROM account_entitlements WHERE user_id=/);
 });
+
+
+test("C3 cannot unlock commercial launch without an implemented billing runtime",()=>{
+  const billing=read("lib/billing-readiness.ts");
+  const readiness=read("lib/commercial-readiness.ts");
+  assert.match(billing,/commercialReady: false/);
+  assert.match(readiness,/commercial-billing-runtime/);
+});
