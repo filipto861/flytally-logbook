@@ -79,7 +79,7 @@ const prohibitedPublicMarketingPatterns=[
   /\bofficial\b[^.\n]{0,40}\b(?:EASA|ÚCL|UCL|Czech CAA|LAA(?: ČR| CZ)?)\b[^.\n]{0,40}\blogbook\b/i,
   /\bFlyTally\b[^.\n]{0,80}\b(?:qualified electronic signature|QES|advanced electronic signature|AES)\b/i,
   /\bFlyTally\b[^.\n]{0,80}\b(?:registered trademark|registered trade mark)\b/i,
-  /\bFlyTally®\b/i,
+  /\bFlyTally®/i,
   /\bFlyTally\b[^.\n]{0,80}\b(?:fully|guaranteed) compliant\b/i,
 ] as const;
 
