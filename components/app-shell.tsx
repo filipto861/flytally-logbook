@@ -4,6 +4,7 @@ import { PwaClient } from "@/components/pwa-client";
 import { ThemeManager } from "@/components/theme-manager";
 import { ThemeBootstrap } from "@/components/theme-bootstrap";
 import { LegalFooter } from "@/components/legal-footer";
+import { PushNotificationOnboarding } from "@/components/push-notification-onboarding";
 import type { AppearancePreference } from "@/lib/ui-preferences";
 
 const appVersion=packageMetadata.version;
@@ -23,6 +24,7 @@ export function AppShell({ children,role,attentionCount=0,notificationCount=0,ap
         </footer>
       </main>
       <PwaClient/>
+      <PushNotificationOnboarding/>
     </div>
   );
 }

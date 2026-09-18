@@ -44,7 +44,13 @@ export function PwaClient(){
     window.addEventListener("appinstalled",onInstalled);
     window.addEventListener(INSTALL_REQUEST_EVENT,onRequest);
     window.addEventListener(INSTALL_STATE_REQUEST_EVENT,onStateRequest);
-    if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>undefined);
+    if("serviceWorker" in navigator)void navigator.serviceWorker.register("/sw.js",{scope:"/"}).then(async registration=>{
+      if(!("pushManager" in registration))return;
+      const subscription=await registration.pushManager.getSubscription();
+      if(!subscription)return;
+      const json=subscription.toJSON();
+      await fetch("/api/push/subscription",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:subscription.endpoint,keys:json.keys??{}})}).catch(()=>undefined);
+    }).catch(()=>undefined);
     queueMicrotask(()=>emitState());
     return()=>{window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled);window.removeEventListener(INSTALL_REQUEST_EVENT,onRequest);window.removeEventListener(INSTALL_STATE_REQUEST_EVENT,onStateRequest)};
   },[]);

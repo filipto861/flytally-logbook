@@ -1,0 +1,33 @@
+/* FlyTally v3.0 — Web Push onboarding, contextual discovery and settings. */
+.push-onboarding{position:fixed;right:22px;bottom:22px;z-index:1200;display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px;width:min(470px,calc(100vw - 32px));padding:17px 18px;border:1px solid color-mix(in srgb,var(--accent2) 38%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--panel) 96%,transparent);color:var(--text);box-shadow:0 22px 58px rgba(0,0,0,.28);backdrop-filter:blur(18px)}
+.push-onboarding-close{position:absolute;top:9px;right:10px;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:1.2rem;cursor:pointer}
+.push-onboarding-close:hover{background:var(--panel2);color:var(--text)}
+.push-onboarding-icon{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);font-size:1.15rem}
+.push-onboarding-copy{display:grid;gap:4px;padding-right:24px}.push-onboarding-copy>p{margin:0}.push-onboarding-copy>strong{font-size:.98rem;line-height:1.3}.push-onboarding-copy>p:not(.eyebrow){color:var(--muted);font-size:.75rem;line-height:1.48}
+.push-onboarding-actions{grid-column:2;display:flex;gap:8px;flex-wrap:wrap}.push-onboarding-actions .primary-button,.push-onboarding-actions .secondary-button{min-height:38px}
+
+.push-inline{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 14px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent2) 28%,var(--line));border-radius:12px;background:color-mix(in srgb,var(--accent2) 5%,var(--panel));color:var(--text)}
+.push-inline>span{font-size:1rem}.push-inline>div{display:grid;gap:3px}.push-inline strong{font-size:.79rem}.push-inline small{color:var(--muted);font-size:.68rem;line-height:1.4}.push-inline .secondary-button{white-space:nowrap}
+
+.push-settings{display:grid;gap:14px;align-content:start}
+.push-device-status{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.push-device-status small{color:var(--muted)}
+.push-install-note{display:grid;gap:4px;padding:10px 12px;border-left:3px solid var(--accent2);border-radius:8px;background:var(--panel2)}.push-install-note small{color:var(--muted);line-height:1.45}
+.push-preference-list{display:grid;gap:7px;border-top:1px solid var(--line);padding-top:12px}
+.push-preference-list label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:flex-start;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-raised);cursor:pointer}
+.push-preference-list label:hover{background:var(--surface-hover)}
+.push-preference-list input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent2)}
+.push-preference-list span{display:grid;gap:3px}.push-preference-list strong{font-size:.75rem}.push-preference-list small{color:var(--muted);font-size:.66rem;line-height:1.38}
+
+html[data-theme="light"] .push-onboarding{background:rgba(255,255,255,.97);box-shadow:0 22px 58px rgba(24,47,70,.18)}
+html[data-theme="light"] .push-inline{background:#f4fafc}
+html[data-theme="light"] .push-preference-list label{background:#fff}
+html[data-theme="light"] .push-install-note{background:#eef7fb}
+
+@media(max-width:700px){
+  .push-onboarding{right:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100vw - 24px);grid-template-columns:auto minmax(0,1fr);padding:15px}
+  .push-onboarding-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.push-onboarding-actions>*{width:100%;text-align:center}
+  .push-inline{grid-template-columns:auto minmax(0,1fr)}.push-inline>.secondary-button{grid-column:1/-1;width:100%}
+}
+@media(max-width:430px){
+  .push-onboarding-actions{grid-template-columns:1fr}
+}
