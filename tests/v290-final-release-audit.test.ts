@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { assertCommercialProductionBuildSafe } from "../lib/commercial-build-guard.ts";
-import { getCommercialReleaseAudit } from "../lib/commercial-release-audit.ts";
+import { deriveCommercialReleaseVerdict, getCommercialReleaseAudit } from "../lib/commercial-release-audit.ts";
 import {
   COMMERCIAL_RELEASE_AUDIT_VERSION,
   getCommercialReleaseControl,
@@ -21,6 +21,12 @@ test("C6 final release control fails closed even when env approval flags are fil
   assert.equal(state.finalApprovalRecorded,true);
   assert.equal(state.commercialReady,false);
   assert.ok(state.blockers.includes("final-release-evidence"));
+});
+
+test("C6 release verdict requires a validated transition before commercial enablement",()=>{
+  assert.equal(deriveCommercialReleaseVerdict(false,false),"BLOCKED");
+  assert.equal(deriveCommercialReleaseVerdict(false,true),"READY_FOR_TRANSITION");
+  assert.equal(deriveCommercialReleaseVerdict(true,true),"CLEARED");
 });
 
 test("C6 canonical audit aggregates C1 through C6 and remains blocked without external evidence",()=>{
