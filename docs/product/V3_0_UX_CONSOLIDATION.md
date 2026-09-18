@@ -42,7 +42,7 @@ Before v3.0 U1 the sidebar mixed:
 
 That makes the global navigation encode implementation structure rather than user intent.
 
-**U1 decision:** keep only durable destinations global. Make Add flight a visually distinct action. Move Needs attention and FSTD into a local Flights workspace. Keep Actions/Notifications in an Activity group and account/data destinations in Pilot & records.
+**U1 decision:** keep only durable destinations global. Make Add flight a visually distinct action. Move Needs attention and FSTD into a local Flights workspace. Keep Actions as a contextual workflow only when something is waiting. Notifications are application chrome, not navigation: expose a bell with a live unread badge. Keep account/data destinations in Pilot & records.
 
 ### Dashboard — generally correct, review later
 
@@ -95,7 +95,8 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - simplify Logbook global navigation;
   - contextualize Flights sub-workflows;
   - preserve Training task navigation;
-  - keep installation secondary to aircraft selection.
+  - keep installation secondary to aircraft selection;
+  - move Notifications out of navigation into a live unread bell.
 - **U2 — Licences & recency**
 - **U3 — Aircraft / Data / Settings**
 - **U4 — Flight workflow clarity**

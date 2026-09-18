@@ -7,3 +7,10 @@
 :global(.sidebar.collapsed) .primaryAction{margin:4px 0 8px!important}
 :global(.sidebar.collapsed) .group{margin-top:0;padding-top:0;border-top:0}
 :global(.sidebar.collapsed) .groupTitle{display:none}
+
+.notificationBell{position:relative;display:grid;place-items:center;width:38px;height:38px;margin-left:auto;flex:0 0 38px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--muted);text-decoration:none;transition:background .14s ease,color .14s ease,border-color .14s ease}
+.notificationBell:hover{border-color:color-mix(in srgb,var(--accent) 36%,var(--line));background:color-mix(in srgb,var(--accent) 10%,var(--panel2));color:var(--text)}
+.notificationBell :global(.nav-icon){width:19px;height:19px}
+.notificationCount{position:absolute;top:-5px;right:-6px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border:2px solid var(--panel);border-radius:999px;background:#dc3f4f;color:#fff;font-size:.58rem;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+:global(.sidebar.collapsed) .notificationBell{margin:7px auto 5px}
+@media(max-width:760px){.notificationBell{width:36px;height:36px;flex-basis:36px;margin-left:auto}}

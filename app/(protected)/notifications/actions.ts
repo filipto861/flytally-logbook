@@ -5,7 +5,7 @@ import { sql } from "@/lib/db";
 import { declineSharedFlight } from "@/app/(protected)/flights/shared-actions";
 
 const id=(value:unknown)=>{const parsed=Number(value);return Number.isSafeInteger(parsed)&&parsed>0?parsed:0};
-const refresh=()=>{revalidatePath("/notifications");revalidatePath("/actions");revalidatePath("/connections")};
+const refresh=()=>{revalidatePath("/notifications","layout");revalidatePath("/actions");revalidatePath("/connections")};
 
 export async function markNotificationRead(form:FormData){const{userId}=await requireUser();const notification=id(form.get("id"));if(notification)await sql`UPDATE user_notifications SET read_at=COALESCE(read_at,NOW()) WHERE id=${notification} AND user_id=${userId}`;refresh()}
 export async function markAllNotificationsRead(){const{userId}=await requireUser();await sql`UPDATE user_notifications SET read_at=NOW() WHERE user_id=${userId} AND read_at IS NULL`;refresh()}
