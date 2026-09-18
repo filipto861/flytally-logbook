@@ -104,7 +104,10 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - Recency shows flying recency only and keeps evidence/settings one level deeper;
   - licence, document and aircraft-training editors live under a dedicated Records layer;
   - professional experience is no longer mixed into the Licences overview.
-- **U3 — Aircraft / Data / Settings — next**
+- **U3 — Aircraft / Data / Settings — in progress**
+  - **U3.1 ✅ Aircraft & airports:** Aircraft, Airports and Data health are now separate workspaces; the default page shows only aircraft management, the worldwide airport catalogue is search-on-demand, and diagnostics / historical code maintenance no longer interrupt everyday management.
+  - **U3.2 — Print & data — next**
+  - **U3.3 — Settings**
 - **U4 — Flight workflow clarity**
 - **U5 — Training learner polish**
 - **U6 — Mobile, accessibility and final UX acceptance**

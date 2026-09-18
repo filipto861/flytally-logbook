@@ -1,0 +1,58 @@
+/* FlyTally v3.0 U3.1 — Aircraft & airports progressive management hierarchy. */
+.database-workspace-nav{display:flex;gap:6px;width:max-content;max-width:100%;margin:-6px 0 22px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--panel);overflow-x:auto;scrollbar-width:none}
+.database-workspace-nav::-webkit-scrollbar{display:none}
+.database-workspace-nav a{display:flex;align-items:center;gap:7px;min-height:38px;padding:8px 12px;border-radius:9px;color:var(--muted);font-size:.82rem;font-weight:800;text-decoration:none;white-space:nowrap}
+.database-workspace-nav a:hover{color:var(--text);background:var(--panel2)}
+.database-workspace-nav a.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.16)}
+.database-workspace-nav b{display:grid;min-width:19px;height:19px;place-items:center;padding:0 5px;border-radius:999px;background:#7c2d12;color:#fed7aa;font-size:.65rem}
+
+.u31-workspace{display:grid;gap:16px}
+.u31-workspace-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:4px 2px 2px}
+.u31-workspace-heading h2,.u31-panel-heading h2{margin:2px 0 5px}
+.u31-workspace-heading p,.u31-panel-heading p{margin:0;max-width:760px}
+.u31-counts{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.u31-counts span{display:flex;align-items:baseline;gap:5px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-size:.72rem;white-space:nowrap}
+.u31-counts b{color:var(--text);font-size:.88rem}
+
+.u31-airport-panel{display:grid;gap:16px;margin:0}
+.u31-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.u31-airport-editor{display:grid;grid-template-columns:1.1fr 2fr 1.5fr .8fr 1fr 1fr auto;gap:9px;align-items:end;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--panel2)}
+.u31-airport-editor label{min-width:0;gap:5px;font-size:.7rem}
+.u31-airport-editor input{width:100%;min-width:0;padding:10px}
+.u31-airport-editor .primary-button{min-height:42px;white-space:nowrap}
+.u31-airport-search{margin:0}
+.u31-empty-state{display:grid;gap:4px;padding:22px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
+.u31-empty-state strong{color:var(--text)}
+.u31-empty-state.compact{padding:18px}
+.u31-advanced-health{margin:0}
+.u31-advanced-health>summary,.airport-code-migration>summary{cursor:pointer;list-style:none}
+.u31-advanced-health[open]>summary,.airport-code-migration[open]>summary{margin-bottom:18px}
+
+/* Keep everyday aircraft cards concise; defaults and identifiers belong in Manage. */
+.aircraft-card-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.aircraft-card-summary>span{min-width:0;display:grid;gap:3px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}
+.aircraft-card-summary small{color:var(--muted);font-size:.62rem;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+.aircraft-card-summary b{overflow:hidden;text-overflow:ellipsis;font-size:.8rem;white-space:nowrap}
+.aircraft-card-summary em{color:var(--muted);font-size:.62rem;font-style:normal}
+.aircraft-manage-button{margin-top:1px}
+
+html[data-theme="light"] .database-workspace-nav,html[data-theme="light"] .u31-counts span,html[data-theme="light"] .aircraft-card-summary>span{background:#fff}
+html[data-theme="light"] .u31-airport-editor{background:#f7f9fc}
+
+@media(max-width:1100px){
+  .u31-airport-editor{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .u31-airport-editor .primary-button{justify-self:start}
+}
+@media(max-width:760px){
+  .database-workspace-nav{width:100%}
+  .u31-workspace-heading{flex-direction:column}
+  .u31-counts{justify-content:flex-start}
+  .u31-airport-editor{grid-template-columns:1fr 1fr}
+  .u31-airport-editor .primary-button{width:100%}
+}
+@media(max-width:520px){
+  .database-workspace-nav a{flex:1 0 auto;justify-content:center}
+  .u31-airport-editor{grid-template-columns:1fr}
+  .aircraft-card-summary{grid-template-columns:1fr 1fr}
+  .aircraft-card-summary>span:last-child{grid-column:1/-1}
+}

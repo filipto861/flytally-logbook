@@ -33,6 +33,7 @@ import "./v161-category-flight-entry.css";
 import "./v162-sailplane.css";
 import "./v250-recency-workspace.css";
 import "./v300-u2-credentials.css";
+import "./v300-u31-aircraft-airports.css";
 
 export const metadata: Metadata = {
   title: "FlyTally",
