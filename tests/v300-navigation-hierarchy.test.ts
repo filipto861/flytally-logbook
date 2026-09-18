@@ -13,8 +13,11 @@ test("v3.0 U1 keeps global Logbook navigation task-oriented",()=>{
   assert.match(sidebar,/label:"Map"/);
   assert.match(sidebar,/label:"Statistics"/);
   assert.match(sidebar,/className=\{styles\.primaryAction\} href="\/flights\/new"/);
-  assert.doesNotMatch(sidebar,/mainLinks=[\s\S]*\/flights\/needs-attention/);
-  assert.doesNotMatch(sidebar,/mainLinks=[\s\S]*\/fstd/);
+  const mainStart=sidebar.indexOf("const mainLinks=[");
+  const mainEnd=sidebar.indexOf("] as const;",mainStart);
+  const main=sidebar.slice(mainStart,mainEnd);
+  assert.doesNotMatch(main,/\/flights\/needs-attention/);
+  assert.doesNotMatch(main,/\/fstd/);
   assert.match(sidebar,/Pilot & records/);
   assert.match(sidebar,/Licences & recency/);
 });
