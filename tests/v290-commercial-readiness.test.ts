@@ -21,6 +21,7 @@ const clearedEnv = {
   COMMERCIAL_REGULATORY_STRATEGY_VERSION: "2026-09-18-c4-v1",
   COMMERCIAL_TRADEMARK_STATUS: "APPROVED",
   COMMERCIAL_MARKETING_CLAIMS_STATUS: "APPROVED",
+  COMMERCIAL_BRAND_CLAIMS_POLICY_VERSION: "2026-09-18-c5-v1",
 } as const;
 
 test("v2.9 commercial launch defaults fail closed to private beta", () => {
@@ -32,6 +33,7 @@ test("v2.9 commercial launch defaults fail closed to private beta", () => {
   assert.ok(readiness.blockers.includes("commercial-legal-publication"));
   assert.ok(readiness.blockers.includes("commercial-billing-runtime"));
   assert.ok(readiness.blockers.includes("signature-regulatory-evidence"));
+  assert.ok(readiness.blockers.includes("brand-claims-evidence"));
 });
 
 test("v2.9 cannot enable commercial mode merely by requesting it", () => {
@@ -53,12 +55,12 @@ test("v2.9 treats mandatory NOT_REQUIRED as unresolved but allows it for reviewe
   assert.ok(!readiness.blockers.includes("qes"));
 });
 
-test("v2.9 can record complete external validation while C2/C3/C4 code gates remain incomplete", () => {
+test("v2.9 can record complete external validation while C2/C3/C4/C5 code gates remain incomplete", () => {
   const readiness = getCommercialReadiness(clearedEnv);
   assert.equal(readiness.configurationValid, true);
   assert.equal(readiness.operatorIdentityComplete, true);
   assert.equal(readiness.externalValidationComplete, true);
-  assert.deepEqual(readiness.blockers, ["commercial-legal-publication","commercial-billing-runtime","signature-regulatory-evidence"]);
+  assert.deepEqual(readiness.blockers, ["commercial-legal-publication","commercial-billing-runtime","signature-regulatory-evidence","brand-claims-evidence"]);
   assert.equal(readiness.effectiveStage, "external-validation");
   assert.equal(readiness.commercialEnabled, false);
 });
