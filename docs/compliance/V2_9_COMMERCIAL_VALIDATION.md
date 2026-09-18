@@ -84,14 +84,42 @@ All four must match. C2 intentionally leaves the committed commercial content ve
 
 The current Private beta terms remain the only effective Terms until that exact reviewed bundle is committed and published.
 
-## C3–C6 planned sequence
+## C3 — Billing & entitlements foundation
 
-- **C3 — Billing:** provider and subscription model only after the commercial model is chosen; entitlement logic must remain product-agnostic across Logbook/Training.
+C3 separates **access entitlement** from **payment processing**.
+
+The canonical entitlement authority is FlyTally Logbook. It owns a durable PostgreSQL ledger whose grant sources are deliberately provider-neutral:
+
+- `billing`;
+- `organization`;
+- `manual`.
+
+Each durable grant is bound to the account, entitlement key, stable external reference, validity window and revocation state. A future Stripe, Paddle or other adapter may write billing grants, but provider identifiers do not enter Training or the entitlement contract itself.
+
+Current private-beta and external-validation users receive `logbook.access` and `training.access` from the release-stage policy. Administrators retain operational access independently. Once the effective stage becomes commercial, an ordinary user receives no automatic beta grant and therefore requires a durable entitlement.
+
+Cross-product identity moves from `ft1` to `ft2`. The short-lived signed assertion carries entitlement version 1 plus the resolved grants. Training validates the snapshot, requires active `training.access`, and persists the snapshot into its own signed session. Time-bounded grants remain time-bounded inside Training.
+
+Settings exposes the current Access & billing state to the user. C3 does not collect payment data and does not invent pricing, plan names, renewal cadence, trial length or checkout behavior.
+
+### C3 still externally/business dependent
+
+The technical entitlement foundation is complete. The following remain intentionally undecided until the commercial model is chosen:
+
+- payment provider;
+- actual subscription plans and prices;
+- tax/VAT/payment configuration;
+- checkout and customer-portal UX;
+- webhook/provider adapter implementation;
+- exact mapping from purchased products to entitlement grants.
+
+## C4–C6 planned sequence
+
 - **C4 — Signatures & regulator validation:** determine whether current attestations are sufficient and whether advanced/QES or authority-specific workflows are actually required.
 - **C5 — Brand & claims:** trademark decision, marketing claim registry and explicit authority-approval wording.
 - **C6 — Commercial release audit:** technical regression, external evidence checklist and one deliberate transition from external-validation to commercial.
 
-## Non-goals of C1/C2
+## Non-goals of C1/C2/C3
 
 - choosing a payment provider;
 - inventing prices or subscription tiers;
