@@ -1,6 +1,6 @@
 # FlyTally v2.9 — Commercial & External Validation
 
-Status: implementation in progress  
+Status: technical implementation complete; external commercial clearance remains pending  
 Scope: shared FlyTally commercial-launch boundary across Logbook and Training.
 
 ## Objective
@@ -159,11 +159,23 @@ The fourth condition intentionally remains incomplete because `BRAND_CLAIMS_EXTE
 
 The detailed policy and required external work are recorded in `docs/compliance/C5_BRAND_CLAIMS_POLICY.md`.
 
-## C6 planned sequence
+## C6 — Final commercial release audit
 
-- **C6 — Commercial release audit:** technical regression, external evidence checklist and one deliberate transition from external-validation to commercial.
+C6 is technically implemented through the canonical release audit and production build guard.
 
-## Non-goals of C1/C2/C3/C4/C5
+The audit aggregates C1–C6 and distinguishes `BLOCKED`, `READY_FOR_TRANSITION` and `CLEARED`. A production build that requests the `commercial` stage fails unless the complete launch gate is actually clear.
+
+The final transition is intentionally two-step: all release gates must first be validated while the service remains in `external-validation`; only then may a separate deployment request `commercial`.
+
+The current audit is **BLOCKED** because real commercial legal content, payment runtime and external regulatory/brand/final-release evidence are still intentionally absent. This is the expected safe state, not a technical failure.
+
+The authoritative release record is `docs/compliance/V2_9_FINAL_RELEASE_AUDIT.md`.
+
+## v2.9 conclusion
+
+The C1–C6 engineering foundation is complete. FlyTally is not thereby commercially cleared. External legal, operational, rights, regulatory, trademark/claims and business-model work remains real launch work and must not be represented as solved by code.
+
+## Non-goals of C1/C2/C3/C4/C5/C6
 
 - choosing a payment provider;
 - inventing prices or subscription tiers;
