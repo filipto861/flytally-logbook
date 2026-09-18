@@ -44,7 +44,9 @@ test("C4 requires the exact strategy version and explicit decision statuses",()=
 
 test("C4 public legal page makes assurance and authority limits explicit",()=>{
   const page=read("app/legal/regulatory/page.tsx");
-  assert.match(page,/eIDAS qualified electronic signature \(QES\)/i);\n  assert.match(page,/advanced electronic signature/i);\n  assert.match(page,/does <strong>not<\/strong> currently represent/i);
+  assert.match(page,/eIDAS qualified electronic signature \(QES\)/i);
+  assert.match(page,/advanced electronic signature/i);
+  assert.match(page,/does <strong>not<\/strong> currently represent/i);
   assert.match(page,/No authority approval is implied/);
   assert.match(page,/External validation incomplete/);
 });
