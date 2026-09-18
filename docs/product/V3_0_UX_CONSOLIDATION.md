@@ -104,12 +104,12 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - Recency shows flying recency only and keeps evidence/settings one level deeper;
   - licence, document and aircraft-training editors live under a dedicated Records layer;
   - professional experience is no longer mixed into the Licences overview.
-- **U3 — Aircraft / Data / Settings — in progress**
+- **U3 ✅ Aircraft / Data / Settings**
   - **U3.1 ✅ Aircraft & airports:** Aircraft, Airports and Data health are now separate workspaces; the default page shows only aircraft management, the worldwide airport catalogue is search-on-demand, and diagnostics / historical code maintenance no longer interrupt everyday management.
   - **U3.1a ✅ Personal aircraft sharing & identity:** an aircraft profile can be sent to an accepted Connection as a one-time copy with sender-selected photo, defaults, current rate, rate history and notes. Existing recipient registrations are merged by explicit import choices instead of duplicated; no fleet ownership or ongoing synchronization is introduced.
   - **U3.2 ✅ Print & data:** Print/export, backup/restore and deleted-flight recovery are separate task workspaces; portable JSON backup now lives with recovery, technical output notes use progressive disclosure, and backup/trash data is loaded only when its workspace is opened.
-  - **U3.3 — Settings — next**
-- **U4 — Flight workflow clarity**
+  - **U3.3 ✅ Settings:** General, Account & security and Privacy are separate task workspaces; security/privacy queries load only in their own workspace, licence management is no longer duplicated in Settings, portable backup is handed off to Print & data, and access/data-retention detail uses progressive disclosure.
+- **U4 — Flight workflow clarity — next**
 - **U5 — Training learner polish**
 - **U6 — Mobile, accessibility and final UX acceptance**
 
