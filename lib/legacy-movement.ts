@@ -2,6 +2,7 @@ export type MovementCompatibilityInput={
   evidence:unknown;
   movementEvidenceRecorded:unknown;
   legacyMovementCandidate:unknown;
+  starts?:unknown;
   landingsDay:unknown;
   landingsNight:unknown;
   takeoffsDay:unknown;
@@ -17,6 +18,7 @@ export type MovementCompatibilityResult={
   approachesDay:number;
   approachesNight:number;
   legacyMovementInferred:boolean;
+  ullMovementInferred:boolean;
 };
 
 const count=(value:unknown)=>Math.max(0,Math.round(Number(value)||0));
@@ -26,15 +28,24 @@ const evidence=(value:unknown)=>String(value??"").trim().toUpperCase();
 /**
  * Preserve structured movement evidence exactly. For certified EASA flights that
  * pre-date the structured PF counters, conservatively reconstruct one take-off
- * and one approach for each historically recorded landing. A structured-era
- * record with movement evidence explicitly left off is never inferred.
+ * and one approach for each historically recorded landing. ULL records historically
+ * stored native starts and landings instead of FCL.060 PF counters; when both exist,
+ * they provide a conservative total-movement compatibility record. Night PF counters
+ * are never inferred from native ULL totals. A structured-era EASA record with PF
+ * movement evidence explicitly left off is never inferred.
  */
 export function resolveMovementCompatibility(input:MovementCompatibilityInput):MovementCompatibilityResult{
   const explicit=enabled(input.movementEvidenceRecorded),takeoffsDay=count(input.takeoffsDay),takeoffsNight=count(input.takeoffsNight),approachesDay=count(input.approachesDay),approachesNight=count(input.approachesNight);
-  if(explicit)return{movementEvidenceRecorded:true,takeoffsDay,takeoffsNight,approachesDay,approachesNight,legacyMovementInferred:false};
+  if(explicit)return{movementEvidenceRecorded:true,takeoffsDay,takeoffsNight,approachesDay,approachesNight,legacyMovementInferred:false,ullMovementInferred:false};
 
-  const landingsDay=count(input.landingsDay),landingsNight=count(input.landingsNight),legacy=enabled(input.legacyMovementCandidate)&&evidence(input.evidence)==="EASA"&&(landingsDay+landingsNight)>0;
-  if(!legacy)return{movementEvidenceRecorded:false,takeoffsDay,takeoffsNight,approachesDay,approachesNight,legacyMovementInferred:false};
+  const landingsDay=count(input.landingsDay),landingsNight=count(input.landingsNight),landingTotal=landingsDay+landingsNight,source=evidence(input.evidence);
+  if(source==="ULL"){
+    const starts=count(input.starts),usable=starts>0&&landingTotal>0;
+    return{movementEvidenceRecorded:usable,takeoffsDay:usable?starts:0,takeoffsNight:0,approachesDay:usable?landingTotal:0,approachesNight:0,legacyMovementInferred:false,ullMovementInferred:usable};
+  }
 
-  return{movementEvidenceRecorded:true,takeoffsDay:landingsDay,takeoffsNight:landingsNight,approachesDay:landingsDay,approachesNight:landingsNight,legacyMovementInferred:true};
+  const legacy=enabled(input.legacyMovementCandidate)&&source==="EASA"&&landingTotal>0;
+  if(!legacy)return{movementEvidenceRecorded:false,takeoffsDay,takeoffsNight,approachesDay,approachesNight,legacyMovementInferred:false,ullMovementInferred:false};
+
+  return{movementEvidenceRecorded:true,takeoffsDay:landingsDay,takeoffsNight:landingsNight,approachesDay:landingsDay,approachesNight:landingsNight,legacyMovementInferred:true,ullMovementInferred:false};
 }

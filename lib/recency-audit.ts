@@ -1,8 +1,8 @@
 import type { CustomRecencyRule,RecencyEvaluation,RecencyEvidence,RecencyFlight } from "./recency-engine.ts";
-import { isAnnexCreditForClass,isClassRefresherFlight,rollingDaysStart,rollingYearsStart } from "./recency-engine.ts";
+import { isAnnexCreditForClass,isClassRefresherFlight,isFcl060ClassEligible,rollingDaysStart,rollingYearsStart } from "./recency-engine.ts";
 
 export type RecencyAuditStatus="confirmed"|"limited"|"review";
-export type RecencyAuditFlight=RecencyFlight&{id:number;registration:string;departure:string;arrival:string;legacyMovementInferred?:boolean};
+export type RecencyAuditFlight=RecencyFlight&{id:number;registration:string;departure:string;arrival:string;legacyMovementInferred?:boolean;ullMovementInferred?:boolean};
 export type RecencyAuditRow={id:string;source:"flight"|"evidence"|"credential";date:string;title:string;detail:string;status:RecencyAuditStatus;dropOffDate?:string;href?:string;issue?:string};
 export type RecencyAuditBundle={rows:RecencyAuditRow[];totalRows:number;confirmedCount:number;limitedCount:number;issueCount:number};
 
@@ -51,13 +51,13 @@ function laplAudit(flights:RecencyAuditFlight[],evidence:RecencyEvidence[],today
 
 function fcl060Audit(evaluation:RecencyEvaluation,flights:RecencyAuditFlight[],today:string){
   const match=/^fcl060-(sep|tmg)-(day|night)$/.exec(evaluation.id),aircraftClass=match?.[1]?.toUpperCase(),mode=match?.[2];if(!aircraftClass||!mode)return bundle([]);
-  const start=rollingDaysStart(today,90),window=flights.filter(f=>f.date>=start&&f.date<=today&&classKey(f.aircraftClass)===aircraftClass&&pilotFlyingRole(f.role)&&upper(f.evidence)!=="ULL"),rows:RecencyAuditRow[]=[],landingIndicator=Boolean(evaluation.meta?.landingIndicator);
+  const start=rollingDaysStart(today,90),window=flights.filter(f=>f.date>=start&&f.date<=today&&isFcl060ClassEligible(f,aircraftClass as "SEP"|"TMG")&&pilotFlyingRole(f.role)),rows:RecencyAuditRow[]=[],landingIndicator=Boolean(evaluation.meta?.landingIndicator);
   for(const f of window){
     const takeoffs=movement(f,"takeoff"),approaches=movement(f,"approach"),landingCount=landings(f),nightTakeoffs=movement(f,"takeoff",true),nightApproaches=movement(f,"approach",true),nightCount=landings(f,true);
     if(landingIndicator){if(!landingCount)continue;const nightDetail=mode==="night"?` · ${plural(nightCount,"night landing")}`:"";rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}`,status:"confirmed",dropOffDate:addDays(f.date,90),href:flightHref(f)});continue}
     if(takeoffs+approaches+landingCount===0)continue;
-    const structured=Boolean(f.movementEvidenceRecorded),consistencyIssue=structured?movementEvidenceIssue(f):"",status:RecencyAuditStatus=!structured?"limited":consistencyIssue?"review":"confirmed",legacy=f.legacyMovementInferred?" · legacy landing compatibility":"",nightDetail=mode==="night"?` · night ${nightTakeoffs} T/O · ${nightApproaches} approach${nightApproaches===1?"":"es"} · ${nightCount} landing${nightCount===1?"":"s"}`:"",issue=!structured?"Take-off and approach evidence is unavailable for this certified structured-era flight":consistencyIssue||undefined;
-    rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(takeoffs,"take-off")} · ${plural(approaches,"approach")} · ${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}${legacy}`,status,dropOffDate:addDays(f.date,90),href:flightHref(f),issue});
+    const structured=Boolean(f.movementEvidenceRecorded),consistencyIssue=structured?movementEvidenceIssue(f):"",status:RecencyAuditStatus=!structured?"limited":consistencyIssue?"review":"confirmed",compatibility=f.ullMovementInferred?` · ULL → ${aircraftClass} native movement evidence`:f.legacyMovementInferred?" · legacy landing compatibility":"",nightDetail=mode==="night"?` · night ${nightTakeoffs} T/O · ${nightApproaches} approach${nightApproaches===1?"":"es"} · ${nightCount} landing${nightCount===1?"":"s"}`:"",issue=!structured?(upper(f.evidence)==="ULL"?"Native ULL start / landing evidence is incomplete for this flight":"Take-off and approach evidence is unavailable for this certified structured-era flight"):consistencyIssue||undefined;
+    rows.push({id:`flight:${f.id}`,source:"flight",date:f.date,title:flightTitle(f),detail:`${plural(takeoffs,"take-off")} · ${plural(approaches,"approach")} · ${plural(landingCount,"landing")}${nightDetail} · ${upper(f.role)}${compatibility}`,status,dropOffDate:addDays(f.date,90),href:flightHref(f),issue});
   }
   if(mode==="night"&&Boolean(evaluation.meta?.irExemption))rows.push({id:"credential:ir",source:"credential",date:today,title:"Current IR",detail:"Current IR is included in the night planning indicator.",status:"confirmed"});
   return bundle(rows);

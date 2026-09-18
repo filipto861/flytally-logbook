@@ -50,9 +50,9 @@ test("v2.0-A category capabilities keep regulatory evidence families separate",(
   assert.equal(balloon.supportsFcl060MovementEvidence,false);
 
   const ull=aircraftCategoryCapabilities({regulatoryCategory:"ULL",aircraftClass:"ULL",evidence:"ULL"});
-  assert.equal(ull.movementEvidenceMode,"NONE");
+  assert.equal(ull.movementEvidenceMode,"FCL060_PF");
   assert.equal(ull.recencyFamily,"ULL");
-  assert.equal(ull.supportsFcl060MovementEvidence,false);
+  assert.equal(ull.supportsFcl060MovementEvidence,true);
 });
 
 test("v2.0-A distinguishes non-TMG sailplane launch evidence from SPL TMG take-off evidence",()=>{
