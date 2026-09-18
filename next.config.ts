@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { assertCommercialProductionBuildSafe } from "./lib/commercial-build-guard.ts";
+
+assertCommercialProductionBuildSafe(process.env);
 
 const contentSecurityPolicy=[
   "default-src 'self'",
