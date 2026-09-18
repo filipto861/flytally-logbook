@@ -13,10 +13,11 @@ v2.8 is not complete until C1–C6 are green. Public commercial launch is blocke
 - Operator identity is environment-backed. Missing formal operator details are a public-launch blocker.
 
 ### C2 — Maps & third-party licensing
-- Satellite: ArcGIS World Imagery with labels/reference overlay; ArcGIS credential remains server-side.
-- Normal map: OSM Standard remains transitional in this baseline. Requests preserve an allowed FlyTally browser Referer upstream, identify FlyTally and use cache headers.
-- Required map attribution must remain visible in interactive and exported Story maps.
-- Target before v2.8 completion: either migrate normal map tiles to a contracted/provider-backed service or re-verify the OSM proxy implementation against the then-current tile policy.
+- Satellite: ArcGIS World Imagery with ArcGIS imagery labels/reference overlay; the ArcGIS credential remains server-side.
+- Normal map: ArcGIS Static Basemap Tiles Open Streets, proxied through FlyTally so provider credentials never reach the browser.
+- Direct use of the community `tile.openstreetmap.org` service has been removed from FlyTally map surfaces.
+- Required Esri/data attribution remains visible in interactive Leaflet maps and exported Story maps.
+- Map responses are cached through the application/provider path; a missing provider credential fails closed rather than silently switching to an unreviewed tile source.
 
 ### C3 — Aviation records
 - Maintain an auditable mapping of AMC1 FCL.050 requirements to stored fields, export columns, page/running totals and signature workflow.
@@ -30,13 +31,13 @@ v2.8 is not complete until C1–C6 are green. Public commercial launch is blocke
 - AI drafting cannot publish safety-critical content without governed human approval.
 
 ### C5 — Security & public sharing
-- Security headers include HSTS, nosniff, frame denial, strict-origin referrer policy and a restrictive Permissions-Policy.
+- Security headers include HSTS, nosniff, frame denial, strict-origin referrer policy, restrictive Permissions-Policy, CSP, COOP and CORP.
 - Public flight shares are secret-token based, revocable, limited to public DTO fields and marked `noindex`/`nofollow`/`nocache`.
 - Sharing UI states which fields become public and links to privacy/terms.
 - Public report route exists for privacy, copyright, security and unlawful-content concerns.
 
 ### C6 — Compliance regression suite
-- Tests protect legal route availability, technical-cookie wording, public-share noindex, public-field disclosure, provider registry, security headers, map Referer/attribution rules and aviation-safety boundaries.
+- Tests protect legal route availability, technical-cookie wording, public-share noindex, public-field disclosure, provider registry, security headers, provider-backed map routing/attribution rules and aviation-safety boundaries.
 
 ## GDPR processing record (RoPA baseline)
 

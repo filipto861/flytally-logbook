@@ -33,16 +33,25 @@ test("v2.8 security baseline restricts unnecessary browser capabilities",()=>{
   assert.match(config,/camera=\(\), microphone=\(\), geolocation=\(\), payment=\(\), usb=\(\)/);
   assert.match(config,/strict-origin-when-cross-origin/);
   assert.match(config,/X-Frame-Options/);
+  assert.match(config,/Content-Security-Policy/);
+  assert.match(config,/frame-ancestors 'none'/);
+  assert.match(config,/object-src 'none'/);
+  assert.match(config,/Cross-Origin-Opener-Policy/);
+  assert.match(config,/Cross-Origin-Resource-Policy/);
 });
 
-test("v2.8 map proxy identifies FlyTally, preserves an allowed Referer and keeps attribution as a release requirement",()=>{
-  const route=read("app/api/map-tile/[z]/[x]/[y]/route.ts"),docs=read("docs/compliance/V2_8_COMPLIANCE_FOUNDATION.md");
-  assert.match(route,/User-Agent/);
-  assert.match(route,/request\.headers\.get\("referer"\)/);
-  assert.match(route,/Referer: referer/);
+test("v2.8 maps use the reviewed ArcGIS provider path and retain attribution",()=>{
+  const route=read("app/api/map-tile/[z]/[x]/[y]/route.ts"),leaflet=read("components/leaflet-mobile.ts"),story=read("components/flight-story-card.tsx"),docs=read("docs/compliance/V2_8_COMPLIANCE_FOUNDATION.md");
+  assert.match(route,/ARCGIS_OPEN_STREETS_HOST/);
+  assert.match(route,/open\/streets\/static\/tile/);
   assert.match(route,/ARCGIS_ACCESS_TOKEN/);
-  assert.match(docs,/Required map attribution must remain visible/);
-  assert.match(docs,/OSM Standard remains transitional/);
+  assert.match(route,/User-Agent/);
+  assert.doesNotMatch(route,/tile\.openstreetmap\.org/);
+  assert.match(leaflet,/\/api\/map-tile\/\{z\}\/\{x\}\/\{y\}\?style=map/);
+  assert.doesNotMatch(leaflet,/tile\.openstreetmap\.org/);
+  assert.match(leaflet,/Esri/);
+  assert.match(story,/Esri · © OpenStreetMap contributors · Microsoft · Esri Community Maps/);
+  assert.match(docs,/Direct use of the community/);
 });
 
 test("v2.8 records processors, retention, incident response and aviation authority boundaries",()=>{
