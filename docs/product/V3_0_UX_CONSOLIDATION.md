@@ -96,7 +96,7 @@ U6 will re-audit the core tasks on narrow/touch layouts. Mobile changes must pre
   - contextualize Flights sub-workflows;
   - preserve Training task navigation;
   - keep installation secondary to aircraft selection;
-  - move Notifications out of navigation into a live unread bell.
+  - move Notifications out of navigation into a live unread bell;\n  - U1.2: remove the redundant Activity section, flatten Pilot & records navigation, fix light-theme section contrast, stack collapsed desktop chrome cleanly and constrain the wide-screen notification inbox.
 - **U2 — Licences & recency**
 - **U3 — Aircraft / Data / Settings**
 - **U4 — Flight workflow clarity**
