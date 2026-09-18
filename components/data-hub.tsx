@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { BackupCenter } from "@/components/backup-center";
 import { BackupRestore } from "@/components/backup-restore";
 import { FlightTrash } from "@/components/flight-trash";
@@ -8,56 +5,64 @@ import { LOGBOOK_OUTPUT_CATEGORIES,LOGBOOK_PRINT_SCOPES } from "@/lib/logbook-pr
 import type { StoredBackup } from "@/lib/backup-center";
 import type { DeletedFlight } from "@/lib/flight-trash";
 import type { RestoreState,TrashRestoreState } from "@/app/(protected)/export/actions";
+import type { DataWorkspaceView } from "@/components/data-workspace-navigation";
 
-type Section="export"|"backups"|"restore"|"trash";
 type RestoreAction=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
 type TrashAction=(state:TrashRestoreState,form:FormData)=>Promise<TrashRestoreState>;
 
-export function DataHub({backups,deletedFlights,createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
-  backups:StoredBackup[];deletedFlights:DeletedFlight[];createAction:()=>Promise<void>;restoreStoredAction:RestoreAction;restoreFileAction:RestoreAction;restoreTrashAction:TrashAction;
+export function DataHub({view,backups=[],deletedFlights=[],createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
+  view:DataWorkspaceView;
+  backups?:StoredBackup[];
+  deletedFlights?:DeletedFlight[];
+  createAction:()=>Promise<void>;
+  restoreStoredAction:RestoreAction;
+  restoreFileAction:RestoreAction;
+  restoreTrashAction:TrashAction;
 }){
-  const [section,setSection]=useState<Section>("export");
-  return <section className="data-hub">
-    <nav className="data-hub-nav" aria-label="Data tools" role="tablist">
-      <button type="button" role="tab" id="data-tab-export" aria-controls="data-panel-export" className={section==="export"?"active":""} aria-selected={section==="export"} onClick={()=>setSection("export")}><span>Print & export</span></button>
-      <button type="button" role="tab" id="data-tab-backups" aria-controls="data-panel-backups" className={section==="backups"?"active":""} aria-selected={section==="backups"} onClick={()=>setSection("backups")}><span>Backups</span><b>{backups.length}</b></button>
-      <button type="button" role="tab" id="data-tab-restore" aria-controls="data-panel-restore" className={section==="restore"?"active":""} aria-selected={section==="restore"} onClick={()=>setSection("restore")}><span>Restore file</span></button>
-      <button type="button" role="tab" id="data-tab-trash" aria-controls="data-panel-trash" className={section==="trash"?"active":""} aria-selected={section==="trash"} onClick={()=>setSection("trash")}><span>Deleted flights</span>{deletedFlights.length?<b>{deletedFlights.length}</b>:null}</button>
-    </nav>
+  if(view==="recovery")return <main className="u32-data-workspace">
+    <section className="u32-workspace-heading"><div><p className="eyebrow">BACKUP & RESTORE</p><h2>Keep a recoverable copy of your logbook</h2><p className="muted">Use FlyTally recovery points for normal recovery. Download a portable backup when you want an independent copy outside FlyTally.</p></div></section>
+    <section className="u32-recovery-grid">
+      <div className="u32-recovery-primary"><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/></div>
+      <aside className="panel u32-portable-backup"><div><p className="eyebrow">PORTABLE COPY</p><h2>Download complete backup</h2><p className="muted">A complete JSON account backup for your own archive or later recovery.</p></div><a className="primary-button" href="/api/export?format=json">Download JSON backup</a><details><summary>What is included?</summary><p className="muted">The portable backup keeps the account data needed by FlyTally recovery, including logbook records, protected certification history and supported settings. Shared workflow state remains subject to recovery authenticity rules.</p></details></aside>
+    </section>
+    <section className="u32-file-restore">
+      <header className="u32-section-heading"><div><p className="eyebrow">RESTORE FROM FILE</p><h2>Use an existing FlyTally backup</h2><p className="muted">The file is validated and compared with this account before anything can be restored. Existing records are not overwritten.</p></div></header>
+      <BackupRestore action={restoreFileAction}/>
+    </section>
+  </main>;
 
-    <div className="data-hub-content">
-      {section==="export"?<div className="export-hub-workspace" role="tabpanel" id="data-panel-export" aria-labelledby="data-tab-export"><header className="workspace-heading"><p className="eyebrow">PRINT & EXPORT</p><h2>Choose one output</h2><p className="muted">Use the printable logbook for a structured pilot record. Excel and CSV are for your own data processing.</p></header>
-        <section className="panel export-workspace" aria-label="Printable pilot logbook">
-          <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">Keep the date range empty for the complete logbook, or limit large print jobs to a period. Holder identity comes from Licences.</p></div></header>
-          <form className="export-filter" action="/print" method="get">
-            <label>From<input type="date" name="from"/><small>Optional</small></label>
-            <label>To<input type="date" name="to"/><small>Optional</small></label>
-            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select><small>Complete includes every logbook category; ULL + EASA excludes other evidence.</small></label>
-            <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select><small>Part-FCL/powered records keep the established FCL.050 view; Sailplane and Balloon use category-specific FlyTally print views.</small></label>
-            <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
-            <div className="export-format-actions"><button className="primary-button">Open printable logbook</button></div>
-          </form>
-          <p className="muted">Category-specific Sailplane, Balloon and Other views are structured FlyTally records, not authority-issued forms. FSTD is shown only when no regulatory-category filter is active.</p>
-        </section>
+  if(view==="deleted")return <main className="u32-data-workspace">
+    <section className="u32-workspace-heading"><div><p className="eyebrow">RECOVERY</p><h2>Deleted flights</h2><p className="muted">Restore flights that were removed from your logbook. This is separate from full account backup recovery.</p></div></section>
+    <FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/>
+  </main>;
 
-        <section className="panel export-workspace" aria-label="Export flight records">
-          <header><div><p className="eyebrow">DATA EXPORT</p><h2>Flight records</h2><p className="muted">Excel and CSV preserve the stored logbook evidence and expose the regulatory category plus category-specific movement evidence.</p></div></header>
-          <form className="export-filter" action="/api/export" method="get">
-            <label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label>
-            <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
-            <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select><small>Optional category scope; legacy records use the same conservative resolver as Flights and Statistics.</small></label>
-            <label>Registration<input name="registration" placeholder="OK-..."/><small>Filters flight rows only</small></label>
-            <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
-            <div className="export-format-actions"><button className="primary-button" name="format" value="xls">Excel</button><button name="format" value="csv">CSV</button></div>
-          </form>
-          <p className="muted">Excel includes filtered flight rows and a category-aware summary. FSTD is included only when no regulatory-category filter is active, because FSTD sessions do not store a flight regulatory-category snapshot. CSV contains filtered flight rows only.</p>
-        </section>
+  return <main className="u32-data-workspace">
+    <section className="u32-workspace-heading"><div><p className="eyebrow">PRINT & EXPORT</p><h2>Get your logbook out of FlyTally</h2><p className="muted">Print a pilot logbook or export flight rows for your own processing. Backup and recovery tools live in their own section.</p></div></section>
+    <section className="u32-output-grid">
+      <article className="panel u32-output-card">
+        <header><div><p className="eyebrow">PILOT LOGBOOK</p><h2>Printable logbook</h2><p className="muted">Open a print-ready logbook for the complete history or a selected period.</p></div><span className="u32-output-kind">PRINT</span></header>
+        <form className="u32-output-form" action="/print" method="get">
+          <div className="u32-date-range"><label>From<input type="date" name="from"/><small>Optional</small></label><label>To<input type="date" name="to"/><small>Optional</small></label></div>
+          <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
+          <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+          <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
+          <button className="primary-button">Open printable logbook</button>
+        </form>
+        <details className="u32-output-details"><summary>Output details</summary><p className="muted">Holder identity comes from Licences. Part-FCL/powered records keep the established FCL.050 view. Sailplane, Balloon and Other are structured FlyTally print views, not authority-issued forms. FSTD is shown only when no regulatory-category filter is active.</p></details>
+      </article>
 
-        <section className="panel export-workspace" aria-label="Complete account backup"><header><div><p className="eyebrow">BACKUP EXPORT</p><h2>Complete JSON backup</h2><p className="muted">Unfiltered portable account backup. Safety Pilot and all other records are always retained.</p></div></header><div className="data-hub-links"><a className="secondary-link" href="/api/export?format=json"><span>Complete JSON backup</span><b>Download</b></a></div></section>
-      </div>:null}
-      {section==="backups"?<div role="tabpanel" id="data-panel-backups" aria-labelledby="data-tab-backups"><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Backups</h2><p className="muted">Automatic and manual recovery points for this account.</p></header><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/></div>:null}
-      {section==="restore"?<div className="restore-workspace" role="tabpanel" id="data-panel-restore" aria-labelledby="data-tab-restore"><header className="workspace-heading"><p className="eyebrow">DATA SAFETY</p><h2>Restore from a file</h2><p className="muted">Select one FlyTally JSON backup. It will be validated automatically before you can restore anything.</p></header><BackupRestore action={restoreFileAction}/></div>:null}
-      {section==="trash"?<div role="tabpanel" id="data-panel-trash" aria-labelledby="data-tab-trash"><header className="workspace-heading"><p className="eyebrow">RECOVERY</p><h2>Deleted flights</h2><p className="muted">Restore flights that were removed from the logbook.</p></header><FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/></div>:null}
-    </div>
-  </section>;
+      <article className="panel u32-output-card">
+        <header><div><p className="eyebrow">FLIGHT DATA</p><h2>Excel or CSV</h2><p className="muted">Export stored flight records for spreadsheets, analysis or your own archive.</p></div><span className="u32-output-kind">DATA</span></header>
+        <form className="u32-output-form" action="/api/export" method="get">
+          <div className="u32-date-range"><label>From<input type="date" name="from"/></label><label>To<input type="date" name="to"/></label></div>
+          <label>Logbook content<select name="scope" defaultValue="all">{LOGBOOK_PRINT_SCOPES.map(scope=><option key={scope.value} value={scope.value}>{scope.label}</option>)}</select></label>
+          <label>Regulatory category<select name="category" defaultValue="all">{LOGBOOK_OUTPUT_CATEGORIES.map(category=><option key={category.value} value={category.value}>{category.label}</option>)}</select></label>
+          <label>Registration<input name="registration" placeholder="OK-..."/><small>Optional</small></label>
+          <label>Auxiliary roles<select name="auxiliary" defaultValue="exclude"><option value="exclude">Exclude Safety Pilot / PAX / Observer</option><option value="include">Include for reference</option></select></label>
+          <div className="u32-export-actions"><button className="primary-button" name="format" value="xls">Download Excel</button><button className="secondary-button" name="format" value="csv">Download CSV</button></div>
+        </form>
+        <details className="u32-output-details"><summary>Excel vs CSV</summary><p className="muted">Excel includes filtered flight rows and a category-aware summary. CSV contains filtered flight rows only. FSTD is included only when no regulatory-category filter is active because FSTD sessions do not store a flight regulatory-category snapshot.</p></details>
+      </article>
+    </section>
+  </main>;
 }

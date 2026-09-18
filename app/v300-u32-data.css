@@ -1,0 +1,43 @@
+/* FlyTally v3.0 U3.2 — task-oriented Print & data hierarchy. */
+.data-workspace-nav{display:flex;gap:6px;width:max-content;max-width:100%;margin:-6px 0 22px;padding:4px;border:1px solid var(--line);border-radius:13px;background:var(--panel);overflow-x:auto;scrollbar-width:none}
+.data-workspace-nav::-webkit-scrollbar{display:none}
+.data-workspace-nav a{display:flex;align-items:center;justify-content:center;min-height:38px;padding:8px 12px;border-radius:9px;color:var(--muted);font-size:.82rem;font-weight:800;text-decoration:none;white-space:nowrap}
+.data-workspace-nav a:hover{background:var(--panel2);color:var(--text)}
+.data-workspace-nav a.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.14)}
+
+.u32-data-workspace{display:grid;gap:16px}
+.u32-workspace-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:4px 2px 2px}
+.u32-workspace-heading h2,.u32-section-heading h2{margin:2px 0 5px}.u32-workspace-heading p,.u32-section-heading p{margin:0;max-width:760px}
+.u32-output-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.u32-output-card{display:grid;gap:16px;margin:0}
+.u32-output-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.u32-output-card h2{margin:2px 0 5px}.u32-output-card header p{margin:0}
+.u32-output-kind{padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--muted);font-size:.62rem;font-weight:850;letter-spacing:.07em}
+.u32-output-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;border:0;background:transparent}
+.u32-output-form>label{grid-column:1/-1;gap:5px}
+.u32-output-form input,.u32-output-form select{width:100%;padding:11px 12px}
+.u32-date-range{display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:1/-1}.u32-date-range label{gap:5px}
+.u32-output-form>.primary-button,.u32-export-actions{grid-column:1/-1}
+.u32-export-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.u32-export-actions button{width:100%}
+.u32-output-details{border-top:1px solid var(--line);padding-top:12px}.u32-output-details summary{cursor:pointer;color:var(--muted);font-size:.75rem;font-weight:800}.u32-output-details p{margin:9px 0 0;font-size:.72rem;line-height:1.5}
+
+.u32-recovery-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.5fr);gap:14px;align-items:start}
+.u32-recovery-primary>.backup-center{margin:0}
+.u32-portable-backup{display:grid;gap:16px;margin:0;position:sticky;top:18px}
+.u32-portable-backup h2{margin:2px 0 5px}.u32-portable-backup p{margin:0}
+.u32-portable-backup .primary-button{text-align:center}
+.u32-portable-backup details{padding-top:12px;border-top:1px solid var(--line)}.u32-portable-backup summary{cursor:pointer;color:var(--muted);font-size:.75rem;font-weight:800}.u32-portable-backup details p{margin-top:9px;font-size:.72rem;line-height:1.5}
+.u32-file-restore{display:grid;gap:12px;margin-top:2px}.u32-file-restore>.backup-restore{margin:0}
+.u32-section-heading{padding:2px}
+
+html[data-theme="light"] .data-workspace-nav{background:#fff}
+html[data-theme="light"] .u32-output-kind{background:#f4f7fa}
+html[data-theme="light"] .u32-output-card,
+html[data-theme="light"] .u32-portable-backup{background:linear-gradient(145deg,#fff,#f8fafc)}
+
+@media(max-width:980px){.u32-output-grid,.u32-recovery-grid{grid-template-columns:1fr}.u32-portable-backup{position:static}}
+@media(max-width:620px){
+  .data-workspace-nav{width:100%}.data-workspace-nav a{flex:1 0 auto}
+  .u32-date-range,.u32-output-form,.u32-export-actions{grid-template-columns:1fr}
+  .u32-output-card{padding:18px 15px}
+}
