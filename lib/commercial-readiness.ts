@@ -1,3 +1,5 @@
+import { getCommercialLegalPublicationState } from "./commercial-legal.ts";
+
 export type FlyTallyLaunchStage = "private-beta" | "external-validation" | "commercial";
 export type ExternalValidationStatus = "PENDING" | "APPROVED" | "NOT_REQUIRED";
 
@@ -21,10 +23,6 @@ export type CommercialReadiness = Readonly<{
   gates: readonly CommercialReadinessGate[];
   blockers: readonly string[];
 }>;
-
-// C1 deliberately keeps public commercial mode impossible until C2 replaces the
-// private-beta legal surface with externally reviewed commercial terms.
-const COMMERCIAL_LEGAL_SURFACE_IMPLEMENTED = false;
 
 const mandatoryApprovalGates = [
   ["legal-review", "Jurisdiction-appropriate lawyer review", "COMMERCIAL_LEGAL_REVIEW_STATUS"],
@@ -77,6 +75,7 @@ function hasOperatorIdentity(env: Env): boolean {
 export function getCommercialReadiness(env: Env = process.env): CommercialReadiness {
   const requested = readRequestedStage(env.FLYTALLY_LAUNCH_STAGE);
   const operatorIdentityComplete = hasOperatorIdentity(env);
+  const commercialLegal = getCommercialLegalPublicationState(env);
 
   const gates: CommercialReadinessGate[] = [
     {
@@ -112,7 +111,7 @@ export function getCommercialReadiness(env: Env = process.env): CommercialReadin
   const externalValidationComplete = externalBlockers.length === 0;
   const blockers = [...externalBlockers];
 
-  if (!COMMERCIAL_LEGAL_SURFACE_IMPLEMENTED) blockers.push("commercial-legal-surface");
+  if (!commercialLegal.publicationReady) blockers.push("commercial-legal-publication");
   if (!requested.valid) blockers.unshift("launch-stage-configuration");
 
   const commercialEnabled = requested.valid
