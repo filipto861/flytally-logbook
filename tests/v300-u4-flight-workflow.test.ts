@@ -23,8 +23,8 @@ test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
   assert.match(workflow,/stage\("Share"/);
   assert.match(workflow,/Continue to certification/);
   assert.doesNotMatch(workflow,/className="primary-button" href=\{state\.shareHref\}>Share flight/);
-  assert.match(detail,/flight-share-shortcut/);
-  assert.match(detail,/href=\{workflow\.shareHref\}>Share<\/Link>/);
+  assert.doesNotMatch(detail,/flight-share-shortcut/);
+  assert.match(page,/certified\?<Link className="secondary-link" href=\{`\/flights\/\$\{id\}\/share`\}>Share<\/Link>/);
   assert.match(workflow,/Available after certification/);
   assert.match(detail,/FlightWorkflowProgress/);
   assert.match(detail,/Flight saved as an editable draft/);
