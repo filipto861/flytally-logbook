@@ -8,19 +8,17 @@ import { NavIcon } from "./nav-icon";
 
 const mainLinks=[
   {href:"/dashboard",icon:"dashboard",label:"Dashboard"},
-  {href:"/statistics",icon:"statistics",label:"Statistics"},
   {href:"/flights",icon:"flights",label:"Flights"},
-  {href:"/flights/needs-attention",icon:"flights",label:"Needs attention",sub:true},
-  {href:"/fstd",icon:"simulator",label:"FSTD sessions",sub:true},
-  {href:"/flights/new",icon:"add",label:"Add flight"},
   {href:"/map",icon:"map",label:"Map"},
+  {href:"/statistics",icon:"statistics",label:"Statistics"},
 ] as const;
-const profileLinks=[
-  {href:"/connections",icon:"connections",label:"Connections"},
-  {href:"/credentials",icon:"credentials",label:"Licences"},
-  {href:"/profile",icon:"settings",label:"Settings"},
+
+const recordLinks=[
+  {href:"/credentials",icon:"credentials",label:"Licences & recency"},
   {href:"/database",icon:"database",label:"Aircraft & airports"},
+  {href:"/connections",icon:"connections",label:"Connections"},
   {href:"/data",icon:"data",label:"Print & data"},
+  {href:"/profile",icon:"settings",label:"Settings"},
 ] as const;
 
 export function Sidebar({role="user",actionCount=0,attentionCount=0}:{role?:"admin"|"user";actionCount?:number;attentionCount?:number}){
@@ -36,19 +34,34 @@ export function Sidebar({role="user",actionCount=0,attentionCount=0}:{role?:"adm
     return()=>{document.body.style.overflow=previous;window.removeEventListener("keydown",close)};
   },[mobile]);
   const toggle=()=>{const next=!collapsed;setCollapsed(next);localStorage.setItem("logbook-sidebar",next?"collapsed":"open")};
-  const activeFor=(href:string)=>href==="/dashboard"?pathname===href:href==="/flights"?(pathname===href||/^\/flights\/\d/.test(pathname)||pathname==="/fstd"):pathname===href||pathname.startsWith(`${href}/`);
-  const visibleMainLinks=mainLinks.filter(link=>link.href!=="/flights/needs-attention"||attentionCount>0);
+  const activeFor=(href:string)=>href==="/dashboard"
+    ? pathname===href
+    : href==="/flights"
+      ? pathname===href||pathname.startsWith("/flights/")||pathname==="/fstd"
+      : pathname===href||pathname.startsWith(`${href}/`);
+
   return <aside className={`sidebar${collapsed?" collapsed":""}${mobile?" mobile-open":""}`}>
     <div className="sidebar-brand"><span className="brand-symbol"><img src="/logbook_icon.png" alt="" /></span><div><p className="eyebrow">LOGBOOK</p><h2>FlyTally</h2></div><button className="sidebar-toggle" type="button" onClick={toggle} aria-label={collapsed?"Expand navigation":"Collapse navigation"}>{collapsed?"›":"‹"}</button><button className="mobile-toggle" type="button" onClick={()=>setMobile(!mobile)} aria-label={mobile?"Close navigation":"Open navigation"} aria-expanded={mobile} aria-controls="primary-navigation">{mobile?"×":"☰"}</button></div>
     <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" tabIndex={mobile?0:-1} onClick={()=>setMobile(false)}/>
     <nav id="primary-navigation" aria-label="Main navigation">
-      {visibleMainLinks.map(link=>{const sub="sub" in link&&link.sub,active=activeFor(link.href),attentionLink=link.href==="/flights/needs-attention";return <Link key={link.href} className={`${active?"active":""}${sub?" sidebar-sub-link":""}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{attentionLink?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>})}
-      {actionCount>0?<Link className={activeFor("/actions")?"active":""} href="/actions" title="Actions" aria-current={activeFor("/actions")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="actions"/></i><span>Actions</span><b className="notification-badge" aria-label={`${actionCount} pending actions`}>{Math.min(actionCount,99)}</b></Link>:null}
-      <Link className={activeFor("/notifications")?"active":""} href="/notifications" title="Notifications" aria-current={activeFor("/notifications")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="notifications"/></i><span>Notifications</span></Link>
+      <Link className={styles.primaryAction} href="/flights/new" title="Add flight" onClick={()=>setMobile(false)}><i><NavIcon name="add"/></i><span>Add flight</span></Link>
+
+      {mainLinks.map(link=>{
+        const active=activeFor(link.href),flights=link.href==="/flights";
+        return <Link key={link.href} className={active?"active":""} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span>{flights&&attentionCount>0?<b className="notification-badge" aria-label={`${attentionCount} flights need attention`}>{Math.min(attentionCount,99)}</b>:null}</Link>
+      })}
+
       <div className={styles.group}>
-        <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Manage</span></div>
-        {profileLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
+        <div className={styles.groupTitle}><i><NavIcon name="notifications"/></i><span>Activity</span></div>
+        {actionCount>0?<Link className={`${activeFor("/actions")?"active":""} sidebar-sub-link ${styles.profileLink}`} href="/actions" title="Actions" aria-current={activeFor("/actions")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="actions"/></i><span>Actions</span><b className="notification-badge" aria-label={`${actionCount} pending actions`}>{Math.min(actionCount,99)}</b></Link>:null}
+        <Link className={`${activeFor("/notifications")?"active":""} sidebar-sub-link ${styles.profileLink}`} href="/notifications" title="Notifications" aria-current={activeFor("/notifications")?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name="notifications"/></i><span>Notifications</span></Link>
       </div>
+
+      <div className={styles.group}>
+        <div className={styles.groupTitle}><i><NavIcon name="manage"/></i><span>Pilot & records</span></div>
+        {recordLinks.map(link=>{const active=activeFor(link.href);return <Link key={link.href} className={`${active?"active":""} sidebar-sub-link ${styles.profileLink}`} href={link.href} title={link.label} aria-current={active?"page":undefined} onClick={()=>setMobile(false)}><i><NavIcon name={link.icon}/></i><span>{link.label}</span></Link>})}
+      </div>
+
       {role==="admin"?<Link className={pathname.startsWith("/admin")?"active":""} href="/admin" title="Administration" aria-current={pathname.startsWith("/admin")?"page":undefined}><i><NavIcon name="admin"/></i><span>Administration</span></Link>:null}
       <form action={logout} className="mobile-only-signout"><button className="ghost-button" title="Sign out"><i><NavIcon name="signout"/></i><span>Sign out</span></button></form>
     </nav>
