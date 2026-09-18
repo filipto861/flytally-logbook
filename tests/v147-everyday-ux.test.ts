@@ -36,11 +36,13 @@ test("v1.47.0 keeps secondary crew sharing available without dominating flight o
   assert.match(css,/\.flight-secondary-panel-body/);
 });
 
-test("v1.47.0 only surfaces technical data checks when action is required",()=>{
-  const database=read("app/(protected)/database/page.tsx");
-  assert.match(database,/\{data\.issues\.length\?<DataQualityPanel/);
-  assert.match(database,/id="data-health"/);
-  assert.match(database,/Data health summary/);
+test("v1.47.0 technical data checks remain secondary to everyday aircraft management",()=>{
+  const database=read("app/(protected)/database/page.tsx"),navigation=read("components/database-workspace-navigation.tsx");
+  assert.match(database,/view==="health"/);
+  assert.match(database,/DataQualityPanel/);
+  assert.match(navigation,/issueCount>0/);
+  const aircraftBlock=database.slice(database.indexOf('view==="aircraft"'),database.indexOf('view==="airports"'));
+  assert.doesNotMatch(aircraftBlock,/DataQualityPanel|Advanced counts|airport-code-migration/);
 });
 
 test("v1.47.0 remains presentation-only around protected flight evidence",()=>{
