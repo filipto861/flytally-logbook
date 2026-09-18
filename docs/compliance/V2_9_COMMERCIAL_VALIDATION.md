@@ -100,7 +100,7 @@ Current private-beta and external-validation users receive `logbook.access` and 
 
 Cross-product identity moves from `ft1` to `ft2`. The short-lived signed assertion carries entitlement version 1 plus the resolved grants. Training validates the snapshot, requires active `training.access`, and persists the snapshot into its own signed session. Time-bounded grants remain time-bounded inside Training.
 
-Settings exposes the current Access & billing state to the user. C3 does not collect payment data and does not invent pricing, plan names, renewal cadence, trial length or checkout behavior.
+Settings exposes the current Access & billing state to the user. C3 does not collect payment data and does not invent pricing, plan names, renewal cadence, trial length or checkout behavior. `commercial-billing-runtime` remains an explicit code blocker, so the commercial launch gate cannot open until a real provider integration implements checkout, entitlement lifecycle synchronization and customer self-service.
 
 ### C3 still externally/business dependent
 
