@@ -18,7 +18,7 @@ test("Print and data exposes one accessible task panel at a time",()=>{
 
 test("Aircraft cards separate status from reversible management actions",()=>{
   const source=read("components/aircraft-manager.tsx");
-  assert.match(source,/Edit aircraft & rates/);
+  assert.match(source,/Manage aircraft/);
   assert.match(source,/Aircraft is active/);
   assert.match(source,/Deactivate aircraft/);
   assert.match(source,/<span className=\{active\?"status-on":"status-off"\}>\{active\?"Active":"Inactive"\}<\/span>/);
@@ -35,13 +35,15 @@ test("Permanent credential and rate deletion requires a disclosed second step",(
 
 test("Aircraft and airport tools present task-oriented navigation and summaries",()=>{
   const page=read("app/(protected)/database/page.tsx");
-  const navigation=read("components/details-navigation.tsx");
-  const css=read("app/globals.css");
-  assert.match(page,/<DetailsNavigation/);
-  assert.match(navigation,/target instanceof HTMLDetailsElement/);
-  assert.match(page,/Profiles, defaults and hourly-rate history/);
-  assert.match(page,/Advanced counts for duplicates, rates, routes and GPS records/);
-  assert.match(css,/FlyTally 1\.24 — clear tasks, safe secondary actions/);
+  const navigation=read("components/database-workspace-navigation.tsx");
+  const css=read("app/v300-u31-aircraft-airports.css");
+  assert.match(page,/<DatabaseWorkspaceNavigation/);
+  assert.match(navigation,/Aircraft/);
+  assert.match(navigation,/Airports/);
+  assert.match(navigation,/Data health/);
+  assert.match(page,/Technical defaults stay inside the aircraft editor/);
+  assert.match(page,/Advanced counts/);
+  assert.match(css,/database-workspace-nav/);
 });
 
 test("Flight list states explain whether a record is editable or official",()=>{
