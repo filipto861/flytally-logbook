@@ -7,8 +7,10 @@
 .recordLink{height:40px!important;color:var(--muted)!important;font-size:.79rem!important;font-weight:680!important}
 .recordLink:hover{color:var(--text)!important}
 .recordLink:global(.active){color:var(--text)!important}
+.adminLink{margin-top:9px!important;padding-top:7px!important;height:51px!important;border-top:1px solid var(--line)!important;border-radius:0!important}
 :global(.sidebar.collapsed) .primaryAction{margin:4px 0 8px!important}
 :global(.sidebar.collapsed) .actionLink{margin-top:0!important;border-top:0!important;padding-top:0!important;height:44px!important}
+:global(.sidebar.collapsed) .adminLink{margin-top:0!important;padding-top:0!important;height:44px!important;border-top:0!important}
 :global(.sidebar.collapsed) .group{margin-top:0;padding-top:0;border-top:0}
 :global(.sidebar.collapsed) .groupTitle{display:none}
 
@@ -26,5 +28,6 @@
   .groupTitle{color:var(--muted);font-size:.66rem}
   .recordLink{height:44px!important;font-size:.84rem!important}
   .actionLink{height:48px!important;margin-top:4px!important}
+  .adminLink{margin-top:9px!important;height:52px!important;padding-top:8px!important}
   .notificationBell{width:36px;height:36px;flex-basis:36px;margin-left:auto}
 }
