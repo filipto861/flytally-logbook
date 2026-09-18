@@ -11,7 +11,7 @@ test("web push persistence is session-bound and preference-aware",()=>{
   const schema=read("lib/push-schema.ts"),push=read("lib/push-notifications.ts");
   assert.match(schema,/CREATE TABLE IF NOT EXISTS push_preferences/);
   assert.match(schema,/CREATE TABLE IF NOT EXISTS push_subscriptions/);
-  assert.match(schema,/session_id TEXT NOT NULL REFERENCES auth_sessions\(id\) ON DELETE CASCADE/);
+  assert.match(schema,/session_id UUID NOT NULL REFERENCES auth_sessions\(id\) ON DELETE CASCADE/);
   assert.match(schema,/endpoint TEXT NOT NULL UNIQUE/);
   assert.match(push,/s\.revoked_at IS NULL AND s\.expires_at>NOW\(\)/);
   assert.match(push,/pushCategoryForKind/);
