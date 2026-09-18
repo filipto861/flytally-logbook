@@ -22,7 +22,9 @@ test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
   assert.match(workflow,/stage\("Certify"/);
   assert.match(workflow,/stage\("Share"/);
   assert.match(workflow,/Continue to certification/);
-  assert.match(workflow,/Share flight/);
+  assert.doesNotMatch(workflow,/className="primary-button" href=\{state\.shareHref\}>Share flight/);
+  assert.match(detail,/flight-share-shortcut/);
+  assert.match(detail,/href=\{workflow\.shareHref\}>Share<\/Link>/);
   assert.match(workflow,/Available after certification/);
   assert.match(detail,/FlightWorkflowProgress/);
   assert.match(detail,/Flight saved as an editable draft/);
@@ -74,4 +76,16 @@ test("v3.0 U4 ships responsive light-theme workflow UI and advances roadmap to U
   assert.match(audit,/U4 ✅ Flight workflow clarity/);
   assert.match(audit,/U5 ✅ Training learner polish/);
   assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
+});
+
+
+test("GPS player keeps the useful 2D replay and removes the fake 3D projection",()=>{
+  const player=read("components/flight-track-player.tsx");
+  assert.match(player,/Synchronized GPS track map/);
+  assert.match(player,/Track position/);
+  assert.match(player,/Playback speed/);
+  assert.doesNotMatch(player,/3D flight path/);
+  assert.doesNotMatch(player,/Perspective three dimensional flight path/);
+  assert.doesNotMatch(player,/GPS altitude perspective/);
+  assert.doesNotMatch(player,/function scene\(/);
 });
