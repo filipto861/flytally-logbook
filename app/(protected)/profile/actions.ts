@@ -8,6 +8,7 @@ import { recordAuthEvent } from "@/lib/auth/security";
 import { sql } from "@/lib/db";
 import { licenceProfileMap,parsePilotPreferences,type PilotPreferences } from "@/lib/logbook-print";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
+import { eraseAccountForPrivacy,revokeAccountPublicShares } from "@/lib/privacy-account";
 
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim();
 async function currentSettings(userId:number){const rows=await sql`SELECT timezone,currency,home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId}` as Array<Record<string,unknown>>;const row=rows[0]??{};return{row,preferences:parsePilotPreferences(row.preferences_json)}}
@@ -108,14 +109,5 @@ export async function changePassword(f:FormData){const session=await requireUser
 export async function revokeDevice(f:FormData){const session=await requireUser();const id=s(f,"session_id");if(!id||id===session.sessionId)return;await revokeSession(session.userId,id);await recordAuthEvent(session.userId,"session_revoked");revalidatePath("/profile");}
 export async function logoutOtherDevices(){const session=await requireUser();await revokeOtherSessions(session.userId,session.sessionId);await recordAuthEvent(session.userId,"other_sessions_revoked");revalidatePath("/profile");}
 export async function disconnectGoogle(){const session=await requireUser();const credentials=await sql`SELECT 1 FROM user_credentials WHERE user_id=${session.userId} LIMIT 1`;if(!credentials[0])return;await sql`DELETE FROM auth_identities WHERE user_id=${session.userId} AND provider='google'`;await recordAuthEvent(session.userId,"google_disconnected");revalidatePath("/profile");}
-export async function deleteAccount(f:FormData){const session=await requireUser();if(s(f,"confirm")!=="DELETE MY ACCOUNT")return;const replacement=`deleted-${session.userId}@flytally.invalid`;await sql.transaction([
-  sql`UPDATE pilot_connections SET status='cancelled',revoked_at=NOW(),updated_at=NOW() WHERE status IN ('pending','accepted') AND (requester_user_id=${session.userId} OR recipient_user_id=${session.userId})`,
-  sql`UPDATE flight_participations SET status='cancelled',cancelled_at=NOW(),responded_at=NOW() WHERE status='pending' AND (source_user_id=${session.userId} OR participant_user_id=${session.userId})`,
-  sql`UPDATE instructor_flight_approvals SET status='cancelled',decided_at=NOW(),decision_note='Account deleted.' WHERE status='pending' AND (student_user_id=${session.userId} OR instructor_user_id=${session.userId})`,
-  sql`UPDATE flight_verifications SET status='revoked',revoked_at=NOW(),revocation_reason='Signer account deleted.' WHERE signer_user_id=${session.userId} AND status='signed'`,
-  sql`DELETE FROM user_notifications WHERE user_id=${session.userId}`,
-  sql`DELETE FROM auth_identities WHERE user_id=${session.userId}`,
-  sql`DELETE FROM user_credentials WHERE user_id=${session.userId}`,
-  sql`UPDATE auth_sessions SET revoked_at=NOW() WHERE user_id=${session.userId}`,
-  sql`UPDATE users SET active=0,email=${replacement},display_name='Deleted pilot',deleted_at=NOW(),updated_at=NOW() WHERE id=${session.userId}`,
-]);redirect("/login")}
+export async function revokeAllPublicShares(){const session=await requireUser();await revokeAccountPublicShares(session.userId);revalidatePath("/profile");}
+export async function deleteAccount(f:FormData){const session=await requireUser();if(s(f,"confirm")!=="DELETE MY ACCOUNT")return;await eraseAccountForPrivacy(session.userId);redirect("/login")}
