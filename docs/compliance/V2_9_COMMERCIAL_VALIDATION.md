@@ -24,7 +24,7 @@ Allowed requested stages:
 
 The default is `private-beta`. An invalid value fails closed to the private-beta behavior.
 
-Requesting `commercial` is not sufficient. The effective stage becomes commercial only after every required gate is explicitly cleared. Otherwise the effective stage remains `external-validation`.
+Requesting `commercial` is not sufficient. The effective stage becomes commercial only after every required gate is explicitly cleared **and** the final commercial legal surface has been implemented in code. C1 deliberately keeps that code gate closed, so even a fully cleared external ledger remains `external-validation` until C2 replaces the private-beta terms with the externally reviewed commercial surface.
 
 ### Approval-required gates
 
