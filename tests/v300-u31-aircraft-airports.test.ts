@@ -58,6 +58,7 @@ test("v3.0 U3.1 ships responsive workspace presentation and advances the roadmap
   assert.match(css,/@media\(max-width:520px\)/);
   assert.match(roadmap,/U3\.1 ✅ Aircraft & airports/);
   assert.match(roadmap,/U3\.2 ✅ Print & data/);
-  assert.match(roadmap,/U3\.3 next: Settings/);
+  assert.match(roadmap,/U3\.3 ✅ Settings/);
+  assert.match(roadmap,/U4 next: flight save/);
   assert.match(audit,/U3\.1 ✅ Aircraft & airports/);
 });
