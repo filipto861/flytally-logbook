@@ -1,5 +1,11 @@
 import { createHmac, randomUUID } from "node:crypto";
 
+import {
+  FLYTALLY_ENTITLEMENT_VERSION,
+  resolveAccountEntitlementSnapshot,
+  type FlyTallyEntitlementGrant,
+} from "../entitlements.ts";
+
 export type TrainingIdentityRole = "admin" | "user";
 
 export type TrainingIdentityClaims = {
@@ -7,6 +13,8 @@ export type TrainingIdentityClaims = {
   readonly aud: "flytally-training";
   readonly sub: string;
   readonly role: TrainingIdentityRole;
+  readonly entitlementVersion: typeof FLYTALLY_ENTITLEMENT_VERSION;
+  readonly entitlements: readonly FlyTallyEntitlementGrant[];
   readonly iat: number;
   readonly exp: number;
   readonly jti: string;
@@ -22,7 +30,7 @@ export type TrainingPrivacyErasureClaims = {
   readonly jti: string;
 };
 
-const VERSION = "ft1";
+export const TRAINING_IDENTITY_VERSION = "ft2";
 export const TRAINING_PRIVACY_ERASURE_VERSION = "ftp1";
 const ASSERTION_SECONDS = 2 * 60;
 
@@ -48,16 +56,19 @@ export function createTrainingIdentityAssertion(
   nowSeconds = Math.floor(Date.now() / 1000),
 ): string {
   if (!subject || subject.length > 128) throw new Error("Invalid FlyTally account subject.");
+  const snapshot=resolveAccountEntitlementSnapshot(subject,role,process.env,nowSeconds);
   const claims: TrainingIdentityClaims = {
     iss: "flytally-logbook",
     aud: "flytally-training",
     sub: subject,
     role,
+    entitlementVersion: FLYTALLY_ENTITLEMENT_VERSION,
+    entitlements: snapshot.grants,
     iat: nowSeconds,
     exp: nowSeconds + ASSERTION_SECONDS,
     jti: randomUUID(),
   };
-  return encode(VERSION,claims);
+  return encode(TRAINING_IDENTITY_VERSION,claims);
 }
 
 export function createTrainingPrivacyErasureAssertion(
