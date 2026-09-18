@@ -50,27 +50,36 @@ function encode(version:string,payload:object):string {
   return `${input}.${sign(input)}`;
 }
 
-export async function createTrainingIdentityAssertion(
+export function createTrainingIdentityAssertionFromGrants(
   subject: string,
   role: TrainingIdentityRole,
+  entitlements: readonly FlyTallyEntitlementGrant[],
   nowSeconds = Math.floor(Date.now() / 1000),
-): Promise<string> {
+): string {
   if (!subject || subject.length > 128) throw new Error("Invalid FlyTally account subject.");
-  const userId=Number(subject);
-  if(!Number.isSafeInteger(userId)||userId<1)throw new Error("Invalid FlyTally account subject.");
-  const snapshot=await resolveAccountEntitlementSnapshot(userId,role,process.env,nowSeconds);
   const claims: TrainingIdentityClaims = {
     iss: "flytally-logbook",
     aud: "flytally-training",
     sub: subject,
     role,
     entitlementVersion: FLYTALLY_ENTITLEMENT_VERSION,
-    entitlements: snapshot.grants,
+    entitlements,
     iat: nowSeconds,
     exp: nowSeconds + ASSERTION_SECONDS,
     jti: randomUUID(),
   };
   return encode(TRAINING_IDENTITY_VERSION,claims);
+}
+
+export async function createTrainingIdentityAssertion(
+  subject: string,
+  role: TrainingIdentityRole,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): Promise<string> {
+  const userId=Number(subject);
+  if(!Number.isSafeInteger(userId)||userId<1)throw new Error("Invalid FlyTally account subject.");
+  const snapshot=await resolveAccountEntitlementSnapshot(userId,role,process.env,nowSeconds);
+  return createTrainingIdentityAssertionFromGrants(subject,role,snapshot.grants,nowSeconds);
 }
 
 export function createTrainingPrivacyErasureAssertion(
