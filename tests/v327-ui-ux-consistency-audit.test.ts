@@ -139,3 +139,50 @@ test("v3.3 design batch 2 makes the legacy GPS profile use theme chart tokens",(
   assert.match(profile,/stroke="var\(--chart-cursor\)"/);
   assert.doesNotMatch(profile,/#38bdf8|#34d399|#f8fafc/i);
 });
+
+
+test("v3.3 design batch 3 uses only the approved NavIcon SVG contract for audited UI icons",()=>{
+  const nav=read("components/nav-icon.tsx");
+  assert.match(nav,/viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1\.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"/);
+  for(const expected of [
+    'close:<><path d="M6 6l12 12M18 6 6 18"/></>',
+    'play:<><path d="m8 5 11 7-11 7z"/></>',
+    'pause:<><path d="M9 5v14M15 5v14"/></>',
+    'check:<><path d="m5 12 4 4L19 6"/></>',
+    'warning:<><path d="M12 3 2.8 20h18.4z"/><path d="M12 9v4M12 17h.01"/></>',
+  ])assert.ok(nav.includes(expected),expected);
+  assert.doesNotMatch(nav,/(?:fill|stroke)="(?:#|rgb|hsl)/i);
+
+  const audited=[
+    "components/push-notification-controls.tsx",
+    "components/flight-entry-workspace.tsx",
+    "components/gps-import-review-player.tsx",
+    "components/flight-track-player.tsx",
+    "components/backup-validator.tsx",
+    "components/monthly-chart.tsx",
+  ];
+  for(const file of audited){
+    const source=read(file);
+    for(const glyph of ["🔔","🔕","✈","✓","⚠","▶","❚","＋"])assert.ok(!source.includes(glyph),`${file}: ${glyph}`);
+    assert.doesNotMatch(source,/>\s*×\s*</,`${file}: icon-only multiplication glyph`);
+  }
+});
+
+test("v3.3 design batch 3 keeps icon-only controls accessible and shares the aircraft marker",()=>{
+  const entry=read("components/flight-entry-workspace.tsx");
+  const importPlayer=read("components/gps-import-review-player.tsx");
+  const player=read("components/flight-track-player.tsx");
+  const marker=read("components/aircraft-marker.ts");
+
+  assert.match(entry,/aria-label="Close"[^>]*><NavIcon name="close"\/>/);
+  for(const source of [importPlayer,player]){
+    assert.match(source,/aria-label=\{playing\?"Pause track":"Play track"\}/);
+    assert.match(source,/<NavIcon name=\{playing\?"pause":"play"\}\/>/);
+    assert.match(source,/createAircraftMarkerIcon\(\)/);
+    assert.match(source,/rotateAircraftMarker\(/);
+  }
+  assert.match(marker,/width="34" height="34"/);
+  assert.match(marker,/iconSize:\[34,34\],iconAnchor:\[17,17\]/);
+  assert.match(importPlayer,/rotateAircraftMarker\(markerRef\.current,current\.bearing,\{smooth:true\}\)/);
+  assert.match(player,/rotateAircraftMarker\(markerRef\.current,current\.bearing\)/);
+});
