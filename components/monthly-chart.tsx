@@ -39,6 +39,6 @@ export function MonthlyChart({data,totalFlights,invalidDates}:{data:MonthlyPoint
         </svg>
       </div>
     </>:<div className="chart-empty-state"><strong>{totalFlights?"Flights could not be grouped by month":"No flights in this period"}</strong></div>}
-    {invalidDates?<p className="chart-warning">⚠ {invalidDates} flight records have no valid date.</p>:null}
+    {invalidDates?<p className="chart-warning">{invalidDates} flight records have no valid date.</p>:null}
   </section>;
 }
