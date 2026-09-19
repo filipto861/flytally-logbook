@@ -26,12 +26,20 @@ test("development scope preserves lightweight docs and CSS behavior",()=>{
   const result=classify(["README.md","app/globals.css"]);
   assert.equal(result.postgres,"false");
   assert.equal(result.scale,"false");
+  assert.equal(result.full_tests,"false");
+});
+
+test("UI contract tests stay on the targeted fast path",()=>{
+  const result=classify(["app/ui-system.css","tests/v320-ui-consistency.test.ts"]);
+  assert.equal(result.postgres,"false");
+  assert.equal(result.full_tests,"false");
 });
 
 test("unknown application code remains conservative",()=>{
   const result=classify(["lib/future-module.ts"]);
   assert.equal(result.postgres,"true");
   assert.equal(result.scale,"false");
+  assert.equal(result.full_tests,"true");
   assert.match(result.modules,/shared/);
 });
 
@@ -39,6 +47,7 @@ test("known hot paths select PostgreSQL and scale gates centrally",()=>{
   const result=classify(["lib/data/dashboard.ts"]);
   assert.equal(result.postgres,"true");
   assert.equal(result.scale,"true");
+  assert.equal(result.full_tests,"true");
   assert.match(result.modules,/analytics/);
 });
 
@@ -46,6 +55,7 @@ test("full-ci forces the complete gate even for documentation-only work",()=>{
   const result=classify(["DEVELOPMENT.md"],"[full-ci] infrastructure transition");
   assert.equal(result.postgres,"true");
   assert.equal(result.scale,"true");
+  assert.equal(result.full_tests,"true");
   assert.match(result.modules,/development-infrastructure/);
 });
 
