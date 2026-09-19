@@ -36,3 +36,15 @@ test("v3.2 U7 gives action and notification mutations explicit pending feedback"
   for(const label of ["Accepting…","Declining…"])assert.ok(actions.includes(`pendingLabel="${label}"`),label);
   for(const label of ["Marking…","Clearing…","Declining…","Deleting…"])assert.ok(notifications.includes(`pendingLabel="${label}"`),label);
 });
+
+test("v3.2 U7 converges remaining high-frequency async actions on the shared loading contract",()=>{
+  for(const file of ["components/flight-form.tsx","components/kml-import-form.tsx","components/backup-center.tsx"]){
+    assert.match(read(file),/PendingActionButton/,file);
+  }
+  for(const file of ["components/backup-restore.tsx","components/flight-trash.tsx","components/quick-aircraft-form.tsx","components/push-notification-controls.tsx"]){
+    const source=read(file);
+    assert.match(source,/aria-busy=/,file);
+    assert.match(source,/data-loading=/,file);
+  }
+});
+
