@@ -34,3 +34,21 @@ export function resetConnectionFixture(){
     ON CONFLICT(user_id,dedupe_key) DO UPDATE SET read_at=NULL,created_at=NOW();
   `);
 }
+
+
+export function resetAccountSettingsFixture(){
+  runBrowserSql(`
+    UPDATE users SET display_name='Browser Smoke Pilot',updated_at=NOW() WHERE id=9001;
+    UPDATE user_settings SET timezone='Europe/Prague',currency='CZK',home_airport='LKLT',default_role='PIC',preferences_json='{}'::jsonb,updated_at=NOW() WHERE user_id=9001;
+  `);
+}
+
+export function resetConnectionManagerFixture(){
+  runBrowserSql(`
+    UPDATE pilot_connections
+    SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
+        requester_shares_logbook=FALSE,recipient_shares_logbook=FALSE,accepted_at=NOW(),updated_at=NOW()
+    WHERE id=7001;
+    DELETE FROM connection_audit_log WHERE entity_type='connection' AND entity_id=7001;
+  `);
+}
