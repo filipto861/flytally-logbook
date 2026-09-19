@@ -9,6 +9,7 @@ import { DatabaseWorkspaceNavigation,type DatabaseWorkspaceView } from "@/compon
 import { sql } from "@/lib/db";
 import { saveAircraftPhoto,removeAircraftPhoto } from "./aircraft-photo-actions";
 import { shareAircraftProfile } from "../connections/aircraft-share-actions";
+import { PendingActionButton } from "@/components/pending-action-button";
 
 export const metadata={title:"Aircraft & airports | FlyTally"};
 
@@ -24,7 +25,7 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
   const activeAircraft=data.aircraft.filter(item=>Boolean(Number(item.active))).length,inactiveAircraft=data.aircraft.length-activeAircraft;
   const airportTotal=Number(data.airportStats.total||0),customAirportCount=data.airports.length;
 
-  return <>
+  return <div className="ui-page-stack">
     <header className="page-header"><div><p className="eyebrow">LOGBOOK DATA</p><h1>Aircraft & airports</h1><p className="muted page-lead">{view==="aircraft"?"Aircraft you fly and the defaults used when logging a flight.":view==="airports"?"Your own locations plus the built-in airport reference catalogue.":"Technical checks and maintenance tools for stored logbook data."}</p></div></header>
     <DatabaseWorkspaceNavigation active={view} issueCount={data.issues.length}/>
 
@@ -46,9 +47,9 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
           <label>Country<input name="iso_country" placeholder="CZ"/></label>
           <label>Latitude<input name="latitude_deg" type="number" step="any" placeholder="50.1234"/></label>
           <label>Longitude<input name="longitude_deg" type="number" step="any" placeholder="14.1234"/></label>
-          <button className="primary-button">Add / update</button>
+          <PendingActionButton className="primary-button" pendingLabel="Saving…">Add / update</PendingActionButton>
         </form>
-        {data.airports.length?<div className="table-scroll"><table><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Country</th><th>Coordinates</th><th>Status</th></tr></thead><tbody>{data.airports.map(item=><tr key={t(item.id)}><td><strong>{t(item.ident)}</strong></td><td>{t(item.name)||"—"}</td><td>{t(item.municipality)||"—"}</td><td>{t(item.iso_country)||"—"}</td><td>{t(item.latitude_deg)}, {t(item.longitude_deg)}</td><td><form action={toggleAirport}><input type="hidden" name="id" value={t(item.id)}/><button className={Number(item.active)?"status-on":"status-off"}>{Number(item.active)?"Active":"Inactive"}</button></form></td></tr>)}</tbody></table></div>:<div className="u31-empty-state"><strong>No custom airports</strong><span>You only need one when a location is not available in FlyTally's reference catalogue.</span></div>}
+        {data.airports.length?<div className="table-scroll"><table><thead><tr><th>Code</th><th>Name</th><th>City</th><th>Country</th><th>Coordinates</th><th>Status</th></tr></thead><tbody>{data.airports.map(item=><tr key={t(item.id)}><td><strong>{t(item.ident)}</strong></td><td>{t(item.name)||"—"}</td><td>{t(item.municipality)||"—"}</td><td>{t(item.iso_country)||"—"}</td><td>{t(item.latitude_deg)}, {t(item.longitude_deg)}</td><td><form action={toggleAirport}><input type="hidden" name="id" value={t(item.id)}/><PendingActionButton className={Number(item.active)?"status-on":"status-off"} pendingLabel="Updating…">{Number(item.active)?"Active":"Inactive"}</PendingActionButton></form></td></tr>)}</tbody></table></div>:<div className="u31-empty-state"><strong>No custom airports</strong><span>You only need one when a location is not available in FlyTally's reference catalogue.</span></div>}
       </section>
 
       <section className="panel u31-airport-panel">
@@ -62,9 +63,9 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
       <section className="u31-workspace-heading"><div><p className="eyebrow">DATA HEALTH</p><h2>{data.issues.length?data.issues.length===1?"1 item needs review":`${data.issues.length} items need review`:"No technical issues detected"}</h2><p className="muted">Diagnostics and historical maintenance live here so they do not interrupt normal aircraft or airport management.</p></div><span className={data.issues.length?"status-warning":"status-on"}>{data.issues.length?"REVIEW":"CLEAR"}</span></section>
       <DataQualityPanel issues={data.issues} airportStats={data.airportStats}/>
 
-      {data.codeMigrations.length?<details className="panel airport-code-migration"><summary><span><strong>Standardize historical airport codes</strong><small>Review older codes before updating eligible historical flights.</small></span><b>{data.codeMigrations.length}</b></summary><div className="table-scroll"><table><thead><tr><th>Current</th><th>New</th><th>Airport</th><th>Departures</th><th>Arrivals</th></tr></thead><tbody>{data.codeMigrations.map(item=><tr key={item.from}><td><code>{item.from}</code></td><td><strong>{item.to}</strong></td><td>{item.name||"—"}</td><td>{item.departures}</td><td>{item.arrivals}</td></tr>)}</tbody></table></div><form action={canonicalizeFlightAirportCodes} className="migration-confirm"><input type="hidden" name="confirm" value="canonicalize-airports"/><button className="primary-button">Update eligible historical flight codes</button></form></details>:null}
+      {data.codeMigrations.length?<details className="panel airport-code-migration"><summary><span><strong>Standardize historical airport codes</strong><small>Review older codes before updating eligible historical flights.</small></span><b>{data.codeMigrations.length}</b></summary><div className="table-scroll"><table><thead><tr><th>Current</th><th>New</th><th>Airport</th><th>Departures</th><th>Arrivals</th></tr></thead><tbody>{data.codeMigrations.map(item=><tr key={item.from}><td><code>{item.from}</code></td><td><strong>{item.to}</strong></td><td>{item.name||"—"}</td><td>{item.departures}</td><td>{item.arrivals}</td></tr>)}</tbody></table></div><form action={canonicalizeFlightAirportCodes} className="migration-confirm"><input type="hidden" name="confirm" value="canonicalize-airports"/><PendingActionButton className="primary-button" pendingLabel="Updating…">Update eligible historical flight codes</PendingActionButton></form></details>:null}
 
       <details className="panel u31-advanced-health"><summary><span><strong>Advanced counts</strong><small>Duplicates, rates, routes and GPS structure.</small></span></summary><div className="metric-grid compact-metrics"><article className="metric"><span>Total flights</span><strong>{t(data.quality.total)}</strong></article><article className="metric"><span>Possible duplicates</span><strong>{t(data.quality.duplicate_flights)}</strong></article><article className="metric"><span>Flights without rate</span><strong>{t(data.quality.missing_price)}</strong></article><article className="metric"><span>Historical rates</span><strong>{t(data.quality.historical_rates)}</strong><small>{t(data.quality.future_rates)} future</small></article><article className="metric"><span>Invalid rates</span><strong>{Number(data.quality.invalid_rate_dates||0)+Number(data.quality.invalid_rates||0)}</strong></article><article className="metric"><span>Incomplete routes</span><strong>{t(data.quality.missing_route)}</strong></article><article className="metric"><span>Invalid BLOCK</span><strong>{t(data.quality.invalid_block_time)}</strong></article><article className="metric"><span>Empty GPS tracks</span><strong>{t(data.quality.empty_tracks)}</strong></article></div></details>
     </main>:null}
-  </>;
+  </div>;
 }
