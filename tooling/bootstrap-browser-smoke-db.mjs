@@ -203,6 +203,27 @@ CREATE TABLE user_notifications(
   user_id BIGINT NOT NULL,
   read_at TIMESTAMPTZ
 );
+CREATE TABLE push_preferences(
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  compliance BOOLEAN NOT NULL DEFAULT TRUE,
+  activity BOOLEAN NOT NULL DEFAULT TRUE,
+  security BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE push_subscriptions(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_id UUID NOT NULL REFERENCES auth_sessions(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL DEFAULT '',
+  auth TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_success_at TIMESTAMPTZ,
+  failure_count INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE aircraft_profile_shares(
   id UUID PRIMARY KEY,
   source_user_id BIGINT NOT NULL,
