@@ -269,21 +269,40 @@ button[data-loading="true"]::after{
 }
 .flight-identity .flight-registration{font-size:.78rem}
 .flight-route-link{
-  display:inline-flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
-  min-width:0;
+  gap:12px;
+  min-width:170px;
   color:var(--text);
   text-decoration:none;
 }
 .flight-route-link strong{
+  min-width:0;
   font-size:.8rem;
-  text-decoration-thickness:1px;
-  text-underline-offset:3px;
 }
-.flight-route-link:hover strong,
-.flight-route-link:focus-visible strong{
+.flight-open-cta{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:30px;
+  padding:6px 10px;
+  border:1px solid color-mix(in srgb,var(--accent2) 48%,var(--line));
+  border-radius:8px;
+  background:color-mix(in srgb,var(--accent2) 10%,var(--panel));
   color:var(--accent2);
-  text-decoration:underline;
+  font-size:.66rem;
+  font-weight:850;
+  white-space:nowrap;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease;
+}
+.flight-open-cta b{font-size:.82rem;line-height:1}
+.flight-route-link:hover .flight-open-cta,
+.flight-route-link:focus-visible .flight-open-cta{
+  border-color:var(--accent2);
+  background:color-mix(in srgb,var(--accent2) 18%,var(--panel));
+  transform:translateX(1px);
 }
 .flight-detail-navigation{
   align-items:center;
@@ -340,7 +359,8 @@ button[data-loading="true"]::after{
 .flight-post-save{display:none}
 
 @media(max-width:700px){
-  .flight-route-link{min-width:0}
+  .flight-route-link{min-width:0;width:100%}
+  .flight-open-cta{min-height:34px;padding-inline:11px}
   .flight-detail-navigation{
     width:100%;
     display:flex;
