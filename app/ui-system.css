@@ -79,3 +79,11 @@ button[data-loading="true"]::after{
   }
   button[data-loading="true"]::after{animation-duration:1.4s}
 }
+
+/* Canonical vertical rhythm for the high-frequency product workspaces. */
+:where(.page-header,.workspace-heading){margin-bottom:var(--ui-section-gap)}
+:where(.metric-grid,.dashboard-primary,.profile-grid,.export-grid,.u33-preference-grid,.u33-privacy-grid){gap:var(--ui-card-gap)}
+:where(.metric-grid,.dashboard-primary,.profile-grid,.export-grid){margin-bottom:var(--ui-card-gap)}
+:where(.flight-form,.data-hub,.export-workspace,.backup-center,.backup-validator,.backup-restore,.flight-trash,.u31-workspace,.u33-settings-workspace,.detail-tab-content){gap:var(--ui-card-gap)}
+:where(.form-grid,.stack-form,.track-manager-grid,.stats-columns,.profile-grid-charts){gap:var(--ui-card-gap)}
+:where(.section-heading,.u31-workspace-heading,.u31-panel-heading,.u33-workspace-heading){gap:var(--ui-card-gap)}
