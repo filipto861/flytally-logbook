@@ -1,12 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { PendingActionButton } from "@/components/pending-action-button";
 import { login } from "./actions";
 
 function SubmitButton() {
-  const { pending } = useFormStatus();
-  return <button className="primary-button" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</button>;
+  return <PendingActionButton className="primary-button" pendingLabel="Signing in…">Sign in</PendingActionButton>;
 }
 
 export function LoginForm({google,externalError,success,returnTo}:{google:boolean;externalError?:string;success?:string;returnTo:string}) {
