@@ -39,7 +39,7 @@ html[data-theme="light"] .sidebar nav a,
 html[data-theme="light"] .sidebar .ghost-button{color:#52667c}
 html[data-theme="light"] .sidebar nav a:hover,
 html[data-theme="light"] .sidebar nav a.active{background:var(--panel2);color:var(--text);border-color:var(--light-border-selected)}
-html[data-theme="light"] .sidebar nav a.sidebar-sub-link.active{background:#edf4f8;color:var(--accent2);border-left-color:var(--accent2)}
+html[data-theme="light"] .sidebar nav a.sidebar-sub-link.active{background:#edf4f8;color:var(--link);border-left-color:var(--accent2)}
 html[data-theme="light"] .sidebar .ghost-button:hover,
 html[data-theme="light"] .sidebar-toggle:hover,
 html[data-theme="light"] .mobile-toggle:hover{background:var(--light-surface-hover-strong);color:var(--text);border-color:var(--light-border-hover-subtle)}
@@ -148,7 +148,7 @@ html[data-theme="light"] .play-button:hover{background:var(--light-surface-play-
 html[data-theme="light"] .leaflet-popup-content-wrapper,
 html[data-theme="light"] .leaflet-popup-tip{background:var(--surface);color:var(--text)}
 html[data-theme="light"] .leaflet-control-attribution{background:#ffffffdd!important;color:var(--muted)!important}
-html[data-theme="light"] .leaflet-control-attribution a{color:var(--accent2)!important}
+html[data-theme="light"] .leaflet-control-attribution a{color:var(--link)!important}
 html[data-theme="light"] .map-touch-toggle{background:#ffffffee;color:#183047;border-color:#b8c8d8;box-shadow:0 2px 8px rgba(30,48,70,.18)}
 html[data-theme="light"] .map-touch-toggle[aria-pressed="true"]{background:var(--light-surface-success-hover);color:#087a5e;border-color:#7fbda8}
 
@@ -210,7 +210,7 @@ html[data-theme="light"] .pwa-dismiss:hover{background:var(--light-surface-hover
 html[data-theme="light"] .entry-progress{background:var(--surface-raised);border-color:var(--line)}
 html[data-theme="light"] .entry-progress>span{color:var(--muted)}
 html[data-theme="light"] .entry-progress>span.complete{color:#4f8073}
-html[data-theme="light"] .entry-progress>span.active{background:#e6f3f9;color:var(--accent2)}
+html[data-theme="light"] .entry-progress>span.active{background:#e6f3f9;color:var(--link)}
 html[data-theme="light"] .entry-review-summary,
 html[data-theme="light"] .import-save-summary{background:var(--surface);border-color:var(--line)}
 html[data-theme="light"] .entry-review-summary dl>div{background:var(--surface-raised);border-color:var(--line)}
@@ -230,6 +230,26 @@ html[data-theme="light"] details.panel>summary,
 html[data-theme="light"] .filter-expander>summary,
 html[data-theme="light"] .data-tabs details>summary,
 html[data-theme="light"] .security-panel>summary{color:var(--text)}
+
+/* WCAG AA normal-text contrast in the light appearance. Brand fills stay on --accent/--accent2. */
+html[data-theme="light"] .eyebrow,
+html[data-theme="light"] .active-route-filter span,
+html[data-theme="light"] .gps-badge,
+html[data-theme="light"] .map-interaction-help span,
+html[data-theme="light"] .hero-metric span,
+html[data-theme="light"] .upload-zone p{color:var(--accent-strong)}
+html[data-theme="light"] .pagination a,
+html[data-theme="light"] .row-link,
+html[data-theme="light"] .active-route-filter>a,
+html[data-theme="light"] .leaflet-popup-content a,
+html[data-theme="light"] .map-interaction-help span:nth-child(2),
+html[data-theme="light"] .auth-text-link,
+html[data-theme="light"] .aircraft-catalog-results button>b,
+html[data-theme="light"] .aircraft-class-hint,
+html[data-theme="light"] .new-flight-modes>details>summary>span,
+html[data-theme="light"] .import-step>span{color:var(--link)}
+html[data-theme="light"] .page-header .muted,
+html[data-theme="light"] .section-heading .muted{color:var(--text-soft)}
 
 .appearance-form{display:flex;align-items:end;gap:12px;max-width:440px}
 .appearance-form label{flex:1}
