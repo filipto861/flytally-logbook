@@ -27,7 +27,8 @@ test("v3.2 U3 runs real desktop and mobile browser projects",()=>{
 
 test("v3.2 U3 verifies auth boundary, responsive overflow and pending feedback",()=>{
   const smoke=read("e2e/public-shell.spec.mjs");
-  assert.match(smoke,/document[.]documentElement[.]scrollWidth/);\n  assert.match(smoke,/document[.]documentElement[.]clientWidth/);
+  assert.match(smoke,/document[.]documentElement[.]scrollWidth/);
+  assert.match(smoke,/document[.]documentElement[.]clientWidth/);
   assert.match(smoke,/page[.]goto\("\/dashboard"\)/);
   assert.match(smoke,/Signing in…/);
   assert.match(smoke,/aria-busy/);
