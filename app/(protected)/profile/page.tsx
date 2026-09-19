@@ -19,7 +19,7 @@ const resolveView=(value:unknown):SettingsWorkspaceView=>value==="account"||valu
 
 function Header({view}:{view:SettingsWorkspaceView}){
   const lead=view==="general"?"Personal details, logbook defaults and app preferences.":view==="account"?"Sign-in methods, devices and FlyTally account access.":"Public sharing, stored-data visibility and account deletion controls.";
-  return <><header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted page-lead">{lead}</p></div></header><SettingsWorkspaceNavigation active={view}/></>;
+  return <div className="ui-page-stack"><header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted page-lead">{lead}</p></div></header><SettingsWorkspaceNavigation active={view}/></>;
 }
 
 export default async function ProfilePage({searchParams}:{searchParams:Promise<{view?:string;privacyError?:string}>}){
@@ -31,7 +31,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
       sql`SELECT timezone,currency,home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     ]);
     const user=userRows[0]??{},settings=settingsRows[0]??{},preferences=parsePilotPreferences(settings.preferences_json),appearance=normalizeAppearance(preferences.appearance);
-    return <>
+    return <div className="ui-page-stack">
       <Header view={view}/>
       <main className="u33-settings-workspace">
         <section className="u33-workspace-heading"><div><p className="eyebrow">GENERAL</p><h2>Personal & logbook defaults</h2><p className="muted">These are everyday defaults for your own logbook. Licence identity and regulatory records stay in Licences & recency.</p></div><Link className="secondary-button" href="/credentials">Open licences</Link></section>
@@ -49,7 +49,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
           <PushNotificationSettings/>
         </section>
       </main>
-    </>;
+    </div>;
   }
 
   if(view==="account"){
@@ -59,7 +59,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
       resolveAccountEntitlementSnapshot(userId,session.role),
     ]);
     const googleLinked=Boolean(auth[0]?.google_linked),hasPassword=Boolean(auth[0]?.has_password),stageLabel=access.stage==="external-validation"?"External commercial validation":access.stage==="commercial"?"Commercial":"Private beta",logbookAccess=access.grants.find(item=>item.key==="logbook.access"),trainingAccess=access.grants.find(item=>item.key==="training.access");
-    return <>
+    return <div className="ui-page-stack">
       <Header view={view}/>
       <main className="u33-settings-workspace">
         <section className="u33-workspace-heading"><div><p className="eyebrow">ACCOUNT & SECURITY</p><h2>Sign-in and devices</h2><p className="muted">Manage how you sign in and revoke sessions you no longer use.</p></div></section>
@@ -74,7 +74,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
 
         <details className="panel u33-access-details"><summary><span><strong>FlyTally access</strong><small>Entitlements and current commercial release stage</small></span><span aria-hidden="true">⌄</span></summary><div className="u33-access-body"><div className="security-grid"><section><h3>Logbook</h3><p className="muted">{logbookAccess?`Access enabled · ${logbookAccess.source}`:"No active entitlement."}</p></section><section><h3>Training</h3><p className="muted">{trainingAccess?`Access enabled · ${trainingAccess.source}`:"No active entitlement."}</p></section></div><p className="muted"><strong>Release stage:</strong> {stageLabel}. <strong>Billing provider:</strong> not configured. FlyTally does not currently store a payment method or charge this account.</p><Link className="secondary-button" href="/legal/commercial">Commercial launch info</Link></div></details>
       </main>
-    </>;
+    </div>;
   }
 
   const privacy=await getAccountPrivacySummary(userId);
@@ -93,5 +93,5 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
 
       <details className="panel danger-zone u33-delete-account"><summary>Delete account…</summary><form action={deleteAccount} className="stack-form"><p className="muted">Deletion first erases your FlyTally Training learner progress. Only after Training confirms that erasure does FlyTally remove sign-in access, public links and their metadata, stored backups, GPS tracks, expenses, live licences/documents, recency evidence, aircraft/rates/settings and recovery trash. If the Training erasure cannot be confirmed, account deletion does not proceed. Historical flight/FSTD records plus signed or approved integrity evidence remain attached to a pseudonymised “Deleted pilot” identity so existing aviation evidence and other pilots’ signed records are not silently destroyed.</p><p className="muted">For a broader erasure request, including review of retained aviation evidence, use the privacy contact in the Privacy notice.</p><label>Type DELETE MY ACCOUNT<input name="confirm" required pattern="DELETE MY ACCOUNT"/></label><PendingActionButton className="icon-danger" pendingLabel="Deleting…">Delete my account</PendingActionButton></form></details>
     </main>
-  </>;
+  </div>;
 }
