@@ -13,7 +13,7 @@ export function BackupRestore({action}:{action:Action}){
   const certified=preview?.certification;
   return <section className="panel backup-restore"><div><p className="eyebrow">SAFE RESTORE</p><h2>{preview?.accountBound?"Backup is ready":"Select a backup"}</h2><p className="muted">FlyTally validates the backup first, compares it with this account and restores only missing records. Existing records are never overwritten.</p></div>
     <label className="backup-file">Backup file<input type="file" accept="application/json,.json" onChange={event=>{setFile(event.target.files?.[0]||null);setState({});setConfirm("")}}/></label>
-    <div className="backup-actions"><button type="button" className="secondary-button" disabled={pending||!file} onClick={()=>run("preview")}>{pending?"Checking…":"Check backup"}</button></div>
+    <div className="backup-actions"><button type="button" className="secondary-button" disabled={pending||!file} aria-busy={pending||undefined} data-loading={pending?"true":undefined} onClick={()=>run("preview")}>{pending?"Checking…":"Check backup"}</button></div>
     {state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">✓ {state.success}</p>:null}
     {state.conflict?<div className="credential-card"><div className="entry-section-body"><p className="eyebrow">RECOVERY BLOCKED</p><strong>{state.conflict.title}</strong><p className="muted">{state.conflict.detail}</p><small>{state.conflict.record}</small></div></div>:null}
     {preview&&summary?<div className="restore-preview">
@@ -28,7 +28,7 @@ export function BackupRestore({action}:{action:Action}){
       </details>)}</div>
       {summary.withheld?<p className="muted">{summary.withheld} shared workflow record{summary.withheld===1?" is":"s are"} intentionally withheld from uploaded-file recovery because its server authenticity is not verified.</p>:null}
       {summary.missing===0?<p className="form-success">✓ All recoverable records from this backup are already present. Running restore would not add data.</p>:null}
-      <div className="restore-confirm"><label>Type RESTORE to confirm<input value={confirm} onChange={event=>setConfirm(event.target.value)} autoComplete="off"/></label><button type="button" className="primary-button" disabled={pending||confirm.trim().toUpperCase()!=="RESTORE"||summary.missing===0} onClick={()=>run("restore")}>{pending?"Restoring…":summary.missing?"Restore missing data":"Nothing to restore"}</button></div>
+      <div className="restore-confirm"><label>Type RESTORE to confirm<input value={confirm} onChange={event=>setConfirm(event.target.value)} autoComplete="off"/></label><button type="button" className="primary-button" disabled={pending||confirm.trim().toUpperCase()!=="RESTORE"||summary.missing===0} aria-busy={pending||undefined} data-loading={pending?"true":undefined} onClick={()=>run("restore")}>{pending?"Restoring…":summary.missing?"Restore missing data":"Nothing to restore"}</button></div>
     </div>:null}
   </section>;
 }
