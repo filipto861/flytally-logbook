@@ -16,5 +16,5 @@ export function AirportDetectionControl({action,departure,arrival}:{action:Actio
   const [state,formAction]=useActionState(action,{});
   const router=useRouter();
   useEffect(()=>{if(state.success)router.refresh()},[router,state.success]);
-  return <section className="panel airport-detection"><div><p className="eyebrow">GPS AIRPORT DETECTION</p><strong>{departure||"?"} → {arrival||"?"}</strong></div><form action={formAction}><Submit/></form>{state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">{state.success}</p>:null}</section>;
+  return <section className="panel airport-detection"><div><p className="eyebrow">GPS AIRPORT DETECTION</p><strong>{departure||"?"} → {arrival||"?"}</strong></div><form action={formAction}><Submit/></form>{state.error?<p className="form-error" role="alert">{state.error}</p>:null}{state.success?<p className="form-success" role="status">{state.success}</p>:null}</section>;
 }
