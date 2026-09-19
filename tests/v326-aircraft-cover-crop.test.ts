@@ -3,27 +3,32 @@ import fs from "node:fs";
 import test from "node:test";
 
 const editor=fs.readFileSync("components/aircraft-photo-editor.tsx","utf8");
+const manager=fs.readFileSync("components/aircraft-manager.tsx","utf8");
 const css=fs.readFileSync("app/globals.css","utf8");
 
-test("aircraft cover uses an interactive 16:9 crop editor",()=>{
-  assert.match(editor,/Crop your aircraft cover/);
+test("aircraft cover defaults to fitting the entire photo without cropping",()=>{
+  assert.match(editor,/type CoverMode="fit"\|"crop"/);
+  assert.match(editor,/useState<CoverMode>\("fit"\)/);
+  assert.match(editor,/Fit whole photo/);
+  assert.match(editor,/The complete photo is kept visible\. Nothing is cropped\./);
+  assert.match(editor,/Math\.min\(width\/source\.width,height\/source\.height\)/);
+});
+
+test("crop-to-fill remains available as an explicit optional mode",()=>{
+  assert.match(editor,/Crop to fill/);
+  assert.match(editor,/mode==="crop"/);
   assert.match(editor,/type="range"/);
   assert.match(editor,/onPointerMove/);
-  assert.match(editor,/Use this crop/);
-  assert.match(css,/\.aircraft-crop-stage/);
-  assert.match(css,/aspect-ratio:16\/9/);
+  assert.match(css,/\.aircraft-cover-mode/);
 });
 
-test("crop preview and saved cover use the same crop geometry",()=>{
-  assert.match(editor,/function getCropRect/);
-  assert.match(editor,/function drawCrop/);
-  assert.match(editor,/drawCrop\(cropCanvas\.current,source,zoom,offset,PREVIEW_WIDTH,PREVIEW_HEIGHT\)/);
-  assert.match(editor,/drawCrop\(canvas,source,zoom,offset,OUTPUT_WIDTH,OUTPUT_HEIGHT\)/);
-  assert.match(editor,/ctx\.drawImage\(source\.image,sx,sy,sw,sh,0,0,width,height\)/);
+test("preview and saved cover share the same drawCover renderer",()=>{
+  assert.match(editor,/drawCover\(cropCanvas\.current,source,mode,zoom,offset,PREVIEW_WIDTH,PREVIEW_HEIGHT\)/);
+  assert.match(editor,/drawCover\(canvas,source,mode,zoom,offset,OUTPUT_WIDTH,OUTPUT_HEIGHT\)/);
 });
 
-test("crop panning can reach the full source bounds",()=>{
-  assert.match(editor,/travelX\/2-clamp\(offsetX\)\*travelX\/2/);
-  assert.match(editor,/travelY\/2-clamp\(offsetY\)\*travelY\/2/);
-  assert.doesNotMatch(editor,/offset\.x\*25|offset\.y\*25/);
+test("aircraft card does not crop the saved 16:9 cover a second time",()=>{
+  assert.match(manager,/backgroundSize:"100% 100%, 100% auto"/);
+  assert.match(manager,/backgroundPosition:"center, top center"/);
+  assert.match(manager,/backgroundRepeat:"no-repeat"/);
 });
