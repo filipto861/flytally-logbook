@@ -101,6 +101,11 @@ button[data-loading="true"]::after{
   min-width:0;
 }
 
+.ui-page-stack > *{
+  min-width:0;
+  max-width:100%;
+}
+
 .ui-page-stack > :where(
   .page-header,
   .panel,
