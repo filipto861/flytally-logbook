@@ -255,25 +255,36 @@ button[data-loading="true"]::after{
 
 /* U11 Flights workflow: make scan/open/navigation actions obvious without duplicating them. */
 .flights-table .flight-list-row>td[data-label="Flight"]{
-  min-width:138px;
-}
-.flight-route-link{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  align-items:center;
-  gap:10px;
   min-width:150px;
+}
+.flight-identity{
+  display:grid;
+  gap:2px;
+  align-content:start;
+}
+.flight-identity .flight-date,
+.flight-identity .flight-registration{
+  display:block;
+  line-height:1.25;
+}
+.flight-identity .flight-registration{font-size:.78rem}
+.flight-route-link{
+  display:inline-flex;
+  align-items:center;
+  min-width:0;
   color:var(--text);
   text-decoration:none;
 }
-.flight-route-link strong{font-size:.8rem}
-.flight-route-link span{
-  color:var(--accent2);
-  font-size:.68rem;
-  font-weight:800;
-  white-space:nowrap;
+.flight-route-link strong{
+  font-size:.8rem;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
 }
-.flight-route-link:hover strong{text-decoration:underline}
+.flight-route-link:hover strong,
+.flight-route-link:focus-visible strong{
+  color:var(--accent2);
+  text-decoration:underline;
+}
 .flight-detail-navigation{
   align-items:center;
   gap:8px;
