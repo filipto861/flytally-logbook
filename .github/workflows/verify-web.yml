@@ -19,6 +19,7 @@ jobs:
     outputs:
       postgres: ${{ steps.changes.outputs.postgres }}
       scale: ${{ steps.changes.outputs.scale }}
+      full_tests: ${{ steps.changes.outputs.full_tests }}
       modules: ${{ steps.changes.outputs.modules }}
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +52,11 @@ jobs:
       - run: npm ci
       - name: TypeScript check
         run: npm run typecheck
-      - name: Unit and regression tests
+      - name: Targeted UI regression tests
+        if: needs.classify.outputs.full_tests != 'true'
+        run: npm run test:ui
+      - name: Full unit and regression tests
+        if: needs.classify.outputs.full_tests == 'true'
         run: npm test
       - name: Production build
         run: npm run build
