@@ -19,7 +19,8 @@ test("v1.40.0 record and shared-workflow views remain available on Flights",()=>
   assert.match(page,/<option value="received">Shared with me<\/option>/);
   assert.match(page,/Official locked logbook record/);
   assert.match(page,/Editable record not yet certified/);
-  assert.match(page,/View flight/);
+  assert.match(page,/className="flight-route-link"/);
+  assert.match(page,/>Open →</);
 });
 
 test("v1.40.0 keeps shared state user scoped and N+1 free",()=>{

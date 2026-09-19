@@ -94,8 +94,8 @@ test("v2.4 hands successful saves directly into final Logbook review",()=>{
   assert.match(actions,/\/flights\/\$\{id\}\?tab=logbook&saved=1/);
   assert.match(actions,/\/flights\/\$\{lastId\}\?tab=logbook&saved=1/);
   assert.match(detailWorkspace,/postSave\?"logbook":initialTab/);
-  assert.match(detailWorkspace,/Flight saved as an editable draft/);
-  assert.match(detailWorkspace,/Certification is the next step/);
+  assert.doesNotMatch(detailWorkspace,/Flight saved as an editable draft/);
+  assert.match(detailWorkspace,/FlightWorkflowProgress/);
   assert.match(detailWorkspace,/history\.replaceState/);
   assert.doesNotMatch(panel,/POST_SAVE_REVIEW_KEY|sessionStorage/);
 });
