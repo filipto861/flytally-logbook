@@ -1,6 +1,10 @@
 /* FlyTally v3.0 — personal aircraft profile sharing + cover photos. */
-.aircraft-card.with-photo{box-shadow:0 14px 34px rgba(0,0,0,.16)}
-.aircraft-card-cover{margin:-17px -17px 0;aspect-ratio:16/9;overflow:hidden;border-bottom:1px solid var(--line);background:var(--panel2)}
+.aircraft-card.with-photo{grid-template-columns:116px minmax(0,1fr);grid-template-areas:"cover header" "summary summary" "action action";column-gap:14px;row-gap:12px;box-shadow:0 14px 34px rgba(0,0,0,.16)}
+.aircraft-card.with-photo>.aircraft-card-cover{grid-area:cover}
+.aircraft-card.with-photo>header{grid-area:header;align-self:center}
+.aircraft-card.with-photo>.aircraft-card-summary{grid-area:summary}
+.aircraft-card.with-photo>.aircraft-manage-button{grid-area:action}
+.aircraft-card-cover{width:116px;aspect-ratio:16/9;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 .aircraft-card-cover img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
 
 .aircraft-photo-section,.aircraft-share-section{min-width:0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text)}
@@ -48,6 +52,8 @@ html[data-theme="light"] .aircraft-share-conflict{background:linear-gradient(135
 html[data-theme="light"] .aircraft-import-success{background:#edf9f5;color:#087a5e;border-color:#8fc8b4}
 
 @media(max-width:760px){
+  .aircraft-card.with-photo{grid-template-columns:1fr;grid-template-areas:"cover" "header" "summary" "action";gap:15px}
+  .aircraft-card.with-photo>.aircraft-card-cover{width:auto;margin:-17px -17px 0;aspect-ratio:16/9;border-width:0 0 1px;border-radius:0}
   .aircraft-photo-editor{grid-template-columns:1fr}
   .aircraft-photo-preview{min-height:180px}
   .share-profile-grid{grid-template-columns:1fr 1fr}
