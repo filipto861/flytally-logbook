@@ -6,9 +6,13 @@ import { PointerEvent as ReactPointerEvent,useActionState,useEffect,useRef,useSt
 type PhotoState={ok:boolean;message:string};
 type SavePhotoAction=(state:PhotoState,form:FormData)=>Promise<PhotoState>;
 type RemovePhotoAction=(form:FormData)=>Promise<void>;
-type SourcePhoto={url:string;width:number;height:number};
+type SourcePhoto={url:string;width:number;height:number;image:HTMLImageElement};
+type CropOffset={x:number;y:number};
 
 const OUTPUT_WIDTH=1200,OUTPUT_HEIGHT=675,OUTPUT_ASPECT=OUTPUT_WIDTH/OUTPUT_HEIGHT;
+const PREVIEW_WIDTH=960,PREVIEW_HEIGHT=540;
+
+const clamp=(value:number,min=-1,max=1)=>Math.max(min,Math.min(max,value));
 
 function loadPhoto(file:File):Promise<SourcePhoto>{
   if(file.size>12*1024*1024)return Promise.reject(new Error("Choose an image smaller than 12 MB."));
@@ -16,24 +20,42 @@ function loadPhoto(file:File):Promise<SourcePhoto>{
   const url=URL.createObjectURL(file);
   return new Promise((resolve,reject)=>{
     const image=new Image();
-    image.onload=()=>resolve({url,width:image.naturalWidth,height:image.naturalHeight});
+    image.onload=()=>resolve({url,width:image.naturalWidth,height:image.naturalHeight,image});
     image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("The image could not be read."))};
     image.src=url;
   });
 }
 
-async function renderCover(source:SourcePhoto,zoom:number,offsetX:number,offsetY:number){
-  const image=await new Promise<HTMLImageElement>((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("The image could not be read."));img.src=source.url});
+function getCropRect(source:SourcePhoto,zoom:number,offsetX:number,offsetY:number){
   const sourceAspect=source.width/source.height;
-  const baseWidth=sourceAspect>OUTPUT_ASPECT?source.height*OUTPUT_ASPECT:source.width;
-  const baseHeight=baseWidth/OUTPUT_ASPECT;
+  let baseWidth:number,baseHeight:number;
+  if(sourceAspect>OUTPUT_ASPECT){
+    baseHeight=source.height;
+    baseWidth=baseHeight*OUTPUT_ASPECT;
+  }else{
+    baseWidth=source.width;
+    baseHeight=baseWidth/OUTPUT_ASPECT;
+  }
   const sw=baseWidth/zoom,sh=baseHeight/zoom;
-  const maxX=(source.width-sw)/2,maxY=(source.height-sh)/2;
-  const sx=Math.max(0,Math.min(source.width-sw,(source.width-sw)/2-offsetX*maxX));
-  const sy=Math.max(0,Math.min(source.height-sh,(source.height-sh)/2-offsetY*maxY));
-  const canvas=document.createElement("canvas");canvas.width=OUTPUT_WIDTH;canvas.height=OUTPUT_HEIGHT;
-  const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Photo processing is unavailable in this browser.");
-  ctx.drawImage(image,sx,sy,sw,sh,0,0,OUTPUT_WIDTH,OUTPUT_HEIGHT);
+  const travelX=Math.max(0,source.width-sw),travelY=Math.max(0,source.height-sh);
+  const sx=travelX/2-clamp(offsetX)*travelX/2;
+  const sy=travelY/2-clamp(offsetY)*travelY/2;
+  return{sx,sy,sw,sh};
+}
+
+function drawCrop(canvas:HTMLCanvasElement,source:SourcePhoto,zoom:number,offset:CropOffset,width:number,height:number){
+  if(canvas.width!==width)canvas.width=width;
+  if(canvas.height!==height)canvas.height=height;
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw new Error("Photo processing is unavailable in this browser.");
+  const{sx,sy,sw,sh}=getCropRect(source,zoom,offset.x,offset.y);
+  ctx.clearRect(0,0,width,height);
+  ctx.drawImage(source.image,sx,sy,sw,sh,0,0,width,height);
+}
+
+function renderCover(source:SourcePhoto,zoom:number,offset:CropOffset){
+  const canvas=document.createElement("canvas");
+  drawCrop(canvas,source,zoom,offset,OUTPUT_WIDTH,OUTPUT_HEIGHT);
   let dataUrl=canvas.toDataURL("image/jpeg",.78);
   if(dataUrl.length>620000)dataUrl=canvas.toDataURL("image/jpeg",.58);
   if(dataUrl.length>620000)throw new Error("This image remains too large after processing. Try another photo.");
@@ -43,28 +65,38 @@ async function renderCover(source:SourcePhoto,zoom:number,offsetX:number,offsetY
 export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveAction,removeAction}:{aircraftId:number;hasPhoto:boolean;photoUpdatedAt:string;saveAction:SavePhotoAction;removeAction:RemovePhotoAction}){
   const[state,action,pending]=useActionState(saveAction,{ok:false,message:""});
   const[payload,setPayload]=useState(""),[preview,setPreview]=useState(""),[error,setError]=useState("");
-  const[source,setSource]=useState<SourcePhoto|null>(null),[zoom,setZoom]=useState(1),[offset,setOffset]=useState({x:0,y:0});
+  const[source,setSource]=useState<SourcePhoto|null>(null),[zoom,setZoom]=useState(1),[offset,setOffset]=useState<CropOffset>({x:0,y:0});
   const drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
+  const cropCanvas=useRef<HTMLCanvasElement|null>(null);
   const existingUrl=hasPhoto?`/api/aircraft-photo/${aircraftId}?v=${encodeURIComponent(photoUpdatedAt)}`:"";
 
   useEffect(()=>()=>{if(source)URL.revokeObjectURL(source.url)},[source]);
+  useEffect(()=>{
+    if(!source||!cropCanvas.current)return;
+    try{drawCrop(cropCanvas.current,source,zoom,offset,PREVIEW_WIDTH,PREVIEW_HEIGHT)}
+    catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be previewed.")}
+  },[source,zoom,offset]);
 
   const choose=async(file?:File)=>{
-    setError("");setPayload("");setPreview("");
-    if(source)URL.revokeObjectURL(source.url);
-    setSource(null);setZoom(1);setOffset({x:0,y:0});
+    setError("");setPayload("");setPreview("");setSource(null);setZoom(1);setOffset({x:0,y:0});
     if(!file)return;
     try{setSource(await loadPhoto(file))}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}
   };
-  const cancelCrop=()=>{if(source)URL.revokeObjectURL(source.url);setSource(null);setPayload("");setPreview("");setZoom(1);setOffset({x:0,y:0})};
-  const applyCrop=async()=>{if(!source)return;try{const dataUrl=await renderCover(source,zoom,offset.x,offset.y);setPreview(dataUrl);setPayload(dataUrl.split(",",2)[1]||"");setSource(null)}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}};
-  const onPointerDown=(event:ReactPointerEvent<HTMLDivElement>)=>{if(!source)return;event.currentTarget.setPointerCapture(event.pointerId);drag.current={x:event.clientX,y:event.clientY,ox:offset.x,oy:offset.y}};
-  const onPointerMove=(event:ReactPointerEvent<HTMLDivElement>)=>{if(!drag.current)return;const rect=event.currentTarget.getBoundingClientRect();setOffset({x:Math.max(-1,Math.min(1,drag.current.ox+(event.clientX-drag.current.x)/(rect.width*.35))),y:Math.max(-1,Math.min(1,drag.current.oy+(event.clientY-drag.current.y)/(rect.height*.35)))})};
+  const cancelCrop=()=>{setSource(null);setPayload("");setPreview("");setZoom(1);setOffset({x:0,y:0})};
+  const applyCrop=()=>{if(!source)return;try{const dataUrl=renderCover(source,zoom,offset);setPreview(dataUrl);setPayload(dataUrl.split(",",2)[1]||"");setSource(null)}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}};
+  const onPointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{if(!source)return;event.currentTarget.setPointerCapture(event.pointerId);drag.current={x:event.clientX,y:event.clientY,ox:offset.x,oy:offset.y}};
+  const onPointerMove=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
+    if(!drag.current)return;
+    const rect=event.currentTarget.getBoundingClientRect();
+    setOffset({
+      x:clamp(drag.current.ox+(event.clientX-drag.current.x)/(rect.width*.5)),
+      y:clamp(drag.current.oy+(event.clientY-drag.current.y)/(rect.height*.5))
+    });
+  };
   const stopDrag=()=>{drag.current=null};
-  const position=source?{x:50-offset.x*25,y:50-offset.y*25}:{x:50,y:50};
 
   return <section className="aircraft-photo-section">
-    <div className="modal-section-heading"><div><p className="eyebrow">PHOTO</p><h3>Aircraft cover</h3><p className="muted">Optional. Choose how your photo should appear in the 16:9 aircraft cover.</p></div></div>
+    <div className="modal-section-heading"><div><p className="eyebrow">PHOTO</p><h3>Aircraft cover</h3><p className="muted">Optional. Choose exactly how your photo should appear in the 16:9 aircraft cover.</p></div></div>
     <div className="aircraft-photo-editor">
       <div className={`aircraft-photo-preview${preview||existingUrl?" has-image":""}`} style={preview||existingUrl?{backgroundImage:`linear-gradient(180deg,transparent 35%,rgba(2,9,20,.66)),url("${preview||existingUrl}")`}:undefined}><span>{preview?"New cover":hasPhoto?"Current cover":"No photo"}</span></div>
       <div className="aircraft-photo-controls">
@@ -81,10 +113,13 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
     </div>
     {source?<div className="aircraft-crop-backdrop" role="dialog" aria-modal="true" aria-labelledby="aircraft-crop-title">
       <div className="aircraft-crop-dialog">
-        <header><div><p className="eyebrow">SET COVER PHOTO</p><h3 id="aircraft-crop-title">Crop your aircraft cover</h3><p className="muted">Move the photo to choose the 16:9 cover. Zoom only when you need a tighter crop.</p></div><button type="button" className="aircraft-crop-close" aria-label="Close crop editor" onClick={cancelCrop}>×</button></header>
-        <div className="aircraft-crop-stage" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={stopDrag} onPointerCancel={stopDrag} style={{backgroundImage:`url("${source.url}")`,backgroundSize:`${zoom*100}% auto`,backgroundPosition:`${position.x}% ${position.y}%`}}><div className="aircraft-crop-grid" aria-hidden="true"/></div>
-        <div className="aircraft-crop-tools"><span aria-hidden="true">−</span><input aria-label="Photo zoom" type="range" min="1" max="2.5" step=".01" value={zoom} onChange={event=>setZoom(Number(event.target.value))}/><span aria-hidden="true">+</span><button type="button" className="secondary-button" onClick={()=>{setZoom(1);setOffset({x:0,y:0})}}>Fit to image</button></div>
-        <footer><button type="button" className="secondary-button" onClick={cancelCrop}>Cancel</button><button type="button" className="primary-button" onClick={()=>void applyCrop()}>Use this crop</button></footer>
+        <header><div><p className="eyebrow">SET COVER PHOTO</p><h3 id="aircraft-crop-title">Crop your aircraft cover</h3><p className="muted">What you see here is the exact 16:9 image that will be saved. Drag to reposition and zoom only when needed.</p></div><button type="button" className="aircraft-crop-close" aria-label="Close crop editor" onClick={cancelCrop}>×</button></header>
+        <div className="aircraft-crop-stage">
+          <canvas ref={cropCanvas} width={PREVIEW_WIDTH} height={PREVIEW_HEIGHT} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={stopDrag} onPointerCancel={stopDrag} aria-label="Aircraft cover crop preview"/>
+          <div className="aircraft-crop-grid" aria-hidden="true"/>
+        </div>
+        <div className="aircraft-crop-tools"><span aria-hidden="true">−</span><input aria-label="Photo zoom" type="range" min="1" max="2.5" step=".01" value={zoom} onChange={event=>setZoom(Number(event.target.value))}/><span aria-hidden="true">+</span><button type="button" className="secondary-button" onClick={()=>{setZoom(1);setOffset({x:0,y:0})}}>Reset crop</button></div>
+        <footer><button type="button" className="secondary-button" onClick={cancelCrop}>Cancel</button><button type="button" className="primary-button" onClick={applyCrop}>Use this crop</button></footer>
       </div>
     </div>:null}
   </section>;
