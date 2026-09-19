@@ -33,7 +33,7 @@ test("v3.3 U10 collapses routine experience while keeping required category evid
 
 test("v3.3 U10 makes source choice and save readiness compact and explicit",()=>{
   const workspace=read("components/flight-entry-workspace.tsx"),form=read("components/flight-form.tsx"),css=read("app/ui-system.css");
-  assert.match(workspace,/GPS import/);
+  assert.match(workspace,/Import GPS track/);
   assert.doesNotMatch(workspace,/>01<|>02</);
   assert.match(form,/className="entry-save-state"/);
   assert.match(form,/Creates an editable draft for final review/);
