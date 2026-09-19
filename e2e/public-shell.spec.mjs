@@ -43,7 +43,7 @@ test("protected routes redirect unauthenticated browsers to sign in",async({page
 });
 
 test("login submission exposes a disabled pending state before the request completes",async({page})=>{
-  let releaseRequest;
+  let releaseRequest=()=>{};
   const requestGate=new Promise(resolve=>{releaseRequest=resolve});
   await page.route("**/login*",async route=>{
     if(route.request().method()==="POST"){
@@ -69,7 +69,6 @@ test("login submission exposes a disabled pending state before the request compl
   await clicking;
 });
 
-
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
 
 async function expectAuthenticatedRoute(page,heading){
@@ -90,14 +89,7 @@ async function loginBrowserPilot(page,returnTo){
   await page.getByLabel("E-mail").fill("browser-auth@example.test");
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page).toHaveURL(new RegExp(`${returnTo.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\async function navigateMain(page,label){
-  const toggle=page.getByRole("button",{name:"Open navigation"});
-  if(await toggle.isVisible())await toggle.click();
-  const link=page.getByRole("link",{name:label,exact:true});
-  await expect(link).toBeVisible();
-  await link.click();
-}
-")}(?:\\?|$)`));
+  await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`));
 }
 
 async function holdPost(page,pattern){
@@ -121,12 +113,8 @@ async function holdPost(page,pattern){
 
 test("authenticated pilot can navigate the core product shell",async({page,context})=>{
   test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
-  await page.goto("/login?returnTo=/dashboard");
-  await page.getByLabel("E-mail").fill("browser-auth@example.test");
-  await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
-  await page.getByRole("button",{name:"Sign in"}).click();
+  await loginBrowserPilot(page,"/dashboard");
 
-  await expect(page).toHaveURL(/\/dashboard$/);
   await expectAuthenticatedRoute(page,"At a glance");
   const session=(await context.cookies()).find(cookie=>cookie.name==="logbook_session");
   expect(session).toBeTruthy();
@@ -146,7 +134,6 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expectAuthenticatedRoute(page,"Connections");
 });
 
-
 test("appearance mutation disables duplicate submit and persists",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated mutation smoke requires the isolated CI database.");
   resetAppearanceFixture();
@@ -156,7 +143,7 @@ test("appearance mutation disables duplicate submit and persists",async({page})=
   await appearance.selectOption("dark");
   const gate=await holdPost(page,"**/profile*");
   const save=page.getByRole("button",{name:"Save appearance"});
-  const clicking=save.click().catch(()=>undefined);
+  const clicking=save.click();
 
   const pending=page.getByRole("button",{name:"Saving…"});
   await expect(pending).toBeDisabled();
@@ -185,7 +172,7 @@ test("connection acceptance disables duplicate submit and persists",async({page}
 
   const gate=await holdPost(page,"**/connections*");
   const accept=page.getByRole("button",{name:"Accept"});
-  const clicking=accept.click().catch(()=>undefined);
+  const clicking=accept.click();
 
   const pending=page.getByRole("button",{name:"Accepting…"});
   await expect(pending).toBeDisabled();
@@ -198,9 +185,9 @@ test("connection acceptance disables duplicate submit and persists",async({page}
   gate.release();
   await clicking;
   await gate.cleanup();
+
   const connected=page.locator("details.connection-manager").filter({hasText:"Browser Friend"});
   await expect(connected).toBeVisible();
-
   await page.reload();
   await expect(page.locator("details.connection-manager").filter({hasText:"Browser Friend"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Accept"})).toHaveCount(0);
