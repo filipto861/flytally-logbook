@@ -36,6 +36,6 @@ export function PilotInsightsChart({data}:{data:PilotInsightMonthlyPoint[]}){
           {visible.map((point,index)=>index%labelStep===0||index===visible.length-1?<text key={point.month} x={geometry[index].x} y={height-18} textAnchor="middle" className="chart-x-label">{monthLabel(point.month)}</text>:null)}
         </svg>
       </div>
-    </>:<div className="chart-empty-state"><strong>No dated flights in this period</strong></div>}
+    </>:<div className="empty-state"><strong>No dated flights in this period</strong></div>}
   </section>;
 }
