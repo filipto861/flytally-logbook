@@ -1,11 +1,37 @@
 /* FlyTally v3.0 — personal aircraft profile sharing + cover photos. */
-.aircraft-card.with-photo{grid-template-columns:116px minmax(0,1fr);grid-template-areas:"cover header" "summary summary" "action action";column-gap:14px;row-gap:12px;box-shadow:0 14px 34px rgba(0,0,0,.16)}
-.aircraft-card.with-photo>.aircraft-card-cover{grid-area:cover}
-.aircraft-card.with-photo>header{grid-area:header;align-self:center}
-.aircraft-card.with-photo>.aircraft-card-summary{grid-area:summary}
-.aircraft-card.with-photo>.aircraft-manage-button{grid-area:action}
-.aircraft-card-cover{width:116px;aspect-ratio:16/9;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.aircraft-card-list{align-items:stretch}
+.aircraft-card{grid-template-columns:116px minmax(0,1fr);grid-template-areas:"cover header" "summary summary" "action action";column-gap:14px;row-gap:12px;align-self:stretch;height:100%}
+.aircraft-card.with-photo{box-shadow:0 14px 34px rgba(0,0,0,.16)}
+.aircraft-card>.aircraft-card-cover{grid-area:cover}
+.aircraft-card>header{grid-area:header;align-self:center}
+.aircraft-card>.aircraft-card-summary{grid-area:summary}
+.aircraft-card>.aircraft-manage-button{grid-area:action;align-self:end}
+.aircraft-card-cover{width:116px;aspect-ratio:16/9;overflow:hidden;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
 .aircraft-card-cover img{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.aircraft-card-placeholder{color:var(--muted);font-size:1.25rem;opacity:.72}
+
+.add-aircraft-card{padding:0;overflow:hidden}
+.add-aircraft-card>summary{min-height:64px;display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;list-style:none;color:var(--text);cursor:pointer}
+.add-aircraft-card>summary::-webkit-details-marker{display:none}
+.add-aircraft-card>summary:hover{background:var(--surface-hover,var(--panel2))}
+.add-aircraft-card[open]>summary{margin-bottom:0;border-bottom:1px solid var(--line);background:var(--surface-raised,var(--panel2))}
+.add-aircraft-icon{width:38px;height:38px;display:grid;place-items:center;border:1px solid #28526d;border-radius:10px;background:#102339;color:var(--accent2);font-size:1.05rem;font-weight:900}
+.add-aircraft-copy{min-width:0;display:grid;gap:2px}
+.add-aircraft-copy strong{font-size:.9rem}
+.add-aircraft-copy small{color:var(--muted);font-size:.7rem;font-weight:520;line-height:1.35}
+.add-aircraft-chevron{color:var(--muted);font-size:1.1rem;transition:transform .16s ease}
+.add-aircraft-card[open] .add-aircraft-chevron{transform:rotate(180deg)}
+.add-aircraft-content{display:grid;gap:14px;padding:16px}
+.aircraft-library-status{margin:0}
+
+.aircraft-delete-zone{margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
+.aircraft-delete-zone>summary{width:max-content;list-style:none;color:#f0a1ad;font-size:.72rem;font-weight:800;cursor:pointer}
+.aircraft-delete-zone>summary::-webkit-details-marker{display:none}
+.aircraft-delete-zone>summary:hover{text-decoration:underline}
+.aircraft-delete-zone>div{display:grid;gap:9px;margin-top:10px;padding:12px;border:1px solid #633640;border-radius:11px;background:var(--surface-raised,var(--panel2))}
+.aircraft-delete-zone p{margin:0;color:var(--muted);font-size:.72rem;line-height:1.45}
+.aircraft-delete-zone form{margin:0}
+.aircraft-delete-zone .danger-button{width:max-content}
 
 .aircraft-photo-section,.aircraft-share-section{min-width:0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text)}
 .aircraft-photo-editor{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(300px,1.1fr);gap:18px;margin-top:14px;align-items:start}
@@ -52,8 +78,10 @@ html[data-theme="light"] .aircraft-share-conflict{background:linear-gradient(135
 html[data-theme="light"] .aircraft-import-success{background:#edf9f5;color:#087a5e;border-color:#8fc8b4}
 
 @media(max-width:760px){
-  .aircraft-card.with-photo{grid-template-columns:1fr;grid-template-areas:"cover" "header" "summary" "action";gap:15px}
-  .aircraft-card.with-photo>.aircraft-card-cover{width:auto;margin:-17px -17px 0;aspect-ratio:16/9;border-width:0 0 1px;border-radius:0}
+  .aircraft-card{grid-template-columns:92px minmax(0,1fr);grid-template-areas:"cover header" "summary summary" "action action";column-gap:12px;row-gap:12px}
+  .aircraft-card-cover{width:92px;margin:0;aspect-ratio:16/9;border-width:1px;border-radius:9px}
+  .add-aircraft-card>summary{grid-template-columns:38px minmax(0,1fr) auto}
+  .aircraft-delete-zone .danger-button{width:100%}
   .aircraft-photo-editor{grid-template-columns:1fr}
   .aircraft-photo-preview{min-height:180px}
   .share-profile-grid{grid-template-columns:1fr 1fr}
