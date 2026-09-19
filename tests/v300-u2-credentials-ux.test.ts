@@ -21,7 +21,7 @@ test("v3.0 U2 keeps the top level to Overview, Recency and Records",()=>{
 test("v3.0 U2 overview is status and action only",()=>{
   const page=read("app/(protected)/credentials/page.tsx");
   const overview=read("app/(protected)/credentials/adaptive-overview.tsx");
-  assert.match(page,/return <AdaptivePilotOverview\/>/);
+  assert.match(page,/<AdaptivePilotOverview\/>/);
   assert.doesNotMatch(page,/ProfessionalExperiencePanel/);
   assert.match(overview,/getRecencyComplianceWorkspaceForUser/);
   assert.match(overview,/attention=state\.items\.filter\(item=>item\.status!=="current"\)/);

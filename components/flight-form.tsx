@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState,useEffect,useMemo,useRef,useState } from "react";
-import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { FlightRow } from "@/lib/data/flights";
@@ -13,6 +12,7 @@ import { normalizeChoice,normalizeRegistration,shouldApplyAircraftProfileDefault
 import { flightPurposeCodesFromTask,stripFlightPurposeTasks } from "@/lib/flight-purpose";
 import { flightEntryProfile,regulatoryAircraftCategory } from "@/lib/flight-entry-profile";
 import { FlightPurposePicker } from "@/components/flight-purpose-picker";
+import { PendingActionButton } from "@/components/pending-action-button";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 import { FlightExpensesEditor } from "@/components/flight-expenses-editor";
 import { ProfessionalContextFields } from "@/components/professional-context-fields";
@@ -28,7 +28,7 @@ const launchMethodLabel=(value:string)=>({WINCH:"Winch",AEROTOW:"Aerotow",SELF_L
 const balloonClassLabel=(value:string)=>({HOT_AIR_BALLOON:"Hot-air balloon",GAS_BALLOON:"Gas balloon",HOT_AIR_AIRSHIP:"Hot-air airship",MIXED_BALLOON:"Mixed balloon"} as Record<string,string>)[value]||value;
 const balloonOperationLabel=(value:string)=>value==="FREE"?"Free flight":value==="TETHERED"?"Tethered flight":"—";
 const validBilling=(value:string)=>/^(BLOCK|AIR)(?:\/\d+)?$/.test(value);
-function Submit({another=false,editing=false}:{another?:boolean;editing?:boolean}){const{pending}=useFormStatus();return <button className={another?"secondary-link":"primary-button"} name="intent" value={another?"another":"save"} disabled={pending}>{pending?"Saving…":another?"Save and add another":editing?"Save changes":"Save & review"}</button>}
+function Submit({another=false,editing=false}:{another?:boolean;editing?:boolean}){return <PendingActionButton className={another?"secondary-link":"primary-button"} name="intent" value={another?"another":"save"} pendingLabel="Saving…">{another?"Save and add another":editing?"Save changes":"Save & review"}</PendingActionButton>}
 
 export function FlightForm({action,aircraft,initial={},instructors=[],expenses=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>;expenses?:FlightExpenseRecord[]}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
