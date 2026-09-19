@@ -97,8 +97,14 @@ button[data-loading="true"]::after{
 
 .ui-page-stack{
   display:grid;
+  grid-template-columns:minmax(0,1fr);
   gap:var(--ui-page-gap);
   min-width:0;
+}
+
+.ui-page-stack > *{
+  min-width:0;
+  max-width:100%;
 }
 
 .ui-page-stack > :where(

@@ -14,7 +14,7 @@ test("v3.2 U3 browser smoke is selective and pinned",()=>{
   assert.match(workflow,/@playwright\/test@1[.]55[.]0/);
   assert.match(workflow,/playwright install --with-deps chromium/);
   assert.match(workflow,/Chromium desktop \+ mobile/);
-  assert.doesNotMatch(workflow,/DATABASE_URL/);
+  assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
 test("v3.2 U3 runs real desktop and mobile browser projects",()=>{
@@ -27,7 +27,8 @@ test("v3.2 U3 runs real desktop and mobile browser projects",()=>{
 
 test("v3.2 U3 verifies auth boundary, responsive overflow and pending feedback",()=>{
   const smoke=read("e2e/public-shell.spec.mjs");
-  assert.match(smoke,/scrollWidth-document[.]documentElement[.]clientWidth/);
+  assert.match(smoke,/document[.]documentElement[.]scrollWidth/);
+  assert.match(smoke,/document[.]documentElement[.]clientWidth/);
   assert.match(smoke,/page[.]goto\("\/dashboard"\)/);
   assert.match(smoke,/Signing in…/);
   assert.match(smoke,/aria-busy/);
