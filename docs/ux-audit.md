@@ -4,9 +4,9 @@ Status: Phase 1 audit complete against `main` at `6f871779af27a6380bd0b77d3969bf
 
 Scope: all current protected routes, public/auth/legal routes, shared UI components, global/versioned CSS, PWA shell, light/dark theme behavior and the existing UI acceptance tests. This audit intentionally does not change business logic, calculations, API contracts, database schema, auth or data handling.
 
-Severity summary: **0 critical · 20 major · 13 minor**.
+Severity summary: **0 critical · 21 major · 14 minor**.
 
-No implementation is approved by this document. Phase 2 must wait for explicit approval.
+Phase 1 was approved in full on 2026-09-19. Phase 2 implementation is proceeding in the approved review batches; this document remains the source audit for finding scope.
 
 ## Findings
 
@@ -45,6 +45,8 @@ No implementation is approved by this document. Phase 2 must wait for explicit a
 | UX-031 | minor | `app/globals.css:46` and `:1114-1118`; `app/v300-u31-aircraft-airports.css` empty-state rules | Empty states exist as plain `.empty-state`, `.flight-empty-state`, `.guided-empty-state` and U31-specific variants with different icon sizes, padding and framing. | Keep exactly two existing patterns: compact `.empty-state` for table/list emptiness and full `.flight-empty-state` for a whole workspace/panel. Map guided/U31 variants onto one of those patterns; do not introduce a third visual. |
 | UX-032 | minor | `app/login/login-form.tsx:20-24`; `app/join/join-form.tsx:5`; `app/(protected)/profile/page.tsx:40` | Email terminology varies between `E-mail`, `Email`, `Account email` and `Pilot email`. | Use `Email` for sign-in/join, `Account email` in account settings and `Pilot email` only where the field specifically searches another pilot. Change login `E-mail` → `Email`. |
 | UX-033 | minor | `app/(protected)/dashboard/page.tsx:56` | Dashboard lead contains decorative generic phrasing: `your all-time flying snapshot and the next places to go`. It is less instrument-like than the rest of the product. | Replace with operational copy: `Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.` Keep heading and layout unchanged. |
+| UX-034 | major | `app/globals.css:1351` | Aircraft catalog result buttons have a more specific `:focus` rule that sets `outline:none`, cancelling the canonical visible focus outline defined by the shared UI system. | Remove the focus-specific outline cancellation and let the canonical focus contract from `app/v150-ui-system.css` apply unchanged. No other focus styling changes. |
+| UX-035 | minor | `app/v301-public-flight-viewer.css:11` | The public-flight theme toggle uses a one-off `accent2` focus outline with a 1 px offset instead of the canonical focus color/ring geometry. | Use the canonical focus color and a 2 px outline offset, matching `app/v150-ui-system.css`. No other focus styling changes. |
 
 ## Category coverage
 
@@ -60,7 +62,7 @@ The findings above cover the requested audit dimensions:
 - Data display / UTC / local / units / durations: UX-017 through UX-021. H:MM duration is already the correct product convention.
 - Navigation / page headers: UX-022, UX-023.
 - Mobile / safe areas / keyboard overlap / touch: existing U6 hardening is strong; remaining target-width gap is UX-024.
-- Accessibility: UX-006, UX-007, UX-012, UX-013, UX-014, UX-024, UX-026.
+- Accessibility: UX-006, UX-007, UX-012, UX-013, UX-014, UX-024, UX-026, UX-034, UX-035.
 - Microcopy: UX-032, UX-033.
 - Motion: UX-005. Global reduced-motion support already exists and is good.
 - Login / legal / error: UX-026, UX-027, UX-028.
@@ -77,13 +79,18 @@ The findings above cover the requested audit dimensions:
 - Print-layout dimensions that exist specifically for FCL.050 output.
 - Currency business rules. The UI currently exposes a currency setting while several cost surfaces are explicitly CZK; resolving that is business-rule adjacent and is therefore intentionally not included as a Phase 2 UI-only change.
 
-## Recommended Phase 2 batching after approval
+## Approved Phase 2 batching
 
-This is not implementation approval; it is the smallest reviewable grouping if the audit is approved.
+1. **Tokens and geometry** — UX-001, UX-002, UX-003, UX-004, UX-005, UX-021.
+2. **Color, contrast and charts** — UX-006, UX-007, UX-008.
+3. **Icon system** — UX-009, UX-010.
+4. **Component states and loading** — UX-011, UX-012, UX-030, UX-031.
+5. **Accessibility and touch targets** — UX-013, UX-014, UX-024, UX-034, UX-035.
+6. **Forms** — UX-015, UX-016.
+7. **Display formatting** — UX-017, UX-018, UX-019, UX-020.
+8. **Routes, headers and legal layout** — UX-022, UX-023, UX-028.
+9. **Surfaces and error pages** — UX-026, UX-027, UX-029.
+10. **Microcopy** — UX-032, UX-033.
+11. **Offline state** — UX-025.
 
-1. **Token and geometry consolidation** — UX-001 to UX-008, UX-021, preserving visual parity.
-2. **Shared components, states and accessibility** — UX-009 to UX-016, UX-024 to UX-031.
-3. **Display formatting and route consistency** — UX-017 to UX-023.
-4. **Microcopy-only pass** — UX-032 to UX-033.
-
-Each implementation PR should list the exact finding IDs it closes, visual verification screens and risks, and should run typecheck, targeted/full tests as required by the repo workflow, and build before the PR is opened.
+Each implementation PR must list the exact finding IDs it closes, visual verification screens and risks. Verification is performed by repository CI and the Vercel preview; local verification must never be claimed when the execution runtime cannot run it.
