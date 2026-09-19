@@ -28,10 +28,13 @@ test("preview and saved cover share the same drawCover renderer",()=>{
   assert.match(editor,/drawCover\(canvas,source,mode,zoom,offset,OUTPUT_WIDTH,OUTPUT_HEIGHT\)/);
 });
 
-test("aircraft card renders the saved cover in its own uncropped 16:9 image area",()=>{
+test("aircraft card renders the saved cover without disturbing the desktop grid",()=>{
   assert.match(manager,/className="aircraft-card-cover"/);
   assert.match(manager,/<img src=\{photoUrl\} alt=""\/>/);
   assert.doesNotMatch(manager,/backgroundImage:.*photoUrl/);
-  assert.match(sharingCss,/\.aircraft-card-cover\{[^}]*aspect-ratio:16\/9/);
+  assert.match(sharingCss,/\.aircraft-card\.with-photo\{[^}]*grid-template-columns:116px minmax\(0,1fr\)/);
+  assert.match(sharingCss,/grid-template-areas:"cover header" "summary summary" "action action"/);
   assert.match(sharingCss,/\.aircraft-card-cover img\{[^}]*object-fit:contain/);
+  assert.match(sharingCss,/@media\(max-width:760px\)\{[\s\S]*grid-template-areas:"cover" "header" "summary" "action"/);
+  assert.match(sharingCss,/@media\(max-width:760px\)\{[\s\S]*aspect-ratio:16\/9/);
 });
