@@ -14,7 +14,7 @@ test("v3.2 U3 browser smoke is selective and pinned",()=>{
   assert.match(workflow,/@playwright\/test@1[.]55[.]0/);
   assert.match(workflow,/playwright install --with-deps chromium/);
   assert.match(workflow,/Chromium desktop \+ mobile/);
-  assert.doesNotMatch(workflow,/DATABASE_URL/);
+  assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
 test("v3.2 U3 runs real desktop and mobile browser projects",()=>{
