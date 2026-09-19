@@ -20,6 +20,7 @@ const fastUiTests = new Set([
   "tests/v300-navigation-hierarchy.test.ts",
   "tests/v300-u6-final-ux.test.ts",
   "tests/v320-ui-consistency.test.ts",
+  "tests/v321-route-ui-audit.test.ts",
 ]);
 
 function isFastUiTest(file) {
