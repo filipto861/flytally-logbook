@@ -82,7 +82,7 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Flights");
   await expect(page).toHaveURL(/\/flights$/);
   await expectAuthenticatedRoute(page,"Flights");
-  await expect(page.getByText("OK-E2E",{exact:true}).first()).toBeVisible();
+  await expect(page.getByRole("row",{name:/OK-E2E/})).toBeVisible();
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
