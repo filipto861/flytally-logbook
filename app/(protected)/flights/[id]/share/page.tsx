@@ -6,6 +6,7 @@ import {getFlightTracks} from "@/lib/data/tracks";
 import {createFlightShare,hasActiveFlightShare,revokeFlightShares} from "@/lib/flight-sharing";
 import {FlightStoryCard} from "@/components/flight-story-card";
 import {SharePublicLink} from "@/components/share-public-link";
+import {PendingActionButton} from "@/components/pending-action-button";
 
 const mins=(a:unknown,b:unknown)=>{const p=(v:unknown)=>{const m=/^(\d{2}):(\d{2})$/.exec(String(v??""));return m?Number(m[1])*60+Number(m[2]):0},x=p(a),y=p(b);return x&&y?(y-x+1440)%1440:0};
 
@@ -28,8 +29,8 @@ export default async function ShareFlightPage({params,searchParams}:{params:Prom
     <section className="panel"><p className="eyebrow">VIEW-ONLY LINK</p><h2>Interactive public flight viewer</h2>
       {token?<><p>Your new link is ready. FlyTally stores only a one-way hash of the secret token.</p><SharePublicLink token={token} title={title}/></>:<p className="muted">{active?"A public link is currently active. Create a new one to rotate the secret, or revoke sharing.":"No public link is active."}</p>}
       <div className="share-safety-note"><strong>Before publishing</strong><p className="muted">Anyone with the secret URL can view the limited flight summary. When GPS sharing is enabled, they can explore the interactive map and replay the aircraft along the recorded route. The options below control whether registration, date and the GPS route/distance are public. Public pages are marked noindex and can be revoked at any time.</p></div>
-      <form action={create} className="share-options"><label><input type="checkbox" name="registration"/> Include aircraft registration</label><label><input type="checkbox" name="date" defaultChecked/> Include flight date</label><label><input type="checkbox" name="track" defaultChecked/> Include GPS route and distance</label><button className="primary-button">{active?"Create new link":"Create public link"}</button></form>
-      {active?<form action={revoke}><button className="secondary-button">Revoke public link</button></form>:null}
+      <form action={create} className="share-options"><label><input type="checkbox" name="registration"/> Include aircraft registration</label><label><input type="checkbox" name="date" defaultChecked/> Include flight date</label><label><input type="checkbox" name="track" defaultChecked/> Include GPS route and distance</label><PendingActionButton className="primary-button" pendingLabel={active?"Rotating…":"Creating…"}>{active?"Create new link":"Create public link"}</PendingActionButton></form>
+      {active?<form action={revoke}><PendingActionButton className="secondary-button" pendingLabel="Revoking…">Revoke public link</PendingActionButton></form>:null}
       <p className="muted share-terms">Only share data you are entitled to make public. See <Link href="/legal/terms">sharing terms</Link> and <Link href="/legal/privacy">privacy notice</Link>.</p>
     </section>
     <section className="panel"><p className="eyebrow">SOCIAL</p><h2>Instagram Story</h2><p className="muted">1080×1920 card with the recorded flight path in perspective, public flight statistics and no regulatory/private logbook fields.</p><FlightStoryCard departure={String(f.departure??"")} arrival={String(f.arrival??"")} date={String(f.date??"")} aircraftType={aircraft} blockMinutes={mins(f.off_block,f.on_block)} landings={Number(f.landings??0)} distanceKm={distance} points={points}/></section>
