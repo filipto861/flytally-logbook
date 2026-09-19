@@ -54,7 +54,7 @@ function execute(statement:string){
 }
 
 export function createLocalPostgresQuery(){
-  const query=((strings:TemplateStringsArray,...values:unknown[])=>Promise.resolve(execute(render(strings,values)))) as ((strings:TemplateStringsArray,...values:unknown[])=>Promise<Array<Record<string,unknown>>>)&{transaction:(queries:unknown[])=>Promise<never>};
+  const query=((strings:TemplateStringsArray,...values:unknown[])=>{const statement=render(strings,values);return Promise.resolve().then(()=>execute(statement)}) as ((strings:TemplateStringsArray,...values:unknown[])=>Promise<Array<Record<string,unknown>>>)&{transaction:(queries:unknown[])=>Promise<never>};
   query.transaction=async()=>{
     throw new Error("Local PostgreSQL smoke adapter does not support transactions. Browser smoke must pre-bootstrap the schema.");
   };
