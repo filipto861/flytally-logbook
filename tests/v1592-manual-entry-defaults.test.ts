@@ -15,17 +15,16 @@ test("v1.59.2 package metadata remains synchronized in later releases",()=>{
   assert.equal(lock.packages[""].version,pkg.version);
 });
 
-test("new manual flight can continue from the latest active-aircraft entry without inventing profile values",()=>{
+test("new manual flight starts without previous aircraft or airport defaults",()=>{
   const start=data.indexOf("export async function getManualEntryDefaults");
   const end=data.indexOf("export async function getFlightNavigation",start);
   const block=data.slice(start,end);
-  assert.match(block,/EXISTS\(SELECT 1 FROM aircraft a/);
-  assert.match(block,/a\.active=1/);
-  assert.match(block,/ORDER BY f\.id DESC LIMIT 1/);
-  assert.match(block,/registration_default_source:registration\?"last-flight":""/);
-  assert.match(block,/departure_default_source:departure\?"previous-arrival":""/);
+  assert.match(block,/registration:""/);
+  assert.match(block,/departure:""/);
   assert.match(block,/arrival:""/);
   assert.match(block,/evidence:""/);
+  assert.doesNotMatch(block,/ORDER BY f\.id DESC LIMIT 1/);
+  assert.doesNotMatch(block,/registration_default_source|departure_default_source/);
   assert.doesNotMatch(block,/home_airport/);
 });
 
