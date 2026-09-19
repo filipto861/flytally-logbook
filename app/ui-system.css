@@ -186,7 +186,9 @@ button[data-loading="true"]::after{
     width:100%;
   }
 
-  .ui-page-stack > .page-header > .connection-actions :where(.primary-button,.secondary-button,.secondary-link){
+  .ui-page-stack > .page-header > .connection-actions :where(.primary-button,.secondary-button,.secondary-link),
+  .ui-page-stack > .page-header > :where(.primary-button,.primary-link,.secondary-button,.secondary-link){
+    width:100%;
     display:flex;
     align-items:center;
     justify-content:center;
