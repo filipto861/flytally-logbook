@@ -20,7 +20,7 @@ test("v1.40.0 record and shared-workflow views remain available on Flights",()=>
   assert.match(page,/Official locked logbook record/);
   assert.match(page,/Editable record not yet certified/);
   assert.match(page,/className="flight-route-link"/);
-  assert.doesNotMatch(page,/>Open →</);
+  assert.match(page,/className="flight-open-cta">Open flight/);
   assert.match(page,/className="flight-identity"/);
 });
 
