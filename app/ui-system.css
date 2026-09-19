@@ -251,3 +251,100 @@ button[data-loading="true"]::after{
   .form-actions.field-actions{grid-template-columns:minmax(0,1fr)}
   .entry-save-state{padding:0 2px 4px}
 }
+
+
+/* U11 Flights workflow: make scan/open/navigation actions obvious without duplicating them. */
+.flights-table .flight-list-row>td[data-label="Flight"]{
+  min-width:138px;
+}
+.flight-route-link{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-width:150px;
+  color:var(--text);
+  text-decoration:none;
+}
+.flight-route-link strong{font-size:.8rem}
+.flight-route-link span{
+  color:var(--accent2);
+  font-size:.68rem;
+  font-weight:800;
+  white-space:nowrap;
+}
+.flight-route-link:hover strong{text-decoration:underline}
+.flight-detail-navigation{
+  align-items:center;
+  gap:8px;
+}
+.flight-detail-nav-main{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.flight-detail-more{position:relative}
+.flight-detail-more>summary{
+  list-style:none;
+  cursor:pointer;
+}
+.flight-detail-more>summary::-webkit-details-marker{display:none}
+.flight-detail-more-menu{
+  position:absolute;
+  z-index:25;
+  right:0;
+  top:calc(100% + 7px);
+  width:min(260px,78vw);
+  display:grid;
+  gap:8px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel);
+  box-shadow:0 16px 34px rgba(0,0,0,.22);
+}
+.flight-detail-more-menu>*{width:100%}
+.flight-detail-more-menu .secondary-link,
+.flight-detail-more-menu .danger-button{
+  justify-content:flex-start;
+  text-align:left;
+}
+.flight-workflow-steps{gap:6px}
+.flight-workflow-step{
+  display:flex;
+  align-items:center;
+  min-height:38px;
+  gap:8px;
+  padding:8px 10px;
+}
+.flight-workflow-step>strong{font-size:.7rem}
+.flight-workflow-step>span{flex:0 0 21px}
+.flight-workflow-primary .primary-button,
+.flight-workflow-primary .secondary-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.flight-post-save{display:none}
+
+@media(max-width:700px){
+  .flight-route-link{min-width:0}
+  .flight-detail-navigation{
+    width:100%;
+    display:flex;
+    align-items:stretch;
+    justify-content:space-between;
+    overflow:visible;
+  }
+  .flight-detail-nav-main{
+    flex:1 1 auto;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .flight-detail-nav-main::-webkit-scrollbar{display:none}
+  .flight-detail-more{flex:0 0 auto}
+  .flight-detail-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}
+  .flight-workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
