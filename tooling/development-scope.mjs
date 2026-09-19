@@ -13,11 +13,17 @@ function isLightweight(file) {
     manifest.lightweight.prefixes.some((prefix) => path.startsWith(prefix));
 }
 
-function isUnitTestOnly(file) {
-  const path = normalize(file);
-  return path.startsWith("tests/") &&
-    !path.startsWith("tests/integration/") &&
-    path.endsWith(".test.ts");
+const fastUiTests = new Set([
+  "tests/v121-ui-simplification.test.ts",
+  "tests/v1342-ui-polish.test.ts",
+  "tests/v156-mobile-layout-audit.test.ts",
+  "tests/v300-navigation-hierarchy.test.ts",
+  "tests/v300-u6-final-ux.test.ts",
+  "tests/v320-ui-consistency.test.ts",
+]);
+
+function isFastUiTest(file) {
+  return fastUiTests.has(normalize(file));
 }
 
 function moduleMatches(module, file) {
@@ -29,7 +35,7 @@ export function classifyDevelopmentScope(files, title = "") {
   const normalizedFiles = files.map(normalize).filter(Boolean);
   const forceFull = title.includes("[full-ci]");
   const scale = forceFull || normalizedFiles.some((file) => manifest.scalePaths.includes(file));
-  const runtimeFiles = normalizedFiles.filter((file) => !isLightweight(file) && !isUnitTestOnly(file));
+  const runtimeFiles = normalizedFiles.filter((file) => !isLightweight(file) && !isFastUiTest(file));
   const postgres = forceFull || scale || runtimeFiles.length > 0;
   const fullTests = forceFull || runtimeFiles.length > 0;
   const modules = new Set();
@@ -41,7 +47,7 @@ export function classifyDevelopmentScope(files, title = "") {
       modules.add(module.id);
       matched = true;
     }
-    if (!matched) modules.add(isLightweight(file) || isUnitTestOnly(file) ? "documentation-style" : "shared");
+    if (!matched) modules.add(isLightweight(file) || isFastUiTest(file) ? "documentation-style" : "shared");
   }
 
   return {
