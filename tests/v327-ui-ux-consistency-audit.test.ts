@@ -103,3 +103,39 @@ test("v3.3 design batch 1 standardizes motion and tabular figures",()=>{
   for(const selector of [".time-pair",".pagination",".page-number-list",".track-stats",".rate-history-row",".numeric-table"])assert.ok(ui.includes(selector),selector);
   assert.match(stats,/className="numeric-table"/);
 });
+
+
+test("v3.3 design batch 2 hardens light normal-text contrast without changing brand fills",()=>{
+  const theme=read("app/theme.css");
+  const colors=read("app/v150-ui-system.css");
+
+  assert.match(colors,/--accent:#0b946e/);
+  assert.match(colors,/--accent2:#087fb8/);
+  assert.match(theme,/\.eyebrow,[\s\S]*color:var\(--accent-strong\)/);
+  assert.match(theme,/\.pagination a,[\s\S]*color:var\(--link\)/);
+  assert.match(theme,/\.page-header \.muted,[\s\S]*color:var\(--text-soft\)/);
+  assert.match(theme,/sidebar-sub-link\.active\{background:#edf4f8;color:var\(--link\);border-left-color:var\(--accent2\)\}/);
+  assert.match(theme,/leaflet-control-attribution a\{color:var\(--link\)!important\}/);
+  assert.match(theme,/entry-progress>span\.active\{background:#e6f3f9;color:var\(--link\)\}/);
+});
+
+test("v3.3 design batch 2 removes compounded footer opacity",()=>{
+  const shell=read("components/app-shell.tsx");
+  const legal=read("components/legal-footer.tsx");
+
+  for(const source of [shell,legal]){
+    assert.match(source,/color:"var\(--text-soft\)"/);
+    assert.match(source,/opacity:1/);
+    assert.doesNotMatch(source,/color:"var\(--muted\)",opacity:\.72/);
+  }
+});
+
+test("v3.3 design batch 2 makes the legacy GPS profile use theme chart tokens",()=>{
+  const profile=read("components/track-profile.tsx");
+
+  assert.match(profile,/stopColor="var\(--chart-primary\)"/);
+  assert.match(profile,/stopColor="var\(--chart-secondary\)"/);
+  assert.match(profile,/stroke="var\(--chart-primary\)"/);
+  assert.match(profile,/stroke="var\(--chart-cursor\)"/);
+  assert.doesNotMatch(profile,/#38bdf8|#34d399|#f8fafc/i);
+});

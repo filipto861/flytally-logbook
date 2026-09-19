@@ -19,7 +19,7 @@ export function AppShell({ children,role,attentionCount=0,notificationCount=0,ap
       <Sidebar role={role} attentionCount={attentionCount} notificationCount={notificationCount}/>
       <main id="main-content" tabIndex={-1} className="content" style={{display:"flex",minHeight:"100vh",flexDirection:"column"}}>
         <div>{children}</div>
-        <footer style={{marginTop:"auto",paddingTop:"28px",display:"grid",justifyItems:"center",gap:"8px",fontSize:".68rem",color:"var(--muted)",opacity:.72}}>
+        <footer style={{marginTop:"auto",paddingTop:"28px",display:"grid",justifyItems:"center",gap:"8px",fontSize:".68rem",color:"var(--text-soft)",opacity:1}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}><span>FlyTally v{appVersion}</span><span aria-hidden="true">·</span><a href={feedbackHref} style={{textDecoration:"underline",textUnderlineOffset:"2px"}}>Feedback</a></div>
           <LegalFooter compact/>
         </footer>
