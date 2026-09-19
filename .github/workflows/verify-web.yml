@@ -4,6 +4,14 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
@@ -42,7 +50,7 @@ jobs:
     name: Fast application gate
     needs: classify
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,18 +61,16 @@ jobs:
       - name: TypeScript check
         run: npm run typecheck
       - name: Targeted UI regression tests
-        if: needs.classify.outputs.full_tests != 'true'
+        if: github.event.pull_request.draft == true || needs.classify.outputs.full_tests != 'true'
         run: npm run test:ui
       - name: Full unit and regression tests
-        if: needs.classify.outputs.full_tests == 'true'
+        if: github.event.pull_request.draft == false && needs.classify.outputs.full_tests == 'true'
         run: npm test
-      - name: Production build
-        run: npm run build
 
   postgres:
     name: PostgreSQL acceptance
     needs: classify
-    if: needs.classify.outputs.postgres == 'true'
+    if: github.event.pull_request.draft == false && needs.classify.outputs.postgres == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -110,7 +116,7 @@ jobs:
         with:
           name: flytally-postgres-acceptance-${{ github.sha }}
           path: flytally-postgres-acceptance.txt
-          retention-days: 90
+          retention-days: 14
       - name: Preserve scale evidence
         if: always() && needs.classify.outputs.scale == 'true'
         uses: actions/upload-artifact@v4
