@@ -101,7 +101,7 @@ function asDeferredLocalQuery(value:unknown):DeferredLocalQuery{
 }
 
 export function createLocalPostgresQuery(){
-  const query=((strings:TemplateStringsArray,...values:unknown[])=>deferredQuery(render(strings,values))) as LocalPostgresQuery;
+  const query=((strings:TemplateStringsArray,...values:unknown[])=>deferredQuery(render(strings,values))) as unknown as LocalPostgresQuery;
   query.transaction=async(queries:unknown[])=>{
     const localQueries=queries.map(asDeferredLocalQuery);
     if(localQueries.some(item=>item.__flytallyLocalStarted))throw new Error("Local PostgreSQL transaction queries must be created inline.");
