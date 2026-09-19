@@ -23,7 +23,9 @@ test("v3.2 U4 browser database is isolated and uses production password format",
   assert.match(bootstrap,/generate_series\(1,14\)/);
   assert.match(bootstrap,/scrypt\$n=131072,r=8,p=1/);
   assert.match(bootstrap,/browser-auth@example[.]test/);
-  assert.match(bootstrap,/OK-E2E/);\n  assert.match(bootstrap,/CREATE TABLE push_preferences/);\n  assert.match(bootstrap,/CREATE TABLE push_subscriptions/);
+  assert.match(bootstrap,/OK-E2E/);
+  assert.match(bootstrap,/CREATE TABLE push_preferences/);
+  assert.match(bootstrap,/CREATE TABLE push_subscriptions/);
 });
 
 test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external secrets",()=>{
@@ -42,5 +44,7 @@ test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=
   assert.match(smoke,/navigateMain\(page,"Flights"\)/);
   assert.match(smoke,/navigateMain\(page,"Settings"\)/);
   assert.match(smoke,/navigateMain\(page,"Connections"\)/);
-  assert.match(smoke,/getByRole\("row",\{name:\/OK-E2E\/}\)/);\n  const ui=read("app/ui-system.css");\n  assert.match(ui,/[.]ui-page-stack > [*][^{]*\\{[^}]*min-width:0;[^}]*max-width:100%;/s);
+  assert.match(smoke,/getByRole\("row",\{name:\/OK-E2E\/}\)/);
+  const ui=read("app/ui-system.css");
+  assert.match(ui,/[.]ui-page-stack > [*][^{]*\\{[^}]*min-width:0;[^}]*max-width:100%;/s);
 });
