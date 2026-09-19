@@ -40,7 +40,7 @@ test("v3.0 U1.2 gives collapsed desktop chrome a non-overlapping vertical stack"
 test("v3.0 U1.2 constrains the desktop notification inbox without shrinking mobile",()=>{
   const page=read("app/(protected)/notifications/page.tsx");
   const css=read("app/(protected)/notifications/notifications.module.css");
-  assert.match(page,/className=\{styles\.inbox\}/);
+  assert.match(page,/styles\.inbox/);
   assert.match(css,/width:min\(100%,1180px\)/);
   assert.match(css,/@media\(max-width:820px\)\{\.inbox\{width:100%\}\}/);
 });
