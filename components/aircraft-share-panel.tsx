@@ -13,7 +13,7 @@ export function AircraftSharePanel({aircraft,connections,action}:{aircraft:Row;c
   const hasPhoto=Boolean(aircraft.has_photo),hasRate=Number(aircraft.current_price_per_hour||0)>0,rateCount=Number(aircraft.rate_count||0);
   return <section className="aircraft-share-section">
     <div className="modal-section-heading"><div><p className="eyebrow">SHARE</p><h3>Share aircraft profile</h3><p className="muted">Send a pre-filled copy to one of your Connections. After import, both pilots can edit their own aircraft independently.</p></div></div>
-    {!connections.length?<div className="u31-empty-state compact"><strong>No Connections available</strong><span>Connect with the other pilot first. Aircraft sharing never exposes a public pilot directory.</span><Link className="secondary-button" href="/connections">Open Connections</Link></div>:<form action={formAction} className="aircraft-share-form">
+    {!connections.length?<div className="empty-state"><strong>No Connections available</strong><span>Connect with the other pilot first. Aircraft sharing never exposes a public pilot directory.</span><Link className="secondary-button" href="/connections">Open Connections</Link></div>:<form action={formAction} className="aircraft-share-form">
       <input type="hidden" name="aircraft_id" value={text(aircraft.id)}/>
       <label>Pilot<select name="recipient_user_id" required defaultValue=""><option value="" disabled>Select a connection…</option>{connections.map(row=><option key={text(row.id)} value={text(row.id)}>{text(row.display_name)||"Pilot"}{text(row.home_airport)?` · ${text(row.home_airport)}`:""}</option>)}</select></label>
       <div className="aircraft-share-options">
