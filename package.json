@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/*.test.ts",
     "test:target": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types",
+    "test:ui": "npm run test:target -- tests/v121-ui-simplification.test.ts tests/v1342-ui-polish.test.ts tests/v156-mobile-layout-audit.test.ts tests/v300-navigation-hierarchy.test.ts tests/v300-u6-final-ux.test.ts tests/v320-ui-consistency.test.ts",
     "scope:changed": "node tooling/development-scope.mjs",
     "test:postgres": "node tooling/run-postgres-tests.mjs core",
     "test:postgres:scale": "node tooling/run-postgres-tests.mjs scale",
