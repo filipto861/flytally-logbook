@@ -143,3 +143,58 @@ button[data-loading="true"]::after{
     align-items:stretch;
   }
 }
+
+/* U7 route-wide consistency: legacy screens now use the same spacing and action contract. */
+.ui-page-stack > :where(
+  .period-control,
+  .metric-grid,
+  .flight-summary,
+  .saved-next-flight,
+  .flight-results-heading,
+  .map-panel,
+  .flight-entry-workspace
+){
+  margin-block:0;
+}
+
+.ui-page-stack > :where(.period-control,.scope-links){
+  justify-self:start;
+}
+
+.ui-page-stack > .page-header > .connection-actions{
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.ui-page-stack :where(.connection-actions) form{
+  margin:0;
+}
+
+.ui-page-stack :where(.empty-state){
+  margin-block:0;
+}
+
+@media(max-width:700px){
+  .ui-page-stack > .page-header > .connection-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .ui-page-stack > .page-header > .connection-actions > *,
+  .ui-page-stack > .page-header > .connection-actions :where(.primary-button,.secondary-button,.secondary-link){
+    width:100%;
+  }
+
+  .ui-page-stack > .page-header > .connection-actions :where(.primary-button,.secondary-button,.secondary-link){
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .ui-page-stack > :where(.period-control,.scope-links){
+    justify-self:stretch;
+    width:100%;
+  }
+}
+
