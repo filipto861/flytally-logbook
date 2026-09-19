@@ -9,6 +9,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("v3.2 U7 brings remaining core routes onto the canonical page stack",()=>{
   const routes=[
     "app/(protected)/statistics/page.tsx",
+    "app/(protected)/credentials/page.tsx",
     "app/(protected)/map/page.tsx",
     "app/(protected)/fstd/page.tsx",
     "app/(protected)/actions/page.tsx",
