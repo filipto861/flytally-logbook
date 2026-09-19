@@ -1,5 +1,6 @@
 import "server-only";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { createLocalPostgresQuery } from "@/lib/local-postgres";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -18,10 +19,9 @@ function getSql(): NeonQueryFunction<false, false> {
   const cached = process.env.NODE_ENV === "production" ? productionSql : globalThis.__logbookSql;
   if (cached) return cached;
 
-  const client = neon(databaseUrl(), {
-    fullResults: false,
-    arrayMode: false,
-  });
+  const client = process.env.FLYTALLY_LOCAL_POSTGRES === "1"
+    ? createLocalPostgresQuery() as unknown as NeonQueryFunction<false,false>
+    : neon(databaseUrl(), { fullResults:false,arrayMode:false });
 
   if (process.env.NODE_ENV === "production") productionSql = client;
   else globalThis.__logbookSql = client;
