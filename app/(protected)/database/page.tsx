@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { getDatabaseDataV164 as getDatabaseData } from "@/lib/data/database-v164";
-import { canonicalizeFlightAirportCodes,deleteRate,saveAircraftWithResult,saveAirport,saveRate,toggleAircraft,toggleAirport } from "./actions";
+import { canonicalizeFlightAirportCodes,deleteAircraftWithResult,deleteRate,saveAircraftWithResult,saveAirport,saveRate,toggleAircraft,toggleAirport } from "./actions";
 import { DataQualityPanel } from "@/components/data-quality-panel";
 import { searchAirportCatalog } from "@/lib/airport-catalog";
 import { AircraftManager } from "@/components/aircraft-manager";
@@ -32,7 +32,7 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
     {view==="aircraft"?<main className="u31-workspace">
       {params.imported?<p className="form-success aircraft-import-success" role="status">{params.imported} was added to your aircraft. You can edit every imported value independently.</p>:null}
       <section className="u31-workspace-heading"><div><p className="eyebrow">AIRCRAFT</p><h2>Your aircraft</h2><p className="muted">Pick an aircraft to manage its profile or rates. Technical defaults stay inside the aircraft editor instead of filling this page.</p></div><div className="u31-counts"><span><b>{activeAircraft}</b> active</span>{inactiveAircraft?<span><b>{inactiveAircraft}</b> inactive</span>:null}</div></section>
-      <AircraftManager aircraft={data.aircraft} rates={data.rates} connections={connections} saveAction={saveAircraftWithResult} toggleAction={toggleAircraft} saveRateAction={saveRate} deleteRateAction={deleteRate} savePhotoAction={saveAircraftPhoto} removePhotoAction={removeAircraftPhoto} shareAction={shareAircraftProfile}/>
+      <AircraftManager aircraft={data.aircraft} rates={data.rates} connections={connections} saveAction={saveAircraftWithResult} toggleAction={toggleAircraft} saveRateAction={saveRate} deleteRateAction={deleteRate} deleteAction={deleteAircraftWithResult} savePhotoAction={saveAircraftPhoto} removePhotoAction={removeAircraftPhoto} shareAction={shareAircraftProfile}/>
     </main>:null}
 
     {view==="airports"?<main className="u31-workspace">
