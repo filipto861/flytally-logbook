@@ -10,7 +10,8 @@ test("v3.3 U11 makes the route itself the primary flight-list open action",()=>{
   const page=read("app/(protected)/flights/page.tsx");
   assert.match(page,/className="flight-route-link"/);
   assert.match(page,/aria-label={`Open flight/);
-  assert.doesNotMatch(page,/>View flight</);
+  assert.doesNotMatch(page,/>View flight<|>Open →</);
+  assert.match(page,/className="flight-identity"/);
   assert.match(page,/<th>Flight<\/th><th>Route<\/th><th>Times<\/th><th>Logged time<\/th><th>Role \/ status<\/th><th>Landings<\/th><th>GPS<\/th><th>Cost<\/th>/);
 });
 

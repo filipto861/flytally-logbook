@@ -16,8 +16,8 @@ test("flight list keeps everyday search visible and advanced filters secondary",
 test("flight rows keep one clear action",()=>{
   const list=read("app/(protected)/flights/page.tsx"),entry=read("app/(protected)/flights/new/page.tsx");
   assert.match(list,/className="flight-route-link"/);
-  assert.match(list,/>Open →</);
-  assert.doesNotMatch(list,/>View flight<|>Edit<|>Copy<|mode=manual&copy=/);
+  assert.match(list,/className="flight-route-link"/);
+  assert.doesNotMatch(list,/>Open →<|>View flight<|>Edit<|>Copy<|mode=manual&copy=/);
   assert.doesNotMatch(entry,/copyId|New flight from copy|getFlightDetailFast/);
 });
 
