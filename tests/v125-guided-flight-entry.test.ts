@@ -12,14 +12,15 @@ test("v1.25 preserves both entry modes when the user switches source",()=>{
   assert.match(source,/<div hidden=\{mode!=="manual"\}>\{manual\}<\/div>/);
 });
 
-test("manual entry has progress, a live pre-save summary and explicit save actions",()=>{
+test("manual entry has a live pre-save summary and explicit save actions without fake wizard progress",()=>{
   const source=read("components/flight-form.tsx");
-  assert.match(source,/Manual flight entry progress/);
+  assert.doesNotMatch(source,/Manual flight entry progress/);
   assert.match(source,/Review before save/);
   assert.match(source,/BLOCK \/ AIR/);
   assert.match(source,/Save & review/);
   assert.match(source,/Save changes/);
   assert.match(source,/Aircraft, logbook.*billing defaults came from/);
+  assert.match(source,/entry-save-state/);
 });
 
 test("GPS import guides review before enabling the final save",()=>{

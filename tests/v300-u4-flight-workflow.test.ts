@@ -10,7 +10,7 @@ test("v3.0 U4 makes Save hand off directly to final Logbook review",()=>{
   const actions=read("app/(protected)/flights/actions.ts"),page=read("app/(protected)/flights/new/page.tsx"),form=read("components/flight-form.tsx"),panel=read("components/intelligent-flight-entry-panel.tsx");
   assert.match(actions,/redirect\(String\(form\.get\("intent"\)\)==="another"\?"\/flights\/new\?added=1":`\/flights\/\$\{id\}\?tab=logbook&saved=1`\)/);
   assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?tab=logbook&saved=1`\)/);
-  assert.match(page,/Saving creates an editable draft and takes you to final Logbook review before certification/);
+  assert.match(page,/takes you to review before certification/);
   assert.match(form,/editing\?"Save changes":"Save & review"/);
   assert.doesNotMatch(panel,/POST_SAVE_REVIEW_KEY|sessionStorage/);
 });
