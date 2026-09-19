@@ -14,8 +14,16 @@ test("aircraft cover uses an interactive 16:9 crop editor",()=>{
   assert.match(css,/aspect-ratio:16\/9/);
 });
 
-test("cover rendering applies the selected zoom and offset before upload",()=>{
-  assert.match(editor,/renderCover\(source,zoom,offset\.x,offset\.y\)/);
-  assert.match(editor,/const sw=baseWidth\/zoom,sh=baseHeight\/zoom/);
-  assert.match(editor,/ctx\.drawImage\(image,sx,sy,sw,sh,0,0,OUTPUT_WIDTH,OUTPUT_HEIGHT\)/);
+test("crop preview and saved cover use the same crop geometry",()=>{
+  assert.match(editor,/function getCropRect/);
+  assert.match(editor,/function drawCrop/);
+  assert.match(editor,/drawCrop\(cropCanvas\.current,source,zoom,offset,PREVIEW_WIDTH,PREVIEW_HEIGHT\)/);
+  assert.match(editor,/drawCrop\(canvas,source,zoom,offset,OUTPUT_WIDTH,OUTPUT_HEIGHT\)/);
+  assert.match(editor,/ctx\.drawImage\(source\.image,sx,sy,sw,sh,0,0,width,height\)/);
+});
+
+test("crop panning can reach the full source bounds",()=>{
+  assert.match(editor,/travelX\/2-clamp\(offsetX\)\*travelX\/2/);
+  assert.match(editor,/travelY\/2-clamp\(offsetY\)\*travelY\/2/);
+  assert.doesNotMatch(editor,/offset\.x\*25|offset\.y\*25/);
 });
