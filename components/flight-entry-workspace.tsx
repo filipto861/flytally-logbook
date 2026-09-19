@@ -30,7 +30,7 @@ export function FlightEntryWorkspace({gps,manual,aircraftAction,aircraftCount,in
   return <div className="flight-entry-workspace">
     <section className="entry-choice" aria-label="Choose how to add a flight">
       <button type="button" className={mode==="manual"?"active":""} aria-pressed={mode==="manual"} onClick={()=>setMode("manual")}><strong>Manual entry</strong><small>Normal logbook entry</small></button>
-      <button type="button" className={mode==="gps"?"active":""} aria-pressed={mode==="gps"} onClick={()=>setMode("gps")}><strong>GPS import</strong><small>KML, GPX or CSV</small></button>
+      <button type="button" className={mode==="gps"?"active":""} aria-pressed={mode==="gps"} onClick={()=>setMode("gps")}><strong>Import GPS track</strong><small>KML, GPX or CSV</small></button>
     </section>
     {!aircraftCount?<section className="first-aircraft-callout" aria-labelledby="first-aircraft-heading"><div><span aria-hidden="true">✈</span><div><strong id="first-aircraft-heading">Start by adding the aircraft you fly</strong><p>FlyTally will remember its logbook, class and defaults so future flights need fewer choices.</p></div></div><button type="button" className="primary-button" aria-haspopup="dialog" aria-expanded={aircraftOpen} aria-controls="quick-aircraft-dialog" onClick={event=>openAircraft(event.currentTarget)}>Add first aircraft</button></section>:null}
     {aircraftNotice?<p className="aircraft-added-notice" role="status">{aircraftNotice}</p>:null}
