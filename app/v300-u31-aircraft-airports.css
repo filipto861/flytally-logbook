@@ -21,9 +21,6 @@
 .u31-airport-editor input{width:100%;min-width:0;padding:10px}
 .u31-airport-editor .primary-button{min-height:42px;white-space:nowrap}
 .u31-airport-search{margin:0}
-.u31-empty-state{display:grid;gap:4px;padding:22px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
-.u31-empty-state strong{color:var(--text)}
-.u31-empty-state.compact{padding:18px}
 .u31-advanced-health{margin:0}
 .u31-advanced-health>summary,.airport-code-migration>summary{cursor:pointer;list-style:none}
 .u31-advanced-health[open]>summary,.airport-code-migration[open]>summary{margin-bottom:18px}
