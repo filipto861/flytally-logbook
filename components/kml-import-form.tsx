@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState,useEffect,useMemo,useRef,useState } from "react";
-import { useFormStatus } from "react-dom";
 import dynamic from "next/dynamic";
 import type { AircraftOption } from "@/lib/data/aircraft";
 import type { AirportCandidate,AirportDetectionResult,AirportDetectionRequest,FlightActionState } from "@/app/(protected)/flights/actions";
@@ -11,6 +10,7 @@ import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overvi
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseBilling } from "@/lib/billing";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
+import { PendingActionButton } from "@/components/pending-action-button";
 
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
@@ -52,8 +52,7 @@ function importReviewEvents(analysis:Analysis,cuts:number[]):ImportReviewEvent[]
 }
 
 function Submit({ready,hasTrack,onReview}:{ready:boolean;hasTrack:boolean;onReview:()=>void}){
-  const {pending}=useFormStatus();
-  return ready?<button className="primary-button" disabled={pending}>{pending?"Saving reviewed flights…":"Save reviewed flights"}</button>:<button type="button" className="primary-button" disabled={!hasTrack} onClick={onReview}>{hasTrack?"Review imported flights":"Upload track first"}</button>;
+  return ready?<PendingActionButton className="primary-button" pendingLabel="Saving reviewed flights…">Save reviewed flights</PendingActionButton>:<button type="button" className="primary-button" disabled={!hasTrack} onClick={onReview}>{hasTrack?"Review imported flights":"Upload track first"}</button>;
 }
 
 function AirportReviewField({label,name,value,candidates,onChange}:{label:string;name:string;value:string;candidates:AirportCandidate[];onChange:(value:string)=>void}){
