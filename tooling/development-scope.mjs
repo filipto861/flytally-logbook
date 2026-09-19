@@ -23,6 +23,7 @@ const fastUiTests = new Set([
   "tests/v321-route-ui-audit.test.ts",
   "tests/v322-browser-smoke.test.ts",
   "tests/v323-auth-browser.test.ts",
+  "tests/v324-auth-mutations.test.ts",
 ]);
 
 function isFastUiTest(file) {
