@@ -147,6 +147,7 @@ button[data-loading="true"]::after{
 /* U7 route-wide consistency: legacy screens now use the same spacing and action contract. */
 .ui-page-stack > :where(
   .period-control,
+  .credentials-primary-tabs,
   .metric-grid,
   .flight-summary,
   .saved-next-flight,
