@@ -38,7 +38,7 @@ export function MonthlyChart({data,totalFlights,invalidDates}:{data:MonthlyPoint
           {visible.map((point,index)=>index%labelStep===0||index===visible.length-1?<text key={point.month} x={geometry[index].x} y={height-18} textAnchor="middle" className="chart-x-label">{monthLabel(point.month)}</text>:null)}
         </svg>
       </div>
-    </>:<div className="chart-empty-state"><strong>{totalFlights?"Flights could not be grouped by month":"No flights in this period"}</strong></div>}
+    </>:<div className="empty-state"><strong>{totalFlights?"Flights could not be grouped by month":"No flights in this period"}</strong></div>}
     {invalidDates?<p className="chart-warning">{invalidDates} flight records have no valid date.</p>:null}
   </section>;
 }
