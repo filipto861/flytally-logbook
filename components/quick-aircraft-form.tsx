@@ -53,6 +53,6 @@ export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:(
       <label className="wide">Notes<textarea name="note" rows={2} placeholder="Optional"/></label>
     </div></details>
     {status&&!status.ok?<p className="form-error wide" role="alert">{status.message}</p>:null}
-    <div className="form-actions wide"><button className="primary-button" disabled={saving}>{saving?"Saving…":"Add aircraft"}</button></div>
+    <div className="form-actions wide"><button className="primary-button" disabled={saving} aria-busy={saving||undefined} data-loading={saving?"true":undefined}>{saving?"Saving…":"Add aircraft"}</button></div>
   </form>;
 }
