@@ -6,12 +6,16 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v3.3 U10 prefills the common manual-entry continuation path",()=>{
-  const data=read("lib/data/flights.ts");
-  assert.match(data,/ORDER BY f\.id DESC LIMIT 1/);
-  assert.match(data,/a\.active=1/);
-  assert.match(data,/registration_default_source:registration\?"last-flight":""/);
-  assert.match(data,/departure_default_source:departure\?"previous-arrival":""/);
+test("v3.3 U10 keeps a new manual entry neutral until the user selects aircraft and route",()=>{
+  const data=read("lib/data/flights.ts"),form=read("components/flight-form.tsx");
+  const start=data.indexOf("export async function getManualEntryDefaults");
+  const end=data.indexOf("export async function getFlightNavigation",start);
+  const block=data.slice(start,end);
+  assert.match(block,/registration:""/);
+  assert.match(block,/departure:""/);
+  assert.match(block,/arrival:""/);
+  assert.doesNotMatch(block,/lastFlights|previous-arrival|last-flight/);
+  assert.doesNotMatch(form,/Last used aircraft selected|Continued from your previous arrival/);
 });
 
 test("v3.3 U10 removes fake wizard progress from manual entry",()=>{
@@ -19,8 +23,6 @@ test("v3.3 U10 removes fake wizard progress from manual entry",()=>{
   const importer=read("components/kml-import-form.tsx");
   assert.doesNotMatch(form,/aria-label="Manual flight entry progress"/);
   assert.match(importer,/aria-label="GPS import progress"/);
-  assert.match(form,/Last used aircraft selected/);
-  assert.match(form,/Continued from your previous arrival/);
 });
 
 test("v3.3 U10 collapses routine experience while keeping required category evidence visible",()=>{
