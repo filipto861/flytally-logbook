@@ -1,4 +1,4 @@
-type IconName="dashboard"|"statistics"|"flights"|"simulator"|"add"|"map"|"connections"|"actions"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage";
+export type IconName="dashboard"|"statistics"|"flights"|"simulator"|"add"|"map"|"connections"|"actions"|"notifications"|"credentials"|"settings"|"database"|"data"|"admin"|"signout"|"manage"|"close"|"play"|"pause"|"check"|"warning";
 
 const paths:Record<IconName,React.ReactNode>={
   dashboard:<><path d="M3.5 10.2 12 3.5l8.5 6.7"/><path d="M5.5 9v11h13V9M9 20v-6h6v6"/></>,
@@ -17,6 +17,11 @@ const paths:Record<IconName,React.ReactNode>={
   admin:<><path d="M12 3 4.5 6v5c0 4.8 3 8.2 7.5 10 4.5-1.8 7.5-5.2 7.5-10V6z"/><path d="m9 12 2 2 4-4"/></>,
   signout:<><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></>,
   manage:<><path d="M6 4h12M6 12h12M6 20h12"/><circle cx="9" cy="4" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="20" r="2"/></>,
+  close:<><path d="M6 6l12 12M18 6 6 18"/></>,
+  play:<><path d="m8 5 11 7-11 7z"/></>,
+  pause:<><path d="M9 5v14M15 5v14"/></>,
+  check:<><path d="m5 12 4 4L19 6"/></>,
+  warning:<><path d="M12 3 2.8 20h18.4z"/><path d="M12 9v4M12 17h.01"/></>,
 };
 
 export function NavIcon({name}:{name:IconName}){
