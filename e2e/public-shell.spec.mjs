@@ -235,7 +235,7 @@ test("connection access update disables duplicate submit and persists",async({pa
 
   const manager=page.locator("details.connection-manager").filter({hasText:"Browser Friend"});
   await expect(manager).toBeVisible();
-  await manager.locator("summary").click();
+  await manager.locator("summary").first().click();
   await manager.getByLabel("Relationship").selectOption("instructor");
   await manager.getByLabel("Allow read-only logbook view").check();
 
@@ -259,7 +259,7 @@ test("connection access update disables duplicate submit and persists",async({pa
   const persisted=page.locator("details.connection-manager").filter({hasText:"Browser Friend"});
   await expect(persisted).toContainText("Instructor");
   await expect(persisted).toContainText("Can view your logbook");
-  await persisted.locator("summary").click();
+  await persisted.locator("summary").first().click();
   await expect(persisted.getByLabel("Relationship")).toHaveValue("instructor");
   await expect(persisted.getByLabel("Allow read-only logbook view")).toBeChecked();
 });
