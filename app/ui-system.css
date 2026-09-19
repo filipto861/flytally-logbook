@@ -21,6 +21,11 @@
 .ui-stack{display:grid;gap:var(--ui-card-gap)}
 .ui-section-stack{display:grid;gap:var(--ui-section-gap)}
 
+/* Numeric alignment contract for dense logbook and analytics data. */
+:where(.time-pair,.pagination,.page-number-list,.track-stats,.rate-history-row,.numeric-cell,.numeric-table,.flight-list-row>td[data-label="Logged time"],.flight-list-row>td[data-label="Landings"],.flight-list-row>td[data-label="GPS"],.flight-list-row>td[data-label="Cost"]){
+  font-variant-numeric:tabular-nums;
+}
+
 :where(.primary-button,.secondary-button,.danger-button,.delete-button,.detail-button,.aircraft-manage-button,.ghost-button){
   min-height:var(--ui-control-min-height);
   border-radius:var(--ui-radius-control);

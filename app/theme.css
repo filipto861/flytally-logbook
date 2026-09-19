@@ -1,31 +1,13 @@
 /* FlyTally v1.34 — shared appearance tokens. Imported after globals.css so legacy surfaces inherit safely. */
 html[data-theme="dark"]{color-scheme:dark}
-html[data-theme="light"]{
-  color-scheme:light;
-  --bg:#f4f7fb;
-  --panel:#ffffff;
-  --panel2:#eaf0f6;
-  --surface:#ffffff;
-  --surface-raised:#f8fafc;
-  --surface-hover:#eef4f8;
-  --line:#d5dee8;
-  --line-soft:#e4eaf0;
-  --border:#d5dee8;
-  --text:#102033;
-  --muted:#66788d;
-  --accent:#0b946e;
-  --accent2:#087fb8;
-  --focus-ring:0 0 0 3px rgba(8,127,184,.14);
-  --shadow-soft:0 8px 24px rgba(30,48,70,.06);
-  --shadow-raised:0 12px 32px rgba(30,48,70,.08);
-}
+html[data-theme="light"]{color-scheme:light}
 
 /* Base surfaces and controls */
 html[data-theme="light"],html[data-theme="light"] body{background:var(--bg);color:var(--text)}
 html[data-theme="light"] label{color:#33465b}
 html[data-theme="light"] input,
 html[data-theme="light"] select,
-html[data-theme="light"] textarea{background:#fff;color:var(--text);border-color:var(--line)}
+html[data-theme="light"] textarea{background:var(--surface);color:var(--text);border-color:var(--line)}
 html[data-theme="light"] input:hover,
 html[data-theme="light"] select:hover,
 html[data-theme="light"] textarea:hover{border-color:#aebdcb}
@@ -39,81 +21,81 @@ html[data-theme="light"] .panel,
 html[data-theme="light"] .table-panel,
 html[data-theme="light"] .map-panel,
 html[data-theme="light"] .track-player-suite,
-html[data-theme="light"] .flight-summary>div{background:linear-gradient(145deg,#fff,#f7f9fc);border-color:var(--line)}
+html[data-theme="light"] .flight-summary>div{background:linear-gradient(145deg,var(--surface),#f7f9fc);border-color:var(--line)}
 html[data-theme="light"] .secondary-button,
-html[data-theme="light"] .detail-button{background:#fff;color:#365069;border-color:#b9c8d6}
+html[data-theme="light"] .detail-button{background:var(--surface);color:#365069;border-color:#b9c8d6}
 html[data-theme="light"] .secondary-button:hover,
-html[data-theme="light"] .detail-button:hover{background:#eef4f8;color:var(--text);border-color:#8eabbf}
+html[data-theme="light"] .detail-button:hover{background:var(--light-surface-hover-strong);color:var(--text);border-color:var(--light-border-hover-strong)}
 html[data-theme="light"] .secondary-link:hover{color:var(--text)}
-html[data-theme="light"] .danger-button{background:#fff2f4;color:#a12d43;border-color:#e6aab5}
+html[data-theme="light"] .danger-button{background:#fff2f4;color:var(--light-text-danger-hover);border-color:#e6aab5}
 html[data-theme="light"] .danger-button:hover{background:#ffe7eb;color:#8b2035;border-color:#d77f90}
 html[data-theme="light"] .form-success{color:#087a5e}
 
 /* Navigation and compact controls */
-html[data-theme="light"] .sidebar{background:linear-gradient(180deg,#f8fafc 0%,#f4f7fa 100%);box-shadow:10px 0 36px rgba(30,48,70,.04)}
+html[data-theme="light"] .sidebar{background:linear-gradient(180deg,var(--surface-raised) 0%,#f4f7fa 100%);box-shadow:10px 0 36px rgba(30,48,70,.04)}
 html[data-theme="light"] .sidebar-toggle,
-html[data-theme="light"] .mobile-toggle{background:#fff;color:var(--muted)}
+html[data-theme="light"] .mobile-toggle{background:var(--surface);color:var(--muted)}
 html[data-theme="light"] .sidebar nav a,
 html[data-theme="light"] .sidebar .ghost-button{color:#52667c}
 html[data-theme="light"] .sidebar nav a:hover,
-html[data-theme="light"] .sidebar nav a.active{background:var(--panel2);color:var(--text);border-color:#c8d5df}
+html[data-theme="light"] .sidebar nav a.active{background:var(--panel2);color:var(--text);border-color:var(--light-border-selected)}
 html[data-theme="light"] .sidebar nav a.sidebar-sub-link.active{background:#edf4f8;color:var(--accent2);border-left-color:var(--accent2)}
 html[data-theme="light"] .sidebar .ghost-button:hover,
 html[data-theme="light"] .sidebar-toggle:hover,
-html[data-theme="light"] .mobile-toggle:hover{background:#eef4f8;color:var(--text);border-color:#b8c9d7}
+html[data-theme="light"] .mobile-toggle:hover{background:var(--light-surface-hover-strong);color:var(--text);border-color:var(--light-border-hover-subtle)}
 html[data-theme="light"] .list-toolbar,
 html[data-theme="light"] .scope-links,
 html[data-theme="light"] .map-interaction-help,
 html[data-theme="light"] .period-control,
 html[data-theme="light"] .segment-control,
-html[data-theme="light"] .database-task-nav{background:#f8fafc}
-html[data-theme="light"] .scope-links a.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(30,48,70,.1)}
+html[data-theme="light"] .database-task-nav{background:var(--surface-raised)}
+html[data-theme="light"] .scope-links a.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(30,48,70,.1)}
 html[data-theme="light"] .page-size-control a,
-html[data-theme="light"] .page-number-list a{background:#fff}
+html[data-theme="light"] .page-number-list a{background:var(--surface)}
 html[data-theme="light"] .page-size-control a.active,
 html[data-theme="light"] .page-number-list a[aria-current="page"]{background:#e6f3f9;color:var(--text);border-color:#7ab8d4}
 html[data-theme="light"] .pagination a:hover,
 html[data-theme="light"] .page-size-control a:hover,
-html[data-theme="light"] .page-number-list a:hover{background:#eef4f8;color:var(--text);border-color:#9cb4c6}
+html[data-theme="light"] .page-number-list a:hover{background:var(--light-surface-hover-strong);color:var(--text);border-color:var(--light-border-hover)}
 html[data-theme="light"] .period-control a.active,
-html[data-theme="light"] .segment-control button.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(30,48,70,.12)}
+html[data-theme="light"] .segment-control button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(30,48,70,.12)}
 html[data-theme="light"] .data-tabs details>summary:hover{color:var(--text)}
 html[data-theme="light"] .data-tabs details>summary b,
 html[data-theme="light"] .quality-panel>summary small,
-html[data-theme="light"] .quality-meta>span{background:#f8fafc;border-color:var(--line)}
+html[data-theme="light"] .quality-meta>span{background:var(--surface-raised);border-color:var(--line)}
 
 /* Dashboard */
-html[data-theme="light"] .hero-metric{border-color:#b7d5df;background:radial-gradient(circle at 80% 10%,#dff6ef 0,transparent 45%),linear-gradient(145deg,#f2fbff,#fff)}
-html[data-theme="light"] .category-card.accent-card{border-color:#9fc0d0;background:linear-gradient(145deg,#f6fbfd,#fff)}
+html[data-theme="light"] .hero-metric{border-color:#b7d5df;background:radial-gradient(circle at 80% 10%,#dff6ef 0,transparent 45%),linear-gradient(145deg,#f2fbff,var(--surface))}
+html[data-theme="light"] .category-card.accent-card{border-color:#9fc0d0;background:linear-gradient(145deg,#f6fbfd,var(--surface))}
 html[data-theme="light"] .dashboard-total-note{background:#edf7f7;color:#526b78;border-color:#b9d8d5}
 html[data-theme="light"] .quickline{background:var(--line);border-color:var(--line)}
 html[data-theme="light"] .quickline>div,
-html[data-theme="light"] .quickline>a{background:#fff}
-html[data-theme="light"] .quickline>a:hover{background:#f2f7fa}
-html[data-theme="light"] .dashboard-chart-v3{background:#fff}
-html[data-theme="light"] .chart-summary>span{background:#f8fafc;color:var(--text)}
+html[data-theme="light"] .quickline>a{background:var(--surface)}
+html[data-theme="light"] .quickline>a:hover{background:var(--light-surface-route-hover)}
+html[data-theme="light"] .dashboard-chart-v3{background:var(--surface)}
+html[data-theme="light"] .chart-summary>span{background:var(--surface-raised);color:var(--text)}
 html[data-theme="light"] .chart-focus{background:#f4f9fb;color:var(--text)}
 html[data-theme="light"] .chart-plot-bg{fill:#f7f9fc}
 html[data-theme="light"] .chart-grid-line{stroke:#dce4ed}
 html[data-theme="light"] .chart-y-label,
-html[data-theme="light"] .chart-x-label{fill:#66788d}
-html[data-theme="light"] .chart-trend-point{stroke:#fff}
-html[data-theme="light"] .chart-hit:focus .chart-bar{stroke:#102033}
-html[data-theme="light"] .chart-empty-state{background:#f8fafc;border-color:#b8c8d8}
+html[data-theme="light"] .chart-x-label{fill:var(--muted)}
+html[data-theme="light"] .chart-trend-point{stroke:var(--surface)}
+html[data-theme="light"] .chart-hit:focus .chart-bar{stroke:var(--text)}
+html[data-theme="light"] .chart-empty-state{background:var(--surface-raised);border-color:#b8c8d8}
 html[data-theme="light"] .chart-warning{background:#fff8e7;color:#8a6410;border-color:#dfc37e}
-html[data-theme="light"] .cost-breakdown article{background:linear-gradient(145deg,#fff,#f7f9fc)}
+html[data-theme="light"] .cost-breakdown article{background:linear-gradient(145deg,var(--surface),#f7f9fc)}
 html[data-theme="light"] .cost-breakdown article:hover{border-color:#a9bdcc}
 html[data-theme="light"] .cost-bar{background:#e2eaf1}
 html[data-theme="light"] .mini-metrics>div,
 html[data-theme="light"] .compact-metrics .metric,
-html[data-theme="light"] .admin-health-grid>div{background:#f8fafc}
+html[data-theme="light"] .admin-health-grid>div{background:var(--surface-raised)}
 
 /* Tables, lists and shared record surfaces */
 html[data-theme="light"] th{background:#f7f9fc;color:#607487}
 html[data-theme="light"] table tbody tr:hover{background:#f2f6f9}
 html[data-theme="light"] .notification-card,
 html[data-theme="light"] .qualification-list>div,
-html[data-theme="light"] .crew-invite-list>div{background:#fff}
+html[data-theme="light"] .crew-invite-list>div{background:var(--surface)}
 html[data-theme="light"] .notification-card.unread{background:#eefaf6}
 html[data-theme="light"] .inline-editor,
 html[data-theme="light"] .expiry-card,
@@ -122,10 +104,10 @@ html[data-theme="light"] .entry-section,
 html[data-theme="light"] .split-editor,
 html[data-theme="light"] .import-choice,
 html[data-theme="light"] .quick-tools,
-html[data-theme="light"] .compact-create{background:#fff}
-html[data-theme="light"] .active-route-filter{border-color:#94cbbd;background:linear-gradient(135deg,#edf9f5,#f5fbff)}
+html[data-theme="light"] .compact-create{background:var(--surface)}
+html[data-theme="light"] .active-route-filter{border-color:#94cbbd;background:linear-gradient(135deg,var(--light-surface-success-hover),#f5fbff)}
 html[data-theme="light"] .active-filter-bar>a{background:#f5f9fb;color:var(--text);border-color:#aac2d1}
-html[data-theme="light"] .active-filter-bar>a:hover{background:#eaf4f8;border-color:#72abc5}
+html[data-theme="light"] .active-filter-bar>a:hover{background:#eaf4f8;border-color:var(--light-border-active)}
 
 /* Flights, entry/review and certification */
 html[data-theme="light"] .utc-chip,
@@ -134,116 +116,116 @@ html[data-theme="light"] .upload-zone{background:#f4fafd;border-color:#9ec6d8}
 html[data-theme="light"] .form-actions.field-actions{background:#fffffff2;box-shadow:0 10px 28px rgba(30,48,70,.1)}
 html[data-theme="light"] .review-confirm,
 html[data-theme="light"] .price-preview{background:#f2f9fc;border-color:#a5c8d6}
-html[data-theme="light"] .flight-review-card{background:#fff;box-shadow:0 8px 24px rgba(30,48,70,.05)}
+html[data-theme="light"] .flight-review-card{background:var(--surface);box-shadow:0 8px 24px rgba(30,48,70,.05)}
 html[data-theme="light"] .flight-review-card.invalid-flight{background:#fff4f5;border-color:#dca3ad}
 html[data-theme="light"] .ground-flight-warning{background:#fff1f3;color:#963247;border-color:#df9ba8}
 html[data-theme="light"] .track-time-warning{background:#fff8e8;color:#775710;border-color:#d9be7d}
-html[data-theme="light"] .airport-candidate-list button{background:#fff;color:var(--muted);border-color:#c7d4de}
+html[data-theme="light"] .airport-candidate-list button{background:var(--surface);color:var(--muted);border-color:#c7d4de}
 html[data-theme="light"] .airport-candidate-list button:hover,
-html[data-theme="light"] .airport-candidate-list button.selected{background:#edf9f5;color:var(--text);border-color:#69b29b}
+html[data-theme="light"] .airport-candidate-list button.selected{background:var(--light-surface-success-hover);color:var(--text);border-color:var(--light-border-success-hover)}
 html[data-theme="light"] .split-explanation strong,
 html[data-theme="light"] .touch-review strong{color:var(--text)}
-html[data-theme="light"] .touch-review{background:#f8fafc;border-color:#c8d5df}
+html[data-theme="light"] .touch-review{background:var(--surface-raised);border-color:var(--light-border-selected)}
 html[data-theme="light"] .flight-lock-panel{background:#f7fbfd;border-color:#a9c6d5}
 html[data-theme="light"] .flight-lock-panel.locked{background:#f0faf6;border-color:#8fc8b4}
-html[data-theme="light"] .flight-lock-badge{background:#edf9f5;color:#087a5e;border-color:#8fc8b4}
-html[data-theme="light"] .locked-flight-note{background:#fff}
-html[data-theme="light"] .quality-issue{background:#fff;border-color:var(--line-soft)}
+html[data-theme="light"] .flight-lock-badge{background:var(--light-surface-success-hover);color:#087a5e;border-color:#8fc8b4}
+html[data-theme="light"] .locked-flight-note{background:var(--surface)}
+html[data-theme="light"] .quality-issue{background:var(--surface);border-color:var(--line-soft)}
 html[data-theme="light"] .quality-issue.warning{background:#fffaf0}
-html[data-theme="light"] .quality-issue.problem{background:linear-gradient(100deg,#fff0f3,#fff 38%);border-left-color:#d96077}
-html[data-theme="light"] .quality-issue .secondary-link{background:#fff;border-color:#b9c8d6}
+html[data-theme="light"] .quality-issue.problem{background:linear-gradient(100deg,#fff0f3,var(--surface) 38%);border-left-color:#d96077}
+html[data-theme="light"] .quality-issue .secondary-link{background:var(--surface);border-color:#b9c8d6}
 html[data-theme="light"] .compliance-note{background:#f7f9fb;color:#5f7384;border-left-color:#9ab2c0}
-html[data-theme="light"] .flight-audit-list article{background:#f8fafc}
+html[data-theme="light"] .flight-audit-list article{background:var(--surface-raised)}
 
 /* Tracks and maps */
 html[data-theme="light"] .track-map{background:#eef3f7}
-html[data-theme="light"] .track-profile{background:#fff}
+html[data-theme="light"] .track-profile{background:var(--surface)}
 html[data-theme="light"] .combined-profile-chart,
-html[data-theme="light"] .profile-grid-charts>div{background:#fff;border-color:var(--line)}
-html[data-theme="light"] .track-stats span{background:#f8fafc;border-color:#cbd7e0}
-html[data-theme="light"] .play-button{background:#eef7fb;color:#087fb8;border-color:#9ec5d7}
-html[data-theme="light"] .play-button:hover{background:#e3f2f8;color:#066b98;border-color:#77abc1}
+html[data-theme="light"] .profile-grid-charts>div{background:var(--surface);border-color:var(--line)}
+html[data-theme="light"] .track-stats span{background:var(--surface-raised);border-color:#cbd7e0}
+html[data-theme="light"] .play-button{background:#eef7fb;color:var(--accent2);border-color:#9ec5d7}
+html[data-theme="light"] .play-button:hover{background:var(--light-surface-play-hover);color:var(--light-text-play-hover);border-color:var(--light-border-play-hover)}
 html[data-theme="light"] .leaflet-popup-content-wrapper,
-html[data-theme="light"] .leaflet-popup-tip{background:#fff;color:var(--text)}
-html[data-theme="light"] .leaflet-control-attribution{background:#ffffffdd!important;color:#66788d!important}
-html[data-theme="light"] .leaflet-control-attribution a{color:#087fb8!important}
+html[data-theme="light"] .leaflet-popup-tip{background:var(--surface);color:var(--text)}
+html[data-theme="light"] .leaflet-control-attribution{background:#ffffffdd!important;color:var(--muted)!important}
+html[data-theme="light"] .leaflet-control-attribution a{color:var(--accent2)!important}
 html[data-theme="light"] .map-touch-toggle{background:#ffffffee;color:#183047;border-color:#b8c8d8;box-shadow:0 2px 8px rgba(30,48,70,.18)}
-html[data-theme="light"] .map-touch-toggle[aria-pressed="true"]{background:#edf9f5;color:#087a5e;border-color:#7fbda8}
+html[data-theme="light"] .map-touch-toggle[aria-pressed="true"]{background:var(--light-surface-success-hover);color:#087a5e;border-color:#7fbda8}
 
 /* Licences and settings */
-html[data-theme="light"] .credential-card{background:#fff;border-color:var(--line)}
+html[data-theme="light"] .credential-card{background:var(--surface);border-color:var(--line)}
 html[data-theme="light"] summary.credential-summary:hover,
-html[data-theme="light"] .licence-expiry-summary:hover{background:#f3f7fa}
+html[data-theme="light"] .licence-expiry-summary:hover{background:var(--light-surface-hover-subtle)}
 html[data-theme="light"] .credential-editor,
-html[data-theme="light"] .licence-editor{background:#f8fafc;border-color:var(--line-soft)}
-html[data-theme="light"] .install-app-status{background:#edf9f5;color:#087a5e;border-color:#8fc8b4}
-html[data-theme="light"] .settings-nav a:hover{background:#eef4f8;color:var(--text)}
+html[data-theme="light"] .licence-editor{background:var(--surface-raised);border-color:var(--line-soft)}
+html[data-theme="light"] .install-app-status{background:var(--light-surface-success-hover);color:#087a5e;border-color:#8fc8b4}
+html[data-theme="light"] .settings-nav a:hover{background:var(--light-surface-hover-strong);color:var(--text)}
 html[data-theme="light"] .settings-save{box-shadow:0 10px 28px rgba(30,48,70,.1)}
-html[data-theme="light"] .status-on{background:#edf9f5;color:#087a5e;border-color:#8fc8b4}
+html[data-theme="light"] .status-on{background:var(--light-surface-success-hover);color:#087a5e;border-color:#8fc8b4}
 html[data-theme="light"] .status-off,
-html[data-theme="light"] .icon-danger{background:#fff3f5;color:#a12d43;border-color:#dfa0ac}
+html[data-theme="light"] .icon-danger{background:var(--light-surface-danger-hover);color:var(--light-text-danger-hover);border-color:var(--light-border-danger-hover)}
 
 /* Aircraft database and modal */
 html[data-theme="light"] .add-aircraft-card,
-html[data-theme="light"] .aircraft-card{background:#fff;border-color:var(--line)}
-html[data-theme="light"] .aircraft-card-metrics{background:#f8fafc;border-color:var(--line-soft)}
+html[data-theme="light"] .aircraft-card{background:var(--surface);border-color:var(--line)}
+html[data-theme="light"] .aircraft-card-metrics{background:var(--surface-raised);border-color:var(--line-soft)}
 html[data-theme="light"] .aircraft-card-metrics>span{background:transparent}
 html[data-theme="light"] .aircraft-manage-button{background:#eef7fb;color:#0876a7;border-color:#a6c7d5}
-html[data-theme="light"] .aircraft-manage-button:hover{background:#e4f2f7;color:#075f85;border-color:#7daec2}
-html[data-theme="light"] .aircraft-modal{background:#fff;border-color:#bdccd7;box-shadow:0 24px 70px rgba(30,48,70,.22)}
+html[data-theme="light"] .aircraft-manage-button:hover{background:var(--light-surface-info-hover);color:var(--light-text-info-hover);border-color:var(--light-border-info-hover)}
+html[data-theme="light"] .aircraft-modal{background:var(--surface);border-color:#bdccd7;box-shadow:0 24px 70px rgba(30,48,70,.22)}
 html[data-theme="light"] .aircraft-modal>header{background:#f5f8fa;border-bottom-color:var(--line)}
-html[data-theme="light"] .modal-close{background:#fff;color:var(--muted);border-color:var(--line)}
+html[data-theme="light"] .modal-close{background:var(--surface);color:var(--muted);border-color:var(--line)}
 html[data-theme="light"] .aircraft-profile-editor,
-html[data-theme="light"] .aircraft-modal .aircraft-rates{background:#f8fafc}
+html[data-theme="light"] .aircraft-modal .aircraft-rates{background:var(--surface-raised)}
 html[data-theme="light"] .rate-editor,
-html[data-theme="light"] .rate-history-row{background:#fff}
+html[data-theme="light"] .rate-history-row{background:var(--surface)}
 
 /* Backup, restore and data hub */
 html[data-theme="light"] .backup-result.valid{background:#effaf5;border-color:#82bea9}
 html[data-theme="light"] .backup-result.invalid{background:#fff1f3;border-color:#d99aa7}
-html[data-theme="light"] .backup-result span{background:#fff}
+html[data-theme="light"] .backup-result span{background:var(--surface)}
 html[data-theme="light"] .restore-preview{background:#effaf5;border-color:#82bea9}
-html[data-theme="light"] .restore-preview>header>span{background:#fff;color:#087a5e;border-color:#8fc8b4}
-html[data-theme="light"] .restore-grid article{background:#fff;border-color:#aed5c7}
+html[data-theme="light"] .restore-preview>header>span{background:var(--surface);color:#087a5e;border-color:#8fc8b4}
+html[data-theme="light"] .restore-grid article{background:var(--surface);border-color:#aed5c7}
 html[data-theme="light"] .restore-grid span{color:var(--muted)}
 html[data-theme="light"] .restore-note{background:#fff8e7;color:#7d5b10!important;border-color:#dec17a}
 html[data-theme="light"] .data-hub-nav{background:#fffffff2;border-color:var(--line)}
-html[data-theme="light"] .data-hub-nav button:hover{background:#eef4f8}
+html[data-theme="light"] .data-hub-nav button:hover{background:var(--light-surface-hover-strong)}
 html[data-theme="light"] .data-hub-nav button.active{background:#e5f1f6;color:var(--text)}
 html[data-theme="light"] .data-hub-nav b{background:#dce8ee;color:#365069}
 html[data-theme="light"] .data-hub-links a,
 html[data-theme="light"] .trash-list article,
-html[data-theme="light"] .stored-backup-list>article{background:#fff}
+html[data-theme="light"] .stored-backup-list>article{background:var(--surface)}
 html[data-theme="light"] .data-hub-links a:hover,
-html[data-theme="light"] .database-task-nav a:hover{background:#eef4f8;color:var(--text)}
+html[data-theme="light"] .database-task-nav a:hover{background:var(--light-surface-hover-strong);color:var(--text)}
 
 /* PWA and mobile shell */
 html[data-theme="light"] .pwa-status{background:#fffffff5;border-color:#c6d3dc;color:var(--text);box-shadow:0 14px 30px rgba(30,48,70,.16)}
-html[data-theme="light"] .pwa-dismiss:hover{background:#eef4f8;color:var(--text);border-color:#b9c8d6}
+html[data-theme="light"] .pwa-dismiss:hover{background:var(--light-surface-hover-strong);color:var(--text);border-color:#b9c8d6}
 @media(max-width:820px){
-  html[data-theme="light"] .sidebar nav{background:#f8fafc;border-bottom-color:var(--line);box-shadow:0 18px 28px rgba(30,48,70,.12)}
+  html[data-theme="light"] .sidebar nav{background:var(--surface-raised);border-bottom-color:var(--line);box-shadow:0 18px 28px rgba(30,48,70,.12)}
 }
 
 /* Screenshot residue pass: guided import, connections, account security and admin rows. */
-html[data-theme="light"] .entry-progress{background:#f8fafc;border-color:var(--line)}
+html[data-theme="light"] .entry-progress{background:var(--surface-raised);border-color:var(--line)}
 html[data-theme="light"] .entry-progress>span{color:var(--muted)}
 html[data-theme="light"] .entry-progress>span.complete{color:#4f8073}
 html[data-theme="light"] .entry-progress>span.active{background:#e6f3f9;color:var(--accent2)}
 html[data-theme="light"] .entry-review-summary,
-html[data-theme="light"] .import-save-summary{background:#fff;border-color:var(--line)}
-html[data-theme="light"] .entry-review-summary dl>div{background:#f8fafc;border-color:var(--line)}
+html[data-theme="light"] .import-save-summary{background:var(--surface);border-color:var(--line)}
+html[data-theme="light"] .entry-review-summary dl>div{background:var(--surface-raised);border-color:var(--line)}
 
-html[data-theme="light"] .connection-privacy{background:linear-gradient(145deg,#f1faf7,#fff)}
+html[data-theme="light"] .connection-privacy{background:linear-gradient(145deg,#f1faf7,var(--surface))}
 html[data-theme="light"] .connection-search-result,
-html[data-theme="light"] .connection-card{background:#fff;color:var(--text);border-color:var(--line)}
+html[data-theme="light"] .connection-card{background:var(--surface);color:var(--text);border-color:var(--line)}
 html[data-theme="light"] .connection-identity span{color:#435a70}
 html[data-theme="light"] .connection-notice{background:#f3f6f9;color:#435a70}
-html[data-theme="light"] .connection-success{background:#edf9f5;color:#08785f}
-html[data-theme="light"] .instructor-decision-actions details>form{background:#fff;color:var(--text);border-color:var(--line)}
+html[data-theme="light"] .connection-success{background:var(--light-surface-success-hover);color:#08785f}
+html[data-theme="light"] .instructor-decision-actions details>form{background:var(--surface);color:var(--text);border-color:var(--line)}
 
 html[data-theme="light"] .security-grid>section,
 html[data-theme="light"] .session-list>div,
-html[data-theme="light"] .invite-list>div{background:#fff;color:var(--text);border-color:var(--line)}
+html[data-theme="light"] .invite-list>div{background:var(--surface);color:var(--text);border-color:var(--line)}
 html[data-theme="light"] details.panel>summary,
 html[data-theme="light"] .filter-expander>summary,
 html[data-theme="light"] .data-tabs details>summary,

@@ -19,7 +19,7 @@
 .add-aircraft-copy{min-width:0;display:grid;gap:2px}
 .add-aircraft-copy strong{font-size:.9rem}
 .add-aircraft-copy small{color:var(--muted);font-size:.7rem;font-weight:520;line-height:1.35}
-.add-aircraft-chevron{color:var(--muted);font-size:1.1rem;transition:transform .16s ease}
+.add-aircraft-chevron{color:var(--muted);font-size:1.1rem;transition:transform .14s ease}
 .add-aircraft-card[open] .add-aircraft-chevron{transform:rotate(180deg)}
 .add-aircraft-content{display:grid;gap:14px;padding:16px}
 .aircraft-library-status{margin:0}
