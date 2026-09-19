@@ -94,3 +94,12 @@ The findings above cover the requested audit dimensions:
 11. **Offline state** — UX-025.
 
 Each implementation PR must list the exact finding IDs it closes, visual verification screens and risks. Verification is performed by repository CI and the Vercel preview; local verification must never be claimed when the execution runtime cannot run it.
+
+
+## Batch 4 empty-state implementation inventory
+
+Batch 4 maps every empty-state variant onto exactly two existing visual patterns:
+- compact `.empty-state` for list/table/subsection emptiness;
+- full `.flight-empty-state` for a whole workspace/panel empty state.
+
+No mapping removes content or a call-to-action. The complete per-instance inventory is recorded in PR #140 before UI implementation.

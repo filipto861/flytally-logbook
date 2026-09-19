@@ -1,7 +1,6 @@
 /* FlyTally v3.0 — personal aircraft profile sharing + cover photos. */
 .aircraft-card-list{align-items:stretch}
 .aircraft-card{grid-template-columns:116px minmax(0,1fr);grid-template-areas:"cover header" "summary summary" "action action";column-gap:14px;row-gap:12px;align-self:stretch;height:100%}
-.aircraft-card.with-photo{box-shadow:0 14px 34px rgba(0,0,0,.16)}
 .aircraft-card>.aircraft-card-cover{grid-area:cover}
 .aircraft-card>header{grid-area:header;align-self:center}
 .aircraft-card>.aircraft-card-summary{grid-area:summary}

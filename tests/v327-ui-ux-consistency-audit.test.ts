@@ -186,3 +186,70 @@ test("v3.3 design batch 3 keeps icon-only controls accessible and shares the air
   assert.match(importPlayer,/rotateAircraftMarker\(markerRef\.current,current\.bearing,\{smooth:true\}\)/);
   assert.match(player,/rotateAircraftMarker\(markerRef\.current,current\.bearing\)/);
 });
+
+
+test("v3.3 design batch 4 moves audited legacy mutations onto PendingActionButton",()=>{
+  const files:Record<string,string[]>={
+    "app/(protected)/flights/[id]/page.tsx":["cancelApproval","requestApproval","cancelCrew","inviteCrew"],
+    "app/(protected)/credentials/legacy-page.tsx":["savePilotLicence","saveQualification","archivePilotCredential","addQualification","addPilotLicence","saveDocumentCredential","toggleExpiry","deleteExpiry","addDocumentCredential"],
+    "components/aircraft-qualifications-section.tsx":["saveAircraftQualification","cancelAircraftQualificationSignature","requestAircraftQualificationSignature","archiveAircraftQualification","addAircraftQualification"],
+    "components/recency-panel.tsx":["saveRecencyMonitors","deleteRecencyRule","deleteRecencyEvidence","addRecencyEvidence","addRecencyRule"],
+    "components/spl-recency-panel.tsx":["addSplProficiencyEvidence","deleteSplProficiencyEvidence"],
+    "components/helicopter-recency-panel.tsx":["addHelicopterProficiencyEvidence","deleteHelicopterProficiencyEvidence"],
+    "components/balloon-recency-panel.tsx":["addBalloonProficiencyEvidence","deleteBalloonProficiencyEvidence"],
+  };
+  for(const [file,actions] of Object.entries(files)){
+    const source=read(file);
+    assert.match(source,/PendingActionButton/,file);
+    for(const action of actions){
+      const start=source.indexOf(`<form action={${action}}`);
+      assert.ok(start>=0,`${file}: ${action}`);
+      const end=source.indexOf("</form>",start);
+      assert.ok(end>start,`${file}: ${action} closing form`);
+      assert.match(source.slice(start,end),/<PendingActionButton/,`${file}: ${action}`);
+    }
+  }
+  const joined=Object.keys(files).map(read).join("\n");
+  for(const label of ["Saving…","Archiving…","Removing…","Requesting…","Cancelling…","Adding…"])assert.ok(joined.includes(`current="${label}"`),label);
+  const stable=read("components/pending-action-label.tsx");
+  assert.match(stable,/pending-action-label-reserve/);
+  assert.match(stable,/aria-hidden="true"/);
+  assert.match(read("app/ui-system.css"),/\.pending-action-label-reserve\{visibility:hidden;pointer-events:none\}/);
+});
+
+test("v3.3 design batch 4 announces the four audited async result messages",()=>{
+  for(const file of ["components/airport-detection-control.tsx","components/backup-center.tsx","components/flight-trash.tsx","components/track-manager.tsx"]){
+    const source=read(file);
+    assert.match(source,/className="form-error" role="alert"/,file);
+    assert.match(source,/className="form-success" role="status"/,file);
+  }
+});
+
+test("v3.3 design batch 4 keeps only compact and full empty-state patterns",()=>{
+  const roots=["app","components"];
+  const sourceFiles:string[]=[];
+  const walk=(dir:string)=>{
+    for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){
+      const rel=path.join(dir,entry.name);
+      if(entry.isDirectory())walk(rel);
+      else if(/\.(?:tsx|css)$/.test(entry.name))sourceFiles.push(rel);
+    }
+  };
+  roots.forEach(walk);
+  const allowed=new Set(["empty-state","flight-empty-state"]);
+  for(const file of sourceFiles){
+    const source=read(file);
+    const names=source.match(/[A-Za-z0-9-]*empty-state[A-Za-z0-9-]*/g)??[];
+    for(const name of names)assert.ok(allowed.has(name),`${file}: unexpected empty-state variant ${name}`);
+  }
+  const globals=read("app/globals.css");
+  assert.match(globals,/\.empty-state \{/);
+  assert.match(globals,/\.flight-empty-state\{/);
+  assert.match(globals,/\.flight-empty-state h2,\.flight-empty-state h3/);
+});
+
+test("v3.3 design batch 4 removes photo-only aircraft elevation",()=>{
+  const sharing=read("app/v300-aircraft-sharing.css");
+  assert.doesNotMatch(sharing,/\.aircraft-card\.with-photo/);
+  assert.match(sharing,/\.aircraft-card\{[^}]*align-self:stretch;[^}]*height:100%/);
+});

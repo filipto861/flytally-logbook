@@ -384,3 +384,5 @@ button[data-loading="true"]::after{
   .flight-detail-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}
   .flight-workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+.pending-action-label{display:grid;place-items:center}.pending-action-label>span{grid-area:1/1}.pending-action-label-reserve{visibility:hidden;pointer-events:none}
