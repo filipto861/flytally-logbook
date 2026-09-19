@@ -27,7 +27,11 @@ test("CI runs one fast PR gate and delegates risk selection to the module regist
   assert.match(workflow,/Fast application gate/);
   assert.match(workflow,/TypeScript check/);
   assert.match(workflow,/npm run typecheck/);
-  assert.match(workflow,/Unit and regression tests/);
+  assert.match(workflow,/Targeted UI regression tests/);
+  assert.match(workflow,/Full unit and regression tests/);
+  assert.match(workflow,/needs\.classify\.outputs\.full_tests != 'true'/);
+  assert.match(workflow,/needs\.classify\.outputs\.full_tests == 'true'/);
+  assert.match(workflow,/npm run test:ui/);
   assert.match(workflow,/Production build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/test:postgres:full/);
