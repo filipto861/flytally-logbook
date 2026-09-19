@@ -10,7 +10,10 @@ on:
       - "public/**"
       - "e2e/**"
       - "lib/auth/**"
+      - "lib/db.ts"
+      - "lib/local-postgres.ts"
       - "lib/ui-*.ts"
+      - "tooling/bootstrap-browser-smoke-db.mjs"
       - "playwright.config.mjs"
       - "next.config.ts"
       - "package.json"
@@ -31,7 +34,28 @@ jobs:
   chromium:
     name: Chromium desktop + mobile
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flytally
+          POSTGRES_PASSWORD: flytally
+          POSTGRES_DB: flytally_browser
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U flytally -d flytally_browser"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://flytally:flytally@127.0.0.1:5432/flytally_browser
+      FLYTALLY_LOCAL_POSTGRES: "1"
+      FLYTALLY_AUTH_BROWSER: "1"
+      FLYTALLY_BROWSER_PASSWORD: FlyTally-Browser-2026!
+      SESSION_SECRET: flytally-browser-session-secret-not-production
+      SIGNING_SECRET: flytally-browser-signing-secret-not-production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +68,8 @@ jobs:
         run: npm install --no-save --package-lock=false @playwright/test@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Bootstrap isolated browser database
+        run: node tooling/bootstrap-browser-smoke-db.mjs
       - name: Production build
         run: npm run build
       - name: Real browser smoke
