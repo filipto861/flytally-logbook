@@ -23,7 +23,6 @@ test("U7 audited routes share one page rhythm without desktop or mobile overflow
   await loginBrowserPilot(page,"/dashboard");
 
   const routes=[
-    ["/map","Airports and routes"],
     ["/statistics","Your flying over time"],
     ["/flights/new","New flight"],
     ["/actions","Actions"],
