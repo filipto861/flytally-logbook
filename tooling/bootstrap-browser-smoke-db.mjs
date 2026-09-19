@@ -65,7 +65,9 @@ CREATE TABLE user_settings(
   currency TEXT NOT NULL DEFAULT 'CZK',
   home_airport TEXT NOT NULL DEFAULT '',
   default_role TEXT NOT NULL DEFAULT 'PIC',
-  preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb
+  preferences_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE auth_sessions(
@@ -201,7 +203,14 @@ CREATE TABLE instructor_flight_approvals(
 CREATE TABLE user_notifications(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
-  read_at TIMESTAMPTZ
+  kind TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  href TEXT NOT NULL DEFAULT '',
+  dedupe_key TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  read_at TIMESTAMPTZ,
+  UNIQUE(user_id,dedupe_key)
 );
 CREATE TABLE push_preferences(
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -234,10 +243,18 @@ CREATE TABLE aircraft_profile_shares(
 );
 
 INSERT INTO users(id,email,display_name,role,active,email_verified_at)
-VALUES(9001,'browser-auth@example.test','Browser Smoke Pilot','user',1,NOW());
+VALUES
+  (9001,'browser-auth@example.test','Browser Smoke Pilot','user',1,NOW()),
+  (9002,'browser-friend@example.test','Browser Friend','user',1,NOW());
 INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)});
 INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json)
-VALUES(9001,'Europe/Prague','CZK','LKLT','PIC','{}'::jsonb);
+VALUES
+  (9001,'Europe/Prague','CZK','LKLT','PIC','{}'::jsonb),
+  (9002,'Europe/Prague','CZK','LKPR','PIC','{}'::jsonb);
+INSERT INTO pilot_connections(id,requester_user_id,recipient_user_id,relationship,status,requester_label,recipient_label)
+VALUES(7001,9002,9001,'pilot','pending','friend','friend');
+INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
+VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
 
 INSERT INTO flights(
   user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
