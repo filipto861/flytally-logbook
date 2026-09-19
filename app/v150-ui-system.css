@@ -1,4 +1,25 @@
 /* FlyTally v1.50 — UI system & theme convergence. Final application color layer. */
+:root{
+  --light-surface-hover-strong:#eef4f8;
+  --light-surface-hover-subtle:#f3f7fa;
+  --light-border-hover-strong:#8eabbf;
+  --light-border-hover:#9cb4c6;
+  --light-border-hover-subtle:#b8c9d7;
+  --light-border-selected:#c8d5df;
+  --light-border-active:#72abc5;
+  --light-surface-info-hover:#e4f2f7;
+  --light-text-info-hover:#075f85;
+  --light-border-info-hover:#7daec2;
+  --light-surface-danger-hover:#fff3f5;
+  --light-text-danger-hover:#a12d43;
+  --light-border-danger-hover:#dfa0ac;
+  --light-surface-play-hover:#e3f2f8;
+  --light-text-play-hover:#066b98;
+  --light-border-play-hover:#77abc1;
+  --light-surface-route-hover:#f2f7fa;
+  --light-surface-success-hover:#edf9f5;
+  --light-border-success-hover:#69b29b;
+}
 :root,html[data-theme="dark"],.app-grid[data-appearance="dark"]{
   --bg:#07111f;--panel:#0e1b2d;--panel2:#13243a;--surface:#0e1b2d;--surface-raised:#13243a;--surface-muted:#0b1727;--surface-hover:#172b43;
   --line:#203650;--line-soft:#192d44;--line-strong:#36516f;--border:#203650;--text:#edf5ff;--text-soft:#c7d6e7;--muted:#8ea3bb;

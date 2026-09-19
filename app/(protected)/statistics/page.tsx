@@ -76,5 +76,5 @@ export default async function StatisticsPage({searchParams}:{searchParams:Promis
 
 function StatTable({headings,empty,children}:{headings:string[];empty:boolean;children:React.ReactNode}){
   if(empty)return <p className="empty-state">No data for this period.</p>;
-  return <div className="table-scroll"><table><thead><tr>{headings.map((value,index)=><th key={`${value}-${index}`}>{value}</th>)}</tr></thead><tbody>{children}</tbody></table></div>;
+  return <div className="table-scroll"><table className="numeric-table"><thead><tr>{headings.map((value,index)=><th key={`${value}-${index}`}>{value}</th>)}</tr></thead><tbody>{children}</tbody></table></div>;
 }
