@@ -127,4 +127,4 @@ jobs:
             flytally-v169-scale-evidence.json
             flytally-v230-100k-scale-evidence.json
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 90
