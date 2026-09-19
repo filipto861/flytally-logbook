@@ -17,8 +17,8 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
-test("CI runs one fast PR gate and delegates risk selection to the module registry",()=>{
-  const workflow=read(".github/workflows/verify-web.yml");
+test("CI runs one fast PR gate and delegates expensive release checks",()=>{
+  const workflow=read(".github/workflows/verify-web.yml"),browser=read(".github/workflows/browser-smoke.yml");
   assert.match(workflow,/branches:\s*\n\s*- main/);
   assert.doesNotMatch(workflow,/codex\/vercel-migration-v080/);
   assert.match(workflow,/cancel-in-progress: true/);
@@ -32,7 +32,9 @@ test("CI runs one fast PR gate and delegates risk selection to the module regist
   assert.match(workflow,/needs\.classify\.outputs\.full_tests != 'true'/);
   assert.match(workflow,/needs\.classify\.outputs\.full_tests == 'true'/);
   assert.match(workflow,/npm run test:ui/);
-  assert.match(workflow,/Production build/);
+  assert.doesNotMatch(workflow,/name: Production build/);
+  assert.match(browser,/name: Production build/);
+  assert.match(browser,/run: npm run build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/test:postgres:full/);
   assert.doesNotMatch(workflow,/lib\/db-optimization[.]ts\|lib\/data\/dashboard[.]ts/);
