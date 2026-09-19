@@ -201,3 +201,53 @@ button[data-loading="true"]::after{
   }
 }
 
+
+
+/* U10 workflow simplicity: keep New flight focused on the common path. */
+.flight-entry-workspace .entry-choice{
+  grid-template-columns:repeat(2,minmax(0,220px));
+  justify-content:start;
+  gap:var(--ui-space-2);
+  margin:0 0 var(--ui-space-4);
+  padding:5px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel);
+}
+.flight-entry-workspace .entry-choice button{
+  grid-template-columns:minmax(0,1fr);
+  gap:2px;
+  min-height:50px;
+  padding:8px 13px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  box-shadow:none;
+}
+.flight-entry-workspace .entry-choice button strong{font-size:.82rem}
+.flight-entry-workspace .entry-choice button small{font-size:.66rem}
+.flight-entry-workspace .entry-choice button.active{
+  border:0;
+  background:color-mix(in srgb,var(--accent) 14%,var(--panel));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent);
+}
+.entry-section-experience .entry-section-body{display:grid;gap:var(--ui-space-3)}
+.entry-context-note{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
+.form-actions.field-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+}
+.entry-save-state{display:grid;gap:2px;min-width:0}
+.entry-save-state strong{font-size:.76rem}
+.entry-save-state small{color:var(--muted);font-size:.66rem;line-height:1.35}
+
+@media(max-width:700px){
+  .flight-entry-workspace .entry-choice{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+  }
+  .flight-entry-workspace .entry-choice button{padding:9px 10px}
+  .form-actions.field-actions{grid-template-columns:minmax(0,1fr)}
+  .entry-save-state{padding:0 2px 4px}
+}
