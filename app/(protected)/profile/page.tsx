@@ -19,7 +19,7 @@ const resolveView=(value:unknown):SettingsWorkspaceView=>value==="account"||valu
 
 function Header({view}:{view:SettingsWorkspaceView}){
   const lead=view==="general"?"Personal details, logbook defaults and app preferences.":view==="account"?"Sign-in methods, devices and FlyTally account access.":"Public sharing, stored-data visibility and account deletion controls.";
-  return <div className="ui-page-stack"><header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted page-lead">{lead}</p></div></header><SettingsWorkspaceNavigation active={view}/></>;
+  return <><header className="page-header"><div><p className="eyebrow">ACCOUNT</p><h1>Settings</h1><p className="muted page-lead">{lead}</p></div></header><SettingsWorkspaceNavigation active={view}/></>;
 }
 
 export default async function ProfilePage({searchParams}:{searchParams:Promise<{view?:string;privacyError?:string}>}){
@@ -78,7 +78,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
   }
 
   const privacy=await getAccountPrivacySummary(userId);
-  return <>
+  return <div className="ui-page-stack">
     <Header view={view}/>
     <main className="u33-settings-workspace">
       <section className="u33-workspace-heading"><div><p className="eyebrow">PRIVACY</p><h2>Your data controls</h2><p className="muted">Control public sharing, review what FlyTally stores and manage account deletion.</p></div><Link className="secondary-button" href="/legal/privacy">Privacy notice</Link></section>
