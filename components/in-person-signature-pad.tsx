@@ -1,5 +1,6 @@
 "use client";
 
+import { PendingActionButton } from "@/components/pending-action-button";
 import { useRef,useState } from "react";
 
 type Point=[number,number];
@@ -31,6 +32,6 @@ export function InPersonSignaturePad({action,defaultInstructor="",recordLabel="t
     <div className="form-actions"><button type="button" className="secondary-button" onClick={clear}>Clear signature</button></div>
     <label className="checkbox-row"><input type="checkbox" name="confirm_in_person" value="yes" required/><span>The {signerNoun} confirms that they reviewed {recordLabel} and signs it in person on this device.</span></label>
     <p className="muted">FlyTally preserves the drawn signature and cryptographically binds it to {recordLabel}. The signer identity is entered in person and is not independently authenticated by a FlyTally account. FlyTally does not represent this capture as a qualified electronic signature (QES) or as an advanced electronic signature.</p>
-    <button className="primary-button" disabled={!hasSignature}>Confirm &amp; sign</button>
+    <PendingActionButton className="primary-button" disabled={!hasSignature} pendingLabel="Signing…">Confirm &amp; sign</PendingActionButton>
   </form>;
 }
