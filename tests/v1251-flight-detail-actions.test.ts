@@ -13,8 +13,9 @@ test("certification reloads the total landing count used by server compliance",(
   assert.match(certificationQuery,/blockingComplianceIssues\(compliance\)/);
 });
 
-test("an ordinary editable flight exposes deletion directly in detail navigation",()=>{
+test("an ordinary editable flight keeps deletion available without competing with primary navigation",()=>{
   const source=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(source,/<div className="detail-navigation">[\s\S]*<DeleteFlightButton action=\{remove\}\/?>/);
-  assert.doesNotMatch(source,/<summary>More actions<\/summary>/);
+  assert.match(source,/flight-detail-more/);
+  assert.match(source,/<DeleteFlightButton action=\{remove\}\/?>/);
+  assert.match(source,/<summary className="secondary-button">More<\/summary>/);
 });
