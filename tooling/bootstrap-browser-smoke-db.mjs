@@ -51,7 +51,8 @@ CREATE TABLE users(
   role TEXT NOT NULL DEFAULT 'user',
   active INTEGER NOT NULL DEFAULT 1,
   email_verified_at TIMESTAMPTZ,
-  deleted_at TIMESTAMPTZ
+  deleted_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE user_credentials(
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -180,6 +181,16 @@ CREATE TABLE pilot_connections(
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   accepted_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE connection_audit_log(
+  id BIGSERIAL PRIMARY KEY,
+  actor_user_id BIGINT NOT NULL,
+  subject_user_id BIGINT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  event_type TEXT NOT NULL,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE pilot_qualifications(
   id BIGSERIAL PRIMARY KEY,

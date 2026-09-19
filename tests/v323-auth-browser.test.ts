@@ -14,7 +14,9 @@ test("v3.2 U4 local Postgres adapter is explicit and localhost-only",()=>{
   assert.match(local,/LOCAL_HOSTS/);
   assert.match(local,/may only target localhost/);
   assert.match(local,/PGCONNECT_TIMEOUT:"5"/);
-  assert.match(local,/does not support transactions/);
+  assert.match(local,/support mutation statements only/);
+  assert.match(local,/BEGIN;\\n/);
+  assert.match(local,/COMMIT;/);
 });
 
 test("v3.2 U4 browser database is isolated and uses production password format",()=>{

@@ -24,6 +24,7 @@ const fastUiTests = new Set([
   "tests/v322-browser-smoke.test.ts",
   "tests/v323-auth-browser.test.ts",
   "tests/v324-auth-mutations.test.ts",
+  "tests/v325-transaction-mutations.test.ts",
 ]);
 
 function isFastUiTest(file) {
