@@ -47,13 +47,18 @@ export async function getFlightFilterOptions(userId:number){const [regs,evidence
 export async function getRecentRoutes(userId:number){const rows=await sql`SELECT UPPER(TRIM(departure)) departure,UPPER(TRIM(arrival)) arrival,COUNT(*) uses,MAX(date) last_date FROM flights WHERE user_id=${userId} AND NULLIF(TRIM(departure),'') IS NOT NULL AND NULLIF(TRIM(arrival),'') IS NOT NULL GROUP BY 1,2 ORDER BY uses DESC,last_date DESC LIMIT 18` as Array<{departure:string;arrival:string}>;return rows.map(r=>({departure:String(r.departure),arrival:String(r.arrival)}));}
 
 export async function getManualEntryDefaults(userId:number){
-  const [settings,user]=await Promise.all([
+  const [settings,user,lastFlights]=await Promise.all([
     sql`SELECT default_role FROM user_settings WHERE user_id=${userId} LIMIT 1`,
     sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
+    sql`SELECT UPPER(TRIM(f.registration)) registration,UPPER(TRIM(COALESCE(f.arrival,''))) arrival
+        FROM flights f
+        WHERE f.user_id=${userId}
+          AND EXISTS(SELECT 1 FROM aircraft a WHERE a.user_id=f.user_id AND a.active=1 AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration)))
+        ORDER BY f.id DESC LIMIT 1`,
   ]) as Array<Array<Record<string,unknown>>>;
-  const cfg=settings[0]??{};
+  const cfg=settings[0]??{},last=lastFlights[0]??{},registration=String(last.registration||""),departure=String(last.arrival||"");
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  return {date:today,registration:"",departure:"",arrival:"",evidence:"",regulatory_category:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1};
+  return {date:today,registration,departure,arrival:"",evidence:"",regulatory_category:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1,registration_default_source:registration?"last-flight":"",departure_default_source:departure?"previous-arrival":""};
 }
 
 export async function getFlightNavigation(userId:number,id:number,filters:FlightFilters={}){
