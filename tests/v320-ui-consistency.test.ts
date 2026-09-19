@@ -29,8 +29,28 @@ test("v3.2 loads the canonical UI system after legacy product layers",()=>{
   assert.ok(layout.indexOf('import "./ui-system.css"')>layout.indexOf('import "./v300-u6-acceptance.css"'));
 });
 
-test("v3.2 uses pending feedback on destructive and cancel server actions",()=>{
-  assert.match(read("components/delete-flight-button.tsx"),/PendingActionButton/);
-  assert.match(read("components/delete-flight-button.tsx"),/pendingLabel="Deleting…"/);
-  assert.match(read("components/aircraft-share-inbox.tsx"),/pendingLabel="Cancelling…"/);
+test("v3.2 uses pending feedback across high-risk user mutations",()=>{
+  const cases=[
+    ["components/delete-flight-button.tsx","Deleting…"],
+    ["components/aircraft-share-inbox.tsx","Cancelling…"],
+    ["components/aircraft-manager.tsx","Updating…"],
+    ["components/aircraft-photo-editor.tsx","Removing…"],
+    ["components/track-manager.tsx","Deleting…"],
+    ["components/in-person-signature-pad.tsx","Signing…"],
+    ["components/training-flight-candidates.tsx","Creating…"],
+    ["components/advanced-qualifications-panel.tsx","Saving…"],
+  ] as const;
+  for(const[file,label] of cases){
+    const source=read(file);
+    assert.match(source,/PendingActionButton/,file);
+    assert.ok(source.includes(`pendingLabel="${label}"`),`${file} missing ${label}`);
+  }
+});
+
+test("v3.2 maps common workspace layouts onto the shared rhythm",()=>{
+  const css=read("app/ui-system.css");
+  assert.match(css,/\.page-header,.workspace-heading/);
+  assert.match(css,/\.metric-grid,.dashboard-primary/);
+  assert.match(css,/\.flight-form,.data-hub/);
+  assert.match(css,/\.form-grid,.stack-form/);
 });
