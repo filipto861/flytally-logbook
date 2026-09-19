@@ -1,0 +1,89 @@
+/* FlyTally canonical UI system.
+   Keep interaction states and spacing tokens here so product CSS does not invent them per screen. */
+:root{
+  --ui-space-1:4px;
+  --ui-space-2:8px;
+  --ui-space-3:12px;
+  --ui-space-4:16px;
+  --ui-space-5:20px;
+  --ui-space-6:24px;
+  --ui-space-8:32px;
+  --ui-space-10:40px;
+  --ui-control-min-height:40px;
+  --ui-touch-min-height:44px;
+  --ui-radius-control:11px;
+  --ui-radius-card:17px;
+  --ui-card-gap:16px;
+  --ui-section-gap:24px;
+  --ui-loading-opacity:.58;
+}
+
+.ui-stack{display:grid;gap:var(--ui-card-gap)}
+.ui-section-stack{display:grid;gap:var(--ui-section-gap)}
+
+:where(.primary-button,.secondary-button,.danger-button,.delete-button,.detail-button,.aircraft-manage-button,.ghost-button){
+  min-height:var(--ui-control-min-height);
+  border-radius:var(--ui-radius-control);
+  transition:background-color .14s ease,border-color .14s ease,color .14s ease,opacity .14s ease,transform .14s ease;
+}
+
+:where(.panel,.metric,.table-panel,.connection-card,.notification-card,.flight-review-card,.settings-panel,.credentials-overview-card){
+  border-radius:var(--ui-radius-card);
+}
+
+:where(.metric-grid,.notification-list,.connection-list,.mini-metrics){
+  gap:var(--ui-card-gap);
+}
+
+:where(button,input[type="submit"]):disabled,
+:where(button,input[type="submit"])[aria-disabled="true"]{
+  cursor:not-allowed;
+}
+
+:where(button,input[type="submit"])[data-loading="true"],
+form[aria-busy="true"] :where(button[type="submit"],input[type="submit"]){
+  pointer-events:none;
+  cursor:progress;
+  opacity:var(--ui-loading-opacity);
+}
+
+button[data-loading="true"]{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--ui-space-2);
+}
+
+button[data-loading="true"]::after{
+  content:"";
+  width:.9em;
+  height:.9em;
+  flex:0 0 .9em;
+  border:2px solid currentColor;
+  border-right-color:transparent;
+  border-radius:50%;
+  animation:flytally-ui-spin .7s linear infinite;
+}
+
+@keyframes flytally-ui-spin{to{transform:rotate(360deg)}}
+
+@media(pointer:coarse){
+  :where(button,.primary-button,.secondary-button,.danger-button,.delete-button,.detail-button,.aircraft-manage-button,.ghost-button){
+    min-height:var(--ui-touch-min-height);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  :where(.primary-button,.secondary-button,.danger-button,.delete-button,.detail-button,.aircraft-manage-button,.ghost-button){
+    transition:none;
+  }
+  button[data-loading="true"]::after{animation-duration:1.4s}
+}
+
+/* Canonical vertical rhythm for the high-frequency product workspaces. */
+:where(.page-header,.workspace-heading){margin-bottom:var(--ui-section-gap)}
+:where(.metric-grid,.dashboard-primary,.profile-grid,.export-grid,.u33-preference-grid,.u33-privacy-grid){gap:var(--ui-card-gap)}
+:where(.metric-grid,.dashboard-primary,.profile-grid,.export-grid){margin-bottom:var(--ui-card-gap)}
+:where(.flight-form,.data-hub,.export-workspace,.backup-center,.backup-validator,.backup-restore,.flight-trash,.u31-workspace,.u33-settings-workspace,.detail-tab-content){gap:var(--ui-card-gap)}
+:where(.form-grid,.stack-form,.track-manager-grid,.stats-columns,.profile-grid-charts){gap:var(--ui-card-gap)}
+:where(.section-heading,.u31-workspace-heading,.u31-panel-heading,.u33-workspace-heading){gap:var(--ui-card-gap)}

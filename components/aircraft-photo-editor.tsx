@@ -1,5 +1,6 @@
 "use client";
 
+import { PendingActionButton } from "@/components/pending-action-button";
 import { useActionState,useState } from "react";
 
 type PhotoState={ok:boolean;message:string};
@@ -43,7 +44,7 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
           <button className="primary-button" disabled={pending||!payload}>{pending?"Saving…":"Save cover photo"}</button>
           {error?<p className="form-error" role="alert">{error}</p>:null}{state.message?<p className={state.ok?"form-success":"form-error"} role="status">{state.message}</p>:null}
         </form>
-        {hasPhoto?<form action={removeAction}><input type="hidden" name="aircraft_id" value={aircraftId}/><button className="secondary-button">Remove photo</button></form>:null}
+        {hasPhoto?<form action={removeAction}><input type="hidden" name="aircraft_id" value={aircraftId}/><PendingActionButton className="secondary-button" pendingLabel="Removing…">Remove photo</PendingActionButton></form>:null}
       </div>
     </div>
   </section>;
