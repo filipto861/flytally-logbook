@@ -1369,3 +1369,10 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
 .aircraft-crop-tools{display:grid;grid-template-columns:auto minmax(120px,1fr) auto auto;align-items:center;gap:12px;margin-top:16px}.aircraft-crop-tools>span{color:var(--muted);font-size:1.3rem;font-weight:800}.aircraft-crop-tools input{width:100%;accent-color:var(--accent)}
 .aircraft-crop-dialog>footer{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
 @media(max-width:600px){.aircraft-crop-backdrop{align-items:end;padding:0}.aircraft-crop-dialog{width:100%;max-height:94dvh;padding:18px 16px calc(16px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0}.aircraft-crop-dialog>header{margin-bottom:14px}.aircraft-crop-dialog>header h3{font-size:1.12rem}.aircraft-crop-stage{border-radius:12px}.aircraft-crop-tools{grid-template-columns:auto 1fr auto}.aircraft-crop-tools .secondary-button{grid-column:1/-1;width:100%}.aircraft-crop-dialog>footer{grid-template-columns:1fr}.aircraft-crop-dialog>footer .primary-button{order:-1}}
+
+.aircraft-cover-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.aircraft-cover-mode button{min-height:42px;padding:9px 12px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-weight:800;cursor:pointer}
+.aircraft-cover-mode button.active{background:var(--surface-raised);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.05),0 4px 14px rgba(0,0,0,.16)}
+.aircraft-crop-stage.fit-mode canvas{cursor:default}
+.aircraft-fit-note{margin:12px 0 0;color:var(--muted);font-size:.72rem;line-height:1.45}
+@media(max-width:600px){.aircraft-cover-mode{grid-template-columns:1fr}.aircraft-cover-mode button{width:100%}}
