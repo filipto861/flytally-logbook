@@ -21,6 +21,7 @@ const fastUiTests = new Set([
   "tests/v300-u6-final-ux.test.ts",
   "tests/v320-ui-consistency.test.ts",
   "tests/v321-route-ui-audit.test.ts",
+  "tests/v322-browser-smoke.test.ts",
 ]);
 
 function isFastUiTest(file) {
