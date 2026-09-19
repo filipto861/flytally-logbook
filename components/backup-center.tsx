@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PendingActionButton } from "@/components/pending-action-button";
 import type { StoredBackup } from "@/lib/backup-center";
 import type { RestoreState } from "@/app/(protected)/export/actions";
 import { buildRecoveryPreviewSummary } from "@/lib/recovery-preview";
@@ -13,7 +14,7 @@ export function BackupCenter({backups,createAction,restoreAction}:{backups:Store
   const[selected,setSelected]=useState<number|null>(null),[state,setState]=useState<RestoreState>({}),[confirm,setConfirm]=useState(""),[pending,setPending]=useState(false),[showAll,setShowAll]=useState(false);
   const preview=state.preview,summary=preview?buildRecoveryPreviewSummary(preview):null;
   const run=async(id:number,intent:"preview"|"restore")=>{const data=new FormData();data.set("backup_id",String(id));data.set("intent",intent);if(intent==="restore"){data.set("preview_digest",state.preview?.digest||"");data.set("confirm",confirm)}else{setState({});setConfirm("")}setPending(true);setSelected(id);try{const next=await restoreAction({},data);setState(next);if(next.success){setConfirm("");setSelected(null)}}finally{setPending(false)}};
-  return <section className="panel backup-center"><header><div><p className="eyebrow">BACKUP CENTER</p><h2>Stored account backups</h2></div><form action={createAction}><button className="primary-button">Create backup now</button></form></header>
+  return <section className="panel backup-center"><header><div><p className="eyebrow">BACKUP CENTER</p><h2>Stored account backups</h2></div><form action={createAction}><PendingActionButton className="primary-button" pendingLabel="Creating…">Create backup now</PendingActionButton></form></header>
     {state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">✓ {state.success}</p>:null}
     {backups.length?<><div className="stored-backup-list">{(showAll?backups:backups.slice(0,6)).map(backup=><article key={backup.id} className={selected===backup.id?"selected":""}>
       <div className="stored-backup-main"><span className={`backup-kind ${backup.kind}`}>{kindLabel[backup.kind]}</span><strong>{new Date(backup.createdAt).toLocaleString("en-GB")}</strong><small>v{backup.version} · {size(backup.compressedBytes)} · {backup.counts.flights||0} flights · {backup.counts.flight_tracks||0} GPS tracks</small></div>
