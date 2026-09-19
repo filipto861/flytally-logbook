@@ -8,10 +8,12 @@ import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catal
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { normalizeAircraftProfileContext } from "@/lib/aircraft-profile-context";
+import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
 const BALLOON_CLASSES=["HOT_AIR_BALLOON","GAS_BALLOON","HOT_AIR_AIRSHIP","MIXED_BALLOON"] as const,BALLOON_GROUPS=["A","B","C","D"] as const;
 function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print");}
 export type AircraftSaveResult={ok:boolean;message:string};
+export type AircraftDeleteResult={ok:boolean;message:string};
 async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
   const {userId}=await requireUser();await Promise.all([ensureV162Schema(),ensureV164Schema()]);const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return{ok:false,message:"Aircraft registration is required."};
   const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),requestedEvidence=s(form,"evidence").toUpperCase(),requestedClass=s(form,"aircraft_class").toUpperCase(),requestedCategory=s(form,"regulatory_category").toUpperCase(),normalized=normalizeAircraftProfileContext(requestedEvidence,requestedClass,requestedCategory);
@@ -39,6 +41,20 @@ async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
 export async function saveAircraft(form:FormData){await persistAircraft(form);}
 export async function saveAircraftWithResult(form:FormData){return persistAircraft(form);}
 export async function toggleAircraft(form:FormData){const {userId}=await requireUser();await sql`UPDATE aircraft SET active=CASE WHEN active=1 THEN 0 ELSE 1 END,updated_at=NOW() WHERE id=${n(form,"id")} AND user_id=${userId}`;revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");}
+export async function deleteAircraftWithResult(form:FormData):Promise<AircraftDeleteResult>{
+  const{userId}=await requireUser();await ensureV300AircraftSharingSchema();const aircraftId=n(form,"id");
+  if(!aircraftId)return{ok:false,message:"Aircraft could not be identified."};
+  const rows=await sql`SELECT id,UPPER(TRIM(registration)) registration FROM aircraft WHERE id=${aircraftId} AND user_id=${userId} LIMIT 1` as Array<{id:number;registration:string}>,aircraft=rows[0];
+  if(!aircraft)return{ok:false,message:"Aircraft not found."};
+  const usage=await sql`SELECT COUNT(*)::int count FROM flights WHERE user_id=${userId} AND UPPER(TRIM(registration))=${aircraft.registration}` as Array<{count:number}>,flightCount=Number(usage[0]?.count||0);
+  if(flightCount>0)return{ok:false,message:`This aircraft is used by ${flightCount} saved flight${flightCount===1?"":"s"}. Deactivate it instead so your logbook history stays intact.`};
+  await sql.transaction([
+    sql`DELETE FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=${aircraft.registration}`,
+    sql`DELETE FROM aircraft WHERE id=${aircraftId} AND user_id=${userId}`,
+  ]);
+  refreshPricing();revalidatePath("/connections");
+  return{ok:true,message:"Aircraft permanently deleted."};
+}
 export async function saveRate(form:FormData){const {userId}=await requireUser();const reg=s(form,"registration").toUpperCase(),valid=s(form,"valid_from"),price=n(form,"price_per_hour");if(!reg||!validIsoDate(valid)||price===null||price<=0)return;await sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) VALUES(${userId},${reg},${s(form,"aircraft_type")},${valid},${price},${n(form,"dry_price_per_hour")},${s(form,"source")||"Aircraft rate change"}) ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source`;refreshPricing();}
 export async function deleteRate(form:FormData){const {userId}=await requireUser();await sql`DELETE FROM rates WHERE id=${n(form,"id")} AND user_id=${userId}`;refreshPricing();}
 export async function saveAirport(form:FormData){const {userId}=await requireUser();const ident=canonicalAirportIdent(s(form,"ident"));if(!ident)return;await sql`INSERT INTO airports(user_id,ident,name,municipality,iso_country,latitude_deg,longitude_deg,active,closed,source,updated_at) VALUES(${userId},${ident},${s(form,"name")},${s(form,"municipality")},${s(form,"iso_country").toUpperCase()},${n(form,"latitude_deg")},${n(form,"longitude_deg")},1,0,'Manual',NOW()) ON CONFLICT(user_id,ident) DO UPDATE SET name=EXCLUDED.name,municipality=EXCLUDED.municipality,iso_country=EXCLUDED.iso_country,latitude_deg=EXCLUDED.latitude_deg,longitude_deg=EXCLUDED.longitude_deg,active=1,updated_at=NOW()`;revalidatePath("/database");}
