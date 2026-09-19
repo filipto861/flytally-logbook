@@ -49,3 +49,46 @@ test("login submission exposes a disabled pending state before the request compl
   releaseRequest();
   await clicking;
 });
+
+
+const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
+
+async function expectAuthenticatedRoute(page,heading){
+  await expect(page.getByRole("heading",{name:heading,level:1})).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+}
+
+async function navigateMain(page,label){
+  const toggle=page.getByRole("button",{name:"Open navigation"});
+  if(await toggle.isVisible())await toggle.click();
+  const link=page.getByRole("link",{name:label,exact:true});
+  await expect(link).toBeVisible();
+  await link.click();
+}
+
+test("authenticated pilot can navigate the core product shell",async({page,context})=>{
+  test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
+  await page.goto("/login?returnTo=/dashboard");
+  await page.getByLabel("E-mail").fill("browser-auth@example.test");
+  await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
+  await page.getByRole("button",{name:"Sign in"}).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expectAuthenticatedRoute(page,"At a glance");
+  const session=(await context.cookies()).find(cookie=>cookie.name==="logbook_session");
+  expect(session).toBeTruthy();
+  expect(session?.httpOnly).toBeTruthy();
+
+  await navigateMain(page,"Flights");
+  await expect(page).toHaveURL(/\/flights$/);
+  await expectAuthenticatedRoute(page,"Flights");
+  await expect(page.getByText("OK-E2E",{exact:true}).first()).toBeVisible();
+
+  await navigateMain(page,"Settings");
+  await expect(page).toHaveURL(/\/profile(?:\?|$)/);
+  await expectAuthenticatedRoute(page,"Settings");
+
+  await navigateMain(page,"Connections");
+  await expect(page).toHaveURL(/\/connections$/);
+  await expectAuthenticatedRoute(page,"Connections");
+});
