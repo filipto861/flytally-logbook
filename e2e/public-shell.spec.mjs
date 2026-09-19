@@ -1,8 +1,26 @@
 import { test,expect } from "@playwright/test";
 
 async function expectNoHorizontalOverflow(page){
-  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
-  expect(overflow).toBeLessThanOrEqual(1);
+  const state=await page.evaluate(()=>{
+    const viewport=document.documentElement.clientWidth;
+    const overflow=document.documentElement.scrollWidth-viewport;
+    const offenders=[...document.querySelectorAll("body *")].map(element=>{
+      const rect=element.getBoundingClientRect();
+      const style=getComputedStyle(element);
+      return{
+        tag:element.tagName.toLowerCase(),
+        id:element.id||"",
+        className:typeof element.className==="string"?element.className.slice(0,140):"",
+        left:Math.round(rect.left*10)/10,
+        right:Math.round(rect.right*10)/10,
+        width:Math.round(rect.width*10)/10,
+        scrollWidth:element instanceof HTMLElement?element.scrollWidth:0,
+        overflowX:style.overflowX,
+      };
+    }).filter(item=>item.right>viewport+1||item.left<-1).slice(0,20);
+    return{viewport,scrollWidth:document.documentElement.scrollWidth,overflow,offenders};
+  });
+  expect(state.overflow,JSON.stringify(state,null,2)).toBeLessThanOrEqual(1);
 }
 
 test("login shell is usable without horizontal overflow",async({page})=>{
