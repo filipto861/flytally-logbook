@@ -52,7 +52,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     return null;
   };
   const visibleLayout=layout.filter(item=>item.enabled);
-  return <>
+  return <div className="ui-page-stack">
     <header className="page-header"><div><p className="eyebrow">DASHBOARD</p><h1>At a glance</h1><p className="muted page-lead">{data.displayName} · your all-time flying snapshot and the next places to go. Historical periods, trends and detailed breakdowns live in Statistics.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
     <section className="dashboard-layout-grid" aria-label="Dashboard overview">
       {visibleLayout.map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
@@ -72,5 +72,5 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     </section>
 
     <DashboardEditor layout={layout}/>
-  </>;
+  </div>;
 }

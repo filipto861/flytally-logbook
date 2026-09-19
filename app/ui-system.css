@@ -87,3 +87,53 @@ button[data-loading="true"]::after{
 :where(.flight-form,.data-hub,.export-workspace,.backup-center,.backup-validator,.backup-restore,.flight-trash,.u31-workspace,.u33-settings-workspace,.detail-tab-content){gap:var(--ui-card-gap)}
 :where(.form-grid,.stack-form,.track-manager-grid,.stats-columns,.profile-grid-charts){gap:var(--ui-card-gap)}
 :where(.section-heading,.u31-workspace-heading,.u31-panel-heading,.u33-workspace-heading){gap:var(--ui-card-gap)}
+
+/* U2 route rhythm: page sections own spacing through the container, not ad-hoc margins. */
+:root{
+  --ui-page-gap:24px;
+  --ui-card-padding:22px;
+  --ui-card-padding-mobile:16px;
+}
+
+.ui-page-stack{
+  display:grid;
+  gap:var(--ui-page-gap);
+  min-width:0;
+}
+
+.ui-page-stack > :where(
+  .page-header,
+  .panel,
+  .table-panel,
+  .flight-finder,
+  .dashboard-layout-grid,
+  .dashboard-recency-status,
+  .database-workspace-nav,
+  .data-workspace-nav,
+  .settings-workspace-nav,
+  .flight-workspace-nav,
+  .connections-layout,
+  .u31-workspace,
+  .u33-settings-workspace
+){
+  margin-block:0;
+}
+
+.ui-page-stack > :where(.u31-workspace,.u33-settings-workspace){
+  gap:var(--ui-card-gap);
+}
+
+.ui-page-stack :where(.section-heading) > :where(span,.status-on,.status-off,.status-warning){
+  flex:0 0 auto;
+}
+
+:where(.connection-actions,.record-protection-actions,.form-actions,.settings-save){
+  gap:var(--ui-space-2);
+}
+
+@media(max-width:700px){
+  .ui-page-stack{gap:var(--ui-space-5)}
+  :where(.connection-actions,.form-actions,.settings-save){
+    align-items:stretch;
+  }
+}

@@ -17,9 +17,9 @@ export default async function DataPage({searchParams}:{searchParams:Promise<Para
   if(view==="deleted")deletedFlights=await listDeletedFlights(userId);
 
   const lead=view==="export"?"Print or export the records you need.":view==="recovery"?"Create, download or restore recoverable copies of your account data.":"Recover flights removed from your personal logbook.";
-  return <>
+  return <div className="ui-page-stack">
     <header className="page-header"><div><p className="eyebrow">LOGBOOK OUTPUT & SAFETY</p><h1>Print & data</h1><p className="muted page-lead">{lead}</p></div></header>
     <DataWorkspaceNavigation active={view}/>
     <DataHub view={view} backups={backups} deletedFlights={deletedFlights} createAction={createManualBackup} restoreStoredAction={restoreStoredBackup} restoreFileAction={restorePortableBackup} restoreTrashAction={restoreDeletedFlight}/>
-  </>;
+  </div>;
 }
