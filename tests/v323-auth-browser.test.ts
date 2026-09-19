@@ -13,7 +13,7 @@ test("v3.2 U4 local Postgres adapter is explicit and localhost-only",()=>{
   assert.match(db,/createLocalPostgresQuery/);
   assert.match(local,/LOCAL_HOSTS/);
   assert.match(local,/may only target localhost/);
-  assert.match(local,/PGCONNECTTIMEOUT:"5"/);
+  assert.match(local,/PGCONNECT_TIMEOUT:"5"/);
   assert.match(local,/does not support transactions/);
 });
 
