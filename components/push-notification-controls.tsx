@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NavIcon } from "@/components/nav-icon";
 import { useEffect,useState } from "react";
 import { disablePushOnDevice,enablePush,loadPushConfig,pushDeviceState,updatePushPreferences,type PushConfig,type PushDeviceState,type PushPreferences } from "@/lib/push-client";
 
@@ -16,9 +17,9 @@ function usePush(){
 export function PushNotificationInline({context="updates"}:{context?:"recency"|"updates"}){
   const{config,state,busy,error,enable}=usePush();
   if(state==="loading"||state==="enabled"||state==="unavailable"||state==="unsupported"||!config)return null;
-  if(state==="install-required")return <aside className="push-inline"><span aria-hidden="true">🔔</span><div><strong>Want FlyTally to remind you?</strong><small>Install FlyTally on your Home Screen to receive {context==="recency"?"recency and expiry":"important"} alerts.</small></div><Link className="secondary-button" href="/profile">Setup</Link></aside>;
-  if(state==="denied")return <aside className="push-inline"><span aria-hidden="true">🔕</span><div><strong>Push alerts are blocked</strong><small>You can allow notifications again in your browser/site settings.</small></div></aside>;
-  return <aside className="push-inline"><span aria-hidden="true">🔔</span><div><strong>{context==="recency"?"Want a reminder before this needs attention?":"Get important alerts on this device"}</strong><small>{context==="recency"?"Enable push for recency, licence, rating and medical reminders.":"Enable push for requests, shared records and compliance reminders."}</small>{error?<small className="form-error">{error}</small>:null}</div><button className="secondary-button" type="button" disabled={busy} aria-busy={busy||undefined} data-loading={busy?"true":undefined} onClick={()=>void enable()}>{busy?"Enabling…":"Enable push alerts"}</button></aside>;
+  if(state==="install-required")return <aside className="push-inline"><span aria-hidden="true"><NavIcon name="notifications"/></span><div><strong>Want FlyTally to remind you?</strong><small>Install FlyTally on your Home Screen to receive {context==="recency"?"recency and expiry":"important"} alerts.</small></div><Link className="secondary-button" href="/profile">Setup</Link></aside>;
+  if(state==="denied")return <aside className="push-inline"><span aria-hidden="true"><NavIcon name="notifications"/></span><div><strong>Push alerts are blocked</strong><small>You can allow notifications again in your browser/site settings.</small></div></aside>;
+  return <aside className="push-inline"><span aria-hidden="true"><NavIcon name="notifications"/></span><div><strong>{context==="recency"?"Want a reminder before this needs attention?":"Get important alerts on this device"}</strong><small>{context==="recency"?"Enable push for recency, licence, rating and medical reminders.":"Enable push for requests, shared records and compliance reminders."}</small>{error?<small className="form-error">{error}</small>:null}</div><button className="secondary-button" type="button" disabled={busy} aria-busy={busy||undefined} data-loading={busy?"true":undefined} onClick={()=>void enable()}>{busy?"Enabling…":"Enable push alerts"}</button></aside>;
 }
 
 export function PushNotificationSettings(){
