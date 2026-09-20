@@ -20,9 +20,9 @@ export function InPersonSignaturePad({action,defaultInstructor="",recordLabel="t
   const signerNoun=allowExaminer?"instructor or examiner":"instructor";
   return <form action={action} onSubmit={prepare} className="stack-form">
     <div className="form-grid settings-grid">
-      <label>{allowExaminer?"Instructor / examiner name":"Instructor name"}<input name="instructor_name" defaultValue={defaultInstructor} maxLength={120} required autoComplete="name"/></label>
-      <label>Licence number<input name="licence_number" maxLength={80} required placeholder="e.g. CZ.FCL.PPA…"/></label>
-      <label>Qualification<input name="qualification" maxLength={80} required defaultValue={defaultQualification}/></label>
+      <label>{allowExaminer?"Instructor / examiner name":"Instructor name"} <span className="field-hint" aria-hidden="true">Required</span><input name="instructor_name" defaultValue={defaultInstructor} maxLength={120} required autoComplete="name"/></label>
+      <label>Licence number <span className="field-hint" aria-hidden="true">Required</span><input name="licence_number" maxLength={80} required placeholder="e.g. CZ.FCL.PPA…"/></label>
+      <label>Qualification <span className="field-hint" aria-hidden="true">Required</span><input name="qualification" maxLength={80} required defaultValue={defaultQualification}/></label>
       <label>FI / FE / certificate reference<input name="qualification_reference" maxLength={80} placeholder="Optional reference"/></label>
       {allowExaminer?<label>Sign as<select name="verification_role" defaultValue="INSTRUCTOR"><option value="INSTRUCTOR">Instructor</option><option value="EXAMINER">Examiner</option></select></label>:<input type="hidden" name="verification_role" value="INSTRUCTOR"/>}
     </div>
