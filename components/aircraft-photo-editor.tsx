@@ -81,6 +81,8 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
   const drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
   const cropCanvas=useRef<HTMLCanvasElement|null>(null),cropDialog=useRef<HTMLDivElement|null>(null),cropClose=useRef<HTMLButtonElement|null>(null),cropOpener=useRef<HTMLElement|null>(null);
   const existingUrl=hasPhoto?`/api/aircraft-photo/${aircraftId}?v=${encodeURIComponent(photoUpdatedAt)}`:"";
+  const restoreCropFocus=()=>requestAnimationFrame(()=>cropOpener.current?.focus());
+  const cancelCover=()=>{setSource(null);setPayload("");setPreview("");setMode("fit");setZoom(1);setOffset({x:0,y:0});restoreCropFocus()};
 
   useEffect(()=>()=>{if(source)URL.revokeObjectURL(source.url)},[source]);
   useEffect(()=>{
@@ -104,13 +106,11 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
     catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be previewed.")}
   },[source,mode,zoom,offset]);
 
-  const restoreCropFocus=()=>requestAnimationFrame(()=>cropOpener.current?.focus());
   const choose=async(file?:File)=>{
     setError("");setPayload("");setPreview("");setSource(null);setMode("fit");setZoom(1);setOffset({x:0,y:0});
     if(!file)return;
     try{setSource(await loadPhoto(file))}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}
   };
-  const cancelCover=()=>{setSource(null);setPayload("");setPreview("");setMode("fit");setZoom(1);setOffset({x:0,y:0});restoreCropFocus()};
   const applyCover=()=>{if(!source)return;try{const dataUrl=renderCover(source,mode,zoom,offset);setPreview(dataUrl);setPayload(dataUrl.split(",",2)[1]||"");setSource(null);restoreCropFocus()}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}};
   const onPointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{if(!source||mode!=="crop")return;event.currentTarget.setPointerCapture(event.pointerId);drag.current={x:event.clientX,y:event.clientY,ox:offset.x,oy:offset.y}};
   const onPointerMove=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
