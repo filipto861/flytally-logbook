@@ -14,7 +14,7 @@ export const metadata={
 export default function RegulatoryValidationPage(){
   const readiness=getRegulatoryReadiness();
 
-  return <main className="page-shell" style={{maxWidth:"960px",margin:"0 auto"}}>
+  return <main className="page-shell legal-page-shell legal-page-shell-wide">
     <div className="page-heading">
       <div>
         <p className="eyebrow">LEGAL · SIGNATURES & REGULATORY VALIDATION</p>
@@ -24,30 +24,30 @@ export default function RegulatoryValidationPage(){
       <Link className="secondary-button" href="/legal">All legal notices</Link>
     </div>
 
-    <section className="panel" style={{display:"grid",gap:"18px"}}>
+    <section className="panel legal-section-stack">
       <div>
         <h2>Current signature assurance</h2>
         <p>FlyTally stores evidence that can bind a signer action to an exact record and detect later modification. FlyTally does <strong>not</strong> currently represent any of these mechanisms as an eIDAS qualified electronic signature (QES) or as an advanced electronic signature.</p>
       </div>
-      <div style={{display:"grid",gap:"12px"}}>
-        {signatureAssuranceCatalog.map(item=><article key={item.kind} style={{paddingBottom:"12px",borderBottom:"1px solid var(--border)"}}>
+      <div className="legal-card-list">
+        {signatureAssuranceCatalog.map(item=><article key={item.kind} className="legal-list-item">
           <strong>{item.label}</strong>
-          <p className="muted" style={{margin:"4px 0"}}>{item.identityAssurance}</p>
-          <p className="muted" style={{margin:0}}>{item.integrityBinding}</p>
+          <p className="muted legal-copy-tight">{item.identityAssurance}</p>
+          <p className="muted legal-summary">{item.integrityBinding}</p>
         </article>)}
       </div>
     </section>
 
-    <section className="panel" style={{display:"grid",gap:"14px"}}>
+    <section className="panel legal-section-stack">
       <div>
         <p className="eyebrow">AUTHORITY STATUS</p>
         <h2>No authority approval is implied</h2>
         <p className="muted">The statuses below describe FlyTally's validation work only. They are not approvals of FlyTally, a pilot, a licence, a flight, a signature or a training record.</p>
       </div>
-      {regulatoryAuthorityStatuses.map(item=><article key={item.id} style={{paddingBottom:"12px",borderBottom:"1px solid var(--border)"}}>
+      {regulatoryAuthorityStatuses.map(item=><article key={item.id} className="legal-list-item">
         <strong>{item.label}</strong>
-        <p className="muted" style={{margin:"4px 0"}}>Status: {item.status.replaceAll("_"," ")}</p>
-        <p style={{margin:0}}>{item.note}</p>
+        <p className="muted legal-copy-tight">Status: {item.status.replaceAll("_"," ")}</p>
+        <p className="legal-summary">{item.note}</p>
       </article>)}
     </section>
 

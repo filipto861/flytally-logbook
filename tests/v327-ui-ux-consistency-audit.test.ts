@@ -672,3 +672,54 @@ test("v3.3 design batch 7b leaves no bare en-GB date-time locale calls on its au
     assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']\s*\)/i,file);
   }
 });
+
+
+test("v3.3 design batch 8 wraps audited protected secondary routes in ui-page-stack",()=>{
+  for(const file of [
+    "app/(protected)/admin/page.tsx",
+    "app/(protected)/connections/logbook/[id]/page.tsx",
+    "app/(protected)/flights/[id]/share/page.tsx",
+  ]){
+    const source=read(file);
+    assert.match(source,/className="ui-page-stack"/,file);
+  }
+});
+
+test("v3.3 design batch 8 uses canonical Share headers in both flight states",()=>{
+  const source=read("app/(protected)/flights/[id]/share/page.tsx");
+  assert.equal((source.match(/className="page-header"/g)??[]).length,2);
+  assert.doesNotMatch(source,/className="page-heading"/);
+  assert.doesNotMatch(source,/className="page-shell"/);
+  assert.equal((source.match(/>Back to flight<\/Link>/g)??[]).length,2);
+});
+
+test("v3.3 design batch 8 moves audited legal layout styles out of JSX",()=>{
+  const files=[
+    "app/legal/page.tsx",
+    "app/legal/[document]/page.tsx",
+    "app/legal/commercial/page.tsx",
+    "app/legal/regulatory/page.tsx",
+    "components/legal-footer.tsx",
+  ];
+  for(const file of files){
+    const source=read(file);
+    assert.doesNotMatch(source,/style=\{\{[^}]*\b(?:margin(?:Top|Bottom)?|gap|paddingBottom)\s*:/,file);
+  }
+  const index=read("app/legal/page.tsx");
+  const document=read("app/legal/[document]/page.tsx");
+  const commercial=read("app/legal/commercial/page.tsx");
+  const regulatory=read("app/legal/regulatory/page.tsx");
+  const footer=read("components/legal-footer.tsx");
+  assert.match(index,/page-shell legal-page-shell/);
+  assert.match(document,/page-shell legal-page-shell/);
+  assert.match(commercial,/page-shell legal-page-shell/);
+  assert.match(regulatory,/page-shell legal-page-shell legal-page-shell-wide/);
+  assert.match(footer,/legal-footer/);
+
+  const css=read("app/ui-system.css");
+  assert.match(css,/\.legal-page-shell\{[\s\S]*max-width:900px;[\s\S]*gap:var\(--ui-section-gap\)/);
+  assert.match(css,/\.legal-page-shell-wide\{max-width:960px\}/);
+  assert.match(css,/\.legal-section-stack\{display:grid;gap:var\(--ui-section-gap\)\}/);
+  assert.match(css,/\.legal-card-list\{display:grid;gap:var\(--ui-card-gap\)\}/);
+  assert.match(css,/\.legal-list-item\{padding-bottom:var\(--ui-card-gap\);border-bottom:1px solid var\(--border\)\}/);
+});
