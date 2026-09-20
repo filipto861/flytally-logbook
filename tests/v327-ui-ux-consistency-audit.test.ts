@@ -782,3 +782,47 @@ test("v3.3 design batch 9 gives root runtime errors retry and safe navigation wi
   assert.equal(fs.existsSync(path.join(root,"app/global-error.tsx")),false);
   assert.equal(fs.existsSync(path.join(root,"app/(protected)/error.tsx")),false);
 });
+
+
+test("v3.3 design batch 9 records the effective login card as 11px and no-blur without changing it",()=>{
+  const globals=read("app/globals.css");
+  const blocks=[...globals.matchAll(/\.login-card\s*\{([^}]*)\}/g)];
+  assert.ok(blocks.length>=2);
+  const finalGlobalsBlock=blocks.at(-1)?.[1]??"";
+  assert.match(finalGlobalsBlock,/width:min\(100%,410px\)/);
+  assert.match(finalGlobalsBlock,/padding:34px/);
+  assert.match(finalGlobalsBlock,/border-radius:11px/);
+  assert.match(finalGlobalsBlock,/backdrop-filter:none/);
+  assert.ok(globals.indexOf("@media (max-width:820px)")<globals.lastIndexOf(".login-card{"));
+
+  const v150=read("app/v150-ui-system.css");
+  const themedBlock=v150.match(/\.login-card\{([^}]*)\}/)?.[1]??"";
+  assert.match(themedBlock,/background:var\(--surface\)/);
+  assert.match(themedBlock,/border-color:var\(--line\)/);
+  assert.match(themedBlock,/box-shadow:var\(--shadow-raised\)/);
+  assert.doesNotMatch(themedBlock,/border-radius|backdrop-filter/);
+  assert.match(v150,/\.login-shell\{background:var\(--bg\);color:var\(--text\)\}/);
+
+  const layout=read("app/layout.tsx");
+  const imports=[...layout.matchAll(/import "\.\/(.+\.css)";/g)].map(match=>match[1]);
+  const v150Index=imports.indexOf("v150-ui-system.css");
+  assert.ok(v150Index>=0);
+  for(const css of imports.slice(v150Index+1))assert.doesNotMatch(read(`app/${css}`),/\.login-card\s*\{|\.login-shell\s*\{/,css);
+});
+
+test("v3.3 design batch 9 makes push onboarding a canonical raised surface without changing placement",()=>{
+  const css=read("app/v300-push.css");
+  const rule=css.match(/\.push-onboarding\{([^}]*)\}/)?.[1]??"";
+  assert.match(rule,/position:fixed/);
+  assert.match(rule,/right:22px/);
+  assert.match(rule,/bottom:22px/);
+  assert.match(rule,/width:min\(470px,calc\(100vw - 32px\)\)/);
+  assert.match(rule,/padding:17px 18px/);
+  assert.match(rule,/background:var\(--surface\)/);
+  assert.match(rule,/border:1px solid var\(--line\)/);
+  assert.match(rule,/border-radius:var\(--ui-radius-card\)/);
+  assert.match(rule,/box-shadow:var\(--shadow-raised\)/);
+  assert.doesNotMatch(rule,/backdrop-filter|color-mix\(/);
+  assert.doesNotMatch(css,/html\[data-theme="light"\] \.push-onboarding\{/);
+  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*\.push-onboarding\{right:12px;bottom:calc\(12px \+ env\(safe-area-inset-bottom\)\);width:calc\(100vw - 24px\);grid-template-columns:auto minmax\(0,1fr\);padding:15px\}/);
+});

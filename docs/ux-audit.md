@@ -178,3 +178,23 @@ Before Batch 9 implementation the remaining audit premises were rechecked agains
 UX-026 deliberately adds only root `app/not-found.tsx` and `app/error.tsx`. The root error boundary renders inside `app/layout.tsx` but replaces the child route subtree when active, so a protected-page error shown by this boundary does not retain `(protected)/layout.tsx` / AppShell navigation. A future `app/(protected)/error.tsx` could keep that shell for errors thrown by protected child pages, but it is not included in this batch. Errors thrown by the root layout itself also remain deliberately uncovered because `app/global-error.tsx` is not approved for Batch 9.
 
 The fallback copy never renders an exception message, digest, stack trace or technical detail. Both pages use one `<main>`, one `<h1>` and the existing `.login-shell`, `.page-shell`, `.ui-page-stack`, `.panel`, primary/secondary button contracts. The root `/` target remains context-safe for signed-out visitors because it redirects signed-out users to Login and signed-in users to Dashboard.
+
+
+### Batch 9 UX-027 closure — audit premise incorrect
+
+The original UX-027 finding is retained above as audit history, but its implementation premise was rechecked against the final CSS cascade before any Batch 9 visual change.
+
+No login-card visual change is required:
+- The early legacy declaration in `app/globals.css` still contains `border-radius:24px` and `backdrop-filter:blur(18px)`, but a later same-specificity `.login-card` rule in the same stylesheet overrides those properties with `border-radius:11px` and `backdrop-filter:none`.
+- That later rule also establishes the effective 410 px width and 34 px padding. The earlier max-width 820 px padding rule appears before it and therefore does not change the final radius/blur contract.
+- `app/v150-ui-system.css`, imported after `globals.css`, changes only the login surface tokens: `background:var(--surface)`, `border-color:var(--line)`, `box-shadow:var(--shadow-raised)`, and `color:var(--text)`. It does not override radius or backdrop filtering.
+- No stylesheet imported after `v150-ui-system.css` defines `.login-card` or `.login-shell`.
+- The auth wrapper `.login-shell` resolves to `background:var(--bg)` in the v150 theme layer. Dark uses the dark `--bg` token and light uses the light `--bg` token; neither appearance changes the 11 px radius or no-blur result.
+
+Therefore UX-027 is closed as: **audit premise incorrect: effective radius is 11 px and backdrop-filter is already none in the final cascade; no visual change**.
+
+The overridden 24 px / blur declarations are intentionally left in place. Removing dead legacy declarations may be a no-op for the current cascade, but cleanup is not necessary to close the finding and is outside this frozen-brand Batch 9 decision.
+
+### Batch 9 UX-029 implementation
+
+The push onboarding keeps its existing fixed placement, width, padding, copy, timing, dismissal and permission behavior. Only the outer surface contract changes to `background:var(--surface)`, `border:1px solid var(--line)`, `border-radius:var(--ui-radius-card)`, and `box-shadow:var(--shadow-raised)`; the backdrop filter and light-only bespoke surface/shadow override are removed.
