@@ -79,23 +79,39 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
   const[payload,setPayload]=useState(""),[preview,setPreview]=useState(""),[error,setError]=useState("");
   const[source,setSource]=useState<SourcePhoto|null>(null),[mode,setMode]=useState<CoverMode>("fit"),[zoom,setZoom]=useState(1),[offset,setOffset]=useState<CropOffset>({x:0,y:0});
   const drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
-  const cropCanvas=useRef<HTMLCanvasElement|null>(null);
+  const cropCanvas=useRef<HTMLCanvasElement|null>(null),cropDialog=useRef<HTMLDivElement|null>(null),cropClose=useRef<HTMLButtonElement|null>(null),cropOpener=useRef<HTMLElement|null>(null);
   const existingUrl=hasPhoto?`/api/aircraft-photo/${aircraftId}?v=${encodeURIComponent(photoUpdatedAt)}`:"";
 
   useEffect(()=>()=>{if(source)URL.revokeObjectURL(source.url)},[source]);
+  useEffect(()=>{
+    if(!source)return;
+    requestAnimationFrame(()=>cropClose.current?.focus());
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){event.preventDefault();cancelCover();return}
+      if(event.key!=="Tab"||!cropDialog.current)return;
+      const controls=[...cropDialog.current.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')].filter(node=>!node.hasAttribute("hidden")&&node.getAttribute("aria-hidden")!=="true");
+      if(!controls.length){event.preventDefault();cropClose.current?.focus();return}
+      const first=controls[0],last=controls.at(-1)!;
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    };
+    document.addEventListener("keydown",keydown);
+    return()=>document.removeEventListener("keydown",keydown);
+  },[source]);
   useEffect(()=>{
     if(!source||!cropCanvas.current)return;
     try{drawCover(cropCanvas.current,source,mode,zoom,offset,PREVIEW_WIDTH,PREVIEW_HEIGHT)}
     catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be previewed.")}
   },[source,mode,zoom,offset]);
 
+  const restoreCropFocus=()=>requestAnimationFrame(()=>cropOpener.current?.focus());
   const choose=async(file?:File)=>{
     setError("");setPayload("");setPreview("");setSource(null);setMode("fit");setZoom(1);setOffset({x:0,y:0});
     if(!file)return;
     try{setSource(await loadPhoto(file))}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}
   };
-  const cancelCover=()=>{setSource(null);setPayload("");setPreview("");setMode("fit");setZoom(1);setOffset({x:0,y:0})};
-  const applyCover=()=>{if(!source)return;try{const dataUrl=renderCover(source,mode,zoom,offset);setPreview(dataUrl);setPayload(dataUrl.split(",",2)[1]||"");setSource(null)}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}};
+  const cancelCover=()=>{setSource(null);setPayload("");setPreview("");setMode("fit");setZoom(1);setOffset({x:0,y:0});restoreCropFocus()};
+  const applyCover=()=>{if(!source)return;try{const dataUrl=renderCover(source,mode,zoom,offset);setPreview(dataUrl);setPayload(dataUrl.split(",",2)[1]||"");setSource(null);restoreCropFocus()}catch(reason){setError(reason instanceof Error?reason.message:"Photo could not be processed.")}};
   const onPointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{if(!source||mode!=="crop")return;event.currentTarget.setPointerCapture(event.pointerId);drag.current={x:event.clientX,y:event.clientY,ox:offset.x,oy:offset.y}};
   const onPointerMove=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
     if(!drag.current||mode!=="crop")return;
@@ -119,7 +135,7 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
           <input type="hidden" name="aircraft_id" value={aircraftId}/>
           <input type="hidden" name="photo_mime_type" value="image/jpeg"/>
           <input type="hidden" name="photo_base64" value={payload}/>
-          <label>Choose photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>void choose(event.target.files?.[0])}/><small>JPG, PNG or WebP. The original file is not stored; only the processed cover is saved.</small></label>
+          <label>Choose photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>{cropOpener.current=event.currentTarget;void choose(event.target.files?.[0])}}/><small>JPG, PNG or WebP. The original file is not stored; only the processed cover is saved.</small></label>
           <button className="primary-button" disabled={pending||!payload}>{pending?"Saving…":"Save cover photo"}</button>
           {error?<p className="form-error" role="alert">{error}</p>:null}{state.message?<p className={state.ok?"form-success":"form-error"} role="status">{state.message}</p>:null}
         </form>
@@ -127,8 +143,8 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
       </div>
     </div>
     {source?<div className="aircraft-crop-backdrop" role="dialog" aria-modal="true" aria-labelledby="aircraft-crop-title">
-      <div className="aircraft-crop-dialog">
-        <header><div><p className="eyebrow">SET COVER PHOTO</p><h3 id="aircraft-crop-title">Adjust aircraft cover</h3><p className="muted">{mode==="fit"?"The complete photo is kept visible. Nothing is cropped.":"Crop to fill is optional. What you see is exactly what will be saved."}</p></div><button type="button" className="aircraft-crop-close" aria-label="Close photo editor" onClick={cancelCover}>×</button></header>
+      <div ref={cropDialog} className="aircraft-crop-dialog">
+        <header><div><p className="eyebrow">SET COVER PHOTO</p><h3 id="aircraft-crop-title">Adjust aircraft cover</h3><p className="muted">{mode==="fit"?"The complete photo is kept visible. Nothing is cropped.":"Crop to fill is optional. What you see is exactly what will be saved."}</p></div><button ref={cropClose} type="button" className="aircraft-crop-close" aria-label="Close photo editor" onClick={cancelCover}>×</button></header>
         <div className="aircraft-cover-mode" role="group" aria-label="Cover photo mode">
           <button type="button" className={mode==="fit"?"active":""} aria-pressed={mode==="fit"} onClick={()=>{setMode("fit");setZoom(1);setOffset({x:0,y:0})}}>Fit whole photo</button>
           <button type="button" className={mode==="crop"?"active":""} aria-pressed={mode==="crop"} onClick={()=>setMode("crop")}>Crop to fill</button>
