@@ -122,12 +122,32 @@ test("v3.3 design batch 2 hardens light normal-text contrast without changing br
 test("v3.3 design batch 2 removes compounded footer opacity",()=>{
   const shell=read("components/app-shell.tsx");
   const legal=read("components/legal-footer.tsx");
+  const css=read("app/ui-system.css");
+  const globals=read("app/globals.css");
 
-  for(const source of [shell,legal]){
-    assert.match(source,/color:"var\(--text-soft\)"/);
-    assert.match(source,/opacity:1/);
-    assert.doesNotMatch(source,/color:"var\(--muted\)",opacity:\.72/);
-  }
+  assert.match(shell,/color:"var\(--text-soft\)"/);
+  assert.match(shell,/opacity:1/);
+  assert.doesNotMatch(shell,/color:"var\(--muted\)",opacity:\.72/);
+
+  assert.match(legal,/className=\{`legal-footer\$\{compact\?" compact":""\}`\}/);
+  const footerRule=css.match(/\.legal-footer\{([^}]*)\}/)?.[1]??"";
+  const compactRule=css.match(/\.legal-footer\.compact\{([^}]*)\}/)?.[1]??"";
+  const linkRule=css.match(/\.legal-footer-link\{([^}]*)\}/)?.[1]??"";
+  assert.match(footerRule,/color:var\(--text-soft\)/);
+  assert.match(footerRule,/font-size:\.72rem/);
+  assert.match(footerRule,/opacity:1/);
+  assert.match(compactRule,/font-size:\.67rem/);
+  assert.doesNotMatch(footerRule,/font-weight:/);
+  assert.doesNotMatch(compactRule,/font-weight:/);
+  assert.doesNotMatch(linkRule,/font-weight:/);
+  assert.doesNotMatch(footerRule,/opacity:(?:0(?:\D|$)|0?\.\d+)/);
+  assert.doesNotMatch(linkRule,/opacity:(?:0(?:\D|$)|0?\.\d+)/);
+  assert.doesNotMatch(linkRule,/color:/);
+  assert.match(globals,/a \{ color:inherit; text-decoration:none; \}/);
+
+  const order=["Privacy","Terms","Cookies","Aviation safety","Providers","Report"].map(label=>legal.indexOf(`["${label}",`));
+  assert.ok(order.every(index=>index>=0));
+  assert.deepEqual([...order].sort((a,b)=>a-b),order);
 });
 
 test("v3.3 design batch 2 makes the legacy GPS profile use theme chart tokens",()=>{
