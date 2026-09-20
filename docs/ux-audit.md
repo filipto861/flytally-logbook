@@ -163,3 +163,38 @@ The Batch 8 source sweep found two public legal routes with the same inline-layo
 The same sweep also found the repeated `marginTop:"18px"` wrapper around the compact legal footer on `app/login/page.tsx` and `app/join/page.tsx`. Because this is the same public/legal inline-spacing class of issue, both now use `.legal-footer-slot` with the canonical 16 px card gap. `app/reset-password` has no equivalent inline legal/footer layout to migrate.
 
 These are layout-only changes. Legal/regulatory wording, headings, links, ordering, authentication behavior and public content remain unchanged.
+
+
+## Batch 9 premise verification and error-boundary scope
+
+Before Batch 9 implementation the remaining audit premises were rechecked against the final imported CSS/code cascade:
+- UX-025 still holds: FlyTally remains online-only and `PwaClient` has no `navigator.onLine` / `online` / `offline` state.
+- UX-026 still holds: the application had no `app/not-found.tsx` or `app/error.tsx`.
+- UX-027 audit premise is incorrect and is closed separately in Batch 9 without a visual change.
+- UX-029 still holds: the onboarding surface still has mixed transparency, bespoke border/shadow and `backdrop-filter:blur(18px)` in its effective surface rule; the light override does not remove that blur.
+- UX-032 still holds: Login says `E-mail`, Join says `Email`, and Settings uses `Account email`.
+- UX-033 still holds: Dashboard still contains `your all-time flying snapshot and the next places to go`.
+
+UX-026 deliberately adds only root `app/not-found.tsx` and `app/error.tsx`. The root error boundary renders inside `app/layout.tsx` but replaces the child route subtree when active, so a protected-page error shown by this boundary does not retain `(protected)/layout.tsx` / AppShell navigation. A future `app/(protected)/error.tsx` could keep that shell for errors thrown by protected child pages, but it is not included in this batch. Errors thrown by the root layout itself also remain deliberately uncovered because `app/global-error.tsx` is not approved for Batch 9.
+
+The fallback copy never renders an exception message, digest, stack trace or technical detail. Both pages use one `<main>`, one `<h1>` and the existing `.login-shell`, `.page-shell`, `.ui-page-stack`, `.panel`, primary/secondary button contracts. The root `/` target remains context-safe for signed-out visitors because it redirects signed-out users to Login and signed-in users to Dashboard.
+
+
+### Batch 9 UX-027 closure — audit premise incorrect
+
+The original UX-027 finding is retained above as audit history, but its implementation premise was rechecked against the final CSS cascade before any Batch 9 visual change.
+
+No login-card visual change is required:
+- The early legacy declaration in `app/globals.css` still contains `border-radius:24px` and `backdrop-filter:blur(18px)`, but a later same-specificity `.login-card` rule in the same stylesheet overrides those properties with `border-radius:11px` and `backdrop-filter:none`.
+- That later rule also establishes the effective 410 px width and 34 px padding. The earlier max-width 820 px padding rule appears before it and therefore does not change the final radius/blur contract.
+- `app/v150-ui-system.css`, imported after `globals.css`, changes only the login surface tokens: `background:var(--surface)`, `border-color:var(--line)`, `box-shadow:var(--shadow-raised)`, and `color:var(--text)`. It does not override radius or backdrop filtering.
+- No stylesheet imported after `v150-ui-system.css` defines `.login-card` or `.login-shell`.
+- The auth wrapper `.login-shell` resolves to `background:var(--bg)` in the v150 theme layer. Dark uses the dark `--bg` token and light uses the light `--bg` token; neither appearance changes the 11 px radius or no-blur result.
+
+Therefore UX-027 is closed as: **audit premise incorrect: effective radius is 11 px and backdrop-filter is already none in the final cascade; no visual change**.
+
+The overridden 24 px / blur declarations are intentionally left in place. Removing dead legacy declarations may be a no-op for the current cascade, but cleanup is not necessary to close the finding and is outside this frozen-brand Batch 9 decision.
+
+### Batch 9 UX-029 implementation
+
+The push onboarding keeps its existing fixed placement, width, padding, copy, timing, dismissal and permission behavior. Only the outer surface contract changes to `background:var(--surface)`, `border:1px solid var(--line)`, `border-radius:var(--ui-radius-card)`, and `box-shadow:var(--shadow-raised)`; the backdrop filter and light-only bespoke surface/shadow override are removed.
