@@ -326,21 +326,32 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   }
 
   const picker=read("components/aircraft-type-picker.tsx");
-  assert.match(picker,/Make \{requireMake\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}/);
-  assert.match(picker,/Aircraft type \/ model \{requireModel\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}/);
+  assert.match(picker,/<span>Make \{requireMake\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(picker,/<span>Aircraft type \/ model \{requireModel\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   const expenses=read("components/flight-expenses-editor.tsx");
-  assert.match(expenses,/Description \{row\.category==="OTHER"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}/);
+  assert.match(expenses,/<span>Description \{row\.category==="OTHER"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   const flight=read("components/flight-form.tsx");
-  assert.match(flight,/Instructor \/ PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}/);
-  assert.match(flight,/Commander \/ PIC"\} \{evidence==="EASA"&&role==="SAFETY PILOT"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}/);
+  assert.match(flight,/<span>Instructor \/ PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(flight,/<span>\{role==="SAFETY PILOT"\?"Actual PIC":"Commander \/ PIC"\} \{evidence==="EASA"&&role==="SAFETY PILOT"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   const signature=read("components/in-person-signature-pad.tsx");
-  assert.match(signature,/Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span>/);
-  assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]+<\/span><span className="field-hint" aria-hidden="true">Required<\/span>/);
+  assert.match(signature,/<span>\{allowExaminer\?"Instructor \/ examiner name":"Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
+  assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]*<span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
 
   const joined=Object.keys(checks).map(read).join("\n")+"\n"+picker+"\n"+expenses+"\n"+signature;
   const requiredCueCount=(joined.match(/>Required<\/span>/g)??[]).length;
   const validCueCount=(joined.match(/<span className="field-hint" aria-hidden="true">Required<\/span>/g)??[]).length;
   assert.equal(requiredCueCount,validCueCount,"every Required cue must use field-hint and aria-hidden");
+});
+
+test("v3.3 design batch 6 keeps Required cues beside label text without adding layout CSS",()=>{
+  const roots=["app","components"],files:string[]=[];
+  const walk=(dir:string)=>{for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){const rel=path.join(dir,entry.name);if(entry.isDirectory())walk(rel);else if(entry.name.endsWith(".tsx"))files.push(rel)}};
+  roots.forEach(walk);
+  for(const file of files){
+    const source=read(file);
+    if(!source.includes('className="field-hint" aria-hidden="true">Required'))continue;
+    assert.doesNotMatch(source,/<label[^>]*>[^<{]*<span className="field-hint" aria-hidden="true">Required<\/span><(?:input|select|textarea)/,file);
+  }
 });
 
 test("v3.3 design batch 6 leaves required-only and optional-only forms without Required cues",()=>{
