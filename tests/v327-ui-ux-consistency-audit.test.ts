@@ -713,27 +713,27 @@ test("v3.3 design batch 8 uses canonical Share headers in both flight states",()
   assert.equal((source.match(/>Back to flight<\/Link>/g)??[]).length,2);
 });
 
-test("v3.3 design batch 8 moves audited legal layout styles out of JSX",()=>{
-  const files=[
-    "app/legal/page.tsx",
-    "app/legal/[document]/page.tsx",
-    "app/legal/commercial/page.tsx",
-    "app/legal/regulatory/page.tsx",
-    "components/legal-footer.tsx",
-  ];
-  for(const file of files){
-    const source=read(file);
-    assert.doesNotMatch(source,/style=\{\{[^}]*\b(?:margin(?:Top|Bottom)?|gap|paddingBottom)\s*:/,file);
-  }
+test("v3.3 design batch 8 moves public legal layout styles out of JSX",()=>{
+  const legalFiles:string[]=[];
+  const walk=(dir:string)=>{for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){const rel=path.join(dir,entry.name);if(entry.isDirectory())walk(rel);else if(entry.name.endsWith(".tsx"))legalFiles.push(rel.replaceAll("\\","/"))}};
+  walk("app/legal");
+  for(const file of legalFiles)assert.doesNotMatch(read(file),/style=\{\{/,file);
+
   const index=read("app/legal/page.tsx");
   const document=read("app/legal/[document]/page.tsx");
   const commercial=read("app/legal/commercial/page.tsx");
   const regulatory=read("app/legal/regulatory/page.tsx");
+  const brand=read("app/legal/brand-claims/page.tsx");
+  const release=read("app/legal/release-status/page.tsx");
   const footer=read("components/legal-footer.tsx");
   assert.match(index,/page-shell legal-page-shell/);
   assert.match(document,/page-shell legal-page-shell/);
   assert.match(commercial,/page-shell legal-page-shell/);
   assert.match(regulatory,/page-shell legal-page-shell legal-page-shell-wide/);
+  assert.match(brand,/page-shell legal-page-shell legal-page-shell-wide/);
+  assert.match(brand,/panel legal-section-stack/);
+  assert.match(brand,/className="legal-list-item"/);
+  assert.match(release,/page-shell legal-page-shell/);
   assert.match(footer,/legal-footer/);
 
   const css=read("app/ui-system.css");
@@ -742,4 +742,14 @@ test("v3.3 design batch 8 moves audited legal layout styles out of JSX",()=>{
   assert.match(css,/\.legal-section-stack\{display:grid;gap:var\(--ui-section-gap\)\}/);
   assert.match(css,/\.legal-card-list\{display:grid;gap:var\(--ui-card-gap\)\}/);
   assert.match(css,/\.legal-list-item\{padding-bottom:var\(--ui-card-gap\);border-bottom:1px solid var\(--border\)\}/);
+});
+
+test("v3.3 design batch 8 moves repeated public auth legal-footer spacing into the shared rhythm",()=>{
+  for(const file of ["app/login/page.tsx","app/join/page.tsx"]){
+    const source=read(file);
+    assert.match(source,/className="legal-footer-slot"/,file);
+    assert.doesNotMatch(source,/style=\{\{[^}]*marginTop:/,file);
+  }
+  assert.doesNotMatch(read("app/reset-password/page.tsx"),/style=\{\{/);
+  assert.match(read("app/ui-system.css"),/\.legal-footer-slot\{margin-top:var\(--ui-card-gap\)\}/);
 });

@@ -19,7 +19,7 @@ export default async function LoginPage({searchParams}:{searchParams:Promise<{er
         <h1>FlyTally</h1>
         <p className="login-lead">Your flights stay private. Sign in to continue.</p>
         <LoginForm google={googleConfigured()} externalError={error} success={success} returnTo={returnTo}/>
-        <div style={{marginTop:"18px"}}><LegalFooter compact/></div>
+        <div className="legal-footer-slot"><LegalFooter compact/></div>
       </section>
     </main>
   );

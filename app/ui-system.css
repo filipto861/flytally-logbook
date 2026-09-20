@@ -411,3 +411,5 @@ button[data-loading="true"]::after{
 .legal-footer{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;color:var(--text-soft);font-size:.72rem;opacity:1}
 .legal-footer.compact{gap:6px 10px;font-size:.67rem}
 .legal-footer-link{text-decoration:underline;text-underline-offset:2px}
+
+.legal-footer-slot{margin-top:var(--ui-card-gap)}

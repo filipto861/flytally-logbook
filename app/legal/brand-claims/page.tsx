@@ -14,7 +14,7 @@ export const metadata={
 export default function BrandClaimsPage(){
   const readiness=getBrandClaimsReadiness();
 
-  return <main className="page-shell" style={{maxWidth:"960px",margin:"0 auto"}}>
+  return <main className="page-shell legal-page-shell legal-page-shell-wide">
     <div className="page-heading">
       <div>
         <p className="eyebrow">LEGAL · BRAND & PUBLIC CLAIMS</p>
@@ -35,16 +35,16 @@ export default function BrandClaimsPage(){
       </div>
     </section>
 
-    <section className="panel" style={{display:"grid",gap:"14px"}}>
+    <section className="panel legal-section-stack">
       <div>
         <p className="eyebrow">CLAIM REGISTRY</p>
         <h2>Approved wording and evidence boundaries</h2>
       </div>
-      {publicClaimRegistry.map(item=><article key={item.id} style={{paddingBottom:"12px",borderBottom:"1px solid var(--border)"}}>
+      {publicClaimRegistry.map(item=><article key={item.id} className="legal-list-item">
         <strong>{item.label}</strong>
-        <p className="muted" style={{margin:"4px 0"}}>Status: {item.status.replaceAll("_"," ")}</p>
-        {item.approvedWording.length?<p style={{margin:"4px 0"}}><b>Permitted wording:</b> {item.approvedWording.join(" · ")}</p>:null}
-        <p style={{margin:0}}>{item.boundary}</p>
+        <p className="muted legal-copy-tight">Status: {item.status.replaceAll("_"," ")}</p>
+        {item.approvedWording.length?<p className="legal-copy-tight"><b>Permitted wording:</b> {item.approvedWording.join(" · ")}</p>:null}
+        <p className="legal-summary">{item.boundary}</p>
       </article>)}
     </section>
 

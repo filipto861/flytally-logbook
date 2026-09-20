@@ -152,3 +152,14 @@ Batch 7b closes UX-036 through UX-039 as presentation-only follow-up work:
 - Dormant `TrackProfile` adopts the existing `NavIcon` play/pause contract and accessible name without changing playback behavior.
 
 No stored value, sorting, filtering, URL, form value, calculation, certified UTC evidence, FCL.050 print output or social Story behavior changes in Batch 7b.
+
+
+### Batch 8 UX-028 leftover addendum
+
+The Batch 8 source sweep found two public legal routes with the same inline-layout pattern that were not named in the original UX-028 row:
+- `app/legal/brand-claims/page.tsx` keeps its existing 960 px public width via `.legal-page-shell-wide`; the claim-registry section now uses the shared 24 px section rhythm and 16 px list-item rhythm while retaining the existing bottom-border look.
+- `app/legal/release-status/page.tsx` keeps its existing 900 px public width via `.legal-page-shell`.
+
+The same sweep also found the repeated `marginTop:"18px"` wrapper around the compact legal footer on `app/login/page.tsx` and `app/join/page.tsx`. Because this is the same public/legal inline-spacing class of issue, both now use `.legal-footer-slot` with the canonical 16 px card gap. `app/reset-password` has no equivalent inline legal/footer layout to migrate.
+
+These are layout-only changes. Legal/regulatory wording, headings, links, ordering, authentication behavior and public content remain unchanged.
