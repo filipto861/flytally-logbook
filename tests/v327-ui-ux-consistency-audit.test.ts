@@ -296,3 +296,118 @@ test("v3.3 design batch 5 restores the canonical focus contract for both audited
   assert.match(canonical,/:where\(a,button,input,select,textarea,summary,\[tabindex\]\):focus-visible\{outline:2px solid var\(--focus-color\);outline-offset:2px;box-shadow:var\(--focus-ring\)\}/);
   assert.match(publicViewer,/\.public-flight-theme-toggle button:focus-visible\{outline:2px solid var\(--focus-color\);outline-offset:2px\}/);
 });
+
+
+test("v3.3 design batch 6 marks native-required controls only in mixed forms",()=>{
+  const cue='<span className="field-hint" aria-hidden="true">Required</span>';
+  const checks:Record<string,string[]>={
+    "app/(protected)/credentials/legacy-page.tsx":["Licence","Licence number","Qualification","Document"],
+    "app/(protected)/database/page.tsx":["Code"],
+    "app/(protected)/fstd/page.tsx":["Date","Device type","Qualification number","Total session time","FSTD instruction / exercise","Instruction"],
+    "app/(protected)/profile/page.tsx":["Name"],
+    "components/aircraft-manager.tsx":["Registration","Balloon class","Hot-air group","New rate CZK/h","Valid from"],
+    "components/aircraft-qualifications-section.tsx":["Completed on","Connected signer"],
+    "components/aircraft-share-panel.tsx":["Pilot"],
+    "components/auth-invite-creator.tsx":["Tester email"],
+    "components/balloon-recency-panel.tsx":["Balloon class","Date","Examiner","Reference"],
+    "components/flight-expenses-editor.tsx":["Amount","Currency"],
+    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Supervising PIC / FI","Countersignature reference","Logbook","Class / category","Billing time"],
+    "components/helicopter-recency-panel.tsx":["Helicopter type","Date","Examiner","Reference"],
+    "components/in-person-signature-pad.tsx":["Licence number","Qualification"],
+    "components/kml-import-form.tsx":["KML, GPX or CSV","Registration","Balloon operation","Date"],
+    "components/quick-aircraft-form.tsx":["Registration"],
+    "components/recency-panel.tsx":["Date","Examiner / instructor","Certificate / reference","Rule name","Rolling window","Target"],
+    "components/spl-recency-panel.tsx":["Date","Examiner / FE(S)","Reference"],
+    "components/track-manager.tsx":["KML, GPX or CSV"],
+  };
+  for(const [file,labels] of Object.entries(checks)){
+    const source=read(file);
+    for(const label of labels)assert.ok(source.includes(`${label} ${cue}`),`${file}: ${label}`);
+  }
+
+  const picker=read("components/aircraft-type-picker.tsx");
+  assert.match(picker,/<span>Make \{requireMake\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(picker,/<span>Aircraft type \/ model \{requireModel\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  const expenses=read("components/flight-expenses-editor.tsx");
+  assert.match(expenses,/<span>Description \{row\.category==="OTHER"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  const flight=read("components/flight-form.tsx");
+  assert.match(flight,/<span>Instructor \/ PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(flight,/<span>\{role==="SAFETY PILOT"\?"Actual PIC":"Commander \/ PIC"\} \{evidence==="EASA"&&role==="SAFETY PILOT"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  const signature=read("components/in-person-signature-pad.tsx");
+  assert.match(signature,/<span>\{allowExaminer\?"Instructor \/ examiner name":"Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
+  assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]*<span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
+
+  const joined=Object.keys(checks).map(read).join("\n")+"\n"+picker+"\n"+expenses+"\n"+signature;
+  const requiredCueCount=(joined.match(/>Required<\/span>/g)??[]).length;
+  const validCueCount=(joined.match(/<span className="field-hint" aria-hidden="true">Required<\/span>/g)??[]).length;
+  assert.equal(requiredCueCount,validCueCount,"every Required cue must use field-hint and aria-hidden");
+});
+
+test("v3.3 design batch 6 keeps Required cues beside label text without adding layout CSS",()=>{
+  const roots=["app","components"],files:string[]=[];
+  const walk=(dir:string)=>{for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){const rel=path.join(dir,entry.name);if(entry.isDirectory())walk(rel);else if(entry.name.endsWith(".tsx"))files.push(rel)}};
+  roots.forEach(walk);
+  for(const file of files){
+    const source=read(file);
+    if(!source.includes('className="field-hint" aria-hidden="true">Required'))continue;
+    assert.doesNotMatch(source,/<label[^>]*>[^<{]*<span className="field-hint" aria-hidden="true">Required<\/span><(?:input|select|textarea)/,file);
+  }
+});
+
+test("v3.3 design batch 6 leaves required-only and optional-only forms without Required cues",()=>{
+  const cue=/field-hint" aria-hidden="true">Required/;
+  for(const file of [
+    "app/forgot-password/forgot-form.tsx",
+    "app/login/login-form.tsx",
+    "app/reset-password/reset-form.tsx",
+    "app/join/join-form.tsx",
+    "app/(protected)/connections/aircraft-training/[id]/page.tsx",
+    "app/(protected)/connections/flight/[id]/page.tsx",
+    "app/(protected)/connections/page.tsx",
+    "app/(protected)/connections/shared/[id]/page.tsx",
+    "app/(protected)/flights/[id]/page.tsx",
+    "app/(protected)/flights/[id]/share/page.tsx",
+    "app/(protected)/flights/page.tsx",
+    "app/(protected)/map/page.tsx",
+    "components/advanced-qualifications-panel.tsx",
+    "components/dashboard-editor.tsx",
+    "components/data-hub.tsx",
+    "components/training-flight-candidates.tsx",
+  ])assert.doesNotMatch(read(file),cue,file);
+
+  const admin=read("app/(protected)/admin/page.tsx");
+  assert.doesNotMatch(admin,cue,"unlabelled legacy admin form stays untouched");
+});
+
+test("v3.3 design batch 6 keeps one form-level alert for affected existing error states",()=>{
+  const manager=read("components/aircraft-manager.tsx");
+  for(const state of ["newStatus","profileStatus","deleteStatus"])assert.ok(manager.includes(`role={${state}.ok?"status":"alert"}`),state);
+  const deleteStart=manager.indexOf("<form action={deleteSelected}>");
+  const deleteEnd=manager.indexOf("</form>",deleteStart);
+  assert.match(manager.slice(deleteStart,deleteEnd),/deleteStatus\?<p[^>]+role=\{deleteStatus\.ok\?"status":"alert"\}/);
+
+  const photo=read("components/aircraft-photo-editor.tsx");
+  const photoStart=photo.indexOf('<form action={action} className="stack-form">');
+  const photoEnd=photo.indexOf("</form>",photoStart);
+  const photoForm=photo.slice(photoStart,photoEnd);
+  assert.equal((photoForm.match(/role="alert"/g)??[]).length,1);
+  assert.match(photoForm,/error\|\|\(!state\.ok&&state\.message\)\?<p className="form-error" role="alert"/);
+  assert.match(photoForm,/state\.ok&&state\.message\?<p className="form-success" role="status"/);
+
+  const share=read("components/aircraft-share-panel.tsx");
+  assert.match(share,/state\.ok\?"status":"alert"/);
+
+  const invite=read("components/auth-invite-creator.tsx");
+  const inviteStart=invite.indexOf("<form action={action}");
+  const inviteEnd=invite.indexOf("</form>",inviteStart);
+  assert.equal((invite.slice(inviteStart,inviteEnd).match(/role="alert"/g)??[]).length,1);
+
+  const search=read("components/pilot-connection-search.tsx");
+  const searchStart=search.indexOf('<form action={action} className="stack-form">');
+  const searchEnd=search.indexOf("</form>",searchStart);
+  assert.equal((search.slice(searchStart,searchEnd).match(/role="alert"/g)??[]).length,1);
+
+  for(const file of ["components/flight-form.tsx","components/kml-import-form.tsx","components/quick-aircraft-form.tsx","components/track-manager.tsx"]){
+    assert.equal((read(file).match(/role="alert"/g)??[]).length,1,file);
+  }
+});

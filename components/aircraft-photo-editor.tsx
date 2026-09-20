@@ -137,7 +137,7 @@ export function AircraftPhotoEditor({aircraftId,hasPhoto,photoUpdatedAt,saveActi
           <input type="hidden" name="photo_base64" value={payload}/>
           <label>Choose photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event=>{cropOpener.current=event.currentTarget;void choose(event.target.files?.[0])}}/><small>JPG, PNG or WebP. The original file is not stored; only the processed cover is saved.</small></label>
           <button className="primary-button" disabled={pending||!payload}>{pending?"Saving…":"Save cover photo"}</button>
-          {error?<p className="form-error" role="alert">{error}</p>:null}{state.message?<p className={state.ok?"form-success":"form-error"} role="status">{state.message}</p>:null}
+          {error||(!state.ok&&state.message)?<p className="form-error" role="alert">{error||state.message}</p>:null}{state.ok&&state.message?<p className="form-success" role="status">{state.message}</p>:null}
         </form>
         {hasPhoto?<form action={removeAction}><input type="hidden" name="aircraft_id" value={aircraftId}/><PendingActionButton className="secondary-button" pendingLabel="Removing…">Remove photo</PendingActionButton></form>:null}
       </div>

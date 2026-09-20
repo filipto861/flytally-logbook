@@ -20,9 +20,9 @@ export function InPersonSignaturePad({action,defaultInstructor="",recordLabel="t
   const signerNoun=allowExaminer?"instructor or examiner":"instructor";
   return <form action={action} onSubmit={prepare} className="stack-form">
     <div className="form-grid settings-grid">
-      <label>{allowExaminer?"Instructor / examiner name":"Instructor name"}<input name="instructor_name" defaultValue={defaultInstructor} maxLength={120} required autoComplete="name"/></label>
-      <label>Licence number<input name="licence_number" maxLength={80} required placeholder="e.g. CZ.FCL.PPA…"/></label>
-      <label>Qualification<input name="qualification" maxLength={80} required defaultValue={defaultQualification}/></label>
+      <label><span>{allowExaminer?"Instructor / examiner name":"Instructor name"} <span className="field-hint" aria-hidden="true">Required</span></span><input name="instructor_name" defaultValue={defaultInstructor} maxLength={120} required autoComplete="name"/></label>
+      <label><span>Licence number <span className="field-hint" aria-hidden="true">Required</span></span><input name="licence_number" maxLength={80} required placeholder="e.g. CZ.FCL.PPA…"/></label>
+      <label><span>Qualification <span className="field-hint" aria-hidden="true">Required</span></span><input name="qualification" maxLength={80} required defaultValue={defaultQualification}/></label>
       <label>FI / FE / certificate reference<input name="qualification_reference" maxLength={80} placeholder="Optional reference"/></label>
       {allowExaminer?<label>Sign as<select name="verification_role" defaultValue="INSTRUCTOR"><option value="INSTRUCTOR">Instructor</option><option value="EXAMINER">Examiner</option></select></label>:<input type="hidden" name="verification_role" value="INSTRUCTOR"/>}
     </div>
@@ -30,7 +30,7 @@ export function InPersonSignaturePad({action,defaultInstructor="",recordLabel="t
     <canvas ref={canvasRef} width={900} height={260} aria-label={allowExaminer?"Instructor or examiner signature pad":"Instructor signature pad"} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} style={{width:"100%",height:"180px",display:"block",background:"#fff",border:"1px solid #46616f",borderRadius:"8px",touchAction:"none",cursor:"crosshair"}}/>
     <input type="hidden" name="signature_json"/>
     <div className="form-actions"><button type="button" className="secondary-button" onClick={clear}>Clear signature</button></div>
-    <label className="checkbox-row"><input type="checkbox" name="confirm_in_person" value="yes" required/><span>The {signerNoun} confirms that they reviewed {recordLabel} and signs it in person on this device.</span></label>
+    <label className="checkbox-row"><input type="checkbox" name="confirm_in_person" value="yes" required/><span>The {signerNoun} confirms that they reviewed {recordLabel} and signs it in person on this device. <span className="field-hint" aria-hidden="true">Required</span></span></label>
     <p className="muted">FlyTally preserves the drawn signature and cryptographically binds it to {recordLabel}. The signer identity is entered in person and is not independently authenticated by a FlyTally account. FlyTally does not represent this capture as a qualified electronic signature (QES) or as an advanced electronic signature.</p>
     <PendingActionButton className="primary-button" disabled={!hasSignature} pendingLabel="Signing…">Confirm &amp; sign</PendingActionButton>
   </form>;

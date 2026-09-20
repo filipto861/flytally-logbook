@@ -35,7 +35,7 @@ test("v3.0 U3.1 makes airport catalogue search on demand",()=>{
   assert.match(page,/view==="airports"&&airportSearch\?searchAirportCatalog/);
   assert.match(page,/Search the catalogue when needed/);
   assert.match(page,/type="hidden" name="view" value="airports"/);
-  assert.match(page,/<label>Code<input name="ident"/);
+  assert.match(page,/<label><span>Code(?: <span className="field-hint" aria-hidden="true">Required<\/span>)?<\/span><input name="ident"/);
   assert.match(page,/<label>Latitude<input name="latitude_deg"/);
   assert.match(page,/<label>Longitude<input name="longitude_deg"/);
 });

@@ -15,7 +15,7 @@ export function AircraftSharePanel({aircraft,connections,action}:{aircraft:Row;c
     <div className="modal-section-heading"><div><p className="eyebrow">SHARE</p><h3>Share aircraft profile</h3><p className="muted">Send a pre-filled copy to one of your Connections. After import, both pilots can edit their own aircraft independently.</p></div></div>
     {!connections.length?<div className="empty-state"><strong>No Connections available</strong><span>Connect with the other pilot first. Aircraft sharing never exposes a public pilot directory.</span><Link className="secondary-button" href="/connections">Open Connections</Link></div>:<form action={formAction} className="aircraft-share-form">
       <input type="hidden" name="aircraft_id" value={text(aircraft.id)}/>
-      <label>Pilot<select name="recipient_user_id" required defaultValue=""><option value="" disabled>Select a connection…</option>{connections.map(row=><option key={text(row.id)} value={text(row.id)}>{text(row.display_name)||"Pilot"}{text(row.home_airport)?` · ${text(row.home_airport)}`:""}</option>)}</select></label>
+      <label><span>Pilot <span className="field-hint" aria-hidden="true">Required</span></span><select name="recipient_user_id" required defaultValue=""><option value="" disabled>Select a connection…</option>{connections.map(row=><option key={text(row.id)} value={text(row.id)}>{text(row.display_name)||"Pilot"}{text(row.home_airport)?` · ${text(row.home_airport)}`:""}</option>)}</select></label>
       <div className="aircraft-share-options">
         <div className="share-fixed-row"><span>✓</span><div><strong>Aircraft profile</strong><small>Registration, type, ICAO, ULL/EASA and regulatory classification are always included.</small></div></div>
         <label className="share-check"><input type="checkbox" name="include_photo" value="yes" defaultChecked={hasPhoto} disabled={!hasPhoto}/><span><strong>Cover photo</strong><small>{hasPhoto?"Copy the current aircraft cover.":"No aircraft photo saved."}</small></span></label>
@@ -26,7 +26,7 @@ export function AircraftSharePanel({aircraft,connections,action}:{aircraft:Row;c
       </div>
       <p className="aircraft-share-privacy">This is a one-time copy, not shared ownership. Future edits, prices and photos are not synchronized.</p>
       <button className="primary-button" disabled={pending}>{pending?"Sending…":"Send aircraft profile"}</button>
-      {state.message?<p className={state.ok?"form-success":"form-error"} role="status">{state.message}</p>:null}
+      {state.message?<p className={state.ok?"form-success":"form-error"} role={state.ok?"status":"alert"}>{state.message}</p>:null}
     </form>}
   </section>;
 }
