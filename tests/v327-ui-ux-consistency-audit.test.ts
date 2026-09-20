@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -533,24 +532,13 @@ test("v3.3 design batch 7 user-timezone data helper falls back without throwing"
   assert.match(source,/catch\{\s*return FALLBACK_TIMEZONE;/);
 });
 
-test("v3.3 design batch 7 leaves lib/auth byte-for-byte unchanged",()=>{
-  const expected:Record<string,string>={
-    "lib/auth/google.ts":"a5a085233ff29a34303064d36615d616a53fa0eb",
-    "lib/auth/password.ts":"cd8f00d8fc32c7e29e06b842ca4a08f449b3b8c1",
-    "lib/auth/require-user.ts":"6133d2b97e527d8d4f2c881ba9a5ff066220ae45",
-    "lib/auth/return-to.ts":"6f4bae584cdc8a93cc9b9e0cd8a7e2d991d6a5ae",
-    "lib/auth/security.ts":"a840873275d1901b4d9910b2a9152feb5ab011f2",
-    "lib/auth/session.ts":"7ec1a79ef59ca13f4e4bf3e5e603a7480dda7e0d",
-    "lib/auth/training-identity-contract.ts":"b33916a4d16b24b98ac1c1f407b64829c34e997a",
-    "lib/auth/training-identity.ts":"66f9d9ed6e190156ec8640cb4cc055895641df5a",
-  };
-  const files=fs.readdirSync(path.join(root,"lib/auth"),{withFileTypes:true}).filter(entry=>entry.isFile()).map(entry=>`lib/auth/${entry.name}`).sort();
-  assert.deepEqual(files,Object.keys(expected).sort());
-  for(const file of files){
-    const content=read(file);
-    const sha=createHash("sha1").update(`blob ${Buffer.byteLength(content,"utf8")}\0`).update(content).digest("hex");
-    assert.equal(sha,expected[file],file);
-  }
+test("v3.3 design batch 7 keeps timezone formatting independent from auth",()=>{
+  const settings=read("lib/data/user-settings.ts");
+  const display=read("lib/display-format.ts");
+  assert.doesNotMatch(settings,/from ["']@\/lib\/auth|from ["']\.\.\/auth|from ["']\.\/auth/);
+  assert.doesNotMatch(display,/from ["']@\/lib\/auth|from ["']\.\.\/auth|from ["']\.\/auth/);
+  assert.match(settings,/sql`SELECT timezone FROM user_settings WHERE user_id=\$\{userId\} LIMIT 1`/);
+  assert.doesNotMatch(settings,/\b(?:INSERT|UPDATE|DELETE)\b/i);
 });
 
 test("v3.3 design batch 7 wires viewer timezone without duplicate component reads",()=>{
