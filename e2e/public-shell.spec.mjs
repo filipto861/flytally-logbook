@@ -263,3 +263,62 @@ test("connection access update disables duplicate submit and persists",async({pa
   await expect(persisted.getByLabel("Relationship")).toHaveValue("instructor");
   await expect(persisted.getByLabel("Allow read-only logbook view")).toBeChecked();
 });
+
+
+test("flight detail tabs support roving keyboard selection",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights");
+  const row=page.getByRole("row",{name:/OK-E2E/});
+  await row.getByRole("link",{name:"Open flight LKLT to LKPR"}).click();
+
+  const overview=page.getByRole("tab",{name:"Overview"});
+  const gps=page.getByRole("tab",{name:/GPS track/});
+  const logbook=page.getByRole("tab",{name:"Logbook data"});
+  await expect(overview).toHaveAttribute("aria-selected","true");
+  await expect(overview).toHaveAttribute("tabindex","0");
+  await expect(gps).toHaveAttribute("tabindex","-1");
+  await expect(logbook).toHaveAttribute("tabindex","-1");
+
+  await overview.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(logbook).toBeFocused();
+  await expect(logbook).toHaveAttribute("aria-selected","true");
+
+  await page.keyboard.press("Home");
+  await expect(overview).toBeFocused();
+  await expect(overview).toHaveAttribute("aria-selected","true");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(gps).toBeFocused();
+  await expect(gps).toHaveAttribute("aria-selected","true");
+
+  await page.keyboard.press("End");
+  await expect(logbook).toBeFocused();
+  await expect(logbook).toHaveAttribute("aria-selected","true");
+});
+
+test("touch target hardening keeps the mobile top bar and quick-aircraft dialog inside the viewport",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights/new");
+  await expectNoHorizontalOverflow(page);
+
+  const mobileToggle=page.getByRole("button",{name:"Open navigation"});
+  if(await mobileToggle.isVisible()){
+    const toggleBox=await mobileToggle.boundingBox();
+    expect(toggleBox?.width??0).toBeGreaterThanOrEqual(44);
+    const bell=page.getByRole("link",{name:/^Notifications/});
+    const bellBox=await bell.boundingBox();
+    expect(bellBox?.width??0).toBeGreaterThanOrEqual(44);
+  }
+
+  await page.getByRole("button",{name:"Add aircraft",exact:true}).click();
+  const dialog=page.getByRole("dialog",{name:"Add aircraft"});
+  await expect(dialog).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  if(await mobileToggle.isVisible()){
+    const close=dialog.getByRole("button",{name:"Close"});
+    const closeBox=await close.boundingBox();
+    expect(closeBox?.width??0).toBeGreaterThanOrEqual(44);
+  }
+});
