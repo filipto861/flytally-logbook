@@ -386,3 +386,30 @@ button[data-loading="true"]::after{
 }
 
 .pending-action-label{display:grid;place-items:center}.pending-action-label>span{grid-area:1/1}.pending-action-label-reserve{visibility:hidden;pointer-events:none}
+
+
+/* Batch 8 — shared public legal layout. Keep public/legal copy on the same spacing tokens as the product UI. */
+.legal-page-shell{
+  width:100%;
+  max-width:900px;
+  margin-inline:auto;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:var(--ui-section-gap);
+}
+.legal-page-shell-wide{max-width:960px}
+.legal-page-shell > :where(.page-heading,.panel,.legal-page-note){margin-block:0}
+.legal-section-stack{display:grid;gap:var(--ui-section-gap)}
+.legal-card-list{display:grid;gap:var(--ui-card-gap)}
+.legal-list-item{padding-bottom:var(--ui-card-gap);border-bottom:1px solid var(--border)}
+.legal-list-item h2{margin-bottom:6px}
+.legal-stage-line{margin:6px 0 0}
+.legal-summary{margin:0}
+.legal-card-copy{margin:4px 0 0}
+.legal-copy-tight{margin:4px 0}
+.legal-page-note{font-size:.78rem}
+.legal-footer{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;color:var(--text-soft);font-size:.72rem;opacity:1}
+.legal-footer.compact{gap:6px 10px;font-size:.67rem}
+.legal-footer-link{text-decoration:underline;text-underline-offset:2px}
+
+.legal-footer-slot{margin-top:var(--ui-card-gap)}

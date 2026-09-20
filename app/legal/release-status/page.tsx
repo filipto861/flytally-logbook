@@ -12,7 +12,7 @@ export default function ReleaseStatusPage(){
   const enabled=audit.commercialLaunchEnabled;
   const transitionReady=audit.verdict==="READY_FOR_TRANSITION";
 
-  return <main className="page-shell" style={{maxWidth:"900px",margin:"0 auto"}}>
+  return <main className="page-shell legal-page-shell">
     <div className="page-heading">
       <div>
         <p className="eyebrow">LEGAL · RELEASE STATUS</p>

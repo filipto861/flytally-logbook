@@ -8,8 +8,8 @@ export async function generateMetadata({params}:{params:Promise<{document:string
 
 export default async function LegalDocumentPage({params}:{params:Promise<{document:string}>}){
   const key=(await params).document as LegalDocumentKey,doc=legalDocuments[key];if(!doc)notFound();
-  return <main className="page-shell" style={{maxWidth:"900px",margin:"0 auto"}}>
+  return <main className="page-shell legal-page-shell">
     <div className="page-heading"><div><p className="eyebrow">LEGAL · EFFECTIVE {LEGAL_EFFECTIVE_DATE.toUpperCase()}</p><h1>{doc.title}</h1><p className="muted">{doc.summary}</p></div><Link className="secondary-button" href="/legal">All legal notices</Link></div>
-    <section className="panel" style={{display:"grid",gap:"24px"}}>{doc.sections.map(section=><article key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</article>)}</section>
+    <section className="panel legal-section-stack">{doc.sections.map(section=><article key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</article>)}</section>
   </main>;
 }

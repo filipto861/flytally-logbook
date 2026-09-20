@@ -122,12 +122,32 @@ test("v3.3 design batch 2 hardens light normal-text contrast without changing br
 test("v3.3 design batch 2 removes compounded footer opacity",()=>{
   const shell=read("components/app-shell.tsx");
   const legal=read("components/legal-footer.tsx");
+  const css=read("app/ui-system.css");
+  const globals=read("app/globals.css");
 
-  for(const source of [shell,legal]){
-    assert.match(source,/color:"var\(--text-soft\)"/);
-    assert.match(source,/opacity:1/);
-    assert.doesNotMatch(source,/color:"var\(--muted\)",opacity:\.72/);
-  }
+  assert.match(shell,/color:"var\(--text-soft\)"/);
+  assert.match(shell,/opacity:1/);
+  assert.doesNotMatch(shell,/color:"var\(--muted\)",opacity:\.72/);
+
+  assert.match(legal,/className=\{`legal-footer\$\{compact\?" compact":""\}`\}/);
+  const footerRule=css.match(/\.legal-footer\{([^}]*)\}/)?.[1]??"";
+  const compactRule=css.match(/\.legal-footer\.compact\{([^}]*)\}/)?.[1]??"";
+  const linkRule=css.match(/\.legal-footer-link\{([^}]*)\}/)?.[1]??"";
+  assert.match(footerRule,/color:var\(--text-soft\)/);
+  assert.match(footerRule,/font-size:\.72rem/);
+  assert.match(footerRule,/opacity:1/);
+  assert.match(compactRule,/font-size:\.67rem/);
+  assert.doesNotMatch(footerRule,/font-weight:/);
+  assert.doesNotMatch(compactRule,/font-weight:/);
+  assert.doesNotMatch(linkRule,/font-weight:/);
+  assert.doesNotMatch(footerRule,/opacity:(?:0(?:\D|$)|0?\.\d+)/);
+  assert.doesNotMatch(linkRule,/opacity:(?:0(?:\D|$)|0?\.\d+)/);
+  assert.doesNotMatch(linkRule,/color:/);
+  assert.match(globals,/a \{ color:inherit; text-decoration:none; \}/);
+
+  const order=["Privacy","Terms","Cookies","Aviation safety","Providers","Report"].map(label=>legal.indexOf(`["${label}",`));
+  assert.ok(order.every(index=>index>=0));
+  assert.deepEqual([...order].sort((a,b)=>a-b),order);
 });
 
 test("v3.3 design batch 2 makes the legacy GPS profile use theme chart tokens",()=>{
@@ -671,4 +691,65 @@ test("v3.3 design batch 7b leaves no bare en-GB date-time locale calls on its au
     assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']\s*\)/i,file);
     assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']\s*\)/i,file);
   }
+});
+
+
+test("v3.3 design batch 8 wraps audited protected secondary routes in ui-page-stack",()=>{
+  for(const file of [
+    "app/(protected)/admin/page.tsx",
+    "app/(protected)/connections/logbook/[id]/page.tsx",
+    "app/(protected)/flights/[id]/share/page.tsx",
+  ]){
+    const source=read(file);
+    assert.match(source,/className="ui-page-stack"/,file);
+  }
+});
+
+test("v3.3 design batch 8 uses canonical Share headers in both flight states",()=>{
+  const source=read("app/(protected)/flights/[id]/share/page.tsx");
+  assert.equal((source.match(/className="page-header"/g)??[]).length,2);
+  assert.doesNotMatch(source,/className="page-heading"/);
+  assert.doesNotMatch(source,/className="page-shell"/);
+  assert.equal((source.match(/>Back to flight<\/Link>/g)??[]).length,2);
+});
+
+test("v3.3 design batch 8 moves public legal layout styles out of JSX",()=>{
+  const legalFiles:string[]=[];
+  const walk=(dir:string)=>{for(const entry of fs.readdirSync(path.join(root,dir),{withFileTypes:true})){const rel=path.join(dir,entry.name);if(entry.isDirectory())walk(rel);else if(entry.name.endsWith(".tsx"))legalFiles.push(rel.replaceAll("\\","/"))}};
+  walk("app/legal");
+  for(const file of legalFiles)assert.doesNotMatch(read(file),/style=\{\{/,file);
+
+  const index=read("app/legal/page.tsx");
+  const document=read("app/legal/[document]/page.tsx");
+  const commercial=read("app/legal/commercial/page.tsx");
+  const regulatory=read("app/legal/regulatory/page.tsx");
+  const brand=read("app/legal/brand-claims/page.tsx");
+  const release=read("app/legal/release-status/page.tsx");
+  const footer=read("components/legal-footer.tsx");
+  assert.match(index,/page-shell legal-page-shell/);
+  assert.match(document,/page-shell legal-page-shell/);
+  assert.match(commercial,/page-shell legal-page-shell/);
+  assert.match(regulatory,/page-shell legal-page-shell legal-page-shell-wide/);
+  assert.match(brand,/page-shell legal-page-shell legal-page-shell-wide/);
+  assert.match(brand,/panel legal-section-stack/);
+  assert.match(brand,/className="legal-list-item"/);
+  assert.match(release,/page-shell legal-page-shell/);
+  assert.match(footer,/legal-footer/);
+
+  const css=read("app/ui-system.css");
+  assert.match(css,/\.legal-page-shell\{[\s\S]*max-width:900px;[\s\S]*gap:var\(--ui-section-gap\)/);
+  assert.match(css,/\.legal-page-shell-wide\{max-width:960px\}/);
+  assert.match(css,/\.legal-section-stack\{display:grid;gap:var\(--ui-section-gap\)\}/);
+  assert.match(css,/\.legal-card-list\{display:grid;gap:var\(--ui-card-gap\)\}/);
+  assert.match(css,/\.legal-list-item\{padding-bottom:var\(--ui-card-gap\);border-bottom:1px solid var\(--border\)\}/);
+});
+
+test("v3.3 design batch 8 moves repeated public auth legal-footer spacing into the shared rhythm",()=>{
+  for(const file of ["app/login/page.tsx","app/join/page.tsx"]){
+    const source=read(file);
+    assert.match(source,/className="legal-footer-slot"/,file);
+    assert.doesNotMatch(source,/style=\{\{[^}]*marginTop:/,file);
+  }
+  assert.doesNotMatch(read("app/reset-password/page.tsx"),/style=\{\{/);
+  assert.match(read("app/ui-system.css"),/\.legal-footer-slot\{margin-top:var\(--ui-card-gap\)\}/);
 });
