@@ -35,7 +35,8 @@
     font-size:16px;
   }
   :where(input[type="checkbox"],input[type="radio"]){min-width:20px;min-height:20px}
-  .sidebar-brand a[aria-label^="Notifications"]{min-width:44px;min-height:44px}
+  :where(.mobile-toggle,.sidebar-toggle,.modal-close,.aircraft-crop-close,.play-button,.sidebar-brand a[aria-label^="Notifications"]){min-inline-size:44px}
+  .sidebar-brand a[aria-label^="Notifications"]{min-height:44px}
 }
 
 @media (prefers-reduced-motion:reduce){
