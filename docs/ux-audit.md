@@ -103,3 +103,8 @@ Batch 4 maps every empty-state variant onto exactly two existing visual patterns
 - full `.flight-empty-state` for a whole workspace/panel empty state.
 
 No mapping removes content or a call-to-action. The complete per-instance inventory is recorded in PR #140 before UI implementation.
+
+
+## Batch 6 form inventory gate
+
+Batch 6 implements UX-015 and UX-016 only after a complete source-form inventory is recorded in PR #142. The PR table classifies every source `<form>` pattern as required-only, optional-only/action-only, or mixed before any runtime form code is changed.
