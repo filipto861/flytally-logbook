@@ -26,7 +26,7 @@ export function AircraftSharePanel({aircraft,connections,action}:{aircraft:Row;c
       </div>
       <p className="aircraft-share-privacy">This is a one-time copy, not shared ownership. Future edits, prices and photos are not synchronized.</p>
       <button className="primary-button" disabled={pending}>{pending?"Sending…":"Send aircraft profile"}</button>
-      {state.message?<p className={state.ok?"form-success":"form-error"} role="status">{state.message}</p>:null}
+      {state.message?<p className={state.ok?"form-success":"form-error"} role={state.ok?"status":"alert"}>{state.message}</p>:null}
     </form>}
   </section>;
 }
