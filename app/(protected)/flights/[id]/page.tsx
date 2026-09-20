@@ -27,6 +27,7 @@ import { costTotalsLabel,type FlightExpenseRecord } from "@/lib/flight-expenses"
 import { FlightExpensesStandalone } from "@/components/flight-expenses-standalone";
 import { PendingActionButton } from "@/components/pending-action-button";
 import { PendingActionLabel } from "@/components/pending-action-label";
+import { formatDateOnly } from "@/lib/display-format";
 
 type Context={q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string;saved?:string};
 const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value&&key!=="tab"&&key!=="saved")query.set(key,value);return query.toString()};
@@ -84,7 +85,7 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const badge=certified?<span className="flight-lock-badge">CERTIFIED R{recordRevision}</span>:correctionDraft?<span className="flight-lock-badge">CORRECTION R{recordRevision}</span>:locked?<span className="flight-lock-badge">LOCKED</span>:null;
   const workflow={certified,correctionDraft,locked,blockers:blockers.length,recordRevision,shareHref:`/flights/${id}/share`};
   const canDelete=participantOwned&&!certified||!locked&&!hasCertifiedHistory,hasMoreActions=hasCertifiedHistory||canDelete;
-  const displayDate=/^\d{4}-\d{2}-\d{2}$/.test(flight.date)?new Date(`${flight.date}T00:00:00`).toLocaleDateString("en-GB"):flight.date;
+  const displayDate=formatDateOnly(flight.date);
   const role=String(flight.role??"").trim().toUpperCase(),approval=approvalRows[0],verification=verificationRows[0],verificationCredentials=storedObject(verification?.credential_snapshot),inPersonSigned=Boolean(verification)&&String(verificationCredentials.source??"")==="In-person handwritten signature",flyTallySigned=Boolean(verification)&&!inPersonSigned,verificationName=inPersonSigned?String(verificationCredentials.identity??"Instructor"):String(verification?.signer_name??approval?.instructor_name??"Instructor"),trainingRole=["DUAL","SPIC","PICUS"].includes(role),requestApproval=requestInstructorApproval.bind(null,id),cancelApproval=cancelInstructorApproval.bind(null,id);
   const verificationState=verification?inPersonSigned?"in-person":"flytally":"",approvalRequestLabel=instructors.length===1?`Request approval from ${String(instructors[0].display_name)}`:"Request approval";
   const approvalClass=verification?"approved":String(approval?.status??"");

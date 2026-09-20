@@ -9,6 +9,7 @@ import { dashboardLayoutFromPreferences,dashboardOverviewLayout,defaultDashboard
 import { parseRecencySnapshot } from "@/lib/recency-service";
 import { getIntelligentLogbookAttention } from "@/lib/intelligent-logbook-service";
 import { getPendingActionCount } from "@/lib/pending-actions";
+import { formatDateOnly } from "@/lib/display-format";
 
 export const metadata={title:"Dashboard | FlyTally"};
 const periods=[["all","All time"],["year","This year"],["12m","Last 12 months"],["previous","Previous year"]] as const;
@@ -47,7 +48,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
     if(id==="total-time")return <article className="hero-metric"><span>Flying time</span><strong>{formatDuration(data.total.minutes)}</strong><p>{data.total.flights} flights · {data.total.landings} landings</p>{data.safetyMinutes>0?<small className="dashboard-total-note">Includes {formatDuration(data.safetyMinutes)} safety pilot time · dashboard only</small>:null}</article>;
     if(id==="ull-time")return <CategoryCard title="ULL" data={data.ull}/>;
     if(id==="easa-time")return <CategoryCard title="EASA" data={data.easa}/>;
-    if(id==="last-flight")return <Link className="panel dashboard-quick-card" href={data.lastFlight?`/flights/${data.lastFlight.id}`:"/flights"}><span>Last flight</span><strong>{data.lastFlight?`${data.lastFlight.date} · ${data.lastFlight.registration}`:"—"}</strong><small>{data.lastFlight?`${data.lastFlight.departure} → ${data.lastFlight.arrival}`:"No flight recorded yet"}</small></Link>;
+    if(id==="last-flight")return <Link className="panel dashboard-quick-card" href={data.lastFlight?`/flights/${data.lastFlight.id}`:"/flights"}><span>Last flight</span><strong>{data.lastFlight?`${formatDateOnly(data.lastFlight.date)} · ${data.lastFlight.registration}`:"—"}</strong><small>{data.lastFlight?`${data.lastFlight.departure} → ${data.lastFlight.arrival}`:"No flight recorded yet"}</small></Link>;
     if(id==="gps-tracks")return <Link className="panel dashboard-quick-card" href="/map"><span>GPS tracks</span><strong>{data.gpsKm.toFixed(0)} km</strong><small>{data.tracks} tracks · open map</small></Link>;
     return null;
   };
@@ -58,7 +59,7 @@ export default async function DashboardPage({searchParams}:{searchParams:Promise
       {visibleLayout.map(item=><div key={item.id} data-dashboard-widget={item.id} data-dashboard-size={item.size} className={`dashboard-widget dashboard-size-${item.size}`}>{renderWidget(item.id)}</div>)}
     </section>
 
-    {recencySnapshot?<Link href="/credentials" className={`dashboard-recency-status dashboard-recency-${recencySnapshot.status}`}><span>Recency</span><strong>{recencySnapshot.label}</strong>{recencySnapshot.nextDate?<small>Next date {recencySnapshot.nextDate}</small>:<small>Open details</small>}</Link>:null}
+    {recencySnapshot?<Link href="/credentials" className={`dashboard-recency-status dashboard-recency-${recencySnapshot.status}`}><span>Recency</span><strong>{recencySnapshot.label}</strong>{recencySnapshot.nextDate?<small>Next date {formatDateOnly(recencySnapshot.nextDate)}</small>:<small>Open details</small>}</Link>:null}
 
     <section className="panel">
       <div className="section-heading"><div><p className="eyebrow">QUICK ACTIONS</p><h2>Where next?</h2><p className="muted">Everyday actions stay here. Historical analysis stays in Statistics.</p></div></div>

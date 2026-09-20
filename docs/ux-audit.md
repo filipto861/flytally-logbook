@@ -114,3 +114,12 @@ Implementation safeguards:
 - Label text and the cue share one inline label-text wrapper so narrow layouts do not gain a new grid row.
 - A source comparison against `main` confirms that no native `required` attribute or conditional requirement changed.
 - UX-016 changes only existing error presentation/announcement; validation, actions, payloads, redirects, calculations and the flight review panel remain unchanged.
+
+
+## Batch 7 display-formatting addendum
+
+The approved Batch 7 call-site review extends the same finding classes to these previously ambiguous presentation surfaces:
+- UX-017 also covers the legacy `components/track-profile.tsx` GPS sample time and `components/track-manager.tsx` `startUtc` display. Both are UTC timeline/evidence presentation and use a literal ` UTC` suffix.
+- UX-019 also covers `components/aircraft-qualifications-section.tsx` date-only displays for `completed_on`, `first_date` and `last_date`. Form values and stored ISO values remain unchanged.
+
+These additions are presentation-only. They do not change stored values, sorting, filtering, URLs, form values, flight calculations, GPS inference or certified/FCL.050 evidence formatting.

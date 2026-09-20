@@ -411,3 +411,80 @@ test("v3.3 design batch 6 keeps one form-level alert for affected existing error
     assert.equal((read(file).match(/role="alert"/g)??[]).length,1,file);
   }
 });
+
+
+test("v3.3 design batch 7 formats date-only values without timezone conversion",async()=>{
+  const {formatDateOnly}=await import("../lib/display-format.ts");
+  assert.equal(formatDateOnly("2026-01-01"),"01/01/2026");
+  assert.equal(formatDateOnly("2026-12-31"),"31/12/2026");
+  for(const invalid of ["","2026-02-29","2026-04-31","not-a-date"])assert.equal(formatDateOnly(invalid),invalid);
+
+  const oldTz=process.env.TZ;
+  try{
+    for(const zone of ["America/Los_Angeles","Pacific/Auckland"]){
+      process.env.TZ=zone;
+      assert.equal(formatDateOnly("2026-01-01"),"01/01/2026",zone);
+      assert.equal(formatDateOnly("2026-12-31"),"31/12/2026",zone);
+    }
+  }finally{
+    if(oldTz===undefined)delete process.env.TZ;else process.env.TZ=oldTz;
+  }
+
+  const daysInMonth=(year:number,month:number)=>[31,year%4===0&&(year%100!==0||year%400===0)?29:28,31,30,31,30,31,31,30,31,30,31][month-1];
+  for(const year of [2024,2026])for(let month=1;month<=12;month++)for(let day=1;day<=daysInMonth(year,month);day++){
+    const iso=`${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const legacy=new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB");
+    assert.equal(formatDateOnly(iso),legacy,iso);
+  }
+
+  const helper=read("lib/display-format.ts");
+  const start=helper.indexOf("export function formatDateOnly");
+  const end=helper.indexOf("\n}\n\nfunction parsedDate",start)+2;
+  assert.ok(start>=0&&end>start);
+  assert.doesNotMatch(helper.slice(start,end),/new Date|Date[.]/);
+});
+
+test("v3.3 design batch 7 keeps GPS timeline timestamps explicitly UTC",()=>{
+  const player=read("components/flight-track-player.tsx");
+  const legacy=read("components/track-profile.tsx");
+  const manager=read("components/track-manager.tsx");
+  const importReview=read("components/gps-import-review-player.tsx");
+  assert.match(player,/formatUtcTime\(current\.time\)/);
+  assert.match(legacy,/formatUtcTime\(current\.time\)/);
+  assert.match(manager,/formatUtcDateTime\(t\.startUtc\)/);
+  assert.match(importReview,/timeZone:"UTC"\}\)\+" UTC"/);
+  assert.doesNotMatch(player,/toLocaleTimeString\("en-GB"/);
+  assert.doesNotMatch(legacy,/toLocaleTimeString\(['"]en-GB['"]/);
+  assert.doesNotMatch(manager,/toLocaleString\("en-GB"/);
+});
+
+test("v3.3 design batch 7 uses one altitude conversion contract and keeps chart geometry in metres",async()=>{
+  const units=await import("../lib/aviation-units.ts");
+  assert.equal(units.METERS_TO_FEET,3.28084);
+  assert.equal(units.metersToFeet(1000),3281);
+  for(const file of ["components/track-profile.tsx","components/flight-track-player.tsx","components/gps-import-review-player.tsx"]){
+    const source=read(file);
+    assert.match(source,/metersToFeet/);
+    assert.doesNotMatch(source,/3[.]28084/);
+  }
+  const legacy=read("components/track-profile.tsx");
+  assert.match(legacy,/metersToFeet\(maxAlt\)\} ft · \{Math\.round\(maxAlt\)\} m/);
+  assert.match(legacy,/metersToFeet\(current\.alt\)\} ft · \{Math\.round\(Number\(current\.alt\)\)\} m/);
+  assert.match(legacy,/const line=profile\.map/);
+  assert.doesNotMatch(legacy,/<text\b|axis|tick/i);
+});
+
+test("v3.3 design batch 7 routes audited date-only displays through formatDateOnly",()=>{
+  const checks:Record<string,string[]>={
+    "app/(protected)/dashboard/page.tsx":["formatDateOnly(data.lastFlight.date)","formatDateOnly(recencySnapshot.nextDate)"],
+    "app/(protected)/statistics/page.tsx":["formatDateOnly(data.career.firstDate)","formatDateOnly(data.career.lastDate)","formatDateOnly(row.firstDate)","formatDateOnly(row.lastDate)"],
+    "components/recency-panel.tsx":["formatDateOnly(item.forecastDate)","formatDateOnly(item.deadline)","formatDateOnly(row.date)","formatDateOnly(row.dropOffDate)","formatDateOnly(item.date)"],
+    "app/(protected)/flights/page.tsx":["formatDateOnly(f.date)"],
+    "app/(protected)/flights/[id]/page.tsx":["formatDateOnly(flight.date)"],
+    "components/aircraft-qualifications-section.tsx":["formatDateOnly(t(row.completed_on))","formatDateOnly(t(row.first_date))","formatDateOnly(t(row.last_date))"],
+  };
+  for(const [file,needles] of Object.entries(checks)){
+    const source=read(file);
+    for(const needle of needles)assert.ok(source.includes(needle),`${file}: ${needle}`);
+  }
+});
