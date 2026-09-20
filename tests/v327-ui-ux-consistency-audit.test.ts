@@ -595,3 +595,34 @@ test("v3.3 design batch 7 prevents bare en-GB date-time locale calls on touched 
     assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']\s*,\s*\{(?![^}]*timeZone\s*:)[^}]*\}\s*\)/i,file);
   }
 });
+
+
+test("v3.3 design batch 7b replaces dormant TrackProfile glyph controls with the shared accessible icon contract",()=>{
+  const source=read("components/track-profile.tsx");
+  assert.match(source,/import \{ NavIcon \} from ["']@\/components\/nav-icon["']/);
+  assert.match(source,/aria-label=\{playing\?"Pause track":"Play track"\}/);
+  assert.match(source,/<NavIcon name=\{playing\?"pause":"play"\}\/>/);
+  assert.doesNotMatch(source,/▶|❚❚/);
+});
+
+test("v3.3 design batch 7b routes remaining date-only displays through formatDateOnly",()=>{
+  const checks:Record<string,string[]>={
+    "components/flight-trash.tsx":["formatDateOnly(flight.date)"],
+    "components/aircraft-manager.tsx":["formatDateOnly(t(rate.valid_from))","formatDateOnly(t(item.current_price_valid_from))"],
+    "components/dashboard-details.tsx":["formatDateOnly(row.lastDate)","formatDateOnly(row.firstDate)","formatDateOnly(row.date)"],
+    "app/(protected)/connections/aircraft/[id]/page.tsx":["formatDateOnly(snapshot.currentRate.validFrom)"],
+  };
+  for(const [file,needles] of Object.entries(checks)){const source=read(file);for(const needle of needles)assert.ok(source.includes(needle),`${file}: ${needle}`)}
+  const dashboard=read("lib/data/dashboard.ts");
+  assert.match(dashboard,/new Date\(Date\.UTC\(today\.getUTCFullYear\(\),today\.getUTCMonth\(\)-12,today\.getUTCDate\(\)\+1\)\)/);
+  assert.match(dashboard,/start:iso\(start\),end:iso\(today\),label:`\$\{formatDateOnly\(iso\(start\)\)\}–\$\{formatDateOnly\(iso\(today\)\)\}`/);
+  assert.doesNotMatch(dashboard,/toLocaleDateString\(["']en-GB["']\)/);
+});
+
+test("v3.3 design batch 7b removes redundant check prefixes from backup and trash status copy",()=>{
+  for(const file of ["components/backup-center.tsx","components/backup-restore.tsx","components/flight-trash.tsx"])assert.doesNotMatch(read(file),/✓/,file);
+  const restore=read("components/backup-restore.tsx");
+  assert.match(restore,/>Backup validated</);
+  assert.match(restore,/>Certified evidence verified:/);
+  assert.match(restore,/>All recoverable records from this backup are already present\./);
+});
