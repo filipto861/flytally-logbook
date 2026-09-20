@@ -116,6 +116,13 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await loginBrowserPilot(page,"/dashboard");
 
   await expectAuthenticatedRoute(page,"At a glance");
+  const mobileToggle=page.getByRole("button",{name:"Open navigation"});
+  if(await mobileToggle.isVisible()){
+    const toggleBox=await mobileToggle.boundingBox();
+    expect(toggleBox?.width??0).toBeGreaterThanOrEqual(44);
+    const bellBox=await page.getByRole("link",{name:/^Notifications/}).boundingBox();
+    expect(bellBox?.width??0).toBeGreaterThanOrEqual(44);
+  }
   const session=(await context.cookies()).find(cookie=>cookie.name==="logbook_session");
   expect(session).toBeTruthy();
   expect(session?.httpOnly).toBeTruthy();
