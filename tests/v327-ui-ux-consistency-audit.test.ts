@@ -253,3 +253,46 @@ test("v3.3 design batch 4 removes photo-only aircraft elevation",()=>{
   assert.doesNotMatch(sharing,/\.aircraft-card\.with-photo/);
   assert.match(sharing,/\.aircraft-card\{[^}]*align-self:stretch;[^}]*height:100%/);
 });
+
+
+test("v3.3 design batch 5 gives the aircraft photo editor the established modal focus lifecycle",()=>{
+  const source=read("components/aircraft-photo-editor.tsx");
+  assert.match(source,/cropOpener=useRef<HTMLElement\|null>/);
+  assert.match(source,/cropClose=useRef<HTMLButtonElement\|null>/);
+  assert.match(source,/requestAnimationFrame\(\(\)=>cropClose[.]current[?][.]focus\(\)\)/);
+  assert.match(source,/event[.]key==="Escape"\)\{event[.]preventDefault\(\);cancelCover\(\);return\}/);
+  assert.match(source,/event[.]key!=="Tab"\|\|!cropDialog[.]current/);
+  assert.match(source,/event[.]shiftKey&&document[.]activeElement===first/);
+  assert.match(source,/document[.]activeElement===last/);
+  assert.match(source,/cropOpener[.]current=event[.]currentTarget/);
+  assert.match(source,/requestAnimationFrame\(\(\)=>cropOpener[.]current[?][.]focus\(\)\)/);
+});
+
+test("v3.3 design batch 5 implements roving keyboard behavior for flight detail tabs",()=>{
+  const source=read("components/flight-detail-workspace.tsx");
+  assert.match(source,/const TABS:Tab\[\]=\["overview","gps","logbook"\]/);
+  assert.match(source,/tabIndex=\{tab===value[?]0:-1\}/);
+  for(const key of ["ArrowRight","ArrowLeft","Home","End"])assert.ok(source.includes(`event.key==="${key}"`),key);
+  assert.match(source,/\(current\+1\)%TABS[.]length/);
+  assert.match(source,/\(current-1\+TABS[.]length\)%TABS[.]length/);
+  assert.match(source,/document[.]getElementById\(`flight-tab-\$\{nextTab\}`\)[?][.]focus\(\)/);
+  assert.match(source,/aria-controls=\{`flight-panel-\$\{value\}`\}/);
+  assert.match(source,/aria-labelledby=\{`flight-tab-\$\{tab\}`\}/);
+});
+
+test("v3.3 design batch 5 gives audited icon-only coarse-pointer controls a 44px logical minimum",()=>{
+  const source=read("app/v300-u6-acceptance.css");
+  const rule=/:where\(\.mobile-toggle,\.sidebar-toggle,\.modal-close,\.aircraft-crop-close,\.play-button,\.sidebar-brand a\[aria-label\^="Notifications"\]\)\{min-inline-size:44px\}/;
+  assert.match(source,rule);
+  assert.match(source,/@media \(max-width:820px\),\(pointer:coarse\)\{/);
+});
+
+test("v3.3 design batch 5 restores the canonical focus contract for both audited outliers",()=>{
+  const globals=read("app/globals.css");
+  const canonical=read("app/v150-ui-system.css");
+  const publicViewer=read("app/v301-public-flight-viewer.css");
+  assert.doesNotMatch(globals,/\.aircraft-catalog-results button:focus[^\{]*\{[^}]*outline:none/);
+  assert.match(globals,/\.aircraft-catalog-results button:hover\{background:var\(--panel2\)\}/);
+  assert.match(canonical,/:where\(a,button,input,select,textarea,summary,\[tabindex\]\):focus-visible\{outline:2px solid var\(--focus-color\);outline-offset:2px;box-shadow:var\(--focus-ring\)\}/);
+  assert.match(publicViewer,/\.public-flight-theme-toggle button:focus-visible\{outline:2px solid var\(--focus-color\);outline-offset:2px\}/);
+});
