@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -486,5 +487,121 @@ test("v3.3 design batch 7 routes audited date-only displays through formatDateOn
   for(const [file,needles] of Object.entries(checks)){
     const source=read(file);
     for(const needle of needles)assert.ok(source.includes(needle),`${file}: ${needle}`);
+  }
+});
+
+
+test("v3.3 design batch 7 formats local timestamps with deterministic numeric en-GB output",async()=>{
+  const {FALLBACK_TIMEZONE,formatLocalDateTime}=await import("../lib/display-format.ts");
+  assert.equal(FALLBACK_TIMEZONE,"Europe/Prague");
+  assert.equal(formatLocalDateTime("2026-09-20T07:35:00Z","Europe/Prague"),"20/09/2026, 09:35");
+  assert.equal(formatLocalDateTime("2026-09-20T07:35:00Z","America/New_York"),"20/09/2026, 03:35");
+
+  assert.equal(formatLocalDateTime("2026-03-29T00:30:00Z","Europe/Prague"),"29/03/2026, 01:30");
+  assert.equal(formatLocalDateTime("2026-03-29T01:30:00Z","Europe/Prague"),"29/03/2026, 03:30");
+  assert.equal(formatLocalDateTime("2026-03-08T06:30:00Z","America/New_York"),"08/03/2026, 01:30");
+  assert.equal(formatLocalDateTime("2026-03-08T07:30:00Z","America/New_York"),"08/03/2026, 03:30");
+
+  assert.equal(formatLocalDateTime("2026-09-20T07:35:00Z","Not/A_Zone"),formatLocalDateTime("2026-09-20T07:35:00Z","Europe/Prague"));
+  for(const value of [null,"","not-a-date"]){
+    const expected=value==null?"":String(value);
+    assert.doesNotThrow(()=>formatLocalDateTime(value,"Not/A_Zone"));
+    assert.equal(formatLocalDateTime(value,"Not/A_Zone"),expected);
+  }
+
+  const helper=read("lib/display-format.ts");
+  const start=helper.indexOf("export function formatLocalDateTime");
+  const local=helper.slice(start);
+  assert.match(local,/new Intl\.DateTimeFormat\("en-GB",options\)/);
+  assert.match(local,/day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"/);
+  assert.doesNotMatch(local,/dateStyle|timeStyle/);
+});
+
+test("v3.3 design batch 7 user-timezone data helper falls back without throwing",async()=>{
+  const {getUserTimezone}=await import("../lib/data/user-settings.ts");
+  assert.equal(await getUserTimezone(7,async()=>[]),"Europe/Prague");
+  assert.equal(await getUserTimezone(7,async()=>[{timezone:null}]),"Europe/Prague");
+  assert.equal(await getUserTimezone(7,async()=>[{timezone:"Not/A_Zone"}]),"Europe/Prague");
+  assert.equal(await getUserTimezone(7,async()=>[{timezone:"Pacific/Auckland"}]),"Pacific/Auckland");
+  await assert.doesNotReject(async()=>{
+    assert.equal(await getUserTimezone(7,async()=>{throw new Error("database unavailable")}),"Europe/Prague");
+  });
+
+  const source=read("lib/data/user-settings.ts");
+  assert.match(source,/sql`SELECT timezone FROM user_settings WHERE user_id=\$\{userId\} LIMIT 1`/);
+  assert.doesNotMatch(source,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP)\b/i);
+  assert.match(source,/catch\{\s*return FALLBACK_TIMEZONE;/);
+});
+
+test("v3.3 design batch 7 leaves lib/auth byte-for-byte unchanged",()=>{
+  const expected:Record<string,string>={
+    "lib/auth/google.ts":"a5a085233ff29a34303064d36615d616a53fa0eb",
+    "lib/auth/password.ts":"cd8f00d8fc32c7e29e06b842ca4a08f449b3b8c1",
+    "lib/auth/require-user.ts":"6133d2b97e527d8d4f2c881ba9a5ff066220ae45",
+    "lib/auth/return-to.ts":"6f4bae584cdc8a93cc9b9e0cd8a7e2d991d6a5ae",
+    "lib/auth/security.ts":"a840873275d1901b4d9910b2a9152feb5ab011f2",
+    "lib/auth/session.ts":"7ec1a79ef59ca13f4e4bf3e5e603a7480dda7e0d",
+    "lib/auth/training-identity-contract.ts":"b33916a4d16b24b98ac1c1f407b64829c34e997a",
+    "lib/auth/training-identity.ts":"66f9d9ed6e190156ec8640cb4cc055895641df5a",
+  };
+  const files=fs.readdirSync(path.join(root,"lib/auth"),{withFileTypes:true}).filter(entry=>entry.isFile()).map(entry=>`lib/auth/${entry.name}`).sort();
+  assert.deepEqual(files,Object.keys(expected).sort());
+  for(const file of files){
+    const content=read(file);
+    const sha=createHash("sha1").update(`blob ${Buffer.byteLength(content,"utf8")}\0`).update(content).digest("hex");
+    assert.equal(sha,expected[file],file);
+  }
+});
+
+test("v3.3 design batch 7 wires viewer timezone without duplicate component reads",()=>{
+  const notifications=read("app/(protected)/notifications/page.tsx");
+  assert.match(notifications,/const\[rows,timeZone\]=await Promise\.all\(\[/);
+  assert.match(notifications,/getUserTimezone\(userId\)/);
+  assert.match(notifications,/formatLocalDateTime\(t\(row\.created_at\),timeZone\)/);
+
+  const profile=read("app/(protected)/profile/page.tsx");
+  assert.match(profile,/const\[auth,sessions,access,timeZone\]=await Promise\.all\(\[/);
+  assert.match(profile,/getUserTimezone\(userId\)/);
+  assert.match(profile,/formatLocalDateTime\(t\(item\.last_seen_at\),timeZone\)/);
+
+  const credentials=read("app/(protected)/credentials/legacy-page.tsx");
+  assert.match(credentials,/SELECT preferences_json,timezone FROM user_settings/);
+  assert.match(credentials,/AircraftQualificationsSection timeZone=\{t\(settings\[0\]\?\.timezone\)\}/);
+
+  const qualifications=read("components/aircraft-qualifications-section.tsx");
+  assert.match(qualifications,/AircraftQualificationsSection\(\{timeZone\}:\{timeZone:string\}\)/);
+  assert.match(qualifications,/formatLocalDateTime\(t\(row\.verified_at\),timeZone\)/);
+  assert.doesNotMatch(qualifications,/getUserTimezone|user_settings/);
+
+  const audit=read("components/flight-audit-panel.tsx");
+  assert.match(audit,/FlightAuditPanel\(\{events,timeZone\}:\{events:FlightAuditEvent\[\];timeZone:string\}\)/);
+  assert.match(audit,/formatLocalDateTime\(event\.changedAt,timeZone\)/);
+  assert.doesNotMatch(audit,/getUserTimezone|user_settings|@\/lib\/db/);
+
+  const detail=read("app/(protected)/flights/[id]/page.tsx");
+  assert.doesNotMatch(detail,/FlightAuditPanel|getFlightAudit/);
+});
+
+test("v3.3 design batch 7 prevents bare en-GB date-time locale calls on touched runtime surfaces",()=>{
+  const files=[
+    "app/(protected)/dashboard/page.tsx",
+    "app/(protected)/statistics/page.tsx",
+    "app/(protected)/flights/page.tsx",
+    "app/(protected)/flights/[id]/page.tsx",
+    "app/(protected)/notifications/page.tsx",
+    "app/(protected)/profile/page.tsx",
+    "app/(protected)/credentials/legacy-page.tsx",
+    "components/recency-panel.tsx",
+    "components/aircraft-qualifications-section.tsx",
+    "components/flight-audit-panel.tsx",
+    "components/track-profile.tsx",
+    "components/flight-track-player.tsx",
+    "components/gps-import-review-player.tsx",
+    "components/track-manager.tsx",
+  ];
+  for(const file of files){
+    const source=read(file);
+    assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']/i,file);
+    assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']/i,file);
   }
 });

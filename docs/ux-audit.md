@@ -123,3 +123,14 @@ The approved Batch 7 call-site review extends the same finding classes to these 
 - UX-019 also covers `components/aircraft-qualifications-section.tsx` date-only displays for `completed_on`, `first_date` and `last_date`. Form values and stored ISO values remain unchanged.
 
 These additions are presentation-only. They do not change stored values, sorting, filtering, URLs, form values, flight calculations, GPS inference or certified/FCL.050 evidence formatting.
+
+
+### Batch 7 UX-018 timezone-read exception
+
+The approved UX-018 implementation may read the signed-in viewer's `user_settings.timezone` for presentation only:
+- Notifications adds one parallel `getUserTimezone(userId)` read beside the existing notification query.
+- Settings → Account adds one parallel `getUserTimezone(userId)` read beside the existing account/session queries; Settings → General continues to reuse its existing `user_settings` row.
+- Credentials already reads `user_settings`, so that existing SELECT also returns `timezone` and passes it to `AircraftQualificationsSection`; no extra query is added for Aircraft Training.
+- `FlightAuditPanel` now requires a `timeZone` prop and performs no data access. It currently has no runtime caller after flight-detail Change history was removed, so Batch 7 does not reintroduce a query or the removed panel.
+
+The timezone is always derived from the signed-in session user's ID. Viewing another pilot's shared data must therefore use the viewer's own screen-timezone preference, never the viewed pilot's timezone. Missing, null, invalid or failed timezone reads fall back to `Europe/Prague`. No auth/session shape, stored setting, schema or write path changes.

@@ -12,6 +12,8 @@ import { getAccountPrivacySummary } from "@/lib/privacy-account";
 import { resolveAccountEntitlementSnapshot } from "@/lib/entitlement-ledger";
 import { PushNotificationSettings } from "@/components/push-notification-controls";
 import { PendingActionButton } from "@/components/pending-action-button";
+import { formatLocalDateTime } from "@/lib/display-format";
+import { getUserTimezone } from "@/lib/data/user-settings";
 
 export const metadata={title:"Settings | FlyTally"};
 const t=(v:unknown)=>String(v??"");
@@ -53,10 +55,11 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
   }
 
   if(view==="account"){
-    const[auth,sessions,access]=await Promise.all([
+    const[auth,sessions,access,timeZone]=await Promise.all([
       sql`SELECT EXISTS(SELECT 1 FROM auth_identities WHERE user_id=${userId} AND provider='google') google_linked,EXISTS(SELECT 1 FROM user_credentials WHERE user_id=${userId}) has_password` as Promise<Array<Record<string,unknown>>>,
       sql`SELECT id,created_at,last_seen_at,expires_at,user_agent FROM auth_sessions WHERE user_id=${userId} AND revoked_at IS NULL AND expires_at>NOW() ORDER BY last_seen_at DESC` as Promise<Array<Record<string,unknown>>>,
       resolveAccountEntitlementSnapshot(userId,session.role),
+      getUserTimezone(userId),
     ]);
     const googleLinked=Boolean(auth[0]?.google_linked),hasPassword=Boolean(auth[0]?.has_password),stageLabel=access.stage==="external-validation"?"External commercial validation":access.stage==="commercial"?"Commercial":"Private beta",logbookAccess=access.grants.find(item=>item.key==="logbook.access"),trainingAccess=access.grants.find(item=>item.key==="training.access");
     return <div className="ui-page-stack">
@@ -70,7 +73,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
           </div>
         </section>
 
-        <section className="panel session-section u33-session-panel"><div className="section-heading"><div><p className="eyebrow">DEVICES</p><h2>Active sessions</h2><p className="muted">Sign out devices you no longer use.</p></div>{sessions.length>1?<form action={logoutOtherDevices}><PendingActionButton className="secondary-button" pendingLabel="Signing out…">Sign out other devices</PendingActionButton></form>:null}</div><div className="session-list">{sessions.map(item=><div key={t(item.id)}><span><strong>{t(item.id)===session.sessionId?"This device":"Signed-in device"}</strong><small>{t(item.user_agent)||"Unknown browser"}</small><small>Last active {new Date(t(item.last_seen_at)).toLocaleString("en-GB")}</small></span>{t(item.id)!==session.sessionId?<form action={revokeDevice}><input type="hidden" name="session_id" value={t(item.id)}/><PendingActionButton className="icon-danger" pendingLabel="Signing out…">Sign out</PendingActionButton></form>:<span className="status-on">Current</span>}</div>)}</div></section>
+        <section className="panel session-section u33-session-panel"><div className="section-heading"><div><p className="eyebrow">DEVICES</p><h2>Active sessions</h2><p className="muted">Sign out devices you no longer use.</p></div>{sessions.length>1?<form action={logoutOtherDevices}><PendingActionButton className="secondary-button" pendingLabel="Signing out…">Sign out other devices</PendingActionButton></form>:null}</div><div className="session-list">{sessions.map(item=><div key={t(item.id)}><span><strong>{t(item.id)===session.sessionId?"This device":"Signed-in device"}</strong><small>{t(item.user_agent)||"Unknown browser"}</small><small>Last active {formatLocalDateTime(t(item.last_seen_at),timeZone)}</small></span>{t(item.id)!==session.sessionId?<form action={revokeDevice}><input type="hidden" name="session_id" value={t(item.id)}/><PendingActionButton className="icon-danger" pendingLabel="Signing out…">Sign out</PendingActionButton></form>:<span className="status-on">Current</span>}</div>)}</div></section>
 
         <details className="panel u33-access-details"><summary><span><strong>FlyTally access</strong><small>Entitlements and current commercial release stage</small></span><span aria-hidden="true">⌄</span></summary><div className="u33-access-body"><div className="security-grid"><section><h3>Logbook</h3><p className="muted">{logbookAccess?`Access enabled · ${logbookAccess.source}`:"No active entitlement."}</p></section><section><h3>Training</h3><p className="muted">{trainingAccess?`Access enabled · ${trainingAccess.source}`:"No active entitlement."}</p></section></div><p className="muted"><strong>Release stage:</strong> {stageLabel}. <strong>Billing provider:</strong> not configured. FlyTally does not currently store a payment method or charge this account.</p><Link className="secondary-button" href="/legal/commercial">Commercial launch info</Link></div></details>
       </main>

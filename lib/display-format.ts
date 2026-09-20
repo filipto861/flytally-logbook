@@ -35,3 +35,21 @@ export function formatUtcDateTime(value:unknown){
   if(!date)return input;
   return new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}).format(date)+" UTC";
 }
+
+export const FALLBACK_TIMEZONE="Europe/Prague";
+
+export function normalizeTimeZone(value:unknown){
+  const candidate=String(value??"").trim();
+  if(!candidate)return FALLBACK_TIMEZONE;
+  try{new Intl.DateTimeFormat("en-GB",{timeZone:candidate});return candidate}catch{return FALLBACK_TIMEZONE}
+}
+
+export function formatLocalDateTime(value:unknown,timeZone:unknown){
+  const{input,date}=parsedDate(value);
+  if(!date)return input;
+  const zone=normalizeTimeZone(timeZone);
+  const options:Intl.DateTimeFormatOptions={timeZone:zone,day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"};
+  try{return new Intl.DateTimeFormat("en-GB",options).format(date)}catch{
+    try{return new Intl.DateTimeFormat("en-GB",{...options,timeZone:FALLBACK_TIMEZONE}).format(date)}catch{return input}
+  }
+}
