@@ -41,7 +41,7 @@ export default async function DatabasePage({searchParams}:{searchParams:Promise<
       <section className="panel u31-airport-panel">
         <div className="u31-panel-heading"><div><p className="eyebrow">YOUR LOCATIONS</p><h2>Custom airports</h2><p className="muted">For private strips, heliports or other locations not available in the built-in catalogue.</p></div></div>
         <form action={saveAirport} className="u31-airport-editor">
-          <label>Code <span className="field-hint" aria-hidden="true">Required</span><input name="ident" placeholder="ICAO / code" required/></label>
+          <label><span>Code <span className="field-hint" aria-hidden="true">Required</span></span><input name="ident" placeholder="ICAO / code" required/></label>
           <label>Name<input name="name" placeholder="Airport or location name"/></label>
           <label>City<input name="municipality" placeholder="City"/></label>
           <label>Country<input name="iso_country" placeholder="CZ"/></label>
