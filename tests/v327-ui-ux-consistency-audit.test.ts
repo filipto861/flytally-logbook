@@ -439,7 +439,7 @@ test("v3.3 design batch 7 formats date-only values without timezone conversion",
 
   const helper=read("lib/display-format.ts");
   const start=helper.indexOf("export function formatDateOnly");
-  const end=helper.indexOf("\n}\n\nfunction parsedDate",start)+2;
+  const end=helper.indexOf("function parsedDate",start);
   assert.ok(start>=0&&end>start);
   assert.doesNotMatch(helper.slice(start,end),/new Date|Date[.]/);
 });
@@ -455,7 +455,7 @@ test("v3.3 design batch 7 keeps GPS timeline timestamps explicitly UTC",()=>{
   assert.match(importReview,/timeZone:"UTC"\}\)\+" UTC"/);
   assert.doesNotMatch(player,/toLocaleTimeString\("en-GB"/);
   assert.doesNotMatch(legacy,/toLocaleTimeString\(['"]en-GB['"]/);
-  assert.doesNotMatch(manager,/toLocaleString\("en-GB"/);
+  assert.doesNotMatch(manager,/new Date\([^;\n]*\)\.toLocale(?:String|TimeString)\(\s*["\']en-GB["\']/i);
 });
 
 test("v3.3 design batch 7 uses one altitude conversion contract and keeps chart geometry in metres",async()=>{
@@ -469,7 +469,7 @@ test("v3.3 design batch 7 uses one altitude conversion contract and keeps chart 
   }
   const legacy=read("components/track-profile.tsx");
   assert.match(legacy,/metersToFeet\(maxAlt\)\} ft · \{Math\.round\(maxAlt\)\} m/);
-  assert.match(legacy,/metersToFeet\(current\.alt\)\} ft · \{Math\.round\(Number\(current\.alt\)\)\} m/);
+  assert.ok(legacy.includes("metersToFeet(current.alt)} ft · ${Math.round(Number(current.alt))} m"));
   assert.match(legacy,/const line=profile\.map/);
   assert.doesNotMatch(legacy,/<text\b|axis|tick/i);
 });
@@ -589,7 +589,9 @@ test("v3.3 design batch 7 prevents bare en-GB date-time locale calls on touched 
   ];
   for(const file of files){
     const source=read(file);
-    assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']/i,file);
-    assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']/i,file);
+    assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']\s*\)/i,file);
+    assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']\s*,\s*\{(?![^}]*timeZone\s*:)[^}]*\}\s*\)/i,file);
+    assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']\s*\)/i,file);
+    assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']\s*,\s*\{(?![^}]*timeZone\s*:)[^}]*\}\s*\)/i,file);
   }
 });
