@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 import { parseAircraftShareSnapshot } from "@/lib/aircraft-sharing";
 import { acceptAircraftProfileShare,declineAircraftProfileShare } from "../../aircraft-share-actions";
+import { formatDateOnly } from "@/lib/display-format";
 
 export const metadata={title:"Aircraft profile share | FlyTally"};
 const text=(value:unknown)=>String(value??"");
@@ -44,7 +45,7 @@ export default async function AircraftShareReviewPage({params,searchParams}:{par
           {own?<label className="share-check"><input type="checkbox" name="import_profile" value="yes" defaultChecked/><span><strong>Aircraft profile</strong><small>Type, ICAO, class/category and ULL/EASA classification.</small></span></label>:<div className="share-fixed-row"><span>✓</span><div><strong>Aircraft profile</strong><small>Required to create {p.registration} in your aircraft.</small></div></div>}
           {Boolean(row.include_photo)&&row.photo_base64?<label className="share-check"><input type="checkbox" name="import_photo" value="yes" defaultChecked/><span><strong>Cover photo</strong><small>Copy the photo shown above. You can replace it later.</small></span></label>:null}
           {Boolean(row.include_defaults)&&snapshot.defaults?<label className="share-check"><input type="checkbox" name="import_defaults" value="yes" defaultChecked/><span><strong>Flight defaults</strong><small>Role {snapshot.defaults.defaultRole} · billing {snapshot.defaults.billingBasis}.</small></span></label>:null}
-          {Boolean(row.include_current_rate)&&snapshot.currentRate?<label className="share-check"><input type="checkbox" name="import_current_rate" value="yes" defaultChecked/><span><strong>Current hourly rate</strong><small>{snapshot.currentRate.pricePerHour.toLocaleString("en-GB")} CZK/h · valid from {snapshot.currentRate.validFrom}.</small></span></label>:null}
+          {Boolean(row.include_current_rate)&&snapshot.currentRate?<label className="share-check"><input type="checkbox" name="import_current_rate" value="yes" defaultChecked/><span><strong>Current hourly rate</strong><small>{snapshot.currentRate.pricePerHour.toLocaleString("en-GB")} CZK/h · valid from {formatDateOnly(snapshot.currentRate.validFrom)}.</small></span></label>:null}
           {Boolean(row.include_rate_history)&&snapshot.rateHistory?.length?<label className="share-check"><input type="checkbox" name="import_rate_history" value="yes" defaultChecked/><span><strong>Full rate history</strong><small>{snapshot.rateHistory.length} historical rate record{snapshot.rateHistory.length===1?"":"s"}.</small></span></label>:null}
           {Boolean(row.include_notes)&&snapshot.note!==undefined?<label className="share-check"><input type="checkbox" name="import_notes" value="yes" defaultChecked/><span><strong>Notes</strong><small>{snapshot.note?`“${snapshot.note.slice(0,120)}${snapshot.note.length>120?"…":""}”`:"Empty note"}</small></span></label>:null}
           <div className="aircraft-import-actions"><button className="primary-button">{own?"Import selected changes":"Add to my aircraft"}</button><button className="secondary-button" formAction={declineAircraftProfileShare.bind(null,shareId)}>Decline</button></div>

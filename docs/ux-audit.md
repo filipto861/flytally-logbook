@@ -47,6 +47,10 @@ Phase 1 was approved in full on 2026-09-19. Phase 2 implementation is proceeding
 | UX-033 | minor | `app/(protected)/dashboard/page.tsx:56` | Dashboard lead contains decorative generic phrasing: `your all-time flying snapshot and the next places to go`. It is less instrument-like than the rest of the product. | Replace with operational copy: `Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.` Keep heading and layout unchanged. |
 | UX-034 | major | `app/globals.css:1351` | Aircraft catalog result buttons have a more specific `:focus` rule that sets `outline:none`, cancelling the canonical visible focus outline defined by the shared UI system. | Remove the focus-specific outline cancellation and let the canonical focus contract from `app/v150-ui-system.css` apply unchanged. No other focus styling changes. |
 | UX-035 | minor | `app/v301-public-flight-viewer.css:11` | The public-flight theme toggle uses a one-off `accent2` focus outline with a 1 px offset instead of the canonical focus color/ring geometry. | Use the canonical focus color and a 2 px outline offset, matching `app/v150-ui-system.css`. No other focus styling changes. |
+| UX-036 | minor | `components/track-profile.tsx:6` | Legacy `TrackProfile` still renders functional play/pause controls as the text glyphs `▶` / `❚❚` and the button has no accessible name. The component currently has no runtime caller, but this conflicts with the established SVG icon and accessible icon-button contract if it is reused. | Replace the glyphs with the existing `<NavIcon name={playing?"pause":"play"}/>` and add `aria-label={playing?"Pause track":"Play track"}`, matching `FlightTrackPlayer` and `GpsImportReviewPlayer`. Keep playback behavior, sizing and layout unchanged. |
+| UX-037 | minor | `app/(protected)/actions/page.tsx:15`; `app/(protected)/admin/page.tsx:22,24,27`; `components/backup-center.tsx:20`; `components/backup-restore.tsx:20`; `components/flight-trash.tsx:14` | Several non-flight metadata timestamps still use bare `toLocaleString("en-GB")`, so their output follows the runtime locale/timezone instead of the signed-in viewer's selected screen timezone. | Render these metadata timestamps with the existing `formatLocalDateTime` contract and the signed-in viewer's `user_settings.timezone`. Reuse an existing settings read where available or one `getUserTimezone(userId)` read per page load; pass timezone into client/components as a prop. Keep existing missing-value placeholders unchanged. |
+| UX-038 | minor | `components/flight-trash.tsx:14`; `components/aircraft-manager.tsx:62,100`; `components/dashboard-details.tsx:26`; `lib/data/dashboard.ts:35`; `app/(protected)/connections/aircraft/[id]/page.tsx:47` | Several date-only values still render raw ISO text or use Date locale conversion even though Batch 7 established one timezone-free date-only presentation contract. | Render display-only `YYYY-MM-DD` values through `formatDateOnly`. For the 12-month Dashboard period label, format the already-calculated ISO start/end values only; do not change period boundaries or calculations. |
+| UX-039 | minor | `components/backup-center.tsx:18`; `components/backup-restore.tsx:17,20,22,26`; `components/flight-trash.tsx:13` | Backup and trash success/validation text still uses a leading `✓` glyph even where the adjacent text and status styling already communicate the same meaning. | Apply the UX-009 rule: remove redundant `✓` prefixes where the adjacent text already carries the status. Keep a glyph only if it is the sole carrier of meaning. Do not change backup/trash behavior or status semantics. |
 
 ## Category coverage
 
@@ -134,3 +138,17 @@ The approved UX-018 implementation may read the signed-in viewer's `user_setting
 - `FlightAuditPanel` now requires a `timeZone` prop and performs no data access. It currently has no runtime caller after flight-detail Change history was removed, so Batch 7 does not reintroduce a query or the removed panel.
 
 The timezone is always derived from the signed-in session user's ID. Viewing another pilot's shared data must therefore use the viewer's own screen-timezone preference, never the viewed pilot's timezone. Missing, null, invalid or failed timezone reads fall back to `Europe/Prague`. No auth/session shape, stored setting, schema or write path changes.
+
+## Batch 7b display-leftovers addendum
+
+Batch 7b closes UX-036 through UX-039 as presentation-only follow-up work:
+- Actions adds one parallel `getUserTimezone(userId)` read beside the existing pending-actions read.
+- Administration adds one `getUserTimezone(session.userId)` entry to its existing `Promise.all`.
+- Print & data starts one `getUserTimezone(userId)` promise per page load and passes the result through `DataHub` to Backup Center, file restore and Deleted flights. The presentation components perform no database access.
+- Every timezone is the signed-in viewer's own `user_settings.timezone`; no route parameter, viewed pilot or backup owner selects it.
+- Missing, null, invalid or failed timezone reads retain the Batch 7 `Europe/Prague` fallback.
+- Date-only cleanup uses `formatDateOnly` only. The Dashboard 12-month period boundary calculation remains unchanged.
+- Redundant leading check glyphs are removed from backup/trash success and validation copy where the adjacent text already carries the meaning.
+- Dormant `TrackProfile` adopts the existing `NavIcon` play/pause contract and accessible name without changing playback behavior.
+
+No stored value, sorting, filtering, URL, form value, calculation, certified UTC evidence, FCL.050 print output or social Story behavior changes in Batch 7b.

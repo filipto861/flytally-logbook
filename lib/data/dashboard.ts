@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { measureServerTask } from "@/lib/performance";
+import { formatDateOnly } from "@/lib/display-format";
 
 export const PERIODS=["all","year","12m","previous"] as const;
 export type DashboardPeriod=(typeof PERIODS)[number];
@@ -32,7 +33,7 @@ function bounds(period:DashboardPeriod,today=new Date()){
   const iso=(date:Date)=>date.toISOString().slice(0,10);
   if(period==="year")return{start:`${year}-01-01`,end:iso(today),label:String(year)};
   if(period==="previous")return{start:`${year-1}-01-01`,end:`${year-1}-12-31`,label:String(year-1)};
-  if(period==="12m"){const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1));return{start:iso(start),end:iso(today),label:`${start.toLocaleDateString("en-GB")}–${today.toLocaleDateString("en-GB")}`}}
+  if(period==="12m"){const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-12,today.getUTCDate()+1));return{start:iso(start),end:iso(today),label:`${formatDateOnly(iso(start))}–${formatDateOnly(iso(today))}`}}
   return{start:null,end:null,label:"all time"};
 }
 

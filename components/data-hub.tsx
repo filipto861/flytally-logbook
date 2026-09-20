@@ -10,8 +10,9 @@ import type { DataWorkspaceView } from "@/components/data-workspace-navigation";
 type RestoreAction=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
 type TrashAction=(state:TrashRestoreState,form:FormData)=>Promise<TrashRestoreState>;
 
-export function DataHub({view,backups=[],deletedFlights=[],createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
+export function DataHub({view,timeZone,backups=[],deletedFlights=[],createAction,restoreStoredAction,restoreFileAction,restoreTrashAction}:{
   view:DataWorkspaceView;
+  timeZone:string;
   backups?:StoredBackup[];
   deletedFlights?:DeletedFlight[];
   createAction:()=>Promise<void>;
@@ -22,18 +23,18 @@ export function DataHub({view,backups=[],deletedFlights=[],createAction,restoreS
   if(view==="recovery")return <main className="u32-data-workspace">
     <section className="u32-workspace-heading"><div><p className="eyebrow">BACKUP & RESTORE</p><h2>Keep a recoverable copy of your logbook</h2><p className="muted">Use FlyTally recovery points for normal recovery. Download a portable backup when you want an independent copy outside FlyTally.</p></div></section>
     <section className="u32-recovery-grid">
-      <div className="u32-recovery-primary"><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction}/></div>
+      <div className="u32-recovery-primary"><BackupCenter backups={backups} createAction={createAction} restoreAction={restoreStoredAction} timeZone={timeZone}/></div>
       <aside className="panel u32-portable-backup"><div><p className="eyebrow">PORTABLE COPY</p><h2>Download complete backup</h2><p className="muted">A complete JSON account backup for your own archive or later recovery.</p></div><a className="primary-button" href="/api/export?format=json">Download JSON backup</a><details><summary>What is included?</summary><p className="muted">The portable backup keeps the account data needed by FlyTally recovery, including logbook records, protected certification history and supported settings. Shared workflow state remains subject to recovery authenticity rules.</p></details></aside>
     </section>
     <section className="u32-file-restore">
       <header className="u32-section-heading"><div><p className="eyebrow">RESTORE FROM FILE</p><h2>Use an existing FlyTally backup</h2><p className="muted">The file is validated and compared with this account before anything can be restored. Existing records are not overwritten.</p></div></header>
-      <BackupRestore action={restoreFileAction}/>
+      <BackupRestore action={restoreFileAction} timeZone={timeZone}/>
     </section>
   </main>;
 
   if(view==="deleted")return <main className="u32-data-workspace">
     <section className="u32-workspace-heading"><div><p className="eyebrow">RECOVERY</p><h2>Deleted flights</h2><p className="muted">Restore flights that were removed from your logbook. This is separate from full account backup recovery.</p></div></section>
-    <FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction}/>
+    <FlightTrash flights={deletedFlights} restoreAction={restoreTrashAction} timeZone={timeZone}/>
   </main>;
 
   return <main className="u32-data-workspace">
