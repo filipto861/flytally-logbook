@@ -626,3 +626,49 @@ test("v3.3 design batch 7b removes redundant check prefixes from backup and tras
   assert.match(restore,/>Certified evidence verified:/);
   assert.match(restore,/>All recoverable records from this backup are already present\./);
 });
+
+
+test("v3.3 design batch 7b wires remaining local metadata to the signed-in viewer timezone once per page",()=>{
+  const actions=read("app/(protected)/actions/page.tsx");
+  assert.match(actions,/\[actions,timeZone\]=await Promise\.all\(\[getPendingActions\(userId\),getUserTimezone\(userId\)\]\)/);
+  assert.match(actions,/formatLocalDateTime\(action\.createdAt,timeZone\)/);
+  assert.equal((actions.match(/getUserTimezone\(/g)??[]).length,1);
+
+  const admin=read("app/(protected)/admin/page.tsx");
+  assert.match(admin,/\[users,health,invites,features,timeZone\]=await Promise\.all\(\[/);
+  assert.match(admin,/getUserTimezone\(session\.userId\)/);
+  assert.match(admin,/formatLocalDateTime\(health\.lastBackup,timeZone\)/);
+  assert.match(admin,/formatLocalDateTime\(t\(invite\.expires_at\),timeZone\)/);
+  assert.match(admin,/formatLocalDateTime\(t\(u\.last_login_at\),timeZone\)/);
+  assert.equal((admin.match(/getUserTimezone\(/g)??[]).length,1);
+
+  const data=read("app/(protected)/data/page.tsx");
+  assert.match(data,/timeZonePromise=getUserTimezone\(userId\)/);
+  assert.match(data,/const timeZone=await timeZonePromise/);
+  assert.match(data,/DataHub view=\{view\} timeZone=\{timeZone\}/);
+  assert.equal((data.match(/getUserTimezone\(/g)??[]).length,1);
+
+  const hub=read("components/data-hub.tsx");
+  assert.match(hub,/timeZone:string/);
+  for(const component of ["BackupCenter","BackupRestore","FlightTrash"])assert.match(hub,new RegExp("<"+component+"[^>]*timeZone=\\{timeZone\\}"));
+
+  const componentChecks:Record<string,string>={
+    "components/backup-center.tsx":"formatLocalDateTime(backup.createdAt,timeZone)",
+    "components/backup-restore.tsx":"formatLocalDateTime(preview.exportedAt,timeZone)",
+    "components/flight-trash.tsx":"formatLocalDateTime(flight.deletedAt,timeZone)",
+  };
+  for(const [file,needle] of Object.entries(componentChecks)){
+    const source=read(file);
+    assert.ok(source.includes(needle),`${file}: ${needle}`);
+    assert.doesNotMatch(source,/getUserTimezone|user_settings|@\/lib\/db/);
+  }
+});
+
+test("v3.3 design batch 7b leaves no bare en-GB date-time locale calls on its audited metadata surfaces",()=>{
+  const files=["app/(protected)/actions/page.tsx","app/(protected)/admin/page.tsx","components/backup-center.tsx","components/backup-restore.tsx","components/flight-trash.tsx"];
+  for(const file of files){
+    const source=read(file);
+    assert.doesNotMatch(source,/new Date\([^;\n]*\)\.toLocaleString\(\s*["']en-GB["']\s*\)/i,file);
+    assert.doesNotMatch(source,/\.toLocale(?:DateString|TimeString)\(\s*["']en-GB["']\s*\)/i,file);
+  }
+});

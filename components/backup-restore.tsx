@@ -3,10 +3,11 @@
 import { useState } from "react";
 import type { RestoreState } from "@/app/(protected)/export/actions";
 import { buildRecoveryPreviewSummary } from "@/lib/recovery-preview";
+import { formatLocalDateTime } from "@/lib/display-format";
 
 type Action=(state:RestoreState,form:FormData)=>Promise<RestoreState>;
 
-export function BackupRestore({action}:{action:Action}){
+export function BackupRestore({action,timeZone}:{action:Action;timeZone:string}){
   const [file,setFile]=useState<File|null>(null),[state,setState]=useState<RestoreState>({}),[confirm,setConfirm]=useState(""),[pending,setPending]=useState(false);
   const preview=state.preview,summary=preview?buildRecoveryPreviewSummary(preview):null;
   const run=async(intent:"preview"|"restore")=>{if(!file){setState({error:"Select a complete JSON backup."});return}const data=new FormData();data.set("backup",file);data.set("intent",intent);if(intent==="restore"){data.set("preview_digest",state.preview?.digest||"");data.set("confirm",confirm)}setPending(true);try{const next=await action({},data);setState(next);if(next.success){setConfirm("");setFile(null)}}finally{setPending(false)}};
@@ -17,7 +18,7 @@ export function BackupRestore({action}:{action:Action}){
     {state.error?<p className="form-error">{state.error}</p>:null}{state.success?<p className="form-success">{state.success}</p>:null}
     {state.conflict?<div className="credential-card"><div className="entry-section-body"><p className="eyebrow">RECOVERY BLOCKED</p><strong>{state.conflict.title}</strong><p className="muted">{state.conflict.detail}</p><small>{state.conflict.record}</small></div></div>:null}
     {preview&&summary?<div className="restore-preview">
-      <header><div><strong>Backup validated</strong><small>Created {preview.exportedAt?new Date(preview.exportedAt).toLocaleString("en-GB"):"date unavailable"}</small></div><span>{preview.authenticity==="verified"||preview.authenticity==="stored"?"Authenticity verified":"Integrity verified"}</span></header>
+      <header><div><strong>Backup validated</strong><small>Created {preview.exportedAt?formatLocalDateTime(preview.exportedAt,timeZone):"date unavailable"}</small></div><span>{preview.authenticity==="verified"||preview.authenticity==="stored"?"Authenticity verified":"Integrity verified"}</span></header>
       {preview.accountBound?<p className="muted">This is non-destructive recovery. FlyTally will add missing records only; matching records remain unchanged and any authoritative-history conflict stops recovery before data is changed.</p>:null}
       {preview.authenticity==="invalid"?<p className="form-error">Backup authenticity could not be verified. Personal recovery remains available, but missing shared workflow state will not be recreated from this file.</p>:preview.authenticity==="unsigned"?<p className="muted">Legacy unsigned backup: personal data can be recovered, while shared workflow state remains server-authoritative.</p>:null}
       {certified?<p className="form-success">Certified evidence verified: {certified.certifiedFlights} certified flight{certified.certifiedFlights===1?"":"s"}, {certified.flightRevisions} archived flight revision{certified.flightRevisions===1?"":"s"}, {certified.certifiedFstd} certified FSTD session{certified.certifiedFstd===1?"":"s"}.</p>:null}
