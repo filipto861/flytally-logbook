@@ -30,7 +30,7 @@ export function InPersonSignaturePad({action,defaultInstructor="",recordLabel="t
     <canvas ref={canvasRef} width={900} height={260} aria-label={allowExaminer?"Instructor or examiner signature pad":"Instructor signature pad"} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} style={{width:"100%",height:"180px",display:"block",background:"#fff",border:"1px solid #46616f",borderRadius:"8px",touchAction:"none",cursor:"crosshair"}}/>
     <input type="hidden" name="signature_json"/>
     <div className="form-actions"><button type="button" className="secondary-button" onClick={clear}>Clear signature</button></div>
-    <label className="checkbox-row"><input type="checkbox" name="confirm_in_person" value="yes" required/><span>The {signerNoun} confirms that they reviewed {recordLabel} and signs it in person on this device.</span></label>
+    <label className="checkbox-row"><input type="checkbox" name="confirm_in_person" value="yes" required/><span>The {signerNoun} confirms that they reviewed {recordLabel} and signs it in person on this device.</span><span className="field-hint" aria-hidden="true">Required</span></label>
     <p className="muted">FlyTally preserves the drawn signature and cryptographically binds it to {recordLabel}. The signer identity is entered in person and is not independently authenticated by a FlyTally account. FlyTally does not represent this capture as a qualified electronic signature (QES) or as an advanced electronic signature.</p>
     <PendingActionButton className="primary-button" disabled={!hasSignature} pendingLabel="Signing…">Confirm &amp; sign</PendingActionButton>
   </form>;
