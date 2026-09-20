@@ -108,3 +108,9 @@ No mapping removes content or a call-to-action. The complete per-instance invent
 ## Batch 6 form inventory gate
 
 Batch 6 implements UX-015 and UX-016 only after a complete source-form inventory is recorded in PR #142. The PR table classifies every source `<form>` pattern as required-only, optional-only/action-only, or mixed before any runtime form code is changed.
+
+Implementation safeguards:
+- `Required` is rendered only for native-required controls inside mixed forms, using the existing `.field-hint` language and `aria-hidden="true"`.
+- Label text and the cue share one inline label-text wrapper so narrow layouts do not gain a new grid row.
+- A source comparison against `main` confirms that no native `required` attribute or conditional requirement changed.
+- UX-016 changes only existing error presentation/announcement; validation, actions, payloads, redirects, calculations and the flight review panel remain unchanged.
