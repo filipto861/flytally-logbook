@@ -753,3 +753,32 @@ test("v3.3 design batch 8 moves repeated public auth legal-footer spacing into t
   assert.doesNotMatch(read("app/reset-password/page.tsx"),/style=\{\{/);
   assert.match(read("app/ui-system.css"),/\.legal-footer-slot\{margin-top:var\(--ui-card-gap\)\}/);
 });
+
+
+test("v3.3 design batch 9 gives root not-found a non-technical FlyTally fallback",()=>{
+  const source=read("app/not-found.tsx");
+  assert.equal((source.match(/<main\b/g)??[]).length,1);
+  assert.equal((source.match(/<h1>/g)??[]).length,1);
+  assert.match(source,/className="login-shell page-shell"/);
+  assert.match(source,/className="panel ui-page-stack"/);
+  assert.match(source,/<h1>Page not found<\/h1>/);
+  assert.match(source,/The page you requested doesn’t exist or is no longer available\./);
+  assert.match(source,/className="primary-button" href="\/">Go to FlyTally<\/Link>/);
+});
+
+test("v3.3 design batch 9 gives root runtime errors retry and safe navigation without technical leakage",()=>{
+  const source=read("app/error.tsx");
+  assert.match(source,/^"use client";/);
+  assert.equal((source.match(/<main\b/g)??[]).length,1);
+  assert.equal((source.match(/<h1>/g)??[]).length,1);
+  assert.match(source,/className="login-shell page-shell"/);
+  assert.match(source,/className="panel ui-page-stack"/);
+  assert.match(source,/<h1>Something went wrong<\/h1>/);
+  assert.match(source,/FlyTally couldn’t load this page\./);
+  assert.match(source,/>Try again<\/button>/);
+  assert.match(source,/onClick=\{\(\)=>reset\(\)\}/);
+  assert.match(source,/className="secondary-button" href="\/">Go to FlyTally<\/Link>/);
+  assert.doesNotMatch(source,/error\.message|\.digest|\.stack|stack trace|technical detail/i);
+  assert.equal(fs.existsSync(path.join(root,"app/global-error.tsx")),false);
+  assert.equal(fs.existsSync(path.join(root,"app/(protected)/error.tsx")),false);
+});
