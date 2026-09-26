@@ -49,3 +49,18 @@ The retained 10k/50k/100k scale tests run only when a known production hot path,
 ## Deployment discipline
 
 The canonical production branch is `main`. Development changes should reach it through a reviewed candidate PR, not by direct iterative pushes. `npm run build` is deliberately build-only so Vercel does not rerun the application test suite on every preview or production deployment. Feature branches are temporary and should be deleted after merge; release history belongs in commits, tags, and GitHub Releases rather than long-lived version branches.
+
+## Documentation governance
+
+Every significant work cycle must reconcile the canonical development documents before it is closed:
+
+- `ROADMAP.md` — update when priority, phase, dependencies, status or a frozen product decision changes.
+- `FEATURES.md` — update when a capability is added, removed, materially changed or explicitly deferred.
+- `CHANGELOG.md` — record what actually merged; never mark planned or unverified work as completed.
+
+Do not create a new root-level version-specific Markdown file for routine milestones. Use the canonical documents first. Supporting analysis belongs under the appropriate `docs/` area; superseded milestone notes belong under `docs/history/`.
+
+A new development chat should reconstruct state from actual repository state first, then ROADMAP, FEATURES, CHANGELOG, architecture/development docs and the latest verified handoff or PR evidence. If those sources disagree, reconcile the drift before new implementation.
+
+Documentation-only changes still use a branch and PR, but runtime/database verification is `N/A` unless the documentation change also modifies executable/configuration files.
+
