@@ -1,6 +1,42 @@
 # FlyTally changelog
 
-This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
+This is the canonical record of **what actually changed** in `flytally-logbook`.
+
+- `ROADMAP.md` is forward-looking and may contain planned work.
+- `FEATURES.md` is the capability inventory.
+- This file records merged/product changes and must not describe planned work as completed.
+- Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
+
+## Unreleased
+
+### Documentation governance
+- Consolidated the roadmap into one current planning document.
+- Added a canonical `FEATURES.md`.
+- Added a documentation index and historical archive under `docs/history/`.
+- Moved old version-specific scope/audit notes out of the repository root without deleting their evidence from Git history.
+
+## v3.3 design & workflow consistency — merged through 2026-09-20
+
+### Workflow simplification
+- Simplified New flight while keeping aircraft and route selection explicit rather than silently prefilled.
+- Simplified the Flights workflow and restored an obvious compact Open action.
+- Unified aircraft-card layout and added safe aircraft deletion.
+
+### Design-system consistency
+- Consolidated shared tokens, geometry, spacing and tabular numeric presentation.
+- Improved light-theme text contrast and moved the legacy GPS chart to theme-aware chart tokens.
+- Replaced OS-dependent functional glyphs with the shared SVG icon system.
+- Converged empty/loading/component states.
+- Hardened accessibility, focus and touch-target behavior.
+- Clarified required-field and validation presentation.
+- Standardized UTC, viewer-timezone and date-only display formatting.
+- Normalized protected secondary route rhythm, Share headers and public/legal layout.
+
+### Engineering workflow
+- Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
+
+Batch 9 and later audit work are not recorded here until merged.
+
 
 ## 2.2.0 — Action Center & Shared Flight Workflow — 2026-09-07
 
@@ -119,7 +155,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 - Expenses remain outside the certified flight fingerprint/revision, so financial metadata can be maintained without rewriting regulatory evidence.
 
 ### Verification
-- Detailed record: `FLIGHT_ENTRY_UX_V159.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V159.md`.
 
 ## 1.58.0 — Flight Entry Polish & Smart Defaults — 2026-09-01
 
@@ -137,7 +173,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 
 ### Verification
 - Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + production CI/runtime audit.
-- Detailed record: `FLIGHT_ENTRY_UX_V158.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V158.md`.
 
 ## 1.57.0 — Flight Entry Workflow Simplification — 2026-09-01
 
@@ -157,7 +193,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 
 ### Verification
 - Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + post-deploy runtime audit.
-- Detailed record: `FLIGHT_ENTRY_UX_V157.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V157.md`.
 
 ## 1.56.0 — Mobile Layout Audit & Responsive Hardening
 - Added the shared iOS/WebKit native date/time sizing fix and a primary-navigation responsive containment audit.
