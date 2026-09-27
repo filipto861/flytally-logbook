@@ -78,6 +78,8 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Legal/public page styling aligned with the product design system.
 - Branded root not-found and runtime-error fallbacks with non-technical recovery actions.
 - Push onboarding aligned to the canonical raised-surface design contract.
+- Consistent account email terminology across sign-in/join/settings surfaces.
+- Operational Dashboard lead copy that directs historical analysis to Statistics.
 
 ## Notifications and PWA — IMPLEMENTED WITH INTENTIONAL LIMITS
 
@@ -107,8 +109,6 @@ Important boundary:
 
 ## Current closeout work — IN PROGRESS
 
-- Email terminology consistency.
-- Dashboard operational microcopy.
 - Explicit online/offline connection banner while retaining online-only mutation policy.
 
 ## Planned
