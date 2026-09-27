@@ -28,6 +28,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Optional aircraft cover photos.
 - Safe aircraft removal workflow.
 - Personal aircraft profile sharing between accepted Connections as recipient-owned copies.
+- Canonical fail-closed aircraft-profile validation is shared by normal Add/Edit and shared-profile import.
 - Airport reference data used by planning/entry presentation.
 
 ## GPS and track workflows — IMPLEMENTED
@@ -119,7 +120,7 @@ The source-of-truth contract is recorded in `docs/product/MULTI_AIRCRAFT_SCALE_C
 
 Planned closeout:
 - historical helicopter type-specific recency reads stored flight identity before any mutable profile state and fails closed when type evidence is unresolved;
-- one canonical fail-closed aircraft-profile validation contract across Add/Edit and shared-profile import;
+- canonical fail-closed aircraft-profile validation across Add/Edit and shared-profile import is implemented;
 - explicit separation of mutable aircraft-profile defaults, dynamic applicability metadata and historical flight snapshots;
 - established ordinary ULL→SEP experience behavior and atypical effective-dated override provenance remain explicit and regression-covered;
 - no-code onboarding proof across every currently supported regulatory category with manual identity fallback;
