@@ -43,24 +43,24 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
-| Roadmap review & prioritization | 🚧 | Current checkpoint; this document is the review candidate |
-| GPS touch-and-go detection reliability | ➡️ | **Priority 1** after roadmap approval; reproduce the real-track mismatch before changing logic |
+| Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
+| GPS touch-and-go detection reliability | 🚧 | **Priority 1 / ACTIVE**; reproduce the real-track mismatch before changing logic |
 | Safety Pilot ↔ PIC shared-flight workflow | ⏳ | **Priority 2**; connected PIC selection + manual fallback + PIC invitation symmetry |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
 
-## Current checkpoint — roadmap review & prioritization
+## Roadmap review & prioritization — DONE
 
-The product is at a clean checkpoint after the UX/design closeout and the first Multi-aircraft integrity milestones.
+The product-wide roadmap review is complete. Filip approved the reconciled priority order on **27 September 2026** after independent second-AI review and repository reconciliation.
 
-This review freezes the following execution order unless new evidence exposes a higher-severity data-integrity or production issue:
+The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue:
 
 | Order | Workstream | Status | Why it is here |
 | ---: | --- | :---: | --- |
-| 0 | Roadmap review / freeze | 🚧 | Finish product-wide planning before more runtime work |
-| 1 | GPS touch-and-go detection reliability | ➡️ | Real user flight produced a wrong landing suggestion; correctness comes first |
+| 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
+| 1 | GPS touch-and-go detection reliability | 🚧 | Real user flight produced a wrong landing suggestion; correctness comes first |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ⏳ | Real missing workflow discovered in normal flying use |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
@@ -71,7 +71,7 @@ This review freezes the following execution order unless new evidence exposes a 
 
 **Priority rule:** production/data-integrity defects can pre-empt this order. Convenience features do not pre-empt unresolved correctness issues.
 
-## P1 — GPS touch-and-go detection reliability — NEXT
+## P1 — GPS touch-and-go detection reliability — ACTIVE
 
 A real GPS import produced the wrong landing suggestion during touch-and-go operations.
 
@@ -137,7 +137,7 @@ Repository reconciliation resolved two proposed sequencing concerns without reor
 2. **Timezone issue #144 vs M2B**  
    The current hard-coded `Europe/Prague` defaults affect manual-flight default date and aircraft/rate `valid_from` dates. The explicit `part_fcl_credit_from` value is a separately entered/persisted field and is not populated from that hard-coded `today` default. Therefore #144 remains important but does not block M2B's credit-provenance audit.
 
-The proposed priority order therefore remains:
+The approved priority order is frozen as:
 GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
 
 ## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
