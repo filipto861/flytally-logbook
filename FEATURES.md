@@ -112,6 +112,21 @@ Important boundary:
 
 ## Planned
 
+### Safety Pilot ↔ PIC shared-flight workflow — PLANNED
+
+- Safety Pilot flight can record the actual PIC by selecting an accepted FlyTally Connection or by entering a name manually.
+- Connected PIC identity is preserved independently from displayed name text.
+- After certification, the source pilot can explicitly invite the selected connected pilot to add the same certified event to their own logbook as PIC.
+- Recipient record remains independently owned/certified; the source Safety Pilot record remains independent evidence and does not gain PIC credit.
+- Manual PIC text never silently creates an account link.
+
+### GPS touch-and-go detection reliability — PRIORITY RELIABILITY WORK
+
+- GPS-derived landing count remains advisory and user-reviewed.
+- Real touch-and-go failure cases are reproduced before detector thresholds change.
+- Sampling-rate-dependent logic should be replaced with time/distance-normalized evidence where the exact failure proves it necessary.
+- Uncertain GPS evidence must remain conservative rather than creating unsupported landing evidence.
+
 ### Multi-aircraft Product Scale — ACTIVE
 
 Existing multi-aircraft profiles remain the foundation. The active scale phase is not a second fleet model.
