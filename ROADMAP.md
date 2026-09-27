@@ -106,7 +106,7 @@ Closeout:
 - the independent second-AI review was reconciled against repository evidence;
 - no product/runtime/schema change in M0.
 
-#### M2A — Helicopter historical snapshot integrity — NEXT
+#### M2A — Helicopter historical snapshot integrity — DONE
 
 Scope:
 - change type-specific helicopter recency to resolve historical type from `flights.aircraft_model`, then bounded legacy `flights.aircraft_type`;
@@ -121,7 +121,7 @@ Acceptance:
 - existing certification v1-v8 verification remains unchanged;
 - targeted unit/service/PostgreSQL regressions cover the compatibility boundary.
 
-#### M1 — Canonical aircraft-profile validation
+#### M1 — Canonical aircraft-profile validation — NEXT
 
 Scope:
 - one reusable server-side parser/normalizer for aircraft profile regulatory fields;
@@ -184,7 +184,7 @@ Acceptance:
 
 The independent second-AI review returned **APPROVE WITH CHANGES**. Its blocking conditions were reconciled into the M0 contract and milestone order.
 
-M2A is now the next implementation batch. M1 remains blocked until M2A closes successfully.
+M2A is closed. M1 — canonical aircraft-profile validation — is now NEXT.
 
 ### 3. Professional Logbook Platform — RESEARCH
 

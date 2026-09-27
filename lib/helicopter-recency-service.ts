@@ -37,10 +37,10 @@ export async function getHelicopterRecencyStateForUser(userId:number):Promise<He
     sql`SELECT id,licence_type,validity_mode,valid_until::text valid_until,recency_until::text recency_until FROM pilot_licences WHERE user_id=${userId} AND active=TRUE` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT id,licence_id,qualification_type,qualification_family,regulatory_category,qualification_scope,privilege_role,classification_source,validity_mode,valid_until::text valid_until,recency_until::text recency_until FROM pilot_qualifications WHERE user_id=${userId} AND active=TRUE AND COALESCE(record_kind,'')<>'aircraft_training'` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT registration,aircraft_type,aircraft_model FROM aircraft WHERE user_id=${userId} AND active=1 AND UPPER(COALESCE(regulatory_category,''))='HELICOPTER' ORDER BY registration` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT f.id,f.date::text date,f.registration,f.departure,f.arrival,f.aircraft_type,f.regulatory_category,f.role,f.off_block,f.on_block,f.movement_evidence_recorded,f.takeoffs_day,f.takeoffs_night,f.approaches_day,f.approaches_night,f.landings_day,f.landings_night,f.purpose_code,
-      COALESCE(NULLIF(a.aircraft_model,''),NULLIF(f.aircraft_type,''),f.registration) helicopter_type,
+    sql`SELECT f.id,f.date::text date,f.registration,f.departure,f.arrival,f.aircraft_type,f.aircraft_model,f.regulatory_category,f.role,f.off_block,f.on_block,f.movement_evidence_recorded,f.takeoffs_day,f.takeoffs_night,f.approaches_day,f.approaches_night,f.landings_day,f.landings_night,f.purpose_code,
+      COALESCE(NULLIF(TRIM(f.aircraft_model),''),NULLIF(TRIM(f.aircraft_type),''),'') helicopter_type,
       EXISTS(SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.verification_role='INSTRUCTOR' AND v.status='signed') instructor_signed
-      FROM flights f LEFT JOIN aircraft a ON a.user_id=f.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(f.registration))
+      FROM flights f
       WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND UPPER(COALESCE(f.regulatory_category,''))='HELICOPTER' AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::date ELSE NULL END>=CURRENT_DATE-INTERVAL '1 year' ORDER BY f.date DESC,f.id DESC` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT id,helicopter_type,evidence_date::text evidence_date,signer,reference,note FROM helicopter_recency_evidence WHERE user_id=${userId} ORDER BY evidence_date DESC,id DESC` as Promise<Array<Record<string,unknown>>>,
   ]);

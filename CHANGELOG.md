@@ -11,6 +11,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
+### Multi-aircraft Product Scale — M2A
+- Changed type-specific helicopter recency to resolve historical type from stored `flights.aircraft_model`, with bounded legacy fallback to stored `flights.aircraft_type`.
+- Removed mutable current-aircraft model and registration as silent historical type fallbacks.
+- Added fail-closed LIMITED DATA handling when unresolved historical helicopter type evidence could satisfy an otherwise missing type-specific requirement.
+- Kept independently proven CURRENT results current; unresolved unrelated flights do not downgrade them.
+- Added PostgreSQL and unit/source regressions proving current profile model edits cannot rewrite historical type resolution.
+- No flight rows, certification payload versions/hashes, schema or ULL/Annex-I mapping semantics changed.
+
 ### Documentation governance
 - Consolidated the roadmap into one current planning document.
 - Added a canonical `FEATURES.md`.
