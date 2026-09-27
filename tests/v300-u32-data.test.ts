@@ -49,7 +49,7 @@ test("v3.0 U3.2 preserves print/export semantics behind a simpler presentation",
 });
 
 test("v3.0 U3.2 has responsive and light-theme presentation",()=>{
-  const layout=read("app/layout.tsx"),css=read("app/v300-u32-data.css"),roadmap=read("ROADMAP.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
+  const layout=read("app/layout.tsx"),css=read("app/v300-u32-data.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(layout,/v300-u32-data\.css/);
   assert.match(css,/data-workspace-nav/);
   assert.match(css,/u32-recovery-grid/);
