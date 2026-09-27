@@ -77,3 +77,14 @@ test("v3.0 aircraft sharing has dedicated persistence and runtime initialization
   assert.match(schema,/CHECK\(source_user_id<>recipient_user_id\)/);
   assert.match(runtime,/ensureV300AircraftSharingSchema/);
 });
+
+test("M1 shared aircraft import uses the canonical regulatory validator and fails closed",()=>{
+  const actions=read("app/(protected)/connections/aircraft-share-actions.ts"),review=read("app/(protected)/connections/aircraft/[id]/page.tsx"),restore=read("lib/account-restore-v6.ts");
+  assert.match(actions,/validateAircraftProfile/);
+  assert.ok(actions.includes("?error=profile"));
+  assert.match(actions,/canonical[.]aircraftClass/);
+  assert.match(actions,/canonical[.]regulatoryCategory/);
+  assert.match(review,/regulatory data FlyTally cannot import safely/);
+  assert.doesNotMatch(restore,/validateAircraftProfile/);
+});
+
