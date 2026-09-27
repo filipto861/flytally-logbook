@@ -198,3 +198,11 @@ The overridden 24 px / blur declarations are intentionally left in place. Removi
 ### Batch 9 UX-029 implementation
 
 The push onboarding keeps its existing fixed placement, width, padding, copy, timing, dismissal and permission behavior. Only the outer surface contract changes to `background:var(--surface)`, `border:1px solid var(--line)`, `border-radius:var(--ui-radius-card)`, and `box-shadow:var(--shadow-raised)`; the backdrop filter and light-only bespoke surface/shadow override are removed.
+
+## Batch 10 microcopy closure
+
+Batch 10 closes UX-032 and UX-033 as presentation-only copy changes:
+- Login now uses `Email`, matching Join. Settings keeps `Account email` because it describes the signed-in account identity; `Pilot email` remains reserved for workflows that search another pilot.
+- Dashboard lead now reads: `Your all-time flying totals. Historical periods, trends and detailed breakdowns are in Statistics.`
+
+No input name, input type, validation, authentication behavior, Dashboard calculation, navigation, stored value, regulatory evidence or layout contract changes in Batch 10.
