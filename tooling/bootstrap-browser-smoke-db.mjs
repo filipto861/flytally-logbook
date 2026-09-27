@@ -108,6 +108,11 @@ CREATE TABLE flights(
   aircraft_type TEXT NOT NULL DEFAULT '',
   aircraft_class TEXT NOT NULL DEFAULT '',
   regulatory_category TEXT NOT NULL DEFAULT 'AEROPLANE',
+  balloon_class TEXT NOT NULL DEFAULT '',
+  balloon_group TEXT NOT NULL DEFAULT '',
+  balloon_operation TEXT NOT NULL DEFAULT '',
+  launch_method TEXT NOT NULL DEFAULT '',
+  launches INTEGER NOT NULL DEFAULT 0,
   departure TEXT NOT NULL DEFAULT '',
   arrival TEXT NOT NULL DEFAULT '',
   off_block TEXT NOT NULL DEFAULT '',
@@ -117,6 +122,7 @@ CREATE TABLE flights(
   role TEXT NOT NULL DEFAULT '',
   starts INTEGER NOT NULL DEFAULT 0,
   task TEXT NOT NULL DEFAULT '',
+  purpose_code TEXT NOT NULL DEFAULT '',
   billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
   price_per_hour NUMERIC NOT NULL DEFAULT 0,
   locked_at TIMESTAMPTZ,
@@ -148,7 +154,196 @@ CREATE TABLE flights(
   takeoffs_night INTEGER NOT NULL DEFAULT 0,
   approaches_day INTEGER NOT NULL DEFAULT 0,
   approaches_night INTEGER NOT NULL DEFAULT 0,
+  verification_name TEXT NOT NULL DEFAULT '',
+  verification_reference TEXT NOT NULL DEFAULT '',
   UNIQUE(id,user_id)
+);
+CREATE TABLE flight_expenses(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  flight_id BIGINT NOT NULL,
+  category TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  amount_minor BIGINT NOT NULL CHECK(amount_minor>0 AND amount_minor<=1000000000),
+  currency TEXT NOT NULL CHECK(currency ~ '^[A-Z]{3}
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  registration TEXT NOT NULL,
+  aircraft_type TEXT NOT NULL DEFAULT '',
+  aircraft_make TEXT NOT NULL DEFAULT '',
+  aircraft_model TEXT NOT NULL DEFAULT '',
+  aircraft_variant TEXT NOT NULL DEFAULT '',
+  aircraft_class TEXT NOT NULL DEFAULT '',
+  regulatory_category TEXT NOT NULL DEFAULT '',
+  balloon_class TEXT NOT NULL DEFAULT '',
+  balloon_group TEXT NOT NULL DEFAULT '',
+  evidence TEXT NOT NULL DEFAULT '',
+  default_role TEXT NOT NULL DEFAULT 'PIC',
+  billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
+  default_price_per_hour NUMERIC NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE rates(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  registration TEXT NOT NULL,
+  valid_from TEXT,
+  price_per_hour NUMERIC NOT NULL DEFAULT 0
+);
+CREATE TABLE flight_tracks(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  flight_id BIGINT NOT NULL,
+  distance_km NUMERIC NOT NULL DEFAULT 0
+);
+CREATE TABLE flight_connected_crew(
+  id BIGSERIAL PRIMARY KEY,
+  source_flight_id BIGINT NOT NULL,
+  source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  connected_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  intended_role TEXT NOT NULL CHECK(intended_role='PIC'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT flight_connected_crew_source_owner_fk FOREIGN KEY(source_flight_id,source_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+  CONSTRAINT flight_connected_crew_distinct_users_check CHECK(source_user_id<>connected_user_id),
+  CONSTRAINT flight_connected_crew_flight_role_uq UNIQUE(source_flight_id,intended_role)
+);
+CREATE TABLE flight_participations(
+  id BIGSERIAL PRIMARY KEY,
+  source_flight_id BIGINT NOT NULL,
+  source_user_id BIGINT NOT NULL,
+  participant_user_id BIGINT NOT NULL,
+  participant_role TEXT NOT NULL DEFAULT 'OBSERVER',
+  source_revision INTEGER NOT NULL DEFAULT 1,
+  source_hash TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  participant_flight_id BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  responded_at TIMESTAMPTZ
+);
+CREATE TABLE pilot_connections(
+  id BIGSERIAL PRIMARY KEY,
+  requester_user_id BIGINT NOT NULL,
+  recipient_user_id BIGINT NOT NULL,
+  relationship TEXT NOT NULL DEFAULT 'pilot',
+  status TEXT NOT NULL DEFAULT 'pending',
+  requester_label TEXT NOT NULL DEFAULT 'friend',
+  recipient_label TEXT NOT NULL DEFAULT 'friend',
+  requester_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE,
+  recipient_shares_logbook BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE connection_audit_log(
+  id BIGSERIAL PRIMARY KEY,
+  actor_user_id BIGINT NOT NULL,
+  subject_user_id BIGINT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  event_type TEXT NOT NULL,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE pilot_qualifications(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  requested_signer_user_id BIGINT,
+  record_kind TEXT,
+  record_active BOOLEAN,
+  signature_status TEXT,
+  verified_at TIMESTAMPTZ
+);
+CREATE TABLE instructor_flight_approvals(
+  id BIGSERIAL PRIMARY KEY,
+  flight_id BIGINT NOT NULL,
+  student_user_id BIGINT NOT NULL,
+  instructor_user_id BIGINT NOT NULL,
+  record_revision INTEGER NOT NULL DEFAULT 1,
+  flight_hash TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE user_notifications(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  kind TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  href TEXT NOT NULL DEFAULT '',
+  dedupe_key TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  read_at TIMESTAMPTZ,
+  UNIQUE(user_id,dedupe_key)
+);
+CREATE TABLE push_preferences(
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  compliance BOOLEAN NOT NULL DEFAULT TRUE,
+  activity BOOLEAN NOT NULL DEFAULT TRUE,
+  security BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE push_subscriptions(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_id UUID NOT NULL REFERENCES auth_sessions(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL DEFAULT '',
+  auth TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_success_at TIMESTAMPTZ,
+  failure_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE aircraft_profile_shares(
+  id UUID PRIMARY KEY,
+  source_user_id BIGINT NOT NULL,
+  recipient_user_id BIGINT NOT NULL,
+  snapshot_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO users(id,email,display_name,role,active,email_verified_at)
+VALUES
+  (9001,'browser-auth@example.test','Browser Smoke Pilot','user',1,NOW()),
+  (9002,'browser-friend@example.test','Browser Friend','user',1,NOW());
+INSERT INTO user_credentials(user_id,password_hash) VALUES(9001,${quote(passwordHash)});
+INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json)
+VALUES
+  (9001,'Europe/Prague','CZK','LKLT','PIC','{}'::jsonb),
+  (9002,'Europe/Prague','CZK','LKPR','PIC','{}'::jsonb);
+INSERT INTO pilot_connections(id,requester_user_id,recipient_user_id,relationship,status,requester_label,recipient_label)
+VALUES(7001,9002,9001,'pilot','pending','friend','friend');
+INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
+VALUES(9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
+INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
+VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
+
+INSERT INTO flights(
+  user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
+  departure,arrival,off_block,takeoff,landing,on_block,role,starts,pic_minutes,
+  landings_day,operator_name,flight_number,operation_context,commander
+) VALUES(
+  9001,'2026-09-18','EASA','OK-E2E','B23','SEP','AEROPLANE',
+  'LKLT','LKPR','10:00','10:05','10:45','10:50','PIC',1,50,
+  1,'FlyTally Browser CI','E2E001','PRIVATE','Browser Smoke Pilot'
+);
+`;
+
+const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-q","-c",sql],{
+  encoding:"utf8",
+  env:{...process.env,PGCONNECTTIMEOUT:"5"},
+  maxBuffer:16*1024*1024,
+});
+if(result.error)throw result.error;
+if(result.status!==0)throw new Error(`Browser smoke database bootstrap failed:\n${result.stderr||result.stdout}`);
+console.log("Browser smoke database ready.");
+),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT flight_expenses_owner_flight_fk FOREIGN KEY(flight_id,user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE
 );
 CREATE TABLE aircraft(
   id BIGSERIAL PRIMARY KEY,
