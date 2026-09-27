@@ -826,3 +826,22 @@ test("v3.3 design batch 9 makes push onboarding a canonical raised surface witho
   assert.doesNotMatch(css,/html\[data-theme="light"\] \.push-onboarding\{/);
   assert.match(css,/@media\(max-width:700px\)\{[\s\S]*\.push-onboarding\{right:12px;bottom:calc\(12px \+ env\(safe-area-inset-bottom\)\);width:calc\(100vw - 24px\);grid-template-columns:auto minmax\(0,1fr\);padding:15px\}/);
 });
+
+test("v3.3 design batch 10 standardizes audited email terminology without changing field semantics",()=>{
+  const login=read("app/login/login-form.tsx");
+  const join=read("app/join/join-form.tsx");
+  const profile=read("app/(protected)/profile/page.tsx");
+
+  assert.match(login,/<label>Email<input name="email" type="email" autoComplete="email" required autoFocus \/><\/label>/);
+  assert.doesNotMatch(login,/E-mail/);
+  assert.match(join,/<label>Email<input value=\{email\} readOnly\/><\/label>/);
+  assert.match(profile,/<label>Account email<input type="email" value=\{t\(user\.email\)\} readOnly\/>/);
+});
+
+test("v3.3 design batch 10 replaces decorative Dashboard lead with operational copy only",()=>{
+  const dashboard=read("app/(protected)/dashboard/page.tsx");
+  assert.match(dashboard,/<h1>At a glance<\/h1>/);
+  assert.match(dashboard,/Your all-time flying totals\. Historical periods, trends and detailed breakdowns are in Statistics\./);
+  assert.doesNotMatch(dashboard,/your all-time flying snapshot and the next places to go/i);
+  assert.match(dashboard,/className="primary-link" href="\/flights\/new">＋ Add flight<\/Link>/);
+});
