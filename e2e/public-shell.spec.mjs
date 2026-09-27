@@ -165,6 +165,19 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   const manual=page.getByLabel("Actual PIC");
   await manual.fill("Manual Captain");
   await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
+
+  await page.getByLabel("Registration").selectOption("OK-E2E");
+  await page.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook&saved=1$/);
+  await expect(page.getByLabel("Registration")).toHaveValue("OK-E2E");
+  await expect(page.getByLabel("Role")).toHaveValue("SAFETY PILOT");
+  await expect(page.getByLabel("Actual PIC")).toHaveValue("Manual Captain");
+
+  await page.getByRole("button",{name:"Save changes"}).click();
+  await expect(page.getByText("Flight changes saved.")).toBeVisible();
+  await expect(page.getByLabel("Registration")).toHaveValue("OK-E2E");
+  await expect(page.getByLabel("Role")).toHaveValue("SAFETY PILOT");
+  await expect(page.getByLabel("Actual PIC")).toHaveValue("Manual Captain");
   await expectNoHorizontalOverflow(page);
 });
 
