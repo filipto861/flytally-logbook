@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 
 const PRODUCTION_BRANCH = "main";
+const EXPLICIT_PREVIEW_BRANCHES = new Set(["test/sp2-browser-preview"]);
 const normalize = (value) => String(value ?? "").replaceAll("\\", "/").replace(/^\.\/+/, "");
 
 function git(args) {
@@ -82,8 +83,11 @@ function filesFromArguments(argv) {
 
 if (!isProductionBuild()) {
   const ref = currentGitRef() || "non-production ref";
-  console.log(`Skipping Vercel preview build for ${ref}. Feature branches are validated by GitHub Actions; Vercel builds production only.`);
-  process.exit(0);
+  if (!EXPLICIT_PREVIEW_BRANCHES.has(ref)) {
+    console.log(`Skipping Vercel preview build for ${ref}. Feature branches are validated by GitHub Actions; Vercel builds production only.`);
+    process.exit(0);
+  }
+  console.error(`Vercel preview build explicitly enabled for isolated test branch ${ref}.`);
 }
 
 const argumentFiles = filesFromArguments(process.argv.slice(2));
