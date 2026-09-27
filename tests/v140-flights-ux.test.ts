@@ -56,7 +56,7 @@ test("v1.40.0 mobile flight cards are scoped away from global navigation",()=>{
 });
 
 test("v1.40.0 leaves stabilized GPS inference and certification direction unchanged",()=>{
-  const roadmap=read("ROADMAP.md"),gps=read("lib/track-processing.ts");
+  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),gps=read("lib/track-processing.ts");
   assert.match(roadmap,/v1\.41\.0: lazy GPS detail payload|v1\.41\.0: lazy GPS detail payload/i);
   assert.match(roadmap,/certification baseline remains unchanged|Certification baseline/i);
   assert.match(gps,/takeoffEvidenceIndex/);
