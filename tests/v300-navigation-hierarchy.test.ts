@@ -42,14 +42,14 @@ test("v3.0 U1 rolls flight attention into the Flights destination",()=>{
   assert.match(sidebar,/pathname\.startsWith\("\/flights\/"\)/);
 });
 
-test("v3.0 roadmap prioritizes UX consolidation before multi-aircraft scale",()=>{
+test("v3.0 roadmap advances to multi-aircraft only after the design-consistency audit closes",()=>{
   const roadmap=read("ROADMAP.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(roadmap,/### UX & Product Consolidation — DONE/);
-  const activeAudit=roadmap.indexOf("### 1. Finish the design-consistency audit — ACTIVE");
-  const multiAircraft=roadmap.indexOf("### 2. Multi-aircraft Product Scale — PLANNED");
-  assert.ok(activeAudit>=0,"roadmap must keep the current design-consistency closeout active");
-  assert.ok(multiAircraft>activeAudit,"multi-aircraft scale must remain after the active UX closeout");
+  const closedAudit=roadmap.indexOf("### 1. Design-consistency audit — DONE");
+  const multiAircraft=roadmap.indexOf("### 2. Multi-aircraft Product Scale — NEXT");
+  assert.ok(closedAudit>=0,"roadmap must record the completed design-consistency closeout");
+  assert.ok(multiAircraft>closedAudit,"multi-aircraft scale must become next only after the UX closeout");
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
   assert.match(audit,/U2 ✅ Licences & recency/);
