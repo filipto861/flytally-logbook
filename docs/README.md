@@ -12,6 +12,9 @@ This directory contains supporting documentation for the Logbook repository.
 - `design-language.md` — active design-language guidance.
 - `ux-audit.md` — current design/UI audit findings and closeout history.
 - `product/V3_0_UX_CONSOLIDATION.md` — detailed UX/product consolidation record.
+- `product/MULTI_AIRCRAFT_SCALE_CONTRACT.md` — active Multi-aircraft source-of-truth contract.
+- `product/GPS_TOUCH_AND_GO_RELIABILITY.md` — Priority 1 GPS landing-detection investigation contract.
+- `product/SAFETY_PILOT_PIC_WORKFLOW.md` — Priority 2 Safety Pilot ↔ PIC workflow/data-model contract.
 - `compliance/` — active compliance/commercial-validation engineering documentation, including the current FCL.050 implementation baseline and evidence matrix.
 - `certification-readiness/` — retained certification-readiness evidence from an older release baseline; useful for provenance, but not current release status.
 
