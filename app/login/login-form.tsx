@@ -17,7 +17,7 @@ export function LoginForm({google,externalError,success,returnTo}:{google:boolea
       {google?<div className="auth-divider"><span>or use your password</span></div>:null}
     <form action={action} className="login-form">
       <input type="hidden" name="returnTo" value={returnTo}/>
-      <label>E-mail<input name="email" type="email" autoComplete="email" required autoFocus /></label>
+      <label>Email<input name="email" type="email" autoComplete="email" required autoFocus /></label>
       <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
       <a href="/forgot-password" className="auth-text-link">Forgot password?</a>
       {success?<p className="form-success" role="status">{success}</p>:null}
