@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Create/Edit synchronize the flight row, expenses and current connected-PIC metadata atomically; switching to manual entry or away from Safety Pilot removes the link.
 - Edit/correction reloads stored connected identity by flight ID, including a fail-closed unavailable state when the Connection is no longer accepted.
 - SP2 does not send PIC invitations or create participation rows; certified sharing remains staged for SP3.
-- Added SP2 source/regression and browser-contract coverage. TypeScript PASS, 884/884 unit/regression PASS, production build PASS, and isolated Neon persistence acceptance PASS; authenticated browser execution remains pending before merge.
+- Added SP2 source/regression and browser-contract coverage. Final verification: TypeScript PASS, 885/885 unit/regression PASS with 0 fail / 0 skip, production build PASS, isolated Neon persistence acceptance PASS, and authenticated isolated Vercel Preview acceptance PASS across desktop, mobile and iPad layouts. Preview testing found and fixed a repeated-save controlled-field reset before merge.
 
 ### Safety Pilot ↔ PIC foundation — SP1
 - Added tracked schema migration v15 for separate `flight_connected_crew` collaboration metadata with owner-bound FK, one-PIC-per-flight uniqueness, self-link rejection and cascade cleanup.
