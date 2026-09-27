@@ -37,6 +37,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Saved-vs-GPS review before applying derived suggestions.
 - Track playback and aircraft marker presentation.
 - Map/profile display without treating GPS as authority for unsupported regulatory evidence.
+- Rolling touch-and-go altitude-discontinuity validation is bounded to the candidate's physical descent/minimum/climb evidence span, preventing unrelated sparse-sampling anomalies from suppressing valid advisory detections while preserving conservative in-span rejection.
 
 ## Licences, recency and evidence — IMPLEMENTED
 
@@ -120,14 +121,7 @@ Important boundary:
 - Recipient record remains independently owned/certified; the source Safety Pilot record remains independent evidence and does not gain PIC credit.
 - Manual PIC text never silently creates an account link.
 
-### GPS touch-and-go detection reliability — PRIORITY RELIABILITY WORK
-
-- GPS-derived landing count remains advisory and user-reviewed.
-- Real touch-and-go failure cases are reproduced before detector thresholds change.
-- Sampling-rate-dependent logic should be replaced with time/distance-normalized evidence where the exact failure proves it necessary.
-- Uncertain GPS evidence must remain conservative rather than creating unsupported landing evidence.
-
-### Multi-aircraft Product Scale — ACTIVE
+### Multi-aircraft Product Scale — PAUSED
 
 Existing multi-aircraft profiles remain the foundation. The active scale phase is not a second fleet model.
 
