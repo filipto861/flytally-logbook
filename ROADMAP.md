@@ -55,12 +55,12 @@ Remaining work:
    - UX-027 is closed as an incorrect audit premise with no visual change.
    - PR #147 carries the implementation and verification closeout.
 
-2. **Batch 10 — microcopy — NEXT**
-   - UX-032: email terminology consistency.
-   - UX-033: replace decorative Dashboard lead copy with operational wording.
+2. **Batch 10 — microcopy — DONE**
+   - UX-032: email terminology is consistent: Email for sign-in/join, Account email for the signed-in account identity, Pilot email only for another-pilot contexts.
+   - UX-033: Dashboard lead copy now uses operational wording and points historical analysis to Statistics.
    - Presentation-only; no domain or regulatory behavior change.
 
-3. **Batch 11 — offline state — PLANNED**
+3. **Batch 11 — offline state — NEXT**
    - UX-025: retain the online-only service-worker policy.
    - Add an explicit non-blocking offline banner.
    - Do **not** add offline editing or offline mutation of logbook/certified data.
