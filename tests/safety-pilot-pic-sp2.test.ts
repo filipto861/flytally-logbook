@@ -100,6 +100,7 @@ test("SP2 connected mode is explicit and cannot silently degrade to manual when 
   assert.match(actions,/if\(mode==="manual"\)return 0;if\(mode!=="connected"\)return-1/);
   assert.match(actions,/if\(!raw\)return-1/);
   assert.match(form,/name="actualPicMode"/);
-  assert.match(form,/select name="connectedPicUserId"[^>]*required/);
+  assert.ok(form.includes('<select name="connectedPicUserId" value={connectedPicUserId} onChange={event=>setConnectedPicUserId(event.target.value)} required aria-invalid={!connectedPicUserId||!connectedPicAccepted}>'));
   assert.match(form,/picMode==="connected"\?\(!connectedPicUserId\|\|!connectedPicAccepted\)/);
+  assert.ok(form.includes('<span>Actual PIC <span className="field-hint" aria-hidden="true">Required</span></span><select name="connectedPicUserId"'));
 });
