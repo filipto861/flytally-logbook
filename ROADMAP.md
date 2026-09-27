@@ -32,6 +32,8 @@ Historical PR/version labels are retained in Git history and the changelog, but 
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization checkpoint | 🚧 | Current work: confirm product priorities before starting the next implementation milestone |
+| Safety Pilot ↔ PIC shared-flight workflow | ⏳ | Requested: connected-pilot selection + manual fallback + PIC invitation symmetry |
+| GPS touch-and-go detection reliability | 🚧 | Real-track mismatch reported; exact track reproduction and detector review required |
 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Candidate next; not started until roadmap review is confirmed |
 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Planned |
 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Planned |
@@ -65,6 +67,8 @@ This table is the concise chronological development history. Detailed implementa
 | Multi-aircraft M0 | ✅ | Current-profile vs historical-flight source-of-truth contract · PR #153 |
 | Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
+| Safety Pilot ↔ PIC shared-flight workflow | ⏳ | Connected PIC selection/manual fallback and PIC invite from a Safety Pilot source record |
+| GPS touch-and-go detection reliability | 🚧 | Reported real-track landing-count mismatch; reproduce before detector changes |
 | Multi-aircraft M2B | ⏳ | Remaining historical/dynamic applicability integrity audit — candidate next |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
 | Multi-aircraft M4 | ⏳ | Sharing, recovery, measured scale and final closeout |
@@ -95,6 +99,44 @@ Goals:
 - preserve completed milestone history in the progress tables above.
 
 No runtime implementation starts from this checkpoint until the roadmap review is confirmed.
+
+#### New product/reliability inputs captured for this review
+
+**Safety Pilot ↔ PIC shared-flight workflow — REQUESTED**
+
+Current repository evidence:
+- `SAFETY PILOT` already exists as a flight role and the form already requires/requests the actual PIC for EASA Safety Pilot records.
+- The current `Actual PIC` field is free text only; the New flight page supplies a datalist of accepted **instructors**, not all accepted pilot Connections.
+- Generic certified-flight sharing exists, but its participant-role contract currently excludes `PIC`; a Safety Pilot source record therefore cannot invite the actual PIC as PIC through the canonical participation workflow.
+
+Requested product behavior:
+- when the owner logs the flight as **SAFETY PILOT**, `Actual PIC` can be selected from accepted Connections **or entered manually**;
+- selecting a connected pilot must preserve that user's identity separately from the displayed/manual name so matching never depends on name text;
+- after certification, the owner can invite that selected connection as **PIC** through the existing Review → Add → Certify shared-flight workflow;
+- the recipient gets an independent owned flight record with role PIC; the source user's Safety Pilot record remains independent evidence;
+- manual PIC text remains valid when the PIC is not a FlyTally connection, but cannot silently create an account link or invitation;
+- adding PIC as a shareable participant role must not accidentally credit the source Safety Pilot record, weaken source-revision/hash checks, or change existing instructor/Safety Pilot invitation semantics.
+
+This is a collaboration/data-model feature and must be designed against the existing `flight_participations` ownership model before implementation.
+
+**GPS touch-and-go detection reliability — INVESTIGATION**
+
+A real flight has been reported where GPS import produced the wrong landing count during touch-and-go operations.
+
+Current detector contract:
+- landing suggestion is `1 + detected touch-and-go events` and remains user-editable/review-required;
+- speed-based detection requires a drop below 20 km/h bracketed by >42 km/h movement and a 5–90 second ground event;
+- rolling touch-and-go fallback uses a local altitude minimum, 28–145 km/h groundspeed, at least 30 m descent and 30 m climb, and an altitude-discontinuity guard;
+- several detector windows and duplicate-suppression rules are currently expressed in **point counts** (for example ±10 points / 8-point grouping), so their real time span changes with GPS sampling rate.
+
+Review requirement:
+- reproduce the reported mismatch from the exact original KML/GPX/CSV before changing thresholds;
+- compare actual touch-and-go timestamps against speed, altitude and sampling interval;
+- determine whether the defect is threshold-specific or caused by point-count windows that are sampling-rate dependent;
+- prefer time/distance-normalized evidence if repository evidence confirms sampling-rate sensitivity;
+- retain manual review/editability and fail conservative rather than inventing regulatory landing evidence.
+
+Exact sample track is required before this investigation can move from reported issue to a verified detector defect/fix plan.
 
 ### Documentation governance consolidation — DONE
 
