@@ -7,24 +7,20 @@ import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
-import { normalizeAircraftProfileContext } from "@/lib/aircraft-profile-context";
+import { validateAircraftProfile } from "@/lib/aircraft-profile-validation";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
-const BALLOON_CLASSES=["HOT_AIR_BALLOON","GAS_BALLOON","HOT_AIR_AIRSHIP","MIXED_BALLOON"] as const,BALLOON_GROUPS=["A","B","C","D"] as const;
 function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/new");revalidatePath("/flights");revalidatePath("/dashboard");revalidatePath("/print");}
 export type AircraftSaveResult={ok:boolean;message:string};
 export type AircraftDeleteResult={ok:boolean;message:string};
 async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
   const {userId}=await requireUser();await Promise.all([ensureV162Schema(),ensureV164Schema()]);const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return{ok:false,message:"Aircraft registration is required."};
-  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),requestedEvidence=s(form,"evidence").toUpperCase(),requestedClass=s(form,"aircraft_class").toUpperCase(),requestedCategory=s(form,"regulatory_category").toUpperCase(),normalized=normalizeAircraftProfileContext(requestedEvidence,requestedClass,requestedCategory);
-  if(!normalized.context)return{ok:false,message:normalized.error||"Select a valid aircraft profile."};
-  const {evidence,aircraftClass,regulatoryCategory}=normalized.context;
-  if(evidence==="EASA"&&(!make||!model))return{ok:false,message:"An EASA aircraft profile requires both manufacturer (Make) and aircraft type/model."};
-  const balloonClassRaw=s(form,"balloon_class").toUpperCase(),balloonGroupRaw=s(form,"balloon_group").toUpperCase(),balloonClass=regulatoryCategory==="BALLOON"&&BALLOON_CLASSES.includes(balloonClassRaw as typeof BALLOON_CLASSES[number])?balloonClassRaw:"",balloonGroup=balloonClass==="HOT_AIR_BALLOON"&&BALLOON_GROUPS.includes(balloonGroupRaw as typeof BALLOON_GROUPS[number])?balloonGroupRaw:"";
-  if(regulatoryCategory==="BALLOON"&&!balloonClass)return{ok:false,message:"Select the Part-BFCL balloon class."};
-  if(balloonClass==="HOT_AIR_BALLOON"&&!balloonGroup)return{ok:false,message:"Select hot-air balloon group A, B, C or D."};
-  const creditRaw=s(form,"part_fcl_credit_class").toUpperCase(),creditClass=["SEP","TMG"].includes(creditRaw)?creditRaw:"",creditBasis=s(form,"part_fcl_credit_basis").slice(0,300),creditFrom=s(form,"part_fcl_credit_from");
-  if(creditClass&&(!creditBasis||!validIsoDate(creditFrom)))return{ok:false,message:"Part-FCL credit needs a basis/reference and a valid-from date."};
+  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),validated=validateAircraftProfile({
+    aircraftMake:make,aircraftModel:model,evidence:s(form,"evidence"),aircraftClass:s(form,"aircraft_class"),regulatoryCategory:s(form,"regulatory_category"),
+    balloonClass:s(form,"balloon_class"),balloonGroup:s(form,"balloon_group"),partFclCreditClass:s(form,"part_fcl_credit_class"),partFclCreditBasis:s(form,"part_fcl_credit_basis"),partFclCreditFrom:s(form,"part_fcl_credit_from"),
+  });
+  if(!validated.profile)return{ok:false,message:validated.error};
+  const{evidence,aircraftClass,regulatoryCategory,balloonClass,balloonGroup,partFclCreditClass:creditClass,partFclCreditBasis:creditBasis,partFclCreditFrom:creditFrom}=validated.profile;
   if(id){
     await sql`UPDATE aircraft SET aircraft_type=${displayType},aircraft_make=${make},aircraft_model=${model},aircraft_variant=${variant},icao_type=${s(form,"icao_type")},aircraft_class=${aircraftClass},regulatory_category=${regulatoryCategory},balloon_class=${balloonClass},balloon_group=${balloonGroup},evidence=${evidence},default_role=${s(form,"default_role")||"PIC"},billing_basis=${billing},part_fcl_credit_class=${creditClass},part_fcl_credit_basis=${creditBasis},part_fcl_credit_from=${creditFrom},note=${s(form,"note")},updated_at=NOW() WHERE id=${id} AND user_id=${userId} AND UPPER(TRIM(registration))=${reg}`;
   }else{
