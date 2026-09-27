@@ -73,7 +73,7 @@ SELECT ${quote(`${marker}[]`)}`;
   });
   const output=spawn(`BEGIN;\n${chunks.join(";\n")};\nCOMMIT;`);
   const results=statements.map(()=>[] as Array<Record<string,unknown>>);
-  for(const line of output.split(/\\r?\\n/)){
+  for(const line of output.split(/\r?\n/)){
     if(!line.startsWith(TRANSACTION_RESULT_PREFIX))continue;
     const separator=line.indexOf(":");
     const index=Number(line.slice(TRANSACTION_RESULT_PREFIX.length,separator));
