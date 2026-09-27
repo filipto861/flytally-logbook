@@ -57,7 +57,7 @@ test("v1.53.1 keeps required EASA aircraft identity out of the optional settings
   assert.match(picker,/required=\{requireMake\}/);
   assert.match(picker,/name="aircraft_model"/);
   assert.match(picker,/required=\{requireModel\}/);
-  assert.match(actions,/evidence==="EASA"&&\(!make\|\|!model\)/);
-  assert.match(actions,/normalizeAircraftProfileContext\(requestedEvidence,requestedClass,requestedCategory\)/);
-  assert.match(actions,/const \{evidence,aircraftClass,regulatoryCategory\}=normalized[.]context/);
+  assert.match(actions,/validateAircraftProfile\(\{/);
+  assert.match(actions,/if\(!validated[.]profile\)return/);
+  assert.match(actions,/const\{evidence,aircraftClass,regulatoryCategory/);
 });
