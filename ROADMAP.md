@@ -44,8 +44,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
-| GPS touch-and-go detection reliability | 🚧 | **Priority 1 / ACTIVE**; real-track defect reproduced, root cause confirmed, minimal fix design under review |
-| Safety Pilot ↔ PIC shared-flight workflow | ⏳ | **Priority 2**; connected PIC selection + manual fallback + PIC invitation symmetry |
+| GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
+| Safety Pilot ↔ PIC shared-flight workflow | ➡️ | **NEXT**; connected PIC selection + manual fallback + PIC invitation symmetry |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -60,8 +60,8 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | Order | Workstream | Status | Why it is here |
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
-| 1 | GPS touch-and-go detection reliability | 🚧 | Real user flight produced a wrong landing suggestion; correctness comes first |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | ⏳ | Real missing workflow discovered in normal flying use |
+| 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | ➡️ | Next approved product milestone after GPS reliability closeout |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -71,9 +71,9 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 
 **Priority rule:** production/data-integrity defects can pre-empt this order. Convenience features do not pre-empt unresolved correctness issues.
 
-## P1 — GPS touch-and-go detection reliability — ACTIVE
+## P1 — GPS touch-and-go detection reliability — DONE
 
-A real GPS import produced the wrong landing suggestion during touch-and-go operations. The exact failure is now reproduced and the confirmed defect is a point-index locality problem in the rolling-T&G altitude-discontinuity guard; runtime implementation has not started.
+A real GPS import produced the wrong landing suggestion during touch-and-go operations. The exact failure was reproduced and fixed by bounding rolling-T&G altitude-discontinuity validation to the candidate's own physical descent/minimum/climb evidence span.
 
 Detailed investigation contract:
 
@@ -87,9 +87,9 @@ Roadmap-level acceptance:
 - re-run the existing GPS/track regression corpus so the fix does not create new false positives;
 - where sampling-rate sensitivity is confirmed, require stable classification across representative sampling intervals.
 
-No threshold or algorithm change is pre-approved by the roadmap.
+Closeout: the existing 28–145 km/h and 30 m qualification thresholds remain unchanged; take-off discontinuity semantics and unrelated point-count grouping/dedup rules remain unchanged. The anonymized sparse fixture failed before the fix and passed after it while the in-span corruption case remained fail-closed.
 
-## P2 — Safety Pilot ↔ PIC shared-flight workflow — PLANNED, HIGH PRIORITY
+## P2 — Safety Pilot ↔ PIC shared-flight workflow — NEXT
 
 User goal:
 
@@ -276,8 +276,8 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M0 | ✅ | Current-profile vs historical-flight source-of-truth contract · PR #153 |
 | Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
-| GPS touch-and-go reliability | ➡️ | First runtime priority after roadmap freeze |
-| Safety Pilot ↔ PIC workflow | ⏳ | Second runtime priority |
+| GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
+| Safety Pilot ↔ PIC workflow | ➡️ | Next approved runtime/product milestone |
 | Multi-aircraft M2B | ⏳ | Resume integrity audit after priority work |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
