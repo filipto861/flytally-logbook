@@ -156,6 +156,18 @@ CREATE TABLE flight_tracks(
   flight_id BIGINT NOT NULL,
   distance_km NUMERIC NOT NULL DEFAULT 0
 );
+CREATE TABLE flight_connected_crew(
+  id BIGSERIAL PRIMARY KEY,
+  source_flight_id BIGINT NOT NULL,
+  source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  connected_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  intended_role TEXT NOT NULL CHECK(intended_role='PIC'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT flight_connected_crew_source_owner_fk FOREIGN KEY(source_flight_id,source_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+  CONSTRAINT flight_connected_crew_distinct_users_check CHECK(source_user_id<>connected_user_id),
+  CONSTRAINT flight_connected_crew_flight_role_uq UNIQUE(source_flight_id,intended_role)
+);
 CREATE TABLE flight_participations(
   id BIGSERIAL PRIMARY KEY,
   source_flight_id BIGINT NOT NULL,
