@@ -38,7 +38,7 @@ CREATE SCHEMA public;
 
 CREATE TABLE flytally_schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_schema_migrations(version,name)
-SELECT value,'browser-smoke-preapplied' FROM generate_series(1,14) value;
+SELECT value,'browser-smoke-preapplied' FROM generate_series(1,15) value;
 
 CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_feature_migrations(migration_key) VALUES
