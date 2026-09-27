@@ -1,8 +1,8 @@
 # Multi-aircraft Product Scale — canonical profile & evidence contract
 
-Status: **M0 merged · M2A closeout candidate**  
+Status: **M0 + M2A merged · M1 closeout candidate**  
 Repository baseline: `main@44a70a039dee6abce58370dad31d29ad1d9d67a0`  
-Planning branch: `docs/multi-aircraft-scale-roadmap`
+Implementation branch: `feat/multi-aircraft-m1-profile-validation`
 
 This document records the repository-backed source-of-truth contract for the Multi-aircraft Product Scale phase. It does not change runtime behavior.
 
@@ -110,7 +110,7 @@ Adjacent data:
 
 ### D1 — Shared import validation
 
-For regulatory profile fields, shared import must use the same canonical server-side validation as normal Add/Edit.
+For regulatory profile fields, shared import now uses the same canonical server-side validation as normal Add/Edit.
 
 Allowed share-specific differences:
 
@@ -198,8 +198,8 @@ Reconciled implementation order:
 
 1. **M0 — contract & evidence audit** — this document.
 2. **M2A — helicopter historical snapshot integrity — DONE** — snapshot-first type resolution + incomplete-evidence compatibility.
-3. **M1 — canonical aircraft-profile validation — NEXT** — one reusable validator for direct Add/Edit + shared import.
-4. **M2B — remaining historical/dynamic applicability verification** — preserve documented ULL mapping semantics and audit any remaining current-profile joins.
+3. **M1 — canonical aircraft-profile validation — DONE** — one reusable validator for direct Add/Edit + shared import.
+4. **M2B — remaining historical/dynamic applicability verification — NEXT** — preserve documented ULL mapping semantics and audit any remaining current-profile joins.
 5. **M3 — heterogeneous no-code onboarding proof.**
 6. **M4 — sharing, recovery, measured scale and release closeout.**
 
