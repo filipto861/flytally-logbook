@@ -44,7 +44,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
-| GPS touch-and-go detection reliability | 🚧 | **Priority 1 / ACTIVE**; reproduce the real-track mismatch before changing logic |
+| GPS touch-and-go detection reliability | 🚧 | **Priority 1 / ACTIVE**; real-track defect reproduced, root cause confirmed, minimal fix design under review |
 | Safety Pilot ↔ PIC shared-flight workflow | ⏳ | **Priority 2**; connected PIC selection + manual fallback + PIC invitation symmetry |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
@@ -73,7 +73,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 
 ## P1 — GPS touch-and-go detection reliability — ACTIVE
 
-A real GPS import produced the wrong landing suggestion during touch-and-go operations.
+A real GPS import produced the wrong landing suggestion during touch-and-go operations. The exact failure is now reproduced and the confirmed defect is a point-index locality problem in the rolling-T&G altitude-discontinuity guard; runtime implementation has not started.
 
 Detailed investigation contract:
 
