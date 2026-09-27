@@ -1,6 +1,6 @@
 # FlyTally Logbook roadmap
 
-Last reconciled: **26 September 2026**
+Last reconciled: **27 September 2026**
 
 This is the canonical planning document for `flytally-logbook`. It answers **what we do next, in what order, and why**.
 
@@ -49,18 +49,18 @@ The current audit is defined in `docs/ux-audit.md`.
 
 Remaining work:
 
-1. **Batch 9 — surfaces and error pages**
-   - PR #147 is implemented on `codex/v335-batch9-error-pages-push`.
-   - Includes UX-026 and UX-029.
+1. **Batch 9 — surfaces and error pages — DONE**
+   - Root not-found and runtime-error fallbacks use the existing FlyTally visual system without exposing technical error details.
+   - Push onboarding uses the canonical raised-surface contract.
    - UX-027 is closed as an incorrect audit premise with no visual change.
-   - Required before merge: verification evidence and production-safe closeout.
+   - PR #147 carries the implementation and verification closeout.
 
-2. **Batch 10 — microcopy**
+2. **Batch 10 — microcopy — NEXT**
    - UX-032: email terminology consistency.
    - UX-033: replace decorative Dashboard lead copy with operational wording.
    - Presentation-only; no domain or regulatory behavior change.
 
-3. **Batch 11 — offline state**
+3. **Batch 11 — offline state — PLANNED**
    - UX-025: retain the online-only service-worker policy.
    - Add an explicit non-blocking offline banner.
    - Do **not** add offline editing or offline mutation of logbook/certified data.

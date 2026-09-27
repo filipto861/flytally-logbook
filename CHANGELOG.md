@@ -17,6 +17,12 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added a documentation index and historical archive under `docs/history/`.
 - Moved old version-specific scope/audit notes out of the repository root without deleting their evidence from Git history.
 
+### Design consistency audit — Batch 9
+- Added branded root not-found and runtime-error fallbacks using existing FlyTally page/panel/button contracts.
+- Kept runtime error presentation non-technical and added retry plus safe root navigation.
+- Replaced the bespoke Push onboarding glass surface with the canonical raised-surface tokens while preserving placement and behavior.
+- Closed UX-027 without a visual change after confirming the effective login-card cascade was already 11 px with no backdrop blur.
+
 ## v3.3 design & workflow consistency — merged through 2026-09-20
 
 ### Workflow simplification
@@ -37,7 +43,7 @@ This section tracks changes intended for the next named release. An entry is pro
 ### Engineering workflow
 - Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
 
-Batch 9 and later audit work are not recorded here until merged.
+Batch 10 and later audit work remain pending.
 
 
 ## v3.2 — UI consistency & verification foundation — 2026-09-19
