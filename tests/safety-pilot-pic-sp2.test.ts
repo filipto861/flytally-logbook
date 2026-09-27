@@ -89,5 +89,5 @@ test("SP2 rejects a blank manual EASA Safety Pilot PIC server-side",()=>{
 
 test("SP2 new Safety Pilot manual PIC starts blank instead of inheriting the source pilot name",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/\[manualCommander,setManualCommander\]=useState\(editing\?field\("commander"\):""\)/);
+  assert.match(form,/\[manualCommander,setManualCommander\]=useState\(editing&&initialRole==="SAFETY PILOT"\?field\("commander"\):""\)/);
 });
