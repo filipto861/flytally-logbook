@@ -90,6 +90,51 @@ function circuitTrack(minimumSpeedKmh=75){
   return points;
 }
 
+
+function irregularRollingTouchAndGo(extraSamplesAfterEvidence=false,corruptionInsideEvidence=false){
+  const start=Date.parse("2026-09-23T16:09:42Z");
+  let seconds=corruptionInsideEvidence
+    ?[-43,-41,-39,-37,-31,-24,-23,-17,-11,0,15,15.001,17,33,40,44,46,48,50,52,54]
+    :[-43,-41,-39,-37,-31,-24,-23,-17,-11,0,15,17,33,40,44,46,48,50,50.001,52,54];
+  let altitudes=corruptionInsideEvidence
+    ?[410,405,395,385,378,346,322,315,284,233,236,241,237,282,314,325,331,336,343,353,361]
+    :[410,405,395,385,378,346,322,315,284,233,236,237,282,314,325,331,336,343,348,353,361];
+
+  // Same physical T&G and distant timestamp artifact, but add harmless climb
+  // samples so the artifact moves beyond the legacy candidate+10 index window.
+  if(extraSamplesAfterEvidence&&!corruptionInsideEvidence){
+    seconds=[...seconds.slice(0,14),41,42,43,...seconds.slice(14)];
+    altitudes=[...altitudes.slice(0,14),317,320,323,...altitudes.slice(14)];
+  }
+
+  const points:KmlPoint[]=[];
+  let latitude=50,lastSeconds:number|null=null;
+  seconds.forEach((offset,index)=>{
+    if(lastSeconds!==null)latitude+=(100*(offset-lastSeconds)/3600)/111.2;
+    points.push({lat:latitude,lon:14,alt:altitudes[index],time:new Date(start+offset*1000).toISOString()});
+    lastSeconds=offset;
+  });
+  return points;
+}
+
+test("a distant near-zero-timestamp altitude pair cannot invalidate the physical T&G evidence span",()=>{
+  const sparse=irregularRollingTouchAndGo(false,false),dense=irregularRollingTouchAndGo(true,false);
+
+  // These fixtures describe the same touchdown geometry. The only material
+  // difference is point density after the +30 m climb evidence has completed.
+  assert.equal(touchAndGoEvents(dense).length,1);
+  assert.equal(landingCount(dense),2);
+
+  assert.equal(touchAndGoEvents(sparse).length,1);
+  assert.equal(landingCount(sparse),2);
+});
+
+test("near-zero timestamp corruption inside the qualifying T&G evidence span remains fail-closed",()=>{
+  const points=irregularRollingTouchAndGo(false,true);
+  assert.deepEqual(touchAndGoEvents(points),[]);
+  assert.equal(landingCount(points),1);
+});
+
 test("a rolling touch-and-go is counted without splitting the flight",()=>{
   const points=circuitTrack();
   assert.deepEqual(suggestedSplits(points),[]);

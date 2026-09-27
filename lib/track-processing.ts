@@ -75,6 +75,24 @@ function hasImplausibleAltitudeJump(points:KmlPoint[],index:number){
 }
 
 /**
+ * Rolling T&G validation must only use altitude continuity from the physical
+ * descent/minimum/climb evidence that qualified the candidate. This keeps an
+ * unrelated later sensor/timestamp anomaly from invalidating the touchdown
+ * merely because sparse sampling leaves it within an arbitrary point count.
+ *
+ * The generic helper above is intentionally unchanged because take-off
+ * evidence also depends on its legacy neighborhood semantics.
+ */
+function hasImplausibleAltitudeJumpWithin(points:KmlPoint[],startIndex:number,endIndex:number){
+  for(let cursor=Math.max(1,startIndex+1);cursor<=Math.min(points.length-1,endIndex);cursor++){
+    const before=points[cursor-1].alt,after=points[cursor].alt,duration=seconds(points[cursor-1],points[cursor]);
+    if(before===null||after===null||!Number.isFinite(before)||!Number.isFinite(after)||duration<=0||duration>15)continue;
+    if(Math.abs(after-before)/duration>25)return true;
+  }
+  return false;
+}
+
+/**
  * Detect a rolling touch-and-go that never becomes slow enough to create a
  * ground event. GPS altitude is deliberately only a secondary signal: the
  * aircraft must descend at least 30 m, reach a local minimum while still at a
@@ -87,13 +105,17 @@ function altitudeTouchAndGoIndices(points:KmlPoint[]){
   for(let index=4;index<points.length-4;index++){
     const altitude=points[index].alt,rollingSpeed=speed[index];
     if(altitude===null||!Number.isFinite(altitude)||rollingSpeed<28||rollingSpeed>145)continue;
-    const left=points.slice(Math.max(0,index-10),index).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
-    const right=points.slice(index+1,Math.min(points.length,index+11)).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+    const leftStart=Math.max(0,index-10),rightEnd=Math.min(points.length-1,index+10);
+    const left=points.slice(leftStart,index).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+    const right=points.slice(index+1,rightEnd+1).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
     if(left.length<3||right.length<3)continue;
     const local=points.slice(index-2,index+3).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
     if(!local.length||altitude>Math.min(...local)+2)continue;
-    if(Math.max(...left)-altitude<30||Math.max(...right)-altitude<30)continue;
-    if(hasImplausibleAltitudeJump(points,index))continue;
+    let descentEvidence=-1,climbEvidence=-1;
+    for(let cursor=index-1;cursor>=leftStart;cursor--){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=30){descentEvidence=cursor;break}}
+    for(let cursor=index+1;cursor<=rightEnd;cursor++){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=30){climbEvidence=cursor;break}}
+    if(descentEvidence<0||climbEvidence<0)continue;
+    if(hasImplausibleAltitudeJumpWithin(points,descentEvidence,climbEvidence))continue;
     candidates.push({index,altitude});
   }
   const events:number[]=[];

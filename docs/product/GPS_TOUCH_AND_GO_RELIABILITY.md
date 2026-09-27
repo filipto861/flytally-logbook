@@ -1,6 +1,6 @@
 # GPS Touch-and-Go Detection Reliability
 
-**Status:** Priority 1 fix-design candidate  
+**Status:** Priority 1 — DONE  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed investigation, fix-design and acceptance contract for the reported GPS landing-count mismatch. `ROADMAP.md` carries only priority and phase status.
@@ -256,6 +256,25 @@ Track separately; do not silently pull into this milestone without new evidence:
 - point-count speed/altitude duplicate suppression;
 - explicit near-duplicate timestamp quality classification;
 - broader time-normalized detector refactor.
+
+## Implementation closeout
+
+Implemented scope:
+- added an anonymized irregular-sampling regression derived from the reproduced failure shape;
+- proved the sparse fixture fails on the pre-fix detector while the denser equivalent geometry passes, isolating array-index locality;
+- added a companion case proving near-zero timestamp corruption inside the qualifying evidence span still rejects the automatic T&G suggestion;
+- added a T&G-specific bounded discontinuity helper while leaving the generic take-off helper unchanged;
+- replaced the T&G candidate's broad ±10-point discontinuity check with nearest-left / nearest-right +30 m physical evidence bounds;
+- did not change rolling speed thresholds, 30 m altitude thresholds, candidate grouping or speed/altitude deduplication.
+
+Regression-first evidence:
+- pre-fix branch: the sparse locality fixture failed exactly at the expected T&G assertion;
+- the in-span corruption case passed as a conservative rejection;
+- after the runtime change, full unit/regression, PostgreSQL acceptance, production build and Chromium desktop/mobile browser smoke passed before documentation closeout.
+
+No full personal GPS route was committed.
+
+Deferred technical-debt items below remain deliberately outside this milestone.
 
 ## Production follow-up
 

@@ -11,6 +11,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
+### GPS touch-and-go detection reliability
+- Reproduced a real missed rolling touch-and-go caused by an unrelated near-zero-timestamp altitude pair remaining inside a sparse ±10-point discontinuity window.
+- Added anonymized regression coverage proving equivalent touchdown geometry must classify the same despite harmless post-climb point-density differences.
+- Bounded rolling-T&G altitude-discontinuity checks to the candidate's own nearest +30 m descent/climb evidence span.
+- Kept the existing 28–145 km/h rolling-speed and 30 m descent/climb thresholds unchanged.
+- Preserved fail-closed rejection when timestamp/altitude corruption occurs inside the qualifying T&G evidence span.
+- Left take-off discontinuity behavior and unrelated point-count grouping/dedup logic unchanged.
+- GPS-derived landing totals remain advisory and user-reviewed; no DB/schema/certification behavior changed.
+
 ### Multi-aircraft Product Scale — M2A
 - Changed type-specific helicopter recency to resolve historical type from stored `flights.aircraft_model`, with bounded legacy fallback to stored `flights.aircraft_type`.
 - Removed mutable current-aircraft model and registration as silent historical type fallbacks.
