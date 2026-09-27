@@ -20,6 +20,7 @@ test("SP2 New Flight loads explicit accepted PIC connection ids separately from 
 test("SP2 Safety Pilot UI keeps connected identity explicit and manual text first-class",()=>{
   const form=read("components/flight-form.tsx");
   assert.match(form,/Actual PIC source/);
+  assert.match(form,/name="actualPicMode"/);
   assert.match(form,/name="connectedPicUserId"/);
   assert.match(form,/Enter name manually/);
   assert.match(form,/FlyTally Connection/);
@@ -43,7 +44,7 @@ test("SP2 create canonicalizes connected commander server-side and creates the l
 test("SP2 update synchronizes current link atomically and removes it for manual or non-Safety-Pilot state",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const update=between(actions,"export async function updateFlight","export async function saveFlightExpenses");
-  assert.match(actions,/function connectedPicSelection\(form:FormData,role:string\)\{if\(role!=="SAFETY PILOT"\)return 0/);
+  assert.match(actions,/function connectedPicSelection\(form:FormData,role:string\)\{if\(role!=="SAFETY PILOT"\)return 0;const mode=String\(form\.get\("actualPicMode"\)/);
   assert.match(update,/commander=p\.commander/);
   assert.match(update,/deleted_link AS/);
   assert.match(update,/connected_link AS/);
@@ -90,4 +91,15 @@ test("SP2 rejects a blank manual EASA Safety Pilot PIC server-side",()=>{
 test("SP2 new Safety Pilot manual PIC starts blank instead of inheriting the source pilot name",()=>{
   const form=read("components/flight-form.tsx");
   assert.match(form,/\[manualCommander,setManualCommander\]=useState\(editing&&initialRole==="SAFETY PILOT"\?field\("commander"\):""\)/);
+});
+
+
+test("SP2 connected mode is explicit and cannot silently degrade to manual when no pilot is selected",()=>{
+  const actions=read("app/(protected)/flights/actions.ts");
+  const form=read("components/flight-form.tsx");
+  assert.match(actions,/if\(mode==="manual"\)return 0;if\(mode!=="connected"\)return-1/);
+  assert.match(actions,/if\(!raw\)return-1/);
+  assert.match(form,/name="actualPicMode"/);
+  assert.match(form,/select name="connectedPicUserId"[^>]*required/);
+  assert.match(form,/picMode==="connected"\?\(!connectedPicUserId\|\|!connectedPicAccepted\)/);
 });
