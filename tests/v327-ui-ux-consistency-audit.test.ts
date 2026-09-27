@@ -847,3 +847,31 @@ test("v3.3 design batch 10 uses operational dashboard lead copy",()=>{
   assert.doesNotMatch(dashboard,/your all-time flying snapshot and the next places to go/i);
 });
 
+test("v3.3 design batch 11 exposes explicit offline state without adding offline data behavior",()=>{
+  const pwa=read("components/pwa-client.tsx");
+  const css=read("app/v300-push.css");
+  const sw=read("public/sw.js");
+
+  assert.match(pwa,/useState\(false\)/);
+  assert.match(pwa,/setOffline\(!navigator\.onLine\)/);
+  assert.match(pwa,/addEventListener\("online",syncConnectivity\)/);
+  assert.match(pwa,/addEventListener\("offline",syncConnectivity\)/);
+  assert.match(pwa,/removeEventListener\("online",syncConnectivity\)/);
+  assert.match(pwa,/removeEventListener\("offline",syncConnectivity\)/);
+  assert.match(pwa,/className="connection-status-banner" role="status" aria-live="polite"/);
+  assert.match(pwa,/You&apos;re offline\. FlyTally needs a connection to load or save logbook data\./);
+
+  const banner=css.match(/\.connection-status-banner\{([^}]*)\}/)?.[1]??"";
+  assert.match(banner,/position:fixed/);
+  assert.match(banner,/top:calc\(12px \+ env\(safe-area-inset-top\)\)/);
+  assert.match(banner,/background:var\(--surface\)/);
+  assert.match(banner,/border:1px solid var\(--line\)/);
+  assert.match(banner,/border-radius:var\(--ui-radius-control\)/);
+  assert.match(banner,/box-shadow:var\(--shadow-raised\)/);
+  assert.match(banner,/pointer-events:none/);
+
+  assert.match(sw,/FlyTally remains online-only/);
+  assert.doesNotMatch(sw,/addEventListener\("fetch"/);
+  assert.doesNotMatch(sw,/respondWith\(/);
+});
+

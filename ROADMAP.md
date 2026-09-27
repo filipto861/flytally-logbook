@@ -43,7 +43,7 @@ Acceptance achieved by the governance candidate:
 
 ## Immediate roadmap
 
-### 1. Finish the design-consistency audit — ACTIVE
+### 1. Design-consistency audit — DONE
 
 The current audit is defined in `docs/ux-audit.md`.
 
@@ -60,10 +60,10 @@ Remaining work:
    - UX-033: Dashboard lead copy now uses operational wording and points historical analysis to Statistics.
    - Presentation-only; no domain or regulatory behavior change.
 
-3. **Batch 11 — offline state — NEXT**
-   - UX-025: retain the online-only service-worker policy.
-   - Add an explicit non-blocking offline banner.
-   - Do **not** add offline editing or offline mutation of logbook/certified data.
+3. **Batch 11 — offline state — DONE**
+   - UX-025: the service worker remains online-only.
+   - A non-blocking connection banner appears when the browser reports offline and clears automatically when connectivity returns.
+   - No offline editing, caching or mutation of logbook/certified data was added.
 
 Closeout acceptance:
 - all approved audit findings are either implemented or explicitly closed with evidence;
@@ -71,7 +71,7 @@ Closeout acceptance:
 - visual verification covers desktop, iPad/mobile, light and dark where relevant;
 - ROADMAP, FEATURES and CHANGELOG are reconciled in the same work cycle.
 
-### 2. Multi-aircraft Product Scale — PLANNED
+### 2. Multi-aircraft Product Scale — NEXT
 
 This is the next product-development direction already established by the previous roadmap.
 

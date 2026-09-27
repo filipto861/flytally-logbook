@@ -28,6 +28,11 @@ This section tracks changes intended for the next named release. An entry is pro
 - Replaced decorative Dashboard lead phrasing with operational all-time totals / Statistics guidance.
 - No authentication, input behavior, dashboard calculation, regulatory or stored-data semantics changed.
 
+### Design consistency audit — Batch 11
+- Added an explicit non-blocking offline connection banner with automatic online/offline event handling.
+- Kept the service worker online-only: no navigation/API interception, offline cache or offline logbook mutation was added.
+- Added source-contract and real-browser coverage for banner appearance/removal.
+
 ## v3.3 design & workflow consistency — merged through 2026-09-20
 
 ### Workflow simplification
@@ -48,7 +53,7 @@ This section tracks changes intended for the next named release. An entry is pro
 ### Engineering workflow
 - Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
 
-Batch 11 remains pending.
+The approved design-consistency audit is complete through Batch 11.
 
 
 ## v3.2 — UI consistency & verification foundation — 2026-09-19

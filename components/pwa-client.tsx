@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect,useRef } from "react";
+import { useEffect,useRef,useState } from "react";
 
 type InstallPromptEvent=Event&{
   prompt:()=>Promise<void>;
@@ -16,6 +16,7 @@ const INSTALL_STATE_EVENT="flytally:install-state";
 const INSTALL_STATE_REQUEST_EVENT="flytally:install-state-request";
 
 export function PwaClient(){
+  const[offline,setOffline]=useState(false);
   const promptRef=useRef<InstallPromptEvent|null>(null),standaloneRef=useRef(false);
   const emitState=(state?:Partial<InstallState>)=>{
     const detail:InstallState={available:Boolean(promptRef.current),standalone:standaloneRef.current,...state};
@@ -36,10 +37,14 @@ export function PwaClient(){
     for(const key of LEGACY_SESSION_KEYS)sessionStorage.removeItem(key);
     const isStandalone=window.matchMedia("(display-mode: standalone)").matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone);
     standaloneRef.current=isStandalone;
+    const syncConnectivity=()=>setOffline(!navigator.onLine);
     const onInstall=(event:Event)=>{event.preventDefault();const prompt=event as InstallPromptEvent;promptRef.current=prompt;emitState({available:true});};
     const onInstalled=()=>{promptRef.current=null;standaloneRef.current=true;emitState({available:false,standalone:true});};
     const onRequest=()=>{void runInstall();};
     const onStateRequest=()=>emitState();
+    syncConnectivity();
+    window.addEventListener("online",syncConnectivity);
+    window.addEventListener("offline",syncConnectivity);
     window.addEventListener("beforeinstallprompt",onInstall);
     window.addEventListener("appinstalled",onInstalled);
     window.addEventListener(INSTALL_REQUEST_EVENT,onRequest);
@@ -52,8 +57,9 @@ export function PwaClient(){
       await fetch("/api/push/subscription",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:subscription.endpoint,keys:json.keys??{}})}).catch(()=>undefined);
     }).catch(()=>undefined);
     queueMicrotask(()=>emitState());
-    return()=>{window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled);window.removeEventListener(INSTALL_REQUEST_EVENT,onRequest);window.removeEventListener(INSTALL_STATE_REQUEST_EVENT,onStateRequest)};
+    return()=>{window.removeEventListener("online",syncConnectivity);window.removeEventListener("offline",syncConnectivity);window.removeEventListener("beforeinstallprompt",onInstall);window.removeEventListener("appinstalled",onInstalled);window.removeEventListener(INSTALL_REQUEST_EVENT,onRequest);window.removeEventListener(INSTALL_STATE_REQUEST_EVENT,onStateRequest)};
   },[]);
 
-  return null;
+  if(!offline)return null;
+  return <div className="connection-status-banner" role="status" aria-live="polite">You&apos;re offline. FlyTally needs a connection to load or save logbook data.</div>;
 }
