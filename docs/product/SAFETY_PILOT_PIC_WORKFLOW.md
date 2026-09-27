@@ -380,7 +380,7 @@ No connected/manual PIC UI is introduced in SP1.
 - Migration v15 and connected-PIC schema/write contracts passed on an isolated Neon child branch.
 - Verified owner-bound composite FK, PIC-only role, self-link rejection, one PIC link per flight/role, source-flight cascade, and PIC participation-role storage.
 - Verified accepted-Connection, editable Safety Pilot, lock/certification, wrong-owner delete, and unconnected-target fail-closed behavior.
-- The isolated Neon branch was deleted after acceptance; no database change was promoted by the acceptance run.
+- The isolated Neon acceptance branch was deleted after verification. After explicit product-owner approval, the exact verified migration v15 was then applied successfully to the production Neon branch as the deployment prerequisite. Post-migration verification confirmed `flight_connected_crew`, the owner-bound FK, PIC participation-role support, and zero rows in the new collaboration table.
 
 ### SP2 — flight create/edit persistence
 
