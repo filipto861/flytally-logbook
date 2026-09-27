@@ -13,5 +13,5 @@ test("v2.0 GA release metadata is aligned",()=>{
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("CHANGELOG.md"),/## 2\.0\.0 — Multi-category Pilot Logbook/);
-  assert.match(read("ROADMAP.md"),/## v2\.0\.0 — Multi-category Pilot Logbook/);
+  assert.match(read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),/## v2\.0\.0 — Multi-category Pilot Logbook/);
 });

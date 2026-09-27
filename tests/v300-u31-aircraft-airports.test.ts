@@ -51,7 +51,7 @@ test("v3.0 U3.1 moves diagnostics and historical maintenance behind Data health"
 });
 
 test("v3.0 U3.1 ships responsive workspace presentation and advances the roadmap",()=>{
-  const layout=read("app/layout.tsx"),css=read("app/v300-u31-aircraft-airports.css"),roadmap=read("ROADMAP.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
+  const layout=read("app/layout.tsx"),css=read("app/v300-u31-aircraft-airports.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(layout,/v300-u31-aircraft-airports\.css/);
   assert.match(css,/database-workspace-nav/);
   assert.match(css,/u31-airport-editor/);

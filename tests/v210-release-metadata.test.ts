@@ -13,5 +13,5 @@ test("v2.1 release remains a preserved baseline for later v2.x releases",()=>{
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("CHANGELOG.md"),/## 2\.1\.0 — Dashboard & Statistics consolidation/);
-  assert.match(read("ROADMAP.md"),/## v2\.1\.0 — Dashboard & Statistics consolidation/);
+  assert.match(read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),/## v2\.1\.0 — Dashboard & Statistics consolidation/);
 });

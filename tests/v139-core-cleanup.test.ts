@@ -49,7 +49,7 @@ test("v1.39.0 mapped legacy approval URLs converge on the shared workflow",()=>{
 });
 
 test("v1.39.0 deliberately preserves backup restore compatibility tables",()=>{
-  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),roadmap=read("ROADMAP.md");
+  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(backup,/track_points/);
   assert.match(backup,/instructor_flight_approvals/);
   assert.match(restore,/track_points/);
@@ -59,7 +59,7 @@ test("v1.39.0 deliberately preserves backup restore compatibility tables",()=>{
 });
 
 test("v1.39.0 does not alter the stabilized GPS inference module",()=>{
-  const roadmap=read("ROADMAP.md"),gps=read("lib/track-processing.ts");
+  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),gps=read("lib/track-processing.ts");
   assert.match(roadmap,/keep certification payloads\/hashes\/revisions, Recency Engine, GPS inference/);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(gps,/hasImplausibleAltitudeJump/);

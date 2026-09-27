@@ -46,7 +46,7 @@ test("v1.47.0 technical data checks remain secondary to everyday aircraft manage
 });
 
 test("v1.47.0 remains presentation-only around protected flight evidence",()=>{
-  const layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md"),certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts");
+  const layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts");
   assert.match(layout,/v147-everyday\.css/);
   assert.match(roadmap,/## v1\.47\.0 · Everyday UX refinement/);
   assert.match(certification,/flightCertificationHash/);

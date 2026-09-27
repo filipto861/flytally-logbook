@@ -39,7 +39,7 @@ test("v1.52 package and lockfile versions remain synchronized in later releases"
 });
 
 test("v1.52 operational documentation describes the current runtime",()=>{
-  const readme=read("README.md"),architecture=read("ARCHITECTURE.md"),review=read("CODE_REVIEW_V152.md");
+  const readme=read("README.md"),architecture=read("ARCHITECTURE.md"),review=read("docs/history/CODE_REVIEW_V152.md");
   assert.match(readme,/Next[.]js 16/);
   assert.match(readme,/Neon PostgreSQL/);
   assert.doesNotMatch(readme,/Current production-oriented release: \*\*FlyTally v1[.]33/);
@@ -56,10 +56,10 @@ test("v1.52 cleanup does not remove the v1.51 regulatory regression safety net",
     "tests/v1511-legacy-recency.test.ts",
     "tests/v1512-recency-provenance.test.ts",
     "tests/v1513-automatic-ull-credit.test.ts",
-    "REGULATORY_CORE_V151.md",
+    "docs/history/REGULATORY_CORE_V151.md",
   ])assert.equal(exists(regression),true,`${regression} must be retained`);
 
-  const regulatory=read("REGULATORY_CORE_V151.md");
+  const regulatory=read("docs/history/REGULATORY_CORE_V151.md");
   assert.match(regulatory,/automatically treated as SEP experience/);
   assert.match(regulatory,/ULL \/ Annex-I experience is not imported automatically into this 90-day passenger-currency rule/i);
 });

@@ -64,7 +64,7 @@ test("v1.44.0 PostgreSQL acceptance keeps certification lineage and canonical pa
 });
 
 test("v1.44.0 keeps stabilized regulatory and mobile direction unchanged",()=>{
-  const roadmap=read("ROADMAP.md"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx");
+  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx");
   assert.match(roadmap,/## v1\.44\.0 · Production hardening & cleanup/);
   assert.match(roadmap,/preserve certification payloads\/hashes\/revisions/);
   assert.match(roadmap,/FCL\.050 print layout and global mobile navigation/);

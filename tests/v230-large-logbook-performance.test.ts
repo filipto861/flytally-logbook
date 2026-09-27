@@ -67,7 +67,7 @@ test("v2.3 Statistics only computes aggregates required by the active section",(
 });
 
 test("v2.3 performance baseline remains documented after v2.7 release",()=>{
-  const roadmap=read("ROADMAP.md");
+  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(roadmap,/## Current release — v2\.7\.0 — Data Integrity & Recovery 2\.0/);
   assert.match(roadmap,/## v2\.3\.0 — Large Logbook Performance & Scalability/);
   assert.match(roadmap,/100k-flight read-performance gate/);

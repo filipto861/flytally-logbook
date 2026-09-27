@@ -42,7 +42,7 @@ test("v1.42.0 removes parser point numbers from normal import review",()=>{
 });
 
 test("v1.42.0 keeps stabilized GPS inference unchanged",()=>{
-  const processing=read("lib/track-processing.ts"),roadmap=read("ROADMAP.md");
+  const processing=read("lib/track-processing.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(processing,/function takeoffEvidenceIndex/);
   assert.match(processing,/hasImplausibleAltitudeJump/);
   assert.match(processing,/export function suggestedSplits/);
@@ -51,7 +51,7 @@ test("v1.42.0 keeps stabilized GPS inference unchanged",()=>{
 });
 
 test("v1.42 import-player styling stays isolated in later releases",()=>{
-  const css=read("app/v142-gps-import.css"),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
+  const css=read("app/v142-gps-import.css"),layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(layout,/v142-gps-import\.css/);
   assert.match(css,/\.import-player-review/);
   assert.match(css,/\.profile-event-marker/);
