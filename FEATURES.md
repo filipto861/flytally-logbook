@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **26 September 2026**
+Last reconciled: **27 September 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -76,6 +76,8 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Reduced-motion and forced-colors fallbacks.
 - Shared date/time/date-only presentation contracts.
 - Legal/public page styling aligned with the product design system.
+- Branded root not-found and runtime-error fallbacks with non-technical recovery actions.
+- Push onboarding aligned to the canonical raised-surface design contract.
 
 ## Notifications and PWA — IMPLEMENTED WITH INTENTIONAL LIMITS
 
@@ -105,7 +107,6 @@ Important boundary:
 
 ## Current closeout work — IN PROGRESS
 
-- Root not-found/runtime-error presentation and canonical Push onboarding surface: implemented in PR #147, pending closeout.
 - Email terminology consistency.
 - Dashboard operational microcopy.
 - Explicit online/offline connection banner while retaining online-only mutation policy.
