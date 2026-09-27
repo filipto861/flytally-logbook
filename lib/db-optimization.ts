@@ -22,6 +22,7 @@ const migrationNames:Record<number,string>={
   12:"shared flight participation",
   13:"crew connections and verified approvals",
   14:"user-owned structured flight expenses",
+  15:"Safety Pilot connected PIC collaboration",
 };
 
 const migrationQueries=(version:number)=>{
@@ -457,6 +458,24 @@ const migrationQueries=(version:number)=>{
     )`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_expenses_user_flight ON flight_expenses(user_id,flight_id,id)`,
     sql`ALTER TABLE deleted_flights ADD COLUMN IF NOT EXISTS expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb`,
+  ];
+  if(version===15)return[
+    sql`CREATE TABLE IF NOT EXISTS flight_connected_crew (
+      id BIGSERIAL PRIMARY KEY,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      connected_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      intended_role TEXT NOT NULL CHECK(intended_role='PIC'),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_connected_crew_source_owner_fk FOREIGN KEY(source_flight_id,source_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      CONSTRAINT flight_connected_crew_distinct_users_check CHECK(source_user_id<>connected_user_id),
+      CONSTRAINT flight_connected_crew_flight_role_uq UNIQUE(source_flight_id,intended_role)
+    )`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_connected_crew_source ON flight_connected_crew(source_user_id,source_flight_id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_connected_crew_connected ON flight_connected_crew(connected_user_id,intended_role)`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_participant_role_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_participant_role_check CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER','PIC'))`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

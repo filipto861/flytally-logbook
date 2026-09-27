@@ -1,4 +1,4 @@
-export const CREW_ROLES=["CO-PILOT","SAFETY PILOT","INSTRUCTOR","EXAMINER","OBSERVER"] as const;
+export const CREW_ROLES=["CO-PILOT","SAFETY PILOT","INSTRUCTOR","EXAMINER","OBSERVER","PIC"] as const;
 export type CrewRole=(typeof CREW_ROLES)[number];
 
 export const VERIFIER_ROLES=["INSTRUCTOR","SUPERVISING PIC","EXAMINER"] as const;
@@ -13,7 +13,7 @@ export function crewRoleCredits(role:unknown,blockMinutes:number){
   const normalized=normalizeCrewRole(role),minutes=Math.max(0,Math.round(blockMinutes)||0);
   return{
     role:normalized,
-    pic:normalized==="INSTRUCTOR"||normalized==="EXAMINER"?minutes:0,
+    pic:normalized==="INSTRUCTOR"||normalized==="EXAMINER"||normalized==="PIC"?minutes:0,
     copilot:normalized==="CO-PILOT"?minutes:0,
     instructor:normalized==="INSTRUCTOR"?minutes:0,
   };
@@ -33,6 +33,7 @@ export function validCrewCombination(sourceRole:unknown,participantRole:unknown)
   if(participant==="SAFETY PILOT")return source==="PIC";
   if(participant==="INSTRUCTOR")return ["DUAL","SPIC","PICUS","SOLO","PIC"].includes(source);
   if(participant==="EXAMINER")return ["PIC","SPIC","PICUS","DUAL"].includes(source);
+  if(participant==="PIC")return source==="SAFETY PILOT";
   return true;
 }
 
