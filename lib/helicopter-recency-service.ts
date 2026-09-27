@@ -41,7 +41,7 @@ export async function getHelicopterRecencyStateForUser(userId:number):Promise<He
       COALESCE(NULLIF(TRIM(f.aircraft_model),''),NULLIF(TRIM(f.aircraft_type),''),'') helicopter_type,
       EXISTS(SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id AND v.flight_user_id=f.user_id AND v.record_revision=COALESCE(f.record_revision,1) AND v.flight_hash=f.certification_hash AND v.verification_role='INSTRUCTOR' AND v.status='signed') instructor_signed
       FROM flights f
-      WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND UPPER(COALESCE(f.regulatory_category,''))='HELICOPTER' AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}
+      WHERE f.user_id=${userId} AND f.certified_at IS NOT NULL AND UPPER(COALESCE(f.regulatory_category,''))='HELICOPTER' AND CASE WHEN f.date~'^\\d{4}-\\d{2}-\\d{2}$' THEN f.date::date ELSE NULL END>=CURRENT_DATE-INTERVAL '1 year' ORDER BY f.date DESC,f.id DESC` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT id,helicopter_type,evidence_date::text evidence_date,signer,reference,note FROM helicopter_recency_evidence WHERE user_id=${userId} ORDER BY evidence_date DESC,id DESC` as Promise<Array<Record<string,unknown>>>,
   ]);
   const activeLicences=licences.filter(row=>helicopterLicence(row.licence_type));if(!activeLicences.length&&!aircraftRows.length&&!flightRows.length)return null;
