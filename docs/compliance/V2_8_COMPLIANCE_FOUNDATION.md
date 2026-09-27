@@ -94,7 +94,7 @@ Never put secrets, raw access tokens, database URLs or unnecessary personal data
 
 ## Aviation-record baseline
 
-`docs/history/FCL050_COMPLIANCE.md` and `docs/certification-readiness/FCL050_COMPLIANCE_MATRIX.md` remain the detailed implementation matrix. v2.8 extends them rather than replacing them. Authority acceptance is not inferred from an internal test result.
+`docs/compliance/FCL050_IMPLEMENTATION.md` and `docs/compliance/FCL050_EVIDENCE_MATRIX.md` are the active FCL.050-oriented implementation/evidence documents. The older `docs/certification-readiness/FCL050_COMPLIANCE_MATRIX.md` remains retained evidence from its documented release era. Authority acceptance is not inferred from an internal test result.
 
 ## Release evidence
 
