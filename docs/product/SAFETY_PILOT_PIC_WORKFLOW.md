@@ -390,7 +390,7 @@ No connected/manual PIC UI is introduced in SP1.
 - edit/correction state reload;
 - source tests + browser form coverage.
 
-**Implementation state:** code complete on `feat/safety-pilot-pic-sp2`; TypeScript/regression/build and browser/database acceptance still pending.
+**Implementation state:** code complete on `feat/safety-pilot-pic-sp2`; isolated Neon database acceptance passed. TypeScript/regression/build and authenticated browser execution are still pending.
 
 Implemented contract:
 - New Flight loads accepted pilot Connections independently from the instructor-only suggestion list.
@@ -402,6 +402,15 @@ Implemented contract:
 - An invalid/revoked Connection produces no partial flight/link mutation.
 - Edit/correction reloads the link by source flight/user/role; a revoked linked pilot remains visible as unavailable until the user explicitly chooses a new Connection or switches to manual mode.
 - SP2 does not create `flight_participations`, send notifications or expose a PIC invitation action; those remain SP3.
+
+**SP2 database acceptance — isolated Neon**
+- connected create canonicalized the source `commander` from the selected account and created the current PIC link;
+- an unaccepted target produced no flight insert;
+- connected update replaced commander/link together;
+- manual update removed the link and preserved manual commander text;
+- revoking the selected Connection made a connected update a no-op with the existing flight/link left unchanged;
+- changing away from Safety Pilot removed the current PIC link;
+- production was not modified by these SP2 acceptance cases.
 
 ### SP3 — certified PIC invitation
 
