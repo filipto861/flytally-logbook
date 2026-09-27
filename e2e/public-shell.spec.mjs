@@ -141,6 +141,20 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expectAuthenticatedRoute(page,"Connections");
 });
 
+test("protected shell shows and clears the offline connection banner",async({page,context})=>{
+  test.skip(!authenticatedBrowser,"Authenticated browser smoke requires the isolated CI database.");
+  await loginBrowserPilot(page,"/dashboard");
+
+  const banner=page.getByRole("status").filter({hasText:"You're offline. FlyTally needs a connection to load or save logbook data."});
+  await expect(banner).toHaveCount(0);
+
+  await context.setOffline(true);
+  await expect(banner).toBeVisible();
+
+  await context.setOffline(false);
+  await expect(banner).toHaveCount(0);
+});
+
 test("appearance mutation disables duplicate submit and persists",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated mutation smoke requires the isolated CI database.");
   resetAppearanceFixture();
