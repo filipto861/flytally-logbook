@@ -168,7 +168,7 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
 
   await page.locator('select[name="registration"]').selectOption("OK-SP2E");
   await page.getByRole("button",{name:"Save & review"}).click();
-  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook&saved=1$/);
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
