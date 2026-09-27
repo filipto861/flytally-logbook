@@ -108,7 +108,7 @@ test("v1.63 credentials and backup plumbing expose helicopter support without re
 test("v1.63 keeps the first-save aircraft integrity contract shared by all profile types",()=>{
   const quick=read("components/quick-aircraft-form.tsx"),manager=read("components/aircraft-manager.tsx"),actions=read("app/(protected)/database/actions.ts");
   for(const source of[quick,manager]){assert.match(source,/AIRCRAFT_PROFILE_CLASSES/);assert.match(source,/aircraftProfileRegulatoryCategory/);assert.match(source,/HELICOPTER/)}
-  assert.match(actions,/normalizeAircraftProfileContext/);assert.match(actions,/aircraft-profile-persistence-mismatch/);
+  assert.match(actions,/validateAircraftProfile/);assert.match(actions,/aircraft-profile-persistence-mismatch/);
 });
 
 test("M2A helicopter recency service resolves historical type from the stored flight snapshot only",()=>{
