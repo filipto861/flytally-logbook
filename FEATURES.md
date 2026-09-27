@@ -110,11 +110,17 @@ Important boundary:
 
 ## Planned
 
-### Multi-aircraft Product Scale
+### Multi-aircraft Product Scale — ACTIVE PLANNING / AUDIT
 
-- Repeatable no-code onboarding for additional aircraft/configurations.
-- Explicit configuration/applicability rather than generic assumptions.
-- Preserve a single flight model and existing regulatory/certification boundaries.
+Existing multi-aircraft profiles remain the foundation. The active scale phase is not a second fleet model.
+
+Planned closeout:
+- one canonical fail-closed aircraft-profile validation contract across Add/Edit and shared-profile import;
+- explicit separation of mutable aircraft-profile defaults from historical flight snapshots;
+- no-code onboarding proof across every currently supported regulatory category with manual identity fallback;
+- recency consumers audited so historical regulatory evidence is not silently reclassified by later profile edits;
+- sharing, backup/restore and multi-profile selection regression coverage at scale;
+- no organization/fleet ownership or new regulatory category implied by this phase.
 
 ## Research only
 
