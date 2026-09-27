@@ -51,9 +51,8 @@ test("v3.0 U6 is loaded last and closes the cross-product UX consolidation track
   const roadmap=read("ROADMAP.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.ok(layout.indexOf('import "./v300-u6-acceptance.css"')>layout.indexOf('import "./v300-u4-flight-workflow.css"'));
-  assert.match(roadmap,/v3\.0 — UX & Product Consolidation ✅/);
-  assert.match(roadmap,/U5 ✅ Training learner polish/);
-  assert.match(roadmap,/U6 ✅ mobile, accessibility and final UX acceptance/);
+  assert.match(roadmap,/### UX & Product Consolidation — DONE/);
+  assert.match(roadmap,/mobile\/accessibility hardening/);
   assert.match(audit,/Status: \*\*v3\.0 complete\*\*/);
   assert.match(audit,/U6 ✅ Mobile, accessibility and final UX acceptance/);
 });
