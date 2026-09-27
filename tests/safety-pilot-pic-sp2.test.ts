@@ -77,3 +77,11 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
   assert.match(bootstrap,/CREATE TABLE aircraft/);
 });
+
+
+test("SP2 rejects a blank manual EASA Safety Pilot PIC server-side",()=>{
+  const actions=read("app/(protected)/flights/actions.ts");
+  const matches=actions.match(/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"&&connectedPicUserId===0&&!f\.commander\.trim\(\)/g)??[];
+  assert.equal(matches.length,2);
+  assert.match(actions,/Enter the actual PIC or select an accepted Connection/);
+});
