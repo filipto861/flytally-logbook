@@ -1,6 +1,8 @@
-# FlyTally — FCL.050 compliance baseline
+# FlyTally — FCL.050 implementation baseline
 
-Regulatory baseline reviewed 25 August 2026:
+Active regulatory baseline reviewed 25 August 2026; later implementation notes in this document include the September 2026 v2.8 print-identity update:
+
+Sources reviewed:
 
 - EASA Easy Access Rules for Aircrew, current online publication February 2026.
 - FCL.050 — Recording of flight time.

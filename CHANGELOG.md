@@ -1,6 +1,132 @@
 # FlyTally changelog
 
-This file records production-facing behavior changes. Detailed regulatory rationale, migration evidence and UX audits remain in the version-specific review documents.
+This is the canonical record of **what actually changed** in `flytally-logbook`.
+
+- `ROADMAP.md` is forward-looking and may contain planned work.
+- `FEATURES.md` is the capability inventory.
+- This file records merged/product changes and must not describe planned work as completed.
+- Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
+
+## Unreleased
+
+This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
+
+### Documentation governance
+- Consolidated the roadmap into one current planning document.
+- Added a canonical `FEATURES.md`.
+- Added a documentation index and historical archive under `docs/history/`.
+- Moved old version-specific scope/audit notes out of the repository root without deleting their evidence from Git history.
+
+## v3.3 design & workflow consistency — merged through 2026-09-20
+
+### Workflow simplification
+- Simplified New flight while keeping aircraft and route selection explicit rather than silently prefilled.
+- Simplified the Flights workflow and restored an obvious compact Open action.
+- Unified aircraft-card layout and added safe aircraft deletion.
+
+### Design-system consistency
+- Consolidated shared tokens, geometry, spacing and tabular numeric presentation.
+- Improved light-theme text contrast and moved the legacy GPS chart to theme-aware chart tokens.
+- Replaced OS-dependent functional glyphs with the shared SVG icon system.
+- Converged empty/loading/component states.
+- Hardened accessibility, focus and touch-target behavior.
+- Clarified required-field and validation presentation.
+- Standardized UTC, viewer-timezone and date-only display formatting.
+- Normalized protected secondary route rhythm, Share headers and public/legal layout.
+
+### Engineering workflow
+- Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
+
+Batch 9 and later audit work are not recorded here until merged.
+
+
+## v3.2 — UI consistency & verification foundation — 2026-09-19
+
+### Changed
+- Added route-level UI consistency auditing and shared UI-system regression coverage.
+- Added real-browser smoke coverage plus authenticated browser and mutation coverage.
+- Added transaction-backed authenticated mutation tests for higher-risk write paths.
+- Unified aircraft-card presentation and added safe aircraft deletion.
+- Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
+
+## v3.0 — UX & Product Consolidation — 2026-09-18
+
+### Changed
+- Simplified global Logbook navigation around pilot tasks and moved Notifications into the live activity model.
+- Simplified Licences & Recency, Aircraft & airports, Print & data and Settings hierarchies.
+- Added personal aircraft-profile sharing and cover photos while keeping recipient copies independently owned.
+- Added Web Push subscriptions, preference controls and contextual onboarding.
+- Clarified the save → review → certify → share workflow.
+- Closed the mobile/accessibility acceptance pass for core Logbook workflows.
+- Added/refined the public interactive flight viewer and Share presentation.
+
+### Integrity
+- UX consolidation did not redefine certified-record, recency, ownership or regulatory evidence semantics.
+- A later FCL.060 ULL same-class correction was merged as an explicit regulatory fix rather than hidden inside UX work.
+
+## v2.9 — Commercial & External Validation technical foundation — 2026-09-18
+
+### Added
+- Fail-closed commercial-readiness contract and external-validation ledger.
+- Versioned commercial legal publication boundary.
+- Provider-neutral billing/entitlement technical foundation.
+- Signature-assurance and regulatory-validation boundary.
+- Brand/public-claims boundary.
+- Final commercial release audit and build guard.
+
+### External boundary
+- Technical implementation does not equal lawyer, regulator, trademark, payment-provider or other external approval.
+- Public commercial release remains dependent on real external evidence and business decisions where required.
+
+## v2.8 — Compliance & Safety Foundation — 2026-09-18
+
+### Added / changed
+- Added privacy self-service, retention controls and cross-product erasure coordination.
+- Hardened regulator-facing logbook identity and source-of-truth handling.
+- Finalized reviewed map-provider/licensing behavior and browser security controls.
+- Added compliance regression coverage for legal, sharing, provider and aviation-safety boundaries.
+
+### Integrity
+- Authority acceptance is not inferred from internal implementation or tests.
+- FCL.050-oriented engineering traceability remains separately documented under `docs/compliance/`.
+
+## v2.7.1 — Recency hotfixes — 2026-09-09
+
+- Fixed the Recency expiry-date SQL type mismatch.
+- Fixed Recency light-theme readability.
+- No intentional regulatory-rule expansion was bundled into these hotfixes.
+
+## v2.7 — Data Integrity & Recovery 2.0 — 2026-09-08
+
+### Changed
+- Made restore review-first with explicit missing/present/protected-conflict preview.
+- Added authenticated current-format portable backup integrity while retaining bounded legacy compatibility.
+- Preserved certified revisions, signatures, GPS, sharing evidence, audit history, licences, expenses and recency evidence through the canonical recovery path.
+- Added tested large-account transaction batching while preserving atomicity/safety limits.
+
+## v2.6 — Professional Pilot Workspace 2.0 — 2026-09-08
+
+- Expanded professional/operator context and professional-experience reporting.
+- Preserved recorded-evidence vs regulatory/employment-conclusion boundaries.
+- Kept professional context explicit instead of silently inferring CAT/NCC/SPO or employment status.
+
+## v2.5 — Recency & Compliance Workspace — 2026-09-08
+
+- Consolidated licence/rating validity, flying recency and supporting evidence into a planning-oriented workspace.
+- Kept CURRENT / ACTION SOON / NOT CURRENT / INCOMPLETE EVIDENCE evidence-driven and explainable.
+- Linked recency presentation to supporting flights, training, signatures and credentials without rewriting certified records.
+
+## v2.4 — Flight Entry & Review 2.0 — 2026-09-08
+
+- Kept one canonical Add flight workflow while integrating review findings near their owning fields.
+- Added explicit saved-vs-GPS review before applying GPS-derived suggestions to an existing flight.
+- Added final logbook-data review before certification/sharing while preserving certification hashes, revisions and regulatory calculations.
+
+## v2.3 — Large Logbook Performance & Scalability — 2026-09-07
+
+- Retained 10k/50k scale gates and added a controlled 100k read-performance benchmark for production hot paths.
+- Reduced Dashboard/Statistics/Print hot-path work through leaner projections, set-wise lookup and scoped aggregation.
+- Preserved v2.2 workflow semantics and certified-data integrity while improving scale behavior.
 
 ## 2.2.0 — Action Center & Shared Flight Workflow — 2026-09-07
 
@@ -119,7 +245,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 - Expenses remain outside the certified flight fingerprint/revision, so financial metadata can be maintained without rewriting regulatory evidence.
 
 ### Verification
-- Detailed record: `FLIGHT_ENTRY_UX_V159.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V159.md`.
 
 ## 1.58.0 — Flight Entry Polish & Smart Defaults — 2026-09-01
 
@@ -137,7 +263,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 
 ### Verification
 - Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + production CI/runtime audit.
-- Detailed record: `FLIGHT_ENTRY_UX_V158.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V158.md`.
 
 ## 1.57.0 — Flight Entry Workflow Simplification — 2026-09-01
 
@@ -157,7 +283,7 @@ This file records production-facing behavior changes. Detailed regulatory ration
 
 ### Verification
 - Release gate: TypeScript + complete regression suite + PostgreSQL acceptance + production build + clean Vercel preview + post-deploy runtime audit.
-- Detailed record: `FLIGHT_ENTRY_UX_V157.md`.
+- Detailed record: `docs/history/FLIGHT_ENTRY_UX_V157.md`.
 
 ## 1.56.0 — Mobile Layout Audit & Responsive Hardening
 - Added the shared iOS/WebKit native date/time sizing fix and a primary-navigation responsive containment audit.

@@ -1,4 +1,4 @@
-# FlyTally v2.8 — FCL.050 engineering evidence matrix
+# FlyTally — FCL.050 engineering evidence matrix
 
 Status date: 17 September 2026
 
@@ -37,9 +37,9 @@ This matrix is internal engineering traceability for the FlyTally electronic pil
 | Auxiliary-only roles | `SAFETY PILOT`, `PAX`, `OBSERVER` | May be retained as reference but cannot carry creditable function time; excluded from official totals by default | Optional reference rows marked `NON-CREDITABLE` | `tests/fcl050-compliance.test.ts`, `tests/easa-print-layout.test.ts` | Implemented |
 | Scope filtering | flight `evidence` + output category | Complete / ULL / EASA / ULL+EASA filter contract | Same regulator-facing powered-logbook structure for selected powered records | `tests/logbook-print.test.ts` | Implemented |
 
-## v2.8 C3 release gate
+## Historical v2.8 C3 release-gate evidence
 
-The C3 print/compliance block is ready to merge only when all of the following are true:
+The following conditions were the v2.8 C3 merge gate and are retained for provenance. They are **not** the current branch/merge gate:
 
 1. TypeScript, unit/regression tests, production build and PostgreSQL acceptance pass on the PR head.
 2. The authoritative `pilot_licences` path remains covered by both behavioural tests and a source-contract regression.
