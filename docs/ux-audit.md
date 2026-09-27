@@ -6,7 +6,7 @@ Scope: all current protected routes, public/auth/legal routes, shared UI compone
 
 Severity summary: **0 critical · 21 major · 14 minor**.
 
-Phase 1 was approved in full on 2026-09-19. Phase 2 implementation is proceeding in the approved review batches; this document remains the source audit for finding scope.
+Phase 1 was approved in full on 2026-09-19. Phase 2 implementation is complete through the approved Batch 11 candidate; this document remains the source audit and closeout record.
 
 ## Findings
 
@@ -207,4 +207,17 @@ Batch 10 closes UX-032 and UX-033 as presentation-only copy changes.
 - UX-033: Dashboard lead copy is operational and points historical analysis to Statistics without the decorative “snapshot / next places to go” phrasing.
 
 No input name/type, autocomplete, required/read-only state, authentication behavior, dashboard data query, calculation, navigation target, regulatory rule or stored value changes.
+
+## Batch 11 offline-state closeout
+
+Batch 11 closes UX-025 without changing FlyTally's online-only data policy.
+
+- `PwaClient` reads `navigator.onLine` after mount and listens for browser `online` / `offline` events.
+- Offline state shows the exact non-blocking status copy: `You're offline. FlyTally needs a connection to load or save logbook data.`
+- The banner uses existing FlyTally surface, line, radius and raised-shadow tokens, respects the top safe area and does not capture pointer input.
+- The banner disappears automatically when the browser reports online.
+- `public/sw.js` remains unchanged and still has no fetch interception or offline navigation/API cache.
+- Real-browser coverage toggles Chromium offline/online state and verifies banner appearance/removal.
+
+No offline editing, offline mutation, queueing, background sync, cached logbook fallback, database/API/auth/regulatory/certification or stored-data semantics were added.
 
