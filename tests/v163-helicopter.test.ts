@@ -110,3 +110,45 @@ test("v1.63 keeps the first-save aircraft integrity contract shared by all profi
   for(const source of[quick,manager]){assert.match(source,/AIRCRAFT_PROFILE_CLASSES/);assert.match(source,/aircraftProfileRegulatoryCategory/);assert.match(source,/HELICOPTER/)}
   assert.match(actions,/normalizeAircraftProfileContext/);assert.match(actions,/aircraft-profile-persistence-mismatch/);
 });
+
+test("M2A helicopter recency service resolves historical type from the stored flight snapshot only",()=>{
+  const service=read("lib/helicopter-recency-service.ts"),certification=read("lib/certification-integrity.ts");
+  assert.match(service,/COALESCE\(NULLIF\(TRIM\(f[.]aircraft_model\),''\),NULLIF\(TRIM\(f[.]aircraft_type\),''\),''\) helicopter_type/);
+  assert.doesNotMatch(service,/COALESCE\(NULLIF\(a[.]aircraft_model/);
+  assert.doesNotMatch(service,/FROM flights f LEFT JOIN aircraft a/);
+  assert.match(certification,/model:text\(row[.]aircraft_model\)\|\|text\(row[.]aircraft_type\)/);
+});
+
+test("M2A unresolved helicopter type evidence produces LIMITED DATA only when it could close the LAPL(H) shortfall",()=>{
+  const known:HelicopterFlight[]=[];
+  for(let i=0;i<4;i++)known.push(flight({id:100+i,date:`2026-08-0${i+1}`}));
+  known.push(flight({id:110,date:"2026-08-05",role:"DUAL",minutes:60,purposeCode:"LAPL_H_FCL140H_REFRESHER",instructorSigned:true}));
+  const unresolved=flight({id:111,date:"2026-08-06",helicopterType:"",minutes:60});
+  const limited=evaluateLaplH([...known,unresolved],"2026-09-01","R44 Raven II");
+  assert.equal(limited.status,"attention");
+  assert.equal(limited.badge,"LIMITED DATA");
+  assert.equal(limited.meta?.unresolvedTypeFlights,1);
+  assert.equal(limited.meta?.unresolvedTypeFlightIds,"111");
+
+  const impossible=evaluateLaplH([flight({id:120,minutes:60}),unresolved],"2026-09-01","R44 Raven II");
+  assert.equal(impossible.status,"not-current");
+});
+
+test("M2A unresolved helicopter type evidence cannot downgrade a result already proven CURRENT",()=>{
+  const known=[flight({id:130,takeoffsDay:3,approachesDay:3,landingsDay:3})];
+  const unresolved=flight({id:131,helicopterType:"",takeoffsDay:3,approachesDay:3,landingsDay:3});
+  const result=evaluateHelicopterPassengerCurrency([...known,unresolved],"2026-09-01","R44 Raven II");
+  assert.equal(result.status,"current");
+  assert.equal(result.meta?.unresolvedTypeFlights,1);
+});
+
+test("M2A passenger currency reports LIMITED DATA when unresolved type evidence could satisfy the missing movements",()=>{
+  const known=[flight({id:140}),flight({id:141,date:"2026-08-02"})];
+  const unresolved=flight({id:142,date:"2026-08-03",helicopterType:""});
+  const result=evaluateHelicopterPassengerCurrency([...known,unresolved],"2026-09-01","R44 Raven II");
+  assert.equal(result.status,"attention");
+  assert.equal(result.badge,"LIMITED DATA");
+  assert.equal(result.meta?.unresolvedTypeFlights,1);
+  assert.equal(result.meta?.unresolvedTypeFlightIds,"142");
+});
+
