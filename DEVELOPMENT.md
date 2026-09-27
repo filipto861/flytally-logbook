@@ -54,6 +54,8 @@ The canonical production branch is `main`. Development changes should reach it t
 
 Every significant work cycle must reconcile the canonical development documents before it is closed:
 
+Every significant PR must either update the relevant canonical document(s) or state explicitly in the PR why ROADMAP / FEATURES / CHANGELOG are `N/A`. Merely reading the documents does not satisfy this requirement.
+
 - `ROADMAP.md` — update when priority, phase, dependencies, status or a frozen product decision changes.
 - `FEATURES.md` — update when a capability is added, removed, materially changed or explicitly deferred.
 - `CHANGELOG.md` — record what actually merged; never mark planned or unverified work as completed.
