@@ -121,7 +121,7 @@ Acceptance:
 - existing certification v1-v8 verification remains unchanged;
 - targeted unit/service/PostgreSQL regressions cover the compatibility boundary.
 
-#### M1 — Canonical aircraft-profile validation — NEXT
+#### M1 — Canonical aircraft-profile validation — DONE
 
 Scope:
 - one reusable server-side parser/normalizer for aircraft profile regulatory fields;
@@ -131,11 +131,13 @@ Scope:
 
 Acceptance:
 - one normalization matrix covers ULL; SEP/MEP/SET; TMG in Part-FCL and Part-SFCL context; Glider; Helicopter; Balloon classes/groups; and conservative Other;
-- Quick Add, full editor and share import cannot persist different regulatory semantics for equivalent input;
-- PostgreSQL sharing acceptance proves invalid imported profile combinations cannot bypass the canonical contract;
+- Quick Add, full editor and share import use the same canonical fail-closed regulatory validator;
+- malformed explicit class/category combinations and non-applicable BFCL fields are rejected instead of silently repaired;
+- PostgreSQL acceptance proves malformed imported profile combinations cannot reach persistence;
+- exact backup/restore remains outside interactive profile canonicalization;
 - no certified flight, revision or existing recipient-owned profile is silently rewritten.
 
-#### M2B — Remaining historical & dynamic applicability integrity
+#### M2B — Remaining historical & dynamic applicability integrity — NEXT
 
 Scope:
 - verify the remaining recency consumers do not silently prefer mutable current-profile identity over stored flight evidence;
@@ -184,7 +186,7 @@ Acceptance:
 
 The independent second-AI review returned **APPROVE WITH CHANGES**. Its blocking conditions were reconciled into the M0 contract and milestone order.
 
-M2A is closed. M1 — canonical aircraft-profile validation — is now NEXT.
+M2A and M1 are closed. M2B — remaining historical & dynamic applicability integrity — is now NEXT.
 
 ### 3. Professional Logbook Platform — RESEARCH
 

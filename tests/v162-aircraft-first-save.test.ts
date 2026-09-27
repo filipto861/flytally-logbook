@@ -49,7 +49,7 @@ test("Quick Add and Aircraft Manager submit the same regulatory profile fields o
 
 test("server canonicalizes and verifies the persisted first-save profile",()=>{
   const actions=read("app/(protected)/database/actions.ts");
-  assert.match(actions,/normalizeAircraftProfileContext\([^)]*requestedCategory\)/);
+  assert.match(actions,/validateAircraftProfile\(\{/);
   assert.match(actions,/INSERT INTO aircraft/);
   for(const column of ["aircraft_class","regulatory_category","evidence"])assert.match(actions,new RegExp(`\\b${column}\\b`));
   assert.match(actions,/ON CONFLICT\(user_id,registration\) DO UPDATE SET[\s\S]*aircraft_class=EXCLUDED[.]aircraft_class[\s\S]*regulatory_category=EXCLUDED[.]regulatory_category[\s\S]*evidence=EXCLUDED[.]evidence/);
