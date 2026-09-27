@@ -60,6 +60,7 @@ export function resetSafetyPilotPicFixture(){
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
         accepted_at=NOW(),updated_at=NOW()
     WHERE id=7001;
+    DELETE FROM flights WHERE user_id=9001 AND registration='OK-SP2E' AND certified_at IS NULL;
     DELETE FROM flight_connected_crew WHERE source_user_id=9001 OR connected_user_id=9001;
   `);
 }
