@@ -44,6 +44,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Credential/medical/document presentation.
 - Aircraft-training / qualification evidence.
 - Category-aware regulatory presentation.
+- Type-specific helicopter recency resolves historical type from stored flight identity, with LIMITED DATA when relevant historical type evidence is unresolved.
 - Evidence-first states rather than silently inferring privileges or authority approval.
 
 ## Collaboration — IMPLEMENTED
