@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP2 browser verification gate  
+**Status:** Priority 2 implementation — SP2 merge gate; SP3 next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -390,7 +390,7 @@ No connected/manual PIC UI is introduced in SP1.
 - edit/correction state reload;
 - source tests + browser form coverage.
 
-**Implementation state:** code complete on `feat/safety-pilot-pic-sp2`; TypeScript PASS, full unit/regression PASS (884/884), production build PASS, and isolated Neon database acceptance PASS. Authenticated browser execution remains the only open SP2 gate.
+**Implementation state:** code complete on `feat/safety-pilot-pic-sp2`; TypeScript PASS, full unit/regression PASS (885/885), production build PASS, isolated Neon database acceptance PASS, and authenticated Vercel Preview acceptance PASS. SP2 is ready for the PR #163 merge gate; SP3 is the next implementation milestone after merge.
 
 Implemented contract:
 - New Flight loads accepted pilot Connections independently from the instructor-only suggestion list.
@@ -405,10 +405,10 @@ Implemented contract:
 
 **SP2 application verification — 27 September 2026**
 - TypeScript: PASS.
-- Full unit/regression suite: 884/884 PASS on current SP2 HEAD.
+- Full unit/regression suite: 885/885 PASS on final SP2 runtime HEAD after the repeated-save regression fix.
 - Production Next.js build: PASS.
 - Source/browser contract coverage confirms manual vs connected Actual PIC mode, edit reload, and browser fixture wiring.
-- Real authenticated browser execution remains pending because the existing browser harness intentionally requires an isolated localhost PostgreSQL fixture.
+- Authenticated browser acceptance: PASS on an isolated Vercel Preview wired only to the isolated Neon SP2 branch. Manual save/reload, repeated save, manual→connected persistence, connected→manual unlink, and desktop/mobile/iPad layouts were verified. A repeated-save controlled-field reset was found during this pass, fixed, regression-covered and re-verified before merge.
 
 **SP2 database acceptance — isolated Neon**
 - connected create canonicalized the source `commander` from the selected account and created the current PIC link;
