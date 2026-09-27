@@ -177,6 +177,7 @@ CREATE TABLE aircraft(
   aircraft_make TEXT NOT NULL DEFAULT '',
   aircraft_model TEXT NOT NULL DEFAULT '',
   aircraft_variant TEXT NOT NULL DEFAULT '',
+  icao_type TEXT NOT NULL DEFAULT '',
   aircraft_class TEXT NOT NULL DEFAULT '',
   regulatory_category TEXT NOT NULL DEFAULT '',
   balloon_class TEXT NOT NULL DEFAULT '',
@@ -198,7 +199,16 @@ CREATE TABLE flight_tracks(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
   flight_id BIGINT NOT NULL,
-  distance_km NUMERIC NOT NULL DEFAULT 0
+  file_name TEXT NOT NULL DEFAULT '',
+  imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  point_count INTEGER NOT NULL DEFAULT 0,
+  distance_km NUMERIC NOT NULL DEFAULT 0,
+  start_utc TIMESTAMPTZ,
+  end_utc TIMESTAMPTZ,
+  min_alt_m NUMERIC,
+  max_alt_m NUMERIC,
+  coordinates_json TEXT NOT NULL DEFAULT '[]',
+  overview_coordinates_json TEXT NOT NULL DEFAULT '[]'
 );
 CREATE TABLE flight_connected_crew(
   id BIGSERIAL PRIMARY KEY,
@@ -266,7 +276,29 @@ CREATE TABLE instructor_flight_approvals(
   record_revision INTEGER NOT NULL DEFAULT 1,
   flight_hash TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending',
-  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  decided_at TIMESTAMPTZ,
+  decision_note TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE flight_verifications(
+  id BIGSERIAL PRIMARY KEY,
+  flight_id BIGINT NOT NULL,
+  flight_user_id BIGINT NOT NULL,
+  signer_user_id BIGINT,
+  verification_role TEXT NOT NULL DEFAULT 'SUPERVISING PIC',
+  record_revision INTEGER NOT NULL DEFAULT 1,
+  flight_hash TEXT NOT NULL DEFAULT '',
+  credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  payload_hash TEXT NOT NULL DEFAULT '',
+  server_signature TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  signed_at TIMESTAMPTZ,
+  declined_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
+  decision_note TEXT NOT NULL DEFAULT '',
+  revocation_reason TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE user_notifications(
   id BIGSERIAL PRIMARY KEY,
@@ -322,7 +354,9 @@ VALUES
 INSERT INTO pilot_connections(id,requester_user_id,recipient_user_id,relationship,status,requester_label,recipient_label)
 VALUES(7001,9002,9001,'pilot','pending','friend','friend');
 INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
-VALUES(9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
+VALUES
+  (9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
+  (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
 INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
 VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
 
