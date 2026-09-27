@@ -166,16 +166,16 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await manual.fill("Manual Captain");
   await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
 
-  await page.locator('select[name="registration"]').selectOption("OK-E2E");
+  await page.locator('select[name="registration"]').selectOption("OK-SP2E");
   await page.getByRole("button",{name:"Save & review"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook&saved=1$/);
-  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
+  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
 
   await page.getByRole("button",{name:"Save changes"}).click();
   await expect(page.getByText("Flight changes saved.")).toBeVisible();
-  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
+  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
   await expectNoHorizontalOverflow(page);
