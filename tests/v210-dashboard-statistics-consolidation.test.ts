@@ -11,7 +11,7 @@ test("v2.1 keeps Dashboard a stable at-a-glance home instead of a period analyti
   assert.match(page,/getDashboardOverviewData\(session\.userId,"all"\)/);
   assert.doesNotMatch(page,/aria-label="Dashboard period"/);
   assert.doesNotMatch(page,/href={`\/dashboard\?period=/);
-  assert.match(page,/your all-time flying snapshot/);
+  assert.match(page,/Your all-time flying totals/);
   assert.match(page,/href="\/statistics\?period=all&section=overview"/);
 });
 

@@ -23,6 +23,11 @@ This section tracks changes intended for the next named release. An entry is pro
 - Replaced the bespoke Push onboarding glass surface with the canonical raised-surface tokens while preserving placement and behavior.
 - Closed UX-027 without a visual change after confirming the effective login-card cascade was already 11 px with no backdrop blur.
 
+### Design consistency audit — Batch 10
+- Standardized sign-in/join email terminology while preserving the more specific Account email label in Settings.
+- Replaced decorative Dashboard lead phrasing with operational all-time totals / Statistics guidance.
+- No authentication, input behavior, dashboard calculation, regulatory or stored-data semantics changed.
+
 ## v3.3 design & workflow consistency — merged through 2026-09-20
 
 ### Workflow simplification
@@ -43,7 +48,7 @@ This section tracks changes intended for the next named release. An entry is pro
 ### Engineering workflow
 - Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
 
-Batch 10 and later audit work remain pending.
+Batch 11 remains pending.
 
 
 ## v3.2 — UI consistency & verification foundation — 2026-09-19

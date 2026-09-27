@@ -32,7 +32,7 @@ test("v1.70 migrates historical dashboard preferences without showing analytics 
 test("v1.70 dashboard is action-oriented and hands historical analysis to Statistics",()=>{
   const page=read("app/(protected)/dashboard/page.tsx");
   assert.match(page,/<h1>At a glance<\/h1>/);
-  assert.match(page,/Historical periods, trends and detailed breakdowns live in Statistics/);
+  assert.match(page,/Historical periods, trends and detailed breakdowns are in Statistics/);
   assert.match(page,/QUICK ACTIONS/);
   assert.match(page,/href="\/flights\/needs-attention"/);
   assert.match(page,/\/statistics\?period=/);

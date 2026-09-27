@@ -826,3 +826,24 @@ test("v3.3 design batch 9 makes push onboarding a canonical raised surface witho
   assert.doesNotMatch(css,/html\[data-theme="light"\] \.push-onboarding\{/);
   assert.match(css,/@media\(max-width:700px\)\{[\s\S]*\.push-onboarding\{right:12px;bottom:calc\(12px \+ env\(safe-area-inset-bottom\)\);width:calc\(100vw - 24px\);grid-template-columns:auto minmax\(0,1fr\);padding:15px\}/);
 });
+
+test("v3.3 design batch 10 standardizes email terminology without changing field behavior",()=>{
+  const login=read("app/login/login-form.tsx");
+  const join=read("app/join/join-form.tsx");
+  const profile=read("app/(protected)/profile/page.tsx");
+
+  assert.match(login,/<label>Email<input name="email" type="email" autoComplete="email" required autoFocus \/><\/label>/);
+  assert.doesNotMatch(login,/>E-mail</);
+  assert.match(join,/<label>Email<input value=\{email\} readOnly\/><\/label>/);
+  assert.match(profile,/<label>Account email<input type="email" value=\{t\(user\.email\)\} readOnly\/>/);
+
+  assert.match(login,/name="email" type="email" autoComplete="email" required autoFocus/);
+  assert.match(join,/value=\{email\} readOnly/);
+});
+
+test("v3.3 design batch 10 uses operational dashboard lead copy",()=>{
+  const dashboard=read("app/(protected)/dashboard/page.tsx");
+  assert.match(dashboard,/\{data\.displayName\} · Your all-time flying totals\. Historical periods, trends and detailed breakdowns are in Statistics\./);
+  assert.doesNotMatch(dashboard,/your all-time flying snapshot and the next places to go/i);
+});
+
