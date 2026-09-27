@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation-design review candidate  
+**Status:** Priority 2 implementation-ready — SP1 schema/domain next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -163,7 +163,12 @@ Current materialization:
 - rechecks certified source revision/hash;
 - creates an independently owned recipient flight;
 - derives credit through `crewRoleCredits()`;
-- does **not** currently recheck accepted Connection state at acceptance/materialization.
+- does **not** currently recheck accepted Connection state at acceptance/materialization;
+- currently derives recipient `commander` from live account display names and does not select `f.commander` at all.
+
+Current role/UI control flow also has two important implementation traps:
+- `validCrewCombination()` falls through to a generic `return true` for roles without an explicit branch;
+- the certified-flight generic crew-role dropdown is built directly from `CREW_ROLES`.
 
 ### Certification/correction behavior
 
@@ -176,6 +181,35 @@ Opening a certified correction:
 - supersedes pending participation requests from the old revision.
 
 Therefore a separate current connected-PIC link can remain attached to the same source flight ID across revisions, provided normal draft edits keep it synchronized with the current role/Actual PIC selection.
+
+
+## Independent implementation-design review — reconciled
+
+The required second-AI read-only review was completed against canonical main `e0e28b9` and then checked again against the repository before this design was frozen.
+
+Verdict: **APPROVE WITH CHANGES**.
+
+The data model and lifecycle were accepted. Three code-path findings are now mandatory acceptance criteria rather than implicit assumptions:
+
+1. **PIC must get an explicit combination rule.**  
+   Adding `PIC` to `CREW_ROLES` is not sufficient because `validCrewCombination()` currently has a permissive fallback. SP1 must add an explicit `participant==='PIC'` branch that returns true **only** when the source role is `SAFETY PILOT`. Unit coverage must prove `PIC→PIC`, `CO-PILOT→PIC` and other unintended mappings fail closed.
+
+2. **PIC must never leak into the generic crew-role selector.**  
+   The existing certified-flight selector is derived directly from `CREW_ROLES`. Once `PIC` exists, that generic selector must unconditionally exclude it. The dedicated PIC invite must derive the target from `flight_connected_crew` server-side and must not accept an arbitrary client-supplied `participant_id`.
+
+3. **PIC materialization must deliberately read certified `flights.commander`.**  
+   Existing materialization currently uses live account display names and does not select `f.commander`. SP4 must add `f.commander` to the source SELECT and use it only for `participantRole==='PIC'`. Existing non-PIC materialization behavior is preserved in this feature to minimize blast radius.
+
+Additional reconciled decisions:
+
+- migration v15 belongs in the tracked `db-optimization.ts` / `migration-plan.ts` sequence that currently ends at v14;
+- New Flight needs a separate all-accepted-Connections query returning both user ID and display name for the connected-PIC control; the instructor-only name query is not reused;
+- read-time revoked Connection state is **live UI authorization state**, not persisted evidence: keep the `flight_connected_crew` row, do not mutate on GET, but do not render an enabled PIC invite while the Connection is no longer accepted;
+- acceptance-time Connection revalidation is scoped to **PIC participation only** in P2. The same gap for older participation roles is real but deferred as separate follow-up work rather than broadening this feature;
+- no certification payload version bump is required because `commander` is already certified evidence and the connected identity remains external collaboration metadata;
+- no historical backfill is required.
+
+With these changes recorded, the design/review gate is closed and SP1 may begin.
 
 ## Frozen implementation design
 
@@ -256,7 +290,7 @@ Migration must be idempotent and verified in PostgreSQL before application code 
 
 ### 5. PIC invitation is dedicated, not generic
 
-Do not make PIC appear as an unrestricted option in the generic crew-role dropdown.
+Do not make PIC appear as an unrestricted option in the generic crew-role dropdown. The existing `availableRoles` filter must explicitly exclude `PIC` regardless of source role.
 
 For a certified source record where:
 - source role = `SAFETY PILOT`;
@@ -282,19 +316,20 @@ Manual-only Actual PIC records display normally but have no PIC invite action.
 PIC participation must be supported explicitly:
 
 - add `PIC` to participation-role normalization/DB constraint;
-- `validCrewCombination('SAFETY PILOT','PIC')` = true;
-- PIC from other source roles remains invalid unless a later feature explicitly adds another mapping;
+- `validCrewCombination('SAFETY PILOT','PIC')` = true through an explicit PIC branch before the current generic fallback;
+- `validCrewCombination('PIC','PIC')`, `validCrewCombination('CO-PILOT','PIC')` and every other source→PIC mapping remain false unless a later feature explicitly adds one;
 - `crewRoleCredits('PIC', minutes)` assigns PIC minutes;
 - source Safety Pilot credit remains unchanged;
 - materialized recipient role is `PIC`;
 - recipient commander comes from the **certification-protected source `commander`** value;
+- `materializeParticipation` must select `f.commander` and use an explicit `participantRole==='PIC'` commander branch; existing non-PIC live-name behavior is not generalized in P2;
 - all other certified source facts continue through the existing materialization path.
 
 Before materialization/acceptance of a PIC participation:
 - source revision/hash must still match;
 - participant must still be an accepted Connection to the source owner.
 
-Existing non-PIC participation behavior must not be weakened.
+This acceptance-time Connection recheck is intentionally PIC-only in P2. Existing non-PIC participation behavior is not changed by this feature; broader revalidation is tracked separately rather than generalized without a dedicated review.
 
 ### 7. Correction/revision lifecycle
 
@@ -310,7 +345,7 @@ Because the connected-PIC link is current collaboration metadata on the same sou
 
 Required surfaces:
 
-- New flight: all accepted Connections available for Safety Pilot Actual PIC selection.
+- New flight: a separate query returns `id + display_name` for all accepted Connections for Safety Pilot Actual PIC selection; do not reuse the existing instructor-only, name-only query.
 - Flight detail editable Logbook data: show current connected selection or manual mode.
 - GPS-imported editable draft: uses the same detail FlightForm before certification; no duplicate GPS-specific PIC model.
 - Certified flight overview: dedicated PIC invitation state/action when applicable.
@@ -320,16 +355,19 @@ Required surfaces:
 
 ### SP1 — schema + pure domain contract
 
-- migration v15;
-- connected-PIC persistence helpers;
-- extend PIC participation role/credit/combination rules;
-- unit + PostgreSQL contract tests.
+- migration v15 in the existing tracked `db-optimization.ts` / `migration-plan.ts` sequence;
+- `flight_connected_crew` persistence helpers;
+- add `PIC` to participation normalization/DB constraint;
+- add an explicit fail-closed PIC branch in `validCrewCombination()` before the generic fallback;
+- add PIC credit in `crewRoleCredits()`;
+- unit tests for valid and invalid source→PIC combinations;
+- PostgreSQL contract tests for table CHECK/UNIQUE/FK/cascade semantics.
 
 No UI yet.
 
 ### SP2 — flight create/edit persistence
 
-- load accepted Connections on New flight;
+- load all accepted Connections with `id + display_name` on New flight using a separate query;
 - FlightForm connected/manual Actual PIC control;
 - create/update transactional link lifecycle;
 - edit/correction state reload;
@@ -337,15 +375,17 @@ No UI yet.
 
 ### SP3 — certified PIC invitation
 
-- dedicated server-side linked-PIC invite action;
-- certified-flight PIC invitation UI;
+- unconditionally exclude `PIC` from the existing generic `availableRoles` selector;
+- dedicated server-side linked-PIC invite action that derives the target from stored metadata and accepts no arbitrary client participant ID;
+- certified-flight PIC invitation UI gated by live accepted-Connection state without mutating the link on read;
 - accepted-Connection + source role + revision/hash checks;
 - notification/review wording.
 
 ### SP4 — PIC materialization + recency proof
 
 - recipient PIC materialization;
-- source certified commander copied as historical PIC name;
+- add `f.commander` to the materialization source SELECT;
+- use certified source `commander` specifically for PIC recipients while preserving existing non-PIC commander behavior;
 - PIC credit through canonical credit path;
 - accepted Connection recheck at materialization;
 - prove recipient recency behaves like an equivalent ordinary PIC record;
@@ -361,15 +401,9 @@ No UI yet.
 - migration/deploy verification;
 - ROADMAP / FEATURES / CHANGELOG closeout.
 
-## Required second-AI review before migration
+## Review gate status
 
-Because this feature introduces a new collaboration table and changes the shared-flight role model, implementation must not start until an independent read-only architecture/data-model review confirms or challenges:
+The required independent read-only architecture/data-model review is complete and reconciled above. No unresolved design blocker remains before SP1.
 
-- whether `flight_connected_crew` is the minimal correct persistence model;
-- transaction boundaries for create/update;
-- correction/revision behavior;
-- dedicated PIC invitation vs generic crew role;
-- participant materialization and PIC credits;
-- Connection rechecks;
-- migration v15 shape and rollback compatibility.
+Implementation must preserve the reconciled findings as acceptance criteria; in particular, adding `PIC` to a shared enum must not make it reachable through the permissive combination fallback or the generic arbitrary-recipient crew invite UI.
 
