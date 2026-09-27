@@ -65,6 +65,21 @@ Important separations include:
 
 A historical signature or verification must never appear valid for a later corrected revision unless the underlying protected evidence contract explicitly allows it.
 
+## Regulatory and data-integrity source of truth
+
+The executable implementation and regression/acceptance tests are authoritative for runtime behavior. Documentation must describe those contracts; it must not invent a parallel regulatory engine.
+
+Current documentation authority for protected/regulatory behavior is:
+
+- this `ARCHITECTURE.md` for cross-cutting certified-record, ownership, category, recency and recovery invariants;
+- `docs/compliance/FCL050_IMPLEMENTATION.md` for the current FCL.050-oriented implementation baseline and external-approval boundary;
+- `docs/compliance/FCL050_EVIDENCE_MATRIX.md` for current FCL.050 engineering traceability to fields, outputs and tests;
+- current code and tests for exact executable semantics, including later corrections that supersede an older written baseline.
+
+Version-specific regulatory notes under `docs/history/` are retained as provenance only. They must not override current code/tests or the active documents above.
+
+The older `docs/certification-readiness/` set is retained as engineering evidence from its documented release era. Its version headers are not current release status and it must not be used to override newer active contracts.
+
 ## Multi-category regulatory model
 
 FlyTally is one pilot logbook across `AEROPLANE`, `HELICOPTER`, `SAILPLANE`, `BALLOON`, `ULL` and conservative `OTHER` records. Category-specific evidence is explicit; category meaning must not be inferred from a convenient display label when the regulatory provenance is unknown.

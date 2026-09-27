@@ -1,8 +1,8 @@
-# FlyTally Certification Readiness
+# FlyTally Certification Readiness — retained evidence set
 
-Status: **v1.33.3**
+Historical evidence baseline: **v1.33.3**
 
-This directory describes the current production-oriented Next.js implementation of FlyTally for technical and authority-facing review. It is not a statement that FlyTally is approved or certified by EASA, ÚCL or another competent authority.
+This directory preserves certification-readiness evidence created around the v1.33.x implementation. It remains useful for provenance and test-history review, but it is **not the current release-status source of truth**. Current cross-cutting architecture lives in `../../ARCHITECTURE.md`; current FCL.050-oriented implementation/evidence documents live in `../compliance/FCL050_IMPLEMENTATION.md` and `../compliance/FCL050_EVIDENCE_MATRIX.md`. Nothing here states that FlyTally is approved or certified by EASA, ÚCL or another competent authority.
 
 Documents:
 
@@ -16,4 +16,4 @@ Documents:
 
 From v1.33.1 the CI verification job includes an isolated PostgreSQL 16 acceptance stage. v1.33.2 extends that stage with cross-user ownership and backup/restore integrity evidence. v1.33.3 adds a complete certified DUAL workflow that executes production certification, correction, request/signature and view-projection SQL against the same PostgreSQL state.
 
-The executable implementation remains the source of truth. These documents must be updated whenever a release changes a protected field, certification payload, signature workflow, print/export semantics, record-retention behavior or the acceptance evidence used to support those claims.
+The executable implementation and current regression tests remain the source of truth. If a current change relies on one of these historical evidence documents, either update/promote the relevant material into active documentation or explicitly record why the historical evidence is still applicable.
