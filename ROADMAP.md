@@ -1,6 +1,8 @@
-# FlyTally Logbook roadmap
+# FlyTally Logbook Roadmap
 
-Last reconciled: **27 September 2026**
+**Status:** Active  
+**Owner:** Filip Točík  
+**Last updated:** 27 September 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what we do next, in what order, and why**.
 
@@ -10,6 +12,63 @@ This is the canonical planning document for `flytally-logbook`. It answers **wha
 - Detailed historical plans and milestone notes live under `docs/history/` and do not override this roadmap.
 
 Historical PR/version labels are retained in Git history and the changelog, but they are not used to infer the current roadmap.
+
+## Progress overview
+
+| Area / milestone | Status | Current state |
+| --- | :---: | --- |
+| Core logbook / certified record integrity | ✅ | Production foundation complete |
+| Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
+| Flight entry / review / GPS workflows | ✅ | Canonical entry and review workflow established |
+| Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
+| Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
+| Statistics / professional workspace | ✅ | Current pilot analytics and professional-experience layer live |
+| Backup / recovery / protected history | ✅ | Portable backup, review-first restore and protected-history preservation implemented |
+| Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
+| Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
+| UX & design consistency | ✅ | UX consolidation and design-consistency audit Batch 1–11 complete |
+| Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
+| Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
+| Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
+| Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
+| Roadmap review & prioritization checkpoint | 🚧 | Current work: confirm product priorities before starting the next implementation milestone |
+| Multi-aircraft M2B — remaining integrity audit | ⏳ | Candidate next; not started until roadmap review is confirmed |
+| Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Planned |
+| Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Planned |
+| Professional Logbook Platform | 🔬 | Research only; organization/operator workflows are not implementation-ready |
+
+**Legend:** ✅ complete/live · 🚧 in progress · ⏳ planned · 🔬 research · ⚠️ blocked/external dependency
+
+## Historical milestone track
+
+This table is the concise chronological development history. Detailed implementation evidence remains in `CHANGELOG.md`, merged PRs and the archived documents under `docs/history/`.
+
+| Milestone / release track | Status | What it established |
+| --- | :---: | --- |
+| v1.51.x — Regulatory Correctness Core | ✅ | Tested FCL.060/LAPL/FCL.740.A foundations, movement evidence, eligible ULL credit and certification evidence boundaries |
+| v1.52 — Codebase Review & Cleanup | ✅ | Retired obsolete runtime/artifacts while preserving the validated regulatory core |
+| v1.53–v1.54 — Aircraft state & catalogue | ✅ | Aircraft-state integrity, structured aircraft-type catalogue and manual fallback |
+| v1.55–v1.61 — Flight-entry UX & category expansion | ✅ | Responsive entry workflow, guided setup and category-aware flight-record foundations |
+| Multi-category Pilot Logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and Other on one canonical flight model |
+| v2.1 — Dashboard & Statistics consolidation | ✅ | Stable all-time Dashboard plus dedicated historical/period analysis in Statistics |
+| v2.2 — Action Center & Shared Flight Workflow | ✅ | Authoritative pending-work surface and reviewed collaboration workflows |
+| v2.3 — Large Logbook Performance & Scalability | ✅ | 10k/50k/100k scale gates and hot-path optimization without changing record semantics |
+| v2.4 — Flight Entry & Review 2.0 | ✅ | Canonical save/review/certify/share flow and explicit GPS review |
+| v2.5 — Recency & Compliance Workspace | ✅ | Evidence-driven recency/licence planning and explainable CURRENT/INCOMPLETE states |
+| v2.6 — Professional Pilot Workspace 2.0 | ✅ | Professional/operator context and experience reporting without silent employment inference |
+| v2.7 — Data Integrity & Recovery 2.0 | ✅ | Review-first restore, backup integrity and protected certification/history recovery |
+| v2.8 — Compliance & Safety Foundation | ✅ | Privacy, regulator-facing identity, map/provider and browser-security foundations |
+| v2.9 — Commercial & External Validation | ✅ | Technical launch/legal/billing/signature/claims gates; external approvals remain separate |
+| v3.0 — UX & Product Consolidation | ✅ | Navigation, Licences & Recency, Aircraft, Print & Data, Settings, Web Push and mobile/accessibility consolidation |
+| v3.3 — Design & Workflow Consistency | ✅ | Shared tokens/geometry/icons/states/forms/display formatting/routes plus final Batch 9–11 closeout |
+| Documentation governance consolidation | ✅ | Canonical ROADMAP / FEATURES / CHANGELOG and archived historical notes · PR #148–150 |
+| Multi-aircraft M0 | ✅ | Current-profile vs historical-flight source-of-truth contract · PR #153 |
+| Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
+| Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
+| Multi-aircraft M2B | ⏳ | Remaining historical/dynamic applicability integrity audit — candidate next |
+| Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
+| Multi-aircraft M4 | ⏳ | Sharing, recovery, measured scale and final closeout |
+| Professional Logbook Platform | 🔬 | Future organization/operator/instructor/student/fleet workflows — research only |
 
 ## Status vocabulary
 
@@ -21,6 +80,21 @@ Historical PR/version labels are retained in Git history and the changelog, but 
 - **BLOCKED / EXTERNAL** — implementation may exist, but completion depends on evidence or a decision outside the repository.
 
 ## Current state
+
+### Roadmap review & prioritization checkpoint — ACTIVE
+
+The product is at a clean checkpoint after documentation governance, UX/design closeout, M0, M2A and M1.
+
+Current work is intentionally documentation/product-priority review before another implementation milestone starts.
+
+Goals:
+- validate the next product priority against the actual repository and production baseline;
+- keep M2B as a candidate next step rather than starting it automatically;
+- confirm whether Multi-aircraft M2B → M3 → M4 remains the right sequence;
+- review the wider Logbook horizon so technical follow-up work does not silently become product priority;
+- preserve completed milestone history in the progress tables above.
+
+No runtime implementation starts from this checkpoint until the roadmap review is confirmed.
 
 ### Documentation governance consolidation — DONE
 
@@ -137,7 +211,7 @@ Acceptance:
 - exact backup/restore remains outside interactive profile canonicalization;
 - no certified flight, revision or existing recipient-owned profile is silently rewritten.
 
-#### M2B — Remaining historical & dynamic applicability integrity — NEXT
+#### M2B — Remaining historical & dynamic applicability integrity — PLANNED
 
 Scope:
 - verify the remaining recency consumers do not silently prefer mutable current-profile identity over stored flight evidence;
@@ -186,7 +260,7 @@ Acceptance:
 
 The independent second-AI review returned **APPROVE WITH CHANGES**. Its blocking conditions were reconciled into the M0 contract and milestone order.
 
-M2A and M1 are closed. M2B — remaining historical & dynamic applicability integrity — is now NEXT.
+M2A and M1 are closed. M2B remains the current candidate next milestone, but implementation is paused until the active roadmap review confirms the wider product priority.
 
 ### 3. Professional Logbook Platform — RESEARCH
 
