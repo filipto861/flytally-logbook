@@ -60,14 +60,55 @@ function execute(statement:string){
 
 const TRANSACTION_RESULT_PREFIX="__flytally_local_tx__";
 
+function topLevelCommandIndex(statement:string){
+  if(!/^WITH\b/i.test(statement))return-1;
+  let depth=0,inSingle=false,inDouble=false,dollarTag="";
+  for(let index=0;index<statement.length;index+=1){
+    const char=statement[index],next=statement[index+1];
+    if(dollarTag){
+      if(statement.startsWith(dollarTag,index)){index+=dollarTag.length-1;dollarTag=""}
+      continue;
+    }
+    if(inSingle){
+      if(char==="'"&&next==="'"){index+=1;continue}
+      if(char==="'")inSingle=false;
+      continue;
+    }
+    if(inDouble){
+      if(char==='"'&&next==='"'){index+=1;continue}
+      if(char==='"')inDouble=false;
+      continue;
+    }
+    if(char==="'"){inSingle=true;continue}
+    if(char==='"'){inDouble=true;continue}
+    if(char==="$"){
+      const match=statement.slice(index).match(/^\$[A-Za-z0-9_]*\$/);
+      if(match){dollarTag=match[0];index+=dollarTag.length-1;continue}
+    }
+    if(char==="("){depth+=1;continue}
+    if(char===")"){depth=Math.max(0,depth-1);continue}
+    if(depth!==0)continue;
+    const rest=statement.slice(index);
+    const match=rest.match(/^(SELECT|INSERT|UPDATE|DELETE)\b/i);
+    if(match)return index;
+  }
+  return-1;
+}
+
+function captureRows(statement:string,marker:string){
+  const commandIndex=topLevelCommandIndex(statement);
+  const aggregate=`SELECT ${quote(marker)} || COALESCE(json_agg(row_to_json(__flytally_local_tx_result)),'[]'::json)::text FROM __flytally_local_tx_result`;
+  if(commandIndex>=0){
+    const prefix=statement.slice(0,commandIndex).trimEnd(),command=statement.slice(commandIndex);
+    return `${prefix}, __flytally_local_tx_result AS (${command}) ${aggregate}`;
+  }
+  return `WITH __flytally_local_tx_result AS (${statement}) ${aggregate}`;
+}
+
 function executeLocalTransaction(statements:string[]){
   const chunks=statements.map((statement,index)=>{
     const marker=`${TRANSACTION_RESULT_PREFIX}${index}:`;
-    if(rowProducing(statement)){
-      return `WITH __flytally_local_tx_result AS (${statement})
-SELECT ${quote(marker)} || COALESCE(json_agg(row_to_json(__flytally_local_tx_result)),'[]'::json)::text
-FROM __flytally_local_tx_result`;
-    }
+    if(rowProducing(statement))return captureRows(statement,marker);
     return `${statement};
 SELECT ${quote(`${marker}[]`)}`;
   });
