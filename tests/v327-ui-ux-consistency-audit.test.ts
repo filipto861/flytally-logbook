@@ -352,7 +352,9 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   assert.match(expenses,/<span>Description \{row\.category==="OTHER"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   const flight=read("components/flight-form.tsx");
   assert.match(flight,/<span>Instructor \/ PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
-  assert.match(flight,/<span>\{role==="SAFETY PILOT"\?"Actual PIC":"Commander \/ PIC"\} \{evidence==="EASA"&&role==="SAFETY PILOT"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(flight,/<span>Actual PIC <span className="field-hint" aria-hidden="true">Required<\/span><\/span><select name="connectedPicUserId"/);
+  assert.match(flight,/<span>Actual PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span><input name="commander"/);
+  assert.match(flight,/<span>Commander \/ PIC<\/span><input name="commander"/);
   const signature=read("components/in-person-signature-pad.tsx");
   assert.match(signature,/<span>\{allowExaminer\?"Instructor \/ examiner name":"Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
   assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]*<span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
