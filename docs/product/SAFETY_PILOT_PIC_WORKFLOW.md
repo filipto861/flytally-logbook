@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation-ready — SP1 schema/domain next  
+**Status:** Priority 2 implementation — SP1 verification gate  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -363,7 +363,15 @@ Required surfaces:
 - unit tests for valid and invalid source→PIC combinations;
 - PostgreSQL contract tests for table CHECK/UNIQUE/FK/cascade semantics.
 
-No UI yet.
+**Implementation state:** code complete on `feat/safety-pilot-pic-sp1`; repository-wide and PostgreSQL verification still required before merge.
+
+Staged-deployment safety is explicit:
+- the existing generic crew selector excludes `PIC`;
+- the existing generic `inviteCrewMember` action rejects `PIC` server-side even if a client crafts the form;
+- existing `materializeParticipation` fails closed for `PIC` until SP4 adds the certified-`commander`, Connection-recheck and recency semantics;
+- therefore migration/domain support can land without exposing a partial PIC-sharing workflow.
+
+No connected/manual PIC UI is introduced in SP1.
 
 ### SP2 — flight create/edit persistence
 
