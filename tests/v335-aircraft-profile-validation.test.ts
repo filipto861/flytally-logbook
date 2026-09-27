@@ -83,6 +83,10 @@ test("M1 direct Add/Edit and shared import use the same canonical validator whil
   assert.match(direct,/validateAircraftProfile\(\{/);
   assert.match(share,/validateAircraftProfile\(\{/);
   assert.ok(share.includes("?error=profile"));
+  const validation=share.indexOf("const validated=validateAircraftProfile");
+  const rejection=share.indexOf("if(!validated.profile)redirect",validation);
+  const persistence=share.indexOf("const queries=[",validation);
+  assert.ok(validation>=0&&rejection>validation&&persistence>rejection,"shared profile validation must fail before persistence queries are built");
   assert.match(share,/canonical[.]aircraftClass/);
   assert.match(share,/canonical[.]regulatoryCategory/);
   assert.match(review,/regulatory data FlyTally cannot import safely/);
