@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; implementation design complete, second-AI architecture review required before migration/code |
+| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; design review reconciled, SP1 schema/domain implementation ready |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -61,7 +61,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | Active design/review milestone before additive migration and implementation |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | Design/review gate closed; SP1 additive schema + domain contract is the active implementation step |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -115,9 +115,11 @@ Frozen roadmap-level boundaries:
 
 The connected identity is modeled as a separate pre-participation collaboration link. Exact schema/table naming is an implementation-design detail, but no name matching is permitted.
 
-Independent second-AI review is required again after implementation design and before any migration.
+Independent second-AI implementation-design review is complete and reconciled against the repository.
 
-Implementation-design discovery is complete and recorded in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`. Runtime/schema implementation remains blocked until that review is reconciled.
+The review returned **APPROVE WITH CHANGES**. The accepted changes are now frozen in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`: explicit fail-closed PIC combination handling, unconditional exclusion of PIC from the generic arbitrary-recipient crew selector, certified `commander` materialization for PIC recipients, live revoked-Connection UI gating, and migration v15 placement in the tracked schema sequence.
+
+The design gate is closed. **SP1 — schema + pure domain contract is now the active implementation step.**
 
 ## Roadmap review reconciliation
 
@@ -279,7 +281,7 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
-| Safety Pilot ↔ PIC workflow | ➡️ | Next approved runtime/product milestone |
+| Safety Pilot ↔ PIC workflow | 🚧 | ACTIVE · design review reconciled; SP1 schema/domain implementation next |
 | Multi-aircraft M2B | ⏳ | Resume integrity audit after priority work |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
