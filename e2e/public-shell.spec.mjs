@@ -149,35 +149,35 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await expectAuthenticatedRoute(page,"New flight");
   await page.getByLabel("Role").selectOption("SAFETY PILOT");
 
-  const source=page.getByLabel("Actual PIC source");
+  const source=page.locator('select[name="actualPicMode"]');
   await expect(source).toHaveValue("manual");
-  await expect(page.getByLabel("Actual PIC")).toBeVisible();
+  await expect(page.locator('input[name="commander"]')).toBeVisible();
   await expect(page.getByText("No invitation is sent when this draft is saved.")).toBeVisible();
 
   await source.selectOption("connected");
-  const connected=page.getByLabel("Actual PIC");
+  const connected=page.locator('select[name="connectedPicUserId"]');
   await expect(connected).toBeVisible();
   await expect(connected.getByRole("option",{name:"Browser Friend"})).toHaveCount(1);
   await connected.selectOption("9002");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Browser Friend");
 
   await source.selectOption("manual");
-  const manual=page.getByLabel("Actual PIC");
+  const manual=page.locator('input[name="commander"]');
   await manual.fill("Manual Captain");
   await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
 
-  await page.getByLabel("Registration").selectOption("OK-E2E");
+  await page.locator('select[name="registration"]').selectOption("OK-E2E");
   await page.getByRole("button",{name:"Save & review"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook&saved=1$/);
-  await expect(page.getByLabel("Registration")).toHaveValue("OK-E2E");
-  await expect(page.getByLabel("Role")).toHaveValue("SAFETY PILOT");
-  await expect(page.getByLabel("Actual PIC")).toHaveValue("Manual Captain");
+  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
+  await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
+  await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
 
   await page.getByRole("button",{name:"Save changes"}).click();
   await expect(page.getByText("Flight changes saved.")).toBeVisible();
-  await expect(page.getByLabel("Registration")).toHaveValue("OK-E2E");
-  await expect(page.getByLabel("Role")).toHaveValue("SAFETY PILOT");
-  await expect(page.getByLabel("Actual PIC")).toHaveValue("Manual Captain");
+  await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
+  await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
+  await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
   await expectNoHorizontalOverflow(page);
 });
 
