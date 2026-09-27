@@ -302,6 +302,8 @@ VALUES
   (9002,'Europe/Prague','CZK','LKPR','PIC','{}'::jsonb);
 INSERT INTO pilot_connections(id,requester_user_id,recipient_user_id,relationship,status,requester_label,recipient_label)
 VALUES(7001,9002,9001,'pilot','pending','friend','friend');
+INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
+VALUES(9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
 INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
 VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
 
