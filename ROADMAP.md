@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | ➡️ | **NEXT**; connected PIC selection + manual fallback + PIC invitation symmetry |
+| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; implementation design complete, second-AI architecture review required before migration/code |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -61,7 +61,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | ➡️ | Next approved product milestone after GPS reliability closeout |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | Active design/review milestone before additive migration and implementation |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -89,7 +89,7 @@ Roadmap-level acceptance:
 
 Closeout: the existing 28–145 km/h and 30 m qualification thresholds remain unchanged; take-off discontinuity semantics and unrelated point-count grouping/dedup rules remain unchanged. The anonymized sparse fixture failed before the fix and passed after it while the in-span corruption case remained fail-closed.
 
-## P2 — Safety Pilot ↔ PIC shared-flight workflow — NEXT
+## P2 — Safety Pilot ↔ PIC shared-flight workflow — ACTIVE
 
 User goal:
 
@@ -116,6 +116,8 @@ Frozen roadmap-level boundaries:
 The connected identity is modeled as a separate pre-participation collaboration link. Exact schema/table naming is an implementation-design detail, but no name matching is permitted.
 
 Independent second-AI review is required again after implementation design and before any migration.
+
+Implementation-design discovery is complete and recorded in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`. Runtime/schema implementation remains blocked until that review is reconciled.
 
 ## Roadmap review reconciliation
 
