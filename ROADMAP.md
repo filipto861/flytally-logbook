@@ -22,7 +22,7 @@ Historical PR/version labels are retained in Git history and the changelog, but 
 
 ## Current state
 
-### Governance consolidation — ACTIVE
+### Documentation governance consolidation — DONE
 
 Goal: make repository state easy to reconstruct in a new development chat without relying on memory.
 
@@ -34,19 +34,20 @@ Scope:
 - preserve historical engineering evidence under `docs/history/`;
 - make ROADMAP / FEATURES / CHANGELOG updates part of the normal Definition of Done.
 
-Acceptance:
+Acceptance achieved by the governance candidate:
 - root documentation is limited to current operating documents;
 - historical milestone files remain available but are clearly non-authoritative;
 - README points to the canonical documentation;
+- active regulatory/data-integrity contracts remain outside the historical archive;
 - no runtime code, schema or product behavior changes.
 
 ## Immediate roadmap
 
-### 1. Finish the design-consistency audit — NEXT
+### 1. Finish the design-consistency audit — ACTIVE
 
 The current audit is defined in `docs/ux-audit.md`.
 
-Remaining work after the documentation reset:
+Remaining work:
 
 1. **Batch 9 — surfaces and error pages**
    - PR #147 is implemented on `codex/v335-batch9-error-pages-push`.
