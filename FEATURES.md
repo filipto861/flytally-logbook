@@ -88,6 +88,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Compliance/activity/security notification preferences.
 - Staged compliance reminder infrastructure.
 - PWA/install support.
+- Explicit offline connection banner driven by browser connectivity state; it clears automatically when the browser reports online.
 
 Intentional current boundary:
 - FlyTally is online-only for logbook loading/saving.
@@ -106,10 +107,6 @@ Important boundary:
 - these features do not mean FlyTally is approved by EASA, ÚCL, LAA or another authority;
 - internal signature mechanisms are not represented as QES unless independently established;
 - legal/trademark/payment-provider approvals remain external decisions where applicable.
-
-## Current closeout work — IN PROGRESS
-
-- Explicit online/offline connection banner while retaining online-only mutation policy.
 
 ## Planned
 
