@@ -12,8 +12,8 @@ This directory contains supporting documentation for the Logbook repository.
 - `design-language.md` — active design-language guidance.
 - `ux-audit.md` — current design/UI audit findings and closeout history.
 - `product/V3_0_UX_CONSOLIDATION.md` — detailed UX/product consolidation record.
-- `compliance/` — active compliance/commercial-validation engineering documentation.
-- `certification-readiness/` — controlled certification-readiness/evidence documentation.
+- `compliance/` — active compliance/commercial-validation engineering documentation, including the current FCL.050 implementation baseline and evidence matrix.
+- `certification-readiness/` — retained certification-readiness evidence from an older release baseline; useful for provenance, but not current release status.
 
 ## Historical documentation
 
