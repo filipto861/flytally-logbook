@@ -110,16 +110,19 @@ Important boundary:
 
 ## Planned
 
-### Multi-aircraft Product Scale — ACTIVE PLANNING / AUDIT
+### Multi-aircraft Product Scale — ACTIVE
 
 Existing multi-aircraft profiles remain the foundation. The active scale phase is not a second fleet model.
 
+The source-of-truth contract is recorded in `docs/product/MULTI_AIRCRAFT_SCALE_CONTRACT.md`.
+
 Planned closeout:
+- historical helicopter type-specific recency reads stored flight identity before any mutable profile state and fails closed when type evidence is unresolved;
 - one canonical fail-closed aircraft-profile validation contract across Add/Edit and shared-profile import;
-- explicit separation of mutable aircraft-profile defaults from historical flight snapshots;
+- explicit separation of mutable aircraft-profile defaults, dynamic applicability metadata and historical flight snapshots;
+- established ordinary ULL→SEP experience behavior and atypical effective-dated override provenance remain explicit and regression-covered;
 - no-code onboarding proof across every currently supported regulatory category with manual identity fallback;
-- recency consumers audited so historical regulatory evidence is not silently reclassified by later profile edits;
-- sharing, backup/restore and multi-profile selection regression coverage at scale;
+- sharing, exact backup/restore and multi-profile selection regression coverage at scale;
 - no organization/fleet ownership or new regulatory category implied by this phase.
 
 ## Research only
