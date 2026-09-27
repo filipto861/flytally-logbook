@@ -147,7 +147,8 @@ CREATE TABLE flights(
   takeoffs_day INTEGER NOT NULL DEFAULT 0,
   takeoffs_night INTEGER NOT NULL DEFAULT 0,
   approaches_day INTEGER NOT NULL DEFAULT 0,
-  approaches_night INTEGER NOT NULL DEFAULT 0
+  approaches_night INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(id,user_id)
 );
 CREATE TABLE flight_tracks(
   id BIGSERIAL PRIMARY KEY,
