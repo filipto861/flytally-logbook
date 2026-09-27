@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 product/architecture contract  
+**Status:** Priority 2 implementation-design review candidate  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -129,3 +129,247 @@ Any database migration must be additive, tenant-safe, idempotent and deployed be
 - manual-only records remain fully usable;
 - existing instructor / Safety Pilot / CO-PILOT / EXAMINER / OBSERVER collaboration remains backward compatible;
 - PostgreSQL, unit/source and browser coverage verifies ownership, duplicate prevention and lifecycle behavior.
+
+## Repository discovery — implementation design
+
+The initial product contract has now been checked against the current runtime.
+
+### Current save/edit paths
+
+- `createFlight()` persists `commander` directly on the source flight.
+- `updateFlight()` updates the same field while the draft is editable.
+- `FlightForm` currently renders Safety Pilot **Actual PIC** as a plain text `commander` input.
+- the New flight page loads only accepted Connections classified as instructors for the existing instructor datalist.
+- the flight-detail page already loads **all accepted Connections** as `crewOptions` for post-certification sharing.
+- GPS import does not need a second PIC-selection implementation: the imported record remains an editable draft and can use the same FlightForm on the flight-detail page before certification.
+
+### Current participation model
+
+`flight_participations` already provides:
+- source flight / source owner;
+- participant account;
+- participant role;
+- exact `source_revision` + `source_hash`;
+- pending/accepted/declined/superseded/cancelled lifecycle;
+- independently materialized `participant_flight_id`;
+- one participant per source revision/member.
+
+Current DB role constraint permits:
+`CO-PILOT | SAFETY PILOT | INSTRUCTOR | EXAMINER | OBSERVER`.
+
+`PIC` is not yet permitted.
+
+Current materialization:
+- rechecks certified source revision/hash;
+- creates an independently owned recipient flight;
+- derives credit through `crewRoleCredits()`;
+- does **not** currently recheck accepted Connection state at acceptance/materialization.
+
+### Certification/correction behavior
+
+`commander` is inside the certification payload and therefore remains the historical displayed Actual PIC evidence.
+
+Opening a certified correction:
+- archives the certified revision;
+- increments the same flight row's revision;
+- clears current certification;
+- supersedes pending participation requests from the old revision.
+
+Therefore a separate current connected-PIC link can remain attached to the same source flight ID across revisions, provided normal draft edits keep it synchronized with the current role/Actual PIC selection.
+
+## Frozen implementation design
+
+### 1. Additive pre-participation entity
+
+Introduce a new additive table:
+
+`flight_connected_crew`
+
+Proposed logical fields:
+
+- `id` — BIGSERIAL primary key;
+- `source_flight_id` — FK to `flights(id)`, ON DELETE CASCADE;
+- `source_user_id` — FK to `users(id)`;
+- `connected_user_id` — FK to `users(id)`;
+- `intended_role` — currently constrained to `PIC`;
+- `created_at`, `updated_at`;
+- CHECK source user != connected user;
+- UNIQUE(`source_flight_id`, `intended_role`).
+
+This table is **collaboration metadata**, not flight evidence and not flight credit.
+
+Server code must always verify that:
+- the source flight belongs to `source_user_id`;
+- the linked user is an accepted Connection at the time the link is created/changed;
+- the source flight is still editable;
+- `intended_role='PIC'` is only retained while source `role='SAFETY PILOT'`.
+
+No historical backfill is required.
+
+### 2. Canonical Safety Pilot form behavior
+
+For `role='SAFETY PILOT'`, FlightForm exposes one clear Actual PIC mode:
+
+**Connected pilot**
+- choose from all accepted pilot Connections;
+- selected account ID is submitted separately;
+- the displayed `commander` value is derived from the selected user's current FlyTally display name on the server;
+- the user cannot silently change the name while retaining a different connected identity.
+
+**Manual entry**
+- no connected user ID;
+- user enters `commander` text directly;
+- no account link or later invitation is implied.
+
+Switching away from Safety Pilot removes the connected-PIC link on save.
+
+Existing DUAL/instructor selection remains separate and unchanged.
+
+### 3. Server-side create/update contract
+
+Create and update must not trust a client-supplied connected user ID blindly.
+
+Before persistence:
+1. parse the normal flight record;
+2. if role is Safety Pilot and a connected PIC ID was supplied:
+   - prove the selected user is an accepted Connection;
+   - load the target display name;
+   - use that display name as canonical `commander`;
+   - persist/update the separate `flight_connected_crew` link;
+3. if manual PIC or non-Safety-Pilot role:
+   - persist the normal commander text;
+   - ensure any existing PIC link is deleted.
+
+The flight row and connected-crew metadata update must be transactional.
+
+### 4. Migration
+
+Use the next additive database migration (currently expected as migration **v15**) to:
+
+- create `flight_connected_crew`;
+- add tenant/query indexes required by source flight and connected user;
+- extend the `flight_participations.participant_role` CHECK to include `PIC`.
+
+No existing rows are rewritten.
+
+Migration must be idempotent and verified in PostgreSQL before application code depending on it is released.
+
+### 5. PIC invitation is dedicated, not generic
+
+Do not make PIC appear as an unrestricted option in the generic crew-role dropdown.
+
+For a certified source record where:
+- source role = `SAFETY PILOT`;
+- a `flight_connected_crew` PIC link exists;
+- linked user is still an accepted Connection;
+
+show a dedicated action such as:
+
+**Invite <pilot> as PIC**
+
+The invite action must:
+- accept the linked user from server-side stored metadata, not an arbitrary submitted target;
+- recheck source ownership;
+- require a certified source revision/hash;
+- recheck accepted Connection state;
+- require source role = Safety Pilot;
+- insert/update a revision-bound `flight_participations` record with participant role `PIC`.
+
+Manual-only Actual PIC records display normally but have no PIC invite action.
+
+### 6. Acceptance/materialization
+
+PIC participation must be supported explicitly:
+
+- add `PIC` to participation-role normalization/DB constraint;
+- `validCrewCombination('SAFETY PILOT','PIC')` = true;
+- PIC from other source roles remains invalid unless a later feature explicitly adds another mapping;
+- `crewRoleCredits('PIC', minutes)` assigns PIC minutes;
+- source Safety Pilot credit remains unchanged;
+- materialized recipient role is `PIC`;
+- recipient commander comes from the **certification-protected source `commander`** value;
+- all other certified source facts continue through the existing materialization path.
+
+Before materialization/acceptance of a PIC participation:
+- source revision/hash must still match;
+- participant must still be an accepted Connection to the source owner.
+
+Existing non-PIC participation behavior must not be weakened.
+
+### 7. Correction/revision lifecycle
+
+Because the connected-PIC link is current collaboration metadata on the same source flight ID:
+
+- opening a correction leaves the current link available for the editable new revision;
+- old pending participation requests remain superseded by the existing revision workflow;
+- editing the corrected draft may change/remove the linked PIC;
+- a new invite can only be created after the new revision is certified;
+- already materialized recipient-owned historical flights remain independent and are never rewritten.
+
+### 8. UI surfaces
+
+Required surfaces:
+
+- New flight: all accepted Connections available for Safety Pilot Actual PIC selection.
+- Flight detail editable Logbook data: show current connected selection or manual mode.
+- GPS-imported editable draft: uses the same detail FlightForm before certification; no duplicate GPS-specific PIC model.
+- Certified flight overview: dedicated PIC invitation state/action when applicable.
+- Shared-flight review: PIC role renders through the existing Review → Add → Certify workflow.
+
+## Implementation milestones
+
+### SP1 — schema + pure domain contract
+
+- migration v15;
+- connected-PIC persistence helpers;
+- extend PIC participation role/credit/combination rules;
+- unit + PostgreSQL contract tests.
+
+No UI yet.
+
+### SP2 — flight create/edit persistence
+
+- load accepted Connections on New flight;
+- FlightForm connected/manual Actual PIC control;
+- create/update transactional link lifecycle;
+- edit/correction state reload;
+- source tests + browser form coverage.
+
+### SP3 — certified PIC invitation
+
+- dedicated server-side linked-PIC invite action;
+- certified-flight PIC invitation UI;
+- accepted-Connection + source role + revision/hash checks;
+- notification/review wording.
+
+### SP4 — PIC materialization + recency proof
+
+- recipient PIC materialization;
+- source certified commander copied as historical PIC name;
+- PIC credit through canonical credit path;
+- accepted Connection recheck at materialization;
+- prove recipient recency behaves like an equivalent ordinary PIC record;
+- prove source Safety Pilot receives no PIC credit.
+
+### SP5 — release closeout
+
+- correction/revision lifecycle;
+- duplicate/cancel/decline/reinvite cases;
+- PostgreSQL acceptance;
+- complete regression suite;
+- build + Chromium desktop/mobile;
+- migration/deploy verification;
+- ROADMAP / FEATURES / CHANGELOG closeout.
+
+## Required second-AI review before migration
+
+Because this feature introduces a new collaboration table and changes the shared-flight role model, implementation must not start until an independent read-only architecture/data-model review confirms or challenges:
+
+- whether `flight_connected_crew` is the minimal correct persistence model;
+- transaction boundaries for create/update;
+- correction/revision behavior;
+- dedicated PIC invitation vs generic crew role;
+- participant materialization and PIC credits;
+- Connection rechecks;
+- migration v15 shape and rollback compatibility.
+
