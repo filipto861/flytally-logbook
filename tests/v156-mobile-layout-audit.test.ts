@@ -4,7 +4,7 @@ import fs from "node:fs";
 
 const css=fs.readFileSync("app/v156-mobile-hardening.css","utf8");
 const layout=fs.readFileSync("app/layout.tsx","utf8");
-const audit=fs.readFileSync("MOBILE_UX_AUDIT_V156.md","utf8");
+const audit=fs.readFileSync("docs/history/MOBILE_UX_AUDIT_V156.md","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 
