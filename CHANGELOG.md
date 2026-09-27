@@ -19,6 +19,14 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added PostgreSQL and unit/source regressions proving current profile model edits cannot rewrite historical type resolution.
 - No flight rows, certification payload versions/hashes, schema or ULL/Annex-I mapping semantics changed.
 
+### Multi-aircraft Product Scale — M1
+- Added one canonical server-side aircraft-profile validator for regulatory profile state.
+- Routed normal Aircraft Add/Edit and accepted shared-profile imports through the same fail-closed validation contract.
+- Rejected explicit class/category mismatches, incomplete EASA identity, invalid/non-applicable BFCL class/group data and malformed explicit Part-FCL credit provenance instead of silently repairing them.
+- Added an actionable shared-profile error path when a received profile cannot be imported safely.
+- Added full profile-matrix/source regressions and PostgreSQL acceptance proving malformed shared regulatory profiles do not reach persistence.
+- Kept exact backup/restore outside interactive profile canonicalization; no schema, certified-flight payload/hash, catalogue-authority or ULL/Annex-I semantics changed.
+
 ### Documentation governance
 - Consolidated the roadmap into one current planning document.
 - Added a canonical `FEATURES.md`.
