@@ -6,13 +6,15 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v3.2 U6 local smoke adapter executes mutation transactions atomically",()=>{
+test("v3.2 U6 local smoke adapter executes transaction batches atomically and preserves returned rows",()=>{
   const local=read("lib/local-postgres.ts");
   assert.match(local,/__flytallyLocalClaimed/);
-  assert.match(local,/executeMutationTransaction/);
+  assert.match(local,/executeLocalTransaction/);
+  assert.match(local,/TRANSACTION_RESULT_PREFIX/);
+  assert.match(local,/json_agg\(row_to_json\(__flytally_local_tx_result\)\)/);
   assert.match(local,/BEGIN;/);
   assert.match(local,/COMMIT;/);
-  assert.match(local,/support mutation statements only/);
+  assert.doesNotMatch(local,/support mutation statements only/);
   assert.match(local,/transaction queries must be created inline/);
 });
 
