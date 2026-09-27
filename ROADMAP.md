@@ -71,20 +71,120 @@ Closeout acceptance:
 - visual verification covers desktop, iPad/mobile, light and dark where relevant;
 - ROADMAP, FEATURES and CHANGELOG are reconciled in the same work cycle.
 
-### 2. Multi-aircraft Product Scale — NEXT
+### 2. Multi-aircraft Product Scale — ACTIVE
 
-This is the next product-development direction already established by the previous roadmap.
+Goal: prove that FlyTally can onboard and use heterogeneous aircraft profiles repeatedly without aircraft-specific code paths, while preserving historical flight evidence and the existing regulatory engines.
 
-Goal: prove repeatable, low-friction multi-aircraft onboarding without creating aircraft-specific parallel workflows.
+#### Existing baseline confirmed by repository discovery
 
-Principles:
-- one canonical flight/data model;
-- configuration and applicability are explicit;
-- manual fallback remains available where catalogue data is absent;
-- no regulatory meaning is inferred solely from aircraft type metadata;
-- changes must preserve certified-history, sharing and recency integrity.
+- A user can already own multiple aircraft profiles; aircraft are personal records keyed by user + registration.
+- The bundled FAA/ICAO identity catalogue contains more than 5,000 searchable entries and always retains manual Make / Model / ICAO fallback.
+- Catalogue class hints are deliberately non-binding; Part-FCL class/category remains explicit pilot-confirmed state.
+- The canonical category layer already supports Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other records.
+- Quick Add and the full Aircraft editor already submit the same regulatory profile fields and the normal server save path fails closed on invalid profile combinations.
+- Flights retain category/configuration evidence separately from the mutable aircraft profile; certification/revision history must remain independent of later profile edits.
+- Aircraft sharing is a one-time recipient-owned copy, not shared fleet ownership.
+- Portable backup/restore already includes aircraft profiles and must preserve exact historical/protected evidence.
 
-Before implementation, create a milestone plan with scope, dependencies, migration impact, tests and acceptance criteria.
+#### Frozen scope decisions
+
+- Do **not** create a second flight model, aircraft-specific entry pages or a parallel fleet runtime.
+- Do **not** infer regulatory class, privilege or applicability solely from catalogue metadata.
+- Do **not** remove manual aircraft identity entry when a catalogue type is missing.
+- Do **not** introduce organization/fleet ownership; that remains Professional Logbook Platform research.
+- Keep one current personal aircraft profile per user + registration. Historical flights remain the evidence snapshot.
+- No schema change is assumed. Any migration must first be proven necessary, additive/backward-compatible and separately gated.
+
+#### M0 — Contract & evidence audit — DONE
+
+Closeout:
+- field-by-field source-of-truth matrix and consumer inventory are recorded in `docs/product/MULTI_AIRCRAFT_SCALE_CONTRACT.md`;
+- shared import is confirmed as a weaker validation boundary and is assigned to M1;
+- helicopter recency is confirmed as the historical-integrity defect that must be fixed before M1 writes are hardened;
+- ULL / Annex-I `part_fcl_credit_*` is classified as dynamic applicability/provenance metadata under the established v1.51.4 contract, not as helicopter-like historical type evidence;
+- exact backup/restore is explicitly outside interactive profile canonicalization;
+- the independent second-AI review was reconciled against repository evidence;
+- no product/runtime/schema change in M0.
+
+#### M2A — Helicopter historical snapshot integrity — NEXT
+
+Scope:
+- change type-specific helicopter recency to resolve historical type from `flights.aircraft_model`, then bounded legacy `flights.aircraft_type`;
+- remove mutable current-profile model and registration as silent type identity fallbacks;
+- add an explicit incomplete/limited-evidence path when historical type is unresolved and could affect the result;
+- preserve certification payload versions/hashes and stored flights unchanged.
+
+Acceptance:
+- later edits to the current aircraft model cannot change historical helicopter type-specific recency;
+- populated flight model wins; legacy flight type fallback is deterministic;
+- unresolved type evidence cannot create false CURRENT;
+- existing certification v1-v8 verification remains unchanged;
+- targeted unit/service/PostgreSQL regressions cover the compatibility boundary.
+
+#### M1 — Canonical aircraft-profile validation
+
+Scope:
+- one reusable server-side parser/normalizer for aircraft profile regulatory fields;
+- direct Add/Edit and shared-profile import use the same fail-closed business rules;
+- malformed, incomplete or non-applicable shared snapshots are rejected rather than defaulted into a plausible profile;
+- preserve catalogue-as-convenience and manual identity fallback.
+
+Acceptance:
+- one normalization matrix covers ULL; SEP/MEP/SET; TMG in Part-FCL and Part-SFCL context; Glider; Helicopter; Balloon classes/groups; and conservative Other;
+- Quick Add, full editor and share import cannot persist different regulatory semantics for equivalent input;
+- PostgreSQL sharing acceptance proves invalid imported profile combinations cannot bypass the canonical contract;
+- no certified flight, revision or existing recipient-owned profile is silently rewritten.
+
+#### M2B — Remaining historical & dynamic applicability integrity
+
+Scope:
+- verify the remaining recency consumers do not silently prefer mutable current-profile identity over stored flight evidence;
+- preserve the established automatic ordinary ULL→SEP experience rule;
+- preserve explicit atypical `part_fcl_credit_*` as dynamic applicability/provenance metadata with its effective-from boundary;
+- verify GPS-import and manual-flight paths snapshot the same applicable aircraft context;
+- preserve certification fingerprint compatibility and historical revision verification.
+
+Acceptance:
+- no remaining historical identity calculation is silently reclassified by current profile edits;
+- ordinary ULL→SEP behavior and explicit TMG override behavior remain regression-covered;
+- basis/effective-date provenance remains enforced for explicit credit override persistence;
+- existing v1-v8 certification hashes and certified revisions continue to verify.
+
+#### M3 — No-code heterogeneous onboarding proof
+
+Scope:
+- prove the existing Aircraft workspace can create and use representative profiles from every supported category without adding make/model-specific code;
+- catalogue-selected and manual identity paths converge on the same profile contract;
+- keep category-specific fields progressive and explicit rather than adding generic “typical aircraft” defaults;
+- verify Add flight receives the complete applicable profile state while Role remains flight-specific.
+
+Acceptance:
+- representative Aeroplane, Helicopter, Sailplane/TMG, Balloon, ULL and Other profiles can be added, edited, deactivated/reactivated and selected in flight entry through the same canonical workflow;
+- unsupported catalogue identity never blocks manual onboarding;
+- missing required applicability data fails closed with user-facing guidance;
+- desktop, iPad and mobile interaction remains usable in light/dark themes.
+
+#### M4 — Sharing, recovery, scale & closeout
+
+Scope:
+- verify one-time aircraft sharing preserves recipient ownership and canonical validation;
+- verify backup/restore preserves aircraft profiles without weakening protected-flight evidence;
+- measure aircraft-library / picker behavior with a multi-profile fixture before adding any optimization;
+- retain safe deletion/deactivation behavior when flights reference a registration;
+- close documentation and production verification.
+
+Acceptance:
+- sharing, restore and multi-profile flight selection have PostgreSQL regression coverage;
+- no duplicate registration or cross-user ownership regression;
+- performance optimization is added only if measured evidence requires it;
+- typecheck, complete regression suite, PostgreSQL acceptance, production build and browser smoke pass on the final candidate;
+- ROADMAP, FEATURES and CHANGELOG are reconciled before closeout.
+
+#### Review gate — SATISFIED FOR M2A
+
+The independent second-AI review returned **APPROVE WITH CHANGES**. Its blocking conditions were reconciled into the M0 contract and milestone order.
+
+M2A is now the next implementation batch. M1 remains blocked until M2A closes successfully.
 
 ### 3. Professional Logbook Platform — RESEARCH
 
