@@ -1,6 +1,29 @@
 import "server-only";
 import { sql } from "@/lib/db";
 
+export type ConnectedPicOption={
+  id:number;
+  name:string;
+};
+
+type ConnectedPicOptionRow={
+  id:number|string;
+  display_name:string;
+};
+
+export async function getAcceptedPicConnections(sourceUserId:number):Promise<ConnectedPicOption[]>{
+  if(!Number.isSafeInteger(sourceUserId)||sourceUserId<=0)return[];
+  const rows=await sql`SELECT DISTINCT u.id,u.display_name
+    FROM pilot_connections c
+    JOIN users u ON u.id=CASE WHEN c.requester_user_id=${sourceUserId} THEN c.recipient_user_id ELSE c.requester_user_id END
+    WHERE c.status='accepted'
+      AND (c.requester_user_id=${sourceUserId} OR c.recipient_user_id=${sourceUserId})
+      AND u.id<>${sourceUserId}
+    ORDER BY u.display_name,u.id` as ConnectedPicOptionRow[];
+  return rows.map(row=>({id:Number(row.id),name:String(row.display_name??"").trim()}))
+    .filter(item=>Number.isSafeInteger(item.id)&&item.id>0&&item.name);
+}
+
 export type ConnectedPicLink={
   id:number;
   sourceFlightId:number;
