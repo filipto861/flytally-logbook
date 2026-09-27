@@ -58,9 +58,32 @@ function execute(statement:string){
   return JSON.parse(output) as Array<Record<string,unknown>>;
 }
 
-function executeMutationTransaction(statements:string[]){
-  if(statements.some(rowProducing))throw new Error("Local PostgreSQL smoke transactions support mutation statements only.");
-  spawn(`BEGIN;\n${statements.join(";\n")};\nCOMMIT;`);
+const TRANSACTION_RESULT_PREFIX="__flytally_local_tx__";
+
+function executeLocalTransaction(statements:string[]){
+  const chunks=statements.map((statement,index)=>{
+    const marker=`${TRANSACTION_RESULT_PREFIX}${index}:`;
+    if(rowProducing(statement)){
+      return `WITH __flytally_local_tx_result AS (${statement})
+SELECT ${quote(marker)} || COALESCE(json_agg(row_to_json(__flytally_local_tx_result)),'[]'::json)::text
+FROM __flytally_local_tx_result`;
+    }
+    return `${statement};
+SELECT ${quote(`${marker}[]`)}`;
+  });
+  const output=spawn(`BEGIN;\n${chunks.join(";\n")};\nCOMMIT;`);
+  const results=statements.map(()=>[] as Array<Record<string,unknown>>);
+  for(const line of output.split(/\\r?\\n/)){
+    if(!line.startsWith(TRANSACTION_RESULT_PREFIX))continue;
+    const separator=line.indexOf(":");
+    const index=Number(line.slice(TRANSACTION_RESULT_PREFIX.length,separator));
+    if(!Number.isSafeInteger(index)||index<0||index>=results.length)continue;
+    const payload=line.slice(separator+1);
+    const parsed=JSON.parse(payload);
+    if(!Array.isArray(parsed))throw new Error("Local PostgreSQL transaction returned malformed row data.");
+    results[index]=parsed as Array<Record<string,unknown>>;
+  }
+  return results;
 }
 
 type Rows=Array<Record<string,unknown>>;
@@ -107,9 +130,8 @@ export function createLocalPostgresQuery(){
     if(localQueries.some(item=>item.__flytallyLocalStarted))throw new Error("Local PostgreSQL transaction queries must be created inline.");
     for(const item of localQueries)item.__flytallyLocalClaimed=true;
     try{
-      await Promise.resolve().then(()=>executeMutationTransaction(localQueries.map(item=>item.__flytallyLocalStatement)));
-      const results=localQueries.map(()=>[] as Rows);
-      localQueries.forEach((item,index)=>item.__flytallyLocalResolve(results[index]));
+      const results=await Promise.resolve().then(()=>executeLocalTransaction(localQueries.map(item=>item.__flytallyLocalStatement)));
+      localQueries.forEach((item,index)=>item.__flytallyLocalResolve(results[index]??[]));
       return results;
     }catch(error){
       localQueries.forEach(item=>item.__flytallyLocalResolve([]));
