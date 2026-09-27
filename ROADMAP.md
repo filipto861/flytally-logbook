@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1 implementation is on branch and at verification gate; SP2 remains blocked until SP1 closes |
+| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1 schema/domain foundation verified and ready to merge; SP2 create/edit persistence is next |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -61,7 +61,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1 additive schema/domain implementation complete on branch; repository-wide + PostgreSQL verification pending |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1 schema/domain foundation verified; SP2 create/edit persistence is next after merge |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -119,9 +119,11 @@ Independent second-AI implementation-design review is complete and reconciled ag
 
 The review returned **APPROVE WITH CHANGES**. The accepted changes are now frozen in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`: explicit fail-closed PIC combination handling, unconditional exclusion of PIC from the generic arbitrary-recipient crew selector, certified `commander` materialization for PIC recipients, live revoked-Connection UI gating, and migration v15 placement in the tracked schema sequence.
 
-The design gate is closed. **SP1 — schema + pure domain contract is implemented on `feat/safety-pilot-pic-sp1` and is now at the verification gate.**
+The design gate is closed. **SP1 — schema + pure domain contract is verified and ready to merge. SP2 — create/edit persistence is the next implementation milestone.**
 
-SP1 staging remains fail-closed: `PIC` is excluded from the legacy generic crew selector, rejected by the generic invite server action, and intentionally not materialized until SP4 supplies the full certified-commander / Connection-recheck / recency contract. SP2 must not start until SP1 verification and merge are complete.
+SP1 staging remains fail-closed: `PIC` is excluded from the legacy generic crew selector, rejected by the generic invite server action, and intentionally not materialized until SP4 supplies the full certified-commander / Connection-recheck / recency contract.
+
+SP1 verification evidence: current-branch unit/regression suite 875/875 PASS; TypeScript PASS; production build PASS; migration v15 and connected-PIC persistence constraints exercised successfully on isolated Neon branch `br-plain-forest-b1fj89as`, which was then deleted without applying any change to production.
 
 ## Roadmap review reconciliation
 
