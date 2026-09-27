@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation-ready — SP1 schema/domain next  
+**Status:** Priority 2 implementation — SP1 verified, SP2 next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -363,7 +363,24 @@ Required surfaces:
 - unit tests for valid and invalid source→PIC combinations;
 - PostgreSQL contract tests for table CHECK/UNIQUE/FK/cascade semantics.
 
-No UI yet.
+**Implementation state:** verified on `feat/safety-pilot-pic-sp1`; ready to merge before SP2 begins.
+
+Staged-deployment safety is explicit:
+- the existing generic crew selector excludes `PIC`;
+- the existing generic `inviteCrewMember` action rejects `PIC` server-side even if a client crafts the form;
+- existing `materializeParticipation` fails closed for `PIC` until SP4 adds the certified-`commander`, Connection-recheck and recency semantics;
+- therefore migration/domain support can land without exposing a partial PIC-sharing workflow.
+
+No connected/manual PIC UI is introduced in SP1.
+
+**SP1 verification closeout — 27 September 2026**
+- TypeScript: PASS.
+- Full unit/regression suite: 875/875 PASS on the current SP1 head.
+- Production Next.js build: PASS.
+- Migration v15 and connected-PIC schema/write contracts passed on an isolated Neon child branch.
+- Verified owner-bound composite FK, PIC-only role, self-link rejection, one PIC link per flight/role, source-flight cascade, and PIC participation-role storage.
+- Verified accepted-Connection, editable Safety Pilot, lock/certification, wrong-owner delete, and unconnected-target fail-closed behavior.
+- The isolated Neon acceptance branch was deleted after verification. After explicit product-owner approval, the exact verified migration v15 was then applied successfully to the production Neon branch as the deployment prerequisite. Post-migration verification confirmed `flight_connected_crew`, the owner-bound FK, PIC participation-role support, and zero rows in the new collaboration table.
 
 ### SP2 — flight create/edit persistence
 
