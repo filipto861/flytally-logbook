@@ -150,6 +150,31 @@ CREATE TABLE flights(
   approaches_night INTEGER NOT NULL DEFAULT 0,
   UNIQUE(id,user_id)
 );
+CREATE TABLE aircraft(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  registration TEXT NOT NULL,
+  aircraft_type TEXT NOT NULL DEFAULT '',
+  aircraft_make TEXT NOT NULL DEFAULT '',
+  aircraft_model TEXT NOT NULL DEFAULT '',
+  aircraft_variant TEXT NOT NULL DEFAULT '',
+  aircraft_class TEXT NOT NULL DEFAULT '',
+  regulatory_category TEXT NOT NULL DEFAULT '',
+  balloon_class TEXT NOT NULL DEFAULT '',
+  balloon_group TEXT NOT NULL DEFAULT '',
+  evidence TEXT NOT NULL DEFAULT '',
+  default_role TEXT NOT NULL DEFAULT 'PIC',
+  billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
+  default_price_per_hour NUMERIC NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE rates(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  registration TEXT NOT NULL,
+  valid_from TEXT,
+  price_per_hour NUMERIC NOT NULL DEFAULT 0
+);
 CREATE TABLE flight_tracks(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
