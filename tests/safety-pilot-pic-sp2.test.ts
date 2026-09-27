@@ -104,3 +104,11 @@ test("SP2 connected mode is explicit and cannot silently degrade to manual when 
   assert.match(form,/picMode==="connected"\?\(!connectedPicUserId\|\|!connectedPicAccepted\)/);
   assert.ok(form.includes('<span>Actual PIC <span className="field-hint" aria-hidden="true">Required</span></span><select name="connectedPicUserId"'));
 });
+
+
+test("SP2 prevents the action reset from clearing controlled flight fields after save",()=>{
+  const form=read("components/flight-form.tsx");
+  assert.match(form,/onReset=\{event=>event\.preventDefault\(\)\}/);
+  assert.match(form,/select name="registration" value=\{registration\}/);
+  assert.match(form,/select name="role" value=\{role\}/);
+});
