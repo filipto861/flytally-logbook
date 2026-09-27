@@ -6,7 +6,7 @@ import { releaseAtLeast } from "./release-version.ts";
 const root=path.resolve(import.meta.dirname,".."),read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.50 is the current UI system release and its CSS is the final application layer",()=>{
-  const pkg=JSON.parse(read("package.json")),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
+  const pkg=JSON.parse(read("package.json")),layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.ok(releaseAtLeast(pkg.version,1,50,0));
   assert.match(roadmap,/## v1\.50\.0 · UI system & theme convergence/);
   assert.ok(layout.indexOf('v148-training.css')<layout.indexOf('v149-linkage.css'));
