@@ -9,7 +9,7 @@ const layout=fs.readFileSync("app/layout.tsx","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 const changelog=fs.readFileSync("CHANGELOG.md","utf8");
-const audit=fs.readFileSync("FLIGHT_ENTRY_UX_V158.md","utf8");
+const audit=fs.readFileSync("docs/history/FLIGHT_ENTRY_UX_V158.md","utf8");
 
 test("v1.58 metadata and final UX layer are synchronized",()=>{
   const [major,minor]=String(pkg.version).split(".").map(Number);
