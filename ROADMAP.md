@@ -73,103 +73,72 @@ This review freezes the following execution order unless new evidence exposes a 
 
 ## P1 — GPS touch-and-go detection reliability — NEXT
 
-### Problem
+A real GPS import produced the wrong landing suggestion during touch-and-go operations.
 
-A real GPS import produced the wrong landing count during touch-and-go operations.
+Detailed investigation contract:
 
-The current suggestion is:
+`docs/product/GPS_TOUCH_AND_GO_RELIABILITY.md`
 
-`landing count = 1 final landing + detected touch-and-go events`
+Roadmap-level acceptance:
+- reproduce the exact real-track mismatch before changing detector logic;
+- create a minimal/anonymized regression fixture;
+- classify the evidence-backed failure mechanism;
+- keep GPS-derived movements advisory and reviewable;
+- re-run the existing GPS/track regression corpus so the fix does not create new false positives;
+- where sampling-rate sensitivity is confirmed, require stable classification across representative sampling intervals.
 
-The suggestion is deliberately advisory and user-editable, but an incorrect suggestion can still lead to incorrect evidence if it is accepted without noticing the error.
-
-### Current detector evidence
-
-The repository currently uses two detector paths:
-
-- **speed/ground event:** below 20 km/h, bracketed by >42 km/h movement, with a 5–90 second event;
-- **rolling altitude event:** 28–145 km/h groundspeed, local altitude minimum, at least 30 m descent before and 30 m climb after, plus altitude-discontinuity rejection.
-
-Some rolling-event windows and duplicate suppression are expressed in **point counts** (for example ±10 points and 8–10 point grouping), so their real duration changes with GPS sampling rate.
-
-### Investigation contract
-
-Before changing detector thresholds:
-
-1. reproduce the exact mismatch from the original KML/GPX/CSV;
-2. record actual expected landings / touch-and-go sequence;
-3. inspect sampling interval, groundspeed and altitude around every expected event;
-4. identify whether the defect is a missed event, false event, poor altitude data, speed threshold issue, split issue or sampling-rate dependency;
-5. derive a minimal regression fixture from the real failure shape; do not commit unnecessary personal route/location history;
-6. only then design the smallest detector correction.
-
-### Acceptance
-
-- the exact reported failure is reproducible before the fix and passes after it;
-- existing fast-low-pass, altitude-discontinuity and split regressions remain green;
-- the same event shape is tested at materially different sampling intervals if sampling-rate sensitivity is confirmed;
-- detector windows become time/distance-normalized where evidence shows point-count windows are the defect;
-- automatic output stays an advisory suggestion requiring review;
-- uncertain evidence remains conservative instead of inventing a landing;
-- ROADMAP / FEATURES / CHANGELOG are reconciled in the fix work cycle.
+No threshold or algorithm change is pre-approved by the roadmap.
 
 ## P2 — Safety Pilot ↔ PIC shared-flight workflow — PLANNED, HIGH PRIORITY
 
-### User story
+User goal:
 
-When I log my own flight as **SAFETY PILOT**, I want to record who the actual PIC was.
+- source pilot records their own flight as **SAFETY PILOT**;
+- Actual PIC can be selected from accepted Connections or entered manually;
+- when a connected PIC was explicitly selected, the source pilot may invite them after certification to add an independent copy as **PIC**.
 
-- If the PIC is an accepted FlyTally Connection, I can select that pilot.
-- If the PIC is not in FlyTally / not connected, I can enter the name manually.
-- If I selected a connected pilot, after certification I can explicitly invite that pilot to add the same flight to their own logbook as **PIC**.
+Detailed workflow/data-model contract:
 
-### Confirmed repository gap
+`docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`
 
-Current behavior already has:
+Frozen roadmap-level boundaries:
+- historical Actual PIC display text remains the existing certification-protected `commander` evidence;
+- connected identity is separate collaboration metadata, never inferred from the name text;
+- connected identity is not added as mutable data to the certified `flights` row;
+- selecting a connected PIC never sends an automatic invitation;
+- invite and accept both re-check accepted Connection state and exact source revision/hash;
+- recipient gets an independently owned PIC record;
+- source SAFETY PILOT record never gains PIC credit;
+- manual-only Actual PIC remains fully valid;
+- no automatic invitation expiry is introduced; existing cancellation/revocation semantics remain the baseline;
+- any required schema change is additive, tenant-safe and backward-compatible.
 
-- `SAFETY PILOT` as a flight role;
-- an **Actual PIC** text field;
-- the canonical certified shared-flight Review → Add → Certify workflow.
+The connected identity is modeled as a separate pre-participation collaboration link. Exact schema/table naming is an implementation-design detail, but no name matching is permitted.
 
-But:
+Independent second-AI review is required again after implementation design and before any migration.
 
-- Actual PIC is currently free text only;
-- New flight only supplies accepted **instructors** as crew suggestions;
-- the canonical `flight_participations` crew-role contract does not currently include `PIC`.
+## Roadmap review reconciliation
 
-### Frozen design boundaries
+The independent roadmap review returned **APPROVE WITH CHANGES**.
 
-- connected pilot identity must be persisted by user identity, not inferred later from display-name text;
-- manual PIC text remains valid and must not create a fake account link;
-- invite is an explicit user action; selecting a connected PIC does not silently mutate the other pilot's logbook;
-- invitation rechecks that the users are still accepted Connections;
-- shared participation remains bound to the exact certified source revision/hash;
-- recipient materializes an independent owned flight with role PIC;
-- source owner's SAFETY PILOT record remains independent evidence and must not gain PIC credit;
-- no shared mutable flight record and no ownership transfer;
-- existing instructor / Safety Pilot / other crew invitation behavior must remain backward-compatible.
+Accepted:
+- GPS remains Priority 1;
+- broader regression-corpus validation is now explicit;
+- detailed GPS/PIC engineering contracts moved out of the root roadmap;
+- Safety Pilot/PIC now freezes separate connected-identity collaboration metadata rather than mutating the certified flight row;
+- accepted Connection state is re-checked at both invite and accept;
+- no automatic invitation expiry is assumed.
 
-### Design milestone before implementation
+Repository reconciliation resolved two proposed sequencing concerns without reordering:
 
-Because pre-certification PIC identity and post-certification `flight_participations` are different lifecycle states, implementation must first decide the minimal canonical persistence contract for the selected PIC.
+1. **Safety Pilot/PIC vs M2B**  
+   Current shared-flight `crewRoleCredits` is used when materializing the participant-owned flight. M2B is the separate audit of mutable aircraft-profile / `part_fcl_credit_*` dependencies. P2 must prove that the materialized recipient PIC behaves like an ordinary PIC record in recency, but it does not require M2B to finish first.
 
-Do **not** solve this by name matching.
+2. **Timezone issue #144 vs M2B**  
+   The current hard-coded `Europe/Prague` defaults affect manual-flight default date and aircraft/rate `valid_from` dates. The explicit `part_fcl_credit_from` value is a separately entered/persisted field and is not populated from that hard-coded `today` default. Therefore #144 remains important but does not block M2B's credit-provenance audit.
 
-If a schema change is required, it must be additive, tenant-safe and backward-compatible.
-
-### Acceptance
-
-- Safety Pilot entry supports accepted-Connection PIC selection and manual fallback in one simple control;
-- saved record preserves displayed PIC name plus connected identity when one was explicitly selected;
-- a certified Safety Pilot source record can invite that exact connected pilot as PIC;
-- recipient review materializes an independent PIC flight with the certified source facts;
-- revision/hash mismatch, revoked connection or malformed identity fails closed;
-- no double-credit or source-role mutation;
-- manual-only PIC records remain fully usable without FlyTally account linkage;
-- PostgreSQL + source/unit + real-browser coverage proves ownership and workflow semantics;
-- desktop, iPad and mobile UX remains simple.
-
-This feature receives an independent second-AI architecture/data-model review after discovery/design and before implementation.
+The proposed priority order therefore remains:
+GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
 
 ## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
 
