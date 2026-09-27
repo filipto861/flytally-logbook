@@ -62,7 +62,7 @@ test("v1.45.0 binds connected and in-person signatures to exact training content
 });
 
 test("v1.45.0 locks signed or pending contents and keeps corrections append-only",()=>{
-  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),roadmap=read("ROADMAP.md");
+  const actions=read("app/(protected)/credentials/aircraft-actions.ts"),section=read("components/aircraft-qualifications-section.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(actions,/verified_at IS NULL AND COALESCE\(signature_status,'unsigned'\)<>'pending'/);
   assert.match(actions,/verified_at IS NULL AND COALESCE\(q\.signature_status,'unsigned'\) IN \('unsigned','declined'\)/);
   assert.match(section,/While pending, the training contents are locked/);
@@ -79,7 +79,7 @@ test("v1.45.0 training evidence remains user-scoped and inside the portable back
 });
 
 test("v1.45.0 keeps flight certification GPS and mobile shell direction untouched",()=>{
-  const certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx"),rootLayout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
+  const certification=read("lib/certification-integrity.ts"),gps=read("lib/track-processing.ts"),layout=read("app/(protected)/layout.tsx"),rootLayout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(certification,/flightCertificationHash/);
   assert.match(gps,/takeoffEvidenceIndex/);
   assert.match(layout,/viewportFit:"cover"/);
