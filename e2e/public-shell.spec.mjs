@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture } from "./browser-db.mjs";
+import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetSafetyPilotPicFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -139,6 +139,33 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Connections");
   await expect(page).toHaveURL(/\/connections$/);
   await expectAuthenticatedRoute(page,"Connections");
+});
+
+test("Safety Pilot Actual PIC form keeps manual and connected identity explicit",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated Safety Pilot PIC browser coverage requires the isolated CI database.");
+  resetSafetyPilotPicFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await expectAuthenticatedRoute(page,"New flight");
+  await page.getByLabel("Role").selectOption("SAFETY PILOT");
+
+  const source=page.getByLabel("Actual PIC source");
+  await expect(source).toHaveValue("manual");
+  await expect(page.getByLabel("Actual PIC")).toBeVisible();
+  await expect(page.getByText("No invitation is sent when this draft is saved.")).toBeVisible();
+
+  await source.selectOption("connected");
+  const connected=page.getByLabel("Actual PIC");
+  await expect(connected).toBeVisible();
+  await expect(connected.getByRole("option",{name:"Browser Friend"})).toHaveCount(1);
+  await connected.selectOption("9002");
+  await expect(page.locator('input[name="commander"]')).toHaveValue("Browser Friend");
+
+  await source.selectOption("manual");
+  const manual=page.getByLabel("Actual PIC");
+  await manual.fill("Manual Captain");
+  await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
+  await expectNoHorizontalOverflow(page);
 });
 
 test("protected shell shows and clears the offline connection banner",async({page,context})=>{
