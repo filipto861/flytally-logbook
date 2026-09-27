@@ -27,7 +27,7 @@ async function expectNoHorizontalOverflow(page){
 test("login shell is usable without horizontal overflow",async({page})=>{
   await page.goto("/login");
   await expect(page.getByRole("heading",{name:"FlyTally"})).toBeVisible();
-  await expect(page.getByLabel("E-mail")).toBeVisible();
+  await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
   const submit=page.getByRole("button",{name:"Sign in"});
   await expect(submit).toBeVisible();
@@ -55,7 +55,7 @@ test("login submission exposes a disabled pending state before the request compl
   });
 
   await page.goto("/login");
-  await page.getByLabel("E-mail").fill("browser-smoke@example.test");
+  await page.getByLabel("Email").fill("browser-smoke@example.test");
   await page.getByLabel("Password").fill("not-a-real-password");
   const submit=page.getByRole("button",{name:"Sign in"});
   const clicking=submit.click().catch(()=>undefined);
@@ -86,7 +86,7 @@ async function navigateMain(page,label){
 
 async function loginBrowserPilot(page,returnTo){
   await page.goto(`/login?returnTo=${encodeURIComponent(returnTo)}`);
-  await page.getByLabel("E-mail").fill("browser-auth@example.test");
+  await page.getByLabel("Email").fill("browser-auth@example.test");
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`));
