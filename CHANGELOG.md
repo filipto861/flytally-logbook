@@ -7,9 +7,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - This file records merged/product changes and must not describe planned work as completed.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 
-## Unreleased — candidate changes
+## Unreleased
 
-Entries in this section describe the current candidate branch and are **not production-complete until merged to `main`**.
+This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 ### Documentation governance
 - Consolidated the roadmap into one current planning document.
