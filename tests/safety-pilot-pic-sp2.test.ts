@@ -61,3 +61,19 @@ test("SP2 edit reloads stored connected identity by flight id instead of matchin
   assert.match(helper,/WHERE c\.source_flight_id=\$\{sourceFlightId\} AND c\.source_user_id=\$\{sourceUserId\} AND c\.intended_role='PIC'/);
   assert.doesNotMatch(helper,/commander/);
 });
+
+
+test("SP2 browser coverage exercises manual and connected Actual PIC modes on the v15 fixture",()=>{
+  const browser=read("e2e/public-shell.spec.mjs");
+  const db=read("e2e/browser-db.mjs");
+  const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
+  assert.match(browser,/Safety Pilot Actual PIC form keeps manual and connected identity explicit/);
+  assert.match(browser,/selectOption\("SAFETY PILOT"\)/);
+  assert.match(browser,/selectOption\("connected"\)/);
+  assert.match(browser,/selectOption\("9002"\)/);
+  assert.match(browser,/fill\("Manual Captain"\)/);
+  assert.match(db,/resetSafetyPilotPicFixture/);
+  assert.match(bootstrap,/generate_series\(1,15\)/);
+  assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
+  assert.match(bootstrap,/CREATE TABLE aircraft/);
+});
