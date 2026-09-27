@@ -42,22 +42,18 @@ test("v3.0 U1 rolls flight attention into the Flights destination",()=>{
   assert.match(sidebar,/pathname\.startsWith\("\/flights\/"\)/);
 });
 
-test("v3.0 roadmap advances to multi-aircraft only after the design-consistency audit closes",()=>{
+test("v3.0 roadmap preserves the UX closeout while current priorities move beyond it",()=>{
   const roadmap=read("ROADMAP.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
-  assert.match(roadmap,/### UX & Product Consolidation — DONE/);
-  const closedAudit=roadmap.indexOf("### 1. Design-consistency audit — DONE");
-  const multiAircraft=roadmap.indexOf("### 2. Multi-aircraft Product Scale — ACTIVE");
-  const m0=roadmap.indexOf("#### M0 — Contract & evidence audit — DONE");
-  const m2a=roadmap.indexOf("#### M2A — Helicopter historical snapshot integrity — DONE");
-  assert.ok(closedAudit>=0,"roadmap must record the completed design-consistency closeout");
-  assert.ok(multiAircraft>closedAudit,"multi-aircraft scale must become active only after the UX closeout");
-  assert.ok(m0>multiAircraft,"multi-aircraft M0 must be closed inside the active phase");
-  const m1=roadmap.indexOf("#### M1 — Canonical aircraft-profile validation — DONE");
-  assert.ok(m2a>m0,"M2A must be closed after M0");
-  assert.ok(m1>m2a,"M1 must be closed after M2A");
-  const m2b=roadmap.indexOf("#### M2B — Remaining historical & dynamic applicability integrity — NEXT");
-  assert.ok(m2b>m1,"M2B must become next after M1 closes");
+  assert.match(roadmap,/\| UX & design consistency \| ✅ \|/);
+  assert.match(roadmap,/\| Roadmap review & prioritization \| ✅ \|/);
+  assert.match(roadmap,/\| GPS touch-and-go detection reliability \| 🚧 \|/);
+  assert.match(roadmap,/\| Multi-aircraft Product Scale \| ⏸️ \|/);
+  assert.match(roadmap,/\| Multi-aircraft M0 — contract & evidence audit \| ✅ \|/);
+  assert.match(roadmap,/\| Multi-aircraft M2A — helicopter snapshot integrity \| ✅ \|/);
+  assert.match(roadmap,/\| Multi-aircraft M1 — canonical profile validation \| ✅ \|/);
+  assert.match(roadmap,/## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME/);
+  assert.match(roadmap,/#### M2B — Remaining historical & dynamic applicability integrity/);
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
   assert.match(audit,/U2 ✅ Licences & recency/);
