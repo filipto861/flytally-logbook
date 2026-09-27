@@ -64,7 +64,7 @@ test("v3.0 U4 preserves correction history and crew sharing semantics",()=>{
 });
 
 test("v3.0 U4 ships responsive light-theme workflow UI and advances roadmap to U5",()=>{
-  const layout=read("app/layout.tsx"),css=read("app/v300-u4-flight-workflow.css"),roadmap=read("ROADMAP.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
+  const layout=read("app/layout.tsx"),css=read("app/v300-u4-flight-workflow.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(layout,/v300-u4-flight-workflow\.css/);
   assert.match(css,/flight-workflow-steps/);
   assert.match(css,/html\[data-theme="light"\] \.flight-workflow/);
