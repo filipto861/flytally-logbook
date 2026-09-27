@@ -18,6 +18,8 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added connected-PIC persistence helpers that require an editable Safety Pilot source flight and an accepted Connection before a link can be written.
 - Kept the staged rollout fail-closed: PIC is excluded from the legacy generic crew selector, rejected by its generic server action, and not materialized until the later dedicated PIC workflow milestone.
 - Added unit/source and PostgreSQL contract coverage for migration, constraints, role mapping and write guards.
+- Verified SP1 with TypeScript PASS, 875/875 unit/regression PASS, production build PASS, and isolated Neon PostgreSQL acceptance over real migration constraints and fail-closed write guards.
+- Deleted the isolated Neon acceptance branch after verification without promoting the migration to the production database.
 - No Safety Pilot PIC selection/invitation UI is shipped by SP1; `FEATURES.md` therefore remains PLANNED.
 
 ### GPS touch-and-go detection reliability
