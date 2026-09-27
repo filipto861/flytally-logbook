@@ -47,9 +47,13 @@ test("v3.0 roadmap advances to multi-aircraft only after the design-consistency 
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(roadmap,/### UX & Product Consolidation — DONE/);
   const closedAudit=roadmap.indexOf("### 1. Design-consistency audit — DONE");
-  const multiAircraft=roadmap.indexOf("### 2. Multi-aircraft Product Scale — NEXT");
+  const multiAircraft=roadmap.indexOf("### 2. Multi-aircraft Product Scale — ACTIVE");
+  const m0=roadmap.indexOf("#### M0 — Contract & evidence audit — DONE");
+  const m2a=roadmap.indexOf("#### M2A — Helicopter historical snapshot integrity — NEXT");
   assert.ok(closedAudit>=0,"roadmap must record the completed design-consistency closeout");
-  assert.ok(multiAircraft>closedAudit,"multi-aircraft scale must become next only after the UX closeout");
+  assert.ok(multiAircraft>closedAudit,"multi-aircraft scale must become active only after the UX closeout");
+  assert.ok(m0>multiAircraft,"multi-aircraft M0 must be closed inside the active phase");
+  assert.ok(m2a>m0,"M2A must be the next integrity batch after M0");
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
   assert.match(audit,/U2 ✅ Licences & recency/);
