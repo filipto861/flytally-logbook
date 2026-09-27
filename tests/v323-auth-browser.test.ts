@@ -51,3 +51,9 @@ test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=
   assert.match(ui,/[.]ui-page-stack\{[^}]*grid-template-columns:minmax\(0,1fr\);[^}]*min-width:0;/s);
   assert.match(ui,/[.]ui-page-stack > [*][^{]*\{[^}]*min-width:0;[^}]*max-width:100%;/s);
 });
+
+
+test("authenticated browser projects serialize shared database fixtures in CI",()=>{
+  const config=read("playwright.config.mjs");
+  assert.match(config,/workers:process[.]env[.]CI\?1:undefined/);
+});
