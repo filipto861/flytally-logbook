@@ -7,7 +7,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - This file records merged/product changes and must not describe planned work as completed.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 
-## Unreleased
+## Unreleased — candidate changes
+
+Entries in this section describe the current candidate branch and are **not production-complete until merged to `main`**.
 
 ### Documentation governance
 - Consolidated the roadmap into one current planning document.
@@ -37,6 +39,94 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 Batch 9 and later audit work are not recorded here until merged.
 
+
+## v3.2 — UI consistency & verification foundation — 2026-09-19
+
+### Changed
+- Added route-level UI consistency auditing and shared UI-system regression coverage.
+- Added real-browser smoke coverage plus authenticated browser and mutation coverage.
+- Added transaction-backed authenticated mutation tests for higher-risk write paths.
+- Unified aircraft-card presentation and added safe aircraft deletion.
+- Reduced unnecessary GitHub Actions usage while retaining risk-based verification gates.
+
+## v3.0 — UX & Product Consolidation — 2026-09-18
+
+### Changed
+- Simplified global Logbook navigation around pilot tasks and moved Notifications into the live activity model.
+- Simplified Licences & Recency, Aircraft & airports, Print & data and Settings hierarchies.
+- Added personal aircraft-profile sharing and cover photos while keeping recipient copies independently owned.
+- Added Web Push subscriptions, preference controls and contextual onboarding.
+- Clarified the save → review → certify → share workflow.
+- Closed the mobile/accessibility acceptance pass for core Logbook workflows.
+- Added/refined the public interactive flight viewer and Share presentation.
+
+### Integrity
+- UX consolidation did not redefine certified-record, recency, ownership or regulatory evidence semantics.
+- A later FCL.060 ULL same-class correction was merged as an explicit regulatory fix rather than hidden inside UX work.
+
+## v2.9 — Commercial & External Validation technical foundation — 2026-09-18
+
+### Added
+- Fail-closed commercial-readiness contract and external-validation ledger.
+- Versioned commercial legal publication boundary.
+- Provider-neutral billing/entitlement technical foundation.
+- Signature-assurance and regulatory-validation boundary.
+- Brand/public-claims boundary.
+- Final commercial release audit and build guard.
+
+### External boundary
+- Technical implementation does not equal lawyer, regulator, trademark, payment-provider or other external approval.
+- Public commercial release remains dependent on real external evidence and business decisions where required.
+
+## v2.8 — Compliance & Safety Foundation — 2026-09-18
+
+### Added / changed
+- Added privacy self-service, retention controls and cross-product erasure coordination.
+- Hardened regulator-facing logbook identity and source-of-truth handling.
+- Finalized reviewed map-provider/licensing behavior and browser security controls.
+- Added compliance regression coverage for legal, sharing, provider and aviation-safety boundaries.
+
+### Integrity
+- Authority acceptance is not inferred from internal implementation or tests.
+- FCL.050-oriented engineering traceability remains separately documented under `docs/compliance/`.
+
+## v2.7.1 — Recency hotfixes — 2026-09-09
+
+- Fixed the Recency expiry-date SQL type mismatch.
+- Fixed Recency light-theme readability.
+- No intentional regulatory-rule expansion was bundled into these hotfixes.
+
+## v2.7 — Data Integrity & Recovery 2.0 — 2026-09-08
+
+### Changed
+- Made restore review-first with explicit missing/present/protected-conflict preview.
+- Added authenticated current-format portable backup integrity while retaining bounded legacy compatibility.
+- Preserved certified revisions, signatures, GPS, sharing evidence, audit history, licences, expenses and recency evidence through the canonical recovery path.
+- Added tested large-account transaction batching while preserving atomicity/safety limits.
+
+## v2.6 — Professional Pilot Workspace 2.0 — 2026-09-08
+
+- Expanded professional/operator context and professional-experience reporting.
+- Preserved recorded-evidence vs regulatory/employment-conclusion boundaries.
+- Kept professional context explicit instead of silently inferring CAT/NCC/SPO or employment status.
+
+## v2.5 — Recency & Compliance Workspace — 2026-09-08
+
+- Consolidated licence/rating validity, flying recency and supporting evidence into a planning-oriented workspace.
+- Kept CURRENT / ACTION SOON / NOT CURRENT / INCOMPLETE EVIDENCE evidence-driven and explainable.
+- Linked recency presentation to supporting flights, training, signatures and credentials without rewriting certified records.
+
+## v2.4 — Flight Entry & Review 2.0 — 2026-09-08
+
+- Kept one canonical Add flight workflow while integrating review findings near their owning fields.
+- Added explicit saved-vs-GPS review before applying GPS-derived suggestions to an existing flight.
+- Added final logbook-data review before certification/sharing while preserving certification hashes, revisions and regulatory calculations.
+
+## v2.3 — Large Logbook Performance & Scalability — 2026-09-07
+
+- Retained 10k/50k scale gates and added a controlled 100k read-performance benchmark for production hot paths.
+- Reduced Dashboard/Statistics/Print hot-path work through leaner projections, set-wise lookup and scoped aggregation.
+- Preserved v2.2 workflow semantics and certified-data integrity while improving scale behavior.
 
 ## 2.2.0 — Action Center & Shared Flight Workflow — 2026-09-07
 
