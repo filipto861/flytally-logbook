@@ -53,7 +53,7 @@ test("v1.38.0 route drill-down distinguishes direction from airport pair",()=>{
 });
 
 test("v1.38.0 consolidates Aircraft Costs and exposes Airports Routes without touching mobile navigation",()=>{
-  const page=read("app/(protected)/dashboard/page.tsx"),widgets=read("lib/dashboard-widgets.ts"),layout=read("app/layout.tsx"),css=read("app/v138-dashboard-insights.css"),roadmap=read("ROADMAP.md");
+  const page=read("app/(protected)/dashboard/page.tsx"),widgets=read("lib/dashboard-widgets.ts"),layout=read("app/layout.tsx"),css=read("app/v138-dashboard-insights.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(page,/Aircraft & costs/);assert.match(page,/Average cost \/ h/);assert.match(page,/Visited airports/);assert.match(page,/Flown routes/);
   assert.match(widgets,/label:"Airports & routes"/);assert.match(layout,/v138-dashboard-insights[.]css/);
   assert.doesNotMatch(css,/mobile-toggle|mobile-nav-backdrop|\.sidebar nav/);
