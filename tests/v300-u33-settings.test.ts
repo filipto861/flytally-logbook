@@ -62,7 +62,7 @@ test("v3.0 U3.3 keeps privacy controls while handing backup recovery to Print & 
 });
 
 test("v3.0 U3.3 ships responsive light-theme presentation and advances roadmap to U4",()=>{
-  const layout=read("app/layout.tsx"),css=read("app/v300-u33-settings.css"),roadmap=read("ROADMAP.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
+  const layout=read("app/layout.tsx"),css=read("app/v300-u33-settings.css"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(layout,/v300-u33-settings\.css/);
   assert.match(css,/settings-workspace-nav/);
   assert.match(css,/html\[data-theme="light"\] \.settings-workspace-nav/);

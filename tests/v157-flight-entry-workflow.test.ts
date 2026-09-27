@@ -7,7 +7,7 @@ const page=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const css=fs.readFileSync("app/v157-flight-entry-workflow.css","utf8");
 const layout=fs.readFileSync("app/layout.tsx","utf8");
 const changelog=fs.readFileSync("CHANGELOG.md","utf8");
-const audit=fs.readFileSync("FLIGHT_ENTRY_UX_V157.md","utf8");
+const audit=fs.readFileSync("docs/history/FLIGHT_ENTRY_UX_V157.md","utf8");
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
 const lock=JSON.parse(fs.readFileSync("package-lock.json","utf8"));
 

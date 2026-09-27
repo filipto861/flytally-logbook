@@ -7,7 +7,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v2.7 release metadata stays aligned",()=>{
-  const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json")),roadmap=read("ROADMAP.md");
+  const pkg=JSON.parse(read("package.json")),lock=JSON.parse(read("package-lock.json")),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.equal(pkg.version,"2.7.0");
   assert.equal(lock.version,"2.7.0");
   assert.equal(lock.packages?.[""]?.version,"2.7.0");

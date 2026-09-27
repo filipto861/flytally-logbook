@@ -59,7 +59,7 @@ test("v2.6 professional export reuses the canonical professional read model",()=
 });
 
 test("v2.6 preserves the v1.66 evidence-vs-claim safety boundary",()=>{
-  const scope=read("V166_PROFESSIONAL_PILOT_LAYER_SCOPE.md"),component=read("components/professional-pilot-workspace.tsx");
+  const scope=read("docs/history/V166_PROFESSIONAL_PILOT_LAYER_SCOPE.md"),component=read("components/professional-pilot-workspace.tsx");
   assert.match(scope,/Do not infer an airline\/commercial operation from aircraft type, registration, route or operator name/);
   assert.match(scope,/Professional summaries are derived views, not licences, qualifications, operator records, duty-time records or regulatory approvals/);
   assert.match(component,/does not treat them as employment or operator-qualification verification/);

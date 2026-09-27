@@ -10,7 +10,7 @@ const root=path.resolve(import.meta.dirname,"..");const read=(file:string)=>fs.r
 const flight=(partial:Partial<RecencyAuditFlight>={}):RecencyAuditFlight=>({id:1,date:"2026-08-20",evidence:"EASA",registration:"OK-ABC",aircraftClass:"SEP",role:"PIC",departure:"LKLT",arrival:"LKBE",minutes:60,landingsDay:1,landingsNight:0,movementEvidenceRecorded:true,takeoffsDay:1,takeoffsNight:0,approachesDay:1,approachesNight:0,...partial});
 
 test("v1.35.4 expandable audit evidence remains wired into recency cards",()=>{
-  const panel=read("components/recency-panel.tsx"),service=read("lib/recency-audit-service.ts"),layout=read("app/layout.tsx"),roadmap=read("ROADMAP.md");
+  const panel=read("components/recency-panel.tsx"),service=read("lib/recency-audit-service.ts"),layout=read("app/layout.tsx"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
   assert.match(panel,/Evidence detail/);assert.match(panel,/Leaves window/);assert.match(panel,/Open flight/);assert.match(panel,/getRecencyAuditForUser/);
   assert.match(service,/SELECT f[.]id,f[.]date/);assert.match(service,/f[.]certified_at IS NOT NULL/);
   assert.match(layout,/v1354-recency-audit[.]css/);assert.match(roadmap,/FSTD recency evidence deferred/i);
