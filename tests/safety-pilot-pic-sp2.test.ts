@@ -76,6 +76,10 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(db,/resetSafetyPilotPicFixture/);
   assert.match(bootstrap,/generate_series\(1,15\)/);
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
+  assert.match(bootstrap,/CREATE TABLE flight_expenses/);
+  assert.match(bootstrap,/balloon_operation TEXT NOT NULL DEFAULT/);
+  assert.match(bootstrap,/purpose_code TEXT NOT NULL DEFAULT/);
+  assert.match(bootstrap,/verification_reference TEXT NOT NULL DEFAULT/);
   assert.match(bootstrap,/CREATE TABLE aircraft/);
 });
 
