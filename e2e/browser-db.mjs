@@ -64,3 +64,36 @@ export function resetSafetyPilotPicFixture(){
     DELETE FROM flight_connected_crew WHERE source_user_id=9001 OR connected_user_id=9001;
   `);
 }
+
+
+export function resetSafetyPilotPicInviteFixture(){
+  runBrowserSql(`
+    UPDATE pilot_connections
+    SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
+        accepted_at=NOW(),updated_at=NOW()
+    WHERE id=7001;
+    DELETE FROM user_notifications WHERE user_id=9002 AND href LIKE '/connections/shared/%';
+    DELETE FROM flight_participations WHERE source_flight_id=9903 AND source_user_id=9001;
+    DELETE FROM flight_connected_crew WHERE source_flight_id=9903 AND source_user_id=9001;
+    DELETE FROM flights WHERE id=9903 AND user_id=9001;
+    INSERT INTO flights(
+      id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
+      departure,arrival,off_block,takeoff,landing,on_block,role,starts,commander,
+      landings_day,movement_evidence_recorded,takeoffs_day,approaches_day,
+      certified_at,certified_by_user_id,certification_hash,certification_version,
+      record_revision,locked_at,locked_by_user_id
+    ) VALUES(
+      9903,9001,'2026-09-20','EASA','OK-SP2E','B23','SEP','AEROPLANE',
+      'LKLT','LKPR','10:00','10:05','11:05','11:12','SAFETY PILOT',3,'Browser Friend',
+      3,TRUE,3,3,NOW(),9001,'browser-sp3-hash',8,1,NOW(),9001
+    );
+    INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role)
+    VALUES(9903,9001,9002,'PIC');
+  `);
+}
+
+export function revokeSafetyPilotPicInviteConnectionFixture(){
+  runBrowserSql(`
+    UPDATE pilot_connections SET status='cancelled',accepted_at=NULL,updated_at=NOW() WHERE id=7001;
+  `);
+}
