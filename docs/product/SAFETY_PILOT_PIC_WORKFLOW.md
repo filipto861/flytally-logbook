@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP3 merge gate; SP4 next  
+**Status:** Priority 2 implementation — SP4 PIC materialization + recency proof ACTIVE  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -61,7 +61,8 @@ No name matching is permitted.
 
 **SP1:** DONE / merged in PR #162.  
 **SP2:** DONE / merged in PR #163. Create/Edit supports manual or explicitly connected Actual PIC identity with atomic persistence, accepted-Connection revalidation, server-canonicalized commander text, edit reload by flight ID, and no invitation side effect.  
-**SP3:** implementation/verification complete in PR #164 and at the merge gate. Scope remains the dedicated post-certification PIC invitation only; PIC materialization remains SP4.
+**SP3:** DONE / merged in PR #164. Dedicated certified PIC invitation is live in the code path; PIC materialization remains separated into SP4.
+**SP4:** ACTIVE. Scope is recipient PIC materialization, certified source commander preservation, PIC-only accepted-Connection recheck at acceptance/materialization, and recency equivalence proof. SP5 lifecycle/release closeout remains separate.
 
 **SP2 closeout:** final repository verification and authenticated browser smoke passed before merge. The browser harness was hardened to support row-returning local PostgreSQL transactions and current flight-detail fixture schema without changing the production SP2 persistence contract.
 
