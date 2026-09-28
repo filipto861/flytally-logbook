@@ -232,8 +232,12 @@ CREATE TABLE flight_participations(
   source_hash TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending',
   participant_flight_id BIGINT,
+  decision_note TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  responded_at TIMESTAMPTZ
+  responded_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  superseded_at TIMESTAMPTZ,
+  UNIQUE(source_flight_id,source_revision,participant_user_id)
 );
 CREATE TABLE pilot_connections(
   id BIGSERIAL PRIMARY KEY,
@@ -300,6 +304,14 @@ CREATE TABLE flight_verifications(
   decision_note TEXT NOT NULL DEFAULT '',
   revocation_reason TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE feature_switches(
+  key TEXT PRIMARY KEY,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_by_user_id BIGINT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+INSERT INTO feature_switches(key,enabled) VALUES('crew_sharing',TRUE),('verified_approvals',TRUE);
+
 CREATE TABLE user_notifications(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,

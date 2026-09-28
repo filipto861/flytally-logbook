@@ -12,6 +12,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 
+### Safety Pilot ↔ PIC certified invitation — SP3
+- Added a dedicated post-certification Actual PIC invitation action for certified Safety Pilot flights.
+- The recipient is derived only from persisted connected-PIC metadata; no arbitrary client-supplied PIC participant ID is accepted.
+- Invite creation rechecks source ownership, Safety Pilot role, certification hash/revision state and live accepted Connection status.
+- Kept PIC excluded from the generic crew-sharing selector and rejected by the generic invite action.
+- Added a separate certified Actual PIC panel with pending/cancel/reinvite states and live revoked-Connection fail-closed messaging.
+- Kept recipient PIC materialization intentionally blocked for SP4.
+- Verification: GitHub Verify FlyTally web PASS; 890/890 unit/regression PASS; PostgreSQL core 47/47 PASS across 20 files; authenticated Chromium desktop/mobile 22/22 PASS.
+
 ### Safety Pilot ↔ PIC create/edit identity — SP2
 - Added an explicit Safety Pilot Actual PIC choice between manual text and an accepted FlyTally Connection; manual entry remains the default and no name matching is used.
 - New Flight loads accepted pilot Connection IDs/names separately from instructor suggestions.
