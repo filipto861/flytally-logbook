@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP3 dedicated certified PIC invitation ACTIVE  
+**Status:** Priority 2 implementation — SP3 merge gate; SP4 next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -61,7 +61,7 @@ No name matching is permitted.
 
 **SP1:** DONE / merged in PR #162.  
 **SP2:** DONE / merged in PR #163. Create/Edit supports manual or explicitly connected Actual PIC identity with atomic persistence, accepted-Connection revalidation, server-canonicalized commander text, edit reload by flight ID, and no invitation side effect.  
-**SP3:** ACTIVE. Scope is the dedicated post-certification PIC invitation only; PIC materialization remains SP4.
+**SP3:** implementation/verification complete in PR #164 and at the merge gate. Scope remains the dedicated post-certification PIC invitation only; PIC materialization remains SP4.
 
 **SP2 closeout:** final repository verification and authenticated browser smoke passed before merge. The browser harness was hardened to support row-returning local PostgreSQL transactions and current flight-detail fixture schema without changing the production SP2 persistence contract.
 
@@ -434,6 +434,14 @@ Implemented contract:
 - certified-flight PIC invitation UI gated by live accepted-Connection state without mutating the link on read;
 - accepted-Connection + source role + revision/hash checks;
 - notification/review wording.
+
+**SP3 verification closeout — 28 September 2026**
+- GitHub Verify FlyTally web: PASS on final SP3 runtime head.
+- Unit/regression suite: 890/890 PASS, 0 fail, 0 skip.
+- PostgreSQL core acceptance: 47/47 PASS across 20 core files, 0 fail, 0 skip.
+- Authenticated Chromium desktop/mobile smoke: 22/22 PASS.
+- Browser coverage proves invite → pending → cancel → re-invite eligibility and live revoked-Connection fail-closed UI.
+- SP4 remains deliberately excluded: recipient PIC materialization is still blocked until the SP4 contract lands.
 
 ### SP4 — PIC materialization + recency proof
 
