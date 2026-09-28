@@ -131,9 +131,15 @@ test("SP3 reinvite can reopen declined or cancelled request but does not reset a
   run("DELETE FROM flight_participations WHERE source_flight_id=10");
   run(render(inviteSql(),{sourceFlightId:10,userId:1}));
   const participationId=Number(run("SELECT id FROM flight_participations WHERE source_flight_id=10"));
+
   run(`UPDATE flight_participations SET status='declined',responded_at=NOW(),decision_note='No' WHERE id=${participationId}`);
   run(render(inviteSql(),{sourceFlightId:10,userId:1}));
   assert.equal(run(`SELECT status||'|'||COALESCE(decision_note,'x')||'|'||(responded_at IS NULL)::text FROM flight_participations WHERE id=${participationId}`),"pending||true");
+
+  run(`UPDATE flight_participations SET status='cancelled',cancelled_at=NOW(),responded_at=NOW(),decision_note='Cancelled' WHERE id=${participationId}`);
+  run(render(inviteSql(),{sourceFlightId:10,userId:1}));
+  assert.equal(run(`SELECT status||'|'||(cancelled_at IS NULL)::text||'|'||(responded_at IS NULL)::text FROM flight_participations WHERE id=${participationId}`),"pending|true|true");
+
   run(`UPDATE flight_participations SET status='accepted' WHERE id=${participationId}`);
   assert.equal(run(render(inviteSql(),{sourceFlightId:10,userId:1})),"");
   assert.equal(run(`SELECT status FROM flight_participations WHERE id=${participationId}`),"accepted");
