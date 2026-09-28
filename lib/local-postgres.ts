@@ -50,9 +50,7 @@ function spawn(statement:string){
 
 function execute(statement:string){
   const producesRows=rowProducing(statement);
-  const command=producesRows
-    ? `WITH __flytally_local_result AS (${statement}) SELECT COALESCE(json_agg(row_to_json(__flytally_local_result)),'[]'::json)::text FROM __flytally_local_result;`
-    : statement;
+  const command=producesRows?captureRows(statement,""):statement;
   const output=spawn(command);
   if(!producesRows||!output)return[];
   return JSON.parse(output) as Array<Record<string,unknown>>;
