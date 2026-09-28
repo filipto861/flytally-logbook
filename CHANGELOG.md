@@ -12,6 +12,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 
+### Safety Pilot ↔ PIC materialization + recency — SP4
+- Enabled the dedicated Safety Pilot → PIC participation to materialize an independently owned recipient PIC flight.
+- Recipient PIC commander now comes from the certification-protected source `commander`; existing non-PIC materialization behavior is unchanged.
+- Added PIC-only acceptance/materialization guards for exact source revision/hash, source Safety Pilot role and a live accepted Connection.
+- PIC minutes use the canonical crew-credit path; the source Safety Pilot record remains non-PIC credit.
+- Shared-flight PIC preview preserves the certified source commander.
+- Added recency proof showing a materialized PIC record behaves like an equivalent ordinary PIC record while the source Safety Pilot contributes no qualifying PIC movements.
+- Added PostgreSQL acceptance for independent ownership, duplicate reuse and revoked-Connection fail-closed behavior.
+- Verification: 895/895 unit/regression PASS; PostgreSQL core 48/48 PASS across 20 files; authenticated Chromium desktop/mobile 22/22 PASS; production build PASS.
+
 ### Safety Pilot ↔ PIC certified invitation — SP3
 - Added a dedicated post-certification Actual PIC invitation action for certified Safety Pilot flights.
 - The recipient is derived only from persisted connected-PIC metadata; no arbitrary client-supplied PIC participant ID is accepted.
