@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetSafetyPilotPicFixture } from "./browser-db.mjs";
+import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -178,6 +178,34 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("certified Safety Pilot can invite only the stored connected Actual PIC",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated Safety Pilot PIC invitation coverage requires the isolated CI database.");
+  resetSafetyPilotPicInviteFixture();
+  await loginBrowserPilot(page,"/flights/9903");
+
+  const panel=page.locator("section.instructor-approval-panel").filter({hasText:"ACTUAL PIC"});
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("heading",{name:"Browser Friend"})).toBeVisible();
+  await expect(panel.getByRole("button",{name:"Invite Actual PIC"})).toBeVisible();
+
+  await panel.getByRole("button",{name:"Invite Actual PIC"}).click();
+  await expect(panel.getByText("PIC invitation · pending")).toBeVisible();
+  await expect(panel.getByRole("button",{name:"Cancel PIC invitation"})).toBeVisible();
+
+  await page.reload();
+  await expect(panel.getByText("PIC invitation · pending")).toBeVisible();
+
+  await panel.getByRole("button",{name:"Cancel PIC invitation"}).click();
+  await expect(panel.getByRole("button",{name:"Invite Actual PIC"})).toBeVisible();
+
+  revokeSafetyPilotPicInviteConnectionFixture();
+  await page.reload();
+  await expect(panel.getByText(/no longer an accepted Connection/)).toBeVisible();
+  await expect(panel.getByRole("button",{name:"Invite Actual PIC"})).toHaveCount(0);
+  await expect(panel.getByRole("link",{name:"Review Connections"})).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
