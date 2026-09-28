@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP2 merge gate; SP3 next  
+**Status:** Priority 2 implementation — SP3 dedicated certified PIC invitation ACTIVE  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -56,6 +56,14 @@ The exact table/schema name can be finalized in implementation design, but the e
 - independent from `flight_participations` until an actual certified invitation exists.
 
 No name matching is permitted.
+
+## Current implementation state
+
+**SP1:** DONE / merged in PR #162.  
+**SP2:** DONE / merged in PR #163. Create/Edit supports manual or explicitly connected Actual PIC identity with atomic persistence, accepted-Connection revalidation, server-canonicalized commander text, edit reload by flight ID, and no invitation side effect.  
+**SP3:** ACTIVE. Scope is the dedicated post-certification PIC invitation only; PIC materialization remains SP4.
+
+**SP2 closeout:** final repository verification and authenticated browser smoke passed before merge. The browser harness was hardened to support row-returning local PostgreSQL transactions and current flight-detail fixture schema without changing the production SP2 persistence contract.
 
 ## Invitation lifecycle
 
