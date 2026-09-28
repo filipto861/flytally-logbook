@@ -12,6 +12,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 
+### Safety Pilot ↔ PIC lifecycle closeout — SP5
+- Added release-level lifecycle coverage for certified-source corrections, pending invitation supersession, cancellation, decline and PIC reinvitation.
+- Verified source correction preserves the connected-PIC link and does not rewrite already materialized recipient-owned records.
+- Verified PIC reinvite may reopen declined/cancelled requests but cannot reset accepted/materialized participation.
+- Kept certification payload/version unchanged and introduced no new schema migration.
+- Extended authenticated browser coverage through cancel → reinvite → pending → cancel and revoked-Connection fail-closed behavior.
+- Verification: 900/900 unit/regression PASS; PostgreSQL core 48/48 PASS across 20 files; authenticated Chromium desktop/mobile 22/22 PASS; production build PASS.
+- Existing migration v15 remains the production-verified prerequisite; SP5 itself has no database migration.
+
 ### Safety Pilot ↔ PIC materialization + recency — SP4
 - Enabled the dedicated Safety Pilot → PIC participation to materialize an independently owned recipient PIC flight.
 - Recipient PIC commander now comes from the certification-protected source `commander`; existing non-PIC materialization behavior is unchanged.
