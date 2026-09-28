@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1–SP4 merged and verified; SP5 lifecycle/release closeout ACTIVE |
+| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1–SP4 merged; SP5 lifecycle/release closeout verified in PR #166 and at merge gate |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -61,7 +61,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1–SP4 DONE/merged · SP5 ACTIVE |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1–SP4 DONE · SP5 verified in PR #166 and at merge gate |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -119,7 +119,7 @@ Independent second-AI implementation-design review is complete and reconciled ag
 
 The review returned **APPROVE WITH CHANGES**. The accepted changes are now frozen in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`: explicit fail-closed PIC combination handling, unconditional exclusion of PIC from the generic arbitrary-recipient crew selector, certified `commander` materialization for PIC recipients, live revoked-Connection UI gating, and migration v15 placement in the tracked schema sequence.
 
-The design gate is closed. **SP1 — schema + pure domain contract is DONE and merged in PR #162. SP2 — create/edit connected/manual Actual PIC persistence is DONE and merged in PR #163. SP3 — dedicated certified PIC invitation is DONE and merged in PR #164. SP4 — PIC materialization + recency proof is DONE and merged in PR #165. SP5 — lifecycle/release closeout is ACTIVE.**
+The design gate is closed. **SP1 — schema + pure domain contract is DONE and merged in PR #162. SP2 — create/edit connected/manual Actual PIC persistence is DONE and merged in PR #163. SP3 — dedicated certified PIC invitation is DONE and merged in PR #164. SP4 — PIC materialization + recency proof is DONE and merged in PR #165. SP5 — lifecycle/release closeout is implementation/verification complete in PR #166 and at the merge gate.**
 
 SP1 staging remains fail-closed: `PIC` is excluded from the legacy generic crew selector, rejected by the generic invite server action, and intentionally not materialized until SP4 supplies the full certified-commander / Connection-recheck / recency contract.
 
@@ -144,6 +144,18 @@ SP4 verification evidence:
 - PostgreSQL core acceptance PASS: 48/48 across 20 core files, 0 fail, 0 skip;
 - authenticated Chromium desktop/mobile smoke PASS: 22/22; production build PASS;
 - SP5 correction/revision lifecycle and release closeout remain separate.
+
+SP5 verification evidence:
+- correction lifecycle supersedes only pending invitations bound to the old certified revision and preserves connected-PIC metadata on the source flight;
+- already materialized recipient records remain independent and are not rewritten by source correction;
+- source cancel and recipient decline remain pending-only and identity-scoped; dedicated PIC reinvite reopens declined/cancelled requests without overwriting accepted/materialized state;
+- certification payload/version remains unchanged;
+- PostgreSQL lifecycle acceptance includes cancelled → reinvite behavior;
+- authenticated browser coverage includes cancel → reinvite → pending → cancel plus revoked-Connection fail-closed state;
+- GitHub Verify FlyTally web PASS: 900/900 unit/regression, 0 fail, 0 skip;
+- PostgreSQL core acceptance PASS: 48/48 across 20 core files, 0 fail, 0 skip;
+- authenticated Chromium desktop/mobile smoke PASS: 22/22; production build PASS;
+- no new schema migration is introduced by SP5; the prerequisite v15 migration was already production-verified during SP1.
 
 SP2 implementation contract:
 - New Flight loads all accepted Connections as explicit `id + display_name` choices separate from the instructor-only list;
