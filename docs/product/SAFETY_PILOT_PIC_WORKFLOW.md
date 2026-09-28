@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP3 merge gate; SP4 next  
+**Status:** Priority 2 implementation — SP4 merge gate; SP5 next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -61,7 +61,8 @@ No name matching is permitted.
 
 **SP1:** DONE / merged in PR #162.  
 **SP2:** DONE / merged in PR #163. Create/Edit supports manual or explicitly connected Actual PIC identity with atomic persistence, accepted-Connection revalidation, server-canonicalized commander text, edit reload by flight ID, and no invitation side effect.  
-**SP3:** implementation/verification complete in PR #164 and at the merge gate. Scope remains the dedicated post-certification PIC invitation only; PIC materialization remains SP4.
+**SP3:** DONE / merged in PR #164. Dedicated certified PIC invitation is live in the code path; PIC materialization remains separated into SP4.
+**SP4:** implementation/verification complete in PR #165 and at the merge gate. Recipient PIC materialization, certified source commander preservation, PIC-only accepted-Connection recheck and recency equivalence proof are complete. SP5 lifecycle/release closeout remains separate.
 
 **SP2 closeout:** final repository verification and authenticated browser smoke passed before merge. The browser harness was hardened to support row-returning local PostgreSQL transactions and current flight-detail fixture schema without changing the production SP2 persistence contract.
 
@@ -452,6 +453,15 @@ Implemented contract:
 - accepted Connection recheck at materialization;
 - prove recipient recency behaves like an equivalent ordinary PIC record;
 - prove source Safety Pilot receives no PIC credit.
+
+**SP4 verification closeout — 28 September 2026**
+- GitHub Verify FlyTally web: PASS.
+- Full unit/regression suite: 895/895 PASS, 0 fail, 0 skip.
+- PostgreSQL core acceptance: 48/48 PASS across 20 core files, 0 fail, 0 skip.
+- Authenticated Chromium desktop/mobile smoke: 22/22 PASS; production build PASS.
+- Materialization preserves certified source `commander` for PIC, creates an independently owned PIC record, applies canonical PIC minutes, reuses an equivalent existing PIC record instead of duplicating it, and leaves the source Safety Pilot without PIC credit.
+- Revoked Connection at materialization fails closed without creating or linking a recipient flight.
+- Recency proof shows the materialized PIC entry is equivalent to an ordinary PIC entry for the same evidence, while the Safety Pilot source contributes no qualifying PIC movements.
 
 ### SP5 — release closeout
 

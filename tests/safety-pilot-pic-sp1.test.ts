@@ -20,11 +20,12 @@ test("SP1 grants canonical PIC credit to a PIC participant",()=>{
   assert.deepEqual(crewRoleCredits("PIC",73),{role:"PIC",pic:73,copilot:0,instructor:0});
 });
 
-test("SP1 keeps PIC out of legacy generic invite/materialization paths until dedicated milestones",()=>{
+test("staged rollout keeps PIC out of the generic arbitrary-recipient invite path",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
   const detail=read("app/(protected)/flights/[id]/page.tsx");
   assert.match(actions,/if\(role==="PIC"\)return;/);
-  assert.match(actions,/if\(participantRole==="PIC"\)return 0;/);
+  assert.doesNotMatch(actions,/if\(participantRole==="PIC"\)return 0;/);
+  assert.match(actions,/participantRole!==\"PIC\"/);
   assert.match(detail,/CREW_ROLES\.filter\(item=>item!=="PIC"&&/);
 });
 
