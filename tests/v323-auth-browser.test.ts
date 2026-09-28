@@ -14,7 +14,8 @@ test("v3.2 U4 local Postgres adapter is explicit and localhost-only",()=>{
   assert.match(local,/LOCAL_HOSTS/);
   assert.match(local,/may only target localhost/);
   assert.match(local,/PGCONNECT_TIMEOUT:"5"/);
-  assert.match(local,/support mutation statements only/);
+  assert.match(local,/TRANSACTION_RESULT_PREFIX/);
+  assert.match(local,/executeLocalTransaction/);
   assert.match(local,/BEGIN;\\n/);
   assert.match(local,/COMMIT;/);
 });
@@ -22,7 +23,7 @@ test("v3.2 U4 local Postgres adapter is explicit and localhost-only",()=>{
 test("v3.2 U4 browser database is isolated and uses production password format",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   assert.match(bootstrap,/DROP SCHEMA public CASCADE/);
-  assert.match(bootstrap,/generate_series\(1,14\)/);
+  assert.match(bootstrap,/generate_series\(1,15\)/);
   assert.match(bootstrap,/scrypt\$n=131072,r=8,p=1/);
   assert.match(bootstrap,/browser-auth@example[.]test/);
   assert.match(bootstrap,/OK-E2E/);
@@ -50,4 +51,10 @@ test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=
   const ui=read("app/ui-system.css");
   assert.match(ui,/[.]ui-page-stack\{[^}]*grid-template-columns:minmax\(0,1fr\);[^}]*min-width:0;/s);
   assert.match(ui,/[.]ui-page-stack > [*][^{]*\{[^}]*min-width:0;[^}]*max-width:100%;/s);
+});
+
+
+test("authenticated browser projects serialize shared database fixtures in CI",()=>{
+  const config=read("playwright.config.mjs");
+  assert.match(config,/workers:process[.]env[.]CI\?1:undefined/);
 });

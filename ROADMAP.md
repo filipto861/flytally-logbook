@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1 verified, production schema v15 applied, PR #162 ready to merge; SP2 create/edit persistence is next |
+| Safety Pilot ↔ PIC shared-flight workflow | 🚧 | **ACTIVE**; SP1 merged; SP2 implementation + final verification complete in PR #163, merge gate open; SP3 dedicated certified PIC invitation next |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B/M3/M4 resume after the two priority items |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -61,7 +61,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | ---: | --- | :---: | --- |
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1 verified and production schema prerequisite applied; PR #162 merge is the remaining SP1 closeout step |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | 🚧 | SP1 DONE · SP2 verified in PR #163 and awaiting merge · SP3 next |
 | 3 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Finish current-profile vs historical-evidence audit before broader scale proof |
 | 4 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 5 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -119,11 +119,28 @@ Independent second-AI implementation-design review is complete and reconciled ag
 
 The review returned **APPROVE WITH CHANGES**. The accepted changes are now frozen in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`: explicit fail-closed PIC combination handling, unconditional exclusion of PIC from the generic arbitrary-recipient crew selector, certified `commander` materialization for PIC recipients, live revoked-Connection UI gating, and migration v15 placement in the tracked schema sequence.
 
-The design gate is closed. **SP1 — schema + pure domain contract is verified and ready to merge. SP2 — create/edit persistence is the next implementation milestone.**
+The design gate is closed. **SP1 — schema + pure domain contract is DONE and merged in PR #162. SP2 — create/edit persistence is implementation/verification complete in PR #163 and is at the merge gate. SP3 — dedicated certified PIC invitation is NEXT after SP2 merges.**
 
 SP1 staging remains fail-closed: `PIC` is excluded from the legacy generic crew selector, rejected by the generic invite server action, and intentionally not materialized until SP4 supplies the full certified-commander / Connection-recheck / recency contract.
 
 SP1 verification evidence: current-branch unit/regression suite 875/875 PASS; TypeScript PASS; production build PASS; migration v15 and connected-PIC persistence constraints exercised successfully on an isolated Neon branch and then deleted. After explicit approval, the same verified migration v15 was applied successfully to the production Neon branch; post-migration verification confirmed the new table, owner FK and PIC participation constraint, with zero connected-crew rows.
+
+SP2 implementation contract:
+- New Flight loads all accepted Connections as explicit `id + display_name` choices separate from the instructor-only list;
+- Safety Pilot Actual PIC supports either a connected selection or manual text, with no name matching;
+- connected selection submits an explicit account ID and the server canonicalizes `commander` from the selected account's current display name after rechecking accepted Connection state;
+- create/update synchronize the flight row and `flight_connected_crew` link in one transaction;
+- switching to manual PIC or changing the flight away from SAFETY PILOT removes the current PIC link;
+- edit/correction reloads the current link by flight ID and never derives identity from `commander`;
+- no invitation is sent in SP2; SP3 remains the first invitation milestone.
+
+SP2 verification evidence:
+- TypeScript PASS on final SP2 runtime head;
+- full unit/regression suite 885/885 PASS with 0 fail / 0 skip;
+- production Next.js build PASS;
+- isolated Neon persistence acceptance PASS for connected create/update, server-canonicalized commander, fail-closed rejected/revoked Connection cases, and manual unlink;
+- authenticated Vercel Preview acceptance PASS against an isolated Neon branch for manual save/reload, repeated-save persistence, manual → connected → manual lifecycle, and desktop / 400 px mobile / 768×1024 iPad portrait / 1024×768 iPad landscape layouts;
+- preview testing exposed a controlled-field reset after repeated save; the bug was fixed, regression-covered, redeployed and re-verified before this merge gate.
 
 ## Roadmap review reconciliation
 

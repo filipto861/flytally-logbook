@@ -12,6 +12,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 
+### Safety Pilot ↔ PIC create/edit identity — SP2
+- Added an explicit Safety Pilot Actual PIC choice between manual text and an accepted FlyTally Connection; manual entry remains the default and no name matching is used.
+- New Flight loads accepted pilot Connection IDs/names separately from instructor suggestions.
+- Connected selections are canonicalized server-side from the selected account's current display name after accepted-Connection revalidation.
+- Create/Edit synchronize the flight row, expenses and current connected-PIC metadata atomically; switching to manual entry or away from Safety Pilot removes the link.
+- Edit/correction reloads stored connected identity by flight ID, including a fail-closed unavailable state when the Connection is no longer accepted.
+- SP2 does not send PIC invitations or create participation rows; certified sharing remains staged for SP3.
+- Added SP2 source/regression and browser-contract coverage. Final verification: TypeScript PASS, 885/885 unit/regression PASS with 0 fail / 0 skip, production build PASS, isolated Neon persistence acceptance PASS, and authenticated isolated Vercel Preview acceptance PASS across desktop, mobile and iPad layouts. Preview testing found and fixed a repeated-save controlled-field reset before merge.
+
 ### Safety Pilot ↔ PIC foundation — SP1
 - Added tracked schema migration v15 for separate `flight_connected_crew` collaboration metadata with owner-bound FK, one-PIC-per-flight uniqueness, self-link rejection and cascade cleanup.
 - Extended shared-flight participation role storage/domain normalization to `PIC`, with an explicit fail-closed `SAFETY PILOT → PIC` combination and canonical PIC-minute credit semantics.

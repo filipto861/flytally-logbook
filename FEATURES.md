@@ -113,13 +113,18 @@ Important boundary:
 
 ## Planned
 
-### Safety Pilot ↔ PIC shared-flight workflow — PLANNED
+### Safety Pilot ↔ PIC shared-flight workflow — PARTIALLY IMPLEMENTED
 
+Implemented by SP1/SP2 in the current delivery:
 - Safety Pilot flight can record the actual PIC by selecting an accepted FlyTally Connection or by entering a name manually.
-- Connected PIC identity is preserved independently from displayed name text.
-- After certification, the source pilot can explicitly invite the selected connected pilot to add the same certified event to their own logbook as PIC.
-- Recipient record remains independently owned/certified; the source Safety Pilot record remains independent evidence and does not gain PIC credit.
-- Manual PIC text never silently creates an account link.
+- Connected PIC identity is preserved independently from displayed name text and reloaded by source flight ID without name matching.
+- Manual PIC text never silently creates an account link; switching back to manual removes the current connected-PIC link.
+
+Still planned in SP3–SP5:
+- after certification, the source pilot can explicitly invite the selected connected pilot to add the same certified event to their own logbook as PIC;
+- recipient record remains independently owned/certified and follows normal PIC credit/recency semantics;
+- source Safety Pilot record remains independent evidence and does not gain PIC credit;
+- correction/revision, duplicate/cancel/decline/reinvite and release-closeout cases remain staged.
 
 ### Multi-aircraft Product Scale — PAUSED
 

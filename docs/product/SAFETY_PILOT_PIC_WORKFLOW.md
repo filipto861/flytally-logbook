@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP1 verified, SP2 next  
+**Status:** Priority 2 implementation — SP2 merge gate; SP3 next  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -363,7 +363,7 @@ Required surfaces:
 - unit tests for valid and invalid source→PIC combinations;
 - PostgreSQL contract tests for table CHECK/UNIQUE/FK/cascade semantics.
 
-**Implementation state:** verified on `feat/safety-pilot-pic-sp1`; ready to merge before SP2 begins.
+**Implementation state:** DONE · merged to `main` in PR #162; production schema migration v15 recorded in `flytally_schema_migrations`.
 
 Staged-deployment safety is explicit:
 - the existing generic crew selector excludes `PIC`;
@@ -389,6 +389,35 @@ No connected/manual PIC UI is introduced in SP1.
 - create/update transactional link lifecycle;
 - edit/correction state reload;
 - source tests + browser form coverage.
+
+**Implementation state:** code complete on `feat/safety-pilot-pic-sp2`; TypeScript PASS, full unit/regression PASS (885/885), production build PASS, isolated Neon database acceptance PASS, and authenticated Vercel Preview acceptance PASS. SP2 is ready for the PR #163 merge gate; SP3 is the next implementation milestone after merge.
+
+Implemented contract:
+- New Flight loads accepted pilot Connections independently from the instructor-only suggestion list.
+- The default Safety Pilot path remains manual text; connected identity is opt-in and uses an explicit account ID.
+- The client never resolves identity by commander text.
+- For a connected selection, create/update resolve and persist the current `users.display_name` server-side only when the selected account is still an accepted Connection.
+- Create inserts the flight, expenses and `flight_connected_crew` link in one database statement after the duplicate advisory lock.
+- Update changes flight fields, expenses and current connected-PIC link atomically; manual mode or any non-Safety-Pilot role removes the current PIC link.
+- An invalid/revoked Connection produces no partial flight/link mutation.
+- Edit/correction reloads the link by source flight/user/role; a revoked linked pilot remains visible as unavailable until the user explicitly chooses a new Connection or switches to manual mode.
+- SP2 does not create `flight_participations`, send notifications or expose a PIC invitation action; those remain SP3.
+
+**SP2 application verification — 27 September 2026**
+- TypeScript: PASS.
+- Full unit/regression suite: 885/885 PASS on final SP2 runtime HEAD after the repeated-save regression fix.
+- Production Next.js build: PASS.
+- Source/browser contract coverage confirms manual vs connected Actual PIC mode, edit reload, and browser fixture wiring.
+- Authenticated browser acceptance: PASS on an isolated Vercel Preview wired only to the isolated Neon SP2 branch. Manual save/reload, repeated save, manual→connected persistence, connected→manual unlink, and desktop/mobile/iPad layouts were verified. A repeated-save controlled-field reset was found during this pass, fixed, regression-covered and re-verified before merge.
+
+**SP2 database acceptance — isolated Neon**
+- connected create canonicalized the source `commander` from the selected account and created the current PIC link;
+- an unaccepted target produced no flight insert;
+- connected update replaced commander/link together;
+- manual update removed the link and preserved manual commander text;
+- revoking the selected Connection made a connected update a no-op with the existing flight/link left unchanged;
+- changing away from Safety Pilot removed the current PIC link;
+- production was not modified by these SP2 acceptance cases.
 
 ### SP3 — certified PIC invitation
 
