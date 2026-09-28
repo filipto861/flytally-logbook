@@ -115,17 +115,16 @@ Important boundary:
 
 ### Safety Pilot ↔ PIC shared-flight workflow — PARTIALLY IMPLEMENTED
 
-Implemented by SP1–SP3 in the current delivery:
+Implemented by SP1–SP4 in the current delivery:
 - Safety Pilot flight can record the actual PIC by selecting an accepted FlyTally Connection or by entering a name manually.
 - Connected PIC identity is preserved independently from displayed name text and reloaded by source flight ID without name matching.
 - Manual PIC text never silently creates an account link; switching back to manual removes the current connected-PIC link.
 - After certification, the source pilot can explicitly invite only the stored connected Actual PIC; the target is derived server-side and the action fails closed when the Connection is no longer accepted.
+- The invited recipient can materialize the exact certified event as an independently owned PIC record; certified source commander evidence is preserved, PIC credit uses the canonical path, and acceptance rechecks the live Connection.
+- Materialized PIC recency follows the same evidence path as an equivalent ordinary PIC record; the source Safety Pilot record remains separate and gains no PIC credit.
 
-Still planned in SP4–SP5:
-- the invited recipient can materialize the certified event as an independently owned PIC record;
-- recipient record remains independently owned/certified and follows normal PIC credit/recency semantics;
-- source Safety Pilot record remains independent evidence and does not gain PIC credit;
-- correction/revision, duplicate/cancel/decline/reinvite and release-closeout cases remain staged.
+Still planned in SP5:
+- correction/revision lifecycle closeout, duplicate/cancel/decline/reinvite release cases and final deployment/documentation closeout.
 
 ### Multi-aircraft Product Scale — PAUSED
 
