@@ -12,6 +12,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
 
+### New Flight UI/UX Simplicity — B0.5 integrity baseline
+- Added a fail-closed selected-aircraft profile-default resolver that reuses the canonical M1 validator and rejects defaults when validation would repair or replace the stored evidence/class.
+- Valid ULL profiles remain ULL; invalid/missing legacy profile context now surfaces as **Needs configuration** instead of silently falling back to ULL.
+- Preserved stored same-aircraft Edit snapshots; the current mutable aircraft profile is consulted only when profile defaults are actually being applied.
+- Added a complete golden EASA SEP PIC `parseFlightInput()` payload baseline plus source coverage proving manual Create and Update continue through the same canonical parser.
+- Recorded the approved Role / normal landing / PF preset policy and scenario-specific decision-density baseline for later UX comparison.
+- No schema, certification hash/version, recency calculation, connection/PIC materialization or UTC semantics changed.
+- **Verification status:** NOT RUN. Branch implementation is not release-complete until local TypeScript/tests/build evidence is recorded.
+
+
 ### General PIC invitation across source roles
 - Generalized explicit post-certification `PIC` invitation beyond Safety Pilot to every recognized canonical stored source role.
 - Added schema migration v16 with invite-time PIC commander provenance (`CERTIFIED_SOURCE_COMMANDER` vs `RECIPIENT_ACCOUNT`) and one-active-PIC-per-source-revision protection.
