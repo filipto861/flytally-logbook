@@ -381,5 +381,25 @@ Filip closed the gate on 29 September 2026:
 1. **Billing / Costs:** optional; absence does not block save.
 2. **Missing route/times:** no entry-page hint; certification owns and explains those blockers.
 3. **Save and add another:** remove from New Flight; offer after successful save/review.
+4. **Role / landings / PF presets:** keep the convenience presets, but surface their evidence-bearing values before save/certification instead of requiring repetitive reconfirmation.
+5. **Aircraft billing default:** explicitly configured profile billing may auto-apply; absent billing must remain absent and must not be synthesized as BLOCK.
 
-No further product decision is required before Batch 1A. All other Claude points are accepted/reconciled above, already resolved in the repository, or explicitly deferred.
+A final repository-backed review also identified a prerequisite integrity correction: selected-aircraft evidence/class currently has a fail-open `ULL` fallback in `FlightForm`. This is not an accepted convenience default and must be removed before compact profile presentation.
+
+The canonical implementation plan is now `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`. No further product decision is required before **B0.5 — integrity prerequisites + golden baseline**. All other Claude points are accepted/reconciled above, already resolved in the repository, or explicitly deferred.
+
+
+## Final independent repository review addendum
+
+After the three product decisions above were frozen, the final independent review checked the current New Flight route, defaults, aircraft/profile read path, FCL.050 compliance, recency service, detail workspace and effective CSS.
+
+Additional reconciled facts:
+- draft records are excluded from the recency service until certified;
+- the normal New Flight create date comes from the current `Europe/Prague` default helper rather than the component's UTC fallback;
+- the New Flight action area is actually sticky and must be verified against content/focus/keyboard overlap;
+- Training purpose movement into optional UI must preserve its hidden parsing marker;
+- M1 write validation does not justify the separate fail-open `ULL` fallback on the form/read path.
+
+These findings do not change the single-page/progressive-disclosure direction. They change the safe implementation sequence by inserting **B0.5** before optional-cost and visual compaction work.
+
+See `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md` for the frozen implementation contract.
