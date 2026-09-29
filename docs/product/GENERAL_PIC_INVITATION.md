@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** IMPLEMENTATION ACTIVE — LOCAL VERIFICATION PENDING  
+**Status:** IMPLEMENTATION ACTIVE — LOCAL APP GATES PASS; POSTGRES/BROWSER PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -171,6 +171,14 @@ Initial local attempt on 29 September 2026:
 - those stale assertions were reconciled to the frozen general-PIC contract on the feature branch;
 - `npm run typecheck` and `npm run build` did not execute because the local checkout had no installed TypeScript/Next binaries (`tsc` / `next` not found); dependency installation plus a clean rerun is required;
 - no PASS is claimed from this attempt.
+
+Second local verification on 29 September 2026 after dependency installation and stale-contract reconciliation:
+- `npm ci` completed successfully;
+- `npm run typecheck`: **PASS**;
+- `npm test`: **909/909 PASS**, 0 fail / 0 skip;
+- `npm run build`: **PASS** with Next.js 16.3.2 production build and TypeScript compilation complete;
+- the external parent-directory package-lock warning from Turbopack did not fail the repository build and is not treated as a product regression;
+- PostgreSQL acceptance and authenticated browser/responsive verification remain pending.
 
 ## Verification
 
