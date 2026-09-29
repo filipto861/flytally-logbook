@@ -39,7 +39,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
 | UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
-| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · screenshot-backed task-flow/cognitive-load audit, with New Flight as the primary problem area |
+| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · screenshot audit + Claude review reconciled; 3 product decisions remain before Batch 1 freeze |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -65,7 +65,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · new-user feedback exposed cognitive overload in core workflows, especially New Flight; screenshot-backed audit before redesign |
+| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · evidence + independent review complete; freeze billing / route-time hint / save-another decisions, then Batch 1 |
 | 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
 | 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -251,6 +251,10 @@ This workstream is deliberately **audit-first**:
 - implement only in small reviewed batches with screenshot/browser evidence.
 
 Frozen guardrail: **simplicity must not come from invented defaults, hidden mandatory evidence, a parallel flight model, weakened validation or silent business-rule changes.**
+
+Independent Claude review returned **APPROVE WITH CHANGES**. Repository reconciliation is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`. Two review concerns were stale against current `main`: the roadmap priority was already updated by Filip and SP2/SP1–SP5 were already complete. Accepted corrections include single-page progressive disclosure, draft-vs-certification readiness semantics, explicit evidence-bearing profile summaries, one role/context slot, optional training-detail separation, completion-state consolidation and helper-copy triage.
+
+Three product decisions remain before Batch 1 is frozen: whether billing remains a universal draft-save gate, whether missing route/times receive a non-blocking entry hint, and whether `Save and add another` remains on the entry form.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
