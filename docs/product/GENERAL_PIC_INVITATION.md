@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** IMPLEMENTATION/VERIFICATION COMPLETE — PRODUCTION MIGRATION + MERGE PENDING  
+**Status:** IMPLEMENTATION/VERIFICATION COMPLETE — PRODUCTION MIGRATION APPLIED; MERGE PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -188,7 +188,7 @@ Final candidate verification on 29 September 2026:
 - GitHub PostgreSQL full acceptance: **66/66 PASS** across 24 integration files, 0 fail / 0 skip;
 - authenticated Chromium desktop + mobile: **22/22 PASS**;
 - isolated Neon v16 migration validation: **PASS** for nullable provenance column, CHECK constraint, active-PIC partial unique index and pre-existing-data compatibility;
-- exact production-parent migration candidate was prepared and revalidated on a temporary Neon branch; production migration is **NOT YET APPLIED** pending explicit approval.
+- exact production-parent migration candidate was prepared and revalidated on a temporary Neon branch; after explicit approval, migration v16 was applied successfully to the production Neon branch on 29 September 2026. Post-check confirmed the nullable provenance column, CHECK constraint, active-PIC partial unique index and migration ledger row; existing rows with non-null provenance remain 0 before runtime rollout.
 
 ## Verification
 
