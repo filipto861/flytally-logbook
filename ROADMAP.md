@@ -39,7 +39,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
 | UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
-| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · screenshot-backed task-flow/cognitive-load audit, with New Flight as the primary problem area |
+| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · design gate closed by Filip; Batch 1A optional-cost contract is next, followed by completion/UI simplification |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -65,7 +65,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · new-user feedback exposed cognitive overload in core workflows, especially New Flight; screenshot-backed audit before redesign |
+| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · evidence/review complete and product decisions frozen; implement small batches beginning with optional-cost semantics |
 | 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
 | 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -237,6 +237,10 @@ Detailed audit contract:
 
 `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`
 
+Frozen implementation contract:
+
+`docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
+
 This workstream is deliberately **audit-first**:
 
 - build deterministic screenshot capture from the isolated authenticated browser fixture;
@@ -251,6 +255,28 @@ This workstream is deliberately **audit-first**:
 - implement only in small reviewed batches with screenshot/browser evidence.
 
 Frozen guardrail: **simplicity must not come from invented defaults, hidden mandatory evidence, a parallel flight model, weakened validation or silent business-rule changes.**
+
+Independent Claude review returned **APPROVE WITH CHANGES**. Repository reconciliation is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`. Two review concerns were stale against current `main`: the roadmap priority was already updated by Filip and SP2/SP1–SP5 were already complete. Accepted corrections include single-page progressive disclosure, draft-vs-certification readiness semantics, explicit evidence-bearing profile summaries, one role/context slot, optional training-detail separation, completion-state consolidation and helper-copy triage.
+
+Filip closed the design gate on **29 September 2026**. Frozen decisions:
+- **Billing / Costs are optional.** Missing billing must not block saving a flight. If cost data is provided it still uses canonical validation; absence is not represented as zero/default evidence.
+- **No route/time completeness hint in New Flight.** An incomplete draft may save normally. Departure, Arrival, valid UTC off-block/on-block and positive flight time remain certification blockers and are surfaced when the user attempts certification, not as extra entry-page copy.
+- **`Save and add another` moves after the first save/review.** New Flight keeps one primary `Save & review` action; the repeat-entry affordance is offered after a successful save.
+- **Role / normal landing / PF presets stay for convenience, but evidence-bearing preset values must be visible before save/certification.** The redesign may compact them, not silently hide them.
+- **Explicit aircraft billing configuration may auto-apply; absent billing remains absent.** No synthetic `BLOCK` fallback.
+
+Final repository review added one prerequisite before presentation compaction: current selected-aircraft normalization can fail open to `ULL` for missing/invalid evidence/class, so that read/form-path fallback must be removed before a compact profile summary can be trusted.
+
+Frozen implementation order:
+1. **B0.5 — integrity prerequisites + golden baseline:** remove fail-open `ULL` fallback; preserve valid ULL; surface unresolved profile evidence; freeze golden create/update payload and decision/preset baselines.
+2. **B1A — optional-cost contract:** make no-billing a true end-to-end state; preserve configured billing; reject malformed populated values; no implicit BLOCK.
+3. **B1B — completion semantics:** remove duplicate review/readiness surfaces, keep one primary `Save & review`, preserve certification blockers and move Add another post-save.
+4. **B2 — essentials + visible movement evidence:** trim duplicated intro, move Role up, regroup route/times, surface landing/PF evidence and verify sticky-action behavior.
+5. **B3 — profile summary + role-context:** compact real evidence-bearing profile values and one applicability-driven required-context area.
+6. **B4 — optional details + helper-copy triage:** training/professional/costs/notes with populated-state discoverability.
+7. **B5 — responsive/accessibility closeout:** desktop/iPad/mobile/light/dark, 320 px reflow, keyboard/safe-area and final cognitive-load measurements.
+
+The detailed scope, dependencies, acceptance criteria and test matrix are frozen in `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
