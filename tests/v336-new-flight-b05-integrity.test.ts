@@ -121,7 +121,7 @@ test("B0.5 selected-aircraft defaults no longer contain a fail-open ULL repair",
   ])assert.ok(!form.includes(forbidden),forbidden);
   assert.match(form,/resolveFlightEntryAircraftProfileDefaults\(selected\)/);
   assert.match(form,/resolveFlightEntryAircraftProfileDefaults\(a\)/);
-  assert.match(form,/profileNeedsConfiguration/);
+  assert.match(form,/profileDefaultsApply=shouldApplyAircraftProfileDefaults\(editing,initialRegistration,registration\),profileNeedsConfiguration=Boolean\(selected&&profileDefaultsApply&&!selectedProfile\?\.profile\)/);
   assert.match(form,/Needs configuration/);
 });
 
