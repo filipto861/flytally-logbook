@@ -1,6 +1,6 @@
 # UI/UX Simplicity Audit 2026 — First-pass findings
 
-**Status:** EVIDENCE + CLAUDE REVIEW RECONCILED — 3 PRODUCT DECISIONS PENDING  
+**Status:** EVIDENCE + REVIEW RECONCILED — DESIGN FROZEN  
 **Evidence date:** 29 September 2026  
 **Runtime basis:** isolated authenticated browser fixture, not production user data  
 **Screenshot artifact:** GitHub Actions Browser smoke run #279, artifact `flytally-browser-smoke-cf775c55b6ac44f4a00081d723f56df97d21536e`
@@ -317,16 +317,16 @@ One completion state + one primary action:
 - turn the form into a wizard without testing the navigation and correction cost;
 - change billing/date/time/certification semantics inside a presentation-only batch.
 
-## Product questions after independent review
+## Frozen product decisions after independent review
 
 Claude review is complete and reconciled in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`.
 
-Training purpose is no longer a pending product question: it is accepted as optional/detail-level presentation while preserving all stored structured evidence and credit logic.
+Training purpose remains optional/detail-level presentation while preserving all stored structured evidence and credit logic.
 
-Three genuine product decisions remain before Batch 1/2 behavior is frozen:
+Filip froze the remaining decisions on 29 September 2026:
 
-1. Should billing remain mandatory for every saved flight, or should cost tracking become optional?
-2. Should missing route/times produce a non-blocking completeness hint during entry, or remain silent until Review/certification?
-3. Should `Save and add another` remain visible as a secondary action on New Flight, or move until after the first save/review?
+1. **Costs are optional.** Billing is not a universal save requirement. Empty billing/cost tracking must be valid; populated cost data must still validate canonically.
+2. **No New Flight completeness hint for route/times.** Drafts can save without Departure/Arrival/times. The existing certification action must fail closed and explain the missing certification evidence when certification is attempted.
+3. **Add another is post-save.** Remove `Save and add another` from initial entry; offer `Add another flight` after a successful save/review.
 
-Current persistence/certification rules remain unchanged until Filip explicitly decides otherwise.
+This closes the design gate. Runtime changes proceed in small verified batches; certification evidence rules are not weakened.
