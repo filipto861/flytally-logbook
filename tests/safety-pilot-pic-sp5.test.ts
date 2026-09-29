@@ -43,13 +43,14 @@ test("SP5 cancellation and decline are owner or recipient scoped and only mutate
 
 test("SP5 dedicated PIC reinvite reopens declined or cancelled requests but never rewrites accepted materialization",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
-  const start=actions.indexOf("export async function inviteConnectedPic");
-  const end=actions.indexOf("export async function inviteCrewMember",start);
+  const start=actions.indexOf("async function insertPicParticipation");
+  const end=actions.indexOf("export async function inviteSafetyPilot",start);
   assert.ok(start>=0&&end>start);
   const invite=actions.slice(start,end);
   assert.match(invite,/flight_participations\.status IN \('pending','declined','cancelled'\)/);
   assert.doesNotMatch(invite,/flight_participations\.status IN \('pending','accepted'/);
   assert.doesNotMatch(invite,/participant_flight_id=/);
+  assert.match(invite,/WHEN flight_participations\.participant_role='PIC' THEN flight_participations\.pic_commander_basis/);
 });
 
 test("SP5 PIC collaboration does not change the certification payload version",()=>{
