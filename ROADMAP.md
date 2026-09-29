@@ -287,11 +287,11 @@ Implemented, verification pending:
 - valid ULL remains valid ULL;
 - canonicalization that would change stored evidence/class is rejected as an automatic entry default;
 - unresolved profile defaults surface as **Needs configuration** and the existing required Logbook/Class controls remain the explicit flight-level recovery path;
-- same-registration Edit continues to preserve the stored flight snapshot instead of re-deriving it from mutable current profile state;
+- same-registration Edit continues to preserve the stored flight snapshot instead of re-deriving it from mutable current profile state, including restoration after a temporary aircraft-selection round trip;
 - golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
 - preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
 
-Verification status: **NOT RUN**. B0.5 is not DONE and B1A must not start until TypeScript, targeted/full regression and build evidence are recorded.
+Verification status: isolated helper behavior **5/5 PASS** and FlightForm syntax transpilation **PASS**; repository TypeScript, targeted/full regression, build and browser verification remain **NOT RUN**. B0.5 is not DONE and B1A must not start until the repository gate is recorded.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
