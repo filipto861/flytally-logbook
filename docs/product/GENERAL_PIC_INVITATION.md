@@ -164,6 +164,14 @@ Implemented before verification:
 
 Verification is pending and must not be represented as PASS until Filip runs the local gates.
 
+Initial local attempt on 29 September 2026:
+- branch/HEAD was confirmed at the intended implementation commit before the run;
+- `npm test` executed 909 tests: 902 passed / 7 failed;
+- the seven failures were stale source-contract assertions from the completed SP2/SP3/SP5/UX/browser-fixture baselines (v15 fixture expectations, the intentionally removed generic-PIC staging block, old notification copy, and roadmap state), not runtime acceptance evidence;
+- those stale assertions were reconciled to the frozen general-PIC contract on the feature branch;
+- `npm run typecheck` and `npm run build` did not execute because the local checkout had no installed TypeScript/Next binaries (`tsc` / `next` not found); dependency installation plus a clean rerun is required;
+- no PASS is claimed from this attempt.
+
 ## Verification
 
 Local verification on Filip's PC is the primary development gate for this extension.
