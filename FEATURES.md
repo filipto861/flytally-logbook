@@ -128,10 +128,11 @@ Implemented by SP1–SP5:
 
 ### General PIC invitation across source roles — PLANNED
 
-- Any certified source flight in a recognized canonical role may explicitly invite an accepted FlyTally Connection to create an independently owned `PIC` copy.
+- Any certified source flight in **any recognized canonical stored role** may explicitly invite an accepted FlyTally Connection to create an independently owned `PIC` copy.
 - The existing Safety Pilot **Actual PIC** link/panel remains a distinct evidence-backed workflow and is not replaced.
 - Generic PIC invitations are revision/hash bound, re-check accepted Connection state at invite and materialization, and never rewrite source credit.
 - Generic PIC recipient commander semantics must be participant-correct; source `commander` is preserved only for the linked Safety Pilot Actual-PIC case.
+- The accepted PIC copy is fully populated from the certified source event (timing, route, GPS, movement evidence, IFR/night and other event facts), while recipient-owned role/credit fields are recalculated as PIC rather than blindly cloned.
 - No automatic invitation and no identity inference from names.
 
 ### Multi-aircraft Product Scale — QUEUED
