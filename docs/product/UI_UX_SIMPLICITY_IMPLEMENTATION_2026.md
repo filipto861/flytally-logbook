@@ -795,7 +795,8 @@ Current state:
 - Claude review: DONE;
 - repository reconciliation: DONE;
 - Filip decisions D1–D5: FROZEN;
-- runtime code changes for this final plan: **NOT STARTED**;
-- implementation contract: READY.
+- B0.5 runtime implementation: **IMPLEMENTED IN `fix/new-flight-b05-integrity` — VERIFICATION PENDING**;
+- B0.5 baseline record: `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`;
+- B1A and later runtime batches: NOT STARTED.
 
-**Next runtime milestone:** B0.5 — Integrity prerequisites + golden baseline.
+**Current gate:** verify B0.5 locally. Only after B0.5 passes may B1A — Optional Costs domain contract begin.
