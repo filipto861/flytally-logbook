@@ -46,7 +46,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
-| General PIC invitation across source roles | 🚧 | **ACTIVE**; v16 provenance + generic PIC invite/materialization/UI implemented on feature branch; local verification pending |
+| General PIC invitation across source roles | 🚧 | **ACTIVE**; implementation complete on feature branch; local TypeScript + 909/909 regression + production build PASS; PostgreSQL/browser gates pending |
 | Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; M2B remaining integrity audit is the next roadmap step |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -63,7 +63,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
-| 3 | General PIC invitation across source roles | 🚧 | **ACTIVE** · implementation complete enough for local TypeScript/unit/PostgreSQL/build/browser verification |
+| 3 | General PIC invitation across source roles | 🚧 | **ACTIVE** · local application gates PASS; PostgreSQL + authenticated browser/responsive verification next |
 | 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the General PIC invitation extension |
 | 5 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 6 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
