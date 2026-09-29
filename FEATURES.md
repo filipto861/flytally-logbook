@@ -126,7 +126,7 @@ Implemented by SP1–SP5:
 - Cancel, decline and reinvite lifecycle is bounded to the existing participation states; accepted/materialized participation is not silently reset.
 - The workflow preserves the existing certification payload version and uses the already-deployed additive migration v15; no later schema migration is required.
 
-### General PIC invitation across source roles — PLANNED
+### General PIC invitation across source roles — IN IMPLEMENTATION (UNMERGED)
 
 - Any certified source flight in **any recognized canonical stored role** may explicitly invite an accepted FlyTally Connection to create an independently owned `PIC` copy.
 - The existing Safety Pilot **Actual PIC** link/panel remains a distinct evidence-backed workflow and is not replaced.
