@@ -20,6 +20,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Extended authenticated browser coverage through cancel → reinvite → pending → cancel and revoked-Connection fail-closed behavior.
 - Verification: 900/900 unit/regression PASS; PostgreSQL core 48/48 PASS across 20 files; authenticated Chromium desktop/mobile 22/22 PASS; production build PASS.
 - Existing migration v15 remains the production-verified prerequisite; SP5 itself has no database migration.
+- PR #166 merged; the Safety Pilot ↔ PIC workflow is complete in the repository through SP1–SP5. Production deployment status is tracked separately.
 
 ### Safety Pilot ↔ PIC materialization + recency — SP4
 - Enabled the dedicated Safety Pilot → PIC participation to materialize an independently owned recipient PIC flight.
