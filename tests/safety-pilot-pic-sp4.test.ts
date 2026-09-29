@@ -9,34 +9,38 @@ import { sharedFlightCreditMinutes } from "../lib/shared-flight-credit.ts";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("SP4 materialization removes the staged PIC block and uses certified source commander",()=>{
+test("PIC materialization uses explicit commander provenance while preserving canonical PIC credit",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
   const start=actions.indexOf("async function materializeParticipation");
-  const end=actions.indexOf("export async function inviteConnectedPic",start);
+  const end=actions.indexOf("async function insertPicParticipation",start);
   assert.ok(start>=0&&end>start);
   const materialize=actions.slice(start,end);
-  assert.doesNotMatch(materialize,/if\(participantRole==="PIC"\)return 0/);
-  assert.match(materialize,/f\.certified_at,f\.certification_hash,f\.record_revision,f\.commander/);
-  assert.match(materialize,/pic=participantRole==="PIC"/);
-  assert.match(materialize,/commander=pic\?text\(row\.commander\):instructor\?/);
+  assert.match(materialize,/p\.pic_commander_basis/);
+  assert.match(materialize,/normalizePicCommanderBasis\(row\.pic_commander_basis\)\?\?\"CERTIFIED_SOURCE_COMMANDER\"/);
+  assert.match(materialize,/picCommanderBasis===\"CERTIFIED_SOURCE_COMMANDER\"\?text\(row\.commander\):participantName/);
   assert.match(materialize,/credit=crewRoleCredits\(participantRole,creditMinutes\)/);
+  assert.match(materialize,/recipientNote=pic\?text\(row\.note\)/);
 });
 
-test("SP4 materialization rechecks accepted Connection and Safety Pilot source only for PIC",()=>{
+test("PIC materialization rechecks Connection for every PIC and linked Actual-PIC evidence for certified-source commander basis",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
   const start=actions.indexOf("async function materializeParticipation");
-  const end=actions.indexOf("export async function inviteConnectedPic",start);
+  const end=actions.indexOf("async function insertPicParticipation",start);
   const materialize=actions.slice(start,end);
-  assert.match(materialize,/\$\{participantRole!==\"PIC\"\} OR UPPER\(TRIM\(COALESCE\(sf\.role,''\)\)\)='SAFETY PILOT'/);
-  assert.match(materialize,/\$\{participantRole!==\"PIC\"\} OR EXISTS\(SELECT 1 FROM pilot_connections pc WHERE pc\.status='accepted'/);
-  assert.match(materialize,/pc\.requester_user_id=\$\{Number\(row\.source_user_id\)\} AND pc\.recipient_user_id=\$\{userId\}/);
-  assert.match(materialize,/pc\.recipient_user_id=\$\{Number\(row\.source_user_id\)\} AND pc\.requester_user_id=\$\{userId\}/);
+  assert.match(materialize,/participantRole!==\"PIC\"/);
+  assert.match(materialize,/pc\.status='accepted'/);
+  assert.match(materialize,/picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"/);
+  assert.match(materialize,/UPPER\(TRIM\(COALESCE\(sf\.role,''\)\)\)='SAFETY PILOT'/);
+  assert.match(materialize,/linked\.connected_user_id=\$\{userId\}/);
+  assert.match(materialize,/picCommanderBasis!==\"RECIPIENT_ACCOUNT\"/);
+  assert.match(materialize,/lineage\.participant_flight_id=sf\.id/);
 });
 
-test("SP4 recipient preview preserves the certification-protected source commander for PIC",()=>{
+test("PIC recipient preview follows the stored commander provenance",()=>{
   const page=read("app/(protected)/connections/shared/[id]/page.tsx");
-  assert.match(page,/pic=participantRole==="PIC"/);
-  assert.match(page,/commander:pic\?row\.commander:ownPic\?row\.participant_name:row\.pilot_name/);
+  assert.match(page,/p\.pic_commander_basis/);
+  assert.match(page,/normalizePicCommanderBasis\(row\.pic_commander_basis\)\?\?\"CERTIFIED_SOURCE_COMMANDER\"/);
+  assert.match(page,/picCommanderBasis===\"CERTIFIED_SOURCE_COMMANDER\"\?row\.commander:row\.participant_name/);
 });
 
 test("SP4 PIC materialization credit follows the canonical ordinary PIC path",()=>{

@@ -23,6 +23,7 @@ const migrationNames:Record<number,string>={
   13:"crew connections and verified approvals",
   14:"user-owned structured flight expenses",
   15:"Safety Pilot connected PIC collaboration",
+  16:"general PIC invitation provenance",
 };
 
 const migrationQueries=(version:number)=>{
@@ -476,6 +477,18 @@ const migrationQueries=(version:number)=>{
     sql`CREATE INDEX IF NOT EXISTS idx_flight_connected_crew_connected ON flight_connected_crew(connected_user_id,intended_role)`,
     sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_participant_role_check`,
     sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_participant_role_check CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER','PIC'))`,
+  ];
+  if(version===16)return[
+    sql`ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS pic_commander_basis TEXT`,
+    sql`ALTER TABLE flight_participations DROP CONSTRAINT IF EXISTS flight_participations_pic_commander_basis_check`,
+    sql`ALTER TABLE flight_participations ADD CONSTRAINT flight_participations_pic_commander_basis_check CHECK(
+      pic_commander_basis IS NULL OR (
+        participant_role='PIC' AND pic_commander_basis IN ('CERTIFIED_SOURCE_COMMANDER','RECIPIENT_ACCOUNT')
+      )
+    )`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS flight_participations_one_active_pic_uq
+      ON flight_participations(source_flight_id,source_revision)
+      WHERE participant_role='PIC' AND status IN ('pending','accepted')`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

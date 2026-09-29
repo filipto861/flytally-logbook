@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** DESIGN REVIEW RECONCILED — PRODUCT DECISIONS FROZEN  
+**Status:** IMPLEMENTATION/VERIFICATION COMPLETE — PRODUCTION MIGRATION APPLIED; MERGE PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -143,7 +143,52 @@ Allowed values:
 
 The CHECK must make the field meaningful only for `participant_role='PIC'`. No backfill. Legacy NULL PIC rows retain Safety Pilot semantics.
 
-A database-level single-active-PIC constraint remains under review because it interacts with the product decision on whether multiple independent PIC assertions are ever allowed. Until that decision is frozen, implementation must not add the index.
+**Frozen integrity rule:** at most one active (`pending` or `accepted`) PIC participation may exist for one source flight revision. Migration v16 therefore adds a partial unique index on `(source_flight_id, source_revision)` for active PIC participations. Declined/cancelled/superseded history remains preserved and a later valid invite may proceed after the active row is no longer active.
+
+## Implementation state
+
+Current branch: `feat/general-pic-invitation`
+
+Implemented before verification:
+- canonical `canInviteAsPic` authorization for every stored canonical flight role;
+- migration v16 with immutable invite-time `pic_commander_basis` provenance and one-active-PIC-per-revision database guard;
+- dedicated Safety Pilot invite writes `CERTIFIED_SOURCE_COMMANDER`;
+- generic Crew & logbook sharing PIC invite writes `RECIPIENT_ACCOUNT`;
+- generic PIC re-share is fail-closed for materialized/shared-derived source flights;
+- PIC materialization rechecks certification revision/hash and accepted Connection;
+- Safety Pilot certified-source commander path additionally rechecks the linked Actual PIC;
+- generic PIC commander uses the recipient account display name;
+- recipient PIC copy carries the complete certified event evidence currently selected by the shared-flight materializer, including recorded movements, night/IFR, task/purpose, note and GPS track;
+- recipient role/credit is recalculated as PIC rather than copying source role credit;
+- certified flight and shared-review UI distinguish dedicated Actual PIC from generic PIC sharing.
+
+Verification is pending and must not be represented as PASS until Filip runs the local gates.
+
+Initial local attempt on 29 September 2026:
+- branch/HEAD was confirmed at the intended implementation commit before the run;
+- `npm test` executed 909 tests: 902 passed / 7 failed;
+- the seven failures were stale source-contract assertions from the completed SP2/SP3/SP5/UX/browser-fixture baselines (v15 fixture expectations, the intentionally removed generic-PIC staging block, old notification copy, and roadmap state), not runtime acceptance evidence;
+- those stale assertions were reconciled to the frozen general-PIC contract on the feature branch;
+- `npm run typecheck` and `npm run build` did not execute because the local checkout had no installed TypeScript/Next binaries (`tsc` / `next` not found); dependency installation plus a clean rerun is required;
+- no PASS is claimed from this attempt.
+
+Second local verification on 29 September 2026 after dependency installation and stale-contract reconciliation:
+- `npm ci` completed successfully;
+- `npm run typecheck`: **PASS**;
+- `npm test`: **909/909 PASS**, 0 fail / 0 skip;
+- `npm run build`: **PASS** with Next.js 16.3.2 production build and TypeScript compilation complete;
+- the external parent-directory package-lock warning from Turbopack did not fail the repository build and is not treated as a product regression;
+- PostgreSQL acceptance and authenticated browser/responsive verification remain pending.
+
+Final candidate verification on 29 September 2026:
+- local TypeScript: **PASS**;
+- local unit/regression: **909/909 PASS**, 0 fail / 0 skip;
+- local production build: **PASS**;
+- GitHub Fast application gate on runtime head `4beec6e8afdd23f05136642ace08c399ed952cb0`: **PASS**, 909/909 tests;
+- GitHub PostgreSQL full acceptance: **66/66 PASS** across 24 integration files, 0 fail / 0 skip;
+- authenticated Chromium desktop + mobile: **22/22 PASS**;
+- isolated Neon v16 migration validation: **PASS** for nullable provenance column, CHECK constraint, active-PIC partial unique index and pre-existing-data compatibility;
+- exact production-parent migration candidate was prepared and revalidated on a temporary Neon branch; after explicit approval, migration v16 was applied successfully to the production Neon branch on 29 September 2026. Post-check confirmed the nullable provenance column, CHECK constraint, active-PIC partial unique index and migration ledger row; existing rows with non-null provenance remain 0 before runtime rollout.
 
 ## Verification
 

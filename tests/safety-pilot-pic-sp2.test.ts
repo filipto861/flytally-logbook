@@ -64,7 +64,7 @@ test("SP2 edit reloads stored connected identity by flight id instead of matchin
 });
 
 
-test("SP2 browser coverage exercises manual and connected Actual PIC modes on the v15 fixture",()=>{
+test("SP2 browser coverage exercises manual and connected Actual PIC modes on the current fixture",()=>{
   const browser=read("e2e/public-shell.spec.mjs");
   const db=read("e2e/browser-db.mjs");
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
@@ -74,7 +74,8 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(browser,/selectOption\("9002"\)/);
   assert.match(browser,/fill\("Manual Captain"\)/);
   assert.match(db,/resetSafetyPilotPicFixture/);
-  assert.match(bootstrap,/generate_series\(1,15\)/);
+  assert.match(bootstrap,/generate_series\(1,16\)/);
+  assert.match(bootstrap,/pic_commander_basis TEXT CHECK/);
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
   assert.match(bootstrap,/CREATE TABLE flight_expenses/);
   assert.match(bootstrap,/balloon_operation TEXT NOT NULL DEFAULT/);

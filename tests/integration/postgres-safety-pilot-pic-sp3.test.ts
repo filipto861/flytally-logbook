@@ -22,8 +22,8 @@ function run(statement:string){
 function inviteSql(){
   const source=fs.readFileSync(path.join(root,"app/(protected)/flights/shared-actions.ts"),"utf8");
   const blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
-  const block=blocks.find(value=>value.includes("INSERT INTO flight_participations")&&value.includes("JOIN flight_connected_crew c"));
-  assert.ok(block,"SP3 production invite SQL is present");
+  const block=blocks.find(value=>value.includes("INSERT INTO flight_participations")&&value.includes("pic_commander_basis")&&value.includes("active_pic"));
+  assert.ok(block,"PIC participation insert SQL is present");
   return block;
 }
 function literal(value:unknown){return typeof value==="number"?String(value):`'${String(value).replaceAll("'","''")}'`}
@@ -74,6 +74,7 @@ before(()=>{
       source_user_id BIGINT NOT NULL REFERENCES users(id),
       participant_user_id BIGINT NOT NULL REFERENCES users(id),
       participant_role TEXT NOT NULL CHECK(participant_role IN ('CO-PILOT','SAFETY PILOT','INSTRUCTOR','EXAMINER','OBSERVER','PIC')),
+      pic_commander_basis TEXT,
       source_revision INTEGER NOT NULL,
       source_hash TEXT NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('pending','accepted','declined','superseded','cancelled')),
@@ -89,7 +90,8 @@ before(()=>{
       (10,1,'SAFETY PILOT',NOW(),'hash-r2',2),
       (11,1,'PIC',NOW(),'pic-hash',1),
       (12,1,'SAFETY PILOT',NULL,'',1),
-      (13,1,'SAFETY PILOT',NOW(),'revoked-hash',1);
+      (13,1,'SAFETY PILOT',NOW(),'revoked-hash',1),
+      (14,1,'INSTRUCTOR',NOW(),'generic-hash',1);
     INSERT INTO pilot_connections(requester_user_id,recipient_user_id,status) VALUES
       (1,2,'accepted'),
       (1,3,'accepted');
@@ -105,42 +107,59 @@ before(()=>{
 after(()=>{if(enabled)raw(`DROP SCHEMA IF EXISTS ${quoted} CASCADE`)});
 
 test("SP3 production invite inserts exact certified revision for the stored linked PIC",{skip:!enabled},()=>{
-  const sql=render(inviteSql(),{sourceFlightId:10,userId:1});
+  const sql=render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false});
   const result=run(sql);
   assert.match(result,/\d+\|2$/);
-  assert.equal(run("SELECT participant_user_id||'|'||participant_role||'|'||source_revision||'|'||source_hash||'|'||status FROM flight_participations WHERE source_flight_id=10"),"2|PIC|2|hash-r2|pending");
+  assert.equal(run("SELECT participant_user_id||'|'||participant_role||'|'||COALESCE(pic_commander_basis,'')||'|'||source_revision||'|'||source_hash||'|'||status FROM flight_participations WHERE source_flight_id=10"),"2|PIC|CERTIFIED_SOURCE_COMMANDER|2|hash-r2|pending");
 });
 
-test("SP3 invite cannot be redirected to another accepted Connection",{skip:!enabled},()=>{
+test("dedicated Actual-PIC invite cannot be redirected to another accepted Connection",{skip:!enabled},()=>{
   assert.equal(run("SELECT COUNT(*) FROM flight_connected_crew WHERE source_flight_id=10 AND connected_user_id=3"),"0");
   run("DELETE FROM flight_participations WHERE source_flight_id=10");
-  run(render(inviteSql(),{sourceFlightId:10,userId:1}));
+  assert.equal(run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:3,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false})),"");
+  run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false}));
   assert.equal(run("SELECT participant_user_id FROM flight_participations WHERE source_flight_id=10"),"2");
 });
 
 test("SP3 invite fails closed for wrong source role, uncertified source, and revoked Connection",{skip:!enabled},()=>{
-  assert.equal(run(render(inviteSql(),{sourceFlightId:11,userId:1})),"");
-  assert.equal(run(render(inviteSql(),{sourceFlightId:12,userId:1})),"");
+  const values={userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false};
+  assert.equal(run(render(inviteSql(),{...values,sourceFlightId:11})),"");
+  assert.equal(run(render(inviteSql(),{...values,sourceFlightId:12})),"");
   run("UPDATE pilot_connections SET status='cancelled' WHERE requester_user_id=1 AND recipient_user_id=2");
-  assert.equal(run(render(inviteSql(),{sourceFlightId:13,userId:1})),"");
+  assert.equal(run(render(inviteSql(),{...values,sourceFlightId:13})),"");
   assert.equal(run("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id IN (11,12,13)"),"0");
 });
 
 test("SP3 reinvite can reopen declined or cancelled request but does not reset accepted state",{skip:!enabled},()=>{
   run("UPDATE pilot_connections SET status='accepted' WHERE requester_user_id=1 AND recipient_user_id=2");
   run("DELETE FROM flight_participations WHERE source_flight_id=10");
-  run(render(inviteSql(),{sourceFlightId:10,userId:1}));
+  run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false}));
   const participationId=Number(run("SELECT id FROM flight_participations WHERE source_flight_id=10"));
 
   run(`UPDATE flight_participations SET status='declined',responded_at=NOW(),decision_note='No' WHERE id=${participationId}`);
-  run(render(inviteSql(),{sourceFlightId:10,userId:1}));
+  run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false}));
   assert.equal(run(`SELECT status||'|'||COALESCE(decision_note,'x')||'|'||(responded_at IS NULL)::text FROM flight_participations WHERE id=${participationId}`),"pending||true");
 
   run(`UPDATE flight_participations SET status='cancelled',cancelled_at=NOW(),responded_at=NOW(),decision_note='Cancelled' WHERE id=${participationId}`);
-  run(render(inviteSql(),{sourceFlightId:10,userId:1}));
+  run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false}));
   assert.equal(run(`SELECT status||'|'||(cancelled_at IS NULL)::text||'|'||(responded_at IS NULL)::text FROM flight_participations WHERE id=${participationId}`),"pending|true|true");
 
   run(`UPDATE flight_participations SET status='accepted' WHERE id=${participationId}`);
-  assert.equal(run(render(inviteSql(),{sourceFlightId:10,userId:1})),"");
+  assert.equal(run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false})),"");
   assert.equal(run(`SELECT status FROM flight_participations WHERE id=${participationId}`),"accepted");
+});
+
+
+test("generic PIC basis can invite from a non-Safety-Pilot certified source and active-PIC guard blocks a second recipient",{skip:!enabled},()=>{
+  run("UPDATE pilot_connections SET status='accepted' WHERE requester_user_id=1 AND recipient_user_id IN (2,3)");
+  const generic={sourceFlightId:14,userId:1,participantId:3,basis:"RECIPIENT_ACCOUNT",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':true};
+  const result=run(render(inviteSql(),generic));
+  assert.match(result,/\d+\|3$/);
+  assert.equal(run("SELECT participant_role||'|'||pic_commander_basis||'|'||status FROM flight_participations WHERE source_flight_id=14"),"PIC|RECIPIENT_ACCOUNT|pending");
+
+  run("DELETE FROM flight_participations WHERE source_flight_id=10");
+  run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:2,basis:"CERTIFIED_SOURCE_COMMANDER",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':false}));
+  const blocked=run(render(inviteSql(),{sourceFlightId:10,userId:1,participantId:3,basis:"RECIPIENT_ACCOUNT",'basis!==\"CERTIFIED_SOURCE_COMMANDER\"':true}));
+  assert.equal(blocked,"");
+  assert.equal(run("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=10 AND status='pending'"),"1");
 });

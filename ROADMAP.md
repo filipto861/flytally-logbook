@@ -45,7 +45,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |\n| General PIC invitation across source roles | 🧭 | **DESIGN FROZEN**; Claude review reconciled; all canonical roles allowed; full certified event copy; v16 provenance accepted; implementation NEXT |
+| Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
+| General PIC invitation across source roles | 🚧 | **MERGE GATE**; all runtime/test gates PASS and production v16 migration applied/verified; PR #169 merge pending |
 | Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; M2B remaining integrity audit is the next roadmap step |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -62,7 +63,8 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
-| 3 | General PIC invitation across source roles | 🧭 | **NEXT** · design frozen; implement generic PIC sharing with v16 provenance + full event copy |\n| 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the General PIC invitation extension |
+| 3 | General PIC invitation across source roles | 🚧 | **MERGE GATE** · production v16 applied and post-verified; final PR checks + merge remain |
+| 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the General PIC invitation extension |
 | 5 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 6 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 7 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -205,7 +207,7 @@ The approved priority order is frozen as:
 GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
 
 
-## P2.1 — General PIC invitation across source roles — DESIGN / REVIEW
+## P2.1 — General PIC invitation across source roles — ACTIVE
 
 Filip expanded the post-certification sharing contract on **29 September 2026**: inviting another connected pilot as `PIC` must not be limited to source flights logged as `SAFETY PILOT`. A certified source flight in any recognized canonical role must be able to invite an accepted Connection to create an independently owned PIC record.
 
@@ -223,7 +225,7 @@ Frozen direction:
 - no schema migration unless independent review proves provenance cannot be derived safely;
 - local verification on Filip's PC is the primary development gate.
 
-Independent Claude review completed on **29 September 2026** with verdict **APPROVE WITH CHANGES**. Accepted: explicit invite-time provenance via additive v16 participation metadata, separate `canInviteAsPic` authorization, and multi-PIC/re-share guards. Filip then froze the remaining product decisions: all recognized canonical source roles may invite PIC, and the recipient copy should reproduce the complete certified event data while recalculating recipient role/credit as PIC. Implementation is now unblocked.
+Independent Claude review completed on **29 September 2026** with verdict **APPROVE WITH CHANGES**. Accepted: explicit invite-time provenance via additive v16 participation metadata, separate `canInviteAsPic` authorization, and multi-PIC/re-share guards. Filip then froze the remaining product decisions: all recognized canonical source roles may invite PIC, and the recipient copy should reproduce the complete certified event data while recalculating recipient role/credit as PIC. Implementation is active on `feat/general-pic-invitation`; verification evidence is not yet recorded as PASS.
 
 ## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
 
