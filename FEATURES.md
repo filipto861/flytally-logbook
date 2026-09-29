@@ -113,6 +113,15 @@ Important boundary:
 
 ## Planned
 
+### UI/UX Simplicity & New Flight cognitive-load reduction — ACTIVE AUDIT
+
+- Screenshot-backed audit of the authenticated product across desktop, iPad landscape, iPad portrait and mobile in light/dark.
+- Dedicated New Flight field inventory classifying controls as core-now, contextual, profile-backed, optional or advanced/regulatory.
+- Simplification through information hierarchy and progressive disclosure rather than invented defaults or weaker validation.
+- One canonical FlightForm/business-rule path remains mandatory.
+- Independent Claude review is required after the first-pass audit/design and before broad implementation.
+- Detailed contract: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
+
 ### Safety Pilot ↔ PIC shared-flight workflow — IMPLEMENTED
 
 Implemented by SP1–SP5:
