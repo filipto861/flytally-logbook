@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** DESIGN REVIEW RECONCILED — PRODUCT DECISIONS FROZEN  
+**Status:** IMPLEMENTATION ACTIVE — LOCAL VERIFICATION PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -143,7 +143,26 @@ Allowed values:
 
 The CHECK must make the field meaningful only for `participant_role='PIC'`. No backfill. Legacy NULL PIC rows retain Safety Pilot semantics.
 
-A database-level single-active-PIC constraint remains under review because it interacts with the product decision on whether multiple independent PIC assertions are ever allowed. Until that decision is frozen, implementation must not add the index.
+**Frozen integrity rule:** at most one active (`pending` or `accepted`) PIC participation may exist for one source flight revision. Migration v16 therefore adds a partial unique index on `(source_flight_id, source_revision)` for active PIC participations. Declined/cancelled/superseded history remains preserved and a later valid invite may proceed after the active row is no longer active.
+
+## Implementation state
+
+Current branch: `feat/general-pic-invitation`
+
+Implemented before verification:
+- canonical `canInviteAsPic` authorization for every stored canonical flight role;
+- migration v16 with immutable invite-time `pic_commander_basis` provenance and one-active-PIC-per-revision database guard;
+- dedicated Safety Pilot invite writes `CERTIFIED_SOURCE_COMMANDER`;
+- generic Crew & logbook sharing PIC invite writes `RECIPIENT_ACCOUNT`;
+- generic PIC re-share is fail-closed for materialized/shared-derived source flights;
+- PIC materialization rechecks certification revision/hash and accepted Connection;
+- Safety Pilot certified-source commander path additionally rechecks the linked Actual PIC;
+- generic PIC commander uses the recipient account display name;
+- recipient PIC copy carries the complete certified event evidence currently selected by the shared-flight materializer, including recorded movements, night/IFR, task/purpose, note and GPS track;
+- recipient role/credit is recalculated as PIC rather than copying source role credit;
+- certified flight and shared-review UI distinguish dedicated Actual PIC from generic PIC sharing.
+
+Verification is pending and must not be represented as PASS until Filip runs the local gates.
 
 ## Verification
 
