@@ -39,7 +39,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
 | UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
-| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · screenshot audit + Claude review reconciled; 3 product decisions remain before Batch 1 freeze |
+| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · design gate closed by Filip; Batch 1A optional-cost contract is next, followed by completion/UI simplification |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -65,7 +65,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · evidence + independent review complete; freeze billing / route-time hint / save-another decisions, then Batch 1 |
+| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · evidence/review complete and product decisions frozen; implement small batches beginning with optional-cost semantics |
 | 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
 | 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -254,7 +254,20 @@ Frozen guardrail: **simplicity must not come from invented defaults, hidden mand
 
 Independent Claude review returned **APPROVE WITH CHANGES**. Repository reconciliation is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`. Two review concerns were stale against current `main`: the roadmap priority was already updated by Filip and SP2/SP1–SP5 were already complete. Accepted corrections include single-page progressive disclosure, draft-vs-certification readiness semantics, explicit evidence-bearing profile summaries, one role/context slot, optional training-detail separation, completion-state consolidation and helper-copy triage.
 
-Three product decisions remain before Batch 1 is frozen: whether billing remains a universal draft-save gate, whether missing route/times receive a non-blocking entry hint, and whether `Save and add another` remains on the entry form.
+Filip closed the design gate on **29 September 2026** with three product decisions:
+- **Billing / Costs are optional.** Missing billing must not block saving a flight. If cost data is provided it still uses canonical validation; absence is not represented as zero/default evidence.
+- **No route/time completeness hint in New Flight.** An incomplete draft may save normally. Departure, Arrival, valid UTC off-block/on-block and positive flight time remain certification blockers and are surfaced when the user attempts certification, not as extra entry-page copy.
+- **`Save and add another` moves after the first save/review.** New Flight keeps one primary `Save & review` action; the repeat-entry affordance is offered after a successful save.
+
+Frozen implementation order:
+1. **Batch 1A — optional-cost contract:** remove billing from universal draft-save validation while preserving valid populated cost data and fail-closed malformed input.
+2. **Batch 1B — completion semantics:** remove duplicate readiness/review surfaces, preserve one draft-save blocker surface, keep certification blockers in Review/certification, and move Add another post-save.
+3. **Batch 2 — profile-backed summary:** compact evidence-bearing aircraft/logbook values and auto-surface unresolved state.
+4. **Batch 3 — role/context separation:** one role-driven required-context area; training purpose remains optional detail.
+5. **Batch 4 — optional details + helper-copy triage:** training/professional/costs/notes with populated-state discoverability.
+6. **Batch 5 — essentials hierarchy + responsive polish:** desktop/iPad/mobile/light/dark verification and final cognitive-load measurements.
+
+Before runtime Batch 1A/1B closes, confirm create/update payload-equivalence coverage and measure normal PIC + DUAL + Safety Pilot decision baselines.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
