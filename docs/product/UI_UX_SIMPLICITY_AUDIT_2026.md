@@ -1,6 +1,6 @@
 # UI/UX Simplicity Audit 2026
 
-**Status:** DISCOVERY / AUDIT DESIGN  
+**Status:** AUDIT + INDEPENDENT REVIEW COMPLETE — PRODUCT DECISIONS PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -214,6 +214,8 @@ After the first-pass audit and draft simplification model, prepare a read-only h
 - explicit questions about cognitive load, hierarchy, progressive disclosure, mobile/iPad behavior and hidden failure modes.
 
 Claude is an independent reviewer, not an authority. Every recommendation must be reconciled against the repository and FlyTally data rules before adoption.
+
+Review completed on 29 September 2026 with verdict **APPROVE WITH CHANGES**. Reconciliation against current `main`, screenshot evidence and live certification behavior is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`.
 
 There is no direct Claude connector in the current ChatGPT toolset, so the review is performed through a relay handoff rather than being represented as if ChatGPT invoked Claude directly.
 
