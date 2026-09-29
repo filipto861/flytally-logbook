@@ -38,7 +38,7 @@ CREATE SCHEMA public;
 
 CREATE TABLE flytally_schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_schema_migrations(version,name)
-SELECT value,'browser-smoke-preapplied' FROM generate_series(1,15) value;
+SELECT value,'browser-smoke-preapplied' FROM generate_series(1,16) value;
 
 CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_feature_migrations(migration_key) VALUES
@@ -228,6 +228,7 @@ CREATE TABLE flight_participations(
   source_user_id BIGINT NOT NULL,
   participant_user_id BIGINT NOT NULL,
   participant_role TEXT NOT NULL DEFAULT 'OBSERVER',
+  pic_commander_basis TEXT CHECK(pic_commander_basis IS NULL OR (participant_role='PIC' AND pic_commander_basis IN ('CERTIFIED_SOURCE_COMMANDER','RECIPIENT_ACCOUNT'))),
   source_revision INTEGER NOT NULL DEFAULT 1,
   source_hash TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending',
@@ -239,6 +240,7 @@ CREATE TABLE flight_participations(
   superseded_at TIMESTAMPTZ,
   UNIQUE(source_flight_id,source_revision,participant_user_id)
 );
+CREATE UNIQUE INDEX flight_participations_one_active_pic_uq ON flight_participations(source_flight_id,source_revision) WHERE participant_role='PIC' AND status IN ('pending','accepted');
 CREATE TABLE pilot_connections(
   id BIGSERIAL PRIMARY KEY,
   requester_user_id BIGINT NOT NULL,
