@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** IMPLEMENTATION ACTIVE — LOCAL APP GATES PASS; POSTGRES/BROWSER PENDING  
+**Status:** IMPLEMENTATION/VERIFICATION COMPLETE — PRODUCTION MIGRATION + MERGE PENDING  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -179,6 +179,16 @@ Second local verification on 29 September 2026 after dependency installation and
 - `npm run build`: **PASS** with Next.js 16.3.2 production build and TypeScript compilation complete;
 - the external parent-directory package-lock warning from Turbopack did not fail the repository build and is not treated as a product regression;
 - PostgreSQL acceptance and authenticated browser/responsive verification remain pending.
+
+Final candidate verification on 29 September 2026:
+- local TypeScript: **PASS**;
+- local unit/regression: **909/909 PASS**, 0 fail / 0 skip;
+- local production build: **PASS**;
+- GitHub Fast application gate on runtime head `4beec6e8afdd23f05136642ace08c399ed952cb0`: **PASS**, 909/909 tests;
+- GitHub PostgreSQL full acceptance: **66/66 PASS** across 24 integration files, 0 fail / 0 skip;
+- authenticated Chromium desktop + mobile: **22/22 PASS**;
+- isolated Neon v16 migration validation: **PASS** for nullable provenance column, CHECK constraint, active-PIC partial unique index and pre-existing-data compatibility;
+- exact production-parent migration candidate was prepared and revalidated on a temporary Neon branch; production migration is **NOT YET APPLIED** pending explicit approval.
 
 ## Verification
 
