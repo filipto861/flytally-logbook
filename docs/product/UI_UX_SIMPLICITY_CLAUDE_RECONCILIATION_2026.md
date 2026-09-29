@@ -1,6 +1,6 @@
 # UI/UX Simplicity Audit 2026 — Claude review reconciliation
 
-**Status:** REVIEW RECONCILED — 3 PRODUCT DECISIONS PENDING  
+**Status:** REVIEW RECONCILED — DESIGN GATE CLOSED  
 **Date:** 29 September 2026  
 **Repository:** `filipto861/flytally-logbook`
 
@@ -66,7 +66,7 @@ Frozen design direction:
 - do not represent missing route/times as zero;
 - Review/certification continues to be the authority for certification blockers.
 
-Exact non-blocking copy remains a Filip product decision below.
+Filip chose **no route/time completeness hint in New Flight**. Review/certification remains the authority for those blockers and explains them when certification is attempted.
 
 ### R2 — Use decision metrics, not height/count alone
 
@@ -181,17 +181,17 @@ Compact/move to contextual help:
 
 A per-string inventory is required before the helper-copy batch.
 
-### R9 — Billing semantics stay frozen until Filip decides
+### R9 — Billing / Costs become optional
 
-Accepted.
+Filip decided that billing is **not** a universal logbook-save requirement.
 
-The current save contract includes billing. This audit may simplify how a valid profile-backed billing state is shown, but may not remove the gate silently.
-
-If billing remains required:
-- a valid profile-backed value should normally be summarized;
-- unresolved billing remains explicit and blocking.
-
-Whether billing belongs in the universal flight-save contract is a product/business rule decision.
+Frozen contract:
+- an otherwise valid flight may be saved with no billing basis and no cost tracking;
+- absence of billing/cost data is not converted to zero or an invented default;
+- if billing/cost data is populated, malformed values still fail closed under canonical parsing/validation;
+- existing populated billing/cost data remains preserved on edit;
+- cost tracking belongs in Optional details rather than required profile evidence;
+- this business-rule change is implemented in a dedicated small batch before broader presentation compaction.
 
 ### R10 — S06 is treated as a symptom/acceptance metric
 
@@ -216,7 +216,7 @@ Current EASA certification blocks on missing departure/arrival/off-block/on-bloc
 - “draft can be saved” semantics during entry;
 - “certification still needs…” semantics without changing persistence gates.
 
-The exact wording and whether the soft prompt is shown in the form remain a product choice.
+Filip chose **no soft prompt in the entry form**. Missing route/times remain silent during ordinary draft entry and are surfaced as blockers only when certification is attempted.
 
 ### Claude's fixed “3 deliberate inputs” target is not frozen
 
@@ -269,7 +269,7 @@ Normally compact:
 - logbook/evidence;
 - class/category;
 - operation/engine where applicable;
-- billing outcome while billing remains mandatory.
+- billing/cost tracking is no longer required profile evidence and moves to Optional details.
 
 A clear Change/Edit affordance remains. Anything unresolved auto-surfaces.
 
@@ -277,15 +277,15 @@ A clear Change/Edit affordance remains. Anything unresolved auto-surfaces.
 Collapsed unless populated/requested:
 - training purpose/task;
 - professional context;
-- costs/expenses;
+- billing/costs/expenses;
 - notes.
 
 ### E — Completion
 One surface:
 - draft-save blockers;
-- optional non-blocking completeness hint if Filip approves it;
+- no extra route/time certification hint during entry;
 - one primary `Save & review`;
-- treatment of `Save and add another` remains a Filip decision.
+- after successful save/review, offer `Add another flight`.
 
 ## Reconciled implementation order
 
@@ -301,20 +301,25 @@ Before runtime Batch 1, add/confirm:
 - golden create/update payload equivalence test;
 - decision-count baseline for normal PIC + DUAL + Safety Pilot.
 
-### Batch 1 — Completion semantics and duplicate review
-- separate draft-save readiness from certification completeness;
-- consolidate duplicate readiness/review surfaces;
-- keep exact existing save gates;
-- preserve Review/certification blockers.
+### Batch 1A — Optional-cost contract
+- remove billing from the universal draft-save gate;
+- allow empty billing/cost tracking without inventing a default;
+- preserve valid populated billing/share/expense data;
+- reject malformed populated billing values;
+- add parser/create/update regression coverage.
 
-Dependency: Filip decision on the soft route/time prompt and `Save and add another`.
+### Batch 1B — Completion semantics and duplicate review
+- remove the duplicated `Review before save` / readiness surfaces after inventorying unique warnings;
+- keep one draft-save blocker surface only when blockers exist;
+- do not show route/time certification hints in New Flight;
+- preserve certification-time blockers and their fail-closed behavior;
+- keep one primary `Save & review`;
+- move `Add another flight` to the successful post-save/review state.
 
 ### Batch 2 — Profile-backed summary
 - compact evidence-bearing profile/logbook summary;
 - auto-surface unresolved/ambiguous values;
 - preserve canonical validation.
-
-Dependency: billing rule remains current unless Filip explicitly changes it.
 
 ### Batch 3 — Role/context separation
 - create one role/category-driven required-context area;
@@ -324,7 +329,7 @@ Dependency: billing rule remains current unless Filip explicitly changes it.
 ### Batch 4 — Optional details + helper-copy triage
 - training purpose/task;
 - professional context;
-- costs/expenses;
+- billing/costs/expenses;
 - notes;
 - populated edit-state indicators;
 - per-string helper-text review.
@@ -369,12 +374,12 @@ Behavior:
 - light/dark + desktop/iPad landscape/iPad portrait/mobile;
 - no keyboard obstruction if any sticky action treatment is adopted.
 
-## Pending Filip product decisions
+## Frozen Filip product decisions
 
-Only three genuine product choices remain before freezing Batch 1/2 behavior:
+Filip closed the gate on 29 September 2026:
 
-1. **Billing gate:** keep billing mandatory for every saved flight, or make cost tracking optional?
-2. **Missing route/times:** show a non-blocking completeness hint during entry, or leave that entirely to Review/certification?
-3. **Save and add another:** keep it as a visible secondary action on New Flight, or move that option until after the first save/review?
+1. **Billing / Costs:** optional; absence does not block save.
+2. **Missing route/times:** no entry-page hint; certification owns and explains those blockers.
+3. **Save and add another:** remove from New Flight; offer after successful save/review.
 
-All other Claude points are either accepted/reconciled above, already resolved in the repository, or explicitly deferred.
+No further product decision is required before Batch 1A. All other Claude points are accepted/reconciled above, already resolved in the repository, or explicitly deferred.
