@@ -15,11 +15,11 @@ This section tracks changes intended for the next named release. An entry is pro
 ### New Flight UI/UX Simplicity — B0.5 integrity baseline
 - Added a fail-closed selected-aircraft profile-default resolver that reuses the canonical M1 validator and rejects defaults when validation would repair or replace the stored evidence/class.
 - Valid ULL profiles remain ULL; invalid/missing legacy profile context now surfaces as **Needs configuration** instead of silently falling back to ULL.
-- Preserved stored same-aircraft Edit snapshots; the current mutable aircraft profile is consulted only when profile defaults are actually being applied.
+- Preserved stored same-aircraft Edit snapshots; changing to another aircraft and back restores the original stored aircraft-dependent snapshot instead of leaving mixed temporary-profile state.
 - Added a complete golden EASA SEP PIC `parseFlightInput()` payload baseline plus source coverage proving manual Create and Update continue through the same canonical parser.
 - Recorded the approved Role / normal landing / PF preset policy and scenario-specific decision-density baseline for later UX comparison.
 - No schema, certification hash/version, recency calculation, connection/PIC materialization or UTC semantics changed.
-- **Verification status:** NOT RUN. Branch implementation is not release-complete until local TypeScript/tests/build evidence is recorded.
+- **Verification status:** isolated helper behavior 5/5 PASS and FlightForm syntax transpilation PASS; repository TypeScript/targeted/full tests/build/browser remain NOT RUN. Branch implementation is not release-complete until the repository gate is recorded.
 
 
 ### General PIC invitation across source roles
