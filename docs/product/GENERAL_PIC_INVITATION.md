@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** DESIGN REVIEW RECONCILED — 2 PRODUCT DECISIONS OPEN  
+**Status:** DESIGN REVIEW RECONCILED — PRODUCT DECISIONS FROZEN  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -55,7 +55,7 @@ Unknown/malformed persisted roles are rejected.
 
 The current Safety Pilot-only branch in `validCrewCombination(sourceRole, "PIC")` remains part of the dedicated Actual-PIC credit pairing contract and is not repurposed as the generic sharing authorization rule.
 
-**Open product decision:** define the exact allowed role set. Claude recommends excluding `SOLO`, `PAX`, and `OBSERVER`; source role `PIC` requires an explicit Filip decision because it can produce two independently owned PIC assertions for one event.
+**Frozen product decision — Filip, 29 September 2026:** generic PIC invitation is allowed from **every recognized canonical stored source role**, including `PIC`, `SOLO`, `PAX`, and `OBSERVER`. Unknown or malformed roles still fail closed. This is an explicit user-controlled sharing action, not an automatic regulatory assertion by FlyTally.
 
 ## UI contract
 
@@ -210,13 +210,19 @@ Repository verification after review:
 
 ### Generic materialization field policy
 
-Accepted fail-closed baseline:
-- copy role-agnostic event facts: date, aircraft identity/config snapshot, airports, timestamps, block/air event timing, task/purpose where role-agnostic, and attached track provenance;
-- assign canonical PIC credit through the recipient role path;
-- do **not** copy source instructor/dual/countersignature evidence;
-- do **not** copy source PF/movement/landing/takeoff/approach evidence automatically.
+**Frozen product decision — Filip, 29 September 2026:** the recipient PIC copy should be fully populated from the certified source event so the recipient does not need to re-enter flight details manually.
 
-**Open product decision:** whether generic recipient PIC drafts should also start with zero/unknown IFR and night time, or whether those event-time fields are sufficiently role-agnostic to copy. The safer default is zero/unknown until recipient review.
+The implementation must therefore copy the complete certified event snapshot that is meaningful to the recipient record, including:
+- date, aircraft identity/config snapshot, airports, all recorded event timestamps and durations;
+- route/task/purpose/note context where stored on the source;
+- GPS/track provenance;
+- recorded night and IFR time;
+- recorded movement evidence, including landings, takeoffs and approaches;
+- other source event evidence needed to reproduce the same flight event.
+
+This is **not** a raw database row clone. Recipient-owned role/credit fields are recalculated for `PIC` through the canonical credit path. Source-only ownership, certification, approval, invitation, billing/audit linkage, and any field whose meaning is strictly the source pilot's own role/credential state must not be copied as recipient credit.
+
+The recipient still explicitly reviews/accepts the invitation, but acceptance should produce a complete PIC record without requiring manual data completion.
 
 ### Re-share guard
 
@@ -226,3 +232,19 @@ Until explicit immutable lineage exists:
 - this prevents A → B → A / A → B → C PIC copy chains from creating duplicate event credit.
 
 This guard is limited to generic PIC sharing and does not rewrite existing legacy sharing semantics.
+
+
+## Frozen decisions after Claude review
+
+Filip resolved the two remaining product questions on 29 September 2026:
+
+1. **Source-role scope:** every recognized canonical role may invite an accepted Connection as PIC. This includes `PIC`, `SOLO`, `PAX`, and `OBSERVER`. Unknown roles remain fail-closed.
+2. **Recipient data completeness:** the accepted PIC record should be fully populated from the certified source event. Movement evidence, IFR/night time, route/timing/GPS and other event facts are copied so the recipient does not need to re-enter them.
+
+Safety/data-integrity interpretation:
+- the copy represents the source pilot's certified event evidence plus the recipient's explicit acceptance;
+- FlyTally does not independently assert that every copied movement/IFR/night item was personally performed by the recipient merely because it was present on the source;
+- recipient role/credit is recalculated as PIC and source role-specific credit is not inherited;
+- the source record is never rewritten;
+- exact revision/hash, accepted Connection and provenance checks remain mandatory;
+- explicit invite-time commander provenance via v16 remains accepted.
