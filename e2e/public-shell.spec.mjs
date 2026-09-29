@@ -201,6 +201,11 @@ test("certified Safety Pilot can invite only the stored connected Actual PIC",as
   await panel.getByRole("button",{name:"Cancel PIC invitation"}).click();
   await expect(panel.getByRole("button",{name:"Invite Actual PIC"})).toBeVisible();
 
+  await panel.getByRole("button",{name:"Invite Actual PIC"}).click();
+  await expect(panel.getByText("PIC invitation · pending")).toBeVisible();
+  await panel.getByRole("button",{name:"Cancel PIC invitation"}).click();
+  await expect(panel.getByRole("button",{name:"Invite Actual PIC"})).toBeVisible();
+
   revokeSafetyPilotPicInviteConnectionFixture();
   await page.reload();
   await expect(panel.getByText(/no longer an accepted Connection/)).toBeVisible();

@@ -1,6 +1,6 @@
 # Safety Pilot ↔ PIC Shared-Flight Workflow
 
-**Status:** Priority 2 implementation — SP4 merge gate; SP5 next  
+**Status:** Priority 2 implementation — SP5 verified; PR #166 merge gate  
 **Last reconciled:** 27 September 2026
 
 This document owns the detailed workflow/data-model contract. `ROADMAP.md` carries only priority and milestone status.
@@ -62,7 +62,8 @@ No name matching is permitted.
 **SP1:** DONE / merged in PR #162.  
 **SP2:** DONE / merged in PR #163. Create/Edit supports manual or explicitly connected Actual PIC identity with atomic persistence, accepted-Connection revalidation, server-canonicalized commander text, edit reload by flight ID, and no invitation side effect.  
 **SP3:** DONE / merged in PR #164. Dedicated certified PIC invitation is live in the code path; PIC materialization remains separated into SP4.
-**SP4:** implementation/verification complete in PR #165 and at the merge gate. Recipient PIC materialization, certified source commander preservation, PIC-only accepted-Connection recheck and recency equivalence proof are complete. SP5 lifecycle/release closeout remains separate.
+**SP4:** DONE / merged in PR #165. Recipient PIC materialization, certified source commander preservation, PIC-only accepted-Connection recheck and recency equivalence proof are complete.
+**SP5:** implementation/verification complete in PR #166 and at the merge gate. Correction/revision, cancel/decline/reinvite and release verification are complete; final P2 status flips to DONE only after PR #166 is confirmed merged.
 
 **SP2 closeout:** final repository verification and authenticated browser smoke passed before merge. The browser harness was hardened to support row-returning local PostgreSQL transactions and current flight-detail fixture schema without changing the production SP2 persistence contract.
 
@@ -472,6 +473,16 @@ Implemented contract:
 - build + Chromium desktop/mobile;
 - migration/deploy verification;
 - ROADMAP / FEATURES / CHANGELOG closeout.
+
+**SP5 verification closeout — 28 September 2026**
+- Full unit/regression suite: 900/900 PASS, 0 fail, 0 skip.
+- PostgreSQL core acceptance: 48/48 PASS across 20 core files, 0 fail, 0 skip.
+- Authenticated Chromium desktop/mobile smoke: 22/22 PASS; production build PASS.
+- Browser lifecycle covers cancel → reinvite → pending → cancel and then live revoked-Connection fail-closed behavior.
+- Correction source assertions prove only pending current-revision invitations are superseded; accepted/materialized recipient records are not rewritten and the connected-PIC link is preserved.
+- Dedicated reinvite is limited to pending/declined/cancelled lifecycle states and does not rewrite accepted materialization.
+- No SP5 schema migration exists. Migration v15 remains the already deployed/verified prerequisite from SP1.
+- Final product/documentation status changes to DONE after PR #166 merge is confirmed; production deployment status is recorded separately and is never inferred from test/build success.
 
 ## Review gate status
 
