@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { crewRoleCredits,normalizeCrewRole,validCrewCombination } from "../lib/crew.ts";
+import { canInviteAsPic,crewRoleCredits,normalizeCrewRole,validCrewCombination } from "../lib/crew.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -20,13 +20,16 @@ test("SP1 grants canonical PIC credit to a PIC participant",()=>{
   assert.deepEqual(crewRoleCredits("PIC",73),{role:"PIC",pic:73,copilot:0,instructor:0});
 });
 
-test("staged rollout keeps PIC out of the generic arbitrary-recipient invite path",()=>{
+test("dedicated Safety Pilot PIC pairing stays narrow while generic PIC authorization is separate",()=>{
   const actions=read("app/(protected)/flights/shared-actions.ts");
   const detail=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(actions,/if\(role==="PIC"\)return;/);
-  assert.doesNotMatch(actions,/if\(participantRole==="PIC"\)return 0;/);
-  assert.match(actions,/participantRole!==\"PIC\"/);
-  assert.match(detail,/CREW_ROLES\.filter\(item=>item!=="PIC"&&/);
+  assert.equal(validCrewCombination("SAFETY PILOT","PIC"),true);
+  assert.equal(validCrewCombination("INSTRUCTOR","PIC"),false);
+  assert.equal(canInviteAsPic("INSTRUCTOR"),true);
+  assert.doesNotMatch(actions,/if\(role==="PIC"\)return;/);
+  assert.match(actions,/role==="PIC"/);
+  assert.match(actions,/canInviteAsPic\(source\[0\]\.role\)/);
+  assert.match(detail,/canInviteAsPic\(role\)/);
 });
 
 test("SP1 migration and persistence helpers preserve owner, role and accepted-Connection gates",()=>{
