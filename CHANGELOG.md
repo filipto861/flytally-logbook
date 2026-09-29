@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added generic PIC sharing through Crew & logbook sharing, with accepted-Connection, exact revision/hash, owner and re-share guards.
 - Generic PIC materialization uses recipient account commander semantics and carries the complete certified event data while recalculating recipient role/credit as PIC.
 - Added source/unit and PostgreSQL acceptance coverage for provenance, migration constraints, generic INSTRUCTOR→PIC materialization, movement/night/IFR copy, duplicate/reinvite and active-PIC guards.
-- **Verification status:** LOCAL TYPECHECK / UNIT / POSTGRES / BUILD / BROWSER NOT YET RUN on the implementation branch.
+- **Verification status:** local TypeScript PASS; 909/909 unit/regression PASS; production Next.js build PASS. PostgreSQL acceptance and authenticated browser/responsive verification remain pending.
 
 ### Safety Pilot ↔ PIC lifecycle closeout — SP5
 - Added release-level lifecycle coverage for certified-source corrections, pending invitation supersession, cancellation, decline and PIC reinvitation.
