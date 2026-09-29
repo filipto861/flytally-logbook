@@ -99,7 +99,8 @@ B0.5 changes the form-default boundary so that:
 - invalid legacy profile defaults resolve to an explicit unresolved state;
 - the Aircraft & logbook disclosure opens through the existing missing evidence/class behavior;
 - the Registration/profile summary exposes **Needs configuration**;
-- editing an existing flight with the same registration continues to preserve its stored flight snapshot rather than re-deriving it from a mutable current profile.
+- editing an existing flight with the same registration continues to preserve its stored flight snapshot rather than re-deriving it from a mutable current profile;
+- if an edit temporarily selects another aircraft and then returns to the original registration, the original stored aircraft-dependent snapshot is restored instead of leaving mixed state from the temporary selection.
 
 ## Golden payload baseline
 
@@ -122,16 +123,23 @@ A duplicate identical `landingsDay` submission is also frozen as deterministic, 
 
 ## Verification state
 
-Not yet claimed:
+Isolated local checks completed in the ChatGPT working container:
 
-- TypeScript: **NOT RUN**
-- targeted tests: **NOT RUN**
+- pure profile-default helper behavior: **5/5 PASS** (valid ULL, missing profile, ULL/SEP mismatch, valid EASA, incomplete EASA identity);
+- transformed `FlightForm` TypeScript/JSX syntax transpilation: **PASS**.
+
+These are not a substitute for the repository gate.
+
+Still not claimed:
+
+- repository TypeScript: **NOT RUN**
+- repository targeted tests: **NOT RUN**
 - full unit/regression suite: **NOT RUN**
-- build: **NOT RUN**
+- production build: **NOT RUN**
 - PostgreSQL: **N/A for the code change; no schema change**
-- browser/screenshot verification: **NOT RUN**
+- authenticated browser/screenshot verification: **NOT RUN**
 
-B0.5 is not DONE until the required local verification is completed and recorded.
+B0.5 is not DONE until the required repository-local verification is completed and recorded.
 
 ## Next after B0.5 verification
 
