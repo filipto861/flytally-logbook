@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** DESIGN / REVIEW GATE  
+**Status:** DESIGN REVIEW RECONCILED — 2 PRODUCT DECISIONS OPEN  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -47,13 +47,15 @@ The source flight's own role/credit is never rewritten because another pilot acc
 
 ## Source-role contract
 
-`PIC` invitation is valid from **every recognized canonical source flight role**.
+Generic PIC authorization is **separate** from `validCrewCombination(sourceRole, participantRole)`.
 
-This must fail closed for malformed/unknown persisted roles rather than treating an arbitrary string as valid.
+Add a dedicated fail-closed predicate such as `canInviteAsPic(sourceRole)`, derived from the canonical flight-entry role registry/domain rather than a second drifting list.
 
-The canonical source-role domain is the existing flight-entry role set, not a second hand-maintained list.
+Unknown/malformed persisted roles are rejected.
 
-The current Safety Pilot-only rule in `validCrewCombination(sourceRole, "PIC")` is therefore superseded for the general invite path.
+The current Safety Pilot-only branch in `validCrewCombination(sourceRole, "PIC")` remains part of the dedicated Actual-PIC credit pairing contract and is not repurposed as the generic sharing authorization rule.
+
+**Open product decision:** define the exact allowed role set. Claude recommends excluding `SOLO`, `PAX`, and `OBSERVER`; source role `PIC` requires an explicit Filip decision because it can produce two independently owned PIC assertions for one event.
 
 ## UI contract
 
@@ -94,14 +96,24 @@ All PIC materialization must continue to:
 - use canonical PIC credit/recency semantics;
 - never add PIC credit to the source flight.
 
-### Commander snapshot
+### Commander provenance
 
-Commander handling differs by provenance:
+Commander behavior must be selected explicitly at **invite time**, not inferred later from mutable collaboration metadata.
 
-- **Safety Pilot linked Actual PIC:** when source role is `SAFETY PILOT` and the PIC recipient matches the persisted `flight_connected_crew` Actual-PIC link, preserve the certification-protected source `commander`.
-- **General PIC invitation:** otherwise snapshot the recipient account's current canonical display name into the recipient record's `commander` when materialized.
+Add an additive nullable participation field, proposed:
 
-This prevents an instructor/examiner/other source flight from incorrectly copying an unrelated source commander into the recipient's PIC record.
+`pic_commander_basis = CERTIFIED_SOURCE_COMMANDER | RECIPIENT_ACCOUNT`
+
+Rules:
+- dedicated Safety Pilot **Invite Actual PIC** writes `CERTIFIED_SOURCE_COMMANDER`;
+- generic **Invite as PIC** writes `RECIPIENT_ACCOUNT`;
+- existing legacy PIC participations with NULL are interpreted as `CERTIFIED_SOURCE_COMMANDER` because they can only originate from the completed Safety Pilot path;
+- the basis is immutable once that participation row exists;
+- a conflicting second invite path returns/reuses the existing row rather than changing provenance.
+
+For `CERTIFIED_SOURCE_COMMANDER`, materialization must additionally re-check that the exact certified source revision is still Safety Pilot and that the recipient still matches the connected Actual-PIC link. Failure is fail-closed; never silently downgrade to recipient-account semantics.
+
+For `RECIPIENT_ACCOUNT`, use the server-canonicalized recipient account display name as the recipient record commander. This is consistent with the current connected Actual-PIC create/edit path, which already canonicalizes `commander` from `users.display_name`.
 
 No name matching is used to establish identity.
 
@@ -119,14 +131,19 @@ Correction/new source revision continues to invalidate stale revision-bound pend
 
 ## Schema boundary
 
-No schema migration is currently expected.
+Independent review found inferred provenance unsafe across correction/reinvite/materialization because `flight_connected_crew` is per-flight mutable collaboration metadata while invitations are revision-bound.
 
-The existing `flight_participations` role `PIC`, revision/hash binding, accepted-Connection checks and `flight_connected_crew` Actual-PIC link are sufficient if provenance can be derived safely from:
+**Accepted design change:** add migration v16 with one nullable immutable participation column:
 
-- source role = `SAFETY PILOT`; and
-- invited participant = current linked Actual PIC.
+`pic_commander_basis`
 
-If independent review finds that this inference is ambiguous under correction/lifecycle states, stop and design an additive provenance field instead of using heuristics.
+Allowed values:
+- `CERTIFIED_SOURCE_COMMANDER`
+- `RECIPIENT_ACCOUNT`
+
+The CHECK must make the field meaningful only for `participant_role='PIC'`. No backfill. Legacy NULL PIC rows retain Safety Pilot semantics.
+
+A database-level single-active-PIC constraint remains under review because it interacts with the product decision on whether multiple independent PIC assertions are ever allowed. Until that decision is frozen, implementation must not add the index.
 
 ## Verification
 
@@ -168,3 +185,44 @@ Before implementation, ask the second AI to review:
 3. Are there any hidden assumptions in duplicate detection or recency that still require Safety Pilot as the source role?
 4. Can `validCrewCombination` use the canonical flight-role domain without introducing a circular dependency or a second divergent role list?
 5. Does the generic invitation UI need any additional guard to avoid confusing the dedicated Safety Pilot Actual-PIC panel?
+
+
+## Review reconciliation — Claude / 29 September 2026
+
+Claude returned **APPROVE WITH CHANGES**.
+
+Accepted changes:
+- explicit invite-time PIC commander provenance via additive v16 participation metadata;
+- generic PIC authorization separated from `validCrewCombination`;
+- fail-closed declarative role authorization;
+- explicit multi-PIC guard;
+- re-share/lineage guard;
+- generic PIC materialization must not blindly copy source role-specific evidence;
+- concurrent dedicated/generic invite to the same recipient must result in one deterministic participation row;
+- existing Safety Pilot tests/behavior remain unchanged.
+
+Repository verification after review:
+- `flight_connected_crew` upsert is draft-only, but the link is intentionally carried across correction on the same source flight ID and can therefore differ between revisions; inferred provenance is not sufficient.
+- current materialization copies source movement fields (`landings_*`, `takeoffs_*`, `approaches_*`, `movement_evidence_recorded`) and time fields including IFR/night; that copy set is unsafe for generic PIC without a narrower contract.
+- current recipient flights have no immutable ancestor/origin field on the `flights` row. Existing participation linkage can identify that a flight was materialized, so generic PIC re-sharing from a materialized shared copy should fail closed unless/until lineage is modeled explicitly.
+- current generic own-flight form stores `commander` as user-entered text, while connected Actual PIC already canonicalizes from `users.display_name`. Generic PIC materialization therefore needs an explicit server-side commander rule rather than assuming an existing SELF convention.
+- participation uniqueness is per source revision + participant, not per PIC role, so multiple different PIC recipients are technically possible unless separately guarded.
+
+### Generic materialization field policy
+
+Accepted fail-closed baseline:
+- copy role-agnostic event facts: date, aircraft identity/config snapshot, airports, timestamps, block/air event timing, task/purpose where role-agnostic, and attached track provenance;
+- assign canonical PIC credit through the recipient role path;
+- do **not** copy source instructor/dual/countersignature evidence;
+- do **not** copy source PF/movement/landing/takeoff/approach evidence automatically.
+
+**Open product decision:** whether generic recipient PIC drafts should also start with zero/unknown IFR and night time, or whether those event-time fields are sufficiently role-agnostic to copy. The safer default is zero/unknown until recipient review.
+
+### Re-share guard
+
+Until explicit immutable lineage exists:
+- a flight that was itself materialized from a participation may not be used as the source of another generic PIC invitation;
+- direct source owner → recipient remains supported;
+- this prevents A → B → A / A → B → C PIC copy chains from creating duplicate event credit.
+
+This guard is limited to generic PIC sharing and does not rewrite existing legacy sharing semantics.
