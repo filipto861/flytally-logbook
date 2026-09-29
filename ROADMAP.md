@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 27 September 2026
+**Last updated:** 29 September 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
 
@@ -38,7 +38,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Backup / recovery / protected history | ✅ | Portable backup, review-first restore and protected-history preservation implemented |
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
-| UX & design consistency | ✅ | UX consolidation and design-consistency audit Batch 1–11 complete |
+| UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
+| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · screenshot-backed task-flow/cognitive-load audit, with New Flight as the primary problem area |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -47,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; **M2B remaining integrity audit is NEXT** |
+| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B is intentionally paused while the core UI/UX simplicity audit runs |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
@@ -64,14 +65,15 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | **NEXT** · resume the historical-evidence/current-profile integrity audit |
-| 5 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
-| 6 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
-| 7 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 8 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
-| 9 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
+| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · new-user feedback exposed cognitive overload in core workflows, especially New Flight; screenshot-backed audit before redesign |
+| 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
+| 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
+| 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
+| 8 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 9 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
+| 10 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
 
-**Priority rule:** production/data-integrity defects can pre-empt this order. Convenience features do not pre-empt unresolved correctness issues.
+**Priority rule:** production/data-integrity defects can pre-empt this order. The active simplicity audit is treated as a core data-entry usability/integrity workstream, not cosmetic convenience work: reducing confusion must not weaken evidence or validation.
 
 ## P1 — GPS touch-and-go detection reliability — DONE
 
@@ -203,8 +205,8 @@ Repository reconciliation resolved two proposed sequencing concerns without reor
 2. **Timezone issue #144 vs M2B**  
    The current hard-coded `Europe/Prague` defaults affect manual-flight default date and aircraft/rate `valid_from` dates. The explicit `part_fcl_credit_from` value is a separately entered/persisted field and is not populated from that hard-coded `today` default. Therefore #144 remains important but does not block M2B's credit-provenance audit.
 
-The approved priority order is frozen as:
-GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
+The previously approved order was GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research. Filip explicitly reprioritized on 29 September 2026 after fresh-user usability feedback. The current order is:
+GPS → Safety Pilot/PIC → General PIC → **UI/UX Simplicity Audit** → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
 
 
 ## P2.1 — General PIC invitation across source roles — DONE
@@ -226,6 +228,31 @@ Frozen direction:
 - local verification on Filip's PC is the primary development gate.
 
 Independent Claude review completed on **29 September 2026** with verdict **APPROVE WITH CHANGES**. Accepted: explicit invite-time provenance via additive v16 participation metadata, separate `canInviteAsPic` authorization, and multi-PIC/re-share guards. Filip then froze the remaining product decisions: all recognized canonical source roles may invite PIC, and the recipient copy should reproduce the complete certified event data while recalculating recipient role/credit as PIC. Implementation is complete. PR #169 merged as `a51e8bb13f702c9a04337bff19755ad614ccfcc1`; migration v16 was applied and post-verified in production before merge; Vercel production deployment `dpl_9ba1sxfaZ1yyBVPFwcBdF3S9B8W3` reached READY and `https://fly-tally.com` returned HTTP 200.
+
+## P2.2 — UI/UX Simplicity Audit 2026 — ACTIVE
+
+A fresh-user usability check on 29 September 2026 exposed that FlyTally can still feel cognitively dense despite the completed visual-consistency audit. The strongest reported friction is **New Flight**, where a new user can be unsure which of the many visible aviation/logbook inputs matter now versus later.
+
+Detailed audit contract:
+
+`docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`
+
+This workstream is deliberately **audit-first**:
+
+- build deterministic screenshot capture from the isolated authenticated browser fixture;
+- review desktop, iPad landscape, iPad portrait and mobile in light + dark;
+- audit the complete route hierarchy, not only individual CSS details;
+- perform a field-by-field New Flight cognitive-load classification;
+- distinguish core-now, contextual, profile-backed, optional and advanced/regulatory inputs;
+- verify primary-action clarity, progressive disclosure, helper-text noise, loading/error/empty states and responsive behavior;
+- draft the simplification information architecture only after evidence collection;
+- obtain an independent Claude read-only review of the audit/design before implementation;
+- reconcile Claude recommendations against the live repository and FlyTally data-integrity rules;
+- implement only in small reviewed batches with screenshot/browser evidence.
+
+Frozen guardrail: **simplicity must not come from invented defaults, hidden mandatory evidence, a parallel flight model, weakened validation or silent business-rule changes.**
+
+The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
 ## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
 
