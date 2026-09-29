@@ -1,5 +1,20 @@
+import { ROLES } from "./flight-input.ts";
+
 export const CREW_ROLES=["CO-PILOT","SAFETY PILOT","INSTRUCTOR","EXAMINER","OBSERVER","PIC"] as const;
 export type CrewRole=(typeof CREW_ROLES)[number];
+
+export const PIC_COMMANDER_BASES=["CERTIFIED_SOURCE_COMMANDER","RECIPIENT_ACCOUNT"] as const;
+export type PicCommanderBasis=(typeof PIC_COMMANDER_BASES)[number];
+
+export function canInviteAsPic(sourceRole:unknown){
+  const normalized=String(sourceRole??"").trim().toUpperCase();
+  return ROLES.includes(normalized as (typeof ROLES)[number]);
+}
+
+export function normalizePicCommanderBasis(value:unknown):PicCommanderBasis|null{
+  const normalized=String(value??"").trim().toUpperCase();
+  return PIC_COMMANDER_BASES.includes(normalized as PicCommanderBasis)?normalized as PicCommanderBasis:null;
+}
 
 export const VERIFIER_ROLES=["INSTRUCTOR","SUPERVISING PIC","EXAMINER"] as const;
 export type VerifierRole=(typeof VERIFIER_ROLES)[number];
