@@ -237,6 +237,10 @@ Detailed audit contract:
 
 `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`
 
+Frozen implementation contract:
+
+`docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
+
 This workstream is deliberately **audit-first**:
 
 - build deterministic screenshot capture from the isolated authenticated browser fixture;
@@ -254,20 +258,25 @@ Frozen guardrail: **simplicity must not come from invented defaults, hidden mand
 
 Independent Claude review returned **APPROVE WITH CHANGES**. Repository reconciliation is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`. Two review concerns were stale against current `main`: the roadmap priority was already updated by Filip and SP2/SP1–SP5 were already complete. Accepted corrections include single-page progressive disclosure, draft-vs-certification readiness semantics, explicit evidence-bearing profile summaries, one role/context slot, optional training-detail separation, completion-state consolidation and helper-copy triage.
 
-Filip closed the design gate on **29 September 2026** with three product decisions:
+Filip closed the design gate on **29 September 2026**. Frozen decisions:
 - **Billing / Costs are optional.** Missing billing must not block saving a flight. If cost data is provided it still uses canonical validation; absence is not represented as zero/default evidence.
 - **No route/time completeness hint in New Flight.** An incomplete draft may save normally. Departure, Arrival, valid UTC off-block/on-block and positive flight time remain certification blockers and are surfaced when the user attempts certification, not as extra entry-page copy.
 - **`Save and add another` moves after the first save/review.** New Flight keeps one primary `Save & review` action; the repeat-entry affordance is offered after a successful save.
+- **Role / normal landing / PF presets stay for convenience, but evidence-bearing preset values must be visible before save/certification.** The redesign may compact them, not silently hide them.
+- **Explicit aircraft billing configuration may auto-apply; absent billing remains absent.** No synthetic `BLOCK` fallback.
+
+Final repository review added one prerequisite before presentation compaction: current selected-aircraft normalization can fail open to `ULL` for missing/invalid evidence/class, so that read/form-path fallback must be removed before a compact profile summary can be trusted.
 
 Frozen implementation order:
-1. **Batch 1A — optional-cost contract:** remove billing from universal draft-save validation while preserving valid populated cost data and fail-closed malformed input.
-2. **Batch 1B — completion semantics:** remove duplicate readiness/review surfaces, preserve one draft-save blocker surface, keep certification blockers in Review/certification, and move Add another post-save.
-3. **Batch 2 — profile-backed summary:** compact evidence-bearing aircraft/logbook values and auto-surface unresolved state.
-4. **Batch 3 — role/context separation:** one role-driven required-context area; training purpose remains optional detail.
-5. **Batch 4 — optional details + helper-copy triage:** training/professional/costs/notes with populated-state discoverability.
-6. **Batch 5 — essentials hierarchy + responsive polish:** desktop/iPad/mobile/light/dark verification and final cognitive-load measurements.
+1. **B0.5 — integrity prerequisites + golden baseline:** remove fail-open `ULL` fallback; preserve valid ULL; surface unresolved profile evidence; freeze golden create/update payload and decision/preset baselines.
+2. **B1A — optional-cost contract:** make no-billing a true end-to-end state; preserve configured billing; reject malformed populated values; no implicit BLOCK.
+3. **B1B — completion semantics:** remove duplicate review/readiness surfaces, keep one primary `Save & review`, preserve certification blockers and move Add another post-save.
+4. **B2 — essentials + visible movement evidence:** trim duplicated intro, move Role up, regroup route/times, surface landing/PF evidence and verify sticky-action behavior.
+5. **B3 — profile summary + role-context:** compact real evidence-bearing profile values and one applicability-driven required-context area.
+6. **B4 — optional details + helper-copy triage:** training/professional/costs/notes with populated-state discoverability.
+7. **B5 — responsive/accessibility closeout:** desktop/iPad/mobile/light/dark, 320 px reflow, keyboard/safe-area and final cognitive-load measurements.
 
-Before runtime Batch 1A/1B closes, confirm create/update payload-equivalence coverage and measure normal PIC + DUAL + Safety Pilot decision baselines.
+The detailed scope, dependencies, acceptance criteria and test matrix are frozen in `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
