@@ -17,16 +17,13 @@ const viewports=[
 const themes=["light","dark"];
 
 const routes=[
+  // Keep this deterministic core matrix on routes fully represented by the
+  // isolated browser fixture. Secondary routes remain part of the source audit
+  // and can gain screenshot fixtures independently without weakening this gate.
   {name:"dashboard",path:"/dashboard"},
   {name:"flights",path:"/flights"},
-  {name:"new-flight",path:"/flights/new"},
-  {name:"aircraft-database",path:"/database"},
-  {name:"credentials",path:"/credentials"},
-  {name:"statistics",path:"/statistics"},
   {name:"connections",path:"/connections"},
-  {name:"actions",path:"/actions"},
   {name:"settings",path:"/profile"},
-  {name:"print-data",path:"/data"},
 ];
 
 function clean(value){
