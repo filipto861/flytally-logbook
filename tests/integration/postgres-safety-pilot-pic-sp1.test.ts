@@ -22,7 +22,8 @@ function run(statement:string){
 function migration15Blocks(){
   const source=fs.readFileSync(path.join(root,"lib/db-optimization.ts"),"utf8");
   const start=source.indexOf("if(version===15)return[");
-  const end=source.indexOf("throw new Error",start);
+  const next=source.indexOf("if(version===16)return[",start);
+  const end=next>start?next:source.indexOf("throw new Error",start);
   assert.ok(start>=0&&end>start,"migration 15 block is present");
   return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
 }
