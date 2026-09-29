@@ -1,6 +1,6 @@
 # General PIC invitation across source roles
 
-**Status:** IMPLEMENTATION/VERIFICATION COMPLETE — PRODUCTION MIGRATION APPLIED; MERGE PENDING  
+**Status:** DONE — MERGED + PRODUCTION VERIFIED  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -293,3 +293,16 @@ Safety/data-integrity interpretation:
 - the source record is never rewritten;
 - exact revision/hash, accepted Connection and provenance checks remain mandatory;
 - explicit invite-time commander provenance via v16 remains accepted.
+
+
+## Closeout
+
+Completed on 29 September 2026.
+
+- PR #169 merged to `main` as `a51e8bb13f702c9a04337bff19755ad614ccfcc1`.
+- Migration v16 was applied to the production Neon branch only after explicit approval and then post-verified.
+- Final verification evidence: local TypeScript PASS; local 909/909 unit/regression PASS; production build PASS; PostgreSQL full acceptance 66/66 PASS across 24 integration files; authenticated Chromium desktop/mobile 22/22 PASS.
+- Vercel production deployment `dpl_9ba1sxfaZ1yyBVPFwcBdF3S9B8W3` reached READY for the merged runtime commit.
+- Canonical `https://fly-tally.com` returned HTTP 200 from that deployment.
+- The completed Safety Pilot Actual-PIC workflow remains preserved as the special certified-source commander path; generic PIC sharing is now the separate all-canonical-role path defined above.
+- Next roadmap workstream: Multi-aircraft M2B remaining integrity audit.
