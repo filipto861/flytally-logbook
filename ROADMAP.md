@@ -45,7 +45,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
 | Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
-| Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |\n| General PIC invitation across source roles | 🧭 | **DESIGN/REVIEW**; Filip expanded PIC invitation to every canonical source role on 29 Sep 2026; implementation precedes M2B |
+| Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |\n| General PIC invitation across source roles | 🧭 | **REVIEW RECONCILED**; Claude APPROVE WITH CHANGES; explicit provenance v16 accepted; 2 product decisions remain before implementation |
 | Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; M2B remaining integrity audit is the next roadmap step |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -62,7 +62,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
-| 3 | General PIC invitation across source roles | 🧭 | **NEXT** · broaden certified PIC invitations beyond Safety Pilot without weakening Actual-PIC provenance |\n| 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the General PIC invitation extension |
+| 3 | General PIC invitation across source roles | 🧭 | **NEXT** · review reconciled; freeze source-role allow-list + generic PF/time evidence policy, then implement |\n| 4 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the General PIC invitation extension |
 | 5 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 6 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 7 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -223,7 +223,7 @@ Frozen direction:
 - no schema migration unless independent review proves provenance cannot be derived safely;
 - local verification on Filip's PC is the primary development gate.
 
-Required independent review occurs after this draft design and before implementation.
+Independent Claude review completed on **29 September 2026** with verdict **APPROVE WITH CHANGES**. Accepted: explicit invite-time provenance via additive v16 participation metadata, separate `canInviteAsPic` authorization, multi-PIC/re-share guards, and fail-closed generic evidence copying. Implementation remains blocked only on the two product decisions recorded in the detailed contract.
 
 ## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
 
