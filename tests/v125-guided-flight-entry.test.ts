@@ -19,7 +19,7 @@ test("manual entry has a live pre-save summary and explicit save actions without
   assert.match(source,/BLOCK \/ AIR/);
   assert.match(source,/Save & review/);
   assert.match(source,/Save changes/);
-  assert.match(source,/Aircraft, logbook.*billing defaults came from/);
+  assert.match(source,/Aircraft, logbook and regulatory context came from/);
   assert.match(source,/entry-save-state/);
 });
 
