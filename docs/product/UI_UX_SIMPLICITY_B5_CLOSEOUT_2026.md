@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B5 Responsive, Accessibility + Final UX Closeout
 
-**Status:** MERGED + PRODUCTION READY — LIVE MATRIX PENDING  
+**Status:** DONE — MERGED / PRODUCTION READY / LIVE MATRIX PASS  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b5-closeout`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -102,9 +102,9 @@ Existing live feedback remains limited to changing information such as:
 
 ## 320px / 200% / cockpit matrix
 
-Source rules now support the required reflow, but visual acceptance is **not** claimed from source inspection alone.
+Final visual acceptance is now backed by the isolated authenticated browser artifact rather than source inspection alone.
 
-Cumulative authenticated live smoke must still cover:
+The cumulative authenticated live matrix covered:
 
 - 1440 × 1100;
 - 1024 × 768 iPad landscape;
@@ -152,7 +152,7 @@ Initial local B5 gate on 30 September 2026:
 - full unit/regression: **962/962 PASS**
 - production build: **PASS**
 - PostgreSQL: **N/A**
-- authenticated live browser matrix: **PENDING — NOT PASS**
+- authenticated live browser matrix: **PASS** — final Browser smoke #352 completed with 23 passed / 3 skipped and produced 132/132 New Flight screenshots; every matrix record reported 0 px horizontal overflow
 
 The only initial full-suite failure was the historical v1.58 source-contract assertion around required-field markup. Its first test-only reconciliation was still too brittle because JSX arrow-handler syntax appeared before the `required` attribute. The assertion was then corrected to inspect each named control through its closing `</select>`.
 
@@ -162,18 +162,30 @@ Clean rerun on 30 September 2026 passed:
 
 TypeScript and production build remain PASS on the runtime-equivalent B5 head because the final correction changed tests only.
 
+Final authenticated closeout evidence:
+- final matrix artifact contains **132 JPEG screenshots** plus `matrix.json`;
+- expected viewport widths are present: 1440, 1024, 768, 720, 390 and 320 px;
+- all 132 records report `scrollWidth === clientWidth` (0 px horizontal overflow);
+- screenshot files are non-blank and match the expected viewport widths;
+- corrected 320px and 200% reflow empty-state presentation was visually rechecked after PR #182.
+
 ## Merge / production state
 
-- PR #179 merged to `main` as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`.
-- Vercel production deployment `dpl_5Rb2vzNcNBEw5xdxearpuJEYBg5N` reached **READY**.
-- Production alias includes `fly-tally.com`.
-- Cumulative authenticated live matrix remains **PENDING / NOT PASS**.
+- PR #179 merged the B5 runtime work to `main` as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`.
+- Final screenshot review exposed one presentation defect: the Flight experience empty-state title and explanation could visually concatenate at 320px / 200% reflow.
+- PR #182 fixed that defect with contextual spacing while preserving the canonical `empty-state` design-system pattern.
+- PR #182 Verify FlyTally web #955 **PASS**; Browser smoke #349 **PASS**.
+- Final cumulative matrix Browser smoke #352 **PASS** with 132/132 screenshots and 0 px horizontal overflow in every matrix record.
+- Final production commit `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is deployed via Vercel deployment `dpl_5JqFYaCKRpFy8tDQHbgZNbm49CRV`, state **READY**.
+- Production aliases include `fly-tally.com`, `logbook-filipito.vercel.app` and the main-branch Vercel alias.
 
 ## Final closeout condition
 
-The UI/UX Simplicity workstream is not DONE until:
+The closeout conditions are satisfied:
 
 1. B5 automated gate is clean;
 2. B5 runtime changes are merged;
-3. cumulative authenticated live New Flight smoke is actually observed;
-4. ROADMAP / FEATURES / CHANGELOG / implementation contract record the final evidence.
+3. cumulative authenticated live New Flight smoke is observed and PASS;
+4. ROADMAP / FEATURES / CHANGELOG / audit / implementation contract record the final evidence.
+
+**Result: B5 and the UI/UX Simplicity workstream are DONE.**
