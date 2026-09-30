@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added coarse-pointer 44px targets and forced-colors treatment for blocker controls.
 - Switched the small Flight-experience Change cue to the normal link token; measured canonical New Flight muted/link colors meet WCAG AA normal-text contrast on dark/light panel surfaces.
 - No parser, persistence schema, certification payload/hash, recency, collaboration, billing or UTC semantics changed.
-- **Verification status:** initial local gate — TypeScript PASS, targeted B5/affected historical contracts 100/100 PASS, production build PASS, full unit/regression 961/962 due to one stale v1.58 source-contract assertion. The assertion was reconciled test-only; clean rerun is pending. PostgreSQL N/A; cumulative authenticated live matrix remains pending and is not reported as PASS.
+- **Verification status:** automated gate PASS — TypeScript PASS, targeted B5/affected historical contracts 100/100 PASS on the runtime head, final v1.58+B5 reconciliation 15/15 PASS, full unit/regression 962/962 PASS, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A; cumulative authenticated live matrix remains pending and is not reported as PASS.
 
 ### New Flight UI/UX Simplicity — B4 optional details + helper-copy triage
 - Consolidated Training purpose/Task, Night/IFR, Professional context, Costs/expenses and Notes under one native **Optional details** disclosure.
