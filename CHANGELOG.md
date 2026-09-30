@@ -11,6 +11,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
+### New Flight UI/UX Simplicity — B2 essentials + movement evidence
+- Reordered the always-visible essentials to Date → Registration → Role, followed by grouped Route and one chronological UTC timeline.
+- Kept Departure/Arrival and all time fields optional for draft save; certification remains the authority for route/time completeness.
+- Preserved live BLOCK/AIR calculation and the `—` unavailable state without inventing `0:00`.
+- Flight experience summary now exposes the actual landing/PF evidence-bearing preset state, with a visible Change cue while keeping detailed movement controls behind the same native disclosure.
+- Reduced repeated manual-entry intro copy and made Add aircraft contextual when the pilot already has aircraft.
+- Added responsive B2 layout rules for desktop, iPad-width and narrow mobile time grids.
+- No parser, persistence schema, certification payload/hash, recency or billing semantics changed.
+- **Verification status:** merge-ready — local TypeScript PASS, targeted B2/affected historical contracts 47/47 PASS, full unit/regression 940/940 PASS, production build PASS. PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
+
 ### New Flight UI/UX Simplicity — B1B completion semantics
 - Removed the duplicated inline **Review before save** card and the second `Ready to save` completion state from New Flight.
 - New Flight keeps one form-level blocker/consequence surface and one primary **Save & review** action; Edit keeps **Save changes**.

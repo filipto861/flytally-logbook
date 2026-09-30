@@ -31,6 +31,8 @@ test("v3.3 U10 collapses routine experience while keeping required category evid
   assert.match(form,/open=\{experienceRequiredOpen\|\|experienceOpen\}/);
   assert.match(form,/className="entry-section entry-section-experience"/);
   assert.match(form,/experienceSummary/);
+  assert.match(form,/PF \$\{movementRecorded\?"Yes":"No"\}/);
+  assert.match(form,/entry-summary-action">Change/);
 });
 
 test("v3.3 U10 makes source choice and save readiness compact and explicit",()=>{

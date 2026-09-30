@@ -304,21 +304,34 @@ PR #174 merged as `37eac801cc69b19c07d4c140213ccda37c4e85ff`.
 - TypeScript PASS, targeted B1A 35/35 PASS, stale-contract rerun 55/55 PASS, full unit/regression 928/928 PASS, production build PASS;
 - protected Preview reached READY, but authenticated smoke remains **DEFERRED, not PASS** and will be checked live with the cumulative New Flight redesign.
 
-### Current implementation checkpoint — B1B
+### Completed checkpoint — B1B
 
-Branch: `feat/new-flight-b1b-completion`
+PR #175 merged as `0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`.
+
+- removed the duplicate pre-save Review/readiness surface;
+- New Flight now has one completion/blocker surface and one primary **Save & review** action;
+- **Add another flight** moved to the successful saved-review handoff;
+- TypeScript PASS, production build PASS, targeted B1B/historical contracts 34/34 PASS, full unit/regression 934/934 PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains explicitly **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Current implementation checkpoint — B2
+
+Branch: `feat/new-flight-b2-essentials`
 
 Implemented, verification pending:
-- removed the full inline **Review before save** card and duplicate `Ready to save` state;
-- New Flight now has one form-level completion/blocker surface plus one primary **Save & review** action;
-- removed initial **Save and add another**;
-- moved profile-origin and unsaved-state information to the relevant profile/completion context;
-- added **Add another flight** only to the successful `saved=1` post-save review handoff;
-- preserved the existing review-first redirect and backward-compatible server intent;
-- route/times remain draft-optional; certification blockers remain in the saved review/certification workflow;
-- no schema, recency, certification payload or UTC change.
+- Date → Registration → Role is now the first visible DOM/tab-order row;
+- Departure/Arrival are grouped under **Route**;
+- Off-block → Takeoff → Landing → On-block are grouped under one **Times · UTC** context;
+- BLOCK/AIR remain live and preserve `—` for unavailable duration;
+- standard Flight experience summary now exposes landing + PF state, e.g. `1 day landing · PF Yes`, with a visible Change cue;
+- existing PF/movement adjustment controls and automatic normal PIC/SOLO preset behavior remain unchanged;
+- edit/review continues to open Flight experience before certification;
+- manual-entry intro copy is reduced;
+- Add aircraft remains dominant only for an empty aircraft library and becomes contextual when aircraft already exist;
+- no schema, parser, certification, recency or UTC semantics changed.
 
-Verification status: **DONE / MERGE READY** — TypeScript PASS, production build PASS, reconciled targeted B1B/historical contracts **34/34 PASS**, full unit/regression **934/934 PASS**. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check and is not reported as PASS. Next milestone: **B2 — Essentials hierarchy + visible movement evidence**.
+Verification status: **DONE / MERGE READY** — local TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check and is not reported as PASS. Next milestone: **B3 — Profile summary + role-driven required context**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 

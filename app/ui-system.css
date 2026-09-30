@@ -238,6 +238,45 @@ button[data-loading="true"]::after{
 }
 .entry-section-experience .entry-section-body{display:grid;gap:var(--ui-space-3)}
 .entry-context-note{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
+
+/* B2 New Flight essentials: identity first, then route, then one UTC timeline. */
+.entry-section-primary{display:grid;gap:var(--ui-space-4)}
+.flight-form .essential-identity-grid{grid-template-columns:minmax(0,.8fr) minmax(0,1.15fr) minmax(0,1.35fr)}
+.essential-group{display:grid;gap:var(--ui-space-2)}
+.essential-group-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.essential-group-heading strong{font-size:.72rem;letter-spacing:.02em}
+.essential-group-heading small{color:var(--muted);font-size:.66rem;font-weight:750;letter-spacing:.05em}
+.flight-form .essential-route-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.flight-form .essential-time-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.essential-time-group .flight-time-summary{margin-top:2px}
+.experience-summary{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.entry-summary-action{color:var(--accent2);font-weight:800}
+.entry-aircraft-context-action{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:36px;
+  padding:6px 8px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:inherit;
+  font-size:.7rem;
+  font-weight:750;
+  cursor:pointer;
+}
+.entry-aircraft-context-action:hover,.entry-aircraft-context-action:focus-visible{color:var(--accent2)}
+@media(max-width:1000px){
+  .flight-form .essential-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .flight-form .essential-identity-grid,
+  .flight-form .essential-route-grid{grid-template-columns:minmax(0,1fr)!important}
+  .flight-form .essential-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:360px){
+  .flight-form .essential-time-grid{grid-template-columns:minmax(0,1fr)}
+}
 .form-actions.field-actions{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
