@@ -50,15 +50,7 @@ test("F0.0 characterizes GPS as a separate semantic write path",()=>{
 });
 
 test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in documentation",()=>{
-  for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.match(characterization,new RegExp(`\\|`+` \\`${role.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\test("F0.0 characterizes the current GPS role surface and the INSTRUKTOR mismatch",()=>{
-  for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.match(gpsForm,new RegExp(`<option>${role.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")}</option>`));
-  assert.match(gpsForm,/<option value="INSTRUKTOR">INSTRUCTOR<\/option>/);
-  assert.doesNotMatch(gpsForm,/<option>SPIC<\/option>|<option>PICUS<\/option>/);
-  assert.equal(ROLES.includes("INSTRUKTOR" as (typeof ROLES)[number]),false);
-  assert.equal(ROLES.includes("INSTRUCTOR" as (typeof ROLES)[number]),true);
-  assert.deepEqual(allocatedFunctionTimes("INSTRUKTOR",60),{picMinutes:0,copilotMinutes:0,dualMinutes:0,instructorMinutes:0});
-  assert.deepEqual(allocatedFunctionTimes("INSTRUCTOR",60),{picMinutes:60,copilotMinutes:0,dualMinutes:0,instructorMinutes:60});
-});")}\\``));
+  for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.ok(characterization.includes(`| \`${role}\``));
   assert.match(characterization,/INSTRUKTOR mismatch/);
   assert.equal(ROLES.includes("INSTRUKTOR" as (typeof ROLES)[number]),false);
   assert.equal(ROLES.includes("INSTRUCTOR" as (typeof ROLES)[number]),true);
