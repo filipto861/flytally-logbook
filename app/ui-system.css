@@ -180,6 +180,11 @@ button[data-loading="true"]::after{
   margin-block:0;
 }
 
+.flight-form .flight-experience-empty-state{
+  display:grid;
+  gap:var(--ui-space-1);
+}
+
 @media(max-width:700px){
   .ui-page-stack > .page-header > .connection-actions{
     width:100%;
