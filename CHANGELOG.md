@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added a complete golden EASA SEP PIC `parseFlightInput()` payload baseline plus source coverage proving manual Create and Update continue through the same canonical parser.
 - Recorded the approved Role / normal landing / PF preset policy and scenario-specific decision-density baseline for later UX comparison.
 - No schema, certification hash/version, recency calculation, connection/PIC materialization or UTC semantics changed.
-- **Verification status:** isolated helper behavior 5/5 PASS and FlightForm syntax transpilation PASS; repository TypeScript/targeted/full tests/build/browser remain NOT RUN. Branch implementation is not release-complete until the repository gate is recorded.
+- **Verification status:** repository TypeScript PASS; targeted B0.5/M1/input tests 21/21 PASS; production build PASS. Initial full suite was 915/916 because a historical v1.59.2 source-contract test asserted the removed fail-open ULL implementation; that stale test was updated to the new fail-closed contract. Current-head full-suite/browser verification remains pending.
 
 
 ### General PIC invitation across source roles
