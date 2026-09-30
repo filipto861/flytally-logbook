@@ -11,6 +11,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
+### New Flight UI/UX Simplicity — B5 responsive + accessibility closeout
+- Delayed ordinary required-field error styling until an explicit save attempt while keeping genuine selected-profile configuration failures immediately visible.
+- Converted the existing missing-field summary into focusable blocker navigation that opens the owning native disclosure before focusing its control.
+- Preserved native details/summary semantics without redundant ARIA state.
+- Restored collapsed evidence summaries on narrow mobile, added earlier iPad/zoom grid reflow and disabled sticky New Flight actions where touch keyboards or very small/short viewports could cause overlap.
+- Added coarse-pointer 44px targets and forced-colors treatment for blocker controls.
+- Switched the small Flight-experience Change cue to the normal link token; measured canonical New Flight muted/link colors meet WCAG AA normal-text contrast on dark/light panel surfaces.
+- No parser, persistence schema, certification payload/hash, recency, collaboration, billing or UTC semantics changed.
+- **Verification status:** NOT RUN on current B5 head; PostgreSQL N/A; cumulative authenticated live matrix remains pending and is not reported as PASS.
+
 ### New Flight UI/UX Simplicity — B4 optional details + helper-copy triage
 - Consolidated Training purpose/Task, Night/IFR, Professional context, Costs/expenses and Notes under one native **Optional details** disclosure.
 - Populated Edit records now auto-open Optional details and summarize which optional domains already contain stored/current data.
