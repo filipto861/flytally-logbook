@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1 design / independent review
+- Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F1_DESIGN.md` with the proposed source-adapter → typed candidate → pure normalizer → `FlightInput` architecture.
+- Kept `parseFlightInput(FormData)` as the proposed compatibility wrapper to minimize Manual blast radius.
+- Explicitly kept GPS tracks, expenses, connected crew, certification lifecycle and participation/verifications outside the canonical flight semantic payload.
+- Split the proposed implementation into F1.1–F1.6 so Manual regression equivalence is proven before GPS is routed through shared normalization.
+- Raised Operation/Engine as a blocking correctness question because current GPS silently stores SP plus class-derived engine, which is not sufficient source evidence for every FCL-style flight.
+- Carried the shared-flight identity-trigger issue forward as a migration/integrity design question; no migration has been written.
+- Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F1_REVIEW_HANDOFF.md` for independent read-only review before runtime implementation.
+- **Runtime/schema behavior:** unchanged; F1 code has not started.
+
 ### Flight Entry Workflow 3.0 — F0 field / consumer contract inventory
 - Added the authoritative repository-backed Manual/GPS/Edit/Certification/consumer matrix at `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md`.
 - Recorded the current Manual canonical parser boundary versus the remaining GPS direct semantic INSERT path.
