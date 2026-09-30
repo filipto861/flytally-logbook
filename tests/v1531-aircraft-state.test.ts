@@ -19,8 +19,8 @@ test("v1.53.1 registration changes refresh aircraft state without changing the f
   assert.match(pick,/setEngineType\(defaultEngineType\(nextClass\)\)/);
   assert.match(pick,/setOperationType\("SP"\)/);
   assert.match(pick,/setEvidence\(nextEvidence\)/);
-  assert.match(pick,/setBilling\(nextBilling[.]basis\)/);
-  assert.match(pick,/setBillingShare\(nextBilling[.]share\)/);
+  assert.match(pick,/setBilling\(nextBilling[.]error\?"INVALID":nextBilling[.]settings\?[.]basis\|\|""\)/);
+  assert.match(pick,/setBillingShare\(nextBilling[.]settings\?[.]share\|\|1\)/);
   assert.match(pick,/setHourlyRate\(Number\(a[.]price_per_hour\)\|\|0\)/);
   assert.doesNotMatch(pick,/setRole\(/);
   assert.doesNotMatch(pick,/nextRole/);

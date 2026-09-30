@@ -291,7 +291,25 @@ Implemented, verification pending:
 - golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
 - preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
 
-Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE. Next milestone: **B1A — Optional Costs domain contract**.
+Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE.
+
+### Current implementation checkpoint — B1A
+
+Branch: `feat/new-flight-b1a-optional-costs`
+
+Implemented, verification pending:
+- blank billing is now a first-class **Not tracked** state in manual entry, GPS import and aircraft defaults;
+- populated malformed billing remains fail-closed and opens/surfaces the relevant configuration state instead of degrading to BLOCK or blank;
+- configured BLOCK/AIR + share values remain canonical and continue to auto-apply from the aircraft profile;
+- no-billing flights no longer resolve/snapshot an aircraft hourly rate, and cost read models treat untracked billing as zero contribution rather than implicit BLOCK;
+- aircraft profile Add/Edit and Quick Add can explicitly store no billing default;
+- aircraft sharing preserves explicit no-billing state; malformed shared billing defaults are surfaced and cannot be imported silently;
+- historical legacy billing helpers remain compatible for callers outside the optional-cost path;
+- no certification, recency, UTC or crew-sharing credit semantics are changed.
+
+Database prerequisite: **PASS (read-only production metadata)** — `aircraft.billing_basis` and `flights.billing_basis` are nullable `text` columns with the legacy `'BLOCK'::text` default, and no production CHECK constraint references `billing_basis`. B1A writes explicit `''` for Not tracked, so the legacy default does not invent a value on the new path. No schema migration is required.
+
+Verification status: **DONE / MERGE READY** — TypeScript PASS, targeted B1A **35/35 PASS**, stale-contract rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS, production DB metadata prerequisite PASS, no migration required. Protected Preview reached READY, but authenticated smoke is **DEFERRED, not PASS** because Preview has no DATABASE_URL; runtime logs confirmed that infrastructure limitation. Filip approved post-merge live smoke instead of connecting Preview to production DB. Next milestone: **B1B — Completion semantics**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 

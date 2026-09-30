@@ -113,7 +113,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
         COALESCE(f.night_minutes,0)::int night_minutes,COALESCE(f.ifr_minutes,0)::int ifr_minutes,COALESCE(f.pic_minutes,0)::int stored_pic_minutes,COALESCE(f.copilot_minutes,0)::int copilot_minutes,COALESCE(f.dual_minutes,0)::int dual_minutes,COALESCE(f.instructor_minutes,0)::int instructor_minutes,
         CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END::int block_minutes,
         CASE WHEN f.takeoff~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END::int air_minutes,
-        GREATEST(COALESCE(f.price_per_hour,0),0)::double precision hourly,UPPER(COALESCE(f.billing_basis,'BLOCK')) billing_basis,
+        GREATEST(COALESCE(f.price_per_hour,0),0)::double precision hourly,UPPER(COALESCE(f.billing_basis,'')) billing_basis,
         COALESCE(t.track_count,0)::int track_count,COALESCE(t.gps_km,0)::double precision gps_km
       FROM flights f LEFT JOIN track t ON t.flight_id=f.id WHERE f.user_id=${userId}
         AND (${start}::text IS NULL OR (f.date::text~'^\\d{4}-\\d{2}-\\d{2}$' AND f.date::text>=${start}::text))
@@ -124,7 +124,7 @@ export async function getDashboardData(userId:number,requested:string):Promise<D
         CASE WHEN stored_day_landings+stored_night_landings>0 THEN stored_day_landings ELSE legacy_starts END::int day_landings,
         stored_night_landings::int night_landings,
         CASE WHEN stored_day_landings+stored_night_landings>0 THEN stored_day_landings+stored_night_landings ELSE legacy_starts END::int landings,
-        hourly*(CASE WHEN billing_basis LIKE 'AIR%' THEN air_minutes ELSE block_minutes END)/60.0/(CASE WHEN split_part(billing_basis,'/',2)~'^[1-9][0-9]*$' AND split_part(billing_basis,'/',2)::int<=20 THEN split_part(billing_basis,'/',2)::numeric ELSE 1 END)::double precision cost
+        hourly*(CASE WHEN billing_basis LIKE 'AIR%' THEN air_minutes WHEN billing_basis LIKE 'BLOCK%' THEN block_minutes ELSE 0 END)/60.0/(CASE WHEN split_part(billing_basis,'/',2)~'^[1-9][0-9]*$' AND split_part(billing_basis,'/',2)::int<=20 THEN split_part(billing_basis,'/',2)::numeric ELSE 1 END)::double precision cost
       FROM base0
     ),base AS MATERIALIZED(
       SELECT *,

@@ -40,9 +40,21 @@ test("v3.0 aircraft share parser normalizes profile and rate evidence",()=>{
   assert.equal(parsed.profile.registration,"OK-ABC");
   assert.equal(parsed.profile.icaoType,"BR23");
   assert.equal(parsed.profile.aircraftClass,"SEP");
+  assert.equal(parsed.defaults?.billingBasis,"BLOCK|2");
+  assert.match(parsed.defaults?.billingError??"",/billing time basis/i);
   assert.equal(parsed.currentRate?.pricePerHour,3500);
   assert.equal(parsed.rateHistory?.length,1);
   assert.equal(parsed.note,"hello");
+});
+
+test("B1A shared aircraft defaults fail closed on malformed populated billing",()=>{
+  const actions=read("app/(protected)/connections/aircraft-share-actions.ts"),review=read("app/(protected)/connections/aircraft/[id]/page.tsx");
+  assert.match(actions,/parseOptionalBilling\(aircraft[.]billing_basis\)/);
+  assert.match(actions,/Aircraft billing setting needs configuration before it can be shared/);
+  assert.match(actions,/importDefaults&&snapshot[.]defaults\?\.billingError/);
+  assert.match(actions,/error=billing/);
+  assert.match(review,/billing \{snapshot[.]defaults[.]billingError\?"needs configuration"/);
+  assert.match(review,/defaultChecked=\{!snapshot[.]defaults[.]billingError\}/);
 });
 
 test("v3.0 aircraft cards support private cover photos without embedding image payloads in the page",()=>{

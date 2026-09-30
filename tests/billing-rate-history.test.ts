@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculatedFlightPrice,parseBilling,serializeBilling } from "../lib/billing.ts";
+import { billingLabel,calculatedFlightPrice,parseBilling,parseOptionalBilling,serializeBilling,serializeOptionalBilling } from "../lib/billing.ts";
 import { effectiveRateForDate,shouldResolveStoredPrice,validIsoDate } from "../lib/rate-history.ts";
 
 test("BLOCK and AIR prices include the selected share",()=>{
@@ -9,7 +9,18 @@ test("BLOCK and AIR prices include the selected share",()=>{
   assert.equal(calculatedFlightPrice(2400,90,60,"BLOCK/3"),1200);
 });
 
-test("legacy billing values remain compatible",()=>{
+test("optional billing keeps absence distinct from BLOCK",()=>{
+  assert.deepEqual(parseOptionalBilling(""),{value:"",settings:null});
+  assert.deepEqual(serializeOptionalBilling("",4),{value:"",settings:null});
+  assert.deepEqual(serializeOptionalBilling("AIR",4),{value:"AIR/4",settings:{basis:"AIR",share:4}});
+  assert.match(parseOptionalBilling("BLOCK/99").error??"",/billing share/i);
+  assert.match(serializeOptionalBilling("unknown",1).error??"",/billing time basis/i);
+  assert.equal(calculatedFlightPrice(2400,90,60,""),0);
+  assert.equal(billingLabel(""),"Not tracked");
+  assert.equal(billingLabel("GROSS"),"Unavailable");
+});
+
+test("legacy billing values remain compatible for untouched callers",()=>{
   assert.deepEqual(parseBilling("BLOCK"),{basis:"BLOCK",share:1});
   assert.deepEqual(parseBilling("AIR"),{basis:"AIR",share:1});
   assert.equal(serializeBilling("AIR",4),"AIR/4");

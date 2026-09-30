@@ -331,7 +331,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
     "components/auth-invite-creator.tsx":["Tester email"],
     "components/balloon-recency-panel.tsx":["Balloon class","Date","Examiner","Reference"],
     "components/flight-expenses-editor.tsx":["Amount","Currency"],
-    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Supervising PIC / FI","Countersignature reference","Logbook","Class / category","Billing time"],
+    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Supervising PIC / FI","Countersignature reference","Logbook","Class / category"],
     "components/helicopter-recency-panel.tsx":["Helicopter type","Date","Examiner","Reference"],
     "components/in-person-signature-pad.tsx":["Licence number","Qualification"],
     "components/kml-import-form.tsx":["KML, GPX or CSV","Registration","Balloon operation","Date"],
@@ -355,6 +355,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   assert.match(flight,/<span>Actual PIC <span className="field-hint" aria-hidden="true">Required<\/span><\/span><select name="connectedPicUserId"/);
   assert.match(flight,/<span>Actual PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span><input name="commander"/);
   assert.match(flight,/<span>Commander \/ PIC<\/span><input name="commander"/);
+  assert.doesNotMatch(flight,/Billing time <span className="field-hint" aria-hidden="true">Required<\/span>/);
   const signature=read("components/in-person-signature-pad.tsx");
   assert.match(signature,/<span>\{allowExaminer\?"Instructor \/ examiner name":"Instructor name"\} <span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);
   assert.match(signature,/confirm_in_person" value="yes" required\/><span>[^<]*<span className="field-hint" aria-hidden="true">Required<\/span><\/span>/);

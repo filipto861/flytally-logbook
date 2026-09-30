@@ -12,7 +12,7 @@ export async function getAircraftOptions(userId: number) {
            COALESCE(a.aircraft_make,'') AS aircraft_make,COALESCE(a.aircraft_model,'') AS aircraft_model,COALESCE(a.aircraft_variant,'') AS aircraft_variant,
            COALESCE(aircraft_class, '') AS aircraft_class, COALESCE(regulatory_category,'') AS regulatory_category,
            COALESCE(balloon_class,'') AS balloon_class,COALESCE(balloon_group,'') AS balloon_group,COALESCE(evidence, '') AS evidence,
-           COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, 'BLOCK') AS billing_basis,
+           COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, '') AS billing_basis,
            COALESCE(r.price_per_hour, a.default_price_per_hour, 0) AS price_per_hour
     FROM aircraft a LEFT JOIN LATERAL (
       SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(a.registration))

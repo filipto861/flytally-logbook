@@ -122,7 +122,9 @@ Important boundary:
 - Independent review and repository reconciliation are complete; Filip's product decisions are frozen.
 - B0.5 hardens selected-aircraft profile defaults so invalid/missing evidence/class cannot be silently presented as ULL.
 - Valid Role/landing/PF presets remain allowed, with evidence-bearing preset visibility scheduled in the essentials batch.
-- Costs are moving to an optional domain contract; missing route/times remain draft-save compatible and certification-gated.
+- B1A implements Costs as an optional domain contract: blank means **Not tracked**, configured BLOCK/AIR defaults may auto-apply, and malformed populated values fail closed.
+- Untracked billing contributes no calculated aircraft cost and does not synthesize a BLOCK basis or rate snapshot; structured expenses remain independent.
+- Missing route/times remain draft-save compatible and certification-gated.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 

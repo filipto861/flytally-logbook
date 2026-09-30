@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
-import { serializeBilling } from "@/lib/billing";
+import { serializeOptionalBilling } from "@/lib/billing";
 import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
 import { ensureV162Schema } from "@/lib/v162-schema";
@@ -14,7 +14,7 @@ function refreshPricing(){revalidatePath("/database");revalidatePath("/flights/n
 export type AircraftSaveResult={ok:boolean;message:string};
 export type AircraftDeleteResult={ok:boolean;message:string};
 async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
-  const {userId}=await requireUser();await Promise.all([ensureV162Schema(),ensureV164Schema()]);const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billing=serializeBilling(s(form,"billing_basis"),s(form,"billing_share"));if(!reg)return{ok:false,message:"Aircraft registration is required."};
+  const {userId}=await requireUser();await Promise.all([ensureV162Schema(),ensureV164Schema()]);const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billingResult=serializeOptionalBilling(s(form,"billing_basis"),s(form,"billing_share"));if(billingResult.error)return{ok:false,message:billingResult.error};const billing=billingResult.value;if(!reg)return{ok:false,message:"Aircraft registration is required."};
   const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),validated=validateAircraftProfile({
     aircraftMake:make,aircraftModel:model,evidence:s(form,"evidence"),aircraftClass:s(form,"aircraft_class"),regulatoryCategory:s(form,"regulatory_category"),
     balloonClass:s(form,"balloon_class"),balloonGroup:s(form,"balloon_group"),partFclCreditClass:s(form,"part_fcl_credit_class"),partFclCreditBasis:s(form,"part_fcl_credit_basis"),partFclCreditFrom:s(form,"part_fcl_credit_from"),

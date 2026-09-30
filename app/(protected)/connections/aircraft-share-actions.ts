@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 import { parseAircraftShareSnapshot,type AircraftShareRate,type AircraftShareSnapshot } from "@/lib/aircraft-sharing";
+import { parseOptionalBilling } from "@/lib/billing";
 import { validateAircraftProfile } from "@/lib/aircraft-profile-validation";
 
 const id=(value:unknown)=>{const n=Number(value);return Number.isSafeInteger(n)&&n>0?n:0};
@@ -35,11 +36,12 @@ export async function shareAircraftProfile(_:ShareAircraftState,form:FormData):P
   const aircraft=rows[0];if(!aircraft)return{ok:false,message:"Aircraft not found."};
 
   const includeDefaults=yes(form,"include_defaults"),includeCurrentRate=yes(form,"include_current_rate"),includeRateHistory=yes(form,"include_rate_history"),includeNotes=yes(form,"include_notes"),includePhoto=yes(form,"include_photo")&&Boolean(aircraft.photo_base64);
+  if(includeDefaults){const billing=parseOptionalBilling(aircraft.billing_basis);if(billing.error)return{ok:false,message:"Aircraft billing setting needs configuration before it can be shared."};}
   const profile={
     registration:text(aircraft.registration).toUpperCase(),aircraftType:text(aircraft.aircraft_type),aircraftMake:text(aircraft.aircraft_make),aircraftModel:text(aircraft.aircraft_model),aircraftVariant:text(aircraft.aircraft_variant),icaoType:text(aircraft.icao_type).toUpperCase(),aircraftClass:text(aircraft.aircraft_class).toUpperCase(),regulatoryCategory:text(aircraft.regulatory_category).toUpperCase(),balloonClass:text(aircraft.balloon_class).toUpperCase(),balloonGroup:text(aircraft.balloon_group).toUpperCase(),evidence:text(aircraft.evidence).toUpperCase(),partFclCreditClass:text(aircraft.part_fcl_credit_class).toUpperCase(),partFclCreditBasis:text(aircraft.part_fcl_credit_basis),partFclCreditFrom:text(aircraft.part_fcl_credit_from).slice(0,10)
   };
   const snapshot:AircraftShareSnapshot={profile};
-  if(includeDefaults)snapshot.defaults={defaultRole:text(aircraft.default_role)||"PIC",billingBasis:text(aircraft.billing_basis)||"BLOCK"};
+  if(includeDefaults)snapshot.defaults={defaultRole:text(aircraft.default_role)||"PIC",billingBasis:text(aircraft.billing_basis)};
 
   const rates=(includeCurrentRate||includeRateHistory)?await sql`SELECT aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source FROM rates WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${profile.registration} ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 250` as Array<Record<string,unknown>>:[];
   const mapped=rates.map(row=>({aircraftType:text(row.aircraft_type),validFrom:text(row.valid_from).slice(0,10),pricePerHour:Number(row.price_per_hour)||0,dryPricePerHour:row.dry_price_per_hour===null||row.dry_price_per_hour===undefined?null:Number(row.dry_price_per_hour)||0,source:text(row.source)} satisfies AircraftShareRate)).filter(rate=>rate.pricePerHour>0&&iso(rate.validFrom));
@@ -78,14 +80,15 @@ export async function acceptAircraftProfileShare(shareId:number,form:FormData){
   const canonical=validated.profile;
   const existing=await sql`SELECT id FROM aircraft WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1` as Array<{id:number|string}>;
   const exists=Boolean(existing[0]),importProfile=!exists||yes(form,"import_profile"),importDefaults=Boolean(row.include_defaults)&&Boolean(snapshot.defaults)&&yes(form,"import_defaults"),importCurrent=Boolean(row.include_current_rate)&&Boolean(snapshot.currentRate)&&yes(form,"import_current_rate"),importHistory=Boolean(row.include_rate_history)&&Boolean(snapshot.rateHistory?.length)&&yes(form,"import_rate_history"),importNotes=Boolean(row.include_notes)&&snapshot.note!==undefined&&yes(form,"import_notes"),importPhoto=Boolean(row.include_photo)&&Boolean(row.photo_base64)&&yes(form,"import_photo");
+  if(importDefaults&&snapshot.defaults?.billingError)redirect(`/connections/aircraft/${shareId}?error=billing`);
 
   const queries=[
     sql`INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_variant,icao_type,aircraft_class,regulatory_category,balloon_class,balloon_group,evidence,default_price_per_hour,default_role,billing_basis,active,part_fcl_credit_class,part_fcl_credit_basis,part_fcl_credit_from,note,created_at,updated_at)
-      VALUES(${session.userId},${reg},${p.aircraftType},${p.aircraftMake},${p.aircraftModel},${p.aircraftVariant},${p.icaoType},${canonical.aircraftClass},${canonical.regulatoryCategory},${canonical.balloonClass},${canonical.balloonGroup},${canonical.evidence},0,'PIC','BLOCK',1,${canonical.partFclCreditClass},${canonical.partFclCreditBasis},${canonical.partFclCreditFrom},'',NOW(),NOW())
+      VALUES(${session.userId},${reg},${p.aircraftType},${p.aircraftMake},${p.aircraftModel},${p.aircraftVariant},${p.icaoType},${canonical.aircraftClass},${canonical.regulatoryCategory},${canonical.balloonClass},${canonical.balloonGroup},${canonical.evidence},0,'PIC','',1,${canonical.partFclCreditClass},${canonical.partFclCreditBasis},${canonical.partFclCreditFrom},'',NOW(),NOW())
       ON CONFLICT(user_id,registration) DO NOTHING`,
   ];
   if(importProfile)queries.push(sql`UPDATE aircraft SET aircraft_type=${p.aircraftType},aircraft_make=${p.aircraftMake},aircraft_model=${p.aircraftModel},aircraft_variant=${p.aircraftVariant},icao_type=${p.icaoType},aircraft_class=${canonical.aircraftClass},regulatory_category=${canonical.regulatoryCategory},balloon_class=${canonical.balloonClass},balloon_group=${canonical.balloonGroup},evidence=${canonical.evidence},part_fcl_credit_class=${canonical.partFclCreditClass},part_fcl_credit_basis=${canonical.partFclCreditBasis},part_fcl_credit_from=${canonical.partFclCreditFrom},active=1,updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`);
-  if(importDefaults&&snapshot.defaults)queries.push(sql`UPDATE aircraft SET default_role=${snapshot.defaults.defaultRole||"PIC"},billing_basis=${snapshot.defaults.billingBasis||"BLOCK"},updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`);
+  if(importDefaults&&snapshot.defaults)queries.push(sql`UPDATE aircraft SET default_role=${snapshot.defaults.defaultRole||"PIC"},billing_basis=${snapshot.defaults.billingBasis},updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`);
   if(importNotes)queries.push(sql`UPDATE aircraft SET note=${snapshot.note||""},updated_at=NOW() WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg}`);
   if(importPhoto)queries.push(sql`INSERT INTO aircraft_photos(aircraft_id,user_id,mime_type,image_base64,updated_at) SELECT a.id,${session.userId},${text(row.photo_mime_type)||"image/jpeg"},${text(row.photo_base64)},NOW() FROM aircraft a WHERE a.user_id=${session.userId} AND UPPER(TRIM(a.registration))=${reg} ON CONFLICT(aircraft_id) DO UPDATE SET user_id=EXCLUDED.user_id,mime_type=EXCLUDED.mime_type,image_base64=EXCLUDED.image_base64,updated_at=NOW()`);
   const addRate=(rate:AircraftShareRate,source:string)=>{if(rate.pricePerHour<=0||!iso(rate.validFrom))return;queries.push(sql`INSERT INTO rates(user_id,registration,aircraft_type,valid_from,price_per_hour,dry_price_per_hour,source) VALUES(${session.userId},${reg},${rate.aircraftType||p.aircraftType},${rate.validFrom},${rate.pricePerHour},${rate.dryPricePerHour},${source}) ON CONFLICT(user_id,registration,valid_from) DO UPDATE SET aircraft_type=EXCLUDED.aircraft_type,price_per_hour=EXCLUDED.price_per_hour,dry_price_per_hour=EXCLUDED.dry_price_per_hour,source=EXCLUDED.source`)};
