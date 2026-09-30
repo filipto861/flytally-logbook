@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F0 Field / Consumer Contract Inventory
 
-**Status:** F0 ANALYSIS COMPLETE · VERIFICATION PENDING  
+**Status:** F0 DONE · VERIFIED  
 **Repository baseline:** `main@5dca9b32af8af0d0a76cca1dada6ae27c5446789`  
 **Scope:** repository-backed analysis only; no runtime, schema, certification-version, recency-rule or historical-data change.
 
@@ -261,13 +261,19 @@ Before F1 is accepted, tests must prove at minimum:
 | CSV/XLS semantic completeness | Output/export follow-up | Do not couple to F1 normalization unless required |
 | Recency current-profile `part_fcl_credit_*` join | M2B dynamic-applicability audit | Preserve existing explicit effective-dated semantics |
 
-## 10. F0 closeout criterion
+## 10. F0 closeout
 
-F0 is complete when:
+F0 is complete.
 
-- this matrix is reconciled against current code;
-- ROADMAP / FEATURES / CHANGELOG / Flight Entry 3.0 contract point to it;
-- source-contract tests lock the most dangerous boundaries that F1 must not accidentally change;
-- no runtime behavior is changed by F0 itself.
+Verification:
+- Verify FlyTally web #982 — PASS;
+- TypeScript — PASS;
+- full unit/regression — **988/988 PASS**;
+- PostgreSQL acceptance — **55/55 PASS**;
+- browser gate — N/A (analysis/docs/source-contract tests only; no runtime UI change);
+- database schema/migration — N/A;
+- production runtime behavior — unchanged.
+
+The first #981 verification attempt failed only because the new characterization test expected an outdated `flightCertificationHash` call shape. The assertion was corrected to the actual current v8 call; no runtime code changed.
 
 The next implementation milestone is **F1 — Shared normalization / semantic write contract**.
