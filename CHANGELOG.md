@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Aircraft sharing preserves no-billing defaults and rejects/surfaces malformed populated billing rather than silently clearing or repairing it.
 - Read-only billing labels distinguish **Not tracked** from malformed persisted billing (**Unavailable**).
 - Legacy billing helpers remain compatible for untouched historical callers; certification, recency, UTC and crew-credit contracts are unchanged.
-- **Verification status:** NOT RUN on current B1A head. PostgreSQL billing column constraints/defaults still require read-only verification before closeout; no migration is planned unless that evidence requires one.
+- **Verification status:** PARTIAL — local TypeScript PASS; targeted B1A suite 35/35 PASS; production build PASS. Full regression was 926/928 with two stale assertions that still treated Billing as required; those tests are now aligned and need rerun. PostgreSQL was not executed because the local gate skipped 55/55 tests and `psql` is unavailable. Actual billing-column metadata and authenticated browser verification remain pending.
 
 
 ### New Flight UI/UX Simplicity — B0.5 integrity baseline
