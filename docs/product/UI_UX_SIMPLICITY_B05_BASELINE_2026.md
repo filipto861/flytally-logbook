@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B0.5 Baseline
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — VERIFIED  
 **Date:** 29 September 2026  
 **Branch:** `fix/new-flight-b05-integrity`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -132,15 +132,16 @@ Repository-local verification supplied by Filip on 30 September 2026:
 
 The single full-suite failure was not a runtime regression. The old v1.59.2 source-contract test still asserted the intentionally removed fail-open expressions `normalizeChoice(...,"ULL")`. B0.5 replaced those expressions with the fail-closed resolver, so the historical test expectation was stale. The test has now been updated to assert the new invariant instead: blank New Flight stays neutral, selected profile defaults go through `resolveFlightEntryAircraftProfileDefaults()`, and no selected-aircraft ULL repair expression remains.
 
-Final verification still required after that test-only correction:
+Current-head verification supplied by Filip on 30 September 2026:
 
-- updated targeted source-contract test: **NOT RUN**
-- full unit/regression suite on current PR head: **NOT RUN**
-- build on current PR head: **NOT RUN** (previous runtime-equivalent build passed)
-- PostgreSQL: **N/A for the code change; no schema change**
-- authenticated browser/screenshot verification: **NOT RUN**
+- targeted B0.5/M1/manual-entry/input suite: **26/26 PASS**
+- full unit/regression suite: **916/916 PASS**
+- production build: **PASS**
+- TypeScript: **PASS** from the immediately preceding runtime-equivalent head; the final correction was test/docs-only and the successful production build also completed its TypeScript phase
+- PostgreSQL: **N/A** — B0.5 changed no schema or persistence semantics
+- dedicated authenticated browser matrix: **N/A for B0.5 closeout** — this batch hardens the profile-default boundary and adds only the malformed/legacy **Needs configuration** presentation state, which cannot occur in the normal validated aircraft fixture without deliberately corrupting fixture data. The comprehensive New Flight browser/screenshot matrix remains mandatory in B2/B5.
 
-B0.5 is not DONE until the current-head regression gate is clean.
+**B0.5 verification gate: PASS.**
 
 ## Next after B0.5 verification
 
