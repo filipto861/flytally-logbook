@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B3 Profile Summary + Role-driven Context
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — MERGE READY  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b3-context`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -119,12 +119,17 @@ Failure review found no runtime/parser/certification regression in the reported 
 3. the v1.59.2 profile-expansion contract did not include the new fail-closed `profileNeedsConfiguration` condition while retaining the registration gate;
 4. the B3 compliance guard test expected `==` while the existing authoritative code uses `===`.
 
-Those test contracts were reconciled without changing runtime code. **Rerun on the current branch head is pending.**
+Those test contracts were reconciled without changing runtime code. The current branch head was then rerun cleanly on 30 September 2026:
+
+- reconciled targeted set: **22/22 PASS**;
+- full unit/regression: **946/946 PASS**.
+
+The earlier TypeScript and production build PASS remain runtime-equivalent because the reconciliation after that run changed tests/docs only.
 
 The cumulative live browser check remains explicitly deferred by Filip's current decision.
 
 ## Next after B3
 
-After B3 code/test/build verification and merge:
+Merge B3, retain the cumulative live UI smoke as an explicit deferred item, then start:
 
 **B4 — Optional details + helper-copy triage.**
