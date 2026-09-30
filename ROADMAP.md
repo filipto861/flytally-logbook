@@ -39,7 +39,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
 | UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
-| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · B0.5 DONE/verified; B1A optional Costs domain contract is next |
+| UI/UX Simplicity Audit 2026 | ✅ | **DONE** · B0.5–B5 merged; final authenticated matrix 132/132 screenshots verified across required viewport/theme states |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B is intentionally paused while the core UI/UX simplicity audit runs |
+| Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; **M2B is the next roadmap step** after UI/UX Simplicity closeout |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
@@ -65,8 +65,8 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · B0.5 verified; proceed to B1A optional-cost semantics |
-| 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
+| 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
+| 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | **NEXT** · resume the historical/dynamic applicability integrity audit unless a higher-severity production issue pre-empts it |
 | 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 8 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -362,11 +362,11 @@ Implemented:
 - measured New Flight muted/link token contrast meets 4.5:1 on canonical dark/light panel surfaces;
 - no parser, schema, certification, recency, collaboration, billing or UTC semantics changed.
 
-Verification status: **AUTOMATED GATE PASS / MERGED / PRODUCTION READY** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. Vercel production deployment for merge `3a73ad85...` is READY on `fly-tally.com`. Cumulative authenticated live matrix remains **PENDING / NOT PASS** and is the final required closeout gate.
+Verification status: **DONE / VERIFIED** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. PR #182 fixed the one screenshot-backed closeout defect (Flight experience empty-state title/explanation concatenation) without introducing a new design-system variant; Verify FlyTally web #955 and Browser smoke #349 both PASS. Final isolated authenticated matrix run #352 then PASSed with **23 browser tests passed / 3 skipped**, generated **132/132 screenshots** across 11 states × 6 viewports × light/dark, and recorded **0 px horizontal overflow** in all 132 matrix records. Production deployment for `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is READY and aliased to `fly-tally.com`.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
-## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME
+## P3 — Multi-aircraft Product Scale — NEXT: M2B
 
 Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.
 

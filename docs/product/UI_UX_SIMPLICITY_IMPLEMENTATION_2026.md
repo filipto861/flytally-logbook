@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — New Flight Implementation Contract
 
-**Status:** READY FOR IMPLEMENTATION  
+**Status:** DONE / IMPLEMENTED / VERIFIED  
 **Decision owner:** Filip  
 **Frozen date:** 29 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -805,6 +805,11 @@ Current state:
 - B5 runtime implementation: **DONE / MERGED** in PR #179 (`3a73ad85a6c33f77a881b339c28b425e7b3b8769`);
 - B5 evidence record: `docs/product/UI_UX_SIMPLICITY_B5_CLOSEOUT_2026.md`;
 - B5 verification: TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
-- cumulative authenticated live New Flight matrix: **PENDING / NOT PASS**.
+- PR #182 closeout polish: **DONE / MERGED** as `45a97aacec50e9e7b20d676afd4493c2e896c1fe`; the screenshot-backed Flight experience empty-state concatenation was fixed with contextual spacing while preserving the canonical design-system empty-state pattern;
+- PR #182 verification: Verify FlyTally web #955 **PASS** and Browser smoke #349 **PASS**;
+- cumulative authenticated live New Flight matrix: **PASS** — Browser smoke #352 completed with 23 browser tests passed / 3 skipped, produced **132/132 screenshots** across 11 states × 6 required viewports × light/dark, and all 132 matrix records reported **0 px horizontal overflow**;
+- artifact integrity: all 132 JPEG captures were present with expected viewport widths and non-blank image content; the corrected 320px and 200% reflow empty-state presentation was visually rechecked;
+- production: Vercel deployment for `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is **READY** and aliased to `fly-tally.com`;
+- test-only matrix PR #181 is evidence-only and is not required in `main`.
 
-**Current gate:** production deployment for B5 is READY on `fly-tally.com`; perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.
+**Closeout:** UI/UX Simplicity 2026 is **DONE**. The next roadmap step is **Multi-aircraft M2B — remaining historical & dynamic applicability integrity**.

@@ -113,7 +113,7 @@ Important boundary:
 
 ## Planned
 
-### UI/UX Simplicity & New Flight cognitive-load reduction — ACTIVE IMPLEMENTATION
+### UI/UX Simplicity & New Flight cognitive-load reduction — IMPLEMENTED
 
 - Screenshot-backed audit of the authenticated product across desktop, iPad landscape, iPad portrait and mobile in light/dark.
 - Dedicated New Flight field inventory classifying controls as core-now, contextual, profile-backed, optional or advanced/regulatory.
@@ -132,6 +132,9 @@ Important boundary:
 - B3 exposes the real Aircraft & logbook snapshot context, keeps required DUAL/Safety Pilot/SPIC/PICUS evidence in a role-driven section, and separates Training purpose/Task into Optional details without changing structured purpose parsing.
 - B4 consolidates Training/Task, Night/IFR, Professional context, Costs/expenses and Notes under one Optional details disclosure, auto-opens populated Edit data, and trims non-decision helper copy while preserving validation and evidence consequences.
 - B5 adds delayed pristine validation styling, focusable blocker navigation, preserved mobile disclosure summaries, 320px/zoom reflow safeguards, touch-keyboard-safe action fallback and measured helper/link contrast without changing flight semantics.
+- Final authenticated closeout matrix passed on the isolated browser fixture: 11 New Flight states × 6 required viewports × light/dark = **132 screenshots**, with zero horizontal overflow recorded in every matrix state.
+- Screenshot review exposed one presentation defect in the Flight experience empty state at 320px/200% reflow; PR #182 fixed the title/explanation separation while preserving the canonical `empty-state` design-system contract.
+- Final production commit `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is deployed READY to `fly-tally.com`; no parser, persistence, certification, recency, collaboration, billing or UTC semantics changed in the closeout fix.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
