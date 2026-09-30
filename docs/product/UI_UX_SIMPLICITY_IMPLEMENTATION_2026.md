@@ -797,10 +797,11 @@ Current state:
 - Filip decisions D1–D5: FROZEN;
 - B0.5 runtime implementation: **DONE / VERIFIED**;
 - B0.5 baseline record: `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`;
-- B1A runtime implementation: **DONE / MERGE READY**;
-- B1A source review: manual/GPS entry, aircraft defaults, cost aggregates, detail UI and aircraft sharing reconciled;
+- B1A runtime implementation: **DONE / MERGED** in PR #174 (`37eac801cc69b19c07d4c140213ccda37c4e85ff`);
 - B1A database evidence: **PASS (read-only production metadata)**; no migration required;
-- B1A authenticated Preview smoke: **DEFERRED, not PASS** because Preview lacks DATABASE_URL; Filip approved live post-merge smoke instead of attaching Preview to production DB;
-- B1B and later runtime batches: NOT STARTED.
+- B1A authenticated UI smoke: **DEFERRED, not PASS** and carried to live cumulative redesign verification;
+- B1B runtime implementation: **IMPLEMENTED IN `feat/new-flight-b1b-completion` — VERIFICATION PENDING**;
+- B1B evidence record: `docs/product/UI_UX_SIMPLICITY_B1B_COMPLETION_2026.md`;
+- B2 and later runtime batches: NOT STARTED.
 
-**Current gate:** merge B1A, retain the live optional-cost smoke as a post-merge verification item, then implement B1B — Completion semantics.
+**Current gate:** run B1B TypeScript, targeted/full regression and production build checks. PostgreSQL is N/A. After B1B merge, proceed to B2 while retaining the cumulative live UI smoke as an explicit deferred verification item.
