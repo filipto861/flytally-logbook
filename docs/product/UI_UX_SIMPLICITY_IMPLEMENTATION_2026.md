@@ -802,8 +802,9 @@ Current state:
 - B3: **DONE / MERGED** in PR #177;
 - B4: **DONE / MERGED** in PR #178 (`b18e19a1550d73536cb9f15abec04b3b275361f1`);
 - B4 verification: TypeScript PASS, targeted **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
-- B5 runtime implementation: **IMPLEMENTED IN `feat/new-flight-b5-closeout` — AUTOMATED VERIFICATION PENDING**;
+- B5 runtime implementation: **AUTOMATED GATE PASS / MERGE READY**;
 - B5 evidence record: `docs/product/UI_UX_SIMPLICITY_B5_CLOSEOUT_2026.md`;
+- B5 verification: TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
 - cumulative authenticated live New Flight matrix: **PENDING / NOT PASS**.
 
-**Current gate:** run B5 TypeScript, targeted/full regression and production build checks. PostgreSQL is N/A. After runtime merge, perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.
+**Current gate:** merge B5 runtime, then perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.
