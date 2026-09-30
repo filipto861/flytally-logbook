@@ -802,9 +802,11 @@ Current state:
 - B1A authenticated UI smoke: **DEFERRED, not PASS** and carried to live cumulative redesign verification;
 - B1B runtime implementation: **DONE / MERGED** in PR #175 (`0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`);
 - B1B verification: TypeScript PASS, production build PASS, targeted reconciled contracts **34/34 PASS**, full unit/regression **934/934 PASS**; PostgreSQL N/A;
-- B2 runtime implementation: **DONE / MERGE READY**;
-- B2 evidence record: `docs/product/UI_UX_SIMPLICITY_B2_ESSENTIALS_2026.md`;
+- B2 runtime implementation: **DONE / MERGED** in PR #176 (`a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`);
 - B2 verification: TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS; PostgreSQL N/A;
-- B3 and later runtime batches: NOT STARTED.
+- B3 runtime implementation: **DONE / MERGE READY**;
+- B3 evidence record: `docs/product/UI_UX_SIMPLICITY_B3_CONTEXT_2026.md`;
+- B3 verification: TypeScript PASS, production build PASS, reconciled targeted contracts **22/22 PASS**, full unit/regression **946/946 PASS**; PostgreSQL N/A;
+- B4 and later runtime batches: NOT STARTED.
 
-**Current gate:** merge B2, then proceed to B3 while retaining the cumulative live UI smoke as an explicit deferred verification item.
+**Current gate:** merge B3, then proceed to B4 while retaining the cumulative live UI smoke as an explicit deferred verification item.
