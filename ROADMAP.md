@@ -309,7 +309,7 @@ Implemented, verification pending:
 
 Database prerequisite: **PASS (read-only production metadata)** — `aircraft.billing_basis` and `flights.billing_basis` are nullable `text` columns with the legacy `'BLOCK'::text` default, and no production CHECK constraint references `billing_basis`. B1A writes explicit `''` for Not tracked, so the legacy default does not invent a value on the new path. No schema migration is required.
 
-Verification status: **PARTIAL** — TypeScript PASS, stale-contract targeted rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS, production DB metadata prerequisite PASS. The local PostgreSQL integration harness remains unavailable/skipped and is not being represented as PASS. Browser verification is still **NOT RUN**. B1A remains open only for targeted authenticated browser verification.
+Verification status: **DONE / MERGE READY** — TypeScript PASS, targeted B1A **35/35 PASS**, stale-contract rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS, production DB metadata prerequisite PASS, no migration required. Protected Preview reached READY, but authenticated smoke is **DEFERRED, not PASS** because Preview has no DATABASE_URL; runtime logs confirmed that infrastructure limitation. Filip approved post-merge live smoke instead of connecting Preview to production DB. Next milestone: **B1B — Completion semantics**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
