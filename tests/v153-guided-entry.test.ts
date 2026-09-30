@@ -54,7 +54,7 @@ test("v1.53 keeps full aircraft profiles approachable through progressive disclo
 });
 
 test("v1.53 makes everyday role choices readable without changing stored role codes",()=>{
-  const form=read("components/flight-form.tsx");
+  const form=read("components/flight-form.tsx"),detail=read("components/flight-detail-workspace.tsx");
   assert.match(form,/PIC — Pilot in command/);
   assert.match(form,/DUAL — Training with instructor/);
   assert.match(form,/INSTRUCTOR — Giving instruction/);
@@ -62,7 +62,8 @@ test("v1.53 makes everyday role choices readable without changing stored role co
   assert.match(form,/a\.registration\}\{a\.aircraft_type\?` · \$\{a\.aircraft_type\}`/);
   assert.match(form,/I was pilot flying \(PF\) for the recorded take-offs, approaches and landings/);
   assert.match(form,/Adjust movement counts/);
-  assert.match(form,/Save and add another/);
+  assert.doesNotMatch(form,/Save and add another/);
+  assert.match(detail,/Add another flight/);
 });
 
 test("v1.53 has one final UX layer and documents a behavior-preserving scope",()=>{
