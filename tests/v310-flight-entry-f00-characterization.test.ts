@@ -71,7 +71,7 @@ test("F0.0 characterizes current Manual role save boundaries before convergence"
   spic.set("verificationReference","Signed ref");
   assert.equal(parseFlightInput(spic).data?.role,"SPIC");
 
-  assert.match(actions,/role==="SAFETY PILOT"&&data\.evidence==="EASA"/);
+  assert.match(actions,/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"/);
   assert.match(actions,/Actual PIC|actual PIC|accepted Connection/);
 });
 
