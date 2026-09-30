@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B1B Completion Semantics
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — MERGE READY  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b1b-completion`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -146,7 +146,10 @@ The six unit failures were inspected individually. They were stale source-contra
 5. v3.3 U11 prohibited any `flight-post-save` handoff even though B1B intentionally adds a transient secondary Add another action there;
 6. the new B1B test looked for literal `Off-block` / `On-block` wording instead of the canonical compliance field/message contract.
 
-Those six tests have now been reconciled to the frozen B1B behavior. **Rerun is pending on the reconciled test head.**
+Those six tests were reconciled to the frozen B1B behavior and rerun cleanly on 30 September 2026:
+
+- targeted B1B + superseded historical contracts: **34/34 PASS**;
+- full unit/regression: **934/934 PASS**.
 
 TypeScript and production build evidence remain runtime-equivalent because the reconciliation changed tests/docs only after Filip's successful run.
 
@@ -160,6 +163,6 @@ That live item should be checked together with the cumulative New Flight redesig
 
 ## Next after B1B
 
-After B1B code/test/build verification and merge:
+Merge B1B, retain the cumulative live UI smoke as an explicit deferred item, then start:
 
 **B2 — Essentials hierarchy + visible movement evidence.**
