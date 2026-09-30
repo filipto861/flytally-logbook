@@ -309,7 +309,7 @@ Implemented, verification pending:
 
 Database prerequisite: source review confirms the implementation writes an explicit empty string, not NULL, but the live/local PostgreSQL column default/check constraints for `flights.billing_basis` and `aircraft.billing_basis` still require read-only verification before B1A can close. No migration is planned unless that evidence proves one is required.
 
-Verification status: **PARTIAL** — Filip's local run passed TypeScript, the targeted B1A suite **35/35**, and production build. Full regression reached **926/928** with exactly two stale test-contract failures that still marked Billing as required; those tests have now been aligned to the frozen optional-cost decision and require rerun. PostgreSQL was **NOT RUN**: the core command skipped all 55 tests and local `psql` is unavailable. Browser verification is still **NOT RUN**. B1A remains open until the rerun, database evidence and browser check are complete.
+Verification status: **PARTIAL** — TypeScript PASS, stale-contract targeted rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS. PostgreSQL is still **NOT RUN**: the core command skipped all 55 tests, local `psql` is unavailable and no `.env.local` exists for the direct Neon metadata query. Browser verification is still **NOT RUN**. B1A remains open only for database evidence and targeted browser verification.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
