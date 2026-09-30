@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Reduced repeated manual-entry intro copy and made Add aircraft contextual when the pilot already has aircraft.
 - Added responsive B2 layout rules for desktop, iPad-width and narrow mobile time grids.
 - No parser, persistence schema, certification payload/hash, recency or billing semantics changed.
-- **Verification status:** NOT RUN on current B2 head; PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
+- **Verification status:** merge-ready — local TypeScript PASS, targeted B2/affected historical contracts 47/47 PASS, full unit/regression 940/940 PASS, production build PASS. PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
 
 ### New Flight UI/UX Simplicity — B1B completion semantics
 - Removed the duplicated inline **Review before save** card and the second `Ready to save` completion state from New Flight.
