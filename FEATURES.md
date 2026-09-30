@@ -125,6 +125,8 @@ Important boundary:
 - B1A implements Costs as an optional domain contract: blank means **Not tracked**, configured BLOCK/AIR defaults may auto-apply, and malformed populated values fail closed.
 - Untracked billing contributes no calculated aircraft cost and does not synthesize a BLOCK basis or rate snapshot; structured expenses remain independent.
 - Missing route/times remain draft-save compatible and certification-gated.
+- B1B simplifies completion to one blocker/action surface and one primary **Save & review** action; **Add another flight** is offered only after a successful save in the saved review handoff.
+- The saved-flight review/certification workspace remains authoritative; New Flight no longer duplicates it with a second inline review card.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
