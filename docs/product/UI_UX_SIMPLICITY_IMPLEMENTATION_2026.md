@@ -810,4 +810,6 @@ Current state:
 - B4 evidence record: `docs/product/UI_UX_SIMPLICITY_B4_OPTIONAL_DETAILS_2026.md`;
 - B5 runtime batch: NOT STARTED.
 
-**Current gate:** rerun B4 targeted/full regression on the current head after test-only reconciliation. Initial TypeScript and production build passed; PostgreSQL is N/A. Authenticated presentation smoke remains deferred to cumulative live verification.
+- B4 verification: TypeScript PASS, reconciled targeted contracts **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A.
+
+**Current gate:** merge B4, then execute B5 responsive/accessibility closeout while retaining cumulative authenticated live UI smoke as an explicit deferred verification item.
