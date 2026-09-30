@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0.0 VERIFICATION  
+**Status:** ACTIVE · DESIGN FROZEN / F0.0 DONE / F0.1 NEXT  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -361,7 +361,7 @@ F0 must document the exact current Save contract instead of generalizing from re
 
 ## 9. Milestones
 
-### F0.0 — Minimal characterization for integrity hotfix — VERIFICATION
+### F0.0 — Minimal characterization for integrity hotfix — DONE
 
 **Goal:** prove the exact affected production contract before changing GPS behavior.
 
@@ -395,7 +395,7 @@ Current evidence adds one important role finding:
 - current function-time allocation gives `INSTRUKTOR` zero credit;
 - the smallest F0.1 role set proven coherent without adding new crew UI is therefore **PIC only**.
 
-Verification remains required before F0.0 can close.
+Verification: Verify FlyTally web #970 PASS; TypeScript PASS; unit/regression 971/971 PASS; PostgreSQL acceptance 55/55 PASS. F0.0 is closed with no runtime/schema change.
 
 ### F0.1 — GPS fail-closed integrity hotfix
 
