@@ -397,7 +397,7 @@ Current evidence adds one important role finding:
 
 Verification: Verify FlyTally web #970 PASS; TypeScript PASS; unit/regression 971/971 PASS; PostgreSQL acceptance 55/55 PASS. F0.0 is closed with no runtime/schema change.
 
-### F0.1 — GPS fail-closed integrity hotfix
+### F0.1 — GPS fail-closed integrity hotfix — IMPLEMENTED / VERIFICATION PENDING
 
 **Goal:** eliminate the production fail-open defect with minimal blast radius.
 
