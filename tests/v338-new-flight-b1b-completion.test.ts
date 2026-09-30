@@ -59,10 +59,10 @@ test("B1B does not move route/time completeness into the draft-save UI",()=>{
 
   assert.doesNotMatch(form,/required[^\n]*(Departure|Arrival|Off-block|On-block)|route and times|required before certification/i);
   assert.doesNotMatch(form,/!departure&&|!arrival&&|!off&&|!on&&/);
-  assert.match(compliance,/Departure/);
-  assert.match(compliance,/Arrival/);
-  assert.match(compliance,/Off-block/);
-  assert.match(compliance,/On-block/);
+  assert.match(compliance,/issue\("departure","departure","Departure place is required\."\)/);
+  assert.match(compliance,/issue\("arrival","arrival","Arrival place is required\."\)/);
+  assert.match(compliance,/issue\("off_block","off_block","Departure time must be recorded in UTC\."\)/);
+  assert.match(compliance,/issue\("on_block","on_block","Arrival time must be recorded in UTC\."\)/);
   assert.match(detail,/blockingComplianceIssues\(compliance\)/);
 });
 
