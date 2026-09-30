@@ -129,6 +129,7 @@ Important boundary:
 - The saved-flight review/certification workspace remains authoritative; New Flight no longer duplicates it with a second inline review card.
 - B2 promotes Role beside Date/Aircraft, groups Route and one UTC timeline, and exposes the applied landing/PF evidence in the collapsed Flight experience summary without forcing normal preset reconfirmation.
 - Existing movement adjustment remains available through progressive disclosure; draft route/time optionality and certification/recency rules are unchanged.
+- B3 exposes the real Aircraft & logbook snapshot context, keeps required DUAL/Safety Pilot/SPIC/PICUS evidence in a role-driven section, and separates Training purpose/Task into Optional details without changing structured purpose parsing.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
