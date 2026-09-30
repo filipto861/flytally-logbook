@@ -324,3 +324,18 @@ B1A conclusion:
 - **no schema migration is required for B1A**.
 
 This is production metadata evidence only; no production row was inserted or modified for the verification.
+
+
+## Preview deployment evidence — 30 September 2026
+
+Vercel preview deployment `dpl_12ayBDGYGVAz7EbfwPQEM4LsTpb8` reached **READY** at `logbook-frr0qht6u-filipito.vercel.app`.
+
+The deployment metadata references commit `342bb7daadb31b8df959da6073482d05541ba26e`. The current branch is six commits ahead, but the diff from that deployment SHA to the current branch contains only:
+
+- `CHANGELOG.md`;
+- `ROADMAP.md`;
+- `docs/product/UI_UX_SIMPLICITY_B1A_OPTIONAL_COSTS_2026.md`.
+
+Therefore the preview is **runtime-equivalent** to the current B1A branch head.
+
+Deployment Protection is enabled. Authenticated browser UI smoke remains pending; no production deployment has been requested or performed.
