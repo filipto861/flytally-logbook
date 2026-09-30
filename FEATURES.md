@@ -187,7 +187,7 @@ Frozen behavior:
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F0 full field/consumer contract inventory is NEXT; full Manual/GPS domain convergence and UX simplification then follow in small milestones.
+- F0 full field/consumer contract inventory is DONE/verified (Verify #982; 988/988 unit; PostgreSQL 55/55); F1 shared normalization is NEXT and must preserve certification v1–v8, historical snapshots and the current PIC-only GPS role boundary.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
