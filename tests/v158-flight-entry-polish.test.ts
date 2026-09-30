@@ -46,8 +46,9 @@ test("v1.58 smart defaults remain transparent after B4 helper-copy triage",()=>{
 
 test("v1.58 required-field guidance stays scoped while B5 delays pristine error styling",()=>{
   for(const name of ["registration","role","evidence","aircraftClass"]){
-    const required=new RegExp(`name="${name}"[^>]*required`);
-    assert.match(form,required,name);
+    const start=form.indexOf(`name="${name}"`),end=form.indexOf("</select>",start),control=form.slice(start,end);
+    assert.ok(start>=0&&end>start,name);
+    assert.ok(control.includes(" required "),name);
   }
   assert.match(form,/aria-invalid=\{submitAttempted&&!registration\|\|profileNeedsConfiguration\|\|undefined\}/);
   for(const name of ["role","evidence","aircraftClass"])assert.ok(form.includes(`aria-invalid={submitAttempted&&!${name}||undefined}`),name);
