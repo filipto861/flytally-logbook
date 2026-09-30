@@ -157,6 +157,14 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
   await expect(page.getByText(/OK-E2E differs from its usual profile/)).toHaveCount(0);
+
+  await page.getByRole("button",{name:"Manual entry"}).click();
+  const manualForm=page.locator("#new-flight-manual-form");
+  await manualForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await expect(manualForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(manualForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await manualForm.locator('select[name="aircraftClass"]').selectOption("ULL");
+  await expect(manualForm.locator('[data-intelligent-review="registration_profile_aircraft_class"]')).toContainText("OK-E2E differs from its usual profile");
   await expectNoHorizontalOverflow(page);
 });
 
