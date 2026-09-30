@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B2 Essentials Hierarchy + Visible Movement Evidence
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — MERGE READY  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b2-essentials`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -134,19 +134,21 @@ No persistence semantics or schema are changed.
 
 ## Verification state
 
-Current B2 head:
+Local verification on 30 September 2026:
 
-- TypeScript: **NOT RUN**
-- targeted B2 / affected historical tests: **NOT RUN**
-- full unit/regression: **NOT RUN**
-- production build: **NOT RUN**
+- TypeScript: **PASS**
+- targeted B2 / affected historical tests: **47/47 PASS**
+- full unit/regression: **940/940 PASS**
+- production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated browser: **DEFERRED TO CUMULATIVE LIVE REDESIGN SMOKE — NOT PASS**
+
+The build completed successfully with Next.js 16.3.2. The only build warning was that Next.js ignored a package-lock.json outside the repository root; it did not affect the repository build result.
 
 Filip chose to test the cumulative redesign live rather than attach protected Preview to production DB. That remains a deferred verification item, not a claimed pass.
 
 ## Next after B2
 
-After B2 code/test/build verification and merge:
+Merge B2, retain the deferred cumulative live UI smoke, then start:
 
 **B3 — Profile summary + role-driven required context.**
