@@ -18,6 +18,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Restored collapsed evidence summaries on narrow mobile, added earlier iPad/zoom grid reflow and disabled sticky New Flight actions where touch keyboards or very small/short viewports could cause overlap.
 - Added coarse-pointer 44px targets and forced-colors treatment for blocker controls.
 - Switched the small Flight-experience Change cue to the normal link token; measured canonical New Flight muted/link colors meet WCAG AA normal-text contrast on dark/light panel surfaces.
+- Final authenticated screenshot review separated the Flight experience empty-state title and explanatory copy so they cannot visually concatenate at 320px or 200% reflow.
 - No parser, persistence schema, certification payload/hash, recency, collaboration, billing or UTC semantics changed.
 - **Verification status:** automated gate PASS and merged in PR #179 as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`; TypeScript PASS, targeted B5/affected historical contracts 100/100 PASS on the runtime head, final v1.58+B5 reconciliation 15/15 PASS, full unit/regression 962/962 PASS, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. Production deployment is READY on `fly-tally.com`; cumulative authenticated live matrix remains pending and is not reported as PASS.
 
