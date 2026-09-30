@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Aircraft sharing preserves no-billing defaults and rejects/surfaces malformed populated billing rather than silently clearing or repairing it.
 - Read-only billing labels distinguish **Not tracked** from malformed persisted billing (**Unavailable**).
 - Legacy billing helpers remain compatible for untouched historical callers; certification, recency, UTC and crew-credit contracts are unchanged.
-- **Verification status:** PARTIAL — TypeScript PASS; stale-contract targeted rerun 55/55 PASS; full unit/regression 928/928 PASS; production build PASS. Read-only production DB metadata confirms both billing columns are nullable text with legacy BLOCK defaults and no billing CHECK constraints, so no migration is required. The local PostgreSQL integration harness remains skipped/unavailable and is not counted as PASS. Authenticated browser verification remains pending.
+- **Verification status:** merge-ready — TypeScript PASS; targeted B1A 35/35 PASS; stale-contract rerun 55/55 PASS; full unit/regression 928/928 PASS; production build PASS; read-only production DB metadata confirms both billing columns are nullable text with legacy BLOCK defaults and no billing CHECK constraints, so no migration is required. Protected Preview was READY but authenticated smoke is explicitly deferred to a live post-merge check because Preview has no DATABASE_URL; the deferred check is not reported as PASS.
 
 
 ### New Flight UI/UX Simplicity — B0.5 integrity baseline
