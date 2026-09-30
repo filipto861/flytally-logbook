@@ -171,6 +171,37 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expectNoHorizontalOverflow(page);
 });
 
+test("GPS import fails closed for invalid profile context and exposes only PIC",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-09-24T12:10:00Z</when><when>2026-09-24T12:11:00Z</when><gx:coord>14.1 50.1 300</gx:coord><gx:coord>14.2 50.2 500</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f01-profile-check.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+
+  const registration=gpsForm.locator('select[name="registration"]');
+  await registration.selectOption("OK-E2E");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
+  await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
+
+  await registration.selectOption("OK-ULL1");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("ULL");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("ULL");
+  await expect(gpsForm.getByText("Needs configuration.")).toHaveCount(0);
+
+  await registration.selectOption("OK-BAD1");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("");
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
+  await expect(gpsForm.getByText("Needs configuration.")).toBeVisible();
+  await expect(gpsForm.getByText("Needs configuration",{exact:true})).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("Safety Pilot Actual PIC form keeps manual and connected identity explicit",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated Safety Pilot PIC browser coverage requires the isolated CI database.");
   resetSafetyPilotPicFixture();
