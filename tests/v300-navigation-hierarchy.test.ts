@@ -42,7 +42,7 @@ test("v3.0 U1 rolls flight attention into the Flights destination",()=>{
   assert.match(sidebar,/pathname\.startsWith\("\/flights\/"\)/);
 });
 
-test("v3.0 roadmap preserves the UX closeout while current priorities move beyond it",()=>{
+test("v3.0 roadmap preserves completed UX work while the GPS integrity defect pre-empts M2B",()=>{
   const roadmap=read("ROADMAP.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
   assert.match(roadmap,/\| UX & design consistency \| ✅ \|/);
@@ -51,11 +51,11 @@ test("v3.0 roadmap preserves the UX closeout while current priorities move beyon
   assert.match(roadmap,/\| Safety Pilot ↔ PIC shared-flight workflow \| ✅ \|/);
   assert.match(roadmap,/\| General PIC invitation across source roles \| ✅ \|/);
   assert.match(roadmap,/\| UI\/UX Simplicity Audit 2026 \| ✅ \|/);
-  assert.match(roadmap,/\| Multi-aircraft Product Scale \| ⏳ \|/);
+  assert.match(roadmap,/\| Flight Entry Workflow 3\.0 \| 🚧 \|/);\n  assert.match(roadmap,/\| Multi-aircraft Product Scale \| ⏸️ \|/);
   assert.match(roadmap,/\| Multi-aircraft M0 — contract & evidence audit \| ✅ \|/);
   assert.match(roadmap,/\| Multi-aircraft M2A — helicopter snapshot integrity \| ✅ \|/);
   assert.match(roadmap,/\| Multi-aircraft M1 — canonical profile validation \| ✅ \|/);
-  assert.match(roadmap,/## P3 — Multi-aircraft Product Scale — NEXT: M2B/);
+  assert.match(roadmap,/## Flight Entry Workflow 3\.0 — ACTIVE/);\n  assert.match(roadmap,/## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE/);
   assert.match(roadmap,/#### M2B — Remaining historical & dynamic applicability integrity/);
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
