@@ -362,7 +362,7 @@ Implemented, automated verification pending:
 - measured New Flight muted/link token contrast meets 4.5:1 on canonical dark/light panel surfaces;
 - no parser, schema, certification, recency, collaboration, billing or UTC semantics changed.
 
-Verification status: **NOT RUN on current B5 head**. PostgreSQL N/A. Cumulative authenticated live matrix is **PENDING / NOT PASS** and remains required before overall UI/UX Simplicity closeout.
+Verification status: initial local gate — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS**, production build PASS, full unit/regression **961/962** with one stale v1.58 source-contract assertion. That historical assertion has been reconciled test-only; clean rerun on the current head is **PENDING**. PostgreSQL N/A. Cumulative authenticated live matrix is **PENDING / NOT PASS** and remains required before overall UI/UX Simplicity closeout.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
