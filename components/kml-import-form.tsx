@@ -8,7 +8,7 @@ import type { MapTrack,TrackPoint } from "@/lib/data/tracks";
 import type { ImportReviewEvent } from "@/components/gps-import-review-player";
 import { flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,overview,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackQuality,trackStats,type KmlPoint,type SplitSuggestion,type TrackFileFormat,type TrackQuality,type TrackSource } from "@/lib/track-processing";
 import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
-import { BILLING_SHARES,parseBilling } from "@/lib/billing";
+import { BILLING_SHARES,parseOptionalBilling } from "@/lib/billing";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 import { PendingActionButton } from "@/components/pending-action-button";
 
@@ -19,6 +19,7 @@ type AirportAction=(requests:AirportDetectionRequest[])=>Promise<AirportDetectio
 type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSuggestion[];registration:string;timeBasis:TrackTimeBasis;format:TrackFileFormat;source:TrackSource;quality:TrackQuality};
 type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;takeoffs:string;note:string;reviewed:boolean};
 type AirportOptions={departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]};
+type ImportBillingChoice=""|"BLOCK"|"AIR"|"INVALID";
 
 const sourceLabel=(source:TrackSource)=>source==="adsbexchange"?"ADSBExchange":source==="flightradar24"?"Flightradar24":source==="skydemon"?"SkyDemon":"Generic GPS";
 
@@ -63,7 +64,7 @@ function AirportReviewField({label,name,value,candidates,onChange}:{label:string
 }
 
 export function KmlImportForm({action,airportAction,aircraft}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[]}){
-  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[balloonOperation,setBalloonOperation]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
+  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[registration,setRegistration]=useState(""),[billing,setBilling]=useState<ImportBillingChoice>(""),[billingShare,setBillingShare]=useState(1),[balloonOperation,setBalloonOperation]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
@@ -98,8 +99,9 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
     return()=>{cancelled=true;clearTimeout(timer)};
   },[analysis,cuts,airportAction]);
 
-  const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBilling=parseBilling(selectedAircraft?.billing_basis),selectedBalloon=String(selectedAircraft?.regulatory_category||"").toUpperCase()==="BALLOON"||String(selectedAircraft?.aircraft_class||"").toUpperCase()==="BALLOON";
-  const ready=parts.length>0&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&(!selectedBalloon||(Number(review.takeoffs)>0&&Number(review.starts)>0)))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
+  const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBalloon=String(selectedAircraft?.regulatory_category||"").toUpperCase()==="BALLOON"||String(selectedAircraft?.aircraft_class||"").toUpperCase()==="BALLOON";
+  useEffect(()=>{const parsed=parseOptionalBilling(selectedAircraft?.billing_basis);setBilling(parsed.error?"INVALID":parsed.settings?.basis||"");setBillingShare(parsed.settings?.share||1)},[registration,selectedAircraft?.billing_basis]);
+  const ready=parts.length>0&&billing!=="INVALID"&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&(!selectedBalloon||(Number(review.takeoffs)>0&&Number(review.starts)>0)))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
   const reviewedCount=reviews.filter(review=>review.reviewed).length;
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
@@ -131,12 +133,12 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         <label>Class<select key={`class-${registration}`} name="aircraftClass" defaultValue={selectedAircraft?.aircraft_class||"ULL"}><option>ULL</option><option>SEP</option><option>TMG</option><option>MEP</option><option>SET</option><option>HELICOPTER</option><option>BALLOON</option><option>OTHER</option><option>GLIDER</option></select></label>
         <label>Logbook<select key={`evidence-${registration}`} name="evidence" defaultValue={selectedAircraft?.evidence||"ULL"}><option>ULL</option><option>EASA</option></select></label>
         <label>Role<select key={`role-${registration}`} name="role" defaultValue={selectedAircraft?.default_role||"PIC"}><option>PIC</option><option>DUAL</option><option value="INSTRUKTOR">INSTRUCTOR</option><option>SAFETY PILOT</option><option>CO-PILOT</option><option>PAX</option><option>OBSERVER</option></select></label>
-        <label>Billing time<select key={`billing-${registration}`} name="billingBasis" defaultValue={selectedBilling.basis}><option>BLOCK</option><option>AIR</option></select></label>
-        <label>Cost share<select key={`share-${registration}`} name="billingShare" defaultValue={selectedBilling.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
+        <label>Billing time<select name="billingBasis" value={billing} onChange={event=>setBilling(event.target.value as ImportBillingChoice)}>{billing==="INVALID"?<option value="INVALID" disabled>Needs configuration</option>:null}<option value="">Not tracked</option><option>BLOCK</option><option>AIR</option></select><small className={billing==="INVALID"?"field-message-error":undefined}>{billing==="INVALID"?"Stored aircraft billing is invalid. Choose Not tracked, BLOCK or AIR.":"Optional aircraft-cost tracking."}</small></label>
+        <label>Cost share<select name="billingShare" value={billingShare} onChange={event=>setBillingShare(Number(event.target.value))} disabled={billing===""||billing==="INVALID"}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
         {selectedBalloon?<label><span>Balloon operation <span className="field-hint" aria-hidden="true">Required</span></span><select name="balloonOperation" value={balloonOperation} onChange={event=>setBalloonOperation(event.target.value)} required><option value="">Select free / tethered</option><option value="FREE">Free flight</option><option value="TETHERED">Tethered flight</option></select><small>Required BFCL evidence. GPS cannot determine whether the operation was free or tethered.</small></label>:<input type="hidden" name="balloonOperation" value=""/>}
         <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
-      <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and billing defaults. Review fields remain editable.</p>
+      <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and configured defaults. Review fields remain editable.</p>
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
       <div className="flight-review-list">{parts.map((part,index)=>{
