@@ -153,8 +153,8 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expect(gpsForm.locator('select[name="registration"]')).toBeVisible();
   await gpsForm.locator('select[name="registration"]').selectOption("OK-HST1");
 
-  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
-  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
   await expect(page.getByText(/OK-HST1 differs from its usual profile/)).toHaveCount(0);
 
@@ -182,19 +182,19 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
 
   const registration=gpsForm.locator('select[name="registration"]');
   await registration.selectOption("OK-E2E");
-  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
-  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
   await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
 
   await registration.selectOption("OK-ULL1");
-  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("ULL");
-  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("ULL");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("ULL");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("ULL");
   await expect(gpsForm.getByText("Needs configuration.")).toHaveCount(0);
 
   await registration.selectOption("OK-BAD1");
-  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("");
-  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
   await expect(gpsForm.getByText("Needs configuration.")).toBeVisible();
