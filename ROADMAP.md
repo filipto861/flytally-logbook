@@ -349,9 +349,9 @@ PR #178 merged as `b18e19a1550d73536cb9f15abec04b3b275361f1`.
 
 ### Current implementation checkpoint — B5
 
-Branch: `feat/new-flight-b5-closeout`
+PR #179 merged as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`.
 
-Implemented, automated verification pending:
+Implemented:
 - ordinary pristine Date/Registration/Role/Logbook/Class fields no longer present inline error styling before a save attempt;
 - the single completion surface now exposes focusable missing-field blockers that open the owning native disclosure before focusing the relevant control;
 - native `details/summary` semantics remain intact without redundant ARIA state;
@@ -362,7 +362,7 @@ Implemented, automated verification pending:
 - measured New Flight muted/link token contrast meets 4.5:1 on canonical dark/light panel surfaces;
 - no parser, schema, certification, recency, collaboration, billing or UTC semantics changed.
 
-Verification status: **AUTOMATED GATE PASS / MERGE READY** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. Cumulative authenticated live matrix remains **PENDING / NOT PASS** and is required before overall UI/UX Simplicity closeout.
+Verification status: **AUTOMATED GATE PASS / MERGED / PRODUCTION READY** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. Vercel production deployment for merge `3a73ad85...` is READY on `fly-tally.com`. Cumulative authenticated live matrix remains **PENDING / NOT PASS** and is the final required closeout gate.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
