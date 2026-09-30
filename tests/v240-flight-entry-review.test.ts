@@ -62,7 +62,8 @@ test("v2.4 maps intelligent findings only to visible fields",()=>{
 });
 
 test("v2.4 keeps hard required-state review and advisory intelligence separate",()=>{
-  assert.match(form,/Complete before save:/);
+  assert.match(form,/Complete before save/);
+  assert.match(form,/className="entry-save-state"/);
   assert.match(panel,/attention\?"form-error":"role-guidance"/);
   assert.match(panel,/role=\{attention\?"alert":undefined\}/);
   assert.match(panel,/Suggestions use only this form and your own stored flights/);
