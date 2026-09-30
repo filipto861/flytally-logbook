@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect,useState,type KeyboardEvent,type ReactNode } from "react";
+import Link from "next/link";
 import { FlightWorkflowProgress,type FlightWorkflowState } from "@/components/flight-workflow-progress";
 
 type Tab = "overview" | "gps" | "logbook";
@@ -27,6 +28,7 @@ export function FlightDetailWorkspace({overview,gps,logbook,gpsCount=0,initialTa
   };
   const item=(value:Tab,label:string,badge?:number)=><button type="button" role="tab" id={`flight-tab-${value}`} aria-controls={`flight-panel-${value}`} className={tab===value?"active":""} aria-selected={tab===value} tabIndex={tab===value?0:-1} onClick={()=>selectTab(value)} onKeyDown={event=>onTabKeyDown(event,value)}><span>{label}</span>{badge!==undefined?<b>{badge}</b>:null}</button>;
   return <section className="flight-detail-workspace">
+    {postSave?<div className="flight-post-save" role="status"><div><strong>Flight saved.</strong><span>Review the editable draft below before certification.</span></div><Link className="secondary-link" href="/flights/new?added=1">Add another flight</Link></div>:null}
     <FlightWorkflowProgress state={workflow} activeTab={tab} onSelectTab={selectTab}/>
     <nav className="detail-tabs" role="tablist" aria-label="Flight detail sections">{item("overview","Overview")}{item("gps","GPS track",gpsCount)}{item("logbook","Logbook data")}</nav>
     <div className="detail-tab-content" role="tabpanel" id={`flight-panel-${tab}`} aria-labelledby={`flight-tab-${tab}`}>{tab==="overview"?overview:tab==="gps"?gps:logbook}</div>
