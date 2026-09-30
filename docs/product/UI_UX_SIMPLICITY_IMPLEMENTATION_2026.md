@@ -796,20 +796,15 @@ Current state:
 - repository reconciliation: DONE;
 - Filip decisions D1–D5: FROZEN;
 - B0.5 runtime implementation: **DONE / VERIFIED**;
-- B0.5 baseline record: `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`;
-- B1A runtime implementation: **DONE / MERGED** in PR #174 (`37eac801cc69b19c07d4c140213ccda37c4e85ff`);
-- B1A database evidence: **PASS (read-only production metadata)**; no migration required;
-- B1A authenticated UI smoke: **DEFERRED, not PASS** and carried to live cumulative redesign verification;
-- B1B runtime implementation: **DONE / MERGED** in PR #175 (`0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`);
-- B1B verification: TypeScript PASS, production build PASS, targeted reconciled contracts **34/34 PASS**, full unit/regression **934/934 PASS**; PostgreSQL N/A;
-- B2 runtime implementation: **DONE / MERGED** in PR #176 (`a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`);
-- B2 verification: TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS; PostgreSQL N/A;
-- B3 runtime implementation: **DONE / MERGED** in PR #177 (`645348ef7280f1b0452d457e152dfdaa0da4a448`);
-- B3 verification: TypeScript PASS, production build PASS, reconciled targeted contracts **22/22 PASS**, full unit/regression **946/946 PASS**; PostgreSQL N/A;
-- B4 runtime implementation: **IMPLEMENTED IN `feat/new-flight-b4-optional-details` — VERIFICATION PENDING**;
-- B4 evidence record: `docs/product/UI_UX_SIMPLICITY_B4_OPTIONAL_DETAILS_2026.md`;
-- B5 runtime batch: NOT STARTED.
+- B1A: **DONE / MERGED** in PR #174;
+- B1B: **DONE / MERGED** in PR #175;
+- B2: **DONE / MERGED** in PR #176;
+- B3: **DONE / MERGED** in PR #177;
+- B4: **DONE / MERGED** in PR #178 (`b18e19a1550d73536cb9f15abec04b3b275361f1`);
+- B4 verification: TypeScript PASS, targeted **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
+- B5 runtime implementation: **AUTOMATED GATE PASS / MERGE READY**;
+- B5 evidence record: `docs/product/UI_UX_SIMPLICITY_B5_CLOSEOUT_2026.md`;
+- B5 verification: TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
+- cumulative authenticated live New Flight matrix: **PENDING / NOT PASS**.
 
-- B4 verification: TypeScript PASS, reconciled targeted contracts **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A.
-
-**Current gate:** merge B4, then execute B5 responsive/accessibility closeout while retaining cumulative authenticated live UI smoke as an explicit deferred verification item.
+**Current gate:** merge B5 runtime, then perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.

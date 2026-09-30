@@ -8,13 +8,13 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("B1B New Flight has one completion surface and one primary save action",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/function Submit\(\{editing=false\}:\{editing\?:boolean\}\)/);
+  assert.match(form,/function Submit\(\{editing=false,onAttempt\}:\{editing\?:boolean;onAttempt\?:\(\)=>void\}\)/);
   assert.match(form,/name="intent" value="save"/);
   assert.match(form,/>\{editing\?"Save changes":"Save & review"\}<\/PendingActionButton>/);
   assert.doesNotMatch(form,/Save and add another|Review before save|entry-review-summary|Ready to save/);
   assert.match(form,/className="entry-save-state"/);
   assert.match(form,/Complete before save/);
-  assert.match(form,/missing\.map\(item=>missingLabel\[item\]\|\|item\)\.join\(" · "\)/);
+  assert.match(form,/missing\.map\(item=><button key=\{item\} type="button" className="entry-blocker-link"/);
   assert.match(form,/Creates an editable draft for final review\./);
 });
 

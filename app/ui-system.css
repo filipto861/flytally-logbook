@@ -476,3 +476,69 @@ button[data-loading="true"]::after{
 .legal-footer-link{text-decoration:underline;text-underline-offset:2px}
 
 .legal-footer-slot{margin-top:var(--ui-card-gap)}
+
+
+/* B5 New Flight closeout: responsive reflow, touch-safe blockers and accessible disclosure summaries. */
+.flight-form :where(.entry-section,.entry-section-body,.optional-detail-group,.entry-save-state,.entry-save-blockers){min-inline-size:0;max-inline-size:100%}
+.flight-form :where(input,select,textarea,button,a[href],summary):focus-visible{scroll-margin-block:96px}
+.entry-save-blockers{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:2px}
+.entry-blocker-link{
+  min-height:32px;
+  padding:2px 4px;
+  border:0;
+  background:transparent;
+  color:var(--link);
+  font:inherit;
+  font-size:.68rem;
+  font-weight:800;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  cursor:pointer;
+}
+.entry-blocker-link:hover,.entry-blocker-link:focus-visible{color:var(--text)}
+.entry-summary-action{color:var(--link)}
+
+@media(max-width:820px){
+  .flight-form .essential-identity-grid,
+  .flight-form .secondary-entry-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+@media(max-width:600px){
+  .flight-form .entry-section>summary{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    column-gap:12px;
+    row-gap:4px;
+  }
+  .flight-form .entry-section>summary>small{
+    display:flex;
+    grid-column:1/-1;
+    min-width:0;
+    margin-left:0;
+    justify-content:flex-start;
+    text-align:left;
+    overflow-wrap:anywhere;
+  }
+  .flight-form .entry-section>summary::after{grid-column:2;grid-row:1}
+  .flight-form .experience-summary{justify-content:flex-start}
+}
+
+@media(max-width:360px){
+  .flight-form .form-actions.field-actions{position:static;bottom:auto}
+  .flight-form .entry-save-blockers{display:grid;grid-template-columns:minmax(0,1fr)}
+  .flight-form .entry-blocker-link{width:100%;justify-content:flex-start;text-align:left}
+}
+
+@media(max-width:900px) and (max-height:600px){
+  .flight-form .form-actions.field-actions{position:static;bottom:auto}
+}
+
+@media(pointer:coarse){
+  .flight-form .form-actions.field-actions{position:static;bottom:auto}
+  .entry-blocker-link{min-height:44px;padding:8px 6px}
+}
+
+@media(forced-colors:active){
+  .entry-blocker-link{border:1px solid ButtonText}
+}

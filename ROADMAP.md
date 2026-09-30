@@ -337,21 +337,32 @@ PR #177 merged as `645348ef7280f1b0452d457e152dfdaa0da4a448`.
 - PostgreSQL N/A;
 - authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
 
-### Current implementation checkpoint — B4
+### Completed checkpoint — B4
 
-Branch: `feat/new-flight-b4-optional-details`
+PR #178 merged as `b18e19a1550d73536cb9f15abec04b3b275361f1`.
 
-Implemented, verification pending:
 - Training purpose/Task, Night/IFR, Professional context, Costs/expenses and Notes are consolidated under one native **Optional details** disclosure;
-- populated Edit records auto-open Optional details and the summary identifies populated domains;
-- Night/IFR move out of Flight experience while preserving the same field/parser semantics;
-- historical stored Night/IFR values remain discoverable even when not normally applicable;
-- malformed billing remains fail-closed and forces Optional details open;
-- repeated profile/role/optional helper prose is compacted while validation, Connection and signed-evidence consequences remain visible;
-- Professional context supports embedded presentation without changing applicability semantics;
-- no schema, parser, certification, recency, collaboration, billing or UTC semantics changed.
+- populated Edit records remain discoverable and malformed billing remains fail-closed;
+- TypeScript PASS, reconciled targeted contracts 34/34 PASS, full unit/regression 954/954 PASS, production build PASS on the runtime-equivalent head;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried into B5 cumulative live verification.
 
-Verification status: **DONE / MERGE READY** — TypeScript PASS, reconciled targeted contracts **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent B4 head. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next milestone: **B5 — Responsive, accessibility and final UX closeout**.
+### Current implementation checkpoint — B5
+
+Branch: `feat/new-flight-b5-closeout`
+
+Implemented, automated verification pending:
+- ordinary pristine Date/Registration/Role/Logbook/Class fields no longer present inline error styling before a save attempt;
+- the single completion surface now exposes focusable missing-field blockers that open the owning native disclosure before focusing the relevant control;
+- native `details/summary` semantics remain intact without redundant ARIA state;
+- mobile disclosure summaries remain visible instead of inheriting the historical <=600px hide rule;
+- identity and secondary grids reflow earlier for iPad portrait / 200% zoom;
+- New Flight sticky actions fall back to normal flow at 320px, short viewports and coarse/touch pointers to avoid virtual-keyboard overlap;
+- new blocker controls receive 44px coarse-pointer targets and forced-colors treatment;
+- measured New Flight muted/link token contrast meets 4.5:1 on canonical dark/light panel surfaces;
+- no parser, schema, certification, recency, collaboration, billing or UTC semantics changed.
+
+Verification status: **AUTOMATED GATE PASS / MERGE READY** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. Cumulative authenticated live matrix remains **PENDING / NOT PASS** and is required before overall UI/UX Simplicity closeout.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 

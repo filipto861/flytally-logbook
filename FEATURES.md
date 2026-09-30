@@ -131,6 +131,7 @@ Important boundary:
 - Existing movement adjustment remains available through progressive disclosure; draft route/time optionality and certification/recency rules are unchanged.
 - B3 exposes the real Aircraft & logbook snapshot context, keeps required DUAL/Safety Pilot/SPIC/PICUS evidence in a role-driven section, and separates Training purpose/Task into Optional details without changing structured purpose parsing.
 - B4 consolidates Training/Task, Night/IFR, Professional context, Costs/expenses and Notes under one Optional details disclosure, auto-opens populated Edit data, and trims non-decision helper copy while preserving validation and evidence consequences.
+- B5 adds delayed pristine validation styling, focusable blocker navigation, preserved mobile disclosure summaries, 320px/zoom reflow safeguards, touch-keyboard-safe action fallback and measured helper/link contrast without changing flight semantics.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
