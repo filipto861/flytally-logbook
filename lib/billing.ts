@@ -69,6 +69,7 @@ export function calculatedFlightPrice(
 
 export function billingLabel(value: unknown): string {
   const parsed=parseOptionalBilling(value);
+  if(parsed.error)return "Unavailable";
   if(!parsed.settings)return "Not tracked";
   const { basis, share }=parsed.settings;
   return `${basis}${share > 1 ? ` · share 1/${share}` : " · full price"}`;
