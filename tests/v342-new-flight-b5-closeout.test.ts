@@ -60,7 +60,7 @@ test("B5 keeps mobile summaries visible and reflows New Flight through 320px",()
 test("B5 touch targets and forced-colors treatment cover the new blocker controls",()=>{
   const css=read("app/ui-system.css");
   const acceptance=read("app/v300-u6-acceptance.css");
-  assert.match(css,/@media\(pointer:coarse\)\{[\s\S]*?\.entry-blocker-link\{min-height:44px/);
+  assert.match(css,/@media\(pointer:coarse\)\{[\s\S]*?\.flight-form \.form-actions\.field-actions\{position:static;bottom:auto\}[\s\S]*?\.entry-blocker-link\{min-height:44px/);
   assert.match(css,/@media\(forced-colors:active\)\{[\s\S]*?\.entry-blocker-link\{border:1px solid ButtonText\}/);
   assert.match(acceptance,/:where\(button,[\s\S]*?summary\)\{[\s\S]*?min-height:44px/);
   assert.match(acceptance,/font-size:16px/);
