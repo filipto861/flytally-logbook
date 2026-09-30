@@ -266,6 +266,16 @@ button[data-loading="true"]::after{
   cursor:pointer;
 }
 .entry-aircraft-context-action:hover,.entry-aircraft-context-action:focus-visible{color:var(--accent2)}
+.optional-details-body{display:grid;gap:var(--ui-space-4)}
+.optional-detail-group{display:grid;gap:var(--ui-space-3)}
+.optional-detail-group+.optional-detail-group{padding-top:var(--ui-space-3);border-top:1px solid var(--line)}
+.optional-detail-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.optional-detail-heading strong{font-size:.76rem}
+.optional-detail-heading small,.optional-detail-note{color:var(--muted);font-size:.66rem;line-height:1.4}
+.optional-detail-heading small{text-align:right}
+.optional-detail-note{margin:0}
+.optional-costs .price-preview{margin-top:0}
+.entry-section-optional .notes-field{display:grid;gap:6px}
 @media(max-width:1000px){
   .flight-form .essential-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
