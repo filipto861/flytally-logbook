@@ -18,7 +18,8 @@ test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(panel,/createPortal/);
   assert.match(panel,/fieldTarget\(form,preferredField\(item\.code\)\)/);
   assert.match(panel,/data-intelligent-review=\{item\.code\}/);
-  assert.match(form,/className="entry-review-summary"/);
+  assert.doesNotMatch(form,/className="entry-review-summary"|Review before save/);
+  assert.match(form,/className="entry-save-state"/);
 });
 
 test("v2.4 continuation and return assistance edit the same canonical route fields",()=>{
@@ -95,6 +96,8 @@ test("v2.4 hands successful saves directly into final Logbook review",()=>{
   assert.match(actions,/\/flights\/\$\{lastId\}\?tab=logbook&saved=1/);
   assert.match(detailWorkspace,/postSave\?"logbook":initialTab/);
   assert.doesNotMatch(detailWorkspace,/Flight saved as an editable draft/);
+  assert.match(detailWorkspace,/Flight saved\./);
+  assert.match(detailWorkspace,/Add another flight/);
   assert.match(detailWorkspace,/FlightWorkflowProgress/);
   assert.match(detailWorkspace,/history\.replaceState/);
   assert.doesNotMatch(panel,/POST_SAVE_REVIEW_KEY|sessionStorage/);
