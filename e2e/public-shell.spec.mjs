@@ -151,16 +151,17 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-09-23T15:10:00Z</when><when>2026-09-23T15:11:00Z</when><gx:coord>14.1 50.1 300</gx:coord><gx:coord>14.2 50.2 500</gx:coord></gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"scope-check.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
   await expect(gpsForm.locator('select[name="registration"]')).toBeVisible();
-  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-HST1");
 
   await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
   await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
-  await expect(page.getByText(/OK-E2E differs from its usual profile/)).toHaveCount(0);
+  await expect(page.getByText(/OK-HST1 differs from its usual profile/)).toHaveCount(0);
 
   await page.getByRole("button",{name:"Manual entry"}).click();
   const manualForm=page.locator("#new-flight-manual-form");
-  await manualForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await expect(manualForm).toBeVisible();
+  await manualForm.locator('select[name="registration"]').selectOption("OK-HST1");
   await expect(manualForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
   await expect(manualForm.locator('select[name="evidence"]')).toHaveValue("EASA");
   await manualForm.locator('select[name="aircraftClass"]').selectOption("ULL");
