@@ -18,7 +18,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Relocated selected-aircraft/profile origin and unsaved-change context instead of discarding unique information from the removed review card.
 - Preserved the existing `/flights/<id>?tab=logbook&saved=1` review-first handoff, draft-save semantics, certification blockers and PendingActionButton duplicate-submit protection.
 - No schema, certification payload/hash, recency, UTC or optional-cost semantics changed.
-- **Verification status:** partial / rerun pending — local TypeScript PASS and production build PASS. Initial targeted run 20/22 and full suite 928/934 exposed six stale source-contract assertions; each was reconciled to the frozen B1B behavior with no runtime/data defect identified. Clean reconciled-head rerun still required. PostgreSQL N/A; authenticated UI smoke remains deferred to the later live cumulative New Flight redesign check and is not reported as PASS.
+- **Verification status:** merge-ready — local TypeScript PASS and production build PASS; reconciled targeted B1B/historical contracts 34/34 PASS; full unit/regression 934/934 PASS. PostgreSQL N/A; authenticated UI smoke remains deferred to the later live cumulative New Flight redesign check and is not reported as PASS.
 
 ### New Flight UI/UX Simplicity — B1A optional Costs
 - Added an explicit optional billing parser/serializer so blank billing means **Not tracked** instead of silently becoming BLOCK.
