@@ -123,23 +123,24 @@ A duplicate identical `landingsDay` submission is also frozen as deterministic, 
 
 ## Verification state
 
-Isolated local checks completed in the ChatGPT working container:
+Repository-local verification supplied by Filip on 30 September 2026:
 
-- pure profile-default helper behavior: **5/5 PASS** (valid ULL, missing profile, ULL/SEP mismatch, valid EASA, incomplete EASA identity);
-- transformed `FlightForm` TypeScript/JSX syntax transpilation: **PASS**.
+- `npm run typecheck`: **PASS**
+- targeted B0.5/M1/input suite: **21/21 PASS**
+- first full `npm test` run: **915/916 PASS, 1 FAIL**
+- `npm run build`: **PASS**
 
-These are not a substitute for the repository gate.
+The single full-suite failure was not a runtime regression. The old v1.59.2 source-contract test still asserted the intentionally removed fail-open expressions `normalizeChoice(...,"ULL")`. B0.5 replaced those expressions with the fail-closed resolver, so the historical test expectation was stale. The test has now been updated to assert the new invariant instead: blank New Flight stays neutral, selected profile defaults go through `resolveFlightEntryAircraftProfileDefaults()`, and no selected-aircraft ULL repair expression remains.
 
-Still not claimed:
+Final verification still required after that test-only correction:
 
-- repository TypeScript: **NOT RUN**
-- repository targeted tests: **NOT RUN**
-- full unit/regression suite: **NOT RUN**
-- production build: **NOT RUN**
+- updated targeted source-contract test: **NOT RUN**
+- full unit/regression suite on current PR head: **NOT RUN**
+- build on current PR head: **NOT RUN** (previous runtime-equivalent build passed)
 - PostgreSQL: **N/A for the code change; no schema change**
 - authenticated browser/screenshot verification: **NOT RUN**
 
-B0.5 is not DONE until the required repository-local verification is completed and recorded.
+B0.5 is not DONE until the current-head regression gate is clean.
 
 ## Next after B0.5 verification
 
