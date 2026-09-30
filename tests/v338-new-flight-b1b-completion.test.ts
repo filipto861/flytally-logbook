@@ -20,7 +20,7 @@ test("B1B New Flight has one completion surface and one primary save action",()=
 
 test("B1B relocated review information stays visible after later summary compaction",()=>{
   const form=read("components/flight-form.tsx");
-  const profileSummary=form.indexOf("const profileSummary=");
+  const profileSummary=form.indexOf("profileSummary=profileNeedsConfiguration");
   const optional=form.indexOf('entry-section entry-section-optional');
   const actions=form.indexOf('className="form-actions field-actions"');
   assert.ok(profileSummary>=0&&optional>profileSummary,"aircraft-profile origin should remain in the profile summary before optional details");
