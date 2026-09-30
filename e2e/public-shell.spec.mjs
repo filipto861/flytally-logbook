@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetGpsFailClosedFixture,resetIntelligentReviewFormScopeFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -139,6 +139,50 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Connections");
   await expect(page).toHaveURL(/\/connections$/);
   await expectAuthenticatedRoute(page,"Connections");
+});
+
+test("GPS import fails closed invalid aircraft context and exposes PIC only",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated GPS fail-closed browser coverage requires the isolated CI database.");
+  resetGpsFailClosedFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-09-24T10:00:00Z</when><when>2026-09-24T10:01:00Z</when><gx:coord>14.1 50.1 300</gx:coord><gx:coord>14.2 50.2 500</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f01-check.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  const registration=gpsForm.locator('select[name="registration"]');
+  await expect(registration).toBeVisible();
+
+  await registration.selectOption("OK-BAD1");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("");
+  await expect(gpsForm.getByText("Needs configuration · fix this aircraft profile before GPS import.")).toBeVisible();
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
+  await gpsForm.locator('input[name="part_0_reviewed"]').check();
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toHaveCount(0);
+
+  await registration.selectOption("OK-E2E");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.getByText("Needs configuration · fix this aircraft profile before GPS import.")).toHaveCount(0);
+
+  const role=gpsForm.getByLabel("Role");
+  await expect(role).toHaveValue("PIC");
+  await expect(role.locator("option")).toHaveCount(1);
+  await expect(gpsForm.locator('input[name="role"]')).toHaveValue("PIC");
+
+  await registration.selectOption("OK-UL01");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("ULL");
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("ULL");
+
+  await registration.selectOption("OK-E2E");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeVisible();
+  await gpsForm.locator('input[name="role"]').evaluate(element=>{element.value="DUAL"});
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByText("GPS import currently supports PIC only. Use Manual entry for other roles.")).toBeVisible();
+  await expect(page).toHaveURL(/\/flights\/new/);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("GPS import never receives manual intelligent profile warnings",async({page})=>{

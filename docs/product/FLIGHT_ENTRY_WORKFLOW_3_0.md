@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0.0 DONE / F0.1 NEXT  
+**Status:** ACTIVE · DESIGN FROZEN / F0.0 DONE / F0.1 VERIFICATION  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -397,7 +397,7 @@ Current evidence adds one important role finding:
 
 Verification: Verify FlyTally web #970 PASS; TypeScript PASS; unit/regression 971/971 PASS; PostgreSQL acceptance 55/55 PASS. F0.0 is closed with no runtime/schema change.
 
-### F0.1 — GPS fail-closed integrity hotfix
+### F0.1 — GPS fail-closed integrity hotfix — VERIFICATION
 
 **Goal:** eliminate the production fail-open defect with minimal blast radius.
 
@@ -416,7 +416,17 @@ Current default interim role policy:
 - GPS Safety Pilot must fail closed until parity;
 - GPS DUAL must not remain selectable if Instructor/PIC cannot be captured and server-validated in the same milestone.
 
-F0.0 decides the smallest safe compatibility set.
+F0.0 decided the smallest safe compatibility set: **PIC only**.
+
+Implemented F0.1 runtime shape, verification pending:
+- GPS UI and server resolve the selected active aircraft through the same fail-closed profile-default contract used by Manual entry;
+- invalid/malformed selected aircraft context is shown as **Needs configuration** and cannot become save-ready;
+- GPS no longer accepts posted class/evidence as an independent authority in this interim milestone; the server derives the persisted regulatory snapshot from the current validated selected aircraft profile;
+- GPS Role is temporarily fixed to PIC in the UI and server rejects every non-PIC submitted role;
+- valid EASA/SEP and explicit ULL profiles remain supported;
+- duplicate fingerprint, advisory-lock and one-transaction flight/track persistence remain unchanged;
+- this temporary profile/role restriction is removed only through later canonical override/RoleCrew parity milestones, not through ad-hoc GPS exceptions.
+
 
 ### F0 — Full field / consumer contract inventory
 

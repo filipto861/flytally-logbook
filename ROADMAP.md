@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0.0 DONE/verified; **F0.1 GPS fail-closed integrity hotfix is NEXT** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0.0 DONE; F0.1 GPS fail-closed hotfix implemented, verification pending |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -409,7 +409,7 @@ Milestones:
 | Milestone | Status | Scope |
 | --- | :---: | --- |
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
-| F0.1 — GPS fail-closed integrity hotfix | ➡️ | **NEXT** · remove ULL fallback, canonical server role validation, PIC-only interim GPS role boundary |
+| F0.1 — GPS fail-closed integrity hotfix | 🚧 | Implemented: fail-closed profile context + PIC-only interim role boundary; verification pending |
 | F0 — Full field/consumer contract inventory | ⏳ | Authoritative Save/Cert/source/persistence/downstream matrix |
 | F1 — Shared normalization / semantic write contract | ⏳ | Manual + GPS converge on canonical `FlightInput` semantics |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
@@ -419,9 +419,9 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- implement F0.1 as a small production-integrity batch using the frozen PIC-only interim GPS role boundary;
-- preserve valid explicit EASA/SEP and ULL PIC imports, duplicate protection and atomic track persistence;
-- verify negative fail-closed behavior before any broader F1/F2 convergence.
+- verify F0.1 unit/source, PostgreSQL regression and authenticated browser behavior;
+- prove invalid profile and crafted non-PIC role cannot reach persistence while valid EASA/SEP and ULL remain usable;
+- only after F0.1 PASS/merge/production smoke advance to the full F0 field/consumer inventory.
 
 After F0.1, re-check the roadmap. M2B remains accepted work and is not cancelled; the default direction is to continue the domain-convergence milestones required to prevent Manual/GPS semantic drift unless new evidence changes priority.
 

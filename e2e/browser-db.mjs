@@ -54,6 +54,18 @@ export function resetConnectionManagerFixture(){
 }
 
 
+export function resetGpsFailClosedFixture(){
+  runBrowserSql(`
+    DELETE FROM flights WHERE user_id=9001 AND registration IN ('OK-BAD1','OK-UL01');
+    DELETE FROM aircraft WHERE user_id=9001 AND registration IN ('OK-BAD1','OK-UL01');
+    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
+    VALUES
+      (9001,'OK-BAD1','B23','BRM Aero','Bristell B23','','AEROPLANE','','PIC','BLOCK',0,1),
+      (9001,'OK-UL01','ULL','','','ULL','ULL','ULL','PIC','',0,1);
+  `);
+}
+
+
 export function resetIntelligentReviewFormScopeFixture(){
   runBrowserSql(`
     CREATE TABLE IF NOT EXISTS airports(
