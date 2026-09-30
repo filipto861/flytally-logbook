@@ -370,7 +370,9 @@ VALUES(7001,9002,9001,'pilot','pending','friend','friend');
 INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
 VALUES
   (9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
-  (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
+  (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
+  (9001,'OK-MTX1','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
+  (9001,'OK-BAD1','B23','BRM Aero','Bristell B23','SEP','ULL','EASA','PIC','',0,1);
 INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
 VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
 
@@ -383,6 +385,22 @@ INSERT INTO flights(
   'LKLT','LKPR','10:00','10:05','10:45','10:50','PIC',1,50,
   1,'FlyTally Browser CI','E2E001','PRIVATE','Browser Smoke Pilot'
 );
+
+INSERT INTO flights(
+  id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
+  departure,arrival,off_block,takeoff,landing,on_block,role,starts,pic_minutes,
+  night_minutes,ifr_minutes,landings_day,landings_night,takeoffs_day,takeoffs_night,
+  movement_evidence_recorded,task,billing_basis,price_per_hour,operator_name,flight_number,
+  operation_context,commander,note
+) VALUES(
+  9910,9001,'2026-09-19','EASA','OK-MTX1','B23','SEP','AEROPLANE',
+  'LKPR','LKLT','18:00','18:06','19:01','19:08','PIC',2,68,
+  20,15,1,1,1,1,TRUE,'Night circuits and instrument practice','AIR',4200,
+  'FlyTally Browser CI','E2E002','PRIVATE','Browser Smoke Pilot',
+  'Deterministic populated optional-details fixture.'
+);
+INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency)
+VALUES(9001,9910,'LANDING','Landing fee',125000,'CZK');
 `;
 
 const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-q","-c",sql],{
