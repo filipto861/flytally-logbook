@@ -139,7 +139,7 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         {selectedBalloon?<label><span>Balloon operation <span className="field-hint" aria-hidden="true">Required</span></span><select name="balloonOperation" value={balloonOperation} onChange={event=>setBalloonOperation(event.target.value)} required><option value="">Select free / tethered</option><option value="FREE">Free flight</option><option value="TETHERED">Tethered flight</option></select><small>Required BFCL evidence. GPS cannot determine whether the operation was free or tethered.</small></label>:<input type="hidden" name="balloonOperation" value=""/>}
         <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
-      {profileError?<p className="field-message-error" role="alert"><b>Needs configuration.</b> {profileError}</p>:null}
+      {profileError?<p className="field-message-error"><b>Needs configuration.</b> {profileError}</p>:null}
       <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and configured defaults. Review fields remain editable.</p>
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
