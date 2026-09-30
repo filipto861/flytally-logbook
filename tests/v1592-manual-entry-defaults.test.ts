@@ -38,7 +38,7 @@ test("blank New flight stays neutral and selected-aircraft profile defaults fail
   assert.doesNotMatch(form,/normalizeChoice\(selected\.aircraft_class,CLASSES,"ULL"\)/);
   assert.match(form,/selected\?\.billing_basis\|\|""/);
   assert.match(form,/initialBilling=parseOptionalBilling\(billingSource\)/);
-  assert.match(form,/initialBillingBasis:""\|"BLOCK"\|"AIR"=initialBilling\.settings\?\.basis\|\|""/);
+  assert.match(form,/initialBillingBasis:FlightBillingChoice=initialBilling\.error\?"INVALID":initialBilling\.settings\?\.basis\|\|""/);
 });
 
 test("explicit aircraft selection atomically refreshes aircraft-dependent defaults",()=>{
@@ -46,7 +46,7 @@ test("explicit aircraft selection atomically refreshes aircraft-dependent defaul
   const start=form.indexOf("const pickAircraft=");
   const end=form.indexOf("const blockMinutes=",start);
   const pick=form.slice(start,end);
-  for(const pattern of [/setType\(a\.aircraft_type\|\|""\)/,/setClass\(nextClass\)/,/setEngineType\(defaultEngineType\(nextClass\)\)/,/setOperationType\("SP"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.settings\?\.basis\|\|""\)/,/setBillingShare\(nextBilling\.settings\?\.share\|\|1\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);
+  for(const pattern of [/setType\(a\.aircraft_type\|\|""\)/,/setClass\(nextClass\)/,/setEngineType\(defaultEngineType\(nextClass\)\)/,/setOperationType\("SP"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.error\?"INVALID":nextBilling\.settings\?\.basis\|\|""\)/,/setBillingShare\(nextBilling\.settings\?\.share\|\|1\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);
   assert.doesNotMatch(pick,/setRole\(/);
 });
 
