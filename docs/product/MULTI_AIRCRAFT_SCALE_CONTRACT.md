@@ -51,6 +51,16 @@ The existing Annex-I / ULL Part-FCL override is in this class: it carries an exp
 
 Versioned flight payload fields covered by certification hashes/revisions. They are not aircraft-profile fields, even when the same conceptual value also exists on the current profile.
 
+## 2A. Flight Entry F0 cross-workstream evidence
+
+Flight Entry Workflow 3.0 F0 identified one unresolved historical-identity interaction that belongs in M2B evidence:
+
+- shared-flight acceptance explicitly supplies the certified source flight's make/model/variant;
+- the v6 `BEFORE INSERT` flight identity trigger can then assign make/model/variant from the recipient's current aircraft profile for the same registration;
+- therefore complete sharing snapshot equivalence is **not yet proven** and must fail closed to evidence rather than be assumed.
+
+F0 does not change this behavior. The interaction must be reconciled before M2B or Flight Entry F1 claims full historical identity equivalence.
+
 ## 3. Field-by-field aircraft profile matrix
 
 | Aircraft field | Canonical class | Historical flight copy / equivalent | Primary consumers | Contract |
