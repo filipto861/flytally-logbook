@@ -315,23 +315,31 @@ PR #175 merged as `0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`.
 - PostgreSQL N/A;
 - authenticated presentation smoke remains explicitly **DEFERRED, not PASS** and is carried to cumulative live verification.
 
-### Current implementation checkpoint — B2
+### Completed checkpoint — B2
 
-Branch: `feat/new-flight-b2-essentials`
+PR #176 merged as `a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`.
+
+- Date → Registration → Role is now the first visible DOM/tab-order row;
+- Route and one chronological UTC timeline are grouped explicitly;
+- Flight experience exposes landing + PF evidence in its collapsed summary;
+- TypeScript PASS, targeted B2/affected historical contracts 47/47 PASS, full unit/regression 940/940 PASS, production build PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Current implementation checkpoint — B3
+
+Branch: `feat/new-flight-b3-context`
 
 Implemented, verification pending:
-- Date → Registration → Role is now the first visible DOM/tab-order row;
-- Departure/Arrival are grouped under **Route**;
-- Off-block → Takeoff → Landing → On-block are grouped under one **Times · UTC** context;
-- BLOCK/AIR remain live and preserve `—` for unavailable duration;
-- standard Flight experience summary now exposes landing + PF state, e.g. `1 day landing · PF Yes`, with a visible Change cue;
-- existing PF/movement adjustment controls and automatic normal PIC/SOLO preset behavior remain unchanged;
-- edit/review continues to open Flight experience before certification;
-- manual-entry intro copy is reduced;
-- Add aircraft remains dominant only for an empty aircraft library and becomes contextual when aircraft already exist;
-- no schema, parser, certification, recency or UTC semantics changed.
+- Aircraft & logbook summary now exposes actual logbook/evidence, regulatory category, class and applicable SP/MP + SE/ME values;
+- new-flight selected-aircraft origin is kept visible without claiming current-profile origin for Edit snapshots;
+- invalid/unresolved selected-aircraft context forces Aircraft & logbook open;
+- former **Crew & training** is now **Role details** and auto-opens for DUAL, Safety Pilot, SPIC and PICUS required evidence;
+- existing Commander/PIC and Instructor fields remain available for other roles without being forced open;
+- Training purpose + Task move to **Optional details** while preserving the unchanged FlightPurposePicker hidden submission contract;
+- no schema, parser, certification, recency, collaboration or UTC semantics changed.
 
-Verification status: **DONE / MERGE READY** — local TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check and is not reported as PASS. Next milestone: **B3 — Profile summary + role-driven required context**.
+Verification status: **NOT RUN on current B3 head**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next after verification: **B4 — Optional details + helper-copy triage**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
