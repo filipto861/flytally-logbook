@@ -20,7 +20,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Recorded CSV/XLS output completeness gaps without changing stored semantics.
 - Added source-contract tests to keep the F0 findings explicit before F1 refactors them.
 - **Runtime/schema behavior:** unchanged by F0 analysis.
-- **Verification:** PENDING on `chore/flight-entry-f0-consumer-inventory`.
+- **Verification:** Verify FlyTally web #982 PASS; TypeScript PASS; full unit/regression **988/988**; PostgreSQL acceptance **55/55**; browser N/A; DB schema/migration N/A. The first #981 attempt exposed only an outdated test assertion for the existing v8 certification hash call and was corrected without runtime changes.
 
 ### Flight Entry Workflow 3.0 — F0.1 GPS fail-closed integrity hotfix
 - Removed GPS UI/server fallbacks that could silently turn missing aircraft class/logbook context into `ULL`.
