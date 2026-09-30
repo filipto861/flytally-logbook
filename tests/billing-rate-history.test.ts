@@ -17,6 +17,7 @@ test("optional billing keeps absence distinct from BLOCK",()=>{
   assert.match(serializeOptionalBilling("unknown",1).error??"",/billing time basis/i);
   assert.equal(calculatedFlightPrice(2400,90,60,""),0);
   assert.equal(billingLabel(""),"Not tracked");
+  assert.equal(billingLabel("GROSS"),"Unavailable");
 });
 
 test("legacy billing values remain compatible for untouched callers",()=>{
