@@ -108,10 +108,12 @@ The canonical domain target is one flight semantic contract, but the current run
 
 This divergence is active technical/data-integrity debt, not an approved second flight model. The current GPS path must not be treated as authoritative precedent where it conflicts with canonical Manual validation.
 
-Known active integrity gap at the 30 September 2026 baseline:
-- GPS selected-aircraft class/evidence can still fail open to `ULL` when profile context is missing/malformed;
-- Manual selected-aircraft entry already fails closed instead;
-- the active Flight Entry Workflow 3.0 contract requires GPS to fail closed first, then converge Manual/GPS semantic normalization.
+F0.1 fail-closed boundary:
+- GPS selected-aircraft class/evidence is resolved from the owned active aircraft profile through the same fail-closed profile resolver used by Manual entry defaults;
+- missing/malformed profile context is **Needs configuration** and cannot silently become `ULL`;
+- valid explicit ULL and valid EASA profile identity remain supported;
+- GPS is temporarily PIC-only until the shared Role/Crew contract exists; server validation rejects non-PIC crafted submissions;
+- GPS still has a dedicated direct-write transaction, so semantic-write convergence remains active debt for F0/F1 rather than being declared complete.
 
 Current Manual Role/Crew semantics and certification/collaboration boundaries remain authoritative during convergence. GPS-derived route/time/movement data is suggestion/provenance and may not invent role, crew identity or regulatory identity.
 
