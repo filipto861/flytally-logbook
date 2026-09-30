@@ -185,7 +185,7 @@ Frozen behavior:
 - historical/certified records are never repaired by guessed crew/profile values.
 
 Current priority:
-- F0.0 characterizes the exact GPS fallback, role, crew and downstream-consumer behavior;
+- F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 removes the confirmed GPS invalid-profile → ULL fail-open path and rejects unsupported role semantics with minimal blast radius;
 - full Manual/GPS domain convergence and UX simplification follow in small milestones.
 

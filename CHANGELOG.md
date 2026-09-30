@@ -9,6 +9,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F0.0 characterization
+- Added a characterization-only baseline for the current GPS flight-entry/write path; no runtime behavior changes in this milestone.
+- Confirmed UI and server fail-open `ULL` fallbacks, direct GPS flight persistence outside `parseFlightInput()`, empty GPS commander/instructor persistence and draft consumption by Dashboard/Statistics/Export/Print while recency remains certified-only.
+- Confirmed the GPS INSTRUCTOR option currently submits non-canonical stored value `INSTRUKTOR`, which receives zero function-time allocation; F0.1 therefore uses **PIC only** as the smallest proven coherent interim GPS role set.
+- Added source regression coverage for the current defect/baseline, role mismatch, Manual save-boundary differences, duplicate/advisory-lock transaction behavior and downstream draft-consumer boundary.
+- Detailed evidence: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F00_CHARACTERIZATION.md`.
+- **Verification status:** DONE — Verify FlyTally web #970 PASS; TypeScript PASS; full unit/regression 971/971 PASS; PostgreSQL acceptance 55/55 PASS. No runtime/schema/deployment change.
+
 ### Flight Entry Workflow 3.0 — planning/design freeze
 - Added the frozen `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md` contract after Claude Round 1, DeepSeek Round 2 and repository reconciliation.
 - Reprioritized the roadmap so the confirmed GPS invalid-profile → `ULL` fail-open defect is addressed before Multi-aircraft M2B.
