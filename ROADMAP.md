@@ -58,7 +58,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 
 The product-wide roadmap review is complete. Filip approved the reconciled priority order on **27 September 2026** after independent second-AI review and repository reconciliation.
 
-The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue:
+The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue. On 30 September 2026 that exception was triggered by the confirmed GPS invalid-profile → `ULL` fail-open path and Manual/GPS semantic-write divergence; the table below records the superseding order:
 
 | Order | Workstream | Status | Why it is here |
 | ---: | --- | :---: | --- |
@@ -168,7 +168,7 @@ P2 closeout:
 - Final SP5 verification: 900/900 unit/regression PASS, PostgreSQL core 48/48 PASS across 20 files, authenticated Chromium desktop/mobile 22/22 PASS, production build PASS.
 - Migration v15 was already applied and production-verified during SP1; SP2–SP5 introduced no additional schema migration.
 - No production deployment is inferred from merge/test success; deployment status is tracked separately.
-- Next roadmap step is Multi-aircraft M2B — remaining integrity audit.
+- At P2 closeout, Multi-aircraft M2B was the then-current next roadmap step; this historical closeout note was superseded on 30 September 2026 by the Flight Entry Workflow 3.0 integrity pre-emption.
 
 SP2 implementation contract:
 - New Flight loads all accepted Connections as explicit `id + display_name` choices separate from the instructor-only list;
@@ -562,7 +562,7 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
-| Safety Pilot ↔ PIC workflow | 🚧 | ACTIVE · design review reconciled; SP1 schema/domain implementation next |
+| Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
 | Flight Entry Workflow 3.0 | 🚧 | ACTIVE · design frozen; F0.0/F0.1 pre-empt M2B because of confirmed GPS data-integrity drift |
 | Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
