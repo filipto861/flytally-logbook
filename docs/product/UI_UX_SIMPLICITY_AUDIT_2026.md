@@ -1,6 +1,6 @@
 # UI/UX Simplicity Audit 2026
 
-**Status:** DESIGN GATE CLOSED — IMPLEMENTATION ACTIVE  
+**Status:** DONE — IMPLEMENTED + VERIFIED  
 **Decision owner:** Filip  
 **Decision date:** 29 September 2026  
 **Repository:** `flytally-logbook`
@@ -265,3 +265,22 @@ This workstream closes only when:
 - no regression is introduced in certified records, role logic, recency, sharing, GPS or profile-backed data;
 - ROADMAP / FEATURES / CHANGELOG are reconciled;
 - verification evidence is recorded rather than assumed.
+
+
+## Final closeout — 30 September 2026
+
+The audit and implementation workstream is closed.
+
+Evidence:
+
+- B0.5 through B5 are implemented and merged through PR #179;
+- final screenshot review found one narrow/zoom presentation defect in the Flight experience empty state;
+- PR #182 fixed that defect without changing parser, persistence, certification, recency, collaboration, billing or UTC semantics;
+- PR #182 verification: Verify FlyTally web #955 PASS and Browser smoke #349 PASS;
+- final isolated authenticated Browser smoke #352 PASSed with **23 passed / 3 skipped**;
+- the final matrix produced **132/132 screenshots** covering 11 New Flight states × 6 required viewports × light/dark;
+- all 132 matrix records reported **0 px horizontal overflow**;
+- production commit `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is Vercel **READY** and aliased to `fly-tally.com`;
+- PostgreSQL schema/migration: N/A for the final presentation-only closeout.
+
+The next roadmap step is **Multi-aircraft M2B — remaining historical & dynamic applicability integrity**.
