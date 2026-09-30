@@ -145,14 +145,16 @@ No persistence semantics or schema are changed.
 
 ## Verification state
 
-Current B5 head:
+Initial local B5 gate on 30 September 2026:
 
-- TypeScript: **NOT RUN**
-- targeted B5 / affected historical tests: **NOT RUN**
-- full unit/regression: **NOT RUN**
-- production build: **NOT RUN**
+- TypeScript: **PASS**
+- targeted B5 / affected historical tests: **100/100 PASS**
+- full unit/regression: **961/962 PASS, 1 FAIL**
+- production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated live browser matrix: **PENDING — NOT PASS**
+
+The only full-suite failure was the historical v1.58 source-contract assertion that still required pristine `aria-invalid={!field}` markup. That assertion conflicts with B5's explicit acceptance requirement to delay ordinary required-field error styling until a save attempt. The v1.58 test has therefore been reconciled test-only to preserve its original scope (required fields only; billing remains optional) while accepting B5 attempt-gated validation. Clean rerun on the current head is pending.
 
 ## Final closeout condition
 
