@@ -36,9 +36,10 @@ test("v1.58 keeps local flight as a small explicit action",()=>{
   assert.match(css,/\.field-inline-action/);
 });
 
-test("v1.58 makes existing smart defaults transparent instead of guessing regulatory data",()=>{
-  assert.match(form,/Aircraft profile applies type, logbook and class defaults/);
-  assert.match(form,/Aircraft default:/);
+test("v1.58 smart defaults remain transparent after B4 helper-copy triage",()=>{
+  assert.match(form,/selected&&!editing\?`from \$\{registration\}`:""/);
+  assert.match(form,/Aircraft default · change if this flight differed\./);
+  assert.doesNotMatch(form,/Aircraft profile applies type, logbook and class defaults/);
   assert.match(form,/shouldApplyAircraftProfileDefaults/);
   assert.doesNotMatch(fs.readFileSync("lib/flight-input.ts","utf8"),/FlyTally v1\.58/);
 });

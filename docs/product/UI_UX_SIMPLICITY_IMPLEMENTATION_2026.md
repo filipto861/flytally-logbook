@@ -804,9 +804,12 @@ Current state:
 - B1B verification: TypeScript PASS, production build PASS, targeted reconciled contracts **34/34 PASS**, full unit/regression **934/934 PASS**; PostgreSQL N/A;
 - B2 runtime implementation: **DONE / MERGED** in PR #176 (`a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`);
 - B2 verification: TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS; PostgreSQL N/A;
-- B3 runtime implementation: **DONE / MERGE READY**;
-- B3 evidence record: `docs/product/UI_UX_SIMPLICITY_B3_CONTEXT_2026.md`;
+- B3 runtime implementation: **DONE / MERGED** in PR #177 (`645348ef7280f1b0452d457e152dfdaa0da4a448`);
 - B3 verification: TypeScript PASS, production build PASS, reconciled targeted contracts **22/22 PASS**, full unit/regression **946/946 PASS**; PostgreSQL N/A;
-- B4 and later runtime batches: NOT STARTED.
+- B4 runtime implementation: **IMPLEMENTED IN `feat/new-flight-b4-optional-details` — VERIFICATION PENDING**;
+- B4 evidence record: `docs/product/UI_UX_SIMPLICITY_B4_OPTIONAL_DETAILS_2026.md`;
+- B5 runtime batch: NOT STARTED.
 
-**Current gate:** merge B3, then proceed to B4 while retaining the cumulative live UI smoke as an explicit deferred verification item.
+- B4 verification: TypeScript PASS, reconciled targeted contracts **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A.
+
+**Current gate:** merge B4, then execute B5 responsive/accessibility closeout while retaining cumulative authenticated live UI smoke as an explicit deferred verification item.
