@@ -331,7 +331,7 @@ Implemented, verification pending:
 - Add aircraft remains dominant only for an empty aircraft library and becomes contextual when aircraft already exist;
 - no schema, parser, certification, recency or UTC semantics changed.
 
-Verification status: **NOT RUN on current B2 head**. PostgreSQL N/A. Authenticated browser smoke remains deferred to the cumulative live redesign check and is not reported as PASS. Next after verification: **B3 — Profile summary + role-driven required context**.
+Verification status: **DONE / MERGE READY** — local TypeScript PASS, targeted B2/affected historical contracts **47/47 PASS**, full unit/regression **940/940 PASS**, production build PASS. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check and is not reported as PASS. Next milestone: **B3 — Profile summary + role-driven required context**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
