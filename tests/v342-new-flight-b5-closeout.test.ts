@@ -74,6 +74,13 @@ test("B5 measured helper and action colors meet normal-text AA on New Flight sur
   assert.match(ui,/\.entry-summary-action\{color:var\(--link\)\}/);
 });
 
+test("B5 keeps Flight experience empty-state title and explanation visually separated",()=>{
+  const form=read("components/flight-form.tsx");
+  const css=read("app/ui-system.css");
+  assert.match(form,/className="empty-state flight-experience-empty-state"/);
+  assert.match(css,/\.flight-form \.flight-experience-empty-state\{[\s\S]*?display:grid;[\s\S]*?gap:var\(--ui-space-1\)/);
+});
+
 test("B5 live regions remain limited to changing feedback rather than static completion copy",()=>{
   const form=read("components/flight-form.tsx");
   assert.match(form,/className="flight-time-summary" aria-live="polite"/);
