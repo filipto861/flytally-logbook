@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Aircraft sharing preserves no-billing defaults and rejects/surfaces malformed populated billing rather than silently clearing or repairing it.
 - Read-only billing labels distinguish **Not tracked** from malformed persisted billing (**Unavailable**).
 - Legacy billing helpers remain compatible for untouched historical callers; certification, recency, UTC and crew-credit contracts are unchanged.
-- **Verification status:** PARTIAL — TypeScript PASS; stale-contract targeted rerun 55/55 PASS; full unit/regression 928/928 PASS; production build PASS. PostgreSQL was not executed because the local gate skipped 55/55 tests; `psql` is unavailable and no `.env.local` is present for direct Neon metadata inspection. Actual billing-column evidence and authenticated browser verification remain pending.
+- **Verification status:** PARTIAL — TypeScript PASS; stale-contract targeted rerun 55/55 PASS; full unit/regression 928/928 PASS; production build PASS. Read-only production DB metadata confirms both billing columns are nullable text with legacy BLOCK defaults and no billing CHECK constraints, so no migration is required. The local PostgreSQL integration harness remains skipped/unavailable and is not counted as PASS. Authenticated browser verification remains pending.
 
 
 ### New Flight UI/UX Simplicity — B0.5 integrity baseline
