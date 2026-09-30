@@ -30,7 +30,8 @@ test("v3.3 U11 keeps one primary next action in the record workflow",()=>{
   assert.match(workflow,/const stage=\(label:string,status:/);
   assert.doesNotMatch(workflow,/Available after certification/);
   assert.match(detail,/postSave\?"logbook":initialTab/);
-  assert.doesNotMatch(detail,/flight-post-save/);
+  assert.match(detail,/className="flight-post-save"/);
+  assert.match(detail,/className="secondary-link" href="\/flights\/new\?added=1">Add another flight/);
 });
 
 test("v3.3 U11 gives certification and public sharing explicit pending feedback",()=>{
