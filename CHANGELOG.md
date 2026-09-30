@@ -19,7 +19,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Added embedded Professional context presentation while preserving its existing applicability and hidden-input behavior.
 - Removed or compacted repeated aircraft-profile, generic role, cost and Task helper prose while keeping validation, Connection and signed-evidence consequences visible.
 - No parser, persistence schema, certification payload/hash, recency, collaboration, billing or UTC semantics changed.
-- **Verification status:** NOT RUN on current B4 head; PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
+- **Verification status:** initial local run — TypeScript PASS and production build PASS; targeted 47/50 and full 949/954 due to five stale/over-broad source-contract assertions. Test-only reconciliations are pushed; clean rerun is pending. PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
 
 ### New Flight UI/UX Simplicity — B3 profile + role context
 - Aircraft & logbook collapsed summary now exposes actual evidence/logbook, regulatory category, aircraft class and applicable operation/engine context instead of relying on a generic category description.
