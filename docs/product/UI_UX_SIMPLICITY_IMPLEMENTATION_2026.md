@@ -800,9 +800,10 @@ Current state:
 - B1A runtime implementation: **DONE / MERGED** in PR #174 (`37eac801cc69b19c07d4c140213ccda37c4e85ff`);
 - B1A database evidence: **PASS (read-only production metadata)**; no migration required;
 - B1A authenticated UI smoke: **DEFERRED, not PASS** and carried to live cumulative redesign verification;
-- B1B runtime implementation: **DONE / MERGE READY**;
-- B1B evidence record: `docs/product/UI_UX_SIMPLICITY_B1B_COMPLETION_2026.md`;
+- B1B runtime implementation: **DONE / MERGED** in PR #175 (`0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`);
 - B1B verification: TypeScript PASS, production build PASS, targeted reconciled contracts **34/34 PASS**, full unit/regression **934/934 PASS**; PostgreSQL N/A;
-- B2 and later runtime batches: NOT STARTED.
+- B2 runtime implementation: **IMPLEMENTED IN `feat/new-flight-b2-essentials` — VERIFICATION PENDING**;
+- B2 evidence record: `docs/product/UI_UX_SIMPLICITY_B2_ESSENTIALS_2026.md`;
+- B3 and later runtime batches: NOT STARTED.
 
-**Current gate:** merge B1B, then proceed to B2 while retaining the cumulative live UI smoke as an explicit deferred verification item.
+**Current gate:** run B2 TypeScript, targeted/full regression and production build checks. PostgreSQL is N/A. Authenticated presentation smoke remains deferred to cumulative live verification.
