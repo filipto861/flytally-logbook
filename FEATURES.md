@@ -186,7 +186,7 @@ Frozen behavior:
 
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
-- F0.1 removes the confirmed GPS invalid-profile → ULL fail-open path and rejects unsupported role semantics with minimal blast radius;
+- F0.1 is implemented with verification pending: GPS selected-aircraft context is fail-closed, valid profile identity is server-derived, and the interim GPS role surface/server contract is PIC-only until Role/Crew parity;
 - full Manual/GPS domain convergence and UX simplification follow in small milestones.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
