@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0.0 + F0.1 DONE / F0 ACTIVE  
+**Status:** ACTIVE · DESIGN FROZEN / F0.0 + F0.1 + F0 DONE / F1 NEXT  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -429,7 +429,7 @@ Closeout evidence:
 
 Next: F0 full field / consumer contract inventory.
 
-### F0 — Full field / consumer contract inventory — ACTIVE / VERIFICATION PENDING
+### F0 — Full field / consumer contract inventory — DONE / VERIFIED
 
 Authoritative inventory artifact:
 
@@ -474,6 +474,16 @@ F0 additionally records four implementation constraints that F1 must not obscure
 - shared-flight creation explicitly copies source identity while the INSERT trigger can overwrite make/model/variant from current recipient profile state, so that interaction needs dedicated integrity review.
 
 F0 runtime change: **none**.
+
+F0 verification:
+- Verify FlyTally web #982 PASS;
+- TypeScript PASS;
+- full unit/regression 988/988 PASS;
+- PostgreSQL acceptance 55/55 PASS;
+- browser N/A because F0 changes only analysis/docs/source-contract tests;
+- DB schema/migration N/A.
+
+**Next: F1 — Shared normalization / semantic write contract.**
 
 ### F1 — Shared normalization / semantic write contract
 
