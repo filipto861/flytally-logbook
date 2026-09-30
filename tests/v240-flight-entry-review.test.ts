@@ -11,7 +11,7 @@ const trackManager=fs.readFileSync("components/track-manager.tsx","utf8");
 
 test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(page,/FlightEntryWorkspace/);
-  assert.match(page,/<FlightForm action=\{createFlight\}/);
+  assert.match(page,/<FlightForm formId=\{manualFormId\} action=\{createFlight\}/);
   assert.match(page,/<IntelligentFlightEntryPanel context=\{intelligentContext\}/);
   assert.match(workspace,/manual:ReactNode/);
   assert.match(workspace,/\{manual\}/);
