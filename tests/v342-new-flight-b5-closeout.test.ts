@@ -74,11 +74,13 @@ test("B5 measured helper and action colors meet normal-text AA on New Flight sur
   assert.match(ui,/\.entry-summary-action\{color:var\(--link\)\}/);
 });
 
-test("B5 keeps Flight experience empty-state title and explanation visually separated",()=>{
+test("B5 keeps Flight experience empty-state title and explanation visually separated without a new empty-state variant",()=>{
   const form=read("components/flight-form.tsx");
   const css=read("app/ui-system.css");
-  assert.match(form,/className="empty-state flight-experience-empty-state"/);
-  assert.match(css,/\.flight-form \.flight-experience-empty-state\{[\s\S]*?display:grid;[\s\S]*?gap:var\(--ui-space-1\)/);
+  assert.match(form,/className="empty-state"><strong>Select an aircraft first<\/strong><span>FlyTally will show the experience fields that match its aircraft profile\.<\/span>/);
+  assert.match(css,/\.flight-form \.entry-section-experience \.empty-state\{[\s\S]*?display:grid;[\s\S]*?gap:var\(--ui-space-1\)/);
+  assert.doesNotMatch(form,/flight-experience-empty-state/);
+  assert.doesNotMatch(css,/flight-experience-empty-state/);
 });
 
 test("B5 live regions remain limited to changing feedback rather than static completion copy",()=>{
