@@ -291,7 +291,7 @@ Implemented, verification pending:
 - golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
 - preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
 
-Verification status: isolated helper behavior **5/5 PASS** and FlightForm syntax transpilation **PASS**; repository TypeScript, targeted/full regression, build and browser verification remain **NOT RUN**. B0.5 is not DONE and B1A must not start until the repository gate is recorded.
+Verification status: repository TypeScript **PASS**, targeted B0.5/M1/input tests **21/21 PASS**, build **PASS**. Initial full suite reached **915/916**; the only failure was a stale v1.59.2 source-contract assertion for the deliberately removed fail-open ULL code and has been updated. Current-head full regression/browser verification remains pending. B0.5 is not DONE and B1A must not start until the gate is clean.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
