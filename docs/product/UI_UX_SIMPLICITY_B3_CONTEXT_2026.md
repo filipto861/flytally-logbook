@@ -1,0 +1,121 @@
+# UI/UX Simplicity 2026 — B3 Profile Summary + Role-driven Context
+
+**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Date:** 30 September 2026  
+**Branch:** `feat/new-flight-b3-context`  
+**Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
+
+## Goal
+
+Expose the actual aircraft/logbook context that will be persisted and keep required role evidence together, while separating optional training-purpose metadata from crew identity.
+
+B3 is a presentation/hierarchy batch. It does not alter the canonical flight parser, persistence schema, certification payload/hash, recency rules, collaboration provenance, UTC semantics, aircraft-profile validation or billing contract.
+
+## Aircraft & logbook summary
+
+The collapsed summary now reports real current values rather than a generic category description:
+
+- Logbook/evidence;
+- regulatory category;
+- aircraft class where distinct;
+- SP/MP + SE/ME where applicable;
+- selected-profile origin for a new flight.
+
+Example:
+
+`EASA · AEROPLANE · SEP · SP · SE · from OK-XXXX`
+
+Invalid selected-aircraft defaults continue to show **Needs configuration**.
+
+The disclosure is forced open whenever a selected registration has missing logbook/class evidence or the selected profile fails canonical configuration validation.
+
+Edit mode continues to preserve the stored flight snapshot and does not claim that historical evidence came from the current mutable aircraft profile.
+
+## Role-driven context
+
+The former **Crew & training** section is now **Role details**.
+
+It auto-opens only when the current role has required crew/supervision evidence:
+
+- DUAL → Instructor / PIC;
+- Safety Pilot → Actual PIC source + Actual PIC;
+- SPIC / PICUS → supervision + countersignature.
+
+For other roles, existing Commander/PIC and Instructor fields remain available in the same disclosure but do not compete with the normal entry path.
+
+Existing field names, Connection identity behavior and countersignature inputs are unchanged.
+
+## Training purpose is optional metadata
+
+`FlightPurposePicker` and `Task / exercise` move out of Role details into a separate **Optional details** disclosure.
+
+The picker component itself is unchanged.
+
+Therefore the structured form semantics remain intact:
+
+- `purposeSelectionPresent=yes`;
+- `purposeCode` checkbox values;
+- canonical `parseFlightInput()` purpose filtering and task encoding.
+
+Optional details auto-opens on Edit when stored structured purpose or Task data is already present.
+
+B4 may consolidate additional optional domains into this hierarchy, but B3 does not move Costs, Professional context, Notes, Night or IFR yet.
+
+## Deliberately unchanged
+
+- Create/Edit parser and field names;
+- DUAL/Safety Pilot/SPIC/PICUS validation rules;
+- Connection / participation behavior;
+- certification completeness and fingerprint versions;
+- recency / FCL.060;
+- aircraft-profile canonical validation;
+- edit snapshot semantics;
+- billing;
+- GPS import;
+- schema / migrations.
+
+## Regression coverage
+
+Updated historical contract:
+
+- `tests/v159-flight-entry-structure-expenses.test.ts`.
+
+New B3 contract:
+
+- `tests/v340-new-flight-b3-context.test.ts`.
+
+The B3 contract verifies:
+
+- explicit aircraft/logbook/regulatory/class/operation-engine summary data;
+- profile origin only on new selected-aircraft context;
+- invalid/unresolved profile auto-expansion;
+- required Role details auto-open policy;
+- DUAL / Safety Pilot / SPIC / PICUS evidence stays together;
+- Training purpose and Task are outside Role details;
+- purpose hidden submission semantics remain unchanged;
+- parser, certification and collaboration boundaries remain unchanged.
+
+## Database / migration
+
+**N/A.**
+
+No persistence semantics or schema are changed.
+
+## Verification state
+
+Current B3 head:
+
+- TypeScript: **NOT RUN**
+- targeted B3 / affected historical tests: **NOT RUN**
+- full unit/regression: **NOT RUN**
+- production build: **NOT RUN**
+- PostgreSQL: **N/A**
+- authenticated browser: **DEFERRED TO CUMULATIVE LIVE REDESIGN SMOKE — NOT PASS**
+
+The cumulative live browser check remains explicitly deferred by Filip's current decision.
+
+## Next after B3
+
+After B3 code/test/build verification and merge:
+
+**B4 — Optional details + helper-copy triage.**
