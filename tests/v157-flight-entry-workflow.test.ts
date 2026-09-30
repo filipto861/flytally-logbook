@@ -38,7 +38,8 @@ test("v1.57 exposes live BLOCK and AIR feedback without changing flight parsing"
 });
 
 test("v1.57 names missing required choices and keeps them discoverable after B1A makes billing optional",()=>{
-  assert.match(form,/Complete before save:/);
+  assert.match(form,/Complete before save/);
+  assert.match(form,/className="entry-save-state"/);
   for(const label of ["Date","Aircraft","Role","Logbook","Aircraft class / category"])assert.ok(form.includes(`"${label}"`));
   assert.doesNotMatch(form,/!billing&&"billing"/);
   assert.match(audit,/Auto-open is one-way assistance/);
