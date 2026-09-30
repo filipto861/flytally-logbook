@@ -65,12 +65,22 @@ New contract:
 
 ## Verification state
 
-- TypeScript: **NOT RUN**
-- targeted B4 / affected historical tests: **NOT RUN**
-- full unit/regression: **NOT RUN**
-- production build: **NOT RUN**
+Initial local verification on 30 September 2026:
+- TypeScript: **PASS**
+- targeted B4 / affected historical tests: **47/50 PASS, 3 FAIL**
+- full unit/regression: **949/954 PASS, 5 FAIL**
+- production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated browser: **DEFERRED TO CUMULATIVE LIVE REDESIGN SMOKE — NOT PASS**
+
+Failure review found five stale/over-broad source-contract assertions rather than a runtime/parser/certification failure:
+1. legacy v1.25 expected the removed duplicate aircraft-origin sentence;
+2. v1.32 expected superseded helper wording instead of the structured purpose submission contract;
+3. B1B expected `const profileSummary=` even though B4 colocated adjacent derived constants;
+4. B3 had the same declaration-shape assumption;
+5. B4 CSS assertion omitted the intentional `flex-wrap:wrap` reflow safeguard.
+
+These five assertions were reconciled test-only. **Clean rerun on the current head is pending.**
 
 ## Next
 
