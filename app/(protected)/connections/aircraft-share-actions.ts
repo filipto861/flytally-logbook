@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 import { parseAircraftShareSnapshot,type AircraftShareRate,type AircraftShareSnapshot } from "@/lib/aircraft-sharing";
+import { parseOptionalBilling } from "@/lib/billing";
 import { validateAircraftProfile } from "@/lib/aircraft-profile-validation";
 
 const id=(value:unknown)=>{const n=Number(value);return Number.isSafeInteger(n)&&n>0?n:0};
@@ -35,6 +36,7 @@ export async function shareAircraftProfile(_:ShareAircraftState,form:FormData):P
   const aircraft=rows[0];if(!aircraft)return{ok:false,message:"Aircraft not found."};
 
   const includeDefaults=yes(form,"include_defaults"),includeCurrentRate=yes(form,"include_current_rate"),includeRateHistory=yes(form,"include_rate_history"),includeNotes=yes(form,"include_notes"),includePhoto=yes(form,"include_photo")&&Boolean(aircraft.photo_base64);
+  if(includeDefaults){const billing=parseOptionalBilling(aircraft.billing_basis);if(billing.error)return{ok:false,message:"Aircraft billing setting needs configuration before it can be shared."};}
   const profile={
     registration:text(aircraft.registration).toUpperCase(),aircraftType:text(aircraft.aircraft_type),aircraftMake:text(aircraft.aircraft_make),aircraftModel:text(aircraft.aircraft_model),aircraftVariant:text(aircraft.aircraft_variant),icaoType:text(aircraft.icao_type).toUpperCase(),aircraftClass:text(aircraft.aircraft_class).toUpperCase(),regulatoryCategory:text(aircraft.regulatory_category).toUpperCase(),balloonClass:text(aircraft.balloon_class).toUpperCase(),balloonGroup:text(aircraft.balloon_group).toUpperCase(),evidence:text(aircraft.evidence).toUpperCase(),partFclCreditClass:text(aircraft.part_fcl_credit_class).toUpperCase(),partFclCreditBasis:text(aircraft.part_fcl_credit_basis),partFclCreditFrom:text(aircraft.part_fcl_credit_from).slice(0,10)
   };
@@ -78,6 +80,7 @@ export async function acceptAircraftProfileShare(shareId:number,form:FormData){
   const canonical=validated.profile;
   const existing=await sql`SELECT id FROM aircraft WHERE user_id=${session.userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1` as Array<{id:number|string}>;
   const exists=Boolean(existing[0]),importProfile=!exists||yes(form,"import_profile"),importDefaults=Boolean(row.include_defaults)&&Boolean(snapshot.defaults)&&yes(form,"import_defaults"),importCurrent=Boolean(row.include_current_rate)&&Boolean(snapshot.currentRate)&&yes(form,"import_current_rate"),importHistory=Boolean(row.include_rate_history)&&Boolean(snapshot.rateHistory?.length)&&yes(form,"import_rate_history"),importNotes=Boolean(row.include_notes)&&snapshot.note!==undefined&&yes(form,"import_notes"),importPhoto=Boolean(row.include_photo)&&Boolean(row.photo_base64)&&yes(form,"import_photo");
+  if(importDefaults&&snapshot.defaults?.billingError)redirect(`/connections/aircraft/${shareId}?error=billing`);
 
   const queries=[
     sql`INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_variant,icao_type,aircraft_class,regulatory_category,balloon_class,balloon_group,evidence,default_price_per_hour,default_role,billing_basis,active,part_fcl_credit_class,part_fcl_credit_basis,part_fcl_credit_from,note,created_at,updated_at)
