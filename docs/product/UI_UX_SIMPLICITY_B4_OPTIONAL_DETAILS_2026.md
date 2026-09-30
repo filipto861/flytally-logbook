@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B4 Optional Details + Helper-copy Triage
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — MERGE READY  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b4-optional-details`
 
@@ -80,8 +80,17 @@ Failure review found five stale/over-broad source-contract assertions rather tha
 4. B3 had the same declaration-shape assumption;
 5. B4 CSS assertion omitted the intentional `flex-wrap:wrap` reflow safeguard.
 
-These five assertions were reconciled test-only. **Clean rerun on the current head is pending.**
+These five assertions were reconciled test-only. Clean rerun on 30 September 2026 passed:
+
+- TypeScript: **PASS**
+- reconciled targeted set: **34/34 PASS**
+- full unit/regression: **954/954 PASS**
+- production build: **PASS** on the runtime-equivalent B4 head
+- PostgreSQL: **N/A**
+- authenticated browser: **DEFERRED TO CUMULATIVE LIVE REDESIGN SMOKE — NOT PASS**
+
+The final syntax-only test correction changed no runtime code, so the earlier successful production build remains runtime-equivalent evidence.
 
 ## Next
 
-After clean verification and merge: **B5 — Responsive, accessibility and final UX closeout.**
+Merge B4, then start **B5 — Responsive, accessibility and final UX closeout**. The cumulative authenticated live UI smoke remains an explicit deferred verification item.
