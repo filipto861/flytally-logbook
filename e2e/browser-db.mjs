@@ -54,6 +54,19 @@ export function resetConnectionManagerFixture(){
 }
 
 
+export function resetIntelligentReviewFormScopeFixture(){
+  runBrowserSql(`
+    DELETE FROM flights WHERE user_id=9001 AND id IN (9911,9912);
+    INSERT INTO flights(
+      id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
+      departure,arrival,off_block,takeoff,landing,on_block,role,starts,pic_minutes,landings_day,commander
+    ) VALUES
+      (9911,9001,'2026-09-16','EASA','OK-E2E','B23','SEP','AEROPLANE','LKLT','LKPR','08:00','08:05','08:45','08:50','PIC',1,50,1,'Browser Smoke Pilot'),
+      (9912,9001,'2026-09-17','EASA','OK-E2E','B23','SEP','AEROPLANE','LKPR','LKLT','09:00','09:05','09:45','09:50','PIC',1,50,1,'Browser Smoke Pilot');
+  `);
+}
+
+
 export function resetSafetyPilotPicFixture(){
   runBrowserSql(`
     UPDATE pilot_connections
