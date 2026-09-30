@@ -22,13 +22,26 @@ test("editing values preserve EASA SEP AIR and aircraft type exactly",()=>{
   assert.equal(parsed.data?.aircraftType,"Bristell B23");
 });
 
-test("parser never silently downgrades missing edit choices to ULL or BLOCK",()=>{
-  for(const field of ["evidence","aircraftClass","billingBasis","role"]){
+test("parser keeps required regulatory choices fail closed while billing is optional",()=>{
+  for(const field of ["evidence","aircraftClass","role"]){
     const form=validForm();form.delete(field);
     const parsed=parseFlightInput(form);
     assert.equal(parsed.data,undefined,`${field} must block save when missing`);
     assert.match(parsed.error??"",/Select a valid/);
   }
+  const noBilling=validForm();noBilling.delete("billingBasis");noBilling.delete("billingShare");
+  const parsed=parseFlightInput(noBilling);
+  assert.equal(parsed.error,undefined);
+  assert.equal(parsed.data?.billingBasis,"");
+});
+
+test("populated malformed billing still fails closed",()=>{
+  const badBasis=validForm();badBasis.set("billingBasis","GROSS");
+  assert.equal(parseFlightInput(badBasis).data,undefined);
+  assert.match(parseFlightInput(badBasis).error??"",/billing time basis/i);
+  const badShare=validForm();badShare.set("billingShare","99");
+  assert.equal(parseFlightInput(badShare).data,undefined);
+  assert.match(parseFlightInput(badShare).error??"",/billing share/i);
 });
 
 test("an instructor name does not override the selected pilot role",()=>{
