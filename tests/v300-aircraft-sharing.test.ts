@@ -40,6 +40,7 @@ test("v3.0 aircraft share parser normalizes profile and rate evidence",()=>{
   assert.equal(parsed.profile.registration,"OK-ABC");
   assert.equal(parsed.profile.icaoType,"BR23");
   assert.equal(parsed.profile.aircraftClass,"SEP");
+  assert.equal(parsed.defaults?.billingBasis,"");
   assert.equal(parsed.currentRate?.pricePerHour,3500);
   assert.equal(parsed.rateHistory?.length,1);
   assert.equal(parsed.note,"hello");
