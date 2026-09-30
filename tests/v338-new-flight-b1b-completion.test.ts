@@ -25,6 +25,7 @@ test("B1B relocates unique review information before deleting the inline review 
   const actions=form.indexOf('className="form-actions field-actions"');
   assert.ok(origin>=0&&profile>origin,"aircraft-profile origin should live with Aircraft & logbook before later optional sections");
   assert.ok(actions>profile,"completion actions stay at the end of the canonical form");
+  assert.match(form,/selected&&!editing\?\` · from \${registration}\`:""/);
   assert.match(form,/Aircraft, logbook and regulatory context came from \{registration\}/);
   assert.match(form,/\{dirty\?<small className="unsaved-indicator">Unsaved changes<\/small>:null\}/);
 });
