@@ -127,6 +127,8 @@ Important boundary:
 - Missing route/times remain draft-save compatible and certification-gated.
 - B1B simplifies completion to one blocker/action surface and one primary **Save & review** action; **Add another flight** is offered only after a successful save in the saved review handoff.
 - The saved-flight review/certification workspace remains authoritative; New Flight no longer duplicates it with a second inline review card.
+- B2 promotes Role beside Date/Aircraft, groups Route and one UTC timeline, and exposes the applied landing/PF evidence in the collapsed Flight experience summary without forcing normal preset reconfirmation.
+- Existing movement adjustment remains available through progressive disclosure; draft route/time optionality and certification/recency rules are unchanged.
 - Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
 - Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
