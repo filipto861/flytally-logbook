@@ -18,7 +18,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Preserved existing GPS split/review, duplicate fingerprint, advisory-lock and single-transaction flight/track persistence behavior.
 - Added F0.1 domain/source regression coverage plus authenticated browser fixtures for valid EASA/SEP, valid explicit ULL and malformed EASA aircraft context.
 - No database schema/migration, certification hash/version, recency rule, historical backfill or broad UI redesign is introduced.
-- **Verification status:** PENDING on branch `fix/flight-entry-f01-gps-integrity`.
+- **Verification status:** PASS on final runtime head before docs closeout — Verify FlyTally web #979: TypeScript PASS, full unit/regression **979/979**, PostgreSQL acceptance **55/55**; Browser smoke #366: production build PASS, authenticated Chromium desktop/mobile **26 passed / 2 skipped**.
 
 ### Flight Entry Workflow 3.0 — F0.0 characterization
 - Added a characterization-only baseline for the current GPS flight-entry/write path; no runtime behavior changes in this milestone.
