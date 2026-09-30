@@ -276,14 +276,18 @@ PostgreSQL acceptance:
 
 Implementation is complete in the branch, but **B1A is not DONE yet**.
 
-Required current-head gate:
+Evidence from Filip's local run on 30 September 2026 before the stale-test alignment commit:
 
-- TypeScript: **NOT RUN**
-- targeted B1A + affected historical tests: **NOT RUN**
-- full unit/regression suite: **NOT RUN**
-- PostgreSQL acceptance: **NOT RUN**
-- production build: **NOT RUN**
+- TypeScript: **PASS**
+- targeted B1A + affected historical tests: **35/35 PASS**
+- full unit/regression suite: **926/928 PASS, 2 FAIL**
+- both failures were stale historical/UI contract assertions that still treated Billing as required; no runtime failure was reported
+- production build: **PASS**
+- PostgreSQL core command: **NOT EXECUTED** — 55/55 tests were skipped because the local PostgreSQL/psql gate was unavailable
+- direct metadata query: **NOT RUN** — local PowerShell reported `psql` is not installed
 - authenticated browser check: **NOT RUN**
+
+The two stale tests were updated to preserve the B1A decision that Billing is optional. Full-suite verification must now be rerun on the new branch head before closeout.
 
 Browser scope for B1A is intentionally targeted rather than the full B2/B5 matrix:
 
