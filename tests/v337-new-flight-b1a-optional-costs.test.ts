@@ -49,6 +49,8 @@ test("B1A New Flight no longer treats billing as a draft-save blocker",()=>{
   assert.doesNotMatch(form,/!billing&&"billing"/);
   assert.doesNotMatch(form,/if\(registration&&!billing\)setCostOpen\(true\)/);
   assert.match(form,/<option value="">Not tracked<\/option>/);
+  assert.match(form,/billing==="INVALID"\?"Needs configuration"/);
+  assert.match(form,/Stored billing is invalid/);
   assert.match(form,/Aircraft cost not tracked/);
   assert.doesNotMatch(form,/Billing time <span className="field-hint"[^>]*>Required/);
   assert.doesNotMatch(form,/name="billingBasis"[^>]*required/);
@@ -61,6 +63,7 @@ test("B1A aircraft defaults preserve absence instead of synthesizing BLOCK",()=>
   assert.match(actions,/serializeOptionalBilling\(s\(form,"billing_basis"\),s\(form,"billing_share"\)\)/);
   assert.match(actions,/const billing=billingResult[.]value/);
   assert.match(manager,/parseOptionalBilling\(aircraft\?\.billing_basis\)/);
+  assert.match(manager,/billingResult\.error\?"INVALID"/);
   assert.match(manager,/<option value="">Not tracked<\/option>/);
   assert.match(quick,/name="billing_basis" defaultValue=""><option value="">Not tracked<\/option>/);
 });
