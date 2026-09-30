@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B5 Responsive, Accessibility + Final UX Closeout
 
-**Status:** AUTOMATED GATE PASS — LIVE MATRIX PENDING  
+**Status:** MERGED + PRODUCTION READY — LIVE MATRIX PENDING  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b5-closeout`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -161,6 +161,13 @@ Clean rerun on 30 September 2026 passed:
 - full unit/regression: **962/962 PASS**.
 
 TypeScript and production build remain PASS on the runtime-equivalent B5 head because the final correction changed tests only.
+
+## Merge / production state
+
+- PR #179 merged to `main` as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`.
+- Vercel production deployment `dpl_5Rb2vzNcNBEw5xdxearpuJEYBg5N` reached **READY**.
+- Production alias includes `fly-tally.com`.
+- Cumulative authenticated live matrix remains **PENDING / NOT PASS**.
 
 ## Final closeout condition
 
