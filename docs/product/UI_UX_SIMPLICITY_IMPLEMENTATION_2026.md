@@ -797,9 +797,10 @@ Current state:
 - Filip decisions D1–D5: FROZEN;
 - B0.5 runtime implementation: **DONE / VERIFIED**;
 - B0.5 baseline record: `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`;
-- B1A runtime implementation: **IMPLEMENTED IN `feat/new-flight-b1a-optional-costs` — VERIFICATION PENDING**;
+- B1A runtime implementation: **DONE / MERGE READY**;
 - B1A source review: manual/GPS entry, aircraft defaults, cost aggregates, detail UI and aircraft sharing reconciled;
-- B1A database evidence: **PENDING** read-only verification of `flights.billing_basis` and `aircraft.billing_basis` defaults/check constraints;
+- B1A database evidence: **PASS (read-only production metadata)**; no migration required;
+- B1A authenticated Preview smoke: **DEFERRED, not PASS** because Preview lacks DATABASE_URL; Filip approved live post-merge smoke instead of attaching Preview to production DB;
 - B1B and later runtime batches: NOT STARTED.
 
-**Current gate:** verify B1A on the exact branch head, including PostgreSQL persistence evidence and authenticated browser behavior. Only after B1A passes may B1B — Completion semantics begin.
+**Current gate:** merge B1A, retain the live optional-cost smoke as a post-merge verification item, then implement B1B — Completion semantics.
