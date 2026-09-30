@@ -293,23 +293,32 @@ Implemented, verification pending:
 
 Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE.
 
-### Current implementation checkpoint — B1A
+### Completed checkpoint — B1A
 
-Branch: `feat/new-flight-b1a-optional-costs`
+PR #174 merged as `37eac801cc69b19c07d4c140213ccda37c4e85ff`.
+
+- blank billing is a first-class **Not tracked** state across manual/GPS entry and aircraft defaults;
+- malformed populated billing remains fail-closed;
+- configured BLOCK/AIR + share values remain canonical;
+- production DB metadata prerequisite passed read-only and no migration is required;
+- TypeScript PASS, targeted B1A 35/35 PASS, stale-contract rerun 55/55 PASS, full unit/regression 928/928 PASS, production build PASS;
+- protected Preview reached READY, but authenticated smoke remains **DEFERRED, not PASS** and will be checked live with the cumulative New Flight redesign.
+
+### Current implementation checkpoint — B1B
+
+Branch: `feat/new-flight-b1b-completion`
 
 Implemented, verification pending:
-- blank billing is now a first-class **Not tracked** state in manual entry, GPS import and aircraft defaults;
-- populated malformed billing remains fail-closed and opens/surfaces the relevant configuration state instead of degrading to BLOCK or blank;
-- configured BLOCK/AIR + share values remain canonical and continue to auto-apply from the aircraft profile;
-- no-billing flights no longer resolve/snapshot an aircraft hourly rate, and cost read models treat untracked billing as zero contribution rather than implicit BLOCK;
-- aircraft profile Add/Edit and Quick Add can explicitly store no billing default;
-- aircraft sharing preserves explicit no-billing state; malformed shared billing defaults are surfaced and cannot be imported silently;
-- historical legacy billing helpers remain compatible for callers outside the optional-cost path;
-- no certification, recency, UTC or crew-sharing credit semantics are changed.
+- removed the full inline **Review before save** card and duplicate `Ready to save` state;
+- New Flight now has one form-level completion/blocker surface plus one primary **Save & review** action;
+- removed initial **Save and add another**;
+- moved profile-origin and unsaved-state information to the relevant profile/completion context;
+- added **Add another flight** only to the successful `saved=1` post-save review handoff;
+- preserved the existing review-first redirect and backward-compatible server intent;
+- route/times remain draft-optional; certification blockers remain in the saved review/certification workflow;
+- no schema, recency, certification payload or UTC change.
 
-Database prerequisite: **PASS (read-only production metadata)** — `aircraft.billing_basis` and `flights.billing_basis` are nullable `text` columns with the legacy `'BLOCK'::text` default, and no production CHECK constraint references `billing_basis`. B1A writes explicit `''` for Not tracked, so the legacy default does not invent a value on the new path. No schema migration is required.
-
-Verification status: **DONE / MERGE READY** — TypeScript PASS, targeted B1A **35/35 PASS**, stale-contract rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS, production DB metadata prerequisite PASS, no migration required. Protected Preview reached READY, but authenticated smoke is **DEFERRED, not PASS** because Preview has no DATABASE_URL; runtime logs confirmed that infrastructure limitation. Filip approved post-merge live smoke instead of connecting Preview to production DB. Next milestone: **B1B — Completion semantics**.
+Verification status: **DONE / MERGE READY** — TypeScript PASS, production build PASS, reconciled targeted B1B/historical contracts **34/34 PASS**, full unit/regression **934/934 PASS**. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check and is not reported as PASS. Next milestone: **B2 — Essentials hierarchy + visible movement evidence**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 

@@ -40,5 +40,6 @@ test("v3.3 U10 makes source choice and save readiness compact and explicit",()=>
   assert.match(form,/className="entry-save-state"/);
   assert.match(form,/Creates an editable draft for final review/);
   assert.match(css,/workflow simplicity: keep New flight focused on the common path/);
-  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto auto/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.doesNotMatch(form,/Save and add another|Review before save|Ready to save/);
 });

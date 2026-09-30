@@ -12,15 +12,15 @@ test("v1.25 preserves both entry modes when the user switches source",()=>{
   assert.match(source,/<div hidden=\{mode!=="manual"\}>\{manual\}<\/div>/);
 });
 
-test("manual entry has a live pre-save summary and explicit save actions without fake wizard progress",()=>{
+test("manual entry keeps one completion surface and one primary save action",()=>{
   const source=read("components/flight-form.tsx");
   assert.doesNotMatch(source,/Manual flight entry progress/);
-  assert.match(source,/Review before save/);
-  assert.match(source,/BLOCK \/ AIR/);
+  assert.doesNotMatch(source,/Review before save|entry-review-summary|Ready to save|Save and add another/);
   assert.match(source,/Save & review/);
   assert.match(source,/Save changes/);
   assert.match(source,/Aircraft, logbook and regulatory context came from/);
   assert.match(source,/entry-save-state/);
+  assert.match(source,/Complete before save/);
 });
 
 test("GPS import guides review before enabling the final save",()=>{
@@ -42,10 +42,10 @@ test("flight forms warn before abandoning unsaved data",()=>{
   assert.match(gps,/useUnsavedFormGuard/);
 });
 
-test("v1.25 review UI has desktop and narrow-screen layouts",()=>{
-  const css=read("app/globals.css");
-  assert.match(css,/FlyTally 1\.25 — guided flight entry/);
-  assert.match(css,/\.entry-review-summary dl\{display:grid;grid-template-columns:repeat\(5/);
-  assert.match(css,/@media\(max-width:600px\)/);
-  assert.match(css,/\.import-save-summary\{grid-template-columns:1fr\}/);
+test("v1.25 legacy review styling remains isolated while current completion uses the canonical action bar",()=>{
+  const legacy=read("app/globals.css"),current=read("app/ui-system.css");
+  assert.match(legacy,/FlyTally 1\.25 — guided flight entry/);
+  assert.match(legacy,/\.import-save-summary\{grid-template-columns:1fr\}/);
+  assert.match(current,/\.form-actions\.field-actions\{/);
+  assert.match(current,/grid-template-columns:minmax\(0,1fr\) auto/);
 });

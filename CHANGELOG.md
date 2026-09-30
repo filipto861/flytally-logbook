@@ -11,6 +11,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 This section tracks changes intended for the next named release. An entry is production-complete only after the corresponding change has been merged to `main`.
 
+### New Flight UI/UX Simplicity — B1B completion semantics
+- Removed the duplicated inline **Review before save** card and the second `Ready to save` completion state from New Flight.
+- New Flight keeps one form-level blocker/consequence surface and one primary **Save & review** action; Edit keeps **Save changes**.
+- Removed initial **Save and add another** and moved **Add another flight** to the successful saved-review handoff.
+- Relocated selected-aircraft/profile origin and unsaved-change context instead of discarding unique information from the removed review card.
+- Preserved the existing `/flights/<id>?tab=logbook&saved=1` review-first handoff, draft-save semantics, certification blockers and PendingActionButton duplicate-submit protection.
+- No schema, certification payload/hash, recency, UTC or optional-cost semantics changed.
+- **Verification status:** merge-ready — local TypeScript PASS and production build PASS; reconciled targeted B1B/historical contracts 34/34 PASS; full unit/regression 934/934 PASS. PostgreSQL N/A; authenticated UI smoke remains deferred to the later live cumulative New Flight redesign check and is not reported as PASS.
+
 ### New Flight UI/UX Simplicity — B1A optional Costs
 - Added an explicit optional billing parser/serializer so blank billing means **Not tracked** instead of silently becoming BLOCK.
 - New Flight and GPS import can save otherwise-valid records without aircraft-cost tracking; populated malformed billing still fails closed.
