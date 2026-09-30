@@ -60,15 +60,28 @@ function InlineInsight({item}:{item:IntelligentInsight}){
 
 const inlineActionStyle={marginLeft:6,background:"transparent",cursor:"pointer"} as const;
 
-export function IntelligentFlightEntryPanel({context}:{context:IntelligentEntryContext}){
+export function IntelligentFlightEntryPanel({context,formId}:{context:IntelligentEntryContext;formId:string}){
   const[draft,setDraft]=useState<IntelligentFlightDraft>({}),[form,setForm]=useState<HTMLFormElement|null>(null);
   useEffect(()=>{
-    const node=document.querySelector<HTMLFormElement>("form.flight-form");if(!node)return;
+    const candidate=document.getElementById(formId);
+    if(!(candidate instanceof HTMLFormElement))return;
+    const node=candidate;
     setForm(node);
-    const sync=()=>setDraft(formDraft(node));
-    sync();node.addEventListener("input",sync);node.addEventListener("change",sync);
-    return()=>{node.removeEventListener("input",sync);node.removeEventListener("change",sync)};
-  },[]);
+    let frame=0;
+    const syncNow=()=>setDraft(formDraft(node));
+    const sync=()=>{
+      cancelAnimationFrame(frame);
+      frame=requestAnimationFrame(syncNow);
+    };
+    syncNow();
+    node.addEventListener("input",sync);
+    node.addEventListener("change",sync);
+    return()=>{
+      cancelAnimationFrame(frame);
+      node.removeEventListener("input",sync);
+      node.removeEventListener("change",sync);
+    };
+  },[formId]);
   const insights=useMemo(()=>intelligentFlightReview(draft,context.history),[draft,context.history]);
   const departure=String(draft.departure??"").trim().toUpperCase(),arrival=String(draft.arrival??"").trim().toUpperCase(),continuation=!departure?context.continuation:null;
   const latest=context.history[0],latestDeparture=String(latest?.departure??"").trim().toUpperCase(),latestArrival=String(latest?.arrival??"").trim().toUpperCase();
