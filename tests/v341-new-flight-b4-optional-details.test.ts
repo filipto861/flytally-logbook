@@ -93,5 +93,6 @@ test("B4 optional grouping has compact shared presentation",()=>{
   const css=read("app/ui-system.css");
   assert.match(css,/\.optional-details-body\{display:grid;gap:var\(--ui-space-4\)\}/);
   assert.match(css,/\.optional-detail-group\+\.optional-detail-group\{padding-top:var\(--ui-space-3\);border-top:1px solid var\(--line\)\}/);
-  assert.match(css,/\.optional-detail-heading\{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap\}/);\n  assert.match(css,/\.optional-detail-heading small\{min-width:0;text-align:right;overflow-wrap:anywhere\}/);
+  assert.match(css,/\.optional-detail-heading\{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap\}/);
+  assert.match(css,/\.optional-detail-heading small\{min-width:0;text-align:right;overflow-wrap:anywhere\}/);
 });
