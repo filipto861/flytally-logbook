@@ -1,3 +1,5 @@
+import { parseOptionalBilling } from "./billing.ts";
+
 export type AircraftShareRate={
   aircraftType:string;
   validFrom:string;
@@ -55,7 +57,7 @@ export function parseAircraftShareSnapshot(value:unknown):AircraftShareSnapshot{
     partFclCreditBasis:text(profile.partFclCreditBasis).slice(0,300),
     partFclCreditFrom:text(profile.partFclCreditFrom).slice(0,10),
   }};
-  if(Object.keys(defaults).length)parsed.defaults={defaultRole:text(defaults.defaultRole)||"PIC",billingBasis:text(defaults.billingBasis)||"BLOCK"};
+  if(Object.keys(defaults).length){const billing=parseOptionalBilling(defaults.billingBasis);parsed.defaults={defaultRole:text(defaults.defaultRole)||"PIC",billingBasis:billing.error?"":billing.value}}
   if(Object.keys(current).length)parsed.currentRate=rate(current);
   if(history.length)parsed.rateHistory=history.slice(0,250).map(rate).filter(item=>item.pricePerHour>0&&/^\d{4}-\d{2}-\d{2}$/.test(item.validFrom));
   if(typeof root.note==="string")parsed.note=root.note.slice(0,5000);
