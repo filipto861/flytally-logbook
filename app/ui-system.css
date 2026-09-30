@@ -535,6 +535,7 @@ button[data-loading="true"]::after{
 }
 
 @media(pointer:coarse){
+  .flight-form .form-actions.field-actions{position:static;bottom:auto}
   .entry-blocker-link{min-height:44px;padding:8px 6px}
 }
 
