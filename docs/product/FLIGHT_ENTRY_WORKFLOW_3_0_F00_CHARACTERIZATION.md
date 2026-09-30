@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F0.0 Characterization
 
-**Status:** IMPLEMENTED · VERIFICATION PENDING  
+**Status:** DONE · VERIFIED  
 **Date:** 30 September 2026  
 **Repository baseline:** `bfe064038e8ecd6a0cb2a53d1090728abd676b57`  
 **Runtime change:** none
@@ -306,3 +306,21 @@ F0.0 is complete when:
 - no runtime behavior changed.
 
 F0.0 does not claim F0.1 behavior is already fixed.
+
+## 14. Verification evidence
+
+Final characterization head before closeout:
+- Verify FlyTally web #970: **PASS**;
+- TypeScript: **PASS**;
+- full unit/regression: **971/971 PASS**;
+- PostgreSQL acceptance: **55/55 PASS**;
+- no runtime implementation files changed by F0.0;
+- no schema migration;
+- no deployment required for characterization-only closeout.
+
+The first verification attempts exposed only test-contract issues:
+- the roadmap regression still expected M2B to be active after the approved pre-emption;
+- the new Safety Pilot source assertion used the wrong local variable name;
+- one follow-up edit accidentally wrote literal `\\n` into the roadmap test source.
+
+All three were corrected as test/characterization defects. No production runtime change was made.
