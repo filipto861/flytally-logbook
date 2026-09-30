@@ -240,7 +240,7 @@ button[data-loading="true"]::after{
 .entry-context-note{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
 .form-actions.field-actions{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
 }
 .entry-save-state{display:grid;gap:2px;min-width:0}
@@ -361,7 +361,19 @@ button[data-loading="true"]::after{
   align-items:center;
   justify-content:center;
 }
-.flight-post-save{display:none}
+.flight-post-save{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--ui-space-3);
+  padding:12px 14px;
+  border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--accent) 8%,var(--panel));
+}
+.flight-post-save>div{display:grid;gap:2px}
+.flight-post-save strong{font-size:.78rem}
+.flight-post-save span{color:var(--muted);font-size:.68rem}
 
 @media(max-width:700px){
   .flight-route-link{min-width:0;width:100%}
@@ -383,6 +395,8 @@ button[data-loading="true"]::after{
   .flight-detail-more{flex:0 0 auto}
   .flight-detail-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}
   .flight-workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flight-post-save{align-items:stretch;flex-direction:column}
+  .flight-post-save .secondary-link{width:100%;justify-content:center}
 }
 
 .pending-action-label{display:grid;place-items:center}.pending-action-label>span{grid-area:1/1}.pending-action-label-reserve{visibility:hidden;pointer-events:none}
