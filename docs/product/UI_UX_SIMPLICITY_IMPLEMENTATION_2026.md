@@ -802,9 +802,9 @@ Current state:
 - B3: **DONE / MERGED** in PR #177;
 - B4: **DONE / MERGED** in PR #178 (`b18e19a1550d73536cb9f15abec04b3b275361f1`);
 - B4 verification: TypeScript PASS, targeted **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
-- B5 runtime implementation: **AUTOMATED GATE PASS / MERGE READY**;
+- B5 runtime implementation: **DONE / MERGED** in PR #179 (`3a73ad85a6c33f77a881b339c28b425e7b3b8769`);
 - B5 evidence record: `docs/product/UI_UX_SIMPLICITY_B5_CLOSEOUT_2026.md`;
 - B5 verification: TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent head; PostgreSQL N/A;
 - cumulative authenticated live New Flight matrix: **PENDING / NOT PASS**.
 
-**Current gate:** merge B5 runtime, then perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.
+**Current gate:** production deployment for B5 is READY on `fly-tally.com`; perform the cumulative authenticated live matrix before declaring the UI/UX Simplicity workstream DONE.
