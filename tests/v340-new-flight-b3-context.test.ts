@@ -64,6 +64,6 @@ test("B3 stays presentation-only around parser certification and collaboration b
   const actions=read("app/(protected)/flights/actions.ts");
   assert.match(actions,/parseFlightInput\(form\)/);
   assert.doesNotMatch(form,/materialize|certificationFingerprint|flight_participations/);
-  assert.match(read("lib/fcl050-compliance.ts"),/role=="DUAL"&&!text\(row\.instructor\)/);
+  assert.match(read("lib/fcl050-compliance.ts"),/role==="DUAL"&&!text\(row\.instructor\)/);
   assert.match(read("lib/flight-input.ts"),/\["SPIC","PICUS"\]\.includes\(role\).*verificationName.*verificationReference/);
 });
