@@ -58,7 +58,7 @@ Malformed populated billing is not reinterpreted as empty or BLOCK.
 - a malformed persisted aircraft/flight value is surfaced as **Needs configuration** in the editable cost UI;
 - the user must explicitly choose **Not tracked**, BLOCK or AIR before save.
 
-Shared untrusted optional defaults are bounded conservatively: malformed shared billing is discarded as unavailable rather than repaired to BLOCK.
+Shared untrusted optional defaults are bounded conservatively: malformed shared billing is preserved as invalid evidence, surfaced to the recipient, left unchecked by default and cannot be imported unless corrected by the sender. It is never repaired to BLOCK or silently cleared.
 
 ## Discovery / consumer inventory
 
@@ -112,7 +112,8 @@ Legacy `parseBilling()` / `serializeBilling()` remain backward-compatible for un
 `calculatedFlightPrice()` and `billingLabel()` are absence-aware:
 
 - untracked billing contributes no aircraft cost;
-- empty billing displays **Not tracked**.
+- empty billing displays **Not tracked**;
+- malformed billing displays **Unavailable**, keeping corrupted persisted data distinct from intentional absence.
 
 ### 2. Canonical flight parser
 
@@ -197,8 +198,11 @@ Aircraft share snapshots preserve explicit absence.
 - sender does not replace empty billing with BLOCK;
 - recipient import does not replace empty billing with BLOCK;
 - a newly imported aircraft starts untracked when no billing default was imported;
-- malformed shared billing does not become BLOCK;
-- review labels empty billing as **not tracked**.
+- malformed shared billing does not become BLOCK or silently become empty;
+- sender-side sharing of malformed defaults is blocked;
+- recipient review marks malformed defaults as **needs configuration** and leaves that group unchecked;
+- attempting to import a malformed defaults group fails closed;
+- review labels genuinely empty billing as **not tracked**.
 
 ### 10. Legacy restore compatibility
 
@@ -219,7 +223,7 @@ Repository audit:
 - B1A changes no schema file;
 - the storage contract remains the existing text billing field plus nullable price snapshot.
 
-The production Neon schema was **not directly queried** during implementation because the available Neon connector is not scoped to the Logbook production project ID. This document therefore does not claim a live production-schema inspection.
+The production Neon schema was **not directly queried** during implementation because the available Neon connector is not scoped to the Logbook production project ID. This document therefore does not claim a live production-schema inspection. Before closeout, a read-only metadata query against the actual target database must confirm the `billing_basis` defaults/nullability/CHECK constraints for both `flights` and `aircraft`.
 
 A PostgreSQL integration acceptance test was added to prove the intended compatibility boundary:
 
