@@ -103,14 +103,23 @@ No persistence semantics or schema are changed.
 
 ## Verification state
 
-Current B3 head:
+Initial local verification run on 30 September 2026:
 
-- TypeScript: **NOT RUN**
-- targeted B3 / affected historical tests: **NOT RUN**
-- full unit/regression: **NOT RUN**
-- production build: **NOT RUN**
+- TypeScript: **PASS**
+- targeted B3 / affected historical tests: **36/39 PASS, 3 FAIL**
+- full unit/regression: **942/946 PASS, 4 FAIL**
+- production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated browser: **DEFERRED TO CUMULATIVE LIVE REDESIGN SMOKE — NOT PASS**
+
+Failure review found no runtime/parser/certification regression in the reported assertions. Four source-contract assertions were stale or overly broad after the intentional B3 presentation move:
+
+1. the v1.59 structure test matched the imported `FlightPurposePicker` symbol instead of the rendered JSX occurrence;
+2. the B1B origin contract expected the old leading separator even though B3 moved the origin into an array-based summary;
+3. the v1.59.2 profile-expansion contract did not include the new fail-closed `profileNeedsConfiguration` condition while retaining the registration gate;
+4. the B3 compliance guard test expected `==` while the existing authoritative code uses `===`.
+
+Those test contracts were reconciled without changing runtime code. **Rerun on the current branch head is pending.**
 
 The cumulative live browser check remains explicitly deferred by Filip's current decision.
 
