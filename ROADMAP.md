@@ -307,9 +307,9 @@ Implemented, verification pending:
 - historical legacy billing helpers remain compatible for callers outside the optional-cost path;
 - no certification, recency, UTC or crew-sharing credit semantics are changed.
 
-Database prerequisite: source review confirms the implementation writes an explicit empty string, not NULL, but the live/local PostgreSQL column default/check constraints for `flights.billing_basis` and `aircraft.billing_basis` still require read-only verification before B1A can close. No migration is planned unless that evidence proves one is required.
+Database prerequisite: **PASS (read-only production metadata)** — `aircraft.billing_basis` and `flights.billing_basis` are nullable `text` columns with the legacy `'BLOCK'::text` default, and no production CHECK constraint references `billing_basis`. B1A writes explicit `''` for Not tracked, so the legacy default does not invent a value on the new path. No schema migration is required.
 
-Verification status: **PARTIAL** — TypeScript PASS, stale-contract targeted rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS. PostgreSQL is still **NOT RUN**: the core command skipped all 55 tests, local `psql` is unavailable and no `.env.local` exists for the direct Neon metadata query. Browser verification is still **NOT RUN**. B1A remains open only for database evidence and targeted browser verification.
+Verification status: **PARTIAL** — TypeScript PASS, stale-contract targeted rerun **55/55 PASS**, full unit/regression **928/928 PASS**, production build PASS, production DB metadata prerequisite PASS. The local PostgreSQL integration harness remains unavailable/skipped and is not being represented as PASS. Browser verification is still **NOT RUN**. B1A remains open only for targeted authenticated browser verification.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
