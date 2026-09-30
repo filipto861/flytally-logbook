@@ -1,10 +1,10 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0.0 DONE / F0.1 NEXT  
+**Status:** ACTIVE · DESIGN FROZEN / F0.0 + F0.1 DONE / F0 ACTIVE  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
-**Production baseline reviewed:** `68bc4510fed303744a770c2d2be3fb4a403475e2`
+**F0 inventory baseline:** `main@5dca9b32af8af0d0a76cca1dada6ae27c5446789`
 
 ## 1. Purpose
 
@@ -411,12 +411,12 @@ Required outcomes:
 - no schema migration unless evidence proves one necessary;
 - no broad UI redesign.
 
-Current default interim role policy:
-- PIC and any other role proven by F0.0 to persist coherently may remain;
-- GPS Safety Pilot must fail closed until parity;
-- GPS DUAL must not remain selectable if Instructor/PIC cannot be captured and server-validated in the same milestone.
+Final F0.1 interim role policy:
+- GPS supports **PIC only**;
+- every other submitted GPS role is rejected server-side;
+- GPS Safety Pilot, DUAL, SPIC/PICUS and other role semantics remain unavailable until F2 proves source-agnostic Role/Crew parity.
 
-F0.0 decides the smallest safe compatibility set.
+F0.0 proved PIC as the smallest safe compatibility set and F0.1 implemented that boundary.
 
 Closeout evidence:
 - Verify FlyTally web #979 PASS;
@@ -429,9 +429,13 @@ Closeout evidence:
 
 Next: F0 full field / consumer contract inventory.
 
-### F0 — Full field / consumer contract inventory
+### F0 — Full field / consumer contract inventory — ACTIVE / VERIFICATION PENDING
 
-Create the authoritative matrix for every important flight field across:
+Authoritative inventory artifact:
+
+`docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md`
+
+The repository-backed matrix now covers every important flight field across:
 - Manual New;
 - GPS New;
 - Edit;
@@ -462,6 +466,14 @@ For every field record:
 - target UX location.
 
 Mark unknowns; do not guess.
+
+F0 additionally records four implementation constraints that F1 must not obscure:
+- make/model/variant are currently finalized by the DB aircraft-identity snapshot trigger;
+- Manual EASA DUAL has a UI/certification requirement that is not yet an authoritative parser Save rule;
+- CSV/XLS export is not a complete semantic mirror of the stored/certified flight payload;
+- shared-flight creation explicitly copies source identity while the INSERT trigger can overwrite make/model/variant from current recipient profile state, so that interaction needs dedicated integrity review.
+
+F0 runtime change: **none**.
 
 ### F1 — Shared normalization / semantic write contract
 
