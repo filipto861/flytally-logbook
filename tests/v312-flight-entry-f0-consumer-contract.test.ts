@@ -55,7 +55,7 @@ test("F0 inventory locks certified-only recency and draft-visible analytics",()=
 
 test("F0 inventory preserves certification v1-v8 compatibility boundary",()=>{
   for(let version=1;version<=8;version++)assert.match(certification,new RegExp(`version===${version}`));
-  assert.match(certificationActions,/flightCertificationHash\(userId,id,row,8\)/);
+  assert.match(certificationActions,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
   assert.match(certificationActions,/certification_version=8/);
   assert.match(matrix,/Do not change certification payload v1–v8/);
 });
