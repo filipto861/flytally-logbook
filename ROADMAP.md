@@ -366,6 +366,13 @@ Verification status: **DONE / VERIFIED** — TypeScript PASS, targeted B5/affect
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
+Post-closeout production defect handling:
+- New Flight mounts GPS and manual entry forms concurrently so mode switching preserves local state.
+- A global first-match `.flight-form` lookup allowed the manual-only intelligent history panel to observe the GPS form and portal stale profile warnings into GPS review.
+- The hotfix explicitly binds intelligence to the manual form and defers event-driven FormData reads until controlled aircraft-profile updates have committed.
+- Required evidence: source regression proving no global form lookup, plus authenticated browser reproduction using a known EASA/SEP aircraft with dominant EASA/SEP history; GPS must retain EASA/SEP and receive no manual intelligent-profile warning.
+- Scope is presentation/advisory wiring only: no flight parser, GPS save, aircraft profile, historical snapshot, certification, recency, billing or database semantics change.
+
 ## P3 — Multi-aircraft Product Scale — NEXT: M2B
 
 Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.

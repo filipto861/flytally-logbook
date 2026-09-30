@@ -31,7 +31,7 @@ const launchMethodLabel=(value:string)=>({WINCH:"Winch",AEROTOW:"Aerotow",SELF_L
 const balloonClassLabel=(value:string)=>({HOT_AIR_BALLOON:"Hot-air balloon",GAS_BALLOON:"Gas balloon",HOT_AIR_AIRSHIP:"Hot-air airship",MIXED_BALLOON:"Mixed balloon"} as Record<string,string>)[value]||value;
 function Submit({editing=false,onAttempt}:{editing?:boolean;onAttempt?:()=>void}){return <PendingActionButton className="primary-button" name="intent" value="save" pendingLabel="Saving…" onClick={onAttempt}>{editing?"Save changes":"Save & review"}</PendingActionButton>}
 
-export function FlightForm({action,aircraft,initial={},instructors=[],picConnections=[],connectedPic=null,expenses=[]}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>;picConnections?:PicConnection[];connectedPic?:ConnectedPicInitial;expenses?:FlightExpenseRecord[]}){
+export function FlightForm({action,aircraft,initial={},instructors=[],picConnections=[],connectedPic=null,expenses=[],formId}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>;picConnections?:PicConnection[];connectedPic?:ConnectedPicInitial;expenses?:FlightExpenseRecord[];formId?:string}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null),formRef=useRef<HTMLFormElement>(null),[submitAttempted,setSubmitAttempted]=useState(false);
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:normalizeRegistration(item.registration)})),[aircraft]);
@@ -81,7 +81,7 @@ export function FlightForm({action,aircraft,initial={},instructors=[],picConnect
     requestAnimationFrame(()=>requestAnimationFrame(()=>formRef.current?.querySelector<HTMLElement>(selector)?.focus()));
   };
   useEffect(()=>{if(state.error){markDirty();errorRef.current?.focus()}},[state.error,markDirty]);
-  return <form ref={formRef} action={formAction} className="flight-form" data-aircraft-category={entryProfile.selected?entryProfile.category:"unselected"} onChangeCapture={markDirty} onReset={event=>event.preventDefault()} onSubmitCapture={beginSubmit}>
+  return <form ref={formRef} id={formId} action={formAction} className="flight-form" data-aircraft-category={entryProfile.selected?entryProfile.category:"unselected"} onChangeCapture={markDirty} onReset={event=>event.preventDefault()} onSubmitCapture={beginSubmit}>
     {instructors.length?<datalist id="connected-instructors">{instructors.map((item,index)=><option value={item.name} key={`${item.name}-${index}`}/>)}</datalist>:null}
     <section className="entry-section entry-section-primary"><p className="section-kicker">Flight essentials</p>
       <div className="form-grid essential-grid essential-identity-grid">

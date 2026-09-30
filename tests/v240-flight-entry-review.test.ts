@@ -11,7 +11,7 @@ const trackManager=fs.readFileSync("components/track-manager.tsx","utf8");
 
 test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(page,/FlightEntryWorkspace/);
-  assert.match(page,/<FlightForm action=\{createFlight\}/);
+  assert.match(page,/<FlightForm formId=\{manualFormId\} action=\{createFlight\}/);
   assert.match(page,/<IntelligentFlightEntryPanel context=\{intelligentContext\}/);
   assert.match(workspace,/manual:ReactNode/);
   assert.match(workspace,/\{manual\}/);
@@ -20,6 +20,17 @@ test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(panel,/data-intelligent-review=\{item\.code\}/);
   assert.doesNotMatch(form,/className="entry-review-summary"|Review before save/);
   assert.match(form,/className="entry-save-state"/);
+});
+
+test("v2.4 binds intelligent review to the explicit manual form and waits for controlled updates",()=>{
+  assert.match(page,/manualFormId="new-flight-manual-form"/);
+  assert.match(page,/<FlightForm formId=\{manualFormId\}/);
+  assert.match(page,/<IntelligentFlightEntryPanel context=\{intelligentContext\} formId=\{manualFormId\}/);
+  assert.match(form,/id=\{formId\}/);
+  assert.match(panel,/document\.getElementById\(formId\)/);
+  assert.match(panel,/candidate instanceof HTMLFormElement/);
+  assert.match(panel,/requestAnimationFrame\(syncNow\)/);
+  assert.doesNotMatch(panel,/document\.querySelector<.*form\.flight-form|document\.querySelector\("form\.flight-form"\)/);
 });
 
 test("v2.4 continuation and return assistance edit the same canonical route fields",()=>{

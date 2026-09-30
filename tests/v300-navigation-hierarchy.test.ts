@@ -50,12 +50,12 @@ test("v3.0 roadmap preserves the UX closeout while current priorities move beyon
   assert.match(roadmap,/\| GPS touch-and-go detection reliability \| ✅ \|/);
   assert.match(roadmap,/\| Safety Pilot ↔ PIC shared-flight workflow \| ✅ \|/);
   assert.match(roadmap,/\| General PIC invitation across source roles \| ✅ \|/);
-  assert.match(roadmap,/\| UI\/UX Simplicity Audit 2026 \| 🚧 \|/);
-  assert.match(roadmap,/\| Multi-aircraft Product Scale \| ⏸️ \|/);
+  assert.match(roadmap,/\| UI\/UX Simplicity Audit 2026 \| ✅ \|/);
+  assert.match(roadmap,/\| Multi-aircraft Product Scale \| ⏳ \|/);
   assert.match(roadmap,/\| Multi-aircraft M0 — contract & evidence audit \| ✅ \|/);
   assert.match(roadmap,/\| Multi-aircraft M2A — helicopter snapshot integrity \| ✅ \|/);
   assert.match(roadmap,/\| Multi-aircraft M1 — canonical profile validation \| ✅ \|/);
-  assert.match(roadmap,/## P3 — Multi-aircraft Product Scale — PAUSED, THEN RESUME/);
+  assert.match(roadmap,/## P3 — Multi-aircraft Product Scale — NEXT: M2B/);
   assert.match(roadmap,/#### M2B — Remaining historical & dynamic applicability integrity/);
   assert.match(audit,/U0 ✅ Product UX audit/);
   assert.match(audit,/U1 ✅ Navigation & task hierarchy/);
