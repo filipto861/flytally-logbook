@@ -18,7 +18,7 @@ This section tracks changes intended for the next named release. An entry is pro
 - Replaced **Crew & training** with role-driven **Role details**; DUAL, Safety Pilot, SPIC and PICUS required evidence auto-opens in one contextual area.
 - Moved structured Training purpose and Task/exercise into **Optional details** while keeping FlightPurposePicker hidden submission semantics unchanged.
 - No parser, persistence schema, certification payload/hash, recency, collaboration, UTC or billing semantics changed.
-- **Verification status:** NOT RUN on current B3 head; PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
+- **Verification status:** initial local run — TypeScript PASS and production build PASS; targeted 36/39 and full 942/946 due to four stale/over-broad source-contract assertions. Test-only reconciliations are pushed; clean rerun is pending. PostgreSQL N/A; authenticated UI smoke remains deferred to cumulative live New Flight verification and is not reported as PASS.
 
 ### New Flight UI/UX Simplicity — B2 essentials + movement evidence
 - Reordered the always-visible essentials to Date → Registration → Role, followed by grouped Route and one chronological UTC timeline.
