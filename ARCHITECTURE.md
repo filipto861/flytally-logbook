@@ -101,9 +101,27 @@ Evidence links should point to the exact flights, training records, signatures o
 
 ## Flight entry and review
 
-Add flight remains one canonical form. Intelligent review findings, continuation/return/local-flight assistance and GPS-derived suggestions are integrated into that workflow rather than creating duplicate entry modes.
+The canonical domain target is one flight semantic contract, but the current runtime still has two creation interaction/write paths:
+
+- Manual New/Edit uses the shared `FlightForm` / `parseFlightInput()` path.
+- GPS import uses a dedicated `KmlImportForm` plus `importKmlFlight()` transaction that currently performs its own extraction/normalization and direct flight/track inserts.
+
+This divergence is active technical/data-integrity debt, not an approved second flight model. The current GPS path must not be treated as authoritative precedent where it conflicts with canonical Manual validation.
+
+Known active integrity gap at the 30 September 2026 baseline:
+- GPS selected-aircraft class/evidence can still fail open to `ULL` when profile context is missing/malformed;
+- Manual selected-aircraft entry already fails closed instead;
+- the active Flight Entry Workflow 3.0 contract requires GPS to fail closed first, then converge Manual/GPS semantic normalization.
+
+Current Manual Role/Crew semantics and certification/collaboration boundaries remain authoritative during convergence. GPS-derived route/time/movement data is suggestion/provenance and may not invent role, crew identity or regulatory identity.
 
 GPS suggestions for an existing saved flight require explicit review before overwriting saved values. A successful normal Save hands the pilot into final logbook-data review without bypassing certification, sharing or protected-record boundaries.
+
+Draft-consumer boundary:
+- canonical recency uses certified flights only;
+- Dashboard/Statistics and Export/Print may consume draft records, so a draft still requires correct stored semantic identity even though it is not regulatory recency evidence.
+
+The active convergence contract is `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
 ## Collaboration and professional evidence
 
