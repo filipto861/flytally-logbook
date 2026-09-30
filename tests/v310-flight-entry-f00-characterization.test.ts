@@ -15,6 +15,7 @@ const insights=read("lib/data/pilot-insights.ts");
 const exportRoute=read("app/api/export/route.ts");
 const printPage=read("app/(protected)/print/page.tsx");
 const recency=read("lib/recency-service.ts");
+const characterization=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F00_CHARACTERIZATION.md");
 
 const importStart=actions.indexOf("export async function importKmlFlight");
 const importEnd=actions.indexOf("\nexport async function",importStart+40);
@@ -31,12 +32,12 @@ function validManualForm(role="PIC"){
   return form;
 }
 
-test("F0.0 characterizes the current GPS fail-open aircraft-context defaults",()=>{
-  assert.match(gpsForm,/name="aircraftClass"[^>]*defaultValue=\{selectedAircraft\?\.aircraft_class\|\|"ULL"\}/);
-  assert.match(gpsForm,/name="evidence"[^>]*defaultValue=\{selectedAircraft\?\.evidence\|\|"ULL"\}/);
-  assert.match(importAction,/const evidence=String\(form\.get\("evidence"\)\|\|"ULL"\)/);
-  assert.match(importAction,/aircraftClass=String\(form\.get\("aircraftClass"\)\|\|"ULL"\)/);
-  assert.match(importAction,/role=String\(form\.get\("role"\)\|\|"PIC"\)/);
+test("F0.0 preserves the historical fail-open characterization in documentation",()=>{
+  assert.match(characterization,/aircraft class → .*\|\| "ULL"/);
+  assert.match(characterization,/evidence\/logbook → .*\|\| "ULL"/);
+  assert.match(characterization,/form\.get\("evidence"\).*\|\| "ULL"/);
+  assert.match(characterization,/form\.get\("aircraftClass"\).*\|\| "ULL"/);
+  assert.match(characterization,/This is the confirmed F0\.1 fail-open defect/);
 });
 
 test("F0.0 characterizes GPS as a separate semantic write path",()=>{
@@ -48,10 +49,17 @@ test("F0.0 characterizes GPS as a separate semantic write path",()=>{
   assert.doesNotMatch(importAction,/verification_name|verification_reference|connectedPicUserId|flight_connected_crew/);
 });
 
-test("F0.0 characterizes the current GPS role surface and the INSTRUKTOR mismatch",()=>{
+test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in documentation",()=>{
+  for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.match(characterization,new RegExp(`\\|`+` \\`${role.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\test("F0.0 characterizes the current GPS role surface and the INSTRUKTOR mismatch",()=>{
   for(const role of ["PIC","DUAL","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"])assert.match(gpsForm,new RegExp(`<option>${role.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")}</option>`));
   assert.match(gpsForm,/<option value="INSTRUKTOR">INSTRUCTOR<\/option>/);
   assert.doesNotMatch(gpsForm,/<option>SPIC<\/option>|<option>PICUS<\/option>/);
+  assert.equal(ROLES.includes("INSTRUKTOR" as (typeof ROLES)[number]),false);
+  assert.equal(ROLES.includes("INSTRUCTOR" as (typeof ROLES)[number]),true);
+  assert.deepEqual(allocatedFunctionTimes("INSTRUKTOR",60),{picMinutes:0,copilotMinutes:0,dualMinutes:0,instructorMinutes:0});
+  assert.deepEqual(allocatedFunctionTimes("INSTRUCTOR",60),{picMinutes:60,copilotMinutes:0,dualMinutes:0,instructorMinutes:60});
+});")}\\``));
+  assert.match(characterization,/INSTRUKTOR mismatch/);
   assert.equal(ROLES.includes("INSTRUKTOR" as (typeof ROLES)[number]),false);
   assert.equal(ROLES.includes("INSTRUCTOR" as (typeof ROLES)[number]),true);
   assert.deepEqual(allocatedFunctionTimes("INSTRUKTOR",60),{picMinutes:0,copilotMinutes:0,dualMinutes:0,instructorMinutes:0});
