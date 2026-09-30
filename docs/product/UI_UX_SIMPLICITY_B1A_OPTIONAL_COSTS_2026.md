@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B1A Optional Costs Contract
 
-**Status:** IMPLEMENTED IN BRANCH — VERIFICATION PENDING  
+**Status:** DONE — MERGE READY  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b1a-optional-costs`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -274,7 +274,7 @@ PostgreSQL acceptance:
 
 ## Verification state
 
-Implementation is complete in the branch, but **B1A is not DONE yet**.
+Implementation is complete and **B1A is DONE for merge purposes**.
 
 Evidence from Filip's local rerun on 30 September 2026:
 
@@ -284,9 +284,9 @@ Evidence from Filip's local rerun on 30 September 2026:
 - production build: **PASS** (runtime-equivalent B1A head)
 - PostgreSQL core command: **NOT EXECUTED** — 55/55 tests were skipped because the local PostgreSQL/psql gate was unavailable
 - direct metadata query: **NOT RUN** — no `.env.local` is present and local `psql` is not installed
-- authenticated browser check: **NOT RUN**
+- authenticated browser check: **DEFERRED TO POST-MERGE LIVE SMOKE — NOT PASS**
 
-Application/unit regression is now clean. B1A remains open only for database metadata/persistence evidence and targeted browser verification.
+Application/unit regression and production-schema evidence are clean. The protected Preview cannot authenticate because Preview has no `DATABASE_URL`; Vercel runtime logs confirmed `POST /login 500` with `DATABASE_URL is not configured`. Filip explicitly chose not to connect Preview to production DB solely for UI smoke and accepted live verification after merge instead.
 
 Browser scope for B1A is intentionally targeted rather than the full B2/B5 matrix:
 
@@ -301,7 +301,7 @@ The complete desktop/iPad/mobile/light/dark redesign matrix remains mandatory in
 
 ## Next step
 
-Run the B1A verification gate. Do not start B1B until failures are reconciled and this document, ROADMAP and CHANGELOG record the final evidence.
+Merge B1A. Perform the short authenticated optional-cost smoke when the change is live. Then continue B1B — Completion semantics. The deferred smoke remains an explicit open verification item until it is actually observed.
 
 
 ## Production database metadata verification — 30 September 2026
@@ -339,3 +339,27 @@ The deployment metadata references commit `342bb7daadb31b8df959da6073482d05541ba
 Therefore the preview is **runtime-equivalent** to the current B1A branch head.
 
 Deployment Protection is enabled. Authenticated browser UI smoke remains pending; no production deployment has been requested or performed.
+
+
+## B1A closeout decision
+
+Filip explicitly approved closing B1A without attaching the protected Preview environment to the production database.
+
+Reason:
+- Preview currently has no DATABASE_URL and therefore cannot complete application login;
+- attaching production DB only for UI smoke would create unnecessary production session/login writes from Preview;
+- the B1A domain/data contract is already covered by clean unit/regression/build evidence plus read-only production schema verification.
+
+Closeout evidence:
+- TypeScript: PASS;
+- targeted B1A: 35/35 PASS;
+- stale-contract rerun: 55/55 PASS;
+- full unit/regression: 928/928 PASS;
+- production build: PASS;
+- production DB metadata prerequisite: PASS, read-only;
+- schema migration: N/A;
+- Preview deployment: READY and runtime-equivalent;
+- authenticated Preview smoke: DEFERRED, not PASS;
+- live post-merge smoke: REQUIRED, pending.
+
+Residual risk is limited to live presentation/runtime behavior of the optional Costs controls. No unresolved billing domain or persistence-contract defect remains.
