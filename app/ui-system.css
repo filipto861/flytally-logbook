@@ -180,7 +180,7 @@ button[data-loading="true"]::after{
   margin-block:0;
 }
 
-.flight-form .flight-experience-empty-state{
+.flight-form .entry-section-experience .empty-state{
   display:grid;
   gap:var(--ui-space-1);
 }
