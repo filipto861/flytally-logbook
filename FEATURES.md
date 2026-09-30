@@ -161,6 +161,36 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
+### Flight Entry Workflow 3.0 — ACTIVE
+
+Product target:
+- one canonical flight semantic contract for Manual and GPS creation;
+- GPS remains source/provenance/suggestion rather than a separate flight model;
+- normal PIC entry becomes materially simpler and presents only current decisions;
+- role-defining fields appear immediately when Role makes them applicable;
+- Review/Certification reviews and certifies; it is not the first place fundamental role identity becomes discoverable.
+
+Frozen behavior:
+- invalid/missing aircraft context never silently becomes `ULL`;
+- valid explicit ULL remains ULL;
+- EASA DUAL exposes Instructor/PIC inline and requires it before Save;
+- EASA Safety Pilot exposes Actual PIC inline and requires Manual/accepted-Connection identity before Save;
+- EASA SPIC/PICUS expose supervision + countersignature evidence inline and require it before Save;
+- route/time completeness can remain draft-incomplete under the existing certification contract;
+- optional billing remains **Not tracked** when absent;
+- server-side role validation is authoritative;
+- GPS Safety Pilot remains fail-closed until full Manual parity exists;
+- multi-part GPS uses one common aircraft identity plus deterministic whole-group Role/Crew overrides;
+- one invalid multi-part record aborts the whole import;
+- historical/certified records are never repaired by guessed crew/profile values.
+
+Current priority:
+- F0.0 characterizes the exact GPS fallback, role, crew and downstream-consumer behavior;
+- F0.1 removes the confirmed GPS invalid-profile → ULL fail-open path and rejects unsupported role semantics with minimal blast radius;
+- full Manual/GPS domain convergence and UX simplification follow in small milestones.
+
+Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
+
 ### Multi-aircraft Product Scale — QUEUED
 
 Existing multi-aircraft profiles remain the foundation. The active scale phase is not a second fleet model.

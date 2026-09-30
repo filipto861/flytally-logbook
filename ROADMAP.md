@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 29 September 2026
+**Last updated:** 30 September 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
 
@@ -31,7 +31,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | ✅ | Canonical manual/GPS review workflow established |
+| Flight entry / review / GPS workflows | 🚧 | Existing workflow live; Flight Entry Workflow 3.0 is active to remove confirmed Manual/GPS semantic-write divergence |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
@@ -48,7 +48,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Multi-aircraft Product Scale | ⏳ | M0/M2A/M1 complete; **M2B is the next roadmap step** after UI/UX Simplicity closeout |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · design frozen; F0.0 characterization is next, then F0.1 GPS fail-closed integrity hotfix |
+| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
@@ -57,7 +58,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 
 The product-wide roadmap review is complete. Filip approved the reconciled priority order on **27 September 2026** after independent second-AI review and repository reconciliation.
 
-The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue:
+The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue. On 30 September 2026 that exception was triggered by the confirmed GPS invalid-profile → `ULL` fail-open path and Manual/GPS semantic-write divergence; the table below records the superseding order:
 
 | Order | Workstream | Status | Why it is here |
 | ---: | --- | :---: | --- |
@@ -66,14 +67,15 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | **NEXT** · resume the historical/dynamic applicability integrity audit unless a higher-severity production issue pre-empts it |
-| 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
-| 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
-| 8 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 9 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
-| 10 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · confirmed GPS semantic-write integrity defect pre-empts M2B; F0.0 → F0.1 first |
+| 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
+| 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
+| 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
+| 9 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 10 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
+| 11 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
 
-**Priority rule:** production/data-integrity defects can pre-empt this order. The active simplicity audit is treated as a core data-entry usability/integrity workstream, not cosmetic convenience work: reducing confusion must not weaken evidence or validation.
+**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence now exercise that rule; Flight Entry Workflow 3.0 is therefore active ahead of M2B. UI simplification must not weaken evidence, validation or historical integrity.
 
 ## P1 — GPS touch-and-go detection reliability — DONE
 
@@ -166,7 +168,7 @@ P2 closeout:
 - Final SP5 verification: 900/900 unit/regression PASS, PostgreSQL core 48/48 PASS across 20 files, authenticated Chromium desktop/mobile 22/22 PASS, production build PASS.
 - Migration v15 was already applied and production-verified during SP1; SP2–SP5 introduced no additional schema migration.
 - No production deployment is inferred from merge/test success; deployment status is tracked separately.
-- Next roadmap step is Multi-aircraft M2B — remaining integrity audit.
+- At P2 closeout, Multi-aircraft M2B was the then-current next roadmap step; this historical closeout note was superseded on 30 September 2026 by the Flight Entry Workflow 3.0 integrity pre-emption.
 
 SP2 implementation contract:
 - New Flight loads all accepted Connections as explicit `id + display_name` choices separate from the instructor-only list;
@@ -373,7 +375,57 @@ Post-closeout production defect handling:
 - Required evidence: source regression proving no global form lookup, plus authenticated browser reproduction using a known EASA/SEP aircraft with dominant EASA/SEP history; GPS must retain EASA/SEP and receive no manual intelligent-profile warning.
 - Scope is presentation/advisory wiring only: no flight parser, GPS save, aircraft profile, historical snapshot, certification, recency, billing or database semantics change.
 
-## P3 — Multi-aircraft Product Scale — NEXT: M2B
+## Flight Entry Workflow 3.0 — ACTIVE
+
+Goal: converge Manual and GPS creation onto one canonical semantic flight contract while materially reducing cognitive load for normal flight entry.
+
+Detailed frozen contract:
+
+`docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`
+
+Why it pre-empts M2B:
+- GPS still has an independent direct-write path that bypasses `parseFlightInput()`;
+- GPS can persist a smaller semantic record than Manual, including empty crew fields for role contexts that require explicit identity;
+- GPS selected-aircraft class/evidence can still fail open to `ULL` when profile context is missing/malformed;
+- Dashboard, Statistics, Export and Print can consume saved drafts, so false ULL identity can affect product outputs before certification;
+- canonical recency remains protected by `certified_at IS NOT NULL`, but that does not make the draft/write defect acceptable.
+
+Frozen direction:
+- one canonical semantic normalization boundary for Manual and GPS;
+- GPS is source/provenance/suggestion, not a separate flight model;
+- EASA DUAL Instructor/PIC, Safety Pilot Actual PIC and SPIC/PICUS supervision evidence are inline and Save-required;
+- Review/Certification remains the authority for certification completeness such as route/time completeness;
+- invalid aircraft context never silently becomes ULL;
+- explicit legitimate flight-level context remains possible where current domain rules support it;
+- GPS Safety Pilot fails closed until full Manual parity exists;
+- server-side role validation is mandatory;
+- multi-part GPS uses common aircraft identity plus whole-group Role/Crew overrides;
+- N-part import is atomic;
+- certified history is never guessed/backfilled;
+- no long-lived compatibility flag may keep old GPS server semantics alive.
+
+Milestones:
+
+| Milestone | Status | Scope |
+| --- | :---: | --- |
+| F0.0 — Minimal characterization | ➡️ | Exact GPS fallback/role/crew/downstream-consumer baseline before runtime change |
+| F0.1 — GPS fail-closed integrity hotfix | ⏳ | Remove ULL fallback, canonical server role validation, fail closed unsupported GPS role semantics |
+| F0 — Full field/consumer contract inventory | ⏳ | Authoritative Save/Cert/source/persistence/downstream matrix |
+| F1 — Shared normalization / semantic write contract | ⏳ | Manual + GPS converge on canonical `FlightInput` semantics |
+| F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
+| F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
+| F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
+| F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
+| F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
+
+Immediate next step:
+- complete F0.0 without changing runtime behavior;
+- freeze the minimal F0.1 test/acceptance contract from actual code evidence;
+- implement F0.1 as a small production-integrity batch.
+
+After F0.1, re-check the roadmap. M2B remains accepted work and is not cancelled; the default direction is to continue the domain-convergence milestones required to prevent Manual/GPS semantic drift unless new evidence changes priority.
+
+## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
 
 Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.
 
@@ -510,8 +562,9 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
-| Safety Pilot ↔ PIC workflow | 🚧 | ACTIVE · design review reconciled; SP1 schema/domain implementation next |
-| Multi-aircraft M2B | ⏳ | Resume integrity audit after priority work |
+| Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
+| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · design frozen; F0.0/F0.1 pre-empt M2B because of confirmed GPS data-integrity drift |
+| Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
 | Multi-aircraft M4 | ⏳ | Sharing/recovery/scale closeout |
