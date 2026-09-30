@@ -28,11 +28,14 @@ test("new manual flight starts without previous aircraft or airport defaults",()
   assert.doesNotMatch(block,/home_airport/);
 });
 
-test("blank New flight does not silently choose first aircraft or ULL/BLOCK defaults",()=>{
+test("blank New flight stays neutral and selected-aircraft profile defaults fail closed",()=>{
   assert.match(form,/initialRegistration=normalizeRegistration\(field\("registration"\)\)/);
   assert.doesNotMatch(form,/normalizedAircraft\[0\]\?\.registration/);
-  assert.match(form,/profileEvidence=selected\?normalizeChoice\(selected\.evidence,EVIDENCE,"ULL"\):""/);
-  assert.match(form,/profileClass=selected\?normalizeChoice\(selected\.aircraft_class,CLASSES,"ULL"\):""/);
+  assert.match(form,/selectedProfile=useMemo\(\(\)=>selected\?resolveFlightEntryAircraftProfileDefaults\(selected\):null,\[selected\]\)/);
+  assert.match(form,/profileEvidence=selectedProfile\?\.profile\?\.evidence\|\|""/);
+  assert.match(form,/profileClass=selectedProfile\?\.profile\?\.aircraftClass\|\|""/);
+  assert.doesNotMatch(form,/normalizeChoice\(selected\.evidence,EVIDENCE,"ULL"\)/);
+  assert.doesNotMatch(form,/normalizeChoice\(selected\.aircraft_class,CLASSES,"ULL"\)/);
   assert.match(form,/selected\?\.billing_basis\|\|""/);
   assert.match(form,/validBilling\(billingSource\)\?initialBilling\.basis:""/);
 });

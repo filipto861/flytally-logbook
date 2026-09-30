@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **27 September 2026**
+Last reconciled: **29 September 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -113,14 +113,18 @@ Important boundary:
 
 ## Planned
 
-### UI/UX Simplicity & New Flight cognitive-load reduction — ACTIVE AUDIT
+### UI/UX Simplicity & New Flight cognitive-load reduction — ACTIVE IMPLEMENTATION
 
 - Screenshot-backed audit of the authenticated product across desktop, iPad landscape, iPad portrait and mobile in light/dark.
 - Dedicated New Flight field inventory classifying controls as core-now, contextual, profile-backed, optional or advanced/regulatory.
 - Simplification through information hierarchy and progressive disclosure rather than invented defaults or weaker validation.
 - One canonical FlightForm/business-rule path remains mandatory.
-- Independent Claude review is required after the first-pass audit/design and before broad implementation.
-- Detailed contract: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
+- Independent review and repository reconciliation are complete; Filip's product decisions are frozen.
+- B0.5 hardens selected-aircraft profile defaults so invalid/missing evidence/class cannot be silently presented as ULL.
+- Valid Role/landing/PF presets remain allowed, with evidence-bearing preset visibility scheduled in the essentials batch.
+- Costs are moving to an optional domain contract; missing route/times remain draft-save compatible and certification-gated.
+- Detailed audit: `docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`.
+- Frozen implementation contract: `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
 
 ### Safety Pilot ↔ PIC shared-flight workflow — IMPLEMENTED
 

@@ -39,7 +39,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
 | Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
 | UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
-| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · design gate closed by Filip; Batch 1A optional-cost contract is next, followed by completion/UI simplification |
+| UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · B0.5 DONE/verified; B1A optional Costs domain contract is next |
 | Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
 | Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
 | Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
@@ -65,7 +65,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · evidence/review complete and product decisions frozen; implement small batches beginning with optional-cost semantics |
+| 4 | UI/UX Simplicity Audit 2026 | 🚧 | **ACTIVE** · B0.5 verified; proceed to B1A optional-cost semantics |
 | 5 | Multi-aircraft M2B — remaining integrity audit | ⏳ | Resume after the simplicity audit unless a higher-severity integrity issue pre-empts it |
 | 6 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 7 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -277,6 +277,21 @@ Frozen implementation order:
 7. **B5 — responsive/accessibility closeout:** desktop/iPad/mobile/light/dark, 320 px reflow, keyboard/safe-area and final cognitive-load measurements.
 
 The detailed scope, dependencies, acceptance criteria and test matrix are frozen in `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
+
+### Current implementation checkpoint — B0.5
+
+Branch: `fix/new-flight-b05-integrity`
+
+Implemented, verification pending:
+- selected-aircraft defaults now reuse canonical aircraft-profile validation instead of repairing invalid/missing evidence/class to `ULL`;
+- valid ULL remains valid ULL;
+- canonicalization that would change stored evidence/class is rejected as an automatic entry default;
+- unresolved profile defaults surface as **Needs configuration** and the existing required Logbook/Class controls remain the explicit flight-level recovery path;
+- same-registration Edit continues to preserve the stored flight snapshot instead of re-deriving it from mutable current profile state, including restoration after a temporary aircraft-selection round trip;
+- golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
+- preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
+
+Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE. Next milestone: **B1A — Optional Costs domain contract**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
