@@ -9,6 +9,19 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F0 field / consumer contract inventory
+- Added the authoritative repository-backed Manual/GPS/Edit/Certification/consumer matrix at `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md`.
+- Recorded the current Manual canonical parser boundary versus the remaining GPS direct semantic INSERT path.
+- Classified Save requirements separately from Certification requirements, including the existing DUAL UI/server Save-boundary mismatch.
+- Recorded certification-hash v1–v8 coverage and explicitly classified non-hashed child/commercial/collaboration data.
+- Recorded draft-visible Dashboard/Statistics/Export/Print behavior versus certified-only canonical Recency and certified-source Sharing.
+- Recorded GPS parity gaps for sailplane launch evidence, PF movements/approaches, day/night fidelity, night/IFR, professional context, purpose, expenses and non-PIC Role/Crew.
+- Identified a cross-workstream historical-identity risk for review: shared-flight INSERT supplies certified source make/model/variant while the v6 flight INSERT trigger can overwrite those fields from recipient current-profile state.
+- Recorded CSV/XLS output completeness gaps without changing stored semantics.
+- Added source-contract tests to keep the F0 findings explicit before F1 refactors them.
+- **Runtime/schema behavior:** unchanged by F0 analysis.
+- **Verification:** PENDING on `chore/flight-entry-f0-consumer-inventory`.
+
 ### Flight Entry Workflow 3.0 — F0.1 GPS fail-closed integrity hotfix
 - Removed GPS UI/server fallbacks that could silently turn missing aircraft class/logbook context into `ULL`.
 - GPS now resolves the selected active aircraft through the same fail-closed aircraft-profile validation used by New Flight defaults; malformed/unavailable context returns **Needs configuration** instead of invented regulatory identity.
