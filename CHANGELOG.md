@@ -9,6 +9,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F0.1 GPS fail-closed integrity hotfix
+- Removed GPS UI/server fallbacks that could silently turn missing aircraft class/logbook context into `ULL`.
+- GPS now resolves the selected active aircraft through the same fail-closed aircraft-profile validation used by New Flight defaults; malformed/unavailable context returns **Needs configuration** instead of invented regulatory identity.
+- GPS no longer trusts submitted aircraft class/logbook/type as authoritative identity: the active selected aircraft profile is resolved server-side and submitted class/logbook must match that canonical context.
+- Interim GPS Role support is intentionally narrowed to **PIC only**; DUAL, Safety Pilot, INSTRUCTOR/legacy `INSTRUKTOR`, Co-pilot, PAX, Observer and crafted unknown roles fail closed until the shared Role/Crew milestone provides complete semantics.
+- Removed the visual-review-only hard-coded `ULL` provenance placeholder.
+- Preserved existing GPS split/review, duplicate fingerprint, advisory-lock and single-transaction flight/track persistence behavior.
+- Added F0.1 domain/source regression coverage plus authenticated browser fixtures for valid EASA/SEP, valid explicit ULL and malformed EASA aircraft context.
+- No database schema/migration, certification hash/version, recency rule, historical backfill or broad UI redesign is introduced.
+- **Verification status:** PENDING on branch `fix/flight-entry-f01-gps-integrity`.
+
 ### Flight Entry Workflow 3.0 — F0.0 characterization
 - Added a characterization-only baseline for the current GPS flight-entry/write path; no runtime behavior changes in this milestone.
 - Confirmed UI and server fail-open `ULL` fallbacks, direct GPS flight persistence outside `parseFlightInput()`, empty GPS commander/instructor persistence and draft consumption by Dashboard/Statistics/Export/Print while recency remains certified-only.
