@@ -8,7 +8,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("B3 aircraft and logbook summary exposes real profile values and origin",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/const profileSummary=profileNeedsConfiguration\?"Needs configuration":\[/);
+  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":\[/);
   assert.match(form,/evidence\|\|"Select logbook"/);
   assert.match(form,/regulatoryCategory&&regulatoryCategory!==evidence\?regulatoryCategory:""/);
   assert.match(form,/aircraftClass&&aircraftClass!==regulatoryCategory\?aircraftClass:""/);
