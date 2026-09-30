@@ -302,3 +302,25 @@ The complete desktop/iPad/mobile/light/dark redesign matrix remains mandatory in
 ## Next step
 
 Run the B1A verification gate. Do not start B1B until failures are reconciled and this document, ROADMAP and CHANGELOG record the final evidence.
+
+
+## Production database metadata verification — 30 September 2026
+
+Filip linked the local checkout to the production Vercel Logbook project and executed read-only metadata queries against the configured production `DATABASE_URL`.
+
+Observed columns:
+
+| table | column | type | nullable | default |
+| --- | --- | --- | --- | --- |
+| `aircraft` | `billing_basis` | `text` | YES | `'BLOCK'::text` |
+| `flights` | `billing_basis` | `text` | YES | `'BLOCK'::text` |
+
+A second read-only `pg_constraint` query searching both tables for constraints whose definition references `billing_basis` returned **zero rows**.
+
+B1A conclusion:
+- the legacy BLOCK default remains compatible with omitted historical/legacy inserts;
+- the B1A runtime explicitly persists `''` for intentional Not tracked state and therefore does not rely on the default;
+- the current production schema has no billing CHECK constraint that blocks the explicit empty-string state;
+- **no schema migration is required for B1A**.
+
+This is production metadata evidence only; no production row was inserted or modified for the verification.
