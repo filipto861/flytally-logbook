@@ -56,13 +56,28 @@ export function resetConnectionManagerFixture(){
 
 export function resetIntelligentReviewFormScopeFixture(){
   runBrowserSql(`
-    DELETE FROM flights WHERE user_id=9001 AND id IN (9911,9912);
+    CREATE TABLE IF NOT EXISTS airports(
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL DEFAULT 0,
+      ident TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      latitude_deg DOUBLE PRECISION,
+      longitude_deg DOUBLE PRECISION,
+      active INTEGER NOT NULL DEFAULT 1,
+      closed INTEGER NOT NULL DEFAULT 0,
+      source TEXT NOT NULL DEFAULT ''
+    );
+    DELETE FROM flights WHERE user_id=9001 AND id IN (9911,9912,9913);
+    DELETE FROM aircraft WHERE user_id=9001 AND registration='OK-HST1';
+    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
+    VALUES(9001,'OK-HST1','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
     INSERT INTO flights(
       id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
       departure,arrival,off_block,takeoff,landing,on_block,role,starts,pic_minutes,landings_day,commander
     ) VALUES
-      (9911,9001,'2026-09-16','EASA','OK-E2E','B23','SEP','AEROPLANE','LKLT','LKPR','08:00','08:05','08:45','08:50','PIC',1,50,1,'Browser Smoke Pilot'),
-      (9912,9001,'2026-09-17','EASA','OK-E2E','B23','SEP','AEROPLANE','LKPR','LKLT','09:00','09:05','09:45','09:50','PIC',1,50,1,'Browser Smoke Pilot');
+      (9911,9001,'2026-09-16','EASA','OK-HST1','B23','SEP','AEROPLANE','LKLT','LKPR','08:00','08:05','08:45','08:50','PIC',1,50,1,'Browser Smoke Pilot'),
+      (9912,9001,'2026-09-17','EASA','OK-HST1','B23','SEP','AEROPLANE','LKPR','LKLT','09:00','09:05','09:45','09:50','PIC',1,50,1,'Browser Smoke Pilot'),
+      (9913,9001,'2026-09-18','EASA','OK-HST1','B23','SEP','AEROPLANE','LKLT','LKPR','10:00','10:05','10:45','10:50','PIC',1,50,1,'Browser Smoke Pilot');
   `);
 }
 
