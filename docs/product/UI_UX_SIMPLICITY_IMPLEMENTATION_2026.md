@@ -808,4 +808,4 @@ Current state:
 - B3 evidence record: `docs/product/UI_UX_SIMPLICITY_B3_CONTEXT_2026.md`;
 - B4 and later runtime batches: NOT STARTED.
 
-**Current gate:** run B3 TypeScript, targeted/full regression and production build checks. PostgreSQL is N/A. Authenticated presentation smoke remains deferred to cumulative live verification.
+**Current gate:** rerun B3 targeted/full regression on the current head after test-only reconciliation. Initial TypeScript and production build passed; PostgreSQL is N/A. Authenticated presentation smoke remains deferred to cumulative live verification.
