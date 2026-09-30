@@ -128,16 +128,29 @@ B1A production DB metadata evidence remains authoritative for optional Costs.
 
 ## Verification state
 
-Not yet claimed on current B1B head:
+Evidence from Filip's local run on 30 September 2026, before the stale-contract test reconciliation:
 
-- TypeScript: **NOT RUN**
-- targeted B1B / affected historical tests: **NOT RUN**
-- full unit/regression: **NOT RUN**
-- production build: **NOT RUN**
+- TypeScript: **PASS**
+- initial targeted B1B/historical set: **20/22 PASS, 2 FAIL**
+- initial full unit/regression: **928/934 PASS, 6 FAIL**
+- production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated browser: **DEFERRED TO LIVE REDESIGN SMOKE BY FILIP'S CURRENT DECISION**
 
-Browser is not reported as PASS. The plan is to validate the cumulative New Flight presentation live after merge rather than attach protected previews to the production DB.
+The six unit failures were inspected individually. They were stale source-contract expectations superseded by B1B, not runtime/data regressions:
+
+1. v1.47 expected initial `Save and add another`;
+2. v1.53 expected initial `Save and add another`;
+3. v1.57 expected the old exact `Complete before save:` copy;
+4. v2.4 expected the same old exact blocker copy;
+5. v3.3 U11 prohibited any `flight-post-save` handoff even though B1B intentionally adds a transient secondary Add another action there;
+6. the new B1B test looked for literal `Off-block` / `On-block` wording instead of the canonical compliance field/message contract.
+
+Those six tests have now been reconciled to the frozen B1B behavior. **Rerun is pending on the reconciled test head.**
+
+TypeScript and production build evidence remain runtime-equivalent because the reconciliation changed tests/docs only after Filip's successful run.
+
+Browser is not reported as PASS. The plan remains to validate the cumulative New Flight presentation live after merge rather than attach protected previews to the production DB.
 
 ## B1A live-smoke carryover
 
