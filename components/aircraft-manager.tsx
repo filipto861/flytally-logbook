@@ -1,6 +1,6 @@
 "use client";
 
-import { BILLING_SHARES,parseBilling } from "@/lib/billing";
+import { BILLING_SHARES,parseOptionalBilling } from "@/lib/billing";
 import { AircraftTypePicker } from "@/components/aircraft-type-picker";
 import { AIRCRAFT_PROFILE_CLASSES,aircraftProfileRegulatoryCategory } from "@/lib/aircraft-profile-context";
 import { useEffect,useRef,useState } from "react";
@@ -30,7 +30,7 @@ const roles=[
 const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 
 function AircraftFields({aircraft}:{aircraft?:Row}){
-  const billing=parseBilling(aircraft?.billing_basis),editing=Boolean(aircraft),initialLogbook=t(aircraft?.evidence)||"ULL",initialClass=t(aircraft?.aircraft_class)||(initialLogbook==="EASA"?"SEP":"ULL"),initialCategory=t(aircraft?.regulatory_category)||aircraftProfileRegulatoryCategory(initialLogbook,initialClass),initialBalloonClass=t(aircraft?.balloon_class),initialBalloonGroup=t(aircraft?.balloon_group);
+  const billingResult=parseOptionalBilling(aircraft?.billing_basis),billing=billingResult.settings??{basis:"" as const,share:1},editing=Boolean(aircraft),initialLogbook=t(aircraft?.evidence)||"ULL",initialClass=t(aircraft?.aircraft_class)||(initialLogbook==="EASA"?"SEP":"ULL"),initialCategory=t(aircraft?.regulatory_category)||aircraftProfileRegulatoryCategory(initialLogbook,initialClass),initialBalloonClass=t(aircraft?.balloon_class),initialBalloonGroup=t(aircraft?.balloon_group);
   const[logbook,setLogbook]=useState(initialLogbook),[aircraftClass,setAircraftClass]=useState(initialClass),[regulatoryCategory,setRegulatoryCategory]=useState(initialCategory),[balloonClass,setBalloonClass]=useState(initialBalloonClass),[balloonGroup,setBalloonGroup]=useState(initialBalloonGroup);
   const clearBalloon=()=>{setBalloonClass("");setBalloonGroup("")};
   const changeLogbook=(value:string)=>{const nextClass=value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass;setLogbook(value);setAircraftClass(nextClass);setRegulatoryCategory(aircraftProfileRegulatoryCategory(value,nextClass,regulatoryCategory));if(value!=="EASA"||nextClass!=="BALLOON")clearBalloon()};
@@ -48,7 +48,7 @@ function AircraftFields({aircraft}:{aircraft?:Row}){
       <label>Variant<input name="aircraft_variant" defaultValue={t(aircraft?.aircraft_variant)} placeholder="Optional variant"/></label>
       <label>Display name<input name="aircraft_type" defaultValue={t(aircraft?.aircraft_type)} placeholder="Leave blank to use model"/><small>Optional short label used elsewhere in FlyTally.</small></label>
       <label>Default role<select name="default_role" defaultValue={t(aircraft?.default_role)||"PIC"}>{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
-      <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option>BLOCK</option><option>AIR</option></select></label>
+      <label>Billing time<select name="billing_basis" defaultValue={billing.basis}><option value="">Not tracked</option><option>BLOCK</option><option>AIR</option></select><small>Optional aircraft-cost default.</small></label>
       <label>Default share<select name="billing_share" defaultValue={billing.share}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
       {!editing?<><label>Initial hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="Optional"/></label><label>Valid from<input name="initial_valid_from" type="date" defaultValue={today}/></label></>:null}
       <label className="aircraft-note">Notes<textarea name="note" rows={2} defaultValue={t(aircraft?.note)} placeholder="Optional"/></label>
