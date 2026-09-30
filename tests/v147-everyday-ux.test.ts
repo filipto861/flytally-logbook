@@ -9,12 +9,13 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v1.47.0 simplifies everyday flight entry without adding another workflow",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,47,0));
-  const page=read("app/(protected)/flights/new/page.tsx"),form=read("components/flight-form.tsx");
+  const page=read("app/(protected)/flights/new/page.tsx"),form=read("components/flight-form.tsx"),detail=read("components/flight-detail-workspace.tsx");
   assert.match(page,/params\.added==="1"/);
   assert.match(page,/saved-next-flight/);
   assert.match(page,/Flight saved\./);
   assert.doesNotMatch(form,/quick-tools|Speed up entry|Recent routes|Reverse route|fillTimes/);
-  assert.match(form,/Save and add another/);
+  assert.doesNotMatch(form,/Save and add another/);
+  assert.match(detail,/Add another flight/);
 });
 
 test("v1.47.0 removes duplicate Flights quick views while preserving exact filters",()=>{
