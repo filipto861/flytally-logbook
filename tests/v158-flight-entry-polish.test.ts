@@ -37,14 +37,15 @@ test("v1.58 keeps local flight as a small explicit action",()=>{
 });
 
 test("v1.58 makes existing smart defaults transparent instead of guessing regulatory data",()=>{
-  assert.match(form,/Aircraft profile applies type, logbook, class and billing defaults/);
+  assert.match(form,/Aircraft profile applies type, logbook and class defaults/);
   assert.match(form,/Aircraft default:/);
   assert.match(form,/shouldApplyAircraftProfileDefaults/);
   assert.doesNotMatch(fs.readFileSync("lib/flight-input.ts","utf8"),/FlyTally v1\.58/);
 });
 
 test("v1.58 provides inline guidance only for fields that are already required",()=>{
-  for(const name of ["registration","role","evidence","aircraftClass","billingBasis"])assert.ok(form.includes(`aria-invalid={!${name==="aircraftClass"?"aircraftClass":name==="billingBasis"?"billing":name}}`));
+  for(const name of ["registration","role","evidence","aircraftClass"])assert.ok(form.includes(`aria-invalid={!${name==="aircraftClass"?"aircraftClass":name}}`));
+  assert.doesNotMatch(form,/name="billingBasis"[^>]*aria-invalid/);
   assert.match(form,/field-message-error/);
   assert.match(css,/\[aria-invalid="true"\]/);
 });
