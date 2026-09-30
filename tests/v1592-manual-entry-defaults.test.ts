@@ -52,6 +52,6 @@ test("explicit aircraft selection atomically refreshes aircraft-dependent defaul
 
 test("blank aircraft state does not force open aircraft-dependent sections",()=>{
   assert.match(form,/useState\(editing&&\(!initialEvidence\|\|!initialClass\)\)/);
-  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\)\)setLogbookOpen\(true\)/);
+  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
   assert.doesNotMatch(form,/if\(registration&&!billing\)setCostOpen\(true\)/);
 });
