@@ -86,6 +86,24 @@ test("B1A flight persistence snapshots a rate only when aircraft cost is tracked
   assert.match(actions,/if\(billing\)\{price=priceCache[.]get\(values[.]date\)\?\?null/);
 });
 
+
+test("B1A GPS import uses the same optional billing semantics",()=>{
+  const form=read("components/kml-import-form.tsx"),actions=read("app/(protected)/flights/actions.ts");
+  assert.match(form,/parseOptionalBilling\(selectedAircraft\?\.billing_basis\)/);
+  assert.match(form,/<option value="">Not tracked<\/option>/);
+  assert.match(form,/billing!=="INVALID"/);
+  assert.match(form,/Stored aircraft billing is invalid/);
+  assert.doesNotMatch(form,/defaultValue=\{selectedBilling[.]basis\}/);
+  assert.match(actions,/serializeOptionalBilling\(form[.]get\("billingBasis"\),form[.]get\("billingShare"\)\)/);
+});
+
+test("B1A legacy restore distinguishes a missing historical field from explicit untracked billing",()=>{
+  const restore=read("app/(protected)/export/actions.ts");
+  assert.match(restore,/Object[.]prototype[.]hasOwnProperty[.]call\(row,"billing_basis"\)\?text\(row,"billing_basis",40\):"BLOCK"/);
+  assert.equal((restore.match(/\$\{legacyBilling\(row\)\}/g)||[]).length,2);
+  assert.doesNotMatch(restore,/text\(row,"billing_basis",40\)\|\|"BLOCK"/);
+});
+
 test("B1A aggregate cost models treat untracked billing as zero rather than BLOCK",()=>{
   const dashboard=read("lib/data/dashboard.ts"),flights=read("lib/data/flights.ts"),fast=read("lib/data/flights-fast.ts"),health=read("lib/data/database.ts");
   assert.doesNotMatch(dashboard,/COALESCE\(f[.]billing_basis,'BLOCK'\)/);
