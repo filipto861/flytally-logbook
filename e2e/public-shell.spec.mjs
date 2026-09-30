@@ -159,6 +159,8 @@ test("GPS import fails closed invalid aircraft context and exposes PIC only",asy
   await expect(gpsForm.getByText("Needs configuration · fix this aircraft profile before GPS import.")).toBeVisible();
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
+  await gpsForm.locator('input[name="part_0_reviewed"]').check();
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toHaveCount(0);
 
   await registration.selectOption("OK-E2E");
   await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
@@ -173,6 +175,13 @@ test("GPS import fails closed invalid aircraft context and exposes PIC only",asy
   await registration.selectOption("OK-UL01");
   await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("ULL");
   await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("ULL");
+
+  await registration.selectOption("OK-E2E");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeVisible();
+  await gpsForm.locator('input[name="role"]').evaluate(element=>{element.value="DUAL"});
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByText("GPS import currently supports PIC only. Use Manual entry for other roles.")).toBeVisible();
+  await expect(page).toHaveURL(/\/flights\/new/);
   await expectNoHorizontalOverflow(page);
 });
 
