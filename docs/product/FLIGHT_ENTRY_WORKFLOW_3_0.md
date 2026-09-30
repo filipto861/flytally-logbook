@@ -397,7 +397,7 @@ Current evidence adds one important role finding:
 
 Verification: Verify FlyTally web #970 PASS; TypeScript PASS; unit/regression 971/971 PASS; PostgreSQL acceptance 55/55 PASS. F0.0 is closed with no runtime/schema change.
 
-### F0.1 — GPS fail-closed integrity hotfix
+### F0.1 — GPS fail-closed integrity hotfix — DONE / VERIFIED
 
 **Goal:** eliminate the production fail-open defect with minimal blast radius.
 
@@ -417,6 +417,17 @@ Current default interim role policy:
 - GPS DUAL must not remain selectable if Instructor/PIC cannot be captured and server-validated in the same milestone.
 
 F0.0 decides the smallest safe compatibility set.
+
+Closeout evidence:
+- Verify FlyTally web #979 PASS;
+- TypeScript PASS;
+- full unit/regression 979/979 PASS;
+- PostgreSQL acceptance 55/55 PASS;
+- Browser smoke #366 PASS with authenticated Chromium desktop/mobile 26 passed / 2 skipped;
+- production build PASS;
+- DB schema/migration N/A.
+
+Next: F0 full field / consumer contract inventory.
 
 ### F0 — Full field / consumer contract inventory
 

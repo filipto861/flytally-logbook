@@ -153,8 +153,8 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expect(gpsForm.locator('select[name="registration"]')).toBeVisible();
   await gpsForm.locator('select[name="registration"]').selectOption("OK-HST1");
 
-  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
-  await expect(gpsForm.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
   await expect(page.getByText(/OK-HST1 differs from its usual profile/)).toHaveCount(0);
 
@@ -168,6 +168,36 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expect(manualForm.locator('select[name="aircraftClass"]')).toBeVisible();
   await manualForm.locator('select[name="aircraftClass"]').selectOption("ULL");
   await expect(manualForm.locator('[data-intelligent-review="registration_profile_aircraft_class"]')).toContainText("OK-HST1 differs from its usual profile");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("GPS import fails closed for invalid profile context and exposes only PIC",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-09-24T12:10:00Z</when><when>2026-09-24T12:11:00Z</when><gx:coord>14.1 50.1 300</gx:coord><gx:coord>14.2 50.2 500</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f01-profile-check.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+
+  const registration=gpsForm.locator('select[name="registration"]');
+  await registration.selectOption("OK-E2E");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
+  await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
+
+  await registration.selectOption("OK-ULL1");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("ULL");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("ULL");
+  await expect(gpsForm.getByText("Needs configuration.")).toHaveCount(0);
+
+  await registration.selectOption("OK-BAD1");
+  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("");
+  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("");
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
+  await expect(gpsForm.getByText("Needs configuration.")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

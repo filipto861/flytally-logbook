@@ -11,6 +11,7 @@ import { trackTimeBasis,utcParts,type TrackTimeBasis } from "@/lib/track-time";
 import { BILLING_SHARES,parseOptionalBilling } from "@/lib/billing";
 import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 import { PendingActionButton } from "@/components/pending-action-button";
+import { resolveGpsImportAircraftContext } from "@/lib/gps-import-integrity";
 
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
@@ -35,7 +36,7 @@ function reviewFor(part:KmlPoint[]):Review{
 }
 
 function mapTrack(part:KmlPoint[],index:number,registration:string,review?:Review,maxPoints=900):MapTrack{
-  return{id:index,flightId:index,date:review?.date||"",registration,departure:review?.departure||"",arrival:review?.arrival||"",evidence:"ULL",distanceKm:trackStats(part).distanceKm,points:overview(part,maxPoints).map(point=>({...point,alt:point.alt??undefined,time:point.time??undefined})) as TrackPoint[]};
+  return{id:index,flightId:index,date:review?.date||"",registration,departure:review?.departure||"",arrival:review?.arrival||"",evidence:"",distanceKm:trackStats(part).distanceKm,points:overview(part,maxPoints).map(point=>({...point,alt:point.alt??undefined,time:point.time??undefined})) as TrackPoint[]};
 }
 
 function eventTime(point:KmlPoint|undefined){const stamp=utcParts(point?.time||null);return stamp?`${stamp.time} UTC`:"Detected on profile"}
@@ -99,9 +100,9 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
     return()=>{cancelled=true;clearTimeout(timer)};
   },[analysis,cuts,airportAction]);
 
-  const selectedAircraft=aircraft.find(item=>item.registration===registration),selectedBalloon=String(selectedAircraft?.regulatory_category||"").toUpperCase()==="BALLOON"||String(selectedAircraft?.aircraft_class||"").toUpperCase()==="BALLOON";
+  const selectedAircraft=aircraft.find(item=>item.registration===registration),profileResolution=selectedAircraft?resolveGpsImportAircraftContext({aircraft_make:selectedAircraft.aircraft_make,aircraft_model:selectedAircraft.aircraft_model,evidence:selectedAircraft.evidence,aircraft_class:selectedAircraft.aircraft_class,regulatory_category:selectedAircraft.regulatory_category,balloon_class:selectedAircraft.balloon_class,balloon_group:selectedAircraft.balloon_group}):null,selectedProfile=profileResolution?.profile,profileError=selectedAircraft&&!selectedProfile?(profileResolution?.error||"Aircraft profile needs configuration before GPS import."):"",selectedBalloon=selectedProfile?.regulatoryCategory==="BALLOON";
   useEffect(()=>{const parsed=parseOptionalBilling(selectedAircraft?.billing_basis);setBilling(parsed.error?"INVALID":parsed.settings?.basis||"");setBillingShare(parsed.settings?.share||1)},[registration,selectedAircraft?.billing_basis]);
-  const ready=parts.length>0&&billing!=="INVALID"&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&(!selectedBalloon||(Number(review.takeoffs)>0&&Number(review.starts)>0)))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
+  const ready=Boolean(selectedProfile)&&parts.length>0&&billing!=="INVALID"&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&(!selectedBalloon||(Number(review.takeoffs)>0&&Number(review.starts)>0)))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
   const reviewedCount=reviews.filter(review=>review.reviewed).length;
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
@@ -129,15 +130,16 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
       <div className="import-step"><span>3</span><div><strong>Common details</strong></div></div>
       <div className="form-grid secondary-entry-grid">
         <label><span>Registration <span className="field-hint" aria-hidden="true">Required</span></span><select name="registration" required value={registration} onChange={event=>{setRegistration(event.target.value);setBalloonOperation("")}}><option value="">Select</option>{aircraft.map(item=><option key={item.registration}>{item.registration}</option>)}</select>{analysis.registration?<small>Suggested: {analysis.registration}</small>:null}</label>
-        <label>Aircraft type<input key={`type-${registration}`} name="aircraftType" defaultValue={selectedAircraft?.aircraft_type||""}/></label>
-        <label>Class<select key={`class-${registration}`} name="aircraftClass" defaultValue={selectedAircraft?.aircraft_class||"ULL"}><option>ULL</option><option>SEP</option><option>TMG</option><option>MEP</option><option>SET</option><option>HELICOPTER</option><option>BALLOON</option><option>OTHER</option><option>GLIDER</option></select></label>
-        <label>Logbook<select key={`evidence-${registration}`} name="evidence" defaultValue={selectedAircraft?.evidence||"ULL"}><option>ULL</option><option>EASA</option></select></label>
-        <label>Role<select key={`role-${registration}`} name="role" defaultValue={selectedAircraft?.default_role||"PIC"}><option>PIC</option><option>DUAL</option><option value="INSTRUKTOR">INSTRUCTOR</option><option>SAFETY PILOT</option><option>CO-PILOT</option><option>PAX</option><option>OBSERVER</option></select></label>
+        <label>Aircraft type<input key={`type-${registration}`} name="aircraftType" value={selectedAircraft?.aircraft_type||""} readOnly/></label>
+        <label>Class<select aria-label="Aircraft class" key={`class-${registration}`} value={selectedProfile?.aircraftClass||""} disabled><option value="">{profileError?"Needs configuration":"Select aircraft"}</option><option>ULL</option><option>SEP</option><option>TMG</option><option>MEP</option><option>SET</option><option>HELICOPTER</option><option>BALLOON</option><option>OTHER</option><option>GLIDER</option></select><input type="hidden" name="aircraftClass" value={selectedProfile?.aircraftClass||""}/></label>
+        <label>Logbook<select aria-label="Logbook" key={`evidence-${registration}`} value={selectedProfile?.evidence||""} disabled><option value="">{profileError?"Needs configuration":"Select aircraft"}</option><option>ULL</option><option>EASA</option></select><input type="hidden" name="evidence" value={selectedProfile?.evidence||""}/></label>
+        <label>Role<select key={`role-${registration}`} name="role" defaultValue="PIC"><option>PIC</option></select></label>
         <label>Billing time<select name="billingBasis" value={billing} onChange={event=>setBilling(event.target.value as ImportBillingChoice)}>{billing==="INVALID"?<option value="INVALID" disabled>Needs configuration</option>:null}<option value="">Not tracked</option><option>BLOCK</option><option>AIR</option></select><small className={billing==="INVALID"?"field-message-error":undefined}>{billing==="INVALID"?"Stored aircraft billing is invalid. Choose Not tracked, BLOCK or AIR.":"Optional aircraft-cost tracking."}</small></label>
         <label>Cost share<select name="billingShare" value={billingShare} onChange={event=>setBillingShare(Number(event.target.value))} disabled={billing===""||billing==="INVALID"}>{BILLING_SHARES.map(value=><option key={value} value={value}>{value===1?"1/1 · full price":`1/${value}`}</option>)}</select></label>
         {selectedBalloon?<label><span>Balloon operation <span className="field-hint" aria-hidden="true">Required</span></span><select name="balloonOperation" value={balloonOperation} onChange={event=>setBalloonOperation(event.target.value)} required><option value="">Select free / tethered</option><option value="FREE">Free flight</option><option value="TETHERED">Tethered flight</option></select><small>Required BFCL evidence. GPS cannot determine whether the operation was free or tethered.</small></label>:<input type="hidden" name="balloonOperation" value=""/>}
         <label className="wide">Task<input name="task" defaultValue="GPS import"/></label>
       </div>
+      {profileError?<p className="field-message-error"><b>Needs configuration.</b> {profileError}</p>:null}
       <p className="value-origin-note"><span>Automatic</span> GPS supplied the times, split and landing suggestions. Aircraft profile supplied logbook and configured defaults. Review fields remain editable.</p>
 
       <div className="import-step"><span>4</span><div><strong>Review flights</strong><small>{detecting?"Detecting airports…":airportCount===0?"Airport catalogue is empty.":airportCount===-1?"Airport detection unavailable.":""}</small></div></div>
@@ -167,7 +169,7 @@ export function KmlImportForm({action,airportAction,aircraft}:{action:Action;air
         </article>;
       })}</div>
     </>:null}
-    {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{reviewedCount} of {parts.length} flights reviewed</strong><small>{ready?"All flights are ready to save.":selectedBalloon&&!balloonOperation?"Select free / tethered operation and review each flight.":"Open each flight, check the suggested values and confirm it."}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":`${Math.max(0,parts.length-reviewedCount)} remaining`}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
+    {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{reviewedCount} of {parts.length} flights reviewed</strong><small>{profileError?"Selected aircraft needs configuration before GPS import can be saved.":ready?"All flights are ready to save.":selectedBalloon&&!balloonOperation?"Select free / tethered operation and review each flight.":"Open each flight, check the suggested values and confirm it."}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":profileError?"Needs configuration":`${Math.max(0,parts.length-reviewedCount)} remaining`}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
     <div className="form-actions field-actions"><Submit ready={ready} hasTrack={Boolean(analysis&&parts.length)} onReview={reviewImported}/></div>
   </form>;

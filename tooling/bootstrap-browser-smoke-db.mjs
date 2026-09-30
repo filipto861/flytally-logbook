@@ -370,7 +370,9 @@ VALUES(7001,9002,9001,'pilot','pending','friend','friend');
 INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
 VALUES
   (9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
-  (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1);
+  (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
+  (9001,'OK-ULL1','UL','','','ULL','ULL','ULL','PIC','',0,1),
+  (9001,'OK-BAD1','B23','','Bristell B23','SEP','AEROPLANE','EASA','PIC','',0,1);
 INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
 VALUES(9001,'connection_request','New connection request','Browser fixture request','/connections','connection:7001');
 
