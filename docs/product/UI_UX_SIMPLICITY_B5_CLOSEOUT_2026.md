@@ -1,6 +1,6 @@
 # UI/UX Simplicity 2026 — B5 Responsive, Accessibility + Final UX Closeout
 
-**Status:** IMPLEMENTED IN BRANCH — AUTOMATED VERIFICATION PENDING  
+**Status:** AUTOMATED GATE PASS — LIVE MATRIX PENDING  
 **Date:** 30 September 2026  
 **Branch:** `feat/new-flight-b5-closeout`  
 **Parent contract:** `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
@@ -149,12 +149,18 @@ Initial local B5 gate on 30 September 2026:
 
 - TypeScript: **PASS**
 - targeted B5 / affected historical tests: **100/100 PASS**
-- full unit/regression: **961/962 PASS, 1 FAIL**
+- full unit/regression: **962/962 PASS**
 - production build: **PASS**
 - PostgreSQL: **N/A**
 - authenticated live browser matrix: **PENDING — NOT PASS**
 
-The only full-suite failure was the historical v1.58 source-contract assertion that still required pristine `aria-invalid={!field}` markup. That assertion conflicts with B5's explicit acceptance requirement to delay ordinary required-field error styling until a save attempt. The v1.58 test has therefore been reconciled test-only to preserve its original scope (required fields only; billing remains optional) while accepting B5 attempt-gated validation. Clean rerun on the current head is pending.
+The only initial full-suite failure was the historical v1.58 source-contract assertion around required-field markup. Its first test-only reconciliation was still too brittle because JSX arrow-handler syntax appeared before the `required` attribute. The assertion was then corrected to inspect each named control through its closing `</select>`.
+
+Clean rerun on 30 September 2026 passed:
+- targeted v1.58 + B5 closeout set: **15/15 PASS**;
+- full unit/regression: **962/962 PASS**.
+
+TypeScript and production build remain PASS on the runtime-equivalent B5 head because the final correction changed tests only.
 
 ## Final closeout condition
 
