@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { parseFlightInput } from "@/lib/flight-input";
-import { regulatoryAircraftCategory } from "@/lib/flight-entry-profile";
 import { airportCandidateScore,flightEnvelope,hasAirborneMovement,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
 import { airportCatalogSize,canonicalAirportIdent,nearestCatalogAirports } from "@/lib/airport-catalog";
 import { selectAutomaticAirport } from "@/lib/airport-selection";
