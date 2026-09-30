@@ -31,7 +31,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | ✅ | Canonical manual/GPS review workflow established |
+| Flight entry / review / GPS workflows | 🚧 | Existing workflow live; Flight Entry Workflow 3.0 is active to remove confirmed Manual/GPS semantic-write divergence |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
