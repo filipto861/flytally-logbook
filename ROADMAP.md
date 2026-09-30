@@ -291,7 +291,25 @@ Implemented, verification pending:
 - golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
 - preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
 
-Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE. Next milestone: **B1A — Optional Costs domain contract**.
+Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE.
+
+### Current implementation checkpoint — B1A
+
+Branch: `feat/new-flight-b1a-optional-costs`
+
+Implemented, verification pending:
+- blank billing is now a first-class **Not tracked** state in manual entry, GPS import and aircraft defaults;
+- populated malformed billing remains fail-closed and opens/surfaces the relevant configuration state instead of degrading to BLOCK or blank;
+- configured BLOCK/AIR + share values remain canonical and continue to auto-apply from the aircraft profile;
+- no-billing flights no longer resolve/snapshot an aircraft hourly rate, and cost read models treat untracked billing as zero contribution rather than implicit BLOCK;
+- aircraft profile Add/Edit and Quick Add can explicitly store no billing default;
+- aircraft sharing preserves explicit no-billing state; malformed shared billing defaults are surfaced and cannot be imported silently;
+- historical legacy billing helpers remain compatible for callers outside the optional-cost path;
+- no certification, recency, UTC or crew-sharing credit semantics are changed.
+
+Database prerequisite: source review confirms the implementation writes an explicit empty string, not NULL, but the live/local PostgreSQL column default/check constraints for `flights.billing_basis` and `aircraft.billing_basis` still require read-only verification before B1A can close. No migration is planned unless that evidence proves one is required.
+
+Verification status: **NOT RUN on current B1A head**. B1A is not DONE until TypeScript, targeted/full regression, build, relevant PostgreSQL persistence evidence and browser verification are recorded.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
