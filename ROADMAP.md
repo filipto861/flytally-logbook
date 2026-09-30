@@ -339,7 +339,7 @@ Implemented, verification pending:
 - Training purpose + Task move to **Optional details** while preserving the unchanged FlightPurposePicker hidden submission contract;
 - no schema, parser, certification, recency, collaboration or UTC semantics changed.
 
-Verification status: initial local run completed — TypeScript PASS, production build PASS, targeted 36/39 and full 942/946. The four failures were reviewed as stale/over-broad source-contract assertions caused by the intentional B3 presentation move; test-only corrections are pushed and a clean rerun on the current head is **PENDING**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next after clean verification: **B4 — Optional details + helper-copy triage**.
+Verification status: **DONE / MERGE READY** — TypeScript PASS, production build PASS, reconciled targeted contracts **22/22 PASS**, full unit/regression **946/946 PASS**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next milestone: **B4 — Optional details + helper-copy triage**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
