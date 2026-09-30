@@ -326,20 +326,32 @@ PR #176 merged as `a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`.
 - PostgreSQL N/A;
 - authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
 
-### Current implementation checkpoint — B3
+### Completed checkpoint — B3
 
-Branch: `feat/new-flight-b3-context`
+PR #177 merged as `645348ef7280f1b0452d457e152dfdaa0da4a448`.
+
+- Aircraft & logbook now exposes the stored/current profile context directly;
+- Role details auto-opens for DUAL, Safety Pilot, SPIC and PICUS required evidence;
+- Training purpose + Task moved out of crew identity into Optional details;
+- TypeScript PASS, production build PASS, reconciled targeted contracts 22/22 PASS, full unit/regression 946/946 PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Current implementation checkpoint — B4
+
+Branch: `feat/new-flight-b4-optional-details`
 
 Implemented, verification pending:
-- Aircraft & logbook summary now exposes actual logbook/evidence, regulatory category, class and applicable SP/MP + SE/ME values;
-- new-flight selected-aircraft origin is kept visible without claiming current-profile origin for Edit snapshots;
-- invalid/unresolved selected-aircraft context forces Aircraft & logbook open;
-- former **Crew & training** is now **Role details** and auto-opens for DUAL, Safety Pilot, SPIC and PICUS required evidence;
-- existing Commander/PIC and Instructor fields remain available for other roles without being forced open;
-- Training purpose + Task move to **Optional details** while preserving the unchanged FlightPurposePicker hidden submission contract;
-- no schema, parser, certification, recency, collaboration or UTC semantics changed.
+- Training purpose/Task, Night/IFR, Professional context, Costs/expenses and Notes are consolidated under one native **Optional details** disclosure;
+- populated Edit records auto-open Optional details and the summary identifies populated domains;
+- Night/IFR move out of Flight experience while preserving the same field/parser semantics;
+- historical stored Night/IFR values remain discoverable even when not normally applicable;
+- malformed billing remains fail-closed and forces Optional details open;
+- repeated profile/role/optional helper prose is compacted while validation, Connection and signed-evidence consequences remain visible;
+- Professional context supports embedded presentation without changing applicability semantics;
+- no schema, parser, certification, recency, collaboration, billing or UTC semantics changed.
 
-Verification status: **DONE / MERGE READY** — TypeScript PASS, production build PASS, reconciled targeted contracts **22/22 PASS**, full unit/regression **946/946 PASS**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next milestone: **B4 — Optional details + helper-copy triage**.
+Verification status: **NOT RUN on current B4 head**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next after verification: **B5 — Responsive, accessibility and final UX closeout**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
