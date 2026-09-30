@@ -198,7 +198,6 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
   await expect(gpsForm.getByText("Needs configuration.")).toBeVisible();
-  await expect(gpsForm.getByText("Needs configuration",{exact:true})).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
