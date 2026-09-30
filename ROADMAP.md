@@ -410,8 +410,8 @@ Milestones:
 | --- | :---: | --- |
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
-| F0 — Full field/consumer contract inventory | 🚧 | **ACTIVE** · authoritative matrix drafted + source-contract tests added; verification pending |
-| F1 — Shared normalization / semantic write contract | ⏳ | Manual + GPS converge on canonical `FlightInput` semantics |
+| F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
+| F1 — Shared normalization / semantic write contract | ➡️ | **NEXT** · Manual + GPS converge on one server semantic record without broadening GPS role support |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,9 +419,9 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- verify and close F0 field/consumer inventory against current main;
-- reconcile the DB aircraft-identity snapshot trigger, shared-flight copy interaction and export/output gaps as explicit dependencies rather than hiding them inside F1;
-- after F0 closeout, move to F1 shared normalization only; F2 Role/Crew semantics remain a separate milestone.
+- design F1 shared normalization from the frozen F0 matrix before changing runtime code;
+- keep the DB aircraft-identity snapshot trigger, shared-flight identity interaction and certification v1–v8 compatibility explicit in the design;
+- do not broaden GPS beyond PIC in F1; F2 remains the owner of Role/Crew parity.
 
 M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
 
