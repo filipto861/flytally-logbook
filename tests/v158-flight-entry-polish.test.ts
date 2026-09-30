@@ -44,8 +44,13 @@ test("v1.58 smart defaults remain transparent after B4 helper-copy triage",()=>{
   assert.doesNotMatch(fs.readFileSync("lib/flight-input.ts","utf8"),/FlyTally v1\.58/);
 });
 
-test("v1.58 provides inline guidance only for fields that are already required",()=>{
-  for(const name of ["registration","role","evidence","aircraftClass"])assert.ok(form.includes(`aria-invalid={!${name==="aircraftClass"?"aircraftClass":name}}`));
+test("v1.58 required-field guidance stays scoped while B5 delays pristine error styling",()=>{
+  for(const name of ["registration","role","evidence","aircraftClass"]){
+    const required=new RegExp(`name="${name}"[^>]*required`);
+    assert.match(form,required,name);
+  }
+  assert.match(form,/aria-invalid=\{submitAttempted&&!registration\|\|profileNeedsConfiguration\|\|undefined\}/);
+  for(const name of ["role","evidence","aircraftClass"])assert.ok(form.includes(`aria-invalid={submitAttempted&&!${name}||undefined}`),name);
   assert.doesNotMatch(form,/name="billingBasis"[^>]*aria-invalid/);
   assert.match(form,/field-message-error/);
   assert.match(css,/\[aria-invalid="true"\]/);
