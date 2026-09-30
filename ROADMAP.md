@@ -351,7 +351,7 @@ Implemented, verification pending:
 - Professional context supports embedded presentation without changing applicability semantics;
 - no schema, parser, certification, recency, collaboration, billing or UTC semantics changed.
 
-Verification status: initial local run — TypeScript PASS, production build PASS, targeted **47/50**, full unit/regression **949/954**. Five failures were reviewed as stale/over-broad source-contract assertions caused by intentional B4 presentation/copy changes; test-only reconciliations are pushed and a clean rerun on the current head is **PENDING**. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next after clean verification: **B5 — Responsive, accessibility and final UX closeout**.
+Verification status: **DONE / MERGE READY** — TypeScript PASS, reconciled targeted contracts **34/34 PASS**, full unit/regression **954/954 PASS**, production build PASS on the runtime-equivalent B4 head. PostgreSQL N/A. Authenticated browser smoke remains deferred to cumulative live verification and is not reported as PASS. Next milestone: **B5 — Responsive, accessibility and final UX closeout**.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
