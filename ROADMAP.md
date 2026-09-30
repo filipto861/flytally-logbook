@@ -318,7 +318,7 @@ Implemented, verification pending:
 - route/times remain draft-optional; certification blockers remain in the saved review/certification workflow;
 - no schema, recency, certification payload or UTC change.
 
-Verification status: **NOT RUN on current B1B head**. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check; it will not be reported as PASS until observed.
+Verification status: **PARTIAL / RERUN PENDING** — Filip's local run produced TypeScript PASS and production build PASS. The first targeted set was 20/22 and the first full suite 928/934; all six failures were reviewed and traced to stale source-contract assertions superseded by B1B, not runtime/data failures. Those tests are now reconciled. A clean rerun of the reconciled head is still required before B1B merge. PostgreSQL N/A. Authenticated browser presentation smoke remains explicitly deferred to the live cumulative redesign check; it will not be reported as PASS until observed.
 
 The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
 
