@@ -22,6 +22,17 @@ test("v2.4 keeps intelligence attached to the canonical manual FlightForm",()=>{
   assert.match(form,/className="entry-save-state"/);
 });
 
+test("v2.4 binds intelligent review to the explicit manual form and waits for controlled updates",()=>{
+  assert.match(page,/manualFormId="new-flight-manual-form"/);
+  assert.match(page,/<FlightForm formId=\{manualFormId\}/);
+  assert.match(page,/<IntelligentFlightEntryPanel context=\{intelligentContext\} formId=\{manualFormId\}/);
+  assert.match(form,/id=\{formId\}/);
+  assert.match(panel,/document\.getElementById\(formId\)/);
+  assert.match(panel,/candidate instanceof HTMLFormElement/);
+  assert.match(panel,/requestAnimationFrame\(syncNow\)/);
+  assert.doesNotMatch(panel,/document\.querySelector<.*form\.flight-form|document\.querySelector\("form\.flight-form"\)/);
+});
+
 test("v2.4 continuation and return assistance edit the same canonical route fields",()=>{
   assert.ok(panel.includes('applyFieldValue(form,"departure",continuation.airport)'));
   assert.ok(panel.includes('applyFieldValue(form,"arrival",latestDeparture)'));
