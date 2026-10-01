@@ -18,8 +18,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - A zero-row connected write is reclassified through the same resolver so a concurrent revocation returns the existing Connection-specific error instead of silently degrading.
 - Added focused source regression coverage, PostgreSQL acceptance for the production resolver query, and authenticated browser coverage for display-name resnapshot on create/update plus revoked-Connection Save rejection.
 - GPS remains PIC-only; certification payload versions v1–v8 and collaboration/materialization semantics are unchanged.
+- **Final verification:** Verify FlyTally web #1077 PASS — TypeScript PASS, full unit/regression **1048/1048**, PostgreSQL acceptance **66/66**; Browser smoke #453 PASS — production build PASS, Chromium **32 passed / 2 skipped**.
+- PR #209 merged as `d90215f88514e953e062980798954c497ca76be7`.
+- Production deployment `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` is READY for that exact merge SHA, aliases `fly-tally.com` with no alias error, and the public production root returned HTTP 200 from that deployment.
 - **DB/schema:** N/A.
-- **Verification:** pending.
 
 ### Flight Entry Workflow 3.0 — F2.2 Manual inline Role/Crew UX
 - Moved role-defining DUAL Instructor/PIC, Safety Pilot Actual PIC, and SPIC/PICUS supervision/countersignature controls directly into Flight essentials immediately after Role.

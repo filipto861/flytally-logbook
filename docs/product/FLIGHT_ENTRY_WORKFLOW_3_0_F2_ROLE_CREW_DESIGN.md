@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0/F2.1/F2.2 DONE · F2.3 IMPLEMENTED / VERIFICATION PENDING  
+**Status:** F2.0/F2.1/F2.2/F2.3 DONE · F2.3 PRODUCTION VERIFIED · F2.4 NEXT  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -357,7 +357,7 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
 - DB/schema migration: N/A.
 
-### F2.3 — Safety Pilot resolver convergence — IMPLEMENTED / VERIFICATION PENDING
+### F2.3 — Safety Pilot resolver convergence — DONE / PRODUCTION VERIFIED
 - one server resolver, `resolveSafetyPilotPicForSave()`, is used by create/update;
 - the resolver owns Safety Pilot mode parsing, malformed/self account rejection, the EASA manual Actual-PIC requirement, accepted-Connection lookup and server display-name snapshot;
 - non-Safety-Pilot roles bypass connected identity and preserve their normalized commander semantic value;
@@ -369,8 +369,11 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - `flight_connected_crew` remains separate metadata and its insert/update/delete remains conditional on successful parent persistence;
 - no destructive RoleCrew sanitization is introduced; F2.4 still owns evidence-aware canonicalization;
 - GPS remains PIC-only; certification v1–v8 and collaboration/materialization semantics remain unchanged;
-- DB/schema migration: N/A;
-- verification: pending.
+- authenticated Chromium coverage verifies server display-name resnapshot on connected create/update and fail-closed Save after Connection revocation;
+- final verification: Verify FlyTally web #1077 PASS — TypeScript PASS, 1048/1048 unit/regression, PostgreSQL 66/66; Browser smoke #453 PASS — production build + Chromium 32 passed / 2 skipped;
+- merge: PR #209 → `main@d90215f88514e953e062980798954c497ca76be7`;
+- production: Vercel `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
+- DB/schema migration: N/A.
 
 ### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization
 - audit Manual, GPS, shared-flight materialization, certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, dashboard/statistics and backup/restore;
@@ -409,8 +412,13 @@ F2.1-specific:
 - self-PIC roles do not gain a new stored commander requirement;
 - existing instructor/verification evidence is preserved because F2.1 performs no destructive sanitization.
 
+F2.3 coverage:
+- Safety Pilot manual/connected resolution and malformed/self connected identity;
+- server display-name snapshot by account ID;
+- revoked-Connection behavior before Save and at the write boundary;
+- atomic connected-PIC metadata synchronization.
+
 Later F2 coverage:
-- Safety Pilot manual/connected resolution and revoked-Connection behavior in F2.3;
 - evidence-aware stale-field cleanup only after F2.4 consumer/producer proof.
 
 ### PostgreSQL / actions
