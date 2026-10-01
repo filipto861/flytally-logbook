@@ -9,6 +9,19 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.0 historical aircraft identity preservation
+- Added base database migration **v17 — historical flight aircraft identity preservation**.
+- Replaced the v6 aircraft-identity trigger behavior without rewriting the already-applied v6 migration.
+- Ordinary Manual/GPS-style INSERTs with an empty make/model/variant tuple still snapshot the current matching aircraft profile.
+- INSERTs carrying any explicit make/model/variant member now preserve the supplied tuple atomically instead of mixing or overwriting it from mutable current profile state.
+- Registration-changing UPDATEs still snapshot identity for the new registration.
+- Same-registration UPDATEs no longer refresh historical identity from mutable current profile state.
+- Exact backup restore remains compatible with its existing two-stage flow: staged empty identity insert followed by explicit identity restore.
+- Added source-contract coverage plus PostgreSQL acceptance for existing certified rows, ordinary inserts, conflicting recipient profiles, partial explicit tuples, same-registration updates, actual registration changes, restore-style second-stage writes and idempotent reapplication.
+- **Historical rows:** no existing flight is rewritten or guessed/backfilled by this migration.
+- **Certification:** no certification payload/hash/version change.
+- **Verification:** final implementation head before docs closeout: Verify FlyTally web #992 PASS; TypeScript PASS; full unit/regression **992/992**; PostgreSQL acceptance **76/76**; Browser smoke #373 **26 passed / 2 skipped** across desktop/mobile; production build PASS. Early #987/#989/#371 failures exposed only migration/test-harness defects (PL/pgSQL delimiter, stale v16 fixture extraction, and browser fixture schema drift); each was corrected and the final gates passed. Production DB application is verified after deployment.
+
 ### Flight Entry Workflow 3.0 — F1 design / independent review
 - Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F1_DESIGN.md` with the proposed source-adapter → typed candidate → pure normalizer → `FlightInput` architecture.
 - Kept `parseFlightInput(FormData)` as the proposed compatibility wrapper to minimize Manual blast radius.

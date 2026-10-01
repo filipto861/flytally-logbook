@@ -59,7 +59,7 @@ Flight Entry Workflow 3.0 F0 identified one unresolved historical-identity inter
 - the v6 `BEFORE INSERT` flight identity trigger can then assign make/model/variant from the recipient's current aircraft profile for the same registration;
 - therefore complete sharing snapshot equivalence is **not yet proven** and must fail closed to evidence rather than be assumed.
 
-F0 does not change this behavior. The interaction must be reconciled before M2B or Flight Entry F1 claims full historical identity equivalence.
+Flight Entry F1.0 addresses this interaction with base migration v17: ordinary empty-snapshot inserts still resolve current profile identity, while any explicitly supplied historical identity tuple is preserved atomically; only an actual registration change refreshes identity. PR-head verification is complete (PostgreSQL 76/76 and Browser 26 passed / 2 skipped); the production cross-workstream risk is considered closed only after migration 17 is confirmed applied on the production database.
 
 ## 3. Field-by-field aircraft profile matrix
 

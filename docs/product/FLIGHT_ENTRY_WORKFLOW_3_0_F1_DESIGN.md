@@ -312,13 +312,14 @@ This must be a new base migration (v17), not a rewrite of v6.
 
 ## 11. F1 implementation plan
 
-### F1.0 — shared-flight identity trigger hotfix
-- add base migration v17;
+### F1.0 — shared-flight identity trigger hotfix — DONE / VERIFIED
+- base migration v17 added;
 - INSERT with empty identity tuple resolves current profile;
 - INSERT with any explicit identity member preserves the supplied tuple atomically;
 - UPDATE with changed registration resolves the new profile identity;
 - same-registration UPDATE preserves historical identity;
 - PostgreSQL acceptance covers Manual/GPS-style insert, explicit snapshot, sharing, registration change, exact restore sequence and certification compatibility.
+- Verification: Verify #992 PASS; 992/992 unit; PostgreSQL 76/76; Browser #373 26 passed / 2 skipped; production build PASS. Production DB migration application remains a deployment gate.
 
 ### F1.1 — candidate types + source adapters
 - introduce minimal typed candidate with explicit unresolved states/provenance;

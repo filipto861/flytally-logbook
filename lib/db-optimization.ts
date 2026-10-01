@@ -24,6 +24,7 @@ const migrationNames:Record<number,string>={
   14:"user-owned structured flight expenses",
   15:"Safety Pilot connected PIC collaboration",
   16:"general PIC invitation provenance",
+  17:"historical flight aircraft identity preservation",
 };
 
 const migrationQueries=(version:number)=>{
@@ -489,6 +490,45 @@ const migrationQueries=(version:number)=>{
     sql`CREATE UNIQUE INDEX IF NOT EXISTS flight_participations_one_active_pic_uq
       ON flight_participations(source_flight_id,source_revision)
       WHERE participant_role='PIC' AND status IN ('pending','accepted')`,
+  ];
+  if(version===17)return[
+    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $$
+      DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+      BEGIN
+        IF TG_OP='INSERT' THEN
+          IF NULLIF(TRIM(COALESCE(NEW.aircraft_make,'')),'') IS NULL
+            AND NULLIF(TRIM(COALESCE(NEW.aircraft_model,'')),'') IS NULL
+            AND NULLIF(TRIM(COALESCE(NEW.aircraft_variant,'')),'') IS NULL THEN
+            SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+                   COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+                   COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+              INTO v_make,v_model,v_variant
+              FROM aircraft a
+              WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+              LIMIT 1;
+            NEW.aircraft_make:=COALESCE(v_make,'');
+            NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+            NEW.aircraft_variant:=COALESCE(v_variant,'');
+          END IF;
+        ELSIF NEW.registration IS DISTINCT FROM OLD.registration THEN
+          SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+                 COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+                 COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+            INTO v_make,v_model,v_variant
+            FROM aircraft a
+            WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+            LIMIT 1;
+          NEW.aircraft_make:=COALESCE(v_make,'');
+          NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+          NEW.aircraft_variant:=COALESCE(v_variant,'');
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_snapshot_aircraft_identity ON flights`,
+    sql`CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
+      BEFORE INSERT OR UPDATE OF registration ON flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity()`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
