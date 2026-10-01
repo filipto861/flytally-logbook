@@ -1,7 +1,7 @@
 # Independent Review Handoff — Flight Entry Workflow 3.0 / F2.4B
 
-> **Status:** REQUESTED · read-only architecture/data-integrity review before any F2.4B runtime semantic change.  
-> **Repository baseline:** `main@064be0862b9506e472545eb16491b21019a90a50`.  
+> **Status:** REQUESTED FOR B2 · B1 contract separation is production-verified; any semantic precedence/cleanup change remains review-gated.  
+> **Repository baseline:** `main@6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`.  
 > **Previous milestone:** F2.4A DONE / PRODUCTION VERIFIED.
 
 ## Reviewer role
@@ -129,13 +129,17 @@ This avoids rewriting certified rows but is still destructive to editable rows a
 
 This best preserves existing behavior and certified interpretation. The inconsistency then lives in the RoleCrew model: `picNameSource="SELF"` is not a complete description of output precedence.
 
-## B1 implementation candidate now available for review
+## B1 implementation now production-verified
 
-A behavior-preserving B1 candidate is implemented on branch `refactor/flight-entry-f24b-role-crew-contract`.
+The behavior-preserving contract split is merged and deployed.
 
-- `RoleCrewSpec.picNameSource` is replaced by explicit `rolePicIdentitySource`;
+- PR #217 → `main@6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`;
+- Verify #1091 PASS: TypeScript, 1058/1058 unit/regression, PostgreSQL 66/66;
+- Browser #466 PASS: production build, Chromium 34 passed / 2 skipped;
+- Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` READY for the exact merge SHA and serving `fly-tally.com`;
+- `RoleCrewSpec.picNameSource` was replaced by explicit `rolePicIdentitySource`;
 - `picDisplayPrecedence` records downstream resolution order separately;
-- self-PIC commander policy is `optional`, matching the existing Manual producer instead of claiming the field is non-applicable;
+- self-PIC commander policy is `optional`, matching the existing Manual/shared producers;
 - self-PIC display order remains `COMMANDER → SELF`;
 - DUAL remains `INSTRUCTOR → COMMANDER`;
 - SPIC/PICUS remain `VERIFIER → COMMANDER`;
@@ -143,7 +147,7 @@ A behavior-preserving B1 candidate is implemented on branch `refactor/flight-ent
 - `pilotInCommandName()` delegates to the pure RoleCrew resolver;
 - raw persistence, certification payloads and shared-materialization producers are untouched.
 
-This candidate intentionally does **not** decide that commander-over-SELF is the ideal future product behavior. It preserves that behavior until independent review authorizes any semantic change.
+B2 review is now narrowly about whether any future semantic precedence or cleanup change is justified. B1 itself does not authorize one.
 
 ## Proposed F2.4B direction
 
