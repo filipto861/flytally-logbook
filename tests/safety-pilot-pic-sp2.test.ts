@@ -63,11 +63,12 @@ test("F2.3 update uses the same resolver, synchronizes the link atomically, and 
 test("SP2 edit reloads stored connected identity by flight id instead of matching commander text",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx");
   const helper=read("lib/flight-connected-crew.ts");
+  const link=between(helper,"export async function getConnectedPicLink","export function upsertConnectedPicLinkQuery");
   assert.match(page,/getConnectedPicLink\(userId,id\)/);
   assert.match(page,/connectedPic=\{connectedPicInitial\}/);
   assert.match(page,/picConnections=\{picConnections\}/);
-  assert.match(helper,/WHERE c\.source_flight_id=\$\{sourceFlightId\} AND c\.source_user_id=\$\{sourceUserId\} AND c\.intended_role='PIC'/);
-  assert.doesNotMatch(helper,/commander/);
+  assert.match(link,/WHERE c\.source_flight_id=\$\{sourceFlightId\} AND c\.source_user_id=\$\{sourceUserId\} AND c\.intended_role='PIC'/);
+  assert.doesNotMatch(link,/commander/);
 });
 
 
