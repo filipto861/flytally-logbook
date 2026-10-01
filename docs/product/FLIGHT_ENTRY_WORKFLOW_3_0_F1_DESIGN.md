@@ -338,10 +338,14 @@ This must be a new base migration (v17), not a rewrite of v6.
 - Verification: Verify #1007 PASS; TypeScript PASS; 1006/1006 unit/regression; PostgreSQL 63/63; Browser #388 26 passed / 2 skipped; production build PASS; DB migration N/A.
 - GPS mutation persistence is intentionally still not routed through the normalizer.
 
-### F1.3 — Manual wrapper regression
-- `parseFlightInput(FormData)` becomes compatibility wrapper;
-- prove Manual create/update remain regression-equivalent;
-- preserve expenses and connected PIC child semantics.
+### F1.3 — Manual wrapper regression — DONE / VERIFIED
+- proved Manual create/update each enter through `parseFlightInput(FormData)` and do not bypass it with direct candidate/normalizer calls;
+- proved normalized `FlightInput` fields feed both create INSERT and update SET contracts;
+- preserved expenses as a separately validated child domain;
+- preserved connected Actual-PIC validation/linkage outside the pure normalizer;
+- preserved create duplicate fingerprint/advisory lock and update lock/price-history boundaries;
+- GPS remains intentionally outside this Manual proof until F1.4;
+- Verification: Verify #1013 PASS; TypeScript PASS; 1014/1014 unit/regression; PostgreSQL 63/63; Browser N/A; DB migration N/A.
 
 ### F1.4 — GPS semantic adapter / persistence convergence
 - resolve each reviewed PIC part into candidate state;
