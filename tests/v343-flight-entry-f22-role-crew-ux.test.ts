@@ -72,7 +72,7 @@ test("F2.2 keeps role switching non-destructive in the browser and leaves server
   assert.match(form,/\[verificationNameValue,setVerificationNameValue\]=useState\(field\("verification_name"\)\)/);
   assert.match(form,/\[verificationReferenceValue,setVerificationReferenceValue\]=useState\(field\("verification_reference"\)\)/);
   assert.match(parser,/roleCrewSaveError\(crewSpec,\{instructor,verificationName,verificationReference\}\)/);
-  assert.match(roleCrew,/commander="not_applicable";[\s\S]*?picNameSource="SELF"/);
+  assert.match(roleCrew,/rolePicIdentitySource="SELF"/);\n  assert.match(roleCrew,/if\(SELF_PIC_ROLES\.has\(role\)\)return\["COMMANDER","SELF"\]/);
   assert.doesNotMatch(form,/fcl050FlightCompliance|certificationFingerprint|flight_participations/);
 });
 
