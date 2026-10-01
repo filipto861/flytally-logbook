@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0.0 + F0.1 + F0 DONE / F1 NEXT  
+**Status:** ACTIVE · DESIGN FROZEN / F0 + F1 IMPLEMENTATION COMPLETE / F1 PRODUCTION CLOSEOUT PENDING  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
