@@ -412,7 +412,7 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | 🚧 | **F2.3 DONE / PRODUCTION VERIFIED** · one Safety Pilot Manual/Connection resolver is shared by create/update; F2.4 producer/consumer reconciliation is next |
+| F2 — Role/Crew parity | 🚧 | **F2.4A ANALYSIS / REVIEW GATE** · producer-consumer audit complete; name-inference removal + semantic canonicalization design under independent review |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
@@ -423,11 +423,12 @@ Immediate next step:
 - F2.1 RoleCrew validation is merged as PR #204 and production-verified on `main@0f00a3c256843dd24b84a801f6b1e0cae60771d5`;
 - F2.2 Manual inline Role/Crew UX is merged as PR #207 and production-verified on `main@205483eda15f82770c1000c0a91fa4df92177fcd`;
 - F2.3 Safety Pilot resolver convergence is merged as PR #209 and production-verified on `main@d90215f88514e953e062980798954c497ca76be7`;
-- begin **F2.4 — producer/consumer reconciliation + evidence-aware canonicalization**: audit all RoleCrew producers/consumers before any destructive cleanup, remove/replace name-based DUAL/SPIC/PICUS account matching, and define role identity versus training/endorsement evidence explicitly;
-- preserve generic commander/instructor fields until F2.4 evidence reconciliation;
+- **F2.4A audit is complete and at independent review gate**: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md` maps Manual/GPS/shared/certification/print-export/audit-backup/recency consumers; `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md` contains the review package;
+- after review, implement F2.4A runtime reconciliation: remove Certification-time DUAL/SPIC/PICUS display-name matching and retain only explicit account-ID verification requests;
+- review-gate F2.4B before changing self-PIC commander interpretation or any editable-Save crew-field canonicalization;
+- preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
-- defer destructive crew-field sanitization until F2.4 producer/consumer reconciliation;
-- do not change certification v1–v8 or infer connected identity from names.
+- do not change certification v1–v8, rewrite certified rows or infer connected identity from names.
 
 F2 discovery/review findings:
 - At initial F2 discovery, EASA DUAL Instructor/PIC was browser/Certification-required but not a shared server Save rule; F2.1 closed that gap.
@@ -442,6 +443,7 @@ F2 discovery/review findings:
 - F2.1 closeout: Verify #1065 PASS; PostgreSQL acceptance PASS; Browser #441 PASS; PR #204 merged; Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY on the exact merge SHA; `fly-tally.com` HTTP 200; DB migration N/A.
 - F2.2 closeout: role-defining DUAL/Safety Pilot/SPIC/PICUS controls are inline under Role; completion blockers cover all shared-contract Save-required crew fields; optional generic crew inputs remain available; Verify #1075 PASS (1042/1042 unit/regression, PostgreSQL 63/63); Browser #451 PASS (production build, Chromium 30 passed / 2 skipped); PR #207 merged as `205483eda15f82770c1000c0a91fa4df92177fcd`; Vercel `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` READY for that exact SHA; `fly-tally.com` HTTP 200; DB migration N/A.
 - F2.3 closeout: `resolveSafetyPilotPicForSave()` centralizes Safety Pilot mode parsing, EASA manual-PIC requirement, account-ID validation, accepted-Connection lookup and authoritative display-name snapshot; create/update persist the resolver output, recheck Connection state in the write predicate, and keep connected child metadata atomic. Verify #1077 PASS (1048/1048 unit/regression, PostgreSQL 66/66); Browser #453 PASS (production build, Chromium 32 passed / 2 skipped); PR #209 merged as `d90215f88514e953e062980798954c497ca76be7`; Vercel `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` READY for that exact SHA; `fly-tally.com` HTTP 200; DB migration N/A.
+- F2.4 discovery finding: Certification still infers account identity by matching typed DUAL/SPIC/PICUS names against `users.display_name`; an explicit post-certification `instructor_id` request already exists and is the proposed replacement. `instructor` and `verification_*` are confirmed overloaded evidence fields, so broad Role-only clearing remains blocked. Self-PIC commander precedence is the only interpretation change currently requiring independent review.
 
 F1 production closeout:
 - every reviewed GPS PIC part is converted to `FlightDraftCandidate` and normalized through the same `normalizeFlightDraft()` / `FlightInput` semantic boundary as Manual entry before persistence;
