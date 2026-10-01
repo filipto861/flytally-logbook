@@ -9,6 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.1 candidate/source adapters
+- Added a typed `FlightDraftCandidate` characterization layer with explicit unresolved semantic state and compact provenance metadata.
+- Added Manual FormData extraction preserving the presence-sensitive fields that current `parseFlightInput()` depends on.
+- Added GPS reviewed-part extraction that carries canonical aircraft-profile context when available but does not infer unresolved Operation/Engine, day/night movement, Part-FCL PF/approach, sailplane launch, night or IFR evidence.
+- Future explicit common GPS Operation/Engine values are supported by the candidate contract without class-derived defaults.
+- The new adapters are not wired into current Manual/GPS mutation runtime yet; persisted flight semantics remain unchanged in F1.1.
+- Verification: Verify FlyTally web #998 PASS; TypeScript PASS; full unit/regression **998/998**; PostgreSQL acceptance **63/63**; Browser smoke #379 **26 passed / 2 skipped**; production build PASS; DB schema/migration N/A.
+- Next: **F1.2 pure normalizer extraction** with `parseFlightInput(FormData)` retained as the compatibility boundary.
+
 ### Flight Entry Workflow 3.0 — F1.0 historical aircraft identity preservation
 - Added base database migration **v17 — historical flight aircraft identity preservation**.
 - Replaced the v6 aircraft-identity trigger behavior without rewriting the already-applied v6 migration.
