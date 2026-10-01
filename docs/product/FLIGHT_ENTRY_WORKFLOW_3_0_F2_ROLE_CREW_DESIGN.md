@@ -415,16 +415,18 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - any editable-Save clearing must be proven non-applicable from explicit structured evidence; otherwise preserve raw evidence;
 - no runtime behavior change is permitted before independent review reconciliation.
 
-#### F2.4C — cross-path characterization
-- Manual Edit/role switching;
-- Certification with no implicit account request;
-- explicit connected instructor request + in-person signature;
-- shared materialization;
-- print/read-only/CSV/XLS;
-- audit/backup;
-- recency exact signed-verification dependency;
-- Safety Pilot F2.3 regression;
-- GPS remains PIC-only.
+#### F2.4C — cross-path characterization — IMPLEMENTED / VERIFY PENDING
+- Manual Edit/role switching: shared normalizer preserves overlapping commander/instructor/verification evidence across DUAL → PIC → SPIC contexts;
+- Certification: remains isolated from account binding and preserves certification v8 behavior; no implicit request/name matching;
+- explicit verification: connected instructor requests consume account ID only, while in-person evidence remains exact revision/hash-bound with unauthenticated handwritten identity clearly distinguished;
+- shared materialization: exact source revision/hash and PIC commander provenance remain fail-closed;
+- print/read-only/CSV/XLS: semantic PIC resolution and raw crew evidence remain aligned;
+- audit/backup: raw commander/instructor/verification fields remain human-visible and recoverable;
+- recency: instructor evidence counts only from a signed verification matching the current flight revision and certification hash;
+- Safety Pilot: F2.3 account-ID resolver and separate `flight_connected_crew` metadata remain authoritative;
+- GPS remains PIC-only through `GPS_IMPORT_ROLES=["PIC"]` and the single-role import UI;
+- authenticated browser coverage verifies that a certified DUAL record with matching typed evidence remains unbound and exposes both explicit connected-account request and in-person signature paths;
+- no runtime, schema, certification-version or persisted-data change is intended by F2.4C.
 
 ### F2.5 — cross-path regression + closeout
 - role matrix unit coverage;
