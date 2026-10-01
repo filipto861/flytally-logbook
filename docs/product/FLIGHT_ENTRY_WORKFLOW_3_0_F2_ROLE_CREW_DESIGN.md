@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0 REVIEW RECONCILED · CONTRACT FROZEN FOR F2.1 VALIDATION-ONLY START · NO RUNTIME CHANGE IN THIS DOCUMENT PR  
+**Status:** F2.0 REVIEW RECONCILED · F2.1 VALIDATION-ONLY IMPLEMENTATION ACTIVE  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -327,7 +327,7 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - identify overloaded instructor/verification evidence and name-based auto-request conflict;
 - no runtime change.
 
-### F2.1 — pure RoleCrew spec + server validation only
+### F2.1 — pure RoleCrew spec + server validation only — ACTIVE
 - add pure `roleCrewSpec(role,evidence)` / equivalent;
 - integrate role requirement validation into `normalizeFlightDraft()`;
 - make EASA DUAL Instructor/PIC Save-required server-side;
