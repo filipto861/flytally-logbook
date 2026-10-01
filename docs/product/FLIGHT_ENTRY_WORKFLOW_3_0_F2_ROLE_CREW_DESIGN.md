@@ -159,7 +159,7 @@ Exact names are not frozen. The invariant is: applicability and Save requirement
 
 **Important reconciliation:** the contract does **not** synthesize the account holder's display name into `flights.commander` for self-PIC roles. Current repository semantics explicitly allow ordinary PIC commander to be blank and resolve self identity from the owning account in `pilotInCommandName()`. Injecting account identity into the pure normalizer would make it source/account-aware and would contradict the F0 field/consumer contract.
 
-## 5. Proposed EASA matrix
+## 5. Frozen EASA matrix after review
 
 This matrix is deliberately split between **frozen decisions** and **review questions**.
 
@@ -372,19 +372,25 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 ### Pure domain
 
 For every Role:
-- accepted canonical fields;
-- rejected/required fields;
-- irrelevant fields sanitized;
-- EASA vs ULL differences explicit;
-- allocated function-time output unchanged.
+- role/evidence policy is deterministic;
+- Save-required fields are explicit;
+- Save-optional roles remain accepted without commander where frozen;
+- EASA vs ULL differences are explicit;
+- PIC-name source semantics are explicit;
+- allocated function-time output remains unchanged.
 
-Specific:
+F2.1-specific:
 - EASA DUAL missing instructor → Save rejected;
 - EASA DUAL instructor present → Save accepted;
-- EASA SPIC/PICUS missing either supervision field → rejected;
-- EASA Safety Pilot manual commander missing → rejected at resolved server boundary;
-- connected Safety Pilot cannot use client-supplied commander as authority;
-- PIC/SOLO/self-PIC roles do not inherit stale verification fields.
+- EASA SPIC/PICUS missing either supervision field → rejected through the shared RoleCrew contract;
+- EASA CO-PILOT/CRCP without commander remains Save-valid;
+- EASA PAX/OBSERVER without commander remains Save-valid;
+- self-PIC roles do not gain a new stored commander requirement;
+- existing instructor/verification evidence is preserved because F2.1 performs no destructive sanitization.
+
+Later F2 coverage:
+- Safety Pilot manual/connected resolution and revoked-Connection behavior in F2.3;
+- evidence-aware stale-field cleanup only after F2.4 consumer/producer proof.
 
 ### PostgreSQL / actions
 
