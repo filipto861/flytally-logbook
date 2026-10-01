@@ -301,7 +301,7 @@ test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches
   await expectNoHorizontalOverflow(page);
 });
 
-test("F2.4A certified verifier evidence stays unbound until explicit account request",async({page})=>{
+test("F2.4A certified verifier evidence stays unbound and exposes only an explicit account request",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F2.4A verification coverage requires the isolated CI database.");
   resetF24VerificationFixture();
   await loginBrowserPilot(page,"/flights/9904");
@@ -312,13 +312,8 @@ test("F2.4A certified verifier evidence stays unbound until explicit account req
   const panel=page.locator("section.instructor-approval-panel").filter({hasText:"CREW VERIFICATION"});
   await expect(panel).toBeVisible();
   await expect(panel.getByText(/Choose a connected FlyTally instructor to send a verification request/)).toBeVisible();
-  const request=panel.getByRole("button",{name:"Request approval from Browser Instructor"});
-  await expect(request).toBeVisible();
-  await request.click();
-  await expect(panel.getByRole("heading",{name:"Waiting for instructor"})).toBeVisible();
-  await expect(panel.getByText("Verification request sent to Browser Instructor. They can review, sign and add their own logbook entry.")).toBeVisible();
-
-  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_user_id=9002 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(1);
+  await expect(panel.getByRole("button",{name:"Request approval from Browser Instructor"})).toBeVisible();
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_user_id=9002 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(0);
   await expectNoHorizontalOverflow(page);
 });
 
