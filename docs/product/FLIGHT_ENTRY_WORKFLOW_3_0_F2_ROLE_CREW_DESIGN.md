@@ -415,7 +415,7 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - any editable-Save clearing must be proven non-applicable from explicit structured evidence; otherwise preserve raw evidence;
 - no runtime behavior change is permitted before independent review reconciliation.
 
-#### F2.4C — cross-path characterization — IMPLEMENTED / VERIFY PENDING
+#### F2.4C — cross-path characterization — DONE / VERIFIED
 - Manual Edit/role switching: shared normalizer preserves overlapping commander/instructor/verification evidence across DUAL → PIC → SPIC contexts;
 - Certification: remains isolated from account binding and preserves certification v8 behavior; no implicit request/name matching;
 - explicit verification: connected instructor requests consume account ID only, while in-person evidence remains exact revision/hash-bound with unauthenticated handwritten identity clearly distinguished;
@@ -426,7 +426,8 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - Safety Pilot: F2.3 account-ID resolver and separate `flight_connected_crew` metadata remain authoritative;
 - GPS remains PIC-only through `GPS_IMPORT_ROLES=["PIC"]` and the single-role import UI;
 - authenticated browser coverage verifies that a certified DUAL record with matching typed evidence remains unbound and exposes both explicit connected-account request and in-person signature paths;
-- no runtime, schema, certification-version or persisted-data change is intended by F2.4C.
+- final evidence: PR #221 → `main@84b5f5362f03ef1959956fba91584059a36c2db5`; Verify #1094 PASS — TypeScript, 1068/1068 unit/regression, PostgreSQL 66/66; Browser #468 PASS — production build + Chromium 34 passed / 2 skipped;
+- no runtime, schema, certification-version or persisted-data change was made by F2.4C; deployment N/A.
 
 ### F2.5 — cross-path regression + closeout
 - role matrix unit coverage;
