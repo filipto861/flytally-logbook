@@ -93,8 +93,10 @@ test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
   assert.match(update,/WHERE flight\.id=\$\{id\} AND flight\.user_id=\$\{userId\} AND flight\.locked_at IS NULL/);
 });
 
-test("F1.3 leaves GPS on its specialized semantic path for F1.4",()=>{
-  assert.doesNotMatch(gps,/parseFlightInput\(|normalizeFlightDraft\(|manualFlightCandidate\(/);
+test("F1.3 Manual persistence remains intact while F1.4 shares normalization but keeps specialized GPS persistence",()=>{
+  assert.doesNotMatch(gps,/parseFlightInput\(|manualFlightCandidate\(/);
+  assert.match(gps,/gpsFlightCandidate\(/);
+  assert.match(gps,/normalizeFlightDraft\(candidate\)/);
   assert.match(gps,/validateGpsImportRole/);
   assert.match(gps,/resolveGpsImportAircraftContext/);
   assert.match(gps,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);

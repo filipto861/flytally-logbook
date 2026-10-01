@@ -189,19 +189,16 @@ test("F1.1 GPS adapter preserves unresolved aircraft-profile state instead of in
   assert.equal(candidate.provenance.aircraftContext,"UNRESOLVED");
 });
 
-test("F1.1 candidate adapters remain out of mutation/UI wiring while F1.2 may consume the Manual adapter",async()=>{
+test("F1.1 candidate contract is now consumed by Manual normalization and F1.4 GPS server normalization",async()=>{
   const fs=await import("node:fs");
   const path=await import("node:path");
   const root=path.resolve(import.meta.dirname,"..");
-  for(const runtimePath of [
-    "app/(protected)/flights/actions.ts",
-    "components/flight-form.tsx",
-    "components/kml-import-form.tsx",
-  ]){
-    const source=fs.readFileSync(path.join(root,runtimePath),"utf8");
-    assert.doesNotMatch(source,/flight-draft-candidate/);
-  }
+  const actions=fs.readFileSync(path.join(root,"app/(protected)/flights/actions.ts"),"utf8");
   const parser=fs.readFileSync(path.join(root,"lib/flight-input.ts"),"utf8");
+  const gpsForm=fs.readFileSync(path.join(root,"components/kml-import-form.tsx"),"utf8");
   assert.match(parser,/manualFlightCandidate/);
   assert.match(parser,/normalizeFlightDraft\(manualFlightCandidate\(form\)\)/);
+  assert.match(actions,/gpsFlightCandidate/);
+  assert.match(actions,/normalizeFlightDraft\(candidate\)/);
+  assert.doesNotMatch(gpsForm,/flight-draft-candidate/);
 });

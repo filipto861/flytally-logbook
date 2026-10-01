@@ -68,16 +68,22 @@ test("F1.5 GPS UI exposes explicit common Operation/Engine and blocks readiness 
   assert.ok(gpsForm.includes('setEngineType("")'));
 });
 
-test("F1.5 server revalidates Operation/Engine and persists resolved values",()=>{
+test("F1.5 server revalidates Operation/Engine and F1.4 persists normalized resolved values",()=>{
   assert.match(importAction,/resolveGpsImportOperationEngine\(\{operationType:form\.get\("operationType"\),engineType:form\.get\("engineType"\)\},profileResult\.profile\)/);
   assert.match(importAction,/if\(operationEngine\.error\)return\{error:operationEngine\.error\}/);
   assert.match(importAction,/const operationType=operationEngine\.operationType,engineType=operationEngine\.engineType/);
-  assert.match(importAction,/\$\{operationType\},\$\{engineType\}/);
+  assert.match(importAction,/operationType,/);
+  assert.match(importAction,/engineType,/);
+  assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
+  assert.match(importAction,/\$\{f\.operationType\},\$\{f\.engineType\}/);
   assert.doesNotMatch(importAction,/'SP',\$\{defaultEngineType\(aircraftClass\)\}/);
 });
 
-test("F1.5 does not broaden GPS role support or route GPS through shared normalizer yet",()=>{
+test("F1.5 keeps GPS PIC-only while F1.4 routes explicit Operation/Engine through shared normalization",()=>{
   assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
-  assert.doesNotMatch(importAction,/normalizeFlightDraft\(/);
-  assert.doesNotMatch(importAction,/gpsFlightCandidate\(/);
+  assert.match(importAction,/gpsFlightCandidate\(/);
+  assert.match(importAction,/operationType,/);
+  assert.match(importAction,/engineType,/);
+  assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
+  assert.match(importAction,/\$\{f\.operationType\},\$\{f\.engineType\}/);
 });
