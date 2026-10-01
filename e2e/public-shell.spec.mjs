@@ -306,7 +306,7 @@ test("F2.4A certified verifier evidence stays unbound until explicit account req
   resetF24VerificationFixture();
   await loginBrowserPilot(page,"/flights/9904");
 
-  await expect(page.getByText("Certified revision 1")).toBeVisible();
+  await expect(page.getByLabel("Overview").getByRole("heading",{name:"Certified revision 1"})).toBeVisible();
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(0);
 
   const panel=page.locator("section.instructor-approval-panel").filter({hasText:"CREW VERIFICATION"});
