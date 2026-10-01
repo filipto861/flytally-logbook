@@ -1,6 +1,7 @@
 import { resolveFlightEntryAircraftProfileDefaults,type FlightEntryAircraftProfileInput } from "./flight-form-rules.ts";
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
 import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
+import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 
 export const GPS_IMPORT_ROLES=["PIC"] as const;
@@ -70,5 +71,27 @@ export function resolveGpsImportOperationEngine(
     operationType:operationType as "SP"|"MP",
     engineType:engineType as "SE"|"ME",
     explicit:true,
+  };
+}
+
+
+export type GpsImportSourceRequirements={
+  landingMode:"DAY_NIGHT"|"TOTAL";
+  movementMode:"FCL060_PF"|"EXPLICIT_TAKEOFFS"|"SAILPLANE_LAUNCH"|"NONE";
+  reviewNightIfr:boolean;
+};
+
+export function gpsImportSourceRequirements(profile:CanonicalAircraftProfileRegulatoryFields):GpsImportSourceRequirements{
+  const capabilities=aircraftCategoryCapabilities({
+    regulatoryCategory:profile.regulatoryCategory,
+    aircraftClass:profile.aircraftClass,
+    evidence:profile.evidence,
+  });
+  return{
+    landingMode:capabilities.timeEntryMode==="SAILPLANE_LAUNCH"?"TOTAL":"DAY_NIGHT",
+    movementMode:capabilities.movementEvidenceMode==="FCL060_PF"?"FCL060_PF":
+      capabilities.movementEvidenceMode==="SFCL_TMG"||capabilities.movementEvidenceMode==="BFCL_TAKEOFF_LANDING"?"EXPLICIT_TAKEOFFS":
+      capabilities.movementEvidenceMode==="SFCL_LAUNCH"?"SAILPLANE_LAUNCH":"NONE",
+    reviewNightIfr:capabilities.timeEntryMode==="STANDARD",
   };
 }
