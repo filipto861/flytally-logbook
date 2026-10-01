@@ -82,6 +82,20 @@ export function resetIntelligentReviewFormScopeFixture(){
 }
 
 
+export function resetGpsNormalizedImportFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_tracks
+    WHERE user_id=9001 AND flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-01'
+        AND off_block='18:00'
+    );
+    DELETE FROM flights
+    WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-01'
+      AND off_block='18:00' AND certified_at IS NULL;
+  `);
+}
+
 export function resetSafetyPilotPicFixture(){
   runBrowserSql(`
     UPDATE pilot_connections
