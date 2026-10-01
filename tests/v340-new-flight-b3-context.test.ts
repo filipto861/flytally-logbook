@@ -24,25 +24,31 @@ test("B3 unresolved aircraft profile keeps Aircraft and logbook expanded",()=>{
   assert.match(form,/Needs configuration/);
 });
 
-test("B3 role-driven context auto-opens only for required role evidence",()=>{
+test("F2.2 supersedes B3 required Role details with inline role-owned identity",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/roleContextRequired=role==="DUAL"\|\|role==="SAFETY PILOT"\|\|countersignatureRequired/);
-  assert.match(form,/open=\{roleContextRequired\|\|crewOpen\}/);
-  assert.match(form,/<summary><span>Role details<\/span><small>\{roleContextSummary\}<\/small><\/summary>/);
-  assert.match(form,/role==="DUAL"\?"Instructor \/ PIC required"/);
-  assert.match(form,/role==="SAFETY PILOT"\?\`Actual PIC/);
-  assert.match(form,/countersignatureRequired\?\`\$\{role\} · supervision \+ countersignature required\`/);
+  assert.match(form,/crewSpec=roleCrewSpec\(role,evidence\)/);
+  assert.match(form,/inlineRoleCrew=Boolean\(dualCrewInline\|\|supervisedCrewInline\|\|safetyCrewInline\)/);
+  assert.match(form,/className="form-grid role-crew-inline-grid" data-role-crew=\{role\}/);
+  assert.doesNotMatch(form,/roleContextRequired|open=\{roleContextRequired\|\|crewOpen\}/);
+  assert.match(form,/<summary><span>Additional crew details<\/span><small>\{additionalCrewSummary\}<\/small><\/summary>/);
 });
 
-test("B3 keeps required crew evidence in Role details",()=>{
+test("F2.2 keeps required crew evidence inside Flight essentials and optional crew separate",()=>{
   const form=read("components/flight-form.tsx");
-  const start=form.indexOf('entry-section entry-section-role-context');
-  const end=form.indexOf('Aircraft & logbook',start);
-  const roleBlock=form.slice(start,end);
+  const essentialsStart=form.indexOf('entry-section entry-section-primary');
+  const essentialsEnd=form.indexOf('entry-section entry-section-experience',essentialsStart);
+  const essentials=form.slice(essentialsStart,essentialsEnd);
   for(const token of ["Instructor / PIC","Actual PIC source","connectedPicUserId","verificationName","verificationReference"]){
-    assert.ok(roleBlock.includes(token),token);
+    assert.ok(essentials.includes(token),token);
   }
-  assert.doesNotMatch(roleBlock,/FlightPurposePicker|Task \/ exercise/);
+  const optionalStart=form.indexOf('entry-section entry-section-role-context');
+  const optionalEnd=form.indexOf('Aircraft & logbook',optionalStart);
+  const optionalCrew=form.slice(optionalStart,optionalEnd);
+  assert.match(optionalCrew,/Additional crew details/);
+  assert.match(optionalCrew,/Commander \/ PIC/);
+  assert.match(optionalCrew,/>Instructor<input/);
+  assert.doesNotMatch(optionalCrew,/Actual PIC source|Countersignature reference/);
+  assert.doesNotMatch(optionalCrew,/FlightPurposePicker|Task \/ exercise/);
 });
 
 test("B3 moves training purpose and task to Optional details without changing purpose submission semantics",()=>{

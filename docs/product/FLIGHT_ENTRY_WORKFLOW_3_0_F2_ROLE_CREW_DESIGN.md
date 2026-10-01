@@ -342,11 +342,17 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY for the exact merge SHA; `fly-tally.com` is aliased with no alias error and returned HTTP 200.
 - DB/schema migration: N/A.
 
-### F2.2 — Manual inline Role/Crew UX
-- required DUAL / Safety Pilot / SPIC / PICUS identity appears directly with Role;
-- required/visibility cues consume the shared spec where applicable;
-- generic optional fields are not removed until their evidence dependencies are resolved;
-- no destructive UI-only cleanup.
+### F2.2 — Manual inline Role/Crew UX — IMPLEMENTED / VERIFICATION PENDING
+- required DUAL / Safety Pilot / SPIC / PICUS identity appears directly in Flight essentials immediately after Role;
+- visibility/PIC-source mapping and EASA Save-required cues consume `roleCrewSpec(role,evidence)`;
+- the completion surface includes DUAL Instructor/PIC, Safety Pilot Actual PIC, SPIC/PICUS supervisor and countersignature blockers with direct focus;
+- generic Commander/PIC + Instructor inputs remain available under optional **Additional crew details**; DUAL has no duplicate optional crew disclosure;
+- instructor / verification input state is preserved locally across unsaved Role switches, while persistence semantics remain unchanged;
+- no destructive UI-only cleanup;
+- Safety Pilot resolver semantics remain action-authoritative until F2.3;
+- GPS remains PIC-only and certification v1–v8 is unchanged;
+- DB/schema migration: N/A;
+- verification: pending.
 
 ### F2.3 — Safety Pilot resolver convergence
 - one server resolver used by create/update;

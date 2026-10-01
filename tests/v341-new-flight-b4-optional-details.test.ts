@@ -72,8 +72,10 @@ test("B4 helper-copy triage removes generic noise but keeps consequences",()=>{
   assert.doesNotMatch(form,/Aircraft profile applies type, logbook and class defaults/);
   assert.doesNotMatch(form,/Choose what you did on this flight\. Most private flights are PIC/);
   assert.doesNotMatch(form,/Configured flight defaults are applied when available/);
-  assert.match(form,/A connected instructor receives the review\/sign request after certification\./);
-  assert.match(form,/saving this draft sends no invitation\./);
+  assert.doesNotMatch(form,/A connected instructor receives the review\/sign request after certification\./);
+  assert.match(form,/Required for EASA DUAL save\./);
+  assert.match(form,/No invitation is sent when this draft is saved\./);
+  assert.match(form,/Manual text remains valid and is not linked to a FlyTally account\./);
   assert.match(purpose,/Structured recency credit still requires the applicable signed evidence\./);
   assert.match(professional,/FlyTally does not infer operational privileges from it\./);
 });

@@ -9,6 +9,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2.2 Manual inline Role/Crew UX
+- Moved role-defining DUAL Instructor/PIC, Safety Pilot Actual PIC, and SPIC/PICUS supervision/countersignature controls directly into Flight essentials immediately after Role.
+- Manual applicability and required cues now consume the shared `roleCrewSpec(role,evidence)` contract introduced in F2.1.
+- Added completion blockers and direct focus targets for EASA DUAL Instructor/PIC and SPIC/PICUS supervisor/countersignature fields, alongside the existing Safety Pilot Actual PIC blocker.
+- Kept generic Commander/PIC + Instructor inputs available under a separate optional **Additional crew details** disclosure; no destructive field cleanup or persistence canonicalization is introduced.
+- Preserved local instructor/supervision form state across role switches before Save.
+- Safety Pilot connection authority remains server/action-owned; GPS remains PIC-only; certification payload versions v1–v8 are unchanged.
+- Added focused F2.2 source/UX regression coverage and reconciled B3/B5 characterization tests.
+- **DB/schema:** N/A.
+- **Verification:** pending.
+
 ### Flight Entry Workflow 3.0 — F2.1 RoleCrew validation
 - Added a pure `roleCrewSpec(role,evidence)` contract describing role-specific Save requirements and PIC-identity source semantics without DB/account dependencies.
 - Routed EASA DUAL and SPIC/PICUS Save validation through the shared RoleCrew contract.

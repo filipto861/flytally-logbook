@@ -60,12 +60,12 @@ test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in 
   assert.deepEqual(allocatedFunctionTimes("INSTRUCTOR",60),{picMinutes:60,copilotMinutes:0,dualMinutes:0,instructorMinutes:60});
 });
 
-test("F2.1 closes the historical DUAL Save gap while preserving the characterized UI boundary",()=>{
+test("F2.2 preserves the F2.1 DUAL Save gap closure while moving the required cue onto the shared UI contract",()=>{
   const dual=validManualForm("DUAL");
   const parsedDual=parseFlightInput(dual);
   assert.equal(parsedDual.data,undefined);
   assert.match(parsedDual.error??"",/instructor\/PIC/i);
-  assert.match(flightForm,/name="instructor"[^>]*required=\{evidence==="EASA"\}/);
+  assert.match(flightForm,/name="instructor"[\s\S]{0,400}required=\{dualInstructorRequired\}/);
 
   dual.set("instructor","Instructor");
   assert.equal(parseFlightInput(dual).data?.role,"DUAL");
