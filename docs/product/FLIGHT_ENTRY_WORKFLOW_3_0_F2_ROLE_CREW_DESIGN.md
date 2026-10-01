@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0 REVIEW RECONCILED · F2.1 DONE / CI VERIFIED · F2.2 NEXT  
+**Status:** F2.0 REVIEW RECONCILED · F2.1 DONE / PRODUCTION VERIFIED · F2.2 NEXT  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -337,7 +337,9 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - **no broad field sanitization**;
 - no GPS role expansion;
 - no certification version/hash schema change.
-- verification: Verify FlyTally web #1064 PASS (TypeScript, full unit/regression, PostgreSQL acceptance); Browser smoke #440 PASS including production build + real Chromium smoke.
+- verification: final PR head Verify FlyTally web #1065 PASS (TypeScript, full unit/regression, PostgreSQL acceptance); Browser smoke #441 PASS including production build + real Chromium smoke.
+- merge: PR #204 → `main@0f00a3c256843dd24b84a801f6b1e0cae60771d5`.
+- production: Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY for the exact merge SHA; `fly-tally.com` is aliased with no alias error and returned HTTP 200.
 - DB/schema migration: N/A.
 
 ### F2.2 — Manual inline Role/Crew UX
