@@ -16,12 +16,13 @@ test("F2.4B characterization: self-PIC falls back to account identity only when 
   }
 });
 
-test("F2.4B characterization: RoleCrew Save/UI contract currently differs from downstream commander precedence",()=>{
+test("F2.4B contract explicitly separates self-PIC role identity from backward-compatible display precedence",()=>{
   for(const role of ["PIC","SOLO","FI","INSTRUCTOR","EXAMINER"]){
     const spec=roleCrewSpec(role,"EASA");
     assert.equal(spec?.selfIsPic,true,role);
-    assert.equal(spec?.picNameSource,"SELF",role);
-    assert.equal(spec?.commander,"not_applicable",role);
+    assert.equal(spec?.rolePicIdentitySource,"SELF",role);
+    assert.equal(spec?.commander,"optional",role);
+    assert.deepEqual(spec?.picDisplayPrecedence,["COMMANDER","SELF"],role);
   }
 });
 
