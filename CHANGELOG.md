@@ -17,7 +17,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Raised Operation/Engine as a blocking correctness question because current GPS silently stores SP plus class-derived engine, which is not sufficient source evidence for every FCL-style flight.
 - Carried the shared-flight identity-trigger issue forward as a migration/integrity design question; no migration has been written.
 - Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F1_REVIEW_HANDOFF.md` for independent read-only review before runtime implementation.
-- **Runtime/schema behavior:** unchanged; F1 code has not started.
+- Independent review returned **APPROVE WITH CHANGES** and was reconciled into the F1 design: F1.0 trigger hotfix first; explicit EASA GPS Operation/Engine before F1 release; unresolved source evidence remains fail-closed; F2 retains Role/Crew ownership.
+- **Runtime/schema behavior:** unchanged in this design PR; F1 runtime code has not started.
 
 ### Flight Entry Workflow 3.0 — F0 field / consumer contract inventory
 - Added the authoritative repository-backed Manual/GPS/Edit/Certification/consumer matrix at `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md`.
