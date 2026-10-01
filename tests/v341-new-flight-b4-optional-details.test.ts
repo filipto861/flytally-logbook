@@ -82,10 +82,14 @@ test("B4 remains presentation-only around canonical parsing and certification",(
   const actions=read("app/(protected)/flights/actions.ts");
   const parser=read("lib/flight-input.ts");
   const certification=read("lib/certification-integrity.ts");
+  const candidate=read("lib/flight-draft-candidate.ts");
   assert.match(actions,/parseFlightInput\(form\)/);
-  assert.match(parser,/nightMinutes=durationMinutes\(form\.get\("nightTime"\)\)/);
-  assert.match(parser,/ifrMinutes=durationMinutes\(form\.get\("ifrTime"\)\)/);
-  assert.match(parser,/hasPurposeField=form\.has\("purposeSelectionPresent"\)\|\|form\.has\("purposeCode"\)/);
+  assert.match(candidate,/nightTime:formValue\(form,"nightTime"\)/);
+  assert.match(candidate,/ifrTime:formValue\(form,"ifrTime"\)/);
+  assert.match(candidate,/purposeSelectionPresent:form\.has\("purposeSelectionPresent"\)\|\|form\.has\("purposeCode"\)/);
+  assert.match(parser,/nightMinutes=durationMinutes\(nightRaw\.value\)/);
+  assert.match(parser,/ifrMinutes=durationMinutes\(ifrRaw\.value\)/);
+  assert.match(parser,/hasPurposeField=candidate\.purposeSelectionPresent/);
   assert.match(certification,/flightCertificationHash/);
 });
 
