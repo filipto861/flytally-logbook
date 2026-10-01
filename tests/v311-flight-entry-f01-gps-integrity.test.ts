@@ -79,7 +79,7 @@ test("F0.1 removes GPS ULL fallbacks and exposes unresolved profile state instea
   assert.match(gpsForm,/resolveGpsImportAircraftContext/);
   assert.match(gpsForm,/profileError/);
   assert.match(gpsForm,/Needs configuration/);
-  assert.match(gpsForm,/Boolean\(selectedProfile\).*parts\.length>0/);
+  assert.match(gpsForm,/Boolean\(selectedProfile&&sourceRequirements\).*parts\.length>0/);
   assert.match(gpsForm,/name="aircraftClass" value=\{selectedProfile\?\.aircraftClass\|\|""\}/);
   assert.match(gpsForm,/name="evidence" value=\{selectedProfile\?\.evidence\|\|""\}/);
 });

@@ -360,11 +360,16 @@ This must be a new base migration (v17), not a rewrite of v6.
 - retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
 - remove the hand-written GPS semantic mapper where the shared normalized value exists.
 
-### F1.6 — source-fidelity prerequisite + cross-path closeout — NEXT
-- sailplane/movement/night/IFR evidence is explicit or remains unavailable; never inferred from generic movement;
-- equivalent Manual/GPS PIC semantics tested where both sources provide equivalent facts;
-- preserve v1–v8 verification and certified-only recency;
-- ROADMAP/FEATURES/CHANGELOG closeout + browser/production smoke for runtime changes.
+### F1.6 — source-fidelity prerequisite + cross-path closeout — DONE / VERIFIED
+- GPS landing evidence is explicitly reviewed as day/night where the current domain distinguishes it; non-TMG sailplane keeps the current total-landing compatibility model;
+- Part-FCL/ULL PF evidence requires an explicit pilot Yes/No decision; positive PF evidence requires explicit day/night take-off and approach counts;
+- Part-SFCL TMG and Part-BFCL use explicit day/night take-off evidence;
+- non-TMG sailplane uses explicit launch method + launch count;
+- Night/IFR are explicit optional reviewed inputs for standard-time categories; blank means none only after the pilot confirms the review card;
+- candidate adapters resolve these values only when the reviewed source supplies them; generic GPS motion remains non-authoritative;
+- current GPS persistence writes the same explicit evidence fields so F1.4 can converge onto the shared normalizer without losing source fidelity;
+- Verification: final Verify #1031 PASS; TypeScript PASS; 1025/1025 unit/regression; PostgreSQL 63/63; Browser #407 26 passed / 2 skipped; production build PASS; DB migration N/A. First #1030 failure was a stale F0.1 source assertion only, corrected without changing runtime behavior.
+- F1.4 shared-normalizer convergence is now unblocked.
 
 ## 12. Do / Do not
 

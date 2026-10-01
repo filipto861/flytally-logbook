@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 + F1.5 DONE** · F1.6 source-fidelity prerequisite NEXT, then F1.4 convergence |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 + F1.5 + F1.6 DONE** · F1.4 GPS shared-normalizer convergence NEXT |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,10 +419,20 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F1.6 GPS source-fidelity prerequisite** before F1.4 runtime convergence;
-- explicit Operation/Engine is now resolved, but the shared normalizer still correctly rejects unresolved day/night movement, Part-FCL PF/approach, sailplane launch, Night and IFR evidence;
-- add only explicit pilot-reviewed inputs needed to represent those facts without inference from generic GPS movement;
-- after F1.6, return to F1.4 and route reviewed GPS PIC parts through the shared normalizer while preserving atomic N-part persistence.
+- begin **F1.4 GPS shared-normalizer convergence**;
+- build each reviewed GPS PIC part as a `FlightDraftCandidate` and normalize it through `normalizeFlightDraft()` before persistence;
+- preserve current F1.6 explicit source-evidence review, F0.1 profile fail-closed behavior, F1.5 Operation/Engine rules, duplicate locks and one atomic N-part transaction;
+- remove hand-written GPS semantic derivation only where the normalized `FlightInput` becomes authoritative.
+
+F1.6 closeout:
+- GPS review requires explicit category-appropriate landing evidence before a part can be confirmed;
+- Part-FCL/ULL PF movement evidence is an explicit Yes/No pilot decision; positive PF credit requires explicit take-off/approach counts;
+- TMG/BFCL take-offs use explicit day/night counts; non-TMG sailplane uses explicit launch method/count;
+- Night/IFR remain optional but pilot-reviewed and are never inferred from track motion;
+- current direct GPS persistence stores the explicit reviewed evidence, preparing F1.4 shared-normalizer convergence without semantic fabrication;
+- first Verify #1030 failed only on a stale F0.1 source assertion after the readiness expression gained `sourceRequirements`; runtime typecheck and PostgreSQL were already green;
+- final Verify #1031 PASS · TypeScript PASS · 1025/1025 unit/regression · PostgreSQL 63/63 · Browser #407 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; GPS remains PIC-only.
 
 F1.5 closeout:
 - explicit GPS Operation (SP/MP) + Engine (SE/ME) controls are required wherever the resolved category exposes those semantics;

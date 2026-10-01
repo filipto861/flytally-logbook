@@ -72,3 +72,25 @@ export function resolveGpsImportOperationEngine(
     explicit:true,
   };
 }
+
+
+export type GpsImportSourceRequirements={
+  landingMode:"DAY_NIGHT"|"TOTAL";
+  movementMode:"FCL060_PF"|"EXPLICIT_TAKEOFFS"|"SAILPLANE_LAUNCH"|"NONE";
+  reviewNightIfr:boolean;
+};
+
+export function gpsImportSourceRequirements(profile:CanonicalAircraftProfileRegulatoryFields):GpsImportSourceRequirements{
+  const capabilities=aircraftCategoryCapabilities({
+    regulatoryCategory:profile.regulatoryCategory,
+    aircraftClass:profile.aircraftClass,
+    evidence:profile.evidence,
+  });
+  return{
+    landingMode:capabilities.timeEntryMode==="SAILPLANE_LAUNCH"?"TOTAL":"DAY_NIGHT",
+    movementMode:capabilities.movementEvidenceMode==="FCL060_PF"?"FCL060_PF":
+      capabilities.movementEvidenceMode==="SFCL_TMG"||capabilities.movementEvidenceMode==="BFCL_TAKEOFF_LANDING"?"EXPLICIT_TAKEOFFS":
+      capabilities.movementEvidenceMode==="SFCL_LAUNCH"?"SAILPLANE_LAUNCH":"NONE",
+    reviewNightIfr:capabilities.timeEntryMode==="STANDARD",
+  };
+}
