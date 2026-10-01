@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0 REVIEW RECONCILED · F2.1 DONE / PRODUCTION VERIFIED · F2.2 NEXT  
+**Status:** F2.0/F2.1 DONE · F2.2 MANUAL INLINE ROLE/CREW UX ACTIVE  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -342,7 +342,7 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY for the exact merge SHA; `fly-tally.com` is aliased with no alias error and returned HTTP 200.
 - DB/schema migration: N/A.
 
-### F2.2 — Manual inline Role/Crew UX
+### F2.2 — Manual inline Role/Crew UX — ACTIVE
 - required DUAL / Safety Pilot / SPIC / PICUS identity appears directly with Role;
 - required/visibility cues consume the shared spec where applicable;
 - generic optional fields are not removed until their evidence dependencies are resolved;
