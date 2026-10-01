@@ -80,23 +80,27 @@ test("B1A aircraft sharing carries explicit no-billing state without repair",()=
   assert.match(parser,/billingError/);
 });
 
-test("B1A flight persistence snapshots a rate only when aircraft cost is tracked",()=>{
+test("B1A flight persistence snapshots a rate only when normalized billing is tracked",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   assert.match(actions,/price=f[.]billingBasis\?await resolvedPrice\(userId,f[.]registration,f[.]date\):null/);
   assert.match(actions,/const price=!f[.]billingBasis\?null:shouldResolveStoredPrice/);
-  assert.match(actions,/billingResult=serializeOptionalBilling\(form[.]get\("billingBasis"\),form[.]get\("billingShare"\)\)/);
-  assert.match(actions,/if\(billing\)\{price=priceCache[.]get\(values[.]date\)\?\?null/);
+  assert.match(actions,/if\(flight\.billingBasis\)\{price=priceCache[.]get\(flight\.date\)\?\?null/);
+  assert.match(actions,/billingBasis:form\.get\("billingBasis"\)/);
+  assert.match(actions,/billingShare:form\.get\("billingShare"\)/);
 });
 
 
-test("B1A GPS import uses the same optional billing semantics",()=>{
-  const form=read("components/kml-import-form.tsx"),actions=read("app/(protected)/flights/actions.ts");
+test("B1A GPS import uses the shared normalizer optional billing semantics",()=>{
+  const form=read("components/kml-import-form.tsx"),actions=read("app/(protected)/flights/actions.ts"),flightInput=read("lib/flight-input.ts");
   assert.match(form,/parseOptionalBilling\(selectedAircraft\?\.billing_basis\)/);
   assert.match(form,/<option value="">Not tracked<\/option>/);
   assert.match(form,/billing!=="INVALID"/);
   assert.match(form,/Stored aircraft billing is invalid/);
   assert.doesNotMatch(form,/defaultValue=\{selectedBilling[.]basis\}/);
-  assert.match(actions,/serializeOptionalBilling\(form[.]get\("billingBasis"\),form[.]get\("billingShare"\)\)/);
+  assert.match(actions,/billingBasis:form\.get\("billingBasis"\)/);
+  assert.match(actions,/billingShare:form\.get\("billingShare"\)/);
+  assert.match(actions,/normalizeFlightDraft\(candidate\)/);
+  assert.match(flightInput,/serializeOptionalBilling\(candidate\.billingBasis,candidate\.billingShare\)/);
 });
 
 test("B1A legacy restore distinguishes a missing historical field from explicit untracked billing",()=>{
