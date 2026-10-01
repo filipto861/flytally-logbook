@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 DONE** · dependency-driven reorder: F1.5 Operation/Engine ACTIVE, then F1.4 |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 + F1.5 DONE** · F1.6 source-fidelity prerequisite NEXT, then F1.4 convergence |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,10 +419,17 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- dependency evidence from the reconciled F1 design requires **F1.5 explicit GPS Operation/Engine before F1.4 runtime convergence**;
-- implement compact explicit Operation (SP/MP) + Engine (SE/ME) controls wherever the resolved category exposes those semantics;
-- fail closed on missing/invalid submitted Operation/Engine instead of persisting hidden SP / class-derived Engine assumptions;
-- after F1.5, return to F1.4 GPS shared-normalizer persistence convergence; F1.6 source-fidelity fields still remain required before F1 release.
+- begin **F1.6 GPS source-fidelity prerequisite** before F1.4 runtime convergence;
+- explicit Operation/Engine is now resolved, but the shared normalizer still correctly rejects unresolved day/night movement, Part-FCL PF/approach, sailplane launch, Night and IFR evidence;
+- add only explicit pilot-reviewed inputs needed to represent those facts without inference from generic GPS movement;
+- after F1.6, return to F1.4 and route reviewed GPS PIC parts through the shared normalizer while preserving atomic N-part persistence.
+
+F1.5 closeout:
+- explicit GPS Operation (SP/MP) + Engine (SE/ME) controls are required wherever the resolved category exposes those semantics;
+- server revalidates and persists explicit values; hidden SP / class-derived Engine assumptions are removed from applicable GPS imports;
+- registration changes clear both selections;
+- Verify #1024 PASS · TypeScript PASS · 1019/1019 unit/regression · PostgreSQL 63/63 · Browser #400 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; GPS remains PIC-only.
 
 F1.3 closeout:
 - Manual create/update are locked to the `parseFlightInput(FormData)` compatibility boundary and consume normalized `FlightInput` fields for flight persistence;
