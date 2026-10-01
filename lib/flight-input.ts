@@ -87,8 +87,8 @@ export function normalizeFlightDraft(candidate:FlightDraftCandidate):{data?:Flig
 
   const sailplaneLaunch=capabilities.movementEvidenceMode==="SFCL_LAUNCH",hasLaunches=candidate.hasLaunches;
   const launchValue=candidateValue(candidate.launches,"Sailplane launch count"),methodValue=candidateValue(candidate.launchMethod,"Sailplane launch method");
-  if(launchValue.error)return{error:launchValue.error};if(methodValue.error)return{error:methodValue.error};
-  const launches=sailplaneLaunch?(hasLaunches?counter(launchValue.value):0):0,launchRaw=text(methodValue.value,20).toUpperCase(),launchMethod=LAUNCH_METHODS.includes(launchRaw as typeof LAUNCH_METHODS[number])?launchRaw:"";
+  if(sailplaneLaunch&&launchValue.error)return{error:launchValue.error};if(sailplaneLaunch&&methodValue.error)return{error:methodValue.error};
+  const launches=sailplaneLaunch?(hasLaunches?counter(launchValue.value):0):0,launchRaw=text(methodValue.error?"":methodValue.value,20).toUpperCase(),launchMethod=LAUNCH_METHODS.includes(launchRaw as typeof LAUNCH_METHODS[number])?launchRaw:"";
   if(sailplaneLaunch&&hasLaunches&&launches<1)return{error:"Enter at least one sailplane launch for this flight."};
   if(launches>0&&!launchMethod)return{error:"Select the launch method used for this sailplane flight."};
   const starts=sailplaneLaunch?launches:hasLandings?landingsDay+landingsNight:legacyStarts;
