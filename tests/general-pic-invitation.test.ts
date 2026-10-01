@@ -34,7 +34,7 @@ test("PIC commander provenance has two explicit immutable meanings",()=>{
 test("schema v16 persists explicit PIC provenance and one active PIC participation per revision",()=>{
   const migration=read("lib/db-optimization.ts");
   const plan=read("lib/migration-plan.ts");
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=16/);
+  assert.match(plan,/version:16,name:"general PIC invitation provenance"/);
   assert.match(migration,/if\(version===16\)return\[/);
   assert.match(migration,/ADD COLUMN IF NOT EXISTS pic_commander_basis TEXT/);
   assert.match(migration,/CERTIFIED_SOURCE_COMMANDER/);
