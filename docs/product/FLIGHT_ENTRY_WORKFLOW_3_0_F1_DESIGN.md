@@ -348,10 +348,19 @@ This must be a new base migration (v17), not a rewrite of v6.
 - Verification: Verify #1013 PASS; TypeScript PASS; 1014/1014 unit/regression; PostgreSQL 63/63; Browser N/A; DB migration N/A.
 
 ### F1.4 — GPS semantic adapter / persistence convergence
+
+#### F1.4A — normalization adapter / preparation
 - resolve each reviewed PIC part into candidate state;
-- pass every semantic flight value through shared normalizer;
+- expose explicit input slots for every source-sensitive semantic value needed by the shared normalizer;
+- prove unresolved values fail closed;
+- do **not** activate the new path in `importKmlFlight()` while required source authority is still unavailable.
+
+#### F1.4B — production persistence activation
+- after F1.5/F1.6 satisfy the required source-authority inputs, pass every semantic flight value through the shared normalizer;
 - retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
 - remove the hand-written GPS semantic mapper where the shared normalized value exists.
+
+This split is a dependency correction, not a change in target architecture. Activating F1.4 before F1.5/F1.6 would either break ordinary EASA GPS imports or reintroduce guessed regulatory facts, both of which violate the independent-review freeze.
 
 ### F1.5 — explicit GPS Operation / Engine
 - add compact common SP/MP + SE/ME controls for applicable EASA GPS imports;
