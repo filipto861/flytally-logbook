@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0 + F1.1 + F1.2 DONE** · pure normalizer live for Manual wrapper · F1.3 NEXT |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 DONE** · Manual persistence boundary proven · F1.4 NEXT |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,10 +419,17 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F1.3 Manual wrapper regression / persistence proof**;
-- prove create + update remain regression-equivalent through `parseFlightInput(FormData) -> manualFlightCandidate() -> normalizeFlightDraft()`;
-- preserve expense parsing, connected Actual-PIC linkage, duplicate fingerprinting and current persistence semantics;
-- GPS remains on its specialized direct semantic path until F1.4; GPS stays PIC-only and explicit EASA Operation/Engine remains required before F1 release.
+- begin **F1.4 GPS semantic adapter / persistence convergence**;
+- route reviewed GPS PIC parts through the shared candidate/normalizer contract without weakening F0.1 fail-closed aircraft context;
+- preserve sorted advisory locks, duplicate protection and one atomic N-part flight+track transaction;
+- do not activate a path that guesses Operation/Engine, sailplane launch, Part-FCL movement/approach, day/night, Night or IFR evidence; F1.5/F1.6 remain required before F1 release.
+
+F1.3 closeout:
+- Manual create/update are locked to the `parseFlightInput(FormData)` compatibility boundary and consume normalized `FlightInput` fields for flight persistence;
+- expense rows, connected Actual-PIC account links, airport canonicalization, rate resolution and duplicate/lock mechanics remain explicit persistence/child-domain concerns outside the pure normalizer;
+- GPS remains on its specialized path for F1.4;
+- Verify #1013 PASS · TypeScript PASS · 1014/1014 unit/regression · PostgreSQL 63/63;
+- Browser N/A because F1.3 is source/contract-test only with no runtime/UI change; DB schema/migration N/A.
 
 F1.2 closeout:
 - `normalizeFlightDraft(candidate)` now owns the source-agnostic semantic body previously embedded directly in `parseFlightInput()`;
