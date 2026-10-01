@@ -110,6 +110,7 @@ export function resetGpsNormalizedImportFixture(){
 
 export function resetF24VerificationFixture(){
   runBrowserSql(`
+    ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS approval_id BIGINT;
     UPDATE users SET display_name='Browser Instructor' WHERE id=9002;
     UPDATE pilot_connections
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='instructor',
