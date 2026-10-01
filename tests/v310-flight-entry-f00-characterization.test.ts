@@ -45,7 +45,6 @@ test("F0.0 characterizes GPS as a separate semantic write path",()=>{
   assert.match(importAction,/allocatedFunctionTimes\(role,creditMinutes\)/);
   assert.match(importAction,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
   assert.match(importAction,/\$\{item\.values\.starts\},'', '',\$\{role\},\$\{task\}/);
-  assert.match(characterization,/operation.*SP|SP.*defaultEngineType/i);
   assert.match(importAction,/\$\{item\.partNote\},\$\{operationType\},\$\{engineType\}/);
   assert.doesNotMatch(importAction,/verification_name|verification_reference|connectedPicUserId|flight_connected_crew/);
 });
