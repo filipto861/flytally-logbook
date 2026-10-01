@@ -329,10 +329,14 @@ This must be a new base migration (v17), not a rewrite of v6.
 - adapters are intentionally not imported by current Manual/GPS mutation runtime yet;
 - Verification: Verify #998 PASS; 998/998 unit/regression; PostgreSQL 63/63; Browser #379 26 passed / 2 skipped; production build PASS; DB migration N/A.
 
-### F1.2 — pure normalizer extraction
-- extract source-agnostic `normalizeFlightDraft()` from current `parseFlightInput()`;
-- no DB/FormData in the pure normalizer;
-- equivalence tests.
+### F1.2 — pure normalizer extraction — DONE / VERIFIED
+- extracted source-agnostic `normalizeFlightDraft(candidate)` from the semantic body of `parseFlightInput()`;
+- `parseFlightInput(FormData)` now delegates through `manualFlightCandidate()`;
+- the normalizer contains no DB, auth or FormData dependency;
+- explicit unresolved candidate values return domain errors instead of guessed defaults;
+- Manual date/time, evidence/class/category, billing, sailplane, balloon, movement, SPIC/PICUS, professional, purpose/task and function-time semantics remain regression-equivalent;
+- Verification: Verify #1007 PASS; TypeScript PASS; 1006/1006 unit/regression; PostgreSQL 63/63; Browser #388 26 passed / 2 skipped; production build PASS; DB migration N/A.
+- GPS mutation persistence is intentionally still not routed through the normalizer.
 
 ### F1.3 — Manual wrapper regression
 - `parseFlightInput(FormData)` becomes compatibility wrapper;
