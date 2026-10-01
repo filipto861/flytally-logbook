@@ -9,6 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.3 Manual persistence proof
+- Added source-contract coverage proving Manual create and update remain behind the `parseFlightInput(FormData)` compatibility boundary after F1.2.
+- Verified flight semantic columns are persisted from normalized `FlightInput` values rather than re-read independently from FormData.
+- Preserved airport canonicalization, rate resolution, duplicate fingerprint/advisory locking and edit lock guards as persistence concerns.
+- Preserved expenses as separately validated child rows and connected Actual-PIC account linkage as collaboration metadata outside the pure normalizer.
+- Confirmed GPS remains on its specialized path for F1.4.
+- Verification: Verify FlyTally web #1013 PASS; TypeScript PASS; full unit/regression **1014/1014**; PostgreSQL acceptance **63/63**; Browser N/A because no runtime/UI behavior changed; DB schema/migration N/A.
+- Next: **F1.4 GPS semantic adapter / persistence convergence**.
+
 ### Flight Entry Workflow 3.0 — F1.2 pure normalizer
 - Extracted `normalizeFlightDraft(candidate)` as the source-agnostic pure semantic normalizer for flight draft data.
 - Converted `parseFlightInput(FormData)` into the compatibility wrapper `FormData → manualFlightCandidate() → normalizeFlightDraft()`.
