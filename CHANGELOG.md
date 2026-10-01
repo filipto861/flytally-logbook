@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2.2 Manual inline Role/Crew UX
+- Moved role-defining DUAL, Safety Pilot and SPIC/PICUS identity/evidence directly beneath Role in Flight essentials instead of hiding it in the Role details disclosure.
+- Manual required cues and completion blockers now consume the shared `roleCrewSpec(role,evidence)` policies for EASA DUAL and SPIC/PICUS; Safety Pilot manual Actual PIC follows the external-resolver policy.
+- Kept ULL role evidence non-mandatory where the shared contract does not mark it Save-required.
+- Renamed the remaining disclosure to **Crew details** and limited it to optional Commander/Instructor context; no destructive field sanitization is introduced.
+- Preserved Safety Pilot manual-vs-Connection behavior and kept connected identity separate from historical commander text.
+- Removed UI copy that implied typed DUAL/SPIC/PICUS names automatically establish connected-account review identity.
+- Added focused F2.2 source/regression coverage for inline placement, shared required policies, completion blockers and optional crew separation.
+- **DB/schema:** N/A.
+
 ### Flight Entry Workflow 3.0 — F2.1 RoleCrew validation
 - Added a pure `roleCrewSpec(role,evidence)` contract describing role-specific Save requirements and PIC-identity source semantics without DB/account dependencies.
 - Routed EASA DUAL and SPIC/PICUS Save validation through the shared RoleCrew contract.

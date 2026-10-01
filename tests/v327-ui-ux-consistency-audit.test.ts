@@ -331,7 +331,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
     "components/auth-invite-creator.tsx":["Tester email"],
     "components/balloon-recency-panel.tsx":["Balloon class","Date","Examiner","Reference"],
     "components/flight-expenses-editor.tsx":["Amount","Currency"],
-    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Supervising PIC / FI","Countersignature reference","Logbook","Class / category"],
+    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Logbook","Class / category"],
     "components/helicopter-recency-panel.tsx":["Helicopter type","Date","Examiner","Reference"],
     "components/in-person-signature-pad.tsx":["Licence number","Qualification"],
     "components/kml-import-form.tsx":["KML, GPX or CSV","Registration","Balloon operation","Date"],
@@ -351,9 +351,11 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
   const expenses=read("components/flight-expenses-editor.tsx");
   assert.match(expenses,/<span>Description \{row\.category==="OTHER"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   const flight=read("components/flight-form.tsx");
-  assert.match(flight,/<span>Instructor \/ PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(flight,/<span>Instructor \/ PIC \{dualInstructorRequired\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   assert.match(flight,/<span>Actual PIC <span className="field-hint" aria-hidden="true">Required<\/span><\/span><select name="connectedPicUserId"/);
-  assert.match(flight,/<span>Actual PIC \{evidence==="EASA"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span><input name="commander"/);
+  assert.match(flight,/<span>Actual PIC \{roleCrew\?\.commander==="external_resolver"\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span><input name="commander"/);
+  assert.match(flight,/<span>Supervising PIC \/ FI \{countersignatureRequired\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
+  assert.match(flight,/<span>Countersignature reference \{countersignatureRequired\?<span className="field-hint" aria-hidden="true">Required<\/span>:null\}<\/span>/);
   assert.match(flight,/<span>Commander \/ PIC<\/span><input name="commander"/);
   assert.doesNotMatch(flight,/Billing time <span className="field-hint" aria-hidden="true">Required<\/span>/);
   const signature=read("components/in-person-signature-pad.tsx");
