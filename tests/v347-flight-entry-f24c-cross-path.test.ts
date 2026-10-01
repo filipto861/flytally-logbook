@@ -129,8 +129,10 @@ test("F2.4C print/read-only/export preserve RoleCrew display semantics and raw e
   assert.match(print,/pilotInCommandName/);
   assert.match(readonly,/pilotInCommandName/);
   for(const field of ["commander","instructor","verification_name","verification_reference"])assert.match(exportRoute,new RegExp(`"${field}"`));
-  assert.match(exportRoute,/format==="csv"/);
-  assert.match(exportRoute,/format==="xls"/);
+  assert.match(exportRoute,/\["csv","xls","json"\]\.includes\(format\)/);
+  assert.match(exportRoute,/if\(format==="xls"\)/);
+  assert.match(exportRoute,/"content-type":"text\/csv; charset=utf-8"/);
+  assert.match(exportRoute,/"content-type":"application\/vnd\.ms-excel; charset=utf-8"/);
 });
 
 test("F2.4C audit and backup keep raw RoleCrew evidence observable and recoverable",()=>{
@@ -164,8 +166,8 @@ test("F2.4C Safety Pilot F2.3 remains server-authoritative and account identity 
   const connected=read("lib/flight-connected-crew.ts");
 
   assert.match(actions,/resolveSafetyPilotPicForSave/);
-  assert.match(actions,/Selected Actual PIC is no longer an accepted Connection/);
   assert.match(actions,/flight_connected_crew/);
+  assert.match(connected,/Selected Actual PIC is no longer an accepted Connection/);
   assert.match(connected,/pilot_connections/);
   assert.match(connected,/status='accepted'/);
   assert.match(connected,/display_name/);
