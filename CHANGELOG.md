@@ -9,6 +9,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2.4 producer-consumer audit / review gate
+- Audited Role/Crew producers and consumers across Manual normalization, Safety Pilot linkage, Certification, explicit instructor verification, shared-flight materialization, print/read-only output, CSV/XLS export, audit, backup/restore, recency and GPS boundaries.
+- Confirmed a remaining Certification-time DUAL/SPIC/PICUS display-name → account inference path; the repository already has an explicit account-ID post-certification request flow that can replace it.
+- Confirmed `instructor` is overloaded with aircraft differences/familiarisation training evidence and `verification_*` is overloaded with generic endorsement evidence; broad Role-only clearing remains unsafe.
+- Identified one unresolved semantic mismatch: current PIC-name output lets stored commander override account self identity on self-PIC roles even though the frozen RoleCrew contract says self is authoritative.
+- Added the F2.4 audit and an independent-review handoff; no runtime, schema, certification-version, recency or historical-data change yet.
+- **Verification:** documentation/repository analysis only; runtime tests not applicable to this analysis commit.
+
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
 - Manual Safety Pilot mode preserves the normalized commander and fails closed for a blank EASA Actual PIC; connected mode validates a positive non-self account ID, requires a currently accepted Connection and ignores client commander text.
