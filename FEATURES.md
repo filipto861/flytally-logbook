@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F1 COMPLETE / F2 NEXT
+### Flight Entry Workflow 3.0 — ACTIVE · F1 COMPLETE / F2 DESIGN REVIEW
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -188,7 +188,7 @@ Current priority:
 - F0/F0.1 are DONE: GPS aircraft context fails closed and interim GPS role support remains PIC-only until Role/Crew parity;
 - F1 is DONE/production-verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence, while GPS track/provenance and atomic N-part persistence remain specialized;
 - explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
-- **F2 Role/Crew parity is NEXT**: DUAL, Safety Pilot, SPIC/PICUS and other supported crew roles must share one server-authoritative role/identity contract before GPS role support can broaden.
+- **F2 Role/Crew parity is in design/independent review**: DUAL, Safety Pilot, SPIC/PICUS and other supported crew roles must share one server-authoritative role/identity contract before GPS role support can broaden; runtime F2 changes have not started.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
