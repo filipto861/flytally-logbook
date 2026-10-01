@@ -412,15 +412,15 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | 🚧 | **F2.0 REVIEW RECONCILED** · F2.1 validation-only is next; sanitization deferred to evidence-aware audit |
+| F2 — Role/Crew parity | 🚧 | **F2.1 ACTIVE** · pure RoleCrew requirement contract + server validation; sanitization deferred to evidence-aware audit |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- merge the reconciled F2.0 design contract;
-- begin **F2.1 — pure RoleCrew requirement contract + server-authoritative validation only**;
+- F2.0 design/review contract is merged as PR #203;
+- complete **F2.1 — pure RoleCrew requirement contract + server-authoritative validation only**;
 - make EASA DUAL Instructor/PIC validation share the same domain contract as existing SPIC/PICUS validation;
 - keep Safety Pilot account resolution action-authoritative until F2.3;
 - keep GPS PIC-only throughout F2;
