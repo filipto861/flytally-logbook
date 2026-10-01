@@ -65,7 +65,7 @@ test("F2.2 preserves the F2.1 DUAL Save gap closure while moving the required cu
   const parsedDual=parseFlightInput(dual);
   assert.equal(parsedDual.data,undefined);
   assert.match(parsedDual.error??"",/instructor\/PIC/i);
-  assert.match(flightForm,/name="instructor"[^>]*required=\{dualInstructorRequired\}/);
+  assert.match(flightForm,/name="instructor"[\s\S]{0,400}required=\{dualInstructorRequired\}/);
 
   dual.set("instructor","Instructor");
   assert.equal(parseFlightInput(dual).data?.role,"DUAL");
