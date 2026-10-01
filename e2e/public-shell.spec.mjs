@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -298,6 +298,29 @@ test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches
   await role.selectOption("SPIC");
   await expect(form.locator('.role-crew-inline-grid input[name="verificationName"]')).toHaveValue("Supervising PIC");
   await expect(form.locator('.role-crew-inline-grid input[name="verificationReference"]')).toHaveValue("Signed ref F22");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("F2.4A certification keeps typed verifier evidence unbound until explicit account request",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F2.4A verification coverage requires the isolated CI database.");
+  resetF24VerificationFixture();
+  await loginBrowserPilot(page,"/flights/9904");
+
+  const panel=page.locator("section.instructor-approval-panel").filter({hasText:"CREW VERIFICATION"});
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText(/stored as flight evidence only/)).toBeVisible();
+  await expect(panel.getByText(/Certification does not bind it to a FlyTally account/)).toBeVisible();
+
+  await page.getByRole("button",{name:"Certify flight"}).click();
+  await expect(page.getByText("Certified revision 1")).toBeVisible();
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(0);
+
+  const certifiedPanel=page.locator("section.instructor-approval-panel").filter({hasText:"CREW VERIFICATION"});
+  const request=certifiedPanel.getByRole("button",{name:"Request approval from Browser Instructor"});
+  await expect(request).toBeVisible();
+  await request.click();
+
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_user_id=9002 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(1);
   await expectNoHorizontalOverflow(page);
 });
 
