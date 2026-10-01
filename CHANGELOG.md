@@ -18,6 +18,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - No destructive commander/instructor/verification sanitization is introduced in F2.1; overloaded training/endorsement evidence remains intact for later F2.4 reconciliation.
 - GPS remains PIC-only; certification payload versions v1–v8 are unchanged.
 - Added targeted RoleCrew unit/integration coverage for the frozen matrix and non-sanitization boundary.
+- **Verification:** Verify FlyTally web #1064 PASS (TypeScript, full unit/regression, PostgreSQL acceptance); Browser smoke #440 PASS including production build and real Chromium smoke.
 - **DB/schema:** N/A.
 
 ### Flight Entry Workflow 3.0 — F2 Role/Crew review reconciliation
