@@ -419,10 +419,10 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F1.4 GPS semantic adapter / persistence convergence**;
-- route reviewed GPS PIC parts through the shared candidate/normalizer contract without weakening F0.1 fail-closed aircraft context;
-- preserve sorted advisory locks, duplicate protection and one atomic N-part flight+track transaction;
-- do not activate a path that guesses Operation/Engine, sailplane launch, Part-FCL movement/approach, day/night, Night or IFR evidence; F1.5/F1.6 remain required before F1 release.
+- implement **F1.4A GPS normalization adapter/preparation** without activating it in the production import mutation;
+- make every GPS semantic prerequisite explicit so unresolved Operation/Engine, sailplane launch, Part-FCL movement/approach, day/night, Night or IFR evidence cannot be hidden by the shared normalizer;
+- preserve the existing live GPS atomic transaction until the activation gate is satisfied;
+- then complete F1.5 explicit Operation/Engine and F1.6 source-fidelity policy/inputs before **F1.4B activation** routes production GPS persistence through the shared normalizer.
 
 F1.3 closeout:
 - Manual create/update are locked to the `parseFlightInput(FormData)` compatibility boundary and consume normalized `FlightInput` fields for flight persistence;
