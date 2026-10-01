@@ -169,15 +169,18 @@ test("F1.6 GPS UI exposes explicit reviewed evidence and does not auto-classify 
   assert.doesNotMatch(gpsForm,/landingsDay:String\(landingCount/);
 });
 
-test("F1.6 server validates and persists explicit GPS evidence instead of fixed day/zero placeholders",()=>{
+test("F1.6 server validates explicit GPS evidence before F1.4 shared persistence",()=>{
   assert.match(actions,/gpsImportSourceRequirements\(profileResult\.profile\)/);
   assert.match(actions,/needs explicit landing evidence matching the reviewed total/);
   assert.match(actions,/needs an explicit pilot-flying movement decision/);
   assert.match(actions,/requires explicit sailplane launch method and count/);
   assert.match(actions,/Night \/ IFR time cannot exceed BLOCK time/);
-  assert.match(actions,/\$\{item\.values\.launchMethod\},\$\{item\.values\.launches\}/);
-  assert.match(actions,/\$\{item\.values\.landingsDay\},\$\{item\.values\.landingsNight\},\$\{item\.values\.movementEvidenceRecorded\}/);
-  assert.match(actions,/\$\{item\.values\.takeoffsDay\},\$\{item\.values\.takeoffsNight\},\$\{item\.values\.approachesDay\},\$\{item\.values\.approachesNight\}/);
-  assert.match(actions,/\$\{item\.values\.nightMinutes\},\$\{item\.values\.ifrMinutes\}/);
-  assert.doesNotMatch(actions,/\$\{item\.values\.starts\},0,FALSE,\$\{regulatoryCategory==="BALLOON"\?item\.values\.takeoffs:0\}/);
+  assert.match(actions,/landingsDay:values\.landingsDay/);
+  assert.match(actions,/movementEvidenceRecorded:values\.movementEvidenceRecorded/);
+  assert.match(actions,/launchMethod:values\.launchMethod/);
+  assert.match(actions,/nightTime:values\.nightMinutes/);
+  assert.match(actions,/normalizeFlightDraft\(candidate\)/);
+  assert.match(actions,/\$\{f\.landingsDay\},\$\{f\.landingsNight\},\$\{f\.movementEvidenceRecorded\}/);
+  assert.match(actions,/\$\{f\.takeoffsDay\},\$\{f\.takeoffsNight\},\$\{f\.approachesDay\},\$\{f\.approachesNight\}/);
+  assert.match(actions,/\$\{f\.nightMinutes\},\$\{f\.ifrMinutes\}/);
 });
