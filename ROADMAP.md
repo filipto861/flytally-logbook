@@ -412,7 +412,7 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | 🚧 | **F2.4A IMPLEMENTED / VERIFIED** · Certification no longer infers verifier accounts from typed names; F2.4B self-PIC/evidence-aware canonicalization remains review-gated |
+| F2 — Role/Crew parity | 🚧 | **F2.4A DONE / PRODUCTION VERIFIED** · no verifier account inference from typed names; F2.4B self-PIC/evidence-aware canonicalization remains review-gated |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
@@ -424,8 +424,8 @@ Immediate next step:
 - F2.2 Manual inline Role/Crew UX is merged as PR #207 and production-verified on `main@205483eda15f82770c1000c0a91fa4df92177fcd`;
 - F2.3 Safety Pilot resolver convergence is merged as PR #209 and production-verified on `main@d90215f88514e953e062980798954c497ca76be7`;
 - **F2.4A audit is complete and at independent review gate**: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md` maps Manual/GPS/shared/certification/print-export/audit-backup/recency consumers; `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md` contains the review package;
-- **F2.4A implemented and verified on PR #212 head `ec943758dfdf45c94f2a84580295be40d99b5c1d`**: Certification no longer performs DUAL/SPIC/PICUS display-name matching; only the existing explicit account-ID verification request path remains; flight-detail copy now states that typed crew names are historical evidence only. Verify FlyTally web #1085 PASS — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #461 PASS — production build PASS, Chromium 34 passed / 2 skipped; DB/schema N/A;
-- next: **F2.4B review gate** before changing self-PIC commander interpretation or introducing any editable-Save crew-field canonicalization;
+- **F2.4A DONE / PRODUCTION VERIFIED**: final PR #212 head `9282b3c0795091e0ae62d4ee26a9d2230716ebb1` passed Verify FlyTally web #1089 — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #465 — production build PASS, Chromium 34 passed / 2 skipped. PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`; Vercel production `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY for that exact merge SHA, aliases `fly-tally.com`, and reports no alias error; DB/schema N/A;
+- next: **F2.4B independent-review gate** before changing self-PIC commander interpretation or introducing any editable-Save crew-field canonicalization;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
 - do not change certification v1–v8, rewrite certified rows or infer connected identity from names.
@@ -437,7 +437,7 @@ F2 discovery/review findings:
 - CO-PILOT/CRCP commander remains Save-optional and Certification-required;
 - self-PIC identity is account-derived; F2 does not synthesize a commander snapshot in the pure normalizer;
 - broad Role-only sanitization is unsafe because `instructor` and `verification_*` also carry training/endorsement evidence;
-- certification currently contains DUAL/SPIC/PICUS name-based auto-request account matching, which conflicts with the frozen no-name-inference rule and is scheduled for F2.4 reconciliation;
+- F2.4A removed the former Certification-time DUAL/SPIC/PICUS name-based auto-request account matching; only explicit account-ID verification requests remain;
 - GPS remains PIC-only throughout F2; F4 owns Role/Crew inheritance/overrides;
 - independent review package and outcome: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_REVIEW_HANDOFF.md`.
 - F2.1 closeout: Verify #1065 PASS; PostgreSQL acceptance PASS; Browser #441 PASS; PR #204 merged; Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY on the exact merge SHA; `fly-tally.com` HTTP 200; DB migration N/A.

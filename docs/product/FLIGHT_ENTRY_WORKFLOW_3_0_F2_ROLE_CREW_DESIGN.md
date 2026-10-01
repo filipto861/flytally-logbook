@@ -375,7 +375,7 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
 - DB/schema migration: N/A.
 
-### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization — ANALYSIS COMPLETE / REVIEW GATE
+### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization — F2.4A DONE / F2.4B REVIEW GATE
 
 Detailed evidence: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md`.  
 Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
@@ -387,7 +387,9 @@ Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
 - retained the existing explicit account-ID `instructor_id` request path as the sole FlyTally account-binding action;
 - Crew Verification copy now states that typed instructor/supervising-PIC names are stored flight evidence only and that account-bound verification requires explicit connected-account selection after Certification;
 - authenticated browser fixture proves a matching typed name on an already-certified DUAL record creates no pending instructor participation and exposes only the explicit request control;
-- final verification on PR #212 head `ec943758dfdf45c94f2a84580295be40d99b5c1d`: Verify FlyTally web #1085 PASS — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #461 PASS — production build + Chromium 34 passed / 2 skipped;
+- final PR head `9282b3c0795091e0ae62d4ee26a9d2230716ebb1` verification: Verify FlyTally web #1089 PASS — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #465 PASS — production build + Chromium 34 passed / 2 skipped;
+- merge: PR #212 → `main@06b50d911e0cedcafbd5f10bea41868098f8d8b0`;
+- production: Vercel `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` READY for the exact merge SHA; `fly-tally.com` is aliased with no alias error;
 - Certification v1–v8, exact revision/hash verification, in-person signing, certified-row immutability, Safety Pilot F2.3 semantics and GPS PIC-only behavior remain unchanged;
 - DB/schema migration: N/A.
 
