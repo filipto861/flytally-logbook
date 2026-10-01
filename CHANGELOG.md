@@ -19,7 +19,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - **F2.4A runtime:** removed Certification-time DUAL/SPIC/PICUS display-name → account matching and the implicit verification request side effect; explicit `instructor_id` account selection remains the only account-bound request path.
 - Updated Crew Verification copy so typed names are described as stored flight evidence, not account bindings or automatic request triggers.
 - Added source-contract and authenticated browser coverage proving a certified matching typed name remains unbound and only an explicit connected-account request control is offered.
-- **Verification:** Verify FlyTally web #1085 PASS — TypeScript PASS, full unit/regression **1052/1052**, PostgreSQL acceptance **66/66**; Browser smoke #461 PASS — production build PASS, Chromium **34 passed / 2 skipped**.
+- **Final verification:** Verify FlyTally web #1089 PASS — TypeScript PASS, full unit/regression **1052/1052**, PostgreSQL acceptance **66/66**; Browser smoke #465 PASS — production build PASS, Chromium **34 passed / 2 skipped**.
+- PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`.
+- Production deployment `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY for that exact merge SHA, aliases `fly-tally.com`, and reports no alias error.
 - **DB/schema:** N/A. Certification v1–v8, certified rows, Safety Pilot F2.3, shared materialization and GPS PIC-only boundaries are unchanged.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
