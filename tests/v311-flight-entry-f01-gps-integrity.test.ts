@@ -96,7 +96,7 @@ test("F0.1 server resolves active aircraft profile and does not trust submitted 
   assert.match(importAction,/FROM aircraft WHERE user_id=\$\{userId\} AND UPPER\(TRIM\(registration\)\)=\$\{registration\} AND active=1 LIMIT 1/);
   assert.match(importAction,/resolveGpsImportAircraftContext/);
   assert.match(importAction,/validateGpsImportSubmittedAircraftContext/);
-  assert.match(importAction,/const evidence=profileResult\.profile\.evidence/);
+  assert.match(importAction,/evidence=profileResult\.profile\.evidence/);
   assert.match(importAction,/aircraftClass=profileResult\.profile\.aircraftClass/);
   assert.match(importAction,/regulatoryCategory=profileResult\.profile\.regulatoryCategory/);
   assert.match(importAction,/aircraftType=String\(selectedAircraft\.aircraft_type\|\|""\)/);
