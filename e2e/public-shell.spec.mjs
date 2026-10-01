@@ -315,6 +315,8 @@ test("F2.4A certified verifier evidence stays unbound until explicit account req
   const request=panel.getByRole("button",{name:"Request approval from Browser Instructor"});
   await expect(request).toBeVisible();
   await request.click();
+  await expect(panel.getByRole("heading",{name:"Waiting for instructor"})).toBeVisible();
+  await expect(panel.getByText("Verification request sent to Browser Instructor. They can review, sign and add their own logbook entry.")).toBeVisible();
 
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_user_id=9002 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(1);
   await expectNoHorizontalOverflow(page);
