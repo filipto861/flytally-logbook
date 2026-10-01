@@ -211,7 +211,8 @@ CREATE TABLE flight_tracks(
   min_alt_m NUMERIC,
   max_alt_m NUMERIC,
   coordinates_json TEXT NOT NULL DEFAULT '[]',
-  overview_coordinates_json TEXT NOT NULL DEFAULT '[]'
+  overview_coordinates_json TEXT NOT NULL DEFAULT '[]',
+  overview_version INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE flight_connected_crew(
   id BIGSERIAL PRIMARY KEY,
