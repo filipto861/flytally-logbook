@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F1 Shared Normalization Design Draft
 
-**Status:** INDEPENDENT REVIEW COMPLETE · APPROVE WITH CHANGES · RECONCILED DESIGN  
+**Status:** IMPLEMENTATION COMPLETE THROUGH F1.6 · F1.4 PR-HEAD VERIFIED · PRODUCTION CLOSEOUT PENDING  
 **Baseline:** `main@1fb1b4edb051b3ce8d052a50401916cb2cbc78b8`  
 **Dependency:** F0 field/consumer matrix DONE/verified.
 
