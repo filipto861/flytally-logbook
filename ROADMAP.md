@@ -412,17 +412,25 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | ➡️ | **NEXT** · source-agnostic role contract and inline role-defining fields |
+| F2 — Role/Crew parity | 🚧 | **DESIGN / INDEPENDENT REVIEW** · role/evidence matrix drafted before runtime changes |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F2 — Role/Crew parity** with a fresh current-main discovery pass;
-- make Role/Crew Save semantics server-authoritative and source-agnostic;
-- keep GPS PIC-only until each additional role has complete identity/supervision semantics;
-- do not change certification v1–v8 or infer crew identity from names.
+- independently review `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_ROLE_CREW_DESIGN.md`;
+- reconcile CO-PILOT/CRCP Save policy, self-PIC field sanitization, legacy draft handling and GPS promotion policy before runtime implementation;
+- then freeze F2.0 and begin F2.1 pure RoleCrew contract only;
+- do not change certification v1–v8 or infer connected identity from names.
+
+F2 discovery/design findings:
+- EASA DUAL Instructor/PIC is required in the browser and by Certification but is not yet a server Save rule in the shared normalizer;
+- Safety Pilot Actual PIC is enforced separately in create/update actions with accepted-Connection recheck and server display-name snapshot;
+- SPIC/PICUS supervision + countersignature are already server Save-required;
+- generic Commander/PIC + Instructor fields are currently exposed for all other Manual roles, and hidden verification values can survive Role changes;
+- GPS remains PIC-only until a role can use the same source-agnostic RoleCrew contract;
+- independent review package: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_REVIEW_HANDOFF.md`.
 
 F1 production closeout:
 - every reviewed GPS PIC part is converted to `FlightDraftCandidate` and normalized through the same `normalizeFlightDraft()` / `FlightInput` semantic boundary as Manual entry before persistence;
