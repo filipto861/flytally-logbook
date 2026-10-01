@@ -25,7 +25,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - **DB/schema:** N/A. Certification v1–v8, certified rows, Safety Pilot F2.3, shared materialization and GPS PIC-only boundaries are unchanged.
 - **F2.4B discovery:** confirmed that self-PIC `commander` can be intentional rather than stale: Manual UI exposes optional Commander/PIC for non-DUAL roles and shared PIC materialization writes participant/source commander snapshots onto recipient `PIC` rows. The earlier draft preference to make SELF always override stored commander is therefore no longer considered safe without independent review.
 - Added a focused F2.4B independent-review handoff. No runtime, schema, certification-output or persisted-data change in this discovery step.
-- Added F2.4B characterization coverage for self-PIC fallback/explicit commander precedence, Manual commander availability, shared PIC commander snapshot production and raw integrity/export visibility. PR #215 merged as `064be0862b9506e472545eb16491b21019a90a50`; Verify FlyTally web #1093 PASS — TypeScript PASS, **1057/1057** unit/regression, PostgreSQL **66/66**. No runtime behavior or schema change.
+- Added F2.4B characterization coverage for self-PIC fallback/explicit commander precedence, Manual commander availability, shared PIC commander snapshot production and raw integrity/export visibility. PR #215 merged as `064be0862b9506e472545eb16491b21019a90a50`; Verify FlyTally web #1090 PASS — TypeScript PASS, **1057/1057** unit/regression, PostgreSQL **66/66**. No runtime behavior or schema change.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
