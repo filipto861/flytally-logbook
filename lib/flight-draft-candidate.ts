@@ -171,6 +171,20 @@ export type GpsReviewedPartCandidateInput={
   note?:unknown;
 };
 
+export type GpsExplicitSemanticEvidence={
+  landingsDay?:CandidateSemantic;
+  landingsNight?:CandidateSemantic;
+  launches?:CandidateSemantic;
+  launchMethod?:CandidateSemantic;
+  movementEvidenceRecorded?:CandidateSemantic;
+  takeoffsDay?:CandidateSemantic;
+  takeoffsNight?:CandidateSemantic;
+  approachesDay?:CandidateSemantic;
+  approachesNight?:CandidateSemantic;
+  nightTime?:CandidateSemantic;
+  ifrTime?:CandidateSemantic;
+};
+
 export type GpsFlightCandidateInput={
   registration:unknown;
   aircraftType:unknown;
@@ -184,6 +198,7 @@ export type GpsFlightCandidateInput={
   reviewedPart:GpsReviewedPartCandidateInput;
   operationType?:unknown;
   engineType?:unknown;
+  semanticEvidence?:GpsExplicitSemanticEvidence;
 };
 
 export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCandidate{
@@ -201,7 +216,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     reason:input.profileError||"Selected aircraft profile is unresolved.",
     provenance:"UNRESOLVED",
   };
-  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="";
+  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="",semantic=input.semanticEvidence??{};
   return{
     source:"GPS_REVIEW",
     date:input.reviewedPart.date,
@@ -215,25 +230,25 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     landing:input.reviewedPart.landing,
     onBlock:input.reviewedPart.onBlock,
     starts:input.reviewedPart.starts,
-    landingsDay:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    landingsNight:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    hasStructuredLandings:false,
-    launches:unresolved("GPS review does not currently capture sailplane launch count."),
-    launchMethod:unresolved("GPS review does not currently capture sailplane launch method."),
-    hasLaunches:false,
+    landingsDay:semantic.landingsDay??unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
+    landingsNight:semantic.landingsNight??unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
+    hasStructuredLandings:true,
+    launches:semantic.launches??unresolved("GPS review does not currently capture sailplane launch count."),
+    launchMethod:semantic.launchMethod??unresolved("GPS review does not currently capture sailplane launch method."),
+    hasLaunches:true,
     balloonOperation:input.balloonOperation??"",
-    movementEvidenceRecorded:unresolved("Generic GPS movement is not Part-FCL PF movement evidence."),
-    takeoffsDay:unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
-    takeoffsNight:unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
-    approachesDay:unresolved("Generic GPS movement is not Part-FCL approach evidence."),
-    approachesNight:unresolved("Generic GPS movement is not Part-FCL approach evidence."),
+    movementEvidenceRecorded:semantic.movementEvidenceRecorded??unresolved("Generic GPS movement is not Part-FCL PF movement evidence."),
+    takeoffsDay:semantic.takeoffsDay??unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
+    takeoffsNight:semantic.takeoffsNight??unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
+    approachesDay:semantic.approachesDay??unresolved("Generic GPS movement is not Part-FCL approach evidence."),
+    approachesNight:semantic.approachesNight??unresolved("Generic GPS movement is not Part-FCL approach evidence."),
     operationType:hasOperation?provided(input.operationType,"COMMON_IMPORT"):unresolved("GPS Operation is not explicitly captured yet."),
     engineType:hasEngine?provided(input.engineType,"COMMON_IMPORT"):unresolved("GPS Engine is not explicitly captured yet."),
     operatorName:"",
     flightNumber:"",
     operationContext:"",
-    nightTime:unresolved("GPS review does not currently provide authoritative night-time evidence."),
-    ifrTime:unresolved("GPS review does not currently provide authoritative IFR evidence."),
+    nightTime:semantic.nightTime??unresolved("GPS review does not currently provide authoritative night-time evidence."),
+    ifrTime:semantic.ifrTime??unresolved("GPS review does not currently provide authoritative IFR evidence."),
     role:input.role,
     commander:"",
     instructor:"",
