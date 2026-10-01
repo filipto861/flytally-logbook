@@ -20,7 +20,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added source-contract coverage plus PostgreSQL acceptance for existing certified rows, ordinary inserts, conflicting recipient profiles, partial explicit tuples, same-registration updates, actual registration changes, restore-style second-stage writes and idempotent reapplication.
 - **Historical rows:** no existing flight is rewritten or guessed/backfilled by this migration.
 - **Certification:** no certification payload/hash/version change.
-- **Verification:** PENDING on `fix/f1-0-shared-flight-identity-trigger`.
+- **Verification:** final implementation head before docs closeout: Verify FlyTally web #992 PASS; TypeScript PASS; full unit/regression **992/992**; PostgreSQL acceptance **76/76**; Browser smoke #373 **26 passed / 2 skipped** across desktop/mobile; production build PASS. Early #987/#989/#371 failures exposed only migration/test-harness defects (PL/pgSQL delimiter, stale v16 fixture extraction, and browser fixture schema drift); each was corrected and the final gates passed. Production DB application is verified after deployment.
 
 ### Flight Entry Workflow 3.0 — F1 design / independent review
 - Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F1_DESIGN.md` with the proposed source-adapter → typed candidate → pure normalizer → `FlightInput` architecture.
