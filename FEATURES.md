@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F2.2 IMPLEMENTATION
+### Flight Entry Workflow 3.0 — ACTIVE · F2.2 DONE / F2.3 NEXT
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -188,7 +188,7 @@ Current priority:
 - F0/F0.1 are DONE: GPS aircraft context fails closed and interim GPS role support remains PIC-only until Role/Crew parity;
 - F1 is DONE/production-verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence, while GPS track/provenance and atomic N-part persistence remain specialized;
 - explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
-- **F2 Role/Crew parity has an F2.2 implementation candidate**: DUAL, Safety Pilot, SPIC and PICUS role-defining identity is shown directly in Flight essentials using the shared RoleCrew contract for applicability/required cues; the completion surface points to those inline controls; generic commander/instructor inputs remain available under Additional crew details; persistence, certification v1–v8 and GPS PIC-only behavior are unchanged pending verification.
+- **F2.2 Manual inline Role/Crew UX is production-verified**: DUAL, Safety Pilot, SPIC and PICUS role-defining identity is shown directly in Flight essentials using the shared RoleCrew contract for applicability/required cues; the completion surface points to those inline controls; generic commander/instructor inputs remain available under Additional crew details; persistence, certification v1–v8 and GPS PIC-only behavior are unchanged. F2.3 Safety Pilot resolver convergence is next.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
