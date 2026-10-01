@@ -125,13 +125,15 @@ export function resetF24VerificationFixture(){
       aircraft_make,aircraft_model,departure,arrival,off_block,takeoff,landing,on_block,
       operation_type,engine_type,role,starts,landings_day,landings_night,
       pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,commander,instructor,
-      verification_name,verification_reference,certification_hash,certification_version,record_revision
+      verification_name,verification_reference,certified_at,certified_by_user_id,
+      certification_hash,certification_version,record_revision,locked_at,locked_by_user_id
     ) VALUES(
       9904,9001,'2026-09-21','EASA','OK-SP2E','B23','SEP','AEROPLANE',
       'BRM Aero','Bristell B23','LKLT','LKPR','10:00','10:05','10:55','11:00',
       'SP','SE','DUAL',1,1,0,
       0,0,60,0,'','Browser Instructor',
-      '','', '',8,1
+      '','',NOW(),9001,
+      'browser-f24-hash',8,1,NOW(),9001
     );
   `);
 }
