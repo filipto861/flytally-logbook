@@ -1,7 +1,7 @@
 # Independent Review Handoff — Flight Entry Workflow 3.0 / F2.4B
 
 > **Status:** REQUESTED · read-only architecture/data-integrity review before any F2.4B runtime semantic change.  
-> **Repository baseline:** `main@95a1f88f7fa7380669339fefd87a8831e64e0949`.  
+> **Repository baseline:** `main@064be0862b9506e472545eb16491b21019a90a50`.  
 > **Previous milestone:** F2.4A DONE / PRODUCTION VERIFIED.
 
 ## Reviewer role
@@ -50,6 +50,15 @@ F2.4A removed Certification-time DUAL/SPIC/PICUS display-name → account infere
 - Safety Pilot F2.3 connection resolver is unchanged;
 - broad Role-only clearing of `instructor` or `verification_*` is prohibited because those fields have non-role evidence consumers;
 - no destructive canonicalization based on task/note regex heuristics.
+
+## Characterization evidence now merged
+
+Before requesting a semantic verdict, current behavior was locked as read-only evidence in PR #215.
+
+- merge: `main@064be0862b9506e472545eb16491b21019a90a50`;
+- Verify FlyTally web #1090 PASS: TypeScript, 1057/1057 unit/regression, PostgreSQL 66/66;
+- no runtime or schema behavior changed;
+- the characterization proves the current SELF-vs-commander mismatch rather than endorsing it as the future design.
 
 ## F2.4B discovery — important new evidence
 

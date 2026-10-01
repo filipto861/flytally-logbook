@@ -403,6 +403,7 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - the earlier draft preference to make SELF always override stored commander is therefore withdrawn pending review because it could change printed/compliance interpretation of certified records and ignore intentional shared-flight provenance;
 - current preferred direction is compatibility-first: preserve `pilotInCommandName()` precedence, preserve raw crew fields, and split RoleCrew Save/UI identity requirements from historical/downstream PIC-display precedence;
 - a contract-only refactor should characterize Manual self-PIC fallback, explicit self-PIC commander, generic shared PIC `RECIPIENT_ACCOUNT`, linked Safety Pilot `CERTIFIED_SOURCE_COMMANDER`, certification hash stability, and raw export/audit/backup preservation;
+- characterization PR #215 is merged as `main@064be0862b9506e472545eb16491b21019a90a50`; it covers self-PIC fallback/explicit commander precedence, the current RoleCrew mismatch, Manual commander availability, shared PIC commander producers and raw integrity/export visibility. Verify #1090 PASS — TypeScript, 1057/1057 unit/regression, PostgreSQL 66/66;
 - any editable-Save clearing must be proven non-applicable from explicit structured evidence; otherwise preserve raw evidence;
 - no runtime behavior change is permitted before independent review reconciliation.
 
