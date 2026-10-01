@@ -72,3 +72,43 @@ export function resolveGpsImportOperationEngine(
     explicit:true,
   };
 }
+
+
+function explicitCounter(value:unknown,label:string){
+  const raw=String(value??"").trim();
+  if(!/^\d{1,2}$/.test(raw))return{error:`Enter explicit ${label} from 0 to 99.`} as const;
+  const count=Number(raw);
+  if(!Number.isInteger(count)||count<0||count>99)return{error:`Enter explicit ${label} from 0 to 99.`} as const;
+  return{value:count} as const;
+}
+
+function explicitDuration(value:unknown,label:string){
+  const raw=String(value??"").trim();
+  const match=raw.match(/^(\d{1,2}):(\d{2})$/);
+  if(!match)return{error:`Enter explicit ${label} as H:MM, including 0:00 when none.`} as const;
+  const hours=Number(match[1]),minutes=Number(match[2]);
+  if(minutes>59||hours>24||(hours===24&&minutes!==0))return{error:`Enter explicit ${label} as H:MM, including 0:00 when none.`} as const;
+  return{value:hours*60+minutes} as const;
+}
+
+export function resolveGpsBasicSourceEvidence(
+  submitted:{landingsDay:unknown;landingsNight:unknown;nightTime:unknown;ifrTime:unknown},
+  blockMinutes:number|null,
+):
+  |{landingsDay:number;landingsNight:number;starts:number;nightMinutes:number;ifrMinutes:number;error?:undefined}
+  |{error:string}{
+  const day=explicitCounter(submitted.landingsDay,"day landings"),night=explicitCounter(submitted.landingsNight,"night landings");
+  if("error" in day)return day;if("error" in night)return night;
+  const nightTime=explicitDuration(submitted.nightTime,"Night time"),ifrTime=explicitDuration(submitted.ifrTime,"IFR time");
+  if("error" in nightTime)return nightTime;if("error" in ifrTime)return ifrTime;
+  if(blockMinutes!==null&&blockMinutes>0&&(nightTime.value>blockMinutes||ifrTime.value>blockMinutes)){
+    return{error:"Night and IFR time cannot exceed BLOCK time."};
+  }
+  return{
+    landingsDay:day.value,
+    landingsNight:night.value,
+    starts:day.value+night.value,
+    nightMinutes:nightTime.value,
+    ifrMinutes:ifrTime.value,
+  };
+}
