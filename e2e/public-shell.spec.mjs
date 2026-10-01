@@ -264,6 +264,43 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   resetGpsNormalizedImportFixture();
 });
 
+test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F2.2 RoleCrew browser coverage requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  await expect(form.locator('select[name="evidence"]')).toHaveValue("EASA");
+
+  const role=form.locator('select[name="role"]');
+  await role.selectOption("DUAL");
+  const dualInstructor=form.locator('.role-crew-inline-grid input[name="instructor"]');
+  await expect(dualInstructor).toBeVisible();
+  await expect(dualInstructor).toHaveAttribute("required","");
+  await dualInstructor.fill("Inline Instructor");
+
+  await role.selectOption("PIC");
+  await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
+  await role.selectOption("DUAL");
+  await expect(form.locator('.role-crew-inline-grid input[name="instructor"]')).toHaveValue("Inline Instructor");
+
+  await role.selectOption("SPIC");
+  const supervisor=form.locator('.role-crew-inline-grid input[name="verificationName"]');
+  const countersign=form.locator('.role-crew-inline-grid input[name="verificationReference"]');
+  await expect(supervisor).toBeVisible();
+  await expect(countersign).toBeVisible();
+  await expect(supervisor).toHaveAttribute("required","");
+  await expect(countersign).toHaveAttribute("required","");
+  await supervisor.fill("Supervising PIC");
+  await countersign.fill("Signed ref F22");
+
+  await role.selectOption("PIC");
+  await role.selectOption("SPIC");
+  await expect(form.locator('.role-crew-inline-grid input[name="verificationName"]')).toHaveValue("Supervising PIC");
+  await expect(form.locator('.role-crew-inline-grid input[name="verificationReference"]')).toHaveValue("Signed ref F22");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("Safety Pilot Actual PIC form keeps manual and connected identity explicit",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated Safety Pilot PIC browser coverage requires the isolated CI database.");
   resetSafetyPilotPicFixture();
