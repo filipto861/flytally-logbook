@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F2.4B B1 PRODUCTION VERIFIED / B2 REVIEW
+### Flight Entry Workflow 3.0 — ACTIVE · F2.4B DONE / F2.4C NEXT
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -193,6 +193,7 @@ Current priority:
 - **F2.4A identity-binding reconciliation is production-verified**: Certification no longer converts typed DUAL/SPIC/PICUS names into FlyTally accounts or sends account-bound requests implicitly. Typed instructor/supervising-PIC values remain historical flight evidence; account-bound verification is an explicit post-certification account-ID action, while in-person signing remains available. PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`; Vercel `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY on that exact SHA and aliases `fly-tally.com` with no alias error. No schema/certification-version/GPS-role change. F2.4B remains review-gated because `instructor` and `verification_*` are overloaded evidence fields and self-PIC commander precedence can affect interpretation of existing certified output.
 - **F2.4B discovery found additional compatibility evidence**: Manual Additional crew details intentionally allows Commander/PIC on self-PIC roles, and shared-flight materialization intentionally writes commander snapshots onto recipient `PIC` rows, including the linked Safety Pilot Actual-PIC provenance path. Therefore self-PIC `commander` is not safely classifiable as stale. The focused review now prefers contract separation (Save/UI source vs historical output precedence) over changing `pilotInCommandName()` or destructively clearing persisted evidence. PR #215 added read-only characterization tests for the current semantics and merged without changing runtime behavior.
 - **F2.4B B1 is production-verified**: RoleCrew separates role-level PIC identity (`rolePicIdentitySource`) from downstream display precedence (`picDisplayPrecedence`). Existing output remains compatibility-first: explicit stored commander precedes account SELF on self-PIC roles, while raw crew evidence is preserved. PR #217 merged as `6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`; Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` is READY on that exact SHA and serves `fly-tally.com`. No persistence/schema/certification-version/GPS-role change. B2 remains a semantic review gate; destructive canonicalization is not authorized.
+- **F2.4B semantic closeout is intentionally non-destructive**: there is no evidence-backed rule that can safely clear `commander`, non-DUAL `instructor`, or non-SPIC/PICUS `verification_*` without risking valid Manual/shared/training/endorsement provenance. F2 freezes current PIC display precedence and preserves raw fields; any future reinterpretation is a separate product/data-integrity decision. F2.4C cross-path characterization is next.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
