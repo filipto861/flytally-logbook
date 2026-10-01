@@ -1,6 +1,6 @@
 # Independent Review Handoff — Flight Entry Workflow 3.0 / F2.4B
 
-> **Status:** REQUESTED FOR B2 · B1 contract separation is production-verified; any semantic precedence/cleanup change remains review-gated.  
+> **Status:** B2 CLOSED CONSERVATIVELY · B1 is production-verified; no semantic precedence or destructive cleanup change was selected.  
 > **Repository baseline:** `main@6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`.  
 > **Previous milestone:** F2.4A DONE / PRODUCTION VERIFIED.
 
@@ -148,6 +148,20 @@ The behavior-preserving contract split is merged and deployed.
 - raw persistence, certification payloads and shared-materialization producers are untouched.
 
 B2 review is now narrowly about whether any future semantic precedence or cleanup change is justified. B1 itself does not authorize one.
+
+## B2 closeout decision
+
+No external reviewer response was supplied before continuation. Because the repository evidence shows that every broad cleanup/reinterpretation option can erase valid provenance or change certified output meaning, F2.4B closes with the fail-closed compatibility outcome:
+
+- preserve current PIC display precedence;
+- preserve raw commander/instructor/verification evidence;
+- perform no destructive canonicalization;
+- do not use task/note regexes as deletion authority;
+- do not rewrite certified rows;
+- do not change certification v1–v8;
+- treat any future precedence or schema-separation change as a new explicit decision requiring fresh evidence/review.
+
+The focused review questions remain useful if a future milestone proposes changing these frozen semantics, but they are no longer a blocker to F2.4C because F2.4B is not taking the risky semantic change.
 
 ## Proposed F2.4B direction
 
