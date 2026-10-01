@@ -194,6 +194,12 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("SP");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("SE");
+  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
+  await expect(reviewed).toBeDisabled();
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill("1");
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+  await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
+  await expect(reviewed).toBeEnabled();
 
   await registration.selectOption("OK-ULL1");
   await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("ULL");
