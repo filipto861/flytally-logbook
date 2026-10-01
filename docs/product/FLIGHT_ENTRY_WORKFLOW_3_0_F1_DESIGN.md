@@ -322,10 +322,12 @@ This must be a new base migration (v17), not a rewrite of v6.
 - Verification: final PR head Verify #997 PASS; 992/992 unit; PostgreSQL 76/76; Browser #378 26 passed / 2 skipped; production build PASS.
 - Production: main `e7361dbe…`, Vercel READY, migration v17 confirmed in the production Neon registry and live trigger definition verified. F1.0 deployment gate is closed.
 
-### F1.1 — candidate types + source adapters
-- introduce minimal typed candidate with explicit unresolved states/provenance;
-- characterize Manual and GPS extraction;
-- no expected behavior change.
+### F1.1 — candidate types + source adapters — DONE / VERIFIED
+- added minimal typed `FlightDraftCandidate` with compact provenance and explicit unresolved semantic state;
+- added Manual FormData characterization preserving presence-sensitive fields;
+- added GPS reviewed-part characterization that does not infer Operation/Engine, day/night movements, Part-FCL PF/approach evidence, sailplane launches, night or IFR;
+- adapters are intentionally not imported by current Manual/GPS mutation runtime yet;
+- Verification: Verify #998 PASS; 998/998 unit/regression; PostgreSQL 63/63; Browser #379 26 passed / 2 skipped; production build PASS; DB migration N/A.
 
 ### F1.2 — pure normalizer extraction
 - extract source-agnostic `normalizeFlightDraft()` from current `parseFlightInput()`;
