@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0/F1 DONE; F2.0 review reconciled; **F2.1 validation-only is NEXT** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0/F1 DONE; F2.0/F2.1 complete; **F2.2 Manual Role/Crew UX is NEXT** |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F1 production-verified; F2 Role/Crew parity is current, with F2.1 validation-only next |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F1 production-verified; F2.1 validation complete; F2.2 Manual Role/Crew UX next |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -412,7 +412,7 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | 🚧 | **F2.1 ACTIVE** · pure RoleCrew requirement contract + server validation; sanitization deferred to evidence-aware audit |
+| F2 — Role/Crew parity | 🚧 | **F2.1 DONE / CI VERIFIED** · F2.2 Manual inline Role/Crew UX is next; sanitization remains deferred |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
@@ -420,8 +420,8 @@ Milestones:
 
 Immediate next step:
 - F2.0 design/review contract is merged as PR #203;
-- complete **F2.1 — pure RoleCrew requirement contract + server-authoritative validation only**;
-- make EASA DUAL Instructor/PIC validation share the same domain contract as existing SPIC/PICUS validation;
+- F2.1 RoleCrew validation is implementation-complete and CI-verified in PR #204;
+- begin **F2.2 — Manual inline Role/Crew UX** so required DUAL / Safety Pilot / SPIC / PICUS identity is visible directly with Role;
 - keep Safety Pilot account resolution action-authoritative until F2.3;
 - keep GPS PIC-only throughout F2;
 - defer destructive crew-field sanitization until F2.4 producer/consumer reconciliation;
@@ -635,7 +635,7 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
 | Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
-| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · F1 production-verified; F2.0 review reconciled; F2.1 validation-only next |
+| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · F1 production-verified; F2.0/F2.1 complete; F2.2 next |
 | Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
