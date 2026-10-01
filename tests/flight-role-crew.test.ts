@@ -125,3 +125,42 @@ test("F2.1 performs no destructive sanitization of additional training or endors
   assert.equal(parsed.data?.verificationName,"Examiner");
   assert.equal(parsed.data?.verificationReference,"Signed check");
 });
+
+test("F2.4B preserves overlapping crew evidence across role contexts instead of canonicalizing destructively",()=>{
+  const dual=formFor("DUAL");
+  dual.set("instructor","Training Instructor");
+  dual.set("commander","Historical Commander");
+  dual.set("verificationName","Examiner Evidence");
+  dual.set("verificationReference","Signed evidence DUAL");
+  let parsed=parseFlightInput(dual);
+  assert.equal(parsed.error,undefined);
+  assert.equal(parsed.data?.commander,"Historical Commander");
+  assert.equal(parsed.data?.instructor,"Training Instructor");
+  assert.equal(parsed.data?.verificationName,"Examiner Evidence");
+  assert.equal(parsed.data?.verificationReference,"Signed evidence DUAL");
+
+  const spic=formFor("SPIC");
+  spic.set("commander","Historical Commander");
+  spic.set("instructor","Training Instructor");
+  spic.set("verificationName","Supervising PIC");
+  spic.set("verificationReference","Signed SPIC reference");
+  parsed=parseFlightInput(spic);
+  assert.equal(parsed.error,undefined);
+  assert.equal(parsed.data?.commander,"Historical Commander");
+  assert.equal(parsed.data?.instructor,"Training Instructor");
+  assert.equal(parsed.data?.verificationName,"Supervising PIC");
+  assert.equal(parsed.data?.verificationReference,"Signed SPIC reference");
+
+  const pic=formFor("PIC");
+  pic.set("commander","Explicit PIC evidence");
+  pic.set("instructor","Differences instructor");
+  pic.set("verificationName","Examiner");
+  pic.set("verificationReference","Revalidation reference");
+  pic.set("task","SEP revalidation");
+  parsed=parseFlightInput(pic);
+  assert.equal(parsed.error,undefined);
+  assert.equal(parsed.data?.commander,"Explicit PIC evidence");
+  assert.equal(parsed.data?.instructor,"Differences instructor");
+  assert.equal(parsed.data?.verificationName,"Examiner");
+  assert.equal(parsed.data?.verificationReference,"Revalidation reference");
+});

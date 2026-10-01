@@ -393,7 +393,7 @@ Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
 - Certification v1–v8, exact revision/hash verification, in-person signing, certified-row immutability, Safety Pilot F2.3 semantics and GPS PIC-only behavior remain unchanged;
 - DB/schema migration: N/A.
 
-#### F2.4B — evidence-aware semantic canonicalization — B1 DONE / PRODUCTION VERIFIED · B2 REVIEW GATE
+#### F2.4B — evidence-aware semantic canonicalization — DONE · COMPATIBILITY FREEZE
 Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 
 - confirmed `instructor` cannot be broadly cleared outside DUAL because non-DUAL differences/familiarisation purpose evidence depends on it;
@@ -405,7 +405,10 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - B1 makes that split explicit: `rolePicIdentitySource` governs role-defining Save/UI identity, while `picDisplayPrecedence` governs historical display/compliance resolution; self-PIC roles use `rolePicIdentitySource=SELF` with display precedence `COMMANDER → SELF` and an optional commander field;
 - `pilotInCommandName()` delegates to the shared pure resolver, so the contract has one implementation point without changing historical output semantics;
 - B1 production evidence: PR #217 → `main@6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`; Verify #1091 PASS — TypeScript, 1058/1058 unit/regression, PostgreSQL 66/66; Browser #466 PASS — production build + Chromium 34 passed / 2 skipped; Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` READY on the exact merge SHA and serving `fly-tally.com`; DB/schema N/A;
-- B2 remains review-gated: no destructive clearing or reinterpretation of certified self-PIC commander evidence is authorized by B1;
+- B2 outcome is intentionally conservative: no destructive clearing and no reinterpretation of certified self-PIC commander evidence is performed in F2. Evidence from Manual UI, shared PIC materialization, training-purpose retention, endorsement consumers, certification hashes, export/audit and backup prevents a safe broader cleanup rule;
+- current display precedence is frozen for F2: DUAL `INSTRUCTOR → COMMANDER`, SPIC/PICUS `VERIFIER → COMMANDER`, self-PIC `COMMANDER → SELF`, commander-based roles `COMMANDER`;
+- raw commander/instructor/verification values remain preserved on editable Save unless a future explicit structured model proves non-applicability; task/note regexes never authorize deletion;
+- this is a compatibility freeze, not a claim that current historical field overloading is the ideal long-term schema. Any future semantic change must reopen the decision explicitly and protect certified history;
 - a contract-only refactor should characterize Manual self-PIC fallback, explicit self-PIC commander, generic shared PIC `RECIPIENT_ACCOUNT`, linked Safety Pilot `CERTIFIED_SOURCE_COMMANDER`, certification hash stability, and raw export/audit/backup preservation;
 - characterization PR #215 is merged as `main@064be0862b9506e472545eb16491b21019a90a50`; it covers self-PIC fallback/explicit commander precedence, the current RoleCrew mismatch, Manual commander availability, shared PIC commander producers and raw integrity/export visibility. Verify #1090 PASS — TypeScript, 1057/1057 unit/regression, PostgreSQL 66/66;
 - any editable-Save clearing must be proven non-applicable from explicit structured evidence; otherwise preserve raw evidence;
