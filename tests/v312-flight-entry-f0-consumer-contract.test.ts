@@ -19,6 +19,8 @@ const printPage=read("app/(protected)/print/page.tsx");
 const sharedActions=read("app/(protected)/flights/shared-actions.ts");
 const dbOptimization=read("lib/db-optimization.ts");
 const matrix=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F0_FIELD_CONSUMER_MATRIX.md");
+const f2=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_ROLE_CREW_DESIGN.md");
+const roleCrew=read("lib/role-crew.ts");
 
 const actionBlock=(name:string)=>{
   const start=actions.indexOf(`export async function ${name}`);
@@ -38,10 +40,13 @@ test("F0 inventory locks Manual shared parser versus current GPS direct semantic
   assert.match(matrix,/GPS is therefore still a second semantic write path/);
 });
 
-test("F0 inventory records the current DUAL Save versus Certification boundary",()=>{
-  assert.doesNotMatch(flightInput,/role==="DUAL"&&!.*instructor.*return\{error/s);
+test("F2.1 closes the F0-characterized DUAL Save gap without changing Certification",()=>{
+  assert.match(roleCrew,/role==="DUAL"/);
+  assert.match(roleCrew,/instructor=easa\?"required_save":"optional"/);
+  assert.match(flightInput,/roleCrewSaveError\(crewSpec,\{instructor,verificationName,verificationReference\}\)/);
   assert.match(compliance,/role==="DUAL"&&!text\(row\.instructor\).*DUAL flight requires the instructor\/PIC name/);
   assert.match(matrix,/Current server parser does not independently reject blank DUAL instructor/);
+  assert.match(f2,/make EASA DUAL Instructor\/PIC Save-required server-side/);
 });
 
 test("F0 inventory locks certified-only recency and draft-visible analytics",()=>{
