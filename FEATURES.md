@@ -187,7 +187,7 @@ Frozen behavior:
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F1.0–F1.3 and F1.5 are DONE/verified. F1.6 source-fidelity inputs are NEXT because unresolved movement/day-night/sailplane/Night/IFR evidence still blocks safe GPS shared-normalizer convergence; F1.4 follows.
+- F1.0–F1.3 and F1.5 are DONE/verified. F1.6 is split into explicit source-fidelity batches: F1.6a landing/Night/IFR is implemented/verification-pending; F1.6b regulatory movement/launch evidence follows before F1.4 GPS normalization.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
