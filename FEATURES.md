@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F2.4A VERIFIED / F2.4B REVIEW
+### Flight Entry Workflow 3.0 — ACTIVE · F2.4A PRODUCTION VERIFIED / F2.4B REVIEW
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -190,7 +190,7 @@ Current priority:
 - explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
 - **F2.2 Manual inline Role/Crew UX is production-verified**: DUAL, Safety Pilot, SPIC and PICUS role-defining identity is shown directly in Flight essentials using the shared RoleCrew contract for applicability/required cues; the completion surface points to those inline controls; generic commander/instructor inputs remain available under Additional crew details.
 - **F2.3 Safety Pilot resolver convergence is production-verified**: Manual and connected Safety Pilot Actual-PIC submissions resolve through one server helper shared by create/update; connected identity is accepted only by account ID with a live accepted Connection, the server display name becomes the historical commander snapshot, the parent write rechecks Connection state fail-closed, and `flight_connected_crew` remains separate atomic metadata. Certification v1–v8 and GPS PIC-only behavior remain unchanged. F2.4 producer/consumer reconciliation + evidence-aware canonicalization is next.
-- **F2.4A identity-binding reconciliation is implemented and verified**: Certification no longer converts typed DUAL/SPIC/PICUS names into FlyTally accounts or sends account-bound requests implicitly. Typed instructor/supervising-PIC values remain historical flight evidence; account-bound verification is an explicit post-certification account-ID action, while in-person signing remains available. No schema/certification-version/GPS-role change. F2.4B remains review-gated because `instructor` and `verification_*` are overloaded evidence fields and self-PIC commander precedence can affect interpretation of existing certified output.
+- **F2.4A identity-binding reconciliation is production-verified**: Certification no longer converts typed DUAL/SPIC/PICUS names into FlyTally accounts or sends account-bound requests implicitly. Typed instructor/supervising-PIC values remain historical flight evidence; account-bound verification is an explicit post-certification account-ID action, while in-person signing remains available. PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`; Vercel `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY on that exact SHA and aliases `fly-tally.com` with no alias error. No schema/certification-version/GPS-role change. F2.4B remains review-gated because `instructor` and `verification_*` are overloaded evidence fields and self-PIC commander precedence can affect interpretation of existing certified output.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
