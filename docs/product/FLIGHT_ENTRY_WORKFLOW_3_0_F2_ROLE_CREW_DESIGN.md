@@ -380,12 +380,16 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 Detailed evidence: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md`.  
 Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
 
-#### F2.4A — identity-binding reconciliation
+#### F2.4A — identity-binding reconciliation — IMPLEMENTED / VERIFIED
 - producer/consumer audit completed across Manual, GPS, shared-flight materialization, Certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, audit/backup and recency;
-- confirmed remaining Certification-time DUAL/SPIC/PICUS display-name matching to accepted instructor Connections;
-- proposed runtime: remove the automatic name matcher and keep only the existing explicit account-ID `instructor_id` request path;
-- update verification-panel copy so typed historical evidence is never described as an account binding or automatic request;
-- Certification v1–v8, exact revision/hash verification, in-person signing and certified-row immutability remain unchanged.
+- removed Certification-time DUAL/SPIC/PICUS display-name matching to accepted instructor Connections;
+- removed the implicit account-bound verification request side effect from Certification;
+- retained the existing explicit account-ID `instructor_id` request path as the sole FlyTally account-binding action;
+- Crew Verification copy now states that typed instructor/supervising-PIC names are stored flight evidence only and that account-bound verification requires explicit connected-account selection after Certification;
+- authenticated browser fixture proves a matching typed name on an already-certified DUAL record creates no pending instructor participation and exposes only the explicit request control;
+- final verification on PR #212 head `ec943758dfdf45c94f2a84580295be40d99b5c1d`: Verify FlyTally web #1085 PASS — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #461 PASS — production build + Chromium 34 passed / 2 skipped;
+- Certification v1–v8, exact revision/hash verification, in-person signing, certified-row immutability, Safety Pilot F2.3 semantics and GPS PIC-only behavior remain unchanged;
+- DB/schema migration: N/A.
 
 #### F2.4B — evidence-aware semantic canonicalization
 - confirmed `instructor` cannot be broadly cleared outside DUAL because non-DUAL differences/familiarisation purpose evidence depends on it;
