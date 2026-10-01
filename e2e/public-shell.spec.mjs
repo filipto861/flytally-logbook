@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -339,6 +339,47 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('input[name="commander"]')).toHaveValue("Manual Captain");
   await expectNoHorizontalOverflow(page);
+});
+
+test("F2.3 Safety Pilot resolver snapshots server identity and fails closed after Connection revocation",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F2.3 Safety Pilot resolver coverage requires the isolated CI database.");
+  resetSafetyPilotPicFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  await form.locator('select[name="role"]').selectOption("SAFETY PILOT");
+  await form.locator('select[name="actualPicMode"]').selectOption("connected");
+  await form.locator('select[name="connectedPicUserId"]').selectOption("9002");
+  await expect(form.locator('input[name="commander"]')).toHaveValue("Browser Friend");
+
+  renameSafetyPilotPicFixture("Browser Friend Renamed");
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
+  await expect(page.locator('select[name="actualPicMode"]')).toHaveValue("connected");
+  await expect(page.locator('input[name="commander"]')).toHaveValue("Browser Friend Renamed");
+
+  renameSafetyPilotPicFixture("Browser Friend Updated");
+  await page.getByRole("button",{name:"Save changes"}).click();
+  await expect(page.getByText("Flight changes saved.")).toBeVisible();
+  await page.reload();
+  await expect(page.locator('input[name="commander"]')).toHaveValue("Browser Friend Updated");
+
+  resetSafetyPilotPicFixture();
+  await page.goto("/flights/new");
+  const rejected=page.locator("#new-flight-manual-form");
+  await rejected.locator('select[name="registration"]').selectOption("OK-SP2E");
+  await rejected.locator('select[name="role"]').selectOption("SAFETY PILOT");
+  await rejected.locator('select[name="actualPicMode"]').selectOption("connected");
+  await rejected.locator('select[name="connectedPicUserId"]').selectOption("9002");
+  revokeSafetyPilotPicConnectionFixture();
+
+  await rejected.getByRole("button",{name:"Save & review"}).click();
+  await expect(rejected.getByRole("alert")).toContainText("Selected Actual PIC is no longer an accepted Connection.");
+  await expect(page).toHaveURL(/\/flights\/new(?:\?.*)?$/);
+  await expectNoHorizontalOverflow(page);
+  resetSafetyPilotPicFixture();
 });
 
 test("certified Safety Pilot can invite only the stored connected Actual PIC",async({page})=>{
