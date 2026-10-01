@@ -9,6 +9,25 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2 Role/Crew review reconciliation
+- Independent review returned **APPROVE WITH CHANGES** and was reconciled against current repository consumers/producers.
+- Frozen CO-PILOT/CRCP commander as Save-optional with the current Certification PIC-name gate unchanged; PAX/OBSERVER Save behavior also remains unchanged.
+- Rejected the proposed new self-PIC commander requirement because the F0 contract and `pilotInCommandName()` explicitly support account-derived self identity with blank stored commander.
+- Found that broad Role-only sanitization is unsafe: `instructor` also gates Aircraft Differences/Familiarisation purpose evidence and `verification_*` feeds general endorsement warnings.
+- Found an existing DUAL/SPIC/PICUS certification auto-request path that matches typed names to connected accounts; this conflicts with the frozen no-name-inference rule and is deferred to explicit F2 reconciliation.
+- Narrowed F2.1 to a pure RoleCrew requirement contract + server validation only. Destructive evidence-aware sanitization moves to F2.4.
+- GPS is frozen PIC-only through F2; F4 owns Role/Crew inheritance/overrides.
+- **Runtime/schema behavior:** unchanged by this reconciliation.
+
+### Flight Entry Workflow 3.0 — F2 Role/Crew design
+- Added a repository-backed F2 Role/Crew design draft after F1 production closeout.
+- Characterized the current split boundaries: EASA DUAL is UI/certification-required but not yet server Save-required; Safety Pilot Actual PIC is action-level with accepted-Connection recheck; SPIC/PICUS supervision is already server Save-required.
+- Proposed one source-agnostic `roleCrewSpec(role,evidence)` contract plus canonical role-owned-field sanitization.
+- Kept connected-account resolution outside the pure normalizer and preserved the historical-text vs account-link distinction.
+- Kept GPS PIC-only during design; F4 remains owner of per-part RoleCrew overrides.
+- Prepared an independent review handoff covering CO-PILOT/CRCP Save policy, self-PIC crew fields, legacy draft sanitization, Safety Pilot connection architecture and GPS role promotion.
+- **Runtime/schema behavior:** unchanged; F2 implementation has not started.
+
 ### Flight Entry Workflow 3.0 — F1.4 shared GPS normalization
 - Routed every reviewed GPS PIC part through `gpsFlightCandidate() → normalizeFlightDraft() → FlightInput` before any flight persistence.
 - GPS flight INSERT semantics now consume the same normalized `FlightInput` contract as Manual entry instead of recomputing role credit, billing, operation/engine and other flight semantics independently.
