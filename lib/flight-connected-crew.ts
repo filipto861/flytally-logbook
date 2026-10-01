@@ -11,6 +11,61 @@ type ConnectedPicOptionRow={
   display_name:string;
 };
 
+export type SafetyPilotPicResolution=
+  |{ok:true;mode:"not_applicable"|"manual"|"connected";commander:string;connectedUserId:number}
+  |{ok:false;error:string};
+
+type SafetyPilotPicSaveInput={
+  sourceUserId:number;
+  role:string;
+  evidence:string;
+  commander:string;
+  form:FormData;
+};
+
+async function acceptedPicSnapshot(sourceUserId:number,connectedUserId:number){
+  const rows=await sql`SELECT u.id,u.display_name
+    FROM users u
+    WHERE u.id=${connectedUserId}
+      AND u.id<>${sourceUserId}
+      AND NULLIF(TRIM(u.display_name),'') IS NOT NULL
+      AND EXISTS(
+        SELECT 1 FROM pilot_connections pc
+        WHERE pc.status='accepted'
+          AND ((pc.requester_user_id=${sourceUserId} AND pc.recipient_user_id=u.id)
+            OR (pc.recipient_user_id=${sourceUserId} AND pc.requester_user_id=u.id))
+      )
+    LIMIT 1` as ConnectedPicOptionRow[];
+  const row=rows[0];
+  if(!row)return null;
+  const id=Number(row.id),displayName=String(row.display_name??"");
+  if(!Number.isSafeInteger(id)||id<=0||!displayName.trim())return null;
+  return{id,displayName};
+}
+
+export async function resolveSafetyPilotPicForSave({
+  sourceUserId,role,evidence,commander,form,
+}:SafetyPilotPicSaveInput):Promise<SafetyPilotPicResolution>{
+  if(role!=="SAFETY PILOT")return{ok:true,mode:"not_applicable",commander,connectedUserId:0};
+
+  const mode=String(form.get("actualPicMode")??"manual").trim().toLowerCase();
+  if(mode==="manual"){
+    if(evidence==="EASA"&&!commander.trim())return{ok:false,error:"Enter the actual PIC or select an accepted Connection."};
+    return{ok:true,mode:"manual",commander,connectedUserId:0};
+  }
+  if(mode!=="connected")return{ok:false,error:"Select a valid connected Actual PIC."};
+
+  const raw=String(form.get("connectedPicUserId")??"").trim();
+  const connectedUserId=Number(raw);
+  if(!raw||!Number.isSafeInteger(connectedUserId)||connectedUserId<=0||connectedUserId===sourceUserId)
+    return{ok:false,error:"Select a valid connected Actual PIC."};
+
+  const snapshot=await acceptedPicSnapshot(sourceUserId,connectedUserId);
+  if(!snapshot)return{ok:false,error:"Selected Actual PIC is no longer an accepted Connection."};
+
+  return{ok:true,mode:"connected",commander:snapshot.displayName,connectedUserId:snapshot.id};
+}
+
 export async function getAcceptedPicConnections(sourceUserId:number):Promise<ConnectedPicOption[]>{
   if(!Number.isSafeInteger(sourceUserId)||sourceUserId<=0)return[];
   const rows=await sql`SELECT DISTINCT u.id,u.display_name
