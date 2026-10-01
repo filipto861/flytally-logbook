@@ -41,7 +41,7 @@ test("F0.0 preserves the historical fail-open characterization in documentation"
 });
 
 test("F0.0 preserves the historical separate GPS semantic path while F1.4 converges current runtime",()=>{
-  assert.match(characterization,/importKmlFlight\(\) does not call `parseFlightInput\(\)`/);
+  assert.match(characterization,/importKmlFlight\(\)` does not call `parseFlightInput\(\)`/);
   assert.match(characterization,/allocates function time directly/);
   assert.match(characterization,/This is a confirmed semantic-write divergence/);
   assert.match(importAction,/gpsFlightCandidate\(\{/);
