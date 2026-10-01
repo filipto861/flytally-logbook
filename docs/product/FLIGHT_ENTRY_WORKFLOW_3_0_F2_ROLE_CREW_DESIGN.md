@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0/F2.1/F2.2 DONE · F2.2 PRODUCTION VERIFIED · F2.3 NEXT  
+**Status:** F2.0/F2.1/F2.2 DONE · F2.3 IMPLEMENTED / VERIFICATION PENDING  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -357,12 +357,20 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
 - DB/schema migration: N/A.
 
-### F2.3 — Safety Pilot resolver convergence
-- one server resolver used by create/update;
-- accepted Connection rechecked at Save time;
-- server display-name snapshot remains authoritative;
-- manual and connected paths converge to the same commander semantic value;
-- `flight_connected_crew` remains separate metadata.
+### F2.3 — Safety Pilot resolver convergence — IMPLEMENTED / VERIFICATION PENDING
+- one server resolver, `resolveSafetyPilotPicForSave()`, is used by create/update;
+- the resolver owns Safety Pilot mode parsing, malformed/self account rejection, the EASA manual Actual-PIC requirement, accepted-Connection lookup and server display-name snapshot;
+- non-Safety-Pilot roles bypass connected identity and preserve their normalized commander semantic value;
+- connected identity is resolved only by submitted account ID plus accepted Connection; typed names are never matched to accounts;
+- connected mode ignores client commander text and returns the current server `users.display_name` as the historical commander snapshot;
+- create/update persist that shared semantic commander and connected user ID;
+- the parent INSERT/UPDATE additionally rechecks accepted Connection state in its own write predicate, so revocation between initial resolution and persistence fails closed;
+- if that write returns no row, the same resolver is called again to classify a Connection revocation without duplicating a second account-resolution implementation;
+- `flight_connected_crew` remains separate metadata and its insert/update/delete remains conditional on successful parent persistence;
+- no destructive RoleCrew sanitization is introduced; F2.4 still owns evidence-aware canonicalization;
+- GPS remains PIC-only; certification v1–v8 and collaboration/materialization semantics remain unchanged;
+- DB/schema migration: N/A;
+- verification: pending.
 
 ### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization
 - audit Manual, GPS, shared-flight materialization, certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, dashboard/statistics and backup/restore;

@@ -9,6 +9,18 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
+- Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
+- Manual Safety Pilot mode preserves the normalized commander and fails closed for a blank EASA Actual PIC; connected mode validates a positive non-self account ID, requires a currently accepted Connection and ignores client commander text.
+- Connected mode snapshots the current server `users.display_name` as the historical commander; no account identity is inferred from names.
+- Create/update persist the shared resolver output and also recheck accepted Connection state inside the parent write predicate to prevent a revoked Connection from producing a parent or child mutation.
+- `flight_connected_crew` remains separate metadata and is inserted/updated/deleted only when the parent create/update succeeds.
+- A zero-row connected write is reclassified through the same resolver so a concurrent revocation returns the existing Connection-specific error instead of silently degrading.
+- Added focused source regression coverage, PostgreSQL acceptance for the production resolver query, and authenticated browser coverage for display-name resnapshot on create/update plus revoked-Connection Save rejection.
+- GPS remains PIC-only; certification payload versions v1–v8 and collaboration/materialization semantics are unchanged.
+- **DB/schema:** N/A.
+- **Verification:** pending.
+
 ### Flight Entry Workflow 3.0 — F2.2 Manual inline Role/Crew UX
 - Moved role-defining DUAL Instructor/PIC, Safety Pilot Actual PIC, and SPIC/PICUS supervision/countersignature controls directly into Flight essentials immediately after Role.
 - Manual applicability and required cues now consume the shared `roleCrewSpec(role,evidence)` contract introduced in F2.1.

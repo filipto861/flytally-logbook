@@ -24,9 +24,9 @@ import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { gpsImportSourceRequirements,resolveGpsImportAircraftContext,resolveGpsImportOperationEngine,validateGpsImportRole,validateGpsImportSubmittedAircraftContext } from "@/lib/gps-import-integrity";
+import { resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
 
 export type FlightActionState = { error?: string; success?: string };
-function connectedPicSelection(form:FormData,role:string){if(role!=="SAFETY PILOT")return 0;const mode=String(form.get("actualPicMode")??"manual").trim().toLowerCase();if(mode==="manual")return 0;if(mode!=="connected")return-1;const raw=String(form.get("connectedPicUserId")??"").trim();if(!raw)return-1;const value=Number(raw);return Number.isSafeInteger(value)&&value>0?value:-1}
 async function resolvedPrice(userId:number,registration:string,date:string){const rows=await sql`SELECT COALESCE(r.price_per_hour,a.default_price_per_hour) AS price_per_hour FROM aircraft a LEFT JOIN LATERAL (SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(${registration})) AND (valid_from IS NULL OR valid_from='' OR valid_from<=${date}) ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 1) r ON TRUE WHERE a.user_id=${userId} AND UPPER(a.registration)=${registration} LIMIT 1` as Array<{price_per_hour:number|null}>;return rows[0]?.price_per_hour??null}
 export type AirportCandidate={ident:string;name:string;distanceKm:number;confidence:"high"|"medium"|"low"|"manual";source:"custom"|"catalogue"};export type AirportDetection=AirportCandidate|null;export type AirportDetectionRequest={departureCandidates:Array<{lat:number;lon:number}>;arrivalCandidates:Array<{lat:number;lon:number}>};export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection;departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]}>;airportCount:number};const AUTO_AIRPORT_RADIUS_KM=4,AIRPORT_CANDIDATE_RADIUS_KM=20;
 const airportConfidence=(distanceKm:number):AirportCandidate["confidence"]=>distanceKm<=1.5?"high":distanceKm<=4?"medium":distanceKm<=8?"low":"manual";
@@ -38,16 +38,15 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
 export async function createFlight(_:FlightActionState,form:FormData):Promise<FlightActionState>{
   const{userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);
   const parsed=parseFlightInput(form),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
-  const f=parsed.data,connectedPicUserId=connectedPicSelection(form,f.role);if(connectedPicUserId<0||connectedPicUserId===userId)return{error:"Select a valid connected Actual PIC."};if(f.role==="SAFETY PILOT"&&f.evidence==="EASA"&&connectedPicUserId===0&&!f.commander.trim())return{error:"Enter the actual PIC or select an accepted Connection."};
+  const f=parsed.data,picResolution=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!picResolution.ok)return{error:picResolution.error};const connectedPicUserId=picResolution.connectedUserId,commander=picResolution.commander;
   const departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency}))),price=f.billingBasis?await resolvedPrice(userId,f.registration,f.date):null,fingerprint=flightFingerprint(userId,{date:f.date,registration:f.registration,offBlock:f.offBlock,departure,arrival});
   const results=await sql.transaction([
     sql`SELECT pg_advisory_xact_lock(hashtextextended(${fingerprint},0))`,
-    sql`WITH pic_context AS (
-      SELECT CASE WHEN ${connectedPicUserId}>0 THEN u.id ELSE NULL END connected_user_id,
-        CASE WHEN ${connectedPicUserId}>0 THEN u.display_name ELSE ${f.commander} END commander
-      FROM (SELECT 1) seed
-      LEFT JOIN LATERAL (
-        SELECT u.id,u.display_name FROM users u
+    sql`WITH inserted AS (
+      INSERT INTO flights (user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,balloon_class,balloon_group,balloon_operation,launch_method,launches,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,note,operation_type,engine_type,operator_name,flight_number,operation_context,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,verification_name,verification_reference)
+      SELECT ${userId},${f.date},${f.evidence},${f.registration},${f.aircraftType},${f.aircraftClass},${f.regulatoryCategory},${f.balloonClass},${f.balloonGroup},${f.balloonOperation},${f.launchMethod},${f.launches},${departure},${arrival},${f.offBlock},${f.takeoff},${f.landing},${f.onBlock},${f.starts},${commander},${f.instructor},${f.role},${f.task},${f.purposeCode},${price},${f.billingBasis},${f.note},${f.operationType},${f.engineType},${f.operatorName},${f.flightNumber},${f.operationContext},${f.landingsDay},${f.landingsNight},${f.movementEvidenceRecorded},${f.takeoffsDay},${f.takeoffsNight},${f.approachesDay},${f.approachesNight},${f.nightMinutes},${f.ifrMinutes},${f.picMinutes},${f.copilotMinutes},${f.dualMinutes},${f.instructorMinutes},${f.verificationName},${f.verificationReference}
+      WHERE (${connectedPicUserId}=0 OR EXISTS(
+        SELECT 1 FROM users u
         WHERE u.id=${connectedPicUserId}
           AND u.id<>${userId}
           AND NULLIF(TRIM(u.display_name),'') IS NOT NULL
@@ -57,14 +56,8 @@ export async function createFlight(_:FlightActionState,form:FormData):Promise<Fl
               AND ((pc.requester_user_id=${userId} AND pc.recipient_user_id=u.id)
                 OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id))
           )
-        LIMIT 1
-      ) u ON ${connectedPicUserId}>0
-      WHERE ${connectedPicUserId}=0 OR u.id IS NOT NULL
-    ),inserted AS (
-      INSERT INTO flights (user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,balloon_class,balloon_group,balloon_operation,launch_method,launches,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,note,operation_type,engine_type,operator_name,flight_number,operation_context,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,verification_name,verification_reference)
-      SELECT ${userId},${f.date},${f.evidence},${f.registration},${f.aircraftType},${f.aircraftClass},${f.regulatoryCategory},${f.balloonClass},${f.balloonGroup},${f.balloonOperation},${f.launchMethod},${f.launches},${departure},${arrival},${f.offBlock},${f.takeoff},${f.landing},${f.onBlock},${f.starts},p.commander,${f.instructor},${f.role},${f.task},${f.purposeCode},${price},${f.billingBasis},${f.note},${f.operationType},${f.engineType},${f.operatorName},${f.flightNumber},${f.operationContext},${f.landingsDay},${f.landingsNight},${f.movementEvidenceRecorded},${f.takeoffsDay},${f.takeoffsNight},${f.approachesDay},${f.approachesNight},${f.nightMinutes},${f.ifrMinutes},${f.picMinutes},${f.copilotMinutes},${f.dualMinutes},${f.instructorMinutes},${f.verificationName},${f.verificationReference}
-      FROM pic_context p
-      WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival})
+      ))
+        AND NOT EXISTS(SELECT 1 FROM flights WHERE user_id=${userId} AND date::text=${f.date} AND UPPER(TRIM(registration))=${f.registration} AND COALESCE(off_block,'')=${f.offBlock} AND UPPER(TRIM(COALESCE(departure,'')))=${departure} AND UPPER(TRIM(COALESCE(arrival,'')))=${arrival})
       RETURNING id
     ),expense_rows AS (
       INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency)
@@ -73,9 +66,9 @@ export async function createFlight(_:FlightActionState,form:FormData):Promise<Fl
       RETURNING id
     ),connected_link AS (
       INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role,updated_at)
-      SELECT inserted.id,${userId},p.connected_user_id,'PIC',NOW()
-      FROM inserted CROSS JOIN pic_context p
-      WHERE p.connected_user_id IS NOT NULL
+      SELECT inserted.id,${userId},${connectedPicUserId},'PIC',NOW()
+      FROM inserted
+      WHERE ${connectedPicUserId}>0
       ON CONFLICT(source_flight_id,intended_role) DO UPDATE
         SET source_user_id=EXCLUDED.source_user_id,connected_user_id=EXCLUDED.connected_user_id,updated_at=NOW()
       RETURNING id
@@ -83,7 +76,7 @@ export async function createFlight(_:FlightActionState,form:FormData):Promise<Fl
     SELECT id FROM inserted`
   ]);
   const rows=results[1] as Array<{id:number|string}>;if(!rows[0]){
-    if(connectedPicUserId>0){const connection=await sql`SELECT 1 FROM pilot_connections pc JOIN users u ON u.id=${connectedPicUserId} WHERE u.id<>${userId} AND NULLIF(TRIM(u.display_name),'') IS NOT NULL AND pc.status='accepted' AND ((pc.requester_user_id=${userId} AND pc.recipient_user_id=u.id) OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id)) LIMIT 1`;if(!connection[0])return{error:"Selected Actual PIC is no longer an accepted Connection."}}
+    if(connectedPicUserId>0){const recheck=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!recheck.ok)return{error:recheck.error}}
     return{error:"This flight already exists. Duplicate submission was blocked."};
   }
   const id=Number(rows[0].id);revalidatePath("/dashboard");revalidatePath("/flights");redirect(String(form.get("intent"))==="another"?"/flights/new?added=1":`/flights/${id}?tab=logbook&saved=1`);
@@ -104,33 +97,27 @@ export async function importKmlFlight(_:FlightActionState,form:FormData):Promise
 export async function updateFlight(id:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{
   const{userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);if(!Number.isSafeInteger(id)||id<=0)return{error:"Invalid record."};
   const parsed=parseFlightInput(form),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
-  const f=parsed.data,connectedPicUserId=connectedPicSelection(form,f.role);if(connectedPicUserId<0||connectedPicUserId===userId)return{error:"Select a valid connected Actual PIC."};if(f.role==="SAFETY PILOT"&&f.evidence==="EASA"&&connectedPicUserId===0&&!f.commander.trim())return{error:"Enter the actual PIC or select an accepted Connection."};
+  const f=parsed.data,picResolution=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!picResolution.ok)return{error:picResolution.error};const connectedPicUserId=picResolution.connectedUserId,commander=picResolution.commander;
   const departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency})));
   const existingRows=await sql`SELECT registration,date::text date,price_per_hour,locked_at,certified_at FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<{registration:string;date:string;price_per_hour:number|null;locked_at:string|null;certified_at:string|null}>;
   const existing=existingRows[0];if(!existing)return{error:"Flight not found or access denied."};if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};if(connectedPicUserId>0&&existing.certified_at)return{error:"Connected Actual PIC can only be changed on an editable draft or correction."};
   const price=!f.billingBasis?null:shouldResolveStoredPrice(existing,f.registration,f.date)?await resolvedPrice(userId,f.registration,f.date):existing.price_per_hour;
-  const rows=await sql`WITH pic_context AS (
-    SELECT CASE WHEN ${connectedPicUserId}>0 THEN u.id ELSE NULL END connected_user_id,
-      CASE WHEN ${connectedPicUserId}>0 THEN u.display_name ELSE ${f.commander} END commander
-    FROM (SELECT 1) seed
-    LEFT JOIN LATERAL (
-      SELECT u.id,u.display_name FROM users u
-      WHERE u.id=${connectedPicUserId}
-        AND u.id<>${userId}
-        AND NULLIF(TRIM(u.display_name),'') IS NOT NULL
-        AND EXISTS(
-          SELECT 1 FROM pilot_connections pc
-          WHERE pc.status='accepted'
-            AND ((pc.requester_user_id=${userId} AND pc.recipient_user_id=u.id)
-              OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id))
-        )
-      LIMIT 1
-    ) u ON ${connectedPicUserId}>0
-    WHERE ${connectedPicUserId}=0 OR u.id IS NOT NULL
-  ),updated AS (
-    UPDATE flights flight SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},regulatory_category=${f.regulatoryCategory},balloon_class=${f.balloonClass},balloon_group=${f.balloonGroup},balloon_operation=${f.balloonOperation},launch_method=${f.launchMethod},launches=${f.launches},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=p.commander,instructor=${f.instructor},role=${f.role},task=${f.task},purpose_code=${f.purposeCode},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note},operation_type=${f.operationType},engine_type=${f.engineType},operator_name=${f.operatorName},flight_number=${f.flightNumber},operation_context=${f.operationContext},landings_day=${f.landingsDay},landings_night=${f.landingsNight},movement_evidence_recorded=${f.movementEvidenceRecorded},takeoffs_day=${f.takeoffsDay},takeoffs_night=${f.takeoffsNight},approaches_day=${f.approachesDay},approaches_night=${f.approachesNight},night_minutes=${f.nightMinutes},ifr_minutes=${f.ifrMinutes},pic_minutes=${f.picMinutes},copilot_minutes=${f.copilotMinutes},dual_minutes=${f.dualMinutes},instructor_minutes=${f.instructorMinutes},verification_name=${f.verificationName},verification_reference=${f.verificationReference}
-    FROM pic_context p
-    WHERE flight.id=${id} AND flight.user_id=${userId} AND flight.locked_at IS NULL AND (${connectedPicUserId}=0 OR flight.certified_at IS NULL)
+  const rows=await sql`WITH updated AS (
+    UPDATE flights flight SET date=${f.date},evidence=${f.evidence},registration=${f.registration},aircraft_type=${f.aircraftType},aircraft_class=${f.aircraftClass},regulatory_category=${f.regulatoryCategory},balloon_class=${f.balloonClass},balloon_group=${f.balloonGroup},balloon_operation=${f.balloonOperation},launch_method=${f.launchMethod},launches=${f.launches},departure=${departure},arrival=${arrival},off_block=${f.offBlock},takeoff=${f.takeoff},landing=${f.landing},on_block=${f.onBlock},starts=${f.starts},commander=${commander},instructor=${f.instructor},role=${f.role},task=${f.task},purpose_code=${f.purposeCode},price_per_hour=${price},billing_basis=${f.billingBasis},note=${f.note},operation_type=${f.operationType},engine_type=${f.engineType},operator_name=${f.operatorName},flight_number=${f.flightNumber},operation_context=${f.operationContext},landings_day=${f.landingsDay},landings_night=${f.landingsNight},movement_evidence_recorded=${f.movementEvidenceRecorded},takeoffs_day=${f.takeoffsDay},takeoffs_night=${f.takeoffsNight},approaches_day=${f.approachesDay},approaches_night=${f.approachesNight},night_minutes=${f.nightMinutes},ifr_minutes=${f.ifrMinutes},pic_minutes=${f.picMinutes},copilot_minutes=${f.copilotMinutes},dual_minutes=${f.dualMinutes},instructor_minutes=${f.instructorMinutes},verification_name=${f.verificationName},verification_reference=${f.verificationReference}
+    WHERE flight.id=${id} AND flight.user_id=${userId} AND flight.locked_at IS NULL
+      AND (${connectedPicUserId}=0 OR flight.certified_at IS NULL)
+      AND (${connectedPicUserId}=0 OR EXISTS(
+        SELECT 1 FROM users u
+        WHERE u.id=${connectedPicUserId}
+          AND u.id<>${userId}
+          AND NULLIF(TRIM(u.display_name),'') IS NOT NULL
+          AND EXISTS(
+            SELECT 1 FROM pilot_connections pc
+            WHERE pc.status='accepted'
+              AND ((pc.requester_user_id=${userId} AND pc.recipient_user_id=u.id)
+                OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id))
+          )
+      ))
     RETURNING flight.id
   ),deleted_expenses AS (
     DELETE FROM flight_expenses WHERE flight_id=${id} AND user_id=${userId} AND EXISTS(SELECT 1 FROM updated) RETURNING id
@@ -147,16 +134,16 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
     RETURNING id
   ),connected_link AS (
     INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role,updated_at)
-    SELECT updated.id,${userId},p.connected_user_id,'PIC',NOW()
-    FROM updated CROSS JOIN pic_context p
-    WHERE p.connected_user_id IS NOT NULL
+    SELECT updated.id,${userId},${connectedPicUserId},'PIC',NOW()
+    FROM updated
+    WHERE ${connectedPicUserId}>0
     ON CONFLICT(source_flight_id,intended_role) DO UPDATE
       SET source_user_id=EXCLUDED.source_user_id,connected_user_id=EXCLUDED.connected_user_id,updated_at=NOW()
     RETURNING id
   )
   SELECT id FROM updated` as Array<{id:number|string}>;
   if(!rows[0]){
-    if(connectedPicUserId>0){const connection=await sql`SELECT 1 FROM pilot_connections pc JOIN users u ON u.id=${connectedPicUserId} WHERE u.id<>${userId} AND NULLIF(TRIM(u.display_name),'') IS NOT NULL AND pc.status='accepted' AND ((pc.requester_user_id=${userId} AND pc.recipient_user_id=u.id) OR (pc.recipient_user_id=${userId} AND pc.requester_user_id=u.id)) LIMIT 1`;if(!connection[0])return{error:"Selected Actual PIC is no longer an accepted Connection."}}
+    if(connectedPicUserId>0){const recheck=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!recheck.ok)return{error:recheck.error}}
     return{error:"Flight not found or access denied."};
   }
   revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath(`/flights/${id}`);return{success:"Flight changes saved."};

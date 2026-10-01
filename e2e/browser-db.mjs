@@ -98,6 +98,7 @@ export function resetGpsNormalizedImportFixture(){
 
 export function resetSafetyPilotPicFixture(){
   runBrowserSql(`
+    UPDATE users SET display_name='Browser Friend' WHERE id=9002;
     UPDATE pilot_connections
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
         accepted_at=NOW(),updated_at=NOW()
@@ -107,9 +108,21 @@ export function resetSafetyPilotPicFixture(){
   `);
 }
 
+export function renameSafetyPilotPicFixture(displayName){
+  const safe=String(displayName??"").replaceAll("'","''");
+  runBrowserSql(`UPDATE users SET display_name='${safe}' WHERE id=9002;`);
+}
+
+export function revokeSafetyPilotPicConnectionFixture(){
+  runBrowserSql(`
+    UPDATE pilot_connections SET status='cancelled',accepted_at=NULL,updated_at=NOW() WHERE id=7001;
+  `);
+}
+
 
 export function resetSafetyPilotPicInviteFixture(){
   runBrowserSql(`
+    UPDATE users SET display_name='Browser Friend' WHERE id=9002;
     UPDATE pilot_connections
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
         accepted_at=NOW(),updated_at=NOW()

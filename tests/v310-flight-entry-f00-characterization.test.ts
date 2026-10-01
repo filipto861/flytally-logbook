@@ -9,6 +9,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const gpsForm=read("components/kml-import-form.tsx");
 const actions=read("app/(protected)/flights/actions.ts");
+const connectedCrew=read("lib/flight-connected-crew.ts");
 const flightForm=read("components/flight-form.tsx");
 const dashboard=read("lib/data/dashboard.ts");
 const insights=read("lib/data/pilot-insights.ts");
@@ -76,8 +77,9 @@ test("F2.2 preserves the F2.1 DUAL Save gap closure while moving the required cu
   spic.set("verificationReference","Signed ref");
   assert.equal(parseFlightInput(spic).data?.role,"SPIC");
 
-  assert.match(actions,/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"/);
-  assert.match(actions,/Actual PIC|actual PIC|accepted Connection/);
+  assert.match(actions,/resolveSafetyPilotPicForSave\(\{sourceUserId:userId,role:f\.role,evidence:f\.evidence,commander:f\.commander,form\}\)/);
+  assert.match(connectedCrew,/if\(role!=="SAFETY PILOT"\)return\{ok:true,mode:"not_applicable"/);
+  assert.match(connectedCrew,/if\(evidence==="EASA"&&!commander\.trim\(\)\)return\{ok:false,error:"Enter the actual PIC or select an accepted Connection\."\}/);
 });
 
 test("F0.0 characterizes duplicate protection and one-transaction GPS persistence",()=>{

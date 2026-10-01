@@ -7,6 +7,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const actions=read("app/(protected)/flights/actions.ts");
 const parser=read("lib/flight-input.ts");
+const connectedCrew=read("lib/flight-connected-crew.ts");
 
 function actionBlock(name:string,next?:string){
   const start=actions.indexOf(`export async function ${name}`);
@@ -35,9 +36,10 @@ test("F1.3 Manual actions do not re-read semantic flight fields from FormData af
   const updateGets=[...update.matchAll(/form\.get(?:All)?\("([^"]+)"/g)].map(match=>match[1]);
   assert.deepEqual(createGets,["intent"]);
   assert.deepEqual(updateGets,[]);
-  assert.match(actions,/function connectedPicSelection\(form:FormData,role:string\)/);
-  assert.match(actions,/form\.get\("actualPicMode"\)/);
-  assert.match(actions,/form\.get\("connectedPicUserId"\)/);
+  assert.doesNotMatch(actions,/function connectedPicSelection/);
+  assert.match(actions,/resolveSafetyPilotPicForSave\(\{sourceUserId:userId,role:f\.role,evidence:f\.evidence,commander:f\.commander,form\}\)/);
+  assert.match(connectedCrew,/form\.get\("actualPicMode"\)/);
+  assert.match(connectedCrew,/form\.get\("connectedPicUserId"\)/);
 });
 
 test("F1.3 create and update persist the normalized FlightInput semantic field set",()=>{
@@ -54,7 +56,7 @@ test("F1.3 create and update persist the normalized FlightInput semantic field s
     for(const field of normalizedFields)assert.ok(block.includes(`f.${field}`),`${name} must persist normalized f.${field}`);
     assert.match(block,/canonicalAirportIdent\(f\.departure\)/,name);
     assert.match(block,/canonicalAirportIdent\(f\.arrival\)/,name);
-    assert.match(block,/p\.commander/,name);
+    assert.ok(block.includes("${commander}"),`${name} must persist the server-resolved commander`);
   }
 });
 
@@ -67,13 +69,17 @@ test("F1.3 preserves expense child persistence outside FlightInput",()=>{
   assert.doesNotMatch(parser,/flight_expenses|expenseJson|expenseCategory/);
 });
 
-test("F1.3 preserves connected Actual-PIC validation and child-link semantics",()=>{
+test("F2.3 preserves connected Actual-PIC validation and child-link semantics through one server resolver",()=>{
   for(const [name,block] of [["create",create],["update",update]] as const){
-    assert.match(block,/connectedPicUserId=connectedPicSelection\(form,f\.role\)/,name);
-    assert.match(block,/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"&&connectedPicUserId===0&&!f\.commander\.trim\(\)/,name);
+    assert.match(block,/picResolution=await resolveSafetyPilotPicForSave\(/,name);
     assert.match(block,/INSERT INTO flight_connected_crew\(source_flight_id,source_user_id,connected_user_id,intended_role,updated_at\)/,name);
     assert.match(block,/pc\.status='accepted'/,name);
+    assert.match(block,/\$\{connectedPicUserId\}=0 OR EXISTS\(/,name);
   }
+  assert.match(connectedCrew,/export async function resolveSafetyPilotPicForSave/);
+  assert.match(connectedCrew,/if\(evidence==="EASA"&&!commander\.trim\(\)\)/);
+  assert.match(connectedCrew,/pc\.status='accepted'/);
+  assert.match(connectedCrew,/commander:snapshot\.displayName/);
   assert.match(update,/DELETE FROM flight_connected_crew[\s\S]*connectedPicUserId\}=0/,);
   assert.doesNotMatch(parser,/flight_connected_crew|pilot_connections|connectedPicUserId/);
 });
@@ -81,7 +87,7 @@ test("F1.3 preserves connected Actual-PIC validation and child-link semantics",(
 test("F1.3 preserves create duplicate protection from normalized identity",()=>{
   assert.match(create,/flightFingerprint\(userId,\{date:f\.date,registration:f\.registration,offBlock:f\.offBlock,departure,arrival\}\)/);
   assert.match(create,/pg_advisory_xact_lock\(hashtextextended\(\$\{fingerprint\},0\)\)/);
-  assert.match(create,/WHERE NOT EXISTS\(SELECT 1 FROM flights WHERE user_id=\$\{userId\} AND date::text=\$\{f\.date\}/);
+  assert.match(create,/AND NOT EXISTS\(SELECT 1 FROM flights WHERE user_id=\$\{userId\} AND date::text=\$\{f\.date\}/);
   assert.match(create,/This flight already exists\. Duplicate submission was blocked\./);
 });
 
