@@ -41,7 +41,7 @@ test("F2.2 keeps generic crew fields available but outside required inline ident
   const end=form.indexOf('Aircraft & logbook',start);
   const additional=form.slice(start,end);
   assert.match(additional,/Additional crew details/);
-  assert.match(additional,/role&&role!=="DUAL"/);
+  assert.match(form,/\{role&&role!=="DUAL"\?<details className="entry-section entry-section-role-context"/);
   assert.match(additional,/Commander \/ PIC/);
   assert.match(additional,/>Instructor<input/);
   assert.doesNotMatch(additional,/Actual PIC source|Countersignature reference/);
