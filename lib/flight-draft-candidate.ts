@@ -1,4 +1,5 @@
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
+import { gpsImportSourceRequirements } from "./gps-import-integrity.ts";
 
 export const FLIGHT_DRAFT_SOURCES=["MANUAL","GPS_REVIEW"] as const;
 export type FlightDraftSource=(typeof FLIGHT_DRAFT_SOURCES)[number];
@@ -168,6 +169,17 @@ export type GpsReviewedPartCandidateInput={
   onBlock:unknown;
   starts:unknown;
   takeoffs?:unknown;
+  landingsDay?:unknown;
+  landingsNight?:unknown;
+  movementEvidenceRecorded?:unknown;
+  takeoffsDay?:unknown;
+  takeoffsNight?:unknown;
+  approachesDay?:unknown;
+  approachesNight?:unknown;
+  launchMethod?:unknown;
+  launches?:unknown;
+  nightTime?:unknown;
+  ifrTime?:unknown;
   note?:unknown;
 };
 
@@ -201,7 +213,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     reason:input.profileError||"Selected aircraft profile is unresolved.",
     provenance:"UNRESOLVED",
   };
-  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="";
+  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="",requirements=profile?gpsImportSourceRequirements(profile):null,review=input.reviewedPart,hasLandingEvidence=review.landingsDay!==undefined&&(requirements?.landingMode==="TOTAL"||review.landingsNight!==undefined),hasLaunchEvidence=review.launches!==undefined&&review.launchMethod!==undefined,hasPfDecision=review.movementEvidenceRecorded!==undefined,hasTakeoffEvidence=review.takeoffsDay!==undefined&&review.takeoffsNight!==undefined,hasApproachEvidence=review.approachesDay!==undefined&&review.approachesNight!==undefined,hasNightIfr=review.nightTime!==undefined&&review.ifrTime!==undefined;
   return{
     source:"GPS_REVIEW",
     date:input.reviewedPart.date,
@@ -215,25 +227,25 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     landing:input.reviewedPart.landing,
     onBlock:input.reviewedPart.onBlock,
     starts:input.reviewedPart.starts,
-    landingsDay:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    landingsNight:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    hasStructuredLandings:false,
-    launches:unresolved("GPS review does not currently capture sailplane launch count."),
-    launchMethod:unresolved("GPS review does not currently capture sailplane launch method."),
-    hasLaunches:false,
+    landingsDay:hasLandingEvidence?provided(review.landingsDay,"GPS_REVIEW"):unresolved("GPS review needs explicit landing evidence."),
+    landingsNight:hasLandingEvidence?provided(requirements?.landingMode==="TOTAL"?0:review.landingsNight,"GPS_REVIEW"):unresolved("GPS review needs explicit day/night landing evidence."),
+    hasStructuredLandings:Boolean(hasLandingEvidence),
+    launches:requirements?.movementMode==="SAILPLANE_LAUNCH"?(hasLaunchEvidence?provided(review.launches,"GPS_REVIEW"):unresolved("GPS review needs explicit sailplane launch count.")):0,
+    launchMethod:requirements?.movementMode==="SAILPLANE_LAUNCH"?(hasLaunchEvidence?provided(review.launchMethod,"GPS_REVIEW"):unresolved("GPS review needs explicit sailplane launch method.")):"",
+    hasLaunches:requirements?.movementMode==="SAILPLANE_LAUNCH"&&hasLaunchEvidence,
     balloonOperation:input.balloonOperation??"",
-    movementEvidenceRecorded:unresolved("Generic GPS movement is not Part-FCL PF movement evidence."),
-    takeoffsDay:unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
-    takeoffsNight:unresolved("GPS review does not currently provide authoritative day/night take-off evidence."),
-    approachesDay:unresolved("Generic GPS movement is not Part-FCL approach evidence."),
-    approachesNight:unresolved("Generic GPS movement is not Part-FCL approach evidence."),
+    movementEvidenceRecorded:requirements?.movementMode==="FCL060_PF"?(hasPfDecision?provided(review.movementEvidenceRecorded,"GPS_REVIEW"):unresolved("GPS review needs an explicit PF movement-evidence decision.")):"",
+    takeoffsDay:requirements?.movementMode==="EXPLICIT_TAKEOFFS"||String(review.movementEvidenceRecorded??"")==="yes"?(hasTakeoffEvidence?provided(review.takeoffsDay,"GPS_REVIEW"):unresolved("GPS review needs explicit day/night take-off evidence.")):0,
+    takeoffsNight:requirements?.movementMode==="EXPLICIT_TAKEOFFS"||String(review.movementEvidenceRecorded??"")==="yes"?(hasTakeoffEvidence?provided(review.takeoffsNight,"GPS_REVIEW"):unresolved("GPS review needs explicit day/night take-off evidence.")):0,
+    approachesDay:String(review.movementEvidenceRecorded??"")==="yes"?(hasApproachEvidence?provided(review.approachesDay,"GPS_REVIEW"):unresolved("GPS review needs explicit day/night approach evidence.")):0,
+    approachesNight:String(review.movementEvidenceRecorded??"")==="yes"?(hasApproachEvidence?provided(review.approachesNight,"GPS_REVIEW"):unresolved("GPS review needs explicit day/night approach evidence.")):0,
     operationType:hasOperation?provided(input.operationType,"COMMON_IMPORT"):unresolved("GPS Operation is not explicitly captured yet."),
     engineType:hasEngine?provided(input.engineType,"COMMON_IMPORT"):unresolved("GPS Engine is not explicitly captured yet."),
     operatorName:"",
     flightNumber:"",
     operationContext:"",
-    nightTime:unresolved("GPS review does not currently provide authoritative night-time evidence."),
-    ifrTime:unresolved("GPS review does not currently provide authoritative IFR evidence."),
+    nightTime:requirements?.reviewNightIfr?(hasNightIfr?provided(review.nightTime,"GPS_REVIEW"):unresolved("GPS review needs explicit Night/IFR review state.")):"",
+    ifrTime:requirements?.reviewNightIfr?(hasNightIfr?provided(review.ifrTime,"GPS_REVIEW"):unresolved("GPS review needs explicit Night/IFR review state.")):"",
     role:input.role,
     commander:"",
     instructor:"",
@@ -250,7 +262,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
       aircraftContext:profile?"AIRCRAFT_PROFILE":"UNRESOLVED",
       route:"GPS_REVIEW",
       timeline:"GPS_REVIEW",
-      movements:"UNRESOLVED",
+      movements:hasLandingEvidence&&requirements&&(requirements.movementMode==="NONE"||requirements.movementMode==="SAILPLANE_LAUNCH"||requirements.movementMode==="EXPLICIT_TAKEOFFS"&&hasTakeoffEvidence||requirements.movementMode==="FCL060_PF"&&hasPfDecision&&String(review.movementEvidenceRecorded??"")!=="yes"||requirements.movementMode==="FCL060_PF"&&hasPfDecision&&hasTakeoffEvidence&&hasApproachEvidence)?"GPS_REVIEW":"UNRESOLVED",
       role:"COMMON_IMPORT",
       operation:hasOperation?"COMMON_IMPORT":"UNRESOLVED",
       engine:hasEngine?"COMMON_IMPORT":"UNRESOLVED",
