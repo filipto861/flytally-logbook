@@ -9,6 +9,18 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.6 GPS source fidelity
+- Added category-driven GPS review requirements instead of inferring regulatory evidence from generic movement.
+- Reviewed landing totals must be explicitly classified day/night where the current domain distinguishes them; non-TMG sailplane keeps the existing total-landing compatibility model.
+- Part-FCL/ULL PF movement credit now requires an explicit Yes/No pilot decision; positive PF evidence requires explicit day/night take-off and approach counts.
+- Part-SFCL TMG and Part-BFCL take-offs require explicit day/night counts; non-TMG sailplane requires explicit launch method/count.
+- Added optional reviewed Night/IFR fields for standard-time categories; track motion does not infer either value.
+- GPS candidate adapters now resolve these source-sensitive fields only from explicit reviewed input, while unresolved/missing required facts remain fail-closed.
+- Current GPS persistence stores the reviewed source-fidelity fields in preparation for F1.4 shared-normalizer convergence.
+- Added source/domain and authenticated browser coverage for the new review boundary.
+- DB schema/migration: N/A.
+- Verification: PENDING on `feat/flight-entry-f1-6-source-fidelity`.
+
 ### Flight Entry Workflow 3.0 — F1.5 explicit GPS Operation / Engine
 - Reordered F1 execution because the shared normalizer correctly treats unresolved Operation/Engine as a blocking semantic state; routing GPS through it before explicit source input would either fail every applicable import or reintroduce guessed defaults.
 - Added common GPS **Operation (SP/MP)** and **Engine (SE/ME)** controls for categories where the canonical capability contract exposes those semantics.
