@@ -41,8 +41,8 @@ test("F0.0 preserves the historical fail-open characterization in documentation"
 });
 
 test("F0.0 preserves the historical GPS separate-write-path finding in documentation",()=>{
-  assert.match(characterization,/GPS import has a separate server write path/);
-  assert.match(characterization,/directly inserts `flights` \+ track rows/);
+  assert.match(characterization,/This is a confirmed semantic-write divergence/);
+  assert.match(characterization,/builds its own `INSERT INTO flights`/);
   assert.doesNotMatch(importAction,/parseFlightInput\(/);
   assert.match(importAction,/gpsFlightCandidate\(/);
   assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
