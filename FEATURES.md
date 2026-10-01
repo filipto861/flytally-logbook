@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F2.4C IMPLEMENTED / VERIFY PENDING
+### Flight Entry Workflow 3.0 — ACTIVE · F2.4C DONE / F2.5 NEXT
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -194,7 +194,7 @@ Current priority:
 - **F2.4B discovery found additional compatibility evidence**: Manual Additional crew details intentionally allows Commander/PIC on self-PIC roles, and shared-flight materialization intentionally writes commander snapshots onto recipient `PIC` rows, including the linked Safety Pilot Actual-PIC provenance path. Therefore self-PIC `commander` is not safely classifiable as stale. The focused review now prefers contract separation (Save/UI source vs historical output precedence) over changing `pilotInCommandName()` or destructively clearing persisted evidence. PR #215 added read-only characterization tests for the current semantics and merged without changing runtime behavior.
 - **F2.4B B1 is production-verified**: RoleCrew separates role-level PIC identity (`rolePicIdentitySource`) from downstream display precedence (`picDisplayPrecedence`). Existing output remains compatibility-first: explicit stored commander precedes account SELF on self-PIC roles, while raw crew evidence is preserved. PR #217 merged as `6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`; Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` is READY on that exact SHA and serves `fly-tally.com`. No persistence/schema/certification-version/GPS-role change. B2 remains a semantic review gate; destructive canonicalization is not authorized.
 - **F2.4B semantic closeout is intentionally non-destructive**: there is no evidence-backed rule that can safely clear `commander`, non-DUAL `instructor`, or non-SPIC/PICUS `verification_*` without risking valid Manual/shared/training/endorsement provenance. F2 freezes current PIC display precedence and preserves raw fields; any future reinterpretation is a separate product/data-integrity decision. F2.4C cross-path characterization is next. PR #219 adds the final cross-role preservation regression and is verified by #1092 (1059/1059 unit/regression, PostgreSQL 66/66).
-- **F2.4C has an implementation candidate**: one cross-path characterization suite now ties the RoleCrew contract to Manual Save/Edit semantics, Certification isolation, explicit FlyTally/in-person verification, shared materialization, print/export, audit/backup, recency, Safety Pilot and GPS PIC-only behavior. Browser coverage verifies both explicit verification paths on a certified training flight. Verification pending.
+- **F2.4C is verified**: one cross-path characterization suite ties the RoleCrew contract to Manual Save/Edit semantics, Certification isolation, explicit FlyTally/in-person verification, shared materialization, print/export, audit/backup, recency, Safety Pilot and GPS PIC-only behavior. PR #221 merged as `84b5f5362f03ef1959956fba91584059a36c2db5`; Verify #1094 PASS (1068/1068 unit/regression, PostgreSQL 66/66) and Browser #468 PASS (production build, Chromium 34 passed / 2 skipped). No runtime/schema change. F2.5 cross-path regression + F2 closeout is next.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
