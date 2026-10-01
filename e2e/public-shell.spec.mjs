@@ -186,11 +186,21 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
   await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
+  await expect(gpsForm.locator('select[name="operationType"]')).toBeVisible();
+  await expect(gpsForm.locator('select[name="engineType"]')).toBeVisible();
+  await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("");
+  await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("SP");
+  await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("SE");
 
   await registration.selectOption("OK-ULL1");
   await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("ULL");
   await expect(gpsForm.getByLabel("Logbook")).toHaveValue("ULL");
   await expect(gpsForm.getByText("Needs configuration.")).toHaveCount(0);
+  await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("");
+  await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
 
   await registration.selectOption("OK-BAD1");
   await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("");

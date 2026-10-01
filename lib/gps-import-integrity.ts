@@ -1,5 +1,7 @@
 import { resolveFlightEntryAircraftProfileDefaults,type FlightEntryAircraftProfileInput } from "./flight-form-rules.ts";
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
+import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
+import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 
 export const GPS_IMPORT_ROLES=["PIC"] as const;
 export type GpsImportRole=(typeof GPS_IMPORT_ROLES)[number];
@@ -33,4 +35,40 @@ export function validateGpsImportSubmittedAircraftContext(
     return{error:"GPS import must use the selected aircraft profile logbook and class. Resolve the aircraft profile before importing this track."};
   }
   return{};
+}
+
+
+export function gpsImportRequiresOperationEngine(profile:CanonicalAircraftProfileRegulatoryFields){
+  return aircraftCategoryCapabilities({
+    evidence:profile.evidence,
+    aircraftClass:profile.aircraftClass,
+    regulatoryCategory:profile.regulatoryCategory,
+  }).showOperationEngineControls;
+}
+
+export function resolveGpsImportOperationEngine(
+  submitted:{operationType:unknown;engineType:unknown},
+  profile:CanonicalAircraftProfileRegulatoryFields,
+):
+  |{operationType:"SP"|"MP";engineType:"SE"|"ME";explicit:boolean;error?:undefined}
+  |{operationType?:undefined;engineType?:undefined;explicit?:undefined;error:string}{
+  if(!gpsImportRequiresOperationEngine(profile)){
+    return{
+      operationType:"SP",
+      engineType:defaultEngineType(profile.aircraftClass),
+      explicit:false,
+    };
+  }
+  const operationType=upper(submitted.operationType),engineType=upper(submitted.engineType);
+  if(!OPERATION_TYPES.includes(operationType as (typeof OPERATION_TYPES)[number])){
+    return{error:"Select whether this GPS flight was single-pilot or multi-pilot."};
+  }
+  if(!ENGINE_TYPES.includes(engineType as (typeof ENGINE_TYPES)[number])){
+    return{error:"Select whether this GPS flight used a single-engine or multi-engine aircraft configuration."};
+  }
+  return{
+    operationType:operationType as "SP"|"MP",
+    engineType:engineType as "SE"|"ME",
+    explicit:true,
+  };
 }

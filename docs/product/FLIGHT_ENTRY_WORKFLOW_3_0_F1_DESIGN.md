@@ -347,18 +347,20 @@ This must be a new base migration (v17), not a rewrite of v6.
 - GPS remains intentionally outside this Manual proof until F1.4;
 - Verification: Verify #1013 PASS; TypeScript PASS; 1014/1014 unit/regression; PostgreSQL 63/63; Browser N/A; DB migration N/A.
 
-### F1.4 — GPS semantic adapter / persistence convergence
+### F1.5 — explicit GPS Operation / Engine — DONE / VERIFIED
+- dependency-driven prerequisite moved ahead of F1.4 runtime convergence because the shared normalizer correctly rejects unresolved Operation/Engine;
+- compact common SP/MP + SE/ME controls are shown whenever the resolved category exposes Operation/Engine semantics;
+- registration/profile change clears both values so a previous aircraft choice cannot leak into a new import;
+- server revalidates submitted Operation/Engine and persists those explicit values instead of hidden SP / class-derived Engine assumptions;
+- non-applicable category branches preserve compatibility storage semantics only; they do not expose Operation/Engine as regulatory input.
+
+### F1.4 — GPS semantic adapter / persistence convergence — BLOCKED UNTIL F1.6 VERIFIED
 - resolve each reviewed PIC part into candidate state;
 - pass every semantic flight value through shared normalizer;
 - retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
 - remove the hand-written GPS semantic mapper where the shared normalized value exists.
 
-### F1.5 — explicit GPS Operation / Engine
-- add compact common SP/MP + SE/ME controls for applicable EASA GPS imports;
-- unresolved values fail closed;
-- no class-derived Engine and no hidden SP default in the shared GPS path.
-
-### F1.6 — source-fidelity + cross-path closeout
+### F1.6 — source-fidelity prerequisite + cross-path closeout — NEXT
 - sailplane/movement/night/IFR evidence is explicit or remains unavailable; never inferred from generic movement;
 - equivalent Manual/GPS PIC semantics tested where both sources provide equivalent facts;
 - preserve v1–v8 verification and certified-only recency;
