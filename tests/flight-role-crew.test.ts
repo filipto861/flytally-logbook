@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseFlightInput } from "../lib/flight-input.ts";
-import { roleCrewSpec } from "../lib/role-crew.ts";
+import { resolveRoleCrewPicName,roleCrewSpec } from "../lib/role-crew.ts";
 
 function formFor(role:string,evidence="EASA"){
   const form=new FormData();
@@ -26,31 +26,47 @@ function formFor(role:string,evidence="EASA"){
   return form;
 }
 
-test("F2.1 RoleCrew spec freezes PIC identity sources and Save policies",()=>{
+test("F2.4B RoleCrew separates role identity policy from PIC display precedence",()=>{
   const pic=roleCrewSpec("PIC","EASA");
   assert.equal(pic?.selfIsPic,true);
-  assert.equal(pic?.picNameSource,"SELF");
-  assert.equal(pic?.commander,"not_applicable");
+  assert.equal(pic?.rolePicIdentitySource,"SELF");
+  assert.equal(pic?.commander,"optional");
+  assert.deepEqual(pic?.picDisplayPrecedence,["COMMANDER","SELF"]);
 
   const dual=roleCrewSpec("DUAL","EASA");
   assert.equal(dual?.instructor,"required_save");
-  assert.equal(dual?.picNameSource,"INSTRUCTOR");
+  assert.equal(dual?.rolePicIdentitySource,"INSTRUCTOR");
+  assert.deepEqual(dual?.picDisplayPrecedence,["INSTRUCTOR","COMMANDER"]);
   assert.equal(roleCrewSpec("DUAL","ULL")?.instructor,"optional");
 
   for(const role of ["SPIC","PICUS"]){
     const spec=roleCrewSpec(role,"EASA");
     assert.equal(spec?.verificationName,"required_save");
     assert.equal(spec?.verificationReference,"required_save");
-    assert.equal(spec?.picNameSource,"VERIFIER");
+    assert.equal(spec?.rolePicIdentitySource,"VERIFIER");
+    assert.deepEqual(spec?.picDisplayPrecedence,["VERIFIER","COMMANDER"]);
   }
 
   const safety=roleCrewSpec("SAFETY PILOT","EASA");
   assert.equal(safety?.commander,"external_resolver");
   assert.equal(safety?.connectedActualPic,"allowed");
+  assert.equal(safety?.rolePicIdentitySource,"COMMANDER");
+  assert.deepEqual(safety?.picDisplayPrecedence,["COMMANDER"]);
 
   for(const role of ["CO-PILOT","CRUISE-RELIEF CO-PILOT","PAX","OBSERVER"]){
-    assert.equal(roleCrewSpec(role,"EASA")?.commander,"optional");
+    const spec=roleCrewSpec(role,"EASA");
+    assert.equal(spec?.commander,"optional");
+    assert.equal(spec?.rolePicIdentitySource,"COMMANDER");
+    assert.deepEqual(spec?.picDisplayPrecedence,["COMMANDER"]);
   }
+});
+
+test("F2.4B PIC resolver preserves historical commander precedence without account inference",()=>{
+  assert.equal(resolveRoleCrewPicName({role:"PIC",commander:"Historical PIC",selfName:"Owner Pilot"}),"Historical PIC");
+  assert.equal(resolveRoleCrewPicName({role:"PIC",commander:"",selfName:"Owner Pilot"}),"Owner Pilot");
+  assert.equal(resolveRoleCrewPicName({role:"DUAL",instructor:"Instructor",commander:"Captain",selfName:"Student"}),"Instructor");
+  assert.equal(resolveRoleCrewPicName({role:"PICUS",verificationName:"Supervisor",commander:"Captain",selfName:"Student"}),"Supervisor");
+  assert.equal(resolveRoleCrewPicName({role:"UNKNOWN",commander:"Legacy Commander",selfName:"Owner Pilot"}),"Legacy Commander");
 });
 
 test("F2.1 makes EASA DUAL instructor server-required while preserving ULL behavior",()=>{
