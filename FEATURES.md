@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F2.3 DONE / F2.4 NEXT
+### Flight Entry Workflow 3.0 — ACTIVE · F2.4 ANALYSIS / REVIEW
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -190,6 +190,7 @@ Current priority:
 - explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
 - **F2.2 Manual inline Role/Crew UX is production-verified**: DUAL, Safety Pilot, SPIC and PICUS role-defining identity is shown directly in Flight essentials using the shared RoleCrew contract for applicability/required cues; the completion surface points to those inline controls; generic commander/instructor inputs remain available under Additional crew details.
 - **F2.3 Safety Pilot resolver convergence is production-verified**: Manual and connected Safety Pilot Actual-PIC submissions resolve through one server helper shared by create/update; connected identity is accepted only by account ID with a live accepted Connection, the server display name becomes the historical commander snapshot, the parent write rechecks Connection state fail-closed, and `flight_connected_crew` remains separate atomic metadata. Certification v1–v8 and GPS PIC-only behavior remain unchanged. F2.4 producer/consumer reconciliation + evidence-aware canonicalization is next.
+- **F2.4 producer-consumer audit is complete and under independent review**: the audit confirms Certification still performs forbidden DUAL/SPIC/PICUS name→account inference even though an explicit account-ID request flow already exists; it also confirms `instructor` and `verification_*` carry non-role training/endorsement evidence and therefore cannot be broadly cleared. F2.4A will remove name inference after review; self-PIC commander semantic precedence and any evidence-aware canonicalization remain review-gated.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
