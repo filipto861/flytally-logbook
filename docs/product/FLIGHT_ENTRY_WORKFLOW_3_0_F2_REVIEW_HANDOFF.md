@@ -1,5 +1,8 @@
 # Independent Review Handoff — Flight Entry Workflow 3.0 / F2 Role-Crew Parity
 
+> **Review status:** COMPLETED · independent verdict **APPROVE WITH CHANGES** · reconciled against repository evidence on 1 October 2026.  
+> This file is preserved as the review request/record. The authoritative reconciled contract is `FLIGHT_ENTRY_WORKFLOW_3_0_F2_ROLE_CREW_DESIGN.md`.
+
 ## Reviewer role
 
 Act as an **independent read-only architecture/data-integrity reviewer**. Challenge the design. Do not treat current UI behavior as authoritative merely because it exists.
@@ -152,3 +155,23 @@ Do not propose:
 - certification hash rewrite;
 - broad GPS role expansion without full parity;
 - a second flight model.
+
+
+## Review outcome / repository reconciliation
+
+Accepted from the independent review:
+- CO-PILOT / CRUISE-RELIEF CO-PILOT remain Save-optional for commander; current Certification remains the stronger PIC-name gate.
+- Safety Pilot account resolution belongs outside the pure normalizer and must recheck accepted Connection state server-side.
+- GPS remains PIC-only throughout F2; F4 owns Role/Crew inheritance and overrides.
+- Certified rows remain immutable and no historical repair/backfill is introduced.
+
+Corrections from repository evidence:
+- self-PIC roles do **not** require a stored commander snapshot. The F0 contract explicitly allows ordinary PIC commander to be blank and `pilotInCommandName()` resolves self from the owning account.
+- SPIC/PICUS current PIC-name semantics are explicit: `verification_name` resolves the supervising PIC/FI.
+- broad role-only sanitization is unsafe because `instructor` also gates Aircraft Differences/Familiarisation purpose evidence and `verification_*` is consumed for general test/revalidation endorsement warnings.
+- current certification `autoRequestTrainingVerification()` performs name-to-account matching for DUAL/SPIC/PICUS. That conflicts with the frozen no-name-inference rule and must be removed/replaced by explicit account-ID selection before F2 closeout.
+
+Implementation consequence:
+- F2.1 is narrowed to the pure RoleCrew requirement contract + server-authoritative validation only.
+- destructive field sanitization is deferred until an evidence-aware producer/consumer audit in F2.4.
+- no GPS role promotion occurs in F2.
