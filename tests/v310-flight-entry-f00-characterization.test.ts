@@ -40,13 +40,15 @@ test("F0.0 preserves the historical fail-open characterization in documentation"
   assert.match(characterization,/This is the confirmed F0\.1 fail-open defect/);
 });
 
-test("F0.0 characterizes GPS as a separate semantic write path",()=>{
-  assert.doesNotMatch(importAction,/parseFlightInput\(/);
-  assert.match(importAction,/allocatedFunctionTimes\(role,creditMinutes\)/);
+test("F0.0 preserves the historical separate GPS semantic path while F1.4 converges current runtime",()=>{
+  assert.match(characterization,/importKmlFlight\(\)` does not call `parseFlightInput\(\)`/);
+  assert.match(characterization,/allocates function time directly/);
+  assert.match(characterization,/This is a confirmed semantic-write divergence/);
+  assert.match(importAction,/gpsFlightCandidate\(\{/);
+  assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
   assert.match(importAction,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
-  assert.match(importAction,/\$\{item\.values\.starts\},'', '',\$\{role\},\$\{task\}/);
-  assert.match(importAction,/\$\{item\.partNote\},\$\{operationType\},\$\{engineType\}/);
-  assert.doesNotMatch(importAction,/verification_name|verification_reference|connectedPicUserId|flight_connected_crew/);
+  assert.match(importAction,/\$\{item\.input\.starts\}/);
+  assert.match(importAction,/\$\{item\.input\.operationType\},\$\{item\.input\.engineType\}/);
 });
 
 test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in documentation",()=>{

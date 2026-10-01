@@ -189,6 +189,8 @@ Current priority:
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
 - F1.6 source-fidelity inputs are DONE/verified: category-specific landing/movement/launch/Night-IFR facts are explicit pilot-reviewed evidence, never inferred from generic GPS motion; F1.4 shared-normalizer convergence is NEXT.
 
+- F1.4 is implemented and PR-head verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence; production closeout is pending merge/deploy.
+
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
 ### Multi-aircraft Product Scale — QUEUED

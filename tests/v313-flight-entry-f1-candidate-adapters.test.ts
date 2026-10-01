@@ -189,12 +189,11 @@ test("F1.1 GPS adapter preserves unresolved aircraft-profile state instead of in
   assert.equal(candidate.provenance.aircraftContext,"UNRESOLVED");
 });
 
-test("F1.1 candidate adapters remain out of mutation/UI wiring while F1.2 may consume the Manual adapter",async()=>{
+test("F1.1 adapter boundary remains explicit as F1.4 wires only the GPS server mutation",async()=>{
   const fs=await import("node:fs");
   const path=await import("node:path");
   const root=path.resolve(import.meta.dirname,"..");
   for(const runtimePath of [
-    "app/(protected)/flights/actions.ts",
     "components/flight-form.tsx",
     "components/kml-import-form.tsx",
   ]){
@@ -204,4 +203,7 @@ test("F1.1 candidate adapters remain out of mutation/UI wiring while F1.2 may co
   const parser=fs.readFileSync(path.join(root,"lib/flight-input.ts"),"utf8");
   assert.match(parser,/manualFlightCandidate/);
   assert.match(parser,/normalizeFlightDraft\(manualFlightCandidate\(form\)\)/);
+  const actions=fs.readFileSync(path.join(root,"app/(protected)/flights/actions.ts"),"utf8");
+  assert.match(actions,/gpsFlightCandidate/);
+  assert.match(actions,/normalizeFlightDraft\(candidate\)/);
 });

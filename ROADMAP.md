@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.3 + F1.5 + F1.6 DONE** · F1.4 GPS shared-normalizer convergence NEXT |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.6 IMPLEMENTED** · F1.4 PR-head verified; merge/production closeout pending |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,10 +419,19 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F1.4 GPS shared-normalizer convergence**;
-- build each reviewed GPS PIC part as a `FlightDraftCandidate` and normalize it through `normalizeFlightDraft()` before persistence;
-- preserve current F1.6 explicit source-evidence review, F0.1 profile fail-closed behavior, F1.5 Operation/Engine rules, duplicate locks and one atomic N-part transaction;
-- remove hand-written GPS semantic derivation only where the normalized `FlightInput` becomes authoritative.
+- merge and production-verify **F1.4 GPS shared-normalizer convergence** after final PR-head gates;
+- confirm `fly-tally.com` runs the merged F1.4 main SHA with no DB migration required;
+- close F1 only after production evidence is recorded;
+- then promote **F2 — Role/Crew parity** as the next implementation milestone.
+
+F1.4 PR-head closeout:
+- every reviewed GPS PIC part is converted to `FlightDraftCandidate` and normalized through the same `normalizeFlightDraft()` / `FlightInput` semantic boundary as Manual entry before persistence;
+- the GPS INSERT consumes normalized semantic fields; track payload, date-effective price lookup, duplicate fingerprinting, advisory locks and the atomic N-part transaction remain persistence/provenance concerns;
+- explicit F1.5 Operation/Engine and F1.6 source-evidence review feed the shared normalizer; GPS remains PIC-only;
+- authenticated browser coverage now performs a real GPS reviewed-flight Save and verifies the resulting stored Manual-review fields;
+- the browser fixture was reconciled with the runtime `flight_tracks.overview_version` schema and the new mutation test cleans up its own deterministic record to avoid cross-project contamination;
+- Verify #1055 PASS · TypeScript PASS · 1030/1030 unit/regression · PostgreSQL 63/63 · Browser #431 PASS · 28 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A for F1.4; production deployment verification remains pending until merge.
 
 F1.6 closeout:
 - GPS review requires explicit category-appropriate landing evidence before a part can be confirmed;

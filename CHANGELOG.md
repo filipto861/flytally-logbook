@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.4 shared GPS normalization
+- Routed every reviewed GPS PIC part through `gpsFlightCandidate() → normalizeFlightDraft() → FlightInput` before any flight persistence.
+- GPS flight INSERT semantics now consume the same normalized `FlightInput` contract as Manual entry instead of recomputing role credit, billing, operation/engine and other flight semantics independently.
+- Kept GPS track coordinates/provenance, date-effective price lookup, duplicate fingerprinting, sorted advisory locks and the atomic N-part transaction outside the semantic normalizer.
+- Preserved F0.1 fail-closed aircraft context, F1.5 explicit Operation/Engine and F1.6 explicit source-evidence review; GPS remains PIC-only.
+- Added Manual/GPS equivalent-EASA-PIC semantic equivalence coverage plus authenticated browser persistence coverage.
+- Reconciled the isolated browser `flight_tracks` fixture with the runtime `overview_version` column and made the mutation test deterministic/cleanup-safe.
+- Final PR-head verification before docs closeout: Verify #1055 PASS; TypeScript PASS; full unit/regression **1030/1030**; PostgreSQL acceptance **63/63**; Browser smoke #431 **28 passed / 2 skipped**; production build PASS.
+- DB schema/migration: N/A for F1.4. Production deployment verification is pending merge.
+
 ### Flight Entry Workflow 3.0 — F1.6 GPS source fidelity
 - Added category-driven GPS review requirements instead of inferring regulatory evidence from generic movement.
 - Reviewed landing totals must be explicitly classified day/night where the current domain distinguishes them; non-TMG sailplane keeps the existing total-landing compatibility model.

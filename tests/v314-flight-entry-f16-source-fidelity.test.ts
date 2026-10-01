@@ -175,9 +175,9 @@ test("F1.6 server validates and persists explicit GPS evidence instead of fixed 
   assert.match(actions,/needs an explicit pilot-flying movement decision/);
   assert.match(actions,/requires explicit sailplane launch method and count/);
   assert.match(actions,/Night \/ IFR time cannot exceed BLOCK time/);
-  assert.match(actions,/\$\{item\.values\.launchMethod\},\$\{item\.values\.launches\}/);
-  assert.match(actions,/\$\{item\.values\.landingsDay\},\$\{item\.values\.landingsNight\},\$\{item\.values\.movementEvidenceRecorded\}/);
-  assert.match(actions,/\$\{item\.values\.takeoffsDay\},\$\{item\.values\.takeoffsNight\},\$\{item\.values\.approachesDay\},\$\{item\.values\.approachesNight\}/);
-  assert.match(actions,/\$\{item\.values\.nightMinutes\},\$\{item\.values\.ifrMinutes\}/);
+  assert.match(actions,/\$\{item\.input\.launchMethod\},\$\{item\.input\.launches\}/);
+  assert.match(actions,/\$\{item\.input\.landingsDay\},\$\{item\.input\.landingsNight\},\$\{item\.input\.movementEvidenceRecorded\}/);
+  assert.match(actions,/\$\{item\.input\.takeoffsDay\},\$\{item\.input\.takeoffsNight\},\$\{item\.input\.approachesDay\},\$\{item\.input\.approachesNight\}/);
+  assert.match(actions,/\$\{item\.input\.nightMinutes\},\$\{item\.input\.ifrMinutes\}/);
   assert.doesNotMatch(actions,/\$\{item\.values\.starts\},0,FALSE,\$\{regulatoryCategory==="BALLOON"\?item\.values\.takeoffs:0\}/);
 });
