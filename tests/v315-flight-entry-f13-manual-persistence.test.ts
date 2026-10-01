@@ -87,7 +87,7 @@ test("F2.3 preserves connected Actual-PIC validation and child-link semantics th
 test("F1.3 preserves create duplicate protection from normalized identity",()=>{
   assert.match(create,/flightFingerprint\(userId,\{date:f\.date,registration:f\.registration,offBlock:f\.offBlock,departure,arrival\}\)/);
   assert.match(create,/pg_advisory_xact_lock\(hashtextextended\(\$\{fingerprint\},0\)\)/);
-  assert.match(create,/WHERE NOT EXISTS\(SELECT 1 FROM flights WHERE user_id=\$\{userId\} AND date::text=\$\{f\.date\}/);
+  assert.match(create,/AND NOT EXISTS\(SELECT 1 FROM flights WHERE user_id=\$\{userId\} AND date::text=\$\{f\.date\}/);
   assert.match(create,/This flight already exists\. Duplicate submission was blocked\./);
 });
 
