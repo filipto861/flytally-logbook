@@ -68,11 +68,14 @@ test("F1.5 GPS UI exposes explicit common Operation/Engine and blocks readiness 
   assert.ok(gpsForm.includes('setEngineType("")'));
 });
 
-test("F1.5 server revalidates Operation/Engine and persists resolved values",()=>{
+test("F1.5 server revalidates Operation/Engine and F1.4 persists normalized resolved values",()=>{
   assert.match(importAction,/resolveGpsImportOperationEngine\(\{operationType:form\.get\("operationType"\),engineType:form\.get\("engineType"\)\},profileResult\.profile\)/);
   assert.match(importAction,/if\(operationEngine\.error\)return\{error:operationEngine\.error\}/);
   assert.match(importAction,/const operationType=operationEngine\.operationType,engineType=operationEngine\.engineType/);
-  assert.match(importAction,/\$\{operationType\},\$\{engineType\}/);
+  assert.match(importAction,/operationType,/);
+  assert.match(importAction,/engineType,/);
+  assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
+  assert.match(importAction,/\$\{f\.operationType\},\$\{f\.engineType\}/);
   assert.doesNotMatch(importAction,/'SP',\$\{defaultEngineType\(aircraftClass\)\}/);
 });
 
