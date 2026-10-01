@@ -412,7 +412,7 @@ Milestones:
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
-| F2 — Role/Crew parity | 🚧 | **F2.4B B1 IMPLEMENTED / VERIFY PENDING** · RoleCrew Save/UI identity policy is split from backward-compatible PIC display precedence; no output/persistence semantic change intended |
+| F2 — Role/Crew parity | 🚧 | **F2.4B B1 DONE / PRODUCTION VERIFIED** · RoleCrew Save/UI identity policy is split from backward-compatible PIC display precedence; B2 remains a semantic review gate with no destructive cleanup authorized |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
@@ -429,7 +429,8 @@ Immediate next step:
 - **F2.4B characterization merged**: PR #215 → `main@064be0862b9506e472545eb16491b21019a90a50`; characterization locks the current mismatch as evidence (SELF Save/UI policy vs commander-over-SELF downstream precedence), Manual explicit commander availability, shared PIC commander producers and raw integrity/export visibility. Verify FlyTally web #1090 PASS — TypeScript PASS, 1057/1057 unit/regression, PostgreSQL 66/66; no runtime behavior changed;
 - focused independent-review package: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`;
 - current preferred direction is compatibility-first: preserve `pilotInCommandName()` output precedence and split RoleCrew Save/UI policy from downstream historical PIC-display semantics rather than rewriting certified interpretation;
-- **B1 implementation candidate:** `RoleCrewSpec` now exposes `rolePicIdentitySource` separately from `picDisplayPrecedence`; self-PIC commander is modeled as optional historical evidence; `pilotInCommandName()` delegates to the shared pure RoleCrew display resolver while retaining the existing commander-over-SELF precedence. Verification pending;
+- **F2.4B B1 DONE / PRODUCTION VERIFIED**: `RoleCrewSpec` exposes `rolePicIdentitySource` separately from `picDisplayPrecedence`; self-PIC commander is modeled as optional historical evidence; `pilotInCommandName()` delegates to the shared pure RoleCrew display resolver while retaining commander-over-SELF precedence. PR #217 merged as `6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`; Verify #1091 PASS — TypeScript PASS, 1058/1058 unit/regression, PostgreSQL 66/66; Browser #466 PASS — production build, Chromium 34 passed / 2 skipped; Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` READY for that exact SHA; `fly-tally.com` HTTP 200 from that deployment; DB/schema N/A;
+- next F2.4B step is semantic closeout/review only: no field clearing, certified reinterpretation or output precedence change is authorized without new evidence;
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
