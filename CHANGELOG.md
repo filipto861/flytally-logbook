@@ -23,6 +23,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`.
 - Production deployment `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY for that exact merge SHA, aliases `fly-tally.com`, and reports no alias error.
 - **DB/schema:** N/A. Certification v1–v8, certified rows, Safety Pilot F2.3, shared materialization and GPS PIC-only boundaries are unchanged.
+- **F2.4B discovery:** confirmed that self-PIC `commander` can be intentional rather than stale: Manual UI exposes optional Commander/PIC for non-DUAL roles and shared PIC materialization writes participant/source commander snapshots onto recipient `PIC` rows. The earlier draft preference to make SELF always override stored commander is therefore no longer considered safe without independent review.
+- Added a focused F2.4B independent-review handoff. No runtime, schema, certification-output or persisted-data change in this discovery step.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.

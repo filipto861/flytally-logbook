@@ -393,13 +393,18 @@ Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
 - Certification v1–v8, exact revision/hash verification, in-person signing, certified-row immutability, Safety Pilot F2.3 semantics and GPS PIC-only behavior remain unchanged;
 - DB/schema migration: N/A.
 
-#### F2.4B — evidence-aware semantic canonicalization
+#### F2.4B — evidence-aware semantic canonicalization — DISCOVERY COMPLETE / REVIEW REQUESTED
+Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
+
 - confirmed `instructor` cannot be broadly cleared outside DUAL because non-DUAL differences/familiarisation purpose evidence depends on it;
 - confirmed `verification_name` / `verification_reference` cannot be broadly cleared outside SPIC/PICUS because generic test/revalidation endorsement evidence shares those fields;
 - text-regex endorsement detection is not sufficient authority for destructive cleanup;
-- unresolved review item: `pilotInCommandName()` currently lets a stored commander override self identity for PIC/SOLO/FI/INSTRUCTOR/EXAMINER, contrary to the frozen RoleCrew PIC-source contract;
-- draft preference is non-destructive semantic precedence (self account wins while raw commander is preserved), but no change is permitted before independent review because existing certified output interpretation could change;
-- any editable-Save clearing must be proven non-applicable under Role + evidence + training/endorsement context; otherwise preserve raw evidence.
+- fresh discovery confirmed `commander` on a self-PIC role is not necessarily stale: Manual UI exposes optional Commander/PIC for self-PIC roles, and shared-flight materialization intentionally writes commander snapshots onto recipient `PIC` rows;
+- the earlier draft preference to make SELF always override stored commander is therefore withdrawn pending review because it could change printed/compliance interpretation of certified records and ignore intentional shared-flight provenance;
+- current preferred direction is compatibility-first: preserve `pilotInCommandName()` precedence, preserve raw crew fields, and split RoleCrew Save/UI identity requirements from historical/downstream PIC-display precedence;
+- a contract-only refactor should characterize Manual self-PIC fallback, explicit self-PIC commander, generic shared PIC `RECIPIENT_ACCOUNT`, linked Safety Pilot `CERTIFIED_SOURCE_COMMANDER`, certification hash stability, and raw export/audit/backup preservation;
+- any editable-Save clearing must be proven non-applicable from explicit structured evidence; otherwise preserve raw evidence;
+- no runtime behavior change is permitted before independent review reconciliation.
 
 #### F2.4C — cross-path characterization
 - Manual Edit/role switching;
