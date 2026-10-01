@@ -17,8 +17,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Preserved local instructor/supervision form state across role switches before Save.
 - Safety Pilot connection authority remains server/action-owned; GPS remains PIC-only; certification payload versions v1–v8 are unchanged.
 - Added focused F2.2 source/UX regression coverage and reconciled B3/B5 characterization tests.
+- Added authenticated Chromium coverage proving DUAL and SPIC/PICUS inline fields are required under EASA and retain unsaved values across Role switches.
+- **Final verification:** Verify FlyTally web #1075 PASS — TypeScript PASS, full unit/regression **1042/1042**, PostgreSQL acceptance **63/63**; Browser smoke #451 PASS — production build PASS, Chromium **30 passed / 2 skipped**.
+- PR #207 merged as `205483eda15f82770c1000c0a91fa4df92177fcd`.
+- Production deployment `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` is READY for that exact merge SHA, aliases `fly-tally.com` with no alias error, and the public production root returned HTTP 200 from that deployment.
 - **DB/schema:** N/A.
-- **Verification:** pending.
 
 ### Flight Entry Workflow 3.0 — F2.1 RoleCrew validation
 - Added a pure `roleCrewSpec(role,evidence)` contract describing role-specific Save requirements and PIC-identity source semantics without DB/account dependencies.
