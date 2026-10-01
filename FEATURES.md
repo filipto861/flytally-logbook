@@ -187,7 +187,7 @@ Frozen behavior:
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F1.0 and F1.1 are DONE: historical identity preservation is live and the typed Manual/GPS candidate adapter contract is characterized/verified; F1.2 pure normalizer extraction is NEXT.
+- F1.0–F1.2 are DONE/verified: historical identity preservation is live, Manual/GPS candidate semantics are characterized, and Manual parsing now delegates to a pure source-agnostic normalizer; F1.3 Manual persistence regression proof is NEXT.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 

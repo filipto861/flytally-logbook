@@ -56,7 +56,8 @@ test("B3 moves training purpose and task to Optional details without changing pu
   assert.match(optional,/name="task" defaultValue=\{storedTask\}/);
   assert.match(picker,/name="purposeSelectionPresent" value="yes"/);
   assert.match(picker,/name="purposeCode"/);
-  assert.match(read("lib/flight-input.ts"),/hasPurposeField=form\.has\("purposeSelectionPresent"\)\|\|form\.has\("purposeCode"\)/);
+  assert.match(read("lib/flight-draft-candidate.ts"),/purposeSelectionPresent:form\.has\("purposeSelectionPresent"\)\|\|form\.has\("purposeCode"\)/);
+  assert.match(read("lib/flight-input.ts"),/hasPurposeField=candidate\.purposeSelectionPresent/);
 });
 
 test("B3 stays presentation-only around parser certification and collaboration boundaries",()=>{
