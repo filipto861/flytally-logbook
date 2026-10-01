@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.6a GPS landing / Night / IFR source fidelity
+- GPS landing detection is now treated only as a suggestion; each reviewed part requires the pilot to enter the actual Day and Night landing split explicitly.
+- Each reviewed GPS part requires explicit Night and IFR duration, including `0:00` when none, so missing evidence is not silently persisted as zero.
+- Added server-side validation for explicit counts/duration format and known BLOCK-time bounds.
+- GPS persistence stores reviewed Day/Night landings and Night/IFR minutes rather than forcing all landings to day and omitting Night/IFR.
+- Extended the GPS candidate adapter so these reviewed facts can later pass through the shared normalizer with `GPS_REVIEW` provenance.
+- Regulatory PF/approach, TMG/BFCL take-off split and Sailplane launch evidence remain intentionally unresolved until F1.6b.
+- DB schema/migration: N/A.
+- Verification: PENDING on `feat/flight-entry-f16a-gps-time-landings`.
+
 ### Flight Entry Workflow 3.0 — F1.5 explicit GPS Operation / Engine
 - Reordered F1 execution because the shared normalizer correctly treats unresolved Operation/Engine as a blocking semantic state; routing GPS through it before explicit source input would either fail every applicable import or reintroduce guessed defaults.
 - Added common GPS **Operation (SP/MP)** and **Engine (SE/ME)** controls for categories where the canonical capability contract exposes those semantics.
