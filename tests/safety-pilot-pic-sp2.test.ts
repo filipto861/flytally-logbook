@@ -29,28 +29,35 @@ test("SP2 Safety Pilot UI keeps connected identity explicit and manual text firs
   assert.match(form,/connection unavailable/);
 });
 
-test("SP2 create canonicalizes connected commander server-side and creates the link in the same statement",()=>{
+test("F2.3 create uses the shared server resolver and persists its canonical commander with an atomic linked PIC",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
+  const helper=read("lib/flight-connected-crew.ts");
   const create=between(actions,"export async function createFlight","export async function importKmlFlight");
-  assert.match(create,/connectedPicSelection\(form,f\.role\)/);
-  assert.match(create,/u\.id=\$\{connectedPicUserId\}/);
-  assert.match(create,/pc\.status='accepted'/);
-  assert.match(create,/THEN u\.display_name ELSE \$\{f\.commander\} END commander/);
+  assert.match(actions,/import \{ resolveSafetyPilotPicForSave \} from "@\/lib\/flight-connected-crew"/);
+  assert.match(create,/picResolution=await resolveSafetyPilotPicForSave\(/);
+  assert.match(helper,/export async function resolveSafetyPilotPicForSave/);
+  assert.match(helper,/WHERE u\.id=\$\{connectedUserId\}/);
+  assert.match(helper,/pc\.status='accepted'/);
+  assert.match(helper,/commander:snapshot\.displayName/);
+  assert.ok(create.includes("${commander}"));
   assert.match(create,/INSERT INTO flight_connected_crew/);
-  assert.match(create,/FROM inserted CROSS JOIN pic_context p/);
-  assert.doesNotMatch(create,/flight_participations/);
+  assert.match(create,/SELECT inserted\.id,\$\{userId\},\$\{connectedPicUserId\},'PIC'/);
+  assert.match(create,/\$\{connectedPicUserId\}=0 OR EXISTS\(/);
+  assert.doesNotMatch(create,/pic_context AS|flight_participations/);
 });
 
-test("SP2 update synchronizes current link atomically and removes it for manual or non-Safety-Pilot state",()=>{
+test("F2.3 update uses the same resolver, synchronizes the link atomically, and removes it for manual or non-Safety-Pilot state",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const update=between(actions,"export async function updateFlight","export async function saveFlightExpenses");
-  assert.match(actions,/function connectedPicSelection\(form:FormData,role:string\)\{if\(role!=="SAFETY PILOT"\)return 0;const mode=String\(form\.get\("actualPicMode"\)/);
-  assert.match(update,/commander=p\.commander/);
+  assert.match(update,/picResolution=await resolveSafetyPilotPicForSave\(/);
+  assert.ok(update.includes("commander=${commander}"));
   assert.match(update,/deleted_link AS/);
   assert.match(update,/connected_link AS/);
   assert.match(update,/\$\{connectedPicUserId\}=0 AND EXISTS\(SELECT 1 FROM updated\)/);
+  assert.match(update,/SELECT updated\.id,\$\{userId\},\$\{connectedPicUserId\},'PIC'/);
   assert.match(update,/ON CONFLICT\(source_flight_id,intended_role\) DO UPDATE/);
-  assert.doesNotMatch(update,/flight_participations/);
+  assert.match(update,/\$\{connectedPicUserId\}=0 OR EXISTS\(/);
+  assert.doesNotMatch(update,/pic_context AS|flight_participations/);
 });
 
 test("SP2 edit reloads stored connected identity by flight id instead of matching commander text",()=>{
@@ -85,11 +92,10 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
 });
 
 
-test("SP2 rejects a blank manual EASA Safety Pilot PIC server-side",()=>{
-  const actions=read("app/(protected)/flights/actions.ts");
-  const matches=actions.match(/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"&&connectedPicUserId===0&&!f\.commander\.trim\(\)/g)??[];
-  assert.equal(matches.length,2);
-  assert.match(actions,/Enter the actual PIC or select an accepted Connection/);
+test("F2.3 shared resolver rejects a blank manual EASA Safety Pilot PIC server-side",()=>{
+  const helper=read("lib/flight-connected-crew.ts");
+  assert.match(helper,/if\(evidence==="EASA"&&!commander\.trim\(\)\)return\{ok:false,error:"Enter the actual PIC or select an accepted Connection\."\}/);
+  assert.doesNotMatch(read("app/(protected)/flights/actions.ts"),/f\.role==="SAFETY PILOT"&&f\.evidence==="EASA"&&connectedPicUserId===0/);
 });
 
 
@@ -99,11 +105,15 @@ test("SP2 new Safety Pilot manual PIC starts blank instead of inheriting the sou
 });
 
 
-test("SP2 connected mode is explicit and cannot silently degrade to manual when no pilot is selected",()=>{
+test("F2.3 connected mode is explicit and cannot silently degrade to manual when no pilot is selected",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
+  const helper=read("lib/flight-connected-crew.ts");
   const form=read("components/flight-form.tsx");
-  assert.match(actions,/if\(mode==="manual"\)return 0;if\(mode!=="connected"\)return-1/);
-  assert.match(actions,/if\(!raw\)return-1/);
+  assert.match(helper,/const mode=String\(form\.get\("actualPicMode"\)\?\?"manual"\)\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(helper,/if\(mode!=="connected"\)return\{ok:false,error:"Select a valid connected Actual PIC\."\}/);
+  assert.match(helper,/const raw=String\(form\.get\("connectedPicUserId"\)\?\?""\)\.trim\(\)/);
+  assert.match(helper,/connectedUserId===sourceUserId/);
+  assert.doesNotMatch(actions,/function connectedPicSelection/);
   assert.match(form,/name="actualPicMode"/);
   assert.ok(form.includes('<select name="connectedPicUserId" value={connectedPicUserId} onChange={event=>setConnectedPicUserId(event.target.value)} required aria-invalid={!connectedPicUserId||!connectedPicAccepted}>'));
   assert.match(form,/picMode==="connected"\?\(!connectedPicUserId\|\|!connectedPicAccepted\)/);
