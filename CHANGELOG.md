@@ -9,6 +9,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2.1 RoleCrew validation
+- Added a pure `roleCrewSpec(role,evidence)` contract describing role-specific Save requirements and PIC-identity source semantics without DB/account dependencies.
+- Routed EASA DUAL and SPIC/PICUS Save validation through the shared RoleCrew contract.
+- EASA DUAL now fails closed server-side when Instructor/PIC is missing instead of relying on HTML required + later Certification.
+- Preserved CO-PILOT/CRCP/PAX/OBSERVER Save-optional commander behavior and existing ULL behavior.
+- Safety Pilot remains action/resolver-authoritative in F2.1; accepted-Connection resolution is not moved into the pure normalizer.
+- No destructive commander/instructor/verification sanitization is introduced in F2.1; overloaded training/endorsement evidence remains intact for later F2.4 reconciliation.
+- GPS remains PIC-only; certification payload versions v1–v8 are unchanged.
+- Added targeted RoleCrew unit/integration coverage for the frozen matrix and non-sanitization boundary.
+- **DB/schema:** N/A.
+
 ### Flight Entry Workflow 3.0 — F2 Role/Crew review reconciliation
 - Independent review returned **APPROVE WITH CHANGES** and was reconciled against current repository consumers/producers.
 - Frozen CO-PILOT/CRCP commander as Save-optional with the current Certification PIC-name gate unchanged; PAX/OBSERVER Save behavior also remains unchanged.
