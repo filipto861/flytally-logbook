@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F1 Shared Normalization Design Draft
 
-**Status:** DRAFT FOR INDEPENDENT REVIEW · NO RUNTIME CHANGE  
+**Status:** INDEPENDENT REVIEW COMPLETE · APPROVE WITH CHANGES · RECONCILED DESIGN  
 **Baseline:** `main@1fb1b4edb051b3ce8d052a50401916cb2cbc78b8`  
 **Dependency:** F0 field/consumer matrix DONE/verified.
 
@@ -35,6 +35,24 @@ F1 must not:
 - introduce a second aircraft model.
 
 F2 remains the owner of full Role/Crew parity.
+
+## 2A. Independent-review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES**.
+
+Accepted blocking changes:
+- F1.0 becomes a prerequisite hotfix for the shared-flight identity trigger before shared normalization can close.
+- F1 release cannot ship while GPS silently assumes `Operation=SP` or derives Engine from aircraft class.
+- GPS sailplane/movement/night/IFR gaps remain explicit unresolved evidence; generic GPS motion is not authority for those facts.
+- F1 must not claim complete Role/Crew authority; F2 still owns DUAL/Safety Pilot/SPIC/PICUS completeness.
+- `FlightDraftCandidate` stays minimal and can express unresolved semantic state.
+- source provenance remains explicit but separate from the canonical persisted value.
+- connection validation, persistence, tracks and post-save actions stay outside the pure normalizer.
+
+Repository reconciliation:
+- the current aircraft profile model has no authoritative stored `operation_type` / `engine_type` defaults to resolve the GPS gap;
+- therefore class-derived Engine is not a valid future F1 authority;
+- exact backup restore stages identity blank and later restores the historical tuple explicitly, so the proposed same-registration trigger preservation does not conflict with the restore write sequence.
 
 ## 3. Proposed domain layers
 
@@ -105,6 +123,8 @@ type FlightDraftCandidate = {
 ```
 
 The exact type can be refined during implementation. The invariant matters more than the spelling: one pure semantic function receives explicit candidate state and returns either canonical `FlightInput` or a domain error.
+
+For source-authority-sensitive fields, the candidate must be able to represent an explicit unresolved state instead of overloading empty string or a guessed default. At minimum this applies to aircraft context, Operation, Engine and later Role/Crew contexts. Keep provenance compact (for example source metadata alongside candidate construction) rather than turning `FlightInput` into a provenance object.
 
 ### Layer C — compatibility wrapper
 
@@ -212,17 +232,19 @@ F0 shows this is not just an implementation detail:
 - a generic Helicopter class does not prove single-engine;
 - PIC can exist in multi-pilot operations.
 
-### Recommended F1 direction
+### Reconciled F1 direction
 
 Do **not** make source-agnostic normalization depend on a hidden GPS `SP` assumption.
 
-For FCL-style EASA categories, F1 should make Operation and Engine explicit candidate values. Manual already supplies visible controls. GPS should either:
-1. expose compact common Operation/Engine controls before Save; or
-2. fail closed when those values are unresolved.
+For EASA GPS, Operation and Engine become explicit semantic candidate values. The current aircraft profile does not contain authoritative Operation/Engine defaults, therefore F1 cannot resolve these from profile today.
 
-For category branches where Operation/Engine are compatibility-only and certification does not use them, preserve the current encoded values without presenting them as regulatory authority.
+Release policy:
+1. F1.1–F1.4 may refactor/characterize without changing current GPS UX.
+2. Before F1 is releasable, F1.5 must add compact common GPS controls for **Operation: SP/MP** and **Engine: SE/ME** for applicable EASA contexts.
+3. If either value is unresolved at submit time, GPS Save fails closed with Needs configuration / explicit correction; the normalizer never supplies SP or class-derived Engine as an implicit answer.
+4. Non-EASA behavior remains governed by its existing explicit domain rules; no new inference is introduced.
 
-Independent review is requested before freezing which UI option is used.
+This resolves the review ambiguity in favor of explicit controls rather than making normal EASA GPS import unusable by default.
 
 ## 8. Sailplane / movement gaps
 
@@ -264,7 +286,7 @@ However F0 found a separate historical-identity risk:
 - shared-flight acceptance explicitly supplies the certified source flight's make/model/variant;
 - the same BEFORE INSERT trigger can replace those explicit values with recipient current-profile identity for the registration.
 
-### Recommended integrity fix before F1 closeout
+### Required F1.0 integrity fix before F1 normalization implementation
 
 Use a new idempotent schema migration rather than editing the already-applied v6 migration in place.
 
@@ -278,50 +300,57 @@ Proposed trigger semantics:
 - **UPDATE without registration change**
   - do not refresh historical identity from mutable current profile.
 
-A practical implementation candidate is to treat a non-empty supplied make/model/variant tuple on INSERT as an explicit snapshot. Existing Manual/GPS inserts currently leave those snapshot columns empty and therefore continue to resolve from profile.
+The identity tuple is atomic:
+- if **all three** supplied identity fields are empty/null, resolve the tuple from current profile;
+- if **any** identity field is supplied, preserve the supplied tuple exactly and do not mix missing members from current profile.
 
-This migration requires independent review and dedicated PostgreSQL acceptance tests before implementation.
+Existing Manual/GPS inserts currently leave snapshot columns empty and therefore continue to resolve from profile. Shared-flight inserts explicitly supply the source tuple and will preserve it.
+
+Exact backup restore remains compatible: it intentionally stages the inserted flight with an empty identity tuple, then performs a separate same-registration UPDATE that explicitly restores make/model/variant. The identity trigger only fires on INSERT or UPDATE OF registration, so that second restore step remains authoritative.
+
+This must be a new base migration (v17), not a rewrite of v6.
 
 ## 11. F1 implementation plan
 
-### F1.1 — pure normalizer extraction
-- introduce typed candidate + pure normalizer;
-- keep `parseFlightInput(FormData)` wrapper;
-- no expected behavior change;
-- existing Manual tests + new equivalence tests.
+### F1.0 — shared-flight identity trigger hotfix
+- add base migration v17;
+- INSERT with empty identity tuple resolves current profile;
+- INSERT with any explicit identity member preserves the supplied tuple atomically;
+- UPDATE with changed registration resolves the new profile identity;
+- same-registration UPDATE preserves historical identity;
+- PostgreSQL acceptance covers Manual/GPS-style insert, explicit snapshot, sharing, registration change, exact restore sequence and certification compatibility.
 
-### F1.2 — Manual create/update proof
-- prove create/update both consume normalized `FlightInput`;
-- no persistence/schema change;
+### F1.1 — candidate types + source adapters
+- introduce minimal typed candidate with explicit unresolved states/provenance;
+- characterize Manual and GPS extraction;
+- no expected behavior change.
+
+### F1.2 — pure normalizer extraction
+- extract source-agnostic `normalizeFlightDraft()` from current `parseFlightInput()`;
+- no DB/FormData in the pure normalizer;
+- equivalence tests.
+
+### F1.3 — Manual wrapper regression
+- `parseFlightInput(FormData)` becomes compatibility wrapper;
+- prove Manual create/update remain regression-equivalent;
 - preserve expenses and connected PIC child semantics.
 
-### F1.3 — GPS candidate adapter
-- resolve each reviewed part into candidate state;
-- pass through shared normalizer;
-- retain F0.1 aircraft fail-closed + PIC-only role;
-- resolve Operation/Engine design question before merge.
+### F1.4 — GPS semantic adapter / persistence convergence
+- resolve each reviewed PIC part into candidate state;
+- pass every semantic flight value through shared normalizer;
+- retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
+- remove the hand-written GPS semantic mapper where the shared normalized value exists.
 
-### F1.4 — GPS persistence convergence
-- direct INSERT consumes only normalized part values plus persistence-only derived price/track data;
-- preserve sorted advisory locks;
-- preserve duplicate `NOT EXISTS`;
-- preserve one N-part transaction;
-- no partial flight/track state.
+### F1.5 — explicit GPS Operation / Engine
+- add compact common SP/MP + SE/ME controls for applicable EASA GPS imports;
+- unresolved values fail closed;
+- no class-derived Engine and no hidden SP default in the shared GPS path.
 
-### F1.5 — cross-path acceptance
-- equivalent EASA SEP PIC Manual/GPS common fields;
-- equivalent ULL PIC common fields;
-- invalid profile;
-- unsupported role;
-- optional incomplete draft;
-- certification requirements unchanged;
-- downstream draft consumers read stored identity consistently.
-
-### F1.6 — integrity/dependency closeout
-- resolve or explicitly block on shared-flight identity trigger risk;
-- preserve v1–v8 verification;
-- ROADMAP/FEATURES/CHANGELOG closeout;
-- production smoke if runtime changed.
+### F1.6 — source-fidelity + cross-path closeout
+- sailplane/movement/night/IFR evidence is explicit or remains unavailable; never inferred from generic movement;
+- equivalent Manual/GPS PIC semantics tested where both sources provide equivalent facts;
+- preserve v1–v8 verification and certified-only recency;
+- ROADMAP/FEATURES/CHANGELOG closeout + browser/production smoke for runtime changes.
 
 ## 12. Do / Do not
 
@@ -343,16 +372,19 @@ This migration requires independent review and dedicated PostgreSQL acceptance t
 - edit an already-applied migration as the production fix for the sharing trigger;
 - combine F1 with general UX cleanup.
 
-## 13. Review decisions required before runtime implementation
+## 13. Review closeout
 
-Independent reviewer should challenge:
+Independent review is complete and reconciled.
 
-1. Is candidate -> pure normalizer -> `FlightInput` the smallest safe architecture, or should persistence use a different canonical type?
-2. Is retaining `parseFlightInput(FormData)` as a wrapper sufficient for backward compatibility?
-3. Should F1 expose GPS Operation/Engine common controls, or fail closed unresolved FCL operation/engine context?
-4. Is the proposed explicit-snapshot INSERT trigger rule safe across Manual, GPS, sharing, restore and historical correction?
-5. Should the trigger integrity fix be a pre-F1 hotfix, F1.0 prerequisite, or M2B item that blocks F1 closeout?
-6. Are there any certification v1–v8 or recency side effects the design missed?
-7. Can GPS use the normalizer while preserving current atomic N-part persistence without creating a second semantic mapping?
+Final decisions:
+1. candidate → pure normalizer → `FlightInput` remains the architecture;
+2. `parseFlightInput(FormData)` remains a compatibility wrapper;
+3. EASA GPS receives explicit common SP/MP + SE/ME controls before F1 release;
+4. unresolved Operation/Engine fails closed;
+5. shared-flight trigger fix is **F1.0**, before semantic normalization work is allowed to close;
+6. identity tuple preservation is atomic and implemented by a new v17 migration;
+7. F1 does not claim complete Role/Crew authority before F2;
+8. GPS stays PIC-only;
+9. N-part persistence remains atomic and specialized only for persistence/provenance, not semantic meaning.
 
-No runtime implementation should start until these questions are reconciled against code/tests and, where useful, independent review.
+Runtime implementation may begin with **F1.0 only**, followed by the ordered F1.1–F1.6 batches.
