@@ -375,12 +375,36 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
 - DB/schema migration: N/A.
 
-### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization
-- audit Manual, GPS, shared-flight materialization, certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, dashboard/statistics and backup/restore;
-- remove/replace DUAL/SPIC/PICUS name-based automatic account matching in certification;
-- define which `instructor` / `verification_*` values are role identity versus training/endorsement evidence;
-- only then introduce deterministic editable-draft sanitization for fields proven non-applicable;
-- certified rows remain immutable.
+### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization — ANALYSIS COMPLETE / REVIEW GATE
+
+Detailed evidence: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md`.  
+Independent review package: `FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md`.
+
+#### F2.4A — identity-binding reconciliation
+- producer/consumer audit completed across Manual, GPS, shared-flight materialization, Certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, audit/backup and recency;
+- confirmed remaining Certification-time DUAL/SPIC/PICUS display-name matching to accepted instructor Connections;
+- proposed runtime: remove the automatic name matcher and keep only the existing explicit account-ID `instructor_id` request path;
+- update verification-panel copy so typed historical evidence is never described as an account binding or automatic request;
+- Certification v1–v8, exact revision/hash verification, in-person signing and certified-row immutability remain unchanged.
+
+#### F2.4B — evidence-aware semantic canonicalization
+- confirmed `instructor` cannot be broadly cleared outside DUAL because non-DUAL differences/familiarisation purpose evidence depends on it;
+- confirmed `verification_name` / `verification_reference` cannot be broadly cleared outside SPIC/PICUS because generic test/revalidation endorsement evidence shares those fields;
+- text-regex endorsement detection is not sufficient authority for destructive cleanup;
+- unresolved review item: `pilotInCommandName()` currently lets a stored commander override self identity for PIC/SOLO/FI/INSTRUCTOR/EXAMINER, contrary to the frozen RoleCrew PIC-source contract;
+- draft preference is non-destructive semantic precedence (self account wins while raw commander is preserved), but no change is permitted before independent review because existing certified output interpretation could change;
+- any editable-Save clearing must be proven non-applicable under Role + evidence + training/endorsement context; otherwise preserve raw evidence.
+
+#### F2.4C — cross-path characterization
+- Manual Edit/role switching;
+- Certification with no implicit account request;
+- explicit connected instructor request + in-person signature;
+- shared materialization;
+- print/read-only/CSV/XLS;
+- audit/backup;
+- recency exact signed-verification dependency;
+- Safety Pilot F2.3 regression;
+- GPS remains PIC-only.
 
 ### F2.5 — cross-path regression + closeout
 - role matrix unit coverage;
