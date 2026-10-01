@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** F2.0 REVIEW RECONCILED · F2.1 DONE / PRODUCTION VERIFIED · F2.2 NEXT  
+**Status:** F2.0/F2.1/F2.2 DONE · F2.2 PRODUCTION VERIFIED · F2.3 NEXT  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
 **Dependency:** F1 shared semantic normalization DONE / production-verified.  
 **Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
@@ -342,7 +342,7 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - production: Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY for the exact merge SHA; `fly-tally.com` is aliased with no alias error and returned HTTP 200.
 - DB/schema migration: N/A.
 
-### F2.2 — Manual inline Role/Crew UX — IMPLEMENTED / VERIFICATION PENDING
+### F2.2 — Manual inline Role/Crew UX — DONE / PRODUCTION VERIFIED
 - required DUAL / Safety Pilot / SPIC / PICUS identity appears directly in Flight essentials immediately after Role;
 - visibility/PIC-source mapping and EASA Save-required cues consume `roleCrewSpec(role,evidence)`;
 - the completion surface includes DUAL Instructor/PIC, Safety Pilot Actual PIC, SPIC/PICUS supervisor and countersignature blockers with direct focus;
@@ -351,8 +351,11 @@ F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS 
 - no destructive UI-only cleanup;
 - Safety Pilot resolver semantics remain action-authoritative until F2.3;
 - GPS remains PIC-only and certification v1–v8 is unchanged;
-- DB/schema migration: N/A;
-- verification: pending.
+- authenticated browser coverage verifies DUAL and SPIC/PICUS required inline controls plus unsaved Role-switch value preservation;
+- final verification: Verify FlyTally web #1075 PASS — TypeScript PASS, 1042/1042 unit/regression, PostgreSQL 63/63; Browser smoke #451 PASS — production build + Chromium 30 passed / 2 skipped;
+- merge: PR #207 → `main@205483eda15f82770c1000c0a91fa4df92177fcd`;
+- production: Vercel `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` READY for the exact merge SHA; `fly-tally.com` aliases it with no alias error and returned HTTP 200;
+- DB/schema migration: N/A.
 
 ### F2.3 — Safety Pilot resolver convergence
 - one server resolver used by create/update;
