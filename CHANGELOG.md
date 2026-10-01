@@ -16,6 +16,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Identified one unresolved semantic mismatch: current PIC-name output lets stored commander override account self identity on self-PIC roles even though the frozen RoleCrew contract says self is authoritative.
 - Added the F2.4 audit and an independent-review handoff; no runtime, schema, certification-version, recency or historical-data change yet.
 - **Verification:** documentation/repository analysis only; runtime tests not applicable to this analysis commit.
+- **F2.4A runtime:** removed Certification-time DUAL/SPIC/PICUS display-name → account matching and the implicit verification request side effect; explicit `instructor_id` account selection remains the only account-bound request path.
+- Updated Crew Verification copy so typed names are described as stored flight evidence, not account bindings or automatic request triggers.
+- Added source-contract and authenticated browser coverage proving a certified matching typed name remains unbound and only an explicit connected-account request control is offered.
+- **Verification:** Verify FlyTally web #1085 PASS — TypeScript PASS, full unit/regression **1052/1052**, PostgreSQL acceptance **66/66**; Browser smoke #461 PASS — production build PASS, Chromium **34 passed / 2 skipped**.
+- **DB/schema:** N/A. Certification v1–v8, certified rows, Safety Pilot F2.3, shared materialization and GPS PIC-only boundaries are unchanged.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
