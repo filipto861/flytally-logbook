@@ -163,6 +163,8 @@ No external reviewer response was supplied before continuation. Because the repo
 
 The focused review questions remain useful if a future milestone proposes changing these frozen semantics, but they are no longer a blocker to F2.4C because F2.4B is not taking the risky semantic change.
 
+Verification: PR #219 merged as `1c0ecf7be2e18feba7e583039ed5c27919dcdd42`; Verify FlyTally web #1092 PASS — TypeScript, 1059/1059 unit/regression, PostgreSQL 66/66. No runtime behavior changed in B2.
+
 ## Proposed F2.4B direction
 
 ### B1 — reconcile the contract, not historical data

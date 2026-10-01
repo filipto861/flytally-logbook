@@ -32,6 +32,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Production deployment `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` is READY for that exact merge SHA, aliases `fly-tally.com` with no alias error, and the production root returned HTTP 200 from that deployment.
 - **DB/schema:** N/A. No destructive canonicalization, certification payload/version change, certified-history rewrite, shared-materialization change or GPS role expansion.
 - **F2.4B B2 semantic closeout:** intentionally performs no destructive canonicalization. Cross-role regression coverage preserves commander/instructor/verification evidence for DUAL, SPIC and PIC contexts, including generic training/endorsement evidence. Current commander-over-SELF display precedence remains frozen for F2; any future change requires an explicit reopened decision rather than silent reinterpretation.
+- PR #219 merged as `1c0ecf7be2e18feba7e583039ed5c27919dcdd42`; Verify FlyTally web #1092 PASS — TypeScript PASS, **1059/1059** unit/regression, PostgreSQL **66/66**. Browser rerun was not required because this closeout changed tests/docs only; runtime behavior remained the already production-verified B1 implementation.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
