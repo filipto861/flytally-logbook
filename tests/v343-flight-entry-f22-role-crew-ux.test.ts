@@ -10,8 +10,8 @@ test("F2.2 derives inline RoleCrew visibility and required cues from the shared 
   const form=read("components/flight-form.tsx");
   assert.match(form,/import \{ roleCrewSpec \} from "@\/lib\/role-crew"/);
   assert.match(form,/crewSpec=roleCrewSpec\(role,evidence\)/);
-  assert.match(form,/dualCrewInline=crewSpec\?\.picNameSource==="INSTRUCTOR"/);
-  assert.match(form,/supervisedCrewInline=crewSpec\?\.picNameSource==="VERIFIER"/);
+  assert.match(form,/dualCrewInline=crewSpec\?\.rolePicIdentitySource==="INSTRUCTOR"/);
+  assert.match(form,/supervisedCrewInline=crewSpec\?\.rolePicIdentitySource==="VERIFIER"/);
   assert.match(form,/safetyCrewInline=crewSpec\?\.connectedActualPic==="allowed"/);
   assert.match(form,/dualInstructorRequired=crewSpec\?\.instructor==="required_save"/);
   assert.match(form,/verificationNameRequired=crewSpec\?\.verificationName==="required_save"/);
@@ -72,7 +72,8 @@ test("F2.2 keeps role switching non-destructive in the browser and leaves server
   assert.match(form,/\[verificationNameValue,setVerificationNameValue\]=useState\(field\("verification_name"\)\)/);
   assert.match(form,/\[verificationReferenceValue,setVerificationReferenceValue\]=useState\(field\("verification_reference"\)\)/);
   assert.match(parser,/roleCrewSaveError\(crewSpec,\{instructor,verificationName,verificationReference\}\)/);
-  assert.match(roleCrew,/rolePicIdentitySource="SELF"/);\n  assert.match(roleCrew,/if\(SELF_PIC_ROLES\.has\(role\)\)return\["COMMANDER","SELF"\]/);
+  assert.match(roleCrew,/rolePicIdentitySource="SELF"/);
+  assert.match(roleCrew,/if\(SELF_PIC_ROLES\.has\(role\)\)return\["COMMANDER","SELF"\]/);
   assert.doesNotMatch(form,/fcl050FlightCompliance|certificationFingerprint|flight_participations/);
 });
 
