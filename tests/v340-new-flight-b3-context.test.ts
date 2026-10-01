@@ -66,5 +66,7 @@ test("B3 stays presentation-only around parser certification and collaboration b
   assert.match(actions,/parseFlightInput\(form\)/);
   assert.doesNotMatch(form,/materialize|certificationFingerprint|flight_participations/);
   assert.match(read("lib/fcl050-compliance.ts"),/role==="DUAL"&&!text\(row\.instructor\)/);
-  assert.match(read("lib/flight-input.ts"),/\["SPIC","PICUS"\]\.includes\(role\).*verificationName.*verificationReference/);
+  assert.match(read("lib/flight-input.ts"),/roleCrewSaveError\(crewSpec,\{instructor,verificationName,verificationReference\}\)/);
+  assert.match(read("lib/role-crew.ts"),/verificationName=easa\?"required_save":"optional"/);
+  assert.match(read("lib/role-crew.ts"),/verificationReference=easa\?"required_save":"optional"/);
 });

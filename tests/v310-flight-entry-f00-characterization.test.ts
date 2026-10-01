@@ -60,12 +60,15 @@ test("F0.0 preserves the historical GPS role surface and INSTRUKTOR mismatch in 
   assert.deepEqual(allocatedFunctionTimes("INSTRUCTOR",60),{picMinutes:60,copilotMinutes:0,dualMinutes:0,instructorMinutes:60});
 });
 
-test("F0.0 characterizes current Manual role save boundaries before convergence",()=>{
+test("F2.1 closes the historical DUAL Save gap while preserving the characterized UI boundary",()=>{
   const dual=validManualForm("DUAL");
   const parsedDual=parseFlightInput(dual);
-  assert.equal(parsedDual.error,undefined,"canonical parser currently permits an incomplete DUAL draft");
-  assert.equal(parsedDual.data?.instructor,"");
+  assert.equal(parsedDual.data,undefined);
+  assert.match(parsedDual.error??"",/instructor\/PIC/i);
   assert.match(flightForm,/name="instructor"[^>]*required=\{evidence==="EASA"\}/);
+
+  dual.set("instructor","Instructor");
+  assert.equal(parseFlightInput(dual).data?.role,"DUAL");
 
   const spic=validManualForm("SPIC");
   assert.equal(parseFlightInput(spic).data,undefined);

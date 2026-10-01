@@ -188,7 +188,7 @@ Current priority:
 - F0/F0.1 are DONE: GPS aircraft context fails closed and interim GPS role support remains PIC-only until Role/Crew parity;
 - F1 is DONE/production-verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence, while GPS track/provenance and atomic N-part persistence remain specialized;
 - explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
-- **F2 Role/Crew parity has completed design review/reconciliation**: F2.1 will add the shared server-authoritative RoleCrew requirement contract without destructive sanitization; Safety Pilot resolver convergence follows separately; GPS remains PIC-only through F2 and F4 owns Role/Crew inheritance/overrides.
+- **F2 Role/Crew parity has completed F2.1 validation**: the shared server-authoritative RoleCrew requirement contract is implemented and CI-verified without destructive sanitization; F2.2 Manual inline Role/Crew UX is next, Safety Pilot resolver convergence follows in F2.3, and GPS remains PIC-only through F2.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
