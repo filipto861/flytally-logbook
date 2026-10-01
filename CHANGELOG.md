@@ -9,6 +9,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.2 pure normalizer
+- Extracted `normalizeFlightDraft(candidate)` as the source-agnostic pure semantic normalizer for flight draft data.
+- Converted `parseFlightInput(FormData)` into the compatibility wrapper `FormData → manualFlightCandidate() → normalizeFlightDraft()`.
+- Kept DB/auth lookup, expenses, connected-crew validation, persistence and GPS track handling outside the pure normalizer.
+- Explicit unresolved candidate authority now returns a domain error instead of being coerced into an implicit value.
+- Preserved existing Manual semantics across EASA/ULL validation, category mapping, sailplane/BFCL evidence, structured movements, SPIC/PICUS supervision, professional context, purpose/task and role-derived function time.
+- GPS import is not routed through shared normalization yet; its persistence behavior remains unchanged in F1.2.
+- Verification: Verify FlyTally web #1007 PASS; TypeScript PASS; full unit/regression **1006/1006**; PostgreSQL acceptance **63/63**; Browser smoke #388 **26 passed / 2 skipped**; production build PASS; DB schema/migration N/A.
+- Earlier #1003/#1006 failures were stale/source-test maintenance and a test syntax error encountered during the refactor, not accepted runtime regressions.
+- Next: **F1.3 Manual wrapper regression / persistence proof**.
+
 ### Flight Entry Workflow 3.0 — F1.1 candidate/source adapters
 - Added a typed `FlightDraftCandidate` characterization layer with explicit unresolved semantic state and compact provenance metadata.
 - Added Manual FormData extraction preserving the presence-sensitive fields that current `parseFlightInput()` depends on.
