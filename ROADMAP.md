@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0 DONE / VERIFIED** · migration v17 preserves explicit historical aircraft identity · F1.1 NEXT |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0 DONE / PRODUCTION VERIFIED** · migration v17 live · F1.1 NEXT |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,9 +419,15 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- merge/deploy verified F1.0 migration v17 and confirm the production database records migration 17 before calling the integrity gate closed in production;
-- then begin F1.1 candidate/source-adapter characterization with no semantic behavior change;
+- begin **F1.1 candidate/source-adapter characterization** with no semantic behavior change;
+- keep explicit unresolved state/provenance boundaries from the reconciled F1 design;
 - F1 release must include explicit EASA GPS Operation/Engine controls; GPS remains PIC-only and F2 owns Role/Crew parity.
+
+F1.0 production closeout:
+- main `e7361dbe3e55fbba721ec01c2bffd5c885452c12`;
+- Vercel production `dpl_EiEU6pWp95nQuNRGwGVTgtLrgSJn` READY and aliased to `fly-tally.com`;
+- production Neon migration registry contains v17 `historical flight aircraft identity preservation` applied 2026-10-01 06:47:01 UTC;
+- live trigger/function definition matches the reviewed v17 semantics.
 
 M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
 

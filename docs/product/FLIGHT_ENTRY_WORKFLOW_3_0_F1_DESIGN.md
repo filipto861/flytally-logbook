@@ -319,7 +319,8 @@ This must be a new base migration (v17), not a rewrite of v6.
 - UPDATE with changed registration resolves the new profile identity;
 - same-registration UPDATE preserves historical identity;
 - PostgreSQL acceptance covers Manual/GPS-style insert, explicit snapshot, sharing, registration change, exact restore sequence and certification compatibility.
-- Verification: Verify #992 PASS; 992/992 unit; PostgreSQL 76/76; Browser #373 26 passed / 2 skipped; production build PASS. Production DB migration application remains a deployment gate.
+- Verification: final PR head Verify #997 PASS; 992/992 unit; PostgreSQL 76/76; Browser #378 26 passed / 2 skipped; production build PASS.
+- Production: main `e7361dbe…`, Vercel READY, migration v17 confirmed in the production Neon registry and live trigger definition verified. F1.0 deployment gate is closed.
 
 ### F1.1 — candidate types + source adapters
 - introduce minimal typed candidate with explicit unresolved states/provenance;
