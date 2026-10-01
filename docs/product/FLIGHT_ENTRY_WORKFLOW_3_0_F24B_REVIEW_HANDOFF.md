@@ -56,7 +56,7 @@ F2.4A removed Certification-time DUAL/SPIC/PICUS display-name → account infere
 Before requesting a semantic verdict, current behavior was locked as read-only evidence in PR #215.
 
 - merge: `main@064be0862b9506e472545eb16491b21019a90a50`;
-- Verify FlyTally web #1093 PASS: TypeScript, 1057/1057 unit/regression, PostgreSQL 66/66;
+- Verify FlyTally web #1090 PASS: TypeScript, 1057/1057 unit/regression, PostgreSQL 66/66;
 - no runtime or schema behavior changed;
 - the characterization proves the current SELF-vs-commander mismatch rather than endorsing it as the future design.
 
