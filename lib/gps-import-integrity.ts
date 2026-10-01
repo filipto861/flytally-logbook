@@ -1,7 +1,6 @@
 import { resolveFlightEntryAircraftProfileDefaults,type FlightEntryAircraftProfileInput } from "./flight-form-rules.ts";
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
 import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
-import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 
 export const GPS_IMPORT_ROLES=["PIC"] as const;
