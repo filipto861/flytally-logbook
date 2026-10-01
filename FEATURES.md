@@ -187,7 +187,7 @@ Frozen behavior:
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F0 full field/consumer contract inventory is DONE/verified; independent F1 review is reconciled; F1.0 migration v17 now preserves explicit historical make/model/variant tuples and is under verification before F1.1 begins.
+- F0 is DONE/verified and independent F1 review is reconciled. F1.0 migration v17 is DONE/verified on the PR head (Verify #992; 992/992 unit; PostgreSQL 76/76; Browser #373 26 passed / 2 skipped; production build PASS). Production DB application is verified separately after deploy; F1.1 follows only after that gate.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
