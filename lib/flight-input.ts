@@ -6,6 +6,7 @@ import { flightPurposeTask,normalizeFlightPurposeCodes,primaryFlightPurposeCode,
 import { regulatoryAircraftCategory,type RegulatoryAircraftCategory } from "./flight-entry-profile.ts";
 import { aircraftCategoryCapabilities,EASA_AIRCRAFT_PROFILE_CLASSES,REGULATORY_AIRCRAFT_CATEGORIES } from "./aircraft-category.ts";
 import { normalizeProfessionalOperationContext,supportsProfessionalContext } from "./professional-context.ts";
+import { roleCrewSaveError,roleCrewSpec } from "./role-crew.ts";
 
 export const EVIDENCE = ["ULL", "EASA"] as const;
 export const CLASSES = ["ULL",...EASA_AIRCRAFT_PROFILE_CLASSES] as const;
@@ -120,7 +121,7 @@ export function normalizeFlightDraft(candidate:FlightDraftCandidate):{data?:Flig
     approachesDay=counter(day.value);approachesNight=counter(night.value);
   }
 
-  const verificationName=text(candidate.verificationName,160),verificationReference=text(candidate.verificationReference,160);if(evidence==="EASA"&&["SPIC","PICUS"].includes(role)&&(!verificationName||!verificationReference))return{error:"SPIC and PICUS entries require the supervising pilot's name and countersignature reference."};
+  const verificationName=text(candidate.verificationName,160),verificationReference=text(candidate.verificationReference,160),crewSpec=roleCrewSpec(role,evidence);if(!crewSpec)return{error:"Select a valid pilot role."};const crewError=roleCrewSaveError(crewSpec,{instructor,verificationName,verificationReference});if(crewError)return{error:crewError};
   const allocation=allocatedFunctionTimes(role,creditedMinutes),rawTask=text(candidate.task,160),hasPurposeField=candidate.purposeSelectionPresent,selectedPurposes=normalizeFlightPurposeCodes(candidate.purposeCodes),legacyPurposes=!hasPurposeField&&role==="DUAL"&&LEGACY_REFRESHER.test(rawTask)?["LAPL_FCL140A_REFRESHER"] as const:[],allowedPurposes=role==="DUAL"?selectedPurposes:instructor?selectedPurposes.filter(code=>code==="AIRCRAFT_DIFFERENCES"||code==="AIRCRAFT_FAMILIARISATION"):[],purposes=allowedPurposes.length?allowedPurposes:legacyPurposes,purposeCode=primaryFlightPurposeCode(purposes),cleanTask=hasPurposeField?stripFlightPurposeTasks(rawTask):rawTask,purposeTask=flightPurposeTask(purposes),task=purposeTask?`${purposeTask}${cleanTask?` · ${cleanTask}`:""}`.slice(0,160):cleanTask;
 
   return{data:{date,registration,aircraftType:text(candidate.aircraftType,80),aircraftClass,regulatoryCategory,balloonClass,balloonGroup,balloonOperation,launchMethod,launches,evidence,departure:text(candidate.departure,16).toUpperCase(),arrival:text(candidate.arrival,16).toUpperCase(),offBlock:times[0],takeoff:times[1],landing:times[2],onBlock:times[3],starts,operationType,engineType,operatorName,flightNumber,operationContext,landingsDay:hasLandings?landingsDay:starts,landingsNight:hasLandings?landingsNight:0,movementEvidenceRecorded,takeoffsDay,takeoffsNight,approachesDay,approachesNight,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,commander:text(candidate.commander,100),instructor,role,task,purposeCode,billingBasis,note:text(candidate.note,2000)}};
