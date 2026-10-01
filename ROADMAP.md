@@ -411,7 +411,7 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0 DONE / PRODUCTION VERIFIED** · migration v17 live · F1.1 NEXT |
+| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0 + F1.1 DONE** · candidate adapters characterized · F1.2 NEXT |
 | F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
@@ -419,9 +419,16 @@ Milestones:
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- begin **F1.1 candidate/source-adapter characterization** with no semantic behavior change;
-- keep explicit unresolved state/provenance boundaries from the reconciled F1 design;
-- F1 release must include explicit EASA GPS Operation/Engine controls; GPS remains PIC-only and F2 owns Role/Crew parity.
+- begin **F1.2 pure normalizer extraction** from current `parseFlightInput()`;
+- keep `parseFlightInput(FormData)` as the compatibility API until Manual regression equivalence is proven;
+- F1.2 must be pure (no DB / no FormData inside the normalizer) and must not change Manual semantics;
+- GPS remains PIC-only; explicit EASA GPS Operation/Engine controls remain required before F1 release.
+
+F1.1 closeout:
+- typed `FlightDraftCandidate` + Manual/GPS characterization adapters added without wiring runtime mutations to them;
+- unresolved Operation/Engine, movement/day-night, sailplane launch, night and IFR facts remain explicit rather than guessed;
+- Verify #998 PASS · TypeScript PASS · 998/998 unit/regression · PostgreSQL 63/63 · Browser #379 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; persisted flight behavior unchanged.
 
 F1.0 production closeout:
 - main `e7361dbe3e55fbba721ec01c2bffd5c885452c12`;

@@ -187,7 +187,7 @@ Frozen behavior:
 Current priority:
 - F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
 - F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F0 is DONE/verified and independent F1 review is reconciled. F1.0 migration v17 is live and production-verified: main `e7361dbe…`, Vercel production READY, migration v17 recorded on the production Neon branch, and the live trigger definition matches the reviewed snapshot-preservation contract. F1.1 is next.
+- F1.0 and F1.1 are DONE: historical identity preservation is live and the typed Manual/GPS candidate adapter contract is characterized/verified; F1.2 pure normalizer extraction is NEXT.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 
