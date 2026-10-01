@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F1.5 explicit GPS Operation / Engine
+- Reordered F1 execution because the shared normalizer correctly treats unresolved Operation/Engine as a blocking semantic state; routing GPS through it before explicit source input would either fail every applicable import or reintroduce guessed defaults.
+- Added common GPS **Operation (SP/MP)** and **Engine (SE/ME)** controls for categories where the canonical capability contract exposes those semantics.
+- Aircraft/registration changes clear both selections so values cannot leak across aircraft profiles.
+- Server-side GPS import now revalidates Operation/Engine and persists the explicit reviewed values rather than silently forcing `SP` and class-derived Engine.
+- Non-applicable category branches retain compatibility storage values only and do not present them as regulatory evidence.
+- GPS remains PIC-only; shared normalizer routing, sailplane/movement/day-night/Night/IFR convergence remain outside this batch.
+- **Verification:** PENDING on `feat/flight-entry-f15-gps-operation-engine`.
+- **DB schema/migration:** N/A.
+
 ### Flight Entry Workflow 3.0 — F1.3 Manual persistence proof
 - Added source-contract coverage proving Manual create and update remain behind the `parseFlightInput(FormData)` compatibility boundary after F1.2.
 - Verified flight semantic columns are persisted from normalized `FlightInput` values rather than re-read independently from FormData.
