@@ -64,8 +64,8 @@ test("F1.5 GPS UI exposes explicit common Operation/Engine and blocks readiness 
   assert.match(gpsForm,/Select SP \/ MP/);
   assert.match(gpsForm,/Select SE \/ ME/);
   assert.match(gpsForm,/!requiresOperationEngine\|\|\(operationType!==""&&engineType!==""\)/);
-  assert.match(gpsForm,/setOperationType\("","?\)?/);
-  assert.match(gpsForm,/setEngineType\("","?\)?/);
+  assert.ok(gpsForm.includes('setOperationType("")'));
+  assert.ok(gpsForm.includes('setEngineType("")'));
 });
 
 test("F1.5 server revalidates Operation/Engine and persists resolved values",()=>{
