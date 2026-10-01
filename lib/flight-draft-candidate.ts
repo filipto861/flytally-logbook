@@ -168,6 +168,10 @@ export type GpsReviewedPartCandidateInput={
   onBlock:unknown;
   starts:unknown;
   takeoffs?:unknown;
+  landingsDay?:unknown;
+  landingsNight?:unknown;
+  nightTime?:unknown;
+  ifrTime?:unknown;
   note?:unknown;
 };
 
@@ -201,7 +205,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     reason:input.profileError||"Selected aircraft profile is unresolved.",
     provenance:"UNRESOLVED",
   };
-  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="";
+  const hasOperation=String(input.operationType??"").trim()!=="",hasEngine=String(input.engineType??"").trim()!=="",hasLandingsDay=String(input.reviewedPart.landingsDay??"").trim()!=="",hasLandingsNight=String(input.reviewedPart.landingsNight??"").trim()!=="",hasNight=String(input.reviewedPart.nightTime??"").trim()!=="",hasIfr=String(input.reviewedPart.ifrTime??"").trim()!=="";
   return{
     source:"GPS_REVIEW",
     date:input.reviewedPart.date,
@@ -215,9 +219,9 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     landing:input.reviewedPart.landing,
     onBlock:input.reviewedPart.onBlock,
     starts:input.reviewedPart.starts,
-    landingsDay:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    landingsNight:unresolved("GPS review currently has total landing count but no authoritative day/night classification."),
-    hasStructuredLandings:false,
+    landingsDay:hasLandingsDay?provided(input.reviewedPart.landingsDay,"GPS_REVIEW"):unresolved("GPS review requires explicit day landing count."),
+    landingsNight:hasLandingsNight?provided(input.reviewedPart.landingsNight,"GPS_REVIEW"):unresolved("GPS review requires explicit night landing count."),
+    hasStructuredLandings:hasLandingsDay&&hasLandingsNight,
     launches:unresolved("GPS review does not currently capture sailplane launch count."),
     launchMethod:unresolved("GPS review does not currently capture sailplane launch method."),
     hasLaunches:false,
@@ -232,8 +236,8 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     operatorName:"",
     flightNumber:"",
     operationContext:"",
-    nightTime:unresolved("GPS review does not currently provide authoritative night-time evidence."),
-    ifrTime:unresolved("GPS review does not currently provide authoritative IFR evidence."),
+    nightTime:hasNight?provided(input.reviewedPart.nightTime,"GPS_REVIEW"):unresolved("GPS review requires explicit Night time, including 0:00 when none."),
+    ifrTime:hasIfr?provided(input.reviewedPart.ifrTime,"GPS_REVIEW"):unresolved("GPS review requires explicit IFR time, including 0:00 when none."),
     role:input.role,
     commander:"",
     instructor:"",
@@ -250,7 +254,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
       aircraftContext:profile?"AIRCRAFT_PROFILE":"UNRESOLVED",
       route:"GPS_REVIEW",
       timeline:"GPS_REVIEW",
-      movements:"UNRESOLVED",
+      movements:hasLandingsDay&&hasLandingsNight?"GPS_REVIEW":"UNRESOLVED",
       role:"COMMON_IMPORT",
       operation:hasOperation?"COMMON_IMPORT":"UNRESOLVED",
       engine:hasEngine?"COMMON_IMPORT":"UNRESOLVED",
