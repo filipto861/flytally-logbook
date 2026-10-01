@@ -31,7 +31,10 @@ test("B5 missing-field navigation opens the owning disclosure before focus",()=>
   assert.match(form,/const focusMissing=\(item:string\)=>/);
   assert.match(form,/\["logbook","class","balloonClass","balloonGroup"\]\.includes\(item\)\)setLogbookOpen\(true\)/);
   assert.match(form,/item==="billingConfig"\)setOptionalDetailsOpen\(true\)/);
-  assert.match(form,/item==="actualPic"\)setCrewOpen\(true\)/);
+  assert.doesNotMatch(form,/item==="actualPic"\)setCrewOpen\(true\)/);
+  assert.match(form,/roleInstructor:'\[name="instructor"\]'/);
+  assert.match(form,/supervisingPic:'\[name="verificationName"\]'/);
+  assert.match(form,/countersignature:'\[name="verificationReference"\]'/);
   assert.match(form,/\["launches","launchMethod","balloonOperation"\]\.includes\(item\)\)setExperienceOpen\(true\)/);
   assert.match(form,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(\(\)=>formRef\.current\?\.querySelector<HTMLElement>\(selector\)\?\.focus\(\)\)\)/);
   assert.match(form,/className="entry-save-blockers" aria-label="Missing required fields"/);
@@ -43,7 +46,8 @@ test("B5 preserves native disclosure semantics and keeps required disclosures di
   assert.doesNotMatch(form,/<details[^>]*aria-expanded/);
   assert.doesNotMatch(form,/<details[^>]*aria-controls/);
   assert.match(form,/experienceRequiredOpen=!entryProfile\.selected\|\|entryProfile\.showSailplaneExperience\|\|balloonFlight/);
-  assert.match(form,/roleContextRequired=role==="DUAL"\|\|role==="SAFETY PILOT"\|\|countersignatureRequired/);
+  assert.match(form,/inlineRoleCrew=Boolean\(dualCrewInline\|\|supervisedCrewInline\|\|safetyCrewInline\)/);
+  assert.match(form,/open=\{crewOpen\} onToggle=\{event=>setCrewOpen\(event\.currentTarget\.open\)\}/);
   assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
   assert.match(form,/if\(billing==="INVALID"\)setOptionalDetailsOpen\(true\)/);
 });
