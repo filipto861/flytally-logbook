@@ -101,19 +101,20 @@ Evidence links should point to the exact flights, training records, signatures o
 
 ## Flight entry and review
 
-The canonical domain target is one flight semantic contract. The current convergence state is:
+Flight entry now has one canonical semantic normalization boundary:
 
-- Manual New/Edit uses `FlightForm` → `parseFlightInput(FormData)` → `manualFlightCandidate()` → pure `normalizeFlightDraft()`.
+- Manual New/Edit uses `FlightForm` → `parseFlightInput(FormData)` → `manualFlightCandidate()` → pure `normalizeFlightDraft()` → `FlightInput`.
+- GPS New uses reviewed source/profile state → `gpsFlightCandidate()` → the same pure `normalizeFlightDraft()` → `FlightInput` before persistence.
 - `normalizeFlightDraft()` owns source-agnostic flight semantics and contains no DB, auth or FormData dependency.
-- GPS import still uses `KmlImportForm` + `importKmlFlight()` with a specialized atomic flight/track transaction and has not yet been routed through the shared normalizer.
+- GPS retains only legitimate specialization around track/source provenance, date-effective price resolution, duplicate/advisory locks and atomic N-part flight+track persistence.
 
-The remaining Manual/GPS divergence is active technical debt, not an approved second flight model. GPS may retain source/provenance and atomic track-persistence specialization, but equivalent flight semantics must converge through the shared normalizer before F1 closes.
+Integrity gates:
+- F0.1 removed GPS invalid-profile → `ULL` fallback and restricted GPS role semantics to PIC until Role/Crew parity;
+- F1.0 migration v17 preserves explicitly supplied historical make/model/variant snapshots and refreshes profile identity only on the reviewed conditions;
+- F1.5 removed hidden GPS SP/class-derived Engine assumptions for applicable contexts;
+- F1.6 requires explicit source-fidelity evidence where generic GPS motion is not authoritative.
 
-Integrity gates already closed:
-- F0.1 removed GPS invalid-profile → `ULL` fallback and restricted interim GPS role semantics to PIC;
-- F1.0 migration v17 preserves explicitly supplied historical make/model/variant snapshots and refreshes profile identity only when appropriate.
-
-Current Manual Role/Crew semantics and certification/collaboration boundaries remain authoritative during convergence. GPS-derived route/time/movement data is suggestion/provenance and may not invent role, crew identity or regulatory identity. Operation/Engine and other source-authority gaps remain explicit unresolved state until later F1 milestones provide reviewed inputs.
+Role/Crew completeness is the remaining domain gap and belongs to F2. GPS stays PIC-only until each additional role can preserve the same identity, supervision and collaboration semantics as Manual entry.
 
 GPS suggestions for an existing saved flight require explicit review before overwriting saved values. A successful normal Save hands the pilot into final logbook-data review without bypassing certification, sharing or protected-record boundaries.
 
