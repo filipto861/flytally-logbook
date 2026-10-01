@@ -19,7 +19,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Current GPS persistence stores the reviewed source-fidelity fields in preparation for F1.4 shared-normalizer convergence.
 - Added source/domain and authenticated browser coverage for the new review boundary.
 - DB schema/migration: N/A.
-- Verification: PENDING on `feat/flight-entry-f1-6-source-fidelity`.
+- Verification: final Verify FlyTally web #1031 PASS; TypeScript PASS; full unit/regression **1025/1025**; PostgreSQL acceptance **63/63**; Browser smoke #407 **26 passed / 2 skipped**; production build PASS; DB schema/migration N/A. The first #1030 run failed only because an F0.1 source-characterization assertion still expected the pre-F1.6 readiness expression; the assertion was reconciled without runtime changes.
 
 ### Flight Entry Workflow 3.0 — F1.5 explicit GPS Operation / Engine
 - Reordered F1 execution because the shared normalizer correctly treats unresolved Operation/Engine as a blocking semantic state; routing GPS through it before explicit source input would either fail every applicable import or reintroduce guessed defaults.
