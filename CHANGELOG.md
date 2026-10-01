@@ -17,7 +17,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added Manual/GPS equivalent-EASA-PIC semantic equivalence coverage plus authenticated browser persistence coverage.
 - Reconciled the isolated browser `flight_tracks` fixture with the runtime `overview_version` column and made the mutation test deterministic/cleanup-safe.
 - Final PR-head verification before docs closeout: Verify #1055 PASS; TypeScript PASS; full unit/regression **1030/1030**; PostgreSQL acceptance **63/63**; Browser smoke #431 **28 passed / 2 skipped**; production build PASS.
-- DB schema/migration: N/A for F1.4. Production deployment verification is pending merge.
+- F1.4 merged as PR #200 on `main@5c2af689c74e209358d22eebf05c3f4120a4224f`.
+- Production deployment `dpl_8NaCnff1TcP6DRkXSwUKmEq9dHiR` reached READY for that exact main SHA and is aliased to `fly-tally.com` with no alias error.
+- DB schema/migration: N/A for F1.4; F1.0 migration v17 remains the only schema prerequisite in F1.
+- F1 shared semantic normalization is therefore **DONE / production-verified**; F2 Role/Crew parity is next.
+- Superseded parallel PRs #196 and #198 were closed without merge.
 
 ### Flight Entry Workflow 3.0 — F1.6 GPS source fidelity
 - Added category-driven GPS review requirements instead of inferring regulatory evidence from generic movement.

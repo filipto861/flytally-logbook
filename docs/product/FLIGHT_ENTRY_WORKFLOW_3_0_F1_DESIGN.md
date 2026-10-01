@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F1 Shared Normalization Design Draft
 
-**Status:** IMPLEMENTATION COMPLETE THROUGH F1.6 · F1.4 PR-HEAD VERIFIED · PRODUCTION CLOSEOUT PENDING  
+**Status:** DONE · PRODUCTION VERIFIED  
 **Baseline:** `main@1fb1b4edb051b3ce8d052a50401916cb2cbc78b8`  
 **Dependency:** F0 field/consumer matrix DONE/verified.
 
@@ -354,11 +354,15 @@ This must be a new base migration (v17), not a rewrite of v6.
 - server revalidates submitted Operation/Engine and persists those explicit values instead of hidden SP / class-derived Engine assumptions;
 - non-applicable category branches preserve compatibility storage semantics only; they do not expose Operation/Engine as regulatory input.
 
-### F1.4 — GPS semantic adapter / persistence convergence — BLOCKED UNTIL F1.6 VERIFIED
-- resolve each reviewed PIC part into candidate state;
-- pass every semantic flight value through shared normalizer;
-- retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
-- remove the hand-written GPS semantic mapper where the shared normalized value exists.
+### F1.4 — GPS semantic adapter / persistence convergence — DONE / PRODUCTION VERIFIED
+- every reviewed PIC part is resolved into candidate state and passed through the shared normalizer;
+- GPS persistence consumes normalized `FlightInput` semantic values;
+- atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection remain preserved;
+- hand-written duplicate semantic derivation was removed where the shared normalized value exists;
+- Verify #1055 PASS · 1030/1030 unit/regression · PostgreSQL 63/63 · Browser #431 28 passed / 2 skipped · production build PASS;
+- PR #200 merged to main `5c2af689c74e209358d22eebf05c3f4120a4224f`;
+- Vercel production `dpl_8NaCnff1TcP6DRkXSwUKmEq9dHiR` READY and aliased to `fly-tally.com`;
+- DB schema/migration N/A for F1.4.
 
 ### F1.6 — source-fidelity prerequisite + cross-path closeout — DONE / VERIFIED
 - GPS landing evidence is explicitly reviewed as day/night where the current domain distinguishes it; non-TMG sailplane keeps the current total-landing compatibility model;
@@ -407,3 +411,17 @@ Final decisions:
 9. N-part persistence remains atomic and specialized only for persistence/provenance, not semantic meaning.
 
 Runtime implementation may begin with **F1.0 only**, followed by the ordered F1.1–F1.6 batches.
+
+
+## 14. F1 production closeout
+
+F1 is complete.
+
+Final production state:
+- shared semantic normalizer is live for Manual and GPS PIC entry;
+- GPS remains PIC-only by design until F2 Role/Crew parity;
+- F1.0 historical identity migration v17 remains live and verified;
+- no certification v1–v8 or recency contract change;
+- superseded implementation PRs #196 and #198 were closed without merge.
+
+Next milestone: **F2 — Role/Crew parity**.

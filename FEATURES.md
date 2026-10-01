@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE
+### Flight Entry Workflow 3.0 — ACTIVE · F1 COMPLETE / F2 NEXT
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -185,11 +185,10 @@ Frozen behavior:
 - historical/certified records are never repaired by guessed crew/profile values.
 
 Current priority:
-- F0.0 is DONE/verified; it confirms the non-canonical GPS `INSTRUKTOR` value and establishes **PIC only** as the smallest coherent interim GPS role set before role/crew parity;
-- F0.1 is DONE/verified: GPS profile context fails closed, server validation resolves the selected active aircraft profile, and the interim GPS role surface is PIC-only until Role/Crew parity;
-- F1.6 source-fidelity inputs are DONE/verified: category-specific landing/movement/launch/Night-IFR facts are explicit pilot-reviewed evidence, never inferred from generic GPS motion; F1.4 shared-normalizer convergence is NEXT.
-
-- F1.4 is implemented and PR-head verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence; production closeout is pending merge/deploy.
+- F0/F0.1 are DONE: GPS aircraft context fails closed and interim GPS role support remains PIC-only until Role/Crew parity;
+- F1 is DONE/production-verified: Manual and GPS PIC drafts converge on the same candidate → pure normalizer → `FlightInput` semantic contract before persistence, while GPS track/provenance and atomic N-part persistence remain specialized;
+- explicit GPS Operation/Engine and category-specific source-fidelity evidence are required where applicable; generic GPS movement does not become regulatory evidence;
+- **F2 Role/Crew parity is NEXT**: DUAL, Safety Pilot, SPIC/PICUS and other supported crew roles must share one server-authoritative role/identity contract before GPS role support can broaden.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 

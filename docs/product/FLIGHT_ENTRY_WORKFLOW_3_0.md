@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0 + F1 IMPLEMENTATION COMPLETE / F1 PRODUCTION CLOSEOUT PENDING  
+**Status:** ACTIVE · DESIGN FROZEN / F0 + F1 DONE / F2 NEXT  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -485,17 +485,22 @@ F0 verification:
 
 **Next: F1 — Shared normalization / semantic write contract.**
 
-### F1 — Shared normalization / semantic write contract
+### F1 — Shared normalization / semantic write contract — DONE / PRODUCTION VERIFIED
 
 **Goal:** Manual and GPS normalize equivalent flight semantics through one domain contract.
 
-Acceptance:
-- Manual create behavior remains regression-equivalent except for explicitly approved fixes;
-- GPS no longer manually invents a smaller semantic record;
-- no hidden defaults;
-- irrelevant role data cannot leak into persistence;
-- certification payload/version/hash unchanged;
-- no destructive historical rewrite.
+Closeout:
+- Manual and GPS PIC use the same `FlightDraftCandidate → normalizeFlightDraft() → FlightInput` semantic boundary before persistence;
+- `parseFlightInput(FormData)` remains the Manual compatibility wrapper;
+- GPS track/provenance, date-effective pricing, duplicate locks and atomic N-part persistence remain outside the pure semantic normalizer;
+- explicit Operation/Engine and source-fidelity evidence replace previous GPS guesses;
+- historical identity preservation migration v17 is live;
+- certification payload/version/hash v1–v8 remains unchanged;
+- no destructive historical rewrite occurred;
+- PR #200 merged to main `5c2af689c74e209358d22eebf05c3f4120a4224f`;
+- Verify #1055 PASS, Browser #431 PASS (28 passed / 2 skipped), production build PASS;
+- Vercel `dpl_8NaCnff1TcP6DRkXSwUKmEq9dHiR` READY and aliased to `fly-tally.com`;
+- F1.4 DB schema/migration N/A.
 
 ### F2 — Role / Crew parity
 

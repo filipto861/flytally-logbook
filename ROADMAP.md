@@ -411,27 +411,30 @@ Milestones:
 | F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
 | F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
-| F1 — Shared normalization / semantic write contract | 🚧 | **F1.0–F1.6 IMPLEMENTED** · F1.4 PR-head verified; merge/production closeout pending |
-| F2 — Role/Crew parity | ⏳ | Source-agnostic role contract and inline role-defining fields |
+| F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
+| F2 — Role/Crew parity | ➡️ | **NEXT** · source-agnostic role contract and inline role-defining fields |
 | F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
 Immediate next step:
-- merge and production-verify **F1.4 GPS shared-normalizer convergence** after final PR-head gates;
-- confirm `fly-tally.com` runs the merged F1.4 main SHA with no DB migration required;
-- close F1 only after production evidence is recorded;
-- then promote **F2 — Role/Crew parity** as the next implementation milestone.
+- begin **F2 — Role/Crew parity** with a fresh current-main discovery pass;
+- make Role/Crew Save semantics server-authoritative and source-agnostic;
+- keep GPS PIC-only until each additional role has complete identity/supervision semantics;
+- do not change certification v1–v8 or infer crew identity from names.
 
-F1.4 PR-head closeout:
+F1 production closeout:
 - every reviewed GPS PIC part is converted to `FlightDraftCandidate` and normalized through the same `normalizeFlightDraft()` / `FlightInput` semantic boundary as Manual entry before persistence;
 - the GPS INSERT consumes normalized semantic fields; track payload, date-effective price lookup, duplicate fingerprinting, advisory locks and the atomic N-part transaction remain persistence/provenance concerns;
 - explicit F1.5 Operation/Engine and F1.6 source-evidence review feed the shared normalizer; GPS remains PIC-only;
 - authenticated browser coverage now performs a real GPS reviewed-flight Save and verifies the resulting stored Manual-review fields;
 - the browser fixture was reconciled with the runtime `flight_tracks.overview_version` schema and the new mutation test cleans up its own deterministic record to avoid cross-project contamination;
 - Verify #1055 PASS · TypeScript PASS · 1030/1030 unit/regression · PostgreSQL 63/63 · Browser #431 PASS · 28 passed / 2 skipped · production build PASS;
-- DB schema/migration N/A for F1.4; production deployment verification remains pending until merge.
+- F1.4 merged as PR #200 on main `5c2af689c74e209358d22eebf05c3f4120a4224f`;
+- Vercel production deployment `dpl_8NaCnff1TcP6DRkXSwUKmEq9dHiR` is READY, targets that exact main SHA and aliases `fly-tally.com` with no alias error;
+- DB schema/migration N/A for F1.4; F1.0 migration v17 remains the only schema prerequisite in this workstream;
+- stale/superseded PRs #196 and #198 were closed without merge.
 
 F1.6 closeout:
 - GPS review requires explicit category-appropriate landing evidence before a part can be confirmed;
