@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 30 September 2026
+**Last updated:** 1 October 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
 
@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0.0 + F0.1 DONE/verified; **F0 full field/consumer contract inventory is NEXT** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0/F1 DONE; F2.0 review reconciled; **F2.1 validation-only is NEXT** |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · confirmed GPS semantic-write integrity defect pre-empts M2B; F0.0 → F0.1 first |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F1 production-verified; F2 Role/Crew parity is current, with F2.1 validation-only next |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -635,7 +635,7 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
 | Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
-| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · design frozen; F0.0/F0.1 pre-empt M2B because of confirmed GPS data-integrity drift |
+| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · F1 production-verified; F2.0 review reconciled; F2.1 validation-only next |
 | Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
