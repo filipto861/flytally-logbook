@@ -1,3 +1,5 @@
+import { resolveRoleCrewPicName } from "./role-crew.ts";
+
 export const LOGBOOK_PRINT_SCOPES=[
   {value:"all",label:"Complete logbook"},
   {value:"ull",label:"ULL only"},
@@ -137,13 +139,12 @@ export function printIdentity(preferences:PilotPreferences,scope:LogbookPrintSco
 }
 
 export function pilotInCommandName(row:Record<string,unknown>,pilotName:string){
-  const role=String(row.role??"").trim().toUpperCase();
-  const instructor=clean(row.instructor);
-  const commander=clean(row.commander);
-  const verifier=clean(row.verification_name);
-  if(role==="DUAL"&&instructor)return instructor;
-  if(["SPIC","PICUS"].includes(role)&&verifier)return verifier;
-  if(commander)return commander;
-  if(["PIC","SOLO","FI","INSTRUCTOR","EXAMINER"].includes(role))return pilotName.trim();
-  return "";
+  return resolveRoleCrewPicName({
+    role:row.role,
+    evidence:row.evidence,
+    commander:row.commander,
+    instructor:row.instructor,
+    verificationName:row.verification_name,
+    selfName:pilotName,
+  });
 }
