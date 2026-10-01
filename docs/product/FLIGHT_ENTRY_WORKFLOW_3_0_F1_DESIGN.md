@@ -360,7 +360,23 @@ This must be a new base migration (v17), not a rewrite of v6.
 - retain atomic N-part SQL/track transaction, sorted advisory locks and duplicate protection;
 - remove the hand-written GPS semantic mapper where the shared normalized value exists.
 
-### F1.6 — source-fidelity prerequisite + cross-path closeout — NEXT
+### F1.6 — source-fidelity prerequisite + cross-path closeout — ACTIVE
+
+#### F1.6a — explicit landing split + Night/IFR — IMPLEMENTED / VERIFICATION PENDING
+- every reviewed GPS part requires explicit Day landings and Night landings;
+- GPS-detected landing count remains a suggestion only and is not assigned to day/night;
+- every reviewed GPS part requires explicit Night and IFR duration, including `0:00` when none;
+- server validates counts/durations and BLOCK bounds and persists reviewed values;
+- candidate adapter can carry these facts as `GPS_REVIEW` provenance rather than unresolved state;
+- no regulatory take-off/approach/sailplane evidence is inferred in this batch.
+
+#### F1.6b — category-specific regulatory movement / launch evidence — NEXT
+- Part-FCL PF Yes/No + explicit day/night take-offs and approaches when Yes;
+- TMG Part-SFCL explicit day/night take-offs;
+- Balloon Part-BFCL explicit day/night take-offs;
+- non-TMG Sailplane explicit launch method + launch count;
+- generic track motion is never authority for these fields.
+
 - sailplane/movement/night/IFR evidence is explicit or remains unavailable; never inferred from generic movement;
 - equivalent Manual/GPS PIC semantics tested where both sources provide equivalent facts;
 - preserve v1–v8 verification and certified-only recency;
