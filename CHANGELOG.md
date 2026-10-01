@@ -9,6 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F2 Role/Crew design
+- Added a repository-backed F2 Role/Crew design draft after F1 production closeout.
+- Characterized the current split boundaries: EASA DUAL is UI/certification-required but not yet server Save-required; Safety Pilot Actual PIC is action-level with accepted-Connection recheck; SPIC/PICUS supervision is already server Save-required.
+- Proposed one source-agnostic `roleCrewSpec(role,evidence)` contract plus canonical role-owned-field sanitization.
+- Kept connected-account resolution outside the pure normalizer and preserved the historical-text vs account-link distinction.
+- Kept GPS PIC-only during design; F4 remains owner of per-part RoleCrew overrides.
+- Prepared an independent review handoff covering CO-PILOT/CRCP Save policy, self-PIC crew fields, legacy draft sanitization, Safety Pilot connection architecture and GPS role promotion.
+- **Runtime/schema behavior:** unchanged; F2 implementation has not started.
+
 ### Flight Entry Workflow 3.0 — F1.4 shared GPS normalization
 - Routed every reviewed GPS PIC part through `gpsFlightCandidate() → normalizeFlightDraft() → FlightInput` before any flight persistence.
 - GPS flight INSERT semantics now consume the same normalized `FlightInput` contract as Manual entry instead of recomputing role credit, billing, operation/engine and other flight semantics independently.
