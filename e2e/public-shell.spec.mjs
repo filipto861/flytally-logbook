@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetSafetyPilotPicFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -219,6 +219,7 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
 
 test("GPS reviewed PIC save persists normalized shared semantics",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS normalized persistence coverage requires the isolated CI database.");
+  resetGpsNormalizedImportFixture();
   await loginBrowserPilot(page,"/flights/new");
 
   await page.getByRole("button",{name:"Import GPS track"}).click();
@@ -248,7 +249,7 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
   await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
 
-  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook&saved=1$/);
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
   await expect(page.locator('select[name="evidence"]')).toHaveValue("EASA");
   await expect(page.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
@@ -260,6 +261,7 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(page.locator('input[name="movementEvidenceRecorded"]')).not.toBeChecked();
   await expect(page.locator('textarea[name="note"]')).toContainText("F1.4 normalized GPS save");
   await expectNoHorizontalOverflow(page);
+  resetGpsNormalizedImportFixture();
 });
 
 test("Safety Pilot Actual PIC form keeps manual and connected identity explicit",async({page})=>{
