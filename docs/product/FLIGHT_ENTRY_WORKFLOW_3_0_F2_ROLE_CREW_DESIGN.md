@@ -1,8 +1,9 @@
 # Flight Entry Workflow 3.0 — F2 Role / Crew Parity Design Draft
 
-**Status:** DRAFT FOR INDEPENDENT REVIEW · NO RUNTIME CHANGE  
+**Status:** F2.0 REVIEW RECONCILED · CONTRACT FROZEN FOR F2.1 VALIDATION-ONLY START · NO RUNTIME CHANGE IN THIS DOCUMENT PR  
 **Baseline:** `main@0ebb3d1e46df62046eb460134678435547beebb5`  
-**Dependency:** F1 shared semantic normalization DONE / production-verified.
+**Dependency:** F1 shared semantic normalization DONE / production-verified.  
+**Independent review:** APPROVE WITH CHANGES; reconciled against current repository evidence on 1 October 2026.
 
 ## 1. Objective
 
@@ -134,10 +135,11 @@ type CrewField =
   | "verificationReference"
   | "connectedActualPic";
 
-type CrewFieldPolicy = "required_save" | "optional" | "not_applicable";
+type CrewFieldPolicy = "required_save" | "optional" | "not_applicable" | "external_resolver";
 
 type RoleCrewSpec = {
   role: FlightRole;
+  evidence: string;
   commander: CrewFieldPolicy;
   instructor: CrewFieldPolicy;
   verificationName: CrewFieldPolicy;
@@ -153,34 +155,33 @@ type RoleCrewSpec = {
 };
 ```
 
-Exact names are not frozen. The invariant is: applicability and Save requirements come from one role/evidence contract, not JSX branches and separate action heuristics.
+Exact names are not frozen. The invariant is: applicability and Save requirements come from one source-agnostic role/evidence contract, not JSX branches and separate action heuristics.
+
+**Important reconciliation:** the contract does **not** synthesize the account holder's display name into `flights.commander` for self-PIC roles. Current repository semantics explicitly allow ordinary PIC commander to be blank and resolve self identity from the owning account in `pilotInCommandName()`. Injecting account identity into the pure normalizer would make it source/account-aware and would contradict the F0 field/consumer contract.
 
 ## 5. Proposed EASA matrix
 
 This matrix is deliberately split between **frozen decisions** and **review questions**.
 
-| Role | PIC identity used by current certification | F2 Save-required proposal | Persisted role-owned fields | Review status |
+| Role | PIC identity used by current certification | F2 Save rule | F2.1 persistence stance | Frozen status |
 | --- | --- | --- | --- | --- |
-| PIC | Self account | none | role only; commander/instructor/verifier cleared | Review requested before tightening current optional fields |
-| SOLO | Self account | none | role only; crew fields cleared | Review requested |
-| FI | Self account | none | role only; crew fields cleared | Review requested because current UI allows generic commander/instructor |
-| INSTRUCTOR | Self account | none | role only; crew fields cleared | Review requested |
-| EXAMINER | Self account | none | role only; crew fields cleared | Review requested |
-| DUAL | Instructor is PIC | **Instructor/PIC required** | instructor only | **Frozen** |
-| SPIC | Verifier is supervising PIC/FI | **verification name + reference required** | verification pair only | **Frozen** |
-| PICUS | Verifier is supervising PIC/FI | **verification name + reference required** | verification pair only | **Frozen** |
-| SAFETY PILOT | Explicit Actual PIC commander | **Actual PIC required** | commander + optional connected-PIC metadata | **Frozen** |
-| CO-PILOT | Explicit commander | proposed commander required before Save | commander only | **Needs review** |
-| CRUISE-RELIEF CO-PILOT | Explicit commander | proposed commander required before Save | commander only | **Needs review** |
-| PAX | Explicit commander needed by current EASA certification | leave Save-optional; certification still blocks | commander only if supplied | **Needs review** |
-| OBSERVER | Explicit commander needed by current EASA certification | leave Save-optional; certification still blocks | commander only if supplied | **Needs review** |
+| PIC | Self account | no additional crew identity required | do not synthesize commander; no destructive sanitization in F2.1 | **Frozen** |
+| SOLO | Self account | no additional crew identity required | same as PIC | **Frozen** |
+| FI | Self account | no additional crew identity required | same as PIC; preserve current training-evidence semantics until consumer audit closes | **Frozen** |
+| INSTRUCTOR | Self account | no additional crew identity required | same as PIC; preserve current training-evidence semantics until consumer audit closes | **Frozen** |
+| EXAMINER | Self account | no additional crew identity required | same as PIC; preserve current endorsement-evidence semantics until consumer audit closes | **Frozen** |
+| DUAL | Instructor is PIC | **Instructor/PIC required before Save** | validate instructor; sanitization deferred | **Frozen** |
+| SPIC | `verification_name` is supervising PIC/FI | **verification name + reference required before Save** | preserve existing pair; sanitization deferred | **Frozen** |
+| PICUS | `verification_name` is supervising PIC/FI | **verification name + reference required before Save** | preserve existing pair; sanitization deferred | **Frozen** |
+| SAFETY PILOT | Explicit Actual PIC commander | **Actual PIC required before Save** | existing action-level resolver remains authoritative until F2.3 | **Frozen** |
+| CO-PILOT | Explicit commander | **Save-optional; Certification-required** | preserve commander if supplied | **Frozen after review** |
+| CRUISE-RELIEF CO-PILOT | Explicit commander | **Save-optional; Certification-required** | preserve commander if supplied | **Frozen after review** |
+| PAX | Explicit commander under current certification | **Save-optional; current Certification behavior unchanged** | preserve commander if supplied | **Frozen after review** |
+| OBSERVER | Explicit commander under current certification | **Save-optional; current Certification behavior unchanged** | preserve commander if supplied | **Frozen after review** |
 
-Why CO-PILOT/CRCP are a review question:
-- current certification requires a PIC name;
-- unlike route/time completeness, the PIC is part of the role's crew identity;
-- but promoting it to Save-required would intentionally tighten current Save semantics beyond the already frozen D3 roles.
+The independent reviewer proposed storing canonical self identity in `commander` for self-PIC roles. Repository evidence does not support that change: the F0 contract states ordinary PIC commander may be blank, and `pilotInCommandName()` resolves self from the owning account after role-specific instructor/verifier/explicit-commander checks. F2 therefore keeps self identity as account ownership semantics rather than inventing a new stored commander requirement.
 
-Do not implement that tightening until reviewed/approved.
+For PAX/OBSERVER, F2 does **not** weaken current certification rules. Whether a future product should certify non-pilot reference entries without a PIC name is a separate product/regulatory decision, not part of F2.
 
 ## 6. Non-EASA / ULL policy
 
@@ -193,47 +194,28 @@ For ULL:
 
 The pure contract may therefore be `roleCrewSpec(role, evidence)`, not `roleCrewSpec(role, source)`.
 
-## 7. Role-owned field sanitization
+## 7. Field ownership and sanitization — reconciled
 
-F2 acceptance requires that irrelevant semantic fields are not persisted after Role changes.
+The initial draft treated `commander`, `instructor` and `verification_*` as purely role-owned fields. The hidden-consumer audit disproved that simplification.
 
-The server must sanitize role-owned fields before persistence.
+Repository evidence:
+- `normalizeFlightDraft()` uses a populated `instructor` outside DUAL to retain selected `AIRCRAFT_DIFFERENCES` / `AIRCRAFT_FAMILIARISATION` purpose evidence;
+- `fcl050-compliance.ts` uses `verification_name` / `verification_reference` outside SPIC/PICUS when test/check or revalidation remarks require endorsement evidence;
+- CSV/XLS export exposes the raw stored commander/instructor/verification columns;
+- printable/FCL.050 output resolves PIC through `pilotInCommandName()`, so self-PIC does not require a stored commander;
+- shared-flight materialization is an additional producer of commander semantics and must be included before destructive canonicalization is introduced.
 
-Proposed rules:
+Therefore **F2.1 must not perform broad destructive crew-field sanitization.** It is validation-only.
 
-- DUAL:
-  - keep `instructor`;
-  - clear `commander`;
-  - clear verification pair.
-- SPIC/PICUS:
-  - keep verification pair;
-  - clear `commander`;
-  - clear `instructor`.
-- SAFETY PILOT:
-  - keep resolved `commander`;
-  - clear instructor + verification pair.
-- CO-PILOT/CRCP:
-  - keep commander;
-  - clear instructor + verification pair.
-- self-PIC roles (PIC/SOLO/FI/INSTRUCTOR/EXAMINER):
-  - proposed: clear commander/instructor/verification pair.
-- PAX/OBSERVER:
-  - keep commander only if supplied;
-  - clear instructor/verification pair.
+Sanitization policy is now:
+1. certified rows remain immutable;
+2. no background rewrite or guessed cleanup;
+3. F2.1 adds server-authoritative role requirements without deleting legacy/additional evidence;
+4. destructive clearing on editable Save is deferred until each field is proven non-applicable in the complete role + evidence + training/endorsement context;
+5. role switches may hide local fields, but persistence must not erase potentially meaningful training/endorsement evidence merely because the target role changed;
+6. a later F2 milestone may introduce **evidence-aware** canonicalization after producer/consumer audit and regression coverage.
 
-This is a semantic cleanup, not merely presentation.
-
-### Historical/edit safety
-
-Certified rows remain immutable.
-
-For existing editable drafts:
-- switching Role explicitly opts into the target Role contract;
-- server Save may clear fields that are not applicable to the target Role;
-- no automatic background rewrite occurs;
-- if unchanged old drafts contain legacy extra fields, we need an explicit decision whether ordinary same-role Save sanitizes them immediately or only a Role change does.
-
-**Recommended:** server always returns canonical target-role fields on Save, but before implementation add regression coverage for existing drafts and confirm we do not destroy meaningful supported evidence. Independent review requested.
+This supersedes the earlier proposal to clear commander/instructor/verification fields solely from Role.
 
 ## 8. Connected Safety Pilot Actual PIC
 
@@ -272,8 +254,9 @@ F2 must not infer an account link from that text.
 Baseline:
 - DUAL requires Instructor/PIC text before EASA Save;
 - datalist/autocomplete may remain convenience-only;
-- any future connected-instructor binding must use an explicit account ID and is separate from this basic Save contract;
-- existing instructor verification workflows remain post-certification evidence and are not automatically triggered from a matching name.
+- any future connected-instructor binding must use an explicit account ID and is separate from this basic Save contract.
+
+**Repository reconciliation:** current `certification-actions.ts` contains `autoRequestTrainingVerification()`, which matches DUAL/SPIC/PICUS text against accepted instructor-labelled Connections and can create an account-bound verification request. That is name-based identity inference and conflicts with the frozen F2 rule that account links are never inferred from names. F2 must remove or replace that automatic name-matching path before closeout. The existing explicit post-certification request action may remain because it receives an explicit account ID.
 
 ## 10. SPIC / PICUS supervision
 
@@ -325,75 +308,63 @@ Optional crew information for roles where it is genuinely supported can remain u
 
 Do not add explanatory paragraphs unless they communicate a non-obvious consequence.
 
-## 12. GPS parity target
+## 12. GPS parity target — frozen after review
 
-F2 does **not** automatically enable every Role in GPS.
+**GPS remains PIC-only for all of F2.**
 
-Promotion rule:
+The independent review correctly identified that F4 owns common/per-part RoleCrew inheritance and override semantics. Enabling DUAL, SPIC/PICUS, Safety Pilot or co-pilot roles during F2 would create an interim GPS contract that F4 would immediately need to replace.
 
-A GPS role can be enabled only when all of these are true:
-1. the shared RoleCrew spec defines it;
-2. all Save-required identity can be collected in Common details;
-3. server validation is identical to Manual semantics;
-4. normalized persisted fields are identical for equivalent evidence;
-5. N-part transaction remains atomic;
-6. no role-specific collaboration metadata is lost.
+F2 may make the shared RoleCrew contract reusable by GPS, but no additional GPS role becomes selectable or persistable until F4 explicitly integrates it with atomic multi-part inheritance/override behavior.
 
-Initial proposed promotion order:
-1. DUAL common-role import;
-2. SPIC/PICUS common-role import if countersignature evidence is meaningful for every imported part;
-3. Safety Pilot only after connected/manual Actual PIC common-role semantics and post-save metadata are proven;
-4. CO-PILOT/CRCP after commander Save policy is decided.
+## 13. Frozen F2 milestone split after review
 
-PIC remains the only enabled GPS role until each promotion milestone passes.
-
-F4 still owns **per-part RoleCrew overrides**. F2 only needs a safe common RoleCrew context across the import.
-
-## 13. Proposed F2 milestone split
-
-### F2.0 — characterization + final contract
-- inventory all Role/Crew consumers;
-- freeze role/evidence matrix;
-- characterize stale-field leakage;
-- characterize Safety Pilot Manual/Connection create+update;
-- characterize certification and sharing effects;
-- independent review;
+### F2.0 — characterization + review reconciliation — DONE IN DESIGN PR
+- inventory Role/Crew consumers and producers;
+- reconcile independent review against repository evidence;
+- freeze CO-PILOT/CRCP Save-optional + Certification-required;
+- freeze GPS PIC-only through F2;
+- confirm self-PIC identity is account-derived and does not require stored commander;
+- identify overloaded instructor/verification evidence and name-based auto-request conflict;
 - no runtime change.
 
-### F2.1 — pure RoleCrew spec + sanitization
-- add `roleCrewSpec(role,evidence)`;
-- add pure canonical role-owned-field validator/sanitizer;
-- integrate into `normalizeFlightDraft()`;
-- make frozen EASA DUAL + SPIC/PICUS Save rules server-authoritative;
-- preserve existing function allocation;
-- no connected-account DB work inside pure normalizer.
+### F2.1 — pure RoleCrew spec + server validation only
+- add pure `roleCrewSpec(role,evidence)` / equivalent;
+- integrate role requirement validation into `normalizeFlightDraft()`;
+- make EASA DUAL Instructor/PIC Save-required server-side;
+- preserve existing SPIC/PICUS Save requirements through the same contract;
+- encode Safety Pilot as externally resolved/action-authoritative until F2.3;
+- preserve CO-PILOT/CRCP/PAX/OBSERVER Save-optional behavior;
+- **no broad field sanitization**;
+- no GPS role expansion;
+- no certification version/hash schema change.
 
-### F2.2 — Manual inline UX
-- required role-owned fields move directly under Role;
-- completion blocker uses the same RoleCrew spec;
-- optional generic crew fields removed where not applicable;
-- role switching preserves local UI input if useful but submit persists only canonical target-role fields.
+### F2.2 — Manual inline Role/Crew UX
+- required DUAL / Safety Pilot / SPIC / PICUS identity appears directly with Role;
+- required/visibility cues consume the shared spec where applicable;
+- generic optional fields are not removed until their evidence dependencies are resolved;
+- no destructive UI-only cleanup.
 
-### F2.3 — Safety Pilot connection resolver convergence
+### F2.3 — Safety Pilot resolver convergence
 - one server resolver used by create/update;
-- manual and connected paths produce the same historical commander semantic value;
-- separate `flight_connected_crew` metadata preserved;
-- revoked Connection / self-link / missing display name fail closed.
+- accepted Connection rechecked at Save time;
+- server display-name snapshot remains authoritative;
+- manual and connected paths converge to the same commander semantic value;
+- `flight_connected_crew` remains separate metadata.
 
-### F2.4 — GPS common RoleCrew parity
-- enable only roles explicitly approved by F2 contract;
-- common RoleCrew context for all parts;
-- all parts normalized before mutation;
-- one invalid role/crew context aborts whole import;
-- Safety Pilot remains blocked until its metadata path is fully represented.
+### F2.4 — producer/consumer reconciliation + evidence-aware canonicalization
+- audit Manual, GPS, shared-flight materialization, certification, print/export, FCL.050, instructor verification, sharing/PIC invitations, dashboard/statistics and backup/restore;
+- remove/replace DUAL/SPIC/PICUS name-based automatic account matching in certification;
+- define which `instructor` / `verification_*` values are role identity versus training/endorsement evidence;
+- only then introduce deterministic editable-draft sanitization for fields proven non-applicable;
+- certified rows remain immutable.
 
-### F2.5 — cross-path + browser closeout
-- Manual/GPS equivalent role semantics;
+### F2.5 — cross-path regression + closeout
+- role matrix unit coverage;
+- crafted Manual Save coverage;
+- Safety Pilot connection lifecycle;
+- certification v1–v8 verification unchanged;
+- shared/instructor/PIC invitation regressions;
 - desktop/iPad/mobile role-aware presentation;
-- role-switch stale-data tests;
-- certification v1–v8 unchanged;
-- recency unchanged;
-- sharing/instructor/Safety Pilot lifecycle regression;
 - docs + production closeout.
 
 ## 14. Testing contract
@@ -452,15 +423,22 @@ Required states:
 - mobile + iPad + desktop;
 - light + dark for final closeout.
 
-## 15. Decisions requiring independent review
+## 15. Independent review reconciliation / frozen decisions
 
-1. Should EASA CO-PILOT / CRUISE-RELIEF CO-PILOT commander become Save-required, or remain Certification-required only?
-2. Should self-PIC roles always clear explicit `commander` and `instructor`, or is there a legitimate supported case for those fields?
-3. For old editable drafts, should same-role Save sanitize irrelevant legacy crew fields immediately, or only after an explicit Role change?
-4. Is keeping DUAL instructor and SPIC/PICUS supervisor as text-only historical evidence sufficient for F2, with explicit account linking deferred?
-5. Is the Safety Pilot resolver boundary correctly separated from the pure RoleCrew normalizer?
-6. Which roles, if any, should be promoted to GPS common-role support in F2 versus waiting for F4?
-7. Are PAX/OBSERVER role semantics correctly treated as reference records with certification requirements separate from Save?
-8. Does any existing sharing/instructor workflow rely on generic commander/instructor fields in a way this sanitization proposal would break?
+Independent review verdict: **APPROVE WITH CHANGES**.
 
-Do not start runtime F2.1 until these are reconciled against repository evidence and independent review.
+Accepted:
+1. CO-PILOT / CRUISE-RELIEF CO-PILOT commander remains Save-optional and current Certification remains the stronger PIC-name gate.
+2. PAX / OBSERVER commander remains Save-optional; F2 does not alter current certification behavior.
+3. Safety Pilot connection resolution remains before/around the pure normalizer, with server-side accepted-Connection recheck and one shared create/update resolver targeted in F2.3.
+4. GPS remains PIC-only until F4.
+5. Certified rows are never sanitized or rewritten; no historical backfill.
+
+Corrected after repository reconciliation:
+1. The reviewer's recommendation to persist self identity into `commander` is **not adopted**. Current F0 contract and `pilotInCommandName()` explicitly support blank self-PIC commander with account-owner resolution.
+2. Broad role-only sanitization is **not safe**. `instructor` and `verification_*` have non-role consumers for training/endorsement evidence, so destructive cleanup is deferred to F2.4 after evidence-aware audit.
+3. SPIC/PICUS PIC-name semantics are not ambiguous in current code: `pilotInCommandName()` resolves `verification_name` as the supervising PIC/FI.
+4. Current certification auto-request logic performs unique name matching to an instructor-labelled accepted Connection. That conflicts with the frozen no-name-inference rule and must be removed or replaced with explicit account-ID selection before F2 closes.
+
+**Runtime gate:** F2.1 may start because it is now limited to a pure RoleCrew requirement contract + server-authoritative validation. Sanitization, account-link behavior changes and GPS expansion are explicitly out of F2.1.
+
