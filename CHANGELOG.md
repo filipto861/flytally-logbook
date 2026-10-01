@@ -16,7 +16,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Server-side GPS import now revalidates Operation/Engine and persists the explicit reviewed values rather than silently forcing `SP` and class-derived Engine.
 - Non-applicable category branches retain compatibility storage values only and do not present them as regulatory evidence.
 - GPS remains PIC-only; shared normalizer routing, sailplane/movement/day-night/Night/IFR convergence remain outside this batch.
-- **Verification:** PENDING on `feat/flight-entry-f15-gps-operation-engine`.
+- **Verification:** Verify FlyTally web #1024 PASS; TypeScript PASS; full unit/regression **1019/1019**; PostgreSQL acceptance **63/63**; Browser smoke #400 **26 passed / 2 skipped**; production build PASS.
 - **DB schema/migration:** N/A.
 
 ### Flight Entry Workflow 3.0 — F1.3 Manual persistence proof
