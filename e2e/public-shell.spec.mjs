@@ -529,7 +529,7 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-mixed-rolecrew.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await gpsForm.getByRole("button",{name:"＋ Add split"}).click();
+  await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
@@ -613,7 +613,7 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-split-reset.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await gpsForm.getByRole("button",{name:"＋ Add split"}).click();
+  await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
 
@@ -628,7 +628,7 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
   await split.focus();
   await split.press("ArrowRight");
   await expect(split).not.toHaveValue(before);
-  await expect(gpsForm.getByRole("status")).toContainText("Role/Crew overrides were reset because the flight split changed");
+  await expect(gpsForm.locator('p[role="status"]').filter({hasText:"Role/Crew overrides were reset because the flight split changed"})).toBeVisible();
   await expect(gpsForm.locator('input[name="part_0_roleCrew_mode"]')).toHaveValue("INHERIT");
   await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
   await expect(gpsForm.locator('select[name$="_roleCrew_role"]')).toHaveCount(0);
