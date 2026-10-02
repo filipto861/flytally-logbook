@@ -31,23 +31,32 @@ export function validateGpsImportRole(value:unknown):
 }
 
 export function validateGpsImportSubmittedAircraftContext(
-  submitted:{evidence:unknown;aircraftClass:unknown;regulatoryCategory:unknown;aircraftType:unknown},
-  allowed:readonly CanonicalFlightAircraftContext[],
+  submitted:{evidence:unknown;aircraftClass:unknown;regulatoryCategory?:unknown;aircraftType?:unknown},
+  authority:CanonicalAircraftProfileRegulatoryFields|readonly CanonicalFlightAircraftContext[],
 ):{context?:CanonicalFlightAircraftContext;error?:string}{
-  const evidence=upper(submitted.evidence),aircraftClass=upper(submitted.aircraftClass),aircraftType=String(submitted.aircraftType??"").trim();
+  const evidence=upper(submitted.evidence),aircraftClass=upper(submitted.aircraftClass);
+  if(!Array.isArray(authority)){
+    if(evidence!==authority.evidence||aircraftClass!==authority.aircraftClass){
+      return{error:"GPS import must use the selected aircraft profile logbook and class. Resolve the aircraft profile before importing this track."};
+    }
+    return{};
+  }
+
+  const allowed=authority as readonly CanonicalFlightAircraftContext[];
   const requestedCategory=upper(submitted.regulatoryCategory);
-  const regulatoryCategory=requestedCategory||allowed.length===1?requestedCategory||allowed[0]?.regulatoryCategory||"":requestedCategory;
+  const regulatoryCategory=requestedCategory||(allowed.length===1?(allowed[0]?.regulatoryCategory||""):"");
   if(!regulatoryCategory&&allowed.length>1){
     return{error:"Select the regulatory context for this GPS import."};
   }
+  const submittedType=String(submitted.aircraftType??"").trim();
   const context=allowed.find(item=>
     item.evidence===evidence
     &&item.aircraftClass===aircraftClass
     &&item.regulatoryCategory===regulatoryCategory
-    &&item.aircraftType===aircraftType
+    &&(!submittedType||item.aircraftType===submittedType)
   );
   if(!context){
-    return{error:"GPS import aircraft context no longer matches the selected aircraft profile. Reload the aircraft and review the import."};
+    return{error:"GPS import must use the selected aircraft profile context. The aircraft profile changed or the submitted context is not allowed; reload the aircraft and review the import."};
   }
   return{context};
 }
