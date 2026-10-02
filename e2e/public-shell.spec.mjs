@@ -502,7 +502,7 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await expect(gpsForm.getByRole("button",{name:"Review imported flights"})).toBeVisible();
   await instructor.fill("Browser Training Instructor");
   await reviewed.check();
-  await expect(gpsForm.getByText("Common Role/Crew")).toContainText("DUAL · Browser Training Instructor");
+  await expect(gpsForm.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("DUAL · Browser Training Instructor");
   await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
   await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
 
