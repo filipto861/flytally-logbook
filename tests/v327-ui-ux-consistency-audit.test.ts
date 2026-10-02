@@ -331,7 +331,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
     "components/auth-invite-creator.tsx":["Tester email"],
     "components/balloon-recency-panel.tsx":["Balloon class","Date","Examiner","Reference"],
     "components/flight-expenses-editor.tsx":["Amount","Currency"],
-    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Logbook","Class / category"],
+    "components/flight-form.tsx":["Date","Registration","Role","Balloon operation","Launch method","Launches","Regulatory context"],
     "components/helicopter-recency-panel.tsx":["Helicopter type","Date","Examiner","Reference"],
     "components/in-person-signature-pad.tsx":["Licence number","Qualification"],
     "components/kml-import-form.tsx":["KML, GPX or CSV","Registration","Balloon operation","Date"],
