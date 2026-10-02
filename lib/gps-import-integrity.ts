@@ -1,4 +1,8 @@
-import { resolveFlightEntryAircraftProfileDefaults,type FlightEntryAircraftProfileInput } from "./flight-form-rules.ts";
+import {
+  allowedFlightContexts,
+  type CanonicalFlightAircraftContext,
+  type FlightAircraftAuthorityProfileInput,
+} from "./flight-aircraft-context-authority.ts";
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
 import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
@@ -8,12 +12,12 @@ export type GpsImportRole=(typeof GPS_IMPORT_ROLES)[number];
 
 const upper=(value:unknown)=>String(value??"").trim().toUpperCase();
 
-export function resolveGpsImportAircraftContext(input:FlightEntryAircraftProfileInput):
-  |{profile:CanonicalAircraftProfileRegulatoryFields;error?:undefined}
-  |{profile?:undefined;error:string}{
-  const resolved=resolveFlightEntryAircraftProfileDefaults(input);
-  if(!resolved.profile)return{error:resolved.error||"Selected aircraft profile needs configuration before GPS import."};
-  return{profile:resolved.profile};
+export function resolveGpsImportAircraftContext(input:FlightAircraftAuthorityProfileInput):
+  |{profile:CanonicalAircraftProfileRegulatoryFields;contexts:CanonicalFlightAircraftContext[];error?:undefined}
+  |{profile?:undefined;contexts?:undefined;error:string}{
+  const resolved=allowedFlightContexts(input);
+  if(!resolved.profile||!resolved.contexts)return{error:resolved.error||"Selected aircraft profile needs configuration before GPS import."};
+  return{profile:resolved.profile,contexts:resolved.contexts};
 }
 
 export function validateGpsImportRole(value:unknown):
@@ -27,14 +31,35 @@ export function validateGpsImportRole(value:unknown):
 }
 
 export function validateGpsImportSubmittedAircraftContext(
-  submitted:{evidence:unknown;aircraftClass:unknown},
-  profile:CanonicalAircraftProfileRegulatoryFields,
-):{error?:string}{
+  submitted:{evidence:unknown;aircraftClass:unknown;regulatoryCategory?:unknown;aircraftType?:unknown},
+  authority:CanonicalAircraftProfileRegulatoryFields|readonly CanonicalFlightAircraftContext[],
+):{context?:CanonicalFlightAircraftContext;error?:string}{
   const evidence=upper(submitted.evidence),aircraftClass=upper(submitted.aircraftClass);
-  if(evidence!==profile.evidence||aircraftClass!==profile.aircraftClass){
-    return{error:"GPS import must use the selected aircraft profile logbook and class. Resolve the aircraft profile before importing this track."};
+  if(!Array.isArray(authority)){
+    const profile=authority as CanonicalAircraftProfileRegulatoryFields;
+    if(evidence!==profile.evidence||aircraftClass!==profile.aircraftClass){
+      return{error:"GPS import must use the selected aircraft profile logbook and class. Resolve the aircraft profile before importing this track."};
+    }
+    return{};
   }
-  return{};
+
+  const allowed=authority as readonly CanonicalFlightAircraftContext[];
+  const requestedCategory=upper(submitted.regulatoryCategory);
+  const regulatoryCategory=requestedCategory||(allowed.length===1?(allowed[0]?.regulatoryCategory||""):"");
+  if(!regulatoryCategory&&allowed.length>1){
+    return{error:"Select the regulatory context for this GPS import."};
+  }
+  const submittedType=String(submitted.aircraftType??"").trim();
+  const context=allowed.find(item=>
+    item.evidence===evidence
+    &&item.aircraftClass===aircraftClass
+    &&item.regulatoryCategory===regulatoryCategory
+    &&(!submittedType||item.aircraftType===submittedType)
+  );
+  if(!context){
+    return{error:"GPS import must use the selected aircraft profile context. The aircraft profile changed or the submitted context is not allowed; reload the aircraft and review the import."};
+  }
+  return{context};
 }
 
 

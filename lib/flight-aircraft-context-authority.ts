@@ -4,7 +4,7 @@ import {
   type AircraftBalloonGroup,
   type CanonicalAircraftProfileRegulatoryFields,
 } from "./aircraft-profile-validation.ts";
-import type { AircraftProfileClass,AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
+import { aircraftProfileRegulatoryCategory,type AircraftProfileClass,type AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
 
 export type FlightAircraftAuthorityProfileInput={
   aircraft_type?:unknown;
@@ -160,6 +160,59 @@ export function classifySnapshotAircraftContextChange(
   submitted:FlightAircraftContextSnapshotInput,
 ):"UNCHANGED"|"CHANGED"{
   return sameFlightAircraftContextSnapshot(stored,submitted)?"UNCHANGED":"CHANGED";
+}
+
+export function snapshotComparisonSubmission(input:{
+  stored:FlightAircraftContextSnapshotInput;
+  submitted:FlightAircraftContextSnapshotInput;
+}):FlightAircraftContextSnapshot{
+  const stored=normalizeFlightAircraftContextSnapshot(input.stored);
+  const submitted=normalizeFlightAircraftContextSnapshot(input.submitted);
+  const legacyDefaultCategory=!stored.regulatoryCategory
+    ?aircraftProfileRegulatoryCategory(stored.evidence,stored.aircraftClass,"")
+    :"";
+  if(
+    !stored.regulatoryCategory
+    &&submitted.regulatoryCategory===legacyDefaultCategory
+    &&sameFlightAircraftContextSnapshot(
+      stored,
+      {...submitted,regulatoryCategory:""},
+    )
+  ){
+    return{...submitted,regulatoryCategory:""};
+  }
+  return submitted;
+}
+
+export function validateSnapshotAircraftContextCorrection(input:{
+  storedAircraftType:unknown;
+  aircraftMake:unknown;
+  aircraftModel:unknown;
+  submitted:FlightAircraftContextSnapshotInput;
+}):{context?:FlightAircraftContextSnapshot;error?:string}{
+  const storedAircraftType=text(input.storedAircraftType).slice(0,80);
+  const submitted=normalizeFlightAircraftContextSnapshot(input.submitted);
+  if(submitted.aircraftType!==storedAircraftType){
+    return{error:"Aircraft type is part of the stored aircraft identity and cannot be changed as a flight-context correction."};
+  }
+  const validated=validateAircraftProfile({
+    aircraftMake:input.aircraftMake,
+    aircraftModel:input.aircraftModel,
+    evidence:submitted.evidence,
+    aircraftClass:submitted.aircraftClass,
+    regulatoryCategory:submitted.regulatoryCategory,
+    balloonClass:submitted.balloonClass,
+    balloonGroup:submitted.balloonGroup,
+  });
+  if(!validated.profile)return{error:validated.error||"Enter a valid corrected aircraft context."};
+  return{context:{
+    evidence:validated.profile.evidence,
+    aircraftClass:validated.profile.aircraftClass,
+    regulatoryCategory:validated.profile.regulatoryCategory,
+    balloonClass:validated.profile.balloonClass,
+    balloonGroup:validated.profile.balloonGroup,
+    aircraftType:storedAircraftType,
+  }};
 }
 
 /**

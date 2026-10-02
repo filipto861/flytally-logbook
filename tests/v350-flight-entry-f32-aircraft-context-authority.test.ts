@@ -215,9 +215,8 @@ test("F3.2 pure resolver does not silently repair profile or snapshot drift",()=
   assert.equal(classifySnapshotAircraftContextChange(stored,crafted),"UNCHANGED");
 });
 
-test("F3.2 resolver remains pure and is not wired into production mutations yet",()=>{
-  const actions=read("app/(protected)/flights/actions.ts");
-  const gpsIntegrity=read("lib/gps-import-integrity.ts");
-  assert.doesNotMatch(actions,/flight-aircraft-context-authority/);
-  assert.doesNotMatch(gpsIntegrity,/flight-aircraft-context-authority/);
+test("F3.2 resolver remains pure after F3.3 wiring",()=>{
+  const source=read("lib/flight-aircraft-context-authority.ts");
+  assert.doesNotMatch(source,/from ["']@\/lib\/db/);
+  assert.doesNotMatch(source,/server-only/);
 });

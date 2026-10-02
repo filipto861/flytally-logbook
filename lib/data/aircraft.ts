@@ -3,7 +3,7 @@ import { sql } from "@/lib/db";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 
-export type AircraftOption = { registration: string; aircraft_type: string; aircraft_make:string; aircraft_model:string; aircraft_variant:string; aircraft_class: string; regulatory_category:string; balloon_class:string; balloon_group:string; evidence: string; default_role: string; billing_basis: string; price_per_hour: number };
+export type AircraftOption = { registration: string; aircraft_type: string; aircraft_make:string; aircraft_model:string; aircraft_variant:string; aircraft_class: string; regulatory_category:string; balloon_class:string; balloon_group:string; evidence: string; part_fcl_credit_class?:string; part_fcl_credit_basis?:string; part_fcl_credit_from?:string; default_role: string; billing_basis: string; price_per_hour: number };
 
 export async function getAircraftOptions(userId: number) {
   await Promise.all([ensureV162Schema(),ensureV164Schema()]);
@@ -12,6 +12,7 @@ export async function getAircraftOptions(userId: number) {
            COALESCE(a.aircraft_make,'') AS aircraft_make,COALESCE(a.aircraft_model,'') AS aircraft_model,COALESCE(a.aircraft_variant,'') AS aircraft_variant,
            COALESCE(aircraft_class, '') AS aircraft_class, COALESCE(regulatory_category,'') AS regulatory_category,
            COALESCE(balloon_class,'') AS balloon_class,COALESCE(balloon_group,'') AS balloon_group,COALESCE(evidence, '') AS evidence,
+           COALESCE(part_fcl_credit_class,'') AS part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') AS part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') AS part_fcl_credit_from,
            COALESCE(default_role, 'PIC') AS default_role, COALESCE(billing_basis, '') AS billing_basis,
            COALESCE(r.price_per_hour, a.default_price_per_hour, 0) AS price_per_hour
     FROM aircraft a LEFT JOIN LATERAL (
