@@ -298,12 +298,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await context.locator('select[name="regulatoryCategory"]').selectOption("AEROPLANE");
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
-  await form.evaluate(form=>{form.querySelectorAll('[name="evidence"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="evidence";crafted.value="ULL";form.appendChild(crafted)});
+  await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="aircraftType";crafted.value="B23";form.appendChild(crafted)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02'"))).toBe(0);
 
-  await form.evaluate(form=>{form.querySelectorAll('[name="evidence"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="evidence";canonical.value="EASA";form.appendChild(canonical)});
+  await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="aircraftType";canonical.value="OTHER";form.appendChild(canonical)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|OTHER|AEROPLANE");
