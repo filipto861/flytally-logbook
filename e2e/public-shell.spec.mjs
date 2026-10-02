@@ -177,6 +177,42 @@ test("GPS and Manual keep profile-owned aircraft context out of generic drift ed
   await expectNoHorizontalOverflow(page);
 });
 
+
+test("F3.4 Manual compact context exposes only A+ choice and blocks invalid profiles",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F3.4 Manual browser coverage requires the isolated CI database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-TMG1");
+  await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("TMG");
+  await expect(form.locator('input[name="evidence"]')).toHaveValue("EASA");
+  await expect(form.locator('select[name="aircraftClass"]')).toHaveCount(0);
+  await expect(form.locator('select[name="evidence"]')).toHaveCount(0);
+
+  const details=form.locator("details.aircraft-context-section");
+  await expect(details.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · TMG · OK-TMG1");
+  await details.locator("summary").click();
+  const regulatory=details.locator('select[name="regulatoryCategory"]');
+  await expect(regulatory).toBeVisible();
+  await expect(regulatory.locator("option")).toHaveCount(2);
+  await expect(regulatory).toHaveValue("AEROPLANE");
+  await regulatory.selectOption("SAILPLANE");
+  await expect(regulatory).toHaveValue("SAILPLANE");
+  await expect(details.locator("[data-aircraft-context-card]")).toContainText("Sailplane · Part-SFCL");
+
+  await form.locator('select[name="registration"]').selectOption("OK-ULL1");
+  await expect(details.locator("summary")).toContainText("ULL · OK-ULL1");
+  await expect(details.locator('select[name="regulatoryCategory"]')).toHaveCount(0);
+
+  await form.locator('select[name="registration"]').selectOption("OK-BAD1");
+  await expect(details).toHaveAttribute("open","");
+  await expect(details.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
+  await expect(form.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
+  const configLink=details.getByRole("link",{name:/Open Aircraft/});
+  await expect(configLink).toHaveAttribute("target","_blank");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("GPS import fails closed for invalid profile context and exposes only PIC",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
