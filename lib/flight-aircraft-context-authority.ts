@@ -1,4 +1,6 @@
 import {
+  AIRCRAFT_BALLOON_CLASSES,
+  AIRCRAFT_BALLOON_GROUPS,
   validateAircraftProfile,
   type AircraftBalloonClass,
   type AircraftBalloonGroup,
