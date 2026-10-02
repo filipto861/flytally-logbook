@@ -8,6 +8,8 @@ import {
   validateGpsImportSubmittedAircraftContext,
 } from "../lib/gps-import-integrity.ts";
 import {
+  classifySnapshotAircraftContextChange,
+  snapshotComparisonSubmission,
   validateSnapshotAircraftContextCorrection,
 } from "../lib/flight-aircraft-context-authority.ts";
 
@@ -83,6 +85,31 @@ test("F3.3 GPS rejects crafted evidence, class and aircraft type drift",()=>{
   }
 });
 
+test("F3.3 legacy blank SNAPSHOT category stays unchanged unless the pilot chooses a non-default context",()=>{
+  const stored={
+    evidence:"EASA",
+    aircraftClass:"SEP",
+    regulatoryCategory:"",
+    balloonClass:"",
+    balloonGroup:"",
+    aircraftType:"B23",
+  };
+  const derivedDefault=snapshotComparisonSubmission({
+    stored,
+    submitted:{...stored,regulatoryCategory:"AEROPLANE"},
+  });
+  assert.equal(derivedDefault.regulatoryCategory,"");
+  assert.equal(classifySnapshotAircraftContextChange(stored,derivedDefault),"UNCHANGED");
+
+  const legacyTmg={...stored,aircraftClass:"TMG",aircraftType:"TMG"};
+  const explicitSailplane=snapshotComparisonSubmission({
+    stored:legacyTmg,
+    submitted:{...legacyTmg,regulatoryCategory:"SAILPLANE"},
+  });
+  assert.equal(explicitSailplane.regulatoryCategory,"SAILPLANE");
+  assert.equal(classifySnapshotAircraftContextChange(legacyTmg,explicitSailplane),"CHANGED");
+});
+
 test("F3.3 explicit SNAPSHOT correction keeps stored identity and validates corrected context",()=>{
   const accepted=validateSnapshotAircraftContextCorrection({
     storedAircraftType:"B23",
@@ -121,6 +148,7 @@ test("F3.3 Manual actions derive PROFILE/SNAPSHOT authority server-side and pres
   const actions=read("app/(protected)/flights/actions.ts");
   assert.match(actions,/resolveProfileAircraftContext\(userId,f\.registration/);
   assert.match(actions,/resolveFlightAircraftContextAuthority\(\{mode:"UPDATE"/);
+  assert.match(actions,/snapshotComparisonSubmission\(\{stored:storedContext,submitted:flightContextFromForm\(form\)\}\)/);
   assert.match(actions,/classifySnapshotAircraftContextChange\(storedContext,submittedContext\)/);
   assert.match(actions,/flightContext=\{evidence:existing\.evidence/);
   assert.match(actions,/part_fcl_credit_class/);
