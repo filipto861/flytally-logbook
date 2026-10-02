@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 CORE IMPLEMENTED / VERIFICATION PENDING · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 TARGETED VERIFIED / FULL REGRESSION + BUILD PENDING · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -350,7 +350,7 @@ Implementation on the current branch:
 - changing the ordered split-boundary set clears all overrides and surfaces a visible reset notice instead of reassigning evidence heuristically;
 - roles remain PIC + DUAL only; SPIC/PICUS and Safety Pilot are still blocked.
 
-Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-crew.test.ts`. Current-head verification: **NOT RUN**. No DB/schema/certification change.
+Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-crew.test.ts`. Verification evidence: targeted F4.2/cross-path batch **67/67 PASS**. TypeScript passed on the runtime-equivalent implementation head; the current head differs only by F4.1 test reconciliation. Full regression and production build remain pending. No DB/schema/certification change.
 
 ### F4.3 — Safety Pilot
 - shared lower-level Actual-PIC resolution plan;
