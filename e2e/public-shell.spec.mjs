@@ -385,6 +385,10 @@ test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in ligh
   const form=page.locator("#new-flight-manual-form");
   await form.locator('select[name="registration"]').selectOption("OK-SP2E");
   await expect(form.locator('input[name="evidence"]')).toHaveValue("EASA");
+  const aircraftContext=form.locator("details.aircraft-context-section");
+  await expect(aircraftContext.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-SP2E");
+  await aircraftContext.locator("summary").click();
+  await expect(aircraftContext.locator("[data-aircraft-context-card]")).toContainText("Profile context");
   const role=form.locator('select[name="role"]');
 
   const assertRoleState=async(value)=>{
@@ -428,6 +432,8 @@ test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in ligh
     for(const theme of ["light","dark"]){
       await page.evaluate(value=>{document.documentElement.dataset.theme=value},theme);
       await expect(page.locator("html")).toHaveAttribute("data-theme",theme);
+      await expect(aircraftContext.locator("[data-aircraft-context-card]")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
       for(const state of ["PIC","DUAL","SPIC","PICUS","CO-PILOT","SAFETY PILOT"])await assertRoleState(state);
     }
   }
