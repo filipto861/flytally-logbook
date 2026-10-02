@@ -162,6 +162,27 @@ export function classifySnapshotAircraftContextChange(
   return sameFlightAircraftContextSnapshot(stored,submitted)?"UNCHANGED":"CHANGED";
 }
 
+export function snapshotComparisonSubmission(input:{
+  stored:FlightAircraftContextSnapshotInput;
+  submitted:FlightAircraftContextSnapshotInput;
+  parsedRegulatoryCategory?:unknown;
+}):FlightAircraftContextSnapshot{
+  const stored=normalizeFlightAircraftContextSnapshot(input.stored);
+  const submitted=normalizeFlightAircraftContextSnapshot(input.submitted);
+  if(
+    !stored.regulatoryCategory
+    &&submitted.regulatoryCategory
+    &&submitted.regulatoryCategory===upper(input.parsedRegulatoryCategory)
+    &&sameFlightAircraftContextSnapshot(
+      stored,
+      {...submitted,regulatoryCategory:""},
+    )
+  ){
+    return{...submitted,regulatoryCategory:""};
+  }
+  return submitted;
+}
+
 export function validateSnapshotAircraftContextCorrection(input:{
   storedAircraftType:unknown;
   aircraftMake:unknown;
