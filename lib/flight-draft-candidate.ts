@@ -189,6 +189,10 @@ export type GpsFlightCandidateInput={
   profile?:CanonicalAircraftProfileRegulatoryFields;
   profileError?:string;
   role:unknown;
+  commander?:unknown;
+  instructor?:unknown;
+  verificationName?:unknown;
+  verificationReference?:unknown;
   billingBasis:unknown;
   billingShare:unknown;
   task:unknown;
@@ -247,10 +251,10 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     nightTime:requirements?.reviewNightIfr?(hasNightIfr?provided(review.nightTime,"GPS_REVIEW"):unresolved("GPS review needs explicit Night/IFR review state.")):"",
     ifrTime:requirements?.reviewNightIfr?(hasNightIfr?provided(review.ifrTime,"GPS_REVIEW"):unresolved("GPS review needs explicit Night/IFR review state.")):"",
     role:input.role,
-    commander:"",
-    instructor:"",
-    verificationName:"",
-    verificationReference:"",
+    commander:input.commander??"",
+    instructor:input.instructor??"",
+    verificationName:input.verificationName??"",
+    verificationReference:input.verificationReference??"",
     task:input.task,
     purposeCodes:[],
     purposeSelectionPresent:false,
