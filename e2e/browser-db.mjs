@@ -116,10 +116,10 @@ export function resetF35SnapshotFixture(){
     VALUES
       (9001,'OK-F35S','BROKEN','','','OTHER','OTHER','EASA','PIC','',0,0),
       (9001,'OK-F35L','BROKEN','','','OTHER','OTHER','EASA','PIC','',0,1);
-    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,departure,arrival,off_block,on_block,role,starts,commander)
+    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,operation_type,engine_type,departure,arrival,off_block,takeoff,landing,on_block,role,starts,landings_day,commander)
     VALUES
-      (9920,9001,'2026-09-26','EASA','OK-F35S','B23','SEP','AEROPLANE','LKLT','LKPR','08:00','09:00','PIC',1,'Browser Smoke Pilot'),
-      (9921,9001,'2026-09-27','EASA','OK-F35L','B23','SEP','','LKPR','LKLT','10:00','11:00','PIC',1,'Browser Smoke Pilot');
+      (9920,9001,'2026-09-26','EASA','OK-F35S','B23','SEP','AEROPLANE','SP','SE','LKLT','LKPR','08:00','08:05','08:55','09:00','PIC',1,1,'Browser Smoke Pilot'),
+      (9921,9001,'2026-09-27','EASA','OK-F35L','B23','SEP','','SP','SE','LKPR','LKLT','10:00','10:05','10:55','11:00','PIC',1,1,'Browser Smoke Pilot');
   `);
 }
 
