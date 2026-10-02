@@ -69,8 +69,9 @@ test("F3.5 browser aircraft fixture supports the current aircraft mutation schem
   assert.match(bootstrap,/created_at TIMESTAMPTZ NOT NULL DEFAULT NOW\(\)/);
   assert.match(bootstrap,/updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW\(\)/);
   assert.match(bootstrap,/UNIQUE\(user_id,registration\)/);
-  assert.match(bootstrap,/price_per_hour NUMERIC DEFAULT 0/);
-  assert.doesNotMatch(bootstrap,/price_per_hour NUMERIC NOT NULL DEFAULT 0/);
+  const flightsBlock=bootstrap.slice(bootstrap.indexOf("CREATE TABLE flights("),bootstrap.indexOf("CREATE TABLE flight_expenses("));
+  assert.match(flightsBlock,/price_per_hour NUMERIC DEFAULT 0/);
+  assert.doesNotMatch(flightsBlock,/price_per_hour NUMERIC NOT NULL DEFAULT 0/);
 });
 
 test("F3.5 Quick Add commits canonical aircraft before refreshing the entry workspace",()=>{
