@@ -92,7 +92,7 @@ test("F4.1 server resolves common RoleCrew from FormData after aircraft authorit
   assert.match(gps,/evidence=authorityContext\.evidence/);
   assert.match(gps,/resolveGpsImportCommonRoleCrew\(\{role:form\.get\("role"\),commander:form\.get\("commander"\),instructor:form\.get\("instructor"\),verificationName:form\.get\("verificationName"\),verificationReference:form\.get\("verificationReference"\)\},evidence\)/);
   assert.match(gps,/role:commonRoleCrew\.role,commander:commonRoleCrew\.commander,instructor:commonRoleCrew\.instructor,verificationName:commonRoleCrew\.verificationName,verificationReference:commonRoleCrew\.verificationReference/);
-  assert.doesNotMatch(gps,/role:form\.get\("role"\)/);
+  assert.doesNotMatch(gps,/gpsFlightCandidate\(\{registration,aircraftType,profile:profileForFlight,role:form\.get\("role"\)/);
 });
 
 test("F4.1 UI exposes common DUAL requirements and invalidates inherited review on Role change",()=>{
