@@ -298,12 +298,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await context.locator('select[name="regulatoryCategory"]').selectOption("AEROPLANE");
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
-  await form.locator('input[name="evidence"]').evaluate(input=>{input.value="ULL";input.setAttribute("value","ULL")});
+  await form.evaluate(form=>{form.querySelectorAll('[name="evidence"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="evidence";crafted.value="ULL";form.appendChild(crafted)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02'"))).toBe(0);
 
-  await form.locator('input[name="evidence"]').evaluate(input=>{input.value="EASA";input.setAttribute("value","EASA")});
+  await form.evaluate(form=>{form.querySelectorAll('[name="evidence"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="evidence";canonical.value="EASA";form.appendChild(canonical)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|OTHER|AEROPLANE");
@@ -316,12 +316,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await expect(form.locator('input[name="balloonClass"]')).toHaveValue("HOT_AIR_BALLOON");
   await expect(form.locator('input[name="balloonGroup"]')).toHaveValue("A");
   await form.locator('select[name="balloonOperation"]').selectOption("FREE");
-  await form.locator('input[name="balloonGroup"]').evaluate(input=>{input.value="B";input.setAttribute("value","B")});
+  await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="balloonGroup";crafted.value="B";form.appendChild(crafted)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02'"))).toBe(0);
 
-  await form.locator('input[name="balloonGroup"]').evaluate(input=>{input.value="A";input.setAttribute("value","A")});
+  await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="balloonGroup";canonical.value="A";form.appendChild(canonical)});
   await form.getByRole("button",{name:"Save & review"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT aircraft_class||'|'||regulatory_category||'|'||balloon_class||'|'||balloon_group||'|'||balloon_operation FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("BALLOON|BALLOON|HOT_AIR_BALLOON|A|FREE");
