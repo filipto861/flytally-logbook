@@ -91,9 +91,9 @@ test("F4.1 server resolves common RoleCrew from FormData after aircraft authorit
   const gps=between(actions,"export async function importKmlFlight","export async function updateFlight");
 
   assert.match(gps,/evidence=authorityContext\.evidence/);
-  assert.match(gps,/resolveGpsImportCommonRoleCrew\(\{role:form\.get\("role"\),commander:form\.get\("commander"\),instructor:form\.get\("instructor"\),verificationName:form\.get\("verificationName"\),verificationReference:form\.get\("verificationReference"\)\},evidence\)/);
+  assert.match(gps,/resolveGpsImportCommonRoleCrew\(\{role:form\.get\("role"\),commander:form\.get\("commander"\),instructor:form\.get\("instructor"\),verificationName:form\.get\("verificationName"\),verificationReference:form\.get\("verificationReference"\),actualPicMode:form\.get\("actualPicMode"\),connectedPicUserId:form\.get\("connectedPicUserId"\)\},evidence\)/);
   assert.match(gps,/resolveGpsImportPartRoleCrew\([\s\S]*?,evidence,commonRoleCrew\)/);
-  assert.match(gps,/partRoleCrew\.push\(resolved\.context\)/);
+  assert.match(gps,/partRoleCrew\.push\(\{\.\.\.resolved\.context,commander:picResolution\.commander,connectedPicUserId:picResolution\.connectedUserId\}\)/);
   assert.match(gps,/role:roleCrew\.role,commander:roleCrew\.commander,instructor:roleCrew\.instructor,verificationName:roleCrew\.verificationName,verificationReference:roleCrew\.verificationReference/);
   assert.doesNotMatch(gps,/gpsFlightCandidate\(\{registration,aircraftType,profile:profileForFlight,role:form\.get\("role"\)/);
 });
@@ -107,7 +107,7 @@ test("F4.1 UI exposes common DUAL requirements and invalidates inherited review 
   assert.match(form,/setRole\(event\.target\.value as \(typeof GPS_IMPORT_ROLES\)\[number\]\);setReviews\(current=>current\.map\(\(review,index\)=>roleCrewOverrides\[index\]\?\.mode==="OVERRIDE"\?review:\{\.\.\.review,reviewed:false\}\)\)/);
   assert.match(form,/role==="DUAL"\?<label><span>Instructor \/ PIC/);
   assert.match(form,/required=\{commonInstructorRequired\}/);
-  assert.match(form,/!commonInstructorRequired\|\|commonInstructor\.trim\(\)!==""/);
+  assert.match(form,/commonRoleCrewReady=Boolean\(selectedProfile\)&&roleCrewBufferReady\(commonRoleCrewBuffer,selectedProfile!\.evidence,picConnections\)/);
   assert.match(form,/Common Role\/Crew/);
   assert.doesNotMatch(form,/name="verificationName"[^>]*value=\{[^}]*verification/i);
 });
