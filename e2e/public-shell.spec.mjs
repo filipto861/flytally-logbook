@@ -203,6 +203,8 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await form.locator('select[name="registration"]').selectOption("OK-ULL1");
   await expect(details.locator("summary")).toContainText("ULL · UL");
   await expect(details.locator('select[name="regulatoryCategory"]')).toHaveCount(0);
+  await details.locator("summary").click();
+  await expect(details).not.toHaveAttribute("open","");
 
   await form.locator('select[name="registration"]').selectOption("OK-BAD1");
   await expect(details).toHaveAttribute("open","");
