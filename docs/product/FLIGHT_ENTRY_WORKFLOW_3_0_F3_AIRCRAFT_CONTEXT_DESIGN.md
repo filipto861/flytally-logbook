@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.3 DONE / LOCAL VERIFIED · F3.4 COMPACT CONTEXT UX NEXT  
+**Status:** F3.3 DONE / LOCAL VERIFIED · F3.4 COMPACT CONTEXT UX IN PROGRESS  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -309,13 +309,25 @@ Local verification:
 - CI/PR/deploy intentionally NOT RUN yet;
 - DB migration/schema change: N/A; certification v1–v8 unchanged.
 
-### F3.4 — compact context UX
-- valid profile => compact context summary + canonical hidden submission fields;
-- historical Edit => Stored flight context summary;
-- invalid profile => Needs configuration + Save blocker;
-- draft-preserving route to Aircraft configuration;
-- explicit TMG/OTHER multi-context choice only;
-- no generic evidence/class override UI.
+### F3.4 — compact context UX — IN PROGRESS
+Implementation branch: `feat/flight-entry-f34-aircraft-context-ux`.
+
+Staged implementation:
+- valid Manual PROFILE => compact **Profile context** summary + hidden profile-owned evidence/class/type/Balloon fields;
+- same-registration Edit => compact **Stored flight context** summary + hidden stored SNAPSHOT fields; current mutable profile is not used for the submitted aircraft context;
+- legacy blank stored `regulatory_category` remains blank on submission and the copy explicitly avoids claiming a backfill;
+- invalid PROFILE => **Needs configuration** completion blocker with Aircraft configuration opened separately so the current draft remains intact;
+- Manual and GPS expose a regulatory-context selector only when the shared resolver returns multiple legitimate contexts; this covers TMG and OTHER without a generic evidence/class override;
+- GPS Common details replaces disabled duplicate profile schema controls with the same compact profile summary;
+- Operation/Engine and Balloon FREE/TETHERED remain flight-specific, as do sailplane launch evidence and Role/Crew;
+- focused regression/source-contract coverage added in `tests/v353-flight-entry-f34-aircraft-context-ux.test.ts`;
+- older B3/B5/F3 characterization tests were reconciled only where F3.4 intentionally supersedes their presentation assumptions.
+
+Verification:
+- NOT RUN yet on this branch;
+- no database migration/schema change;
+- certification v1–v8 unchanged;
+- F3.3 server authority remains the fail-closed persistence boundary.
 
 ### F3.5 — action/persistence/browser/production closeout
 Cover at minimum:

@@ -9,6 +9,18 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.4 compact aircraft-context UX (staged, verification pending)
+- Replaced routine Manual Logbook/Class/Aircraft type editors with one compact **Aircraft context** surface backed by the F3 authority model.
+- PROFILE entry submits server-supported profile-owned evidence, class, aircraft type and Balloon class/group as hidden authority fields; only genuine TMG/OTHER regulatory context from `allowedFlightContexts(profile)` remains selectable.
+- Same-registration Edit presents **Stored flight context** and submits the stored SNAPSHOT tuple instead of refreshing it from the mutable current profile. Legacy rows with blank stored `regulatory_category` remain blank on submission and are described without invented backfill.
+- Invalid PROFILE state is now part of the Manual completion blocker list and links to Aircraft configuration in a new tab/window so the current draft is preserved.
+- GPS Common details now uses the same compact profile-context presentation and removes disabled duplicate Logbook/Class/Aircraft type controls while preserving the common TMG/OTHER selector.
+- Operation/Engine, Balloon FREE/TETHERED, sailplane launch evidence and Role/Crew remain explicit flight-specific inputs.
+- Added focused F3.4 source/contract coverage and reconciled earlier B3/B5/F3 characterization assertions with the superseding compact-authority UX.
+- **Verification:** NOT RUN yet on the F3.4 branch.
+- **Schema/certification:** no migration and no certification v1-v8 change.
+
+
 ### Flight Entry Workflow 3.0 — F3.3 server enforcement (locally verified, not yet merged/deployed)
 - Wired Manual New and registration-change saves to server-side owned-profile authority using the shared F3 resolver; submitted aircraft context must be a member of the profile's allowed context set, and persistence now uses the canonical server-authorized context rather than the raw normalized request values.
 - Wired same-registration Edit to server-derived SNAPSHOT authority; unchanged historical context is persisted from the stored snapshot without consulting the mutable current profile. Legacy blank regulatory-category rows are preserved rather than silently upgraded by the current UI's derived presentation value.
