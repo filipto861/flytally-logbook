@@ -513,7 +513,7 @@ Acceptance:
 - switching roles may preserve useful local input state, but irrelevant semantic fields are not persisted;
 - server is authoritative.
 
-### F3 — Aircraft context simplification — F3.0 DISCOVERY / REVIEW
+### F3 — Aircraft context simplification — F3.0 DONE / VERIFIED · F3.1 REVIEW GATE
 
 **Goal:** stop presenting aircraft-profile schema as a normal flight-entry task.
 
@@ -531,6 +531,8 @@ Draft authority model:
 
 Detailed design: `FLIGHT_ENTRY_WORKFLOW_3_0_F3_AIRCRAFT_CONTEXT_DESIGN.md`.  
 Independent review: `FLIGHT_ENTRY_WORKFLOW_3_0_F3_REVIEW_HANDOFF.md`.
+
+F3.0 evidence: PR #225 → `main@4e42dbf7fd095aa768e404500b141510386a18c5`; Verify #1096 PASS — 1084/1084 unit/regression, PostgreSQL 66/66; no runtime/schema/deploy change.
 
 Acceptance remains:
 - valid profile shows compact actual evidence-bearing context;

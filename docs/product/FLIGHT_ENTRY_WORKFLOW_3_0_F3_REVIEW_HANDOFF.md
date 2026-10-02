@@ -1,7 +1,7 @@
 # Independent Review Handoff — Flight Entry Workflow 3.0 / F3 Aircraft Context
 
 > **Status:** REQUESTED · read-only architecture/data-integrity review before F3 runtime authority changes.  
-> **Repository baseline:** main@663b1af89ae320059039efada82cfeb349c7032f.  
+> **Repository baseline:** main@4e42dbf7fd095aa768e404500b141510386a18c5.  
 > **F2 status:** DONE / PRODUCTION VERIFIED.
 
 ## Reviewer role
@@ -56,6 +56,12 @@ F2 runtime/test closeout:
 - production dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ READY on exact runtime SHA;
 - docs closeout PR #224;
 - current main before F3.0: 663b1af89ae320059039efada82cfeb349c7032f.
+
+## F3.0 verification
+
+- PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`.
+- Verify FlyTally web #1096 PASS: 1084/1084 unit/regression, PostgreSQL 66/66.
+- No runtime/schema/deploy change in F3.0.
 
 ## F3 confirmed findings
 
