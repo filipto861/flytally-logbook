@@ -9,12 +9,12 @@ const schemaName=`ft_heli_snapshot_${randomUUID().replaceAll("-","")}`;
 const quoted=`"${schemaName}"`;
 
 function raw(statement:string){
-  return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
+  return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
 }
 function run(statement:string){
   const result=raw(`SET search_path TO ${quoted};\n${statement}`);
   if(result.status!==0)throw new Error(result.stderr||result.stdout);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 
 before(()=>{

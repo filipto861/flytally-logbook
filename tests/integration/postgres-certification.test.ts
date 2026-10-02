@@ -12,7 +12,7 @@ const schema=`ft_accept_${randomUUID().replaceAll("-","")}`;
 const quotedSchema=`"${schema}"`;
 
 function rawPsql(sql:string){
-  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",sql],{
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:sql,
     encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}
   });
   if(result.error)throw result.error;
@@ -22,7 +22,7 @@ function rawPsql(sql:string){
 function run(sql:string){
   const result=rawPsql(`SET search_path TO ${quotedSchema};\n${sql}`);
   if(result.status!==0)throw new Error(`PostgreSQL acceptance command failed:\n${result.stderr||result.stdout}`);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 
 function reject(sql:string,pattern:RegExp){

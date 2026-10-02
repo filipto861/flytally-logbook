@@ -28,4 +28,12 @@ test("PostgreSQL subprocess calls keep connection strings behind explicit -d for
     explicitDatabaseSelections+=(source.match(/spawnSync\("psql",\s*\[\s*"-d",\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\))/g)??[]).length;
   }
   assert.ok(explicitDatabaseSelections>=psqlSources.length,"Expected every PostgreSQL harness source to use explicit -d selection");
+  for(const file of psqlSources){
+    const source=fs.readFileSync(file,"utf8");
+    assert.doesNotMatch(
+      source,
+      /spawnSync\("psql",[\s\S]*?"-c",\s*(?:statement|sql)\s*\]/,
+      `${path.relative(root,file)} passes SQL through the Windows command line instead of UTF-8 stdin`,
+    );
+  }
 });

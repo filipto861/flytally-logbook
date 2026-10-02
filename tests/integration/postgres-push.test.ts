@@ -7,8 +7,8 @@ import { after,before,test } from "node:test";
 
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1",databaseUrl=process.env.DATABASE_URL??"",root=path.resolve(import.meta.dirname,"../..");
 const schemaName=`ft_push_${randomUUID().replaceAll("-","")}`,quoted=`"${schemaName}"`;
-function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}})}
-function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim()}
+function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}})}
+function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
 
 before(()=>{
   if(!enabled)return;

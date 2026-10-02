@@ -11,8 +11,8 @@ const root=path.resolve(import.meta.dirname,"../..");
 const schema=`ft_v200_output_${randomUUID().replaceAll("-","")}`;
 const quoted=`"${schema}"`;
 
-function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
-function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim()}
+function raw(statement:string){return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:8*1024*1024})}
+function run(statement:string){const result=raw(`SET search_path TO ${quoted};\n${statement}`);if(result.status!==0)throw new Error(result.stderr||result.stdout);return String(result.stdout??"").trim().replace(/\r\n/g,"\n")}
 function literal(value:unknown){if(value===null||value===undefined)return"NULL";if(typeof value==="number")return String(value);if(typeof value==="boolean")return value?"TRUE":"FALSE";return`'${String(value).replaceAll("'","''")}'`}
 function queryBlock(){const source=fs.readFileSync(path.join(root,"app/api/export/route.ts"),"utf8"),blocks=[...source.matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);const block=blocks.find(value=>value.includes("WITH t AS ("));assert.ok(block,"v2.0-E1 export SQL block not found");return block}
 function render(category:string="all",scope:string="all",auxiliary:string="exclude"){

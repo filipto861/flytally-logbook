@@ -38,14 +38,14 @@ function render(strings:TemplateStringsArray,values:unknown[]){
 const rowProducing=(statement:string)=>/^(?:SELECT|WITH)\b/i.test(statement)||/\bRETURNING\b/i.test(statement);
 
 function spawn(statement:string){
-  const result=spawnSync("psql",["-d",localDatabaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1","-c",statement],{
+  const result=spawnSync("psql",["-d",localDatabaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1"],{input:statement,
     encoding:"utf8",
     env:{...process.env,PGCONNECT_TIMEOUT:"5"},
     maxBuffer:16*1024*1024,
   });
   if(result.error)throw result.error;
   if(result.status!==0)throw new Error(`Local PostgreSQL query failed: ${String(result.stderr||result.stdout).trim()}`);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 
 function execute(statement:string){

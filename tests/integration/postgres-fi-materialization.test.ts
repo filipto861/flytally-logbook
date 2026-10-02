@@ -15,14 +15,14 @@ const quotedSchema=`"${schema}"`;
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 function rawPsql(statement:string){
-  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
   if(result.error)throw result.error;
   return result;
 }
 function run(statement:string){
   const result=rawPsql(`SET search_path TO ${quotedSchema};\n${statement}`);
   if(result.status!==0)throw new Error(`PostgreSQL FI materialisation command failed:\n${result.stderr||result.stdout}`);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 function rows(statement:string){
   const clean=statement.trim().replace(/;\s*$/,"");

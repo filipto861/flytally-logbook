@@ -12,7 +12,7 @@ function databaseUrl(){
 
 export function runBrowserSql(statement){
   if(process.env.FLYTALLY_AUTH_BROWSER!=="1")throw new Error("Browser DB reset is only available in authenticated smoke mode.");
-  const result=spawnSync("psql",["-d",databaseUrl(),"-X","-q","-v","ON_ERROR_STOP=1","-c",statement],{
+  const result=spawnSync("psql",["-d",databaseUrl(),"-X","-q","-v","ON_ERROR_STOP=1"],{input:statement,
     encoding:"utf8",
     env:{...process.env,PGCONNECTTIMEOUT:"5"},
     maxBuffer:4*1024*1024,
@@ -23,14 +23,14 @@ export function runBrowserSql(statement){
 
 export function browserSqlScalar(statement){
   if(process.env.FLYTALLY_AUTH_BROWSER!=="1")throw new Error("Browser DB query is only available in authenticated smoke mode.");
-  const result=spawnSync("psql",["-d",databaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1","-c",statement],{
+  const result=spawnSync("psql",["-d",databaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1"],{input:statement,
     encoding:"utf8",
     env:{...process.env,PGCONNECTTIMEOUT:"5"},
     maxBuffer:4*1024*1024,
   });
   if(result.error)throw result.error;
   if(result.status!==0)throw new Error(`Browser fixture query failed: ${String(result.stderr||result.stdout).trim()}`);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 
 export function resetAppearanceFixture(){

@@ -35,7 +35,7 @@ const evidence:Record<string,unknown>={
 };
 
 function rawPsql(statement:string){
-  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{input:statement,
     encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:64*1024*1024,
   });
   if(result.error)throw result.error;
@@ -44,7 +44,7 @@ function rawPsql(statement:string){
 function run(statement:string){
   const result=rawPsql(`SET search_path TO ${quotedSchema};\n${statement}`);
   if(result.status!==0)throw new Error(`PostgreSQL v2.3 performance command failed:\n${result.stderr||result.stdout}`);
-  return String(result.stdout??"").trim();
+  return String(result.stdout??"").trim().replace(/\r\n/g,"\n");
 }
 function rows(statement:string){
   const clean=statement.trim().replace(/;\s*$/,"");
