@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F3 DONE; F3 is production-integrated and **F4 multi-part GPS inheritance is NEXT** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F3 DONE; **F4 multi-part GPS inheritance is at independent review gate** |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F3 integrated to `main` and production deployment READY; **F4 multi-part GPS inheritance is next** |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F4 discovery/design complete on `feat/flight-entry-f4-gps-inheritance`; independent review required before runtime implementation |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -414,7 +414,7 @@ Milestones:
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
-| F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
+| F4 — Multi-part GPS inheritance | 🚧 | **REVIEW GATE** · common Role/Crew + whole-part overrides + atomic resolved persistence; no runtime implementation yet |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
@@ -452,6 +452,7 @@ Immediate next step:
 - **F3.5 DONE / LOCAL VERIFIED** on `test/flight-entry-f35-closeout`. Independent review returned **APPROVE WITH CHANGES** and no runtime correctness defect was found. End-to-end authenticated PostgreSQL/browser evidence now proves same-registration SNAPSHOT preservation with inactive/invalid current profile, legacy blank-category preservation, crafted SNAPSHOT/PROFILE/A+ drift rejection, submit-time PROFILE re-resolution, normalized A→B→A authority selection, Quick Add → immediate Save, TMG/OTHER A+ persistence and Balloon profile-owned class/group versus flight-specific FREE/TETHERED. Final unit/regression gate is **1119/1119 PASS** and targeted authenticated Chromium is **4/4 PASS**. PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS were already established on the runtime-identical F3.5 head; later F3.5 changes were test/fixture/docs only. Source audit confirms export/statistics consume stored `flights` context, trash restores raw stored context, and print keeps F3 context on the stored flight snapshot while current Aircraft supplies only ICAO presentation code. No DB migration or certification v1–v8 change. CI/PR/merge/deploy remain intentionally NOT RUN. The microscopic profile-read→flight-write race and deliberate historical correction remain non-blocking/deferred unless new evidence proves an integrity defect.
 - **F3 production integration DONE:** `main` was fast-forwarded across the complete F3 stack, with rollback anchor `chore/pre-f3-integration-anchor` preserving pre-F3 `4906c1c376d48e9032d23f85b73aea560843f8a5`. The docs-only F3 closeout head was ignored by Vercel, so an empty tree-identical trigger commit `a4b1c626d487aad86ef3e2de887df50a0a2b9248` forced the intended production build without changing runtime contents. Vercel deployment `dpl_Dn3PAymjG7aCds9xsw18shzkYM4a` is READY, aliases `fly-tally.com` with no alias error, and public smoke returned HTTP 200 from that deployment. No runtime errors were reported in the immediate 30-minute post-deploy window. GitHub Actions were intentionally not run; no PR was used. DB migration/schema N/A; certification v1–v8 unchanged.
 - **NEXT: F4 — Multi-part GPS inheritance.** Reconstruct the frozen F4 contract before implementation; F4 owns common values + whole Role/Crew overrides + atomic resolved persistence.
+- **F4 discovery/design staged:** current GPS remains intentionally PIC-only; per-part Review state has no Role/Crew fields; each GPS part already normalizes through the shared `normalizeFlightDraft()` contract; Safety Pilot parity additionally requires server-authoritative Actual-PIC/Connection resolution and atomic connected-crew child persistence. Draft design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_GPS_INHERITANCE_DESIGN.md`; independent review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_REVIEW_HANDOFF.md`. No runtime/schema/certification change in this step.
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
