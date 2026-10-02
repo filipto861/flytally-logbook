@@ -8,6 +8,9 @@ export type FlightEntryAircraftProfileInput={
   regulatory_category?:unknown;
   balloon_class?:unknown;
   balloon_group?:unknown;
+  part_fcl_credit_class?:unknown;
+  part_fcl_credit_basis?:unknown;
+  part_fcl_credit_from?:unknown;
 };
 
 export type FlightEntryAircraftProfileDefaults=
@@ -30,6 +33,9 @@ export function resolveFlightEntryAircraftProfileDefaults(input:FlightEntryAircr
     regulatoryCategory:input.regulatory_category,
     balloonClass:input.balloon_class,
     balloonGroup:input.balloon_group,
+    partFclCreditClass:input.part_fcl_credit_class,
+    partFclCreditBasis:input.part_fcl_credit_basis,
+    partFclCreditFrom:input.part_fcl_credit_from,
   });
   if(!validated.profile)return{error:validated.error||"Aircraft profile needs configuration."};
   if(validated.profile.evidence!==rawEvidence||validated.profile.aircraftClass!==rawClass){
