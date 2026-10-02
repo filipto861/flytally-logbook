@@ -15,6 +15,7 @@ import { PendingActionButton } from "@/components/pending-action-button";
 import { GPS_IMPORT_ROLES,gpsImportRequiresOperationEngine,gpsImportSourceRequirements,resolveGpsImportAircraftContext,type GpsImportSourceRequirements } from "@/lib/gps-import-integrity";
 import { LAUNCH_METHODS } from "@/lib/flight-input";
 import { roleCrewSpec } from "@/lib/role-crew";
+import type { ConnectedPicOption } from "@/lib/flight-connected-crew";
 
 const GpsImportReviewPlayer=dynamic(()=>import("@/components/gps-import-review-player").then(module=>module.GpsImportReviewPlayer),{ssr:false,loading:()=> <div className="track-map-loading">Loading visual GPS review…</div>});
 
@@ -24,12 +25,31 @@ type Analysis={name:string;points:KmlPoint[];suggested:number[];details:SplitSug
 type Review={date:string;offBlock:string;takeoff:string;landing:string;onBlock:string;departure:string;arrival:string;starts:string;takeoffs:string;landingsDay:string;landingsNight:string;pfMovement:""|"yes"|"no";takeoffsDay:string;takeoffsNight:string;approachesDay:string;approachesNight:string;launchMethod:string;launches:string;nightTime:string;ifrTime:string;note:string;reviewed:boolean};
 type AirportOptions={departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]};
 type ImportBillingChoice=""|"BLOCK"|"AIR"|"INVALID";
-type PartRoleCrewOverride={mode:"INHERIT"}|{mode:"OVERRIDE";role:(typeof GPS_IMPORT_ROLES)[number];instructor:string};
+type SafetyPilotMode="manual"|"connected";
+type RoleCrewBuffer={role:(typeof GPS_IMPORT_ROLES)[number];instructor:string;commander:string;actualPicMode:SafetyPilotMode;connectedPicUserId:string};
+type PartRoleCrewOverride={mode:"INHERIT"}|({mode:"OVERRIDE"}&RoleCrewBuffer);
 
 const sourceLabel=(source:TrackSource)=>source==="adsbexchange"?"ADSBExchange":source==="flightradar24"?"Flightradar24":source==="skydemon"?"SkyDemon":"Generic GPS";
 const regulatoryContextLabel=(value:string)=>({AEROPLANE:"Aeroplane · Part-FCL",SAILPLANE:"Sailplane · Part-SFCL",HELICOPTER:"Helicopter · Part-FCL",BALLOON:"Balloon · Part-BFCL",ULL:"ULL",OTHER:"Other"} as Record<string,string>)[value]||value;
 const balloonClassLabel=(value:string)=>({HOT_AIR_BALLOON:"Hot-air balloon",GAS_BALLOON:"Gas balloon",HOT_AIR_AIRSHIP:"Hot-air airship",MIXED_BALLOON:"Mixed balloon"} as Record<string,string>)[value]||value;
 const compactContextSummary=(parts:Array<string|undefined>)=>[...new Set(parts.filter((value):value is string=>Boolean(value)))].join(" · ");
+function roleCrewBufferReady(buffer:RoleCrewBuffer,evidence:string,picConnections:ConnectedPicOption[]){
+  const spec=roleCrewSpec(buffer.role,evidence);
+  if(!spec)return false;
+  if(spec.instructor==="required_save"&&!buffer.instructor.trim())return false;
+  if(buffer.role!=="SAFETY PILOT")return true;
+  if(buffer.actualPicMode==="manual")return spec.commander!=="external_resolver"||Boolean(buffer.commander.trim());
+  const id=Number(buffer.connectedPicUserId);
+  return Number.isSafeInteger(id)&&id>0&&picConnections.some(option=>option.id===id);
+}
+function roleCrewSummary(buffer:RoleCrewBuffer,picConnections:ConnectedPicOption[]){
+  if(buffer.role==="DUAL")return `DUAL · ${buffer.instructor||"Instructor / PIC required"}`;
+  if(buffer.role==="SAFETY PILOT"){
+    const connected=picConnections.find(option=>String(option.id)===buffer.connectedPicUserId)?.name;
+    return `SAFETY PILOT · ${buffer.actualPicMode==="connected"?(connected||"Accepted Connection required"):(buffer.commander||"Actual PIC required")}`;
+  }
+  return"PIC";
+}
 
 function inspect(source:string,name:string):Analysis{
   const inspection=inspectTrackFile(source,name),points=inspection.points;
@@ -90,8 +110,8 @@ function AirportReviewField({label,name,value,candidates,onChange}:{label:string
   </div>;
 }
 
-export function KmlImportForm({action,airportAction,aircraft}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[]}){
-  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[roleCrewOverrides,setRoleCrewOverrides]=useState<PartRoleCrewOverride[]>([]),[overrideResetNotice,setOverrideResetNotice]=useState(""),[registration,setRegistration]=useState(""),[regulatoryCategory,setRegulatoryCategory]=useState(""),[role,setRole]=useState<(typeof GPS_IMPORT_ROLES)[number]>("PIC"),[commonInstructor,setCommonInstructor]=useState(""),[billing,setBilling]=useState<ImportBillingChoice>(""),[billingShare,setBillingShare]=useState(1),[balloonOperation,setBalloonOperation]=useState(""),[operationType,setOperationType]=useState(""),[engineType,setEngineType]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
+export function KmlImportForm({action,airportAction,aircraft,picConnections}:{action:Action;airportAction:AirportAction;aircraft:AircraftOption[];picConnections:ConnectedPicOption[]}){
+  const [state,formAction]=useActionState(action,{}),[analysis,setAnalysis]=useState<Analysis|null>(null),[cuts,setCuts]=useState<number[]>([]),[reviews,setReviews]=useState<Review[]>([]),[roleCrewOverrides,setRoleCrewOverrides]=useState<PartRoleCrewOverride[]>([]),[overrideResetNotice,setOverrideResetNotice]=useState(""),[registration,setRegistration]=useState(""),[regulatoryCategory,setRegulatoryCategory]=useState(""),[role,setRole]=useState<(typeof GPS_IMPORT_ROLES)[number]>("PIC"),[commonInstructor,setCommonInstructor]=useState(""),[commonCommander,setCommonCommander]=useState(""),[commonActualPicMode,setCommonActualPicMode]=useState<SafetyPilotMode>("manual"),[commonConnectedPicUserId,setCommonConnectedPicUserId]=useState(""),[billing,setBilling]=useState<ImportBillingChoice>(""),[billingShare,setBillingShare]=useState(1),[balloonOperation,setBalloonOperation]=useState(""),[operationType,setOperationType]=useState(""),[engineType,setEngineType]=useState(""),[airportCount,setAirportCount]=useState<number|null>(null),[airportOptions,setAirportOptions]=useState<AirportOptions[]>([]),[detecting,setDetecting]=useState(false);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null);
   const parts=useMemo(()=>analysis?splitPoints(analysis.points,cuts):[],[analysis,cuts]);
   const visualTrack=useMemo(()=>analysis?mapTrack(analysis.points,-1,registration,undefined,1800):null,[analysis,registration]);
