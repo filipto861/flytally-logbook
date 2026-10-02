@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 1 October 2026
+**Last updated:** 2 October 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
 
@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0/F1 DONE; F2.0/F2.1 complete; **F2.2 Manual Role/Crew UX is NEXT** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F2 DONE; F3.0 VERIFIED; independent review reconciled; **F3.1 read-only production census is NEXT** |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F1 production-verified; F2.1 validation complete; F2.2 Manual Role/Crew UX next |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F2 complete; F3.0 verified; F3.1 census precedes any aircraft-context runtime enforcement |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -413,7 +413,7 @@ Milestones:
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
-| F3 — Aircraft context simplification | 🚧 | **F3.0 DONE / VERIFIED · REVIEW GATE** · Manual/GPS authority divergence and historical snapshot semantics characterized; override breadth + GPS timing require product/reviewer decision before F3.1 |
+| F3 — Aircraft context simplification | 🚧 | **F3.0 DONE / VERIFIED · REVIEW RECONCILED** · A+ authority frozen; F3.1 is a read-only production census before resolver/enforcement work |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
@@ -439,8 +439,12 @@ Immediate next step:
 - **F3.0 discovery / characterization complete**: Manual applies profile defaults client-side but create/update do not re-resolve the active profile; invalid-profile state is visible but not an action-level Save blocker; GPS already enforces active canonical profile authority; same-registration Edit intentionally preserves stored context;
 - **F3.0 verification:** PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`; Verify FlyTally web #1096 PASS — TypeScript/application gate PASS, **1084/1084** unit/regression, PostgreSQL **66/66**; Browser N/A (docs/characterization only); runtime/schema/deploy N/A;
 - F3 design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_AIRCRAFT_CONTEXT_DESIGN.md`; review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_REVIEW_HANDOFF.md`;
-- draft authority model: server-derived PROFILE for New/registration change, SNAPSHOT for same-registration Edit, explicit OVERRIDE only by deliberate user action; no silent repair/backfill;
-- **next after independent review: F3.1 shared server aircraft-context authority contract**; override breadth and GPS override timing are not yet frozen.
+- **independent review reconciled on 2 October 2026**: broad full regulatory Option B is superseded by **A+** — profile-owned evidence/class, explicit TMG/OTHER multi-context choices only, plus deliberate same-registration SNAPSHOT correction; no generic client-sent override authority flag;
+- server derives PROFILE for Manual New/registration change and GPS, SNAPSHOT for same-registration Edit; PROFILE drift is rejected; unchanged SNAPSHOT context passes through without revalidation against today's stricter validator;
+- Manual PROFILE authority requires an **owned + valid** profile; inactive aircraft may remain available for explicit historical back-fill, while GPS keeps its existing active-owned-profile selection rule;
+- aircraft type/make/model/variant remain profile/snapshot-owned; Balloon class/group remain profile-owned and FREE/TETHERED remains flight-specific;
+- GPS receives the same narrow common TMG/OTHER context choice in F3 where a profile legitimately has multiple allowed contexts; F4 still owns Role/Crew inheritance and per-part overrides;
+- **next: F3.1 read-only production census** of invalid profiles and stored-vs-current-context divergence. No runtime enforcement begins until that evidence is recorded; no production row may be repaired/normalized by the census.
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
