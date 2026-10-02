@@ -1,7 +1,7 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.0 DONE / VERIFIED · INDEPENDENT REVIEW REQUIRED BEFORE F3.1 RUNTIME AUTHORITY CHANGE  
-**Repository baseline:** main@4e42dbf7fd095aa768e404500b141510386a18c5  
+**Status:** F3.0 DONE / VERIFIED · INDEPENDENT REVIEW RECONCILED · F3.1 CENSUS NEXT  
+**Repository baseline:** main@02de2d2288be9bb52dc905f23418d48dc095cb06  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
 ## 1. Goal
@@ -66,65 +66,79 @@ The database identity snapshot contract matches this:
 
 F3 should formalize this on the server.
 
-## 3. Authority model
+## 3. Authority model — frozen after independent review
 
-F3 should distinguish authority from presentation.
+F3 distinguishes authority from presentation. The server derives authority; the client never claims PROFILE/SNAPSHOT authority and there is no generic client-sent `OVERRIDE` authority flag.
 
 ### PROFILE authority
 
-Applies to Manual New, Manual Edit after registration changes, and GPS import.
+Applies to:
+- Manual New;
+- Manual Edit when the final submitted registration differs from the stored registration;
+- GPS import.
 
-Requirements:
-- active owned aircraft must exist;
-- current profile must validate canonically;
-- malformed/unavailable profile => Needs configuration / Save unavailable;
-- client context drift is rejected rather than silently repaired;
+Manual requirements:
+- an owned aircraft profile must exist;
+- the profile must validate canonically;
+- malformed/unavailable profile => **Needs configuration** / Save unavailable;
+- submitted aircraft context must be a member of `allowedFlightContexts(profile)`;
+- unexplained drift is rejected rather than silently rewritten;
 - aircraft type/identity is profile-owned.
+
+An inactive but owned/valid profile may remain usable for explicit historical Manual back-fill. Whether an inactive aircraft is normally shown in the picker is a presentation concern, not the server authority rule.
+
+GPS keeps its existing active-owned-profile selection requirement. F3 converges semantic authority, not every source-specific selectability rule.
 
 ### SNAPSHOT authority
 
-Applies to Manual Edit when registration remains unchanged.
+Applies to Manual Edit when the normalized final registration equals the normalized stored registration.
 
 Requirements:
-- stored flight context remains authoritative even if current profile changed, was deactivated, or is incomplete;
+- stored flight context remains authoritative even if the current profile changed, was deactivated, or became invalid;
 - no silent profile refresh;
-- unrelated edits do not mutate stored aircraft context.
+- if all aircraft-context fields are unchanged, they pass through without re-validating the historical values against today's validator;
+- unrelated edits therefore cannot be blocked solely because a historical row would fail a newer validator;
+- an explicit context correction validates only the changed/corrected context;
+- registration comparison is canonicalized at least for case and surrounding whitespace and is based on stored registration versus final submitted registration.
 
-### EXPLICIT OVERRIDE
+### Allowed multi-context selection (A+)
 
-Applies only after an explicit user action.
+The broad full-regulatory override proposal is superseded.
 
-Proposed rules:
-- override is explicit, never inferred from field drift;
-- server validates a complete compatible flight context;
-- persisted flight fields remain historical truth for that flight;
-- override never mutates the aircraft profile;
-- New/registration-change still requires a valid identity-bearing target profile;
-- same-registration Edit may explicitly correct its stored draft/correction context independently of current profile state.
+The shared pure function `allowedFlightContexts(profile)` defines the complete set of legitimate flight contexts a valid profile may produce. Normal profiles usually yield one context. Genuine multi-context profiles may yield multiple explicit choices.
 
-Exact override breadth is a review decision.
+Frozen scope:
+- evidence stays profile-owned;
+- aircraft class stays profile-owned;
+- TMG regulatory context remains an explicit per-flight choice where the profile legitimately supports Part-FCL Aeroplane versus Part-SFCL Sailplane context;
+- OTHER category remains explicit through the same multi-context mechanism;
+- Balloon class/group remain profile-owned;
+- Balloon FREE/TETHERED remains flight-specific;
+- aircraft identity/type is never a free flight-level context choice.
 
-## 4. Server contract proposal
+Same-registration historical correction is a separate SNAPSHOT correction path and is not authority granted by a client flag.
+
+## 4. Shared server contract — frozen
 
 Use one shared aircraft-context contract, not a second flight model.
 
-Suggested concepts:
-- FlightAircraftContext: evidence, aircraftClass, regulatoryCategory, balloonClass, balloonGroup, aircraftType.
-- Authority kind: PROFILE, SNAPSHOT, OVERRIDE.
+Core concepts:
+- `FlightAircraftContext`: evidence, aircraftClass, regulatoryCategory, balloonClass, balloonGroup, aircraftType;
+- authority kind: PROFILE or SNAPSHOT, derived server-side;
+- `allowedFlightContexts(profile)`: pure source of truth for valid PROFILE contexts;
+- explicit SNAPSHOT correction detection for editable historical rows.
 
-The action derives base authority:
+Server behavior:
 - Create => PROFILE.
-- Update same registration => SNAPSHOT.
-- Update changed registration => PROFILE.
-- Client may request OVERRIDE but cannot claim PROFILE/SNAPSHOT authority.
+- Update with normalized stored registration == normalized final registration => SNAPSHOT.
+- Update with changed final registration => PROFILE.
+- GPS => PROFILE using its existing active-owned-profile selection rule.
+- PROFILE submissions outside `allowedFlightContexts(profile)` fail closed.
+- SNAPSHOT unchanged context is preserved byte/semantic-equivalently and is not refreshed from the current profile.
+- SNAPSHOT changed context is treated as an explicit correction and validated deliberately.
+- no silent drift repair, inferred neighboring values, or ULL fallback.
 
-For PROFILE/SNAPSHOT without override:
-- submitted normalized context must equal authoritative context;
-- unexplained drift fails closed.
-
-For OVERRIDE:
-- submitted context is validated explicitly;
-- no value is inferred from neighboring fields.
+Scope of drift enforcement is aircraft regulatory/identity context only. Flight-level fields such as SP/MP, SE/ME, billing/rates/share defaults and other source-specific flight facts keep their existing contracts unless another milestone changes them explicitly.
 
 ## 5. Identity / type handling
 
@@ -182,13 +196,19 @@ Preserved from this flight
 
 Do not label it as current-profile data.
 
-### Explicit override
+### Multi-context choice / historical correction
 
-If retained after review:
-- one explicit Change flight context / Use different context for this flight action;
-- show only fields that can actually change;
-- state that it changes this flight only, not the aircraft profile;
-- reset deterministically to PROFILE/SNAPSHOT values.
+Do not expose a generic full-context override.
+
+For a valid PROFILE with more than one member of `allowedFlightContexts(profile)`:
+- show only the legitimate contextual decision (TMG regulatory context / OTHER category);
+- make the selection explicit and visibly flight-specific;
+- reset deterministically to the profile-supported default/selection state.
+
+For same-registration Edit:
+- unchanged stored context remains a read-only historical summary;
+- a deliberate correction action may expose only the fields that the correction contract actually allows;
+- correction never refreshes identity from the current profile.
 
 ## 7. Multi-context cases
 
@@ -206,69 +226,86 @@ Current validator allows EASA OTHER with AEROPLANE, SAILPLANE or OTHER. This als
 
 Balloon class/group are profile context. FREE/TETHERED remains flight-specific BFCL evidence.
 
-## 8. Review decisions
+## 8. Independent-review reconciliation — frozen
 
-### Decision 1 — override breadth
+Independent review verdict: **APPROVE WITH CHANGES**.
 
-**Option A — narrow override**
-Only regulatory-category override for multi-context classes such as TMG/OTHER. Evidence and class stay profile-owned.
+Accepted:
+- broad Option B is not frozen;
+- F3 uses **A+**: profile-owned evidence/class with explicit choices only for genuine multi-context profile semantics plus explicit historical SNAPSHOT correction;
+- server computes the allowed-context set; no generic client authority flag;
+- PROFILE drift is rejected, never silently rewritten;
+- unchanged SNAPSHOT context is not revalidated against today's stricter validator;
+- same-registration Edit remains independent of a mutable/inactive/invalid current profile;
+- aircraft identity/type remains profile/snapshot-owned;
+- read-only production census is required before runtime enforcement;
+- shared-flight materialization and recipient historical identity paths are outside Manual PROFILE equality enforcement.
 
-Pros: strongest authority, simpler UX.  
-Risk: removes existing valid flight-level logbook/class flexibility.
+Reconciled differences from the reviewer:
+- Manual server authority requires **owned + valid**, not necessarily active, so explicit historical back-fill on a retired aircraft is not structurally prohibited. Picker behavior may remain active-first.
+- GPS keeps its existing active-profile workflow but receives the same narrow TMG/OTHER common context decision in F3. F4 still owns Role/Crew inheritance and per-part overrides.
+- no new provenance schema field is introduced. Persisted flight context remains historical truth; existing audit history should be reused for corrections if it already covers those writes.
 
-**Option B — explicit full regulatory override — draft recommendation**
-Preserve current valid flight-level flexibility behind explicit override mode:
-- evidence;
-- class;
-- compatible regulatory category;
-- category-required balloon context.
+Superseded draft decisions remain documented above for traceability but do not control implementation.
 
-Pros: backward-compatible with the documented F0 Manual contract; exceptions become deliberate.  
-Risk: more UI/validation complexity and must never bypass an invalid profile.
+## 9. Revised milestones
 
-**Option C — no override except historical correction**
-Not recommended because F3 acceptance requires legitimate explicit flight context to remain available.
+### F3.0 — discovery / characterization / independent review — DONE
+- current Manual/GPS authority divergence characterized;
+- historical SNAPSHOT behavior frozen;
+- independent review completed and reconciled;
+- no runtime/schema change.
 
-### Decision 2 — GPS override timing
+### F3.1 — read-only production census + final enforcement gate — NEXT
+Before any runtime enforcement:
+- count aircraft profiles that fail the current canonical validator, split active/inactive and relevant category/evidence dimensions;
+- count stored flights whose persisted aircraft context differs from the context(s) currently allowed by their matching profile;
+- distinguish draft/certified divergence where safely queryable;
+- quantify TMG/OTHER/Balloon and legacy populations relevant to A+;
+- document a repair path for invalid profiles if the population is non-zero;
+- do not mutate, repair, normalize or backfill production data.
 
-**Option A:** F3 adds the same explicit common aircraft-context override to GPS; all imported parts share it. F4 later owns per-part RoleCrew inheritance/override.
+F3.1 closes by recording the census evidence and confirming whether any evidence requires reopening A+ before code.
 
-**Option B:** GPS stays profile-only through F3 and gains context override in F4.
-
-Draft recommendation: A, otherwise Manual and GPS still disagree on TMG/multi-context authority after F3.
-
-## 9. Proposed milestones
-
-### F3.0 — discovery / characterization / review
-- freeze current Manual/GPS authority divergence;
-- freeze historical snapshot behavior;
-- decide override breadth and GPS timing;
-- no runtime change.
-
-### F3.1 — shared server authority contract
-- add pure context comparison/resolution;
+### F3.2 — pure shared authority resolver
+- implement pure `allowedFlightContexts(profile)`;
+- implement normalized registration/context comparison;
 - derive PROFILE versus SNAPSHOT server-side;
-- reject invalid profile and unexplained submitted drift;
-- no UI simplification yet.
+- characterize unchanged SNAPSHOT pass-through and explicit correction detection;
+- unit matrix only; not yet wired to production mutations.
 
-### F3.2 — Manual compact context UX
-- valid profile => compact summary + canonical hidden fields;
-- historical Edit => stored snapshot summary;
+### F3.3 — server enforcement + GPS authority convergence
+- wire Manual create/update through the shared resolver;
+- reject invalid PROFILE and crafted unexplained drift;
+- preserve unchanged same-registration SNAPSHOT without current-profile validation;
+- preserve shared-flight materialization/recipient paths outside this equality gate;
+- wire GPS through the same authority resolver with no full regulatory override;
+- add common TMG/OTHER context selection for the whole GPS import session where `allowedFlightContexts(profile)` has multiple members;
+- GPS Role remains PIC-only until F4.
+
+### F3.4 — compact context UX
+- valid profile => compact context summary + canonical hidden submission fields;
+- historical Edit => Stored flight context summary;
 - invalid profile => Needs configuration + Save blocker;
-- explicit override per reviewed decision;
-- TMG/OTHER explicit handling.
+- draft-preserving route to Aircraft configuration;
+- explicit TMG/OTHER multi-context choice only;
+- no generic evidence/class override UI.
 
-### F3.3 — GPS context convergence
-- reuse shared context contract;
-- preserve active-profile server authority;
-- add reviewed common override behavior if approved;
-- GPS role remains PIC-only until F4.
-
-### F3.4 — action / persistence regression
-Cover New, Edit same registration, Edit changed registration, invalid/deactivated profile, explicit ULL, TMG Aeroplane/Sailplane, OTHER, Balloon, crafted drift, and no partial related mutations.
-
-### F3.5 — browser / production closeout
-Manual + GPS, valid/invalid profile, override, historical Edit, TMG, desktop/iPad/mobile/light/dark, docs + production evidence.
+### F3.5 — action/persistence/browser/production closeout
+Cover at minimum:
+- crafted FormData drift for each authority mode;
+- registration normalization including A→B→A UI round-trip with final server comparison against stored registration;
+- same-registration Edit with inactive/invalid current profile;
+- legacy unchanged SNAPSHOT that fails today's validator;
+- profile-changed-between-render-and-submit race;
+- Quick Add followed by immediate Save;
+- TMG/OTHER common Manual/GPS context;
+- Balloon class/group profile ownership and FREE/TETHERED flight specificity;
+- certification v1–v8 invariance;
+- historical identity/shared materialization invariance;
+- exact backup/restore, trash/restore, export/print/statistics/recency characterization where affected;
+- desktop/iPad/mobile, light/dark browser acceptance;
+- required ROADMAP / FEATURES / CHANGELOG closeout and production evidence.
 
 ## 9.1 F3.0 verification evidence
 
@@ -282,10 +319,10 @@ Manual + GPS, valid/invalid profile, override, historical Edit, TMG, desktop/iPa
 
 F3 cannot close until:
 - ordinary valid-profile entry no longer asks users to re-enter aircraft-profile schema;
-- Manual New/registration-change uses server-authoritative active profile context;
+- Manual New/registration-change uses server-authoritative owned + valid profile context; GPS keeps its existing active-owned-profile selection requirement;
 - invalid profile cannot be bypassed by crafted Manual context fields;
 - same-registration Edit preserves stored historical context;
-- explicit override cannot be inferred from drift;
+- a multi-context choice or SNAPSHOT correction cannot be inferred from drift;
 - TMG/multi-context cases stay explicit;
 - GPS and Manual use the same aircraft-context authority concepts;
 - certification v1–v8 and historical identity snapshots remain unchanged;
