@@ -217,11 +217,12 @@ test("F3.2 pure resolver does not silently repair profile or snapshot drift",()=
   assert.equal(classifySnapshotAircraftContextChange(stored,crafted),"UNCHANGED");
 });
 
-test("F3.2 resolver remains pure and is not wired into production mutations yet",()=>{
+test("F3.3 production entry paths now import the F3.2 pure authority contract",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const gpsIntegrity=read("lib/gps-import-integrity.ts");
-  assert.doesNotMatch(actions,/flight-aircraft-context-authority/);
-  assert.doesNotMatch(gpsIntegrity,/flight-aircraft-context-authority/);
+  assert.match(actions,/flight-aircraft-context-authority/);
+  assert.match(actions,/resolveProfileAuthorityForSave/);
+  assert.match(gpsIntegrity,/allowedFlightContexts/);
 });
 
 test("F3.3 unchanged SNAPSHOT submission recognizes only the deterministic legacy blank-category presentation",()=>{
