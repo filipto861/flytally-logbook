@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · F0–F3 DONE / F4 INDEPENDENT REVIEW GATE  
+**Status:** ACTIVE · F0–F3 DONE / F4.1 VERIFIED / F4.2 CORE IMPLEMENTED — VERIFICATION PENDING  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -543,7 +543,7 @@ Acceptance remains:
 - historical snapshots remain independent of mutable current profile;
 - Manual and GPS share one aircraft-context authority model before F4.
 
-### F4 — GPS multi-part common / override model — INDEPENDENT REVIEW GATE
+### F4 — GPS multi-part common / override model — ACTIVE
 
 **Goal:** deterministic common inheritance with whole RoleCrew overrides.
 
@@ -555,6 +555,8 @@ Acceptance:
 - reset-to-common deterministic;
 - one invalid part blocks atomic import;
 - server receives fully resolved records.
+
+Current implementation state: F4.1 common PIC/DUAL Role/Crew is locally verified. F4.2 whole-part PIC/DUAL `INHERIT`/`OVERRIDE` envelopes are implemented on the feature branch with strict server resolution and split-reset behavior; targeted/type/regression/build verification for the F4.2 head is pending. SPIC/PICUS and Safety Pilot remain outside the F4.2 runtime scope.
 
 ### F5 — Primary UX / copy simplification
 
