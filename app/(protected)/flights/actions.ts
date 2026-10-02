@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
-import { LAUNCH_METHODS,normalizeFlightDraft,parseFlightInput } from "@/lib/flight-input";
+import { LAUNCH_METHODS,normalizeFlightDraft,parseFlightInput,type FlightInput } from "@/lib/flight-input";
 import { gpsFlightCandidate } from "@/lib/flight-draft-candidate";
 import { airportCandidateScore,flightEnvelope,hasAirborneMovement,landingCount,localParts,overview,parseTrackFile,splitPoints,trackEndpointCandidates,trackStats } from "@/lib/kml";
 import { airportCatalogSize,canonicalAirportIdent,nearestCatalogAirports } from "@/lib/airport-catalog";
@@ -23,10 +23,69 @@ import { ensureV159Schema } from "@/lib/v159-schema";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
-import { gpsImportSourceRequirements,resolveGpsImportAircraftContext,resolveGpsImportOperationEngine,validateGpsImportRole,validateGpsImportSubmittedAircraftContext } from "@/lib/gps-import-integrity";
+import { gpsImportSourceRequirements,resolveGpsImportOperationEngine,validateGpsImportRole } from "@/lib/gps-import-integrity";
+import { authorizeProfileFlightContext,authorizeUnchangedSnapshotFlightContext,resolveFlightAircraftContextAuthority,type FlightAircraftAuthorityProfileInput,type FlightAircraftContextSnapshotInput } from "@/lib/flight-aircraft-context-authority";
 import { resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
 
 export type FlightActionState = { error?: string; success?: string };
+
+type AircraftAuthorityRow=FlightAircraftAuthorityProfileInput&{
+  aircraft_type:string;
+  aircraft_make:string;
+  aircraft_model:string;
+  evidence:string;
+  aircraft_class:string;
+  regulatory_category:string;
+  balloon_class:string;
+  balloon_group:string;
+  part_fcl_credit_class:string;
+  part_fcl_credit_basis:string;
+  part_fcl_credit_from:string;
+};
+
+type StoredFlightAircraftContextRow={
+  registration:string;
+  evidence:string;
+  aircraft_type:string;
+  aircraft_class:string;
+  regulatory_category:string;
+  balloon_class:string;
+  balloon_group:string;
+};
+
+const flightAircraftContextFromInput=(f:FlightInput):FlightAircraftContextSnapshotInput=>({
+  evidence:f.evidence,
+  aircraftClass:f.aircraftClass,
+  regulatoryCategory:f.regulatoryCategory,
+  balloonClass:f.balloonClass,
+  balloonGroup:f.balloonGroup,
+  aircraftType:f.aircraftType,
+});
+
+const flightAircraftContextFromForm=(form:FormData):FlightAircraftContextSnapshotInput=>({
+  evidence:form.get("evidence"),
+  aircraftClass:form.get("aircraftClass"),
+  regulatoryCategory:form.get("regulatoryCategory"),
+  balloonClass:form.get("balloonClass"),
+  balloonGroup:form.get("balloonGroup"),
+  aircraftType:form.get("aircraftType"),
+});
+
+const storedFlightAircraftContext=(row:StoredFlightAircraftContextRow):FlightAircraftContextSnapshotInput=>({
+  evidence:row.evidence,
+  aircraftClass:row.aircraft_class,
+  regulatoryCategory:row.regulatory_category,
+  balloonClass:row.balloon_class,
+  balloonGroup:row.balloon_group,
+  aircraftType:row.aircraft_type,
+});
+
+async function aircraftAuthorityProfile(userId:number,registration:string,activeOnly:boolean){
+  const rows=activeOnly
+    ?await sql`SELECT COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_make,'') aircraft_make,COALESCE(aircraft_model,'') aircraft_model,COALESCE(evidence,'') evidence,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration} AND active=1 LIMIT 1` as AircraftAuthorityRow[]
+    :await sql`SELECT COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_make,'') aircraft_make,COALESCE(aircraft_model,'') aircraft_model,COALESCE(evidence,'') evidence,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration} LIMIT 1` as AircraftAuthorityRow[];
+  return rows[0]??null;
+}
 async function resolvedPrice(userId:number,registration:string,date:string){const rows=await sql`SELECT COALESCE(r.price_per_hour,a.default_price_per_hour) AS price_per_hour FROM aircraft a LEFT JOIN LATERAL (SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(${registration})) AND (valid_from IS NULL OR valid_from='' OR valid_from<=${date}) ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 1) r ON TRUE WHERE a.user_id=${userId} AND UPPER(a.registration)=${registration} LIMIT 1` as Array<{price_per_hour:number|null}>;return rows[0]?.price_per_hour??null}
 export type AirportCandidate={ident:string;name:string;distanceKm:number;confidence:"high"|"medium"|"low"|"manual";source:"custom"|"catalogue"};export type AirportDetection=AirportCandidate|null;export type AirportDetectionRequest={departureCandidates:Array<{lat:number;lon:number}>;arrivalCandidates:Array<{lat:number;lon:number}>};export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection;departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]}>;airportCount:number};const AUTO_AIRPORT_RADIUS_KM=4,AIRPORT_CANDIDATE_RADIUS_KM=20;
 const airportConfidence=(distanceKm:number):AirportCandidate["confidence"]=>distanceKm<=1.5?"high":distanceKm<=4?"medium":distanceKm<=8?"low":"manual";
