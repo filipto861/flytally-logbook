@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.4 DONE / LOCAL VERIFIED · F3.5 CLOSEOUT IN PROGRESS  
+**Status:** F3 DONE / LOCAL VERIFIED · INTEGRATION / PRODUCTION VERIFICATION PENDING BEFORE F4  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -352,7 +352,7 @@ Verification:
 - CI, PR, merge and production deployment: NOT RUN / not claimed.
 - Next roadmap step: **F3.5 action/persistence/browser/production closeout**.
 
-### F3.5 — action/persistence/browser/production closeout — IN PROGRESS
+### F3.5 — action/persistence/browser/production closeout — DONE / LOCAL VERIFIED
 
 Independent review reconciliation:
 - second-AI verdict: **APPROVE WITH CHANGES**; no confirmed runtime correctness defect;
@@ -378,6 +378,32 @@ Cover at minimum:
 - exact backup/restore, trash/restore, export/print/statistics/recency characterization where affected;
 - desktop/iPad/mobile, light/dark browser acceptance;
 - required ROADMAP / FEATURES / CHANGELOG closeout and production evidence.
+
+F3.5 result:
+- no application-runtime defect was found and no F3.5 runtime change was required;
+- action/browser persistence proves unchanged SNAPSHOT survives inactive/invalid current profile state and legacy blank stored category remains blank;
+- crafted SNAPSHOT, PROFILE and A+ drift fail closed at the real mutation boundary;
+- authority follows the final normalized registration, including the A→B→A UI round-trip;
+- PROFILE is re-resolved at submit time, so a profile changed after render cannot silently persist stale context;
+- Quick Add creates a canonical profile that is immediately available for Manual PROFILE Save;
+- TMG/OTHER choices remain bounded to allowed contexts and Balloon class/group stay profile-owned while FREE/TETHERED remains flight-specific;
+- downstream source audit confirms export/statistics/trash/print do not refresh F3 authority from mutable profile state;
+- certification v1–v8, shared materialization, backup/restore and recency invariance remain covered by existing regression suites;
+- the microscopic profile-read→flight-write race and explicit historical-context correction path remain documented non-blocking follow-ups rather than F3 defects.
+
+Local evidence:
+- full unit/regression: **1119/1119 PASS**, 0 fail, 0 skipped;
+- disposable browser DB bootstrap: PASS;
+- targeted authenticated Chromium F3.5 suite: **4/4 PASS**;
+- PostgreSQL core: **66/66 PASS** on the runtime-identical F3.5 head;
+- TypeScript: PASS on the runtime-identical F3.5 head;
+- production build: PASS on the runtime-identical F3.5 head;
+- final F3.5 changes after those runtime gates were limited to tests/browser fixtures/docs;
+- DB migration/schema: N/A;
+- certification v1–v8: unchanged;
+- CI/PR/merge/deploy: NOT RUN / not claimed.
+
+F3 is therefore locally closed. The next gate is branch integration plus production verification; **F4 must not treat local F3 evidence as a production-deployment claim.**
 
 ## 9.1 F3.0 verification evidence
 
@@ -422,6 +448,19 @@ Cover at minimum:
 - No database migration, schema mutation or certification v1–v8 change.
 - No CI, PR, merge or production deployment is claimed by this local closeout.
 - Next roadmap step: **F3.4 compact context UX**.
+
+## 9.6 F3.5 local verification evidence
+
+- Independent reviewer verdict was **APPROVE WITH CHANGES**; reconciliation required end-to-end proof rather than speculative locking/refactoring.
+- Unit/regression final branch gate: **1119/1119 PASS**, 0 fail, 0 skipped.
+- Authenticated desktop Chromium F3.5 closeout: **4/4 PASS**.
+- Browser database bootstrap: PASS on disposable localhost PostgreSQL.
+- Runtime-identical F3.5 evidence retained from the preceding gate: PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS.
+- No application-runtime code changed during F3.5; changes are test coverage, browser fixture parity and documentation.
+- No database migration and no certification v1–v8 change.
+- No CI, PR, merge or production deployment is claimed.
+- Remaining deferred items: microscopic profile-read→write race and deliberate same-registration historical context correction UX.
+- Integration/production verification is required before beginning F4 implementation on canonical main.
 
 ## 10. Acceptance criteria
 

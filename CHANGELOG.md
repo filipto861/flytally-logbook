@@ -9,12 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### Flight Entry Workflow 3.0 — F3.5 closeout (in progress)
+### Flight Entry Workflow 3.0 — F3.5 closeout (locally verified; integration pending)
 - Reconciled the F3.5 closeout plan against an independent second-AI review. Verdict: **APPROVE WITH CHANGES**; no confirmed correctness defect, but action/persistence proof is required for crafted authority drift and historical SNAPSHOT boundaries.
 - Froze the minimum closeout scope: no runtime change unless a test proves a bypass or stale-profile consumer; no generic historical-context override; no DB migration; GPS remains PIC-only.
 - Source-audited downstream consumers before adding duplicate tests: CSV/XLS export and Statistics derive regulatory context from stored `flights`; Trash serializes/restores raw flight context; Print reads F3 evidence/category/class/type from `flights` and consults current Aircraft only for ICAO type-code presentation; existing certification/shared/backup/restore/recency suites remain the primary invariance evidence.
 - Deferred as non-blocking unless evidence changes: the microscopic PROFILE read→flight-write race, explicit historical-context correction UX, wider browser matrix beyond already-verified F3.4 states, and any new schema.
-- **Verification:** pending F3.5 implementation and local gates.
+- Added focused source-contract coverage plus authenticated browser/PostgreSQL fixtures for historical SNAPSHOT, crafted authority drift, submit-time PROFILE re-resolution, TMG/OTHER A+, Balloon ownership and Quick Add → immediate Save. Browser-fixture schema was aligned with current aircraft mutation columns and optional untracked flight billing; these are test-only changes.
+- **Local verification:** final unit/regression **1119/1119 PASS**, 0 fail, 0 skipped; browser bootstrap PASS; targeted authenticated desktop Chromium **4/4 PASS**. PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS were already established on the runtime-identical F3.5 branch before the final test-only fixture/assertion refinements.
+- **Runtime/schema/certification:** no application-runtime change in F3.5, no DB migration, certification v1–v8 unchanged.
+- **Integration/deploy:** CI/PR/merge/production deployment NOT RUN and not claimed. F3 is locally closed; integration/production verification is the next gate before F4.
 
 
 ### Flight Entry Workflow 3.0 — F3.4 compact aircraft-context UX (locally verified, not yet merged/deployed)
