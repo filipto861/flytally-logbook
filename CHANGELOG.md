@@ -9,7 +9,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### Flight Entry Workflow 3.0 — F3.4 compact aircraft-context UX (staged, verification pending)
+### Flight Entry Workflow 3.0 — F3.4 compact aircraft-context UX (locally verified, not yet merged/deployed)
 - Replaced routine Manual Logbook/Class/Aircraft type editors with one compact **Aircraft context** surface backed by the F3 authority model.
 - PROFILE entry submits server-supported profile-owned evidence, class, aircraft type and Balloon class/group as hidden authority fields; only genuine TMG/OTHER regulatory context from `allowedFlightContexts(profile)` remains selectable.
 - Same-registration Edit presents **Stored flight context** and submits the stored SNAPSHOT tuple instead of refreshing it from the mutable current profile. Legacy rows with blank stored `regulatory_category` remain blank on submission and are described without invented backfill.
@@ -17,7 +17,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - GPS Common details now uses the same compact profile-context presentation and removes disabled duplicate Logbook/Class/Aircraft type controls while preserving the common TMG/OTHER selector.
 - Operation/Engine, Balloon FREE/TETHERED, sailplane launch evidence and Role/Crew remain explicit flight-specific inputs.
 - Added focused F3.4 source/contract coverage and reconciled earlier B3/B5/F3 characterization assertions with the superseding compact-authority UX.
-- **Verification:** NOT RUN yet on the F3.4 branch.
+- Browser fixture was aligned with the existing F3 authority provenance columns and now includes an explicit TMG fixture for multi-context acceptance; this is test-fixture-only and does not alter application schema.
+- **Local verification on `e305f3ef3985d371a385a0e7231ec42d8a6d135e`:** TypeScript PASS; full unit/regression **1110/1110 PASS**, 0 fail, 0 skip; production `next build` PASS; disposable localhost browser DB bootstrap PASS; targeted authenticated desktop-Chromium suite **5/5 PASS**, including Manual/GPS compact context, invalid PROFILE blocker, TMG A+ choice, GPS-save SNAPSHOT reopen and the responsive light/dark RoleCrew/context matrix.
+- **CI/PR/deploy:** NOT RUN intentionally for this local closeout; no merge or production deployment is claimed.
 - **Schema/certification:** no migration and no certification v1-v8 change.
 
 

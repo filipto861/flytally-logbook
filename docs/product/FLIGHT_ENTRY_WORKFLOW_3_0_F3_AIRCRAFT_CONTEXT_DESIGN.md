@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.3 DONE / LOCAL VERIFIED · F3.4 COMPACT CONTEXT UX IN PROGRESS  
+**Status:** F3.4 DONE / LOCAL VERIFIED · F3.5 CLOSEOUT NEXT  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -309,7 +309,7 @@ Local verification:
 - CI/PR/deploy intentionally NOT RUN yet;
 - DB migration/schema change: N/A; certification v1–v8 unchanged.
 
-### F3.4 — compact context UX — IN PROGRESS
+### F3.4 — compact context UX — DONE / LOCAL VERIFIED
 Implementation branch: `feat/flight-entry-f34-aircraft-context-ux`.
 
 Staged implementation:
@@ -324,10 +324,33 @@ Staged implementation:
 - older B3/B5/F3 characterization tests were reconciled only where F3.4 intentionally supersedes their presentation assumptions.
 
 Verification:
-- NOT RUN yet on this branch;
+- final local head `e305f3ef3985d371a385a0e7231ec42d8a6d135e`;
+- TypeScript PASS;
+- full unit/regression **1110/1110 PASS**, 0 fail, 0 skipped;
+- production build PASS;
+- disposable localhost browser DB bootstrap PASS on PostgreSQL 16;
+- targeted authenticated Chromium **5/5 PASS** covering Manual/GPS compact context, invalid PROFILE, TMG A+ choice, GPS-save SNAPSHOT reopen, and the existing responsive desktop/iPad landscape/iPad portrait/mobile × light/dark matrix;
 - no database migration/schema change;
 - certification v1–v8 unchanged;
+- CI/PR/deploy not run yet;
 - F3.3 server authority remains the fail-closed persistence boundary.
+
+## 9.5 F3.4 local verification evidence
+
+- Manual PROFILE and same-registration SNAPSHOT presentation both use the shared F3 authority concepts without exposing generic evidence/class/type override controls.
+- Manual and GPS multi-context selection is bounded to the resolver-provided TMG/OTHER regulatory-category set.
+- Invalid PROFILE is visible, blocks completion, and routes to Aircraft configuration without replacing the in-progress entry page.
+- Compact summaries preserve profile-owned aircraft type, include Balloon profile detail where applicable, and de-duplicate repeated labels.
+- Browser fixture carries the existing Part-FCL provenance columns and an explicit TMG case; this is test infrastructure only.
+- Full final-head unit/regression gate: **1110/1110 PASS**, 0 fail, 0 skipped.
+- TypeScript: PASS.
+- Production build: PASS.
+- Disposable localhost browser bootstrap: PASS.
+- Targeted authenticated Chromium: **5/5 PASS**, including responsive light/dark context-card coverage.
+- Database migration/schema change: N/A.
+- Certification v1–v8: unchanged.
+- CI, PR, merge and production deployment: NOT RUN / not claimed.
+- Next roadmap step: **F3.5 action/persistence/browser/production closeout**.
 
 ### F3.5 — action/persistence/browser/production closeout
 Cover at minimum:
