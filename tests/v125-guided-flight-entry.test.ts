@@ -18,7 +18,8 @@ test("manual entry keeps one completion surface and one primary save action",()=
   assert.doesNotMatch(source,/Review before save|entry-review-summary|Ready to save|Save and add another/);
   assert.match(source,/Save & review/);
   assert.match(source,/Save changes/);
-  assert.match(source,/selected&&!editing\?`from \$\{registration\}`:""/);
+  assert.match(source,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
+  assert.match(source,/snapshotAuthority\?"Stored flight context":"Profile context"/);
   assert.match(source,/entry-save-state/);
   assert.match(source,/Complete before save/);
 });
