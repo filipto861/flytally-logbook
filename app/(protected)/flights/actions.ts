@@ -52,15 +52,6 @@ type AircraftAuthorityProfileRow={
   part_fcl_credit_from:string;
 };
 
-const flightContextFromInput=(input:{evidence:string;aircraftClass:string;regulatoryCategory:string;balloonClass:string;balloonGroup:string;aircraftType:string}):FlightAircraftContextSnapshotInput=>({
-  evidence:input.evidence,
-  aircraftClass:input.aircraftClass,
-  regulatoryCategory:input.regulatoryCategory,
-  balloonClass:input.balloonClass,
-  balloonGroup:input.balloonGroup,
-  aircraftType:input.aircraftType,
-});
-
 const flightContextFromForm=(form:FormData):FlightAircraftContextSnapshotInput=>({
   evidence:form.get("evidence"),
   aircraftClass:form.get("aircraftClass"),
