@@ -161,6 +161,6 @@ test("F3.3 GPS UI submits one common regulatory context and complete authority p
   assert.match(form,/name="regulatoryCategory"/);
   assert.match(form,/Applies to every flight in this import session/);
   assert.match(form,/part_fcl_credit_class:selectedAircraft\.part_fcl_credit_class/);
-  assert.match(aircraft,/part_fcl_credit_class:string/);
+  assert.match(aircraft,/part_fcl_credit_class\?:string/);
   assert.match(aircraft,/COALESCE\(part_fcl_credit_basis,''\)/);
 });
