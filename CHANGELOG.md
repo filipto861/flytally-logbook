@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3 independent-review reconciliation
+- Reconciled the F3 aircraft-context design against the independent review and current repository contracts before any runtime enforcement.
+- Superseded the draft full regulatory override (Option B) with **A+**: evidence/class remain profile-owned; explicit flight-level choice is limited to genuine profile-supported TMG/OTHER multi-context semantics plus deliberate same-registration historical correction.
+- Froze server-derived PROFILE/SNAPSHOT authority with no generic client-sent override-authority flag; PROFILE drift must reject, while unchanged SNAPSHOT context must remain historical and must not be revalidated against today's stricter profile validator.
+- Froze Manual New/registration-change authority as **owned + canonically valid** profile, allowing inactive owned profiles to remain available for explicit historical back-fill; GPS retains its existing active-owned-profile selection boundary.
+- Froze aircraft identity/type and Balloon class/group as profile/snapshot-owned; Balloon FREE/TETHERED remains flight-specific.
+- Kept narrow Manual/GPS convergence in F3: the common resolver will expose the same whole-session TMG/OTHER choice where a profile has multiple allowed contexts; GPS Role/Crew expansion remains F4.
+- Reordered F3 so **F3.1 is a read-only production census** before resolver/enforcement implementation. The census may not repair, normalize, backfill or invent production evidence.
+- **Runtime/schema/certification:** no change in this reconciliation step.
+
 ### Flight Entry Workflow 3.0 — F3.0 aircraft-context discovery / review
 - Characterized aircraft-context authority across Manual New/Edit, GPS import, canonical aircraft-profile validation and historical identity snapshots.
 - Confirmed Manual currently applies profile defaults client-side but create/update do not re-resolve the active profile, while GPS already re-queries and validates the active profile server-side.
