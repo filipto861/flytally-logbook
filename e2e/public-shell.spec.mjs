@@ -351,7 +351,7 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
 });
 
-test("GPS import fails closed for invalid profile context and exposes only F4.1 PIC/DUAL roles",async({page})=>{
+test("GPS import fails closed for invalid profile context and exposes only implemented F4 roles",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
 
@@ -365,8 +365,8 @@ test("GPS import fails closed for invalid profile context and exposes only F4.1 
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
-  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(2);
-  await expect(gpsForm.locator('select[name="role"] option')).toHaveText(["PIC","DUAL"]);
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(3);
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveText(["PIC","DUAL","SAFETY PILOT"]);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
   await expect(gpsForm.locator('select[name="operationType"]')).toBeVisible();
   await expect(gpsForm.locator('select[name="engineType"]')).toBeVisible();
