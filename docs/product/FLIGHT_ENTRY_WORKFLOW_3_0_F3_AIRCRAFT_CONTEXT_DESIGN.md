@@ -1,7 +1,7 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.0 DISCOVERY / CHARACTERIZATION COMPLETE · INDEPENDENT REVIEW REQUIRED BEFORE RUNTIME AUTHORITY CHANGE  
-**Repository baseline:** main@663b1af89ae320059039efada82cfeb349c7032f  
+**Status:** F3.0 DONE / VERIFIED · INDEPENDENT REVIEW REQUIRED BEFORE F3.1 RUNTIME AUTHORITY CHANGE  
+**Repository baseline:** main@4e42dbf7fd095aa768e404500b141510386a18c5  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
 ## 1. Goal
@@ -269,6 +269,14 @@ Cover New, Edit same registration, Edit changed registration, invalid/deactivate
 
 ### F3.5 — browser / production closeout
 Manual + GPS, valid/invalid profile, override, historical Edit, TMG, desktop/iPad/mobile/light/dark, docs + production evidence.
+
+## 9.1 F3.0 verification evidence
+
+- PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`.
+- Verify FlyTally web #1096 PASS: application/TypeScript gate PASS, 1084/1084 unit/regression, PostgreSQL 66/66.
+- Browser smoke: N/A for F3.0 because only documentation and characterization tests changed.
+- DB/schema/deploy: N/A.
+- Runtime semantics remain unchanged; F3.1 is review-gated.
 
 ## 10. Acceptance criteria
 
