@@ -44,15 +44,16 @@ test("F4.0 duplicate identity remains RoleCrew-independent",()=>{
   assert.doesNotMatch(source,/role|commander|instructor|verification/i);
 });
 
-test("F4.0 records the temporary PIC-only GPS role boundary before F4.1",()=>{
-  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC"]);
+test("F4.0 temporary PIC-only boundary is superseded only by the F4.1 common PIC/DUAL gate",()=>{
+  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL"]);
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
-  for(const role of ["DUAL","SPIC","PICUS","SAFETY PILOT"]){
-    assert.match(validateGpsImportRole(role).error??"",/supports PIC only/i,role);
+  assert.deepEqual(validateGpsImportRole("DUAL"),{role:"DUAL"});
+  for(const role of ["SPIC","PICUS","SAFETY PILOT"]){
+    assert.match(validateGpsImportRole(role).error??"",/supports PIC and DUAL/i,role);
   }
 
   const form=read("components/kml-import-form.tsx");
-  assert.match(form,/name="role" defaultValue="PIC"><option>PIC<\/option>/);
+  assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
 });
 
 test("F4.0 records that Safety Pilot authority is not yet wired into GPS",()=>{
