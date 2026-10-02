@@ -23,6 +23,15 @@ type SafetyPilotPicSaveInput={
   form:FormData;
 };
 
+export type SafetyPilotPicResolveInput={
+  sourceUserId:number;
+  role:string;
+  evidence:string;
+  commander:string;
+  mode:unknown;
+  connectedPicUserId:unknown;
+};
+
 async function acceptedPicSnapshot(sourceUserId:number,connectedUserId:number){
   const rows=await sql`SELECT u.id,u.display_name
     FROM users u
@@ -43,19 +52,19 @@ async function acceptedPicSnapshot(sourceUserId:number,connectedUserId:number){
   return{id,displayName};
 }
 
-export async function resolveSafetyPilotPicForSave({
-  sourceUserId,role,evidence,commander,form,
-}:SafetyPilotPicSaveInput):Promise<SafetyPilotPicResolution>{
+export async function resolveSafetyPilotPic({
+  sourceUserId,role,evidence,commander,mode:rawMode,connectedPicUserId:rawConnectedPicUserId,
+}:SafetyPilotPicResolveInput):Promise<SafetyPilotPicResolution>{
   if(role!=="SAFETY PILOT")return{ok:true,mode:"not_applicable",commander,connectedUserId:0};
 
-  const mode=String(form.get("actualPicMode")??"manual").trim().toLowerCase();
+  const mode=String(rawMode??"manual").trim().toLowerCase();
   if(mode==="manual"){
     if(evidence==="EASA"&&!commander.trim())return{ok:false,error:"Enter the actual PIC or select an accepted Connection."};
     return{ok:true,mode:"manual",commander,connectedUserId:0};
   }
   if(mode!=="connected")return{ok:false,error:"Select a valid connected Actual PIC."};
 
-  const raw=String(form.get("connectedPicUserId")??"").trim();
+  const raw=String(rawConnectedPicUserId??"").trim();
   const connectedUserId=Number(raw);
   if(!raw||!Number.isSafeInteger(connectedUserId)||connectedUserId<=0||connectedUserId===sourceUserId)
     return{ok:false,error:"Select a valid connected Actual PIC."};
@@ -64,6 +73,19 @@ export async function resolveSafetyPilotPicForSave({
   if(!snapshot)return{ok:false,error:"Selected Actual PIC is no longer an accepted Connection."};
 
   return{ok:true,mode:"connected",commander:snapshot.displayName,connectedUserId:snapshot.id};
+}
+
+export async function resolveSafetyPilotPicForSave({
+  sourceUserId,role,evidence,commander,form,
+}:SafetyPilotPicSaveInput):Promise<SafetyPilotPicResolution>{
+  return resolveSafetyPilotPic({
+    sourceUserId,
+    role,
+    evidence,
+    commander,
+    mode:form.get("actualPicMode"),
+    connectedPicUserId:form.get("connectedPicUserId"),
+  });
 }
 
 export async function getAcceptedPicConnections(sourceUserId:number):Promise<ConnectedPicOption[]>{
