@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** REVIEW RECONCILED · F4.0 CHARACTERIZATION STAGED · ONE PRODUCT DECISION OPEN  
+**Status:** F4.0 DONE / LOCAL VERIFIED · F4.1 COMMON PIC/DUAL IMPLEMENTED / VERIFICATION PENDING · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -284,7 +284,7 @@ Strict envelope interpretation:
 F4.0 characterization:
 - source-contract tests now lock Manual/GPS persistence of all Role/Crew columns;
 - duplicate fingerprint Role/Crew independence is locked;
-- temporary PIC-only GPS scope is locked;
+- temporary PIC-only GPS scope was locked before F4.1 expansion;
 - Safety Pilot remains intentionally unwired from GPS until F4.3;
 - shared DUAL/SPIC/PICUS Save requirements are locked before expansion.
 
@@ -295,7 +295,7 @@ Open product decision:
 
 ## 12. Frozen F4 batches
 
-### F4.0 — characterization — STAGED
+### F4.0 — characterization — DONE / LOCAL VERIFIED
 No runtime change.
 - persistence-column parity;
 - duplicate fingerprint scope;
@@ -303,7 +303,7 @@ No runtime change.
 - current Safety Pilot non-wiring;
 - shared Role/Crew Save requirements.
 
-### F4.1 — common Role/Crew
+### F4.1 — common Role/Crew — IMPLEMENTED / VERIFICATION PENDING
 - strict server common envelope;
 - GPS role allowlist derived from canonical roles minus explicitly blocked roles;
 - common Role/Crew UI driven by shared `roleCrewSpec()`;
@@ -311,6 +311,25 @@ No runtime change.
 - DUAL enabled after parity tests;
 - SPIC/PICUS implementation waits for the countersignature-inheritance decision;
 - Safety Pilot remains blocked.
+
+F4.0 local evidence:
+- targeted characterization: **5/5 PASS**;
+- full unit/regression baseline: **1124/1124 PASS**, 0 fail, 0 skipped;
+- TypeScript was PASS on the pre-F4.1 characterization head.
+
+F4.1 implementation now:
+- expands the explicit GPS allowlist only from PIC to PIC + DUAL;
+- adds a strict server common Role/Crew resolver;
+- rejects stale/crafted additional crew fields instead of field-falling back;
+- requires EASA DUAL Instructor / PIC through the existing shared `roleCrewSpec() + roleCrewSaveError()` contract;
+- carries resolved common Role/Crew into `gpsFlightCandidate() → normalizeFlightDraft()`;
+- exposes one common PIC/DUAL control in GPS UI;
+- marks all inherited parts unreviewed when common Role changes;
+- keeps common crew-text edits out of route/timeline review invalidation and uses readiness for DUAL completeness;
+- keeps SPIC/PICUS and Safety Pilot blocked;
+- changes no DB schema and no certification payload.
+
+F4.1 local verification is **NOT RUN** after implementation and must pass before F4.2.
 
 ### F4.2 — whole-part overrides
 - INHERIT or complete OVERRIDE per part;
