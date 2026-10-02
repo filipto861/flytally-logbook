@@ -30,6 +30,7 @@ import {
   classifySnapshotAircraftContextChange,
   resolveFlightAircraftContextAuthority,
   sameFlightAircraftContextSnapshot,
+  snapshotComparisonSubmission,
   validateSnapshotAircraftContextCorrection,
   type FlightAircraftContextSnapshot,
   type FlightAircraftContextSnapshotInput,
@@ -168,7 +169,7 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
     const profileAuthority=await resolveProfileAircraftContext(userId,f.registration,flightContextFromInput(f));if(!profileAuthority.context)return{error:profileAuthority.error};flightContext=profileAuthority.context;
   }else{
     const storedContext:FlightAircraftContextSnapshotInput={evidence:existing.evidence,aircraftClass:existing.aircraft_class,regulatoryCategory:existing.regulatory_category,balloonClass:existing.balloon_class,balloonGroup:existing.balloon_group,aircraftType:existing.aircraft_type};
-    const submittedContext=flightContextFromForm(form);
+    const submittedContext=snapshotComparisonSubmission({stored:storedContext,submitted:flightContextFromForm(form)});
     if(classifySnapshotAircraftContextChange(storedContext,submittedContext)==="UNCHANGED"){
       flightContext={evidence:existing.evidence,aircraftClass:existing.aircraft_class,regulatoryCategory:existing.regulatory_category,balloonClass:existing.balloon_class,balloonGroup:existing.balloon_group,aircraftType:existing.aircraft_type};
     }else{
