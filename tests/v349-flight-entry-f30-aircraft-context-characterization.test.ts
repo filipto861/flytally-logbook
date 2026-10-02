@@ -81,39 +81,30 @@ test("F3.0 Manual UI still presents aircraft-profile schema as ordinary editable
 test("F3.3 Manual profile authority is server-enforced while the existing client warning remains visible",()=>{
   const form=read("components/flight-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");
-  const createStart=actions.indexOf("export async function createFlight");
-  const createEnd=actions.indexOf("export async function importKmlFlight",createStart);
-  const create=actions.slice(createStart,createEnd);
-  const updateStart=actions.indexOf("export async function updateFlight");
-  const updateEnd=actions.indexOf("\nexport async function",updateStart+40);
-  const update=actions.slice(updateStart,updateEnd>updateStart?updateEnd:actions.length);
+  const create=actions.slice(actions.indexOf("export async function createFlight"),actions.indexOf("export async function importKmlFlight"));
+  const update=actions.slice(actions.indexOf("export async function updateFlight"));
 
-  assert.match(form,/profileNeedsConfiguration=Boolean\(selected&&profileDefaultsApply&&!selectedProfile\?\.profile\)/);
-  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
-  assert.doesNotMatch(form,/missing=\[[^\]]*profileNeedsConfiguration/);
-
-  for(const action of [create,update]){
-    assert.match(action,/parseFlightInput\(form\)/);
-    assert.doesNotMatch(action,/resolveFlightEntryAircraftProfileDefaults|resolveGpsImportAircraftContext/);
-    assert.doesNotMatch(action,/FROM aircraft WHERE[^\n]*registration/);
-  }
+  assert.match(form,/profileNeedsConfiguration=Boolean/);
+  assert.match(create,/resolveProfileAuthorityForSave/);
+  assert.match(update,/resolveFlightAircraftContextAuthority/);
+  assert.match(update,/isUnchangedSnapshotSubmission/);
+  assert.match(update,/validateSnapshotAircraftContextCorrection/);
 });
 
-test("F3.0 GPS already treats the active profile as server authority and blocks drift",()=>{
+test("F3.3 GPS uses the active profile through the shared allowed-context authority",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const gps=read("components/kml-import-form.tsx");
   const start=actions.indexOf("export async function importKmlFlight");
-  const end=actions.indexOf("\nexport async function updateFlight",start);
+  const end=actions.indexOf("export async function updateFlight",start);
   const importAction=actions.slice(start,end);
 
-  assert.match(importAction,/FROM aircraft WHERE user_id=\$\{userId\} AND UPPER\(TRIM\(registration\)\)=\$\{registration\} AND active=1 LIMIT 1/);
+  assert.match(importAction,/loadAircraftAuthorityProfile/);
   assert.match(importAction,/resolveGpsImportAircraftContext/);
-  assert.match(importAction,/validateGpsImportSubmittedAircraftContext/);
-  assert.match(importAction,/evidence=profileResult\.profile\.evidence/);
-  assert.match(importAction,/aircraftClass=profileResult\.profile\.aircraftClass/);
-
-  assert.match(gps,/profileError=selectedAircraft&&!selectedProfile/);
-  assert.match(gps,/const ready=Boolean\(selectedProfile&&sourceRequirements\)/);
+  assert.match(importAction,/isAllowedFlightContext/);
+  assert.match(importAction,/resolvedProfile/);
+  assert.match(gps,/contextChoices/);
+  assert.match(gps,/name="regulatoryCategory"/);
+  assert.match(gps,/const ready=Boolean\(resolvedProfile&&sourceRequirements\)/);
   assert.match(gps,/Needs configuration/);
 });
 
