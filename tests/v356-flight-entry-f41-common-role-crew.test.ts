@@ -42,8 +42,6 @@ test("F4.1 GPS candidate carries the resolved common RoleCrew into the shared no
     registration:"OK-F41",
     aircraftType:"B23",
     profile:{
-      aircraftMake:"BRM Aero",
-      aircraftModel:"Bristell B23",
       evidence:"EASA",
       aircraftClass:"SEP",
       regulatoryCategory:"AEROPLANE",
