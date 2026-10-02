@@ -91,15 +91,14 @@ test("F0.1 GPS UI exposes only the supported PIC role",()=>{
   }
 });
 
-test("F0.1 server resolves active aircraft profile and does not trust submitted identity defaults",()=>{
+test("F0.1 server active-profile authority now routes through the shared F3 resolver",()=>{
   assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
-  assert.match(importAction,/FROM aircraft WHERE user_id=\$\{userId\} AND UPPER\(TRIM\(registration\)\)=\$\{registration\} AND active=1 LIMIT 1/);
-  assert.match(importAction,/resolveGpsImportAircraftContext/);
-  assert.match(importAction,/validateGpsImportSubmittedAircraftContext/);
-  assert.match(importAction,/evidence=profileResult\.profile\.evidence/);
-  assert.match(importAction,/aircraftClass=profileResult\.profile\.aircraftClass/);
-  assert.match(importAction,/regulatoryCategory=profileResult\.profile\.regulatoryCategory/);
-  assert.match(importAction,/aircraftType=String\(selectedAircraft\.aircraft_type\|\|""\)/);
+  assert.match(importAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
+  assert.match(importAction,/authorizeProfileFlightContext\(selectedAircraft,flightAircraftContextFromForm\(form\)\)/);
+  assert.match(importAction,/evidence=authority\.context\.evidence/);
+  assert.match(importAction,/aircraftClass=authority\.context\.aircraftClass/);
+  assert.match(importAction,/regulatoryCategory=authority\.context\.regulatoryCategory/);
+  assert.match(importAction,/aircraftType=authority\.context\.aircraftType/);
 });
 
 test("F0.1 preserves GPS duplicate locking and atomic transaction behavior",()=>{
