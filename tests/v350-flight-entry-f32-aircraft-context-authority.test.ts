@@ -215,9 +215,8 @@ test("F3.2 pure resolver does not silently repair profile or snapshot drift",()=
   assert.equal(classifySnapshotAircraftContextChange(stored,crafted),"UNCHANGED");
 });
 
-test("F3.2 resolver remains pure and is not wired into production mutations yet",()=>{
-  const actions=read("app/(protected)/flights/actions.ts");
-  const gpsIntegrity=read("lib/gps-import-integrity.ts");
-  assert.doesNotMatch(actions,/flight-aircraft-context-authority/);
-  assert.doesNotMatch(gpsIntegrity,/flight-aircraft-context-authority/);
+test("F3.2 resolver remains a pure authority module after later runtime wiring",()=>{
+  const authority=read("lib/flight-aircraft-context-authority.ts");
+  assert.doesNotMatch(authority,/from ["']@\/lib\/db|from ["'].\/db|server-only/);
+  assert.doesNotMatch(authority,/FormData|requireUser|sql`/);
 });
