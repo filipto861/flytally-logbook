@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · F0–F3 DONE / F4.1 VERIFIED / F4.2 CORE VERIFIED — AUTHENTICATED BROWSER PENDING  
+**Status:** ACTIVE · F0–F3 DONE / F4.1 VERIFIED / F4.2 DONE — LOCAL VERIFIED / F4.3 SAFETY PILOT NEXT  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -556,7 +556,7 @@ Acceptance:
 - one invalid part blocks atomic import;
 - server receives fully resolved records.
 
-Current implementation state: F4.1 common PIC/DUAL Role/Crew is locally verified. F4.2 whole-part PIC/DUAL `INHERIT`/`OVERRIDE` envelopes are implemented with strict server resolution and split-reset behavior; targeted **67/67**, full unit/regression **1134/1134**, and production build including TypeScript are PASS. Authenticated browser persistence/reset coverage is staged and pending. SPIC/PICUS and Safety Pilot remain outside the F4.2 runtime scope.
+Current implementation state: F4.1 common PIC/DUAL Role/Crew and F4.2 whole-part PIC/DUAL `INHERIT`/`OVERRIDE` envelopes are locally verified. F4.2 evidence is targeted **67/67**, full unit/regression **1134/1134**, production build including TypeScript PASS, and authenticated desktop Chromium **4/4 PASS** against the isolated local PostgreSQL browser DB. F4.3 Safety Pilot is next; SPIC/PICUS remain blocked by the separate countersignature-reference product decision.
 
 ### F5 — Primary UX / copy simplification
 
