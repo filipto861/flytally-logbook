@@ -9,6 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.0 aircraft-context discovery / review
+- Characterized aircraft-context authority across Manual New/Edit, GPS import, canonical aircraft-profile validation and historical identity snapshots.
+- Confirmed Manual currently applies profile defaults client-side but create/update do not re-resolve the active profile, while GPS already re-queries and validates the active profile server-side.
+- Confirmed Manual invalid-profile state is visible as **Needs configuration** but is not itself an action-level profile gate.
+- Confirmed same-registration Edit preserves stored context; registration change applies current profile/identity snapshot semantics.
+- Added F3 design, independent-review handoff and v349 characterization coverage for valid ULL/EASA, TMG/OTHER multi-context profiles, Manual/GPS authority divergence and historical snapshot boundaries.
+- Draft authority model is PROFILE / SNAPSHOT / explicit OVERRIDE; override breadth and GPS timing are review-gated.
+- **Runtime/schema/certification:** no change in F3.0.
+
 ### Flight Entry Workflow 3.0 — F2.4 producer-consumer audit / review gate
 - Audited Role/Crew producers and consumers across Manual normalization, Safety Pilot linkage, Certification, explicit instructor verification, shared-flight materialization, print/read-only output, CSV/XLS export, audit, backup/restore, recency and GPS boundaries.
 - Confirmed a remaining Certification-time DUAL/SPIC/PICUS display-name → account inference path; the repository already has an explicit account-ID post-certification request flow that can replace it.

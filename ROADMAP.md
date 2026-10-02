@@ -413,7 +413,7 @@ Milestones:
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
-| F3 — Aircraft context simplification | ⏳ | Compact valid context, explicit unresolved/override handling |
+| F3 — Aircraft context simplification | 🚧 | **F3.0 DISCOVERY / REVIEW** · Manual/GPS authority divergence and historical snapshot semantics characterized; override breadth + GPS timing require review |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
@@ -436,7 +436,10 @@ Immediate next step:
 - **F2.5 DONE / PRODUCTION VERIFIED**: PR #223 merged as `bc187e307958054efa2e32db316b06139d10df6e`; Verify FlyTally web #1095 PASS — TypeScript PASS, 1077/1077 unit/regression, PostgreSQL 66/66; Browser smoke #469 PASS — production build PASS, Chromium 36 passed / 2 skipped. Final coverage freezes every Manual RoleCrew role across EASA/ULL, crafted Save requirements, function-time allocation, certification v1–v8 compatibility, explicit invitation boundaries, auxiliary-role non-creditability and GPS PIC-only. Authenticated browser closeout covers PIC, DUAL, SPIC, PICUS, CO-PILOT and Safety Pilot at desktop, iPad landscape, iPad portrait and mobile under light + dark with overflow checks;
 - production deployment `dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ` is READY for exact merge SHA `bc187e307958054efa2e32db316b06139d10df6e`, aliases `fly-tally.com` with no alias error, and `fly-tally.com` returned HTTP 200 with that deployment ID; DB/schema N/A;
 - **F2 CLOSED**: no destructive RoleCrew canonicalization, no implicit name→account inference, no certification-version change, no historical rewrite, and GPS remains PIC-only until F4;
-- next roadmap phase: **F3 — Aircraft context simplification**. Reconstruct F3 contract before coding; do not carry F2 assumptions into aircraft-context changes implicitly.
+- **F3.0 discovery / characterization complete**: Manual applies profile defaults client-side but create/update do not re-resolve the active profile; invalid-profile state is visible but not an action-level Save blocker; GPS already enforces active canonical profile authority; same-registration Edit intentionally preserves stored context;
+- F3 design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_AIRCRAFT_CONTEXT_DESIGN.md`; review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_REVIEW_HANDOFF.md`;
+- draft authority model: server-derived PROFILE for New/registration change, SNAPSHOT for same-registration Edit, explicit OVERRIDE only by deliberate user action; no silent repair/backfill;
+- **next after independent review: F3.1 shared server aircraft-context authority contract**; override breadth and GPS override timing are not yet frozen.
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;

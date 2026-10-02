@@ -513,17 +513,33 @@ Acceptance:
 - switching roles may preserve useful local input state, but irrelevant semantic fields are not persisted;
 - server is authoritative.
 
-### F3 — Aircraft context simplification
+### F3 — Aircraft context simplification — F3.0 DISCOVERY / REVIEW
 
 **Goal:** stop presenting aircraft-profile schema as a normal flight-entry task.
 
-Acceptance:
+F3.0 findings:
+- Manual New/Edit currently receives aircraft-profile defaults in the client, but create/update do not re-resolve the active profile server-side;
+- GPS already has server-authoritative active-profile validation and submitted-context drift rejection;
+- same-registration Edit intentionally preserves the stored historical context, while registration change applies current profile authority;
+- invalid Manual profile can be shown as Needs configuration without an action-level profile gate;
+- TMG and OTHER are explicit multi-context classes and cannot be reduced heuristically.
+
+Draft authority model:
+- PROFILE — New, registration change, GPS;
+- SNAPSHOT — same-registration Edit;
+- OVERRIDE — explicit user action only, never inferred from drift.
+
+Detailed design: `FLIGHT_ENTRY_WORKFLOW_3_0_F3_AIRCRAFT_CONTEXT_DESIGN.md`.  
+Independent review: `FLIGHT_ENTRY_WORKFLOW_3_0_F3_REVIEW_HANDOFF.md`.
+
+Acceptance remains:
 - valid profile shows compact actual evidence-bearing context;
-- invalid profile shows Needs configuration;
+- invalid profile shows Needs configuration and fails closed;
 - legitimate explicit flight context remains available;
 - no silent repair;
 - TMG and other multi-context cases remain explicit;
-- historical snapshots remain independent of mutable current profile.
+- historical snapshots remain independent of mutable current profile;
+- Manual and GPS share one aircraft-context authority model before F4.
 
 ### F4 — GPS multi-part common / override model
 
