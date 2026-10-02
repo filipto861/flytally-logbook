@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F4 discovery/design complete on `feat/flight-entry-f4-gps-inheritance`; independent review required before runtime implementation |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F4 independent review reconciled; F4.0 characterization staged, one SPIC/PICUS countersignature-inheritance decision remains before full multi-role implementation |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -414,7 +414,7 @@ Milestones:
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
-| F4 — Multi-part GPS inheritance | 🚧 | **REVIEW GATE** · common Role/Crew + whole-part overrides + atomic resolved persistence; no runtime implementation yet |
+| F4 — Multi-part GPS inheritance | 🚧 | **F4.0 STAGED** · review reconciled; characterization first, then common Role/Crew → whole-part overrides → Safety Pilot |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
 
@@ -453,6 +453,7 @@ Immediate next step:
 - **F3 production integration DONE:** `main` was fast-forwarded across the complete F3 stack, with rollback anchor `chore/pre-f3-integration-anchor` preserving pre-F3 `4906c1c376d48e9032d23f85b73aea560843f8a5`. The docs-only F3 closeout head was ignored by Vercel, so an empty tree-identical trigger commit `a4b1c626d487aad86ef3e2de887df50a0a2b9248` forced the intended production build without changing runtime contents. Vercel deployment `dpl_Dn3PAymjG7aCds9xsw18shzkYM4a` is READY, aliases `fly-tally.com` with no alias error, and public smoke returned HTTP 200 from that deployment. No runtime errors were reported in the immediate 30-minute post-deploy window. GitHub Actions were intentionally not run; no PR was used. DB migration/schema N/A; certification v1–v8 unchanged.
 - **NEXT: F4 — Multi-part GPS inheritance.** Reconstruct the frozen F4 contract before implementation; F4 owns common values + whole Role/Crew overrides + atomic resolved persistence.
 - **F4 discovery/design staged:** current GPS remains intentionally PIC-only; per-part Review state has no Role/Crew fields; each GPS part already normalizes through the shared `normalizeFlightDraft()` contract; Safety Pilot parity additionally requires server-authoritative Actual-PIC/Connection resolution and atomic connected-crew child persistence. Draft design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_GPS_INHERITANCE_DESIGN.md`; independent review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_REVIEW_HANDOFF.md`. No runtime/schema/certification change in this step.
+- **F4 review reconciliation:** second AI returned APPROVE WITH CHANGES. Repo verification confirmed GPS already persists the complete Role/Crew column set and `flightFingerprint()` excludes Role/Crew. Accepted architecture is strict common+whole-override envelopes resolved server-side, override clearing on ordered split-boundary changes, Safety Pilot last with the existing write-time Connection guard preserved. F4.0 characterization test `tests/v355-flight-entry-f40-characterization.test.ts` is staged. One product decision remains: whether one SPIC/PICUS countersignature reference may be inherited across multiple split records.
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;
