@@ -10,29 +10,30 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const between=(source:string,start:string,end:string)=>{const a=source.indexOf(start),b=source.indexOf(end,a+start.length);assert.ok(a>=0&&b>a,`Missing range: ${start}`);return source.slice(a,b)};
 
-test("F4.1 GPS role allowlist expands only to PIC and DUAL",()=>{
-  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL"]);
+test("F4.1 PIC/DUAL baseline is superseded narrowly by F4.3 Safety Pilot",()=>{
+  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL","SAFETY PILOT"]);
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
   assert.deepEqual(validateGpsImportRole("dual"),{role:"DUAL"});
-  for(const role of ["SPIC","PICUS","SAFETY PILOT","INSTRUCTOR","CO-PILOT","PAX","OBSERVER","ADMIN"]){
+  assert.deepEqual(validateGpsImportRole("safety pilot"),{role:"SAFETY PILOT"});
+  for(const role of ["SPIC","PICUS","INSTRUCTOR","CO-PILOT","PAX","OBSERVER","ADMIN"]){
     const result=validateGpsImportRole(role);
     assert.equal(result.role,undefined,role);
-    assert.match(result.error??"",/supports PIC and DUAL/i,role);
+    assert.match(result.error??"",/supports PIC, DUAL and SAFETY PILOT/i,role);
   }
 });
 
 test("F4.1 common RoleCrew resolver is strict and never field-falls back",()=>{
   assert.deepEqual(resolveGpsImportCommonRoleCrew({role:"PIC"},"EASA"),{
-    context:{role:"PIC",commander:"",instructor:"",verificationName:"",verificationReference:""},
+    context:{role:"PIC",commander:"",instructor:"",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0},
   });
   assert.match(resolveGpsImportCommonRoleCrew({role:"PIC",instructor:"Stale FI"},"EASA").error??"",/does not accept additional Role\/Crew evidence/i);
 
   assert.match(resolveGpsImportCommonRoleCrew({role:"DUAL",instructor:""},"EASA").error??"",/require the instructor\/PIC name/i);
   assert.deepEqual(resolveGpsImportCommonRoleCrew({role:"DUAL",instructor:"Training Instructor"},"EASA"),{
-    context:{role:"DUAL",commander:"",instructor:"Training Instructor",verificationName:"",verificationReference:""},
+    context:{role:"DUAL",commander:"",instructor:"Training Instructor",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0},
   });
   assert.deepEqual(resolveGpsImportCommonRoleCrew({role:"DUAL",instructor:""},"ULL"),{
-    context:{role:"DUAL",commander:"",instructor:"",verificationName:"",verificationReference:""},
+    context:{role:"DUAL",commander:"",instructor:"",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0},
   });
   assert.match(resolveGpsImportCommonRoleCrew({role:"DUAL",instructor:"FI",verificationReference:"stale"},"EASA").error??"",/accepts only the Instructor \/ PIC field/i);
 });
