@@ -36,7 +36,8 @@ export function validateGpsImportSubmittedAircraftContext(
 ):{context?:CanonicalFlightAircraftContext;error?:string}{
   const evidence=upper(submitted.evidence),aircraftClass=upper(submitted.aircraftClass);
   if(!Array.isArray(authority)){
-    if(evidence!==authority.evidence||aircraftClass!==authority.aircraftClass){
+    const profile=authority as CanonicalAircraftProfileRegulatoryFields;
+    if(evidence!==profile.evidence||aircraftClass!==profile.aircraftClass){
       return{error:"GPS import must use the selected aircraft profile logbook and class. Resolve the aircraft profile before importing this track."};
     }
     return{};
