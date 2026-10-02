@@ -106,7 +106,7 @@ test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
 });
 
 test("F1.3 Manual persistence boundary remains intact while F1.4 converges GPS semantics",()=>{
-  assert.match(gps,/validateGpsImportRole/);
+  assert.match(gps,/resolveGpsImportCommonRoleCrew/);
   assert.match(gps,/authorizeProfileFlightContext/);
   assert.match(gps,/gpsFlightCandidate/);
   assert.match(gps,/normalizeFlightDraft\(candidate\)/);
