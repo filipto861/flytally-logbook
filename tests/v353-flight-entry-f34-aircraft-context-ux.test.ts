@@ -120,6 +120,6 @@ test("F3.4 browser fixture carries authority provenance and exercises compact Ma
   assert.match(browser,/F3\.4 Manual compact context exposes only A\+ choice and blocks invalid profiles/);
   assert.match(browser,/details\.aircraft-context-section/);
   assert.match(browser,/select\[name="regulatoryCategory"\]/);
-  assert.match(browser,/ULL · OK-ULL1/);
+  assert.match(browser,/ULL · UL/);
   assert.match(browser,/Stored flight context/);
 });
