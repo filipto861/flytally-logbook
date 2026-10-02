@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 DONE / LOCAL VERIFIED · F4.3 SAFETY PILOT NEXT · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1/F4.2 DONE / LOCAL VERIFIED · F4.3 CORE IMPLEMENTED / VERIFICATION PENDING · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -331,7 +331,7 @@ F4.1 implementation now:
 
 F4.1 local verification is complete: targeted cross-path batch **55/55 PASS**, TypeScript PASS, full unit/regression **1129/1129 PASS**, production build PASS, and authenticated desktop Chromium **2/2 PASS** against the disposable PostgreSQL browser DB. The browser gate proves the common PIC/DUAL role surface, DUAL review invalidation, required Instructor/PIC gating, successful Save, and persisted normalized DUAL Instructor/PIC data. The browser-only bootstrap now provides the minimal `airports` relation required by GPS airport detection; production DB/schema/certification are unchanged. **F4.2 is unblocked and next.**
 
-### F4.2 — whole-part overrides — CORE IMPLEMENTED / VERIFICATION PENDING
+### F4.2 — whole-part overrides — DONE / LOCAL VERIFIED
 - INHERIT or complete OVERRIDE per part;
 - no field-level fallback;
 - Reset to common deletes override;
@@ -348,18 +348,23 @@ Implementation on the current branch:
 - server resolves each part with `resolveGpsImportPartRoleCrew()` and supplies that complete context to `gpsFlightCandidate() → normalizeFlightDraft()`;
 - common Role changes invalidate only inherited review confirmations; per-part Role changes invalidate only that flight; Instructor text changes use the Save completeness gate without forcing route/timeline re-review;
 - changing the ordered split-boundary set clears all overrides and surfaces a visible reset notice instead of reassigning evidence heuristically;
-- roles remain PIC + DUAL only; SPIC/PICUS and Safety Pilot are still blocked.
+- F4.2 closeout roles were PIC + DUAL only; F4.3 subsequently adds Safety Pilot while SPIC/PICUS remain blocked.
 
 Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-crew.test.ts`. Verification evidence: targeted F4.2/cross-path batch **67/67 PASS**, full unit/regression **1134/1134 PASS**, production build PASS including TypeScript, and authenticated desktop Chromium **4/4 PASS** against the isolated local PostgreSQL browser DB. Browser coverage proves mixed INHERIT/OVERRIDE persistence, inherited-only common-Role invalidation, deterministic Reset to common, split-boundary override clearing with a visible notice, and per-flight PIC/DUAL persistence. **F4.2 is closed. F4.3 Safety Pilot is next.** No production DB/schema/certification change.
 
-### F4.3 — Safety Pilot
-- shared lower-level Actual-PIC resolution plan;
-- manual or accepted Connection;
-- account-ID based server authority;
-- display-name snapshot;
-- write-time accepted-Connection guard;
-- one child row per connected source flight;
-- one invalid/revoked connection aborts the whole import.
+### F4.3 — Safety Pilot — CORE IMPLEMENTED / VERIFICATION PENDING
+- extracted `resolveSafetyPilotPic()` as the shared lower-level Actual-PIC authority while preserving `resolveSafetyPilotPicForSave()` as the Manual FormData wrapper;
+- GPS role scope expands only to PIC + DUAL + SAFETY PILOT; SPIC/PICUS remain blocked;
+- common and whole-part Safety Pilot contexts support explicit Manual Actual PIC text or one accepted Connection account ID;
+- strict envelopes forbid connected display-name claims, stale role fields and field-level fallback;
+- each final part is resolved through the account-ID authority before `gpsFlightCandidate() → normalizeFlightDraft()`;
+- connected mode snapshots the current server display name into `commander` and keeps `connectedPicUserId` separate metadata;
+- the GPS write CTE independently rechecks accepted Connection state and nonblank account identity at mutation time;
+- each connected Safety Pilot source flight atomically creates one `flight_connected_crew` row alongside its flight and track;
+- zero parent, track or required connected-child rows force the complete N-part transaction to fail closed;
+- no invitation is sent during Save;
+- split-change override clearing and inherited-only common Role invalidation remain unchanged from F4.2;
+- focused F4.3 unit/source coverage and isolated PostgreSQL rollback coverage are staged. **Verification on the current F4.3 head: NOT RUN.** No DB migration or certification-version change.
 
 ### F4.4 — closeout
 - full regression, PostgreSQL, TypeScript, build and authenticated browser matrix;
@@ -377,4 +382,4 @@ Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-
 6. Should changing common Role/Crew mark inherited parts as unreviewed, or is a separate Role/Crew completeness gate sufficient?
 7. What is the minimum safe transaction shape for N flights + tracks + zero-or-more connected-crew rows while preserving current advisory locks and duplicate behavior?
 
-No runtime implementation begins until this review is reconciled.
+The independent review gate is reconciled. Runtime implementation follows the frozen F4 batch boundaries above; verification evidence is recorded per batch before closeout.
