@@ -1,10 +1,12 @@
 import {
+  AIRCRAFT_BALLOON_CLASSES,
+  AIRCRAFT_BALLOON_GROUPS,
   validateAircraftProfile,
   type AircraftBalloonClass,
   type AircraftBalloonGroup,
   type CanonicalAircraftProfileRegulatoryFields,
 } from "./aircraft-profile-validation.ts";
-import type { AircraftProfileClass,AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
+import { normalizeAircraftProfileContext,type AircraftProfileClass,type AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
 
 export type FlightAircraftAuthorityProfileInput={
   aircraft_type?:unknown;
@@ -153,6 +155,79 @@ export function isAllowedFlightContext(
 ){
   const candidate=normalizeFlightAircraftContextSnapshot(submitted);
   return allowed.some(context=>sameFlightAircraftContextSnapshot(candidate,context));
+}
+
+export function isUnchangedSnapshotSubmission(
+  stored:FlightAircraftContextSnapshotInput,
+  submitted:FlightAircraftContextSnapshotInput,
+){
+  if(sameFlightAircraftContextSnapshot(stored,submitted))return true;
+  const storedSnapshot=normalizeFlightAircraftContextSnapshot(stored);
+  if(storedSnapshot.regulatoryCategory)return false;
+  const submittedSnapshot=normalizeFlightAircraftContextSnapshot(submitted);
+  if(storedSnapshot.evidence!==submittedSnapshot.evidence
+    ||storedSnapshot.aircraftClass!==submittedSnapshot.aircraftClass
+    ||storedSnapshot.balloonClass!==submittedSnapshot.balloonClass
+    ||storedSnapshot.balloonGroup!==submittedSnapshot.balloonGroup
+    ||storedSnapshot.aircraftType!==submittedSnapshot.aircraftType)return false;
+  const normalized=normalizeAircraftProfileContext(
+    storedSnapshot.evidence,
+    storedSnapshot.aircraftClass,
+    "",
+  );
+  return Boolean(normalized.context&&submittedSnapshot.regulatoryCategory===normalized.context.regulatoryCategory);
+}
+
+export function validateSnapshotAircraftContextCorrection(
+  input:FlightAircraftContextSnapshotInput,
+):
+  |{context:CanonicalFlightAircraftContext;error?:undefined}
+  |{context?:undefined;error:string}{
+  const snapshot=normalizeFlightAircraftContextSnapshot(input);
+  const normalized=normalizeAircraftProfileContext(
+    snapshot.evidence,
+    snapshot.aircraftClass,
+    snapshot.regulatoryCategory,
+  );
+  if(!normalized.context)return{error:normalized.error||"Select a valid aircraft context."};
+  if(snapshot.regulatoryCategory!==normalized.context.regulatoryCategory){
+    return{error:"Aircraft class/category and regulatory context do not match."};
+  }
+  const regulatoryCategory=normalized.context.regulatoryCategory;
+  if(regulatoryCategory!=="BALLOON"){
+    if(snapshot.balloonClass||snapshot.balloonGroup){
+      return{error:"Balloon class/group can only be stored on a Balloon / Part-BFCL flight context."};
+    }
+    return{context:{
+      evidence:normalized.context.evidence,
+      aircraftClass:normalized.context.aircraftClass,
+      regulatoryCategory,
+      balloonClass:"",
+      balloonGroup:"",
+      aircraftType:snapshot.aircraftType,
+    }};
+  }
+  if(!AIRCRAFT_BALLOON_CLASSES.includes(snapshot.balloonClass as Exclude<AircraftBalloonClass,"">)){
+    return{error:"Select the Part-BFCL balloon class."};
+  }
+  const balloonClass=snapshot.balloonClass as Exclude<AircraftBalloonClass,"">;
+  let balloonGroup:AircraftBalloonGroup="";
+  if(balloonClass==="HOT_AIR_BALLOON"){
+    if(!AIRCRAFT_BALLOON_GROUPS.includes(snapshot.balloonGroup as Exclude<AircraftBalloonGroup,"">)){
+      return{error:"Select hot-air balloon group A, B, C or D."};
+    }
+    balloonGroup=snapshot.balloonGroup as Exclude<AircraftBalloonGroup,"">;
+  }else if(snapshot.balloonGroup){
+    return{error:"Hot-air balloon group is not applicable to this balloon class."};
+  }
+  return{context:{
+    evidence:normalized.context.evidence,
+    aircraftClass:normalized.context.aircraftClass,
+    regulatoryCategory,
+    balloonClass,
+    balloonGroup,
+    aircraftType:snapshot.aircraftType,
+  }};
 }
 
 export function classifySnapshotAircraftContextChange(

@@ -69,7 +69,7 @@ test("F1.5 GPS UI exposes explicit common Operation/Engine and blocks readiness 
 });
 
 test("F1.5 server revalidates Operation/Engine and persists resolved values",()=>{
-  assert.match(importAction,/resolveGpsImportOperationEngine\(\{operationType:form\.get\("operationType"\),engineType:form\.get\("engineType"\)\},profileResult\.profile\)/);
+  assert.match(importAction,/resolveGpsImportOperationEngine\(\{operationType:form\.get\("operationType"\),engineType:form\.get\("engineType"\)\},resolvedProfile\)/);
   assert.match(importAction,/if\(operationEngine\.error\)return\{error:operationEngine\.error\}/);
   assert.match(importAction,/const operationType=operationEngine\.operationType,engineType=operationEngine\.engineType/);
   assert.match(importAction,/\$\{item\.input\.operationType\},\$\{item\.input\.engineType\}/);

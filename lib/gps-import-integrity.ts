@@ -1,5 +1,5 @@
-import { resolveFlightEntryAircraftProfileDefaults,type FlightEntryAircraftProfileInput } from "./flight-form-rules.ts";
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
+import { allowedFlightContexts,type CanonicalFlightAircraftContext,type FlightAircraftAuthorityProfileInput } from "./flight-aircraft-context-authority.ts";
 import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 
@@ -8,12 +8,12 @@ export type GpsImportRole=(typeof GPS_IMPORT_ROLES)[number];
 
 const upper=(value:unknown)=>String(value??"").trim().toUpperCase();
 
-export function resolveGpsImportAircraftContext(input:FlightEntryAircraftProfileInput):
-  |{profile:CanonicalAircraftProfileRegulatoryFields;error?:undefined}
-  |{profile?:undefined;error:string}{
-  const resolved=resolveFlightEntryAircraftProfileDefaults(input);
-  if(!resolved.profile)return{error:resolved.error||"Selected aircraft profile needs configuration before GPS import."};
-  return{profile:resolved.profile};
+export function resolveGpsImportAircraftContext(input:FlightAircraftAuthorityProfileInput):
+  |{profile:CanonicalAircraftProfileRegulatoryFields;contexts:CanonicalFlightAircraftContext[];error?:undefined}
+  |{profile?:undefined;contexts?:undefined;error:string}{
+  const resolved=allowedFlightContexts(input);
+  if(!resolved.profile||!resolved.contexts)return{error:resolved.error||"Selected aircraft profile needs configuration before GPS import."};
+  return{profile:resolved.profile,contexts:resolved.contexts};
 }
 
 export function validateGpsImportRole(value:unknown):

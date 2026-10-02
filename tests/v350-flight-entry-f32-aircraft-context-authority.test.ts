@@ -7,8 +7,10 @@ import {
   allowedFlightContexts,
   classifySnapshotAircraftContextChange,
   isAllowedFlightContext,
+  isUnchangedSnapshotSubmission,
   normalizeFlightAircraftContextSnapshot,
   resolveFlightAircraftContextAuthority,
+  validateSnapshotAircraftContextCorrection,
 } from "../lib/flight-aircraft-context-authority.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
@@ -215,9 +217,37 @@ test("F3.2 pure resolver does not silently repair profile or snapshot drift",()=
   assert.equal(classifySnapshotAircraftContextChange(stored,crafted),"UNCHANGED");
 });
 
-test("F3.2 resolver remains pure and is not wired into production mutations yet",()=>{
+test("F3.3 production entry paths now import the F3.2 pure authority contract",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const gpsIntegrity=read("lib/gps-import-integrity.ts");
-  assert.doesNotMatch(actions,/flight-aircraft-context-authority/);
-  assert.doesNotMatch(gpsIntegrity,/flight-aircraft-context-authority/);
+  assert.match(actions,/flight-aircraft-context-authority/);
+  assert.match(actions,/resolveProfileAuthorityForSave/);
+  assert.match(gpsIntegrity,/allowedFlightContexts/);
+});
+
+test("F3.3 unchanged SNAPSHOT submission recognizes only the deterministic legacy blank-category presentation",()=>{
+  const stored={evidence:"EASA",aircraftClass:"SEP",regulatoryCategory:"",balloonClass:"",balloonGroup:"",aircraftType:"B23"};
+  assert.equal(isUnchangedSnapshotSubmission(stored,{...stored,regulatoryCategory:"AEROPLANE"}),true);
+  assert.equal(isUnchangedSnapshotSubmission(stored,{...stored,regulatoryCategory:"SAILPLANE"}),false);
+  assert.equal(isUnchangedSnapshotSubmission(stored,{...stored,evidence:"ULL",aircraftClass:"ULL",regulatoryCategory:"ULL"}),false);
+  assert.equal(isUnchangedSnapshotSubmission(stored,{...stored,aircraftType:"B24",regulatoryCategory:"AEROPLANE"}),false);
+
+  const ullStored={evidence:"ULL",aircraftClass:"ULL",regulatoryCategory:"",balloonClass:"",balloonGroup:"",aircraftType:"UL"};
+  assert.equal(isUnchangedSnapshotSubmission(ullStored,{...ullStored,regulatoryCategory:"ULL"}),true);
+});
+
+test("F3.3 SNAPSHOT correction validates context compatibility without requiring today's mutable profile identity",()=>{
+  assert.deepEqual(validateSnapshotAircraftContextCorrection({
+    evidence:"EASA",aircraftClass:"TMG",regulatoryCategory:"SAILPLANE",balloonClass:"",balloonGroup:"",aircraftType:"Historic TMG",
+  }),{context:{
+    evidence:"EASA",aircraftClass:"TMG",regulatoryCategory:"SAILPLANE",balloonClass:"",balloonGroup:"",aircraftType:"Historic TMG",
+  }});
+
+  assert.match(validateSnapshotAircraftContextCorrection({
+    evidence:"EASA",aircraftClass:"SEP",regulatoryCategory:"SAILPLANE",balloonClass:"",balloonGroup:"",aircraftType:"B23",
+  }).error??"",/do not match/i);
+
+  assert.match(validateSnapshotAircraftContextCorrection({
+    evidence:"EASA",aircraftClass:"BALLOON",regulatoryCategory:"BALLOON",balloonClass:"HOT_AIR_BALLOON",balloonGroup:"",aircraftType:"Historic balloon",
+  }).error??"",/group A, B, C or D/i);
 });
