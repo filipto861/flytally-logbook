@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.2 DONE / PRODUCTION VERIFIED · F3.3 SERVER ENFORCEMENT NEXT  
+**Status:** F3.2 DONE / PRODUCTION VERIFIED · F3.3 SERVER ENFORCEMENT IN PROGRESS  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -287,7 +287,9 @@ Verification:
 - Vercel production `dpl_7vwVVvE98UZVYJ6upCB9CQnfok4a` READY on the exact merge SHA, aliases `fly-tally.com`, alias error null;
 - DB migration/schema change: N/A.
 
-### F3.3 — server enforcement + GPS authority convergence
+### F3.3 — server enforcement + GPS authority convergence — IN PROGRESS
+Implementation branch: `feat/flight-entry-f33-aircraft-authority`. Verification is **NOT RUN** pending local execution.
+
 - wire Manual create/update through the shared resolver;
 - reject invalid PROFILE and crafted unexplained drift;
 - preserve unchanged same-registration SNAPSHOT without current-profile validation;
