@@ -37,6 +37,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - **Final verification:** Verify FlyTally web #1094 PASS — TypeScript PASS, full unit/regression **1068/1068**, PostgreSQL acceptance **66/66**; Browser smoke #468 PASS — production build PASS, Chromium **34 passed / 2 skipped**.
 - PR #221 merged as `84b5f5362f03ef1959956fba91584059a36c2db5`.
 - **Runtime/schema/deploy:** no runtime or schema behavior changed; production deployment N/A.
+- **F2.5 implementation candidate:** added final exhaustive RoleCrew matrix/crafted Save regression coverage, v1–v8 certification compatibility checks, explicit invitation boundary checks, auxiliary-role non-creditability/GPS PIC-only guards, and responsive authenticated browser coverage for PIC/DUAL/SPIC/PICUS/CO-PILOT/Safety Pilot across desktop, iPad landscape/portrait and mobile in light + dark. No runtime/schema behavior change intended; verification pending.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
