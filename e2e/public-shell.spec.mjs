@@ -157,7 +157,7 @@ test("GPS and Manual keep profile-owned aircraft context out of generic drift ed
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
   await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveCount(0);
   await expect(gpsForm.locator('select[name="evidence"]')).toHaveCount(0);
-  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-HST1");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
   await expect(page.getByText(/OK-HST1 differs from its usual profile/)).toHaveCount(0);
 
@@ -170,7 +170,7 @@ test("GPS and Manual keep profile-owned aircraft context out of generic drift ed
   await expect(manualForm.locator('select[name="aircraftClass"]')).toHaveCount(0);
   await expect(manualForm.locator('select[name="evidence"]')).toHaveCount(0);
   const context=manualForm.locator("details.aircraft-context-section");
-  await expect(context.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-HST1");
+  await expect(context.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
   await context.locator("summary").click();
   await expect(context.locator("[data-aircraft-context-card]")).toContainText("Profile context");
   await expect(manualForm.locator('[data-intelligent-review="registration_profile_aircraft_class"]')).toHaveCount(0);
@@ -190,7 +190,7 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await expect(form.locator('select[name="evidence"]')).toHaveCount(0);
 
   const details=form.locator("details.aircraft-context-section");
-  await expect(details.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · TMG · OK-TMG1");
+  await expect(details.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · TMG");
   await details.locator("summary").click();
   const regulatory=details.locator('select[name="regulatoryCategory"]');
   await expect(regulatory).toBeVisible();
@@ -201,7 +201,7 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await expect(details.locator("[data-aircraft-context-card]")).toContainText("Sailplane · Part-SFCL");
 
   await form.locator('select[name="registration"]').selectOption("OK-ULL1");
-  await expect(details.locator("summary")).toContainText("ULL · OK-ULL1");
+  await expect(details.locator("summary")).toContainText("ULL · UL");
   await expect(details.locator('select[name="regulatoryCategory"]')).toHaveCount(0);
 
   await form.locator('select[name="registration"]').selectOption("OK-BAD1");
@@ -226,7 +226,7 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await registration.selectOption("OK-E2E");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
-  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-E2E");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
   await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
   await expect(gpsForm.locator('select[name="operationType"]')).toBeVisible();
@@ -258,7 +258,7 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await registration.selectOption("OK-ULL1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("ULL");
-  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("ULL · OK-ULL1");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("ULL · UL");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
 
@@ -386,7 +386,7 @@ test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in ligh
   await form.locator('select[name="registration"]').selectOption("OK-SP2E");
   await expect(form.locator('input[name="evidence"]')).toHaveValue("EASA");
   const aircraftContext=form.locator("details.aircraft-context-section");
-  await expect(aircraftContext.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-SP2E");
+  await expect(aircraftContext.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
   await aircraftContext.locator("summary").click();
   await expect(aircraftContext.locator("[data-aircraft-context-card]")).toContainText("Profile context");
   const role=form.locator('select[name="role"]');
