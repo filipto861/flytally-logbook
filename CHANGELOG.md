@@ -9,6 +9,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.3 server enforcement (staged, not yet verified)
+- Wired Manual New and registration-change saves to server-side owned-profile authority using the shared F3 resolver; submitted aircraft context must be a member of the profile's allowed context set.
+- Wired same-registration Edit to server-derived SNAPSHOT authority; unchanged historical context is persisted from the stored snapshot without consulting the mutable current profile. Legacy blank regulatory-category rows are preserved rather than silently upgraded by the current UI's derived presentation value.
+- Routed GPS through the same shared PROFILE authority while keeping its active-aircraft selection boundary and PIC-only Role scope.
+- Added one common GPS TMG/OTHER regulatory-context choice and server validation against `allowedFlightContexts(profile)`; no full evidence/class override was introduced.
+- Propagated Part-FCL credit provenance into entry/profile authority validation so malformed provenance fails closed rather than being dropped at the F3 boundary.
+- Added focused F3.3 unit/source-contract coverage and retired stale F3.0/F3.2 assertions that expected the resolver to remain unwired.
+- **Verification:** NOT RUN. Local typecheck, targeted/full unit suite, PostgreSQL acceptance and production build are required before closeout.
+- **Schema/certification:** no migration and no certification v1-v8 change.
+
+
 ### Flight Entry Workflow 3.0 — F3.2 authority resolver
 - Added the pure shared aircraft-context authority resolver and its focused unit matrix.
 - The resolver keeps evidence/class, Balloon class/group and aircraft type profile-owned, while allowing only the frozen TMG/OTHER multi-context categories.
