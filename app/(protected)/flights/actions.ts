@@ -99,7 +99,7 @@ export async function redetectFlightAirports(flightId:number,_:FlightActionState
 export async function createFlight(_:FlightActionState,form:FormData):Promise<FlightActionState>{
   const{userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);
   const parsed=parseFlightInput(form),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
-  const f=parsed.data,profileAuthority=await resolveProfileAircraftContext(userId,f.registration,flightContextFromInput(f));if(!profileAuthority.context)return{error:profileAuthority.error};const flightContext=profileAuthority.context;
+  const f=parsed.data,profileAuthority=await resolveProfileAircraftContext(userId,f.registration,flightContextFromForm(form));if(!profileAuthority.context)return{error:profileAuthority.error};const flightContext=profileAuthority.context;
   const picResolution=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!picResolution.ok)return{error:picResolution.error};const connectedPicUserId=picResolution.connectedUserId,commander=picResolution.commander;
   const departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency}))),price=f.billingBasis?await resolvedPrice(userId,f.registration,f.date):null,fingerprint=flightFingerprint(userId,{date:f.date,registration:f.registration,offBlock:f.offBlock,departure,arrival});
   const results=await sql.transaction([
@@ -166,7 +166,7 @@ export async function updateFlight(id:number,_:FlightActionState,form:FormData):
   const authority=resolveFlightAircraftContextAuthority({mode:"UPDATE",storedRegistration:existing.registration,submittedRegistration:f.registration});
   let flightContext:FlightAircraftContextSnapshot;
   if(authority.authority==="PROFILE"){
-    const profileAuthority=await resolveProfileAircraftContext(userId,f.registration,flightContextFromInput(f));if(!profileAuthority.context)return{error:profileAuthority.error};flightContext=profileAuthority.context;
+    const profileAuthority=await resolveProfileAircraftContext(userId,f.registration,flightContextFromForm(form));if(!profileAuthority.context)return{error:profileAuthority.error};flightContext=profileAuthority.context;
   }else{
     const storedContext:FlightAircraftContextSnapshotInput={evidence:existing.evidence,aircraftClass:existing.aircraft_class,regulatoryCategory:existing.regulatory_category,balloonClass:existing.balloon_class,balloonGroup:existing.balloon_group,aircraftType:existing.aircraft_type};
     const submittedContext=snapshotComparisonSubmission({stored:storedContext,submitted:flightContextFromForm(form)});
