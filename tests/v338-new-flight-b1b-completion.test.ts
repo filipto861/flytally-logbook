@@ -26,7 +26,7 @@ test("B1B relocated review information stays visible after later summary compact
   assert.ok(profileSummary>=0&&optional>profileSummary,"aircraft-profile origin should remain in the profile summary before optional details");
   assert.ok(actions>optional,"completion actions stay at the end of the canonical form");
   assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
-  assert.match(form,/compactContextSummary\(\[selectedProfileContext\?\.evidence\|\|evidence,[^\n]*registration\]\)/);
+  assert.match(form,/compactContextSummary\(\[selectedProfileContext\?\.evidence\|\|evidence,[^\n]*selectedProfileContext\?\.aircraftType\|\|type\]\)/);
   assert.doesNotMatch(form,/value-origin-note/);
   assert.match(form,/\{dirty\?<small className="unsaved-indicator">Unsaved changes<\/small>:null\}/);
 });
