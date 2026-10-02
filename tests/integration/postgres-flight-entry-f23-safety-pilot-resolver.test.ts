@@ -12,7 +12,7 @@ const schema=`ft_f23_pic_${randomUUID().replaceAll("-","")}`;
 const quoted=`"${schema}"`;
 
 function raw(statement:string){
-  return spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
+  return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}});
 }
 function run(statement:string){
   const result=raw(`SET search_path TO ${quoted};\n${statement}`);

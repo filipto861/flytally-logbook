@@ -15,7 +15,7 @@ const evidencePath=path.join(root,"flytally-scale-evidence.json");
 const evidence:Record<string,unknown>={version:"1.44.0",dataset:{targetFlights:10000,noiseFlights:10000}};
 
 function rawPsql(statement:string){
-  const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:16*1024*1024});
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:16*1024*1024});
   if(result.error)throw result.error;
   return result;
 }

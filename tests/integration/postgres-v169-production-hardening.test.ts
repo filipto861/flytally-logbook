@@ -21,7 +21,7 @@ const LOGGED_ROWS=SCALE_ROWS-AUXILIARY_ROWS;
 const evidence:Record<string,unknown>={release:"v1.69-candidate",dataset:{mixedCategoryFlights:SCALE_ROWS,dashboardActivityFlights:DASHBOARD_ROWS,loggedFlights:LOGGED_ROWS,auxiliaryFlights:AUXILIARY_ROWS,categories:["AEROPLANE","SAILPLANE","HELICOPTER","BALLOON"]}};
 
 function rawPsql(statement:string){
-  const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:32*1024*1024});
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:32*1024*1024});
   if(result.error)throw result.error;
   return result;
 }

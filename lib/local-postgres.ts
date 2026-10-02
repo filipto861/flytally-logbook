@@ -38,7 +38,7 @@ function render(strings:TemplateStringsArray,values:unknown[]){
 const rowProducing=(statement:string)=>/^(?:SELECT|WITH)\b/i.test(statement)||/\bRETURNING\b/i.test(statement);
 
 function spawn(statement:string){
-  const result=spawnSync("psql",[localDatabaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1","-c",statement],{
+  const result=spawnSync("psql",["-d",localDatabaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1","-c",statement],{
     encoding:"utf8",
     env:{...process.env,PGCONNECT_TIMEOUT:"5"},
     maxBuffer:16*1024*1024,

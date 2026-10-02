@@ -12,7 +12,7 @@ const schema=`ft_accept_${randomUUID().replaceAll("-","")}`;
 const quotedSchema=`"${schema}"`;
 
 function rawPsql(sql:string){
-  const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",sql],{
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",sql],{
     encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"}
   });
   if(result.error)throw result.error;

@@ -35,7 +35,7 @@ const evidence:Record<string,unknown>={
 };
 
 function rawPsql(statement:string){
-  const result=spawnSync("psql",[databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{
+  const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt","-c",statement],{
     encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:64*1024*1024,
   });
   if(result.error)throw result.error;
