@@ -2,8 +2,9 @@ import { allowedFlightContexts,type CanonicalFlightAircraftContext,type FlightAi
 import type { CanonicalAircraftProfileRegulatoryFields } from "./aircraft-profile-validation.ts";
 import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
+import { roleCrewSaveError,roleCrewSpec } from "./role-crew.ts";
 
-export const GPS_IMPORT_ROLES=["PIC"] as const;
+export const GPS_IMPORT_ROLES=["PIC","DUAL"] as const;
 export type GpsImportRole=(typeof GPS_IMPORT_ROLES)[number];
 
 const upper=(value:unknown)=>String(value??"").trim().toUpperCase();
@@ -21,9 +22,37 @@ export function validateGpsImportRole(value:unknown):
   |{role?:undefined;error:string}{
   const role=upper(value);
   if(!GPS_IMPORT_ROLES.includes(role as GpsImportRole)){
-    return{error:"GPS import currently supports PIC only. Use Manual entry for other roles until Role/Crew parity is available."};
+    return{error:"GPS import currently supports PIC and DUAL. Other roles remain unavailable until their Role/Crew authority is implemented."};
   }
   return{role:role as GpsImportRole};
+}
+
+export type GpsImportCommonRoleCrew={
+  role:GpsImportRole;
+  commander:string;
+  instructor:string;
+  verificationName:string;
+  verificationReference:string;
+};
+
+const clean=(value:unknown,max:number)=>String(value??"").trim().slice(0,max);
+
+export function resolveGpsImportCommonRoleCrew(
+  submitted:{role:unknown;commander?:unknown;instructor?:unknown;verificationName?:unknown;verificationReference?:unknown},
+  evidence:unknown,
+):
+  |{context:GpsImportCommonRoleCrew;error?:undefined}
+  |{context?:undefined;error:string}{
+  const roleResult=validateGpsImportRole(submitted.role);if(!roleResult.role)return{error:roleResult.error};
+  const role=roleResult.role,commander=clean(submitted.commander,100),instructor=clean(submitted.instructor,100),verificationName=clean(submitted.verificationName,160),verificationReference=clean(submitted.verificationReference,160);
+  if(role==="PIC"){
+    if(commander||instructor||verificationName||verificationReference)return{error:"PIC GPS import does not accept additional Role/Crew evidence in the common context."};
+    return{context:{role,commander:"",instructor:"",verificationName:"",verificationReference:""}};
+  }
+  if(commander||verificationName||verificationReference)return{error:"DUAL GPS import accepts only the Instructor / PIC field in the common Role/Crew context."};
+  const spec=roleCrewSpec(role,String(evidence??""));if(!spec)return{error:"Select a valid GPS pilot role."};
+  const crewError=roleCrewSaveError(spec,{instructor,verificationName:"",verificationReference:""});if(crewError)return{error:crewError};
+  return{context:{role,commander:"",instructor,verificationName:"",verificationReference:""}};
 }
 
 export function validateGpsImportSubmittedAircraftContext(
