@@ -318,6 +318,63 @@ test("F2.4C certified verifier evidence stays unbound and exposes both explicit 
   await expectNoHorizontalOverflow(page);
 });
 
+test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in light and dark",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F2.5 responsive RoleCrew coverage requires the isolated CI database.");
+  resetSafetyPilotPicFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  await expect(form.locator('select[name="evidence"]')).toHaveValue("EASA");
+  const role=form.locator('select[name="role"]');
+
+  const assertRoleState=async(value)=>{
+    await role.selectOption(value);
+    if(value==="PIC"){
+      await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
+    }else if(value==="DUAL"){
+      const instructor=form.locator('.role-crew-inline-grid input[name="instructor"]');
+      await expect(instructor).toBeVisible();
+      await expect(instructor).toHaveAttribute("required","");
+      await expect(form.locator("details.entry-section-role-context")).toHaveCount(0);
+    }else if(value==="SPIC"||value==="PICUS"){
+      await expect(form.locator('.role-crew-inline-grid input[name="verificationName"]')).toBeVisible();
+      await expect(form.locator('.role-crew-inline-grid input[name="verificationName"]')).toHaveAttribute("required","");
+      await expect(form.locator('.role-crew-inline-grid input[name="verificationReference"]')).toBeVisible();
+      await expect(form.locator('.role-crew-inline-grid input[name="verificationReference"]')).toHaveAttribute("required","");
+    }else if(value==="CO-PILOT"){
+      await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
+      const details=form.locator("details.entry-section-role-context");
+      await expect(details).toBeVisible();
+      await expect(details.locator("summary")).toContainText("Optional commander / instructor");
+    }else if(value==="SAFETY PILOT"){
+      await expect(form.locator('select[name="actualPicMode"]')).toBeVisible();
+      await expect(form.locator('select[name="actualPicMode"]')).toHaveValue("manual");
+      const actualPic=form.locator('.role-crew-inline-grid input[name="commander"]');
+      await expect(actualPic).toBeVisible();
+      await expect(actualPic).toHaveAttribute("required","");
+      await expect(form.getByText("Manual text remains valid and is not linked to a FlyTally account.")).toBeVisible();
+    }
+    await expectNoHorizontalOverflow(page);
+  };
+
+  const viewports=[
+    {name:"desktop",width:1280,height:800},
+    {name:"ipad-landscape",width:1024,height:768},
+    {name:"ipad-portrait",width:768,height:1024},
+    {name:"mobile",width:390,height:844},
+  ];
+  for(const viewport of viewports){
+    await page.setViewportSize({width:viewport.width,height:viewport.height});
+    for(const theme of ["light","dark"]){
+      await page.evaluate(value=>{document.documentElement.dataset.theme=value},theme);
+      await expect(page.locator("html")).toHaveAttribute("data-theme",theme);
+      for(const state of ["PIC","DUAL","SPIC","PICUS","CO-PILOT","SAFETY PILOT"])await assertRoleState(state);
+    }
+  }
+  resetSafetyPilotPicFixture();
+});
+
 test("Safety Pilot Actual PIC form keeps manual and connected identity explicit",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated Safety Pilot PIC browser coverage requires the isolated CI database.");
   resetSafetyPilotPicFixture();
