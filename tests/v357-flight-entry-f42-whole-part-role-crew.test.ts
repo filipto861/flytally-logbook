@@ -87,6 +87,7 @@ test("F4.2 rejects unknown, out-of-range and per-flight common-context envelope 
     "part_1_roleCrew_instructor",
   ],2),{});
   assert.match(validateGpsImportPartEnvelopeKeys(["part_0_roleCrew_magic"],1).error??"",/unknown Role\/Crew override field/i);
+  assert.match(validateGpsImportPartEnvelopeKeys(["part_0_roleCrew_mode","part_0_roleCrew_mode"],1).error??"",/duplicate Role\/Crew override field/i);
   assert.match(validateGpsImportPartEnvelopeKeys(["part_2_roleCrew_mode"],2).error??"",/count does not match/i);
   assert.match(validateGpsImportPartEnvelopeKeys(["part_0_aircraftClass"],1).error??"",/cannot override aircraft, operation, billing or other common GPS context/i);
   assert.match(validateGpsImportPartEnvelopeKeys(["part_0_operationType"],1).error??"",/cannot override aircraft, operation, billing or other common GPS context/i);
