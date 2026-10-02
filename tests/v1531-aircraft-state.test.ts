@@ -26,15 +26,12 @@ test("v1.53.1 registration changes refresh aircraft state without changing the f
   assert.doesNotMatch(pick,/nextRole/);
 });
 
-test("v1.53.1 known aircraft type cannot be independently mixed with another profile",()=>{
+test("v1.53.1 aircraft type remains profile/snapshot-owned and cannot be independently mixed with another profile",()=>{
   const form=read("components/flight-form.tsx");
-  const fieldStart=form.indexOf('<label>Aircraft type<input name="aircraftType"');
-  const fieldEnd=form.indexOf('</label>',fieldStart);
-  assert.ok(fieldStart>=0&&fieldEnd>fieldStart);
-  const aircraftTypeField=form.slice(fieldStart,fieldEnd);
-  assert.match(aircraftTypeField,/readOnly=\{Boolean\(selected\)\}/);
-  assert.match(aircraftTypeField,/From the selected aircraft profile/);
-  assert.match(aircraftTypeField,/No active aircraft profile is available/);
+  assert.doesNotMatch(form,/<input name="aircraftType"[^>]*onChange=/);
+  assert.match(form,/submittedAircraftType=snapshotAuthority\?field\("aircraft_type"\)\.trim\(\):selectedProfileContext\?\.aircraftType\|\|type/);
+  assert.match(form,/type="hidden" name="aircraftType" value=\{submittedAircraftType\}/);
+  assert.match(form,/Supplied by the selected aircraft profile and enforced again by the server when you save\./);
 });
 
 test("v1.53.1 keeps regulatory parsing and certification boundaries unchanged",()=>{
