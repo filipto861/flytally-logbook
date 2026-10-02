@@ -19,6 +19,8 @@ const commonDual: GpsImportCommonRoleCrew={
   instructor:"Common Instructor",
   verificationName:"",
   verificationReference:"",
+  actualPicMode:"",
+  connectedPicUserId:0,
 };
 
 test("F4.2 INHERIT resolves the complete common RoleCrew context and rejects stale override fields",()=>{
@@ -42,7 +44,7 @@ test("F4.2 OVERRIDE is whole-context only and never field-falls back to common",
   },"EASA",commonDual);
   assert.deepEqual(pic,{
     mode:"OVERRIDE",
-    context:{role:"PIC",commander:"",instructor:"",verificationName:"",verificationReference:""},
+    context:{role:"PIC",commander:"",instructor:"",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0},
   });
 
   assert.match(resolveGpsImportPartRoleCrew({
@@ -67,7 +69,7 @@ test("F4.2 OVERRIDE is whole-context only and never field-falls back to common",
     instructorPresent:true,
   },"EASA",commonDual),{
     mode:"OVERRIDE",
-    context:{role:"DUAL",commander:"",instructor:"Override Instructor",verificationName:"",verificationReference:""},
+    context:{role:"DUAL",commander:"",instructor:"Override Instructor",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0},
   });
 
   assert.match(resolveGpsImportPartRoleCrew({
@@ -100,7 +102,7 @@ test("F4.2 server resolves common plus each strict part envelope before candidat
   assert.match(gps,/validateGpsImportPartEnvelopeKeys\(form\.keys\(\),partCount\)/);
   assert.match(gps,/resolveGpsImportPartRoleCrew\(\{mode:form\.get\(\`\$\{prefix\}mode\`\)/);
   assert.match(gps,/rolePresent:form\.has\(\`\$\{prefix\}role\`\)/);
-  assert.match(gps,/partRoleCrew\.push\(resolved\.context\)/);
+  assert.match(gps,/partRoleCrew\.push\(\{\.\.\.resolved\.context,commander:picResolution\.commander,connectedPicUserId:picResolution\.connectedUserId\}\)/);
   assert.match(gps,/values=reviewed\[index\],roleCrew=partRoleCrew\[index\]/);
   assert.match(gps,/role:roleCrew\.role,commander:roleCrew\.commander,instructor:roleCrew\.instructor,verificationName:roleCrew\.verificationName,verificationReference:roleCrew\.verificationReference/);
   assert.doesNotMatch(gps,/role:commonRoleCrew\.role,commander:commonRoleCrew\.commander,instructor:commonRoleCrew\.instructor/);
@@ -109,7 +111,7 @@ test("F4.2 server resolves common plus each strict part envelope before candidat
 test("F4.2 UI submits INHERIT or a complete supported override and clears overrides on split changes",()=>{
   const form=read("components/kml-import-form.tsx");
 
-  assert.match(form,/type PartRoleCrewOverride=\{mode:"INHERIT"\}\|\{mode:"OVERRIDE";role:/);
+  assert.match(form,/type PartRoleCrewOverride=\{mode:"INHERIT"\}\|\(\{mode:"OVERRIDE"\}\&RoleCrewBuffer\)/);
   assert.match(form,/roleCrewOverrides\.some\(item=>item\.mode==="OVERRIDE"\)/);
   assert.match(form,/Role\/Crew overrides were reset because the flight split changed/);
   assert.match(form,/setRoleCrewOverrides\(splitPoints\(source\.points,clean\)\.map\(\(\)=>\(\{mode:"INHERIT"\}\)\)\)/);
