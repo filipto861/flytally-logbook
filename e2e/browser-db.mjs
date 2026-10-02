@@ -108,6 +108,48 @@ export function resetGpsNormalizedImportFixture(){
   `);
 }
 
+export function resetF35SnapshotFixture(){
+  runBrowserSql(`
+    DELETE FROM flights WHERE id IN (9920,9921) AND user_id=9001;
+    DELETE FROM aircraft WHERE user_id=9001 AND registration IN ('OK-F35S','OK-F35L');
+    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active)
+    VALUES
+      (9001,'OK-F35S','BROKEN','','','OTHER','OTHER','EASA','PIC','',0,0),
+      (9001,'OK-F35L','BROKEN','','','OTHER','OTHER','EASA','PIC','',0,1);
+    INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,departure,arrival,off_block,on_block,role,starts,commander)
+    VALUES
+      (9920,9001,'2026-09-26','EASA','OK-F35S','B23','SEP','AEROPLANE','LKLT','LKPR','08:00','09:00','PIC',1,'Browser Smoke Pilot'),
+      (9921,9001,'2026-09-27','EASA','OK-F35L','B23','SEP','','LKPR','LKLT','10:00','11:00','PIC',1,'Browser Smoke Pilot');
+  `);
+}
+
+export function resetF35QuickAddFixture(){
+  runBrowserSql(`
+    DELETE FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND certified_at IS NULL;
+    DELETE FROM rates WHERE user_id=9001 AND registration='OK-F35Q';
+    DELETE FROM aircraft WHERE user_id=9001 AND registration='OK-F35Q';
+  `);
+}
+
+export function resetF35AuthorityFixtures(){
+  runBrowserSql(`
+    DELETE FROM flights WHERE user_id=9001 AND registration IN ('OK-TMG1','OK-F35O','OK-F35B') AND date='2026-10-02' AND certified_at IS NULL;
+    DELETE FROM aircraft WHERE user_id=9001 AND registration IN ('OK-F35O','OK-F35B');
+    INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active,balloon_class,balloon_group)
+    VALUES
+      (9001,'OK-F35O','OTHER','TEST','Other Aircraft','OTHER','OTHER','EASA','PIC','',0,1,'',''),
+      (9001,'OK-F35B','BALLOON','TEST','Hot Air Balloon','BALLOON','BALLOON','EASA','PIC','',0,1,'HOT_AIR_BALLOON','A');
+  `);
+}
+
+export function mutateF35ProfileAfterRender(){
+  runBrowserSql(`
+    UPDATE aircraft
+    SET aircraft_type='MEP PROFILE',aircraft_class='MEP',regulatory_category='AEROPLANE',updated_at=NOW()
+    WHERE user_id=9001 AND registration='OK-E2E';
+  `);
+}
+
 export function resetF24VerificationFixture(){
   runBrowserSql(`
     ALTER TABLE flight_participations ADD COLUMN IF NOT EXISTS approval_id BIGINT;
