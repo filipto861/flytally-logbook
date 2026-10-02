@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
+- Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
+- Confirmed GPS remains intentionally PIC-only at both UI and server role gate, per-part Review state currently contains no Role/Crew context, and every reviewed part already passes through the shared `gpsFlightCandidate() → normalizeFlightDraft()` semantic boundary.
+- Confirmed existing atomic import prepares and normalizes every part before one duplicate-safe transaction; F4 should extend this boundary rather than replace it.
+- Confirmed Safety Pilot cannot be enabled by UI expansion alone: GPS must preserve Manual/accepted-Connection Actual-PIC authority, account-ID Connection recheck, display-name snapshot and one atomic connected-crew child row per resulting source flight.
+- Drafted one common complete Role/Crew context plus all-or-nothing whole-part overrides; field-level inheritance, per-part aircraft identity and inferred crew remain prohibited.
+- Proposed fail-closed split behavior clears part Role/Crew overrides when split structure changes instead of guessing which new segment owns old crew evidence.
+- Added F4 design and independent-review handoff. Runtime/schema/certification: unchanged; implementation is blocked on review reconciliation.
+
+
 ### Flight Entry Workflow 3.0 — F3.5 closeout and F3 production integration
 - Reconciled the F3.5 closeout plan against an independent second-AI review. Verdict: **APPROVE WITH CHANGES**; no confirmed correctness defect, but action/persistence proof is required for crafted authority drift and historical SNAPSHOT boundaries.
 - Froze the minimum closeout scope: no runtime change unless a test proves a bypass or stale-profile consumer; no generic historical-context override; no DB migration; GPS remains PIC-only.
