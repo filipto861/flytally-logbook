@@ -89,9 +89,7 @@ test("F0.1 GPS UI role surface stays bound to the explicit F4 allowlist",()=>{
   assert.match(gpsForm,/GPS_IMPORT_ROLES\.map\(value=><option/);
   assert.match(gpsForm,/name="role" value=\{role\}/);
   for(const unsupported of ["INSTRUKTOR","SAFETY PILOT","CO-PILOT","PAX","OBSERVER","SPIC","PICUS"]){
-    assert.doesNotMatch(gpsForm,new RegExp(`<option(?: value="[^"]+")?>${unsupported.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}</option>`));
-  }
-});")}</option>`));
+    assert.ok(!gpsForm.includes(`>${unsupported}</option>`),unsupported);
   }
 });
 
