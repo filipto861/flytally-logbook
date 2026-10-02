@@ -4,7 +4,7 @@ import {
   type AircraftBalloonGroup,
   type CanonicalAircraftProfileRegulatoryFields,
 } from "./aircraft-profile-validation.ts";
-import type { AircraftProfileClass,AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
+import { aircraftProfileRegulatoryCategory,type AircraftProfileClass,type AircraftRegulatoryCategory } from "./aircraft-profile-context.ts";
 
 export type FlightAircraftAuthorityProfileInput={
   aircraft_type?:unknown;
@@ -165,14 +165,15 @@ export function classifySnapshotAircraftContextChange(
 export function snapshotComparisonSubmission(input:{
   stored:FlightAircraftContextSnapshotInput;
   submitted:FlightAircraftContextSnapshotInput;
-  parsedRegulatoryCategory?:unknown;
 }):FlightAircraftContextSnapshot{
   const stored=normalizeFlightAircraftContextSnapshot(input.stored);
   const submitted=normalizeFlightAircraftContextSnapshot(input.submitted);
+  const legacyDefaultCategory=!stored.regulatoryCategory
+    ?aircraftProfileRegulatoryCategory(stored.evidence,stored.aircraftClass,"")
+    :"";
   if(
     !stored.regulatoryCategory
-    &&submitted.regulatoryCategory
-    &&submitted.regulatoryCategory===upper(input.parsedRegulatoryCategory)
+    &&submitted.regulatoryCategory===legacyDefaultCategory
     &&sameFlightAircraftContextSnapshot(
       stored,
       {...submitted,regulatoryCategory:""},
