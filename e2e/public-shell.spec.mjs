@@ -293,7 +293,7 @@ test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches
 
   const form=page.locator("#new-flight-manual-form");
   await form.locator('select[name="registration"]').selectOption("OK-SP2E");
-  await expect(form.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(form.locator('input[name="evidence"]')).toHaveValue("EASA");
 
   const role=form.locator('select[name="role"]');
   await role.selectOption("DUAL");
@@ -348,7 +348,7 @@ test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in ligh
 
   const form=page.locator("#new-flight-manual-form");
   await form.locator('select[name="registration"]').selectOption("OK-SP2E");
-  await expect(form.locator('select[name="evidence"]')).toHaveValue("EASA");
+  await expect(form.locator('input[name="evidence"]')).toHaveValue("EASA");
   const role=form.locator('select[name="role"]');
 
   const assertRoleState=async(value)=>{
