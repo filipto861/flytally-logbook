@@ -4,7 +4,7 @@ import { aircraftCategoryCapabilities } from "./aircraft-category.ts";
 import { defaultEngineType,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 import { roleCrewSaveError,roleCrewSpec } from "./role-crew.ts";
 
-export const GPS_IMPORT_ROLES=["PIC","DUAL"] as const;
+export const GPS_IMPORT_ROLES=["PIC","DUAL","SAFETY PILOT"] as const;
 export type GpsImportRole=(typeof GPS_IMPORT_ROLES)[number];
 
 const upper=(value:unknown)=>String(value??"").trim().toUpperCase();
@@ -22,7 +22,7 @@ export function validateGpsImportRole(value:unknown):
   |{role?:undefined;error:string}{
   const role=upper(value);
   if(!GPS_IMPORT_ROLES.includes(role as GpsImportRole)){
-    return{error:"GPS import currently supports PIC and DUAL. Other roles remain unavailable until their Role/Crew authority is implemented."};
+    return{error:"GPS import currently supports PIC, DUAL and SAFETY PILOT. Other roles remain unavailable until their Role/Crew authority is implemented."};
   }
   return{role:role as GpsImportRole};
 }
@@ -33,6 +33,8 @@ export type GpsImportCommonRoleCrew={
   instructor:string;
   verificationName:string;
   verificationReference:string;
+  actualPicMode:""|"manual"|"connected";
+  connectedPicUserId:number;
 };
 
 export const GPS_IMPORT_ROLE_CREW_MODES=["INHERIT","OVERRIDE"] as const;
@@ -45,31 +47,48 @@ export type GpsImportPartRoleCrewEnvelope={
   instructor?:unknown;
   verificationName?:unknown;
   verificationReference?:unknown;
+  actualPicMode?:unknown;
+  connectedPicUserId?:unknown;
   rolePresent?:boolean;
   commanderPresent?:boolean;
   instructorPresent?:boolean;
   verificationNamePresent?:boolean;
   verificationReferencePresent?:boolean;
+  actualPicModePresent?:boolean;
+  connectedPicUserIdPresent?:boolean;
 };
 
 const clean=(value:unknown,max:number)=>String(value??"").trim().slice(0,max);
 
 export function resolveGpsImportCommonRoleCrew(
-  submitted:{role:unknown;commander?:unknown;instructor?:unknown;verificationName?:unknown;verificationReference?:unknown},
+  submitted:{role:unknown;commander?:unknown;instructor?:unknown;verificationName?:unknown;verificationReference?:unknown;actualPicMode?:unknown;connectedPicUserId?:unknown},
   evidence:unknown,
 ):
   |{context:GpsImportCommonRoleCrew;error?:undefined}
   |{context?:undefined;error:string}{
   const roleResult=validateGpsImportRole(submitted.role);if(!roleResult.role)return{error:roleResult.error};
-  const role=roleResult.role,commander=clean(submitted.commander,100),instructor=clean(submitted.instructor,100),verificationName=clean(submitted.verificationName,160),verificationReference=clean(submitted.verificationReference,160);
+  const role=roleResult.role,commander=clean(submitted.commander,100),instructor=clean(submitted.instructor,100),verificationName=clean(submitted.verificationName,160),verificationReference=clean(submitted.verificationReference,160),actualPicMode=String(submitted.actualPicMode??"").trim().toLowerCase(),connectedRaw=String(submitted.connectedPicUserId??"").trim(),connectedPicUserId=connectedRaw?Number(connectedRaw):0;
   if(role==="PIC"){
-    if(commander||instructor||verificationName||verificationReference)return{error:"PIC GPS import does not accept additional Role/Crew evidence in the common context."};
-    return{context:{role,commander:"",instructor:"",verificationName:"",verificationReference:""}};
+    if(commander||instructor||verificationName||verificationReference||actualPicMode||connectedRaw)return{error:"PIC GPS import does not accept additional Role/Crew evidence in the common context."};
+    return{context:{role,commander:"",instructor:"",verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0}};
   }
-  if(commander||verificationName||verificationReference)return{error:"DUAL GPS import accepts only the Instructor / PIC field in the common Role/Crew context."};
-  const spec=roleCrewSpec(role,String(evidence??""));if(!spec)return{error:"Select a valid GPS pilot role."};
-  const crewError=roleCrewSaveError(spec,{instructor,verificationName:"",verificationReference:""});if(crewError)return{error:crewError};
-  return{context:{role,commander:"",instructor,verificationName:"",verificationReference:""}};
+  if(role==="DUAL"){
+    if(commander||verificationName||verificationReference||actualPicMode||connectedRaw)return{error:"DUAL GPS import accepts only the Instructor / PIC field in the common Role/Crew context."};
+    const spec=roleCrewSpec(role,String(evidence??""));if(!spec)return{error:"Select a valid GPS pilot role."};
+    const crewError=roleCrewSaveError(spec,{instructor,verificationName:"",verificationReference:""});if(crewError)return{error:crewError};
+    return{context:{role,commander:"",instructor,verificationName:"",verificationReference:"",actualPicMode:"",connectedPicUserId:0}};
+  }
+
+  if(instructor||verificationName||verificationReference)return{error:"SAFETY PILOT GPS import accepts only Actual PIC identity fields."};
+  if(!["manual","connected"].includes(actualPicMode))return{error:"Select Manual or accepted Connection for the Safety Pilot Actual PIC."};
+  if(actualPicMode==="manual"){
+    if(connectedRaw)return{error:"Manual Safety Pilot Actual PIC must not include a connected account ID."};
+    if(String(evidence??"").trim().toUpperCase()==="EASA"&&!commander)return{error:"Enter the actual PIC or select an accepted Connection."};
+    return{context:{role,commander,instructor:"",verificationName:"",verificationReference:"",actualPicMode:"manual",connectedPicUserId:0}};
+  }
+  if(commander)return{error:"Connected Safety Pilot Actual PIC must be resolved from the selected account, not submitted as commander text."};
+  if(!connectedRaw||!Number.isSafeInteger(connectedPicUserId)||connectedPicUserId<=0)return{error:"Select a valid connected Actual PIC."};
+  return{context:{role,commander:"",instructor:"",verificationName:"",verificationReference:"",actualPicMode:"connected",connectedPicUserId}};
 }
 
 export function resolveGpsImportPartRoleCrew(
@@ -89,6 +108,8 @@ export function resolveGpsImportPartRoleCrew(
     submitted.instructorPresent,
     submitted.verificationNamePresent,
     submitted.verificationReferencePresent,
+    submitted.actualPicModePresent,
+    submitted.connectedPicUserIdPresent,
   ];
   if(mode==="INHERIT"){
     if(presentFields.some(Boolean))return{error:"Inherited Role/Crew must not submit per-flight override fields."};
@@ -98,13 +119,22 @@ export function resolveGpsImportPartRoleCrew(
   if(!submitted.rolePresent)return{error:"A Role/Crew override must include its own Role."};
   const roleResult=validateGpsImportRole(submitted.role);if(!roleResult.role)return{error:roleResult.error};
   const role=roleResult.role;
-  if(submitted.commanderPresent||submitted.verificationNamePresent||submitted.verificationReferencePresent){
-    return{error:`${role} GPS Role/Crew override contains fields that are not applicable to this supported role.`};
-  }
   if(role==="PIC"){
-    if(submitted.instructorPresent)return{error:"PIC GPS Role/Crew override must contain only its own Role."};
-  }else if(!submitted.instructorPresent){
-    return{error:"DUAL GPS Role/Crew override must include its own Instructor / PIC field."};
+    if(submitted.commanderPresent||submitted.instructorPresent||submitted.verificationNamePresent||submitted.verificationReferencePresent||submitted.actualPicModePresent||submitted.connectedPicUserIdPresent)return{error:"PIC GPS Role/Crew override must contain only its own Role."};
+  }else if(role==="DUAL"){
+    if(submitted.commanderPresent||submitted.verificationNamePresent||submitted.verificationReferencePresent||submitted.actualPicModePresent||submitted.connectedPicUserIdPresent)return{error:"DUAL GPS Role/Crew override contains fields that are not applicable to DUAL."};
+    if(!submitted.instructorPresent)return{error:"DUAL GPS Role/Crew override must include its own Instructor / PIC field."};
+  }else{
+    if(submitted.instructorPresent||submitted.verificationNamePresent||submitted.verificationReferencePresent)return{error:"SAFETY PILOT GPS Role/Crew override contains fields that are not applicable to Safety Pilot."};
+    if(!submitted.actualPicModePresent)return{error:"SAFETY PILOT GPS Role/Crew override must include its own Actual PIC mode."};
+    const safetyMode=String(submitted.actualPicMode??"").trim().toLowerCase();
+    if(safetyMode==="manual"){
+      if(!submitted.commanderPresent)return{error:"Manual SAFETY PILOT override must include its own Actual PIC text field."};
+      if(submitted.connectedPicUserIdPresent)return{error:"Manual SAFETY PILOT override must not include a connected account ID."};
+    }else if(safetyMode==="connected"){
+      if(submitted.commanderPresent)return{error:"Connected SAFETY PILOT override must not submit commander text."};
+      if(!submitted.connectedPicUserIdPresent)return{error:"Connected SAFETY PILOT override must include its own connected Actual PIC account ID."};
+    }
   }
 
   const resolved=resolveGpsImportCommonRoleCrew({
@@ -113,6 +143,8 @@ export function resolveGpsImportPartRoleCrew(
     instructor:submitted.instructor,
     verificationName:submitted.verificationName,
     verificationReference:submitted.verificationReference,
+    actualPicMode:submitted.actualPicMode,
+    connectedPicUserId:submitted.connectedPicUserId,
   },evidence);
   if(!resolved.context)return{error:resolved.error};
   return{mode:"OVERRIDE",context:resolved.context};
@@ -125,6 +157,8 @@ const PART_ROLE_CREW_SUFFIXES=new Set([
   "instructor",
   "verificationName",
   "verificationReference",
+  "actualPicMode",
+  "connectedPicUserId",
 ]);
 const PART_COMMON_ONLY_SUFFIXES=new Set([
   "registration",
