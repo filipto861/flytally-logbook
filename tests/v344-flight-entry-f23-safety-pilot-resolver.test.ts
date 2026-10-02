@@ -7,9 +7,11 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const between=(source:string,start:string,end:string)=>{const a=source.indexOf(start),b=source.indexOf(end,a+start.length);assert.ok(a>=0&&b>a,`Missing range: ${start}`);return source.slice(a,b)};
 
-test("F2.3 owns Safety Pilot Manual/Connection resolution in one server helper",()=>{
+test("F2.3 owns Safety Pilot Manual/Connection resolution in one reusable server helper",()=>{
   const helper=read("lib/flight-connected-crew.ts");
+  assert.match(helper,/export async function resolveSafetyPilotPic\(/);
   assert.match(helper,/export async function resolveSafetyPilotPicForSave/);
+  assert.match(helper,/return resolveSafetyPilotPic\(\{/);
   assert.match(helper,/if\(role!=="SAFETY PILOT"\)return\{ok:true,mode:"not_applicable",commander,connectedUserId:0\}/);
   assert.match(helper,/if\(mode==="manual"\)\{/);
   assert.match(helper,/if\(evidence==="EASA"&&!commander\.trim\(\)\)/);
@@ -74,11 +76,12 @@ test("F2.3 reuses the same resolver for post-write race classification",()=>{
   }
 });
 
-test("F2.3 keeps collaboration, certification and GPS scope outside the resolver",()=>{
+test("F2.3 keeps collaboration and certification outside the resolver while F4.3 reuses it for GPS",()=>{
   const helper=read("lib/flight-connected-crew.ts");
   const actions=read("app/(protected)/flights/actions.ts");
   const gps=between(actions,"export async function importKmlFlight","export async function updateFlight");
   assert.doesNotMatch(helper,/flight_participations|certification_hash|certification_version|gpsFlightCandidate|normalizeFlightDraft/);
-  assert.doesNotMatch(gps,/resolveSafetyPilotPicForSave|flight_connected_crew/);
+  assert.match(gps,/resolveSafetyPilotPic\(/);
+  assert.match(gps,/flight_connected_crew/);
   assert.match(gps,/resolveGpsImportCommonRoleCrew/);
 });
