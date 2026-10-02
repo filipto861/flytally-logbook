@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — ACTIVE · F3.0 VERIFIED / F3.1 CENSUS NEXT
+### Flight Entry Workflow 3.0 — ACTIVE · F3.1 CENSUS DONE / F3.2 RESOLVER NEXT
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
@@ -199,7 +199,8 @@ Current priority:
 - **F3.0 aircraft-context discovery is complete and independently reviewed**: Manual New/Edit currently trusts submitted flight context after client profile defaults, while GPS re-resolves and validates the active aircraft profile server-side. Historical same-registration Edit already preserves stored snapshots. PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`; Verify #1096 PASS (1084/1084 unit/regression, PostgreSQL 66/66). Browser/deploy N/A because F3.0 changed only docs + characterization.
 - **F3 review reconciliation is frozen before runtime work**: broad full-regulatory override is superseded by A+. Evidence and aircraft class are profile-owned; only genuine profile-supported TMG/OTHER multi-context choices remain explicit, plus deliberate same-registration historical correction. The server derives PROFILE/SNAPSHOT authority and computes `allowedFlightContexts(profile)`; there is no generic client-sent override authority flag. PROFILE drift rejects rather than rewrites. Unchanged SNAPSHOT context is preserved without revalidating historical values against today's validator. Aircraft identity/type and Balloon class/group remain profile/snapshot-owned; FREE/TETHERED remains flight-specific.
 - **Manual/GPS authority convergence is narrow and source-safe**: Manual New/registration change require an owned + canonically valid profile; inactive owned profiles may still support explicit historical back-fill. GPS keeps its existing active-owned-profile selection requirement but will use the same resolver and the same common TMG/OTHER choice where multiple allowed contexts exist. GPS Role remains PIC-only until F4.
-- **F3.1 is now a read-only production census gate**: quantify validator-invalid profiles and stored-flight/profile-context divergence before server enforcement. The census may not repair, normalize, backfill or invent production evidence.
+- **F3.1 production census is complete**: 25 profiles are present, all active and 0 invalid under current validator-equivalent checks; all 289 flights have a current matching profile. The 73 apparent category divergences are certified legacy rows with blank stored `regulatory_category`; there are 0 explicit nonblank category mismatches. Exactly one certified historical flight has ULL/ULL stored context against a profile now EASA/SEP, with the profile update timestamp later than the flight date. Seven flights retain historical identity differences from the mutable current profile. No current TMG/OTHER/Balloon production population or populated Part-FCL credit provenance exists. The census was read-only and does not reopen A+.
+- **F3.2 is next**: implement the pure shared `allowedFlightContexts(profile)` / PROFILE-SNAPSHOT resolver and unit matrix without wiring it into production mutations.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`.
 

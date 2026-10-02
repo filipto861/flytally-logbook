@@ -1,7 +1,7 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.0 DONE / VERIFIED · INDEPENDENT REVIEW RECONCILED · F3.1 CENSUS NEXT  
-**Repository baseline:** main@02de2d2288be9bb52dc905f23418d48dc095cb06  
+**Status:** F3.1 PRODUCTION CENSUS COMPLETE · A+ CONFIRMED · F3.2 RESOLVER NEXT  
+**Repository baseline for F3.1:** main@82123d11480aebd0973c540a1e530f1582211f20  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
 ## 1. Goal
@@ -256,16 +256,19 @@ Superseded draft decisions remain documented above for traceability but do not c
 - independent review completed and reconciled;
 - no runtime/schema change.
 
-### F3.1 — read-only production census + final enforcement gate — NEXT
-Before any runtime enforcement:
-- count aircraft profiles that fail the current canonical validator, split active/inactive and relevant category/evidence dimensions;
-- count stored flights whose persisted aircraft context differs from the context(s) currently allowed by their matching profile;
-- distinguish draft/certified divergence where safely queryable;
-- quantify TMG/OTHER/Balloon and legacy populations relevant to A+;
-- document a repair path for invalid profiles if the population is non-zero;
-- do not mutate, repair, normalize or backfill production data.
+### F3.1 — read-only production census + final enforcement gate — DONE
+Evidence: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F31_PRODUCTION_CENSUS.md`.
 
-F3.1 closes by recording the census evidence and confirming whether any evidence requires reopening A+ before code.
+Production census found:
+- 25 aircraft profiles, all active, **0 invalid** under current validator-equivalent checks;
+- 289 flights, all with a current matching owned profile by normalized registration;
+- 73 apparent category divergences are all certified legacy rows with blank stored `regulatory_category`;
+- exactly one evidence/class divergence exists: a certified historical ULL snapshot against a profile now EASA/SEP; the profile update timestamp is later than the flight date;
+- 0 explicit nonblank category mismatches;
+- 7 historical identity differences against mutable current profiles, reinforcing SNAPSHOT ownership;
+- no current TMG/OTHER/Balloon flight/profile population and no populated Part-FCL credit provenance.
+
+No production evidence requires reopening A+. No migration or bulk repair is required. The census was read-only and changed no runtime/schema/certification data.
 
 ### F3.2 — pure shared authority resolver
 - implement pure `allowedFlightContexts(profile)`;
@@ -314,6 +317,19 @@ Cover at minimum:
 - Browser smoke: N/A for F3.0 because only documentation and characterization tests changed.
 - DB/schema/deploy: N/A.
 - Runtime semantics remain unchanged; F3.1 is review-gated.
+
+## 9.2 F3.1 production-census evidence
+
+- Database inspection was read-only; no production row was mutated.
+- Profile population: 25 total / 25 active / 0 invalid.
+- Flight population: 289 total / 289 current-profile matches.
+- Legacy blank stored regulatory category: 73 certified rows / 0 drafts.
+- Explicit nonblank category mismatch: 0.
+- Evidence/class mismatch against current profile: 1 certified historical snapshot; current profile was updated after the flight date.
+- Historical identity differences against current profile: 7 total (4 certified / 3 draft).
+- TMG/OTHER/Balloon profile/flight population: 0; populated Part-FCL credit provenance: 0 profiles.
+- Runtime/schema/certification/deploy: N/A.
+- A+ remains frozen; F3.2 is next.
 
 ## 10. Acceptance criteria
 
