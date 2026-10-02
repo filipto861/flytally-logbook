@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -513,6 +513,128 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await expectNoHorizontalOverflow(page);
   resetF41CommonRoleCrewFixture();
 });
+
+
+test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.2 whole-part RoleCrew coverage requires the isolated browser database.");
+  resetF42WholePartRoleCrewFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-02T20:00:00Z</when><when>2026-10-02T20:01:00Z</when><when>2026-10-02T20:02:00Z</when><when>2026-10-02T20:03:00Z</when><when>2026-10-02T20:04:00Z</when><when>2026-10-02T20:05:00Z</when>'+
+    '<when>2026-10-02T20:06:00Z</when><when>2026-10-02T20:07:00Z</when><when>2026-10-02T20:08:00Z</when><when>2026-10-02T20:09:00Z</when><when>2026-10-02T20:10:00Z</when><when>2026-10-02T20:11:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.17 50.15 800</gx:coord><gx:coord>14.21 50.18 850</gx:coord><gx:coord>14.25 50.21 500</gx:coord><gx:coord>14.29 50.24 300</gx:coord>'+
+    '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-mixed-rolecrew.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.getByRole("button",{name:"＋ Add split"}).click();
+  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+
+  const completePart=async(index,values)=>{
+    await gpsForm.locator('input[name="part_'+index+'_date"]').fill("2026-10-02");
+    await gpsForm.locator('input[name="part_'+index+'_offBlock"]').fill(values.offBlock);
+    await gpsForm.locator('input[name="part_'+index+'_takeoff"]').fill(values.takeoff);
+    await gpsForm.locator('input[name="part_'+index+'_landing"]').fill(values.landing);
+    await gpsForm.locator('input[name="part_'+index+'_onBlock"]').fill(values.onBlock);
+    const starts=gpsForm.locator('input[name="part_'+index+'_starts"]');
+    const total=(await starts.inputValue())||"1";
+    await starts.fill(total);
+    await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
+    await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
+    await gpsForm.locator('select[name="part_'+index+'_movementEvidenceRecorded"]').selectOption("no");
+    await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(values.note);
+  };
+  await completePart(0,{offBlock:"20:00",takeoff:"20:01",landing:"20:04",onBlock:"20:05",note:"F4.2 inherited PIC"});
+  await completePart(1,{offBlock:"20:06",takeoff:"20:07",landing:"20:10",onBlock:"20:11",note:"F4.2 overridden DUAL"});
+
+  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
+  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
+  await expect(review0).toBeEnabled();
+  await expect(review1).toBeEnabled();
+  await review0.check();
+  await review1.check();
+
+  const second=gpsForm.locator(".flight-review-card").nth(1);
+  await second.getByRole("button",{name:"Override Role/Crew"}).click();
+  await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
+  await expect(review1).not.toBeChecked();
+  const overrideInstructor=second.locator('input[name="part_1_roleCrew_instructor"]');
+  await expect(overrideInstructor).toHaveAttribute("required","");
+  await overrideInstructor.fill("Browser F42 Instructor");
+  await review1.check();
+  await expect(review0).toBeChecked();
+
+  const commonRole=gpsForm.locator('select[name="role"]');
+  await commonRole.selectOption("DUAL");
+  await expect(review0).not.toBeChecked();
+  await expect(review1).toBeChecked();
+  await commonRole.selectOption("PIC");
+  await expect(review1).toBeChecked();
+
+  await second.getByRole("button",{name:"Reset to common"}).click();
+  await expect(second.locator('select[name="part_1_roleCrew_role"]')).toHaveCount(0);
+  await expect(second.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
+  await expect(review1).not.toBeChecked();
+  await expect(second.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("PIC");
+
+  await second.getByRole("button",{name:"Override Role/Crew"}).click();
+  await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
+  await second.locator('input[name="part_1_roleCrew_instructor"]').fill("Browser F42 Instructor");
+  await review0.check();
+  await review1.check();
+  await expect(gpsForm.locator('input[name="part_0_roleCrew_mode"]')).toHaveValue("INHERIT");
+  await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("OVERRIDE");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT string_agg(off_block||'|'||role||'|'||COALESCE(instructor,''), E'\\n' ORDER BY off_block) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02' AND off_block IN ('20:00','20:06')")).toBe("20:00|PIC|\n20:06|DUAL|Browser F42 Instructor");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02' AND off_block IN ('20:00','20:06'))")).toBe("2");
+  await expectNoHorizontalOverflow(page);
+  resetF42WholePartRoleCrewFixture();
+});
+
+test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.2 split-reset coverage requires the isolated browser database.");
+  resetF42WholePartRoleCrewFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-02T20:00:00Z</when><when>2026-10-02T20:01:00Z</when><when>2026-10-02T20:02:00Z</when><when>2026-10-02T20:03:00Z</when><when>2026-10-02T20:04:00Z</when><when>2026-10-02T20:05:00Z</when>'+
+    '<when>2026-10-02T20:06:00Z</when><when>2026-10-02T20:07:00Z</when><when>2026-10-02T20:08:00Z</when><when>2026-10-02T20:09:00Z</when><when>2026-10-02T20:10:00Z</when><when>2026-10-02T20:11:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.17 50.15 800</gx:coord><gx:coord>14.21 50.18 850</gx:coord><gx:coord>14.25 50.21 500</gx:coord><gx:coord>14.29 50.24 300</gx:coord>'+
+    '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-split-reset.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.getByRole("button",{name:"＋ Add split"}).click();
+  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+
+  const second=gpsForm.locator(".flight-review-card").nth(1);
+  await second.getByRole("button",{name:"Override Role/Crew"}).click();
+  await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
+  await second.locator('input[name="part_1_roleCrew_instructor"]').fill("Temporary F42 Instructor");
+  await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("OVERRIDE");
+
+  const split=gpsForm.locator('.split-row input[type="range"]').first();
+  const before=await split.inputValue();
+  await split.focus();
+  await split.press("ArrowRight");
+  await expect(split).not.toHaveValue(before);
+  await expect(gpsForm.getByRole("status")).toContainText("Role/Crew overrides were reset because the flight split changed");
+  await expect(gpsForm.locator('input[name="part_0_roleCrew_mode"]')).toHaveValue("INHERIT");
+  await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
+  await expect(gpsForm.locator('select[name$="_roleCrew_role"]')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 
 test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F2.2 RoleCrew browser coverage requires the isolated CI database.");
