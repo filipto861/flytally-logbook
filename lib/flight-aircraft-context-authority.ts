@@ -162,6 +162,37 @@ export function classifySnapshotAircraftContextChange(
   return sameFlightAircraftContextSnapshot(stored,submitted)?"UNCHANGED":"CHANGED";
 }
 
+export function validateSnapshotAircraftContextCorrection(input:{
+  storedAircraftType:unknown;
+  aircraftMake:unknown;
+  aircraftModel:unknown;
+  submitted:FlightAircraftContextSnapshotInput;
+}):{context?:FlightAircraftContextSnapshot;error?:string}{
+  const storedAircraftType=text(input.storedAircraftType).slice(0,80);
+  const submitted=normalizeFlightAircraftContextSnapshot(input.submitted);
+  if(submitted.aircraftType!==storedAircraftType){
+    return{error:"Aircraft type is part of the stored aircraft identity and cannot be changed as a flight-context correction."};
+  }
+  const validated=validateAircraftProfile({
+    aircraftMake:input.aircraftMake,
+    aircraftModel:input.aircraftModel,
+    evidence:submitted.evidence,
+    aircraftClass:submitted.aircraftClass,
+    regulatoryCategory:submitted.regulatoryCategory,
+    balloonClass:submitted.balloonClass,
+    balloonGroup:submitted.balloonGroup,
+  });
+  if(!validated.profile)return{error:validated.error||"Enter a valid corrected aircraft context."};
+  return{context:{
+    evidence:validated.profile.evidence,
+    aircraftClass:validated.profile.aircraftClass,
+    regulatoryCategory:validated.profile.regulatoryCategory,
+    balloonClass:validated.profile.balloonClass,
+    balloonGroup:validated.profile.balloonGroup,
+    aircraftType:storedAircraftType,
+  }};
+}
+
 /**
  * Authority is derived only from operation type plus stored registration versus the final
  * submitted registration. Intermediate UI selections never grant PROFILE authority.
