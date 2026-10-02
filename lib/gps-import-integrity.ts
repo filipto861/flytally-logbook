@@ -143,12 +143,15 @@ const PART_COMMON_ONLY_SUFFIXES=new Set([
 ]);
 
 export function validateGpsImportPartEnvelopeKeys(keys:Iterable<string>,partCount:number):{error?:string}{
+  const seenRoleCrew=new Set<string>();
   for(const key of keys){
     const roleCrew=key.match(/^part_(\d+)_roleCrew_(.+)$/);
     if(roleCrew){
       const index=Number(roleCrew[1]),suffix=roleCrew[2];
       if(!Number.isSafeInteger(index)||index<0||index>=partCount)return{error:"Role/Crew override count does not match the reviewed track split."};
       if(!PART_ROLE_CREW_SUFFIXES.has(suffix))return{error:`Flight ${index+1} contains an unknown Role/Crew override field.`};
+      if(seenRoleCrew.has(key))return{error:`Flight ${index+1} contains a duplicate Role/Crew override field.`};
+      seenRoleCrew.add(key);
       continue;
     }
     const commonOnly=key.match(/^part_(\d+)_(registration|aircraftType|aircraftClass|evidence|regulatoryCategory|balloonClass|balloonGroup|balloonOperation|operationType|engineType|billingBasis|billingShare|task)$/);
