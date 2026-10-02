@@ -16,6 +16,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Confirmed same-registration Edit preserves stored context; registration change applies current profile/identity snapshot semantics.
 - Added F3 design, independent-review handoff and v349 characterization coverage for valid ULL/EASA, TMG/OTHER multi-context profiles, Manual/GPS authority divergence and historical snapshot boundaries.
 - Draft authority model is PROFILE / SNAPSHOT / explicit OVERRIDE; override breadth and GPS timing are review-gated.
+- **Verification:** PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`; Verify FlyTally web #1096 PASS — **1084/1084** unit/regression and PostgreSQL **66/66**. Browser/deploy N/A because F3.0 is docs + characterization only.
 - **Runtime/schema/certification:** no change in F3.0.
 
 ### Flight Entry Workflow 3.0 — F2.4 producer-consumer audit / review gate
