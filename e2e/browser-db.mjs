@@ -135,7 +135,7 @@ export function resetF35AuthorityFixtures(){
   runBrowserSql(`
     UPDATE aircraft SET aircraft_type='B23',aircraft_make='BRM Aero',aircraft_model='Bristell B23',aircraft_class='SEP',regulatory_category='AEROPLANE',evidence='EASA',active=1,updated_at=NOW()
     WHERE user_id=9001 AND registration='OK-E2E';
-    DELETE FROM flights WHERE user_id=9001 AND registration IN ('OK-TMG1','OK-F35O','OK-F35B') AND date='2026-10-02' AND certified_at IS NULL;
+    DELETE FROM flights WHERE user_id=9001 AND registration IN ('OK-E2E','OK-TMG1','OK-F35O','OK-F35B') AND date='2026-10-02' AND certified_at IS NULL;
     DELETE FROM aircraft WHERE user_id=9001 AND registration IN ('OK-F35O','OK-F35B');
     INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_class,regulatory_category,evidence,default_role,billing_basis,default_price_per_hour,active,balloon_class,balloon_group)
     VALUES
