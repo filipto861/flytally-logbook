@@ -25,8 +25,68 @@ import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { gpsImportSourceRequirements,resolveGpsImportAircraftContext,resolveGpsImportOperationEngine,validateGpsImportRole,validateGpsImportSubmittedAircraftContext } from "@/lib/gps-import-integrity";
 import { resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
+import {
+  allowedFlightContexts,
+  classifySnapshotAircraftContextChange,
+  resolveFlightAircraftContextAuthority,
+  sameFlightAircraftContextSnapshot,
+  validateSnapshotAircraftContextCorrection,
+  type FlightAircraftContextSnapshot,
+  type FlightAircraftContextSnapshotInput,
+} from "@/lib/flight-aircraft-context-authority";
 
 export type FlightActionState = { error?: string; success?: string };
+
+type AircraftAuthorityProfileRow={
+  aircraft_type:string;
+  aircraft_make:string;
+  aircraft_model:string;
+  evidence:string;
+  aircraft_class:string;
+  regulatory_category:string;
+  balloon_class:string;
+  balloon_group:string;
+  part_fcl_credit_class:string;
+  part_fcl_credit_basis:string;
+  part_fcl_credit_from:string;
+};
+
+const flightContextFromInput=(input:{evidence:string;aircraftClass:string;regulatoryCategory:string;balloonClass:string;balloonGroup:string;aircraftType:string}):FlightAircraftContextSnapshotInput=>({
+  evidence:input.evidence,
+  aircraftClass:input.aircraftClass,
+  regulatoryCategory:input.regulatoryCategory,
+  balloonClass:input.balloonClass,
+  balloonGroup:input.balloonGroup,
+  aircraftType:input.aircraftType,
+});
+
+const flightContextFromForm=(form:FormData):FlightAircraftContextSnapshotInput=>({
+  evidence:form.get("evidence"),
+  aircraftClass:form.get("aircraftClass"),
+  regulatoryCategory:form.get("regulatoryCategory"),
+  balloonClass:form.get("balloonClass"),
+  balloonGroup:form.get("balloonGroup"),
+  aircraftType:form.get("aircraftType"),
+});
+
+async function aircraftAuthorityProfile(userId:number,registration:string,activeOnly=false):Promise<AircraftAuthorityProfileRow|undefined>{
+  const rows=activeOnly
+    ?await sql`SELECT COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_make,'') aircraft_make,COALESCE(aircraft_model,'') aircraft_model,COALESCE(evidence,'') evidence,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration} AND active=1 LIMIT 1` as AircraftAuthorityProfileRow[]
+    :await sql`SELECT COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_make,'') aircraft_make,COALESCE(aircraft_model,'') aircraft_model,COALESCE(evidence,'') evidence,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${registration} LIMIT 1` as AircraftAuthorityProfileRow[];
+  return rows[0];
+}
+
+async function resolveProfileAircraftContext(userId:number,registration:string,submitted:FlightAircraftContextSnapshotInput,activeOnly=false):
+  Promise<{context?:FlightAircraftContextSnapshot;profile?:ReturnType<typeof allowedFlightContexts>["profile"];error?:string}>{
+  const aircraft=await aircraftAuthorityProfile(userId,registration,activeOnly);
+  if(!aircraft)return{error:activeOnly?"Selected aircraft profile is unavailable. Choose an active aircraft before importing this track.":"Selected aircraft profile is unavailable. Choose an aircraft profile before saving this flight."};
+  const resolved=allowedFlightContexts(aircraft);
+  if(!resolved.profile||!resolved.contexts)return{error:resolved.error||"Selected aircraft profile needs configuration before this flight can be saved."};
+  const context=resolved.contexts.find(item=>sameFlightAircraftContextSnapshot(item,submitted));
+  if(!context)return{error:"Aircraft profile changed or the submitted aircraft context is not allowed. Reload the aircraft and review the flight context."};
+  return{context,profile:resolved.profile};
+}
+
 async function resolvedPrice(userId:number,registration:string,date:string){const rows=await sql`SELECT COALESCE(r.price_per_hour,a.default_price_per_hour) AS price_per_hour FROM aircraft a LEFT JOIN LATERAL (SELECT price_per_hour FROM rates WHERE user_id=${userId} AND UPPER(TRIM(registration))=UPPER(TRIM(${registration})) AND (valid_from IS NULL OR valid_from='' OR valid_from<=${date}) ORDER BY valid_from DESC NULLS LAST,id DESC LIMIT 1) r ON TRUE WHERE a.user_id=${userId} AND UPPER(a.registration)=${registration} LIMIT 1` as Array<{price_per_hour:number|null}>;return rows[0]?.price_per_hour??null}
 export type AirportCandidate={ident:string;name:string;distanceKm:number;confidence:"high"|"medium"|"low"|"manual";source:"custom"|"catalogue"};export type AirportDetection=AirportCandidate|null;export type AirportDetectionRequest={departureCandidates:Array<{lat:number;lon:number}>;arrivalCandidates:Array<{lat:number;lon:number}>};export type AirportDetectionResult={parts:Array<{departure:AirportDetection;arrival:AirportDetection;departureCandidates:AirportCandidate[];arrivalCandidates:AirportCandidate[]}>;airportCount:number};const AUTO_AIRPORT_RADIUS_KM=4,AIRPORT_CANDIDATE_RADIUS_KM=20;
 const airportConfidence=(distanceKm:number):AirportCandidate["confidence"]=>distanceKm<=1.5?"high":distanceKm<=4?"medium":distanceKm<=8?"low":"manual";
