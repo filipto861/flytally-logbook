@@ -29,7 +29,7 @@ test("B5 delays ordinary required-field error styling until a save attempt",()=>
 test("B5 missing-field navigation opens the owning disclosure before focus",()=>{
   const form=read("components/flight-form.tsx");
   assert.match(form,/const focusMissing=\(item:string\)=>/);
-  assert.match(form,/\["logbook","class","balloonClass","balloonGroup"\]\.includes\(item\)\)setLogbookOpen\(true\)/);
+  assert.match(form,/\["profileConfig","aircraftContext","balloonClass","balloonGroup"\]\.includes\(item\)\)setLogbookOpen\(true\)/);
   assert.match(form,/item==="billingConfig"\)setOptionalDetailsOpen\(true\)/);
   assert.doesNotMatch(form,/item==="actualPic"\)setCrewOpen\(true\)/);
   assert.match(form,/roleInstructor:'\[name="instructor"\]'/);
@@ -48,7 +48,7 @@ test("B5 preserves native disclosure semantics and keeps required disclosures di
   assert.match(form,/experienceRequiredOpen=!entryProfile\.selected\|\|entryProfile\.showSailplaneExperience\|\|balloonFlight/);
   assert.match(form,/inlineRoleCrew=Boolean\(dualCrewInline\|\|supervisedCrewInline\|\|safetyCrewInline\)/);
   assert.match(form,/open=\{crewOpen\} onToggle=\{event=>setCrewOpen\(event\.currentTarget\.open\)\}/);
-  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
+  assert.match(form,/if\(profileNeedsConfiguration\)setLogbookOpen\(true\)/);
   assert.match(form,/if\(billing==="INVALID"\)setOptionalDetailsOpen\(true\)/);
 });
 
