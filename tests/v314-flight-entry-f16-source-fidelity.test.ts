@@ -170,7 +170,7 @@ test("F1.6 GPS UI exposes explicit reviewed evidence and does not auto-classify 
 });
 
 test("F1.6 server validates and persists explicit GPS evidence instead of fixed day/zero placeholders",()=>{
-  assert.match(actions,/gpsImportSourceRequirements\(profileResult\.profile\)/);
+  assert.match(actions,/gpsImportSourceRequirements\(gpsProfile\)/);
   assert.match(actions,/needs explicit landing evidence matching the reviewed total/);
   assert.match(actions,/needs an explicit pilot-flying movement decision/);
   assert.match(actions,/requires explicit sailplane launch method and count/);
