@@ -378,6 +378,7 @@ INSERT INTO aircraft(user_id,registration,aircraft_type,aircraft_make,aircraft_m
 VALUES
   (9001,'OK-E2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
   (9001,'OK-SP2E','B23','BRM Aero','Bristell B23','SEP','AEROPLANE','EASA','PIC','BLOCK',0,1),
+  (9001,'OK-TMG1','TMG','SCHEIBE','SF25C','TMG','AEROPLANE','EASA','PIC','BLOCK',0,1),
   (9001,'OK-ULL1','UL','','','ULL','ULL','ULL','PIC','',0,1),
   (9001,'OK-BAD1','B23','','Bristell B23','SEP','AEROPLANE','EASA','PIC','',0,1);
 INSERT INTO user_notifications(user_id,kind,title,body,href,dedupe_key)
