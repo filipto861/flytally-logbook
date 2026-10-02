@@ -79,7 +79,7 @@ test("F0.1 removes GPS ULL fallbacks and exposes unresolved profile state instea
   assert.match(gpsForm,/resolveGpsImportAircraftContext/);
   assert.match(gpsForm,/profileError/);
   assert.match(gpsForm,/Needs configuration/);
-  assert.match(gpsForm,/Boolean\(selectedProfile&&sourceRequirements\).*parts\.length>0/);
+  assert.match(gpsForm,/Boolean\(effectiveProfile&&sourceRequirements\).*parts\.length>0/);
   assert.match(gpsForm,/name="aircraftClass" value=\{selectedProfile\?\.aircraftClass\|\|""\}/);
   assert.match(gpsForm,/name="evidence" value=\{selectedProfile\?\.evidence\|\|""\}/);
 });
@@ -93,13 +93,14 @@ test("F0.1 GPS UI exposes only the supported PIC role",()=>{
 
 test("F0.1 server resolves active aircraft profile and does not trust submitted identity defaults",()=>{
   assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
-  assert.match(importAction,/FROM aircraft WHERE user_id=\$\{userId\} AND UPPER\(TRIM\(registration\)\)=\$\{registration\} AND active=1 LIMIT 1/);
+  assert.match(importAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
+  assert.match(actions,/active=1 LIMIT 1/);
   assert.match(importAction,/resolveGpsImportAircraftContext/);
   assert.match(importAction,/validateGpsImportSubmittedAircraftContext/);
-  assert.match(importAction,/evidence=profileResult\.profile\.evidence/);
-  assert.match(importAction,/aircraftClass=profileResult\.profile\.aircraftClass/);
-  assert.match(importAction,/regulatoryCategory=profileResult\.profile\.regulatoryCategory/);
-  assert.match(importAction,/aircraftType=String\(selectedAircraft\.aircraft_type\|\|""\)/);
+  assert.match(importAction,/evidence=submittedContext\.context\.evidence/);
+  assert.match(importAction,/aircraftClass=submittedContext\.context\.aircraftClass/);
+  assert.match(importAction,/regulatoryCategory=submittedContext\.context\.regulatoryCategory/);
+  assert.match(importAction,/aircraftType=submittedContext\.context\.aircraftType/);
 });
 
 test("F0.1 preserves GPS duplicate locking and atomic transaction behavior",()=>{
