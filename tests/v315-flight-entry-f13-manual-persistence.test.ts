@@ -37,23 +37,24 @@ test("F1.3 Manual actions do not re-read semantic flight fields from FormData af
   assert.deepEqual(createGets,["intent"]);
   assert.deepEqual(updateGets,[]);
   assert.doesNotMatch(actions,/function connectedPicSelection/);
-  assert.match(actions,/resolveSafetyPilotPicForSave\(\{sourceUserId:userId,role:f\.role,evidence:f\.evidence,commander:f\.commander,form\}\)/);
+  assert.match(actions,/resolveSafetyPilotPicForSave\(\{sourceUserId:userId,role:f\.role,evidence:flightContext\.evidence,commander:f\.commander,form\}\)/);
   assert.match(connectedCrew,/form\.get\("actualPicMode"\)/);
   assert.match(connectedCrew,/form\.get\("connectedPicUserId"\)/);
 });
 
 test("F1.3 create and update persist the normalized FlightInput semantic field set",()=>{
   const normalizedFields=[
-    "date","evidence","registration","aircraftType","aircraftClass","regulatoryCategory",
-    "balloonClass","balloonGroup","balloonOperation","launchMethod","launches",
+    "date","registration","balloonOperation","launchMethod","launches",
     "offBlock","takeoff","landing","onBlock","starts","instructor","role","task","purposeCode",
     "billingBasis","note","operationType","engineType","operatorName","flightNumber","operationContext",
     "landingsDay","landingsNight","movementEvidenceRecorded","takeoffsDay","takeoffsNight",
     "approachesDay","approachesNight","nightMinutes","ifrMinutes","picMinutes","copilotMinutes",
     "dualMinutes","instructorMinutes","verificationName","verificationReference",
   ];
+  const authorityFields=["evidence","aircraftType","aircraftClass","regulatoryCategory","balloonClass","balloonGroup"];
   for(const [name,block] of [["create",create],["update",update]] as const){
     for(const field of normalizedFields)assert.ok(block.includes(`f.${field}`),`${name} must persist normalized f.${field}`);
+    for(const field of authorityFields)assert.ok(block.includes(`flightContext.${field}`),`${name} must persist server-authoritative flightContext.${field}`);
     assert.match(block,/canonicalAirportIdent\(f\.departure\)/,name);
     assert.match(block,/canonicalAirportIdent\(f\.arrival\)/,name);
     assert.ok(block.includes("${commander}"),`${name} must persist the server-resolved commander`);
@@ -92,7 +93,7 @@ test("F1.3 preserves create duplicate protection from normalized identity",()=>{
 });
 
 test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
-  assert.match(update,/SELECT registration,date::text date,price_per_hour,locked_at,certified_at FROM flights/);
+  assert.match(update,/SELECT registration,date::text date,price_per_hour,locked_at,certified_at,[\s\S]*FROM flights WHERE id=/);
   assert.match(update,/if\(existing\.locked_at\)return\{error:"This flight is locked\. Unlock it before editing\."\}/);
   assert.match(update,/connectedPicUserId>0&&existing\.certified_at/);
   assert.match(update,/shouldResolveStoredPrice\(existing,f\.registration,f\.date\)/);
