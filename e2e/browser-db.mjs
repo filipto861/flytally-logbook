@@ -122,6 +122,20 @@ export function resetF41CommonRoleCrewFixture(){
   `);
 }
 
+export function resetF42WholePartRoleCrewFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_tracks
+    WHERE user_id=9001 AND flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+        AND off_block IN ('20:00','20:06')
+    );
+    DELETE FROM flights
+    WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+      AND off_block IN ('20:00','20:06') AND certified_at IS NULL;
+  `);
+}
+
 export function resetF35SnapshotFixture(){
   runBrowserSql(`
     DELETE FROM flights WHERE id IN (9920,9921) AND user_id=9001;
