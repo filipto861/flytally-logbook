@@ -159,7 +159,7 @@ test("F3.3 GPS uses active PROFILE authority and exposes one common multi-contex
 
   assert.match(gpsAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
   assert.match(gpsAction,/authorizeProfileFlightContext\(selectedAircraft,flightAircraftContextFromForm\(form\)\)/);
-  assert.match(gpsAction,/profileForFlight=\{\.\.\.authority\.profile,regulatoryCategory:authority\.context\.regulatoryCategory\}/);
+  assert.match(gpsAction,/authorityProfile=authority\.profile,authorityContext=authority\.context,profileForFlight=\{\.\.\.authorityProfile,regulatoryCategory:authorityContext\.regulatoryCategory\}/);
   assert.match(form,/allowedContexts\.length>1/);
   assert.match(form,/name="regulatoryCategory"/);
   assert.match(form,/This choice applies to every flight in this import session/);
