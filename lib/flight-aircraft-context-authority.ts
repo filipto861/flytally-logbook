@@ -162,6 +162,52 @@ export function classifySnapshotAircraftContextChange(
   return sameFlightAircraftContextSnapshot(stored,submitted)?"UNCHANGED":"CHANGED";
 }
 
+export type AuthorizedProfileFlightContext=
+  |{
+    profile:CanonicalAircraftProfileRegulatoryFields;
+    context:CanonicalFlightAircraftContext;
+    contexts:CanonicalFlightAircraftContext[];
+    error?:undefined;
+  }
+  |{profile?:undefined;context?:undefined;contexts?:undefined;error:string};
+
+/**
+ * Applies PROFILE authority to one submitted flight context.
+ *
+ * The caller owns aircraft lookup/ownership/selectability. This pure boundary only accepts
+ * a context that the complete canonical profile can legitimately produce.
+ */
+export function authorizeProfileFlightContext(
+  profileInput:FlightAircraftAuthorityProfileInput,
+  submitted:FlightAircraftContextSnapshotInput,
+):AuthorizedProfileFlightContext{
+  const allowed=allowedFlightContexts(profileInput);
+  if(!allowed.profile||!allowed.contexts)return{error:allowed.error||"Aircraft profile needs configuration."};
+  const context=allowed.contexts.find(item=>sameFlightAircraftContextSnapshot(item,submitted));
+  if(!context)return{error:"Aircraft profile changed or this flight context is no longer available. Reload the form and try again."};
+  return{profile:allowed.profile,context,contexts:allowed.contexts};
+}
+
+export type AuthorizedUnchangedSnapshotFlightContext=
+  |{context:FlightAircraftContextSnapshot;error?:undefined}
+  |{context?:undefined;error:string};
+
+/**
+ * F3.3 SNAPSHOT gate.
+ *
+ * Unchanged historical context passes through without today's profile validator. A changed
+ * context is deliberately not interpreted as authority; the explicit correction workflow owns it.
+ */
+export function authorizeUnchangedSnapshotFlightContext(
+  stored:FlightAircraftContextSnapshotInput,
+  submitted:FlightAircraftContextSnapshotInput,
+):AuthorizedUnchangedSnapshotFlightContext{
+  if(classifySnapshotAircraftContextChange(stored,submitted)==="CHANGED"){
+    return{error:"This edit changes the stored aircraft context. Restore the stored context before saving."};
+  }
+  return{context:normalizeFlightAircraftContextSnapshot(stored)};
+}
+
 /**
  * Authority is derived only from operation type plus stored registration versus the final
  * submitted registration. Intermediate UI selections never grant PROFILE authority.
