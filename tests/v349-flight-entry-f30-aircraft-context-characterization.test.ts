@@ -69,13 +69,15 @@ test("F3.0 Manual parser currently accepts a canonical flight context without co
   assert.equal(parsed.data?.regulatoryCategory,"AEROPLANE");
 });
 
-test("F3.0 Manual UI still presents aircraft-profile schema as ordinary editable flight fields",()=>{
+test("F3.0 editable aircraft-schema characterization is superseded by F3.4 compact authority UX",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/<summary><span>Aircraft & logbook<\/span>/);
-  assert.match(form,/select name="evidence" value=\{evidence\}/);
-  assert.match(form,/select name="aircraftClass" value=\{aircraftClass\}/);
-  assert.match(form,/aircraftClass==="TMG"&&evidence==="EASA"\?<label>Regulatory context/);
-  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration"/);
+  assert.match(form,/<summary><span>Aircraft context<\/span>/);
+  assert.doesNotMatch(form,/<select name="evidence"/);
+  assert.doesNotMatch(form,/<select name="aircraftClass"/);
+  assert.match(form,/type="hidden" name="evidence" value=\{submittedEvidence\}/);
+  assert.match(form,/type="hidden" name="aircraftClass" value=\{submittedAircraftClass\}/);
+  assert.match(form,/profileContexts\.length>1&&!snapshotAuthority/);
+  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
 });
 
 test("F3.0 client characterization is superseded by F3.3 server PROFILE/SNAPSHOT authority",()=>{
@@ -88,7 +90,7 @@ test("F3.0 client characterization is superseded by F3.3 server PROFILE/SNAPSHOT
   const updateEnd=actions.indexOf("\nexport async function",updateStart+40);
   const update=actions.slice(updateStart,updateEnd>updateStart?updateEnd:actions.length);
 
-  assert.match(form,/profileNeedsConfiguration=Boolean\(selected&&profileDefaultsApply&&!selectedProfile\?\.profile\)/);
+  assert.match(form,/profileNeedsConfiguration=Boolean\(selected&&profileDefaultsApply&&\(!profileAuthority\?\.profile\|\|!profileContexts\.length\)\)/);
   assert.match(create,/aircraftAuthorityProfile\(userId,f\.registration,false\)/);
   assert.match(create,/authorizeProfileFlightContext/);
   assert.match(update,/resolveFlightAircraftContextAuthority/);

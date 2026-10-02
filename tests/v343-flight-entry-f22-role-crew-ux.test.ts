@@ -38,7 +38,7 @@ test("F2.2 places role-defining identity immediately after Role inside Flight es
 test("F2.2 keeps generic crew fields available but outside required inline identity",()=>{
   const form=read("components/flight-form.tsx");
   const start=form.indexOf('entry-section entry-section-role-context');
-  const end=form.indexOf('Aircraft & logbook',start);
+  const end=form.indexOf('Aircraft context',start);
   const additional=form.slice(start,end);
   assert.match(additional,/Additional crew details/);
   assert.match(form,/\{role&&role!=="DUAL"\?<details className="entry-section entry-section-role-context"/);

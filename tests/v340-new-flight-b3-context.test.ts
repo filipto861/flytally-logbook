@@ -6,22 +6,22 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("B3 aircraft and logbook summary exposes real profile values and origin",()=>{
+test("F3.4 supersedes B3 aircraft/logbook editors with an authority summary",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":\[/);
-  assert.match(form,/evidence\|\|"Select logbook"/);
-  assert.match(form,/regulatoryCategory&&regulatoryCategory!==evidence\?regulatoryCategory:""/);
-  assert.match(form,/aircraftClass&&aircraftClass!==regulatoryCategory\?aircraftClass:""/);
-  assert.match(form,/entryProfile\.showOperationEngineControls\?\`\$\{operationType\} · \$\{engineType\}\`:""/);
-  assert.match(form,/selected&&!editing\?\`from \$\{registration\}\`:""/);
+  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
+  assert.match(form,/snapshotAuthority\?"Stored flight context":"Profile context"/);
+  assert.match(form,/Supplied by the selected aircraft profile and enforced again by the server when you save\./);
   assert.match(form,/className=\{profileNeedsConfiguration\?"field-message-error":"profile-summary"\}/);
+  assert.doesNotMatch(form,/<select name="evidence"/);
+  assert.doesNotMatch(form,/<select name="aircraftClass"/);
 });
 
-test("B3 unresolved aircraft profile keeps Aircraft and logbook expanded",()=>{
+test("F3.4 unresolved aircraft profile opens Aircraft context and preserves the draft route",()=>{
   const form=read("components/flight-form.tsx");
-  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
+  assert.match(form,/if\(profileNeedsConfiguration\)setLogbookOpen\(true\)/);
   assert.match(form,/open=\{logbookOpen\}/);
-  assert.match(form,/Needs configuration/);
+  assert.match(form,/Open Aircraft without losing this draft/);
+  assert.match(form,/data-aircraft-config-link/);
 });
 
 test("F2.2 supersedes B3 required Role details with inline role-owned identity",()=>{
@@ -42,7 +42,7 @@ test("F2.2 keeps required crew evidence inside Flight essentials and optional cr
     assert.ok(essentials.includes(token),token);
   }
   const optionalStart=form.indexOf('entry-section entry-section-role-context');
-  const optionalEnd=form.indexOf('Aircraft & logbook',optionalStart);
+  const optionalEnd=form.indexOf('Aircraft context',optionalStart);
   const optionalCrew=form.slice(optionalStart,optionalEnd);
   assert.match(optionalCrew,/Additional crew details/);
   assert.match(optionalCrew,/Commander \/ PIC/);
