@@ -95,10 +95,11 @@ test("F0.1 server active-profile authority now routes through the shared F3 reso
   assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
   assert.match(importAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
   assert.match(importAction,/authorizeProfileFlightContext\(selectedAircraft,flightAircraftContextFromForm\(form\)\)/);
-  assert.match(importAction,/evidence=authority\.context\.evidence/);
-  assert.match(importAction,/aircraftClass=authority\.context\.aircraftClass/);
-  assert.match(importAction,/regulatoryCategory=authority\.context\.regulatoryCategory/);
-  assert.match(importAction,/aircraftType=authority\.context\.aircraftType/);
+  assert.match(importAction,/authorityProfile=authority\.profile,authorityContext=authority\.context/);
+  assert.match(importAction,/evidence=authorityContext\.evidence/);
+  assert.match(importAction,/aircraftClass=authorityContext\.aircraftClass/);
+  assert.match(importAction,/regulatoryCategory=authorityContext\.regulatoryCategory/);
+  assert.match(importAction,/aircraftType=authorityContext\.aircraftType/);
 });
 
 test("F0.1 preserves GPS duplicate locking and atomic transaction behavior",()=>{
