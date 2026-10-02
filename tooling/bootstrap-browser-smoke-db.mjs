@@ -127,7 +127,7 @@ CREATE TABLE flights(
   task TEXT NOT NULL DEFAULT '',
   purpose_code TEXT NOT NULL DEFAULT '',
   billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
-  price_per_hour NUMERIC NOT NULL DEFAULT 0,
+  price_per_hour NUMERIC DEFAULT 0,
   locked_at TIMESTAMPTZ,
   locked_by_user_id BIGINT,
   certified_at TIMESTAMPTZ,
