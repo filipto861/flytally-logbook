@@ -78,7 +78,7 @@ test("F3.0 Manual UI still presents aircraft-profile schema as ordinary editable
   assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration"/);
 });
 
-test("F3.0 Manual invalid-profile state is visible client-side but is not an action-level profile authority",()=>{
+test("F3.3 Manual profile authority is server-enforced while the existing client warning remains visible",()=>{
   const form=read("components/flight-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");
   const createStart=actions.indexOf("export async function createFlight");
