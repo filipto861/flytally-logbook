@@ -192,7 +192,11 @@ CREATE TABLE aircraft(
   default_role TEXT NOT NULL DEFAULT 'PIC',
   billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
   default_price_per_hour NUMERIC NOT NULL DEFAULT 0,
-  active INTEGER NOT NULL DEFAULT 1
+  active INTEGER NOT NULL DEFAULT 1,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id,registration)
 );
 CREATE TABLE rates(
   id BIGSERIAL PRIMARY KEY,
