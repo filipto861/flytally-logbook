@@ -24,7 +24,7 @@ import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { gpsImportSourceRequirements,resolveGpsImportOperationEngine,validateGpsImportRole } from "@/lib/gps-import-integrity";
-import { authorizeProfileFlightContext,authorizeUnchangedSnapshotFlightContext,resolveFlightAircraftContextAuthority,type FlightAircraftAuthorityProfileInput,type FlightAircraftContextSnapshotInput } from "@/lib/flight-aircraft-context-authority";
+import { authorizeProfileFlightContext,authorizeUnchangedSnapshotFlightContext,resolveFlightAircraftContextAuthority,type FlightAircraftAuthorityProfileInput,type FlightAircraftContextSnapshot,type FlightAircraftContextSnapshotInput } from "@/lib/flight-aircraft-context-authority";
 import { resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
 
 export type FlightActionState = { error?: string; success?: string };
@@ -53,7 +53,7 @@ type StoredFlightAircraftContextRow={
   balloon_group:string;
 };
 
-const flightAircraftContextFromInput=(f:FlightInput):FlightAircraftContextSnapshotInput=>({
+const flightAircraftContextFromInput=(f:FlightInput):FlightAircraftContextSnapshot=>({
   evidence:f.evidence,
   aircraftClass:f.aircraftClass,
   regulatoryCategory:f.regulatoryCategory,
