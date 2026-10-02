@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · DESIGN FROZEN / F0 + F1 DONE / F2 NEXT  
+**Status:** ACTIVE · F0–F3 DONE / F4 INDEPENDENT REVIEW GATE  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -513,7 +513,7 @@ Acceptance:
 - switching roles may preserve useful local input state, but irrelevant semantic fields are not persisted;
 - server is authoritative.
 
-### F3 — Aircraft context simplification — F3.0 DONE / VERIFIED · F3.1 REVIEW GATE
+### F3 — Aircraft context simplification — DONE / PRODUCTION INTEGRATED
 
 **Goal:** stop presenting aircraft-profile schema as a normal flight-entry task.
 
@@ -543,7 +543,7 @@ Acceptance remains:
 - historical snapshots remain independent of mutable current profile;
 - Manual and GPS share one aircraft-context authority model before F4.
 
-### F4 — GPS multi-part common / override model
+### F4 — GPS multi-part common / override model — INDEPENDENT REVIEW GATE
 
 **Goal:** deterministic common inheritance with whole RoleCrew overrides.
 
