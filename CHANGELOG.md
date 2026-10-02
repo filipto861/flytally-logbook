@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.1 production census
+- Completed the required read-only aircraft-context census before runtime enforcement.
+- Current profiles pass the canonical validation gate; no pre-enforcement bulk repair or migration is required.
+- Historical flight/profile differences were classified as legacy blank-category snapshots plus one older stored regulatory snapshot against a later-updated current profile; no explicit nonblank category conflict was found.
+- Historical aircraft identity differences remain SNAPSHOT evidence and are not refresh targets.
+- No current production TMG/OTHER/Balloon population was available to validate multi-context frequency; focused contract tests remain required.
+- A+ remains frozen and F3.2 pure resolver work is next.
+- Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F31_PRODUCTION_CENSUS.md` and updated ROADMAP/FEATURES/F3 design.
+- **Runtime/schema/certification/deploy:** N/A; no production data was mutated.
+
 ### Flight Entry Workflow 3.0 — F3 independent-review reconciliation
 - Reconciled the F3 aircraft-context design against the independent review and current repository contracts before any runtime enforcement.
 - Superseded the draft full regulatory override (Option B) with **A+**: evidence/class remain profile-owned; explicit flight-level choice is limited to genuine profile-supported TMG/OTHER multi-context semantics plus deliberate same-registration historical correction.
