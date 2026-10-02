@@ -37,7 +37,7 @@ test("v1.58 keeps local flight as a small explicit action",()=>{
 });
 
 test("v1.58 smart defaults remain transparent after B4 helper-copy triage",()=>{
-  assert.match(form,/selected&&!editing\?`from \$\{registration\}`:""/);
+  assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
   assert.match(form,/Aircraft default · change if this flight differed\./);
   assert.doesNotMatch(form,/Aircraft profile applies type, logbook and class defaults/);
   assert.match(form,/shouldApplyAircraftProfileDefaults/);
@@ -45,13 +45,16 @@ test("v1.58 smart defaults remain transparent after B4 helper-copy triage",()=>{
 });
 
 test("v1.58 required-field guidance stays scoped while B5 delays pristine error styling",()=>{
-  for(const name of ["registration","role","evidence","aircraftClass"]){
+  for(const name of ["registration","role"]){
     const start=form.indexOf(`name="${name}"`),end=form.indexOf("</select>",start),control=form.slice(start,end);
     assert.ok(start>=0&&end>start,name);
     assert.ok(control.includes(" required "),name);
   }
   assert.match(form,/aria-invalid=\{submitAttempted&&!registration\|\|profileNeedsConfiguration\|\|undefined\}/);
-  for(const name of ["role","evidence","aircraftClass"])assert.ok(form.includes(`aria-invalid={submitAttempted&&!${name}||undefined}`),name);
+  assert.ok(form.includes('aria-invalid={submitAttempted&&!role||undefined}'));
+  assert.match(form,/type="hidden" name="evidence" value=\{submittedEvidence\}/);
+  assert.match(form,/type="hidden" name="aircraftClass" value=\{submittedAircraftClass\}/);
+  assert.doesNotMatch(form,/<select name="evidence"|<select name="aircraftClass"/);
   assert.doesNotMatch(form,/name="billingBasis"[^>]*aria-invalid/);
   assert.match(form,/field-message-error/);
   assert.match(css,/\[aria-invalid="true"\]/);
