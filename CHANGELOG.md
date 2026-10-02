@@ -9,6 +9,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.5 closeout (in progress)
+- Reconciled the F3.5 closeout plan against an independent second-AI review. Verdict: **APPROVE WITH CHANGES**; no confirmed correctness defect, but action/persistence proof is required for crafted authority drift and historical SNAPSHOT boundaries.
+- Froze the minimum closeout scope: no runtime change unless a test proves a bypass or stale-profile consumer; no generic historical-context override; no DB migration; GPS remains PIC-only.
+- Source-audited downstream consumers before adding duplicate tests: CSV/XLS export and Statistics derive regulatory context from stored `flights`; Trash serializes/restores raw flight context; Print reads F3 evidence/category/class/type from `flights` and consults current Aircraft only for ICAO type-code presentation; existing certification/shared/backup/restore/recency suites remain the primary invariance evidence.
+- Deferred as non-blocking unless evidence changes: the microscopic PROFILE read→flight-write race, explicit historical-context correction UX, wider browser matrix beyond already-verified F3.4 states, and any new schema.
+- **Verification:** pending F3.5 implementation and local gates.
+
+
 ### Flight Entry Workflow 3.0 — F3.4 compact aircraft-context UX (locally verified, not yet merged/deployed)
 - Replaced routine Manual Logbook/Class/Aircraft type editors with one compact **Aircraft context** surface backed by the F3 authority model.
 - PROFILE entry submits server-supported profile-owned evidence, class, aircraft type and Balloon class/group as hidden authority fields; only genuine TMG/OTHER regulatory context from `allowedFlightContexts(profile)` remains selectable.

@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.4 DONE / LOCAL VERIFIED · F3.5 CLOSEOUT NEXT  
+**Status:** F3.4 DONE / LOCAL VERIFIED · F3.5 CLOSEOUT IN PROGRESS  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -352,7 +352,18 @@ Verification:
 - CI, PR, merge and production deployment: NOT RUN / not claimed.
 - Next roadmap step: **F3.5 action/persistence/browser/production closeout**.
 
-### F3.5 — action/persistence/browser/production closeout
+### F3.5 — action/persistence/browser/production closeout — IN PROGRESS
+
+Independent review reconciliation:
+- second-AI verdict: **APPROVE WITH CHANGES**; no confirmed runtime correctness defect;
+- real mutation-boundary proof is required for crafted PROFILE/SNAPSHOT/A+ drift, final registration normalization, unchanged historical SNAPSHOT under inactive/invalid current profiles, submit-time PROFILE re-resolution, Quick Add → immediate Save, TMG/OTHER and Balloon ownership;
+- browser proof is limited to same-registration historical Edit and Quick Add → immediate Save because F3.4 already covered the responsive compact-context matrix;
+- source audit supersedes the draft request for new generic consumer tests: export/statistics use stored `flights` context, trash restores raw stored context, print uses stored F3 context and only joins current Aircraft for ICAO presentation code; existing certification/shared/backup/restore/recency suites remain authoritative;
+- profile-read→flight-write locking/versioning is non-blocking for this phase; submit-time server re-resolution is the accepted authority point;
+- deliberate same-registration historical correction remains a separate explicit future path and is not required for unchanged SNAPSHOT safety;
+- no runtime/schema change is planned unless a test proves an actual defect.
+
+Closeout matrix:
 Cover at minimum:
 - crafted FormData drift for each authority mode;
 - registration normalization including A→B→A UI round-trip with final server comparison against stored registration;
