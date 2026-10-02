@@ -80,5 +80,5 @@ test("F2.3 keeps collaboration, certification and GPS scope outside the resolver
   const gps=between(actions,"export async function importKmlFlight","export async function updateFlight");
   assert.doesNotMatch(helper,/flight_participations|certification_hash|certification_version|gpsFlightCandidate|normalizeFlightDraft/);
   assert.doesNotMatch(gps,/resolveSafetyPilotPicForSave|flight_connected_crew/);
-  assert.match(gps,/validateGpsImportRole/);
+  assert.match(gps,/resolveGpsImportCommonRoleCrew/);
 });
