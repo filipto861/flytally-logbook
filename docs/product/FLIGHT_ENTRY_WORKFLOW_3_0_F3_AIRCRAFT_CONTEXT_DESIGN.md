@@ -1,7 +1,7 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.1 PRODUCTION CENSUS COMPLETE · A+ CONFIRMED · F3.2 RESOLVER NEXT  
-**Repository baseline for F3.1:** main@82123d11480aebd0973c540a1e530f1582211f20  
+**Status:** F3.2 DONE / PRODUCTION VERIFIED · F3.3 SERVER ENFORCEMENT NEXT  
+**Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
 ## 1. Goal
@@ -270,12 +270,22 @@ Production census found:
 
 No production evidence requires reopening A+. No migration or bulk repair is required. The census was read-only and changed no runtime/schema/certification data.
 
-### F3.2 — pure shared authority resolver
-- implement pure `allowedFlightContexts(profile)`;
-- implement normalized registration/context comparison;
-- derive PROFILE versus SNAPSHOT server-side;
-- characterize unchanged SNAPSHOT pass-through and explicit correction detection;
-- unit matrix only; not yet wired to production mutations.
+### F3.2 — pure shared authority resolver — DONE / PRODUCTION VERIFIED
+- added `lib/flight-aircraft-context-authority.ts` with pure `allowedFlightContexts(profile)`;
+- validates the complete profile authority input, including Part-FCL credit provenance, before producing any allowed context;
+- standard profiles produce exactly one context; TMG produces only AEROPLANE/SAILPLANE and OTHER only AEROPLANE/SAILPLANE/OTHER, with current profile category first;
+- evidence/class, Balloon class/group and aircraft type remain profile-owned dimensions;
+- added raw SNAPSHOT normalization/comparison that deliberately preserves legacy blank `regulatory_category` instead of deriving today's value;
+- added PROFILE/SNAPSHOT authority derivation from operation type + stored registration versus final normalized submitted registration, including the A→B→A final-state case;
+- added exact allowed-context membership checks and explicit SNAPSHOT change classification;
+- F3.2 remains deliberately **unwired** from Manual/GPS mutations; F3.3 owns persistence enforcement.
+
+Verification:
+- PR #229 merged as `abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73`;
+- Verify FlyTally web #1097 PASS: TypeScript, full unit/regression gate and PostgreSQL acceptance PASS; PostgreSQL **66/66**;
+- Browser smoke #470 PASS: production build + Chromium browser suite;
+- Vercel production `dpl_7vwVVvE98UZVYJ6upCB9CQnfok4a` READY on the exact merge SHA, aliases `fly-tally.com`, alias error null;
+- DB migration/schema change: N/A.
 
 ### F3.3 — server enforcement + GPS authority convergence
 - wire Manual create/update through the shared resolver;
@@ -330,6 +340,16 @@ Cover at minimum:
 - TMG/OTHER/Balloon profile/flight population: 0; populated Part-FCL credit provenance: 0 profiles.
 - Runtime/schema/certification/deploy: N/A.
 - A+ remains frozen; F3.2 is next.
+
+## 9.3 F3.2 verification evidence
+
+- New pure authority module: `lib/flight-aircraft-context-authority.ts`.
+- Focused matrix: `tests/v350-flight-entry-f32-aircraft-context-authority.test.ts`.
+- The test matrix covers EASA SEP, ULL, TMG, OTHER, Balloon, malformed EASA identity, malformed Part-FCL credit provenance, authority derivation, final-registration normalization, legacy blank SNAPSHOT preservation, crafted drift and the explicit not-yet-wired milestone boundary.
+- Verify #1097 PASS; PostgreSQL acceptance artifact reports 66/66.
+- Browser #470 PASS; production build PASS.
+- Production deployment is READY on exact main SHA with no alias error.
+- No database migration and no mutation wiring were introduced.
 
 ## 10. Acceptance criteria
 

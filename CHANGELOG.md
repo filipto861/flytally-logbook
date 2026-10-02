@@ -9,6 +9,15 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F3.2 authority resolver
+- Added the pure shared aircraft-context authority resolver and its focused unit matrix.
+- The resolver keeps evidence/class, Balloon class/group and aircraft type profile-owned, while allowing only the frozen TMG/OTHER multi-context categories.
+- Added PROFILE/SNAPSHOT authority derivation from stored versus final normalized registration and raw SNAPSHOT comparison that preserves legacy blank category values.
+- F3.2 remains intentionally unwired from Manual/GPS mutations; F3.3 owns enforcement.
+- PR #229 merged as `abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73`; Verify #1097 PASS, PostgreSQL 66/66; Browser #470 PASS including production build.
+- Production deployment is READY on the exact merge SHA with the `fly-tally.com` alias and no alias error.
+- DB migration/schema: N/A.
+
 ### Flight Entry Workflow 3.0 — F3.1 production census
 - Completed the required read-only aircraft-context census before runtime enforcement.
 - Current profiles pass the canonical validation gate; no pre-enforcement bulk repair or migration is required.
