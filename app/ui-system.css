@@ -243,6 +243,23 @@ button[data-loading="true"]::after{
 }
 .entry-section-experience .entry-section-body{display:grid;gap:var(--ui-space-3)}
 .entry-context-note{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
+.aircraft-context-section .entry-section-body{display:grid;gap:var(--ui-space-3)}
+.aircraft-context-card{
+  display:grid;
+  gap:6px;
+  min-width:0;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:color-mix(in srgb,var(--panel) 82%,var(--panel2));
+}
+.aircraft-context-card>div{display:grid;gap:3px;min-width:0}
+.aircraft-context-card strong{font-size:.76rem}
+.aircraft-context-card span{color:var(--text);font-size:.76rem;font-weight:750;overflow-wrap:anywhere}
+.aircraft-context-card small{color:var(--muted);font-size:.68rem;line-height:1.45}
+.aircraft-context-card.needs-configuration{border-color:color-mix(in srgb,#d99a46 58%,var(--line));background:color-mix(in srgb,#d99a46 7%,var(--panel))}
+.aircraft-context-choice{max-width:520px}
+.aircraft-flight-context-controls{margin-top:2px}
 
 /* B2 New Flight essentials: identity first, then route, then one UTC timeline. */
 .entry-section-primary{display:grid;gap:var(--ui-space-4)}
