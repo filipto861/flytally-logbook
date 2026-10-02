@@ -429,14 +429,16 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - final evidence: PR #221 → `main@84b5f5362f03ef1959956fba91584059a36c2db5`; Verify #1094 PASS — TypeScript, 1068/1068 unit/regression, PostgreSQL 66/66; Browser #468 PASS — production build + Chromium 34 passed / 2 skipped;
 - no runtime, schema, certification-version or persisted-data change was made by F2.4C; deployment N/A.
 
-### F2.5 — cross-path regression + closeout
-- role matrix unit coverage;
-- crafted Manual Save coverage;
-- Safety Pilot connection lifecycle;
-- certification v1–v8 verification unchanged;
-- shared/instructor/PIC invitation regressions;
-- desktop/iPad/mobile role-aware presentation;
-- docs + production closeout.
+### F2.5 — cross-path regression + closeout — IMPLEMENTED / VERIFY PENDING
+- exhaustive role matrix covers every `ROLES` / `ROLE_CREW_ROLES` value exactly once for EASA and ULL policy;
+- crafted Manual Save coverage proves EASA DUAL/SPIC/PICUS fail closed until required crew evidence is supplied while ULL does not inherit EASA blockers;
+- function-time allocation is frozen for every role; Safety Pilot/PAX/Observer remain non-creditable;
+- Safety Pilot F2.3 lifecycle remains covered by the existing PostgreSQL + authenticated browser tests and the final source boundary asserts Save does not create collaboration invitations;
+- certification fingerprints v1–v8 are verified with RoleCrew evidence integrity-bound; current Certification remains v8;
+- shared/instructor/PIC invitation paths remain explicit, account-ID based and source revision/hash bound;
+- GPS remains PIC-only;
+- authenticated browser closeout checks key role-aware states at desktop 1280×800, iPad landscape 1024×768, iPad portrait 768×1024 and mobile 390×844 under both light and dark theme selectors, including horizontal-overflow checks;
+- no runtime/schema behavior change is intended; after green verification F2 can close and F3 becomes next.
 
 ## 14. Testing contract
 
