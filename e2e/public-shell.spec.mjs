@@ -270,8 +270,12 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
-  await expect(page.locator('select[name="evidence"]')).toHaveValue("EASA");
-  await expect(page.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(page.locator('input[name="evidence"]')).toHaveValue("EASA");
+  await expect(page.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+  const storedContext=page.locator("details.aircraft-context-section");
+  await expect(storedContext.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
+  await storedContext.locator("summary").click();
+  await expect(storedContext.locator("[data-aircraft-context-card]")).toContainText("Stored flight context");
   await expect(page.locator('select[name="role"]')).toHaveValue("PIC");
   await expect(page.locator('select[name="operationType"]')).toHaveValue("SP");
   await expect(page.locator('select[name="engineType"]')).toHaveValue("SE");
