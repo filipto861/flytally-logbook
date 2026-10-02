@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3.2 DONE / PRODUCTION VERIFIED · F3.3 SERVER ENFORCEMENT IN PROGRESS  
+**Status:** F3.3 DONE / LOCAL VERIFIED · F3.4 COMPACT CONTEXT UX NEXT  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -287,16 +287,27 @@ Verification:
 - Vercel production `dpl_7vwVVvE98UZVYJ6upCB9CQnfok4a` READY on the exact merge SHA, aliases `fly-tally.com`, alias error null;
 - DB migration/schema change: N/A.
 
-### F3.3 — server enforcement + GPS authority convergence — IN PROGRESS
-Implementation branch: `feat/flight-entry-f33-aircraft-authority`. Verification is **NOT RUN** pending local execution.
+### F3.3 — server enforcement + GPS authority convergence — DONE / LOCAL VERIFIED
+Implementation branch: `feat/flight-entry-f33-aircraft-authority`.
 
-- wire Manual create/update through the shared resolver;
-- reject invalid PROFILE and crafted unexplained drift;
-- preserve unchanged same-registration SNAPSHOT without current-profile validation;
-- preserve shared-flight materialization/recipient paths outside this equality gate;
-- wire GPS through the same authority resolver with no full regulatory override;
-- add common TMG/OTHER context selection for the whole GPS import session where `allowedFlightContexts(profile)` has multiple members;
-- GPS Role remains PIC-only until F4.
+Implemented:
+- Manual New and registration-change saves re-resolve the owned aircraft profile server-side, validate complete profile provenance and require exact membership in `allowedFlightContexts(profile)`;
+- Manual PROFILE persistence writes the canonical server-authorized context, not raw request aircraft-context values;
+- same-registration Edit derives SNAPSHOT authority from stored versus final normalized registration and persists the stored historical context without current-profile validation;
+- legacy blank stored `regulatory_category` remains blank when the current UI only presented the derived category and all other stored context fields are unchanged;
+- unexplained PROFILE or SNAPSHOT drift fails closed; deliberate same-registration historical correction remains a separate F3.4/F3.5 path rather than an implicit override;
+- shared-flight materialization/recipient historical identity remains outside the Manual PROFILE equality gate;
+- GPS keeps active-owned-profile selection, uses the shared PROFILE authority resolver and exposes one common whole-session TMG/OTHER context choice when the allowed set has multiple members;
+- GPS Role remains PIC-only until F4;
+- Part-FCL credit provenance is carried through the entry authority boundary and malformed provenance fails closed.
+
+Local verification:
+- final head `065896d3c9aa75fee8c2c0c7cc7a2f6abc20e52a`: full unit/regression **1102/1102 PASS**;
+- runtime-identical head `3644a85d6da5e01a96c6869b9537c114d395e299`: TypeScript PASS, PostgreSQL core **66/66 PASS**, production build PASS;
+- final-head delta after that runtime verification is test-only: one stale F1.3 source-contract assertion was aligned with canonical PROFILE authority persistence;
+- Windows PostgreSQL acceptance portability was repaired by explicit `-d`, UTF-8 stdin SQL and CRLF normalization; local PostgreSQL remained localhost-only;
+- CI/PR/deploy intentionally NOT RUN yet;
+- DB migration/schema change: N/A; certification v1–v8 unchanged.
 
 ### F3.4 — compact context UX
 - valid profile => compact context summary + canonical hidden submission fields;
@@ -352,6 +363,19 @@ Cover at minimum:
 - Browser #470 PASS; production build PASS.
 - Production deployment is READY on exact main SHA with no alias error.
 - No database migration and no mutation wiring were introduced.
+
+## 9.4 F3.3 local verification evidence
+
+- Manual Create, registration-change Edit, same-registration SNAPSHOT Edit and GPS PROFILE authority are wired through the shared F3 contract.
+- Canonical PROFILE context is persisted from server authority on Create; Update persists either canonical PROFILE authority or preserved SNAPSHOT authority.
+- Focused F3.3 coverage exercises PROFILE authorization, A+ TMG/OTHER narrowing, unchanged SNAPSHOT preservation, GPS convergence, shared-materialization isolation and source-level persistence wiring.
+- Full final-head unit/regression gate: **1102/1102 PASS**, 0 fail, 0 skipped.
+- PostgreSQL core acceptance: **66/66 PASS** on the runtime-identical head.
+- TypeScript: PASS on the runtime-identical head.
+- Production build: PASS on the runtime-identical head.
+- No database migration, schema mutation or certification v1–v8 change.
+- No CI, PR, merge or production deployment is claimed by this local closeout.
+- Next roadmap step: **F3.4 compact context UX**.
 
 ## 10. Acceptance criteria
 

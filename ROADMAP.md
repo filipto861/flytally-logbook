@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F2 DONE; F3.0/F3.1/F3.2 complete and verified; **F3.3 server enforcement + GPS authority convergence is IN PROGRESS** |
+| Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F0–F2 DONE; F3.0–F3.3 complete through local verification; **F3.4 compact aircraft-context UX is NEXT** |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -67,7 +67,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F3.2 pure authority resolver production-verified; F3.3 Manual enforcement + GPS authority convergence in progress on `feat/flight-entry-f33-aircraft-authority` |
+| 5 | Flight Entry Workflow 3.0 | 🚧 | **ACTIVE** · F3.3 server enforcement + GPS authority convergence is locally verified on `feat/flight-entry-f33-aircraft-authority`; F3.4 compact context UX is next |
 | 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
@@ -413,7 +413,7 @@ Milestones:
 | F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
-| F3 — Aircraft context simplification | 🚧 | **F3.2 DONE / PRODUCTION VERIFIED** · pure A+ authority resolver merged; production mutations remain unwired; F3.3 is next |
+| F3 — Aircraft context simplification | 🚧 | **F3.3 DONE / LOCAL VERIFIED** · Manual/GPS authority enforcement is staged and verified locally; F3.4 compact context UX is next |
 | F4 — Multi-part GPS inheritance | ⏳ | Common values + whole Role/Crew overrides + atomic resolved persistence |
 | F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
 | F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
@@ -447,7 +447,8 @@ Immediate next step:
 - **F3.1 production census DONE**: 25 profiles / 25 active / 0 invalid; 289 flights all match a current profile; 73 apparent category divergences are certified legacy rows with blank stored `regulatory_category`; exactly one certified evidence/class divergence is a historical ULL snapshot against a profile now EASA/SEP, with the profile update timestamp later than the flight date; 0 explicit nonblank category mismatches; 7 historical identity differences reinforce SNAPSHOT ownership; current TMG/OTHER/Balloon and Part-FCL-credit populations are zero. Census was read-only and changed no data.
 - F3.1 evidence: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F31_PRODUCTION_CENSUS.md`. A+ remains frozen; no migration/bulk repair is required.
 - **F3.2 DONE / PRODUCTION VERIFIED**: pure shared `allowedFlightContexts(profile)` + PROFILE/SNAPSHOT authority resolver is merged as PR #229 → `main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73`. It preserves legacy blank SNAPSHOT context, validates full profile provenance, restricts multi-context expansion to TMG/OTHER and remains deliberately unwired from mutations. Verify #1097 PASS (TypeScript, full unit/regression, PostgreSQL 66/66); Browser #470 PASS (production build + Chromium); Vercel `dpl_7vwVVvE98UZVYJ6upCB9CQnfok4a` READY on exact SHA, aliases `fly-tally.com`, alias error null; DB migration N/A.
-- **next: F3.3 server enforcement + GPS authority convergence** using the shared resolver; Manual crafted PROFILE drift must fail closed, unchanged same-registration SNAPSHOT must bypass current-profile revalidation, shared materialization remains outside the equality gate, and GPS gets only the narrow common TMG/OTHER context choice.
+- **F3.3 DONE / LOCAL VERIFIED** on `feat/flight-entry-f33-aircraft-authority`: Manual New/registration-change re-resolve owned PROFILE authority and persist canonical authority context; same-registration Edit preserves SNAPSHOT context, including legacy blank category compatibility; GPS uses active PROFILE authority with one common TMG/OTHER choice; shared materialization remains outside the equality gate. Local evidence: final-head unit/regression **1102/1102 PASS**; PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS on the runtime-identical pre-final-test-adjustment head. No DB migration or certification v1–v8 change. CI/PR/deploy intentionally not run yet.
+- **next: F3.4 compact aircraft-context UX**: replace routine editable profile schema with compact authority summaries, keep only legitimate TMG/OTHER choice explicit, show Stored flight context on SNAPSHOT Edit, and make invalid PROFILE state an explicit Needs configuration blocker without weakening the F3.3 server gate.
 - do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
 - preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
 - keep GPS PIC-only throughout F2;

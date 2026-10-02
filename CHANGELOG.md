@@ -9,14 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### Flight Entry Workflow 3.0 — F3.3 server enforcement (staged, not yet verified)
-- Wired Manual New and registration-change saves to server-side owned-profile authority using the shared F3 resolver; submitted aircraft context must be a member of the profile's allowed context set.
+### Flight Entry Workflow 3.0 — F3.3 server enforcement (locally verified, not yet merged/deployed)
+- Wired Manual New and registration-change saves to server-side owned-profile authority using the shared F3 resolver; submitted aircraft context must be a member of the profile's allowed context set, and persistence now uses the canonical server-authorized context rather than the raw normalized request values.
 - Wired same-registration Edit to server-derived SNAPSHOT authority; unchanged historical context is persisted from the stored snapshot without consulting the mutable current profile. Legacy blank regulatory-category rows are preserved rather than silently upgraded by the current UI's derived presentation value.
 - Routed GPS through the same shared PROFILE authority while keeping its active-aircraft selection boundary and PIC-only Role scope.
 - Added one common GPS TMG/OTHER regulatory-context choice and server validation against `allowedFlightContexts(profile)`; no full evidence/class override was introduced.
 - Propagated Part-FCL credit provenance into entry/profile authority validation so malformed provenance fails closed rather than being dropped at the F3 boundary.
-- Added focused F3.3 unit/source-contract coverage and retired stale F3.0/F3.2 assertions that expected the resolver to remain unwired.
-- **Verification:** NOT RUN. Local typecheck, targeted/full unit suite, PostgreSQL acceptance and production build are required before closeout.
+- Added focused F3.3 unit/source-contract coverage and retired stale F3.0/F3.2/F1.3 assertions that conflicted with the now-authoritative persistence boundary.
+- Hardened the local PostgreSQL acceptance/browser harness for Windows: connection URLs are passed with explicit `-d`, SQL is streamed through UTF-8 stdin, and CRLF query output is normalized before assertions. The harness remains localhost-only.
+- **Local verification:** final branch head `065896d3c9aa75fee8c2c0c7cc7a2f6abc20e52a` — full unit/regression **1102/1102 PASS**. On runtime-identical head `3644a85d6da5e01a96c6869b9537c114d395e299`: TypeScript PASS, PostgreSQL core **66/66 PASS**, production `next build` PASS. The only change after that runtime verification was a stale source-contract test assertion aligned to canonical F3 authority persistence.
+- **CI/PR/deploy:** NOT RUN intentionally for this local closeout; no claim of merge or production deployment.
 - **Schema/certification:** no migration and no certification v1-v8 change.
 
 
