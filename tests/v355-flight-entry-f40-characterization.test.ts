@@ -17,7 +17,7 @@ test("F4.0 characterizes Manual and GPS RoleCrew persistence columns before mult
 
   for(const [name,block] of [["Manual",manual],["GPS",gps]] as const){
     for(const column of ["commander","instructor","role","verification_name","verification_reference"]){
-      assert.match(block,new RegExp(`INSERT INTO flights\\([\\s\\S]*?\\b${column}\\b`),`${name} must persist ${column}`);
+      assert.match(block,new RegExp(`INSERT INTO flights\\s*\\([\\s\\S]*?\\b${column}\\b`),`${name} must persist ${column}`);
     }
   }
 
