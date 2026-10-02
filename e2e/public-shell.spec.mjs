@@ -215,6 +215,142 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await expectNoHorizontalOverflow(page);
 });
 
+
+test("F3.5 same-registration SNAPSHOT survives invalid current profile and rejects crafted drift",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F3.5 SNAPSHOT coverage requires the isolated browser database.");
+  resetF35SnapshotFixture();
+  await loginBrowserPilot(page,"/flights/9920");
+  await page.getByRole("tab",{name:"Logbook data"}).click();
+
+  const form=page.locator("form.flight-form");
+  const context=form.locator("details.aircraft-context-section");
+  await expect(context.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
+  await context.locator("summary").click();
+  await expect(context.locator("[data-aircraft-context-card]")).toContainText("Stored flight context");
+  await expect(context).toContainText("Current aircraft-profile changes are not applied to this edit.");
+
+  await form.locator('select[name="registration"]').selectOption("OK-E2E");
+  await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+  await form.locator('select[name="registration"]').selectOption("OK-F35S");
+  await expect(context.locator("[data-aircraft-context-card]")).toContainText("Stored flight context");
+
+  await form.getByRole("button",{name:"Save changes"}).click();
+  await expect(form.getByText("Flight changes saved.")).toBeVisible();
+  expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE id=9920")).toBe("EASA|SEP|AEROPLANE|B23");
+
+  await form.locator('input[name="aircraftClass"]').evaluate(input=>{input.value="MEP";input.setAttribute("value","MEP")});
+  await form.getByRole("button",{name:"Save changes"}).click();
+  await expect(form.getByRole("alert")).toContainText("This edit changes the stored aircraft context.");
+  expect(browserSqlScalar("SELECT aircraft_class FROM flights WHERE id=9920")).toBe("SEP");
+
+  await page.goto("/flights/9921");
+  await page.getByRole("tab",{name:"Logbook data"}).click();
+  const legacy=page.locator("form.flight-form");
+  const legacyContext=legacy.locator("details.aircraft-context-section");
+  await legacyContext.locator("summary").click();
+  await expect(legacyContext).toContainText("This legacy record has no stored regulatory-category value");
+  await legacy.getByRole("button",{name:"Save changes"}).click();
+  await expect(legacy.getByText("Flight changes saved.")).toBeVisible();
+  expect(browserSqlScalar("SELECT COALESCE(regulatory_category,'<NULL>') FROM flights WHERE id=9921")).toBe("");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F3.5 PROFILE coverage requires the isolated browser database.");
+  resetF35AuthorityFixtures();
+  await loginBrowserPilot(page,"/flights/new");
+
+  let form=page.locator("#new-flight-manual-form");
+  await form.locator('input[name="date"]').fill("2026-10-02");
+  await form.locator('select[name="registration"]').selectOption("OK-E2E");
+  await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+
+  mutateF35ProfileAfterRender();
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'"))).toBe(0);
+
+  resetF35AuthorityFixtures();
+  await page.reload();
+  form=page.locator("#new-flight-manual-form");
+  await form.locator('input[name="date"]').fill("2026-10-02");
+  await form.locator('select[name="registration"]').selectOption("OK-TMG1");
+  const context=form.locator("details.aircraft-context-section");
+  await context.locator("summary").click();
+  await context.locator('select[name="regulatoryCategory"]').selectOption("SAILPLANE");
+  await form.locator('select[name="operationType"]').selectOption("SP");
+  await form.locator('select[name="engineType"]').selectOption("SE");
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-TMG1' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|TMG|SAILPLANE");
+});
+
+test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-specific choices",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F3.5 multi-context coverage requires the isolated browser database.");
+  resetF35AuthorityFixtures();
+  await loginBrowserPilot(page,"/flights/new");
+
+  let form=page.locator("#new-flight-manual-form");
+  await form.locator('input[name="date"]').fill("2026-10-02");
+  await form.locator('select[name="registration"]').selectOption("OK-F35O");
+  let context=form.locator("details.aircraft-context-section");
+  await context.locator("summary").click();
+  await context.locator('select[name="regulatoryCategory"]').selectOption("AEROPLANE");
+  await form.locator('select[name="operationType"]').selectOption("SP");
+  await form.locator('select[name="engineType"]').selectOption("SE");
+  await form.locator('input[name="evidence"]').evaluate(input=>{input.value="ULL";input.setAttribute("value","ULL")});
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02'"))).toBe(0);
+
+  await form.locator('input[name="evidence"]').evaluate(input=>{input.value="EASA";input.setAttribute("value","EASA")});
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|OTHER|AEROPLANE");
+
+  await page.goto("/flights/new");
+  form=page.locator("#new-flight-manual-form");
+  await form.locator('input[name="date"]').fill("2026-10-02");
+  await form.locator('select[name="registration"]').selectOption("OK-F35B");
+  context=form.locator("details.aircraft-context-section");
+  await expect(form.locator('input[name="balloonClass"]')).toHaveValue("HOT_AIR_BALLOON");
+  await expect(form.locator('input[name="balloonGroup"]')).toHaveValue("A");
+  await form.locator('select[name="balloonOperation"]').selectOption("FREE");
+  await form.locator('input[name="balloonGroup"]').evaluate(input=>{input.value="B";input.setAttribute("value","B")});
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
+  expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02'"))).toBe(0);
+
+  await form.locator('input[name="balloonGroup"]').evaluate(input=>{input.value="A";input.setAttribute("value","A")});
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT aircraft_class||'|'||regulatory_category||'|'||balloon_class||'|'||balloon_group||'|'||balloon_operation FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("BALLOON|BALLOON|HOT_AIR_BALLOON|A|FREE");
+});
+
+test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F3.5 Quick Add coverage requires the isolated browser database.");
+  resetF35QuickAddFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Add aircraft"}).click();
+  const quick=page.locator("form.quick-aircraft-form");
+  await quick.locator('input[name="registration"]').fill("OK-F35Q");
+  await quick.locator('input[name="aircraft_model"]').fill("F35 Quick");
+  await quick.getByRole("button",{name:"Add aircraft"}).click();
+  await expect(page.getByRole("status")).toContainText("Aircraft added. Select it below to continue with the flight.");
+
+  const form=page.locator("#new-flight-manual-form");
+  const registration=form.locator('select[name="registration"]');
+  await expect(registration.locator('option[value="OK-F35Q"]')).toHaveCount(1);
+  await registration.selectOption("OK-F35Q");
+  await form.locator('input[name="date"]').fill("2026-10-02");
+  await expect(form.locator('input[name="evidence"]')).toHaveValue("ULL");
+  await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
+  await form.getByRole("button",{name:"Save & review"}).click();
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
+});
+
 test("GPS import fails closed for invalid profile context and exposes only PIC",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
