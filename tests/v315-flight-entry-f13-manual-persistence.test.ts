@@ -42,10 +42,9 @@ test("F1.3 Manual actions do not re-read semantic flight fields from FormData af
   assert.match(connectedCrew,/form\.get\("connectedPicUserId"\)/);
 });
 
-test("F1.3 create and update persist the normalized FlightInput semantic field set",()=>{
+test("F1.3 normalized FlightInput remains the Manual semantic body while F3.3 owns aircraft-context authority",()=>{
   const normalizedFields=[
-    "date","evidence","registration","aircraftType","aircraftClass","regulatoryCategory",
-    "balloonClass","balloonGroup","balloonOperation","launchMethod","launches",
+    "date","registration","balloonOperation","launchMethod","launches",
     "offBlock","takeoff","landing","onBlock","starts","instructor","role","task","purposeCode",
     "billingBasis","note","operationType","engineType","operatorName","flightNumber","operationContext",
     "landingsDay","landingsNight","movementEvidenceRecorded","takeoffsDay","takeoffsNight",
@@ -53,11 +52,17 @@ test("F1.3 create and update persist the normalized FlightInput semantic field s
     "dualMinutes","instructorMinutes","verificationName","verificationReference",
   ];
   for(const [name,block] of [["create",create],["update",update]] as const){
-    for(const field of normalizedFields)assert.ok(block.includes(`f.${field}`),`${name} must persist normalized f.${field}`);
+    for(const field of normalizedFields)assert.ok(block.includes(`f.${field}`),`${name} must retain normalized f.${field}`);
     assert.match(block,/canonicalAirportIdent\(f\.departure\)/,name);
     assert.match(block,/canonicalAirportIdent\(f\.arrival\)/,name);
     assert.ok(block.includes("${commander}"),`${name} must persist the server-resolved commander`);
   }
+  for(const field of ["evidence","aircraftType","aircraftClass","regulatoryCategory","balloonClass","balloonGroup"]){
+    assert.ok(create.includes(`f.${field}`),`create retains normalized ${field} after PROFILE authorization`);
+  }
+  assert.match(update,/persistedAircraftContext=flightAircraftContextFromInput\(f\)/);
+  assert.match(update,/evidence=\$\{persistedAircraftContext\.evidence\}/);
+  assert.match(update,/aircraft_type=\$\{persistedAircraftContext\.aircraftType\}/);
 });
 
 test("F1.3 preserves expense child persistence outside FlightInput",()=>{
@@ -92,7 +97,7 @@ test("F1.3 preserves create duplicate protection from normalized identity",()=>{
 });
 
 test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
-  assert.match(update,/SELECT registration,date::text date,price_per_hour,locked_at,certified_at FROM flights/);
+  assert.match(update,/SELECT registration,date::text date,price_per_hour,locked_at,certified_at,/);
   assert.match(update,/if\(existing\.locked_at\)return\{error:"This flight is locked\. Unlock it before editing\."\}/);
   assert.match(update,/connectedPicUserId>0&&existing\.certified_at/);
   assert.match(update,/shouldResolveStoredPrice\(existing,f\.registration,f\.date\)/);
@@ -101,7 +106,7 @@ test("F1.3 preserves update lock, correction and stored-price boundaries",()=>{
 
 test("F1.3 Manual persistence boundary remains intact while F1.4 converges GPS semantics",()=>{
   assert.match(gps,/validateGpsImportRole/);
-  assert.match(gps,/resolveGpsImportAircraftContext/);
+  assert.match(gps,/authorizeProfileFlightContext/);
   assert.match(gps,/gpsFlightCandidate/);
   assert.match(gps,/normalizeFlightDraft\(candidate\)/);
   assert.match(gps,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
