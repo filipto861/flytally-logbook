@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1 CORE VERIFIED / AUTHENTICATED BROWSER PENDING · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 NEXT · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -303,7 +303,7 @@ No runtime change.
 - current Safety Pilot non-wiring;
 - shared Role/Crew Save requirements.
 
-### F4.1 — common Role/Crew — IMPLEMENTED / VERIFICATION PENDING
+### F4.1 — common Role/Crew — DONE / LOCAL VERIFIED
 - strict server common envelope;
 - GPS role allowlist derived from canonical roles minus explicitly blocked roles;
 - common Role/Crew UI driven by shared `roleCrewSpec()`;
@@ -329,7 +329,7 @@ F4.1 implementation now:
 - keeps SPIC/PICUS and Safety Pilot blocked;
 - changes no DB schema and no certification payload.
 
-F4.1 core local verification is complete: targeted cross-path batch **55/55 PASS**, TypeScript PASS, full unit/regression **1129/1129 PASS**, and production build PASS. Authenticated browser proof is staged to cover common PIC/DUAL role surface, common DUAL review invalidation, and persisted DUAL Instructor/PIC. F4.2 remains blocked until that browser gate passes.
+F4.1 local verification is complete: targeted cross-path batch **55/55 PASS**, TypeScript PASS, full unit/regression **1129/1129 PASS**, production build PASS, and authenticated desktop Chromium **2/2 PASS** against the disposable PostgreSQL browser DB. The browser gate proves the common PIC/DUAL role surface, DUAL review invalidation, required Instructor/PIC gating, successful Save, and persisted normalized DUAL Instructor/PIC data. The browser-only bootstrap now provides the minimal `airports` relation required by GPS airport detection; production DB/schema/certification are unchanged. **F4.2 is unblocked and next.**
 
 ### F4.2 — whole-part overrides
 - INHERIT or complete OVERRIDE per part;
