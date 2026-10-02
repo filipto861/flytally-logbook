@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 NEXT · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 CORE IMPLEMENTED / VERIFICATION PENDING · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -331,13 +331,26 @@ F4.1 implementation now:
 
 F4.1 local verification is complete: targeted cross-path batch **55/55 PASS**, TypeScript PASS, full unit/regression **1129/1129 PASS**, production build PASS, and authenticated desktop Chromium **2/2 PASS** against the disposable PostgreSQL browser DB. The browser gate proves the common PIC/DUAL role surface, DUAL review invalidation, required Instructor/PIC gating, successful Save, and persisted normalized DUAL Instructor/PIC data. The browser-only bootstrap now provides the minimal `airports` relation required by GPS airport detection; production DB/schema/certification are unchanged. **F4.2 is unblocked and next.**
 
-### F4.2 — whole-part overrides
+### F4.2 — whole-part overrides — CORE IMPLEMENTED / VERIFICATION PENDING
 - INHERIT or complete OVERRIDE per part;
 - no field-level fallback;
 - Reset to common deletes override;
 - ordered split-boundary-set change clears overrides with a visible notice;
 - common Role change invalidates inherited review state; crew text change uses completeness gate only;
 - crafted partial/stale/aircraft-drift envelopes fail closed.
+
+Implementation on the current branch:
+- UI keeps per-part Role/Crew override state separate from route/timeline Review state;
+- every part submits `part_N_roleCrew_mode=INHERIT|OVERRIDE`;
+- inherited parts submit no per-flight Role/Crew fields;
+- a PIC override submits only its own Role; a DUAL override submits its own Role + Instructor/PIC field;
+- server rejects missing mode, unknown or duplicate override keys, override indices outside the server-derived split count, stale Role/Crew fields on inherited/PIC envelopes, and attempted per-part aircraft/operation/billing/task context;
+- server resolves each part with `resolveGpsImportPartRoleCrew()` and supplies that complete context to `gpsFlightCandidate() → normalizeFlightDraft()`;
+- common Role changes invalidate only inherited review confirmations; per-part Role changes invalidate only that flight; Instructor text changes use the Save completeness gate without forcing route/timeline re-review;
+- changing the ordered split-boundary set clears all overrides and surfaces a visible reset notice instead of reassigning evidence heuristically;
+- roles remain PIC + DUAL only; SPIC/PICUS and Safety Pilot are still blocked.
+
+Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-crew.test.ts`. Current-head verification: **NOT RUN**. No DB/schema/certification change.
 
 ### F4.3 — Safety Pilot
 - shared lower-level Actual-PIC resolution plan;
