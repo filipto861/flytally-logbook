@@ -78,7 +78,7 @@ test("F3.0 Manual UI still presents aircraft-profile schema as ordinary editable
   assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration"/);
 });
 
-test("F3.0 Manual invalid-profile state is visible client-side but is not an action-level profile authority",()=>{
+test("F3.0 client characterization is superseded by F3.3 server PROFILE/SNAPSHOT authority",()=>{
   const form=read("components/flight-form.tsx");
   const actions=read("app/(protected)/flights/actions.ts");
   const createStart=actions.indexOf("export async function createFlight");
@@ -89,31 +89,26 @@ test("F3.0 Manual invalid-profile state is visible client-side but is not an act
   const update=actions.slice(updateStart,updateEnd>updateStart?updateEnd:actions.length);
 
   assert.match(form,/profileNeedsConfiguration=Boolean\(selected&&profileDefaultsApply&&!selectedProfile\?\.profile\)/);
-  assert.match(form,/if\(registration&&\(!evidence\|\|!aircraftClass\|\|profileNeedsConfiguration\)\)setLogbookOpen\(true\)/);
-  assert.doesNotMatch(form,/missing=\[[^\]]*profileNeedsConfiguration/);
-
-  for(const action of [create,update]){
-    assert.match(action,/parseFlightInput\(form\)/);
-    assert.doesNotMatch(action,/resolveFlightEntryAircraftProfileDefaults|resolveGpsImportAircraftContext/);
-    assert.doesNotMatch(action,/FROM aircraft WHERE[^\n]*registration/);
-  }
+  assert.match(create,/aircraftAuthorityProfile\(userId,f\.registration,false\)/);
+  assert.match(create,/authorizeProfileFlightContext/);
+  assert.match(update,/resolveFlightAircraftContextAuthority/);
+  assert.match(update,/authorizeUnchangedSnapshotFlightContext/);
 });
 
-test("F3.0 GPS already treats the active profile as server authority and blocks drift",()=>{
+test("F3.0 GPS active-profile authority now converges through the shared F3 resolver",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const gps=read("components/kml-import-form.tsx");
   const start=actions.indexOf("export async function importKmlFlight");
   const end=actions.indexOf("\nexport async function updateFlight",start);
   const importAction=actions.slice(start,end);
 
-  assert.match(importAction,/FROM aircraft WHERE user_id=\$\{userId\} AND UPPER\(TRIM\(registration\)\)=\$\{registration\} AND active=1 LIMIT 1/);
-  assert.match(importAction,/resolveGpsImportAircraftContext/);
-  assert.match(importAction,/validateGpsImportSubmittedAircraftContext/);
-  assert.match(importAction,/evidence=profileResult\.profile\.evidence/);
-  assert.match(importAction,/aircraftClass=profileResult\.profile\.aircraftClass/);
+  assert.match(importAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
+  assert.match(importAction,/authorizeProfileFlightContext\(selectedAircraft,flightAircraftContextFromForm\(form\)\)/);
+  assert.match(importAction,/profileForFlight/);
 
   assert.match(gps,/profileError=selectedAircraft&&!selectedProfile/);
   assert.match(gps,/const ready=Boolean\(selectedProfile&&sourceRequirements\)/);
+  assert.match(gps,/allowedContexts\.length>1/);
   assert.match(gps,/Needs configuration/);
 });
 
