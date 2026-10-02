@@ -16,7 +16,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Confirmed Safety Pilot cannot be enabled by UI expansion alone: GPS must preserve Manual/accepted-Connection Actual-PIC authority, account-ID Connection recheck, display-name snapshot and one atomic connected-crew child row per resulting source flight.
 - Drafted one common complete Role/Crew context plus all-or-nothing whole-part overrides; field-level inheritance, per-part aircraft identity and inferred crew remain prohibited.
 - Proposed fail-closed split behavior clears part Role/Crew overrides when split structure changes instead of guessing which new segment owns old crew evidence.
-- Added F4 design and independent-review handoff. Runtime/schema/certification: unchanged; implementation is blocked on review reconciliation.
+- Added F4 design and independent-review handoff. Runtime/schema/certification: unchanged.
+- Reconciled the independent review against current code: GPS already persists commander/instructor/role/verification name/reference from normalized per-part input; duplicate fingerprint excludes Role/Crew; Safety Pilot remains intentionally unwired from GPS.
+- Staged F4.0 characterization coverage locking persistence-column parity, duplicate identity, temporary PIC-only scope, Safety Pilot non-wiring and shared DUAL/SPIC/PICUS Save requirements. No runtime behavior changed.
+- Frozen implementation order: common Role/Crew → whole-part overrides → Safety Pilot. One product decision remains before enabling SPIC/PICUS: whether a common countersignature reference may apply to multiple split flight records.
 
 
 ### Flight Entry Workflow 3.0 — F3.5 closeout and F3 production integration
