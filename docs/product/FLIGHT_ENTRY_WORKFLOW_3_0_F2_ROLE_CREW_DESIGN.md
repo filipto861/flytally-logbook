@@ -429,7 +429,7 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - final evidence: PR #221 → `main@84b5f5362f03ef1959956fba91584059a36c2db5`; Verify #1094 PASS — TypeScript, 1068/1068 unit/regression, PostgreSQL 66/66; Browser #468 PASS — production build + Chromium 34 passed / 2 skipped;
 - no runtime, schema, certification-version or persisted-data change was made by F2.4C; deployment N/A.
 
-### F2.5 — cross-path regression + closeout — IMPLEMENTED / VERIFY PENDING
+### F2.5 — cross-path regression + closeout — DONE / PRODUCTION VERIFIED
 - exhaustive role matrix covers every `ROLES` / `ROLE_CREW_ROLES` value exactly once for EASA and ULL policy;
 - crafted Manual Save coverage proves EASA DUAL/SPIC/PICUS fail closed until required crew evidence is supplied while ULL does not inherit EASA blockers;
 - function-time allocation is frozen for every role; Safety Pilot/PAX/Observer remain non-creditable;
@@ -438,7 +438,10 @@ Focused review: `FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`.
 - shared/instructor/PIC invitation paths remain explicit, account-ID based and source revision/hash bound;
 - GPS remains PIC-only;
 - authenticated browser closeout checks key role-aware states at desktop 1280×800, iPad landscape 1024×768, iPad portrait 768×1024 and mobile 390×844 under both light and dark theme selectors, including horizontal-overflow checks;
-- no runtime/schema behavior change is intended; after green verification F2 can close and F3 becomes next.
+- final evidence: PR #223 → `main@bc187e307958054efa2e32db316b06139d10df6e`; Verify #1095 PASS — TypeScript, 1077/1077 unit/regression, PostgreSQL 66/66; Browser #469 PASS — production build + Chromium 36 passed / 2 skipped;
+- production `dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ` is READY for that exact merge SHA, aliases `fly-tally.com` without alias error, and the production root returned HTTP 200;
+- DB/schema N/A; no runtime semantic change was introduced by F2.5 itself;
+- **F2 is closed**. F3 Aircraft context simplification is the next roadmap phase.
 
 ## 14. Testing contract
 
@@ -467,8 +470,10 @@ F2.3 coverage:
 - revoked-Connection behavior before Save and at the write boundary;
 - atomic connected-PIC metadata synchronization.
 
-Later F2 coverage:
-- evidence-aware stale-field cleanup only after F2.4 consumer/producer proof.
+Final F2 compatibility freeze:
+- F2.4 producer/consumer proof showed that broad stale-field cleanup is unsafe because commander/instructor/verification fields can carry valid Manual/shared/training/endorsement provenance;
+- F2 therefore performs no destructive RoleCrew cleanup and does not reinterpret certified history;
+- any future structured evidence/schema separation must be a new explicit decision with migration, consumer proof and certified-history protection.
 
 ### PostgreSQL / actions
 
@@ -506,6 +511,24 @@ Required states:
 - role switch DUAL → PIC → DUAL;
 - mobile + iPad + desktop;
 - light + dark for final closeout.
+
+## 14.1 F2 final closeout
+
+F2.0–F2.5 are complete.
+
+Frozen at handoff to F3:
+- EASA DUAL, SPIC and PICUS Save requirements remain server-authoritative;
+- Safety Pilot Actual PIC resolution remains account-ID/server-authoritative with historical commander snapshot and separate connected metadata;
+- typed crew names never infer FlyTally account identity;
+- explicit connected verification and in-person signature remain separate post-certification actions;
+- self-PIC historical display precedence remains `COMMANDER → SELF`;
+- raw crew evidence is preserved non-destructively;
+- certification v1–v8 verification remains backward compatible and current writes remain v8;
+- shared/instructor/PIC collaboration stays exact revision/hash bound;
+- Safety Pilot/PAX/Observer remain non-creditable;
+- GPS remains PIC-only until the dedicated F4 scope.
+
+F2.5 evidence: PR #223 / `main@bc187e307958054efa2e32db316b06139d10df6e`, Verify #1095, Browser #469, production `dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ`.
 
 ## 15. Independent review reconciliation / frozen decisions
 

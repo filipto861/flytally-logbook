@@ -37,7 +37,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - **Final verification:** Verify FlyTally web #1094 PASS — TypeScript PASS, full unit/regression **1068/1068**, PostgreSQL acceptance **66/66**; Browser smoke #468 PASS — production build PASS, Chromium **34 passed / 2 skipped**.
 - PR #221 merged as `84b5f5362f03ef1959956fba91584059a36c2db5`.
 - **Runtime/schema/deploy:** no runtime or schema behavior changed; production deployment N/A.
-- **F2.5 implementation candidate:** added final exhaustive RoleCrew matrix/crafted Save regression coverage, v1–v8 certification compatibility checks, explicit invitation boundary checks, auxiliary-role non-creditability/GPS PIC-only guards, and responsive authenticated browser coverage for PIC/DUAL/SPIC/PICUS/CO-PILOT/Safety Pilot across desktop, iPad landscape/portrait and mobile in light + dark. No runtime/schema behavior change intended; verification pending.
+- **F2.5 final regression + F2 closeout:** added exhaustive RoleCrew matrix/crafted Save coverage, v1–v8 certification compatibility checks, explicit invitation boundary checks, auxiliary-role non-creditability/GPS PIC-only guards, and responsive authenticated browser coverage for PIC/DUAL/SPIC/PICUS/CO-PILOT/Safety Pilot across desktop, iPad landscape/portrait and mobile in light + dark.
+- **Final verification:** Verify FlyTally web #1095 PASS — TypeScript PASS, full unit/regression **1077/1077**, PostgreSQL acceptance **66/66**; Browser smoke #469 PASS — production build PASS, Chromium **36 passed / 2 skipped**.
+- PR #223 merged as `bc187e307958054efa2e32db316b06139d10df6e`.
+- Production deployment `dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ` is READY for exact merge SHA `bc187e307958054efa2e32db316b06139d10df6e`, aliases `fly-tally.com` with no alias error, and the production root returned HTTP 200 from that deployment.
+- **DB/schema:** N/A. F2 closes without destructive RoleCrew canonicalization, certification-version change, historical rewrite or GPS role expansion.
 
 ### Flight Entry Workflow 3.0 — F2.3 Safety Pilot resolver convergence
 - Added one server-owned `resolveSafetyPilotPicForSave()` path used by both Manual create and update.
