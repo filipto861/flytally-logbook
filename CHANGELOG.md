@@ -20,6 +20,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Reconciled the independent review against current code: GPS already persists commander/instructor/role/verification name/reference from normalized per-part input; duplicate fingerprint excludes Role/Crew; Safety Pilot remains intentionally unwired from GPS.
 - Staged F4.0 characterization coverage locking persistence-column parity, duplicate identity, temporary PIC-only scope, Safety Pilot non-wiring and shared DUAL/SPIC/PICUS Save requirements. No runtime behavior changed.
 - Frozen implementation order: common Role/Crew → whole-part overrides → Safety Pilot. One product decision remains before enabling SPIC/PICUS: whether a common countersignature reference may apply to multiple split flight records.
+- F4.0 local verification completed: targeted 5/5 PASS and full unit/regression 1124/1124 PASS.
+- Implemented F4.1 common GPS Role/Crew for PIC + DUAL only: strict server resolution after aircraft authority, shared EASA DUAL Instructor/PIC validation, candidate propagation into the shared normalizer, controlled common UI, and inherited-review invalidation on common Role changes. SPIC/PICUS and Safety Pilot remain unavailable. Runtime verification for F4.1 is pending; no DB/schema/certification change.
 
 
 ### Flight Entry Workflow 3.0 — F3.5 closeout and F3 production integration
