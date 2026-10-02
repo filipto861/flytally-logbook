@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 
 import {
@@ -8,6 +10,9 @@ import {
   normalizeFlightAircraftContextSnapshot,
   resolveFlightAircraftContextAuthority,
 } from "../lib/flight-aircraft-context-authority.ts";
+
+const root=path.resolve(import.meta.dirname,"..");
+const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 const profile=(overrides:Record<string,unknown>={})=>({
   aircraft_type:"B23",
@@ -208,4 +213,11 @@ test("F3.2 pure resolver does not silently repair profile or snapshot drift",()=
 
   const stored={...crafted};
   assert.equal(classifySnapshotAircraftContextChange(stored,crafted),"UNCHANGED");
+});
+
+test("F3.2 resolver remains pure and is not wired into production mutations yet",()=>{
+  const actions=read("app/(protected)/flights/actions.ts");
+  const gpsIntegrity=read("lib/gps-import-integrity.ts");
+  assert.doesNotMatch(actions,/flight-aircraft-context-authority/);
+  assert.doesNotMatch(gpsIntegrity,/flight-aircraft-context-authority/);
 });
