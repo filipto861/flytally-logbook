@@ -58,8 +58,9 @@ test("F1.3 normalized FlightInput remains the Manual semantic body while F3.3 ow
     assert.ok(block.includes("${commander}"),`${name} must persist the server-resolved commander`);
   }
   for(const field of ["evidence","aircraftType","aircraftClass","regulatoryCategory","balloonClass","balloonGroup"]){
-    assert.ok(create.includes(`f.${field}`),`create retains normalized ${field} after PROFILE authorization`);
+    assert.ok(create.includes(`authorityContext.${field}`),`create persists canonical PROFILE authority ${field}`);
   }
+  assert.match(create,/authorityContext=authority\.context/);
   assert.match(update,/persistedAircraftContext=flightAircraftContextFromInput\(f\)/);
   assert.match(update,/evidence=\$\{persistedAircraftContext\.evidence\}/);
   assert.match(update,/aircraft_type=\$\{persistedAircraftContext\.aircraftType\}/);
