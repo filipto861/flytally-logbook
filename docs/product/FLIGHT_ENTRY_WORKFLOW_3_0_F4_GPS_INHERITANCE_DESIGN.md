@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** DISCOVERY COMPLETE · DESIGN DRAFT / INDEPENDENT REVIEW GATE  
+**Status:** REVIEW RECONCILED · F4.0 CHARACTERIZATION STAGED · ONE PRODUCT DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -249,6 +249,91 @@ Expected gates after implementation:
   - revoked Connection fail-closed;
   - responsive desktop/iPad/mobile and light/dark for override UX;
 - no DB migration unless implementation evidence proves one necessary.
+
+## 11. Independent-review reconciliation
+
+Second-AI verdict: **APPROVE WITH CHANGES**. The review was based on the handoff only, so every code-dependent concern was reconciled against the current branch before implementation.
+
+Accepted:
+- whole-context INHERIT/OVERRIDE remains the F4 model;
+- server receives common context + explicit whole-part override envelopes and resolves them itself;
+- override length must match server-validated part count;
+- overrides never field-fallback to common;
+- split-boundary-set changes clear all overrides; route/time/note edits do not;
+- duplicate identity remains Role/Crew-independent;
+- changing the common Role invalidates inherited-part review confirmation; crew-text edits do not;
+- role-specific client buffers may be preserved, but only final-role fields are submitted;
+- Safety Pilot is sequenced last;
+- Operation/Engine, Balloon operation, billing and regulatory context remain common and outside F4 per-part overrides.
+
+Repository verification changed two review assumptions:
+- the current GPS INSERT already persists `commander`, `instructor`, `role`, `verification_name` and `verification_reference` from normalized `item.input`; F4.0 now locks that parity before role expansion;
+- `flightFingerprint()` is already explicitly limited to date + registration + off-block + departure + arrival, so Role/Crew remains outside duplicate identity.
+
+Safety Pilot reconciliation:
+- extracting a reusable lower-level resolution plan is accepted;
+- however, the existing Manual path already performs an accepted-Connection guard inside the write statement. F4.3 must preserve that write-time guard for every connected Safety Pilot part. A pre-write resolver/memoized account snapshot alone is not equivalent parity.
+- each connected Safety Pilot result must create one `flight_connected_crew` child row atomically with its source flight and track.
+
+Strict envelope interpretation:
+- unknown envelope keys are rejected;
+- an override must contain the complete allowed field set for its final role and may not borrow missing values from common;
+- client buffers for other roles are UI-only and must not be submitted as stale hidden fields;
+- this strict transport envelope does not create a second Role/Crew rules engine: completeness/meaning remains owned by `roleCrewSpec()` + `normalizeFlightDraft()`.
+
+F4.0 characterization:
+- source-contract tests now lock Manual/GPS persistence of all Role/Crew columns;
+- duplicate fingerprint Role/Crew independence is locked;
+- temporary PIC-only GPS scope is locked;
+- Safety Pilot remains intentionally unwired from GPS until F4.3;
+- shared DUAL/SPIC/PICUS Save requirements are locked before expansion.
+
+Open product decision:
+- **SPIC/PICUS countersignature reference inheritance across split parts.**
+- Repository evidence proves the field is typed evidence and Save-required for EASA SPIC/PICUS, but it does not prove whether one reference semantically covers multiple split flight records.
+- Recommended default: allow common inheritance and show the resolved reference on every part. If one reference must be unique per flight, SPIC/PICUS must require a whole-part override per flight instead.
+
+## 12. Frozen F4 batches
+
+### F4.0 — characterization — STAGED
+No runtime change.
+- persistence-column parity;
+- duplicate fingerprint scope;
+- current GPS PIC-only gate;
+- current Safety Pilot non-wiring;
+- shared Role/Crew Save requirements.
+
+### F4.1 — common Role/Crew
+- strict server common envelope;
+- GPS role allowlist derived from canonical roles minus explicitly blocked roles;
+- common Role/Crew UI driven by shared `roleCrewSpec()`;
+- every part inherits one complete resolved context;
+- DUAL enabled after parity tests;
+- SPIC/PICUS implementation waits for the countersignature-inheritance decision;
+- Safety Pilot remains blocked.
+
+### F4.2 — whole-part overrides
+- INHERIT or complete OVERRIDE per part;
+- no field-level fallback;
+- Reset to common deletes override;
+- ordered split-boundary-set change clears overrides with a visible notice;
+- common Role change invalidates inherited review state; crew text change uses completeness gate only;
+- crafted partial/stale/aircraft-drift envelopes fail closed.
+
+### F4.3 — Safety Pilot
+- shared lower-level Actual-PIC resolution plan;
+- manual or accepted Connection;
+- account-ID based server authority;
+- display-name snapshot;
+- write-time accepted-Connection guard;
+- one child row per connected source flight;
+- one invalid/revoked connection aborts the whole import.
+
+### F4.4 — closeout
+- full regression, PostgreSQL, TypeScript, build and authenticated browser matrix;
+- responsive override UX;
+- ROADMAP / FEATURES / CHANGELOG;
+- production smoke.
 
 ## 11. Review-gated questions
 
