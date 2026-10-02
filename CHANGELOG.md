@@ -22,7 +22,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Frozen implementation order: common Role/Crew → whole-part overrides → Safety Pilot. One product decision remains before enabling SPIC/PICUS: whether a common countersignature reference may apply to multiple split flight records.
 - F4.0 local verification completed: targeted 5/5 PASS and full unit/regression 1124/1124 PASS.
 - Implemented F4.1 common GPS Role/Crew for PIC + DUAL only: strict server resolution after aircraft authority, shared EASA DUAL Instructor/PIC validation, candidate propagation into the shared normalizer, controlled common UI, and inherited-review invalidation on common Role changes. SPIC/PICUS and Safety Pilot remain unavailable.
-- F4.1 core local verification PASS: targeted cross-path tests **55/55**, TypeScript PASS, full unit/regression **1129/1129**, and production build PASS. Added an isolated authenticated browser persistence fixture/test for common DUAL review invalidation and stored Role/Crew; that browser gate is staged but not yet run. No DB/schema/certification change.
+- F4.1 local closeout PASS: targeted cross-path tests **55/55**, TypeScript PASS, full unit/regression **1129/1129**, production build PASS, and authenticated desktop Chromium **2/2 PASS** against the disposable PostgreSQL browser DB. The browser proof covers PIC/DUAL role-surface behavior, common DUAL review invalidation, required Instructor/PIC gating, successful Save, and persisted normalized `DUAL + Instructor` values. The browser-only bootstrap now creates the minimal `airports` relation needed by GPS airport detection. No production DB/schema/certification change.
 
 
 ### Flight Entry Workflow 3.0 — F3.5 closeout and F3 production integration
