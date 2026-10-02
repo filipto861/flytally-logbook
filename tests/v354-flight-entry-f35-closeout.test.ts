@@ -63,6 +63,14 @@ test("F3.5 trash restore round-trips raw stored aircraft context without profile
   assert.doesNotMatch(trash,/validateAircraftProfile|allowedFlightContexts/);
 });
 
+test("F3.5 browser aircraft fixture supports the current aircraft mutation schema",()=>{
+  const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
+  assert.match(bootstrap,/note TEXT NOT NULL DEFAULT ''/);
+  assert.match(bootstrap,/created_at TIMESTAMPTZ NOT NULL DEFAULT NOW\(\)/);
+  assert.match(bootstrap,/updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW\(\)/);
+  assert.match(bootstrap,/UNIQUE\(user_id,registration\)/);
+});
+
 test("F3.5 Quick Add commits canonical aircraft before refreshing the entry workspace",()=>{
   const quick=read("components/quick-aircraft-form.tsx");
   const actions=read("app/(protected)/database/actions.ts");
