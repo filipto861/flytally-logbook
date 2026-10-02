@@ -44,19 +44,20 @@ test("F4.0 duplicate identity remains RoleCrew-independent",()=>{
   assert.doesNotMatch(source,/role|commander|instructor|verification/i);
 });
 
-test("F4.0 temporary PIC-only boundary is superseded only by the F4.1 common PIC/DUAL gate",()=>{
-  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL"]);
+test("F4.0 temporary PIC-only boundary is superseded by F4.1 DUAL and F4.3 Safety Pilot gates",()=>{
+  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL","SAFETY PILOT"]);
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
   assert.deepEqual(validateGpsImportRole("DUAL"),{role:"DUAL"});
-  for(const role of ["SPIC","PICUS","SAFETY PILOT"]){
-    assert.match(validateGpsImportRole(role).error??"",/supports PIC and DUAL/i,role);
+  assert.deepEqual(validateGpsImportRole("SAFETY PILOT"),{role:"SAFETY PILOT"});
+  for(const role of ["SPIC","PICUS"]){
+    assert.match(validateGpsImportRole(role).error??"",/supports PIC, DUAL and SAFETY PILOT/i,role);
   }
 
   const form=read("components/kml-import-form.tsx");
   assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
 });
 
-test("F4.0 records that Safety Pilot authority is not yet wired into GPS",()=>{
+test("F4.0 Safety Pilot characterization is superseded by F4.3 while preserving Manual authority",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
   const manual=between(actions,"export async function createFlight","export async function importKmlFlight");
   const gps=between(actions,"export async function importKmlFlight","export async function updateFlight");
@@ -66,8 +67,9 @@ test("F4.0 records that Safety Pilot authority is not yet wired into GPS",()=>{
   assert.match(manual,/flight_connected_crew/);
   assert.match(manual,/pc\.status='accepted'/);
 
-  assert.doesNotMatch(gps,/resolveSafetyPilotPicForSave/);
-  assert.doesNotMatch(gps,/flight_connected_crew/);
+  assert.match(gps,/resolveSafetyPilotPic/);
+  assert.match(gps,/flight_connected_crew/);
+  assert.match(gps,/pc\.status='accepted'/);
 
   assert.match(helper,/WHERE u\.id=\$\{connectedUserId\}/);
   assert.match(helper,/pc\.status='accepted'/);
