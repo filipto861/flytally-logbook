@@ -35,6 +35,23 @@ export type GpsImportCommonRoleCrew={
   verificationReference:string;
 };
 
+export const GPS_IMPORT_ROLE_CREW_MODES=["INHERIT","OVERRIDE"] as const;
+export type GpsImportRoleCrewMode=(typeof GPS_IMPORT_ROLE_CREW_MODES)[number];
+
+export type GpsImportPartRoleCrewEnvelope={
+  mode:unknown;
+  role?:unknown;
+  commander?:unknown;
+  instructor?:unknown;
+  verificationName?:unknown;
+  verificationReference?:unknown;
+  rolePresent?:boolean;
+  commanderPresent?:boolean;
+  instructorPresent?:boolean;
+  verificationNamePresent?:boolean;
+  verificationReferencePresent?:boolean;
+};
+
 const clean=(value:unknown,max:number)=>String(value??"").trim().slice(0,max);
 
 export function resolveGpsImportCommonRoleCrew(
@@ -53,6 +70,95 @@ export function resolveGpsImportCommonRoleCrew(
   const spec=roleCrewSpec(role,String(evidence??""));if(!spec)return{error:"Select a valid GPS pilot role."};
   const crewError=roleCrewSaveError(spec,{instructor,verificationName:"",verificationReference:""});if(crewError)return{error:crewError};
   return{context:{role,commander:"",instructor,verificationName:"",verificationReference:""}};
+}
+
+export function resolveGpsImportPartRoleCrew(
+  submitted:GpsImportPartRoleCrewEnvelope,
+  evidence:unknown,
+  common:GpsImportCommonRoleCrew,
+):
+  |{mode:GpsImportRoleCrewMode;context:GpsImportCommonRoleCrew;error?:undefined}
+  |{mode?:undefined;context?:undefined;error:string}{
+  const mode=upper(submitted.mode);
+  if(!GPS_IMPORT_ROLE_CREW_MODES.includes(mode as GpsImportRoleCrewMode)){
+    return{error:"Select whether this flight inherits the common Role/Crew context or uses a complete override."};
+  }
+  const presentFields=[
+    submitted.rolePresent,
+    submitted.commanderPresent,
+    submitted.instructorPresent,
+    submitted.verificationNamePresent,
+    submitted.verificationReferencePresent,
+  ];
+  if(mode==="INHERIT"){
+    if(presentFields.some(Boolean))return{error:"Inherited Role/Crew must not submit per-flight override fields."};
+    return{mode:"INHERIT",context:{...common}};
+  }
+
+  if(!submitted.rolePresent)return{error:"A Role/Crew override must include its own Role."};
+  const roleResult=validateGpsImportRole(submitted.role);if(!roleResult.role)return{error:roleResult.error};
+  const role=roleResult.role;
+  if(submitted.commanderPresent||submitted.verificationNamePresent||submitted.verificationReferencePresent){
+    return{error:`${role} GPS Role/Crew override contains fields that are not applicable to this supported role.`};
+  }
+  if(role==="PIC"){
+    if(submitted.instructorPresent)return{error:"PIC GPS Role/Crew override must contain only its own Role."};
+  }else if(!submitted.instructorPresent){
+    return{error:"DUAL GPS Role/Crew override must include its own Instructor / PIC field."};
+  }
+
+  const resolved=resolveGpsImportCommonRoleCrew({
+    role,
+    commander:submitted.commander,
+    instructor:submitted.instructor,
+    verificationName:submitted.verificationName,
+    verificationReference:submitted.verificationReference,
+  },evidence);
+  if(!resolved.context)return{error:resolved.error};
+  return{mode:"OVERRIDE",context:resolved.context};
+}
+
+const PART_ROLE_CREW_SUFFIXES=new Set([
+  "mode",
+  "role",
+  "commander",
+  "instructor",
+  "verificationName",
+  "verificationReference",
+]);
+const PART_COMMON_ONLY_SUFFIXES=new Set([
+  "registration",
+  "aircraftType",
+  "aircraftClass",
+  "evidence",
+  "regulatoryCategory",
+  "balloonClass",
+  "balloonGroup",
+  "balloonOperation",
+  "operationType",
+  "engineType",
+  "billingBasis",
+  "billingShare",
+  "task",
+]);
+
+export function validateGpsImportPartEnvelopeKeys(keys:Iterable<string>,partCount:number):{error?:string}{
+  for(const key of keys){
+    const roleCrew=key.match(/^part_(\d+)_roleCrew_(.+)$/);
+    if(roleCrew){
+      const index=Number(roleCrew[1]),suffix=roleCrew[2];
+      if(!Number.isSafeInteger(index)||index<0||index>=partCount)return{error:"Role/Crew override count does not match the reviewed track split."};
+      if(!PART_ROLE_CREW_SUFFIXES.has(suffix))return{error:`Flight ${index+1} contains an unknown Role/Crew override field.`};
+      continue;
+    }
+    const commonOnly=key.match(/^part_(\d+)_(registration|aircraftType|aircraftClass|evidence|regulatoryCategory|balloonClass|balloonGroup|balloonOperation|operationType|engineType|billingBasis|billingShare|task)$/);
+    if(commonOnly){
+      const index=Number(commonOnly[1]);
+      if(!Number.isSafeInteger(index)||index<0||index>=partCount)return{error:"Per-flight common-context field count does not match the reviewed track split."};
+      if(PART_COMMON_ONLY_SUFFIXES.has(commonOnly[2]))return{error:`Flight ${index+1} cannot override aircraft, operation, billing or other common GPS context.`};
+    }
+  }
+  return{};
 }
 
 export function validateGpsImportSubmittedAircraftContext(
