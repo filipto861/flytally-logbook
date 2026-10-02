@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -351,7 +351,7 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
 });
 
-test("GPS import fails closed for invalid profile context and exposes only PIC",async({page})=>{
+test("GPS import fails closed for invalid profile context and exposes only F4.1 PIC/DUAL roles",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
 
@@ -365,7 +365,8 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
   await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · B23");
-  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(2);
+  await expect(gpsForm.locator('select[name="role"] option')).toHaveText(["PIC","DUAL"]);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
   await expect(gpsForm.locator('select[name="operationType"]')).toBeVisible();
   await expect(gpsForm.locator('select[name="engineType"]')).toBeVisible();
@@ -459,6 +460,57 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(page.locator('textarea[name="note"]')).toContainText("F1.4 normalized GPS save");
   await expectNoHorizontalOverflow(page);
   resetGpsNormalizedImportFixture();
+});
+
+test("F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.1 common RoleCrew coverage requires the isolated browser database.");
+  resetF41CommonRoleCrewFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-10-02T19:00:00Z</when><when>2026-10-02T19:01:00Z</when><when>2026-10-02T19:02:00Z</when><when>2026-10-02T19:03:00Z</when><when>2026-10-02T19:04:00Z</when><when>2026-10-02T19:05:00Z</when><gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f41-common-dual.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+
+  await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-02");
+  await gpsForm.locator('input[name="part_0_offBlock"]').fill("19:00");
+  await gpsForm.locator('input[name="part_0_takeoff"]').fill("19:01");
+  await gpsForm.locator('input[name="part_0_landing"]').fill("19:04");
+  await gpsForm.locator('input[name="part_0_onBlock"]').fill("19:05");
+  const starts=gpsForm.locator('input[name="part_0_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+  await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
+  await gpsForm.locator('textarea[name="part_0_note"]').fill("F4.1 common DUAL browser proof");
+
+  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
+  await expect(reviewed).toBeEnabled();
+  await reviewed.check();
+
+  const role=gpsForm.locator('select[name="role"]');
+  await role.selectOption("DUAL");
+  await expect(reviewed).not.toBeChecked();
+  const instructor=gpsForm.locator('input[name="instructor"]');
+  await expect(instructor).toBeVisible();
+  await expect(instructor).toHaveAttribute("required","");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeDisabled();
+  await instructor.fill("Browser Training Instructor");
+  await reviewed.check();
+  await expect(gpsForm.getByText("Common Role/Crew")).toContainText("DUAL · Browser Training Instructor");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  await expect(page.locator('select[name="role"]')).toHaveValue("DUAL");
+  await expect(page.locator('input[name="instructor"]')).toHaveValue("Browser Training Instructor");
+  expect(browserSqlScalar("SELECT role||'|'||instructor||'|'||COALESCE(commander,'')||'|'||COALESCE(verification_name,'')||'|'||COALESCE(verification_reference,'') FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02' AND off_block='19:00' ORDER BY id DESC LIMIT 1")).toBe("DUAL|Browser Training Instructor|||");
+  await expectNoHorizontalOverflow(page);
+  resetF41CommonRoleCrewFixture();
 });
 
 test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",async({page})=>{
