@@ -241,13 +241,14 @@ test("F2.5 auxiliary roles remain non-creditable and do not silently enter LAPL 
   assert.doesNotMatch(recency,/laplExperienceRole[^\n]*OBSERVER/);
 });
 
-test("F2.5 GPS role scope stays frozen at PIC-only for the next dedicated milestone",()=>{
+test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC and DUAL while later roles remain blocked",()=>{
   const gps=read("lib/gps-import-integrity.ts");
   const form=read("components/kml-import-form.tsx");
-  assert.match(gps,/GPS_IMPORT_ROLES=\["PIC"\]/);
-  assert.match(gps,/GPS import currently supports PIC only/);
-  assert.match(form,/name="role" defaultValue="PIC"><option>PIC<\/option><\/select>/);
-  for(const role of ["DUAL","SPIC","PICUS","SAFETY PILOT","CO-PILOT"]){
+  assert.match(gps,/GPS_IMPORT_ROLES=\["PIC","DUAL"\]/);
+  assert.match(gps,/GPS import currently supports PIC and DUAL/);
+  assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
+  assert.match(form,/role==="DUAL"/);
+  for(const role of ["SPIC","PICUS","SAFETY PILOT","CO-PILOT"]){
     assert.doesNotMatch(form,new RegExp(`<option(?: value="[^"]+")?>${role.replace(/[.*+?^$()|[\]\\]/g,"\\$&")}</option>`));
   }
 });
