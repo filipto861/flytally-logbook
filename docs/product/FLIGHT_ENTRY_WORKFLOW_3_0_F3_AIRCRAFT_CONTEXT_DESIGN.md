@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F3 Aircraft Context Simplification
 
-**Status:** F3 DONE / LOCAL VERIFIED · INTEGRATION / PRODUCTION VERIFICATION PENDING BEFORE F4  
+**Status:** F3 DONE / PRODUCTION INTEGRATED · F4 NEXT  
 **Repository baseline after F3.2:** main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73  
 **Scope:** aircraft-context authority, explicit override semantics, compact Manual/GPS presentation, historical snapshot protection. No runtime/schema/certification change in F3.0.
 
@@ -401,9 +401,13 @@ Local evidence:
 - final F3.5 changes after those runtime gates were limited to tests/browser fixtures/docs;
 - DB migration/schema: N/A;
 - certification v1–v8: unchanged;
-- CI/PR/merge/deploy: NOT RUN / not claimed.
+- CI/PR: intentionally NOT RUN; direct fast-forward integration was used after explicit approval.
+- Production integration: `main@a4b1c626d487aad86ef3e2de887df50a0a2b9248`, runtime tree identical to the locally verified F3 closeout tree.
+- Vercel: `dpl_Dn3PAymjG7aCds9xsw18shzkYM4a` READY, `fly-tally.com` alias healthy, public HTTP 200.
+- Immediate post-deploy runtime-error check: none reported in the selected 30-minute window.
+- Rollback anchor: `chore/pre-f3-integration-anchor` → `4906c1c376d48e9032d23f85b73aea560843f8a5`.
 
-F3 is therefore locally closed. The next gate is branch integration plus production verification; **F4 must not treat local F3 evidence as a production-deployment claim.**
+F3 is closed and production-integrated. **F4 multi-part GPS inheritance is the next implementation milestone.**
 
 ## 9.1 F3.0 verification evidence
 
