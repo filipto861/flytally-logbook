@@ -105,3 +105,21 @@ test("F3.4 keeps flight-specific configuration explicit outside profile-owned ai
   assert.match(gps,/GPS cannot determine crew operation\./);
   assert.match(gps,/GPS cannot determine whether the operation was free or tethered\./);
 });
+
+test("F3.4 compact summaries de-duplicate repeated ULL context labels",()=>{
+  const manual=read("components/flight-form.tsx");
+  const gps=read("components/kml-import-form.tsx");
+  for(const source of [manual,gps])assert.match(source,/compactContextSummary=\(parts:Array<string\|undefined>\)=>\[\.\.\.new Set\(/);
+});
+
+test("F3.4 browser fixture carries authority provenance and exercises compact Manual/GPS states",()=>{
+  const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
+  const browser=read("e2e/public-shell.spec.mjs");
+  for(const column of ["part_fcl_credit_class","part_fcl_credit_basis","part_fcl_credit_from"])assert.match(bootstrap,new RegExp(column+" TEXT NOT NULL DEFAULT ''"));
+  assert.match(bootstrap,/OK-TMG1/);
+  assert.match(browser,/F3\.4 Manual compact context exposes only A\+ choice and blocks invalid profiles/);
+  assert.match(browser,/details\.aircraft-context-section/);
+  assert.match(browser,/select\[name="regulatoryCategory"\]/);
+  assert.match(browser,/ULL · OK-ULL1/);
+  assert.match(browser,/Stored flight context/);
+});
