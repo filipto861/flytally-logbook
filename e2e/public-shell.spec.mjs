@@ -188,8 +188,9 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
 
   const registration=gpsForm.locator('select[name="registration"]');
   await registration.selectOption("OK-E2E");
-  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
-  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-E2E");
   await expect(gpsForm.locator('select[name="role"] option')).toHaveCount(1);
   await expect(gpsForm.locator('select[name="role"]')).toHaveValue("PIC");
   await expect(gpsForm.locator('select[name="operationType"]')).toBeVisible();
@@ -207,19 +208,31 @@ test("GPS import fails closed for invalid profile context and exposes only PIC",
   await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
   await expect(reviewed).toBeEnabled();
 
+  await registration.selectOption("OK-TMG1");
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("TMG");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
+  const regulatory=gpsForm.locator('select[name="regulatoryCategory"]');
+  await expect(regulatory).toBeVisible();
+  await expect(regulatory.locator("option")).toHaveCount(2);
+  await expect(regulatory).toHaveValue("AEROPLANE");
+  await regulatory.selectOption("SAILPLANE");
+  await expect(regulatory).toHaveValue("SAILPLANE");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("Sailplane · Part-SFCL");
+
   await registration.selectOption("OK-ULL1");
-  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("ULL");
-  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("ULL");
-  await expect(gpsForm.getByText("Needs configuration.")).toHaveCount(0);
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("ULL");
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("ULL · OK-ULL1");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
 
   await registration.selectOption("OK-BAD1");
-  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("");
-  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
-  await expect(gpsForm.getByText("Needs configuration.")).toBeVisible();
+  const invalidContext=gpsForm.locator("[data-aircraft-context-card]");
+  await expect(invalidContext).toContainText("Needs configuration");
+  const configLink=invalidContext.getByRole("link",{name:/Open Aircraft/});
+  await expect(configLink).toHaveAttribute("target","_blank");
   await expectNoHorizontalOverflow(page);
 });
 
