@@ -141,6 +141,13 @@ test("F3.3 Manual actions derive PROFILE/SNAPSHOT authority server-side before p
 
   assert.match(create,/aircraftAuthorityProfile\(userId,f\.registration,false\)/);
   assert.match(create,/authorizeProfileFlightContext\(profile,flightAircraftContextFromForm\(form\)\)/);
+  assert.match(create,/authorityContext=authority\.context/);
+  assert.match(create,/\$\{authorityContext\.evidence\}/);
+  assert.match(create,/\$\{authorityContext\.aircraftType\}/);
+  assert.match(create,/\$\{authorityContext\.aircraftClass\}/);
+  assert.match(create,/\$\{authorityContext\.regulatoryCategory\}/);
+  assert.match(create,/\$\{authorityContext\.balloonClass\}/);
+  assert.match(create,/\$\{authorityContext\.balloonGroup\}/);
 
   assert.match(update,/resolveFlightAircraftContextAuthority/);
   assert.match(update,/authorityKind\.authority==="PROFILE"/);
