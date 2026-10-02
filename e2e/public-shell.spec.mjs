@@ -141,8 +141,8 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await expectAuthenticatedRoute(page,"Connections");
 });
 
-test("GPS import never receives manual intelligent profile warnings",async({page})=>{
-  test.skip(!authenticatedBrowser,"Authenticated intelligent-review browser coverage requires the isolated CI database.");
+test("GPS and Manual keep profile-owned aircraft context out of generic drift editors",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated aircraft-context browser coverage requires the isolated CI database.");
   resetIntelligentReviewFormScopeFixture();
   await loginBrowserPilot(page,"/flights/new");
 
@@ -153,8 +153,11 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   await expect(gpsForm.locator('select[name="registration"]')).toBeVisible();
   await gpsForm.locator('select[name="registration"]').selectOption("OK-HST1");
 
-  await expect(gpsForm.getByLabel("Aircraft class")).toHaveValue("SEP");
-  await expect(gpsForm.getByLabel("Logbook")).toHaveValue("EASA");
+  await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
+  await expect(gpsForm.locator('select[name="aircraftClass"]')).toHaveCount(0);
+  await expect(gpsForm.locator('select[name="evidence"]')).toHaveCount(0);
+  await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-HST1");
   await expect(gpsForm.locator("[data-intelligent-review]")).toHaveCount(0);
   await expect(page.getByText(/OK-HST1 differs from its usual profile/)).toHaveCount(0);
 
@@ -162,12 +165,15 @@ test("GPS import never receives manual intelligent profile warnings",async({page
   const manualForm=page.locator("#new-flight-manual-form");
   await expect(manualForm).toBeVisible();
   await manualForm.locator('select[name="registration"]').selectOption("OK-HST1");
-  await expect(manualForm.locator('select[name="aircraftClass"]')).toHaveValue("SEP");
-  await expect(manualForm.locator('select[name="evidence"]')).toHaveValue("EASA");
-  await manualForm.locator("summary").filter({hasText:"Aircraft & logbook"}).click();
-  await expect(manualForm.locator('select[name="aircraftClass"]')).toBeVisible();
-  await manualForm.locator('select[name="aircraftClass"]').selectOption("ULL");
-  await expect(manualForm.locator('[data-intelligent-review="registration_profile_aircraft_class"]')).toContainText("OK-HST1 differs from its usual profile");
+  await expect(manualForm.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
+  await expect(manualForm.locator('input[name="evidence"]')).toHaveValue("EASA");
+  await expect(manualForm.locator('select[name="aircraftClass"]')).toHaveCount(0);
+  await expect(manualForm.locator('select[name="evidence"]')).toHaveCount(0);
+  const context=manualForm.locator("details.aircraft-context-section");
+  await expect(context.locator("summary")).toContainText("EASA · Aeroplane · Part-FCL · SEP · OK-HST1");
+  await context.locator("summary").click();
+  await expect(context.locator("[data-aircraft-context-card]")).toContainText("Profile context");
+  await expect(manualForm.locator('[data-intelligent-review="registration_profile_aircraft_class"]')).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
