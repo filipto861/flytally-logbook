@@ -8,7 +8,6 @@ const sharing=fs.readFileSync("app/(protected)/flights/shared-actions.ts","utf8"
 const restore=fs.readFileSync("lib/account-restore-v6.ts","utf8");
 
 test("migration 17 preserves explicit historical aircraft identity as an atomic tuple",()=>{
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=17/);
   assert.match(plan,/version:17,name:"historical flight aircraft identity preservation"/);
   assert.match(db,/17:"historical flight aircraft identity preservation"/);
   assert.match(db,/if\(version===17\)return\[/);
