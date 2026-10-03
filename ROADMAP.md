@@ -561,7 +561,7 @@ Milestones:
 | E1.0 — design + independent review | ✅ | **DONE / RECONCILED** · APPROVE WITH CHANGES; repo + authoritative twilight-source reconciliation complete |
 | E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
 | E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
-| E1.3 — GPS civil-twilight landing suggestion | ⏳ | Event-level Day/Night suggestion with provenance and sticky user override |
+| E1.3 — GPS civil-twilight landing suggestion | 🚧 | **DISCOVERY/DESIGN COMPLETE · INDEPENDENT REVIEW GATE** · exact GPS T&G/final-landing event points identified; geometric -6° SERA classifier + EASA-only applicability + UNSET/SUGGESTED/MANUAL sticky override state drafted; dedicated review handoff added before implementation |
 | E1.4 — historical Task cleanup | ⏳ | Read-only census first; draft exact-value cleanup only after approval; certified rows protected |
 | E1.5 — verification / migration / production closeout | ⏳ | PostgreSQL, unit, build, browser, PR/CI, migration, smoke, docs |
 
