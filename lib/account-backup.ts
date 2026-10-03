@@ -8,6 +8,7 @@ import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
+import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 
 export async function buildAccountBackup(userId:number):Promise<{backup:PortableBackup;json:string;digest:string}>{
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
