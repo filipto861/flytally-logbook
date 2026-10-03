@@ -375,7 +375,7 @@ Post-closeout production defect handling:
 - Required evidence: source regression proving no global form lookup, plus authenticated browser reproduction using a known EASA/SEP aircraft with dominant EASA/SEP history; GPS must retain EASA/SEP and receive no manual intelligent-profile warning.
 - Scope is presentation/advisory wiring only: no flight parser, GPS save, aircraft profile, historical snapshot, certification, recency, billing or database semantics change.
 
-## Flight Entry Workflow 3.0 — ACTIVE
+## Flight Entry Workflow 3.0 — DONE / PRODUCTION VERIFIED
 
 Goal: converge Manual and GPS creation onto one canonical semantic flight contract while materially reducing cognitive load for normal flight entry.
 
@@ -415,8 +415,8 @@ Milestones:
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
 | F4 — Multi-part GPS inheritance | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged as `252bcb8`; PIC/DUAL/Safety Pilot common+whole-part Role/Crew inheritance verified; SPIC/PICUS countersignature-reference inheritance remains separately deferred |
-| F5 — Primary UX / copy simplification | ✅ | **DONE / LOCAL VERIFIED** · focused 46/46 PASS; reconciliation 16/16 PASS; TypeScript PASS; full regression **1151/1151 PASS**; production build PASS; authenticated F5.3 browser **2/2 PASS** across focused desktop/iPad/mobile states; no runtime/schema/certification semantic change |
-| F6 — Browser / responsive / production closeout | 🚧 | **LOCAL VERIFIED · PR/CI NEXT** · source contract **6/6 PASS**; authenticated F6 browser **4/4 PASS** across Manual/GPS/invalid-profile matrix, required viewports, light/dark and 200% reflow equivalent; no runtime change; final PR/CI/merge/deploy/smoke follows |
+| F5 — Primary UX / copy simplification | ✅ | **DONE / PRODUCTION VERIFIED** · included in PR #235 → `fb0bbb3`; focused 46/46 PASS; reconciliation 16/16 PASS; TypeScript PASS; full regression **1151/1151 PASS**; production build PASS; authenticated F5.3 browser **2/2 PASS** |
+| F6 — Browser / responsive / production closeout | ✅ | **DONE / PRODUCTION VERIFIED** · PR #235 CI PASS; local full Playwright **72 passed / 2 skipped / 0 failed**; source **6/6 PASS**; F6 browser **4/4 PASS**; merge `fb0bbb3`; Vercel `dpl_GM9nQX2gBwbn4GgzEy7YrJPnmR4F` READY on exact SHA; production smoke PASS; no runtime errors |
 
 Immediate next step:
 - F2.0 design/review contract is merged as PR #203;
