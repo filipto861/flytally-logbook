@@ -966,9 +966,15 @@ test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared
   resetE14LegacyTaskFixture();
 
   await loginBrowserPilot(page,"/flights/9914");
-  await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText(/retained exactly as stored evidence from the legacy GPS-import workflow/)).toBeVisible();
+  const ownerPanel=page.getByRole("tabpanel");
+  await expect(ownerPanel.locator("small").filter({hasText:/^GPS import/}).first()).toBeVisible();
+  await expect(ownerPanel.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+
+  await page.getByRole("tab",{name:"Logbook data"}).click();
+  const ownerLegacyNote=page.locator(".legacy-task-note");
+  await expect(ownerLegacyNote.locator("code")).toHaveText("GPS import");
+  await expect(ownerLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
+  await expect(ownerLegacyNote).toContainText("retained exactly as stored evidence from the legacy GPS-import workflow");
 
   for(const viewport of [
     {width:1280,height:800},
@@ -976,15 +982,16 @@ test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared
     {width:390,height:844},
   ]){
     await page.setViewportSize(viewport);
-    await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
-    await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+    await expect(ownerLegacyNote.locator("code")).toHaveText("GPS import");
+    await expect(ownerLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
     await expectNoHorizontalOverflow(page);
   }
 
   await page.goto("/connections/shared/9915");
-  await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
-  await expect(page.getByText(/retained exactly as stored evidence from the legacy GPS-import workflow/)).toBeVisible();
+  const sharedLegacyNote=page.locator(".legacy-task-note");
+  await expect(sharedLegacyNote.locator("code")).toHaveText("GPS import");
+  await expect(sharedLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
+  await expect(sharedLegacyNote).toContainText("retained exactly as stored evidence from the legacy GPS-import workflow");
   await expect(page.getByRole("button",{name:"Add to my logbook"})).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
