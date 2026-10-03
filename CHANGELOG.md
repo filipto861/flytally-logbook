@@ -17,7 +17,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added authenticated GPS multi-part coverage for inherited common DUAL plus complete connected Safety Pilot per-flight override and Reset-to-common visibility.
 - Added Manual + GPS invalid-profile recovery coverage across the full presentation matrix.
 - Added focused source contract `tests/v360-flight-entry-f6-closeout.test.ts` and closeout design `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F6_CLOSEOUT.md`.
-- Runtime/parser/normalizer/persistence/schema/certification/recency changes: **none**. Local F6 verification: **NOT RUN**.
+- Runtime/parser/normalizer/persistence/schema/certification/recency changes: **none**. Local F6 verification complete: focused closeout contract **6/6 PASS** and authenticated Chromium F6 matrix **4/4 PASS**. The browser matrix exercises Manual PIC/DUAL/Safety Pilot Manual+Connection/SPIC/PICUS, GPS PIC/DUAL/Safety Pilot Manual+Connection, GPS multi-part inherited DUAL + connected Safety Pilot override, and Manual/GPS invalid-profile recovery across 1440 desktop, iPad landscape/portrait, 390 mobile, 320 mobile and 200% reflow equivalent in Light + Dark with zero horizontal overflow assertions. F6 is **LOCAL VERIFIED**; PR/CI/merge/deploy/production smoke remain pending.
 
 ### Flight Entry Workflow 3.0 — F5 Primary UX discovery/design
 - Reconstructed the post-F4 production state from `main@5281d61fe2e7f38a3425ac0189007b46c68601b2` and reconciled roadmap drift: F0–F4 are production verified, while F5 and F6 remain outstanding milestones.
