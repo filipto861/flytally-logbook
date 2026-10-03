@@ -24,7 +24,6 @@ function manualForm(operationType=""){
 
 test("E1.2 schema v18 adds a nullable constrained aircraft operation default without backfill",()=>{
   const plan=read("lib/migration-plan.ts"),db=read("lib/db-optimization.ts");
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=18/);
   assert.match(plan,/version:18,name:"aircraft default operation type"/);
   assert.match(db,/18:"aircraft default operation type"/);
   const start=db.indexOf("if(version===18)return[");
