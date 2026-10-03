@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1/F4.2 DONE / LOCAL VERIFIED · F4.3 TARGETED + POSTGRES VERIFIED / FULL REGRESSION RERUN PENDING · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1/F4.2 DONE / LOCAL VERIFIED · F4.3 TARGETED + POSTGRES + BUILD VERIFIED / FULL REGRESSION RERUN PENDING · ONE SPIC/PICUS DECISION OPEN  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -364,7 +364,7 @@ Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-
 - zero parent, track or required connected-child rows force the complete N-part transaction to fail closed;
 - no invitation is sent during Save;
 - split-change override clearing and inherited-only common Role invalidation remain unchanged from F4.2;
-- F4.3 verification evidence is now: F1.4/F4.3 focused **12/12 PASS**, targeted cross-path **80/80 PASS**, isolated PostgreSQL Manual-resolver + GPS Safety Pilot **5/5 PASS** including accepted connected persistence and revoked-Connection whole-transaction rollback, and TypeScript PASS on the runtime-equivalent head. The deliberate division-by-zero is the fail-closed assertion and is expected in that test. The first full-suite run reached **1135/1141 PASS**; all 6 failures were stale source-contract assertions superseded by F4.3 and have been reconciled in test-only commits. Focused/full rerun, production build and authenticated browser are still pending. No DB migration or certification-version change.
+- F4.3 verification evidence is now: F1.4/F4.3 focused **12/12 PASS**, targeted cross-path **80/80 PASS**, isolated PostgreSQL Manual-resolver + GPS Safety Pilot **5/5 PASS** including accepted connected persistence and revoked-Connection whole-transaction rollback, and TypeScript plus production build PASS on the runtime-equivalent head. The deliberate division-by-zero is the fail-closed assertion and is expected in that test. The first full-suite run reached **1135/1141 PASS**; all 6 failures were stale source-contract assertions superseded by F4.3 and have been reconciled in test-only commits. Focused/full rerun, production build and authenticated browser are still pending. No DB migration or certification-version change.
 
 ### F4.4 — closeout
 - full regression, PostgreSQL, TypeScript, build and authenticated browser matrix;
