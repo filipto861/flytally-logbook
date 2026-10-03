@@ -257,6 +257,8 @@ Historical revision snapshots, deleted-flight recovery copies and audit history 
 Census implementation: `tooling/e14-gps-task-census.sql`.
 It starts `BEGIN TRANSACTION READ ONLY`, performs SELECT-only inspection and ends with `ROLLBACK`.
 
+Local verification completed on the isolated browser PostgreSQL database after bringing the fixture in line with its declared preapplied migration state: focused E1.4/E1.1/certification tests **15/15 PASS**, TypeScript PASS, and the full census executed through `ROLLBACK` with zero matching fixture rows. This is syntax/schema proof only; it is not production census evidence.
+
 ### E1.5 — verification / docs / production closeout
 - targeted unit/source tests;
 - migration/PostgreSQL tests for v18;
