@@ -9,6 +9,36 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
+- Activated the final F6 acceptance phase after F5 completed local verification.
+- Added a shared required presentation matrix covering 1440 desktop, iPad landscape, iPad portrait, 390 mobile, 320 compact mobile and a 720 × 450 CSS viewport representing 1440 × 900 at 200% browser reflow; every state runs in Light + Dark and checks document-level horizontal overflow.
+- Added authenticated Manual coverage for PIC, DUAL, Safety Pilot Manual, Safety Pilot Connection, SPIC and PICUS.
+- Added authenticated GPS single-flight coverage for the strict implemented role allowlist PIC / DUAL / SAFETY PILOT, including Manual + connected Actual-PIC modes.
+- Added authenticated GPS multi-part coverage for inherited common DUAL plus complete connected Safety Pilot per-flight override and Reset-to-common visibility.
+- Added Manual + GPS invalid-profile recovery coverage across the full presentation matrix.
+- Added focused source contract `tests/v360-flight-entry-f6-closeout.test.ts` and closeout design `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F6_CLOSEOUT.md`.
+- Runtime/parser/normalizer/persistence/schema/certification/recency changes: **none**. Local F6 verification complete: focused closeout contract **6/6 PASS** and authenticated Chromium F6 matrix **4/4 PASS**. The browser matrix exercises Manual PIC/DUAL/Safety Pilot Manual+Connection/SPIC/PICUS, GPS PIC/DUAL/Safety Pilot Manual+Connection, GPS multi-part inherited DUAL + connected Safety Pilot override, and Manual/GPS invalid-profile recovery across 1440 desktop, iPad landscape/portrait, 390 mobile, 320 mobile and 200% reflow equivalent in Light + Dark with zero horizontal overflow assertions. F6 is **LOCAL VERIFIED**; PR/CI/merge/deploy/production smoke remain pending.
+
+### Flight Entry Workflow 3.0 — F5 Primary UX discovery/design
+- Reconstructed the post-F4 production state from `main@5281d61fe2e7f38a3425ac0189007b46c68601b2` and reconciled roadmap drift: F0–F4 are production verified, while F5 and F6 remain outstanding milestones.
+- Activated F5 on branch `feat/flight-entry-f5-primary-ux`.
+- Source audit confirms the common Manual PIC hierarchy is already largely aligned with the frozen B1–B5 simplicity model: Date/Registration/Role, Route and UTC timeline are visible; landing/PF evidence, additional crew, aircraft context and Optional details use progressive disclosure.
+- Draft F5 direction is intentionally narrow: remove duplicated workflow/helper copy rather than redesign flight semantics or invent new defaults.
+- Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F5_PRIMARY_UX_DESIGN.md` and `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F5_REVIEW_HANDOFF.md`.
+- Runtime/schema/certification changes during discovery: **none**.
+- Independent review returned **APPROVE WITH CHANGES** and was reconciled against the repository before implementation.
+- Repo verification corrected the review scope: `FlightForm` is shared by Manual New + Manual Edit; GPS uses `KmlImportForm`; current Dashboard “Add flight” routes to New Flight rather than a separate Quick Add flight form.
+- F5.1 removes the redundant long New Flight header workflow paragraph while preserving the mode chooser, GPS contextual instruction, `Save & review` and the action-surface draft/review consequence.
+- F5.2 keeps Registration `Manage aircraft` because the valid collapsed Aircraft context has no equivalent manage link; unresolved profile recovery remains unchanged.
+- F5.2 retains Role provenance as concise New-only `Aircraft default`, and removes the misleading cue from Edit/SNAPSHOT.
+- F5.2 removes the generic BLOCK/AIR “Calculated automatically” helper only for New Flight when both values are resolved; BFCL authority copy, incomplete-state instruction, Edit helper behavior and the `aria-live` value surface remain.
+- Added focused F5 source contracts and reconciled the historical v1.58 Role-provenance test. Verification: **NOT RUN**.
+- Added two focused authenticated F5 browser cases: common Manual PIC exact persistent-control/helper allowlist across desktop/iPad/mobile, and PIC→DUAL contextual identity with the Role-default cue removed.
+- Verification evidence: F5 focused/source batch **46/46 PASS**, TypeScript PASS and production build PASS.
+- First full regression reached **1150/1151 PASS**; the only failure was the historical U4 source assertion still requiring the removed header sentence. It has been reconciled to the retained action-surface draft/review cue without runtime changes.
+- First F5 browser run reached **1/2 PASS**; the common-PIC allowlist correctly encountered the existing contextual intelligent continuation suggestion (`Continue from LKPR…`). The F5 allowlist is now scoped to persistent/core helpers and controls while explicitly preserving/asserting contextual `data-intelligent-review` assistance. No runtime change.
+- Final verification complete: focused reconciliation **16/16 PASS**, full unit/regression **1151/1151 PASS**, production build PASS, and authenticated F5.3 browser **2/2 PASS**. The browser proof preserves contextual Intelligent Logbook continuation assistance while keeping the persistent/core helper allowlist explicit. F5 is **DONE / LOCAL VERIFIED**. No DB/schema/certification change; deploy belongs to F6 closeout.
+
 ### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
 - Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
 - Confirmed GPS remains intentionally PIC-only at both UI and server role gate, per-part Review state currently contains no Role/Crew context, and every reviewed part already passes through the shared `gpsFlightCandidate() → normalizeFlightDraft()` semantic boundary.
