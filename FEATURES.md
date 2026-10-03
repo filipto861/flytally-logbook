@@ -161,6 +161,21 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
+### Flight Entry Follow-up E1 — PLANNED / REVIEW GATE
+
+Planned product capabilities:
+- optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
+- no synthetic `GPS import` Task on new GPS imports;
+- certification-safe handling of historical synthetic Task values;
+- GPS event-level Day/Night landing suggestions from civil twilight when UTC + coordinates are available;
+- Route continuation/return suggestions that do not disturb field alignment.
+
+Safety/data boundaries:
+- no SP/MP inference or backfill from aircraft type/history;
+- no raw rewrite of certified Task evidence;
+- civil-twilight output is suggestion/provenance, not universal jurisdiction authority;
+- missing event time/location remains manual/unavailable.
+
 ### Flight Entry Workflow 3.0 — DONE / PRODUCTION VERIFIED
 
 Product target:
