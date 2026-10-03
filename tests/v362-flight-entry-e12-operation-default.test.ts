@@ -100,10 +100,18 @@ test("E1.2 sharing carries the default and rejects unknown imported values inste
   });
   assert.match(invalid.defaults?.operationError??"",/single-pilot|multi-pilot|not set/i);
 
+  const legacy=parseAircraftShareSnapshot({
+    profile:{registration:"OK-E12"},
+    defaults:{defaultRole:"PIC",billingBasis:""},
+  });
+  assert.equal(legacy.defaults?.defaultOperationType,undefined);
+  assert.equal(legacy.defaults?.operationError,undefined);
+
   const actions=read("app/(protected)/connections/aircraft-share-actions.ts");
   assert.match(actions,/defaultOperationType:text\(aircraft\.default_operation_type\)\.toUpperCase\(\)/);
   assert.match(actions,/snapshot\.defaults\?\.operationError/);
-  assert.match(actions,/default_operation_type=\$\{snapshot\.defaults\.defaultOperationType\|\|null\}/);
+  assert.match(actions,/operationDefaultIncluded=snapshot\.defaults\.defaultOperationType!==undefined/);
+  assert.match(actions,/default_operation_type=CASE WHEN \$\{operationDefaultIncluded\} THEN \$\{snapshot\.defaults\.defaultOperationType\|\|null\} ELSE default_operation_type END/);
 });
 
 test("E1.2 account backup and exact restore are schema-aware and preserve the aircraft column through SELECT star JSON restore",()=>{
