@@ -7,6 +7,7 @@ import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
+import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
 import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 import { EXACT_RESTORE_STATEMENT_LIMIT,RESTORE_BATCH_SIZES } from "@/lib/recovery-scale";
