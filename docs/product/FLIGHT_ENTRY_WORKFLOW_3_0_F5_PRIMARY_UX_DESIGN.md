@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F5 Primary UX / Copy Simplification
 
-**Status:** REVIEW RECONCILED · TARGETED/TYPECHECK/BUILD VERIFIED · FULL REGRESSION + BROWSER RERUN PENDING  
+**Status:** DONE / LOCAL VERIFIED · F6 PRODUCTION CLOSEOUT NEXT  
 **Baseline:** `main@5281d61fe2e7f38a3425ac0189007b46c68601b2`  
 **Scope:** simplify the normal Manual PIC entry presentation after F0–F4 domain convergence.  
 **Out of scope:** flight semantics, parser/normalizer rules, certification rules, recency, GPS persistence semantics, RoleCrew authority, aircraft-profile authority, DB/schema/certification changes.
