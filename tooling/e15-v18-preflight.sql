@@ -33,6 +33,9 @@ DECLARE
   actual_name text;
   v integer;
 BEGIN
+  IF current_database() IS DISTINCT FROM 'neondb' THEN
+    RAISE EXCEPTION 'E1.5 preflight: wrong database target: %',current_database();
+  END IF;
   IF to_regclass('public.flytally_schema_migrations') IS NULL THEN
     RAISE EXCEPTION 'E1.5 preflight: migration registry missing';
   END IF;
