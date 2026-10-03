@@ -259,6 +259,37 @@ It starts `BEGIN TRANSACTION READ ONLY`, performs SELECT-only inspection and end
 
 Local verification completed on the isolated browser PostgreSQL database after bringing the fixture in line with its declared preapplied migration state: focused E1.4/E1.1/certification tests **15/15 PASS**, TypeScript PASS, and the full census executed through `ROLLBACK` with zero matching fixture rows. This is syntax/schema proof only; it is not production census evidence.
 
+Production read-only census on 2026-10-03 then found:
+- 14 exact live `task='GPS import'` rows across 3 accounts;
+- all 14 are `CERTIFIED_CURRENT`; there are **zero ordinary editable draft cleanup candidates**;
+- 4 certified revision snapshots retain the value;
+- 2 deleted-flight recovery copies retain the value;
+- 51 audit events retain the value.
+
+The census ran against schema v17 with transaction read-only enabled and completed through `ROLLBACK`. No production row was mutated.
+
+### E1.4 independent policy review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES** after the production census.
+
+Accepted and frozen:
+1. **Policy A is the default:** preserve all currently certified legacy values. E1.4 ships no automated historical Task mutation, batch endpoint, admin cleanup or cleanup migration.
+2. **Policy B is pilot-initiated only:** an owner may use the existing `Correct flight` workflow, provide a correction reason, edit the Task, and re-certify. The previous certified revision remains archived. E1.4 adds no prompt/nag or automated correction.
+3. **Policy C is additive presentation only:** exact `GPS import` may receive a legacy annotation in interactive read-only owner/shared views, but the raw value remains visible. Export/print data, certification payload/hash, revision snapshots, deleted recovery evidence and audit history remain raw.
+4. Exact-match only. No trim/case/fuzzy matching is used for the annotation or correction policy.
+5. Ownership remains enforced by the existing server correction action (`id + user_id`) and ordinary edit authorization; shared participants cannot mutate the source flight.
+6. Migration v18 remains a separate E1.5 deployment prerequisite and is not applied as part of E1.4.
+
+Reviewer wording suggested “not pilot-entered.” We intentionally do **not** encode that stronger claim in the UI because the stored row proves the exact legacy value, not the human intent behind every historical occurrence. The annotation therefore identifies the legacy GPS-import workflow and states that the raw value is retained as stored evidence.
+
+Required closeout guards staged in E1.4:
+- PostgreSQL acceptance proving the archived R1 snapshot keeps `GPS import` + original hash, the editable correction may clear Task, the re-certified R2 has empty Task + a new hash, and old audit/recovery evidence remains untouched;
+- exact-match annotation tests;
+- export/print/certification source guards proving no presentation transform leaks into stored or exported evidence;
+- correction ownership/source guards proving no bulk cleanup path was introduced.
+
+Verification of these newly staged guards is still pending.
+
 ### E1.5 — verification / docs / production closeout
 - targeted unit/source tests;
 - migration/PostgreSQL tests for v18;
