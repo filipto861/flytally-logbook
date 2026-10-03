@@ -65,6 +65,9 @@ test("E1.5 explicit v18 migration revalidates under the runtime advisory lock an
   assert.match(sql,/ADD CONSTRAINT ck_aircraft_default_operation_type/);
   assert.match(sql,/CHECK\(default_operation_type IS NULL OR default_operation_type IN \('SP','MP'\)\)/);
   assert.match(sql,/VALUES\(18,'aircraft default operation type'\)/);
+  assert.match(sql,/SELECT c\.is_nullable,c\.column_default/);
+  assert.match(sql,/INTO observed_is_nullable,observed_column_default/);
+  assert.doesNotMatch(sql,/SELECT is_nullable,column_default/);
   assert.match(sql,/existing aircraft defaults were populated unexpectedly/);
   assert.match(sql,/COMMIT;/);
   assert.doesNotMatch(sql,/UPDATE\s+public\.aircraft|UPDATE\s+aircraft|UPDATE\s+flights|flight_certified_revisions|flight_audit_log|deleted_flights|GPS import/i);
@@ -77,9 +80,12 @@ test("E1.5 postflight verifies v18 shape and preserves evidence counts for compa
   assert.match(sql,/COUNT\(\*\) FROM public\.flytally_schema_migrations\)<>18/);
   assert.match(sql,/version<1 OR version>18/);
   assert.match(sql,/version=18 AND name='aircraft default operation type'/);
-  assert.match(sql,/data_type IS DISTINCT FROM 'text'/);
-  assert.match(sql,/column_nullable IS DISTINCT FROM 'YES'/);
-  assert.match(sql,/column_default IS NOT NULL/);
+  assert.match(sql,/SELECT c\.is_nullable,c\.column_default,c\.data_type/);
+  assert.match(sql,/INTO observed_is_nullable,observed_column_default,observed_data_type/);
+  assert.doesNotMatch(sql,/SELECT is_nullable,column_default,data_type/);
+  assert.match(sql,/observed_data_type IS DISTINCT FROM 'text'/);
+  assert.match(sql,/observed_is_nullable IS DISTINCT FROM 'YES'/);
+  assert.match(sql,/observed_column_default IS NOT NULL/);
   assert.match(sql,/convalidated/);
   assert.match(sql,/default_operation_type IS NOT NULL/);
   assert.match(sql,/certified_revision_rows/);
