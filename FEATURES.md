@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Workflow 3.0 — DONE / PRODUCTION VERIFIED
+### Flight Entry Workflow 3.0 — F0–F4 PRODUCTION VERIFIED · F5 PRIMARY UX ACTIVE
 
 Product target:
 - one canonical flight semantic contract for Manual and GPS creation;
