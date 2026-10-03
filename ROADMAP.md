@@ -415,7 +415,7 @@ Milestones:
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
 | F4 — Multi-part GPS inheritance | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged as `252bcb8`; PIC/DUAL/Safety Pilot common+whole-part Role/Crew inheritance verified; SPIC/PICUS countersignature-reference inheritance remains separately deferred |
-| F5 — Primary UX / copy simplification | 🚧 | **ACTIVE · discovery/design** · reduce normal PIC decision density and helper-copy noise without changing draft/certification/domain semantics |
+| F5 — Primary UX / copy simplification | 🚧 | **ACTIVE · F5.0–F5.2 IMPLEMENTED / VERIFICATION PENDING** · independent review reconciled; New-only copy reduction staged with Role provenance retained and Edit/GPS semantics preserved |
 | F6 — Browser / responsive / production closeout | ➡️ | Full role/source viewport/theme/reflow acceptance after F5 |
 
 Immediate next step:
