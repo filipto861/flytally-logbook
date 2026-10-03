@@ -15,7 +15,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Source audit confirms the common Manual PIC hierarchy is already largely aligned with the frozen B1–B5 simplicity model: Date/Registration/Role, Route and UTC timeline are visible; landing/PF evidence, additional crew, aircraft context and Optional details use progressive disclosure.
 - Draft F5 direction is intentionally narrow: remove duplicated workflow/helper copy rather than redesign flight semantics or invent new defaults.
 - Added `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F5_PRIMARY_UX_DESIGN.md` and `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F5_REVIEW_HANDOFF.md`.
-- Runtime/schema/certification changes: **none**. Implementation remains independent-review gated.
+- Runtime/schema/certification changes during discovery: **none**.
+- Independent review returned **APPROVE WITH CHANGES** and was reconciled against the repository before implementation.
+- Repo verification corrected the review scope: `FlightForm` is shared by Manual New + Manual Edit; GPS uses `KmlImportForm`; current Dashboard “Add flight” routes to New Flight rather than a separate Quick Add flight form.
+- F5.1 removes the redundant long New Flight header workflow paragraph while preserving the mode chooser, GPS contextual instruction, `Save & review` and the action-surface draft/review consequence.
+- F5.2 keeps Registration `Manage aircraft` because the valid collapsed Aircraft context has no equivalent manage link; unresolved profile recovery remains unchanged.
+- F5.2 retains Role provenance as concise New-only `Aircraft default`, and removes the misleading cue from Edit/SNAPSHOT.
+- F5.2 removes the generic BLOCK/AIR “Calculated automatically” helper only for New Flight when both values are resolved; BFCL authority copy, incomplete-state instruction, Edit helper behavior and the `aria-live` value surface remain.
+- Added focused F5 source contracts and reconciled the historical v1.58 Role-provenance test. Verification: **NOT RUN**.
 
 ### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
 - Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
