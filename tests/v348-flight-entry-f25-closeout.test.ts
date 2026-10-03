@@ -250,16 +250,6 @@ test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC/DUAL and F4.3 Safet
   assert.match(form,/role==="DUAL"/);
   assert.match(form,/role==="SAFETY PILOT"/);
   for(const role of ["SPIC","PICUS","CO-PILOT"]){
-    assert.doesNotMatch(form,new RegExp(`<option(?: value="[^"]+")?>${role.replace(/[.*+?^$()|[\]\\]/g,"\\test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC and DUAL while later roles remain blocked",()=>{
-  const gps=read("lib/gps-import-integrity.ts");
-  const form=read("components/kml-import-form.tsx");
-  assert.match(gps,/GPS_IMPORT_ROLES=\["PIC","DUAL"\]/);
-  assert.match(gps,/GPS import currently supports PIC and DUAL/);
-  assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
-  assert.match(form,/role==="DUAL"/);
-  for(const role of ["SPIC","PICUS","SAFETY PILOT","CO-PILOT"]){
     assert.doesNotMatch(form,new RegExp(`<option(?: value="[^"]+")?>${role.replace(/[.*+?^$()|[\]\\]/g,"\\$&")}</option>`));
-  }
-});")}</option>`));
   }
 });
