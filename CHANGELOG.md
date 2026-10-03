@@ -9,6 +9,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Development workflow governance
+- Adopted a risk-based verification cadence in `DEVELOPMENT.md`: targeted tests during iteration, subsystem-specific evidence at milestones, one complete local release gate for the final candidate, independent PR CI, and production-only preflight/postflight/smoke during closeout.
+- Heavy PostgreSQL, authenticated browser and scale suites are no longer repeated after every small edit by default. Documentation/stale-source-guard corrections after an already-valid full gate require targeted re-verification unless they change runtime, persistence/schema, auth/security, certification/recency, or performance-critical behaviour.
+- This is a development-process change only; product scope, ROADMAP priority and FEATURES capability inventory are unchanged.
+
+
 ### Flight Entry Follow-up E1 — discovery/design
 - Production-use follow-up audit opened after Flight Entry Workflow 3.0 production closeout.
 - Confirmed Manual New currently uses a generic SP fallback for `operation_type`, while GPS intentionally requires explicit SP/MP and clears the value on aircraft change.
