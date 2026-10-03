@@ -107,7 +107,7 @@ export function FlightForm({action,aircraft,initial={},instructors=[],picConnect
       <div className="essential-group essential-route-group"><div className="essential-group-heading"><strong>Route</strong></div><div className="form-grid essential-route-grid">
         <label>Departure<input name="departure" value={departure} onChange={e=>setDeparture(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}/></label>
         <label>Arrival<input name="arrival" value={arrival} onChange={e=>setArrival(e.target.value.toUpperCase())} placeholder="LKLT" autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}/>{!editing&&departure&&arrival!==departure?<small><button className="field-inline-action" type="button" onClick={()=>{markDirty();setArrival(departure)}}>Use {departure} for local flight</button></small>:null}</label>
-      </div></div>
+      </div><div className="intelligent-route-assistance" data-intelligent-route-assistance aria-live="polite" aria-atomic="false"/></div>
       <div className="essential-group essential-time-group"><div className="essential-group-heading"><strong>Times</strong><small>UTC</small></div><div className="form-grid essential-time-grid">
         <label>Off-block<input name="offBlock" type="time" value={off} onChange={e=>setOff(e.target.value)}/></label>
         <label>Takeoff<input name="takeoff" type="time" value={takeoff} onChange={e=>setTakeoff(e.target.value)}/></label>
