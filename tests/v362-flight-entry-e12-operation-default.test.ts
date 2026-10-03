@@ -71,6 +71,8 @@ test("E1.2 Aircraft Add Edit and Quick Add expose an optional default operation 
   assert.match(actions,/parseAircraftDefaultOperationType\(s\(form,"default_operation_type"\)\)/);
   assert.match(actions,/default_operation_type=\$\{defaultOperationType\}/);
   assert.match(actions,/default_operation_type=EXCLUDED\.default_operation_type/);
+  assert.match(actions,/COALESCE\(default_operation_type,''\) default_operation_type/);
+  assert.match(actions,/saved\.default_operation_type\.toUpperCase\(\)!==\(defaultOperationType\|\|""\)/);
 });
 
 test("E1.2 Manual and GPS entry receive and visibly apply the profile default without making it aircraft authority",()=>{
