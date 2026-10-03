@@ -17,7 +17,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Confirmed `task` is included in the flight certification payload from certification v1 onward; certified rows therefore cannot be bulk-cleared by raw SQL without invalidating audit/integrity semantics.
 - Confirmed GPS review already has detected T&G/final-landing event indices with UTC timestamps and track coordinates; the airport catalogue also has worldwide lat/lon/country.
 - Confirmed Intelligent Logbook continuation/return assistance is portalled inside individual Route field labels, explaining the observed Departure/Arrival misalignment.
-- Added E1 design and independent-review handoff. Runtime/schema/production data changes: **none**.
+- Added E1 design and independent-review handoff.
+- Independent review returned **APPROVE WITH CHANGES**. Accepted: certified Task correction contract, explicit Operation propagation/validation, route a11y, event-coordinate precedence and jurisdiction/provenance copy. Rejected one reviewer premise after authoritative verification: civil twilight remains the geometric solar-centre -6° boundary; sunrise/sunset refraction/solar-disc offset is not applied to civil twilight.
+- E1.1 implementation: Intelligent `Continue from…` / `Return to…` suggestions now render in a dedicated `aria-live="polite"` full-width row below both Route fields instead of inside one label; the action remains an explicit keyboard-focusable button.
+- E1.1 implementation: GPS Common details no longer expose or default `Task = GPS import`; new GPS imports submit an empty Task. Manual/Edit Task remains unchanged. Historical rows were **not** mutated.
+- Added focused source contracts and authenticated browser route-alignment coverage. Verification: **NOT RUN**.
 
 ### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
 - Activated the final F6 acceptance phase after F5 completed local verification.
