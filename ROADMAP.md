@@ -536,6 +536,35 @@ F1.0 production closeout:
 
 M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
 
+## Flight Entry Follow-up E1 — ACTIVE / REVIEW GATE
+
+Goal: address four production-use follow-ups without reopening the completed Flight Entry Workflow 3.0 domain-convergence workstream.
+
+Design:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_DESIGN.md`
+
+Independent review:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_REVIEW_HANDOFF.md`
+
+Frozen draft direction:
+- aircraft profile may hold nullable **default Operation** SP/MP; it is a prefill only, never aircraft authority;
+- no SP/MP profile backfill from type/history; NULL means explicit per-flight choice;
+- GPS import stops writing synthetic `Task = GPS import`;
+- certified historical `task` is never raw-mutated because Task participates in the certification hash;
+- GPS Day/Night landing counts may be suggested from each detected landing event's UTC + coordinates using EASA/SERA civil-twilight boundary, with explicit pilot confirmation and fail-closed unavailable state;
+- Continue/Return assistance moves below the Route row so contextual intelligence cannot misalign Departure/Arrival inputs.
+
+Milestones:
+
+| Milestone | Status | Scope |
+| --- | :---: | --- |
+| E1.0 — design + independent review | 🚧 | **ACTIVE** · repo discovery complete; review required before runtime/schema/data changes |
+| E1.1 — route UX + new GPS Task behavior | ⏳ | Align Route fields; remove future `GPS import` Task default |
+| E1.2 — aircraft default Operation | ⏳ | Additive nullable profile default; Manual/GPS prefill; per-flight override remains |
+| E1.3 — GPS civil-twilight landing suggestion | ⏳ | Event-level Day/Night suggestion with provenance and sticky user override |
+| E1.4 — historical Task cleanup | ⏳ | Read-only census first; draft exact-value cleanup only after approval; certified rows protected |
+| E1.5 — verification / migration / production closeout | ⏳ | PostgreSQL, unit, build, browser, PR/CI, migration, smoke, docs |
+
 ## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
 
 Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.
