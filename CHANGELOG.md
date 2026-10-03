@@ -23,7 +23,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - F5.2 retains Role provenance as concise New-only `Aircraft default`, and removes the misleading cue from Edit/SNAPSHOT.
 - F5.2 removes the generic BLOCK/AIR “Calculated automatically” helper only for New Flight when both values are resolved; BFCL authority copy, incomplete-state instruction, Edit helper behavior and the `aria-live` value surface remain.
 - Added focused F5 source contracts and reconciled the historical v1.58 Role-provenance test. Verification: **NOT RUN**.
-- Added two focused authenticated F5 browser cases: common Manual PIC exact visible-control/helper allowlist across desktop/iPad/mobile, and PIC→DUAL contextual identity with the Role-default cue removed. Browser verification: **NOT RUN**.
+- Added two focused authenticated F5 browser cases: common Manual PIC exact persistent-control/helper allowlist across desktop/iPad/mobile, and PIC→DUAL contextual identity with the Role-default cue removed.
+- Verification evidence: F5 focused/source batch **46/46 PASS**, TypeScript PASS and production build PASS.
+- First full regression reached **1150/1151 PASS**; the only failure was the historical U4 source assertion still requiring the removed header sentence. It has been reconciled to the retained action-surface draft/review cue without runtime changes.
+- First F5 browser run reached **1/2 PASS**; the common-PIC allowlist correctly encountered the existing contextual intelligent continuation suggestion (`Continue from LKPR…`). The F5 allowlist is now scoped to persistent/core helpers and controls while explicitly preserving/asserting contextual `data-intelligent-review` assistance. No runtime change.
+- Final full-regression and 2-case browser reruns: **PENDING**.
 
 ### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
 - Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
