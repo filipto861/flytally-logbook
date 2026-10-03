@@ -5,11 +5,13 @@ export const AIRCRAFT_BALLOON_CLASSES=["HOT_AIR_BALLOON","GAS_BALLOON","HOT_AIR_
 export const AIRCRAFT_BALLOON_GROUPS=["A","B","C","D"] as const;
 export const PART_FCL_CREDIT_CLASSES=["SEP","TMG"] as const;
 export const AIRCRAFT_DEFAULT_OPERATION_TYPES=["SP","MP"] as const;
+export const AIRCRAFT_DEFAULT_ENGINE_TYPES=["SE","ME"] as const;
 
 export type AircraftBalloonClass=(typeof AIRCRAFT_BALLOON_CLASSES)[number]|"";
 export type AircraftBalloonGroup=(typeof AIRCRAFT_BALLOON_GROUPS)[number]|"";
 export type PartFclCreditClass=(typeof PART_FCL_CREDIT_CLASSES)[number]|"";
 export type AircraftDefaultOperationType=(typeof AIRCRAFT_DEFAULT_OPERATION_TYPES)[number]|"";
+export type AircraftDefaultEngineType=(typeof AIRCRAFT_DEFAULT_ENGINE_TYPES)[number]|"";
 
 export type AircraftProfileValidationInput={
   aircraftMake?:unknown;
@@ -51,6 +53,17 @@ export function parseAircraftDefaultOperationType(value:unknown):
     return{error:"Default operation must be single-pilot, multi-pilot or not set."};
   }
   return{value:normalized as Exclude<AircraftDefaultOperationType,"">};
+}
+
+export function parseAircraftDefaultEngineType(value:unknown):
+  |{value:AircraftDefaultEngineType;error?:undefined}
+  |{value?:undefined;error:string}{
+  const normalized=upper(value);
+  if(!normalized)return{value:""};
+  if(!AIRCRAFT_DEFAULT_ENGINE_TYPES.includes(normalized as Exclude<AircraftDefaultEngineType,"">)){
+    return{error:"Default engine must be single-engine, multi-engine or not set."};
+  }
+  return{value:normalized as Exclude<AircraftDefaultEngineType,"">};
 }
 
 function explicitCategoryCompatible(evidence:string,aircraftClass:string,requested:string){

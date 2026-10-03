@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { airportCandidateScore,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
+import { airportCandidateScore,flightEnvelope,hasAirborneMovement,inspectTrackFile,landingCount,parseKml,parseTrackFile,splitPoints,suggestedSplitDetails,suggestedSplits,touchAndGoEvents,trackEndpointCandidates,trackQuality,type KmlPoint } from "../lib/track-processing.ts";
 
 const point=(time:string,lat=50,lon=14):KmlPoint=>({lat,lon,alt:300,time});
 
@@ -65,6 +65,32 @@ test("track quality surfaces implausible position jumps",()=>{
   const points=[point("2026-08-21T08:00:00Z",50,14),point("2026-08-21T08:00:10Z",51,15),point("2026-08-21T08:01:00Z",51.01,15.01),point("2026-08-21T08:02:00Z",51.02,15.02)];
   const quality=trackQuality(points);
   assert.equal(quality.status,"review");
+  assert.ok(quality.implausibleJumps>=1);
+  assert.match(quality.warnings.join(" "),/implausible position/);
+});
+
+test("SkyDemon near-instant teleport stays a warning without delaying later credible take-off evidence",()=>{
+  const rows=[
+    ["2026-10-03T14:23:14.706Z",50.31796,14.262853,237.69078],
+    ["2026-10-03T14:23:35.221Z",50.31796,14.262853,236.25081],
+    ["2026-10-03T14:23:35.222Z",50.31796,14.262853,236.25081],
+    ["2026-10-03T14:23:35.223Z",50.33195,14.250404,289.72714],
+    ["2026-10-03T14:23:39.179Z",50.33322,14.249202,303.48788],
+    ["2026-10-03T14:23:40.162Z",50.33322,14.249202,308.66898],
+    ["2026-10-03T14:23:42.187Z",50.334274,14.248592,323.775],
+    ["2026-10-03T14:23:43.162Z",50.334274,14.248592,323.775],
+    ["2026-10-03T14:23:45.164Z",50.335014,14.248411,332.61212],
+    ["2026-10-03T14:23:47.165Z",50.335754,14.248477,342.73056],
+    ["2026-10-03T14:23:49.161Z",50.33647,14.248766,352.29407],
+    ["2026-10-03T14:23:51.163Z",50.33714,14.249294,360.71793],
+    ["2026-10-03T14:23:53.165Z",50.337727,14.2500105,369.055],
+    ["2026-10-03T14:24:00.163Z",50.33961,14.253916,390.3822],
+    ["2026-10-03T14:24:03.163Z",50.340054,14.25497,398.1865],
+    ["2026-10-03T14:24:08.163Z",50.341328,14.258233,422.01672],
+  ] as const;
+  const points:KmlPoint[]=rows.map(([time,lat,lon,alt])=>({time,lat,lon,alt}));
+  const envelope=flightEnvelope(points),quality=trackQuality(points);
+  assert.equal(points[envelope.takeoffIndex].time,"2026-10-03T14:23:39.179Z");
   assert.ok(quality.implausibleJumps>=1);
   assert.match(quality.warnings.join(" "),/implausible position/);
 });
