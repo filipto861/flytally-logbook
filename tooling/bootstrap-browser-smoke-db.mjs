@@ -148,6 +148,8 @@ CREATE TABLE flights(
   certification_version INTEGER NOT NULL DEFAULT 8,
   record_revision INTEGER NOT NULL DEFAULT 1,
   correction_reason TEXT NOT NULL DEFAULT '',
+  correction_opened_at TIMESTAMPTZ,
+  correction_opened_by_user_id BIGINT,
   pic_minutes INTEGER NOT NULL DEFAULT 0,
   copilot_minutes INTEGER NOT NULL DEFAULT 0,
   dual_minutes INTEGER NOT NULL DEFAULT 0,
@@ -173,6 +175,44 @@ CREATE TABLE flights(
   verification_reference TEXT NOT NULL DEFAULT '',
   UNIQUE(id,user_id)
 );
+CREATE TABLE flight_audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  flight_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  actor_user_id BIGINT,
+  action TEXT NOT NULL CHECK(action IN ('created','updated','deleted')),
+  old_data JSONB,
+  new_data JSONB,
+  changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE deleted_flights (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  original_flight_id BIGINT NOT NULL,
+  delete_token TEXT NOT NULL UNIQUE,
+  flight_data JSONB NOT NULL,
+  tracks_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  purge_after TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '90 days'),
+  restored_at TIMESTAMPTZ,
+  restored_flight_id BIGINT
+);
+CREATE TABLE flight_certified_revisions (
+  id BIGSERIAL PRIMARY KEY,
+  flight_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+  snapshot_data JSONB NOT NULL,
+  certification_hash TEXT NOT NULL,
+  certification_version INTEGER NOT NULL DEFAULT 1,
+  certified_at TIMESTAMPTZ NOT NULL,
+  certified_by_user_id BIGINT,
+  superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  superseded_by_user_id BIGINT NOT NULL,
+  correction_reason TEXT NOT NULL,
+  UNIQUE(user_id,flight_id,revision_number)
+);
+
 CREATE TABLE flight_expenses(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
