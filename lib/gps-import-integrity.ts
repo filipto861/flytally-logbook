@@ -258,9 +258,10 @@ export function gpsImportSourceRequirements(profile:CanonicalAircraftProfileRegu
     aircraftClass:profile.aircraftClass,
     evidence:profile.evidence,
   });
+  const partFclPf=capabilities.movementEvidenceMode==="FCL060_PF"&&(profile.regulatoryCategory!=="ULL"||Boolean(profile.partFclCreditClass));
   return{
     landingMode:capabilities.timeEntryMode==="SAILPLANE_LAUNCH"?"TOTAL":"DAY_NIGHT",
-    movementMode:capabilities.movementEvidenceMode==="FCL060_PF"?"FCL060_PF":
+    movementMode:partFclPf?"FCL060_PF":
       capabilities.movementEvidenceMode==="SFCL_TMG"||capabilities.movementEvidenceMode==="BFCL_TAKEOFF_LANDING"?"EXPLICIT_TAKEOFFS":
       capabilities.movementEvidenceMode==="SFCL_LAUNCH"?"SAILPLANE_LAUNCH":"NONE",
     reviewNightIfr:capabilities.timeEntryMode==="STANDARD",
