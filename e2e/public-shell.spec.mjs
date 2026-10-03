@@ -911,10 +911,13 @@ test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowl
   await expect(timeSummary.locator("small")).toHaveCount(0);
 
   const essentials=form.locator(".entry-section-primary");
-  const persistentHelpers=(await essentials.locator("small:visible").allTextContents()).map(value=>value.trim()).filter(Boolean);
+  const persistentHelpers=(await essentials.locator("small:visible:not([data-intelligent-review])").allTextContents()).map(value=>value.trim()).filter(Boolean);
   expect(persistentHelpers).toEqual(["Manage aircraft","Aircraft default","UTC"]);
+  const intelligentHelpers=essentials.locator("small[data-intelligent-review]");
+  await expect(intelligentHelpers).toHaveCount(1);
+  await expect(intelligentHelpers).toContainText("Continue from LKPR?");
 
-  const controls=await form.locator('input:not([type="hidden"]):visible,select:visible,textarea:visible,button:visible').evaluateAll(nodes=>nodes.map(node=>({
+  const controls=await form.locator('input:not([type="hidden"]):visible,select:visible,textarea:visible,button:visible').evaluateAll(nodes=>nodes.filter(node=>!node.closest("[data-intelligent-review]")).map(node=>({
     tag:node.tagName.toLowerCase(),
     name:node.getAttribute("name")||"",
     text:(node.textContent||"").trim(),
