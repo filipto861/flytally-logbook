@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -633,6 +633,138 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
   await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
   await expect(gpsForm.locator('select[name$="_roleCrew_role"]')).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
+});
+
+
+async function completeF43GpsPart(gpsForm,index,{offBlock,takeoff,landing,onBlock,note}){
+  await gpsForm.locator('input[name="part_'+index+'_date"]').fill("2026-10-03");
+  await gpsForm.locator('input[name="part_'+index+'_offBlock"]').fill(offBlock);
+  await gpsForm.locator('input[name="part_'+index+'_takeoff"]').fill(takeoff);
+  await gpsForm.locator('input[name="part_'+index+'_landing"]').fill(landing);
+  await gpsForm.locator('input[name="part_'+index+'_onBlock"]').fill(onBlock);
+  const starts=gpsForm.locator('input[name="part_'+index+'_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
+  await gpsForm.locator('select[name="part_'+index+'_movementEvidenceRecorded"]').selectOption("no");
+  await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(note);
+}
+
+test("F4.3 common Manual Safety Pilot persists explicit Actual PIC without account link",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.3 Manual Safety Pilot coverage requires the isolated browser database.");
+  resetF43GpsSafetyPilotFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-03T21:00:00Z</when><when>2026-10-03T21:01:00Z</when><when>2026-10-03T21:02:00Z</when><when>2026-10-03T21:03:00Z</when><when>2026-10-03T21:04:00Z</when><when>2026-10-03T21:05:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f43-common-manual.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('select[name="role"]').selectOption("SAFETY PILOT");
+  await gpsForm.locator('select[name="actualPicMode"]').selectOption("manual");
+  await gpsForm.locator('input[name="commander"]').fill("Manual GPS Captain");
+
+  await completeF43GpsPart(gpsForm,0,{offBlock:"21:00",takeoff:"21:01",landing:"21:04",onBlock:"21:05",note:"F4.3 common manual Safety Pilot"});
+  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
+  await expect(reviewed).toBeEnabled();
+  await reviewed.check();
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:00' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Manual GPS Captain");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_connected_crew WHERE source_user_id=9001 AND source_flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:00')")).toBe("0");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:00')")).toBe("1");
+  await expectNoHorizontalOverflow(page);
+  resetF43GpsSafetyPilotFixture();
+});
+
+test("F4.3 common connected Safety Pilot snapshots server identity and persists one PIC link",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.3 connected Safety Pilot coverage requires the isolated browser database.");
+  resetF43GpsSafetyPilotFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-03T21:20:00Z</when><when>2026-10-03T21:21:00Z</when><when>2026-10-03T21:22:00Z</when><when>2026-10-03T21:23:00Z</when><when>2026-10-03T21:24:00Z</when><when>2026-10-03T21:25:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f43-common-connected.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('select[name="role"]').selectOption("SAFETY PILOT");
+  await gpsForm.locator('select[name="actualPicMode"]').selectOption("connected");
+  await gpsForm.locator('select[name="connectedPicUserId"]').selectOption("9002");
+
+  await completeF43GpsPart(gpsForm,0,{offBlock:"21:20",takeoff:"21:21",landing:"21:24",onBlock:"21:25",note:"F4.3 connected snapshot"});
+  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
+  await reviewed.check();
+  renameSafetyPilotPicFixture("Browser F43 Snapshot");
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+
+  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:20' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Browser F43 Snapshot");
+  expect(browserSqlScalar("SELECT connected_user_id||'|'||intended_role FROM flight_connected_crew WHERE source_user_id=9001 AND source_flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:20')")).toBe("9002|PIC");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:20')")).toBe("1");
+  await expectNoHorizontalOverflow(page);
+  resetF43GpsSafetyPilotFixture();
+});
+
+test("F4.3 revoked per-flight connected Safety Pilot fails closed without partial split persistence",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.3 revoked-Connection coverage requires the isolated browser database.");
+  resetF43GpsSafetyPilotFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-03T21:40:00Z</when><when>2026-10-03T21:41:00Z</when><when>2026-10-03T21:42:00Z</when><when>2026-10-03T21:43:00Z</when><when>2026-10-03T21:44:00Z</when><when>2026-10-03T21:45:00Z</when>'+
+    '<when>2026-10-03T21:46:00Z</when><when>2026-10-03T21:47:00Z</when><when>2026-10-03T21:48:00Z</when><when>2026-10-03T21:49:00Z</when><when>2026-10-03T21:50:00Z</when><when>2026-10-03T21:51:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.17 50.15 800</gx:coord><gx:coord>14.21 50.18 850</gx:coord><gx:coord>14.25 50.21 500</gx:coord><gx:coord>14.29 50.24 300</gx:coord>'+
+    '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f43-override-revoked.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.getByRole("button",{name:/Add split/}).click();
+  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+
+  await completeF43GpsPart(gpsForm,0,{offBlock:"21:40",takeoff:"21:41",landing:"21:44",onBlock:"21:45",note:"F4.3 inherited PIC"});
+  await completeF43GpsPart(gpsForm,1,{offBlock:"21:46",takeoff:"21:47",landing:"21:50",onBlock:"21:51",note:"F4.3 revoked Safety Pilot override"});
+  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
+  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
+  await review0.check();
+  await review1.check();
+
+  const second=gpsForm.locator(".flight-review-card").nth(1);
+  await second.getByRole("button",{name:"Override Role/Crew"}).click();
+  await second.locator('select[name="part_1_roleCrew_role"]').selectOption("SAFETY PILOT");
+  await expect(review1).not.toBeChecked();
+  await second.locator('select[name="part_1_roleCrew_actualPicMode"]').selectOption("connected");
+  await second.locator('select[name="part_1_roleCrew_connectedPicUserId"]').selectOption("9002");
+  await review1.check();
+  await expect(review0).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+
+  revokeSafetyPilotPicConnectionFixture();
+  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.locator('[role="alert"]')).toContainText("Selected Actual PIC is no longer an accepted Connection");
+  await expect(page).toHaveURL(/\/flights\/new(?:\?|$)/);
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block IN ('21:40','21:46')")).toBe("0");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block IN ('21:40','21:46'))")).toBe("0");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_connected_crew WHERE source_user_id=9001 AND source_flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block IN ('21:40','21:46'))")).toBe("0");
+  await expectNoHorizontalOverflow(page);
+  resetF43GpsSafetyPilotFixture();
 });
 
 
