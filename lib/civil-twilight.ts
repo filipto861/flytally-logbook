@@ -11,6 +11,9 @@ export type CivilTwilightClass="DAY"|"NIGHT"|"UNAVAILABLE";
 export type CivilTwilightLandingSuggestion=
   |{status:"AVAILABLE";day:number;night:number;total:number}
   |{status:"UNAVAILABLE";total:number};
+export type CivilTwilightNightTimeSuggestion=
+  |{status:"AVAILABLE";minutes:number}
+  |{status:"UNAVAILABLE"};
 
 const radians=(degrees:number)=>degrees*Math.PI/180;
 const degrees=(radiansValue:number)=>radiansValue*180/Math.PI;
@@ -98,4 +101,60 @@ export function gpsLandingDayNightSuggestion(points:KmlPoint[]):CivilTwilightLan
   if(indices.length!==detectedTotal||new Set(indices).size!==indices.length)return{status:"UNAVAILABLE",total:detectedTotal};
   const events=indices.map(index=>points[index]);
   return aggregateCivilTwilightLandingEvents(events,detectedTotal);
+}
+
+
+function timedPointMillis(point:KmlPoint){
+  const basis=trackTimestampBasis(point.time);
+  if(basis!=="utc"&&basis!=="offset")return null;
+  const millis=Date.parse(String(point.time));
+  return Number.isFinite(millis)?millis:null;
+}
+
+function interpolatedPoint(a:KmlPoint,b:KmlPoint,fraction:number,millis:number):KmlPoint{
+  return{
+    lat:a.lat+(b.lat-a.lat)*fraction,
+    lon:a.lon+(b.lon-a.lon)*fraction,
+    alt:null,
+    time:new Date(millis).toISOString(),
+  };
+}
+
+function civilTwilightCrossingFraction(a:KmlPoint,b:KmlPoint,aMillis:number,bMillis:number,aAltitude:number,bAltitude:number){
+  let low=0,high=1,lowValue=aAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG,highValue=bAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
+  if(lowValue===0)return 0;if(highValue===0)return 1;if(lowValue*highValue>0)return null;
+  for(let iteration=0;iteration<24;iteration++){
+    const mid=(low+high)/2,midMillis=aMillis+(bMillis-aMillis)*mid,point=interpolatedPoint(a,b,mid,midMillis);
+    const altitude=geometricSolarAltitudeDegrees(point.time,point.lat,point.lon);
+    if(altitude===null)return null;
+    const value=altitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
+    if(lowValue*value<=0){high=mid;highValue=value}else{low=mid;lowValue=value}
+  }
+  return(low+high)/2;
+}
+
+/**
+ * Conservative GPS Night-time suggestion. Every timed segment must be monotonic,
+ * no longer than ten minutes, and inside the supported solar-calculation envelope.
+ * Manual input remains authoritative and IFR is intentionally outside this helper.
+ */
+export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightTimeSuggestion{
+  if(points.length<2)return{status:"UNAVAILABLE"};
+  let nightSeconds=0;
+  for(let index=1;index<points.length;index++){
+    const a=points[index-1],b=points[index],aMillis=timedPointMillis(a),bMillis=timedPointMillis(b);
+    if(aMillis===null||bMillis===null||bMillis<=aMillis)return{status:"UNAVAILABLE"};
+    const duration=(bMillis-aMillis)/1000;
+    if(duration>600)return{status:"UNAVAILABLE"};
+    const aAltitude=geometricSolarAltitudeDegrees(a.time,a.lat,a.lon),bAltitude=geometricSolarAltitudeDegrees(b.time,b.lat,b.lon);
+    if(aAltitude===null||bAltitude===null)return{status:"UNAVAILABLE"};
+    const aDelta=aAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG,bDelta=bAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
+    if(Math.abs(aDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG||Math.abs(bDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return{status:"UNAVAILABLE"};
+    if(aDelta<0&&bDelta<0){nightSeconds+=duration;continue}
+    if(aDelta>0&&bDelta>0)continue;
+    const crossing=civilTwilightCrossingFraction(a,b,aMillis,bMillis,aAltitude,bAltitude);
+    if(crossing===null)return{status:"UNAVAILABLE"};
+    nightSeconds+=aDelta<0?duration*crossing:duration*(1-crossing);
+  }
+  return{status:"AVAILABLE",minutes:Math.max(0,Math.round(nightSeconds/60))};
 }
