@@ -31,6 +31,9 @@ DECLARE
   actual_name text;
   v integer;
 BEGIN
+  IF current_database() IS DISTINCT FROM 'neondb' THEN
+    RAISE EXCEPTION 'E1.5 migration: wrong database target: %',current_database();
+  END IF;
   IF to_regclass('public.flytally_schema_migrations') IS NULL OR to_regclass('public.aircraft') IS NULL THEN
     RAISE EXCEPTION 'E1.5 migration: required production schema objects missing';
   END IF;
