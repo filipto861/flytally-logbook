@@ -52,6 +52,15 @@ test("E1.4 correction remains owner-scoped and archives the certified snapshot b
   assert.doesNotMatch(actions,/UPDATE flights SET task\s*=\s*''/);
 });
 
+test("E1.4 authenticated browser fixture cleans up its certified legacy rows between projects",()=>{
+  const browserDb=read("e2e/browser-db.mjs");
+  const browser=read("e2e/public-shell.spec.mjs");
+  assert.match(browserDb,/export function clearE14LegacyTaskFixture\(\)/);
+  assert.match(browserDb,/DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN \(9914,9915\)/);
+  assert.match(browserDb,/DELETE FROM flights WHERE id IN \(9914,9915\)/);
+  assert.match(browser,/finally\{\s*clearE14LegacyTaskFixture\(\);\s*\}/);
+});
+
 test("E1.4 legacy annotation styles are bounded and responsive",()=>{
   const css=read("app/globals.css");
   assert.match(css,/\.legacy-task-note\{/);
