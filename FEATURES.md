@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Follow-up E1 — PLANNED / REVIEW GATE
+### Flight Entry Follow-up E1 — E1.1 DONE / LOCAL VERIFIED · E1.2 IMPLEMENTED / VERIFICATION PENDING
 
 Planned product capabilities:
 - optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
