@@ -5,7 +5,8 @@ export default defineConfig({
   timeout:30_000,
   expect:{timeout:5_000},
   fullyParallel:false,
-  workers:process.env.CI?1:undefined,
+  // Authenticated browser tests share one isolated mutable PostgreSQL fixture; serialize across projects locally and in CI.
+  workers:1,
   retries:process.env.CI?1:0,
   reporter:process.env.CI?[["line"],["html",{outputFolder:"playwright-report",open:"never"}]]:"line",
   use:{
