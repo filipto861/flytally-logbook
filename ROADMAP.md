@@ -558,8 +558,8 @@ Milestones:
 
 | Milestone | Status | Scope |
 | --- | :---: | --- |
-| E1.0 — design + independent review | 🚧 | **ACTIVE** · repo discovery complete; review required before runtime/schema/data changes |
-| E1.1 — route UX + new GPS Task behavior | ⏳ | Align Route fields; remove future `GPS import` Task default |
+| E1.0 — design + independent review | ✅ | **DONE / RECONCILED** · APPROVE WITH CHANGES; repo + authoritative twilight-source reconciliation complete |
+| E1.1 — route UX + new GPS Task behavior | 🚧 | **IMPLEMENTED / VERIFICATION PENDING** · dedicated live route-assistance row; GPS Task now submits empty; no historical mutation |
 | E1.2 — aircraft default Operation | ⏳ | Additive nullable profile default; Manual/GPS prefill; per-flight override remains |
 | E1.3 — GPS civil-twilight landing suggestion | ⏳ | Event-level Day/Night suggestion with provenance and sticky user override |
 | E1.4 — historical Task cleanup | ⏳ | Read-only census first; draft exact-value cleanup only after approval; certified rows protected |
