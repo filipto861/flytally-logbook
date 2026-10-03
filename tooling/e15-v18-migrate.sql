@@ -82,22 +82,22 @@ VALUES(18,'aircraft default operation type');
 
 DO $e15$
 DECLARE
-  column_nullable text;
-  column_default text;
+  observed_is_nullable text;
+  observed_column_default text;
   constraint_validated boolean;
   non_null_rows bigint;
 BEGIN
-  SELECT is_nullable,column_default
-    INTO column_nullable,column_default
-    FROM information_schema.columns
-    WHERE table_schema='public'
-      AND table_name='aircraft'
-      AND column_name='default_operation_type';
+  SELECT c.is_nullable,c.column_default
+    INTO observed_is_nullable,observed_column_default
+    FROM information_schema.columns c
+    WHERE c.table_schema='public'
+      AND c.table_name='aircraft'
+      AND c.column_name='default_operation_type';
 
-  IF column_nullable IS DISTINCT FROM 'YES' THEN
+  IF observed_is_nullable IS DISTINCT FROM 'YES' THEN
     RAISE EXCEPTION 'E1.5 migration: default_operation_type is not nullable';
   END IF;
-  IF column_default IS NOT NULL THEN
+  IF observed_column_default IS NOT NULL THEN
     RAISE EXCEPTION 'E1.5 migration: default_operation_type unexpectedly has a default';
   END IF;
 
