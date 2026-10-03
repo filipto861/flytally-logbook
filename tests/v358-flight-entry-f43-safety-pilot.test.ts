@@ -203,6 +203,7 @@ test("F4.3 connected Safety Pilot write is connection-guarded and atomic with fl
   assert.match(gps,/1\/\(SELECT COUNT\(\*\)::integer FROM inserted\) inserted_ok/);
   assert.match(gps,/1\/\(SELECT COUNT\(\*\)::integer FROM track_insert\) track_ok/);
   assert.match(gps,/CASE WHEN \$\{item\.connectedPicUserId\}>0 THEN 1\/\(SELECT COUNT\(\*\)::integer FROM connected_crew\) ELSE 1 END crew_ok/);
+  assert.match(gps,/SELECT flight_id FROM validated WHERE inserted_ok=1 AND track_ok=1 AND crew_ok=1/);
   assert.match(gps,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
   assert.match(gps,/insertResults\.some\(rows=>!Number\(rows\?\.\[0\]\?\.flight_id\)\)/);
   assert.doesNotMatch(gps,/flight_participations|certification_hash|certification_version/);
