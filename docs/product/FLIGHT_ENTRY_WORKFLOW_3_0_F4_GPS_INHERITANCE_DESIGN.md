@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1/F4.2/F4.3 DONE / LOCAL VERIFIED · F4.4 CLOSEOUT ACTIVE · ONE SPIC/PICUS DECISION DEFERRED  
+**Status:** F4.0 DONE · F4.1/F4.2/F4.3 DONE / LOCAL VERIFIED · F4.4 LOCAL CLOSEOUT VERIFIED / MERGE+PRODUCTION SMOKE PENDING · ONE SPIC/PICUS DECISION DEFERRED  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -368,12 +368,12 @@ Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-
 
 ### F4.4 — closeout — ACTIVE
 - F4.3 already supplies full regression **1142/1142 PASS**, isolated PostgreSQL **5/5 PASS**, TypeScript PASS, production build PASS and authenticated desktop Safety Pilot **3/3 PASS** on the current runtime;
-- a dedicated authenticated responsive override matrix is staged for 1280 desktop, 1024 iPad landscape, 768 iPad portrait, 390 mobile and 320 mobile, each in light + dark;
+- the dedicated authenticated responsive override matrix is **1/1 PASS** for 1280 desktop, 1024 iPad landscape, 768 iPad portrait, 390 mobile and 320 mobile, each in light + dark;
 - the matrix holds inherited DUAL beside a complete connected Safety Pilot override and asserts stable visible controls/values plus zero horizontal overflow;
 - ROADMAP / FEATURES / CHANGELOG / canonical contract are being updated in the same closeout cycle;
 - SPIC/PICUS remain deliberately fail-closed; the countersignature-reference inheritance question is deferred as a product decision and is not guessed during F4 closeout;
 - DB/schema/certification changes remain N/A;
-- merge/deploy and production smoke remain pending after the responsive gate.
+- local F4.4 acceptance is complete; merge/deploy and production smoke remain pending before F4.4 is DONE.
 
 ## 11. Review-gated questions
 
