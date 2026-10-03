@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1/F4.2/F4.3 DONE / LOCAL VERIFIED · F4.4 CLOSEOUT NEXT · ONE SPIC/PICUS DECISION OPEN  
+**Status:** F4.0 DONE · F4.1/F4.2/F4.3 DONE / LOCAL VERIFIED · F4.4 CLOSEOUT ACTIVE · ONE SPIC/PICUS DECISION DEFERRED  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -366,11 +366,14 @@ Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-
 - split-change override clearing and inherited-only common Role invalidation remain unchanged from F4.2;
 - F4.3 verification evidence is now: F1.4/F4.3 focused **12/12 PASS**, targeted cross-path **80/80 PASS**, isolated PostgreSQL Manual-resolver + GPS Safety Pilot **5/5 PASS** including accepted connected persistence and revoked-Connection whole-transaction rollback, and TypeScript plus production build PASS on the runtime-equivalent head. The deliberate division-by-zero is the fail-closed assertion and is expected in that test. The stale source-contract assertions superseded by F4.3 were reconciled in test-only commits. Final reconciliation is **9/9 PASS**, TypeScript is PASS, final full regression is **1141/1141 PASS**, and production build remains PASS on the runtime-equivalent head. Authenticated browser coverage for common/override Safety Pilot, server display-name snapshot, connected child-row persistence and revoked-Connection fail-closed behavior is the remaining closeout gate. F4.3 closeout is complete locally. The first browser attempt exposed only a localhost smoke-adapter parser defect: `track_insert` was parsed as a top-level INSERT token. The adapter now enforces a left identifier boundary before command recognition; its focused regression is **4/4 PASS**. Final F4.3 evidence is targeted cross-path **80/80 PASS**, isolated PostgreSQL **5/5 PASS**, TypeScript PASS, full unit/regression **1142/1142 PASS**, production build PASS and authenticated desktop Chromium **3/3 PASS**. The browser proof covers common Manual Safety Pilot, common connected server-snapshot + PIC child-link persistence, and revoked per-flight connected override with zero partial split persistence. No DB migration or certification-version change. F4.4 closeout is next. No DB migration or certification-version change.
 
-### F4.4 — closeout
-- full regression, PostgreSQL, TypeScript, build and authenticated browser matrix;
-- responsive override UX;
-- ROADMAP / FEATURES / CHANGELOG;
-- production smoke.
+### F4.4 — closeout — ACTIVE
+- F4.3 already supplies full regression **1142/1142 PASS**, isolated PostgreSQL **5/5 PASS**, TypeScript PASS, production build PASS and authenticated desktop Safety Pilot **3/3 PASS** on the current runtime;
+- a dedicated authenticated responsive override matrix is staged for 1280 desktop, 1024 iPad landscape, 768 iPad portrait, 390 mobile and 320 mobile, each in light + dark;
+- the matrix holds inherited DUAL beside a complete connected Safety Pilot override and asserts stable visible controls/values plus zero horizontal overflow;
+- ROADMAP / FEATURES / CHANGELOG / canonical contract are being updated in the same closeout cycle;
+- SPIC/PICUS remain deliberately fail-closed; the countersignature-reference inheritance question is deferred as a product decision and is not guessed during F4 closeout;
+- DB/schema/certification changes remain N/A;
+- merge/deploy and production smoke remain pending after the responsive gate.
 
 ## 11. Review-gated questions
 
