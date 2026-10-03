@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
+- Activated the final F6 acceptance phase after F5 completed local verification.
+- Added a shared required presentation matrix covering 1440 desktop, iPad landscape, iPad portrait, 390 mobile, 320 compact mobile and a 720 × 450 CSS viewport representing 1440 × 900 at 200% browser reflow; every state runs in Light + Dark and checks document-level horizontal overflow.
+- Added authenticated Manual coverage for PIC, DUAL, Safety Pilot Manual, Safety Pilot Connection, SPIC and PICUS.
+- Added authenticated GPS single-flight coverage for the strict implemented role allowlist PIC / DUAL / SAFETY PILOT, including Manual + connected Actual-PIC modes.
+- Added authenticated GPS multi-part coverage for inherited common DUAL plus complete connected Safety Pilot per-flight override and Reset-to-common visibility.
+- Added Manual + GPS invalid-profile recovery coverage across the full presentation matrix.
+- Added focused source contract `tests/v360-flight-entry-f6-closeout.test.ts` and closeout design `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F6_CLOSEOUT.md`.
+- Runtime/parser/normalizer/persistence/schema/certification/recency changes: **none**. Local F6 verification: **NOT RUN**.
+
 ### Flight Entry Workflow 3.0 — F5 Primary UX discovery/design
 - Reconstructed the post-F4 production state from `main@5281d61fe2e7f38a3425ac0189007b46c68601b2` and reconciled roadmap drift: F0–F4 are production verified, while F5 and F6 remain outstanding milestones.
 - Activated F5 on branch `feat/flight-entry-f5-primary-ux`.
