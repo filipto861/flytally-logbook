@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture,clearE14LegacyTaskFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -130,7 +130,7 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Flights");
   await expect(page).toHaveURL(/\/flights$/);
   await expectAuthenticatedRoute(page,"Flights");
-  await expect(page.getByRole("row",{name:/OK-E2E/})).toBeVisible();
+  await expect(page.getByRole("row",{name:/^Flight 18\/09\/2026 OK-E2E B23/})).toBeVisible();
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
@@ -203,14 +203,18 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await form.locator('select[name="registration"]').selectOption("OK-ULL1");
   await expect(details.locator("summary")).toContainText("ULL · UL");
   await expect(details.locator('select[name="regulatoryCategory"]')).toHaveCount(0);
-  await details.locator("summary").click();
-  await expect(details).not.toHaveAttribute("open","");
 
-  await form.locator('select[name="registration"]').selectOption("OK-BAD1");
-  await expect(details).toHaveAttribute("open","");
-  await expect(details.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
-  await expect(form.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
-  const configLink=details.getByRole("link",{name:/Open Aircraft/});
+  // Prove invalid-profile auto-open from a clean closed state rather than racing the
+  // controlled <details> onToggle update from the previous ULL interaction.
+  await page.reload();
+  const invalidForm=page.locator("#new-flight-manual-form");
+  const invalidDetails=invalidForm.locator("details.aircraft-context-section");
+  await expect(invalidDetails).not.toHaveAttribute("open","");
+  await invalidForm.locator('select[name="registration"]').selectOption("OK-BAD1");
+  await expect(invalidDetails).toHaveAttribute("open","");
+  await expect(invalidDetails.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
+  await expect(invalidForm.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
+  const configLink=invalidDetails.getByRole("link",{name:/Open Aircraft/});
   await expect(configLink).toHaveAttribute("target","_blank");
   await expectNoHorizontalOverflow(page);
 });
@@ -964,8 +968,8 @@ test("E1.2 aircraft default operation prefills Manual and GPS but remains flight
 test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared read-only views",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated E1.4 legacy Task presentation coverage requires the isolated browser database.");
   resetE14LegacyTaskFixture();
-
-  await loginBrowserPilot(page,"/flights/9914");
+  try{
+    await loginBrowserPilot(page,"/flights/9914");
   const ownerPanel=page.getByRole("tabpanel");
   await expect(ownerPanel.locator("small").filter({hasText:/^GPS import/}).first()).toBeVisible();
   await expect(ownerPanel.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
@@ -995,8 +999,11 @@ test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared
   await expect(page.getByRole("button",{name:"Add to my logbook"})).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  expect(browserSqlScalar("SELECT task FROM flights WHERE id=9914 AND user_id=9001")).toBe("GPS import");
-  expect(browserSqlScalar("SELECT task FROM flights WHERE id=9915 AND user_id=9002")).toBe("GPS import");
+    expect(browserSqlScalar("SELECT task FROM flights WHERE id=9914 AND user_id=9001")).toBe("GPS import");
+    expect(browserSqlScalar("SELECT task FROM flights WHERE id=9915 AND user_id=9002")).toBe("GPS import");
+  }finally{
+    clearE14LegacyTaskFixture();
+  }
 });
 
 test("E1.3 night definition setting persists explicit MANUAL and SERA applicability",async({page})=>{
