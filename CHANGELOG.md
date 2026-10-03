@@ -22,6 +22,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - E1.1 implementation: Intelligent `Continue from…` / `Return to…` suggestions now render in a dedicated `aria-live="polite"` full-width row below both Route fields instead of inside one label; the action remains an explicit keyboard-focusable button.
 - E1.1 implementation: GPS Common details no longer expose or default `Task = GPS import`; new GPS imports submit an empty Task. Manual/Edit Task remains unchanged. Historical rows were **not** mutated.
 - Added focused source contracts and authenticated browser route-alignment coverage. E1.1 local verification: targeted **30/30 PASS**, TypeScript PASS, production build PASS and authenticated browser **3/3 PASS**. E1.1 is DONE / LOCAL VERIFIED.
+- E1.2 implementation staged schema v18 `aircraft.default_operation_type` as nullable `SP | MP | NULL` with a database CHECK constraint and **no aircraft-profile backfill**.
+- Aircraft Add/Edit and Quick Add now expose optional Default operation; persistence validates and verifies the saved value. New Manual/GPS flight entry receives the profile default only as a prefill and the per-flight Operation remains editable.
+- Manual New no longer silently normalizes a missing applicable Operation to SP: an incomplete draft may preserve `operation_type=''`, while existing FCL.050 certification remains fail-closed unless SP/MP is explicitly recorded. The existing `flights.operation_type` column and certification payload/version are unchanged.
+- GPS still requires an explicit resolved SP/MP before Save; a profile default may preselect the control but does not bypass the server requirement.
+- Aircraft sharing carries the default as part of optional Flight defaults. Legacy pending shares that predate the field preserve an existing recipient default rather than silently clearing it; a new share with an explicitly blank default can clear it to NULL when Flight defaults are imported.
+- Account backup/restore remains exact through schema-aware `SELECT *` + `json_populate_record` after migration v18. Unknown imported defaults fail closed via parser/database constraint.
+- Added focused E1.2 source/domain tests, PostgreSQL migration acceptance and authenticated Manual/GPS browser proof. E1.2 verification: **NOT RUN**. Production migration v18: **NOT APPLIED**.
 
 ### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
 - Activated the final F6 acceptance phase after F5 completed local verification.
