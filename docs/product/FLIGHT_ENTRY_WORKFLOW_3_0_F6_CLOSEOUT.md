@@ -1,9 +1,9 @@
 # Flight Entry Workflow 3.0 — F6 Browser / Responsive / Production Closeout
 
-**Status:** LOCAL VERIFIED · FINAL PR / CI / MERGE / PRODUCTION CLOSEOUT PENDING  
-**Runtime baseline:** F5 DONE / LOCAL VERIFIED on `feat/flight-entry-f5-primary-ux`  
-**Scope:** final browser/responsive acceptance, PR/CI, merge, production deployment and smoke.  
-**Runtime behavior changes in F6:** none planned.
+**Status:** DONE / PRODUCTION VERIFIED  
+**Runtime merge:** `fb0bbb3da5d3c0be36ecd3190b1840977edbd252` via PR #235  
+**Production deployment:** `dpl_GM9nQX2gBwbn4GgzEy7YrJPnmR4F` · READY · `fly-tally.com`  
+**Runtime behavior changes in F6:** none.
 
 ## 1. Goal
 
@@ -152,10 +152,11 @@ F6 local acceptance is **complete**:
 - required Manual/GPS/invalid-profile states remained explicit;
 - no runtime behavior changed during F6.
 
-F6 is DONE only after:
-- final PR CI PASS;
-- merge to `main`;
-- production deployment READY for the exact merge SHA;
-- production smoke PASS;
-- immediate runtime-error check clean;
-- required documentation synchronized.
+F6 final closeout is complete:
+- PR #235 CI PASS: Fast application gate, PostgreSQL acceptance, Chromium desktop + mobile, Classify CI risk and Vercel Preview Comments;
+- local full authenticated Playwright: **72 passed / 2 skipped / 0 failed**;
+- squash merge to `main`: `fb0bbb3da5d3c0be36ecd3190b1840977edbd252`;
+- production deployment `dpl_GM9nQX2gBwbn4GgzEy7YrJPnmR4F` READY for that exact SHA with `fly-tally.com` alias and no alias error;
+- production smoke HTTP 200 from the exact deployment for `/`, `/login` and `/flights/new`; unauthenticated protected entry resolves to Login as designed;
+- immediate 30-minute Vercel runtime-error check: none;
+- DB/schema migration N/A; certification version/hash unchanged; no historical rewrite.
