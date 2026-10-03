@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F6 Browser / Responsive / Production Closeout
 
-**Status:** ACTIVE · FULL BROWSER MATRIX STAGED / VERIFICATION PENDING  
+**Status:** LOCAL VERIFIED · FINAL PR / CI / MERGE / PRODUCTION CLOSEOUT PENDING  
 **Runtime baseline:** F5 DONE / LOCAL VERIFIED on `feat/flight-entry-f5-primary-ux`  
 **Scope:** final browser/responsive acceptance, PR/CI, merge, production deployment and smoke.  
 **Runtime behavior changes in F6:** none planned.
@@ -145,11 +145,11 @@ The open SPIC/PICUS GPS countersignature-reference inheritance decision remains 
 
 ## 8. Acceptance
 
-F6 is locally accepted when:
-- the focused source contract passes;
-- all four authenticated F6 browser tests pass;
-- every required viewport/theme/reflow state reports no horizontal overflow;
-- all required role/source states remain visible and explicit;
+F6 local acceptance is **complete**:
+- focused source contract **6/6 PASS**;
+- authenticated F6 browser matrix **4/4 PASS**;
+- required desktop/iPad/mobile/320/200%-reflow states exercised in Light + Dark with shared zero-horizontal-overflow assertions;
+- required Manual/GPS/invalid-profile states remained explicit;
 - no runtime behavior changed during F6.
 
 F6 is DONE only after:
