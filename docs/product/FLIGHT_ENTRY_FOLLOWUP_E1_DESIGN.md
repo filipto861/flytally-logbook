@@ -1,6 +1,6 @@
 # Flight Entry Follow-up — Defaults, Day/Night Suggestions & Route UX
 
-**Status:** E1.1 + E1.2 + E1.3 DONE / LOCAL VERIFIED · E1.4 DISCOVERY / READ-ONLY CENSUS  
+**Status:** E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 ACTIVE  
 **Baseline:** `main@ee6b1d215d803aab3e4d2af12b41d61ddea06fee`  
 **Decision owner:** Filip  
 **Scope:** four post-closeout improvements identified from production New Flight / GPS Import use.
@@ -288,7 +288,7 @@ Required closeout guards staged in E1.4:
 - export/print/certification source guards proving no presentation transform leaks into stored or exported evidence;
 - correction ownership/source guards proving no bulk cleanup path was introduced.
 
-Verification status after the review batch: focused source/certification tests **20/20 PASS**, TypeScript PASS, and the PostgreSQL correction/history acceptance suite **5/5 PASS** against local `flytally_browser`. The expected rejection messages from certified-row mutation and duplicate-verification probes were observed as part of passing negative tests. Authenticated runtime owner/shared-view coverage has been added and still requires Playwright execution; production build for this final UI batch is also still pending.
+Final E1.4 verification: focused source/certification tests **20/20 PASS**, TypeScript PASS, PostgreSQL correction/history acceptance **5/5 PASS** against local `flytally_browser`, production build PASS (Next.js 16.3.8; 41/41 static pages), and targeted authenticated Playwright owner/shared-view coverage **1/1 PASS**. The expected PostgreSQL rejection messages from certified-row mutation and duplicate-verification probes were observed as passing negative tests. E1.4 is closed **DONE / LOCAL VERIFIED** with no production historical mutation.
 
 ### E1.5 — verification / docs / production closeout
 - targeted unit/source tests;
