@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** ACTIVE · F0–F3 DONE / F4.1/F4.2 VERIFIED / F4.3 CORE IMPLEMENTED — VERIFICATION PENDING  
+**Status:** ACTIVE · F0–F3 DONE / F4.1/F4.2 VERIFIED / F4.3 CORE VERIFIED — AUTHENTICATED BROWSER PENDING  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
@@ -556,7 +556,7 @@ Acceptance:
 - one invalid part blocks atomic import;
 - server receives fully resolved records.
 
-Current implementation state: F4.1 common PIC/DUAL Role/Crew and F4.2 whole-part PIC/DUAL `INHERIT`/`OVERRIDE` envelopes are locally verified. F4.2 evidence is targeted **67/67**, full unit/regression **1134/1134**, production build including TypeScript PASS, and authenticated desktop Chromium **4/4 PASS** against the isolated local PostgreSQL browser DB. **F4.3 Safety Pilot core is now implemented / verification pending**: Manual text or accepted-Connection account ID is explicit, final per-part identity is resolved server-side, connected display name is server-snapshotted, write-time Connection authority is rechecked atomically, and each connected source flight receives one `flight_connected_crew` child row in the same transaction as its flight and track. One failed connected part aborts the full import. No invitation is sent during Save. SPIC/PICUS remain blocked by the separate countersignature-reference product decision; no DB migration or certification-version change is introduced.
+Current implementation state: F4.1 common PIC/DUAL Role/Crew and F4.2 whole-part PIC/DUAL `INHERIT`/`OVERRIDE` envelopes are locally verified. F4.2 evidence is targeted **67/67**, full unit/regression **1134/1134**, production build including TypeScript PASS, and authenticated desktop Chromium **4/4 PASS** against the isolated local PostgreSQL browser DB. **F4.3 Safety Pilot core is verified / authenticated browser pending**: Manual text or accepted-Connection account ID is explicit, final per-part identity is resolved server-side, connected display name is server-snapshotted, write-time Connection authority is rechecked atomically, and each connected source flight receives one `flight_connected_crew` child row in the same transaction as its flight and track. One failed connected part aborts the full import. No invitation is sent during Save. SPIC/PICUS remain blocked by the separate countersignature-reference product decision; no DB migration or certification-version change is introduced. Verification evidence: targeted cross-path **80/80 PASS**, isolated PostgreSQL **5/5 PASS**, reconciliation **9/9 PASS**, TypeScript PASS, final full regression **1141/1141 PASS**, and production build PASS on the runtime-equivalent head. Authenticated F4.3 browser coverage remains the final closeout gate.
 
 ### F5 — Primary UX / copy simplification
 
