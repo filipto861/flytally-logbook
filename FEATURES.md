@@ -161,12 +161,12 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 DONE / LOCAL VERIFIED · E1.4 ACTIVE
+### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 DONE / LOCAL VERIFIED · E1.4 REVIEW RECONCILED / VERIFYING
 
 Planned product capabilities:
 - optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
 - no synthetic `GPS import` Task on new GPS imports;
-- certification-safe handling of historical synthetic Task values;
+- certification-safe handling of historical synthetic Task values: no automated certified-row mutation; exact legacy `GPS import` remains raw evidence, with additive UI annotation and optional pilot-initiated correction through the existing revision workflow;
 - GPS event-level Day/Night landing suggestions from civil twilight when UTC + coordinates are available;
 - Route continuation/return suggestions that do not disturb field alignment.
 
