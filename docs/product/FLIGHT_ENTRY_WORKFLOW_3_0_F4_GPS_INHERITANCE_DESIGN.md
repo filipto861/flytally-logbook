@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F4 GPS Multi-part Inheritance
 
-**Status:** F4.0 DONE · F4.1/F4.2/F4.3 DONE / LOCAL VERIFIED · F4.4 LOCAL CLOSEOUT VERIFIED / MERGE+PRODUCTION SMOKE PENDING · ONE SPIC/PICUS DECISION DEFERRED  
+**Status:** F4.0–F4.4 DONE / PRODUCTION VERIFIED · ONE SPIC/PICUS DECISION DEFERRED  
 **Repository baseline:** `main@245a90ec1c25d98653b804657c8b00941b5bca84`  
 **Scope:** common GPS Role/Crew context, whole-part Role/Crew overrides, fully resolved server normalization, atomic persistence.  
 **Out of scope:** aircraft-context redesign, certification v1–v8 changes, historical backfill, field-level inheritance, GPS-derived crew inference.
@@ -373,7 +373,7 @@ Focused F4.2 evidence is staged in `tests/v357-flight-entry-f42-whole-part-role-
 - ROADMAP / FEATURES / CHANGELOG / canonical contract are being updated in the same closeout cycle;
 - SPIC/PICUS remain deliberately fail-closed; the countersignature-reference inheritance question is deferred as a product decision and is not guessed during F4 closeout;
 - DB/schema/certification changes remain N/A;
-- local F4.4 acceptance is complete; merge/deploy and production smoke remain pending before F4.4 is DONE.
+- F4.4 is DONE / PRODUCTION VERIFIED. PR #233 squash-merged as `252bcb8eb0258603c1164c5e19bfdcf25bc0d9dd`; Vercel production deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` is READY and serves `fly-tally.com`. Production smoke returned HTTP 200 for `/`, `/login` and `/flights/new`, with unauthenticated protected routing resolving to the login surface. Immediate post-deploy runtime-error check found no errors. No DB/schema/certification change. SPIC/PICUS remain explicitly deferred pending the separate countersignature-reference inheritance decision.
 
 ## 11. Review-gated questions
 
