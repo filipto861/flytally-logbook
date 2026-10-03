@@ -138,7 +138,7 @@ test("E14-T01/T02/T03 certified legacy GPS Task correction preserves revision, a
   assert.equal(run(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=104 AND user_id=1 AND snapshot_data->>'task'='GPS import' AND certification_hash='legacy-hash-r1'`),"1");
   assert.equal(run(`SELECT COUNT(*) FROM flight_audit_log WHERE flight_id=104 AND user_id=1 AND (old_data->>'task'='GPS import' OR new_data->>'task'='GPS import')`)>"0",true);
   assert.equal(run(`SELECT COUNT(*) FROM flight_audit_log WHERE flight_id=104 AND user_id=1 AND new_data->>'correction_reason'='${correctionReason}'`)>"0",true);
-  assert.equal(run(`SELECT flight_data->>'task'||'|'||flight_data->>'certification_hash' FROM deleted_flights WHERE delete_token='e14-deleted-copy'`),"GPS import|deleted-hash");
+  assert.equal(run(`SELECT (flight_data->>'task')||'|'||(flight_data->>'certification_hash') FROM deleted_flights WHERE delete_token='e14-deleted-copy'`),"GPS import|deleted-hash");
   reject(`UPDATE flights SET task='rewritten after recertification' WHERE id=104 AND user_id=1`,/Certified flight is immutable/i);
 });
 
