@@ -31,7 +31,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | 🚧 | Existing workflow live; Flight Entry Workflow 3.0 is active to remove confirmed Manual/GPS semantic-write divergence |
+| Flight entry / review / GPS workflows | 🚧 | Flight Entry Workflow 3.0 is DONE / PRODUCTION VERIFIED; Flight Entry Follow-up E1 is active in E1.5 production closeout |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
@@ -48,8 +48,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **F0–F4 DONE / PRODUCTION VERIFIED; F5 PRIMARY UX ACTIVE** · domain convergence complete; now simplifying the normal PIC entry without changing semantics |
-| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
+| Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; domain convergence and F5/F6 UX closeout complete |
+| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is temporarily pre-empted by Flight Entry Follow-up E1 production closeout |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
@@ -68,14 +68,14 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
 | 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
-| 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
+| 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; resume/re-check after active Flight Entry Follow-up E1 production closeout |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 9 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 10 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
 | 11 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
 
-**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence now exercise that rule; Flight Entry Workflow 3.0 is therefore active ahead of M2B. UI simplification must not weaken evidence, validation or historical integrity.
+**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence previously exercised that rule; Flight Entry Workflow 3.0 is now DONE / PRODUCTION VERIFIED. Flight Entry Follow-up E1 remains active only for the scoped follow-up/migration closeout before M2B resumes. UI simplification must not weaken evidence, validation or historical integrity.
 
 ## P1 — GPS touch-and-go detection reliability — DONE
 
@@ -563,7 +563,7 @@ Milestones:
 | E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
 | E1.3 — GPS civil-twilight landing suggestion | ✅ | **DONE / LOCAL VERIFIED** · focused classifier/wiring/GPS regression suite 38/38 PASS; TypeScript PASS; production build PASS; authenticated browser 5/5 PASS covering Settings persistence, MANUAL fail-closed, SERA suggestion/provenance, total invalidation and sticky pilot edits |
 | E1.4 — historical Task cleanup | ✅ | **DONE / LOCAL VERIFIED** · production read-only census found 14 exact live rows across 3 accounts, all certified, with zero ordinary draft candidates; no historical mutation executed. Policy A frozen: preserve certified evidence; pilot correction remains owner-scoped existing workflow only; exact legacy value gets additive UI annotation while raw export/print/certification evidence remains unchanged. Verification: focused tests **20/20 PASS**, TypeScript PASS, PostgreSQL certification/correction acceptance **5/5 PASS** on local `flytally_browser`, production build PASS (41/41 static pages), targeted authenticated Playwright **1/1 PASS**. |
-| E1.5 — verification / migration / production closeout | 🚧 | **SANITY GATE 16/16 PASS / FULL LOCAL GATE ACTIVE** · independent review reconciled; current main v17 compatibility and preview/CI isolation proved. Exact read-only v17 preflight, guarded explicit v18 transaction and read-only postflight are staged. Focused E1.5/E1.2/migration-plan sanity gate **16/16 PASS**. Full local release verification is now active; no production write/migration/merge/deploy executed yet. |
+| E1.5 — verification / migration / production closeout | 🚧 | **FULL LOCAL GATE — STALE REGRESSION EXPECTATIONS REMEDIATED / RERUN NEXT** · TypeScript PASS. First full unit/regression run: **1193/1198 PASS, 5 FAIL**, all five traced to superseded source/document assertions rather than a runtime defect: three unconditional-SP expectations superseded by E1.2 nullable aircraft Operation defaults, one aircraft-share billing assertion superseded by the combined billing/Operation fail-closed guard, and one roadmap assertion superseded by Workflow 3.0 production closeout. Tests/docs were reconciled; full suite rerun required before continuing. No production write/migration/merge/deploy executed yet. |
 
 ## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
 
