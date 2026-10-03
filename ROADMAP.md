@@ -536,7 +536,7 @@ F1.0 production closeout:
 
 M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
 
-## Flight Entry Follow-up E1 — ACTIVE / REVIEW GATE
+## Flight Entry Follow-up E1 — E1.1–E1.4 LOCAL VERIFIED · E1.5 ACTIVE
 
 Goal: address four production-use follow-ups without reopening the completed Flight Entry Workflow 3.0 domain-convergence workstream.
 
@@ -562,8 +562,8 @@ Milestones:
 | E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
 | E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
 | E1.3 — GPS civil-twilight landing suggestion | ✅ | **DONE / LOCAL VERIFIED** · focused classifier/wiring/GPS regression suite 38/38 PASS; TypeScript PASS; production build PASS; authenticated browser 5/5 PASS covering Settings persistence, MANUAL fail-closed, SERA suggestion/provenance, total invalidation and sticky pilot edits |
-| E1.4 — historical Task cleanup | 🚧 | **FINAL BROWSER/BUILD VERIFICATION PENDING** · production census found 14 exact live rows across 3 accounts, all certified, with zero ordinary draft candidates; Policy A frozen and no historical mutation executed. Focused E1.4/E1.1/certification tests **20/20 PASS**, TypeScript PASS, PostgreSQL certification/correction acceptance **5/5 PASS** on local `flytally_browser`. Runtime owner/shared legacy annotation coverage is staged; authenticated Playwright + production build remain to run before closeout. |
-| E1.5 — verification / migration / production closeout | ⏳ | PostgreSQL, unit, build, browser, PR/CI, migration, smoke, docs |
+| E1.4 — historical Task cleanup | ✅ | **DONE / LOCAL VERIFIED** · production read-only census found 14 exact live rows across 3 accounts, all certified, with zero ordinary draft candidates; no historical mutation executed. Policy A frozen: preserve certified evidence; pilot correction remains owner-scoped existing workflow only; exact legacy value gets additive UI annotation while raw export/print/certification evidence remains unchanged. Verification: focused tests **20/20 PASS**, TypeScript PASS, PostgreSQL certification/correction acceptance **5/5 PASS** on local `flytally_browser`, production build PASS (41/41 static pages), targeted authenticated Playwright **1/1 PASS**. |
+| E1.5 — verification / migration / production closeout | 🚧 | **ACTIVE NEXT** · consolidate E1.1–E1.4 verification evidence, apply migration v18 as a separate production prerequisite, complete PR/CI/deploy/smoke/docs closeout without coupling E1.4 historical data to the migration. |
 
 ## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
 
