@@ -39,6 +39,17 @@ PostgreSQL is skipped only for documentation and CSS-only changes. Any other cha
 
 The retained 10k/50k/100k scale tests run only when a known production hot path, scale fixture, or database optimization file changes. For a broad or release-critical candidate, add `[full-ci]` to the PR title; this forces the complete PostgreSQL suite including all retained scale gates.
 
+## Authenticated browser acceptance
+
+The authenticated Playwright suite uses one isolated mutable PostgreSQL fixture database for both desktop and mobile projects. `playwright.config.mjs` therefore pins the suite to **one worker** in local runs and CI. Do not override this with a higher worker count unless every worker/project receives an independently bootstrapped database.
+
+After configuring the local browser-test database and environment, the canonical browser command is:
+
+```bash
+node tooling/bootstrap-browser-smoke-db.mjs
+npx playwright test --config=playwright.config.mjs
+```
+
 ## PostgreSQL commands
 
 - `npm run test:postgres` — core database/integrity acceptance tests, excluding large scale fixtures.
