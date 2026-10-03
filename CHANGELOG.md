@@ -21,7 +21,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Independent review returned **APPROVE WITH CHANGES**. Accepted: certified Task correction contract, explicit Operation propagation/validation, route a11y, event-coordinate precedence and jurisdiction/provenance copy. Rejected one reviewer premise after authoritative verification: civil twilight remains the geometric solar-centre -6° boundary; sunrise/sunset refraction/solar-disc offset is not applied to civil twilight.
 - E1.1 implementation: Intelligent `Continue from…` / `Return to…` suggestions now render in a dedicated `aria-live="polite"` full-width row below both Route fields instead of inside one label; the action remains an explicit keyboard-focusable button.
 - E1.1 implementation: GPS Common details no longer expose or default `Task = GPS import`; new GPS imports submit an empty Task. Manual/Edit Task remains unchanged. Historical rows were **not** mutated.
-- Added focused source contracts and authenticated browser route-alignment coverage. Verification: **NOT RUN**.
+- Added focused source contracts and authenticated browser route-alignment coverage. E1.1 local verification: targeted **30/30 PASS**, TypeScript PASS, production build PASS and authenticated browser **3/3 PASS**. E1.1 is DONE / LOCAL VERIFIED.
 
 ### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
 - Activated the final F6 acceptance phase after F5 completed local verification.
