@@ -27,7 +27,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Verification evidence: F5 focused/source batch **46/46 PASS**, TypeScript PASS and production build PASS.
 - First full regression reached **1150/1151 PASS**; the only failure was the historical U4 source assertion still requiring the removed header sentence. It has been reconciled to the retained action-surface draft/review cue without runtime changes.
 - First F5 browser run reached **1/2 PASS**; the common-PIC allowlist correctly encountered the existing contextual intelligent continuation suggestion (`Continue from LKPR…`). The F5 allowlist is now scoped to persistent/core helpers and controls while explicitly preserving/asserting contextual `data-intelligent-review` assistance. No runtime change.
-- Final full-regression and 2-case browser reruns: **PENDING**.
+- Final verification complete: focused reconciliation **16/16 PASS**, full unit/regression **1151/1151 PASS**, production build PASS, and authenticated F5.3 browser **2/2 PASS**. The browser proof preserves contextual Intelligent Logbook continuation assistance while keeping the persistent/core helper allowlist explicit. F5 is **DONE / LOCAL VERIFIED**. No DB/schema/certification change; deploy belongs to F6 closeout.
 
 ### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
 - Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
