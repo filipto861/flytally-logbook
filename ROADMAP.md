@@ -416,7 +416,7 @@ Milestones:
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
 | F4 — Multi-part GPS inheritance | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged as `252bcb8`; PIC/DUAL/Safety Pilot common+whole-part Role/Crew inheritance verified; SPIC/PICUS countersignature-reference inheritance remains separately deferred |
 | F5 — Primary UX / copy simplification | ✅ | **DONE / LOCAL VERIFIED** · focused 46/46 PASS; reconciliation 16/16 PASS; TypeScript PASS; full regression **1151/1151 PASS**; production build PASS; authenticated F5.3 browser **2/2 PASS** across focused desktop/iPad/mobile states; no runtime/schema/certification semantic change |
-| F6 — Browser / responsive / production closeout | 🚧 | **ACTIVE · MATRIX STAGED / VERIFICATION PENDING** · Manual/GPS/invalid-profile coverage across 1440, iPad landscape/portrait, 390, 320 and 200% reflow equivalent × light/dark; final PR/CI/merge/deploy/smoke follows |
+| F6 — Browser / responsive / production closeout | 🚧 | **LOCAL VERIFIED · PR/CI NEXT** · source contract **6/6 PASS**; authenticated F6 browser **4/4 PASS** across Manual/GPS/invalid-profile matrix, required viewports, light/dark and 200% reflow equivalent; no runtime change; final PR/CI/merge/deploy/smoke follows |
 
 Immediate next step:
 - F2.0 design/review contract is merged as PR #203;
