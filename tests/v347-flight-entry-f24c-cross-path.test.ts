@@ -174,13 +174,17 @@ test("F2.4C Safety Pilot F2.3 remains server-authoritative and account identity 
   assert.doesNotMatch(connected,/LOWER\(TRIM\(u\.display_name\)\)=LOWER/);
 });
 
-test("F2.4C GPS stays PIC-only until the dedicated multi-role milestone",()=>{
-  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC"]);
+test("F2.4C GPS multi-role expansion remains narrow while F4.3 adds full Safety Pilot authority",()=>{
+  assert.deepEqual([...GPS_IMPORT_ROLES],["PIC","DUAL","SAFETY PILOT"]);
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
-  assert.match(validateGpsImportRole("DUAL").error??"",/supports PIC only/i);
-  assert.match(validateGpsImportRole("SAFETY PILOT").error??"",/supports PIC only/i);
+  assert.deepEqual(validateGpsImportRole("DUAL"),{role:"DUAL"});
+  assert.deepEqual(validateGpsImportRole("SAFETY PILOT"),{role:"SAFETY PILOT"});
+  assert.match(validateGpsImportRole("SPIC").error??"",/supports PIC, DUAL and SAFETY PILOT/i);
+  assert.match(validateGpsImportRole("PICUS").error??"",/supports PIC, DUAL and SAFETY PILOT/i);
 
   const form=read("components/kml-import-form.tsx");
-  assert.match(form,/name="role" defaultValue="PIC"><option>PIC<\/option>/);
-  assert.doesNotMatch(form,/name="role"[^>]*>[\s\S]{0,300}<option>DUAL<\/option>/);
+  assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
+  assert.match(form,/role==="DUAL"/);
+  assert.match(form,/role==="SAFETY PILOT"/);
+  assert.match(form,/connectedPicUserId/);
 });

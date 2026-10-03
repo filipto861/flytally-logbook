@@ -108,6 +108,59 @@ export function resetGpsNormalizedImportFixture(){
   `);
 }
 
+export function resetF41CommonRoleCrewFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_tracks
+    WHERE user_id=9001 AND flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+        AND off_block='19:00'
+    );
+    DELETE FROM flights
+    WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+      AND off_block='19:00' AND certified_at IS NULL;
+  `);
+}
+
+export function resetF42WholePartRoleCrewFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_tracks
+    WHERE user_id=9001 AND flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+        AND off_block IN ('20:00','20:06')
+    );
+    DELETE FROM flights
+    WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'
+      AND off_block IN ('20:00','20:06') AND certified_at IS NULL;
+  `);
+}
+
+export function resetF43GpsSafetyPilotFixture(){
+  runBrowserSql(`
+    UPDATE users SET display_name='Browser Friend',updated_at=NOW() WHERE id=9002;
+    UPDATE pilot_connections
+    SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
+        accepted_at=NOW(),updated_at=NOW()
+    WHERE id=7001;
+    DELETE FROM flight_connected_crew
+    WHERE source_user_id=9001 AND source_flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03'
+        AND off_block IN ('21:00','21:20','21:40','21:46')
+    );
+    DELETE FROM flight_tracks
+    WHERE user_id=9001 AND flight_id IN(
+      SELECT id FROM flights
+      WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03'
+        AND off_block IN ('21:00','21:20','21:40','21:46')
+    );
+    DELETE FROM flights
+    WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03'
+      AND off_block IN ('21:00','21:20','21:40','21:46') AND certified_at IS NULL;
+  `);
+}
+
 export function resetF35SnapshotFixture(){
   runBrowserSql(`
     DELETE FROM flights WHERE id IN (9920,9921) AND user_id=9001;

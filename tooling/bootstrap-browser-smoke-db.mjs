@@ -71,6 +71,18 @@ CREATE TABLE user_settings(
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE airports(
+  ident TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  latitude_deg DOUBLE PRECISION,
+  longitude_deg DOUBLE PRECISION,
+  user_id BIGINT NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  closed INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX airports_ident_idx ON airports(ident);
+
 CREATE TABLE auth_sessions(
   id UUID PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

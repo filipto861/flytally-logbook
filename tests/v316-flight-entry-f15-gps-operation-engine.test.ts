@@ -76,8 +76,8 @@ test("F1.5 server revalidates Operation/Engine and persists resolved values",()=
   assert.doesNotMatch(importAction,/'SP',\$\{defaultEngineType\(aircraftClass\)\}/);
 });
 
-test("F1.5 keeps GPS role support narrow while F1.4 routes PIC semantics through the shared normalizer",()=>{
-  assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
+test("F1.5 keeps GPS role support explicitly bounded while shared normalization handles resolved RoleCrew",()=>{
+  assert.match(importAction,/resolveGpsImportCommonRoleCrew\(\{role:form\.get\("role"\)/);
   assert.match(importAction,/normalizeFlightDraft\(candidate\)/);
   assert.match(importAction,/gpsFlightCandidate\(/);
   assert.match(importAction,/\$\{item\.input\.role\}/);

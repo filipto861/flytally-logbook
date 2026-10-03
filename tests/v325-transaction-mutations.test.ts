@@ -18,6 +18,13 @@ test("v3.2 U6 local smoke adapter executes transaction batches atomically and pr
   assert.match(local,/transaction queries must be created inline/);
 });
 
+test("v3.2 U6 local transaction parser requires a left identifier boundary before a top-level command token",()=>{
+  const local=read("lib/local-postgres.ts");
+  assert.match(local,/const previous=statement\[index-1\]\?\?""/);
+  assert.match(local,/\[A-Za-z0-9_\$\]\/\.test\(previous\)/);
+  assert.match(local,/const match=rest\.match\(\/\^\(SELECT\|INSERT\|UPDATE\|DELETE\)\\b\/i\)/);
+});
+
 test("v3.2 U6 browser fixture supports settings and connection updates",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   const helper=read("e2e/browser-db.mjs");

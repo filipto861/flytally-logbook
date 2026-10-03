@@ -87,7 +87,7 @@ test("F1.4 duplicate identity uses the same normalized semantic record",()=>{
 test("F1.4 preserves specialized GPS atomic persistence and provenance outside FlightInput",()=>{
   assert.match(gpsAction,/pg_advisory_xact_lock/);
   assert.match(gpsAction,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
-  assert.match(gpsAction,/WHERE NOT EXISTS\(SELECT 1 FROM flights/);
+  assert.match(gpsAction,/NOT EXISTS\(SELECT 1 FROM flights/);
   assert.match(gpsAction,/INSERT INTO flight_tracks/);
   assert.match(gpsAction,/JSON\.stringify\(item\.part\)/);
   assert.match(gpsAction,/rolled back\. No partial flights were created/);

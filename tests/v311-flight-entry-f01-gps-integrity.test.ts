@@ -53,12 +53,14 @@ test("F0.1 accepts valid EASA and explicit ULL aircraft contexts but rejects mal
   assert.match(malformedEasa.error??"",/requires both manufacturer/i);
 });
 
-test("F0.1 GPS interim role contract accepts PIC only and rejects crafted roles",()=>{
+test("F0.1 interim GPS role boundary is superseded by F4.1 PIC/DUAL and F4.3 Safety Pilot parity",()=>{
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
-  for(const role of ["","DUAL","SAFETY PILOT","INSTRUCTOR","INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS","ADMIN"]){
+  assert.deepEqual(validateGpsImportRole("DUAL"),{role:"DUAL"});
+  assert.deepEqual(validateGpsImportRole("SAFETY PILOT"),{role:"SAFETY PILOT"});
+  for(const role of ["","INSTRUCTOR","INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS","ADMIN"]){
     const result=validateGpsImportRole(role);
     assert.equal(result.role,undefined,role);
-    assert.match(result.error??"",/supports PIC only/i);
+    assert.match(result.error??"",/supports PIC, DUAL and SAFETY PILOT/i);
   }
 });
 
@@ -84,15 +86,17 @@ test("F0.1 removes GPS ULL fallbacks and exposes unresolved profile state instea
   assert.match(gpsForm,/name="evidence" value=\{selectedProfile\?\.evidence\|\|""\}/);
 });
 
-test("F0.1 GPS UI exposes only the supported PIC role",()=>{
-  assert.match(gpsForm,/name="role" defaultValue="PIC"><option>PIC<\/option><\/select>/);
-  for(const unsupported of ["DUAL","INSTRUKTOR","SAFETY PILOT","CO-PILOT","PAX","OBSERVER"]){
-    assert.doesNotMatch(gpsForm,new RegExp(`<option(?: value="[^"]+")?>${unsupported.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}</option>`));
+test("F0.1 GPS UI role surface stays bound to the explicit F4 allowlist",()=>{
+  assert.match(gpsForm,/GPS_IMPORT_ROLES\.map\(value=><option/);
+  assert.match(gpsForm,/name="role" value=\{role\}/);
+  assert.match(gpsForm,/role==="SAFETY PILOT"/);
+  for(const unsupported of ["INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS"]){
+    assert.ok(!gpsForm.includes(`>${unsupported}</option>`),unsupported);
   }
 });
 
 test("F0.1 server active-profile authority now routes through the shared F3 resolver",()=>{
-  assert.match(importAction,/validateGpsImportRole\(form\.get\("role"\)\)/);
+  assert.match(importAction,/resolveGpsImportCommonRoleCrew\(\{role:form\.get\("role"\)/);
   assert.match(importAction,/aircraftAuthorityProfile\(userId,registration,true\)/);
   assert.match(importAction,/authorizeProfileFlightContext\(selectedAircraft,flightAircraftContextFromForm\(form\)\)/);
   assert.match(importAction,/authorityProfile=authority\.profile,authorityContext=authority\.context/);
@@ -106,7 +110,7 @@ test("F0.1 preserves GPS duplicate locking and atomic transaction behavior",()=>
   assert.match(importAction,/new Set\(prepared\.map\(item=>item\.fingerprint\)\)\.size!==prepared\.length/);
   assert.match(importAction,/pg_advisory_xact_lock/);
   assert.match(importAction,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
-  assert.match(importAction,/WHERE NOT EXISTS\(SELECT 1 FROM flights/);
+  assert.match(importAction,/NOT EXISTS\(SELECT 1 FROM flights/);
   assert.match(importAction,/rolled back\. No partial flights were created/);
 });
 

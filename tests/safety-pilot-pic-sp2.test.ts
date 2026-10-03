@@ -33,7 +33,7 @@ test("F2.3 create uses the shared server resolver and persists its canonical com
   const actions=read("app/(protected)/flights/actions.ts");
   const helper=read("lib/flight-connected-crew.ts");
   const create=between(actions,"export async function createFlight","export async function importKmlFlight");
-  assert.match(actions,/import \{ resolveSafetyPilotPicForSave \} from "@\/lib\/flight-connected-crew"/);
+  assert.match(actions,/import \{[^}]*resolveSafetyPilotPicForSave[^}]*\} from "@\/lib\/flight-connected-crew"/);
   assert.match(create,/picResolution=await resolveSafetyPilotPicForSave\(/);
   assert.match(helper,/export async function resolveSafetyPilotPicForSave/);
   assert.match(helper,/WHERE u\.id=\$\{connectedUserId\}/);
@@ -110,10 +110,12 @@ test("F2.3 connected mode is explicit and cannot silently degrade to manual when
   const actions=read("app/(protected)/flights/actions.ts");
   const helper=read("lib/flight-connected-crew.ts");
   const form=read("components/flight-form.tsx");
-  assert.match(helper,/const mode=String\(form\.get\("actualPicMode"\)\?\?"manual"\)\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(helper,/const mode=String\(rawMode\?\?"manual"\)\.trim\(\)\.toLowerCase\(\)/);
   assert.match(helper,/if\(mode!=="connected"\)return\{ok:false,error:"Select a valid connected Actual PIC\."\}/);
-  assert.match(helper,/const raw=String\(form\.get\("connectedPicUserId"\)\?\?""\)\.trim\(\)/);
+  assert.match(helper,/const raw=String\(rawConnectedPicUserId\?\?""\)\.trim\(\)/);
   assert.match(helper,/connectedUserId===sourceUserId/);
+  assert.match(helper,/mode:form\.get\("actualPicMode"\)/);
+  assert.match(helper,/connectedPicUserId:form\.get\("connectedPicUserId"\)/);
   assert.doesNotMatch(actions,/function connectedPicSelection/);
   assert.match(form,/name="actualPicMode"/);
   assert.ok(form.includes('<select name="connectedPicUserId" value={connectedPicUserId} onChange={event=>setConnectedPicUserId(event.target.value)} required aria-invalid={!connectedPicUserId||!connectedPicAccepted}>'));
