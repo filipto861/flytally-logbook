@@ -45,6 +45,9 @@ before(()=>{
   const version=spawnSync("psql",["--version"],{encoding:"utf8"});
   if(version.error)throw new Error(`psql is required for PostgreSQL acceptance tests: ${version.error.message}`);
   const source=fs.readFileSync(path.join(root,"lib/db-optimization.ts"),"utf8");
+  const auditTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_audit_log");
+  const auditFunction=productionSqlBlock(source,"CREATE OR REPLACE FUNCTION logbook_audit_flight_change()");
+  const deletedFlightsTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS deleted_flights");
   const revisionTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_certified_revisions");
   const protectionFunction=productionSqlBlock(source,"CREATE OR REPLACE FUNCTION logbook_protect_locked_flight()","last");
   const participationTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_participations");
@@ -57,6 +60,7 @@ before(()=>{
       id BIGINT PRIMARY KEY,
       user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       note TEXT NOT NULL DEFAULT '',
+      task TEXT NOT NULL DEFAULT '',
       certified_at TIMESTAMPTZ,
       certified_by_user_id BIGINT,
       certification_hash TEXT NOT NULL DEFAULT '',
@@ -68,9 +72,13 @@ before(()=>{
       correction_opened_at TIMESTAMPTZ,
       correction_opened_by_user_id BIGINT
     );
+    ${auditTable};
+    ${deletedFlightsTable};
     ${revisionTable};
     ${protectionFunction};
+    ${auditFunction};
     CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();
+    CREATE TRIGGER trg_logbook_audit_flight_change AFTER INSERT OR UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_audit_flight_change();
     ${participationTable};
     ${verificationTable};
     INSERT INTO users(id) VALUES(1),(2),(3);
@@ -107,6 +115,31 @@ test("AC-03 and AC-04 correction transition requires matching archive and preser
   reject(`UPDATE flights SET note='silent rewrite' WHERE id=102`,/Certified flight is immutable/i);
   assert.equal(run(`SELECT COUNT(*)||'|'||MIN(revision_number)||'|'||MIN(certification_hash) FROM flight_certified_revisions WHERE flight_id=102`),"1|1|hash-r1");
   assert.equal(run(`SELECT record_revision||'|'||certification_hash||'|'||note FROM flights WHERE id=102`),"2|hash-r2|r2 corrected");
+});
+
+test("E14-T01/T02/T03 certified legacy GPS Task correction preserves revision, audit and recovery evidence",{skip:!enabled},()=>{
+  run(`INSERT INTO flights(id,user_id,note,task,certified_at,certified_by_user_id,certification_hash,locked_at,locked_by_user_id,record_revision)
+    VALUES(104,1,'legacy gps task','GPS import',NOW(),1,'legacy-hash-r1',NOW(),1,1);`);
+  run(`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data)
+    VALUES(1,999,'e14-deleted-copy',jsonb_build_object('task','GPS import','certification_hash','deleted-hash'));`);
+
+  const correctionReason="Remove legacy GPS import Task";
+  run(`INSERT INTO flight_certified_revisions(flight_id,user_id,revision_number,snapshot_data,certification_hash,certification_version,certified_at,certified_by_user_id,superseded_by_user_id,correction_reason)
+    SELECT id,user_id,record_revision,to_jsonb(f),certification_hash,certification_version,certified_at,certified_by_user_id,1,'${correctionReason}' FROM flights f WHERE id=104 AND user_id=1;`);
+  run(`UPDATE flights SET certified_at=NULL,certified_by_user_id=NULL,certification_hash='',locked_at=NULL,locked_by_user_id=NULL,
+    record_revision=2,correction_reason='${correctionReason}',correction_opened_at=NOW(),correction_opened_by_user_id=1 WHERE id=104 AND user_id=1;`);
+
+  assert.equal(run(`SELECT snapshot_data->>'task'||'|'||certification_hash||'|'||revision_number FROM flight_certified_revisions WHERE flight_id=104 AND user_id=1`),"GPS import|legacy-hash-r1|1");
+
+  run(`UPDATE flights SET task='' WHERE id=104 AND user_id=1 AND certified_at IS NULL;`);
+  run(`UPDATE flights SET certified_at=NOW(),certified_by_user_id=1,certification_hash='legacy-hash-r2',locked_at=NOW(),locked_by_user_id=1 WHERE id=104 AND user_id=1 AND certified_at IS NULL;`);
+
+  assert.equal(run(`SELECT record_revision||'|'||task||'|'||certification_hash FROM flights WHERE id=104 AND user_id=1`),"2||legacy-hash-r2");
+  assert.equal(run(`SELECT COUNT(*) FROM flight_certified_revisions WHERE flight_id=104 AND user_id=1 AND snapshot_data->>'task'='GPS import' AND certification_hash='legacy-hash-r1'`),"1");
+  assert.equal(run(`SELECT COUNT(*) FROM flight_audit_log WHERE flight_id=104 AND user_id=1 AND (old_data->>'task'='GPS import' OR new_data->>'task'='GPS import')`)>"0",true);
+  assert.equal(run(`SELECT COUNT(*) FROM flight_audit_log WHERE flight_id=104 AND user_id=1 AND new_data->>'correction_reason'='${correctionReason}'`)>"0",true);
+  assert.equal(run(`SELECT flight_data->>'task'||'|'||flight_data->>'certification_hash' FROM deleted_flights WHERE delete_token='e14-deleted-copy'`),"GPS import|deleted-hash");
+  reject(`UPDATE flights SET task='rewritten after recertification' WHERE id=104 AND user_id=1`,/Certified flight is immutable/i);
 });
 
 test("AC-06 verification stays bound to exact revision and hash",{skip:!enabled},()=>{
