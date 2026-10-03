@@ -87,15 +87,17 @@ export function IntelligentFlightEntryPanel({context,formId}:{context:Intelligen
   const latest=context.history[0],latestDeparture=String(latest?.departure??"").trim().toUpperCase(),latestArrival=String(latest?.arrival??"").trim().toUpperCase();
   const returnLeg=departure&&!arrival&&latestArrival===departure&&latestDeparture&&latestDeparture!==departure?latest:null;
   const inline=insights.map(item=>({item,target:fieldTarget(form,preferredField(item.code))})),fallback=inline.filter(entry=>!entry.target).map(entry=>entry.item);
-  const departureTarget=fieldTarget(form,"departure"),arrivalTarget=fieldTarget(form,"arrival");
+  const routeAssistanceTarget=form?.querySelector<HTMLElement>("[data-intelligent-route-assistance]")??null;
 
   return <>
-    {continuation&&form&&departureTarget?createPortal(<small className="role-guidance" data-intelligent-review="continuation">
-      <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
-    </small>,departureTarget):null}
-    {returnLeg&&form&&arrivalTarget?createPortal(<small className="role-guidance" data-intelligent-review="return-leg">
-      <strong>Return to {latestDeparture}?</strong> Your latest flight was {latestDeparture} → {latestArrival} on {String(returnLeg.date).slice(0,10)}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"arrival",latestDeparture)}>Use {latestDeparture}</button>
-    </small>,arrivalTarget):null}
+    {(continuation||returnLeg)&&form&&routeAssistanceTarget?createPortal(<div className="intelligent-route-assistance-content">
+      {continuation?<small className="role-guidance intelligent-route-suggestion" data-intelligent-review="continuation">
+        <strong>Continue from {continuation.airport}?</strong> Last flight ended there on {continuation.date} with {continuation.registration}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"departure",continuation.airport)}>Use {continuation.airport}</button>
+      </small>:null}
+      {returnLeg?<small className="role-guidance intelligent-route-suggestion" data-intelligent-review="return-leg">
+        <strong>Return to {latestDeparture}?</strong> Your latest flight was {latestDeparture} → {latestArrival} on {String(returnLeg.date).slice(0,10)}. <button className="detail-button" style={inlineActionStyle} type="button" onClick={()=>applyFieldValue(form,"arrival",latestDeparture)}>Use {latestDeparture}</button>
+      </small>:null}
+    </div>,routeAssistanceTarget):null}
     {inline.map(({item,target})=>target?createPortal(<InlineInsight item={item}/>,target,`intelligent-${item.code}`):null)}
     {fallback.length?<section className="panel" aria-live="polite" data-intelligent-review="fallback">
       <div className="section-heading"><div><p className="eyebrow">INTELLIGENT REVIEW</p><h2>Worth checking</h2></div><span>{fallback.length}</span></div>

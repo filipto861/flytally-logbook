@@ -97,7 +97,9 @@ export function normalizeFlightDraft(candidate:FlightDraftCandidate):{data?:Flig
   const instructor=text(candidate.instructor,100);
   const operationRaw=semanticValue(candidate.operationType,"Operation"),engineRaw=semanticValue(candidate.engineType,"Engine");
   if(operationRaw.error)return{error:operationRaw.error};if(engineRaw.error)return{error:engineRaw.error};
-  const operationType=option(text(operationRaw.value,2).toUpperCase(),OPERATION_TYPES,"SP"),engineType=option(text(engineRaw.value,2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass)),professional=supportsProfessionalContext({evidence,regulatoryCategory}),operationContextRaw=text(candidate.operationContext,24).toUpperCase(),operationContext=professional?normalizeProfessionalOperationContext(operationContextRaw):"",operatorName=professional?text(candidate.operatorName,120):"",flightNumber=professional?text(candidate.flightNumber,40).toUpperCase():"";
+  const operationValue=text(operationRaw.value,2).toUpperCase();
+  if(operationValue&&!OPERATION_TYPES.includes(operationValue as (typeof OPERATION_TYPES)[number]))return{error:"Select a valid operation type."};
+  const operationType=operationValue,engineType=option(text(engineRaw.value,2).toUpperCase(),ENGINE_TYPES,defaultEngineType(aircraftClass)),professional=supportsProfessionalContext({evidence,regulatoryCategory}),operationContextRaw=text(candidate.operationContext,24).toUpperCase(),operationContext=professional?normalizeProfessionalOperationContext(operationContextRaw):"",operatorName=professional?text(candidate.operatorName,120):"",flightNumber=professional?text(candidate.flightNumber,40).toUpperCase():"";
 
   const nightRaw=candidateValue(candidate.nightTime,"Night time"),ifrRaw=candidateValue(candidate.ifrTime,"IFR time");
   if(nightRaw.error)return{error:nightRaw.error};if(ifrRaw.error)return{error:ifrRaw.error};

@@ -1,4 +1,5 @@
 import { parseOptionalBilling } from "./billing.ts";
+import { parseAircraftDefaultOperationType } from "./aircraft-profile-validation.ts";
 
 export type AircraftShareRate={
   aircraftType:string;
@@ -27,7 +28,7 @@ export type AircraftShareProfile={
 
 export type AircraftShareSnapshot={
   profile:AircraftShareProfile;
-  defaults?:{defaultRole:string;billingBasis:string;billingError?:string};
+  defaults?:{defaultRole:string;defaultOperationType?:string;billingBasis:string;billingError?:string;operationError?:string};
   currentRate?:AircraftShareRate;
   rateHistory?:AircraftShareRate[];
   note?:string;
@@ -57,7 +58,7 @@ export function parseAircraftShareSnapshot(value:unknown):AircraftShareSnapshot{
     partFclCreditBasis:text(profile.partFclCreditBasis).slice(0,300),
     partFclCreditFrom:text(profile.partFclCreditFrom).slice(0,10),
   }};
-  if(Object.keys(defaults).length){const billing=parseOptionalBilling(defaults.billingBasis),rawBilling=text(defaults.billingBasis).toUpperCase().slice(0,32);parsed.defaults={defaultRole:text(defaults.defaultRole)||"PIC",billingBasis:billing.error?rawBilling:billing.value,...(billing.error?{billingError:billing.error}:{})}}
+  if(Object.keys(defaults).length){const billing=parseOptionalBilling(defaults.billingBasis),rawBilling=text(defaults.billingBasis).toUpperCase().slice(0,32),operationPresent=Object.prototype.hasOwnProperty.call(defaults,"defaultOperationType"),operation=operationPresent?parseAircraftDefaultOperationType(defaults.defaultOperationType):{value:"" as const};parsed.defaults={defaultRole:text(defaults.defaultRole)||"PIC",...(operationPresent?{defaultOperationType:operation.error?text(defaults.defaultOperationType).toUpperCase().slice(0,16):operation.value||""}:{}),billingBasis:billing.error?rawBilling:billing.value,...(billing.error?{billingError:billing.error}:{}),...(operationPresent&&operation.error?{operationError:operation.error}:{})}}
   if(Object.keys(current).length)parsed.currentRate=rate(current);
   if(history.length)parsed.rateHistory=history.slice(0,250).map(rate).filter(item=>item.pricePerHour>0&&/^\d{4}-\d{2}-\d{2}$/.test(item.validFrom));
   if(typeof root.note==="string")parsed.note=root.note.slice(0,5000);

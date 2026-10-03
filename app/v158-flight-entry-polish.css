@@ -1,2 +1,9 @@
 /* FlyTally v1.58 — flight-entry polish and transparent smart defaults. */
 .field-inline-action{appearance:none;border:0;background:transparent;padding:0;color:var(--accent2);font:inherit;font-weight:750;cursor:pointer;text-align:left}.field-inline-action:hover,.field-inline-action:focus-visible{text-decoration:underline}.field-message-error{color:#f59e0b!important;font-weight:750}.flight-form [aria-invalid="true"]{border-color:color-mix(in srgb,#f59e0b 68%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,#f59e0b 18%,transparent)}@media(max-width:700px){.field-inline-action{min-height:32px;display:inline-flex;align-items:center}}
+
+.intelligent-route-assistance{min-width:0;margin-top:8px}
+.intelligent-route-assistance:empty{display:none}
+.intelligent-route-assistance-content{display:grid;gap:6px;min-width:0}
+.intelligent-route-suggestion{margin-top:0!important}
+.intelligent-route-suggestion .detail-button{max-width:100%;vertical-align:middle}
+@media(max-width:700px){.intelligent-route-assistance{margin-top:6px}.intelligent-route-suggestion .detail-button{margin-left:0!important;margin-top:6px}}

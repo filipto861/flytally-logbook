@@ -25,6 +25,7 @@ const migrationNames:Record<number,string>={
   15:"Safety Pilot connected PIC collaboration",
   16:"general PIC invitation provenance",
   17:"historical flight aircraft identity preservation",
+  18:"aircraft default operation type",
 };
 
 const migrationQueries=(version:number)=>{
@@ -529,6 +530,20 @@ const migrationQueries=(version:number)=>{
     sql`CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
       BEFORE INSERT OR UPDATE OF registration ON flights
       FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity()`,
+  ];
+  if(version===18)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_operation_type TEXT`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(
+        SELECT 1 FROM pg_constraint
+        WHERE conname='ck_aircraft_default_operation_type'
+          AND conrelid='aircraft'::regclass
+      ) THEN
+        ALTER TABLE aircraft
+          ADD CONSTRAINT ck_aircraft_default_operation_type
+          CHECK(default_operation_type IS NULL OR default_operation_type IN ('SP','MP'));
+      END IF;
+    END $$`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };

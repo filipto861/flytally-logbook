@@ -31,7 +31,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | 🚧 | Existing workflow live; Flight Entry Workflow 3.0 is active to remove confirmed Manual/GPS semantic-write divergence |
+| Flight entry / review / GPS workflows | 🚧 | Flight Entry Workflow 3.0 is DONE / PRODUCTION VERIFIED; Flight Entry Follow-up E1 is active in E1.5 production closeout |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
@@ -48,8 +48,8 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | 🚧 | **F0–F4 DONE / PRODUCTION VERIFIED; F5 PRIMARY UX ACTIVE** · domain convergence complete; now simplifying the normal PIC entry without changing semantics |
-| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
+| Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; domain convergence and F5/F6 UX closeout complete |
+| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is temporarily pre-empted by Flight Entry Follow-up E1 production closeout |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
@@ -68,14 +68,14 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
 | 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
-| 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; re-check priority after F0.1 and domain-convergence dependency review |
+| 6 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; resume/re-check after active Flight Entry Follow-up E1 production closeout |
 | 7 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 8 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 9 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 10 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
 | 11 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
 
-**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence now exercise that rule; Flight Entry Workflow 3.0 is therefore active ahead of M2B. UI simplification must not weaken evidence, validation or historical integrity.
+**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence previously exercised that rule; Flight Entry Workflow 3.0 is now DONE / PRODUCTION VERIFIED. Flight Entry Follow-up E1 remains active only for the scoped follow-up/migration closeout before M2B resumes. UI simplification must not weaken evidence, validation or historical integrity.
 
 ## P1 — GPS touch-and-go detection reliability — DONE
 
@@ -536,6 +536,35 @@ F1.0 production closeout:
 
 M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
 
+## Flight Entry Follow-up E1 — E1.1–E1.4 LOCAL VERIFIED · E1.5 LOCAL GATE PASS / PR-CI ACTIVE
+
+Goal: address four production-use follow-ups without reopening the completed Flight Entry Workflow 3.0 domain-convergence workstream.
+
+Design:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_DESIGN.md`
+
+Independent review:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_REVIEW_HANDOFF.md`
+
+Frozen draft direction:
+- aircraft profile may hold nullable **default Operation** SP/MP; it is a prefill only, never aircraft authority;
+- no SP/MP profile backfill from type/history; NULL means explicit per-flight choice;
+- GPS import stops writing synthetic `Task = GPS import`;
+- certified historical `task` is never raw-mutated because Task participates in the certification hash;
+- GPS Day/Night landing counts may be suggested from each detected landing event's UTC + coordinates using EASA/SERA civil-twilight boundary, with explicit pilot confirmation and fail-closed unavailable state;
+- Continue/Return assistance moves below the Route row so contextual intelligence cannot misalign Departure/Arrival inputs.
+
+Milestones:
+
+| Milestone | Status | Scope |
+| --- | :---: | --- |
+| E1.0 — design + independent review | ✅ | **DONE / RECONCILED** · APPROVE WITH CHANGES; repo + authoritative twilight-source reconciliation complete |
+| E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
+| E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
+| E1.3 — GPS civil-twilight landing suggestion | ✅ | **DONE / LOCAL VERIFIED** · focused classifier/wiring/GPS regression suite 38/38 PASS; TypeScript PASS; production build PASS; authenticated browser 5/5 PASS covering Settings persistence, MANUAL fail-closed, SERA suggestion/provenance, total invalidation and sticky pilot edits |
+| E1.4 — historical Task cleanup | ✅ | **DONE / LOCAL VERIFIED** · production read-only census found 14 exact live rows across 3 accounts, all certified, with zero ordinary draft candidates; no historical mutation executed. Policy A frozen: preserve certified evidence; pilot correction remains owner-scoped existing workflow only; exact legacy value gets additive UI annotation while raw export/print/certification evidence remains unchanged. Verification: focused tests **20/20 PASS**, TypeScript PASS, PostgreSQL certification/correction acceptance **5/5 PASS** on local `flytally_browser`, production build PASS (41/41 static pages), targeted authenticated Playwright **1/1 PASS**. |
+| E1.5 — verification / migration / production closeout | 🚧 | **PR/CI ACTIVE — FIRST RUN BLOCKED BY STALE ROADMAP GUARD** · Local release gate remains closed: targeted browser-source guard **5/5 PASS**; exact-head TypeScript PASS, unit/regression **1200/1200 PASS**, production build PASS with **41/41** static pages; local PostgreSQL **84/84 PASS**; authoritative local serialized Playwright **84/84 PASS** with **2 intentional skips**. PR #237 `[full-ci]` first run: CI Browser smoke **84/84 PASS** with **2 intentional skips** using 1 worker; PostgreSQL acceptance PASS; Fast application gate TypeScript PASS but unit/regression **1199/1200** because `v300-navigation-hierarchy` still required the superseded exact `E1.5 ACTIVE` roadmap heading after docs advanced to PR/CI. No runtime defect was exposed. The roadmap guard is now stage-tolerant across E1.5 closeout transitions; rerun CI and require full green before production preflight/migration/merge/deploy. Production v18 remains NOT APPLIED; no production write/migration/merge/deploy executed yet. |
+
 ## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
 
 Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.
@@ -674,7 +703,7 @@ This is the concise active history. Detailed implementation evidence belongs in 
 | Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
 | GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
 | Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
-| Flight Entry Workflow 3.0 | 🚧 | ACTIVE · F1 production-verified; F2.0/F2.1 complete; F2.2 next |
+| Flight Entry Workflow 3.0 | ✅ | DONE / PRODUCTION VERIFIED · PR #233 merged; production `252bcb8`; F1–F6 closeout complete |
 | Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
 | Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
 | Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |

@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture,clearE14LegacyTaskFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -130,7 +130,9 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Flights");
   await expect(page).toHaveURL(/\/flights$/);
   await expectAuthenticatedRoute(page,"Flights");
-  await expect(page.getByRole("row",{name:/OK-E2E/})).toBeVisible();
+  const baselineFlightRow=page.locator("tr.flight-list-row").filter({hasText:"18/09/2026"}).filter({hasText:"OK-E2E"});
+  await expect(baselineFlightRow).toHaveCount(1);
+  await expect(baselineFlightRow).toBeVisible();
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
@@ -203,14 +205,18 @@ test("F3.4 Manual compact context exposes only A+ choice and blocks invalid prof
   await form.locator('select[name="registration"]').selectOption("OK-ULL1");
   await expect(details.locator("summary")).toContainText("ULL · UL");
   await expect(details.locator('select[name="regulatoryCategory"]')).toHaveCount(0);
-  await details.locator("summary").click();
-  await expect(details).not.toHaveAttribute("open","");
 
-  await form.locator('select[name="registration"]').selectOption("OK-BAD1");
-  await expect(details).toHaveAttribute("open","");
-  await expect(details.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
-  await expect(form.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
-  const configLink=details.getByRole("link",{name:/Open Aircraft/});
+  // Prove invalid-profile auto-open from a clean closed state rather than racing the
+  // controlled <details> onToggle update from the previous ULL interaction.
+  await page.reload();
+  const invalidForm=page.locator("#new-flight-manual-form");
+  const invalidDetails=invalidForm.locator("details.aircraft-context-section");
+  await expect(invalidDetails).not.toHaveAttribute("open","");
+  await invalidForm.locator('select[name="registration"]').selectOption("OK-BAD1");
+  await expect(invalidDetails).toHaveAttribute("open","");
+  await expect(invalidDetails.locator("[data-aircraft-context-card]")).toContainText("Needs configuration");
+  await expect(invalidForm.getByRole("button",{name:"Aircraft profile"})).toBeVisible();
+  const configLink=invalidDetails.getByRole("link",{name:/Open Aircraft/});
   await expect(configLink).toHaveAttribute("target","_blank");
   await expectNoHorizontalOverflow(page);
 });
@@ -884,6 +890,206 @@ test("F2.4C certified verifier evidence stays unbound and exposes both explicit 
   await expect(panel.getByRole("link",{name:"Instructor without FlyTally · Sign on this device"})).toHaveAttribute("href","/flights/9904/in-person-signature");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001 AND participant_user_id=9002 AND participant_role='INSTRUCTOR' AND status='pending'"))).toBe(0);
   await expectNoHorizontalOverflow(page);
+});
+
+test("E1.1 route assistance stays below aligned Route fields and remains keyboard reachable",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.1 route UX coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  const departure=form.locator('input[name="departure"]');
+  const arrival=form.locator('input[name="arrival"]');
+  const assistance=form.locator("[data-intelligent-route-assistance]");
+  const suggestion=assistance.locator('[data-intelligent-review="continuation"]');
+  await expect(assistance).toHaveAttribute("aria-live","polite");
+  await expect(suggestion).toBeVisible();
+  await expect(suggestion).toContainText(/Continue from [A-Z0-9]{3,8}\?/);
+  const useButton=suggestion.getByRole("button",{name:/Use [A-Z0-9]{3,8}/});
+  await useButton.focus();
+  await expect(useButton).toBeFocused();
+
+  for(const viewport of [
+    {width:1280,height:800,aligned:true},
+    {width:768,height:1024,aligned:true},
+    {width:390,height:844,aligned:false},
+  ]){
+    await page.setViewportSize({width:viewport.width,height:viewport.height});
+    const boxes=await Promise.all([departure.boundingBox(),arrival.boundingBox(),assistance.boundingBox()]);
+    expect(boxes.every(Boolean)).toBeTruthy();
+    const [departureBox,arrivalBox,assistanceBox]=boxes;
+    if(viewport.aligned){
+      expect(Math.abs(departureBox.y-arrivalBox.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(departureBox.height-arrivalBox.height)).toBeLessThanOrEqual(1);
+    }
+    expect(assistanceBox.y).toBeGreaterThanOrEqual(Math.max(departureBox.y+departureBox.height,arrivalBox.y+arrivalBox.height)-1);
+    await expectNoHorizontalOverflow(page);
+  }
+
+  const target=(await useButton.textContent()).replace(/^Use\s+/,"").trim();
+  await useButton.click();
+  await expect(departure).toHaveValue(target);
+});
+
+test("E1.2 aircraft default operation prefills Manual and GPS but remains flight-editable",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.2 operation-default coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/dashboard");
+  runBrowserSql("UPDATE aircraft SET default_operation_type='MP',updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
+
+  try{
+    await page.goto("/flights/new");
+    const manual=page.locator("#new-flight-manual-form");
+    await manual.locator('select[name="registration"]').selectOption("OK-E2E");
+    const context=manual.locator("details.aircraft-context-section");
+    if(!(await context.getAttribute("open")))await context.locator("summary").click();
+    const manualOperation=manual.locator('select[name="operationType"]');
+    await expect(manualOperation).toHaveValue("MP");
+    await expect(manualOperation.locator("xpath=following-sibling::small")).toContainText("Aircraft default");
+    await manualOperation.selectOption("SP");
+    await expect(manualOperation).toHaveValue("SP");
+
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-10-03T23:00:00Z</when><when>2026-10-03T23:01:00Z</when><when>2026-10-03T23:02:00Z</when><when>2026-10-03T23:03:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.15 50.15 700</gx:coord><gx:coord>14.20 50.20 700</gx:coord><gx:coord>14.25 50.25 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e12-default-operation.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+    const gpsOperation=gps.locator('select[name="operationType"]');
+    await expect(gpsOperation).toHaveValue("MP");
+    await expect(gpsOperation.locator("xpath=following-sibling::small")).toContainText("Aircraft default");
+    await gpsOperation.selectOption("SP");
+    await expect(gpsOperation).toHaveValue("SP");
+    await expectNoHorizontalOverflow(page);
+  }finally{
+    runBrowserSql("UPDATE aircraft SET default_operation_type=NULL,updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
+  }
+});
+
+test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared read-only views",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.4 legacy Task presentation coverage requires the isolated browser database.");
+  resetE14LegacyTaskFixture();
+  try{
+    await loginBrowserPilot(page,"/flights/9914");
+  const ownerPanel=page.getByRole("tabpanel");
+  await expect(ownerPanel.locator("small").filter({hasText:/^GPS import/}).first()).toBeVisible();
+  await expect(ownerPanel.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+
+  await page.getByRole("tab",{name:"Logbook data"}).click();
+  const ownerLegacyNote=page.locator(".legacy-task-note");
+  await expect(ownerLegacyNote.locator("code")).toHaveText("GPS import");
+  await expect(ownerLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
+  await expect(ownerLegacyNote).toContainText("retained exactly as stored evidence from the legacy GPS-import workflow");
+
+  for(const viewport of [
+    {width:1280,height:800},
+    {width:768,height:1024},
+    {width:390,height:844},
+  ]){
+    await page.setViewportSize(viewport);
+    await expect(ownerLegacyNote.locator("code")).toHaveText("GPS import");
+    await expect(ownerLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }
+
+  await page.goto("/connections/shared/9915");
+  const sharedLegacyNote=page.locator(".legacy-task-note");
+  await expect(sharedLegacyNote.locator("code")).toHaveText("GPS import");
+  await expect(sharedLegacyNote.getByText("LEGACY GPS IMPORT",{exact:true})).toBeVisible();
+  await expect(sharedLegacyNote).toContainText("retained exactly as stored evidence from the legacy GPS-import workflow");
+  await expect(page.getByRole("button",{name:"Add to my logbook"})).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+    expect(browserSqlScalar("SELECT task FROM flights WHERE id=9914 AND user_id=9001")).toBe("GPS import");
+    expect(browserSqlScalar("SELECT task FROM flights WHERE id=9915 AND user_id=9002")).toBe("GPS import");
+  }finally{
+    clearE14LegacyTaskFixture();
+  }
+});
+
+test("E1.3 night definition setting persists explicit MANUAL and SERA applicability",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 settings coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  try{
+    await loginBrowserPilot(page,"/profile");
+    const nightDefinition=page.getByLabel("Night definition");
+    await expect(nightDefinition).toHaveValue("MANUAL");
+    await nightDefinition.selectOption("SERA");
+    await page.getByRole("button",{name:"Save changes"}).click();
+    await page.reload();
+    await expect(page.getByLabel("Night definition")).toHaveValue("SERA");
+    expect(browserSqlScalar("SELECT COALESCE(preferences_json->>'night_definition','') FROM user_settings WHERE user_id=9001")).toBe("SERA");
+  }finally{
+    resetAccountSettingsFixture();
+  }
+});
+
+test("E1.3 MANUAL account applicability leaves GPS Day Night classification explicit",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 manual-applicability coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("MANUAL");
+  try{
+    await loginBrowserPilot(page,"/flights/new");
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-07-19T11:55:00Z</when><when>2026-07-19T11:56:00Z</when><when>2026-07-19T11:57:00Z</when><when>2026-07-19T11:58:00Z</when><when>2026-07-19T11:59:00Z</when><when>2026-07-19T12:00:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e13-manual.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+    const day=gps.locator('input[name="part_0_landingsDay"]'),night=gps.locator('input[name="part_0_landingsNight"]');
+    await expect(day).toHaveValue("");
+    await expect(night).toHaveValue("");
+    await expect(day).not.toHaveAttribute("aria-describedby",/part-0-landing-suggestion/);
+    await expect(gps.getByText("EASA/SERA civil-twilight suggestion")).toHaveCount(0);
+  }finally{
+    resetAccountSettingsFixture();
+  }
+});
+
+test("E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 SERA suggestion coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("SERA");
+  try{
+    await loginBrowserPilot(page,"/flights/new");
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-07-19T11:55:00Z</when><when>2026-07-19T11:56:00Z</when><when>2026-07-19T11:57:00Z</when><when>2026-07-19T11:58:00Z</when><when>2026-07-19T11:59:00Z</when><when>2026-07-19T12:00:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e13-sera.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+
+    const total=gps.locator('input[name="part_0_starts"]'),day=gps.locator('input[name="part_0_landingsDay"]'),night=gps.locator('input[name="part_0_landingsNight"]');
+    await expect(total).toHaveValue("1");
+    await expect(day).toHaveValue("1");
+    await expect(night).toHaveValue("0");
+    const describedBy=await day.getAttribute("aria-describedby");
+    expect(describedBy).toBe("part-0-landing-suggestion");
+    await expect(night).toHaveAttribute("aria-describedby","part-0-landing-suggestion");
+    const provenance=gps.locator("#part-0-landing-suggestion");
+    await expect(provenance).toContainText("EASA/SERA civil-twilight suggestion");
+    await expect(provenance).toContainText("GPS event time/location");
+
+    await total.fill("2");
+    await expect(day).toHaveValue("");
+    await expect(night).toHaveValue("");
+    await expect(provenance).toContainText("Automatic split cleared");
+
+    await day.fill("1");
+    await night.fill("1");
+    await expect(provenance).toContainText("Pilot-edited Day/Night split");
+    await gps.locator('select[name="operationType"]').selectOption("SP");
+    await expect(day).toHaveValue("1");
+    await expect(night).toHaveValue("1");
+    await expectNoHorizontalOverflow(page);
+  }finally{
+    resetAccountSettingsFixture();
+  }
 });
 
 test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",async({page})=>{

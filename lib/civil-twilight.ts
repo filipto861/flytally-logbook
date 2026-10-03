@@ -1,0 +1,101 @@
+import { trackTimestampBasis } from "./track-time.ts";
+import { flightEnvelope,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
+
+export const CIVIL_TWILIGHT_ALTITUDE_DEG=-6;
+export const CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG=.5;
+export const CIVIL_TWILIGHT_MIN_YEAR=1800;
+export const CIVIL_TWILIGHT_MAX_YEAR=2100;
+export const CIVIL_TWILIGHT_MAX_ABS_LATITUDE=72;
+
+export type CivilTwilightClass="DAY"|"NIGHT"|"UNAVAILABLE";
+export type CivilTwilightLandingSuggestion=
+  |{status:"AVAILABLE";day:number;night:number;total:number}
+  |{status:"UNAVAILABLE";total:number};
+
+const radians=(degrees:number)=>degrees*Math.PI/180;
+const degrees=(radiansValue:number)=>radiansValue*180/Math.PI;
+const normalizeDegrees=(value:number)=>((value%360)+360)%360;
+
+function parsedInstant(value:unknown){
+  const timestamp=String(value??"").trim();
+  const basis=trackTimestampBasis(timestamp);
+  if(basis!=="utc"&&basis!=="offset")return null;
+  const date=new Date(timestamp),millis=date.getTime();
+  if(!Number.isFinite(millis))return null;
+  const year=date.getUTCFullYear();
+  if(year<CIVIL_TWILIGHT_MIN_YEAR||year>CIVIL_TWILIGHT_MAX_YEAR)return null;
+  return{date,millis};
+}
+
+/**
+ * Geometric solar-centre altitude using the published NOAA/Meeus equations.
+ * Atmospheric-refraction correction is deliberately not applied because the
+ * SERA civil-twilight definition uses the geometric centre of the Sun at -6°.
+ */
+export function geometricSolarAltitudeDegrees(timestamp:unknown,lat:unknown,lon:unknown):number|null{
+  const latitude=Number(lat),longitude=Number(lon),instant=parsedInstant(timestamp);
+  if(!instant||!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>CIVIL_TWILIGHT_MAX_ABS_LATITUDE||Math.abs(longitude)>180)return null;
+
+  const julianDay=instant.millis/86_400_000+2_440_587.5;
+  const century=(julianDay-2_451_545)/36_525;
+  const geomMeanLong=normalizeDegrees(280.46646+century*(36_000.76983+century*.0003032));
+  const geomMeanAnomaly=357.52911+century*(35_999.05029-.0001537*century);
+  const eccentricity=.016708634-century*(.000042037+.0000001267*century);
+  const anomalyRad=radians(geomMeanAnomaly);
+  const sunEquation=
+    Math.sin(anomalyRad)*(1.914602-century*(.004817+.000014*century))
+    +Math.sin(2*anomalyRad)*(.019993-.000101*century)
+    +Math.sin(3*anomalyRad)*.000289;
+  const trueLongitude=geomMeanLong+sunEquation;
+  const omega=125.04-1934.136*century;
+  const apparentLongitude=trueLongitude-.00569-.00478*Math.sin(radians(omega));
+  const meanObliquity=23+(26+(21.448-century*(46.815+century*(.00059-century*.001813)))/60)/60;
+  const obliquity=meanObliquity+.00256*Math.cos(radians(omega));
+  const declination=degrees(Math.asin(Math.sin(radians(obliquity))*Math.sin(radians(apparentLongitude))));
+  const y=Math.tan(radians(obliquity/2))**2;
+  const meanLongRad=radians(geomMeanLong);
+  const equationOfTime=4*degrees(
+    y*Math.sin(2*meanLongRad)
+    -2*eccentricity*Math.sin(anomalyRad)
+    +4*eccentricity*y*Math.sin(anomalyRad)*Math.cos(2*meanLongRad)
+    -.5*y*y*Math.sin(4*meanLongRad)
+    -1.25*eccentricity*eccentricity*Math.sin(2*anomalyRad)
+  );
+  const utcMinutes=instant.date.getUTCHours()*60+instant.date.getUTCMinutes()+instant.date.getUTCSeconds()/60+instant.date.getUTCMilliseconds()/60_000;
+  const trueSolarTime=((utcMinutes+equationOfTime+4*longitude)%1440+1440)%1440;
+  let hourAngle=trueSolarTime/4-180;
+  if(hourAngle< -180)hourAngle+=360;
+  const cosZenith=
+    Math.sin(radians(latitude))*Math.sin(radians(declination))
+    +Math.cos(radians(latitude))*Math.cos(radians(declination))*Math.cos(radians(hourAngle));
+  const bounded=Math.max(-1,Math.min(1,cosZenith));
+  const altitude=90-degrees(Math.acos(bounded));
+  return Number.isFinite(altitude)?altitude:null;
+}
+
+export function classifyCivilTwilightEvent(input:{timestamp:unknown;lat:unknown;lon:unknown}):CivilTwilightClass{
+  const altitude=geometricSolarAltitudeDegrees(input.timestamp,input.lat,input.lon);
+  if(altitude===null||Math.abs(altitude-CIVIL_TWILIGHT_ALTITUDE_DEG)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return"UNAVAILABLE";
+  return altitude>CIVIL_TWILIGHT_ALTITUDE_DEG?"DAY":"NIGHT";
+}
+
+export function aggregateCivilTwilightLandingEvents(events:Array<Pick<KmlPoint,"time"|"lat"|"lon">|undefined>,detectedTotal:number):CivilTwilightLandingSuggestion{
+  if(!Number.isSafeInteger(detectedTotal)||detectedTotal<1||events.length!==detectedTotal)return{status:"UNAVAILABLE",total:Math.max(0,Number.isFinite(detectedTotal)?Math.trunc(detectedTotal):0)};
+  let day=0,night=0;
+  for(const event of events){
+    if(!event)return{status:"UNAVAILABLE",total:detectedTotal};
+    const classification=classifyCivilTwilightEvent({timestamp:event.time,lat:event.lat,lon:event.lon});
+    if(classification==="UNAVAILABLE")return{status:"UNAVAILABLE",total:detectedTotal};
+    if(classification==="DAY")day+=1;else night+=1;
+  }
+  if(day+night!==detectedTotal)return{status:"UNAVAILABLE",total:detectedTotal};
+  return{status:"AVAILABLE",day,night,total:detectedTotal};
+}
+
+export function gpsLandingDayNightSuggestion(points:KmlPoint[]):CivilTwilightLandingSuggestion{
+  if(points.length<2)return{status:"UNAVAILABLE",total:0};
+  const touches=touchAndGoEvents(points),envelope=flightEnvelope(points),indices=[...touches.map(event=>event.index),envelope.landingIndex],detectedTotal=1+touches.length;
+  if(indices.length!==detectedTotal||new Set(indices).size!==indices.length)return{status:"UNAVAILABLE",total:detectedTotal};
+  const events=indices.map(index=>points[index]);
+  return aggregateCivilTwilightLandingEvents(events,detectedTotal);
+}

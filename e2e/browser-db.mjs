@@ -55,6 +55,11 @@ export function resetAccountSettingsFixture(){
   `);
 }
 
+export function setE13NightDefinitionFixture(value){
+  if(value!=="MANUAL"&&value!=="SERA")throw new Error("Invalid E1.3 night-definition fixture.");
+  runBrowserSql(`UPDATE user_settings SET preferences_json=jsonb_set(COALESCE(preferences_json,'{}'::jsonb),'{night_definition}',to_jsonb('${value}'::text),true),updated_at=NOW() WHERE user_id=9001;`);
+}
+
 export function resetConnectionManagerFixture(){
   runBrowserSql(`
     UPDATE pilot_connections
@@ -284,6 +289,48 @@ export function resetSafetyPilotPicInviteFixture(){
     );
     INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role)
     VALUES(9903,9001,9002,'PIC');
+  `);
+}
+
+export function resetE14LegacyTaskFixture(){
+  runBrowserSql(`
+    UPDATE users SET display_name='Browser Friend' WHERE id=9002;
+    DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN (9914,9915);
+    DELETE FROM flights WHERE id IN (9914,9915);
+
+    INSERT INTO flights(
+      id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
+      departure,arrival,off_block,takeoff,landing,on_block,role,starts,task,
+      operation_type,engine_type,landings_day,landings_night,pic_minutes,commander,
+      certified_at,certified_by_user_id,certification_hash,certification_version,
+      record_revision,locked_at,locked_by_user_id
+    ) VALUES
+    (
+      9914,9001,'2026-09-30','EASA','OK-E2E','B23','SEP','AEROPLANE',
+      'LKPR','LKLT','10:00','10:05','10:55','11:00','PIC',1,'GPS import',
+      'SP','SE',1,0,60,'Browser Pilot',
+      NOW(),9001,'browser-e14-owner-hash',8,1,NOW(),9001
+    ),
+    (
+      9915,9002,'2026-09-30','EASA','OK-SHARED','B23','SEP','AEROPLANE',
+      'LKLT','LKPR','12:00','12:05','12:55','13:00','PIC',1,'GPS import',
+      'SP','SE',1,0,60,'Browser Friend',
+      NOW(),9002,'browser-e14-shared-hash',8,1,NOW(),9002
+    );
+
+    INSERT INTO flight_participations(
+      id,source_flight_id,source_user_id,participant_user_id,participant_role,
+      source_revision,source_hash,status
+    ) VALUES(
+      9915,9915,9002,9001,'COPILOT',1,'browser-e14-shared-hash','pending'
+    );
+  `);
+}
+
+export function clearE14LegacyTaskFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN (9914,9915);
+    DELETE FROM flights WHERE id IN (9914,9915);
   `);
 }
 

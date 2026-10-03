@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **29 September 2026**
+Last reconciled: **3 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -160,6 +160,21 @@ Implemented by SP1–SP5:
 - The accepted PIC copy is fully populated from the certified source event (timing, route, GPS, movement evidence, IFR/night and other event facts), while recipient-owned role/credit fields are recalculated as PIC rather than blindly cloned.
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
+
+### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 LOCAL GATE PASS / PR-CI
+
+Planned product capabilities:
+- optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
+- no synthetic `GPS import` Task on new GPS imports;
+- certification-safe handling of historical synthetic Task values: no automated certified-row mutation; exact legacy `GPS import` remains raw evidence, with additive UI annotation and optional pilot-initiated correction through the existing revision workflow;
+- GPS event-level Day/Night landing suggestions from civil twilight when UTC + coordinates are available;
+- Route continuation/return suggestions that do not disturb field alignment.
+
+Safety/data boundaries:
+- no SP/MP inference or backfill from aircraft type/history;
+- no raw rewrite of certified Task evidence;
+- civil-twilight output is suggestion/provenance, not universal jurisdiction authority;
+- missing event time/location remains manual/unavailable.
 
 ### Flight Entry Workflow 3.0 — DONE / PRODUCTION VERIFIED
 

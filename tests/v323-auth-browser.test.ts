@@ -48,14 +48,18 @@ test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=
   assert.match(smoke,/navigateMain\(page,"Flights"\)/);
   assert.match(smoke,/navigateMain\(page,"Settings"\)/);
   assert.match(smoke,/navigateMain\(page,"Connections"\)/);
-  assert.match(smoke,/getByRole\("row",\{name:\/OK-E2E\/}\)/);
+  assert.match(smoke,/locator\("tr[.]flight-list-row"\)/);
+  assert.match(smoke,/filter\(\{hasText:"18\/09\/2026"\}\)/);
+  assert.match(smoke,/filter\(\{hasText:"OK-E2E"\}\)/);
   const ui=read("app/ui-system.css");
   assert.match(ui,/[.]ui-page-stack\{[^}]*grid-template-columns:minmax\(0,1fr\);[^}]*min-width:0;/s);
   assert.match(ui,/[.]ui-page-stack > [*][^{]*\{[^}]*min-width:0;[^}]*max-width:100%;/s);
 });
 
 
-test("authenticated browser projects serialize shared database fixtures in CI",()=>{
+test("authenticated browser projects serialize the shared database fixture locally and in CI",()=>{
   const config=read("playwright.config.mjs");
-  assert.match(config,/workers:process[.]env[.]CI\?1:undefined/);
+  assert.match(config,/fullyParallel:false/);
+  assert.match(config,/workers:1/);
+  assert.doesNotMatch(config,/workers:process[.]env[.]CI\?1:undefined/);
 });
