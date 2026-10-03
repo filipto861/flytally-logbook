@@ -47,6 +47,7 @@ export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:(
     <details className="quick-aircraft-advanced wide"><summary>More aircraft settings <small>optional</small></summary><div className="quick-aircraft-advanced-grid">
       <label>Variant<input name="aircraft_variant" placeholder="Optional variant"/></label>
       <label>Default role<select name="default_role" defaultValue="PIC">{roles.map(role=><option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
+      <label>Default operation<select name="default_operation_type" defaultValue=""><option value="">No default</option><option value="SP">SP · single-pilot</option><option value="MP">MP · multi-pilot</option></select><small>Optional prefill for new flights.</small></label>
       <label>Billing time<select name="billing_basis" defaultValue=""><option value="">Not tracked</option><option>BLOCK</option><option>AIR</option></select><small>Optional aircraft-cost default.</small></label>
       <label>Hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="Optional"/></label>
       <input type="hidden" name="initial_valid_from" value={today}/>
