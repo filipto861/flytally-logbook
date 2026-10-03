@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry Follow-up E1 — discovery/design
+- Production-use follow-up audit opened after Flight Entry Workflow 3.0 production closeout.
+- Confirmed Manual New currently uses a generic SP fallback for `operation_type`, while GPS intentionally requires explicit SP/MP and clears the value on aircraft change.
+- Confirmed aircraft profiles already persist default Role/billing but have no Operation default.
+- Confirmed GPS Common details currently submit `Task = GPS import`.
+- Confirmed `task` is included in the flight certification payload from certification v1 onward; certified rows therefore cannot be bulk-cleared by raw SQL without invalidating audit/integrity semantics.
+- Confirmed GPS review already has detected T&G/final-landing event indices with UTC timestamps and track coordinates; the airport catalogue also has worldwide lat/lon/country.
+- Confirmed Intelligent Logbook continuation/return assistance is portalled inside individual Route field labels, explaining the observed Departure/Arrival misalignment.
+- Added E1 design and independent-review handoff. Runtime/schema/production data changes: **none**.
+
 ### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
 - Activated the final F6 acceptance phase after F5 completed local verification.
 - Added a shared required presentation matrix covering 1440 desktop, iPad landscape, iPad portrait, 390 mobile, 320 compact mobile and a 720 × 450 CSS viewport representing 1440 × 900 at 200% browser reflow; every state runs in Light + Dark and checks document-level horizontal overflow.
