@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -959,6 +959,37 @@ test("E1.2 aircraft default operation prefills Manual and GPS but remains flight
   }finally{
     runBrowserSql("UPDATE aircraft SET default_operation_type=NULL,updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
   }
+});
+
+test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared read-only views",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.4 legacy Task presentation coverage requires the isolated browser database.");
+  resetE14LegacyTaskFixture();
+
+  await loginBrowserPilot(page,"/flights/9914");
+  await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText(/retained exactly as stored evidence from the legacy GPS-import workflow/)).toBeVisible();
+
+  for(const viewport of [
+    {width:1280,height:800},
+    {width:768,height:1024},
+    {width:390,height:844},
+  ]){
+    await page.setViewportSize(viewport);
+    await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
+    await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }
+
+  await page.goto("/connections/shared/9915");
+  await expect(page.getByText("GPS import",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText("LEGACY GPS IMPORT",{exact:true}).first()).toBeVisible();
+  await expect(page.getByText(/retained exactly as stored evidence from the legacy GPS-import workflow/)).toBeVisible();
+  await expect(page.getByRole("button",{name:"Add to my logbook"})).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  expect(browserSqlScalar("SELECT task FROM flights WHERE id=9914 AND user_id=9001")).toBe("GPS import");
+  expect(browserSqlScalar("SELECT task FROM flights WHERE id=9915 AND user_id=9002")).toBe("GPS import");
 });
 
 test("E1.3 night definition setting persists explicit MANUAL and SERA applicability",async({page})=>{
