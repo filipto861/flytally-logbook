@@ -559,8 +559,8 @@ Milestones:
 | Milestone | Status | Scope |
 | --- | :---: | --- |
 | E1.0 — design + independent review | ✅ | **DONE / RECONCILED** · APPROVE WITH CHANGES; repo + authoritative twilight-source reconciliation complete |
-| E1.1 — route UX + new GPS Task behavior | 🚧 | **IMPLEMENTED / VERIFICATION PENDING** · dedicated live route-assistance row; GPS Task now submits empty; no historical mutation |
-| E1.2 — aircraft default Operation | ⏳ | Additive nullable profile default; Manual/GPS prefill; per-flight override remains |
+| E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
+| E1.2 — aircraft default Operation | 🚧 | **ACTIVE** · additive v18 nullable aircraft default; propagation + Manual/GPS semantics implementation |
 | E1.3 — GPS civil-twilight landing suggestion | ⏳ | Event-level Day/Night suggestion with provenance and sticky user override |
 | E1.4 — historical Task cleanup | ⏳ | Read-only census first; draft exact-value cleanup only after approval; certified rows protected |
 | E1.5 — verification / migration / production closeout | ⏳ | PostgreSQL, unit, build, browser, PR/CI, migration, smoke, docs |
