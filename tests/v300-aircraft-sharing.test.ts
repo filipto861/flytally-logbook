@@ -53,7 +53,7 @@ test("B1A shared aircraft defaults fail closed on malformed populated defaults",
   assert.match(actions,/Aircraft billing setting needs configuration before it can be shared/);
   assert.match(actions,/snapshot[.]defaults\?\.billingError\|\|snapshot[.]defaults\?\.operationError/);
   assert.match(actions,/error=defaults/);
-  assert.match(review,/operation \{snapshot[.]defaults[.]operationError\?"needs configuration"/);
+  assert.match(review,/operation \\{snapshot[.]defaults[.]defaultOperationType===undefined\\?"not included":snapshot[.]defaults[.]operationError\\?"needs configuration"/);
   assert.match(review,/billing \{snapshot[.]defaults[.]billingError\?"needs configuration"/);
   assert.match(review,/defaultChecked=\{!snapshot[.]defaults[.]billingError&&!snapshot[.]defaults[.]operationError\}/);
 });
