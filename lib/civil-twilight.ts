@@ -163,7 +163,8 @@ export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightT
   let nightSeconds=0;
   for(let index=1;index<points.length;index++){
     const a=points[index-1],b=points[index],aMillis=timedPointMillis(a),bMillis=timedPointMillis(b);
-    if(aMillis===null||bMillis===null||bMillis<=aMillis)return{status:"UNAVAILABLE"};
+    if(aMillis===null||bMillis===null||bMillis<aMillis)return{status:"UNAVAILABLE"};
+    if(bMillis===aMillis)continue;
     const duration=(bMillis-aMillis)/1000;
     if(duration>600)return{status:"UNAVAILABLE"};
     const aAltitude=geometricSolarAltitudeDegrees(a.time,a.lat,a.lon),bAltitude=geometricSolarAltitudeDegrees(b.time,b.lat,b.lon);
