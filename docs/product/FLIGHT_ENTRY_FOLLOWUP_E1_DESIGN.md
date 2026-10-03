@@ -375,6 +375,119 @@ Backward compatibility:
 
 E1.2 does not change certification version/hash, historical flights, recency rules or aircraft applicability authority.
 
+## 11. E1.3 independent-review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES**. Findings were checked against the current repository and authoritative SERA/USNO/NOAA/NREL material before implementation.
+
+### E1.3-R1 — numerical boundary guard: accepted in principle, reviewer value rejected
+
+The review is correct that a calculated suggestion must not imply false precision exactly at the -6° boundary. However, the proposed fixed **±0.05°** band is not source-backed by the cited NOAA statement: NOAA's published ±1 minute / ±10 minute figures refer to sunrise/sunset timing, not directly to geometric solar-altitude error.
+
+Initial E1.3 therefore uses a deliberately conservative **calculation-confidence guard**, not a new regulatory boundary:
+- geometric SERA boundary remains exactly **-6°**;
+- NOAA/Meeus geometric solar-position equations are used **without atmospheric-refraction correction**;
+- automatic classification is supported only for latitude **|lat| <= 72°** and years **1800–2100**;
+- if calculated geometric altitude is within **±0.5° of -6°**, result is `UNAVAILABLE`;
+- outside that guard: altitude > -5.5° => DAY; altitude < -6.5° => NIGHT;
+- the ±0.5° interval is explicitly a conservative product confidence guard, not an aviation/legal redefinition of night.
+
+Rationale: NOAA documents approximately one-minute sunrise/sunset accuracy inside ±72° and lower accuracy outside that latitude. E1.3 therefore fails closed at high latitude and around the boundary instead of pretending precision the source does not support. A future migration to a higher-accuracy maintained solar-position implementation (for example NREL SPA) may narrow/remove this guard after independent validation.
+
+### E1.3-R2 — NOAA maintenance/range: accepted
+
+NOAA/GML now states that its Solar Calculator is no longer actively supported or maintained. E1.3 relies on the published Meeus-based equations as a documented computational basis, not on the web calculator as runtime authority.
+
+The 1800–2100 interval is a temporary fail-closed computation envelope, not a regulatory limit. Outside it, classification is `UNAVAILABLE`.
+
+### E1.3-R3 — external fixtures: accepted with larger margin
+
+USNO twilight outputs are minute-rounded. Reference tests must therefore sit comfortably outside both rounding and the E1.3 confidence guard. Use fixture instants at least **5 minutes** from the published twilight minute where practical, and separately test the confidence-guard path.
+
+### E1.3-R4 — aggregate invariants: accepted
+
+For one GPS split part:
+- extract every detected T&G event plus the final landing event;
+- detected total = `1 + touchAndGoEvents(part).length`;
+- every event must have its own usable explicit timestamp and coordinates;
+- every event must classify;
+- classified event count must equal detected total;
+- otherwise aggregate result is `UNAVAILABLE`;
+- an available result must satisfy `day + night === total === detected total`.
+
+No `flightEnvelope().landingUtc` fallback may replace a missing timestamp on the exact final-landing point.
+
+### E1.3-R5 — applicability: requirement accepted, aircraft-profile field rejected
+
+The reviewer is right that applicability must be explicit, but `nightDefinition` does **not** belong to the aircraft profile: the governing night definition is a pilot/logbook/jurisdiction rule, not an aircraft identity/default.
+
+E1.3 uses an account-level preference stored in existing `user_settings.preferences_json`:
+- `night_definition = "MANUAL" | "SERA"`;
+- missing/unknown value => `MANUAL` (fail closed; no backfill);
+- automatic suggestion requires all of:
+  1. account preference `SERA`;
+  2. selected canonical profile evidence `EASA`;
+  3. GPS source requirement `landingMode === "DAY_NIGHT"`;
+  4. event calculation available.
+- `MANUAL` leaves Day/Night fields explicit and blank.
+
+This preference is account/logbook applicability state and is automatically covered by existing settings backup/restore. No database schema migration is required.
+
+### E1.3-R6/R7 — sticky override + ambiguity: accepted
+
+Landing split provenance is **ephemeral review state only**:
+- `UNSET`
+- `SUGGESTED`
+- `MANUAL`
+
+Transitions:
+- initial applicable + available calculation: `UNSET -> SUGGESTED`;
+- direct Day or Night edit: `SUGGESTED/UNSET -> MANUAL`;
+- reviewed total change while `SUGGESTED`: clear Day/Night and set `UNSET`;
+- reviewed total change while `MANUAL`: preserve values; existing total-consistency validation blocks review/save until corrected;
+- unrelated changes (airport detection, Role/Crew, billing, Operation) never overwrite `MANUAL`;
+- any ambiguous/timezone-less event timestamp makes aggregate calculation `UNAVAILABLE`.
+
+### E1.3-R8 — split reset: accepted with simpler fail-closed behavior
+
+Any source-track or split-boundary change already reconstructs all part reviews via `resetParts()`. E1.3 keeps that contract:
+- rerun T&G detection and final-landing extraction for every new part;
+- recompute suggestions from the new event sets;
+- do **not** attempt heuristic preservation of MANUAL Day/Night values across a split edit.
+
+This intentionally favors explicit re-review over identity matching between pre/post-split events.
+
+### E1.3-R9 — provenance persistence/sharing: resolved as ephemeral
+
+`UNSET/SUGGESTED/MANUAL` is UI review provenance only. It is **not persisted**, not added to certification payloads, not shared, and not used by recency.
+
+Only the pilot-reviewed canonical `landings_day` / `landings_night` values persist.
+
+### E1.3-R10 — accessibility: accepted
+
+When a suggestion is available, both Day and Night controls must reference the visible suggestion/provenance copy through `aria-describedby` (or equivalent programmatic association). Unavailable/manual explanatory copy must likewise be programmatically associated when shown.
+
+### E1.3 acceptance additions
+
+Focused tests must cover:
+- ordinary-latitude morning/evening reference fixtures safely outside the confidence guard;
+- equatorial reference fixtures;
+- Anchorage-like continuous civil-twilight/day case below 72° latitude;
+- |latitude| > 72° => UNAVAILABLE;
+- year outside 1800–2100 => UNAVAILABLE;
+- exact/near -6° values inside the ±0.5° confidence guard => UNAVAILABLE;
+- ambiguous timestamp / invalid coordinate => UNAVAILABLE;
+- partial event classification => aggregate UNAVAILABLE;
+- event-count invariant;
+- account preference MANUAL => no prefill;
+- account preference SERA + EASA + DAY_NIGHT => eligible prefill;
+- direct edit => MANUAL sticky state;
+- SUGGESTED total change => clear + UNSET;
+- MANUAL total change => preserve + validation block;
+- split change => full re-extraction/recalculation;
+- unrelated airport/crew/billing/operation changes do not overwrite MANUAL;
+- accessible description includes suggestion provenance;
+- certification payload/version remains unchanged.
+
 ## 9. E1.1 implementation freeze after review
 
 E1.1 may now proceed with only:
