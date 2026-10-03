@@ -118,11 +118,9 @@ BEGIN
     RAISE EXCEPTION 'E1.5 migration: existing aircraft defaults were populated unexpectedly';
   END IF;
 
-  IF NOT EXISTS(
-    SELECT 1 FROM public.flytally_schema_migrations
-    WHERE version=18 AND name='aircraft default operation type'
-  ) THEN
-    RAISE EXCEPTION 'E1.5 migration: v18 registry row missing';
+  IF (SELECT COUNT(*) FROM public.flytally_schema_migrations
+      WHERE version=18 AND name='aircraft default operation type')<>1 THEN
+    RAISE EXCEPTION 'E1.5 migration: exact v18 registry row missing or duplicated';
   END IF;
   IF (SELECT COUNT(*) FROM public.flytally_schema_migrations WHERE version=18)<>1 THEN
     RAISE EXCEPTION 'E1.5 migration: v18 registry cardinality invalid';
