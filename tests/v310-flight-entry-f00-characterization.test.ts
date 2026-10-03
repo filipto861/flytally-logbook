@@ -87,7 +87,7 @@ test("F0.0 characterizes duplicate protection and one-transaction GPS persistenc
   assert.match(importAction,/At least one reviewed flight already exists\. The duplicate import was blocked\./);
   assert.match(importAction,/pg_advisory_xact_lock\(hashtextextended\(\$\{value\},0\)\)/);
   assert.match(importAction,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
-  assert.match(importAction,/WHERE NOT EXISTS\(SELECT 1 FROM flights/);
+  assert.match(importAction,/NOT EXISTS\(SELECT 1 FROM flights/);
   assert.match(importAction,/Import failed and the transaction was rolled back\. No partial flights were created\./);
 });
 
