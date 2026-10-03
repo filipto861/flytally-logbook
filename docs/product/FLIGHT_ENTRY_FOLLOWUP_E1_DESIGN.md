@@ -1,6 +1,6 @@
 # Flight Entry Follow-up — Defaults, Day/Night Suggestions & Route UX
 
-**Status:** E1.1 DONE / LOCAL VERIFIED · E1.2 ACTIVE  
+**Status:** E1.1 DONE / LOCAL VERIFIED · E1.2 IMPLEMENTED / VERIFICATION PENDING  
 **Baseline:** `main@ee6b1d215d803aab3e4d2af12b41d61ddea06fee`  
 **Decision owner:** Filip  
 **Scope:** four post-closeout improvements identified from production New Flight / GPS Import use.
@@ -345,6 +345,35 @@ Initial GPS Day/Night suggestion copy must identify:
 - GPS event UTC/location (or explicit aerodrome-coordinate fallback);
 - pilot confirmation required;
 - calculated suggestion is not represented as universal jurisdictional authority.
+
+
+
+## 10. E1.2 implementation contract
+
+Repository implementation resolves the Operation-default model as follows:
+
+- `aircraft.default_operation_type` is added by schema migration v18 as nullable text constrained to `SP`, `MP` or SQL NULL;
+- migration v18 performs **no UPDATE/backfill** on existing aircraft;
+- `flights.operation_type` is deliberately unchanged from the existing persisted schema. For an applicable Manual draft with no selected/default Operation, FlyTally stores the existing draft representation `''` rather than inventing SP or changing the flight schema to nullable;
+- FCL.050 certification already rejects anything other than explicit SP/MP, preserving fail-closed certification semantics;
+- GPS remains stricter at Save: applicable GPS imports cannot save until SP/MP is resolved;
+- Edit/SNAPSHOT does not apply the current aircraft profile default over stored flight evidence.
+
+Propagation implemented:
+1. Aircraft Add/Edit — explicit optional Default operation;
+2. Quick Add aircraft — same optional field, default blank;
+3. New Flight aircraft query — carries `default_operation_type`;
+4. GPS aircraft option — preselects valid profile default but keeps required per-flight control;
+5. aircraft one-time sharing — new snapshots carry the field; malformed values fail closed;
+6. account backup/restore — current schema row is exported/restored exactly;
+7. schema migration — additive/idempotent v18 with DB CHECK and no backfill;
+8. recency/certification — no consumer reads the aircraft default as flight evidence.
+
+Backward compatibility:
+- a legacy pending aircraft share whose snapshot predates `defaultOperationType` leaves an existing recipient aircraft default unchanged when Flight defaults are imported;
+- a new snapshot that explicitly contains `defaultOperationType:""` means the sender intentionally has no default and may clear the recipient default to NULL if the recipient chooses to import Flight defaults.
+
+E1.2 does not change certification version/hash, historical flights, recency rules or aircraft applicability authority.
 
 ## 9. E1.1 implementation freeze after review
 
