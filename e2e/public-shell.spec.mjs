@@ -130,7 +130,9 @@ test("authenticated pilot can navigate the core product shell",async({page,conte
   await navigateMain(page,"Flights");
   await expect(page).toHaveURL(/\/flights$/);
   await expectAuthenticatedRoute(page,"Flights");
-  await expect(page.getByRole("row",{name:/^Flight 18\/09\/2026 OK-E2E B23/})).toBeVisible();
+  const baselineFlightRow=page.locator("tr.flight-list-row").filter({hasText:"18/09/2026"}).filter({hasText:"OK-E2E"});
+  await expect(baselineFlightRow).toHaveCount(1);
+  await expect(baselineFlightRow).toBeVisible();
 
   await navigateMain(page,"Settings");
   await expect(page).toHaveURL(/\/profile(?:\?|$)/);
