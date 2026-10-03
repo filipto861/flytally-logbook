@@ -14,6 +14,9 @@ export type CivilTwilightLandingSuggestion=
 export type CivilTwilightNightTimeSuggestion=
   |{status:"AVAILABLE";minutes:number}
   |{status:"UNAVAILABLE"};
+export type CivilTwilightMovementSuggestion=
+  |{status:"AVAILABLE";takeoffsDay:number;takeoffsNight:number;approachesDay:number;approachesNight:number}
+  |{status:"UNAVAILABLE"};
 
 const radians=(degrees:number)=>degrees*Math.PI/180;
 const degrees=(radiansValue:number)=>radiansValue*180/Math.PI;
@@ -101,6 +104,23 @@ export function gpsLandingDayNightSuggestion(points:KmlPoint[]):CivilTwilightLan
   if(indices.length!==detectedTotal||new Set(indices).size!==indices.length)return{status:"UNAVAILABLE",total:detectedTotal};
   const events=indices.map(index=>points[index]);
   return aggregateCivilTwilightLandingEvents(events,detectedTotal);
+}
+
+export function gpsPfMovementDayNightSuggestion(points:KmlPoint[]):CivilTwilightMovementSuggestion{
+  if(points.length<2)return{status:"UNAVAILABLE"};
+  const touches=touchAndGoEvents(points),envelope=flightEnvelope(points);
+  const takeoffEvents=[points[envelope.takeoffIndex],...touches.map(event=>points[event.index])];
+  const approachEvents=[...touches.map(event=>points[event.index]),points[envelope.landingIndex]];
+  const takeoffSuggestion=aggregateCivilTwilightLandingEvents(takeoffEvents,takeoffEvents.length);
+  const approachSuggestion=aggregateCivilTwilightLandingEvents(approachEvents,approachEvents.length);
+  if(takeoffSuggestion.status!=="AVAILABLE"||approachSuggestion.status!=="AVAILABLE")return{status:"UNAVAILABLE"};
+  return{
+    status:"AVAILABLE",
+    takeoffsDay:takeoffSuggestion.day,
+    takeoffsNight:takeoffSuggestion.night,
+    approachesDay:approachSuggestion.day,
+    approachesNight:approachSuggestion.night,
+  };
 }
 
 
