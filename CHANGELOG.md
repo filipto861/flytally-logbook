@@ -23,6 +23,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - F5.2 retains Role provenance as concise New-only `Aircraft default`, and removes the misleading cue from Edit/SNAPSHOT.
 - F5.2 removes the generic BLOCK/AIR “Calculated automatically” helper only for New Flight when both values are resolved; BFCL authority copy, incomplete-state instruction, Edit helper behavior and the `aria-live` value surface remain.
 - Added focused F5 source contracts and reconciled the historical v1.58 Role-provenance test. Verification: **NOT RUN**.
+- Added two focused authenticated F5 browser cases: common Manual PIC exact visible-control/helper allowlist across desktop/iPad/mobile, and PIC→DUAL contextual identity with the Role-default cue removed. Browser verification: **NOT RUN**.
 
 ### Flight Entry Workflow 3.0 — F4 GPS inheritance design/review gate
 - Completed repository discovery for the frozen F4 multi-part GPS inheritance milestone; no runtime behavior changed.
