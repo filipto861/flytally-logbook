@@ -35,6 +35,7 @@ test("E1.5 production v18 preflight is read-only and fails closed on registry or
   assert.match(sql,/version<1 OR version>17/);
   assert.match(sql,/default_operation_type already exists/);
   assert.match(sql,/constraint already exists/);
+  assert.match(sql,/current_database\(\) IS DISTINCT FROM 'neondb'/);
   assert.match(sql,/pg_is_in_recovery\(\)/);
   assert.match(sql,/ROLLBACK/);
   assert.doesNotMatch(sql,/\bUPDATE\b|\bINSERT\b|\bDELETE\b|ALTER TABLE/i);
@@ -47,6 +48,7 @@ test("E1.5 explicit v18 migration revalidates under the runtime advisory lock an
   assert.match(sql,/SET LOCAL lock_timeout='5s'/);
   assert.match(sql,/SET LOCAL statement_timeout='30s'/);
   assert.match(sql,/pg_advisory_xact_lock\(704190104\)/);
+  assert.match(sql,/current_database\(\) IS DISTINCT FROM 'neondb'/);
   const lock=sql.indexOf("pg_advisory_xact_lock(704190104)");
   const guard=sql.indexOf("FOR v IN 1..17 LOOP");
   const alter=sql.indexOf("ALTER TABLE public.aircraft");
@@ -64,6 +66,7 @@ test("E1.5 explicit v18 migration revalidates under the runtime advisory lock an
 test("E1.5 postflight verifies v18 shape and preserves evidence counts for comparison",()=>{
   const sql=read("tooling/e15-v18-postflight.sql");
   assert.match(sql,/BEGIN TRANSACTION READ ONLY/);
+  assert.match(sql,/current_database\(\) IS DISTINCT FROM 'neondb'/);
   assert.match(sql,/COUNT\(\*\) FROM public\.flytally_schema_migrations\)<>18/);
   assert.match(sql,/version<1 OR version>18/);
   assert.match(sql,/version=18 AND name='aircraft default operation type'/);
