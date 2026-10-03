@@ -1,6 +1,6 @@
 # Flight Entry Follow-up — Defaults, Day/Night Suggestions & Route UX
 
-**Status:** INDEPENDENT REVIEW RECONCILED · E1.1 IMPLEMENTATION ACTIVE  
+**Status:** E1.1 DONE / LOCAL VERIFIED · E1.2 ACTIVE  
 **Baseline:** `main@ee6b1d215d803aab3e4d2af12b41d61ddea06fee`  
 **Decision owner:** Filip  
 **Scope:** four post-closeout improvements identified from production New Flight / GPS Import use.
