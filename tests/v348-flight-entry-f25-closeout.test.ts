@@ -241,7 +241,16 @@ test("F2.5 auxiliary roles remain non-creditable and do not silently enter LAPL 
   assert.doesNotMatch(recency,/laplExperienceRole[^\n]*OBSERVER/);
 });
 
-test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC and DUAL while later roles remain blocked",()=>{
+test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC/DUAL and F4.3 Safety Pilot while later roles remain blocked",()=>{
+  const gps=read("lib/gps-import-integrity.ts");
+  const form=read("components/kml-import-form.tsx");
+  assert.match(gps,/GPS_IMPORT_ROLES=\["PIC","DUAL","SAFETY PILOT"\]/);
+  assert.match(gps,/GPS import currently supports PIC, DUAL and SAFETY PILOT/);
+  assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
+  assert.match(form,/role==="DUAL"/);
+  assert.match(form,/role==="SAFETY PILOT"/);
+  for(const role of ["SPIC","PICUS","CO-PILOT"]){
+    assert.doesNotMatch(form,new RegExp(`<option(?: value="[^"]+")?>${role.replace(/[.*+?^$()|[\]\\]/g,"\\test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC and DUAL while later roles remain blocked",()=>{
   const gps=read("lib/gps-import-integrity.ts");
   const form=read("components/kml-import-form.tsx");
   assert.match(gps,/GPS_IMPORT_ROLES=\["PIC","DUAL"\]/);
@@ -250,5 +259,7 @@ test("F2.5 GPS role scope is superseded narrowly by F4.1 PIC and DUAL while late
   assert.match(form,/role==="DUAL"/);
   for(const role of ["SPIC","PICUS","SAFETY PILOT","CO-PILOT"]){
     assert.doesNotMatch(form,new RegExp(`<option(?: value="[^"]+")?>${role.replace(/[.*+?^$()|[\]\\]/g,"\\$&")}</option>`));
+  }
+});")}</option>`));
   }
 });
