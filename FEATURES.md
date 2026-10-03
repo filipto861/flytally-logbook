@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **29 September 2026**
+Last reconciled: **3 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -161,7 +161,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 ACTIVE
+### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 LOCAL RELEASE CLOSEOUT
 
 Planned product capabilities:
 - optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
