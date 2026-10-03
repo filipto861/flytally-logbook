@@ -46,7 +46,7 @@ test("explicit aircraft selection atomically refreshes aircraft-dependent defaul
   const start=form.indexOf("const pickAircraft=");
   const end=form.indexOf("const blockMinutes=",start);
   const pick=form.slice(start,end);
-  for(const pattern of [/setType\(a\.aircraft_type\|\|""\)/,/setClass\(nextClass\)/,/setEngineType\(defaultEngineType\(nextClass\)\)/,/setOperationType\("SP"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.error\?"INVALID":nextBilling\.settings\?\.basis\|\|""\)/,/setBillingShare\(nextBilling\.settings\?\.share\|\|1\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);
+  for(const pattern of [/setType\(a\.aircraft_type\|\|""\)/,/setClass\(nextClass\)/,/setEngineType\(defaultEngineType\(nextClass\)\)/,/setOperationType\(nextOperationProfile\.showOperationEngineControls\?normalizeChoice\(a\.default_operation_type,OPERATION_TYPES,""\):"SP"\)/,/setEvidence\(nextEvidence\)/,/setBilling\(nextBilling\.error\?"INVALID":nextBilling\.settings\?\.basis\|\|""\)/,/setBillingShare\(nextBilling\.settings\?\.share\|\|1\)/,/setHourlyRate\(Number\(a\.price_per_hour\)\|\|0\)/])assert.match(pick,pattern);
   assert.doesNotMatch(pick,/setRole\(/);
 });
 
