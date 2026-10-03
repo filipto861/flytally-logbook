@@ -327,6 +327,13 @@ export function resetE14LegacyTaskFixture(){
   `);
 }
 
+export function clearE14LegacyTaskFixture(){
+  runBrowserSql(`
+    DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN (9914,9915);
+    DELETE FROM flights WHERE id IN (9914,9915);
+  `);
+}
+
 export function revokeSafetyPilotPicInviteConnectionFixture(){
   runBrowserSql(`
     UPDATE pilot_connections SET status='cancelled',accepted_at=NULL,updated_at=NOW() WHERE id=7001;
