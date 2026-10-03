@@ -231,6 +231,32 @@ Low-risk batch:
 - certified records remain untouched unless an explicit correction/re-certification plan is separately approved;
 - backup/audit evidence recorded.
 
+### E1.4 discovery freeze — census before cleanup
+
+Repository discovery added two safety constraints before any historical mutation:
+
+1. The GPS UI already submits an explicit empty hidden `task`, but the server adapter still had a legacy fallback `form.get("task") ?? "GPS import"`. E1.4 removes that residual producer path first so a missing/malformed client field cannot create new synthetic Task values.
+2. `certified_at IS NULL` is **not sufficient** to call a row a disposable draft. A flight opened through the certified-correction workflow is temporarily uncertified while its prior certified revision is preserved in `flight_certified_revisions`.
+
+The read-only census therefore classifies exact live `task='GPS import'` rows as:
+- `CERTIFIED_CURRENT` — current row is certified; never raw-mutated;
+- `CORRECTION_OR_CERTIFIED_HISTORY` — current row may be editable, but it has revision/correction history; never bulk-cleaned as an ordinary draft;
+- `LOCKED_DRAFT` — current draft is locked; not a cleanup candidate;
+- `INCONSISTENT_UNCERTIFIED_HASH` — uncertified row unexpectedly retains a certification hash; fail closed and investigate;
+- `ORDINARY_EDITABLE_DRAFT` — only category that may become a direct-cleanup candidate after production census, backup/evidence review, independent review and explicit approval.
+
+The census also counts:
+- near-match Task variants separately from the exact synthetic value;
+- certified revision snapshots containing the value;
+- deleted-flight recovery copies containing the value;
+- audit events containing the value;
+- participation / instructor-approval / verification history for exact live rows.
+
+Historical revision snapshots, deleted-flight recovery copies and audit history are evidence surfaces and are **not** E1.4 mutation targets.
+
+Census implementation: `tooling/e14-gps-task-census.sql`.
+It starts `BEGIN TRANSACTION READ ONLY`, performs SELECT-only inspection and ends with `ROLLBACK`.
+
 ### E1.5 — verification / docs / production closeout
 - targeted unit/source tests;
 - migration/PostgreSQL tests for v18;
