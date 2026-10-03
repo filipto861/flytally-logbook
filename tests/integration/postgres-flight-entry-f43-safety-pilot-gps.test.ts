@@ -52,7 +52,7 @@ WITH inserted AS (
     1/(SELECT COUNT(*)::integer FROM track_insert) track_ok,
     CASE WHEN ${connectedUserId}>0 THEN 1/(SELECT COUNT(*)::integer FROM connected_crew) ELSE 1 END crew_ok
 )
-SELECT flight_id,inserted_ok,track_ok,crew_ok FROM validated;
+SELECT flight_id FROM validated WHERE inserted_ok=1 AND track_ok=1 AND crew_ok=1;
 `;
 }
 
