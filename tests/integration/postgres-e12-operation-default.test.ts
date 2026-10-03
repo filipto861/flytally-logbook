@@ -24,7 +24,7 @@ function migration18Blocks(){
   const start=source.indexOf("if(version===18)return[");
   const end=source.indexOf("throw new Error",start);
   assert.ok(start>=0&&end>start);
-  return [...source.slice(start,end).matchAll(/sql`([\\s\\S]*?)`/g)].map(match=>match[1]);
+  return [...source.slice(start,end).matchAll(/sql`([\s\S]*?)`/g)].map(match=>match[1]);
 }
 
 before(()=>{
