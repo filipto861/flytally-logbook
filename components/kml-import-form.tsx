@@ -180,7 +180,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
       if(suggestion.status!=="AVAILABLE"||Number(review.starts)!==suggestion.total)return review;
       return{...review,landingsDay:String(suggestion.day),landingsNight:String(suggestion.night),landingSplitSource:"SUGGESTED",reviewed:false};
     }));
-  },[analysis,cuts,nightDefinition,selectedProfile?.evidence,sourceRequirements?.landingMode,seraLandingSuggestionEnabled,parts]);
+  },[analysis,cuts,registration,nightDefinition,selectedProfile?.evidence,sourceRequirements?.landingMode,seraLandingSuggestionEnabled,parts]);
   const ready=Boolean(selectedProfile&&sourceRequirements)&&parts.length>0&&billing!=="INVALID"&&commonRoleCrewReady&&overridesReady&&(!requiresOperationEngine||(operationType!==""&&engineType!==""))&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.reviewed&&review.date&&gpsSourceReviewReady(review,sourceRequirements!))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation));
   const reviewedCount=reviews.filter(review=>review.reviewed).length;
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
