@@ -48,6 +48,6 @@ test("v1.54.3 preserves EASA aircraft identity validation and v1.53.1 flight sta
   assert.match(flight,/submittedAircraftType=snapshotAuthority\?field\("aircraft_type"\)\.trim\(\):selectedProfileContext\?\.aircraftType\|\|type/);
   assert.match(flight,/type="hidden" name="aircraftType" value=\{submittedAircraftType\}/);
   const start=flight.indexOf("const pickAircraft="),end=flight.indexOf("const blockMinutes=",start),pick=flight.slice(start,end);
-  assert.match(pick,/setOperationType\("SP"\)/);
+  assert.match(pick,/setOperationType\(nextOperationProfile\.showOperationEngineControls\?normalizeChoice\(a\.default_operation_type,OPERATION_TYPES,""\):"SP"\)/);
   assert.doesNotMatch(pick,/setRole\(/);
 });
