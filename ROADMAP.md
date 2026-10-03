@@ -48,7 +48,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
-| Flight Entry Workflow 3.0 | ✅ | **F4 DONE / PRODUCTION VERIFIED** · PR #233 squash-merged as `252bcb8`; Vercel production READY; public/protected-route smoke PASS; no runtime errors in immediate post-deploy check |
+| Flight Entry Workflow 3.0 | 🚧 | **F0–F4 DONE / PRODUCTION VERIFIED; F5 PRIMARY UX ACTIVE** · domain convergence complete; now simplifying the normal PIC entry without changing semantics |
 | Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is pre-empted by the confirmed GPS entry integrity defect |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
@@ -414,9 +414,9 @@ Milestones:
 | F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
 | F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
 | F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
-| F4 — Multi-part GPS inheritance | 🚧 | **F4.0 DONE · F4.1 DONE / LOCAL VERIFIED · F4.2 TARGETED VERIFIED / FULL REGRESSION + BUILD PENDING** · strict INHERIT/OVERRIDE for PIC+DUAL; SPIC/PICUS decision still open |
-| F5 — Primary UX / copy simplification | ⏳ | Low-cognitive-load normal PIC entry after domain convergence |
-| F6 — Browser / responsive / production closeout | ⏳ | Desktop/iPad/mobile/320px/200%/light-dark acceptance |
+| F4 — Multi-part GPS inheritance | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged as `252bcb8`; PIC/DUAL/Safety Pilot common+whole-part Role/Crew inheritance verified; SPIC/PICUS countersignature-reference inheritance remains separately deferred |
+| F5 — Primary UX / copy simplification | 🚧 | **ACTIVE · discovery/design** · reduce normal PIC decision density and helper-copy noise without changing draft/certification/domain semantics |
+| F6 — Browser / responsive / production closeout | ➡️ | Full role/source viewport/theme/reflow acceptance after F5 |
 
 Immediate next step:
 - F2.0 design/review contract is merged as PR #203;
