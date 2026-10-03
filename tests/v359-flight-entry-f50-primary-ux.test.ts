@@ -96,7 +96,7 @@ test("F5.2 keeps Role default provenance concise and New-only",()=>{
   const form=read("components/flight-form.tsx");
   assert.match(form,/!editing&&selected&&role===profileRole\?<small>Aircraft default<\/small>:null/);
   assert.doesNotMatch(form,/Aircraft default · change if this flight differed\./);
-  assert.match(form,/const\[role,setRole\]=useState<string>\(initialRole\)/);
+  assert.match(form,/\[role,setRole\]=useState<string>\(initialRole\)/);
 });
 
 test("F5.2 preserves Registration management and unresolved-profile recovery",()=>{
@@ -109,7 +109,7 @@ test("F5.2 preserves Registration management and unresolved-profile recovery",()
 test("F5.2 trims only resolved New-flight BLOCK AIR explanation while preserving authority and live updates",()=>{
   const form=read("components/flight-form.tsx");
   const at=form.indexOf('className="flight-time-summary"');
-  const end=form.indexOf('</div></div>\n    </section>',at);
+  const end=form.indexOf('<details className="entry-section entry-section-experience"',at);
   assert.ok(at>=0&&end>at);
   const summary=form.slice(at,end);
 
