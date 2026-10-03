@@ -1,6 +1,6 @@
 # Flight Entry Follow-up — Defaults, Day/Night Suggestions & Route UX
 
-**Status:** DISCOVERY / DESIGN COMPLETE · INDEPENDENT REVIEW REQUIRED BEFORE RUNTIME OR DATA CHANGES  
+**Status:** INDEPENDENT REVIEW RECONCILED · E1.1 IMPLEMENTATION ACTIVE  
 **Baseline:** `main@ee6b1d215d803aab3e4d2af12b41d61ddea06fee`  
 **Decision owner:** Filip  
 **Scope:** four post-closeout improvements identified from production New Flight / GPS Import use.
@@ -255,3 +255,103 @@ Low-risk batch:
 8. User-edited Day/Night counts are never silently overwritten.
 9. Continue/Return assistance no longer changes Route input alignment.
 10. No certification-version change or historical rewrite is introduced incidentally.
+
+
+## 8. Independent review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES**. Findings were checked against the repository and authoritative twilight definitions before implementation.
+
+### E1-R1 — civil-twilight refraction offset / UNKNOWN proposal: partially rejected
+
+The review correctly asked for explicit edge-case treatment, but its proposed physical model is not adopted.
+
+Authoritative basis:
+- current EASA SERA Article 2(97) defines civil twilight by the **centre of the sun's disc at 6 degrees below the horizon**;
+- U.S. Naval Observatory computational guidance distinguishes sunrise/sunset, where refraction + solar radius produce the familiar 50-arcminute correction, from civil twilight, which it defines at **geometric solar-centre altitude -6°**.
+
+Therefore:
+- **no additional ~0.5° refraction/solar-disc offset** is added to the SERA -6° civil-twilight threshold;
+- polar day/night is **not UNKNOWN by itself**: classification is evaluated at the event timestamp, so an event with geometric solar altitude >= -6° is DAY and < -6° is NIGHT even if no twilight crossing occurs that day;
+- no root solver is required for event classification, so “near-singular twilight crossing” is not part of the core algorithm;
+- invalid/non-finite timestamp/coordinates or a non-finite solar solution => UNAVAILABLE.
+
+Before E1.3 implementation, the chosen solar-position algorithm must be verified against authoritative reference fixtures at ordinary and high latitudes. If the algorithm cannot meet the documented accuracy target near -6°, the implementation must fail closed rather than invent an arbitrary regulatory epsilon.
+
+### E1-R2 — certified Task correction contract: accepted
+
+When a certified flight is reopened specifically to clear `task='GPS import'`:
+1. the previous certified revision snapshot retains the original Task;
+2. the reopened row may be corrected through the existing correction workflow;
+3. re-certification recomputes the certification payload/hash with the corrected Task, including empty string;
+4. the correction reason remains first-class audit evidence;
+5. no cleanup migration/script bypasses that workflow.
+
+E1.4 must include an integration test proving the old snapshot retains `GPS import` and the new certified revision contains an empty Task.
+
+### E1-R3 — Operation validation: accepted with certification nuance
+
+`default_operation_type` remains a nullable profile **default**, never aircraft authority.
+
+For SP/MP-capable EASA contexts:
+- New Manual with profile default SP/MP: preselect it.
+- New Manual with profile default NULL: show explicit `Select SP / MP`; draft Save may remain incomplete, storing empty operation rather than inventing SP.
+- Certification remains fail-closed because existing FCL.050 compliance requires explicit SP/MP.
+- GPS with profile default NULL: explicit SP/MP remains required before GPS save.
+- GPS with profile default SP/MP: preselect it, but the pilot may override it per flight.
+- Edit/SNAPSHOT: stored flight operation remains authoritative; current profile default is not applied.
+
+For categories where SP/MP is not an applicable visible control, existing category-specific canonical behavior remains unchanged.
+
+### E1-R4 — default_operation_type propagation checklist: accepted
+
+E1.2 must explicitly verify NULL/SP/MP propagation through:
+1. Aircraft Add/Edit;
+2. Quick Add aircraft;
+3. New Flight aircraft query/initializer;
+4. GPS aircraft option;
+5. aircraft profile sharing/import/export serialization that copies canonical profile fields;
+6. backup/restore;
+7. additive/idempotent schema migration and schema-version checks;
+8. recency/certification consumers — profile default must never substitute for stored flight operation.
+
+Unknown persisted/imported values must fail closed; they are not coerced to SP.
+
+### E1-R5 — route-assistance accessibility: accepted
+
+Dedicated route assistance row contract:
+- sits after Departure + Arrival in DOM order;
+- `aria-live="polite"`;
+- explicit action is a real button;
+- focus is not programmatically stolen when the suggestion appears;
+- no document horizontal overflow;
+- Departure/Arrival input boxes retain equal row alignment at desktop/iPad widths;
+- mobile wraps below the fields without overlap.
+
+### E1-R6 — final landing coordinate precedence: accepted with correction
+
+Primary source is always the detected event track coordinate.
+
+Aerodrome-coordinate fallback is permitted only if:
+- the event timestamp is valid;
+- the arrival aerodrome resolves unambiguously to a valid coordinate;
+- the track event lacks a valid coordinate.
+
+No invented “aerodrome reference time” exists in the current data model, so the review's proposed ±2-minute comparison to an aerodrome reference time is not adopted. If the event coordinate is unavailable and aerodrome fallback would materially change applicability, UI provenance must say the aerodrome coordinate was used.
+
+### E1-R7 — jurisdiction/provenance copy: accepted
+
+Initial GPS Day/Night suggestion copy must identify:
+- EASA/SERA civil-twilight basis;
+- GPS event UTC/location (or explicit aerodrome-coordinate fallback);
+- pilot confirmation required;
+- calculated suggestion is not represented as universal jurisdictional authority.
+
+## 9. E1.1 implementation freeze after review
+
+E1.1 may now proceed with only:
+- Route assistance relocation + accessibility contract;
+- future GPS Task behavior: remove the visible/common `Task = GPS import` control and submit empty Task for newly imported flights;
+- regression tests proving Manual/Edit Task semantics remain unchanged;
+- **no historical data cleanup in E1.1**.
+
+E1.2/E1.3/E1.4 remain separately gated by their schema/aviation/data-integrity requirements.
