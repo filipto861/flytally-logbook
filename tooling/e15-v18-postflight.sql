@@ -16,6 +16,9 @@ DECLARE
   data_type text;
   constraint_validated boolean;
 BEGIN
+  IF current_database() IS DISTINCT FROM 'neondb' THEN
+    RAISE EXCEPTION 'E1.5 postflight: wrong database target: %',current_database();
+  END IF;
   IF (SELECT COUNT(*) FROM public.flytally_schema_migrations)<>18
      OR EXISTS(SELECT 1 FROM public.flytally_schema_migrations WHERE version<1 OR version>18) THEN
     RAISE EXCEPTION 'E1.5 postflight: registry is not exact versions 1..18';
