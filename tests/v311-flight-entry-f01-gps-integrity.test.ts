@@ -53,13 +53,14 @@ test("F0.1 accepts valid EASA and explicit ULL aircraft contexts but rejects mal
   assert.match(malformedEasa.error??"",/requires both manufacturer/i);
 });
 
-test("F0.1 interim GPS role boundary is superseded only by F4.1 PIC/DUAL parity",()=>{
+test("F0.1 interim GPS role boundary is superseded by F4.1 PIC/DUAL and F4.3 Safety Pilot parity",()=>{
   assert.deepEqual(validateGpsImportRole("PIC"),{role:"PIC"});
   assert.deepEqual(validateGpsImportRole("DUAL"),{role:"DUAL"});
-  for(const role of ["","SAFETY PILOT","INSTRUCTOR","INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS","ADMIN"]){
+  assert.deepEqual(validateGpsImportRole("SAFETY PILOT"),{role:"SAFETY PILOT"});
+  for(const role of ["","INSTRUCTOR","INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS","ADMIN"]){
     const result=validateGpsImportRole(role);
     assert.equal(result.role,undefined,role);
-    assert.match(result.error??"",/supports PIC and DUAL/i);
+    assert.match(result.error??"",/supports PIC, DUAL and SAFETY PILOT/i);
   }
 });
 
@@ -88,7 +89,8 @@ test("F0.1 removes GPS ULL fallbacks and exposes unresolved profile state instea
 test("F0.1 GPS UI role surface stays bound to the explicit F4 allowlist",()=>{
   assert.match(gpsForm,/GPS_IMPORT_ROLES\.map\(value=><option/);
   assert.match(gpsForm,/name="role" value=\{role\}/);
-  for(const unsupported of ["INSTRUKTOR","SAFETY PILOT","CO-PILOT","PAX","OBSERVER","SPIC","PICUS"]){
+  assert.match(gpsForm,/role==="SAFETY PILOT"/);
+  for(const unsupported of ["INSTRUKTOR","CO-PILOT","PAX","OBSERVER","SPIC","PICUS"]){
     assert.ok(!gpsForm.includes(`>${unsupported}</option>`),unsupported);
   }
 });
@@ -108,7 +110,7 @@ test("F0.1 preserves GPS duplicate locking and atomic transaction behavior",()=>
   assert.match(importAction,/new Set\(prepared\.map\(item=>item\.fingerprint\)\)\.size!==prepared\.length/);
   assert.match(importAction,/pg_advisory_xact_lock/);
   assert.match(importAction,/sql\.transaction\(\[\.\.\.locks,\.\.\.inserts\]\)/);
-  assert.match(importAction,/WHERE NOT EXISTS\(SELECT 1 FROM flights/);
+  assert.match(importAction,/NOT EXISTS\(SELECT 1 FROM flights/);
   assert.match(importAction,/rolled back\. No partial flights were created/);
 });
 
