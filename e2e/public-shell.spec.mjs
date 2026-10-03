@@ -886,6 +886,97 @@ test("F2.4C certified verifier evidence stays unbound and exposes both explicit 
   await expectNoHorizontalOverflow(page);
 });
 
+test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F5 browser coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  await expect(form.locator('select[name="role"]')).toHaveValue("PIC");
+
+  await expect(page.locator("header.page-header").getByRole("heading",{name:"New flight"})).toBeVisible();
+  await expect(page.locator("header.page-header p.muted")).toHaveCount(0);
+  await expect(form.getByText("Aircraft default",{exact:true})).toBeVisible();
+  await expect(form.getByRole("link",{name:"Manage aircraft"})).toBeVisible();
+
+  await form.locator('input[name="offBlock"]').fill("10:00");
+  await form.locator('input[name="takeoff"]').fill("10:05");
+  await form.locator('input[name="landing"]').fill("10:55");
+  await form.locator('input[name="onBlock"]').fill("11:00");
+  const timeSummary=form.locator(".flight-time-summary");
+  await expect(timeSummary).toContainText("BLOCK");
+  await expect(timeSummary).toContainText("1:00");
+  await expect(timeSummary).toContainText("AIR");
+  await expect(timeSummary).toContainText("0:50");
+  await expect(timeSummary.locator("small")).toHaveCount(0);
+
+  const essentials=form.locator(".entry-section-primary");
+  const persistentHelpers=(await essentials.locator("small:visible").allTextContents()).map(value=>value.trim()).filter(Boolean);
+  expect(persistentHelpers).toEqual(["Manage aircraft","Aircraft default","UTC"]);
+
+  const controls=await form.locator('input:not([type="hidden"]):visible,select:visible,textarea:visible,button:visible').evaluateAll(nodes=>nodes.map(node=>({
+    tag:node.tagName.toLowerCase(),
+    name:node.getAttribute("name")||"",
+    text:(node.textContent||"").trim(),
+  })));
+  expect(controls).toEqual([
+    {tag:"input",name:"date",text:""},
+    {tag:"select",name:"registration",text:controls[1]?.text??""},
+    {tag:"select",name:"role",text:controls[2]?.text??""},
+    {tag:"input",name:"departure",text:""},
+    {tag:"input",name:"arrival",text:""},
+    {tag:"input",name:"offBlock",text:""},
+    {tag:"input",name:"takeoff",text:""},
+    {tag:"input",name:"landing",text:""},
+    {tag:"input",name:"onBlock",text:""},
+    {tag:"button",name:"intent",text:"Save & review"},
+  ]);
+
+  await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
+  await expect(form.locator("details.entry-section-experience")).not.toHaveAttribute("open","");
+  await expect(form.locator("details.entry-section-role-context")).not.toHaveAttribute("open","");
+  await expect(form.locator("details.aircraft-context-section")).not.toHaveAttribute("open","");
+  await expect(form.locator("details.entry-section-optional")).not.toHaveAttribute("open","");
+
+  for(const viewport of [
+    {width:1280,height:800},
+    {width:768,height:1024},
+    {width:390,height:844},
+  ]){
+    await page.setViewportSize(viewport);
+    await expect(form.getByRole("button",{name:"Save & review"})).toBeVisible();
+    await expect(form.locator(".flight-time-summary")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
+test("F5.3 role change keeps required DUAL identity inline and removes the default cue",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F5 contextual-role coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  const role=form.locator('select[name="role"]');
+  await expect(role).toHaveValue("PIC");
+  await expect(form.getByText("Aircraft default",{exact:true})).toBeVisible();
+
+  await role.selectOption("DUAL");
+  await expect(form.getByText("Aircraft default",{exact:true})).toHaveCount(0);
+  const instructor=form.locator('.role-crew-inline-grid input[name="instructor"]');
+  await expect(instructor).toBeVisible();
+  await expect(instructor).toHaveAttribute("required","");
+  await expect(form.getByRole("button",{name:"Instructor / PIC"})).toBeVisible();
+
+  for(const viewport of [
+    {width:1024,height:768},
+    {width:390,height:844},
+  ]){
+    await page.setViewportSize(viewport);
+    await expect(instructor).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
 test("F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in light and dark",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F2.5 responsive RoleCrew coverage requires the isolated CI database.");
   resetSafetyPilotPicFixture();
