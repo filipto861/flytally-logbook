@@ -6,12 +6,18 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 
 1. Work locally on a complete slice. Do not push every intermediate edit to the candidate branch.
 2. During iteration, run only the tests that cover the changed behaviour:
-   - `npm run typecheck` for a quick TypeScript-only check.
+   - `npm run typecheck` when TypeScript/application contracts changed or a quick compile check is useful.
    - `npm run test:target -- tests/<relevant-file>.test.ts` for targeted regression tests.
    - `npm run scope:changed -- <path> [<path> ...]` to see the development modules and CI risk selected for a set of changed files.
-3. Before publishing a candidate, run `npm run verify`. This runs the explicit TypeScript gate, the complete unit/regression suite once, and then the real Next.js production build.
-4. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
-5. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build when the released commit can affect runtime output.
+3. At a meaningful milestone, run the smallest broader gate justified by the changed surface:
+   - UI-only work: focused browser coverage for the affected flow when needed.
+   - persistence/schema/data-integrity work: relevant PostgreSQL acceptance.
+   - known scale/performance hot paths: the retained scale fixture for that path.
+   - unrelated heavy suites are not a default milestone requirement.
+4. Before the final PR/release candidate, run one complete local release gate appropriate to the change. `npm run verify` remains the normal application gate; add PostgreSQL/browser/scale coverage when the changed surface requires it.
+5. Do **not** rerun the full local gate merely because documentation, comments, or a stale test/source assertion was corrected after an already-valid full gate. Run the affected targeted test(s), then let PR CI independently re-prove the clean checkout. Repeat a heavy local gate only when the correction changes runtime behaviour, persistence/schema, auth/security, certification/recency logic, performance-critical code, or invalidates earlier evidence.
+6. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
+7. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build when the released commit can affect runtime output.
 
 ## Module scope registry
 
@@ -30,6 +36,20 @@ Anything that may affect runtime or the build environment continues to deploy. T
 The guard first uses `VERCEL_GIT_PREVIOUS_SHA` when Vercel provides a usable commit. In this project Vercel preview checkouts may omit that variable and may not expose an `origin` remote. The safe fallback therefore matches the candidate-first workflow: production deployments compare the released commit with its first parent, while a preview without `VERCEL_GIT_PREVIOUS_SHA` may use its parent only when that parent is a GitHub-created merge commit from the normal production history. A preview with additional candidate commits after that production merge fails safe and requires the build rather than comparing only the latest commit.
 
 If a safe diff base cannot be established, the guard requires the build. Do not broaden the development-only allowlist or weaken the trusted-parent rule merely to save a preview.
+
+## Risk-based verification cadence
+
+Verification depth follows the risk of the change, not the age or total size of the repository.
+
+- **Iteration:** targeted tests only. Optimize for fast feedback while the implementation is still moving.
+- **Milestone:** broaden only to the directly affected subsystem. Database, browser and scale suites are evidence for specific risks, not ritual gates after every edit.
+- **Final local candidate:** one complete local release gate for the candidate, with the heavy subsystem suites required by its actual risk.
+- **PR CI:** independent clean-checkout proof. CI is not a reason to duplicate an unchanged full local gate immediately beforehand or afterwards.
+- **Production closeout:** run only release-specific checks such as DB preflight/postflight, deployment verification and smoke. Do not replay the entire development test matrix unless production evidence exposes a new uncertainty.
+
+A failed gate should be diagnosed first. If the failure is a stale assertion, harness defect or documentation/source-contract drift, fix that defect and rerun the smallest test that proves the fix; do not blindly restart every expensive suite. If the failure exposes or may conceal a runtime/data-integrity defect, expand verification again before release.
+
+This policy does not relax fail-closed behaviour, schema/certification integrity, auth/security gates, or production migration discipline. It removes redundant repetition while preserving independent release evidence.
 
 ## CI risk levels
 
