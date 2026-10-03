@@ -11,9 +11,9 @@ SELECT current_database() AS database_name,
 
 DO $e15$
 DECLARE
-  column_nullable text;
-  column_default text;
-  data_type text;
+  observed_is_nullable text;
+  observed_column_default text;
+  observed_data_type text;
   constraint_validated boolean;
 BEGIN
   IF current_database() IS DISTINCT FROM 'neondb' THEN
@@ -31,21 +31,21 @@ BEGIN
     RAISE EXCEPTION 'E1.5 postflight: exact v18 registry row missing';
   END IF;
 
-  SELECT is_nullable,column_default,data_type
-    INTO column_nullable,column_default,data_type
-    FROM information_schema.columns
-    WHERE table_schema='public'
-      AND table_name='aircraft'
-      AND column_name='default_operation_type';
+  SELECT c.is_nullable,c.column_default,c.data_type
+    INTO observed_is_nullable,observed_column_default,observed_data_type
+    FROM information_schema.columns c
+    WHERE c.table_schema='public'
+      AND c.table_name='aircraft'
+      AND c.column_name='default_operation_type';
 
-  IF data_type IS DISTINCT FROM 'text' THEN
-    RAISE EXCEPTION 'E1.5 postflight: column type drift: %',data_type;
+  IF observed_data_type IS DISTINCT FROM 'text' THEN
+    RAISE EXCEPTION 'E1.5 postflight: column type drift: %',observed_data_type;
   END IF;
-  IF column_nullable IS DISTINCT FROM 'YES' THEN
+  IF observed_is_nullable IS DISTINCT FROM 'YES' THEN
     RAISE EXCEPTION 'E1.5 postflight: column is not nullable';
   END IF;
-  IF column_default IS NOT NULL THEN
-    RAISE EXCEPTION 'E1.5 postflight: column has unexpected default: %',column_default;
+  IF observed_column_default IS NOT NULL THEN
+    RAISE EXCEPTION 'E1.5 postflight: column has unexpected default: %',observed_column_default;
   END IF;
 
   SELECT convalidated INTO constraint_validated
