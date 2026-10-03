@@ -38,6 +38,59 @@ Close the E1 workstream without mixing three independent concerns:
 
 Historical `GPS import` handling remains evidence-preserving and is not part of the schema migration.
 
+## 2.1 Independent review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES**. The two potential S1 blockers were checked against the actual repository/runtime configuration before release tooling was staged.
+
+### S1-A — current production main compatibility with future v18: resolved
+
+Production baseline `main@ee6b1d215d803aab3e4d2af12b41d61ddea06fee` advertises schema v17, but its runtime migrator reads only registry rows where `version<=DATABASE_SCHEMA_VERSION` before passing them to `pendingMigrationVersions()`. Therefore an already-present v18 registry row is ignored by the v17 application rather than passed to `migrationQueries()`; the v17 application does not throw `Unknown database migration 18`.
+
+Relevant old-app aircraft consumers were also audited for the short v18-before-deploy window:
+- aircraft create/share writes use explicit column lists rather than positional `INSERT ... VALUES`;
+- aircraft option reads select explicit columns;
+- account backup intentionally uses `SELECT * FROM aircraft`;
+- restore uses `json_populate_record(NULL::aircraft,item)`, so it remains schema-aware when the nullable column exists.
+
+Conclusion: additive v18 is compatible with the current production application for the planned pre-deploy window. This conclusion must be rechecked if `main` changes before migration.
+
+### S1-B — PR/Vercel Preview production-DB mutation: resolved for automatic Git deployments
+
+Repository `vercel.json` has `git.deploymentEnabled={"*":false,"main":true}`. Under Vercel branch-rule semantics, feature branches match only the false wildcard rule; `main` matches the explicit true rule. Recent feature-branch deployment records are created as **CANCELED** with no production target, confirming that the branch does not reach a running Vercel preview runtime.
+
+GitHub CI is separately isolated:
+- PostgreSQL acceptance uses local service DB `flytally_test`;
+- browser smoke uses local service DB `flytally_browser`;
+- neither workflow injects the production Neon `DATABASE_URL`.
+
+A manually invoked Vercel CLI preview remains out of scope and must not be run for this release before the production migration decision.
+
+### S1-C — IF NOT EXISTS masking partial state: accepted and fixed
+
+The explicit production tooling does **not** reuse the runtime migration's permissive idempotent DDL. E1.5 now has three dedicated scripts:
+- `tooling/e15-v18-preflight.sql` — read-only exact v17 proof;
+- `tooling/e15-v18-migrate.sql` — single guarded transaction;
+- `tooling/e15-v18-postflight.sql` — read-only v18 verification.
+
+The explicit migration:
+- takes advisory xact lock `704190104`;
+- uses bounded `lock_timeout=5s` and `statement_timeout=30s`;
+- re-checks exact versions/names 1–17 after the lock;
+- aborts if the v18 column or constraint already exists;
+- uses plain DDL, not `IF NOT EXISTS`;
+- verifies nullable/no-default/no-backfill/v18 registry invariants before COMMIT.
+
+Source-contract coverage is `tests/v367-flight-entry-e15-closeout.test.ts`.
+
+### S2/S3 accepted release changes
+
+- exact migration names 1–17 are required, not only `MAX(version)=17`;
+- recovery-point decision must be recorded before production write;
+- old-app compatibility smoke occurs after v18 and before merge;
+- production SP/MP mutation smoke uses only disposable/test data, otherwise production proof remains read-only;
+- post-deploy E1.4 census remains read-only evidence and is interpreted by date/state rather than fixed count;
+- direct/unpooled Neon connection is preferred for the explicit DDL; the actual production host must be classified before migration.
+
 ## 3. Frozen migration contract — v18
 
 Canonical runtime migration source:
