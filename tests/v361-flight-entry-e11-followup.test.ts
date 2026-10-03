@@ -11,6 +11,9 @@ test("E1.1 GPS import no longer exposes or writes the synthetic GPS import Task"
   assert.doesNotMatch(gps,/Task<input name="task" defaultValue="GPS import"/);
   assert.doesNotMatch(gps,/defaultValue="GPS import"/);
   assert.match(gps,/<input type="hidden" name="task" value=""\/>/);
+  const actions=read("app/(protected)/flights/actions.ts");
+  assert.match(actions,/const task=String\(form\.get\("task"\)\?\?""\)/);
+  assert.doesNotMatch(actions,/form\.get\("task"\)\?\?"GPS import"/);
 });
 
 test("E1.1 Manual and Edit keep the existing optional Task exercise field",()=>{
