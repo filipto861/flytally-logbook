@@ -562,7 +562,7 @@ Milestones:
 | E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
 | E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
 | E1.3 — GPS civil-twilight landing suggestion | ✅ | **DONE / LOCAL VERIFIED** · focused classifier/wiring/GPS regression suite 38/38 PASS; TypeScript PASS; production build PASS; authenticated browser 5/5 PASS covering Settings persistence, MANUAL fail-closed, SERA suggestion/provenance, total invalidation and sticky pilot edits |
-| E1.4 — historical Task cleanup | 🚧 | **DISCOVERY / READ-ONLY CENSUS** · stop any remaining synthetic producer path; classify exact `GPS import` rows into ordinary drafts vs locked/correction/certified history before any mutation; no cleanup write without explicit approval |
+| E1.4 — historical Task cleanup | 🚧 | **CENSUS TOOL STAGED / VERIFICATION PENDING** · residual server `GPS import` fallback removed; read-only production census classifies exact live rows plus certified revisions/deleted copies/audit evidence; no historical mutation implemented or approved |
 | E1.5 — verification / migration / production closeout | ⏳ | PostgreSQL, unit, build, browser, PR/CI, migration, smoke, docs |
 
 ## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
