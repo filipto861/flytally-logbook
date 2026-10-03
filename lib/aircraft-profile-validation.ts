@@ -4,10 +4,12 @@ import { validIsoDate } from "./rate-history.ts";
 export const AIRCRAFT_BALLOON_CLASSES=["HOT_AIR_BALLOON","GAS_BALLOON","HOT_AIR_AIRSHIP","MIXED_BALLOON"] as const;
 export const AIRCRAFT_BALLOON_GROUPS=["A","B","C","D"] as const;
 export const PART_FCL_CREDIT_CLASSES=["SEP","TMG"] as const;
+export const AIRCRAFT_DEFAULT_OPERATION_TYPES=["SP","MP"] as const;
 
 export type AircraftBalloonClass=(typeof AIRCRAFT_BALLOON_CLASSES)[number]|"";
 export type AircraftBalloonGroup=(typeof AIRCRAFT_BALLOON_GROUPS)[number]|"";
 export type PartFclCreditClass=(typeof PART_FCL_CREDIT_CLASSES)[number]|"";
+export type AircraftDefaultOperationType=(typeof AIRCRAFT_DEFAULT_OPERATION_TYPES)[number]|"";
 
 export type AircraftProfileValidationInput={
   aircraftMake?:unknown;
@@ -39,6 +41,17 @@ export type AircraftProfileValidationResult=
 
 const text=(value:unknown)=>String(value??"").trim();
 const upper=(value:unknown)=>text(value).toUpperCase();
+
+export function parseAircraftDefaultOperationType(value:unknown):
+  |{value:AircraftDefaultOperationType;error?:undefined}
+  |{value?:undefined;error:string}{
+  const normalized=upper(value);
+  if(!normalized)return{value:""};
+  if(!AIRCRAFT_DEFAULT_OPERATION_TYPES.includes(normalized as Exclude<AircraftDefaultOperationType,"">)){
+    return{error:"Default operation must be single-pilot, multi-pilot or not set."};
+  }
+  return{value:normalized as Exclude<AircraftDefaultOperationType,"">};
+}
 
 function explicitCategoryCompatible(evidence:string,aircraftClass:string,requested:string){
   if(!requested)return true;
