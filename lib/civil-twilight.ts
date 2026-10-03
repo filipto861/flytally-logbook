@@ -1,5 +1,5 @@
-import { trackTimestampBasis } from "@/lib/track-time";
-import { flightEnvelope,touchAndGoEvents,type KmlPoint } from "@/lib/track-processing";
+import { trackTimestampBasis } from "./track-time.ts";
+import { flightEnvelope,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
 
 export const CIVIL_TWILIGHT_ALTITUDE_DEG=-6;
 export const CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG=.5;
