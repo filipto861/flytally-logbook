@@ -55,6 +55,11 @@ export function resetAccountSettingsFixture(){
   `);
 }
 
+export function setE13NightDefinitionFixture(value){
+  if(value!=="MANUAL"&&value!=="SERA")throw new Error("Invalid E1.3 night-definition fixture.");
+  runBrowserSql(`UPDATE user_settings SET preferences_json=jsonb_set(COALESCE(preferences_json,'{}'::jsonb),'{night_definition}',to_jsonb('${value}'::text),true),updated_at=NOW() WHERE user_id=9001;`);
+}
+
 export function resetConnectionManagerFixture(){
   runBrowserSql(`
     UPDATE pilot_connections
