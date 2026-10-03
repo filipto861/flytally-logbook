@@ -768,6 +768,70 @@ test("F4.3 revoked per-flight connected Safety Pilot fails closed without partia
 });
 
 
+test("F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports and themes",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated F4.4 responsive override coverage requires the isolated browser database.");
+  resetF43GpsSafetyPilotFixture();
+  await loginBrowserPilot(page,"/flights/new");
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-03T21:40:00Z</when><when>2026-10-03T21:41:00Z</when><when>2026-10-03T21:42:00Z</when><when>2026-10-03T21:43:00Z</when><when>2026-10-03T21:44:00Z</when><when>2026-10-03T21:45:00Z</when>'+
+    '<when>2026-10-03T21:46:00Z</when><when>2026-10-03T21:47:00Z</when><when>2026-10-03T21:48:00Z</when><when>2026-10-03T21:49:00Z</when><when>2026-10-03T21:50:00Z</when><when>2026-10-03T21:51:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 500</gx:coord><gx:coord>14.17 50.15 800</gx:coord><gx:coord>14.21 50.18 850</gx:coord><gx:coord>14.25 50.21 500</gx:coord><gx:coord>14.29 50.24 300</gx:coord>'+
+    '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f44-responsive-overrides.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.getByRole("button",{name:/Add split/}).click();
+  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('select[name="role"]').selectOption("DUAL");
+  await gpsForm.locator('input[name="instructor"]').fill("Responsive Common Instructor");
+
+  await completeF43GpsPart(gpsForm,0,{offBlock:"21:40",takeoff:"21:41",landing:"21:44",onBlock:"21:45",note:"F4.4 inherited DUAL"});
+  await completeF43GpsPart(gpsForm,1,{offBlock:"21:46",takeoff:"21:47",landing:"21:50",onBlock:"21:51",note:"F4.4 Safety Pilot override"});
+
+  const first=gpsForm.locator(".flight-review-card").nth(0);
+  const second=gpsForm.locator(".flight-review-card").nth(1);
+  await second.getByRole("button",{name:"Override Role/Crew"}).click();
+  await second.locator('select[name="part_1_roleCrew_role"]').selectOption("SAFETY PILOT");
+  await second.locator('select[name="part_1_roleCrew_actualPicMode"]').selectOption("connected");
+  await second.locator('select[name="part_1_roleCrew_connectedPicUserId"]').selectOption("9002");
+
+  await expect(first.getByText("Common Role/Crew")).toBeVisible();
+  await expect(first.getByText(/DUAL · Responsive Common Instructor/)).toBeVisible();
+  await expect(second.getByText("Flight Role/Crew override")).toBeVisible();
+  await expect(second.getByText(/SAFETY PILOT · Browser Friend/)).toBeVisible();
+
+  const states=[
+    {name:"desktop",width:1280,height:800},
+    {name:"ipad-landscape",width:1024,height:768},
+    {name:"ipad-portrait",width:768,height:1024},
+    {name:"mobile",width:390,height:844},
+    {name:"mobile-320",width:320,height:800},
+  ];
+  for(const viewport of states){
+    await page.setViewportSize({width:viewport.width,height:viewport.height});
+    for(const theme of ["light","dark"]){
+      await page.evaluate(value=>{document.documentElement.dataset.theme=value},theme);
+      await expect(page.locator("html")).toHaveAttribute("data-theme",theme);
+      await expect(gpsForm).toBeVisible();
+      await expect(first).toBeVisible();
+      await expect(second).toBeVisible();
+      await expect(second.locator('select[name="part_1_roleCrew_role"]')).toHaveValue("SAFETY PILOT");
+      await expect(second.locator('select[name="part_1_roleCrew_actualPicMode"]')).toHaveValue("connected");
+      await expect(second.locator('select[name="part_1_roleCrew_connectedPicUserId"]')).toHaveValue("9002");
+      await expect(second.getByRole("button",{name:"Reset to common"})).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  }
+
+  resetF43GpsSafetyPilotFixture();
+});
+
+
 test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F2.2 RoleCrew browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
