@@ -86,6 +86,8 @@ function topLevelCommandIndex(statement:string){
     if(char==="("){depth+=1;continue}
     if(char===")"){depth=Math.max(0,depth-1);continue}
     if(depth!==0)continue;
+    const previous=statement[index-1]??"";
+    if(/[A-Za-z0-9_$]/.test(previous))continue;
     const rest=statement.slice(index);
     const match=rest.match(/^(SELECT|INSERT|UPDATE|DELETE)\b/i);
     if(match)return index;
