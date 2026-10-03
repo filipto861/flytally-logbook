@@ -8,6 +8,17 @@ export type AircraftTypeCatalogEntry={
   classHint:""|"SEP"|"MEP"|"SET";
 };
 
+export type AircraftEngineDefaultSuggestion=""|"SE"|"ME";
+
+export function engineDefaultFromCatalogEntry(entry:Pick<AircraftTypeCatalogEntry,"category"|"engine">):AircraftEngineDefaultSuggestion{
+  if(String(entry.category??"").trim().toLowerCase()!=="fixed-wing")return"";
+  const match=String(entry.engine??"").trim().toUpperCase().match(/^(\d+)[A-Z]/);
+  if(!match)return"";
+  const count=Number(match[1]);
+  if(!Number.isSafeInteger(count)||count<1)return"";
+  return count===1?"SE":"ME";
+}
+
 const normalize=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 
 export function rankAircraftTypes(catalog:AircraftTypeCatalogEntry[],query:string,limit=12){
