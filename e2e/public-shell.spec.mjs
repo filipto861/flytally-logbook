@@ -886,6 +886,45 @@ test("F2.4C certified verifier evidence stays unbound and exposes both explicit 
   await expectNoHorizontalOverflow(page);
 });
 
+test("E1.1 route assistance stays below aligned Route fields and remains keyboard reachable",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.1 route UX coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('select[name="registration"]').selectOption("OK-SP2E");
+  const departure=form.locator('input[name="departure"]');
+  const arrival=form.locator('input[name="arrival"]');
+  const assistance=form.locator("[data-intelligent-route-assistance]");
+  const suggestion=assistance.locator('[data-intelligent-review="continuation"]');
+  await expect(assistance).toHaveAttribute("aria-live","polite");
+  await expect(suggestion).toBeVisible();
+  await expect(suggestion).toContainText(/Continue from [A-Z0-9]{3,8}\?/);
+  const useButton=suggestion.getByRole("button",{name:/Use [A-Z0-9]{3,8}/});
+  await useButton.focus();
+  await expect(useButton).toBeFocused();
+
+  for(const viewport of [
+    {width:1280,height:800,aligned:true},
+    {width:768,height:1024,aligned:true},
+    {width:390,height:844,aligned:false},
+  ]){
+    await page.setViewportSize({width:viewport.width,height:viewport.height});
+    const boxes=await Promise.all([departure.boundingBox(),arrival.boundingBox(),assistance.boundingBox()]);
+    expect(boxes.every(Boolean)).toBeTruthy();
+    const [departureBox,arrivalBox,assistanceBox]=boxes;
+    if(viewport.aligned){
+      expect(Math.abs(departureBox.y-arrivalBox.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(departureBox.height-arrivalBox.height)).toBeLessThanOrEqual(1);
+    }
+    expect(assistanceBox.y).toBeGreaterThanOrEqual(Math.max(departureBox.y+departureBox.height,arrivalBox.y+arrivalBox.height)-1);
+    await expectNoHorizontalOverflow(page);
+  }
+
+  const target=(await useButton.textContent()).replace(/^Use\s+/,"").trim();
+  await useButton.click();
+  await expect(departure).toHaveValue(target);
+});
+
 test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F5 browser coverage requires the isolated browser database.");
   await loginBrowserPilot(page,"/flights/new");
