@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -958,6 +958,90 @@ test("E1.2 aircraft default operation prefills Manual and GPS but remains flight
     await expectNoHorizontalOverflow(page);
   }finally{
     runBrowserSql("UPDATE aircraft SET default_operation_type=NULL,updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
+  }
+});
+
+test("E1.3 night definition setting persists explicit MANUAL and SERA applicability",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 settings coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  try{
+    await loginBrowserPilot(page,"/profile");
+    const nightDefinition=page.getByLabel("Night definition");
+    await expect(nightDefinition).toHaveValue("MANUAL");
+    await nightDefinition.selectOption("SERA");
+    await page.getByRole("button",{name:"Save changes"}).click();
+    await page.reload();
+    await expect(page.getByLabel("Night definition")).toHaveValue("SERA");
+    expect(browserSqlScalar("SELECT COALESCE(preferences_json->>'night_definition','') FROM user_settings WHERE user_id=9001")).toBe("SERA");
+  }finally{
+    resetAccountSettingsFixture();
+  }
+});
+
+test("E1.3 MANUAL account applicability leaves GPS Day Night classification explicit",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 manual-applicability coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("MANUAL");
+  try{
+    await loginBrowserPilot(page,"/flights/new");
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-07-19T11:55:00Z</when><when>2026-07-19T11:56:00Z</when><when>2026-07-19T11:57:00Z</when><when>2026-07-19T11:58:00Z</when><when>2026-07-19T11:59:00Z</when><when>2026-07-19T12:00:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e13-manual.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+    const day=gps.locator('input[name="part_0_landingsDay"]'),night=gps.locator('input[name="part_0_landingsNight"]');
+    await expect(day).toHaveValue("");
+    await expect(night).toHaveValue("");
+    await expect(day).not.toHaveAttribute("aria-describedby",/part-0-landing-suggestion/);
+    await expect(gps.getByText("EASA/SERA civil-twilight suggestion")).toHaveCount(0);
+  }finally{
+    resetAccountSettingsFixture();
+  }
+});
+
+test("E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.3 SERA suggestion coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("SERA");
+  try{
+    await loginBrowserPilot(page,"/flights/new");
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-07-19T11:55:00Z</when><when>2026-07-19T11:56:00Z</when><when>2026-07-19T11:57:00Z</when><when>2026-07-19T11:58:00Z</when><when>2026-07-19T11:59:00Z</when><when>2026-07-19T12:00:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e13-sera.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+
+    const total=gps.locator('input[name="part_0_starts"]'),day=gps.locator('input[name="part_0_landingsDay"]'),night=gps.locator('input[name="part_0_landingsNight"]');
+    await expect(total).toHaveValue("1");
+    await expect(day).toHaveValue("1");
+    await expect(night).toHaveValue("0");
+    const describedBy=await day.getAttribute("aria-describedby");
+    expect(describedBy).toBe("part-0-landing-suggestion");
+    await expect(night).toHaveAttribute("aria-describedby","part-0-landing-suggestion");
+    const provenance=gps.locator("#part-0-landing-suggestion");
+    await expect(provenance).toContainText("EASA/SERA civil-twilight suggestion");
+    await expect(provenance).toContainText("GPS event time/location");
+
+    await total.fill("2");
+    await expect(day).toHaveValue("");
+    await expect(night).toHaveValue("");
+    await expect(provenance).toContainText("Automatic split cleared");
+
+    await day.fill("1");
+    await night.fill("1");
+    await expect(provenance).toContainText("Pilot-edited Day/Night split");
+    await gps.locator('select[name="operationType"]').selectOption("SP");
+    await expect(day).toHaveValue("1");
+    await expect(night).toHaveValue("1");
+    await expectNoHorizontalOverflow(page);
+  }finally{
+    resetAccountSettingsFixture();
   }
 });
 
