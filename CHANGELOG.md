@@ -28,37 +28,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - GPS still requires an explicit resolved SP/MP before Save; a profile default may preselect the control but does not bypass the server requirement.
 - Aircraft sharing carries the default as part of optional Flight defaults. Legacy pending shares that predate the field preserve an existing recipient default rather than silently clearing it; a new share with an explicitly blank default can clear it to NULL when Flight defaults are imported.
 - Account backup/restore remains exact through schema-aware `SELECT *` + `json_populate_record` after migration v18. Unknown imported defaults fail closed via parser/database constraint.
-- Added focused E1.2 source/domain tests, PostgreSQL migration acceptance and authenticated Manual/GPS browser proof. Local verification completed: targeted **54/54 PASS**, focused migration regression **5/5 PASS**, TypeScript PASS, PostgreSQL acceptance **2/2 PASS**, production build PASS and authenticated browser **4/4 PASS**. Browser verification also exposed a pre-existing branch regression in migration 17 (`AS # FlyTally changelog
-
-This is the canonical record of **what actually changed** in `flytally-logbook`.
-
-- `ROADMAP.md` is forward-looking and may contain planned work.
-- `FEATURES.md` is the capability inventory.
-- This file records merged/product changes and must not describe planned work as completed.
-- Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
-
-## Unreleased
-
-### Flight Entry Follow-up E1 — discovery/design
-- Production-use follow-up audit opened after Flight Entry Workflow 3.0 production closeout.
-- Confirmed Manual New currently uses a generic SP fallback for `operation_type`, while GPS intentionally requires explicit SP/MP and clears the value on aircraft change.
-- Confirmed aircraft profiles already persist default Role/billing but have no Operation default.
-- Confirmed GPS Common details currently submit `Task = GPS import`.
-- Confirmed `task` is included in the flight certification payload from certification v1 onward; certified rows therefore cannot be bulk-cleared by raw SQL without invalidating audit/integrity semantics.
-- Confirmed GPS review already has detected T&G/final-landing event indices with UTC timestamps and track coordinates; the airport catalogue also has worldwide lat/lon/country.
-- Confirmed Intelligent Logbook continuation/return assistance is portalled inside individual Route field labels, explaining the observed Departure/Arrival misalignment.
-- Added E1 design and independent-review handoff.
-- Independent review returned **APPROVE WITH CHANGES**. Accepted: certified Task correction contract, explicit Operation propagation/validation, route a11y, event-coordinate precedence and jurisdiction/provenance copy. Rejected one reviewer premise after authoritative verification: civil twilight remains the geometric solar-centre -6° boundary; sunrise/sunset refraction/solar-disc offset is not applied to civil twilight.
-- E1.1 implementation: Intelligent `Continue from…` / `Return to…` suggestions now render in a dedicated `aria-live="polite"` full-width row below both Route fields instead of inside one label; the action remains an explicit keyboard-focusable button.
-- E1.1 implementation: GPS Common details no longer expose or default `Task = GPS import`; new GPS imports submit an empty Task. Manual/Edit Task remains unchanged. Historical rows were **not** mutated.
-- Added focused source contracts and authenticated browser route-alignment coverage. E1.1 local verification: targeted **30/30 PASS**, TypeScript PASS, production build PASS and authenticated browser **3/3 PASS**. E1.1 is DONE / LOCAL VERIFIED.
-- E1.2 implementation staged schema v18 `aircraft.default_operation_type` as nullable `SP | MP | NULL` with a database CHECK constraint and **no aircraft-profile backfill**.
-- Aircraft Add/Edit and Quick Add now expose optional Default operation; persistence validates and verifies the saved value. New Manual/GPS flight entry receives the profile default only as a prefill and the per-flight Operation remains editable.
-- Manual New no longer silently normalizes a missing applicable Operation to SP: an incomplete draft may preserve `operation_type=''`, while existing FCL.050 certification remains fail-closed unless SP/MP is explicitly recorded. The existing `flights.operation_type` column and certification payload/version are unchanged.
-- GPS still requires an explicit resolved SP/MP before Save; a profile default may preselect the control but does not bypass the server requirement.
-- Aircraft sharing carries the default as part of optional Flight defaults. Legacy pending shares that predate the field preserve an existing recipient default rather than silently clearing it; a new share with an explicitly blank default can clear it to NULL when Flight defaults are imported.
-- Account backup/restore remains exact through schema-aware `SELECT *` + `json_populate_record` after migration v18. Unknown imported defaults fail closed via parser/database constraint.
- instead of `AS $`); the dollar quote was restored and a source regression guard added. E1.2 is **DONE / LOCAL VERIFIED**. Production migration v18 remains **NOT APPLIED**.
+- Added focused E1.2 source/domain tests, PostgreSQL migration acceptance and authenticated Manual/GPS browser proof. Local verification completed: targeted **54/54 PASS**, focused migration regression **5/5 PASS**, TypeScript PASS, PostgreSQL acceptance **2/2 PASS**, production build PASS and authenticated browser **4/4 PASS**. Browser verification also exposed a pre-existing branch regression in migration 17 (`AS $` instead of `AS $$`); the dollar quote was restored and a source regression guard added. E1.2 is **DONE / LOCAL VERIFIED**. Production migration v18 remains **NOT APPLIED**.
+- E1.3 discovery mapped the existing GPS evidence path: T&G and final landing already have exact track indices, timestamps and coordinates; timezone-less track timestamps already fail closed. Draft implementation uses geometric solar-centre altitude at the SERA -6° boundary, requires every detected landing event to classify before suggesting an aggregate split, limits first-release auto-prefill to the EASA/SERA path, and tracks landing split provenance explicitly as UNSET/SUGGESTED/MANUAL so unrelated UI state cannot overwrite pilot edits. Added dedicated read-only independent-review handoff before implementation.
 
 ### Flight Entry Workflow 3.0 — F6 browser/responsive/production closeout
 - Activated the final F6 acceptance phase after F5 completed local verification.
