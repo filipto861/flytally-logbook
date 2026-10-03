@@ -11,6 +11,9 @@ test("migration 17 preserves explicit historical aircraft identity as an atomic 
   assert.match(plan,/version:17,name:"historical flight aircraft identity preservation"/);
   assert.match(db,/17:"historical flight aircraft identity preservation"/);
   assert.match(db,/if\(version===17\)return\[/);
+  const migration17=db.slice(db.indexOf("if(version===17)return["),db.indexOf("if(version===18)return["));
+  assert.match(migration17,/RETURNS TRIGGER AS \$\$/);
+  assert.match(migration17,/\$\$ LANGUAGE plpgsql/);
   assert.match(db,/IF TG_OP='INSERT' THEN/);
   assert.match(db,/NULLIF\(TRIM\(COALESCE\(NEW\.aircraft_make,''\)\),''\) IS NULL/);
   assert.match(db,/NULLIF\(TRIM\(COALESCE\(NEW\.aircraft_model,''\)\),''\) IS NULL/);
