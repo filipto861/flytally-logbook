@@ -288,7 +288,7 @@ Required closeout guards staged in E1.4:
 - export/print/certification source guards proving no presentation transform leaks into stored or exported evidence;
 - correction ownership/source guards proving no bulk cleanup path was introduced.
 
-Verification of these newly staged guards is still pending.
+Verification status after the review batch: focused source/certification tests **20/20 PASS**, TypeScript PASS, and the PostgreSQL correction/history acceptance suite **5/5 PASS** against local `flytally_browser`. The expected rejection messages from certified-row mutation and duplicate-verification probes were observed as part of passing negative tests. Authenticated runtime owner/shared-view coverage has been added and still requires Playwright execution; production build for this final UI batch is also still pending.
 
 ### E1.5 — verification / docs / production closeout
 - targeted unit/source tests;
