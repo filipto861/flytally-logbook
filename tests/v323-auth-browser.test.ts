@@ -55,7 +55,9 @@ test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=
 });
 
 
-test("authenticated browser projects serialize shared database fixtures in CI",()=>{
+test("authenticated browser projects serialize the shared database fixture locally and in CI",()=>{
   const config=read("playwright.config.mjs");
-  assert.match(config,/workers:process[.]env[.]CI\?1:undefined/);
+  assert.match(config,/fullyParallel:false/);
+  assert.match(config,/workers:1/);
+  assert.doesNotMatch(config,/workers:process[.]env[.]CI\?1:undefined/);
 });
