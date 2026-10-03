@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -923,6 +923,42 @@ test("E1.1 route assistance stays below aligned Route fields and remains keyboar
   const target=(await useButton.textContent()).replace(/^Use\s+/,"").trim();
   await useButton.click();
   await expect(departure).toHaveValue(target);
+});
+
+test("E1.2 aircraft default operation prefills Manual and GPS but remains flight-editable",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated E1.2 operation-default coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/dashboard");
+  runBrowserSql("UPDATE aircraft SET default_operation_type='MP',updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
+
+  try{
+    await page.goto("/flights/new");
+    const manual=page.locator("#new-flight-manual-form");
+    await manual.locator('select[name="registration"]').selectOption("OK-E2E");
+    const context=manual.locator("details.aircraft-context-section");
+    if(!(await context.getAttribute("open")))await context.locator("summary").click();
+    const manualOperation=manual.locator('select[name="operationType"]');
+    await expect(manualOperation).toHaveValue("MP");
+    await expect(manualOperation.locator("xpath=following-sibling::small")).toContainText("Aircraft default");
+    await manualOperation.selectOption("SP");
+    await expect(manualOperation).toHaveValue("SP");
+
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-10-03T23:00:00Z</when><when>2026-10-03T23:01:00Z</when><when>2026-10-03T23:02:00Z</when><when>2026-10-03T23:03:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.15 50.15 700</gx:coord><gx:coord>14.20 50.20 700</gx:coord><gx:coord>14.25 50.25 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"e12-default-operation.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+    const gpsOperation=gps.locator('select[name="operationType"]');
+    await expect(gpsOperation).toHaveValue("MP");
+    await expect(gpsOperation.locator("xpath=following-sibling::small")).toContainText("Aircraft default");
+    await gpsOperation.selectOption("SP");
+    await expect(gpsOperation).toHaveValue("SP");
+    await expectNoHorizontalOverflow(page);
+  }finally{
+    runBrowserSql("UPDATE aircraft SET default_operation_type=NULL,updated_at=NOW() WHERE user_id=9001 AND registration='OK-E2E';");
+  }
 });
 
 test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",async({page})=>{
