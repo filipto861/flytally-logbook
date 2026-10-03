@@ -493,7 +493,7 @@ const migrationQueries=(version:number)=>{
       WHERE participant_role='PIC' AND status IN ('pending','accepted')`,
   ];
   if(version===17)return[
-    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $
+    sql`CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $$
       DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
       BEGIN
         IF TG_OP='INSERT' THEN
