@@ -139,7 +139,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
     setCuts(clean);setReviews(splitPoints(source.points,clean).map(reviewFor));setAirportOptions([]);setAirportCount(null);
   };
   const updateReview=(index:number,patch:Partial<Review>)=>{markDirty();setReviews(current=>current.map((review,i)=>i===index?{...review,...patch}:review))};
-  const updateLandingTotal=(index:number,value:string)=>{markDirty();setReviews(current=>current.map((review,i)=>i!==index?review:review.landingSplitSource==="SUGGESTED"?{...review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",reviewed:false}:{...review,starts:value,reviewed:false}))};
+  const updateLandingTotal=(index:number,value:string)=>{markDirty();setReviews(current=>current.map((review,i)=>i!==index?review:review.landingSplitSource==="SUGGESTED"?{...review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",pfMovement:"",takeoffsDay:"",takeoffsNight:"",approachesDay:"",approachesNight:"",reviewed:false}:{...review,starts:value,pfMovement:"",takeoffsDay:"",takeoffsNight:"",approachesDay:"",approachesNight:"",reviewed:false}))};
   const updateLandingSplit=(index:number,field:"landingsDay"|"landingsNight",value:string)=>{markDirty();setReviews(current=>current.map((review,i)=>i===index?{...review,[field]:value,landingSplitSource:"MANUAL",reviewed:false}:review))};
   const updateRoleCrewOverride=(index:number,next:PartRoleCrewOverride)=>{markDirty();setOverrideResetNotice("");setRoleCrewOverrides(current=>current.map((item,i)=>i===index?next:item))};
 
