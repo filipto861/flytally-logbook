@@ -27,6 +27,13 @@ test("E1.5 PR automation cannot run feature-branch Vercel runtime and CI databas
   assert.doesNotMatch(browser,/neondb|DATABASE_URL:\s*\$\{\{\s*secrets\./);
 });
 
+test("E1.5 authenticated browser suite is serialized because desktop and mobile share one mutable fixture database",()=>{
+  const playwright=read("playwright.config.mjs");
+  assert.match(playwright,/fullyParallel:false/);
+  assert.match(playwright,/workers:1/);
+  assert.doesNotMatch(playwright,/workers:process\\.env\\.CI\\?1:undefined/);
+});
+
 test("E1.5 production v18 preflight is read-only and fails closed on registry or partial-schema drift",()=>{
   const sql=read("tooling/e15-v18-preflight.sql");
   assert.match(sql,/BEGIN TRANSACTION READ ONLY/);
