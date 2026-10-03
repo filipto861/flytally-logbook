@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — F5 Primary UX / Copy Simplification
 
-**Status:** DISCOVERY / DESIGN ACTIVE · INDEPENDENT REVIEW PENDING  
+**Status:** REVIEW RECONCILED · F5.0/F5.1/F5.2 IMPLEMENTATION ACTIVE  
 **Baseline:** `main@5281d61fe2e7f38a3425ac0189007b46c68601b2`  
 **Scope:** simplify the normal Manual PIC entry presentation after F0–F4 domain convergence.  
 **Out of scope:** flight semantics, parser/normalizer rules, certification rules, recency, GPS persistence semantics, RoleCrew authority, aircraft-profile authority, DB/schema/certification changes.
@@ -239,3 +239,122 @@ Review should challenge:
 6. Is any proposed simplification likely to create desktop-only gains while harming iPad/mobile?
 
 No runtime implementation should begin until this review is reconciled against the repository and frozen contracts.
+
+
+## 10. Independent review reconciliation
+
+Independent review returned **APPROVE WITH CHANGES**. The review was reconciled against the current repository before runtime implementation.
+
+### Accepted: Role provenance is retained
+
+Repo verification:
+- current Role helper is `Aircraft default · change if this flight differed.`;
+- `FlightForm` has no separate role-provenance/touched state;
+- Role itself is evidence-bearing and drives inline Role/Crew requirements.
+
+Decision:
+- do **not** remove the provenance cue;
+- reduce it to **`Aircraft default`**;
+- show it only on New Flight, never on Edit/SNAPSHOT;
+- do not add a new touched-state solely for copy behavior;
+- a pilot-selected role different from the aircraft default has no default cue.
+
+If the pilot later deliberately returns the Role value to the aircraft default, the cue may reappear because F5 deliberately uses the existing value/default comparison rather than inventing a second provenance state.
+
+### Accepted with repo correction: shared-form context
+
+Repo verification:
+- `FlightForm` is shared by Manual New and editable Flight Detail;
+- GPS New/review uses `KmlImportForm`, not `FlightForm`;
+- the current Dashboard has links to `/flights/new`; there is no separate runtime Quick Add form using `FlightForm`.
+
+Therefore candidate copy changes inside `FlightForm` must be gated where Edit semantics differ. F5 does not claim that GPS uses the Manual form.
+
+### Accepted: BLOCK/AIR copy gets explicit conditions
+
+Repo verification:
+- `.flight-time-summary` is the live region via `aria-live="polite"`;
+- no `aria-describedby` points to the generic helper;
+- BFCL authority copy is category-specific;
+- Sailplane AIR-time authority is also preserved in the Sailplane experience evidence note.
+
+Decision for **New Flight only**:
+- BFCL consequence copy remains unchanged;
+- when both BLOCK and AIR are resolved, omit the generic `Calculated automatically...` sentence;
+- when either value is unresolved, retain an instruction that the timeline is incomplete;
+- Edit keeps its existing helper behavior to avoid changing historical-edit presentation in F5.
+
+The BLOCK/AIR values and live-region semantics remain unchanged.
+
+### Accepted: page header can be reduced
+
+Repo verification:
+- the mode chooser immediately below already says Manual entry vs Import GPS track;
+- GPS mode retains its own upload/review instruction;
+- the completion surface already says `Creates an editable draft for final review.`;
+- the primary action is `Save & review`;
+- route-level UI consistency tests require the shared page rhythm, not a mandatory descriptive paragraph on New Flight.
+
+Decision:
+- remove the long explanatory paragraph from the New Flight page header;
+- retain eyebrow + title;
+- keep draft/review consequence copy at the action surface.
+
+### Accepted: Registration helper stays
+
+Repo verification:
+- the routine valid-profile Registration field currently exposes `Manage aircraft`;
+- the collapsed valid Aircraft context card does **not** contain a manage/edit link;
+- only unresolved profile state provides the draft-preserving `Open Aircraft` recovery link;
+- Add aircraft creates a new aircraft and is not equivalent to managing the selected aircraft.
+
+Decision:
+- **retain `Manage aircraft`** in F5;
+- do not relocate it or add a new management component.
+
+### Accepted: Date/UTC excluded
+
+F5 will not alter:
+- Date copy;
+- UTC label;
+- time-field labels;
+- saved-date/timezone semantics;
+- issue #144 behavior.
+
+### Accepted: tests assert invariants, not deleted copy
+
+F5 tests will explicitly lock:
+- common Manual New interactive hierarchy;
+- retained Role default cue;
+- Edit does not show the New-only Role-default cue;
+- Registration recovery/manage path remains;
+- BLOCK/AIR live region remains;
+- no dangling descriptor dependency is introduced;
+- role-required identity remains inline;
+- GPS continues to use its separate `KmlImportForm`;
+- semantic parser/normalizer/certification boundaries remain untouched.
+
+## 11. Final implementation order after review
+
+### F5.0 — characterization
+- add source/contract coverage for New vs Edit vs GPS ownership;
+- lock the common Manual PIC visible-control hierarchy and retained evidence surfaces;
+- lock the retained recovery/a11y boundaries.
+
+### F5.1 — lowest-risk page copy
+- remove the redundant New Flight header paragraph only.
+
+### F5.2 — helper triage
+1. BLOCK/AIR generic helper on New only;
+2. Role helper trim + New-only gate;
+3. Registration helper **unchanged**.
+
+### F5.3 — focused verification
+- focused source/unit contracts;
+- TypeScript;
+- browser: common Manual PIC + one role-required contextual state;
+- include desktop, iPad and narrow mobile focused states;
+- no horizontal overflow;
+- no semantic submit/persistence changes.
+
+F6 remains the broad all-role/all-source viewport/theme/200% production closeout.
