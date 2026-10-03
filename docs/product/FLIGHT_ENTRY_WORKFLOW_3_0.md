@@ -1,6 +1,6 @@
 # Flight Entry Workflow 3.0 — Canonical Entry Contract
 
-**Status:** F0–F4 DONE / PRODUCTION VERIFIED · F5 PRIMARY UX ACTIVE  
+**Status:** F0–F4 DONE / PRODUCTION VERIFIED · F5.0–F5.2 IMPLEMENTED / VERIFICATION PENDING  
 **Decision owner:** Filip  
 **Frozen date:** 30 September 2026  
 **Repository:** `filipto861/flytally-logbook`  
