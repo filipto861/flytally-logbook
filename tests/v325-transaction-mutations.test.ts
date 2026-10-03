@@ -18,6 +18,13 @@ test("v3.2 U6 local smoke adapter executes transaction batches atomically and pr
   assert.match(local,/transaction queries must be created inline/);
 });
 
+test("v3.2 U6 local transaction parser does not treat command words inside CTE identifiers as the top-level command",()=>{
+  const local=read("lib/local-postgres.ts");
+  assert.match(local,/const previous=statement\[index-1\]\?\?""/);
+  assert.match(local,/\[A-Za-z0-9_\$\]\/\.test\(previous\)/);
+  assert.match(local,/track_insert/).not;
+});
+
 test("v3.2 U6 browser fixture supports settings and connection updates",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   const helper=read("e2e/browser-db.mjs");
