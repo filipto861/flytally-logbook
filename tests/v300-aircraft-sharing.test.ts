@@ -51,11 +51,11 @@ test("B1A shared aircraft defaults fail closed on malformed populated defaults",
   const actions=read("app/(protected)/connections/aircraft-share-actions.ts"),review=read("app/(protected)/connections/aircraft/[id]/page.tsx");
   assert.match(actions,/parseOptionalBilling\(aircraft[.]billing_basis\)/);
   assert.match(actions,/Aircraft billing setting needs configuration before it can be shared/);
-  assert.match(actions,/snapshot[.]defaults\?\.billingError\|\|snapshot[.]defaults\?\.operationError/);
+  assert.match(actions,/snapshot[.]defaults\?\.billingError\|\|snapshot[.]defaults\?\.operationError\|\|snapshot[.]defaults\?\.engineError/);
   assert.match(actions,/error=defaults/);
   assert.match(review,/operation [{]snapshot[.]defaults[.]defaultOperationType===undefined[?]"not included":snapshot[.]defaults[.]operationError[?]"needs configuration"/);
   assert.match(review,/billing \{snapshot[.]defaults[.]billingError\?"needs configuration"/);
-  assert.match(review,/defaultChecked=\{!snapshot[.]defaults[.]billingError&&!snapshot[.]defaults[.]operationError\}/);
+  assert.match(review,/defaultChecked=\{!snapshot[.]defaults[.]billingError&&!snapshot[.]defaults[.]operationError&&!snapshot[.]defaults[.]engineError\}/);
 });
 
 test("v3.0 aircraft cards support private cover photos without embedding image payloads in the page",()=>{
