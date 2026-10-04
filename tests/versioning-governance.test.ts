@@ -15,7 +15,7 @@ test("current roadmap uses numeric release targets and numeric phases",()=>{
   const roadmap=read("ROADMAP.md");
   assert.match(roadmap,/## Canonical release sequence/);
   assert.match(roadmap,/# 2\.8\.0 — Flight Entry Simplification — ACTIVE/);
-  for(const phase of [1,2,3,4,5,6])assert.match(roadmap,new RegExp(`## Phase ${phase}\\b`));
+  for(const phase of [1,2,3,4,5,6,7])assert.match(roadmap,new RegExp(`## Phase ${phase}\\b`));
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
 
@@ -28,8 +28,8 @@ test("versioning policy separates product releases from technical counters",()=>
   assert.match(policy,/Do not create new current-planning identifiers/);
 });
 
-test("2.8.0 design preserves explicit certification and fail-closed batch semantics",()=>{
-  const design=read("docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md");
+test("3.4.0 design preserves explicit certification and fail-closed batch semantics",()=>{
+  const design=read("docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md");
   assert.match(design,/Save & certify flight/);
   assert.match(design,/Save draft/);
   assert.match(design,/no silent certification/i);
