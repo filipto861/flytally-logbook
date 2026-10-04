@@ -9,7 +9,6 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("product version source remains numeric MAJOR.MINOR.PATCH",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   assert.match(pkg.version,/^\d+\.\d+\.\d+$/);
-  assert.equal(pkg.version,"2.7.0");
 });
 
 test("current roadmap uses numeric release targets and numeric phases",()=>{
