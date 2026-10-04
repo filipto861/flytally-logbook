@@ -10,6 +10,7 @@ This is the canonical planning document for `flytally-logbook`. It answers **wha
 - `CHANGELOG.md` = changes that actually shipped.
 - `ARCHITECTURE.md` = current architectural and data-integrity invariants.
 - `DEVELOPMENT.md` = implementation and verification workflow.
+- `docs/product/VERSIONING.md` = canonical numeric product/versioning convention.
 - detailed milestone contracts belong under `docs/product/`;
 - superseded release plans remain under `docs/history/`.
 
@@ -31,7 +32,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | ✅ | Flight Entry Workflow 3.0 + Follow-up E1 + E2 rapid GPS post-production corrections are production verified |
+| Flight entry / review / GPS workflows | 🚧 | Production baseline is verified; **2.8.0 Flight Entry Simplification is ACTIVE** |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
@@ -49,35 +50,30 @@ A roadmap item is not DONE until implementation, required verification and docum
 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; domain convergence and F5/F6 UX closeout complete |
-| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is temporarily pre-empted by Flight Entry Follow-up E1 production closeout |
+| Multi-aircraft Product Scale | ⏸️ | Completed integrity foundations are preserved; remaining integrity work resumes as **2.9.0** after 2.8.0 |
 | Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
 | Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
 | Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
 
-## Roadmap review & prioritization — DONE
+## Canonical release sequence
 
-The product-wide roadmap review is complete. Filip approved the reconciled priority order on **27 September 2026** after independent second-AI review and repository reconciliation.
+The product-wide priority review remains valid, but **from 4 October 2026 forward all active planning uses numeric product release versions**. Historical letter-coded milestones below are preserved only for traceability to old PRs, tests and closeout evidence.
 
-The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue. On 30 September 2026 that exception was triggered by the confirmed GPS invalid-profile → `ULL` fail-open path and Manual/GPS semantic-write divergence; the table below records the superseding order:
+Current production product version remains **2.7.0**. The next product release is **2.8.0**. Product versions are independent from database schema versions, certification payload versions and backup format versions.
 
-| Order | Workstream | Status | Why it is here |
-| ---: | --- | :---: | --- |
-| 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
-| 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
-| 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
-| 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
-| 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
-| 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
-| 6 | E2 — GPS post-production corrections | ✅ | DONE / PRODUCTION VERIFIED · PR #238 merged; v19 applied and postflight-verified; exact production deployment READY |
-| 7 | E3 — Flight entry simplification | 🚧 | Filip reprioritized after production use: reduce GPS/manual entry cognitive load, remove redundant review chrome, and support explicit same-page Save & Certify without weakening audit/certification integrity |
-| 8 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Paused until E3 UX simplification is reviewed and completed |
-| 8 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
-| 9 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
-| 10 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 11 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
-| 12 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
+| Order | Target release | Workstream | Status | Why it is here |
+| ---: | ---: | --- | :---: | --- |
+| 1 | **2.8.0** | Flight Entry Simplification | 🚧 | Production use proved the Manual/GPS workflow correct but too dense; simplify hierarchy and support explicit same-page Save & certify |
+| 2 | **2.9.0** | Multi-aircraft remaining integrity audit | ➡️ | Resume the accepted historical/dynamic applicability audit after entry UX stabilizes |
+| 3 | **2.10.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default-date semantics can be wrong around timezone boundaries |
+| 4 | **2.11.0** | Currency / monetary semantics · #136 | ⏳ | Account currency and stored monetary denomination need one business contract |
+| 5 | **2.12.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported aircraft categories |
+| 6 | **2.13.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow integrity and scale evidence |
+| — | — | Professional Logbook Platform | 🔬 | Research only until pilot-logbook foundations are stable and scope is frozen |
 
-**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence previously exercised that rule; Flight Entry Workflow 3.0 is now DONE / PRODUCTION VERIFIED. Flight Entry Follow-up E1 remains active only for the scoped follow-up/migration closeout before M2B resumes. UI simplification must not weaken evidence, validation or historical integrity.
+**Priority rule:** a confirmed production, security or data-integrity defect may pre-empt this order. UI simplification may never weaken evidence, validation, certification integrity or historical record protection.
+
+**Versioning rule:** ROADMAP uses target numeric release versions plus numeric phases. CHANGELOG records only actual merged/shipped change. No new active milestone families such as E/F/B/SP/M are introduced. See `docs/product/VERSIONING.md`.
 
 ## E2 — GPS post-production corrections — DONE / PRODUCTION VERIFIED
 
@@ -90,7 +86,7 @@ Frozen scope:
 - add conservative GPS Night-time suggestion from track timestamps/positions under the same explicit night definition; IFR remains manual;
 - simplify FCL.060 PF evidence to optional explicit pilot confirmation and do not block ordinary GPS save merely because PF evidence is absent; ULL without explicit Part-FCL credit mapping must not show Part-FCL PF evidence controls.
 
-Closeout evidence: exact release candidate `70f8e12c585b0f3713ce91ba0c1f036ebaf1102e`; Verify #1141 PASS with TypeScript PASS, 1208/1208 unit/regression and PostgreSQL 86/86; Browser #514 PASS with 84/84 and 2 intentional skips; production v19 preflight proved exact v1–v18 and no partial state; migration v19 committed additively with no aircraft backfill; postflight proved nullable `default_engine_type`, validated NULL/SE/ME constraint, 0 non-null defaults, unchanged baseline counts and exact registry v1–v19. PR #238 merged as `ba2b4324f1f9ae84161ec86e82fc13d268938160`; Vercel deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY for that exact SHA, aliases `fly-tally.com` with no alias error, and immediate runtime-error check found none. M2B is next.
+Closeout evidence: exact release candidate `70f8e12c585b0f3713ce91ba0c1f036ebaf1102e`; Verify #1141 PASS with TypeScript PASS, 1208/1208 unit/regression and PostgreSQL 86/86; Browser #514 PASS with 84/84 and 2 intentional skips; production v19 preflight proved exact v1–v18 and no partial state; migration v19 committed additively with no aircraft backfill; postflight proved nullable `default_engine_type`, validated NULL/SE/ME constraint, 0 non-null defaults, unchanged baseline counts and exact registry v1–v19. PR #238 merged as `ba2b4324f1f9ae84161ec86e82fc13d268938160`; Vercel deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY for that exact SHA, aliases `fly-tally.com` with no alias error, and immediate runtime-error check found none. At E2 closeout the then-next item was M2B; Filip reprioritized on 4 October 2026, so **2.8.0** now supersedes that sequencing note.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_E2_RAPID_CORRECTIONS.md`.
 
@@ -750,20 +746,29 @@ The pre-consolidation roadmap is preserved verbatim at:
 
 Historical documents are evidence/context only. If they conflict with this file, this roadmap controls current planning.
 
+## 2.8.0 — Flight Entry Simplification — ACTIVE
 
-## E3 — Flight entry simplification — ACTIVE
+**Goal:** make routine Manual/GPS entry materially simpler while preserving the verified evidence and certification contracts.
 
-**Trigger:** production use on 4 October 2026 showed that the New Flight / GPS review surface is functionally correct but too dense: too many visible sections, repeated helper text/status surfaces, and a second-page certification step after the pilot has already reviewed the import.
+Detailed contract: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
 
-**Frozen direction before implementation:**
-- Keep all existing source/evidence and fail-closed validation contracts.
-- Reduce the default visible hierarchy to the minimum needed to understand and complete the flight.
-- Use progressive disclosure for GPS source/split/map details, aircraft context, optional training/cost/crew details and diagnostics.
-- Replace generic duplicate review acknowledgements with targeted confirmation only where evidence is genuinely ambiguous or warned.
-- Same-page certification is allowed only as an explicit pilot action. No silent auto-certification.
-- Primary completion path should be **Save & certify** when certification blockers are clear; **Save draft** remains available.
-- Multi-flight imports must not produce a partially certified batch; implementation must define and test atomic/fail-closed semantics.
-- Preserve audit history, certification hash/version semantics, correction workflow, sharing prerequisites and recency evidence rules.
-- Training-purpose visibility remains category-aware; current ULL view intentionally exposes only applicable generic ULL-safe purposes. Historical picker behavior is documented in the E3 design note.
-- Desktop, iPad landscape/portrait and mobile must be verified in light and dark.
-- Independent second-AI UX/data-integrity review is required before implementation.
+| Phase | Status | Scope |
+| ---: | :---: | --- |
+| 1 | 🚧 | Discovery, current-screen baseline, field/section inventory, Training-purpose audit, certification dependency map, independent second-AI review |
+| 2 | ⏳ | Simplify information hierarchy: compact Source, compact Flight context, one primary flight card, progressive GPS/map/split detail |
+| 3 | ⏳ | Reconcile optional/contextual details and Training purpose applicability/persistence; decide generic non-regulatory Training / practice marker |
+| 4 | ⏳ | Explicit same-page **Save & certify** + secondary **Save draft**; remove redundant generic review acknowledgement; define fail-closed multi-flight certification semantics |
+| 5 | ⏳ | Responsive/accessibility/pending/error polish across desktop, iPad landscape/portrait, mobile and light/dark |
+| 6 | ⏳ | Release verification, version bump, CHANGELOG, PR/CI, deployment and production smoke |
+
+Frozen boundaries:
+- GPS remains advisory/editable; missing or ambiguous evidence is never invented.
+- IFR stays pilot-entered.
+- Existing SERA Day/Night/Night-time provenance rules stay authoritative only as suggestions.
+- Certification is explicit; no automatic certification merely because inputs are complete.
+- Existing certification hash/version, audit/correction/share/recency authority must be reused, not duplicated.
+- Save draft remains valid.
+- Multi-flight requests may never end in an unintended partially certified batch.
+- Existing purpose codes/history remain backward-compatible.
+- No DB migration is assumed.
+- Runtime implementation starts only after the Phase 1 review gate is reconciled.
