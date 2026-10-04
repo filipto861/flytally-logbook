@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 3 October 2026
+**Last updated:** 4 October 2026
 
 This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
 
@@ -31,7 +31,7 @@ A roadmap item is not DONE until implementation, required verification and docum
 | --- | :---: | --- |
 | Core logbook / certified record integrity | ✅ | Production foundation complete |
 | Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
-| Flight entry / review / GPS workflows | 🚧 | Flight Entry Workflow 3.0 + Follow-up E1 are production deployed; E2 rapid GPS post-production corrections are ACTIVE |
+| Flight entry / review / GPS workflows | ✅ | Flight Entry Workflow 3.0 + Follow-up E1 + E2 rapid GPS post-production corrections are production verified |
 | Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
 | Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
 | Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
@@ -68,8 +68,8 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
 | 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
-| 6 | E2 — GPS post-production corrections | 🚧 | Real production track exposed take-off anomaly handling plus follow-up SE/ME, Day/Night, Night-time and PF-evidence UX gaps; one rapid batch approved by Filip |
-| 7 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Accepted work; resume/re-check after E2 rapid production correction |
+| 6 | E2 — GPS post-production corrections | ✅ | DONE / PRODUCTION VERIFIED · PR #238 merged; v19 applied and postflight-verified; exact production deployment READY |
+| 7 | Multi-aircraft M2B — remaining integrity audit | ➡️ | Accepted work; resume/re-check now that E2 production closeout is complete |
 | 8 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 9 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 10 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -78,7 +78,7 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 
 **Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence previously exercised that rule; Flight Entry Workflow 3.0 is now DONE / PRODUCTION VERIFIED. Flight Entry Follow-up E1 remains active only for the scoped follow-up/migration closeout before M2B resumes. UI simplification must not weaken evidence, validation or historical integrity.
 
-## E2 — GPS post-production corrections — ACTIVE
+## E2 — GPS post-production corrections — DONE / PRODUCTION VERIFIED
 
 Filip approved one rapid correction batch after production use exposed four linked GPS-entry gaps. The batch is intentionally implemented and verified together rather than as separate release milestones.
 
@@ -89,7 +89,7 @@ Frozen scope:
 - add conservative GPS Night-time suggestion from track timestamps/positions under the same explicit night definition; IFR remains manual;
 - simplify FCL.060 PF evidence to optional explicit pilot confirmation and do not block ordinary GPS save merely because PF evidence is absent; ULL without explicit Part-FCL credit mapping must not show Part-FCL PF evidence controls.
 
-Verification cadence follows `DEVELOPMENT.md`: focused tests during the batch, one complete local release gate at the final candidate, then independent PR CI. Production schema migration remains explicit and fail-closed.
+Closeout evidence: exact release candidate `70f8e12c585b0f3713ce91ba0c1f036ebaf1102e`; Verify #1141 PASS with TypeScript PASS, 1208/1208 unit/regression and PostgreSQL 86/86; Browser #514 PASS with 84/84 and 2 intentional skips; production v19 preflight proved exact v1–v18 and no partial state; migration v19 committed additively with no aircraft backfill; postflight proved nullable `default_engine_type`, validated NULL/SE/ME constraint, 0 non-null defaults, unchanged baseline counts and exact registry v1–v19. PR #238 merged as `ba2b4324f1f9ae84161ec86e82fc13d268938160`; Vercel deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY for that exact SHA, aliases `fly-tally.com` with no alias error, and immediate runtime-error check found none. M2B is next.
 
 Detailed contract: `docs/product/FLIGHT_ENTRY_E2_RAPID_CORRECTIONS.md`.
 
