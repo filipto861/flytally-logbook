@@ -123,7 +123,7 @@ Important boundary:
 - The generic normal-case “I reviewed this flight” acknowledgement is planned for removal; only specific unresolved/warning evidence may require targeted confirmation.
 - Certification must reuse the existing compliance/hash/revision authority; audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
 - Multi-flight imports may not create an unintended partially certified batch.
-- Training-purpose applicability/persistence is part of the release audit: ULL currently shows only Aircraft differences + Aircraft familiarisation because Part-FCL/SFCL/BFCL purposes are filtered; 2.8.0 will decide whether a generic non-regulatory **Training / practice flight** marker is needed, without granting recency/endorsement credit.
+- Training-purpose applicability/persistence remains category-aware: ULL correctly shows only Aircraft differences + Aircraft familiarisation while Part-FCL/SFCL/BFCL recency purposes stay hidden. 2.8.0 does not add a generic structured Training / practice marker; ordinary descriptive detail remains in Task / exercise.
 - Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
 - Detailed design: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
 
