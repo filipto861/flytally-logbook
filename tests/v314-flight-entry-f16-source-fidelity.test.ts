@@ -155,12 +155,13 @@ test("F1.6 non-TMG sailplane requires explicit launch evidence and does not inve
   assert.equal(explicit.data?.starts,1);
 });
 
-test("F1.6 GPS UI exposes explicit reviewed evidence and does not auto-classify day/night",()=>{
+test("F1.6 GPS UI keeps reviewed evidence explicit while E2 may suggest SERA day/night and optional PF",()=>{
   assert.match(gpsForm,/part_\$\{index\}_landingsDay/);
   assert.match(gpsForm,/part_\$\{index\}_landingsNight/);
   assert.match(gpsForm,/part_\$\{index\}_movementEvidenceRecorded/);
-  assert.match(gpsForm,/Yes — I was PF/);
-  assert.match(gpsForm,/No — do not count PF movements/);
+  assert.match(gpsForm,/Count the detected movements as PF evidence/);
+  assert.match(gpsForm,/Leave unchecked unless you were pilot flying/);
+  assert.match(gpsForm,/gpsLandingDayNightSuggestion/);
   assert.match(gpsForm,/part_\$\{index\}_launchMethod/);
   assert.match(gpsForm,/part_\$\{index\}_launches/);
   assert.match(gpsForm,/part_\$\{index\}_nightTime/);
@@ -172,7 +173,8 @@ test("F1.6 GPS UI exposes explicit reviewed evidence and does not auto-classify 
 test("F1.6 server validates and persists explicit GPS evidence instead of fixed day/zero placeholders",()=>{
   assert.match(actions,/gpsImportSourceRequirements\(profileForFlight\)/);
   assert.match(actions,/needs explicit landing evidence matching the reviewed total/);
-  assert.match(actions,/needs an explicit pilot-flying movement decision/);
+  assert.match(actions,/if\(pf&&pf!=="yes"\)/);
+  assert.match(actions,/needs explicit PF take-off and approach counts when PF evidence is enabled/);
   assert.match(actions,/requires explicit sailplane launch method and count/);
   assert.match(actions,/Night \/ IFR time cannot exceed BLOCK time/);
   assert.match(actions,/\$\{item\.input\.launchMethod\},\$\{item\.input\.launches\}/);

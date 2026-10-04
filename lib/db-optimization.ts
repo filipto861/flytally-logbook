@@ -26,6 +26,7 @@ const migrationNames:Record<number,string>={
   16:"general PIC invitation provenance",
   17:"historical flight aircraft identity preservation",
   18:"aircraft default operation type",
+  19:"aircraft default engine type",
 };
 
 const migrationQueries=(version:number)=>{
@@ -542,6 +543,20 @@ const migrationQueries=(version:number)=>{
         ALTER TABLE aircraft
           ADD CONSTRAINT ck_aircraft_default_operation_type
           CHECK(default_operation_type IS NULL OR default_operation_type IN ('SP','MP'));
+      END IF;
+    END $$`,
+  ];
+  if(version===19)return[
+    sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_engine_type TEXT`,
+    sql`DO $$ BEGIN
+      IF NOT EXISTS(
+        SELECT 1 FROM pg_constraint
+        WHERE conname='ck_aircraft_default_engine_type'
+          AND conrelid='aircraft'::regclass
+      ) THEN
+        ALTER TABLE aircraft
+          ADD CONSTRAINT ck_aircraft_default_engine_type
+          CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME'));
       END IF;
     END $$`,
   ];

@@ -23,6 +23,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 ## Aircraft and airports — IMPLEMENTED
 
 - Personal aircraft profiles.
+- Aircraft flight defaults include editable Role and Operation defaults; E2 is adding an editable SE/ME engine default with catalogue suggestion when source engine-count data is unambiguous.
 - Searchable aircraft-type catalogue with manual fallback.
 - Explicit aircraft-dependent profile state.
 - Optional aircraft cover photos.
@@ -38,6 +39,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Track playback and aircraft marker presentation.
 - Map/profile display without treating GPS as authority for unsupported regulatory evidence.
 - Rolling touch-and-go altitude-discontinuity validation is bounded to the candidate's physical descent/minimum/climb evidence span, preventing unrelated sparse-sampling anomalies from suppressing valid advisory detections while preserving conservative in-span rejection.
+- E2 ACTIVE: harden advisory take-off timing around GPS teleports/gaps; extend explicit SERA Day/Night suggestions to supported ULL review; add conservative GPS Night-time suggestion while keeping IFR manual; simplify optional PF movement evidence without inventing recency credit.
 
 ## Licences, recency and evidence — IMPLEMENTED
 

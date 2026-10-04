@@ -147,7 +147,7 @@ function hasCredibleSplitSection(points:KmlPoint[]){
 export function trackQuality(points:KmlPoint[]):TrackQuality{
   const timedPoints=points.filter(point=>point.time&&Number.isFinite(Date.parse(point.time))).length,altitudePoints=points.filter(point=>point.alt!==null&&Number.isFinite(point.alt)).length;
   let largestGapSeconds=0,implausibleJumps=0;
-  for(let index=1;index<points.length;index++){const duration=seconds(points[index-1],points[index]);if(duration>largestGapSeconds)largestGapSeconds=duration;if(duration>0){const distance=haversineKm(points[index-1],points[index]),speed=distance/(duration/3600);if(distance>=2&&speed>1200)implausibleJumps++}}
+  for(let index=1;index<points.length;index++){const duration=seconds(points[index-1],points[index]);if(duration>largestGapSeconds)largestGapSeconds=duration;if(duration>0){const distance=haversineKm(points[index-1],points[index]),speed=distance/(duration/3600);if((distance>=2&&speed>1200)||(distance>=.5&&speed>1800))implausibleJumps++}}
   const timestampCoverage=points.length?timedPoints/points.length:0,altitudeCoverage=points.length?altitudePoints/points.length:0,warnings:string[]=[];
   if(points.length<4)warnings.push("Very few GPS points; review the route, airports and times carefully.");
   if(points.length>=2&&!hasAirborneMovement(points))warnings.push("No credible airborne movement was detected in this section.");
@@ -234,7 +234,7 @@ function takeoffEvidenceIndex(points:KmlPoint[],speed:number[]){
         if(Math.max(...future)-baseline<25)continue;
         for(let cursor=index;cursor<=end;cursor++){
           const altitude=points[cursor].alt;
-          if(speed[cursor]>=40&&altitude!==null&&Number.isFinite(altitude)&&altitude>=baseline+8&&!hasImplausibleAltitudeJump(points,cursor))return cursor;
+          if(speed[cursor]>=40&&altitude!==null&&Number.isFinite(altitude)&&altitude>=baseline+8&&!hasImplausibleAltitudeJumpWithin(points,Math.max(0,cursor-1),Math.min(end,cursor+2)))return cursor;
         }
         continue;
       }

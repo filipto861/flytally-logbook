@@ -76,7 +76,7 @@ test("B1A aircraft sharing carries explicit no-billing state without repair",()=
   assert.doesNotMatch(actions,/billingBasis:text\(aircraft[.]billing_basis\)\|\|"BLOCK"/);
   assert.match(actions,/billing_basis=\$\{snapshot[.]defaults[.]billingBasis\}/);
   assert.doesNotMatch(actions,/snapshot[.]defaults[.]billingBasis\|\|"BLOCK"/);
-  assert.match(actions,/importDefaults&&\(snapshot[.]defaults\?\.billingError\|\|snapshot[.]defaults\?\.operationError\)/);
+  assert.match(actions,/importDefaults&&\(snapshot[.]defaults\?\.billingError\|\|snapshot[.]defaults\?\.operationError\|\|snapshot[.]defaults\?\.engineError\)/);
   assert.match(parser,/billingError/);
 });
 

@@ -386,7 +386,7 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await expect(reviewed).toBeDisabled();
   await gpsForm.locator('input[name="part_0_landingsDay"]').fill("1");
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
-  await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
+  await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await expect(reviewed).toBeEnabled();
 
   await registration.selectOption("OK-TMG1");
@@ -406,6 +406,7 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("ULL · UL");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
+  await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).toHaveCount(0);
 
   await registration.selectOption("OK-BAD1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
@@ -440,7 +441,7 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await starts.fill(total);
   await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
-  await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
+  await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F1.4 normalized GPS save");
 
   const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
@@ -491,7 +492,7 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await starts.fill(total);
   await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
-  await gpsForm.locator('select[name="part_0_movementEvidenceRecorded"]').selectOption("no");
+  await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F4.1 common DUAL browser proof");
 
   const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
@@ -552,7 +553,7 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
     await starts.fill(total);
     await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
     await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
-    await gpsForm.locator('select[name="part_'+index+'_movementEvidenceRecorded"]').selectOption("no");
+    await expect(gpsForm.locator('input[name="part_'+index+'_movementEvidenceRecorded"]')).not.toBeChecked();
     await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(values.note);
   };
   await completePart(0,{offBlock:"20:00",takeoff:"20:01",landing:"20:04",onBlock:"20:05",note:"F4.2 inherited PIC"});
@@ -653,7 +654,7 @@ async function completeF43GpsPart(gpsForm,index,{offBlock,takeoff,landing,onBloc
   await starts.fill(total);
   await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
   await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
-  await gpsForm.locator('select[name="part_'+index+'_movementEvidenceRecorded"]').selectOption("no");
+  await expect(gpsForm.locator('input[name="part_'+index+'_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(note);
 }
 
@@ -1043,7 +1044,7 @@ test("E1.3 MANUAL account applicability leaves GPS Day Night classification expl
     await expect(day).toHaveValue("");
     await expect(night).toHaveValue("");
     await expect(day).not.toHaveAttribute("aria-describedby",/part-0-landing-suggestion/);
-    await expect(gps.getByText("EASA/SERA civil-twilight suggestion")).toHaveCount(0);
+    await expect(gps.getByText("SERA civil-twilight suggestion")).toHaveCount(0);
   }finally{
     resetAccountSettingsFixture();
   }
@@ -1072,7 +1073,7 @@ test("E1.3 SERA GPS suggestion is accessible, invalidates on total change and ke
     expect(describedBy).toBe("part-0-landing-suggestion");
     await expect(night).toHaveAttribute("aria-describedby","part-0-landing-suggestion");
     const provenance=gps.locator("#part-0-landing-suggestion");
-    await expect(provenance).toContainText("EASA/SERA civil-twilight suggestion");
+    await expect(provenance).toContainText("SERA civil-twilight suggestion");
     await expect(provenance).toContainText("GPS event time/location");
 
     await total.fill("2");

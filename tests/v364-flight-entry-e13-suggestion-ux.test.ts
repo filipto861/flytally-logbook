@@ -28,22 +28,23 @@ test("E1.3 account settings expose and persist explicit MANUAL or SERA applicabi
   assert.match(newFlight,/nightDefinition=\{nightDefinition\}/);
 });
 
-test("E1.3 GPS suggestion is gated by account SERA plus EASA DAY_NIGHT context",()=>{
-  assert.match(gps,/nightDefinition==="SERA"&&selectedProfile\?\.evidence==="EASA"&&sourceRequirements\?\.landingMode==="DAY_NIGHT"/);
+test("E1.3 GPS suggestion is gated by explicit account SERA plus DAY_NIGHT context",()=>{
+  assert.match(gps,/nightDefinition==="SERA"&&sourceRequirements\?\.landingMode==="DAY_NIGHT"/);
+  assert.doesNotMatch(gps,/nightDefinition==="SERA"&&selectedProfile\?\.evidence==="EASA"/);
   assert.match(gps,/gpsLandingDayNightSuggestion\(parts\[index\]\?\?\[\]\)/);
   assert.match(gps,/suggestion\.status!=="AVAILABLE"\|\|Number\(review\.starts\)!==suggestion\.total/);
 });
 
 test("E1.3 landing split state is sticky for direct edits and clears suggested split on total change",()=>{
   assert.match(gps,/type LandingSplitSource="UNSET"\|"SUGGESTED"\|"MANUAL"/);
-  assert.match(gps,/review\.landingSplitSource==="SUGGESTED"\?\{\.\.\.review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",reviewed:false\}/);
+  assert.match(gps,/review\.landingSplitSource==="SUGGESTED"\?\{\.\.\.review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",pfMovement:"",takeoffsDay:"",takeoffsNight:"",approachesDay:"",approachesNight:"",reviewed:false\}/);
   assert.match(gps,/\[field\]:value,landingSplitSource:"MANUAL",reviewed:false/);
   assert.match(gps,/landingSplitSource:"UNSET",pfMovement/);
 });
 
 test("E1.3 Day Night suggestion provenance is accessible and remains pilot-editable",()=>{
   assert.match(gps,/aria-describedby=\{seraLandingSuggestionEnabled\?landingHelpId:undefined\}/);
-  assert.match(gps,/EASA\/SERA civil-twilight suggestion · GPS event time\/location/);
+  assert.match(gps,/SERA civil-twilight suggestion · GPS event time\/location/);
   assert.match(gps,/Pilot-edited Day\/Night split/);
   assert.match(gps,/Day\/Night split unavailable from the GPS event evidence/);
   assert.match(gps,/onChange=\{event=>updateLandingSplit\(index,"landingsDay",event\.target\.value\)\}/);
