@@ -261,3 +261,11 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 - No automatic FX conversion unless a future business rule explicitly defines it.
 - No unsupported offline editing.
 - No authority/legal/trademark/provider approval inferred from code, tests or internal status.
+
+
+### Flight Entry E3 — planned simplification
+- Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
+- Same-page **Save & certify** is planned as an explicit action; **Save draft** remains available.
+- Certification integrity, audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
+- GPS warnings remain visible when relevant, but routine source/split/map diagnostics should not dominate the default workflow.
+- Training-purpose choices remain applicability-aware rather than showing regulatory purposes that do not apply to the selected aircraft/logbook context.
