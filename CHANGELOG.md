@@ -9,6 +9,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Flight Entry E2 — production verified
+- Hardened advisory take-off anomaly locality around corrupt GPS transitions while preserving discontinuity warnings and editable GPS-derived values.
+- Added nullable aircraft `default_engine_type = SE | ME | NULL` with no historical backfill; unambiguous catalogue engine count may suggest a value but does not become authority.
+- Extended explicit SERA Day/Night handling to supported ULL GPS review, added conservative GPS Night-time suggestion, kept IFR always pilot-entered, and made FCL.060 PF movement evidence optional/fail-closed.
+- Final PR #238 CI passed: Verify #1141 — TypeScript PASS, **1208/1208** unit/regression, PostgreSQL **86/86**; Browser #514 — production build PASS, **84/84** with 2 intentional skips.
+- Production v19 preflight proved exact v1–v18/no partial state; v19 migration committed successfully; postflight proved nullable/no-default engine column, validated NULL/SE/ME constraint, **0** backfilled defaults, unchanged baseline data counts and exact registry v1–v19.
+- PR #238 merged as `ba2b4324f1f9ae84161ec86e82fc13d268938160`; production deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY on that SHA, aliases `fly-tally.com` with no alias error, and immediate runtime-error check found none.
+- No historical flight, certification, audit, recovery or aircraft-default backfill mutation was performed.
+
+
 ### Development workflow governance
 - Adopted a risk-based verification cadence in `DEVELOPMENT.md`: targeted tests during iteration, subsystem-specific evidence at milestones, one complete local release gate for the final candidate, independent PR CI, and production-only preflight/postflight/smoke during closeout.
 - Heavy PostgreSQL, authenticated browser and scale suites are no longer repeated after every small edit by default. Documentation/stale-source-guard corrections after an already-valid full gate require targeted re-verification unless they change runtime, persistence/schema, auth/security, certification/recency, or performance-critical behaviour.
