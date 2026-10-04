@@ -97,3 +97,15 @@ A new development chat should reconstruct state from actual repository state fir
 
 Documentation-only changes still use a branch and PR, but runtime/database verification is `N/A` unless the documentation change also modifies executable/configuration files.
 
+
+
+## Product versioning
+
+Current planning and releases follow `docs/product/VERSIONING.md`.
+
+- Use numeric `MAJOR.MINOR.PATCH` product versions.
+- New ROADMAP work is identified by the target product release number and numeric phases, not by new letter-coded milestone families.
+- `CHANGELOG.md` records actual merged/shipped changes; planned scope belongs in ROADMAP.
+- Keep `package.json`, any visible app version, release changelog heading and release tag aligned at ship time.
+- PostgreSQL migration versions, certification payload versions and backup format versions remain independent technical counters.
+- Historical letter-coded milestone names remain untouched where needed for traceability, but do not create new ones.
