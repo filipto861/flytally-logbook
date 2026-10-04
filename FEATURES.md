@@ -117,15 +117,19 @@ Important boundary:
 
 ### 3.4.0 — Flight Entry Simplification — ACTIVE
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
-- Default GPS hierarchy becomes compact **Source → Flight details → Completion**; map/profile, clean single-flight split controls, provenance and advanced diagnostics become progressive detail rather than permanent chrome.
-- Common Aircraft / Role / Operation / Engine / Billing becomes one compact editable context summary instead of another large workflow layer.
-- Same-page **Save & certify** is the planned explicit primary completion action when eligible; **Save draft** remains available.
-- The generic normal-case “I reviewed this flight” acknowledgement is planned for removal; only specific unresolved/warning evidence may require targeted confirmation.
-- Certification must reuse the existing compliance/hash/revision authority; audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
-- Multi-flight imports may not create an unintended partially certified batch.
-- Training-purpose applicability/persistence remains category-aware: ULL correctly shows only Aircraft differences + Aircraft familiarisation while Part-FCL/SFCL/BFCL recency purposes stay hidden. 3.4.0 does not add a generic structured Training / practice marker; ordinary descriptive detail remains in Task / exercise.
+- Default single-flight GPS hierarchy becomes compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics become conditional detail.
+- Flight context becomes one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine; Billing remains secondary.
+- Single-flight **Save & certify** is the explicit primary completion action when eligible; **Save draft** remains available and is the implicit/default submit behavior.
+- Pressing Enter cannot certify. Certification always requires the explicit Save & certify action.
+- Certification reuses the existing persisted-row compliance/hash/revision authority. If draft save succeeds but certification is blocked, the record remains a draft with an explicit reason.
+- The generic normal-case “I reviewed this flight” GPS gate is removed together with its server requirement; only a non-blocking GPS-quality warning may require targeted acknowledgement.
+- Multi-flight GPS stays atomic **draft-only** in 3.4.0; no batch certification is added.
+- Save & certify never sends PIC/crew/instructor invitations automatically.
+- Training-purpose filtering remains category-aware: ULL correctly hides non-applicable Part-FCL/SFCL/BFCL recency purposes. 3.4.0 adds no generic structured Training / practice marker.
+- 3.4.0 fixes the current Training-purpose UI/server parity gap by moving visibility and persistence eligibility onto one shared applicability contract.
 - Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
 - Detailed design: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
+- Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`.
 
 
 ### UI/UX Simplicity & New Flight cognitive-load reduction — IMPLEMENTED
