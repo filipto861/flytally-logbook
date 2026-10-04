@@ -25,7 +25,7 @@ test("versioning policy reconciles legacy labels without reusing them",()=>{
   const policy=read("docs/product/VERSIONING.md");
   assert.match(policy,/MAJOR\.MINOR\.PATCH/);
   assert.match(policy,/first canonical unified product release is 3\.4\.0/i);
-  assert.match(policy,/historical CHANGELOG labels already used labels through \*\*v3\.3\*\*/);
+  assert.match(policy,/CHANGELOG\/development headings already used labels through \*\*v3\.3\*\*/);
   assert.match(policy,/PostgreSQL schema migration version/);
   assert.match(policy,/certification payload\/hash version/);
   assert.match(policy,/backup\/export format version/);
