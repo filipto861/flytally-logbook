@@ -11,10 +11,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 ## Unreleased
 
 ### Documentation / versioning governance
-- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`, with `2.8.0` reserved for the active Flight Entry Simplification release.
+- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`; because historical CHANGELOG labels already reached v3.3, the first canonical unified target is `3.4.0`.
 - New implementation phases use numeric Phase 1 / Phase 2 / … naming rather than new E/F/B/SP/M milestone families.
 - Database schema, certification payload and backup-format versions remain independent technical counters.
-- Added the 2.8.0 design/acceptance contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
+- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
 
 ## Legacy unversioned development / production history — through 4 October 2026
 
