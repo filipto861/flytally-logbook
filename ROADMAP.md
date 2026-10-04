@@ -71,7 +71,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 
 # 2.8.0 — Flight Entry Simplification — ACTIVE
 
-Detailed contract: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`
+Detailed contract: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`  
+Independent review handoff: `docs/product/2_8_0_REVIEW_HANDOFF.md`
 
 ## Product goal
 
