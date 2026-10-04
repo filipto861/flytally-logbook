@@ -37,7 +37,7 @@ test("E1.3 GPS suggestion is gated by explicit account SERA plus DAY_NIGHT conte
 
 test("E1.3 landing split state is sticky for direct edits and clears suggested split on total change",()=>{
   assert.match(gps,/type LandingSplitSource="UNSET"\|"SUGGESTED"\|"MANUAL"/);
-  assert.match(gps,/review\.landingSplitSource==="SUGGESTED"\?\{\.\.\.review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",reviewed:false\}/);
+  assert.match(gps,/review\.landingSplitSource==="SUGGESTED"\?\{\.\.\.review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",pfMovement:"",takeoffsDay:"",takeoffsNight:"",approachesDay:"",approachesNight:"",reviewed:false\}/);
   assert.match(gps,/\[field\]:value,landingSplitSource:"MANUAL",reviewed:false/);
   assert.match(gps,/landingSplitSource:"UNSET",pfMovement/);
 });
