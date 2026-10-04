@@ -115,6 +115,19 @@ Important boundary:
 
 ## Planned
 
+### 2.8.0 — Flight Entry Simplification — ACTIVE
+- Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
+- Default GPS hierarchy becomes compact **Source → Flight details → Completion**; map/profile, clean single-flight split controls, provenance and advanced diagnostics become progressive detail rather than permanent chrome.
+- Common Aircraft / Role / Operation / Engine / Billing becomes one compact editable context summary instead of another large workflow layer.
+- Same-page **Save & certify** is the planned explicit primary completion action when eligible; **Save draft** remains available.
+- The generic normal-case “I reviewed this flight” acknowledgement is planned for removal; only specific unresolved/warning evidence may require targeted confirmation.
+- Certification must reuse the existing compliance/hash/revision authority; audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
+- Multi-flight imports may not create an unintended partially certified batch.
+- Training-purpose applicability/persistence is part of the release audit: ULL currently shows only Aircraft differences + Aircraft familiarisation because Part-FCL/SFCL/BFCL purposes are filtered; 2.8.0 will decide whether a generic non-regulatory **Training / practice flight** marker is needed, without granting recency/endorsement credit.
+- Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
+- Detailed design: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
+
+
 ### UI/UX Simplicity & New Flight cognitive-load reduction — IMPLEMENTED
 
 - Screenshot-backed audit of the authenticated product across desktop, iPad landscape, iPad portrait and mobile in light/dark.
@@ -262,15 +275,3 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 - No unsupported offline editing.
 - No authority/legal/trademark/provider approval inferred from code, tests or internal status.
 
-
-### 2.8.0 — Flight Entry Simplification — ACTIVE
-- Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
-- Default GPS hierarchy becomes compact **Source → Flight details → Completion**; map/profile, clean single-flight split controls, provenance and advanced diagnostics become progressive detail rather than permanent chrome.
-- Common Aircraft / Role / Operation / Engine / Billing becomes one compact editable context summary instead of another large workflow layer.
-- Same-page **Save & certify** is the planned explicit primary completion action when eligible; **Save draft** remains available.
-- The generic normal-case “I reviewed this flight” acknowledgement is planned for removal; only specific unresolved/warning evidence may require targeted confirmation.
-- Certification must reuse the existing compliance/hash/revision authority; audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
-- Multi-flight imports may not create an unintended partially certified batch.
-- Training-purpose applicability/persistence is part of the release audit: ULL currently shows only Aircraft differences + Aircraft familiarisation because Part-FCL/SFCL/BFCL purposes are filtered; 2.8.0 will decide whether a generic non-regulatory **Training / practice flight** marker is needed, without granting recency/endorsement credit.
-- Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
-- Detailed design: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
