@@ -14,8 +14,8 @@ test("product version source remains numeric MAJOR.MINOR.PATCH",()=>{
 test("current roadmap uses numeric release targets and numeric phases",()=>{
   const roadmap=read("ROADMAP.md");
   assert.match(roadmap,/## Canonical release sequence/);
-  assert.match(roadmap,/## 2\.8\.0 — Flight Entry Simplification — ACTIVE/);
-  for(const phase of [1,2,3,4,5,6])assert.match(roadmap,new RegExp(`\\| ${phase} \\|`));
+  assert.match(roadmap,/# 2\.8\.0 — Flight Entry Simplification — ACTIVE/);
+  for(const phase of [1,2,3,4,5,6])assert.match(roadmap,new RegExp(`## Phase ${phase}\\b`));
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
 
