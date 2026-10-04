@@ -77,7 +77,7 @@ Default visible:
 - any real GPS-quality warning.
 
 Progressive disclosure:
-- split controls when only one clean flight is detected;
+- split controls stay hidden for one clean detected flight and appear only for multi-flight detection, manual split or ambiguity;
 - map;
 - altitude/speed profile;
 - raw source diagnostics.
