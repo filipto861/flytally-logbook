@@ -69,7 +69,8 @@ The following execution order is frozen unless new evidence exposes a higher-sev
 | 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
 | 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
 | 6 | E2 — GPS post-production corrections | ✅ | DONE / PRODUCTION VERIFIED · PR #238 merged; v19 applied and postflight-verified; exact production deployment READY |
-| 7 | Multi-aircraft M2B — remaining integrity audit | ➡️ | Accepted work; resume/re-check now that E2 production closeout is complete |
+| 7 | E3 — Flight entry simplification | 🚧 | Filip reprioritized after production use: reduce GPS/manual entry cognitive load, remove redundant review chrome, and support explicit same-page Save & Certify without weakening audit/certification integrity |
+| 8 | Multi-aircraft M2B — remaining integrity audit | ⏸️ | Paused until E3 UX simplification is reviewed and completed |
 | 8 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
 | 9 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
 | 10 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -748,3 +749,21 @@ The pre-consolidation roadmap is preserved verbatim at:
 `docs/history/ROADMAP_LEGACY_2026-09-26.md`
 
 Historical documents are evidence/context only. If they conflict with this file, this roadmap controls current planning.
+
+
+## E3 — Flight entry simplification — ACTIVE
+
+**Trigger:** production use on 4 October 2026 showed that the New Flight / GPS review surface is functionally correct but too dense: too many visible sections, repeated helper text/status surfaces, and a second-page certification step after the pilot has already reviewed the import.
+
+**Frozen direction before implementation:**
+- Keep all existing source/evidence and fail-closed validation contracts.
+- Reduce the default visible hierarchy to the minimum needed to understand and complete the flight.
+- Use progressive disclosure for GPS source/split/map details, aircraft context, optional training/cost/crew details and diagnostics.
+- Replace generic duplicate review acknowledgements with targeted confirmation only where evidence is genuinely ambiguous or warned.
+- Same-page certification is allowed only as an explicit pilot action. No silent auto-certification.
+- Primary completion path should be **Save & certify** when certification blockers are clear; **Save draft** remains available.
+- Multi-flight imports must not produce a partially certified batch; implementation must define and test atomic/fail-closed semantics.
+- Preserve audit history, certification hash/version semantics, correction workflow, sharing prerequisites and recency evidence rules.
+- Training-purpose visibility remains category-aware; current ULL view intentionally exposes only applicable generic ULL-safe purposes. Historical picker behavior is documented in the E3 design note.
+- Desktop, iPad landscape/portrait and mobile must be verified in light and dark.
+- Independent second-AI UX/data-integrity review is required before implementation.
