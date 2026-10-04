@@ -1,9 +1,9 @@
 # Flight Entry E2 — rapid post-production corrections
 
-**Status:** ACTIVE  
+**Status:** DONE / PRODUCTION VERIFIED  
 **Owner:** Filip Točík  
-**Date:** 3 October 2026  
-**Branch:** `fix/e2-gps-postprod-corrections`
+**Date:** 4 October 2026  
+**Branch:** merged via PR #238
 
 ## Trigger
 
@@ -32,3 +32,18 @@ The same production review exposed linked entry-friction gaps: no aircraft SE/ME
 - PF confirmation is non-blocking; unchecked/absent persists zero PF movement evidence;
 - v19 migration is additive, nullable, constrained and has no backfill;
 - targeted tests cover detector, catalogue engine mapping, night logic, UI/source contract and PostgreSQL migration; one full local release gate only at final candidate.
+
+
+## Production closeout — 4 October 2026
+
+- Exact release candidate: `70f8e12c585b0f3713ce91ba0c1f036ebaf1102e`.
+- CI: Verify FlyTally web #1141 PASS — TypeScript PASS, unit/regression **1208/1208**, PostgreSQL acceptance **86/86**.
+- Browser smoke #514 PASS — production build PASS, authenticated Chromium **84/84** with **2 intentional skips**.
+- Production v19 preflight ran read-only against `neondb`, proved exact schema registry v1–v18, no `default_engine_type`, no engine-default constraint, and no partial migration state; transaction ended with ROLLBACK.
+- Baseline counts immediately before migration: aircraft 25, flights 289, certified revisions 56, flight audit rows 1549, deleted flights 8.
+- Explicit v19 migration completed in one transaction with advisory xact lock `704190104`; column + CHECK constraint + registry row committed successfully.
+- Postflight proved `default_engine_type TEXT NULL`, no column default, validated NULL/SE/ME CHECK constraint, **0** non-null engine defaults, unchanged baseline row counts and exact registry v1–v19; verification transaction ended with ROLLBACK.
+- PR #238 merged to `main` as `ba2b4324f1f9ae84161ec86e82fc13d268938160`.
+- Vercel production deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY for that exact merge SHA, aliases `fly-tally.com`, and reports no alias error.
+- Immediate production runtime-error query found no errors.
+- No historical flight/certification/audit/recovery record was rewritten and no aircraft engine default was backfilled.
