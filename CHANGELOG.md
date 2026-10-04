@@ -6,8 +6,17 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - `FEATURES.md` is the capability inventory.
 - This file records merged/product changes and must not describe planned work as completed.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
+- From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
 ## Unreleased
+
+### Documentation / versioning governance
+- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`, with `2.8.0` reserved for the active Flight Entry Simplification release.
+- New implementation phases use numeric Phase 1 / Phase 2 / … naming rather than new E/F/B/SP/M milestone families.
+- Database schema, certification payload and backup-format versions remain independent technical counters.
+- Added the 2.8.0 design/acceptance contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
+
+## Legacy unversioned development / production history — through 4 October 2026
 
 ### Flight Entry E2 — production verified
 - Hardened advisory take-off anomaly locality around corrupt GPS transitions while preserving discontinuity warnings and editable GPS-derived values.
