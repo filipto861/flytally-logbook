@@ -190,9 +190,9 @@ Current ULL filtering hides the Part-FCL/SFCL/BFCL recency options, which is why
 2.8.0 must:
 - preserve regulatory applicability filtering;
 - verify UI visibility == server persistence eligibility;
-- decide whether to add a generic non-regulatory **Training / practice flight** marker for ULL/ordinary training;
-- if added, give it **no automatic recency, endorsement or authority credit**;
-- preserve all existing stored/certified purpose evidence.
+- preserve the current category-aware filtering; ULL must not expose Part-FCL/SFCL/BFCL recency purposes that do not apply;
+- do **not** add a new generic structured Training / practice marker as part of 2.8.0;
+- preserve all existing stored/certified purpose evidence and keep free-text Task / exercise for ordinary descriptive training detail.
 
 ## Phase 4 — Same-page completion / certification
 
