@@ -61,10 +61,7 @@ The structured catalogue currently contains:
 6. SPL SFCL.160 recency training
 7. BPL BFCL.160 recency training
 
-Current ULL UI filters out the Part-FCL/SFCL/BFCL purposes, leaving only the first two. Review whether:
-- the current visibility/persistence rules are coherent;
-- a generic non-regulatory **Training / practice flight** marker should return for ULL/ordinary training;
-- any such marker can remain explicitly non-crediting for recency/endorsement/authority.
+Current ULL UI filters out the Part-FCL/SFCL/BFCL purposes, leaving only the first two. This filtering is now a frozen product decision and is considered correct. Review only whether the current UI visibility and server persistence rules remain coherent; do not propose exposing non-applicable regulatory purposes or adding a new generic structured Training / practice marker in 2.8.0.
 
 ## Certification questions
 
