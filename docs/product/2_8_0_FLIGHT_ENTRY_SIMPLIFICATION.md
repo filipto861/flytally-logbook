@@ -3,7 +3,8 @@
 **Status:** DESIGN / REVIEW GATE  
 **Date:** 4 October 2026  
 **Repo:** `flytally-logbook`  
-**Branch:** `feat/2.8.0-flight-entry-simplification`
+**Branch:** `feat/2.8.0-flight-entry-simplification`  
+**Independent review handoff:** `docs/product/2_8_0_REVIEW_HANDOFF.md`
 
 ## Goal
 
