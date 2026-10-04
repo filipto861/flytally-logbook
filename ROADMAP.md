@@ -73,13 +73,13 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 # 3.4.0 — Flight Entry Simplification — ACTIVE
 
 Detailed contract: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`  
-Independent review handoff: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`
+Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`
 
 ## Product goal
 
-Make routine Manual/GPS entry substantially simpler and more cockpit/iPad-friendly without weakening any current evidence or certification contract.
+Make routine Manual/GPS entry materially simpler and more cockpit/iPad-friendly without weakening source provenance, validation, certification integrity, recency, sharing or historical record protection.
 
-Target common flow:
+Target common single-flight flow:
 
 **Source → Flight details → Save & certify**
 
@@ -87,81 +87,90 @@ with secondary/contextual information progressively disclosed.
 
 ## Frozen decisions
 
-- GPS-derived values remain advisory and editable.
-- Missing/ambiguous/non-applicable evidence remains unavailable or explicit; never invented.
+- GPS values remain advisory/editable; missing or ambiguous evidence fails closed.
 - IFR remains pilot-entered.
-- Existing SERA Day/Night and Night-time suggestions retain current provenance/authority semantics.
+- Existing SERA Day/Night/Night-time suggestion semantics remain unchanged.
 - Certification remains an explicit pilot action.
-- Same-page **Save & certify** is allowed and preferred for an eligible completed flight.
-- **Save draft** remains available.
-- No silent auto-certification.
-- Generic normal-case “I reviewed this flight” confirmation should be removed; warning-specific acknowledgement may remain where evidence genuinely requires it.
-- Existing certification hash/version, compliance rules, audit history, correction revisions, sharing prerequisites and recency authority must be reused.
-- Multi-flight import must never create an unintended partially certified batch.
-- Existing Training purpose codes/history remain backward-compatible.
+- **Save & certify** is single-flight only in 3.4.0.
+- **Save draft** remains available and is the implicit/default submit behavior.
+- Pressing Enter must never certify.
+- Certification hash/compliance/revision logic is reused from the current persisted-row authority path.
+- If draft save succeeds but certification fails, the flight remains a draft with an explicit blocker message.
+- Current generic GPS “I reviewed this flight” gate is removed only together with its server requirement.
+- Only a non-blocking GPS-quality warning may require targeted acknowledgement; T&G detection, near-boundary SERA manual fallback and invalid profile state do not get extra acknowledgement checkboxes.
+- Multi-flight GPS remains all-or-none **draft save only** in 3.4.0; no batch certification.
+- Save & certify never sends PIC/crew/instructor invitations automatically.
+- Regulatory category / evidence basis is part of the compact context and pre-certification summary.
+- Collapsed sections must summarize their actual state; hidden must never mean invented zero/default.
+- ULL category filtering remains correct; non-applicable Part-FCL/SFCL/BFCL purposes stay hidden.
+- No new generic structured Training / practice purpose.
+- Existing purpose codes/history remain backward-compatible.
 - No DB migration is assumed.
 
-## Phase 1 — Discovery / review gate — ACTIVE
+## Phase 1 — Discovery / contract freeze — ACTIVE
 
-Scope:
-- inventory effective Manual + GPS sections, fields, validation and server actions;
-- map current certification/save dependencies;
-- classify every visible block as **KEEP / COLLAPSE / CONDITIONAL / REMOVE-DUPLICATE**;
-- audit current Training purpose catalogue, category filtering and server persistence parity;
-- freeze multi-flight Save & certify failure semantics;
-- obtain independent second-AI review before runtime implementation.
+Repository reconciliation is substantially complete.
 
-Acceptance:
-- no field disappears merely because it looks optional;
-- no UI option can be silently discarded by the server;
-- same-page certification has one explicit shared authority path;
-- review identifies exact responsive states to verify.
+Confirmed current-state facts:
+- current certification reads the persisted owned row, runs compliance, hashes certification v8 from that row and conditionally certifies only an uncertified record;
+- current post-save page is a genuine second full Logbook-data review surface, not just a confirmation dialog;
+- GPS `part_<n>_reviewed` is server-required but not persisted/certification-protected;
+- Manual/GPS creation already uses flight fingerprint + PostgreSQL advisory locks + duplicate checks;
+- GPS multi-flight draft creation is already transactional for parent/track/required connected-crew rows;
+- recency and public-share authority require certified flights;
+- `purpose_code` is certification-protected from certification payload v3 onward;
+- Training-purpose UI is category-aware but server normalization also applies role/evidence gating, so one shared applicability contract is required.
+
+Phase 1 remaining acceptance:
+- finalize KEEP / COLLAPSE / CONDITIONAL / REMOVE-DUPLICATE matrix;
+- define exact pre-certification summary fields and blocker-to-disclosure mapping;
+- characterize Enter/default-submit behavior with tests;
+- define shared Training-purpose applicability predicate;
+- then begin runtime implementation.
 
 ## Phase 2 — Information hierarchy
 
 ### GPS source
-
 Default visible:
-- file/source name;
+- source/file name;
 - point count / detected-flight count;
-- one concise source status;
+- one concise source state;
 - real GPS-quality warning when present.
 
-Progressive/conditional:
-- clean single-flight split controls are hidden;
-- split editor appears only for multi-flight detection, manual split or ambiguity;
-- map + altitude/speed profile live under **Review GPS track**;
-- warning can auto-open the review surface when visual inspection is required;
-- raw source diagnostics stay secondary.
+Conditional:
+- split controls hidden for one clean flight;
+- split editor appears only for multi-flight/manual split/ambiguity;
+- map + altitude/speed profile under **Review GPS track**;
+- warning may auto-open visual review;
+- raw diagnostics remain secondary.
 
 ### Flight context
-
-Replace the large Common details area with one compact editable summary:
-- aircraft;
+Replace the large Common details area with one compact editable summary showing:
+- aircraft registration/type;
+- regulatory category / evidence basis;
 - role;
-- operation;
-- engine;
-- billing when tracked.
+- operation / engine where applicable;
+- per-flight Role/Crew divergence when present.
 
-Only invalid/missing required state auto-opens the detailed controls.
+Billing remains a secondary cost context, not a substitute for regulatory evidence.
 
-### Flight card
-
+### Flight details
 Default visible:
 - date;
 - departure / arrival;
-- landings total + Day/Night when applicable;
+- landings total + Day/Night where applicable;
 - Off-block / Takeoff / Landing / On-block;
-- Night / IFR only when applicable;
-- concise Notes affordance.
+- Night / IFR where applicable;
+- concise Notes affordance;
+- any blocking evidence problem.
 
-Repeated helper/provenance/status text must be reduced where one value + one compact source/status cue already communicates the decision.
+Duplicate helper/provenance/status copy should be removed when one compact source/status cue is sufficient.
 
-## Phase 3 — Optional / contextual details + Training purpose
+## Phase 3 — Progressive optional/contextual detail
 
 Collapsed by default:
 - additional crew;
-- aircraft provenance/context detail;
+- detailed aircraft provenance;
 - Training purpose;
 - Task / exercise;
 - Costs / additional expenses;
@@ -169,104 +178,111 @@ Collapsed by default:
 - extended movement evidence when not required;
 - source diagnostics.
 
-Auto-open only when:
-- role/category makes the content required;
-- stored/edit data already exists;
-- validation identifies a problem;
-- user opens it.
+Auto-open only when required, populated, invalid or explicitly opened.
 
-### Training purpose
+Collapsed summaries must truthfully represent state and distinguish unset/unavailable/not tracked from explicit zero where the existing domain distinguishes them.
 
-Current structured catalogue remains:
-1. Aircraft differences training / endorsement
-2. Aircraft familiarisation
-3. LAPL(A) FCL.140.A refresher training
-4. LAPL(H) FCL.140.H refresher training
-5. SEP/TMG FCL.740.A refresher training
-6. SPL SFCL.160 recency training
-7. BPL BFCL.160 recency training
+### Training-purpose reconciliation
+- preserve the existing seven structured purpose codes;
+- preserve category-aware regulatory filtering;
+- keep ULL non-applicable Part-FCL/SFCL/BFCL purposes hidden;
+- do not add a generic structured Training / practice marker;
+- keep Task / exercise for ordinary descriptive detail;
+- make one shared applicability predicate authoritative for both picker visibility and server persistence;
+- preserve historical stored/certified purpose values even if current applicability differs.
 
-Current ULL filtering hides the Part-FCL/SFCL/BFCL recency options, which is why production currently shows only Aircraft differences + Aircraft familiarisation.
+## Phase 4 — Single-flight Save & certify
 
-3.4.0 must:
-- preserve regulatory applicability filtering;
-- verify UI visibility == server persistence eligibility;
-- preserve the current category-aware filtering; ULL must not expose Part-FCL/SFCL/BFCL recency purposes that do not apply;
-- do **not** add a new generic structured Training / practice marker as part of 3.4.0;
-- preserve all existing stored/certified purpose evidence and keep free-text Task / exercise for ordinary descriptive training detail.
+Primary explicit action:
+**Save & certify flight**
 
-## Phase 4 — Same-page completion / certification
-
-Eligible single-flight path:
-
-**Primary:** Save & certify flight  
-**Secondary:** Save draft
+Secondary:
+**Save draft**
 
 Rules:
-- the click on Save & certify is the explicit certification confirmation;
-- no second certification click is required on the next page;
-- server uses the existing certification compliance/hash/revision contract;
-- no duplicated certification rule set;
-- warning-specific acknowledgement replaces generic review confirmation where needed;
-- Save draft remains the fallback for incomplete/uncertain data.
+- missing/default intent = Save draft;
+- Enter/default submit cannot certify;
+- save uses the existing canonical create path;
+- certification re-reads the persisted row and uses one shared certification helper derived from current `certifyFlight`;
+- hash is never calculated directly from raw form payload;
+- certification failure after successful save leaves an owned draft and surfaces the blocker;
+- successful certification requires no second certification click;
+- existing correction-revision workflow remains authoritative for certified-flight edits;
+- no sharing/invitation/verification side effect is triggered automatically.
 
-### Multi-flight GPS batch rule
+### Pre-certification summary
+Show next to the action:
+- date;
+- route;
+- aircraft registration/type;
+- regulatory category / evidence basis;
+- role / required crew evidence;
+- operation / engine where applicable;
+- four movement times;
+- landings Day/Night;
+- Night / IFR;
+- certification blockers.
 
-Before implementation, select and test one fail-closed contract:
+Consequence copy:
+**Certified flights are locked; later changes are recorded as corrections.**
 
-1. save all drafts atomically, then certify all in one all-or-none certification transaction; if certification fails, the whole batch remains draft; or
-2. direct batch save+certify only if one atomic implementation can be proven.
+## Phase 5 — GPS review-gate simplification / multi-flight safety
 
-Forbidden:
-- accidental mixed certified/draft state caused by intermediate failure.
+- remove the generic `I reviewed this flight` checkbox and server requirement;
+- require targeted acknowledgement only for a non-blocking GPS-quality warning that the pilot is permitted to accept;
+- T&G count remains visible/editable but gets no extra checkbox;
+- near-boundary SERA remains manual/unavailable as today;
+- invalid profile/evidence remains blocking;
+- multi-flight import continues to save all parts atomically as drafts only;
+- no 3.4.0 batch certification.
 
-## Phase 5 — Responsive / interaction polish
+## Phase 6 — Responsive / interaction polish
 
 Required:
 - desktop;
 - iPad landscape;
 - iPad portrait;
 - mobile 390;
-- compact mobile / reflow;
+- compact mobile/reflow;
 - light + dark.
 
 Acceptance:
-- materially fewer default-visible sections than 2.7.0;
-- one obvious primary action;
+- materially fewer default-visible sections than production 2.7.0;
+- one obvious primary action for the current context;
 - no horizontal overflow;
-- validation points to the exact disclosure that needs attention;
+- blocker identifies which disclosure needs attention;
 - async actions have pending/disabled duplicate-submit protection;
 - keyboard/focus order remains usable;
+- save/certification result is announced accessibly;
 - no raw errors.
-
-## Phase 6 — Responsive / interaction polish
-
-See the detailed 3.4.0 contract for responsive acceptance and warning/error-state polish.
 
 ## Phase 7 — Release closeout
 
-Required evidence, according to final changed surface:
+Required evidence:
 - targeted tests during implementation;
 - TypeScript;
-- complete unit/regression candidate gate;
-- PostgreSQL acceptance because save/certification is persistence-critical;
-- authenticated browser coverage for Manual + GPS, draft + direct certification, warnings and responsive states;
+- full unit/regression candidate gate;
+- PostgreSQL acceptance for save/certification, duplicate/concurrency and multi-flight atomicity;
+- certification parity test between old explicit certification and new Save & certify on equivalent persisted rows;
+- authenticated browser coverage for Manual + GPS, Save draft + Save & certify, blockers, GPS warning acknowledgement, Enter-key behavior and responsive states;
 - production build;
 - PR CI;
 - production deployment + smoke + runtime-error check;
 - ROADMAP / FEATURES / CHANGELOG reconciliation;
-- version bump to **3.4.0** only at release-candidate/ship time.
+- one-time product-version reconciliation to **3.4.0** only at ship time.
 
 ### 3.4.0 Definition of Done
 
-- simplified hierarchy is production deployed;
-- same-page explicit Save & certify is verified;
+- simplified hierarchy production deployed;
+- single-flight same-page Save & certify verified;
+- default/Enter submit cannot certify;
 - Save draft remains valid;
-- multi-flight cannot partially certify unintentionally;
-- Training purpose behavior is reconciled and regression-covered;
-- certification/audit/correction/share/recency authority remains intact;
+- multi-flight import remains atomic draft-only;
+- generic reviewed checkbox removed without losing required GPS-warning evidence;
+- Training-purpose UI/server applicability unified;
+- certification/audit/correction/share/recency authority unchanged;
 - responsive light/dark acceptance passes;
-- `package.json`, visible app version, CHANGELOG release heading and release tag agree on `3.4.0`.
+- `package.json`, visible app version, CHANGELOG release heading and Git tag agree on `3.4.0`.
 
 ---
 
