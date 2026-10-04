@@ -163,7 +163,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 LOCAL GATE PASS / PR-CI
+### Legacy Flight Entry follow-up — IMPLEMENTED / PRODUCTION VERIFIED
 
 Planned product capabilities:
 - optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
@@ -263,9 +263,14 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 - No authority/legal/trademark/provider approval inferred from code, tests or internal status.
 
 
-### Flight Entry E3 — planned simplification
+### 2.8.0 — Flight Entry Simplification — ACTIVE
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
-- Same-page **Save & certify** is planned as an explicit action; **Save draft** remains available.
-- Certification integrity, audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
-- GPS warnings remain visible when relevant, but routine source/split/map diagnostics should not dominate the default workflow.
-- Training-purpose choices remain applicability-aware rather than showing regulatory purposes that do not apply to the selected aircraft/logbook context.
+- Default GPS hierarchy becomes compact **Source → Flight details → Completion**; map/profile, clean single-flight split controls, provenance and advanced diagnostics become progressive detail rather than permanent chrome.
+- Common Aircraft / Role / Operation / Engine / Billing becomes one compact editable context summary instead of another large workflow layer.
+- Same-page **Save & certify** is the planned explicit primary completion action when eligible; **Save draft** remains available.
+- The generic normal-case “I reviewed this flight” acknowledgement is planned for removal; only specific unresolved/warning evidence may require targeted confirmation.
+- Certification must reuse the existing compliance/hash/revision authority; audit history, correction revisions, sharing gates and recency evidence remain unchanged in authority.
+- Multi-flight imports may not create an unintended partially certified batch.
+- Training-purpose applicability/persistence is part of the release audit: ULL currently shows only Aircraft differences + Aircraft familiarisation because Part-FCL/SFCL/BFCL purposes are filtered; 2.8.0 will decide whether a generic non-regulatory **Training / practice flight** marker is needed, without granting recency/endorsement credit.
+- Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
+- Detailed design: `docs/product/2_8_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
