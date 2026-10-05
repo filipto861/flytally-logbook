@@ -328,14 +328,112 @@ CREATE TABLE connection_audit_log(
   details JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE pilot_licences(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  licence_type TEXT NOT NULL,
+  licence_number TEXT NOT NULL,
+  authority TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),
+  valid_until DATE,
+  recency_until DATE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id,licence_type,licence_number)
+);
 CREATE TABLE pilot_qualifications(
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
-  requested_signer_user_id BIGINT,
+  licence_id BIGINT REFERENCES pilot_licences(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  qualification_type TEXT NOT NULL,
+  certificate_reference TEXT NOT NULL DEFAULT '',
+  validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),
+  valid_until DATE,
+  recency_until DATE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   record_kind TEXT,
   record_active BOOLEAN,
+  linked_licence_id BIGINT REFERENCES pilot_licences(id) ON DELETE SET NULL,
+  training_kind TEXT,
+  aircraft_make TEXT,
+  aircraft_model TEXT,
+  aircraft_variant TEXT,
+  differences TEXT,
+  completed_on DATE,
+  instructor_name TEXT,
+  training_organisation TEXT,
+  notes TEXT,
+  requested_signer_user_id BIGINT,
   signature_status TEXT,
-  verified_at TIMESTAMPTZ
+  verification_role TEXT,
+  verified_at TIMESTAMPTZ,
+  verified_by_user_id BIGINT,
+  verification_snapshot JSONB,
+  verification_signature TEXT,
+  verification_note TEXT,
+  verification_version INTEGER,
+  qualification_family TEXT,
+  regulatory_category TEXT,
+  qualification_scope TEXT,
+  privilege_role TEXT,
+  classification_source TEXT,
+  issued_on DATE,
+  limitations TEXT,
+  UNIQUE(licence_id,qualification_type,certificate_reference)
+);
+CREATE TABLE user_expiries(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL DEFAULT '',
+  label TEXT NOT NULL,
+  expiry_date DATE NOT NULL,
+  warning_days INTEGER NOT NULL DEFAULT 30,
+  note TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE spl_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  aircraft_context TEXT NOT NULL,
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK')),
+  CHECK(aircraft_context IN ('SAILPLANE','TMG'))
+);
+CREATE TABLE helicopter_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  helicopter_type TEXT NOT NULL,
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK'))
+);
+CREATE TABLE bpl_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  balloon_class TEXT NOT NULL,
+  balloon_group TEXT NOT NULL DEFAULT '',
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK')),
+  CHECK(balloon_class IN ('HOT_AIR_BALLOON','GAS_BALLOON','HOT_AIR_AIRSHIP','MIXED_BALLOON')),
+  CHECK(balloon_group IN ('','A','B','C','D'))
 );
 CREATE TABLE instructor_flight_approvals(
   id BIGSERIAL PRIMARY KEY,
