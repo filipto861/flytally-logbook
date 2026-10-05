@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import { sql } from "@/lib/db";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
@@ -8,9 +7,9 @@ import { ensureV132Schema } from "@/lib/v132-schema";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
 import { ensureFlightSharingSchema } from "@/lib/flight-sharing";
 import { certifyStoredFlight } from "@/lib/flight-certification";
+import { revalidateFlightCertificationViews } from "@/lib/flight-revalidation";
 
 const text=(value:unknown)=>String(value??"").trim();
-const revalidateFlight=(flightId:number)=>{revalidatePath(`/flights/${flightId}`);revalidatePath(`/flights/${flightId}/audit`);revalidatePath("/flights");revalidatePath("/certification");revalidatePath("/print");revalidatePath("/database");revalidatePath("/connections");revalidatePath("/notifications");revalidatePath("/credentials");revalidatePath("/dashboard");};
 export async function certifyFlight(flightId:number,form:FormData){
   const {userId}=await requireUser();
   if(!Number.isSafeInteger(flightId)||flightId<=0||text(form.get("confirm"))!=="certify")return;
@@ -19,7 +18,7 @@ export async function certifyFlight(flightId:number,form:FormData){
     await sql`UPDATE flights SET locked_at=NULL,locked_by_user_id=NULL WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND locked_at IS NOT NULL`;
     result=await certifyStoredFlight(userId,flightId);
   }
-  if(result.status==="certified"||result.status==="already-certified")revalidateFlight(flightId);
+  if(result.status==="certified"||result.status==="already-certified")revalidateFlightCertificationViews(flightId);
 }
 export async function startCertifiedCorrection(flightId:number,form:FormData){
   const {userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV132Schema(),ensureFlightSharingSchema()]);if(!Number.isSafeInteger(flightId)||flightId<=0)return;const reason=text(form.get("reason")).slice(0,1000);if(reason.length<8)return;const rows=await sql`SELECT certified_at,certification_hash,record_revision FROM flights WHERE id=${flightId} AND user_id=${userId} LIMIT 1` as Array<Record<string,unknown>>;const current=rows[0];if(!current||!current.certified_at)return;
@@ -31,5 +30,5 @@ export async function startCertifiedCorrection(flightId:number,form:FormData){
     sql`UPDATE instructor_flight_approvals SET status='superseded',decided_at=NOW(),decision_note='Source flight opened for correction.' WHERE flight_id=${flightId} AND student_user_id=${userId} AND record_revision=${Number(current.record_revision)||1} AND status='pending'`,
     sql`UPDATE flight_verifications SET status='superseded' WHERE flight_id=${flightId} AND flight_user_id=${userId} AND record_revision=${Number(current.record_revision)||1} AND status='pending'`,
     sql`UPDATE flight_public_shares SET revoked_at=NOW() WHERE user_id=${userId} AND flight_id=${flightId} AND revoked_at IS NULL`,
-  ]);await refreshRecencySnapshot(userId);revalidateFlight(flightId);
+  ]);await refreshRecencySnapshot(userId);revalidateFlightCertificationViews(flightId);
 }
