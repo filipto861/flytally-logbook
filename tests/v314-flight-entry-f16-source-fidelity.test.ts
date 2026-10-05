@@ -166,7 +166,7 @@ test("F1.6 GPS UI keeps reviewed evidence explicit while E2 may suggest SERA day
   assert.match(gpsForm,/part_\$\{index\}_launches/);
   assert.match(gpsForm,/part_\$\{index\}_nightTime/);
   assert.match(gpsForm,/part_\$\{index\}_ifrTime/);
-  assert.match(gpsForm,/disabled=\{!sourceReady\}/);
+  assert.doesNotMatch(gpsForm,/part_\$\{index\}_reviewed/);assert.match(gpsForm,/gpsWarningReviewed/);
   assert.doesNotMatch(gpsForm,/landingsDay:String\(landingCount/);
 });
 
