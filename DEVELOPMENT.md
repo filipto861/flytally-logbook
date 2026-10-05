@@ -15,9 +15,9 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
    - known scale/performance hot paths: the retained scale fixture for that path.
    - unrelated heavy suites are not a default milestone requirement.
 4. Before the final PR/release candidate, run one complete local release gate appropriate to the change. `npm run verify` remains the normal application gate; add PostgreSQL/browser/scale coverage when the changed surface requires it.
-5. Do **not** rerun the full local gate merely because documentation, comments, or a stale test/source assertion was corrected after an already-valid full gate. Run the affected targeted test(s), then let PR CI independently re-prove the clean checkout. Repeat a heavy local gate only when the correction changes runtime behaviour, persistence/schema, auth/security, certification/recency logic, performance-critical code, or invalidates earlier evidence.
+5. Do **not** rerun the full local gate merely because documentation, comments, or a stale test/source assertion was corrected after an already-valid full gate. Run the affected targeted test(s). Repeat a heavy local gate only when the correction changes runtime behaviour, persistence/schema, auth/security, certification/recency logic, performance-critical code, or invalidates earlier evidence.
 6. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
-7. Merge only after the PR gates succeed. The production push does not repeat the same GitHub verification; Vercel performs the production build when the released commit can affect runtime output.
+7. Merge only after the required **local** release gates for the exact candidate succeed. GitHub Actions are not a required merge/release gate; Vercel still performs the production build when the released commit can affect runtime output.
 
 ## Module scope registry
 
@@ -44,20 +44,24 @@ Verification depth follows the risk of the change, not the age or total size of 
 - **Iteration:** targeted tests only. Optimize for fast feedback while the implementation is still moving.
 - **Milestone:** broaden only to the directly affected subsystem. Database, browser and scale suites are evidence for specific risks, not ritual gates after every edit.
 - **Final local candidate:** one complete local release gate for the candidate, with the heavy subsystem suites required by its actual risk.
-- **PR CI:** independent clean-checkout proof. CI is not a reason to duplicate an unchanged full local gate immediately beforehand or afterwards.
+- **GitHub Actions:** optional manual diagnostic only. They are not part of the normal merge/release gate.
 - **Production closeout:** run only release-specific checks such as DB preflight/postflight, deployment verification and smoke. Do not replay the entire development test matrix unless production evidence exposes a new uncertainty.
 
 A failed gate should be diagnosed first. If the failure is a stale assertion, harness defect or documentation/source-contract drift, fix that defect and rerun the smallest test that proves the fix; do not blindly restart every expensive suite. If the failure exposes or may conceal a runtime/data-integrity defect, expand verification again before release.
 
 This policy does not relax fail-closed behaviour, schema/certification integrity, auth/security gates, or production migration discipline. It removes redundant repetition while preserving independent release evidence.
 
-## CI risk levels
+## GitHub Actions policy
 
-Every pull request gets the **Fast application gate**: explicit `tsc --noEmit`, all unit/regression tests, and `next build`. The standalone TypeScript check is retained as a fast explicit integrity gate even though the production build also validates application types.
+GitHub Actions are **manual-only** and are not part of the normal FlyTally merge/release gate.
 
-PostgreSQL is skipped only for documentation and CSS-only changes. Any other change runs the core PostgreSQL acceptance suite in parallel with the fast application gate.
+- `Verify FlyTally web` and `Browser smoke` may be started manually with `workflow_dispatch` only when an independent cloud reproduction is useful.
+- Normal development and release verification are performed on the developer workstation.
+- Do not use GitHub Actions as the primary debugging loop or as a mandatory release ritual.
+- A release may be merged with GitHub CI **NOT RUN by decision** when the required local evidence for the changed surface is complete.
+- Never claim GitHub CI PASS when it was not run.
 
-The retained 10k/50k/100k scale tests run only when a known production hot path, scale fixture, or database optimization file changes. For a broad or release-critical candidate, add `[full-ci]` to the PR title; this forces the complete PostgreSQL suite including all retained scale gates.
+The local gate remains risk-based: TypeScript/unit-regression, PostgreSQL, browser, build and scale coverage are required only where the changed surface justifies them.
 
 ## Authenticated browser acceptance
 
@@ -111,21 +115,20 @@ Current planning and releases follow `docs/product/VERSIONING.md`.
 - Historical letter-coded milestone names remain untouched where needed for traceability, but do not create new ones.
 
 
-## Local-first verification during active development
+## Local-first verification
 
 For significant feature work, keep the pull request in **Draft** while implementation is active.
 
-During Draft development:
-- use the developer workstation for targeted tests, TypeScript, browser checks and PostgreSQL checks as required by the changed scope;
-- GitHub Verify and Browser Smoke are intentionally skipped for Draft PRs;
-- do not add `[full-ci]` to the PR title during normal implementation;
-- do not use GitHub Actions as the debugging loop for each commit.
+During development and release preparation:
+- use the developer workstation for targeted tests, TypeScript, browser checks, PostgreSQL checks and production build as required by the changed scope;
+- GitHub Verify and Browser Smoke do not run automatically;
+- do not use GitHub Actions as the debugging loop;
+- use a manual GitHub workflow only when Filip explicitly wants an independent cloud reproduction.
 
 Before merge:
-1. complete the relevant local release gate;
-2. update ROADMAP / FEATURES / CHANGELOG for the exact candidate;
-3. mark the PR **Ready for review**;
-4. run the independent clean-checkout GitHub Verify + Browser Smoke once on that exact candidate;
-5. if CI finds a defect, fix it locally first, rerun the affected local gate, and only then request the final CI again.
+1. complete the relevant local release gate on the exact candidate;
+2. update ROADMAP / FEATURES / CHANGELOG;
+3. record GitHub CI as `NOT RUN — local-first policy` unless a manual workflow was explicitly requested;
+4. merge only after the local evidence required by the changed surface is complete.
 
-Use `[full-ci]` only when an exact release candidate genuinely requires the forced full/scale gate. A normal runtime PR already receives risk-based full tests when it is Ready for review.
+This is a deliberate workflow choice, not a claim that CI passed.
