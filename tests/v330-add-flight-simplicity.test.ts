@@ -41,7 +41,7 @@ test("v3.3 U10 makes source choice and save readiness compact and explicit",()=>
   assert.match(workspace,/Import GPS track/);
   assert.doesNotMatch(workspace,/>01<|>02</);
   assert.match(form,/className="entry-save-state"/);
-  assert.match(form,/Creates an editable draft for final review/);
+  assert.match(form,/Save draft keeps the record editable/);
   assert.match(css,/workflow simplicity: keep New flight focused on the common path/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
   assert.doesNotMatch(form,/Save and add another|Review before save|Ready to save/);
