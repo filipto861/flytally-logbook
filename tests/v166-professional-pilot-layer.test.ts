@@ -36,7 +36,7 @@ test("v1.66 certification v8 protects professional context while v7 remains bit-
   assert.equal(flightCertificationHash(row,7,7),flightCertificationHash(changed,7,7));
   assert.notEqual(flightCertificationHash(row,7,8),flightCertificationHash(changed,7,8));
   assert.deepEqual((flightCertificationPayload(row,7,8) as Record<string,unknown>).professionalContext,{operatorName:"Example Air",flightNumber:"EX166",operationContext:"CAT"});
-  assert.match(read("app/(protected)/flights/certification-actions.ts"),/certification_version=8/);
+  assert.match(read("lib/flight-certification.ts"),/certification_version=8/);
 });
 
 test("v1.66 professional experience excludes uncertified and non-Part-FCL records",()=>{
