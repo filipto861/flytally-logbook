@@ -414,6 +414,8 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
   await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-05");
+  await gpsForm.locator('input[name="part_0_departure"]').fill("LKLT");
+  await gpsForm.locator('input[name="part_0_arrival"]').fill("LKPR");
   await gpsForm.locator('input[name="part_0_offBlock"]').fill("14:00");
   await gpsForm.locator('input[name="part_0_takeoff"]').fill("14:01");
   await gpsForm.locator('input[name="part_0_landing"]').fill("14:04");
