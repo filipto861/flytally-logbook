@@ -382,12 +382,10 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("SP");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("SE");
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeDisabled();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   await gpsForm.locator('input[name="part_0_landingsDay"]').fill("1");
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
-  await expect(reviewed).toBeEnabled();
 
   await registration.selectOption("OK-TMG1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("TMG");
@@ -444,11 +442,10 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F1.4 normalized GPS save");
 
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
@@ -495,23 +492,19 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F4.1 common DUAL browser proof");
 
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
 
   const role=gpsForm.locator('select[name="role"]');
   await role.selectOption("DUAL");
-  await expect(reviewed).not.toBeChecked();
   const instructor=gpsForm.locator('input[name="instructor"]');
   await expect(instructor).toBeVisible();
   await expect(instructor).toHaveAttribute("required","");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toHaveCount(0);
-  await expect(gpsForm.getByRole("button",{name:"Review imported flights"})).toBeVisible();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Complete flight details"})).toBeVisible();
   await instructor.fill("Browser Training Instructor");
-  await reviewed.check();
   await expect(gpsForm.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("DUAL · Browser Training Instructor");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="role"]')).toHaveValue("DUAL");
@@ -559,45 +552,36 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
   await completePart(0,{offBlock:"20:00",takeoff:"20:01",landing:"20:04",onBlock:"20:05",note:"F4.2 inherited PIC"});
   await completePart(1,{offBlock:"20:06",takeoff:"20:07",landing:"20:10",onBlock:"20:11",note:"F4.2 overridden DUAL"});
 
-  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
-  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
-  await expect(review0).toBeEnabled();
-  await expect(review1).toBeEnabled();
-  await review0.check();
-  await review1.check();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   const second=gpsForm.locator(".flight-review-card").nth(1);
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
-  await expect(review1).not.toBeChecked();
   const overrideInstructor=second.locator('input[name="part_1_roleCrew_instructor"]');
   await expect(overrideInstructor).toHaveAttribute("required","");
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toHaveCount(0);
   await overrideInstructor.fill("Browser F42 Instructor");
-  await review1.check();
-  await expect(review0).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   const commonRole=gpsForm.locator('select[name="role"]');
   await commonRole.selectOption("DUAL");
-  await expect(review0).not.toBeChecked();
-  await expect(review1).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toHaveCount(0);
   await commonRole.selectOption("PIC");
-  await expect(review1).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   await second.getByRole("button",{name:"Reset to common"}).click();
   await expect(second.locator('select[name="part_1_roleCrew_role"]')).toHaveCount(0);
   await expect(second.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
-  await expect(review1).not.toBeChecked();
   await expect(second.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("PIC");
 
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
   await second.locator('input[name="part_1_roleCrew_instructor"]').fill("Browser F42 Instructor");
-  await review0.check();
-  await review1.check();
   await expect(gpsForm.locator('input[name="part_0_roleCrew_mode"]')).toHaveValue("INHERIT");
   await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("OVERRIDE");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save 2 flight drafts"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT string_agg(off_block||'|'||role||'|'||COALESCE(instructor,''), E'\\n' ORDER BY off_block) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02' AND off_block IN ('20:00','20:06')")).toBe("20:00|PIC|\n20:06|DUAL|Browser F42 Instructor");
@@ -678,11 +662,9 @@ test("F4.3 common Manual Safety Pilot persists explicit Actual PIC without accou
   await gpsForm.locator('input[name="commander"]').fill("Manual GPS Captain");
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:00",takeoff:"21:01",landing:"21:04",onBlock:"21:05",note:"F4.3 common manual Safety Pilot"});
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:00' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Manual GPS Captain");
@@ -712,11 +694,10 @@ test("F4.3 common connected Safety Pilot snapshots server identity and persists 
   await gpsForm.locator('select[name="connectedPicUserId"]').selectOption("9002");
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:20",takeoff:"21:21",landing:"21:24",onBlock:"21:25",note:"F4.3 connected snapshot"});
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await reviewed.check();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   renameSafetyPilotPicFixture("Browser F43 Snapshot");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:20' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Browser F43 Snapshot");
@@ -748,23 +729,17 @@ test("F4.3 revoked per-flight connected Safety Pilot fails closed without partia
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:40",takeoff:"21:41",landing:"21:44",onBlock:"21:45",note:"F4.3 inherited PIC"});
   await completeF43GpsPart(gpsForm,1,{offBlock:"21:46",takeoff:"21:47",landing:"21:50",onBlock:"21:51",note:"F4.3 revoked Safety Pilot override"});
-  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
-  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
-  await review0.check();
-  await review1.check();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
 
   const second=gpsForm.locator(".flight-review-card").nth(1);
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("SAFETY PILOT");
-  await expect(review1).not.toBeChecked();
   await second.locator('select[name="part_1_roleCrew_actualPicMode"]').selectOption("connected");
   await second.locator('select[name="part_1_roleCrew_connectedPicUserId"]').selectOption("9002");
-  await review1.check();
-  await expect(review0).toBeChecked();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   revokeSafetyPilotPicConnectionFixture();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await gpsForm.getByRole("button",{name:"Save 2 flight drafts"}).click();
   await expect(gpsForm.locator('[role="alert"]')).toContainText("Selected Actual PIC is no longer an accepted Connection");
   await expect(page).toHaveURL(/\/flights\/new(?:\?|$)/);
   expect(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block IN ('21:40','21:46')")).toBe("0");
