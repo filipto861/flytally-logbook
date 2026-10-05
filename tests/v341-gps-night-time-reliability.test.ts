@@ -139,4 +139,6 @@ test("3.4.1 GPS UI explains unavailable Night time and keeps manual edits sticky
   assert.match(gps,/if\(review\.nightTimeSource==="MANUAL"\)return review/);
   assert.match(gps,/review\.nightTimeSource==="SUGGESTED"\?\{\.\.\.review,nightTime:"",nightTimeSource:"UNSET"\}:review/);
   assert.match(gps,/GPS does not prove IFR/);
+  assert.match(gps,/Night \{singleReview\.nightTime\|\|"—"\} · IFR \{singleReview\.ifrTime\|\|"—"\}/);
+  assert.doesNotMatch(gps,/Night \{singleReview\.nightTime\|\|"0:00"\}/);
 });
