@@ -30,7 +30,7 @@ test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
   assert.match(detail,/FlightWorkflowProgress/);
   assert.doesNotMatch(detail,/Flight saved as an editable draft/);
   assert.match(detail,/history\.replaceState/);
-  assert.match(page,/workflow=\{certified,correctionDraft,locked,blockers:blockers\.length,recordRevision,shareHref:/);
+  assert.match(page,/workflow=\{certified,correctionDraft,locked,blockers:certificationBlockers\.length,recordRevision,shareHref:/);
   assert.match(page,/completion=\{completion\}/);assert.match(page,/completionMessage=\{completionMessage\}/);
   assert.doesNotMatch(detail,/↗ Share flight/);
 });
@@ -38,7 +38,7 @@ test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
 test("v3.0 U4 keeps certification explicit and blocks sharing until the record is certified",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx"),sharing=read("lib/flight-sharing.ts"),sharePage=read("app/(protected)/flights/[id]/share/page.tsx");
   assert.match(page,/name="confirm" value="certify"/);
-  assert.match(page,/disabled=\{easa&&blockers\.length>0\}/);
+  assert.match(page,/disabled=\{certificationBlockers\.length>0\}/);
   assert.match(sharing,/WHERE id=\$\{flightId\} AND user_id=\$\{userId\} AND certified_at IS NOT NULL/);
   assert.match(sharing,/s\.revoked_at IS NULL AND f\.certified_at IS NOT NULL/);
   assert.match(sharePage,/if\(!f\.certified_at\)return/);
