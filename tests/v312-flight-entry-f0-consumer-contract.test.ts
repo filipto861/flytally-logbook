@@ -34,7 +34,8 @@ const update=actionBlock("updateFlight");
 
 test("F0 inventory locks Manual shared parser versus current GPS direct semantic path",()=>{
   assert.match(create,/parseFlightInput\(form\)/);
-  assert.match(update,/parseFlightInput\(form\)/);
+  assert.match(update,/existingPurposeCodes=normalizeFlightPurposeCodes/);
+  assert.match(update,/parseFlightInput\(form,\{existingPurposeCodes\}\)/);
   assert.doesNotMatch(gps,/parseFlightInput\(/);
   assert.match(gps,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
   assert.match(matrix,/GPS is therefore still a second semantic write path/);
