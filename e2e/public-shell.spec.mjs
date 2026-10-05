@@ -483,6 +483,46 @@ test("3.4.0 GPS quality warning requires one targeted acknowledgement before com
   await expectNoHorizontalOverflow(page);
 });
 
+test("3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 responsive coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const releaseViewports=F6_PRESENTATION_VIEWPORTS.filter(viewport=>
+    ["desktop-1440","ipad-landscape","ipad-portrait","mobile-390"].includes(viewport.name)
+  );
+  const manual=page.locator("#new-flight-manual-form");
+  await manual.locator('select[name="registration"]').selectOption("OK-E2E");
+  for(const viewport of releaseViewports){
+    for(const theme of ["light","dark"]){
+      await applyF6PresentationState(page,viewport,theme);
+      await expect(manual).toBeVisible();
+      await expect(manual.getByRole("button",{name:"Save draft"})).toBeVisible();
+      await expect(manual.getByRole("button",{name:"Save & certify flight"})).toBeVisible();
+    }
+  }
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-05T16:00:00Z</when><when>2026-10-05T16:01:00Z</when><when>2026-10-05T16:02:00Z</when><when>2026-10-05T16:03:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.14 50.13 600</gx:coord><gx:coord>14.20 50.18 650</gx:coord><gx:coord>14.24 50.21 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-responsive.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await expect(gpsForm.locator(".flight-review-card").first()).toBeVisible();
+
+  for(const viewport of releaseViewports){
+    for(const theme of ["light","dark"]){
+      await applyF6PresentationState(page,viewport,theme);
+      await expect(gpsForm).toBeVisible();
+      await expect(gpsForm.locator(".flight-review-card").first()).toBeVisible();
+      await expect(gpsForm.locator("details.gps-track-review")).toBeVisible();
+    }
+  }
+});
+
 test("GPS import fails closed for invalid profile context and exposes only implemented F4 roles",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
