@@ -280,11 +280,11 @@ Local verification evidence recorded on 5 October 2026:
 - PostgreSQL core acceptance: **73/73 PASS**;
 - production Next.js build: **PASS**;
 - targeted authenticated 3.4.0 browser acceptance: **6/6 PASS** across desktop Chromium and mobile Chromium;
+- focused responsive Flight Entry smoke: **1/1 PASS** in desktop Chromium while internally covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark;
 - targeted 3.4.0 source/contract pack: **13/13 PASS**;
 - GitHub CI: **NOT RUN by policy**; workflows are manual-only diagnostics.
 
 Remaining release evidence:
-- focused responsive Flight Entry matrix on the exact runtime candidate (desktop project only; the matrix itself covers desktop/iPad/mobile + light/dark);
 - final documentation/version/tag reconciliation;
 - merge/deploy;
 - production smoke + runtime-error check.
