@@ -32,8 +32,9 @@ Those historical headings remain audit evidence and are not rewritten.
 To avoid reusing an existing historical release label, the **first canonical unified product release is 3.4.0**.
 
 Therefore:
-- production remains `2.7.0` until the new release candidate is actually ready to ship;
-- at 3.4.0 release closeout, `package.json`, visible app version, CHANGELOG release heading and Git tag move together to `3.4.0`;
+- deployed production remains `2.7.0` until 3.4.0 is merged and deployed;
+- the active 3.4.0 release branch may carry `package.json = 3.4.0` while that version is still unreleased; this identifies the candidate being built and does **not** claim production deployment;
+- at 3.4.0 release closeout, the deployed app/footer, CHANGELOG release heading and Git tag must all agree with `package.json = 3.4.0`;
 - no future canonical release may reuse `2.8`, `2.9`, `3.0`, `3.2` or `3.3`.
 
 This is a one-time reconciliation, not permission for future version drift.
