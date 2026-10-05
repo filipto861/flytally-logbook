@@ -71,7 +71,7 @@ function nightTimeUnavailableText(suggestion:CivilTwilightNightTimeSuggestion|nu
   if(!suggestion||suggestion.status==="AVAILABLE")return"H:MM · manual when GPS/SERA evidence is unavailable.";
   const reason=suggestion.reasons[0];
   if(reason==="SEGMENT_GAP_TOO_LARGE"){
-    const gap=suggestion.largestGapSeconds?Math.ceil(suggestion.largestGapSeconds/60):null;
+    const gap=suggestion.affectedSegmentSeconds?Math.ceil(suggestion.affectedSegmentSeconds/60):null;
     return`GPS Night-time unavailable — ${gap?`${gap} minute `:""}track gap is too large for an exact civil-twilight result. Enter manually.`;
   }
   if(reason==="TRACK_DISCONTINUITY")return"GPS Night-time unavailable — track continuity is insufficient for an exact result. Enter manually.";
