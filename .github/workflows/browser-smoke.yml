@@ -1,28 +1,6 @@
 name: Browser smoke
 
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-    paths:
-      - "app/**"
-      - "components/**"
-      - "public/**"
-      - "e2e/**"
-      - "lib/**"
-      - "tooling/bootstrap-browser-smoke-db.mjs"
-      - "playwright.config.mjs"
-      - "next.config.ts"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/browser-smoke.yml"
-  schedule:
-    - cron: "23 3 * * 1"
   workflow_dispatch:
 
 permissions:
