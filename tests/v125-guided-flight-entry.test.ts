@@ -30,7 +30,7 @@ test("GPS import guides review before enabling the final save",()=>{
   assert.match(source,/Complete flight details/);
   assert.match(source,/Save draft/);assert.match(source,/Save &amp; certify flight/);assert.match(source,/Save \$\{partCount\} flight drafts/);
   assert.match(source,/Ready to save/);
-  assert.match(source,/GPS supplied the times, split and landing suggestions/);
+  assert.match(source,/GPS supplies advisory times and movement suggestions/);
 });
 
 test("flight forms warn before abandoning unsaved data",()=>{
