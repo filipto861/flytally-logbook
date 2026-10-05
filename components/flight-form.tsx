@@ -167,14 +167,10 @@ export function FlightForm({action,aircraft,initial={},instructors=[],picConnect
 </div></details>
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}{state.success?<p className="form-success" role="status">{state.success}</p>:null}
     {!editing?<section className="entry-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Ready to finish?</h2><p className="muted">Review the key evidence that will be sealed if you choose Save &amp; certify.</p></div></div><div className="entry-certification-grid">
-      <div><span>Date</span><strong>{date||"—"}</strong></div>
-      <div><span>Route</span><strong>{certificationRouteSummary}</strong></div>
-      <div><span>Aircraft / basis</span><strong>{certificationContextSummary}</strong></div>
-      <div><span>Role / crew</span><strong>{certificationCrewSummary}</strong></div>
-      <div><span>Operation / engine</span><strong>{certificationOperationSummary}</strong></div>
+      <div><span>Flight</span><strong>{date||"—"} · {certificationRouteSummary}</strong></div>
+      <div><span>Aircraft / role</span><strong>{certificationContextSummary} · {certificationCrewSummary}</strong><small>{certificationOperationSummary}</small></div>
       <div><span>UTC times</span><strong>{certificationTimesSummary}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
-      <div><span>Landings</span><strong>{certificationLandingSummary}</strong></div>
-      <div><span>Night / IFR</span><strong>{nightTime||"0:00"} / {ifrTime||"0:00"}</strong></div>
+      <div><span>Evidence</span><strong>{certificationLandingSummary} · Night {nightTime||"0:00"} · IFR {ifrTime||"0:00"}</strong></div>
     </div><p className="value-origin-note"><span>Certification</span> Certified flights are locked; later changes are recorded as corrections.</p></section>:null}
     <div className="form-actions field-actions"><div className="entry-save-state">{missing.length?<><strong>Complete before save</strong><div className="entry-save-blockers" aria-label="Missing required fields">{missing.map(item=><button key={item} type="button" className="entry-blocker-link" onClick={()=>focusMissing(item)}>{missingLabel[item]||item}</button>)}</div></>:<small>{editing?"Save the corrected draft.":"Save draft keeps the record editable. Save & certify seals the persisted record when compliance checks pass."}</small>}{dirty?<small className="unsaved-indicator">Unsaved changes</small>:null}</div><Submit editing={editing} certifyDisabled={missing.length>0} onAttempt={()=>setSubmitAttempted(true)}/></div>
   </form>;
