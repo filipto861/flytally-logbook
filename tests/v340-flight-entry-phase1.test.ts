@@ -201,4 +201,8 @@ test("3.4.0 browser fixture includes credential and recency dependencies used by
   for(const column of ["qualification_type","qualification_family","regulatory_category","qualification_scope","privilege_role","classification_source","validity_mode","valid_until","recency_until"]){
     assert.match(bootstrap,new RegExp(`\\b${column}\\b`));
   }
+  assert.match(bootstrap,/generate_series\(1,19\)/);
+  assert.match(bootstrap,/default_operation_type TEXT CHECK\(default_operation_type IS NULL OR default_operation_type IN \('SP','MP'\)\)/);
+  assert.match(bootstrap,/default_engine_type TEXT CHECK\(default_engine_type IS NULL OR default_engine_type IN \('SE','ME'\)\)/);
+  assert.match(bootstrap,/CREATE TRIGGER trg_logbook_snapshot_aircraft_identity/);
 });
