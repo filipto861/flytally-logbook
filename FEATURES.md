@@ -122,7 +122,9 @@ Important boundary:
 - Preserve sticky manual Night-time edits and keep IFR fully pilot-entered.
 - Do not infer Night time from a NIGHT landing.
 - Do not auto-apply partial/lower-bound Night duration as the total.
-- Phase 1 preserves the current 600-second segment guard while reproducing the actual failing reason; numerical relaxation is gated by evidence.
+- Replace blanket >600 s rejection with a conservative same-state proof that reuses the canonical GPS-continuity speed bound; sparse segments that could contain civil twilight remain unavailable.
+- Fail closed on ambiguous/non-monotonic timestamps, implausible position transitions, unsupported solar envelope, confidence-boundary endpoints and conflicting equal-time positions.
+- Include a real-like EHAM → LKPR twilight regression proving a NIGHT landing and exact Night minutes only when the crossing itself is sufficiently bracketed.
 - Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`.
 
 ### 3.4.0 — Flight Entry Simplification — IMPLEMENTED / PRODUCTION VERIFIED
