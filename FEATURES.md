@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned
 
-### 3.4.0 — Flight Entry Simplification — ACTIVE
+### 3.4.0 — Flight Entry Simplification — RELEASE CANDIDATE
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
 - Default single-flight GPS hierarchy is now compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics are conditional detail. Phase 2 also removes redundant clean-quality copy and keeps incomplete-import focus on the first unresolved flight.
 - Flight context is now one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine. Billing/Cost share moved to a separate collapsed Costs disclosure and malformed persisted billing still fails closed.
