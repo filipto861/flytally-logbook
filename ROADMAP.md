@@ -284,7 +284,7 @@ Local verification evidence recorded on 5 October 2026:
 - GitHub CI: **NOT RUN by policy**; workflows are manual-only diagnostics.
 
 Remaining release evidence:
-- complete authenticated browser suite on the exact runtime candidate;
+- focused responsive Flight Entry matrix on the exact runtime candidate (desktop project only; the matrix itself covers desktop/iPad/mobile + light/dark);
 - final documentation/version/tag reconciliation;
 - merge/deploy;
 - production smoke + runtime-error check.
@@ -295,7 +295,7 @@ Required evidence:
 - full unit/regression candidate gate;
 - PostgreSQL acceptance for save/certification, duplicate/concurrency and multi-flight atomicity;
 - certification parity test between old explicit certification and new Save & certify on equivalent persisted rows;
-- authenticated browser coverage for Manual + GPS, Save draft + Save & certify, blockers, GPS warning acknowledgement, Enter-key behavior and responsive states;
+- risk-based authenticated browser coverage for Manual + GPS completion, Enter-to-draft, GPS warning acknowledgement and the dedicated Flight Entry responsive matrix; a full repository-wide Playwright suite is not required for this release;
 - production build;
 - exact-candidate local verification evidence recorded;
 - GitHub CI: **NOT REQUIRED**; manual-only diagnostic if explicitly requested;
