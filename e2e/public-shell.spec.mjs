@@ -435,6 +435,52 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await expectNoHorizontalOverflow(page);
 });
 
+test("3.4.0 GPS quality warning requires one targeted acknowledgement before completion",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS warning coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-05T15:00:00Z</when><when>2026-10-05T15:00:10Z</when><when>2026-10-05T15:01:00Z</when><when>2026-10-05T15:02:00Z</when><when>2026-10-05T15:03:00Z</when>'+
+    '<gx:coord>14.00 50.00 300</gx:coord><gx:coord>15.00 51.00 500</gx:coord><gx:coord>15.01 51.01 800</gx:coord><gx:coord>15.02 51.02 700</gx:coord><gx:coord>15.03 51.03 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-quality-warning.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+
+  await expect(gpsForm.getByText("GPS track needs review.")).toBeVisible();
+  const trackReview=gpsForm.locator("details.gps-track-review");
+  await expect(trackReview).toHaveAttribute("open","");
+  const acknowledgement=gpsForm.locator('input[name="gpsWarningReviewed"]');
+  await expect(acknowledgement).toBeVisible();
+  await expect(acknowledgement).not.toBeChecked();
+
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-05");
+  await gpsForm.locator('input[name="part_0_departure"]').fill("LKLT");
+  await gpsForm.locator('input[name="part_0_arrival"]').fill("LKPR");
+  await gpsForm.locator('input[name="part_0_offBlock"]').fill("15:00");
+  await gpsForm.locator('input[name="part_0_takeoff"]').fill("15:01");
+  await gpsForm.locator('input[name="part_0_landing"]').fill("15:02");
+  await gpsForm.locator('input[name="part_0_onBlock"]').fill("15:03");
+  const starts=gpsForm.locator('input[name="part_0_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+
+  await expect(gpsForm.getByText("Review the GPS quality warning.")).toBeVisible();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Complete flight details"})).toBeVisible();
+
+  await acknowledgement.check();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test("GPS import fails closed for invalid profile context and exposes only implemented F4 roles",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
