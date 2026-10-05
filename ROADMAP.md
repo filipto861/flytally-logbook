@@ -176,7 +176,7 @@ Phase 2 closeout:
 - clean GPS quality no longer emits a redundant standalone status line;
 - incomplete imports jump to the first flight section that still needs evidence.
 
-## Phase 3 — Progressive optional/contextual detail — ACTIVE
+## Phase 3 — Progressive optional/contextual detail — DONE
 
 Collapsed by default:
 - additional crew;
@@ -201,7 +201,7 @@ Collapsed summaries must truthfully represent state and distinguish unset/unavai
 - make one shared applicability predicate authoritative for both picker visibility and server persistence;
 - preserve historical stored/certified purpose values even if current applicability differs.
 
-## Phase 4 — Single-flight Save & certify
+## Phase 4 — Single-flight Save & certify — IMPLEMENTED / VERIFICATION ACTIVE
 
 Primary explicit action:
 **Save & certify flight**
@@ -236,7 +236,7 @@ Show next to the action:
 Consequence copy:
 **Certified flights are locked; later changes are recorded as corrections.**
 
-## Phase 5 — GPS review-gate simplification / multi-flight safety
+## Phase 5 — GPS review-gate simplification / multi-flight safety — IMPLEMENTED / VERIFICATION ACTIVE
 
 - remove the generic `I reviewed this flight` checkbox and server requirement;
 - require targeted acknowledgement only for a non-blocking GPS-quality warning that the pilot is permitted to accept;
@@ -246,7 +246,7 @@ Consequence copy:
 - multi-flight import continues to save all parts atomically as drafts only;
 - no 3.4.0 batch certification.
 
-## Phase 6 — Responsive / interaction polish
+## Phase 6 — Responsive / interaction polish — VERIFICATION ACTIVE
 
 Required:
 - desktop;
