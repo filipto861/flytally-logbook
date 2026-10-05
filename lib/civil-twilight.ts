@@ -24,7 +24,7 @@ export type NightTimeUnavailableReason=
   |"CROSSING_UNRESOLVED";
 export type CivilTwilightNightTimeSuggestion=
   |{status:"AVAILABLE";minutes:number}
-  |{status:"UNAVAILABLE";reasons:NightTimeUnavailableReason[];firstAffectedSegment?:number;largestGapSeconds?:number};
+  |{status:"UNAVAILABLE";reasons:NightTimeUnavailableReason[];firstAffectedSegment?:number;affectedSegmentSeconds?:number};
 export type CivilTwilightMovementSuggestion=
   |{status:"AVAILABLE";takeoffsDay:number;takeoffsNight:number;approachesDay:number;approachesNight:number}
   |{status:"UNAVAILABLE"};
@@ -135,8 +135,8 @@ export function gpsPfMovementDayNightSuggestion(points:KmlPoint[]):CivilTwilight
 }
 
 
-function unavailableNightTime(reason:NightTimeUnavailableReason,firstAffectedSegment?:number,largestGapSeconds?:number):CivilTwilightNightTimeSuggestion{
-  return{status:"UNAVAILABLE",reasons:[reason],...(firstAffectedSegment===undefined?{}:{firstAffectedSegment}),...(largestGapSeconds===undefined?{}:{largestGapSeconds})};
+function unavailableNightTime(reason:NightTimeUnavailableReason,firstAffectedSegment?:number,affectedSegmentSeconds?:number):CivilTwilightNightTimeSuggestion{
+  return{status:"UNAVAILABLE",reasons:[reason],...(firstAffectedSegment===undefined?{}:{firstAffectedSegment}),...(affectedSegmentSeconds===undefined?{}:{affectedSegmentSeconds})};
 }
 
 function timedPoint(point:KmlPoint){
