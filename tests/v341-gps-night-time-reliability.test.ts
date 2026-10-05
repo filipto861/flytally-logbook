@@ -114,7 +114,7 @@ test("3.4.1 remains fail closed outside the supported solar envelope",()=>{
   if(year.status==="UNAVAILABLE")assert.deepEqual(year.reasons,["UNSUPPORTED_SOLAR_ENVELOPE"]);
 });
 
-test("3.4.1 real-like EHAM to LKPR sparse route keeps NIGHT landing and derives exact partial Night time without bridging twilight unsafely",()=>{
+test("3.4.1 real-like EHAM to LKPR sparse route keeps NIGHT landing and derives exact Night time without bridging twilight unsafely",()=>{
   const route:KmlPoint[]=[
     point(52.31,4.76,"2026-10-05T16:00:00Z"),
     point(52.10,7.00,"2026-10-05T16:15:00Z"), // sparse but conservatively proven DAY
