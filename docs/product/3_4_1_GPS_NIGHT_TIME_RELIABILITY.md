@@ -1,6 +1,6 @@
 # 3.4.1 — GPS Night-time reliability
 
-**Status:** ACTIVE — PHASE 1 REPRODUCTION / DIAGNOSTICS  
+**Status:** ACTIVE — SINGLE-PHASE IMPLEMENTATION  
 **Owner:** Filip Točík  
 **Date:** 5 October 2026  
 **Repo:** `flytally-logbook`  
@@ -140,37 +140,36 @@ Examples:
 
 Manual input remains available in every unavailable case.
 
-## Phase 1 — Reproduction and diagnostics — ACTIVE
+## Single implementation phase — ACTIVE
 
-Before numerical behavior changes:
+Filip explicitly approved completing diagnostics, numerical correction, UI feedback and regression hardening in one 3.4.1 phase.
 
-1. Add structured reason classification to the current helper without weakening fail-closed semantics.
-2. Preserve the existing 600-second cap during this phase.
-3. Add focused tests proving each reason path.
-4. Add UI reason mapping while preserving sticky manual edits.
-5. Obtain the original/anonymized failing EHAM → LKPR track if available, or characterize an equivalent fixture without claiming it is the original production reproduction.
-6. Record the actual blocker for the failing shape.
+Scope:
 
-**Phase 1 acceptance:**
+1. Add structured unavailable reason classification.
+2. Surface concise pilot-facing reason copy while preserving manual input.
+3. Keep manual Night-time edits sticky and clear only stale automatic suggestions.
+4. Reuse the canonical position-discontinuity thresholds from `track-processing.ts`; do not create a second generic quality model.
+5. Replace the blanket “>600 s means whole flight unavailable” rule with a bounded sparse-segment contract:
+   - a segment at or below 600 s keeps the existing exact endpoint/crossing behavior;
+   - a longer segment may be accepted only when both endpoints are on the same side of civil twilight and a conservative bound proves the entire segment cannot enter the ±0.5° twilight confidence region;
+   - the bound combines a conservative solar-altitude time-rate bound with the existing canonical 1200 km/h general GPS-continuity speed bound;
+   - a long segment that could contain twilight remains `UNAVAILABLE / SEGMENT_GAP_TOO_LARGE`;
+   - a long segment is never made safe merely by inventing/subdividing intermediate points.
+6. Fail closed on implausible position transitions, non-monotonic or ambiguous timestamps, unsupported solar envelope, confidence-guard endpoints and conflicting equal-time positions.
+7. Add a real-like EHAM → LKPR twilight-crossing regression with one sparse but provably DAY segment, a densely bracketed civil-twilight crossing and a final NIGHT landing.
 
-- no Night-time number changes solely because diagnostics were added;
-- 10:00 / 10:01 legacy behavior remains unchanged;
-- unavailable UI names the real reason instead of showing only a generic manual fallback;
-- manual Night-time remains sticky;
-- landing NIGHT + unavailable Night time remains a valid explicit state;
-- focused tests pass.
+Acceptance:
 
-## Phase 2 — Segment-policy correction — GATED BY PHASE 1 EVIDENCE
-
-Only if Phase 1 proves the fixed gap rule or another segment policy causes false-unavailable results:
-
-- define the replacement continuity/interpolation contract before code;
-- prefer shared track-integrity evidence over new heuristics;
-- do not treat subdivision of invented intermediate points as additional evidence;
-- if a segment cannot be proven safe enough for an exact total, return `UNAVAILABLE`;
-- no extrapolation outside supported solar/time/position envelope.
-
-A fixed replacement threshold may be used only if its derivation and acceptance boundary are documented and test-backed. Otherwise the existing fail-closed cap remains.
+- ordinary dense all-day/all-night/crossing behavior remains exact;
+- a sparse same-state segment can be accepted only when the conservative bound proves it cannot contain twilight;
+- sparse ambiguous twilight remains unavailable with an explicit reason;
+- a NIGHT landing still does not imply Night time;
+- real-like EHAM → LKPR returns a NIGHT landing suggestion and exact calculated Night minutes when the crossing itself is sufficiently bracketed;
+- no partial/lower-bound value is auto-applied;
+- manual edits remain sticky;
+- IFR remains manual;
+- no DB migration or certification payload change.
 
 ## Required regression matrix
 
@@ -197,23 +196,18 @@ At minimum:
 
 ## Verification plan
 
-For Phase 1:
+For the single 3.4.1 phase:
 
 - targeted civil-twilight/night tests;
 - GPS UI/source-contract tests;
+- full GPS/track regression corpus;
 - TypeScript;
 - production build;
 - targeted authenticated GPS-review browser acceptance;
-- full unit/regression gate before merge.
+- full unit/regression gate before merge;
+- prove no new false exact Night minutes.
 
 PostgreSQL/DB migration testing is **N/A** unless scope changes.
-
-For any Phase 2 numerical change:
-
-- rerun the full GPS/track regression corpus;
-- add before/after fixture evidence;
-- prove no new false exact Night minutes;
-- run the normal release gate before merge/deploy.
 
 ## Do not
 
