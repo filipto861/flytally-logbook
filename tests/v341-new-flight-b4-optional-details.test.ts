@@ -53,8 +53,8 @@ test("B4 moves Night and IFR detail out of Flight experience without dropping st
   assert.ok(form.indexOf("Night time",optional)>optional);
   assert.ok(form.indexOf("IFR time",optional)>optional);
   assert.match(form,/showOptionalTime=entryProfile\.showStandardExperience\|\|storedNightMinutes>0\|\|storedIfrMinutes>0/);
-  assert.match(form,/type="hidden" name="nightTime" value=\{formatEasaDuration\(field\("night_minutes","0"\)\)\}/);
-  assert.match(form,/type="hidden" name="ifrTime" value=\{formatEasaDuration\(field\("ifr_minutes","0"\)\)\}/);
+  assert.match(form,/type="hidden" name="nightTime" value=\{nightTime\}/);
+  assert.match(form,/type="hidden" name="ifrTime" value=\{ifrTime\}/);
 });
 
 test("B4 invalid billing remains fail closed and opens Optional details",()=>{
