@@ -29,8 +29,8 @@ test("v3.3 U11 keeps one primary next action in the record workflow",()=>{
   assert.match(workflow,/href={state\.shareHref}>Share flight<\/Link>/);
   assert.match(workflow,/const stage=\(label:string,status:/);
   assert.doesNotMatch(workflow,/Available after certification/);
-  assert.match(detail,/postSave\?"logbook":initialTab/);
-  assert.match(detail,/className="flight-post-save"/);
+  assert.match(detail,/completion==="draft-saved"[\s\S]*\?"logbook":initialTab/);
+  assert.match(detail,/flight-post-save completion-/);
   assert.match(detail,/className="secondary-link" href="\/flights\/new\?added=1">Add another flight/);
 });
 
