@@ -52,10 +52,10 @@ export async function certifyStoredFlight(userId:number,flightId:number):Promise
   const row=await certificationRow(userId,flightId);
   if(!row)return{status:"not-found",flightId};
   if(row.certified_at)return{status:"already-certified",flightId};
-  if(row.locked_at)return{status:"locked",flightId};
 
   const issues=blockingComplianceIssues(flightCertificationCompliance(row,text(row.pilot_name)));
   if(issues.length)return{status:"blocked",flightId,issues};
+  if(row.locked_at)return{status:"locked",flightId};
 
   const certificationHash=flightCertificationHash({...row,certification_version:8},userId,8);
   if(!certificationHash)return{status:"blocked",flightId,issues:[{code:"certification_hash",field:"record",message:"The flight certification fingerprint could not be created.",severity:"error"}]};
