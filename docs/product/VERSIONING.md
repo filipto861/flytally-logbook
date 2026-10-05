@@ -2,7 +2,7 @@
 
 **Effective:** 4 October 2026  
 **Production package version at adoption:** `2.7.0`  
-**First canonical unified release target:** `3.4.0`
+**First canonical unified release:** `3.4.0` (production 5 October 2026)
 
 This document defines the product-version and roadmap naming convention for `flytally-logbook`.
 
@@ -32,9 +32,9 @@ Those historical headings remain audit evidence and are not rewritten.
 To avoid reusing an existing historical release label, the **first canonical unified product release is 3.4.0**.
 
 Therefore:
-- deployed production remains `2.7.0` until 3.4.0 is merged and deployed;
-- the active 3.4.0 release branch may carry `package.json = 3.4.0` while that version is still unreleased; this identifies the candidate being built and does **not** claim production deployment;
-- at 3.4.0 release closeout, the deployed app/footer, CHANGELOG release heading and Git tag must all agree with `package.json = 3.4.0`;
+- 3.4.0 was merged and deployed to production on 5 October 2026 as the first unified release;
+- future release branches may carry the target `package.json` version while still unreleased; this identifies the candidate being built and does **not** claim production deployment;
+- at release closeout, the deployed app/footer and CHANGELOG release heading must agree with `package.json`; any Git tag / GitHub Release used for that release must carry the same version;
 - no future canonical release may reuse `2.8`, `2.9`, `3.0`, `3.2` or `3.3`.
 
 This is a one-time reconciliation, not permission for future version drift.
@@ -68,10 +68,10 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-At adoption:
+Current production baseline after 3.4.0 closeout:
 - production database schema is **v19**;
 - flight certification payload is **v8**;
-- production product package remains **2.7.0**.
+- production product package is **3.4.0**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -88,7 +88,8 @@ PR titles should start with the numeric target version when practical.
 
 | Target | Scope | Status |
 | --- | --- | :---: |
-| 3.4.0 | Flight Entry Simplification | ACTIVE |
+| 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
+| 3.4.1 | GPS Night-time reliability | ACTIVE |
 | 3.5.0 | Multi-aircraft remaining integrity audit | NEXT |
 | 3.6.0 | Saved-date / timezone semantics | PLANNED |
 | 3.7.0 | Currency / monetary semantics | PLANNED |
