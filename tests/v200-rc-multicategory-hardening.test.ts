@@ -53,10 +53,10 @@ test("v2.0-RC shared-flight credit uses conservative legacy resolution without r
 });
 
 test("v2.0-RC certification action uses the category router and revision archive keeps the complete certified snapshot",()=>{
-  const action=read("lib/flight-certification.ts"),integrity=read("lib/certification-integrity.ts");
+  const action=read("lib/flight-certification.ts"),correction=read("app/(protected)/flights/certification-actions.ts"),integrity=read("lib/certification-integrity.ts");
   assert.match(action,/flightCertificationCompliance\(row,text\(row\.pilot_name\)\)/);
   assert.doesNotMatch(action,/const compliance=fcl050FlightCompliance/);
-  assert.match(action,/flight_certified_revisions.*to_jsonb\(f\)/s);
+  assert.match(correction,/flight_certified_revisions.*to_jsonb\(f\)/s);
   for(const field of ["regulatory_category","balloon_class","balloon_group","balloon_operation","launch_method","launches"])assert.match(integrity,new RegExp(field));
 });
 
