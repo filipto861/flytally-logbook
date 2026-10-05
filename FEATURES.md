@@ -119,11 +119,11 @@ Important boundary:
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
 - Default single-flight GPS hierarchy is now compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics are conditional detail. Phase 2 also removes redundant clean-quality copy and keeps incomplete-import focus on the first unresolved flight.
 - Flight context is now one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine. Billing/Cost share moved to a separate collapsed Costs disclosure and malformed persisted billing still fails closed.
-- Single-flight **Save & certify** is the explicit primary completion action when eligible; **Save draft** remains available and is the implicit/default submit behavior.
+- Single-flight **Save & certify** is implemented for Manual and GPS. **Save draft** remains available and is the implicit/default submit behavior; pressing Enter cannot certify.
 - Pressing Enter cannot certify. Certification always requires the explicit Save & certify action.
 - Certification reuses the existing persisted-row compliance/hash/revision authority. If draft save succeeds but certification is blocked, the record remains a draft with an explicit reason.
-- The generic normal-case “I reviewed this flight” GPS gate is removed together with its server requirement; only a non-blocking GPS-quality warning may require targeted acknowledgement.
-- Multi-flight GPS stays atomic **draft-only** in 3.4.0; no batch certification is added.
+- The generic normal-case “I reviewed this flight” GPS gate and server requirement are removed; deterministic evidence readiness is used instead, with targeted acknowledgement only for non-blocking GPS-quality warnings.
+- Multi-flight GPS stays atomic **draft-only** in 3.4.0; the UI exposes only **Save N flight drafts**, and crafted multi-flight certify intent fails closed server-side.
 - Save & certify never sends PIC/crew/instructor invitations automatically.
 - Training-purpose filtering remains category-aware: ULL correctly hides non-applicable Part-FCL/SFCL/BFCL recency purposes. 3.4.0 adds no generic structured Training / practice marker.
 - 3.4.0 fixes the current Training-purpose UI/server parity gap by moving visibility and persistence eligibility onto one shared applicability contract.
