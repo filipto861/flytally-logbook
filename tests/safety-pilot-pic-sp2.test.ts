@@ -82,7 +82,7 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(browser,/selectOption\("9002"\)/);
   assert.match(browser,/fill\("Manual Captain"\)/);
   assert.match(db,/resetSafetyPilotPicFixture/);
-  assert.match(bootstrap,/generate_series\(1,16\)/);
+  assert.match(bootstrap,/generate_series\(1,19\)/);
   assert.match(bootstrap,/pic_commander_basis TEXT CHECK/);
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
   assert.match(bootstrap,/CREATE TABLE flight_expenses/);
