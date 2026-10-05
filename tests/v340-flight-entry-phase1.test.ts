@@ -149,3 +149,32 @@ test("3.4.0 Phase 3 keeps Billing secondary to regulatory flight context",()=>{
   const contextAssignment=gps.match(/flightContextSummary=selectedProfile\?compactContextSummary\(\[([^\]]+)\]\)/)?.[1]??"";
   assert.doesNotMatch(contextAssignment,/Billing|billing/);
 });
+
+
+test("3.4.0 single GPS import exposes draft first and explicit certification second",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  const actions=read("app/(protected)/flights/actions.ts");
+
+  const submitStart=gps.indexOf("function Submit");
+  const submitEnd=gps.indexOf("function AirportReviewField",submitStart);
+  const submit=gps.slice(submitStart,submitEnd);
+  const draftIndex=submit.indexOf('name="intent" value="draft"');
+  const certifyIndex=submit.indexOf('name="intent" value="certify"');
+  assert.ok(draftIndex>=0&&certifyIndex>draftIndex,"GPS implicit submit must resolve to draft before explicit certification.");
+  assert.match(submit,/partCount===1/);
+  assert.match(submit,/Save &amp; certify flight/);
+  assert.match(submit,/Save \$\{partCount\} flight drafts/);
+
+  assert.match(actions,/completionIntent=String\(form\.get\("intent"\)\|\|"draft"\)/);
+  assert.match(actions,/completionIntent==="certify"&&partCount!==1/);
+  assert.match(actions,/Multi-flight GPS imports are saved as drafts/);
+  assert.match(actions,/completionIntent==="certify"&&prepared\.length===1/);
+  assert.match(actions,/certifyStoredFlight\(userId,lastId\)/);
+});
+
+test("3.4.0 single GPS completion summary exposes certification evidence",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.match(gps,/gps-certification-summary/);
+  for(const label of ["Date","Route","Aircraft / basis","Role / crew","Operation / engine","UTC times","Landings","Night / IFR"])assert.ok(gps.includes(`<span>${label}</span>`),label);
+  assert.match(gps,/Certified flights are locked; later changes are recorded as corrections\./);
+});
