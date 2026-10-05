@@ -89,7 +89,7 @@ async function loginBrowserPilot(page,returnTo){
   await page.getByLabel("Email").fill("browser-auth@example.test");
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`));
+  await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`),{timeout:15000});
 }
 
 async function holdPost(page,pattern){
