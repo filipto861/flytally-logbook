@@ -178,3 +178,12 @@ test("3.4.0 single GPS completion summary exposes certification evidence",()=>{
   for(const label of ["Flight","Aircraft / role","UTC times","Evidence"])assert.ok(gps.includes(`<span>${label}</span>`),label);
   assert.match(gps,/Certified flights are locked; later changes are recorded as corrections\./);
 });
+
+test("3.4.0 flight detail uses the same category-aware certification blocker contract as direct certification",()=>{
+  const detail=read("app/(protected)/flights/[id]/page.tsx");
+  assert.match(detail,/flightCertificationCompliance\(raw,pilotName\)/);
+  assert.match(detail,/blockingComplianceIssues\(certificationCompliance\)/);
+  assert.match(detail,/blockers:certificationBlockers\.length/);
+  assert.match(detail,/disabled=\{certificationBlockers\.length>0\}/);
+  assert.doesNotMatch(detail,/fcl050FlightCompliance\(raw,pilotName\)/);
+});
