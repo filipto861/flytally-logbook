@@ -26,6 +26,7 @@ import { ensureV166Schema } from "@/lib/v166-schema";
 import { gpsImportSourceRequirements,resolveGpsImportCommonRoleCrew,resolveGpsImportOperationEngine,resolveGpsImportPartRoleCrew,validateGpsImportPartEnvelopeKeys } from "@/lib/gps-import-integrity";
 import { authorizeProfileFlightContext,authorizeUnchangedSnapshotFlightContext,resolveFlightAircraftContextAuthority,type FlightAircraftAuthorityProfileInput,type FlightAircraftContextSnapshot,type FlightAircraftContextSnapshotInput } from "@/lib/flight-aircraft-context-authority";
 import { resolveSafetyPilotPic,resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
+import { flightPurposeCodesFromTask,normalizeFlightPurposeCodes } from "@/lib/flight-purpose";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -198,11 +199,12 @@ SELECT flight_id FROM validated WHERE inserted_ok=1 AND track_ok=1 AND crew_ok=1
 
 export async function updateFlight(id:number,_:FlightActionState,form:FormData):Promise<FlightActionState>{
   const{userId}=await requireUser();await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);if(!Number.isSafeInteger(id)||id<=0)return{error:"Invalid record."};
-  const parsed=parseFlightInput(form),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
+  const existingRows=await sql`SELECT registration,date::text date,price_per_hour,locked_at,certified_at,COALESCE(evidence,'') evidence,COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group,COALESCE(purpose_code,'') purpose_code,COALESCE(task,'') task FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<StoredFlightAircraftContextRow&{date:string;price_per_hour:number|null;locked_at:string|null;certified_at:string|null;purpose_code:string;task:string}>;
+  const existing=existingRows[0];if(!existing)return{error:"Flight not found or access denied."};if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};
+  const existingPurposeCodes=normalizeFlightPurposeCodes([existing.purpose_code,...flightPurposeCodesFromTask(existing.task)]),parsed=parseFlightInput(form,{existingPurposeCodes}),expenseResult=parseFlightExpenses(form);if(!parsed.data)return{error:parsed.error};if(!expenseResult.data)return{error:expenseResult.error};
   const f=parsed.data,picResolution=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!picResolution.ok)return{error:picResolution.error};const connectedPicUserId=picResolution.connectedUserId,commander=picResolution.commander;
+  if(connectedPicUserId>0&&existing.certified_at)return{error:"Connected Actual PIC can only be changed on an editable draft or correction."};
   const departure=canonicalAirportIdent(f.departure),arrival=canonicalAirportIdent(f.arrival),expenseJson=JSON.stringify(expenseResult.data.map(item=>({category:item.category,label:item.label,amount_minor:item.amountMinor,currency:item.currency})));
-  const existingRows=await sql`SELECT registration,date::text date,price_per_hour,locked_at,certified_at,COALESCE(evidence,'') evidence,COALESCE(aircraft_type,'') aircraft_type,COALESCE(aircraft_class,'') aircraft_class,COALESCE(regulatory_category,'') regulatory_category,COALESCE(balloon_class,'') balloon_class,COALESCE(balloon_group,'') balloon_group FROM flights WHERE id=${id} AND user_id=${userId} LIMIT 1` as Array<StoredFlightAircraftContextRow&{date:string;price_per_hour:number|null;locked_at:string|null;certified_at:string|null}>;
-  const existing=existingRows[0];if(!existing)return{error:"Flight not found or access denied."};if(existing.locked_at)return{error:"This flight is locked. Unlock it before editing."};if(connectedPicUserId>0&&existing.certified_at)return{error:"Connected Actual PIC can only be changed on an editable draft or correction."};
   const authorityKind=resolveFlightAircraftContextAuthority({mode:"UPDATE",storedRegistration:existing.registration,submittedRegistration:f.registration});
   let persistedAircraftContext=flightAircraftContextFromInput(f);
   if(authorityKind.authority==="PROFILE"){
