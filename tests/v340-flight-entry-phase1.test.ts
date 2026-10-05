@@ -187,3 +187,15 @@ test("3.4.0 flight detail uses the same category-aware certification blocker con
   assert.match(detail,/disabled=\{certificationBlockers\.length>0\}/);
   assert.doesNotMatch(detail,/fcl050FlightCompliance\(raw,pilotName\)/);
 });
+
+
+test("3.4.0 browser fixture includes credential and recency dependencies used by protected flight pages",()=>{
+  const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
+
+  for(const table of ["pilot_licences","pilot_qualifications","user_expiries","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence"]){
+    assert.match(bootstrap,new RegExp(`CREATE TABLE ${table}\\(`));
+  }
+  for(const column of ["qualification_type","qualification_family","regulatory_category","qualification_scope","privilege_role","classification_source","validity_mode","valid_until","recency_until"]){
+    assert.match(bootstrap,new RegExp(`\\b${column}\\b`));
+  }
+});
