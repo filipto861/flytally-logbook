@@ -205,4 +205,6 @@ test("3.4.0 browser fixture includes credential and recency dependencies used by
   assert.match(bootstrap,/default_operation_type TEXT CHECK\(default_operation_type IS NULL OR default_operation_type IN \('SP','MP'\)\)/);
   assert.match(bootstrap,/default_engine_type TEXT CHECK\(default_engine_type IS NULL OR default_engine_type IN \('SE','ME'\)\)/);
   assert.match(bootstrap,/CREATE TRIGGER trg_logbook_snapshot_aircraft_identity/);
+  assert.match(bootstrap,/COALESCE\(NULLIF\(TRIM\(a\.aircraft_variant\),''\),''\)/);
+  assert.doesNotMatch(bootstrap,/TRIM\(a\.aircraft_variant,''\)/);
 });
