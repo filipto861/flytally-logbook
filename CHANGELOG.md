@@ -14,7 +14,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Simplified the GPS import hierarchy: clean single-flight track review collapses by default, multi-flight/ambiguous/warned track review stays surfaced, and redundant clean-quality status copy was removed.
 - Reduced primary GPS Flight context to aircraft/regulatory basis/role/applicable operation-engine; Billing and Cost share now live in a separate collapsed Costs disclosure while invalid stored billing still blocks save.
 - Replaced generic GPS reviewed-state UX with deterministic evidence readiness plus targeted GPS-quality acknowledgement; incomplete imports navigate to the first unresolved flight card.
-- Multi-flight GPS remains draft-only and atomic; direct certification is not introduced by these changes.
+- Multi-flight GPS remains draft-only and atomic; direct batch certification is not introduced by these changes.
+- Added explicit same-page **Save draft** and **Save & certify flight** completion for eligible single Manual and GPS entries. Certification always re-reads the persisted row and reuses the existing v8 compliance/hash authority.
+- Added compact pre-certification summaries for the evidence being sealed, draft fallback messaging when certification is blocked/deferred, and draft-first implicit/Enter-key behavior.
+- Updated authenticated browser coverage for the removed generic GPS review checkbox and added direct Manual/GPS certification plus Enter-to-draft acceptance cases.
 
 ### Documentation / versioning governance
 - Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`; because historical CHANGELOG labels already reached v3.3, the first canonical unified target is `3.4.0`.
