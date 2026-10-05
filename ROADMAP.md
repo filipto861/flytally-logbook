@@ -129,7 +129,7 @@ Phase 1 closeout:
 - shared Training-purpose applicability predicate implemented and source-covered;
 - independent review reconciled against actual repository behavior.
 
-## Phase 2 — Information hierarchy — ACTIVE
+## Phase 2 — Information hierarchy — DONE
 
 ### GPS source
 Default visible:
@@ -167,7 +167,16 @@ Default visible:
 
 Duplicate helper/provenance/status copy should be removed when one compact source/status cue is sufficient.
 
-## Phase 3 — Progressive optional/contextual detail
+Phase 2 closeout:
+- clean single-flight GPS track review is collapsed by default;
+- multi-flight / ambiguous / warned GPS review remains surfaced;
+- the old wizard-step chrome is removed;
+- compact Flight context exposes aircraft + regulatory evidence basis + role + applicable operation/engine;
+- Billing is no longer part of the primary context summary;
+- clean GPS quality no longer emits a redundant standalone status line;
+- incomplete imports jump to the first flight section that still needs evidence.
+
+## Phase 3 — Progressive optional/contextual detail — ACTIVE
 
 Collapsed by default:
 - additional crew;
