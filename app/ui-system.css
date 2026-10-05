@@ -330,16 +330,15 @@ button[data-loading="true"]::after{
 .entry-certification-grid{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:8px;
+  column-gap:18px;
+  row-gap:10px;
+  padding-top:2px;
 }
 .entry-certification-grid>div{
   display:grid;
   gap:3px;
   min-width:0;
-  padding:9px 10px;
-  border:1px solid color-mix(in srgb,var(--line) 86%,transparent);
-  border-radius:9px;
-  background:color-mix(in srgb,var(--panel2) 72%,transparent);
+  padding:2px 0;
 }
 .entry-certification-grid span{
   color:var(--muted);
