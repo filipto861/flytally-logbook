@@ -57,7 +57,14 @@ export function trackFileFormat(source:string,fileName=""):TrackFileFormat{const
 export function trackSource(source:string,fileName=""):TrackSource{const haystack=`${fileName}\n${source.slice(0,20000)}`.toLowerCase();if(/adsb\s*exchange|adsbexchange/.test(haystack))return"adsbexchange";if(/flightradar\s*24|flightradar24|\bfr24\b/.test(haystack))return"flightradar24";if(/skydemon/.test(haystack))return"skydemon";return"generic"}
 export function parseTrackFile(source:string,fileName=""){const format=trackFileFormat(source,fileName);return format==="gpx"?parseGpx(source):format==="csv"?parseCsv(source):parseKml(source)}
 
+export const TRACK_GENERAL_IMPLAUSIBLE_SPEED_KMH=1200;
+export const TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH=1800;
 export const haversineKm=(a:KmlPoint,b:KmlPoint)=>{const radius=6371.0088,p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p,q=Math.sin(dLat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)**2;return 2*radius*Math.asin(Math.sqrt(q))};
+export function isImplausiblePositionTransition(a:KmlPoint,b:KmlPoint,durationSeconds:number){
+  if(!Number.isFinite(durationSeconds)||durationSeconds<=0)return false;
+  const distance=haversineKm(a,b),speed=distance/(durationSeconds/3600);
+  return(distance>=2&&speed>TRACK_GENERAL_IMPLAUSIBLE_SPEED_KMH)||(distance>=.5&&speed>TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH);
+}
 const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value=(Date.parse(b.time)-Date.parse(a.time))/1000;return Number.isFinite(value)&&value>0?value:0};
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
@@ -147,7 +154,7 @@ function hasCredibleSplitSection(points:KmlPoint[]){
 export function trackQuality(points:KmlPoint[]):TrackQuality{
   const timedPoints=points.filter(point=>point.time&&Number.isFinite(Date.parse(point.time))).length,altitudePoints=points.filter(point=>point.alt!==null&&Number.isFinite(point.alt)).length;
   let largestGapSeconds=0,implausibleJumps=0;
-  for(let index=1;index<points.length;index++){const duration=seconds(points[index-1],points[index]);if(duration>largestGapSeconds)largestGapSeconds=duration;if(duration>0){const distance=haversineKm(points[index-1],points[index]),speed=distance/(duration/3600);if((distance>=2&&speed>1200)||(distance>=.5&&speed>1800))implausibleJumps++}}
+  for(let index=1;index<points.length;index++){const duration=seconds(points[index-1],points[index]);if(duration>largestGapSeconds)largestGapSeconds=duration;if(duration>0&&isImplausiblePositionTransition(points[index-1],points[index],duration))implausibleJumps++}
   const timestampCoverage=points.length?timedPoints/points.length:0,altitudeCoverage=points.length?altitudePoints/points.length:0,warnings:string[]=[];
   if(points.length<4)warnings.push("Very few GPS points; review the route, airports and times carefully.");
   if(points.length>=2&&!hasAirborneMovement(points))warnings.push("No credible airborne movement was detected in this section.");
