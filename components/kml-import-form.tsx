@@ -300,14 +300,10 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
       })}</div>
     </>:null}
     {analysis&&singleReview&&parts.length===1?<section className="entry-certification-summary gps-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Ready to finish?</h2><p className="muted">Review the key GPS-derived and pilot-confirmed evidence that will be sealed if you choose Save &amp; certify.</p></div></div><div className="entry-certification-grid">
-      <div><span>Date</span><strong>{singleReview.date||"—"}</strong></div>
-      <div><span>Route</span><strong>{singleReview.departure||"—"} → {singleReview.arrival||"—"}</strong></div>
-      <div><span>Aircraft / basis</span><strong>{singleAircraftSummary}</strong></div>
-      <div><span>Role / crew</span><strong>{roleCrewSummary(singleRoleCrew,picConnections)}</strong></div>
-      <div><span>Operation / engine</span><strong>{singleOperationSummary}</strong></div>
+      <div><span>Flight</span><strong>{singleReview.date||"—"} · {singleReview.departure||"—"} → {singleReview.arrival||"—"}</strong></div>
+      <div><span>Aircraft / role</span><strong>{singleAircraftSummary} · {roleCrewSummary(singleRoleCrew,picConnections)}</strong><small>{singleOperationSummary}</small></div>
       <div><span>UTC times</span><strong>{singleReview.offBlock||"—"} / {singleReview.takeoff||"—"} / {singleReview.landing||"—"} / {singleReview.onBlock||"—"}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
-      <div><span>Landings</span><strong>{singleLandingSummary}</strong></div>
-      <div><span>Night / IFR</span><strong>{singleReview.nightTime||"0:00"} / {singleReview.ifrTime||"0:00"}</strong></div>
+      <div><span>Evidence</span><strong>{singleLandingSummary} · Night {singleReview.nightTime||"0:00"} · IFR {singleReview.ifrTime||"0:00"}</strong></div>
     </div><p className="value-origin-note"><span>Certification</span> Certified flights are locked; later changes are recorded as corrections.</p></section>:null}
     {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{parts.length===1?"Flight import":`${parts.length} flight import`}</strong><small>{profileError?"Selected aircraft needs configuration before GPS import can be saved.":requiresOperationEngine&&(!operationType||!engineType)?"Select Operation and Engine before saving.":billing==="INVALID"?"Resolve the stored aircraft billing setting.":gpsQualityNeedsAcknowledgement&&!gpsWarningAcknowledged?"Review the GPS quality warning.":selectedBalloon&&!balloonOperation?"Select free / tethered operation.":ready?"Ready to save.":`${reviewReadyCount} of ${parts.length} flights have complete logbook evidence.`}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":profileError?"Needs configuration":"Needs attention"}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
