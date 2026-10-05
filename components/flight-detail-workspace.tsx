@@ -42,7 +42,7 @@ export function FlightDetailWorkspace({
   const onTabKeyDown=(event:KeyboardEvent<HTMLButtonElement>,value:Tab)=>{
     const current=TABS.indexOf(value);let next=current;
     if(event.key==="ArrowRight")next=(current+1)%TABS.length;
-    else if(event.key==="ArrowLeft")next=(current-1+TABS.length;
+    else if(event.key==="ArrowLeft")next=(current-1+TABS.length)%TABS.length;
     else if(event.key==="Home")next=0;
     else if(event.key==="End")next=TABS.length-1;
     else return;
