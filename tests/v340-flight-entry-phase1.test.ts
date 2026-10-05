@@ -175,6 +175,6 @@ test("3.4.0 single GPS import exposes draft first and explicit certification sec
 test("3.4.0 single GPS completion summary exposes certification evidence",()=>{
   const gps=read("components/kml-import-form.tsx");
   assert.match(gps,/gps-certification-summary/);
-  for(const label of ["Date","Route","Aircraft / basis","Role / crew","Operation / engine","UTC times","Landings","Night / IFR"])assert.ok(gps.includes(`<span>${label}</span>`),label);
+  for(const label of ["Flight","Aircraft / role","UTC times","Evidence"])assert.ok(gps.includes(`<span>${label}</span>`),label);
   assert.match(gps,/Certified flights are locked; later changes are recorded as corrections\./);
 });
