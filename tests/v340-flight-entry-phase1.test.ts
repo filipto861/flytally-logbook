@@ -95,3 +95,16 @@ test("3.4.0 picker and update path both consume the shared applicability contrac
   assert.match(actions,/existingPurposeCodes=normalizeFlightPurposeCodes/);
   assert.match(actions,/parseFlightInput\(form,\{existingPurposeCodes\}\)/);
 });
+
+
+test("3.4.0 Phase 2 removes fake GPS wizard chrome and collapses clean-track/context detail",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  assert.doesNotMatch(gps,/className="entry-progress"/);
+  assert.doesNotMatch(gps,/className="import-step"/);
+  assert.match(gps,/className="entry-section gps-track-review" open=\{gpsReviewNeedsAttention\}/);
+  assert.match(gps,/parts\.length===1&&!cuts\.length/);
+  assert.match(gps,/Split into multiple flights/);
+  assert.match(gps,/className="entry-section gps-flight-context" open=\{flightContextNeedsAttention\}/);
+  assert.match(gps,/regulatoryContextLabel/);
+  assert.match(gps,/FLIGHT DETAILS/);
+});
