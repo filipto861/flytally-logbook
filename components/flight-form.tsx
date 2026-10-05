@@ -166,7 +166,7 @@ export function FlightForm({action,aircraft,initial={},instructors=[],picConnect
   <section className="optional-detail-group optional-notes"><div className="optional-detail-heading"><strong>Notes</strong><small>{storedNote?"Added":"Not added"}</small></div><label className="notes-field">Notes<textarea name="note" rows={3} defaultValue={field("note")}/></label></section>
 </div></details>
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}{state.success?<p className="form-success" role="status">{state.success}</p>:null}
-    {!editing?<section className="entry-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Ready to finish?</h2><p className="muted">Review the key evidence that will be sealed if you choose Save &amp; certify.</p></div></div><div className="entry-certification-grid">
+    {!editing?<section className="entry-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Review &amp; finish</h2></div></div><div className="entry-certification-grid">
       <div><span>Flight</span><strong>{date||"—"} · {certificationRouteSummary}</strong></div>
       <div><span>Aircraft / role</span><strong>{certificationContextSummary} · {certificationCrewSummary}</strong><small>{certificationOperationSummary}</small></div>
       <div><span>UTC times</span><strong>{certificationTimesSummary}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
