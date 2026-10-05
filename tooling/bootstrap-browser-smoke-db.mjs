@@ -253,7 +253,7 @@ CREATE TABLE aircraft(
   UNIQUE(user_id,registration)
 );
 
-CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $
+CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $flytally$
   DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
   BEGIN
     IF TG_OP='INSERT' THEN
@@ -285,7 +285,7 @@ CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER 
     END IF;
     RETURN NEW;
   END;
-$ LANGUAGE plpgsql;
+$flytally$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
   BEFORE INSERT OR UPDATE OF registration ON flights
   FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity();
