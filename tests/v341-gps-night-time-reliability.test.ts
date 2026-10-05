@@ -50,7 +50,7 @@ test("3.4.1 accepts a sparse same-state segment only when the conservative bound
   assert.equal(unsafe.status,"UNAVAILABLE");
   if(unsafe.status==="UNAVAILABLE"){
     assert.deepEqual(unsafe.reasons,["SEGMENT_GAP_TOO_LARGE"]);
-    assert.equal(unsafe.largestGapSeconds,900);
+    assert.equal(unsafe.affectedSegmentSeconds,900);
   }
 });
 
