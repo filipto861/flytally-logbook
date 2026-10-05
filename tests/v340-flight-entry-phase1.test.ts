@@ -195,8 +195,9 @@ test("3.4.0 browser fixture includes credential and recency dependencies used by
   for(const table of ["pilot_licences","pilot_qualifications","user_expiries","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence"]){
     assert.match(bootstrap,new RegExp(`CREATE TABLE ${table}\\(`));
   }
-  assert.match(bootstrap,/CREATE TABLE flights\([\s\S]*?date TEXT NOT NULL/);
-  assert.doesNotMatch(bootstrap,/CREATE TABLE flights\([\s\S]*?date DATE NOT NULL/);
+  const flightsTable=bootstrap.match(/CREATE TABLE flights\([\s\S]*?\n\);/)?.[0]??"";
+  assert.match(flightsTable,/date TEXT NOT NULL/);
+  assert.doesNotMatch(flightsTable,/date DATE NOT NULL/);
   for(const column of ["qualification_type","qualification_family","regulatory_category","qualification_scope","privilege_role","classification_source","validity_mode","valid_until","recency_until"]){
     assert.match(bootstrap,new RegExp(`\\b${column}\\b`));
   }
