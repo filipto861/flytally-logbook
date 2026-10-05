@@ -68,6 +68,7 @@ export type FlightDraftCandidate={
   verificationReference:unknown;
   task:unknown;
   purposeCodes:unknown[];
+  existingPurposeCodes:unknown[];
   purposeSelectionPresent:boolean;
   billingBasis:unknown;
   billingShare:unknown;
@@ -91,7 +92,7 @@ const provided=(value:unknown,provenance:FlightDraftProvenance):CandidateSemanti
 const unresolved=(reason:string):CandidateSemantic=>({state:"unresolved",reason,provenance:"UNRESOLVED"});
 const formValue=(form:FormData,name:string)=>form.get(name)??"";
 
-export function manualFlightCandidate(form:FormData):FlightDraftCandidate{
+export function manualFlightCandidate(form:FormData,existingPurposeCodes:unknown[]=[]):FlightDraftCandidate{
   return{
     source:"MANUAL",
     date:formValue(form,"date"),
@@ -139,6 +140,7 @@ export function manualFlightCandidate(form:FormData):FlightDraftCandidate{
     verificationReference:formValue(form,"verificationReference"),
     task:formValue(form,"task"),
     purposeCodes:form.getAll("purposeCode"),
+    existingPurposeCodes,
     purposeSelectionPresent:form.has("purposeSelectionPresent")||form.has("purposeCode"),
     billingBasis:formValue(form,"billingBasis"),
     billingShare:formValue(form,"billingShare"),
@@ -257,6 +259,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     verificationReference:input.verificationReference??"",
     task:input.task,
     purposeCodes:[],
+    existingPurposeCodes:[],
     purposeSelectionPresent:false,
     billingBasis:input.billingBasis,
     billingShare:input.billingShare,

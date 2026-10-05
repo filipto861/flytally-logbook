@@ -6,8 +6,28 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - `FEATURES.md` is the capability inventory.
 - This file records merged/product changes and must not describe planned work as completed.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
+- From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
 ## Unreleased
+
+### 3.4.0 Flight Entry Simplification — in development
+- Local release verification now includes TypeScript PASS, 1230/1230 unit/regression PASS, 73/73 PostgreSQL core PASS, production build PASS, 13/13 targeted 3.4.0 contract PASS, 6/6 targeted authenticated desktop/mobile Playwright PASS, and a focused responsive Flight Entry smoke **1/1 PASS** covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark. GitHub CI is intentionally NOT RUN under the local-first policy.
+- Switched repository verification to local-first release gating; GitHub Verify and Browser Smoke are now manual-only diagnostics rather than automatic PR/release requirements.
+- Simplified the GPS import hierarchy: clean single-flight track review collapses by default, multi-flight/ambiguous/warned track review stays surfaced, and redundant clean-quality status copy was removed.
+- Reduced primary GPS Flight context to aircraft/regulatory basis/role/applicable operation-engine; Billing and Cost share now live in a separate collapsed Costs disclosure while invalid stored billing still blocks save.
+- Replaced generic GPS reviewed-state UX with deterministic evidence readiness plus targeted GPS-quality acknowledgement; incomplete imports navigate to the first unresolved flight card.
+- Multi-flight GPS remains draft-only and atomic; direct batch certification is not introduced by these changes.
+- Added explicit same-page **Save draft** and **Save & certify flight** completion for eligible single Manual and GPS entries. Certification always re-reads the persisted row and reuses the existing v8 compliance/hash authority. Flight-detail readiness/blocker UI now uses that same category-aware certification compliance contract instead of the old Part-FCL-only blocker view.
+- Added compact pre-certification summaries for the evidence being sealed, draft fallback messaging when certification is blocked/deferred, and draft-first implicit/Enter-key behavior. The completion summary was then flattened to four concise evidence groups instead of another nested card grid.
+- Updated authenticated browser coverage for the removed generic GPS review checkbox and added direct Manual/GPS certification, Enter-to-draft, multi-flight draft-only, and targeted GPS-quality acknowledgement acceptance cases.
+
+### Documentation / versioning governance
+- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`; because historical CHANGELOG labels already reached v3.3, the first canonical unified target is `3.4.0`.
+- New implementation phases use numeric Phase 1 / Phase 2 / … naming rather than new E/F/B/SP/M milestone families.
+- Database schema, certification payload and backup-format versions remain independent technical counters.
+- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
+
+## Legacy unversioned development / production history — through 4 October 2026
 
 ### Flight Entry E2 — production verified
 - Hardened advisory take-off anomaly locality around corrupt GPS transitions while preserving discontinuity warnings and editable GPS-derived values.

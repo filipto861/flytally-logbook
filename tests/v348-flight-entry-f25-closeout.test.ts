@@ -202,13 +202,13 @@ test("F2.5 certification fingerprints v1-v8 remain verifiable and RoleCrew evide
     assert.equal(verifyFlightCertification({...candidate,certification_hash:hash,commander:"Tampered Commander"},42).status,"mismatch",String(version));
   }
   assert.equal(verifyFlightCertification({...certificationRow,certification_version:9,certification_hash:"x"},42).status,"unsupported");
-  const action=read("app/(protected)/flights/certification-actions.ts");
+  const action=read("lib/flight-certification.ts");
   assert.match(action,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
   assert.match(action,/certification_version=8/);
 });
 
 test("F2.5 invitation workflows remain explicit, account-ID based and exact-source bound",()=>{
-  const certification=read("app/(protected)/flights/certification-actions.ts");
+  const certification=read("lib/flight-certification.ts");
   const instructor=read("app/(protected)/flights/instructor-actions.ts");
   const training=read("lib/training-verification.ts");
   const shared=read("app/(protected)/flights/shared-actions.ts");

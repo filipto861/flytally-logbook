@@ -115,6 +115,23 @@ Important boundary:
 
 ## Planned
 
+### 3.4.0 — Flight Entry Simplification — RELEASE CANDIDATE
+- Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
+- Default single-flight GPS hierarchy is now compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics are conditional detail. Phase 2 also removes redundant clean-quality copy and keeps incomplete-import focus on the first unresolved flight.
+- Flight context is now one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine. Billing/Cost share moved to a separate collapsed Costs disclosure and malformed persisted billing still fails closed.
+- Single-flight **Save & certify** is implemented for Manual and GPS. **Save draft** remains available and is the implicit/default submit behavior; pressing Enter cannot certify.
+- Pressing Enter cannot certify. Certification always requires the explicit Save & certify action.
+- Certification reuses the existing persisted-row compliance/hash/revision authority. If draft save succeeds but certification is blocked, the record remains a draft with an explicit reason.
+- The generic normal-case “I reviewed this flight” GPS gate and server requirement are removed; deterministic evidence readiness is used instead, with targeted acknowledgement only for non-blocking GPS-quality warnings.
+- Multi-flight GPS stays atomic **draft-only** in 3.4.0; the UI exposes only **Save N flight drafts**, and crafted multi-flight certify intent fails closed server-side.
+- Save & certify never sends PIC/crew/instructor invitations automatically.
+- Training-purpose filtering remains category-aware: ULL correctly hides non-applicable Part-FCL/SFCL/BFCL recency purposes. 3.4.0 adds no generic structured Training / practice marker.
+- 3.4.0 fixes the current Training-purpose UI/server parity gap by moving visibility and persistence eligibility onto one shared applicability contract.
+- Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
+- Detailed design: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
+- Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`.
+
+
 ### UI/UX Simplicity & New Flight cognitive-load reduction — IMPLEMENTED
 
 - Screenshot-backed audit of the authenticated product across desktop, iPad landscape, iPad portrait and mobile in light/dark.
@@ -163,7 +180,7 @@ Implemented by SP1–SP5:
 - No automatic invitation and no identity inference from names.
 - Migration v16 persists invite-time PIC commander provenance and enforces one active PIC participation per source revision.
 
-### Flight Entry Follow-up E1 — E1.1 + E1.2 + E1.3 + E1.4 DONE / LOCAL VERIFIED · E1.5 LOCAL GATE PASS / PR-CI
+### Legacy Flight Entry follow-up — IMPLEMENTED / PRODUCTION VERIFIED
 
 Planned product capabilities:
 - optional aircraft-profile default for SP/MP, applied only as a New Flight prefill and always editable per flight;
@@ -261,3 +278,4 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 - No automatic FX conversion unless a future business rule explicitly defines it.
 - No unsupported offline editing.
 - No authority/legal/trademark/provider approval inferred from code, tests or internal status.
+

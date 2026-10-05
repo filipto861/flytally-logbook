@@ -9,12 +9,41 @@ export const FLIGHT_PURPOSES=[
 ] as const;
 
 export type FlightPurposeCode=(typeof FLIGHT_PURPOSES)[number]["code"];
+export type FlightPurposeApplicabilityContext={
+  regulatoryCategory?:unknown;
+  role?:unknown;
+  instructor?:unknown;
+};
 const known=new Set<string>(FLIGHT_PURPOSES.map(item=>item.code));
+const generalPurposeCodes=new Set<FlightPurposeCode>(["AIRCRAFT_DIFFERENCES","AIRCRAFT_FAMILIARISATION"]);
 const escapeRegExp=(value:string)=>value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 
 function values(value:unknown):string[]{
   if(Array.isArray(value))return value.flatMap(item=>values(item));
   return String(value??"").split(/[|,]/).map(item=>item.trim()).filter(Boolean);
+}
+
+function normalizedContext(value:unknown){return String(value??"").trim().toUpperCase()}
+
+function categoryAllowsPurpose(code:FlightPurposeCode,regulatoryCategory:unknown){
+  if(generalPurposeCodes.has(code))return true;
+  const category=normalizedContext(regulatoryCategory);
+  if(code==="LAPL_FCL140A_REFRESHER"||code==="SEP_TMG_FCL740A_REFRESHER")return category==="AEROPLANE";
+  if(code==="LAPL_H_FCL140H_REFRESHER")return category==="HELICOPTER";
+  if(code==="SPL_SFCL160_TRAINING")return category==="SAILPLANE";
+  if(code==="BPL_BFCL160_TRAINING")return category==="BALLOON";
+  return false;
+}
+
+export function flightPurposeApplicable(code:FlightPurposeCode,context:FlightPurposeApplicabilityContext){
+  if(!categoryAllowsPurpose(code,context.regulatoryCategory))return false;
+  const role=normalizedContext(context.role),hasInstructor=String(context.instructor??"").trim().length>0;
+  if(role==="DUAL")return true;
+  return hasInstructor&&generalPurposeCodes.has(code);
+}
+
+export function applicableFlightPurposeCodes(context:FlightPurposeApplicabilityContext){
+  return FLIGHT_PURPOSES.map(item=>item.code).filter(code=>flightPurposeApplicable(code,context));
 }
 
 export function normalizeFlightPurposeCodes(value:unknown):FlightPurposeCode[]{

@@ -18,11 +18,12 @@ test("v3.3 U10 keeps a new manual entry neutral until the user selects aircraft 
   assert.doesNotMatch(form,/Last used aircraft selected|Continued from your previous arrival/);
 });
 
-test("v3.3 U10 removes fake wizard progress from manual entry",()=>{
+test("v3.3 U10 baseline stays valid while 3.4 removes fake wizard progress from both entry paths",()=>{
   const form=read("components/flight-form.tsx");
   const importer=read("components/kml-import-form.tsx");
   assert.doesNotMatch(form,/aria-label="Manual flight entry progress"/);
-  assert.match(importer,/aria-label="GPS import progress"/);
+  assert.doesNotMatch(importer,/aria-label="GPS import progress"/);
+  assert.doesNotMatch(importer,/className="entry-progress"/);
 });
 
 test("v3.3 U10 collapses routine experience while keeping required category evidence visible",()=>{
@@ -40,7 +41,7 @@ test("v3.3 U10 makes source choice and save readiness compact and explicit",()=>
   assert.match(workspace,/Import GPS track/);
   assert.doesNotMatch(workspace,/>01<|>02</);
   assert.match(form,/className="entry-save-state"/);
-  assert.match(form,/Creates an editable draft for final review/);
+  assert.match(form,/Save draft keeps the record editable/);
   assert.match(css,/workflow simplicity: keep New flight focused on the common path/);
   assert.match(css,/grid-template-columns:minmax\(0,1fr\) auto/);
   assert.doesNotMatch(form,/Save and add another|Review before save|Ready to save/);

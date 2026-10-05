@@ -98,13 +98,14 @@ test("F4.1 server resolves common RoleCrew from FormData after aircraft authorit
   assert.doesNotMatch(gps,/gpsFlightCandidate\(\{registration,aircraftType,profile:profileForFlight,role:form\.get\("role"\)/);
 });
 
-test("F4.1 UI exposes common DUAL requirements and invalidates inherited review on Role change",()=>{
+test("F4.1 UI exposes common DUAL requirements without a generic per-flight review gate",()=>{
   const form=read("components/kml-import-form.tsx");
 
   assert.match(form,/GPS_IMPORT_ROLES\.map\(value=><option/);
   assert.match(form,/roleCrewSpec\(role,selectedProfile\.evidence\)/);
   assert.match(form,/commonInstructorRequired=commonCrewSpec\?\.instructor==="required_save"/);
-  assert.match(form,/setRole\(event\.target\.value as \(typeof GPS_IMPORT_ROLES\)\[number\]\);setReviews\(current=>current\.map\(\(review,index\)=>roleCrewOverrides\[index\]\?\.mode==="OVERRIDE"\?review:\{\.\.\.review,reviewed:false\}\)\)/);
+  assert.match(form,/onChange=\{event=>setRole\(event\.target\.value as \(typeof GPS_IMPORT_ROLES\)\[number\]\)\}/);
+  assert.doesNotMatch(form,/reviewed:false/);
   assert.match(form,/role==="DUAL"\?<label><span>Instructor \/ PIC/);
   assert.match(form,/required=\{commonInstructorRequired\}/);
   assert.match(form,/commonRoleCrewReady=Boolean\(selectedProfile\)&&roleCrewBufferReady\(commonRoleCrewBuffer,selectedProfile!\.evidence,picConnections\)/);

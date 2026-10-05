@@ -101,7 +101,8 @@ after(()=>{if(enabled)rawPsql(`DROP SCHEMA IF EXISTS ${quotedSchema} CASCADE`)})
 
 test("AC-01/03/04/05/06/26 full certified workflow stays consistent across current and historical projections",{skip:!enabled},()=>{
   process.env.SIGNING_SECRET=process.env.SIGNING_SECRET||"flytally-ci-signing-secret-with-enough-entropy";
-  const certification=read("app/(protected)/flights/certification-actions.ts");
+  const certification=read("lib/flight-certification.ts");
+  const correctionActions=read("app/(protected)/flights/certification-actions.ts");
   const training=read("lib/training-verification.ts");
   const shared=read("app/(protected)/flights/shared-actions.ts");
   const detail=read("app/(protected)/flights/[id]/page.tsx");
@@ -113,9 +114,10 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   run(`INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_make,aircraft_model,aircraft_variant,aircraft_type,aircraft_class,regulatory_category,balloon_class,balloon_group,balloon_operation,launch_method,launches,departure,arrival,off_block,takeoff,landing,on_block,starts,operation_type,engine_type,operator_name,flight_number,operation_context,landings_day,landings_night,movement_evidence_recorded,takeoffs_day,takeoffs_night,approaches_day,approaches_night,night_minutes,ifr_minutes,pic_minutes,copilot_minutes,dual_minutes,instructor_minutes,commander,instructor,role,task,note,purpose_code,verification_name,verification_reference,certification_version,record_revision,correction_reason)
     VALUES(401,41,'2026-08-28','EASA','OK-WF1','Bristell','B23','','B23','SEP','AEROPLANE','','','','',0,'LKPR','LKBE','08:00','08:05','09:00','09:05',1,'SP','SE','Workflow Training','WF401','TRAINING',1,0,FALSE,0,0,0,0,0,0,0,0,65,0,'Test Instructor','Test Instructor','DUAL','Training exercise','','','','',8,1,'')`);
 
-  const certifyUpdate=sqlBlock(certification,"UPDATE flights SET certified_at=NOW(),certified_by_user_id=");
+  const certifyUpdate=sqlBlock(certification,"SET certified_at=NOW()");
   const r1Hash=flightCertificationHash(draft,41,8);
-  run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r1Hash}));
+  const r1RowXmin=String(rows(`SELECT xmin::text row_xmin FROM flights WHERE id=401 AND user_id=41`)[0].row_xmin);
+  run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r1Hash,'String(row.row_xmin??"")':r1RowXmin}));
   const certifiedR1=rows(`SELECT * FROM flights WHERE id=401 AND user_id=41`)[0];
   assert.equal(verifyFlightCertification(certifiedR1,41).status,"verified");
   assert.equal(String(certifiedR1.operation_context),"TRAINING");
@@ -150,8 +152,8 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   const r1VerificationId=signRevision(1,r1Hash,r1Request.participationId,r1Request.approvalId,"R1 reviewed and signed");
 
   const correctionReason="Correct destination after post-flight review";
-  const archiveInsert=sqlBlock(certification,"INSERT INTO flight_certified_revisions(flight_id,user_id,revision_number,snapshot_data");
-  const correctionUpdate=sqlBlock(certification,"UPDATE flights SET record_revision=COALESCE(record_revision,1)+1");
+  const archiveInsert=sqlBlock(correctionActions,"INSERT INTO flight_certified_revisions(flight_id,user_id,revision_number,snapshot_data");
+  const correctionUpdate=sqlBlock(correctionActions,"UPDATE flights SET record_revision=COALESCE(record_revision,1)+1");
   run(render(archiveInsert,{flightId:401,userId:41,reason:correctionReason}));
   run(render(correctionUpdate,{reason:correctionReason,flightId:401,userId:41}));
 
@@ -169,7 +171,8 @@ test("AC-01/03/04/05/06/26 full certified workflow stays consistent across curre
   assert.equal(Number(r2Draft.record_revision),2);
   assert.equal(String(r2Draft.correction_reason),correctionReason);
   const r2Hash=flightCertificationHash(r2Draft,41,8);
-  run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r2Hash}));
+  const r2RowXmin=String(rows(`SELECT xmin::text row_xmin FROM flights WHERE id=401 AND user_id=41`)[0].row_xmin);
+  run(render(certifyUpdate,{flightId:401,userId:41,certificationHash:r2Hash,'String(row.row_xmin??"")':r2RowXmin}));
 
   const r2Request=requestRevision(2,r2Hash);
   const r2VerificationId=signRevision(2,r2Hash,r2Request.participationId,r2Request.approvalId,"R2 reviewed and signed");

@@ -21,9 +21,9 @@ const gps=actionBlock("importKmlFlight","updateFlight");
 const update=actionBlock("updateFlight","saveFlightExpenses");
 
 test("F1.3 keeps parseFlightInput as the Manual compatibility boundary",()=>{
-  assert.match(parser,/export function parseFlightInput\(form:FormData\)[\s\S]*return normalizeFlightDraft\(manualFlightCandidate\(form\)\)/);
+  assert.match(parser,/export function parseFlightInput\(form:FormData,options:[\s\S]*return normalizeFlightDraft\(manualFlightCandidate\(form,options\.existingPurposeCodes\?\?\[\]\)\)/);
   for(const [name,block] of [["create",create],["update",update]] as const){
-    assert.equal((block.match(/parseFlightInput\(form\)/g)||[]).length,1,name);
+    assert.equal((block.match(/parseFlightInput\(form(?:,\{existingPurposeCodes\})?\)/g)||[]).length,1,name);
     assert.equal((block.match(/parseFlightExpenses\(form\)/g)||[]).length,1,name);
     assert.match(block,/const f=parsed\.data/,name);
     assert.doesNotMatch(block,/normalizeFlightDraft\(/,name);

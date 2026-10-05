@@ -9,7 +9,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const actions=read("app/(protected)/flights/actions.ts");
 const flightInput=read("lib/flight-input.ts");
 const certification=read("lib/certification-integrity.ts");
-const certificationActions=read("app/(protected)/flights/certification-actions.ts");
+const certificationActions=read("lib/flight-certification.ts");
 const compliance=read("lib/fcl050-compliance.ts");
 const recency=read("lib/recency-service.ts");
 const dashboard=read("lib/data/dashboard.ts");
@@ -34,7 +34,8 @@ const update=actionBlock("updateFlight");
 
 test("F0 inventory locks Manual shared parser versus current GPS direct semantic path",()=>{
   assert.match(create,/parseFlightInput\(form\)/);
-  assert.match(update,/parseFlightInput\(form\)/);
+  assert.match(update,/existingPurposeCodes=normalizeFlightPurposeCodes/);
+  assert.match(update,/parseFlightInput\(form,\{existingPurposeCodes\}\)/);
   assert.doesNotMatch(gps,/parseFlightInput\(/);
   assert.match(gps,/INSERT INTO flights\(user_id,date,evidence,registration,aircraft_type,aircraft_class/);
   assert.match(matrix,/GPS is therefore still a second semantic write path/);

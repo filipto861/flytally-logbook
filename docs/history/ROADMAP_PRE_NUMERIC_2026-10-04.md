@@ -1,0 +1,759 @@
+# FlyTally Logbook Roadmap — pre-numeric archive
+
+**Archived:** 4 October 2026  
+**Source:** canonical `ROADMAP.md` immediately before adoption of numeric release planning.
+
+This file preserves the previous letter-coded milestone history, closeout evidence and superseded sequencing for auditability. It is historical evidence only. Current planning is controlled by root `ROADMAP.md`.
+
+---
+
+# FlyTally Logbook Roadmap
+
+**Status:** Active  
+**Owner:** Filip Točík  
+**Last updated:** 4 October 2026
+
+This is the canonical planning document for `flytally-logbook`. It answers **what is complete, what we are doing now, what comes next, and why**.
+
+- `FEATURES.md` = product capability inventory.
+- `CHANGELOG.md` = changes that actually shipped.
+- `ARCHITECTURE.md` = current architectural and data-integrity invariants.
+- `DEVELOPMENT.md` = implementation and verification workflow.
+- detailed milestone contracts belong under `docs/product/`;
+- superseded release plans remain under `docs/history/`.
+
+A roadmap item is not DONE until implementation, required verification and documentation closeout are complete.
+
+## Status legend
+
+- ✅ **DONE** — implemented, verified and merged.
+- 🚧 **ACTIVE** — current work.
+- ➡️ **NEXT** — first implementation work after ACTIVE closes.
+- ⏳ **PLANNED** — accepted direction, not yet next.
+- ⏸️ **PAUSED** — already started but intentionally not the current priority.
+- 🔬 **RESEARCH** — not implementation-ready.
+- ⚠️ **BLOCKED / EXTERNAL** — completion depends on evidence or a decision outside the repository.
+
+## Progress overview
+
+| Area / milestone | Status | Current state |
+| --- | :---: | --- |
+| Core logbook / certified record integrity | ✅ | Production foundation complete |
+| Multi-category pilot logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and conservative Other supported |
+| Flight entry / review / GPS workflows | ✅ | Flight Entry Workflow 3.0 + Follow-up E1 + E2 rapid GPS post-production corrections are production verified |
+| Recency / licences / evidence | ✅ | Evidence-first workspace live; helicopter historical type integrity hardened |
+| Sharing / Connections / Action Center | ✅ | Shared-flight, instructor and aircraft-profile collaboration live |
+| Statistics / professional workspace | ✅ | Pilot analytics and professional-experience layer live |
+| Backup / recovery / protected history | ✅ | Portable backup, review-first restore and protected-history preservation implemented |
+| Compliance & safety foundation | ✅ | Technical compliance/security foundation complete |
+| Commercial & external validation foundation | ✅ | Technical foundation complete; external approvals remain separate |
+| UX & design consistency | ✅ | Previous consistency/polish audit Batch 1–11 complete |
+| UI/UX Simplicity Audit 2026 | ✅ | **DONE** · B0.5–B5 merged; final authenticated matrix 132/132 screenshots verified across required viewport/theme states |
+| Documentation governance | ✅ | ROADMAP / FEATURES / CHANGELOG governance and repository cleanup complete |
+| Multi-aircraft M0 — contract & evidence audit | ✅ | Source-of-truth matrix and consumer inventory complete · PR #153 |
+| Multi-aircraft M2A — helicopter snapshot integrity | ✅ | Historical type resolution fixed and fail-closed · PR #154 |
+| Multi-aircraft M1 — canonical profile validation | ✅ | Add/Edit + shared import use one fail-closed contract · PR #155 |
+| Roadmap review & prioritization | ✅ | Product order reviewed, independently challenged and approved by Filip on 27 September 2026 |
+| GPS touch-and-go detection reliability | ✅ | Priority 1 complete; discontinuity validation is bounded to the physical T&G evidence span without changing thresholds or take-off semantics |
+| Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete and merged; original Safety Pilot-specific workflow remains closed and preserved |
+| General PIC invitation across source roles | ✅ | DONE · PR #169 merged; migration v16 applied/verified; production deployment READY and public smoke 200 |
+| Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; domain convergence and F5/F6 UX closeout complete |
+| Multi-aircraft Product Scale | ⏸️ | M0/M2A/M1 complete; M2B remains accepted but is temporarily pre-empted by Flight Entry Follow-up E1 production closeout |
+| Saved-date / timezone semantics · issue #144 | ⏳ | Known persisted-default inconsistency; semantics decision required before code |
+| Currency / monetary semantics · issue #136 | ⏳ | Known business-rule inconsistency; define account vs per-record currency before code |
+| Professional Logbook Platform | 🔬 | Organization/operator/fleet workflows remain research-only |
+
+## Roadmap review & prioritization — DONE
+
+The product-wide roadmap review is complete. Filip approved the reconciled priority order on **27 September 2026** after independent second-AI review and repository reconciliation.
+
+The following execution order is frozen unless new evidence exposes a higher-severity data-integrity or production issue. On 30 September 2026 that exception was triggered by the confirmed GPS invalid-profile → `ULL` fail-open path and Manual/GPS semantic-write divergence; the table below records the superseding order:
+
+| Order | Workstream | Status | Why it is here |
+| ---: | --- | :---: | --- |
+| 0 | Roadmap review / freeze | ✅ | Product-wide order approved and documentation frozen |
+| 1 | GPS touch-and-go detection reliability | ✅ | Real-track defect reproduced, fixed with evidence-span locality and regression-verified |
+| 2 | Safety Pilot ↔ PIC shared-flight workflow | ✅ | SP1–SP5 complete · PRs #162–#166 merged |
+| 3 | General PIC invitation across source roles | ✅ | DONE · PR #169 merged, production v16 applied, deployment READY |
+| 4 | UI/UX Simplicity Audit 2026 | ✅ | DONE · B0.5–B5 merged, final authenticated live matrix PASS, visual closeout complete |
+| 5 | Flight Entry Workflow 3.0 | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged; production `252bcb8`; deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` READY; smoke PASS; no DB/schema/certification change |
+| 6 | E2 — GPS post-production corrections | ✅ | DONE / PRODUCTION VERIFIED · PR #238 merged; v19 applied and postflight-verified; exact production deployment READY |
+| 7 | Multi-aircraft M2B — remaining integrity audit | ➡️ | Accepted work; resume/re-check now that E2 production closeout is complete |
+| 8 | Saved-date / timezone semantics · #144 | ⏳ | Can persist the wrong calendar date around timezone boundaries |
+| 9 | Currency / monetary semantics · #136 | ⏳ | Current setting and hard-coded CZK surfaces need one business contract |
+| 10 | Multi-aircraft M3 — heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 11 | Multi-aircraft M4 — sharing/recovery/scale closeout | ⏳ | Close the phase with cross-workflow and scale evidence |
+| 12 | Professional Logbook Platform | 🔬 | Only after pilot-logbook foundations are stable in real use |
+
+**Priority rule:** production/data-integrity defects can pre-empt this order. The confirmed GPS invalid-profile → `ULL` fallback and Manual/GPS semantic-write divergence previously exercised that rule; Flight Entry Workflow 3.0 is now DONE / PRODUCTION VERIFIED. Flight Entry Follow-up E1 remains active only for the scoped follow-up/migration closeout before M2B resumes. UI simplification must not weaken evidence, validation or historical integrity.
+
+## E2 — GPS post-production corrections — DONE / PRODUCTION VERIFIED
+
+Filip approved one rapid correction batch after production use exposed four linked GPS-entry gaps. The batch is intentionally implemented and verified together rather than as separate release milestones.
+
+Frozen scope:
+- harden take-off detection so an implausible GPS teleport cannot contaminate a long following point window and delay the advisory take-off marker; preserve fail-closed warning/provenance when exact wheels-off cannot be proven;
+- add nullable aircraft-profile `default_engine_type = SE | ME | NULL`, with an editable catalogue-derived suggestion only when engine count is unambiguous; no historical aircraft backfill;
+- apply the existing explicit account SERA night definition to supported ULL as well as EASA GPS review, so Day/Night landing suggestions are not artificially blocked by logbook family;
+- add conservative GPS Night-time suggestion from track timestamps/positions under the same explicit night definition; IFR remains manual;
+- simplify FCL.060 PF evidence to optional explicit pilot confirmation and do not block ordinary GPS save merely because PF evidence is absent; ULL without explicit Part-FCL credit mapping must not show Part-FCL PF evidence controls.
+
+Closeout evidence: exact release candidate `70f8e12c585b0f3713ce91ba0c1f036ebaf1102e`; Verify #1141 PASS with TypeScript PASS, 1208/1208 unit/regression and PostgreSQL 86/86; Browser #514 PASS with 84/84 and 2 intentional skips; production v19 preflight proved exact v1–v18 and no partial state; migration v19 committed additively with no aircraft backfill; postflight proved nullable `default_engine_type`, validated NULL/SE/ME constraint, 0 non-null defaults, unchanged baseline counts and exact registry v1–v19. PR #238 merged as `ba2b4324f1f9ae84161ec86e82fc13d268938160`; Vercel deployment `dpl_FsVYmDgJ2b3KNx4Yhd9jPsLJkvYc` is READY for that exact SHA, aliases `fly-tally.com` with no alias error, and immediate runtime-error check found none. M2B is next.
+
+Detailed contract: `docs/product/FLIGHT_ENTRY_E2_RAPID_CORRECTIONS.md`.
+
+## P1 — GPS touch-and-go detection reliability — DONE
+
+A real GPS import produced the wrong landing suggestion during touch-and-go operations. The exact failure was reproduced and fixed by bounding rolling-T&G altitude-discontinuity validation to the candidate's own physical descent/minimum/climb evidence span.
+
+Detailed investigation contract:
+
+`docs/product/GPS_TOUCH_AND_GO_RELIABILITY.md`
+
+Roadmap-level acceptance:
+- reproduce the exact real-track mismatch before changing detector logic;
+- create a minimal/anonymized regression fixture;
+- classify the evidence-backed failure mechanism;
+- keep GPS-derived movements advisory and reviewable;
+- re-run the existing GPS/track regression corpus so the fix does not create new false positives;
+- where sampling-rate sensitivity is confirmed, require stable classification across representative sampling intervals.
+
+Closeout: the existing 28–145 km/h and 30 m qualification thresholds remain unchanged; take-off discontinuity semantics and unrelated point-count grouping/dedup rules remain unchanged. The anonymized sparse fixture failed before the fix and passed after it while the in-span corruption case remained fail-closed.
+
+## P2 — Safety Pilot ↔ PIC shared-flight workflow — DONE
+
+User goal:
+
+- source pilot records their own flight as **SAFETY PILOT**;
+- Actual PIC can be selected from accepted Connections or entered manually;
+- when a connected PIC was explicitly selected, the source pilot may invite them after certification to add an independent copy as **PIC**.
+
+Detailed workflow/data-model contract:
+
+`docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`
+
+Frozen roadmap-level boundaries:
+- historical Actual PIC display text remains the existing certification-protected `commander` evidence;
+- connected identity is separate collaboration metadata, never inferred from the name text;
+- connected identity is not added as mutable data to the certified `flights` row;
+- selecting a connected PIC never sends an automatic invitation;
+- invite and accept both re-check accepted Connection state and exact source revision/hash;
+- recipient gets an independently owned PIC record;
+- source SAFETY PILOT record never gains PIC credit;
+- manual-only Actual PIC remains fully valid;
+- no automatic invitation expiry is introduced; existing cancellation/revocation semantics remain the baseline;
+- any required schema change is additive, tenant-safe and backward-compatible.
+
+The connected identity is modeled as a separate pre-participation collaboration link. Exact schema/table naming is an implementation-design detail, but no name matching is permitted.
+
+Independent second-AI implementation-design review is complete and reconciled against the repository.
+
+The review returned **APPROVE WITH CHANGES**. The accepted changes are now frozen in `docs/product/SAFETY_PILOT_PIC_WORKFLOW.md`: explicit fail-closed PIC combination handling, unconditional exclusion of PIC from the generic arbitrary-recipient crew selector, certified `commander` materialization for PIC recipients, live revoked-Connection UI gating, and migration v15 placement in the tracked schema sequence.
+
+The design gate and implementation are closed. **SP1 — schema + pure domain contract is DONE and merged in PR #162. SP2 — create/edit connected/manual Actual PIC persistence is DONE and merged in PR #163. SP3 — dedicated certified PIC invitation is DONE and merged in PR #164. SP4 — PIC materialization + recency proof is DONE and merged in PR #165. SP5 — lifecycle/release closeout is DONE and merged in PR #166.**
+
+SP1 staging remains fail-closed: `PIC` is excluded from the legacy generic crew selector, rejected by the generic invite server action, and intentionally not materialized until SP4 supplies the full certified-commander / Connection-recheck / recency contract.
+
+SP1 verification evidence: current-branch unit/regression suite 875/875 PASS; TypeScript PASS; production build PASS; migration v15 and connected-PIC persistence constraints exercised successfully on an isolated Neon branch and then deleted. After explicit approval, the same verified migration v15 was applied successfully to the production Neon branch; post-migration verification confirmed the new table, owner FK and PIC participation constraint, with zero connected-crew rows.
+
+SP3 verification evidence:
+- dedicated server-side PIC invite derives the target only from persisted connected-PIC metadata;
+- invite requires an owned certified Safety Pilot source, non-empty certification hash and a live accepted Connection;
+- generic arbitrary-recipient sharing still excludes/rejects PIC;
+- certified flight UI exposes the linked Actual PIC separately and fails closed when the Connection is revoked;
+- GitHub Verify FlyTally web PASS on final SP3 runtime head: 890/890 unit/regression tests, 0 fail, 0 skip;
+- PostgreSQL core acceptance PASS: 47/47, 0 fail, 0 skip across 20 core files;
+- authenticated Chromium desktop/mobile smoke PASS: 22/22;
+- SP4 materialization remains intentionally out of SP3.
+
+SP4 verification evidence:
+- recipient PIC materialization uses the certification-protected source `commander` while preserving existing non-PIC commander behavior;
+- PIC acceptance/materialization rechecks exact source revision/hash, source SAFETY PILOT role and live accepted Connection;
+- canonical PIC credit and ordinary PIC recency equivalence are regression-proven; source SAFETY PILOT contributes no PIC credit/movements;
+- PostgreSQL acceptance proves independent recipient ownership, duplicate reuse and revoked-Connection fail-closed behavior;
+- GitHub Verify FlyTally web PASS: 895/895 unit/regression, 0 fail, 0 skip;
+- PostgreSQL core acceptance PASS: 48/48 across 20 core files, 0 fail, 0 skip;
+- authenticated Chromium desktop/mobile smoke PASS: 22/22; production build PASS;
+- SP5 correction/revision lifecycle and release closeout remain separate.
+
+SP5 verification evidence:
+- correction lifecycle supersedes only pending invitations bound to the old certified revision and preserves connected-PIC metadata on the source flight;
+- already materialized recipient records remain independent and are not rewritten by source correction;
+- source cancel and recipient decline remain pending-only and identity-scoped; dedicated PIC reinvite reopens declined/cancelled requests without overwriting accepted/materialized state;
+- certification payload/version remains unchanged;
+- PostgreSQL lifecycle acceptance includes cancelled → reinvite behavior;
+- authenticated browser coverage includes cancel → reinvite → pending → cancel plus revoked-Connection fail-closed state;
+- GitHub Verify FlyTally web PASS: 900/900 unit/regression, 0 fail, 0 skip;
+- PostgreSQL core acceptance PASS: 48/48 across 20 core files, 0 fail, 0 skip;
+- authenticated Chromium desktop/mobile smoke PASS: 22/22; production build PASS;
+- no new schema migration is introduced by SP5; the prerequisite v15 migration was already production-verified during SP1.
+
+P2 closeout:
+- SP1–SP5 are merged to `main` through PRs #162–#166.
+- Final SP5 verification: 900/900 unit/regression PASS, PostgreSQL core 48/48 PASS across 20 files, authenticated Chromium desktop/mobile 22/22 PASS, production build PASS.
+- Migration v15 was already applied and production-verified during SP1; SP2–SP5 introduced no additional schema migration.
+- No production deployment is inferred from merge/test success; deployment status is tracked separately.
+- At P2 closeout, Multi-aircraft M2B was the then-current next roadmap step; this historical closeout note was superseded on 30 September 2026 by the Flight Entry Workflow 3.0 integrity pre-emption.
+
+SP2 implementation contract:
+- New Flight loads all accepted Connections as explicit `id + display_name` choices separate from the instructor-only list;
+- Safety Pilot Actual PIC supports either a connected selection or manual text, with no name matching;
+- connected selection submits an explicit account ID and the server canonicalizes `commander` from the selected account's current display name after rechecking accepted Connection state;
+- create/update synchronize the flight row and `flight_connected_crew` link in one transaction;
+- switching to manual PIC or changing the flight away from SAFETY PILOT removes the current PIC link;
+- edit/correction reloads the current link by flight ID and never derives identity from `commander`;
+- no invitation is sent in SP2; SP3 remains the first invitation milestone.
+
+SP2 verification evidence:
+- TypeScript PASS on final SP2 runtime head;
+- full unit/regression suite 885/885 PASS with 0 fail / 0 skip;
+- production Next.js build PASS;
+- isolated Neon persistence acceptance PASS for connected create/update, server-canonicalized commander, fail-closed rejected/revoked Connection cases, and manual unlink;
+- authenticated Vercel Preview acceptance PASS against an isolated Neon branch for manual save/reload, repeated-save persistence, manual → connected → manual lifecycle, and desktop / 400 px mobile / 768×1024 iPad portrait / 1024×768 iPad landscape layouts;
+- preview testing exposed a controlled-field reset after repeated save; the bug was fixed, regression-covered, redeployed and re-verified before this merge gate.
+
+## Roadmap review reconciliation
+
+The independent roadmap review returned **APPROVE WITH CHANGES**.
+
+Accepted:
+- GPS remains Priority 1;
+- broader regression-corpus validation is now explicit;
+- detailed GPS/PIC engineering contracts moved out of the root roadmap;
+- Safety Pilot/PIC now freezes separate connected-identity collaboration metadata rather than mutating the certified flight row;
+- accepted Connection state is re-checked at both invite and accept;
+- no automatic invitation expiry is assumed.
+
+Repository reconciliation resolved two proposed sequencing concerns without reordering:
+
+1. **Safety Pilot/PIC vs M2B**  
+   Current shared-flight `crewRoleCredits` is used when materializing the participant-owned flight. M2B is the separate audit of mutable aircraft-profile / `part_fcl_credit_*` dependencies. P2 must prove that the materialized recipient PIC behaves like an ordinary PIC record in recency, but it does not require M2B to finish first.
+
+2. **Timezone issue #144 vs M2B**  
+   The current hard-coded `Europe/Prague` defaults affect manual-flight default date and aircraft/rate `valid_from` dates. The explicit `part_fcl_credit_from` value is a separately entered/persisted field and is not populated from that hard-coded `today` default. Therefore #144 remains important but does not block M2B's credit-provenance audit.
+
+The previously approved order was GPS → Safety Pilot/PIC → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research. Filip explicitly reprioritized on 29 September 2026 after fresh-user usability feedback. The current order is:
+GPS → Safety Pilot/PIC → General PIC → **UI/UX Simplicity Audit** → M2B → timezone #144 → currency #136 → M3 → M4 → Professional research.
+
+
+## P2.1 — General PIC invitation across source roles — DONE
+
+Filip expanded the post-certification sharing contract on **29 September 2026**: inviting another connected pilot as `PIC` must not be limited to source flights logged as `SAFETY PILOT`. A certified source flight in any recognized canonical role must be able to invite an accepted Connection to create an independently owned PIC record.
+
+Detailed contract:
+
+`docs/product/GENERAL_PIC_INVITATION.md`
+
+Frozen direction:
+- the completed Safety Pilot Actual-PIC workflow remains intact and evidence-backed;
+- generic `Crew & logbook sharing` gains `PIC` for every recognized canonical source role;
+- invite and materialization remain exact revision/hash bound and accepted-Connection gated;
+- generic PIC materialization must not blindly copy an unrelated source commander;
+- source credit is unchanged by recipient PIC acceptance;
+- no automatic invite;
+- no schema migration unless independent review proves provenance cannot be derived safely;
+- local verification on Filip's PC is the primary development gate.
+
+Independent Claude review completed on **29 September 2026** with verdict **APPROVE WITH CHANGES**. Accepted: explicit invite-time provenance via additive v16 participation metadata, separate `canInviteAsPic` authorization, and multi-PIC/re-share guards. Filip then froze the remaining product decisions: all recognized canonical source roles may invite PIC, and the recipient copy should reproduce the complete certified event data while recalculating recipient role/credit as PIC. Implementation is complete. PR #169 merged as `a51e8bb13f702c9a04337bff19755ad614ccfcc1`; migration v16 was applied and post-verified in production before merge; Vercel production deployment `dpl_9ba1sxfaZ1yyBVPFwcBdF3S9B8W3` reached READY and `https://fly-tally.com` returned HTTP 200.
+
+## P2.2 — UI/UX Simplicity Audit 2026 — ACTIVE
+
+A fresh-user usability check on 29 September 2026 exposed that FlyTally can still feel cognitively dense despite the completed visual-consistency audit. The strongest reported friction is **New Flight**, where a new user can be unsure which of the many visible aviation/logbook inputs matter now versus later.
+
+Detailed audit contract:
+
+`docs/product/UI_UX_SIMPLICITY_AUDIT_2026.md`
+
+Frozen implementation contract:
+
+`docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`
+
+This workstream is deliberately **audit-first**:
+
+- build deterministic screenshot capture from the isolated authenticated browser fixture;
+- review desktop, iPad landscape, iPad portrait and mobile in light + dark;
+- audit the complete route hierarchy, not only individual CSS details;
+- perform a field-by-field New Flight cognitive-load classification;
+- distinguish core-now, contextual, profile-backed, optional and advanced/regulatory inputs;
+- verify primary-action clarity, progressive disclosure, helper-text noise, loading/error/empty states and responsive behavior;
+- draft the simplification information architecture only after evidence collection;
+- obtain an independent Claude read-only review of the audit/design before implementation;
+- reconcile Claude recommendations against the live repository and FlyTally data-integrity rules;
+- implement only in small reviewed batches with screenshot/browser evidence.
+
+Frozen guardrail: **simplicity must not come from invented defaults, hidden mandatory evidence, a parallel flight model, weakened validation or silent business-rule changes.**
+
+Independent Claude review returned **APPROVE WITH CHANGES**. Repository reconciliation is recorded in `docs/product/UI_UX_SIMPLICITY_CLAUDE_RECONCILIATION_2026.md`. Two review concerns were stale against current `main`: the roadmap priority was already updated by Filip and SP2/SP1–SP5 were already complete. Accepted corrections include single-page progressive disclosure, draft-vs-certification readiness semantics, explicit evidence-bearing profile summaries, one role/context slot, optional training-detail separation, completion-state consolidation and helper-copy triage.
+
+Filip closed the design gate on **29 September 2026**. Frozen decisions:
+- **Billing / Costs are optional.** Missing billing must not block saving a flight. If cost data is provided it still uses canonical validation; absence is not represented as zero/default evidence.
+- **No route/time completeness hint in New Flight.** An incomplete draft may save normally. Departure, Arrival, valid UTC off-block/on-block and positive flight time remain certification blockers and are surfaced when the user attempts certification, not as extra entry-page copy.
+- **`Save and add another` moves after the first save/review.** New Flight keeps one primary `Save & review` action; the repeat-entry affordance is offered after a successful save.
+- **Role / normal landing / PF presets stay for convenience, but evidence-bearing preset values must be visible before save/certification.** The redesign may compact them, not silently hide them.
+- **Explicit aircraft billing configuration may auto-apply; absent billing remains absent.** No synthetic `BLOCK` fallback.
+
+Final repository review added one prerequisite before presentation compaction: current selected-aircraft normalization can fail open to `ULL` for missing/invalid evidence/class, so that read/form-path fallback must be removed before a compact profile summary can be trusted.
+
+Frozen implementation order:
+1. **B0.5 — integrity prerequisites + golden baseline:** remove fail-open `ULL` fallback; preserve valid ULL; surface unresolved profile evidence; freeze golden create/update payload and decision/preset baselines.
+2. **B1A — optional-cost contract:** make no-billing a true end-to-end state; preserve configured billing; reject malformed populated values; no implicit BLOCK.
+3. **B1B — completion semantics:** remove duplicate review/readiness surfaces, keep one primary `Save & review`, preserve certification blockers and move Add another post-save.
+4. **B2 — essentials + visible movement evidence:** trim duplicated intro, move Role up, regroup route/times, surface landing/PF evidence and verify sticky-action behavior.
+5. **B3 — profile summary + role-context:** compact real evidence-bearing profile values and one applicability-driven required-context area.
+6. **B4 — optional details + helper-copy triage:** training/professional/costs/notes with populated-state discoverability.
+7. **B5 — responsive/accessibility closeout:** desktop/iPad/mobile/light/dark, 320 px reflow, keyboard/safe-area and final cognitive-load measurements.
+
+The detailed scope, dependencies, acceptance criteria and test matrix are frozen in `docs/product/UI_UX_SIMPLICITY_IMPLEMENTATION_2026.md`.
+
+### Current implementation checkpoint — B0.5
+
+Branch: `fix/new-flight-b05-integrity`
+
+Implemented, verification pending:
+- selected-aircraft defaults now reuse canonical aircraft-profile validation instead of repairing invalid/missing evidence/class to `ULL`;
+- valid ULL remains valid ULL;
+- canonicalization that would change stored evidence/class is rejected as an automatic entry default;
+- unresolved profile defaults surface as **Needs configuration** and the existing required Logbook/Class controls remain the explicit flight-level recovery path;
+- same-registration Edit continues to preserve the stored flight snapshot instead of re-deriving it from mutable current profile state, including restoration after a temporary aircraft-selection round trip;
+- golden `parseFlightInput()` payload coverage and create/update shared-parser source coverage added;
+- preset policy and decision-density baseline recorded in `docs/product/UI_UX_SIMPLICITY_B05_BASELINE_2026.md`.
+
+Verification status: **PASS** — targeted B0.5/M1/manual-entry/input suite **26/26**, full suite **916/916**, production build **PASS**; TypeScript PASS on the runtime-equivalent head and inside the final build. PostgreSQL N/A. B0.5 is DONE.
+
+### Completed checkpoint — B1A
+
+PR #174 merged as `37eac801cc69b19c07d4c140213ccda37c4e85ff`.
+
+- blank billing is a first-class **Not tracked** state across manual/GPS entry and aircraft defaults;
+- malformed populated billing remains fail-closed;
+- configured BLOCK/AIR + share values remain canonical;
+- production DB metadata prerequisite passed read-only and no migration is required;
+- TypeScript PASS, targeted B1A 35/35 PASS, stale-contract rerun 55/55 PASS, full unit/regression 928/928 PASS, production build PASS;
+- protected Preview reached READY, but authenticated smoke remains **DEFERRED, not PASS** and will be checked live with the cumulative New Flight redesign.
+
+### Completed checkpoint — B1B
+
+PR #175 merged as `0d7e5d56b88a06292c98969e515d2ef48aa5fb0b`.
+
+- removed the duplicate pre-save Review/readiness surface;
+- New Flight now has one completion/blocker surface and one primary **Save & review** action;
+- **Add another flight** moved to the successful saved-review handoff;
+- TypeScript PASS, production build PASS, targeted B1B/historical contracts 34/34 PASS, full unit/regression 934/934 PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains explicitly **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Completed checkpoint — B2
+
+PR #176 merged as `a3bc8b3ed99ca34a49cc39db9ec38ac578e2ae86`.
+
+- Date → Registration → Role is now the first visible DOM/tab-order row;
+- Route and one chronological UTC timeline are grouped explicitly;
+- Flight experience exposes landing + PF evidence in its collapsed summary;
+- TypeScript PASS, targeted B2/affected historical contracts 47/47 PASS, full unit/regression 940/940 PASS, production build PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Completed checkpoint — B3
+
+PR #177 merged as `645348ef7280f1b0452d457e152dfdaa0da4a448`.
+
+- Aircraft & logbook now exposes the stored/current profile context directly;
+- Role details auto-opens for DUAL, Safety Pilot, SPIC and PICUS required evidence;
+- Training purpose + Task moved out of crew identity into Optional details;
+- TypeScript PASS, production build PASS, reconciled targeted contracts 22/22 PASS, full unit/regression 946/946 PASS;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried to cumulative live verification.
+
+### Completed checkpoint — B4
+
+PR #178 merged as `b18e19a1550d73536cb9f15abec04b3b275361f1`.
+
+- Training purpose/Task, Night/IFR, Professional context, Costs/expenses and Notes are consolidated under one native **Optional details** disclosure;
+- populated Edit records remain discoverable and malformed billing remains fail-closed;
+- TypeScript PASS, reconciled targeted contracts 34/34 PASS, full unit/regression 954/954 PASS, production build PASS on the runtime-equivalent head;
+- PostgreSQL N/A;
+- authenticated presentation smoke remains **DEFERRED, not PASS** and is carried into B5 cumulative live verification.
+
+### Current implementation checkpoint — B5
+
+PR #179 merged as `3a73ad85a6c33f77a881b339c28b425e7b3b8769`.
+
+Implemented:
+- ordinary pristine Date/Registration/Role/Logbook/Class fields no longer present inline error styling before a save attempt;
+- the single completion surface now exposes focusable missing-field blockers that open the owning native disclosure before focusing the relevant control;
+- native `details/summary` semantics remain intact without redundant ARIA state;
+- mobile disclosure summaries remain visible instead of inheriting the historical <=600px hide rule;
+- identity and secondary grids reflow earlier for iPad portrait / 200% zoom;
+- New Flight sticky actions fall back to normal flow at 320px, short viewports and coarse/touch pointers to avoid virtual-keyboard overlap;
+- new blocker controls receive 44px coarse-pointer targets and forced-colors treatment;
+- measured New Flight muted/link token contrast meets 4.5:1 on canonical dark/light panel surfaces;
+- no parser, schema, certification, recency, collaboration, billing or UTC semantics changed.
+
+Verification status: **DONE / VERIFIED** — TypeScript PASS, targeted B5/affected historical contracts **100/100 PASS** on the runtime head, final v1.58+B5 reconciliation **15/15 PASS**, full unit/regression **962/962 PASS**, production build PASS on the runtime-equivalent B5 head. PostgreSQL N/A. PR #182 fixed the one screenshot-backed closeout defect (Flight experience empty-state title/explanation concatenation) without introducing a new design-system variant; Verify FlyTally web #955 and Browser smoke #349 both PASS. Final isolated authenticated matrix run #352 then PASSed with **23 browser tests passed / 3 skipped**, generated **132/132 screenshots** across 11 states × 6 viewports × light/dark, and recorded **0 px horizontal overflow** in all 132 matrix records. Production deployment for `45a97aacec50e9e7b20d676afd4493c2e896c1fe` is READY and aliased to `fly-tally.com`.
+
+The previous `docs/ux-audit.md` remains the historical visual-consistency/polish audit and is not overwritten by this work.
+
+Post-closeout production defect handling:
+- New Flight mounts GPS and manual entry forms concurrently so mode switching preserves local state.
+- A global first-match `.flight-form` lookup allowed the manual-only intelligent history panel to observe the GPS form and portal stale profile warnings into GPS review.
+- The hotfix explicitly binds intelligence to the manual form and defers event-driven FormData reads until controlled aircraft-profile updates have committed.
+- Required evidence: source regression proving no global form lookup, plus authenticated browser reproduction using a known EASA/SEP aircraft with dominant EASA/SEP history; GPS must retain EASA/SEP and receive no manual intelligent-profile warning.
+- Scope is presentation/advisory wiring only: no flight parser, GPS save, aircraft profile, historical snapshot, certification, recency, billing or database semantics change.
+
+## Flight Entry Workflow 3.0 — DONE / PRODUCTION VERIFIED
+
+Goal: converge Manual and GPS creation onto one canonical semantic flight contract while materially reducing cognitive load for normal flight entry.
+
+Detailed frozen contract:
+
+`docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md`
+
+Why it pre-empts M2B:
+- GPS still has an independent direct-write path that bypasses `parseFlightInput()`;
+- GPS can persist a smaller semantic record than Manual, including empty crew fields for role contexts that require explicit identity;
+- GPS selected-aircraft class/evidence can still fail open to `ULL` when profile context is missing/malformed;
+- Dashboard, Statistics, Export and Print can consume saved drafts, so false ULL identity can affect product outputs before certification;
+- canonical recency remains protected by `certified_at IS NOT NULL`, but that does not make the draft/write defect acceptable.
+
+Frozen direction:
+- one canonical semantic normalization boundary for Manual and GPS;
+- GPS is source/provenance/suggestion, not a separate flight model;
+- EASA DUAL Instructor/PIC, Safety Pilot Actual PIC and SPIC/PICUS supervision evidence are inline and Save-required;
+- Review/Certification remains the authority for certification completeness such as route/time completeness;
+- invalid aircraft context never silently becomes ULL;
+- explicit legitimate flight-level context remains possible where current domain rules support it;
+- GPS Safety Pilot fails closed until full Manual parity exists;
+- server-side role validation is mandatory;
+- multi-part GPS uses common aircraft identity plus whole-group Role/Crew overrides;
+- N-part import is atomic;
+- certified history is never guessed/backfilled;
+- no long-lived compatibility flag may keep old GPS server semantics alive.
+
+Milestones:
+
+| Milestone | Status | Scope |
+| --- | :---: | --- |
+| F0.0 — Minimal characterization | ✅ | Current GPS fallback/role/crew/consumer contract characterized; #970 PASS; no runtime change |
+| F0.1 — GPS fail-closed integrity hotfix | ✅ | PR #188 merged · Verify #980 PASS · Browser #367 PASS · production READY |
+| F0 — Full field/consumer contract inventory | ✅ | Matrix frozen · Verify #982 PASS · 988/988 unit · PostgreSQL 55/55 · no runtime change |
+| F1 — Shared normalization / semantic write contract | ✅ | **DONE / PRODUCTION VERIFIED** · main `5c2af689…` · Verify #1055 · Browser #431 · production READY |
+| F2 — Role/Crew parity | ✅ | **DONE / PRODUCTION VERIFIED** · F2.0–F2.5 complete; RoleCrew Save/UI, Safety Pilot resolution, identity binding, compatibility freeze and cross-path regression are closed |
+| F3 — Aircraft context simplification | ✅ | **DONE / PRODUCTION INTEGRATED** · `main@a4b1c626…`, Vercel READY, public smoke 200; no DB migration |
+| F4 — Multi-part GPS inheritance | ✅ | **DONE / PRODUCTION VERIFIED** · PR #233 merged as `252bcb8`; PIC/DUAL/Safety Pilot common+whole-part Role/Crew inheritance verified; SPIC/PICUS countersignature-reference inheritance remains separately deferred |
+| F5 — Primary UX / copy simplification | ✅ | **DONE / PRODUCTION VERIFIED** · included in PR #235 → `fb0bbb3`; focused 46/46 PASS; reconciliation 16/16 PASS; TypeScript PASS; full regression **1151/1151 PASS**; production build PASS; authenticated F5.3 browser **2/2 PASS** |
+| F6 — Browser / responsive / production closeout | ✅ | **DONE / PRODUCTION VERIFIED** · PR #235 CI PASS; local full Playwright **72 passed / 2 skipped / 0 failed**; source **6/6 PASS**; F6 browser **4/4 PASS**; merge `fb0bbb3`; Vercel `dpl_GM9nQX2gBwbn4GgzEy7YrJPnmR4F` READY on exact SHA; production smoke PASS; no runtime errors |
+
+Immediate next step:
+- F2.0 design/review contract is merged as PR #203;
+- F2.1 RoleCrew validation is merged as PR #204 and production-verified on `main@0f00a3c256843dd24b84a801f6b1e0cae60771d5`;
+- F2.2 Manual inline Role/Crew UX is merged as PR #207 and production-verified on `main@205483eda15f82770c1000c0a91fa4df92177fcd`;
+- F2.3 Safety Pilot resolver convergence is merged as PR #209 and production-verified on `main@d90215f88514e953e062980798954c497ca76be7`;
+- **F2.4A audit is complete and at independent review gate**: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_PRODUCER_CONSUMER_AUDIT.md` maps Manual/GPS/shared/certification/print-export/audit-backup/recency consumers; `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24_REVIEW_HANDOFF.md` contains the review package;
+- **F2.4A DONE / PRODUCTION VERIFIED**: final PR #212 head `9282b3c0795091e0ae62d4ee26a9d2230716ebb1` passed Verify FlyTally web #1089 — TypeScript PASS, 1052/1052 unit/regression, PostgreSQL 66/66; Browser smoke #465 — production build PASS, Chromium 34 passed / 2 skipped. PR #212 merged as `06b50d911e0cedcafbd5f10bea41868098f8d8b0`; Vercel production `dpl_DP43Y79vK4Kny2L86Wuw5VCjAoHH` is READY for that exact merge SHA, aliases `fly-tally.com`, and reports no alias error; DB/schema N/A;
+- **F2.4B discovery complete**: Manual UI can intentionally persist Commander/PIC on self-PIC roles, and shared PIC materialization intentionally writes a commander snapshot on recipient role `PIC`; therefore a non-empty self-PIC commander cannot be classified as stale from Role alone;
+- **F2.4B characterization merged**: PR #215 → `main@064be0862b9506e472545eb16491b21019a90a50`; characterization locks the current mismatch as evidence (SELF Save/UI policy vs commander-over-SELF downstream precedence), Manual explicit commander availability, shared PIC commander producers and raw integrity/export visibility. Verify FlyTally web #1090 PASS — TypeScript PASS, 1057/1057 unit/regression, PostgreSQL 66/66; no runtime behavior changed;
+- focused independent-review package: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F24B_REVIEW_HANDOFF.md`;
+- current preferred direction is compatibility-first: preserve `pilotInCommandName()` output precedence and split RoleCrew Save/UI policy from downstream historical PIC-display semantics rather than rewriting certified interpretation;
+- **F2.4B B1 DONE / PRODUCTION VERIFIED**: `RoleCrewSpec` exposes `rolePicIdentitySource` separately from `picDisplayPrecedence`; self-PIC commander is modeled as optional historical evidence; `pilotInCommandName()` delegates to the shared pure RoleCrew display resolver while retaining commander-over-SELF precedence. PR #217 merged as `6f1b33745d8b5c352d0d3331ea4891bb9f8d9f58`; Verify #1091 PASS — TypeScript PASS, 1058/1058 unit/regression, PostgreSQL 66/66; Browser #466 PASS — production build, Chromium 34 passed / 2 skipped; Vercel `dpl_4MfDPVYDhR3ibgQ7uHoeUAagQkQW` READY for that exact SHA; `fly-tally.com` HTTP 200 from that deployment; DB/schema N/A;
+- **F2.4B B2 compatibility freeze:** repository evidence does not provide a safe structured rule for deleting commander/instructor/verification evidence or changing certified PIC display precedence. F2 therefore deliberately performs no destructive crew-field canonicalization and preserves the current `COMMANDER → SELF` self-PIC display fallback. Any future semantic change requires an explicit reopened decision with new evidence; external reviewer input remains welcome but no semantic change is being taken without it;
+- cross-role preservation tests for DUAL, SPIC and PIC evidence are merged as PR #219 → `main@1c0ecf7be2e18feba7e583039ed5c27919dcdd42`; Verify FlyTally web #1092 PASS — TypeScript PASS, 1059/1059 unit/regression, PostgreSQL 66/66; no runtime/schema behavior changed;
+- **F2.4C DONE / VERIFIED**: PR #221 merged as `84b5f5362f03ef1959956fba91584059a36c2db5`; Verify FlyTally web #1094 PASS — TypeScript PASS, 1068/1068 unit/regression, PostgreSQL 66/66; Browser smoke #468 PASS — production build PASS, Chromium 34 passed / 2 skipped. The dedicated cross-path suite covers Manual non-destructive role transitions, Certification/request separation, exact-revision/hash in-person verification, shared materialization provenance, print/read-only/export, audit/backup, recency signed-verification dependency, Safety Pilot F2.3 and GPS PIC-only. Authenticated browser coverage verifies both explicit verification paths without typed-name account binding. Runtime/schema behavior was unchanged, so production deployment is N/A;
+- **F2.5 DONE / PRODUCTION VERIFIED**: PR #223 merged as `bc187e307958054efa2e32db316b06139d10df6e`; Verify FlyTally web #1095 PASS — TypeScript PASS, 1077/1077 unit/regression, PostgreSQL 66/66; Browser smoke #469 PASS — production build PASS, Chromium 36 passed / 2 skipped. Final coverage freezes every Manual RoleCrew role across EASA/ULL, crafted Save requirements, function-time allocation, certification v1–v8 compatibility, explicit invitation boundaries, auxiliary-role non-creditability and GPS PIC-only. Authenticated browser closeout covers PIC, DUAL, SPIC, PICUS, CO-PILOT and Safety Pilot at desktop, iPad landscape, iPad portrait and mobile under light + dark with overflow checks;
+- production deployment `dpl_GFWksQDdFMoSr9qyvQYgiCBd2ShJ` is READY for exact merge SHA `bc187e307958054efa2e32db316b06139d10df6e`, aliases `fly-tally.com` with no alias error, and `fly-tally.com` returned HTTP 200 with that deployment ID; DB/schema N/A;
+- **F2 CLOSED**: no destructive RoleCrew canonicalization, no implicit name→account inference, no certification-version change, no historical rewrite, and GPS remains PIC-only until F4;
+- **F3.0 discovery / characterization complete**: Manual applies profile defaults client-side but create/update do not re-resolve the active profile; invalid-profile state is visible but not an action-level Save blocker; GPS already enforces active canonical profile authority; same-registration Edit intentionally preserves stored context;
+- **F3.0 verification:** PR #225 merged as `4e42dbf7fd095aa768e404500b141510386a18c5`; Verify FlyTally web #1096 PASS — TypeScript/application gate PASS, **1084/1084** unit/regression, PostgreSQL **66/66**; Browser N/A (docs/characterization only); runtime/schema/deploy N/A;
+- F3 design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_AIRCRAFT_CONTEXT_DESIGN.md`; review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F3_REVIEW_HANDOFF.md`;
+- **independent review reconciled on 2 October 2026**: broad full regulatory Option B is superseded by **A+** — profile-owned evidence/class, explicit TMG/OTHER multi-context choices only, plus deliberate same-registration SNAPSHOT correction; no generic client-sent override authority flag;
+- server derives PROFILE for Manual New/registration change and GPS, SNAPSHOT for same-registration Edit; PROFILE drift is rejected; unchanged SNAPSHOT context passes through without revalidation against today's stricter validator;
+- Manual PROFILE authority requires an **owned + valid** profile; inactive aircraft may remain available for explicit historical back-fill, while GPS keeps its existing active-owned-profile selection rule;
+- aircraft type/make/model/variant remain profile/snapshot-owned; Balloon class/group remain profile-owned and FREE/TETHERED remains flight-specific;
+- GPS receives the same narrow common TMG/OTHER context choice in F3 where a profile legitimately has multiple allowed contexts; F4 still owns Role/Crew inheritance and per-part overrides;
+- **F3.1 production census DONE**: 25 profiles / 25 active / 0 invalid; 289 flights all match a current profile; 73 apparent category divergences are certified legacy rows with blank stored `regulatory_category`; exactly one certified evidence/class divergence is a historical ULL snapshot against a profile now EASA/SEP, with the profile update timestamp later than the flight date; 0 explicit nonblank category mismatches; 7 historical identity differences reinforce SNAPSHOT ownership; current TMG/OTHER/Balloon and Part-FCL-credit populations are zero. Census was read-only and changed no data.
+- F3.1 evidence: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F31_PRODUCTION_CENSUS.md`. A+ remains frozen; no migration/bulk repair is required.
+- **F3.2 DONE / PRODUCTION VERIFIED**: pure shared `allowedFlightContexts(profile)` + PROFILE/SNAPSHOT authority resolver is merged as PR #229 → `main@abc66ae13cfc8a3af7f6ee21f19ab5c8ab63bc73`. It preserves legacy blank SNAPSHOT context, validates full profile provenance, restricts multi-context expansion to TMG/OTHER and remains deliberately unwired from mutations. Verify #1097 PASS (TypeScript, full unit/regression, PostgreSQL 66/66); Browser #470 PASS (production build + Chromium); Vercel `dpl_7vwVVvE98UZVYJ6upCB9CQnfok4a` READY on exact SHA, aliases `fly-tally.com`, alias error null; DB migration N/A.
+- **F3.3 DONE / LOCAL VERIFIED** on `feat/flight-entry-f33-aircraft-authority`: Manual New/registration-change re-resolve owned PROFILE authority and persist canonical authority context; same-registration Edit preserves SNAPSHOT context, including legacy blank category compatibility; GPS uses active PROFILE authority with one common TMG/OTHER choice; shared materialization remains outside the equality gate. Local evidence: final-head unit/regression **1102/1102 PASS**; PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS on the runtime-identical pre-final-test-adjustment head. No DB migration or certification v1–v8 change. CI/PR/deploy intentionally not run yet.
+- **F3.4 DONE / LOCAL VERIFIED** on `feat/flight-entry-f34-aircraft-context-ux`: Manual and GPS use compact authority summaries with canonical hidden profile-owned fields; same-registration Edit submits the stored SNAPSHOT tuple, including legacy blank category preservation; only `allowedFlightContexts(profile)` TMG/OTHER category choice remains editable; invalid PROFILE is a save blocker with a draft-preserving new-tab Aircraft configuration route; Operation/Engine and Balloon FREE/TETHERED remain flight-specific. Final local evidence on `e305f3ef3985d371a385a0e7231ec42d8a6d135e`: TypeScript PASS, full unit/regression **1110/1110 PASS**, production build PASS, disposable browser DB bootstrap PASS, and targeted authenticated Chromium **5/5 PASS** including the desktop/iPad landscape/iPad portrait/mobile × light/dark overflow matrix inside the F2.5 scenario. No DB migration or certification v1–v8 change. CI/PR/deploy not run.
+- **F3.5 DONE / LOCAL VERIFIED** on `test/flight-entry-f35-closeout`. Independent review returned **APPROVE WITH CHANGES** and no runtime correctness defect was found. End-to-end authenticated PostgreSQL/browser evidence now proves same-registration SNAPSHOT preservation with inactive/invalid current profile, legacy blank-category preservation, crafted SNAPSHOT/PROFILE/A+ drift rejection, submit-time PROFILE re-resolution, normalized A→B→A authority selection, Quick Add → immediate Save, TMG/OTHER A+ persistence and Balloon profile-owned class/group versus flight-specific FREE/TETHERED. Final unit/regression gate is **1119/1119 PASS** and targeted authenticated Chromium is **4/4 PASS**. PostgreSQL core **66/66 PASS**, TypeScript PASS and production build PASS were already established on the runtime-identical F3.5 head; later F3.5 changes were test/fixture/docs only. Source audit confirms export/statistics consume stored `flights` context, trash restores raw stored context, and print keeps F3 context on the stored flight snapshot while current Aircraft supplies only ICAO presentation code. No DB migration or certification v1–v8 change. CI/PR/merge/deploy remain intentionally NOT RUN. The microscopic profile-read→flight-write race and deliberate historical correction remain non-blocking/deferred unless new evidence proves an integrity defect.
+- **F3 production integration DONE:** `main` was fast-forwarded across the complete F3 stack, with rollback anchor `chore/pre-f3-integration-anchor` preserving pre-F3 `4906c1c376d48e9032d23f85b73aea560843f8a5`. The docs-only F3 closeout head was ignored by Vercel, so an empty tree-identical trigger commit `a4b1c626d487aad86ef3e2de887df50a0a2b9248` forced the intended production build without changing runtime contents. Vercel deployment `dpl_Dn3PAymjG7aCds9xsw18shzkYM4a` is READY, aliases `fly-tally.com` with no alias error, and public smoke returned HTTP 200 from that deployment. No runtime errors were reported in the immediate 30-minute post-deploy window. GitHub Actions were intentionally not run; no PR was used. DB migration/schema N/A; certification v1–v8 unchanged.
+- **NEXT: F4 — Multi-part GPS inheritance.** Reconstruct the frozen F4 contract before implementation; F4 owns common values + whole Role/Crew overrides + atomic resolved persistence.
+- **F4 discovery/design staged:** current GPS remains intentionally PIC-only; per-part Review state has no Role/Crew fields; each GPS part already normalizes through the shared `normalizeFlightDraft()` contract; Safety Pilot parity additionally requires server-authoritative Actual-PIC/Connection resolution and atomic connected-crew child persistence. Draft design: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_GPS_INHERITANCE_DESIGN.md`; independent review handoff: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F4_REVIEW_HANDOFF.md`. No runtime/schema/certification change in this step.
+- **F4 review reconciliation:** second AI returned APPROVE WITH CHANGES. Repo verification confirmed GPS already persists the complete Role/Crew column set and `flightFingerprint()` excludes Role/Crew. Accepted architecture is strict common+whole-override envelopes resolved server-side, override clearing on ordered split-boundary changes, Safety Pilot last with the existing write-time Connection guard preserved. F4.0 characterization test `tests/v355-flight-entry-f40-characterization.test.ts` is locally verified (5/5; full suite 1124/1124). One product decision remains: whether one SPIC/PICUS countersignature reference may be inherited across multiple split records.
+- **F4.1 DONE / LOCAL VERIFIED:** targeted F0/F1/F2/F4 contract batch **55/55 PASS**, TypeScript PASS, full unit/regression **1129/1129 PASS**, production build PASS, and authenticated desktop Chromium **2/2 PASS** against the disposable PostgreSQL browser DB. Browser proof covers the PIC/DUAL role surface plus common DUAL review invalidation, required Instructor/PIC gating, successful Save, and persisted normalized `DUAL + Instructor` values. The disposable browser fixture now includes the minimal `airports` relation required by GPS airport detection; no production DB/schema/certification change. SPIC/PICUS and Safety Pilot remain blocked. **F4.2 whole-part overrides is next.**
+- **F4.2 core implemented / verification pending:** each split now submits explicit `INHERIT` or a complete supported `OVERRIDE`; the server rejects missing/unknown/duplicate/stale override fields, out-of-range envelopes and attempted per-flight aircraft/operation/billing drift, resolves every part against the common context before `gpsFlightCandidate() → normalizeFlightDraft()`, and never field-falls back. Split-boundary changes clear all overrides with a visible notice; common Role changes invalidate inherited reviews only; Role/Crew text completeness remains a Save gate. Runtime roles remain PIC + DUAL only. New focused suite: `tests/v357-flight-entry-f42-whole-part-role-crew.test.ts`. **F4.2 DONE / LOCAL VERIFIED:** targeted cross-path batch **67/67**, full unit/regression **1134/1134**, production build PASS including TypeScript, and authenticated desktop Chromium **4/4 PASS** against the isolated local PostgreSQL browser DB. Browser proof covers common F4.1 integrity, mixed INHERIT/OVERRIDE persistence, inherited-only common-Role invalidation, deterministic Reset to common, split-boundary override clearing with visible notice, and persisted per-flight PIC/DUAL Role/Crew. No production DB/schema/certification change. **F4.3 Safety Pilot is now core-implemented / verification pending.**
+- **F4.3 core implemented / verification pending:** GPS role scope expands narrowly to PIC + DUAL + SAFETY PILOT while SPIC/PICUS remain blocked. The existing Manual Actual-PIC resolver was split into a reusable account-ID/server-snapshot resolver plus the unchanged FormData wrapper; GPS resolves every final inherited/overridden Safety Pilot part through that authority boundary before normalization. Manual Actual PIC text and accepted-Connection account ID are explicit, connected display-name text is server-snapshotted, every connected Safety Pilot result creates its own `flight_connected_crew` child row, and the write CTE rechecks the live accepted Connection inside the same transaction as flight + track persistence. Zero-row parent/track/required-child writes deliberately abort the whole N-part transaction. Added focused F4.3 source/domain coverage plus isolated PostgreSQL atomicity coverage. **F4.3 verification evidence:** focused F1.4/F4.3 **12/12 PASS**, targeted cross-path **80/80 PASS**, isolated PostgreSQL Manual-resolver + GPS Safety Pilot **5/5 PASS** including accepted connected child-row persistence and revoked-Connection full rollback, and TypeScript plus production build PASS on the runtime-equivalent head. The intentional PostgreSQL division-by-zero is the fail-closed transaction assertion. The initial stale source-contract failures were reconciled in test-only commits. Final reconciliation is **9/9 PASS**, TypeScript is PASS, and the final full regression is **1141/1141 PASS**. Production build remains PASS on the runtime-equivalent head; no runtime changed afterward. F4.3 is **DONE / LOCAL VERIFIED**. Final evidence: targeted cross-path **80/80 PASS**, isolated PostgreSQL Manual-resolver + GPS Safety Pilot **5/5 PASS**, local PostgreSQL transaction-adapter regression **4/4 PASS**, TypeScript PASS, full unit/regression **1142/1142 PASS**, production build PASS, and authenticated desktop Chromium F4.3 **3/3 PASS**. The first browser attempt exposed only a localhost smoke-adapter parser defect (`track_insert` was misread as a top-level `INSERT` token); the adapter was fixed with a left identifier-boundary guard, rebuilt, and the same three browser scenarios then passed. Browser proof covers common Manual Safety Pilot persistence without account link, common connected account-ID persistence with authoritative server display-name snapshot + one `flight_connected_crew` PIC row, and revoked per-flight connected override fail-closed behavior with zero partial split persistence. No DB migration, certification-version change or deployment in F4.3. **F4.4 closeout is ACTIVE.** The dedicated authenticated responsive Role/Crew override matrix is **1/1 PASS** across desktop, iPad landscape, iPad portrait, 390 px mobile and 320 px mobile in light + dark, asserting inherited DUAL plus per-flight connected Safety Pilot override state with zero horizontal overflow. SPIC/PICUS remain intentionally fail-closed and are carried forward as the unresolved countersignature-reference product decision rather than guessed during closeout. F4.4 and the full F4 milestone are **DONE / PRODUCTION VERIFIED**. PR #233 was squash-merged to `main` as `252bcb8eb0258603c1164c5e19bfdcf25bc0d9dd`. Vercel production deployment `dpl_3Jh1ghZ8wfkZRE5w3ZN83gxasnzd` is READY and aliases `fly-tally.com`, `logbook-filipito.vercel.app` and `logbook-git-main-filipito.vercel.app` with no alias error. Production smoke returned HTTP 200 for `/`, `/login` and `/flights/new`; unauthenticated protected routes resolve to the login surface as expected, and all responses were served by that exact deployment. Immediate 30-minute Vercel runtime-error check reported no runtime errors. No DB migration, schema change, historical backfill or certification-version change.
+- do not clear commander/instructor/verification fields on editable Save unless structured evidence proves the value non-applicable;
+- preserve non-DUAL instructor evidence and non-SPIC/PICUS verification evidence until an explicit applicability rule proves cleanup safe;
+- keep GPS PIC-only throughout F2;
+- do not change certification v1–v8, rewrite certified rows or infer connected identity from names.
+
+F2 discovery/review findings:
+- At initial F2 discovery, EASA DUAL Instructor/PIC was browser/Certification-required but not a shared server Save rule; F2.1 closed that gap.
+- Safety Pilot Actual PIC now resolves through one shared create/update server resolver with account-ID-only accepted-Connection validation, server display-name snapshot and a second fail-closed write-time Connection guard;
+- SPIC/PICUS supervision + countersignature are already server Save-required;
+- CO-PILOT/CRCP commander remains Save-optional and Certification-required;
+- self-PIC identity is account-derived; F2 does not synthesize a commander snapshot in the pure normalizer;
+- broad Role-only sanitization is unsafe because `instructor` and `verification_*` also carry training/endorsement evidence;
+- F2.4A removed the former Certification-time DUAL/SPIC/PICUS name-based auto-request account matching; only explicit account-ID verification requests remain;
+- GPS remains PIC-only throughout F2; F4 owns Role/Crew inheritance/overrides;
+- independent review package and outcome: `docs/product/FLIGHT_ENTRY_WORKFLOW_3_0_F2_REVIEW_HANDOFF.md`.
+- F2.1 closeout: Verify #1065 PASS; PostgreSQL acceptance PASS; Browser #441 PASS; PR #204 merged; Vercel `dpl_Dd3wzaNm51qBVKDBzRMFHF7cEgfP` READY on the exact merge SHA; `fly-tally.com` HTTP 200; DB migration N/A.
+- F2.2 closeout: role-defining DUAL/Safety Pilot/SPIC/PICUS controls are inline under Role; completion blockers cover all shared-contract Save-required crew fields; optional generic crew inputs remain available; Verify #1075 PASS (1042/1042 unit/regression, PostgreSQL 63/63); Browser #451 PASS (production build, Chromium 30 passed / 2 skipped); PR #207 merged as `205483eda15f82770c1000c0a91fa4df92177fcd`; Vercel `dpl_9v8FjPuj8F2jAuH4TAVNfHrM4eAE` READY for that exact SHA; `fly-tally.com` HTTP 200; DB migration N/A.
+- F2.3 closeout: `resolveSafetyPilotPicForSave()` centralizes Safety Pilot mode parsing, EASA manual-PIC requirement, account-ID validation, accepted-Connection lookup and authoritative display-name snapshot; create/update persist the resolver output, recheck Connection state in the write predicate, and keep connected child metadata atomic. Verify #1077 PASS (1048/1048 unit/regression, PostgreSQL 66/66); Browser #453 PASS (production build, Chromium 32 passed / 2 skipped); PR #209 merged as `d90215f88514e953e062980798954c497ca76be7`; Vercel `dpl_84eHWKabeoy8DqgGuM6rDATjTTjR` READY for that exact SHA; `fly-tally.com` HTTP 200; DB migration N/A.
+- F2.4 discovery finding: Certification still infers account identity by matching typed DUAL/SPIC/PICUS names against `users.display_name`; an explicit post-certification `instructor_id` request already exists and is the proposed replacement. `instructor` and `verification_*` are confirmed overloaded evidence fields, so broad Role-only clearing remains blocked. Self-PIC commander precedence is the only interpretation change currently requiring independent review.
+
+F1 production closeout:
+- every reviewed GPS PIC part is converted to `FlightDraftCandidate` and normalized through the same `normalizeFlightDraft()` / `FlightInput` semantic boundary as Manual entry before persistence;
+- the GPS INSERT consumes normalized semantic fields; track payload, date-effective price lookup, duplicate fingerprinting, advisory locks and the atomic N-part transaction remain persistence/provenance concerns;
+- explicit F1.5 Operation/Engine and F1.6 source-evidence review feed the shared normalizer; GPS remains PIC-only;
+- authenticated browser coverage now performs a real GPS reviewed-flight Save and verifies the resulting stored Manual-review fields;
+- the browser fixture was reconciled with the runtime `flight_tracks.overview_version` schema and the new mutation test cleans up its own deterministic record to avoid cross-project contamination;
+- Verify #1055 PASS · TypeScript PASS · 1030/1030 unit/regression · PostgreSQL 63/63 · Browser #431 PASS · 28 passed / 2 skipped · production build PASS;
+- F1.4 merged as PR #200 on main `5c2af689c74e209358d22eebf05c3f4120a4224f`;
+- Vercel production deployment `dpl_8NaCnff1TcP6DRkXSwUKmEq9dHiR` is READY, targets that exact main SHA and aliases `fly-tally.com` with no alias error;
+- DB schema/migration N/A for F1.4; F1.0 migration v17 remains the only schema prerequisite in this workstream;
+- stale/superseded PRs #196 and #198 were closed without merge.
+
+F1.6 closeout:
+- GPS review requires explicit category-appropriate landing evidence before a part can be confirmed;
+- Part-FCL/ULL PF movement evidence is an explicit Yes/No pilot decision; positive PF credit requires explicit take-off/approach counts;
+- TMG/BFCL take-offs use explicit day/night counts; non-TMG sailplane uses explicit launch method/count;
+- Night/IFR remain optional but pilot-reviewed and are never inferred from track motion;
+- current direct GPS persistence stores the explicit reviewed evidence, preparing F1.4 shared-normalizer convergence without semantic fabrication;
+- first Verify #1030 failed only on a stale F0.1 source assertion after the readiness expression gained `sourceRequirements`; runtime typecheck and PostgreSQL were already green;
+- final Verify #1031 PASS · TypeScript PASS · 1025/1025 unit/regression · PostgreSQL 63/63 · Browser #407 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; GPS remains PIC-only.
+
+F1.5 closeout:
+- explicit GPS Operation (SP/MP) + Engine (SE/ME) controls are required wherever the resolved category exposes those semantics;
+- server revalidates and persists explicit values; hidden SP / class-derived Engine assumptions are removed from applicable GPS imports;
+- registration changes clear both selections;
+- Verify #1024 PASS · TypeScript PASS · 1019/1019 unit/regression · PostgreSQL 63/63 · Browser #400 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; GPS remains PIC-only.
+
+F1.3 closeout:
+- Manual create/update are locked to the `parseFlightInput(FormData)` compatibility boundary and consume normalized `FlightInput` fields for flight persistence;
+- expense rows, connected Actual-PIC account links, airport canonicalization, rate resolution and duplicate/lock mechanics remain explicit persistence/child-domain concerns outside the pure normalizer;
+- GPS remains on its specialized path for F1.4;
+- Verify #1013 PASS · TypeScript PASS · 1014/1014 unit/regression · PostgreSQL 63/63;
+- Browser N/A because F1.3 is source/contract-test only with no runtime/UI change; DB schema/migration N/A.
+
+F1.2 closeout:
+- `normalizeFlightDraft(candidate)` now owns the source-agnostic semantic body previously embedded directly in `parseFlightInput()`;
+- `parseFlightInput(FormData)` is a thin compatibility wrapper over `manualFlightCandidate()` + the pure normalizer;
+- normalizer has no DB/auth/FormData dependency and explicit unresolved candidate authority fails closed instead of becoming a guessed value;
+- existing Manual semantics remain regression-equivalent across the complete suite;
+- Verify #1007 PASS · TypeScript PASS · 1006/1006 unit/regression · PostgreSQL 63/63 · Browser #388 26 passed / 2 skipped · production build PASS;
+- first #1003 run exposed stale source-characterization tests only; #1006 exposed a test-edit syntax error only; both were corrected without changing the intended runtime contract;
+- DB schema/migration N/A; GPS persistence remains unchanged.
+
+F1.1 closeout:
+- typed `FlightDraftCandidate` + Manual/GPS characterization adapters added without wiring runtime mutations to them;
+- unresolved Operation/Engine, movement/day-night, sailplane launch, night and IFR facts remain explicit rather than guessed;
+- Verify #998 PASS · TypeScript PASS · 998/998 unit/regression · PostgreSQL 63/63 · Browser #379 26 passed / 2 skipped · production build PASS;
+- DB schema/migration N/A; persisted flight behavior unchanged.
+
+F1.0 production closeout:
+- main `e7361dbe3e55fbba721ec01c2bffd5c885452c12`;
+- Vercel production `dpl_EiEU6pWp95nQuNRGwGVTgtLrgSJn` READY and aliased to `fly-tally.com`;
+- production Neon migration registry contains v17 `historical flight aircraft identity preservation` applied 2026-10-01 06:47:01 UTC;
+- live trigger/function definition matches the reviewed v17 semantics.
+
+M2B remains accepted work and is not cancelled. F0 found a shared-flight/current-profile snapshot interaction that must remain visible to both F1 and M2B before either workstream claims full historical-identity equivalence.
+
+## Flight Entry Follow-up E1 — E1.1–E1.4 LOCAL VERIFIED · E1.5 LOCAL GATE PASS / PR-CI ACTIVE
+
+Goal: address four production-use follow-ups without reopening the completed Flight Entry Workflow 3.0 domain-convergence workstream.
+
+Design:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_DESIGN.md`
+
+Independent review:
+`docs/product/FLIGHT_ENTRY_FOLLOWUP_E1_REVIEW_HANDOFF.md`
+
+Frozen draft direction:
+- aircraft profile may hold nullable **default Operation** SP/MP; it is a prefill only, never aircraft authority;
+- no SP/MP profile backfill from type/history; NULL means explicit per-flight choice;
+- GPS import stops writing synthetic `Task = GPS import`;
+- certified historical `task` is never raw-mutated because Task participates in the certification hash;
+- GPS Day/Night landing counts may be suggested from each detected landing event's UTC + coordinates using EASA/SERA civil-twilight boundary, with explicit pilot confirmation and fail-closed unavailable state;
+- Continue/Return assistance moves below the Route row so contextual intelligence cannot misalign Departure/Arrival inputs.
+
+Milestones:
+
+| Milestone | Status | Scope |
+| --- | :---: | --- |
+| E1.0 — design + independent review | ✅ | **DONE / RECONCILED** · APPROVE WITH CHANGES; repo + authoritative twilight-source reconciliation complete |
+| E1.1 — route UX + new GPS Task behavior | ✅ | **DONE / LOCAL VERIFIED** · targeted 30/30 PASS; TypeScript PASS; production build PASS; authenticated browser 3/3 PASS; no historical mutation |
+| E1.2 — aircraft default Operation | ✅ | **DONE / LOCAL VERIFIED** · additive v18 nullable `default_operation_type`; no backfill; Add/Edit/Quick Add/share/backup/restore + Manual/GPS prefill; targeted 54/54 PASS; focused migration regression 5/5 PASS; TypeScript PASS; PostgreSQL acceptance 2/2 PASS; production build PASS; authenticated browser 4/4 PASS. Production migration v18 remains NOT APPLIED. |
+| E1.3 — GPS civil-twilight landing suggestion | ✅ | **DONE / LOCAL VERIFIED** · focused classifier/wiring/GPS regression suite 38/38 PASS; TypeScript PASS; production build PASS; authenticated browser 5/5 PASS covering Settings persistence, MANUAL fail-closed, SERA suggestion/provenance, total invalidation and sticky pilot edits |
+| E1.4 — historical Task cleanup | ✅ | **DONE / LOCAL VERIFIED** · production read-only census found 14 exact live rows across 3 accounts, all certified, with zero ordinary draft candidates; no historical mutation executed. Policy A frozen: preserve certified evidence; pilot correction remains owner-scoped existing workflow only; exact legacy value gets additive UI annotation while raw export/print/certification evidence remains unchanged. Verification: focused tests **20/20 PASS**, TypeScript PASS, PostgreSQL certification/correction acceptance **5/5 PASS** on local `flytally_browser`, production build PASS (41/41 static pages), targeted authenticated Playwright **1/1 PASS**. |
+| E1.5 — verification / migration / production closeout | 🚧 | **PR/CI ACTIVE — FIRST RUN BLOCKED BY STALE ROADMAP GUARD** · Local release gate remains closed: targeted browser-source guard **5/5 PASS**; exact-head TypeScript PASS, unit/regression **1200/1200 PASS**, production build PASS with **41/41** static pages; local PostgreSQL **84/84 PASS**; authoritative local serialized Playwright **84/84 PASS** with **2 intentional skips**. PR #237 `[full-ci]` first run: CI Browser smoke **84/84 PASS** with **2 intentional skips** using 1 worker; PostgreSQL acceptance PASS; Fast application gate TypeScript PASS but unit/regression **1199/1200** because `v300-navigation-hierarchy` still required the superseded exact `E1.5 ACTIVE` roadmap heading after docs advanced to PR/CI. No runtime defect was exposed. The roadmap guard is now stage-tolerant across E1.5 closeout transitions; rerun CI and require full green before production preflight/migration/merge/deploy. Production v18 remains NOT APPLIED; no production write/migration/merge/deploy executed yet. |
+
+## P3 — Multi-aircraft Product Scale — PAUSED: M2B AFTER INTEGRITY GATE
+
+Goal: prove repeatable no-code onboarding of heterogeneous aircraft profiles without aircraft-specific parallel workflows while preserving historical flight evidence.
+
+Detailed source-of-truth contract:
+
+`docs/product/MULTI_AIRCRAFT_SCALE_CONTRACT.md`
+
+### Completed
+
+| Milestone | Status | Closeout |
+| --- | :---: | --- |
+| M0 — Contract & evidence audit | ✅ | Current profile vs historical snapshot vs dynamic applicability classified |
+| M2A — Helicopter historical snapshot integrity | ✅ | Historical helicopter type no longer depends silently on mutable current aircraft profile |
+| M1 — Canonical aircraft-profile validation | ✅ | Add/Edit and shared profile import use one fail-closed validation contract |
+
+### Remaining
+
+#### M2B — Remaining historical & dynamic applicability integrity
+
+- audit remaining recency consumers for mutable-current-profile dependencies;
+- preserve established ordinary ULL→SEP behavior;
+- preserve explicit effective-dated `part_fcl_credit_*` provenance semantics;
+- verify manual and GPS entry snapshot equivalent applicable aircraft context;
+- preserve v1–v8 certification hash/revision compatibility.
+
+Acceptance:
+- no remaining historical identity calculation can be silently reclassified by editing the current aircraft profile;
+- ordinary ULL→SEP and explicit TMG override behavior remain regression-covered;
+- explicit credit basis/effective date remains enforced;
+- certification/revision verification remains unchanged.
+
+#### M3 — No-code heterogeneous onboarding proof
+
+Representative Aeroplane, Helicopter, Sailplane/TMG, Balloon, ULL and Other profiles must use the same canonical workflow:
+
+- catalogue selection or manual identity fallback;
+- Add/Edit;
+- Quick Add;
+- deactivate/reactivate;
+- flight selection;
+- required applicability guidance;
+- desktop/iPad/mobile light/dark acceptance.
+
+No make/model-specific runtime path is introduced.
+
+#### M4 — Sharing, recovery, scale & closeout
+
+- one-time aircraft sharing preserves recipient ownership and canonical validation;
+- exact backup/restore preserves profile and protected-flight evidence;
+- multi-profile picker/library behavior is measured before optimization;
+- deletion/deactivation protection remains safe when flights reference the registration;
+- PostgreSQL, complete regressions, typecheck, production build and browser smoke pass;
+- documentation closes in the same work cycle.
+
+### Permanent Multi-aircraft boundaries
+
+- one canonical flight model;
+- no aircraft-specific flight-entry pages;
+- no regulatory classification inferred solely from catalogue metadata;
+- manual aircraft identity fallback remains;
+- one current personal aircraft profile per user + registration;
+- historical flights remain evidence snapshots;
+- organization/fleet ownership is not part of this phase;
+- no migration unless evidence proves one necessary.
+
+## P4 — Cross-cutting saved-data semantics — PLANNED
+
+These are known open issues from the completed UX audit. They were intentionally excluded from display-only fixes because they can affect persisted data/business semantics.
+
+### S1 — User timezone vs saved calendar dates · issue #144
+
+Known affected behavior includes manual-flight default date and new aircraft/rate effective-date defaults using a hard-coded `Europe/Prague` calendar despite a per-user timezone setting.
+
+Before implementation define:
+
+- which defaults use the user's configured calendar timezone;
+- which evidence remains UTC;
+- how midnight/day-boundary behavior is tested;
+- whether any existing persisted data needs treatment.
+
+Guardrail: GPS/FCL.050 UTC evidence is not converted into local-time evidence by this task.
+
+### S2 — Currency setting vs stored monetary values · issue #136
+
+Current product exposes a currency setting while some cost/expense surfaces remain explicitly CZK.
+
+Before implementation define:
+
+- whether account currency is presentation-only or the default denomination for new monetary entries;
+- which records already carry their own currency;
+- whether legacy values have an explicit currency provenance;
+- export/backup implications;
+- no automatic FX conversion unless a future explicit rule defines it.
+
+No storage migration is assumed.
+
+## P5 — Professional Logbook Platform — RESEARCH
+
+Potential later direction:
+
+- organization/operator accounts;
+- instructor/student workflows;
+- flight-school evidence;
+- fleet-linked training;
+- organizational verification;
+- controlled reports and team permissions.
+
+This is deliberately not scheduled for implementation until the personal pilot logbook, collaboration model and Multi-aircraft phase are stable in real use.
+
+## Historical milestone track
+
+This is the concise active history. Detailed implementation evidence belongs in `CHANGELOG.md`, merged PRs and `docs/history/`.
+
+| Milestone / release track | Status | What it established |
+| --- | :---: | --- |
+| v1.51.x — Regulatory Correctness Core | ✅ | FCL.060/LAPL/FCL.740.A foundations, movement evidence, eligible ULL credit and certification evidence boundaries |
+| v1.52 — Codebase Review & Cleanup | ✅ | Retired obsolete runtime/artifacts while preserving the regulatory core |
+| v1.53–v1.54 — Aircraft state & catalogue | ✅ | Aircraft-state integrity, structured aircraft-type catalogue and manual fallback |
+| v1.55–v1.61 — Flight-entry UX & category expansion | ✅ | Responsive entry workflow, guided setup and category-aware record foundations |
+| Multi-category Pilot Logbook | ✅ | Aeroplane, Helicopter, Sailplane, Balloon, ULL and Other on one canonical flight model |
+| v2.1 — Dashboard & Statistics consolidation | ✅ | Stable all-time Dashboard plus Statistics historical/period analysis |
+| v2.2 — Action Center & Shared Flight Workflow | ✅ | Authoritative pending-work surface and reviewed collaboration workflows |
+| v2.3 — Large Logbook Performance & Scalability | ✅ | 10k/50k/100k scale gates and hot-path optimization |
+| v2.4 — Flight Entry & Review 2.0 | ✅ | Canonical save/review/certify/share flow and explicit GPS review |
+| v2.5 — Recency & Compliance Workspace | ✅ | Evidence-driven recency/licence planning and explainable evidence states |
+| v2.6 — Professional Pilot Workspace 2.0 | ✅ | Professional/operator context and experience reporting without silent employment inference |
+| v2.7 — Data Integrity & Recovery 2.0 | ✅ | Review-first restore, backup integrity and protected-history recovery |
+| v2.8 — Compliance & Safety Foundation | ✅ | Privacy, identity, maps/provider and browser-security foundations |
+| v2.9 — Commercial & External Validation | ✅ | Technical launch/legal/billing/signature/claims gates; external approvals separate |
+| v3.0 — UX & Product Consolidation | ✅ | Navigation, Licences & Recency, Aircraft, Print & Data, Settings, Web Push and mobile/accessibility consolidation |
+| v3.3 — Design & Workflow Consistency | ✅ | Shared tokens/icons/states/forms/formatting/routes plus Batch 9–11 closeout |
+| Documentation governance consolidation | ✅ | Canonical ROADMAP / FEATURES / CHANGELOG and archived historical notes · PR #148–150 |
+| Multi-aircraft M0 | ✅ | Current-profile vs historical-flight source-of-truth contract · PR #153 |
+| Multi-aircraft M2A | ✅ | Helicopter historical snapshot integrity · PR #154 |
+| Multi-aircraft M1 | ✅ | Canonical fail-closed aircraft-profile validation · PR #155 |
+| GPS touch-and-go reliability | ✅ | Real-track locality defect reproduced and fixed without changing movement thresholds |
+| Safety Pilot ↔ PIC workflow | ✅ | SP1–SP5 complete; PRs #162–#166 merged and closeout evidence recorded |
+| Flight Entry Workflow 3.0 | ✅ | DONE / PRODUCTION VERIFIED · PR #233 merged; production `252bcb8`; F1–F6 closeout complete |
+| Multi-aircraft M2B | ⏸️ | Accepted; resume/re-check after Flight Entry Workflow 3.0 integrity gate |
+| Saved-data semantics · timezone/currency | ⏳ | Known cross-cutting business/data semantics debt |
+| Multi-aircraft M3 | ⏳ | No-code heterogeneous onboarding proof |
+| Multi-aircraft M4 | ⏳ | Sharing/recovery/scale closeout |
+| Professional Logbook Platform | 🔬 | Future organization/operator/fleet workflows |
+
+## Permanent engineering constraints
+
+1. **Data integrity first.** Certified/finalized evidence is audited/versioned, not destructively rewritten.
+2. **Evidence before regulatory status.** Missing evidence must not produce a false CURRENT/compliant state.
+3. **One workflow.** Do not create parallel Quick/Simple/Advanced variants of the same core task.
+4. **Explicit state.** Missing is not zero/default; invalid combinations fail closed.
+5. **Backward compatibility.** Existing records, fingerprints, revisions, sharing and restore behavior remain protected.
+6. **Independent participant evidence.** A shared flight is one real-world event, but each pilot's owned/certified evidence remains independent.
+7. **Server-side ownership/auth.** Client state never substitutes for authorization.
+8. **Mobile is a release gate.** Desktop success alone is insufficient for core workflows.
+9. **Testing is part of completion.** PASS is reported only for checks that actually ran.
+10. **Documentation is part of completion.** Significant work checks/updates ROADMAP, FEATURES and CHANGELOG in the same work cycle.
+11. **External approval is never inferred.** Internal code/tests/publication do not equal regulator/legal/provider approval.
+12. **Product priority follows evidence.** Real production correctness and data-integrity defects outrank convenience expansion.
+
+## Historical roadmap
+
+The pre-consolidation roadmap is preserved verbatim at:
+
+`docs/history/ROADMAP_LEGACY_2026-09-26.md`
+
+Historical documents are evidence/context only. If they conflict with this file, this roadmap controls current planning.

@@ -106,9 +106,9 @@ test("v2.4 hands successful saves directly into final Logbook review",()=>{
   const actions=fs.readFileSync("app/(protected)/flights/actions.ts","utf8");
   assert.match(actions,/\/flights\/\$\{id\}\?tab=logbook&saved=1/);
   assert.match(actions,/\/flights\/\$\{lastId\}\?tab=logbook&saved=1/);
-  assert.match(detailWorkspace,/postSave\?"logbook":initialTab/);
-  assert.doesNotMatch(detailWorkspace,/Flight saved as an editable draft/);
-  assert.match(detailWorkspace,/Flight saved\./);
+  assert.match(detailWorkspace,/completion==="draft-saved"[\s\S]*\?"logbook":initialTab/);
+  assert.match(detailWorkspace,/Flight saved as draft\./);
+  assert.match(detailWorkspace,/Flight saved and certified\./);
   assert.match(detailWorkspace,/Add another flight/);
   assert.match(detailWorkspace,/FlightWorkflowProgress/);
   assert.match(detailWorkspace,/history\.replaceState/);

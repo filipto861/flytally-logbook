@@ -54,7 +54,7 @@ test("SP5 dedicated PIC reinvite reopens declined or cancelled requests but neve
 });
 
 test("SP5 PIC collaboration does not change the certification payload version",()=>{
-  const certification=read("app/(protected)/flights/certification-actions.ts");
+  const certification=read("lib/flight-certification.ts");
   assert.match(certification,/flightCertificationHash\(\{\.\.\.row,certification_version:8\},userId,8\)/);
   assert.match(certification,/certification_version=8/);
 });

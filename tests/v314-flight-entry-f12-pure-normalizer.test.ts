@@ -185,5 +185,5 @@ test("F1.2 normalizer body has no FormData, DB or account dependency",()=>{
   assert.ok(start>=0&&end>start);
   const normalizer=source.slice(start,end);
   assert.doesNotMatch(normalizer,/FormData|sql\`|requireUser|requireAuth|process\.env/);
-  assert.match(source,/return normalizeFlightDraft\(manualFlightCandidate\(form\)\)/);
+  assert.match(source,/return normalizeFlightDraft\(manualFlightCandidate\(form,options\.existingPurposeCodes\?\?\[\]\)\)/);
 });

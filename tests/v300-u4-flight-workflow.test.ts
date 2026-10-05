@@ -8,11 +8,12 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v3.0 U4 makes Save hand off directly to final Logbook review",()=>{
   const actions=read("app/(protected)/flights/actions.ts"),page=read("app/(protected)/flights/new/page.tsx"),form=read("components/flight-form.tsx"),panel=read("components/intelligent-flight-entry-panel.tsx");
-  assert.match(actions,/redirect\(String\(form\.get\("intent"\)\)==="another"\?"\/flights\/new\?added=1":`\/flights\/\$\{id\}\?tab=logbook&saved=1`\)/);
-  assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?tab=logbook&saved=1`\)/);
+  assert.match(actions,/intent=String\(form\.get\("intent"\)\|\|"draft"\)/);assert.match(actions,/if\(intent==="certify"\)/);assert.match(actions,/redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
+  assert.match(actions,/`\/flights\/\$\{id\}\?tab=logbook&saved=1`/);
+  assert.match(actions,/if\(completionIntent==="certify"&&prepared\.length===1\)/);assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?certified=1`\)/);assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?tab=logbook&saved=1`\)/);
   assert.doesNotMatch(page,/takes you to review before certification/);
-  assert.match(form,/Creates an editable draft for final review\./);
-  assert.match(form,/editing\?"Save changes":"Save & review"/);
+  assert.match(form,/Save draft keeps the record editable/);
+  assert.match(form,/Save &amp; certify flight/);
   assert.doesNotMatch(panel,/POST_SAVE_REVIEW_KEY|sessionStorage/);
 });
 
@@ -29,15 +30,15 @@ test("v3.0 U4 shows one durable Saved Review Certify Share progression",()=>{
   assert.match(detail,/FlightWorkflowProgress/);
   assert.doesNotMatch(detail,/Flight saved as an editable draft/);
   assert.match(detail,/history\.replaceState/);
-  assert.match(page,/workflow=\{certified,correctionDraft,locked,blockers:blockers\.length,recordRevision,shareHref:/);
-  assert.match(page,/postSave=\{context\.saved==="1"\}/);
+  assert.match(page,/workflow=\{certified,correctionDraft,locked,blockers:certificationBlockers\.length,recordRevision,shareHref:/);
+  assert.match(page,/completion=\{completion\}/);assert.match(page,/completionMessage=\{completionMessage\}/);
   assert.doesNotMatch(detail,/↗ Share flight/);
 });
 
 test("v3.0 U4 keeps certification explicit and blocks sharing until the record is certified",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx"),sharing=read("lib/flight-sharing.ts"),sharePage=read("app/(protected)/flights/[id]/share/page.tsx");
   assert.match(page,/name="confirm" value="certify"/);
-  assert.match(page,/disabled=\{easa&&blockers\.length>0\}/);
+  assert.match(page,/disabled=\{certificationBlockers\.length>0\}/);
   assert.match(sharing,/WHERE id=\$\{flightId\} AND user_id=\$\{userId\} AND certified_at IS NOT NULL/);
   assert.match(sharing,/s\.revoked_at IS NULL AND f\.certified_at IS NOT NULL/);
   assert.match(sharePage,/if\(!f\.certified_at\)return/);

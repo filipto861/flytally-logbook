@@ -202,7 +202,7 @@ test("F1.1 adapter boundary remains explicit as F1.4 wires only the GPS server m
   }
   const parser=fs.readFileSync(path.join(root,"lib/flight-input.ts"),"utf8");
   assert.match(parser,/manualFlightCandidate/);
-  assert.match(parser,/normalizeFlightDraft\(manualFlightCandidate\(form\)\)/);
+  assert.match(parser,/normalizeFlightDraft\(manualFlightCandidate\(form,options\.existingPurposeCodes\?\?\[\]\)\)/);
   const actions=fs.readFileSync(path.join(root,"app/(protected)/flights/actions.ts"),"utf8");
   assert.match(actions,/gpsFlightCandidate/);
   assert.match(actions,/normalizeFlightDraft\(candidate\)/);

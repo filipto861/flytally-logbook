@@ -89,7 +89,7 @@ async function loginBrowserPilot(page,returnTo){
   await page.getByLabel("Email").fill("browser-auth@example.test");
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
-  await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`));
+  await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`),{timeout:15000});
 }
 
 async function holdPost(page,pattern){
@@ -272,7 +272,7 @@ test("F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG
   await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
 
   mutateF35ProfileAfterRender();
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'"))).toBe(0);
 
@@ -286,7 +286,7 @@ test("F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG
   await context.locator('select[name="regulatoryCategory"]').selectOption("SAILPLANE");
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-TMG1' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|TMG|SAILPLANE");
 });
@@ -305,12 +305,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
   await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="aircraftType";crafted.value="B23";form.appendChild(crafted)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02'"))).toBe(0);
 
   await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="aircraftType";canonical.value="OTHER";form.appendChild(canonical)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|OTHER|AEROPLANE");
 
@@ -323,12 +323,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await expect(form.locator('input[name="balloonGroup"]')).toHaveValue("A");
   await form.locator('select[name="balloonOperation"]').selectOption("FREE");
   await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="balloonGroup";crafted.value="B";form.appendChild(crafted)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02'"))).toBe(0);
 
   await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="balloonGroup";canonical.value="A";form.appendChild(canonical)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT aircraft_class||'|'||regulatory_category||'|'||balloon_class||'|'||balloon_group||'|'||balloon_operation FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("BALLOON|BALLOON|HOT_AIR_BALLOON|A|FREE");
 });
@@ -352,9 +352,175 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   await form.locator('input[name="date"]').fill("2026-10-02");
   await expect(form.locator('input[name="evidence"]')).toHaveValue("ULL");
   await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
+});
+
+test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 completion coverage requires the isolated browser database.");
+  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00')");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const completeManual=async(offBlock,takeoff,landing,onBlock)=>{
+    const form=page.locator("#new-flight-manual-form");
+    await form.locator('input[name="date"]').fill("2026-10-05");
+    await form.locator('select[name="registration"]').selectOption("OK-E2E");
+    await form.locator('input[name="departure"]').fill("LKLT");
+    await form.locator('input[name="arrival"]').fill("LKPR");
+    await form.locator('input[name="offBlock"]').fill(offBlock);
+    await form.locator('input[name="takeoff"]').fill(takeoff);
+    await form.locator('input[name="landing"]').fill(landing);
+    await form.locator('input[name="onBlock"]').fill(onBlock);
+    const experience=form.locator("details.entry-section-experience");
+    if(!(await experience.getAttribute("open")))await experience.locator("summary").click();
+    await form.locator('input[name="landingsDay"]').fill("1");
+    await form.locator('input[name="landingsNight"]').fill("0");
+    const context=form.locator("details.aircraft-context-section");
+    if(!(await context.getAttribute("open")))await context.locator("summary").click();
+    await form.locator('select[name="operationType"]').selectOption("SP");
+    await form.locator('select[name="engineType"]').selectOption("SE");
+    await expect(form.locator(".entry-certification-summary")).toContainText("EASA");
+    return form;
+  };
+
+  let form=await completeManual("12:00","12:05","12:55","13:00");
+  await expect(form.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(form.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await form.getByRole("button",{name:"Save & certify flight"}).click();
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='12:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
+
+  await page.goto("/flights/new");
+  form=await completeManual("13:00","13:05","13:55","14:00");
+  await form.locator('input[name="arrival"]').press("Enter");
+  await expect(page.getByText("Flight saved as draft.")).toBeVisible();
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='13:00' ORDER BY id DESC LIMIT 1")).toBe("DRAFT");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
+  runBrowserSql("DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')");
+  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00'");
+  await loginBrowserPilot(page,"/flights/new");
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-10-05T14:00:00Z</when><when>2026-10-05T14:01:00Z</when><when>2026-10-05T14:02:00Z</when><when>2026-10-05T14:03:00Z</when><when>2026-10-05T14:04:00Z</when><when>2026-10-05T14:05:00Z</when><gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-direct-certify.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-05");
+  await gpsForm.locator('input[name="part_0_departure"]').fill("LKLT");
+  await gpsForm.locator('input[name="part_0_arrival"]').fill("LKPR");
+  await gpsForm.locator('input[name="part_0_offBlock"]').fill("14:00");
+  await gpsForm.locator('input[name="part_0_takeoff"]').fill("14:01");
+  await gpsForm.locator('input[name="part_0_landing"]').fill("14:04");
+  await gpsForm.locator('input[name="part_0_onBlock"]').fill("14:05");
+  const starts=gpsForm.locator('input[name="part_0_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.locator(".gps-certification-summary")).toContainText("EASA");
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save & certify flight"}).click();
+
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')")).toBe("1");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("3.4.0 GPS quality warning requires one targeted acknowledgement before completion",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS warning coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-05T15:00:00Z</when><when>2026-10-05T15:00:10Z</when><when>2026-10-05T15:01:00Z</when><when>2026-10-05T15:02:00Z</when><when>2026-10-05T15:03:00Z</when>'+
+    '<gx:coord>14.00 50.00 300</gx:coord><gx:coord>15.00 51.00 500</gx:coord><gx:coord>15.01 51.01 800</gx:coord><gx:coord>15.02 51.02 700</gx:coord><gx:coord>15.03 51.03 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-quality-warning.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+
+  await expect(gpsForm.getByText("GPS track needs review.")).toBeVisible();
+  const trackReview=gpsForm.locator("details.gps-track-review");
+  await expect(trackReview).toHaveAttribute("open","");
+  const acknowledgement=gpsForm.locator('input[name="gpsWarningReviewed"]');
+  await expect(acknowledgement).toBeVisible();
+  await expect(acknowledgement).not.toBeChecked();
+
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-05");
+  await gpsForm.locator('input[name="part_0_departure"]').fill("LKLT");
+  await gpsForm.locator('input[name="part_0_arrival"]').fill("LKPR");
+  await gpsForm.locator('input[name="part_0_offBlock"]').fill("15:00");
+  await gpsForm.locator('input[name="part_0_takeoff"]').fill("15:01");
+  await gpsForm.locator('input[name="part_0_landing"]').fill("15:02");
+  await gpsForm.locator('input[name="part_0_onBlock"]').fill("15:03");
+  const starts=gpsForm.locator('input[name="part_0_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+
+  await expect(gpsForm.getByText("Review the GPS quality warning.")).toBeVisible();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Complete flight details"})).toBeVisible();
+
+  await acknowledgement.check();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 responsive coverage requires the isolated browser database.");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const releaseViewports=F6_PRESENTATION_VIEWPORTS.filter(viewport=>
+    ["desktop-1440","ipad-landscape","ipad-portrait","mobile-390"].includes(viewport.name)
+  );
+  const manual=page.locator("#new-flight-manual-form");
+  await manual.locator('select[name="registration"]').selectOption("OK-E2E");
+  for(const viewport of releaseViewports){
+    for(const theme of ["light","dark"]){
+      await applyF6PresentationState(page,viewport,theme);
+      await expect(manual).toBeVisible();
+      await expect(manual.getByRole("button",{name:"Save draft"})).toBeVisible();
+      await expect(manual.getByRole("button",{name:"Save & certify flight"})).toBeVisible();
+    }
+  }
+
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+    '<when>2026-10-05T16:00:00Z</when><when>2026-10-05T16:01:00Z</when><when>2026-10-05T16:02:00Z</when><when>2026-10-05T16:03:00Z</when>'+
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.14 50.13 600</gx:coord><gx:coord>14.20 50.18 650</gx:coord><gx:coord>14.24 50.21 300</gx:coord>'+
+    '</gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-responsive.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await expect(gpsForm.locator(".flight-review-card").first()).toBeVisible();
+
+  for(const viewport of releaseViewports){
+    for(const theme of ["light","dark"]){
+      await applyF6PresentationState(page,viewport,theme);
+      await expect(gpsForm).toBeVisible();
+      await expect(gpsForm.locator(".flight-review-card").first()).toBeVisible();
+      await expect(gpsForm.locator("details.gps-track-review")).toBeVisible();
+    }
+  }
 });
 
 test("GPS import fails closed for invalid profile context and exposes only implemented F4 roles",async({page})=>{
@@ -382,12 +548,10 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
   await expect(gpsForm.locator('select[name="operationType"]')).toHaveValue("SP");
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("SE");
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeDisabled();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   await gpsForm.locator('input[name="part_0_landingsDay"]').fill("1");
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
-  await expect(reviewed).toBeEnabled();
 
   await registration.selectOption("OK-TMG1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("TMG");
@@ -444,11 +608,10 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F1.4 normalized GPS save");
 
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
@@ -495,23 +658,19 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
   await gpsForm.locator('textarea[name="part_0_note"]').fill("F4.1 common DUAL browser proof");
 
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
 
   const role=gpsForm.locator('select[name="role"]');
   await role.selectOption("DUAL");
-  await expect(reviewed).not.toBeChecked();
   const instructor=gpsForm.locator('input[name="instructor"]');
   await expect(instructor).toBeVisible();
   await expect(instructor).toHaveAttribute("required","");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toHaveCount(0);
-  await expect(gpsForm.getByRole("button",{name:"Review imported flights"})).toBeVisible();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Complete flight details"})).toBeVisible();
   await instructor.fill("Browser Training Instructor");
-  await reviewed.check();
   await expect(gpsForm.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("DUAL · Browser Training Instructor");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="role"]')).toHaveValue("DUAL");
@@ -559,45 +718,36 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
   await completePart(0,{offBlock:"20:00",takeoff:"20:01",landing:"20:04",onBlock:"20:05",note:"F4.2 inherited PIC"});
   await completePart(1,{offBlock:"20:06",takeoff:"20:07",landing:"20:10",onBlock:"20:11",note:"F4.2 overridden DUAL"});
 
-  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
-  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
-  await expect(review0).toBeEnabled();
-  await expect(review1).toBeEnabled();
-  await review0.check();
-  await review1.check();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   const second=gpsForm.locator(".flight-review-card").nth(1);
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
-  await expect(review1).not.toBeChecked();
   const overrideInstructor=second.locator('input[name="part_1_roleCrew_instructor"]');
   await expect(overrideInstructor).toHaveAttribute("required","");
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toHaveCount(0);
   await overrideInstructor.fill("Browser F42 Instructor");
-  await review1.check();
-  await expect(review0).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   const commonRole=gpsForm.locator('select[name="role"]');
   await commonRole.selectOption("DUAL");
-  await expect(review0).not.toBeChecked();
-  await expect(review1).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toHaveCount(0);
   await commonRole.selectOption("PIC");
-  await expect(review1).toBeChecked();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   await second.getByRole("button",{name:"Reset to common"}).click();
   await expect(second.locator('select[name="part_1_roleCrew_role"]')).toHaveCount(0);
   await expect(second.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("INHERIT");
-  await expect(review1).not.toBeChecked();
   await expect(second.locator("p.value-origin-note").filter({hasText:"Common Role/Crew"})).toContainText("PIC");
 
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("DUAL");
   await second.locator('input[name="part_1_roleCrew_instructor"]').fill("Browser F42 Instructor");
-  await review0.check();
-  await review1.check();
   await expect(gpsForm.locator('input[name="part_0_roleCrew_mode"]')).toHaveValue("INHERIT");
   await expect(gpsForm.locator('input[name="part_1_roleCrew_mode"]')).toHaveValue("OVERRIDE");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save 2 flight drafts"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT string_agg(off_block||'|'||role||'|'||COALESCE(instructor,''), E'\\n' ORDER BY off_block) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02' AND off_block IN ('20:00','20:06')")).toBe("20:00|PIC|\n20:06|DUAL|Browser F42 Instructor");
@@ -678,11 +828,9 @@ test("F4.3 common Manual Safety Pilot persists explicit Actual PIC without accou
   await gpsForm.locator('input[name="commander"]').fill("Manual GPS Captain");
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:00",takeoff:"21:01",landing:"21:04",onBlock:"21:05",note:"F4.3 common manual Safety Pilot"});
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await expect(reviewed).toBeEnabled();
-  await reviewed.check();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:00' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Manual GPS Captain");
@@ -712,11 +860,10 @@ test("F4.3 common connected Safety Pilot snapshots server identity and persists 
   await gpsForm.locator('select[name="connectedPicUserId"]').selectOption("9002");
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:20",takeoff:"21:21",landing:"21:24",onBlock:"21:25",note:"F4.3 connected snapshot"});
-  const reviewed=gpsForm.locator('input[name="part_0_reviewed"]');
-  await reviewed.check();
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   renameSafetyPilotPicFixture("Browser F43 Snapshot");
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save draft"}).click();
 
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT role||'|'||commander FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block='21:20' ORDER BY id DESC LIMIT 1")).toBe("SAFETY PILOT|Browser F43 Snapshot");
@@ -748,23 +895,17 @@ test("F4.3 revoked per-flight connected Safety Pilot fails closed without partia
 
   await completeF43GpsPart(gpsForm,0,{offBlock:"21:40",takeoff:"21:41",landing:"21:44",onBlock:"21:45",note:"F4.3 inherited PIC"});
   await completeF43GpsPart(gpsForm,1,{offBlock:"21:46",takeoff:"21:47",landing:"21:50",onBlock:"21:51",note:"F4.3 revoked Safety Pilot override"});
-  const review0=gpsForm.locator('input[name="part_0_reviewed"]');
-  const review1=gpsForm.locator('input[name="part_1_reviewed"]');
-  await review0.check();
-  await review1.check();
+  await expect(gpsForm.locator('input[name$="_reviewed"]')).toHaveCount(0);
 
   const second=gpsForm.locator(".flight-review-card").nth(1);
   await second.getByRole("button",{name:"Override Role/Crew"}).click();
   await second.locator('select[name="part_1_roleCrew_role"]').selectOption("SAFETY PILOT");
-  await expect(review1).not.toBeChecked();
   await second.locator('select[name="part_1_roleCrew_actualPicMode"]').selectOption("connected");
   await second.locator('select[name="part_1_roleCrew_connectedPicUserId"]').selectOption("9002");
-  await review1.check();
-  await expect(review0).toBeChecked();
-  await expect(gpsForm.getByRole("button",{name:"Save reviewed flights"})).toBeEnabled();
+  await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   revokeSafetyPilotPicConnectionFixture();
-  await gpsForm.getByRole("button",{name:"Save reviewed flights"}).click();
+  await gpsForm.getByRole("button",{name:"Save 2 flight drafts"}).click();
   await expect(gpsForm.locator('[role="alert"]')).toContainText("Selected Actual PIC is no longer an accepted Connection");
   await expect(page).toHaveURL(/\/flights\/new(?:\?|$)/);
   expect(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-03' AND off_block IN ('21:40','21:46')")).toBe("0");
@@ -1140,7 +1281,8 @@ test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowl
     {tag:"input",name:"takeoff",text:""},
     {tag:"input",name:"landing",text:""},
     {tag:"input",name:"onBlock",text:""},
-    {tag:"button",name:"intent",text:"Save & review"},
+    {tag:"button",name:"intent",text:"Save draft"},
+    {tag:"button",name:"intent",text:"Save & certify flight"},
   ]);
 
   await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
@@ -1155,7 +1297,7 @@ test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowl
     {width:390,height:844},
   ]){
     await page.setViewportSize(viewport);
-    await expect(form.getByRole("button",{name:"Save & review"})).toBeVisible();
+    await expect(form.getByRole("button",{name:"Save draft"})).toBeVisible();
     await expect(form.locator(".flight-time-summary")).toBeVisible();
     await expectNoHorizontalOverflow(page);
   }
@@ -1251,7 +1393,7 @@ test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and
       await expect(supervisor).toHaveAttribute("required","");
       await expect(reference).toHaveAttribute("required","");
     }
-    await expect(form.getByRole("button",{name:"Save & review"})).toBeVisible();
+    await expect(form.getByRole("button",{name:"Save draft"})).toBeVisible();
     await expectNoHorizontalOverflow(page);
   };
 
@@ -1490,7 +1632,7 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
 
   await page.locator('select[name="registration"]').selectOption("OK-SP2E");
-  await page.getByRole("button",{name:"Save & review"}).click();
+  await page.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
@@ -1517,7 +1659,7 @@ test("F2.3 Safety Pilot resolver snapshots server identity and fails closed afte
   await expect(form.locator('input[name="commander"]')).toHaveValue("Browser Friend");
 
   renameSafetyPilotPicFixture("Browser Friend Renamed");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('select[name="actualPicMode"]')).toHaveValue("connected");
@@ -1538,7 +1680,7 @@ test("F2.3 Safety Pilot resolver snapshots server identity and fails closed afte
   await rejected.locator('select[name="connectedPicUserId"]').selectOption("9002");
   revokeSafetyPilotPicConnectionFixture();
 
-  await rejected.getByRole("button",{name:"Save & review"}).click();
+  await rejected.getByRole("button",{name:"Save draft"}).click();
   await expect(rejected.getByRole("alert")).toContainText("Selected Actual PIC is no longer an accepted Connection.");
   await expect(page).toHaveURL(/\/flights\/new(?:\?.*)?$/);
   await expectNoHorizontalOverflow(page);

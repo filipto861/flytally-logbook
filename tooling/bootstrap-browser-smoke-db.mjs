@@ -38,7 +38,7 @@ CREATE SCHEMA public;
 
 CREATE TABLE flytally_schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_schema_migrations(version,name)
-SELECT value,'browser-smoke-preapplied' FROM generate_series(1,16) value;
+SELECT value,'browser-smoke-preapplied' FROM generate_series(1,19) value;
 
 CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_feature_migrations(migration_key) VALUES
@@ -114,7 +114,7 @@ CREATE TABLE auth_events(
 CREATE TABLE flights(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
+  date TEXT NOT NULL,
   evidence TEXT NOT NULL DEFAULT '',
   registration TEXT NOT NULL DEFAULT '',
   aircraft_type TEXT NOT NULL DEFAULT '',
@@ -242,6 +242,8 @@ CREATE TABLE aircraft(
   part_fcl_credit_basis TEXT NOT NULL DEFAULT '',
   part_fcl_credit_from TEXT NOT NULL DEFAULT '',
   default_role TEXT NOT NULL DEFAULT 'PIC',
+  default_operation_type TEXT CHECK(default_operation_type IS NULL OR default_operation_type IN ('SP','MP')),
+  default_engine_type TEXT CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME')),
   billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
   default_price_per_hour NUMERIC NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1,
@@ -250,6 +252,44 @@ CREATE TABLE aircraft(
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id,registration)
 );
+
+CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $flytally$
+  DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+  BEGIN
+    IF TG_OP='INSERT' THEN
+      IF NULLIF(TRIM(COALESCE(NEW.aircraft_make,'')),'') IS NULL
+        AND NULLIF(TRIM(COALESCE(NEW.aircraft_model,'')),'') IS NULL
+        AND NULLIF(TRIM(COALESCE(NEW.aircraft_variant,'')),'') IS NULL THEN
+        SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+               COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+               COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+          INTO v_make,v_model,v_variant
+          FROM aircraft a
+          WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+          LIMIT 1;
+        NEW.aircraft_make:=COALESCE(v_make,'');
+        NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+        NEW.aircraft_variant:=COALESCE(v_variant,'');
+      END IF;
+    ELSIF NEW.registration IS DISTINCT FROM OLD.registration THEN
+      SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+             COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+             COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
+        INTO v_make,v_model,v_variant
+        FROM aircraft a
+        WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+        LIMIT 1;
+      NEW.aircraft_make:=COALESCE(v_make,'');
+      NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+      NEW.aircraft_variant:=COALESCE(v_variant,'');
+    END IF;
+    RETURN NEW;
+  END;
+$flytally$ LANGUAGE plpgsql;
+CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
+  BEFORE INSERT OR UPDATE OF registration ON flights
+  FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity();
+
 CREATE TABLE rates(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -328,14 +368,112 @@ CREATE TABLE connection_audit_log(
   details JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE pilot_licences(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  licence_type TEXT NOT NULL,
+  licence_number TEXT NOT NULL,
+  authority TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),
+  valid_until DATE,
+  recency_until DATE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id,licence_type,licence_number)
+);
 CREATE TABLE pilot_qualifications(
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
-  requested_signer_user_id BIGINT,
+  licence_id BIGINT REFERENCES pilot_licences(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  qualification_type TEXT NOT NULL,
+  certificate_reference TEXT NOT NULL DEFAULT '',
+  validity_mode TEXT NOT NULL CHECK(validity_mode IN ('unlimited','date','recency')),
+  valid_until DATE,
+  recency_until DATE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   record_kind TEXT,
   record_active BOOLEAN,
+  linked_licence_id BIGINT REFERENCES pilot_licences(id) ON DELETE SET NULL,
+  training_kind TEXT,
+  aircraft_make TEXT,
+  aircraft_model TEXT,
+  aircraft_variant TEXT,
+  differences TEXT,
+  completed_on DATE,
+  instructor_name TEXT,
+  training_organisation TEXT,
+  notes TEXT,
+  requested_signer_user_id BIGINT,
   signature_status TEXT,
-  verified_at TIMESTAMPTZ
+  verification_role TEXT,
+  verified_at TIMESTAMPTZ,
+  verified_by_user_id BIGINT,
+  verification_snapshot JSONB,
+  verification_signature TEXT,
+  verification_note TEXT,
+  verification_version INTEGER,
+  qualification_family TEXT,
+  regulatory_category TEXT,
+  qualification_scope TEXT,
+  privilege_role TEXT,
+  classification_source TEXT,
+  issued_on DATE,
+  limitations TEXT,
+  UNIQUE(licence_id,qualification_type,certificate_reference)
+);
+CREATE TABLE user_expiries(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL DEFAULT '',
+  label TEXT NOT NULL,
+  expiry_date DATE NOT NULL,
+  warning_days INTEGER NOT NULL DEFAULT 30,
+  note TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE spl_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  aircraft_context TEXT NOT NULL,
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK')),
+  CHECK(aircraft_context IN ('SAILPLANE','TMG'))
+);
+CREATE TABLE helicopter_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  helicopter_type TEXT NOT NULL,
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK'))
+);
+CREATE TABLE bpl_recency_evidence(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  evidence_kind TEXT NOT NULL DEFAULT 'PROFICIENCY_CHECK',
+  balloon_class TEXT NOT NULL,
+  balloon_group TEXT NOT NULL DEFAULT '',
+  evidence_date DATE NOT NULL,
+  signer TEXT NOT NULL,
+  reference TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK(evidence_kind IN ('PROFICIENCY_CHECK')),
+  CHECK(balloon_class IN ('HOT_AIR_BALLOON','GAS_BALLOON','HOT_AIR_AIRSHIP','MIXED_BALLOON')),
+  CHECK(balloon_group IN ('','A','B','C','D'))
 );
 CREATE TABLE instructor_flight_approvals(
   id BIGSERIAL PRIMARY KEY,

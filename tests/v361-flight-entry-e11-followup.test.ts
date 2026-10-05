@@ -24,10 +24,11 @@ test("E1.1 Manual and Edit keep the existing optional Task exercise field",()=>{
 
 test("E1.1 does not change certification Task integrity semantics",()=>{
   const integrity=read("lib/certification-integrity.ts");
-  const certification=read("app/(protected)/flights/certification-actions.ts");
+  const certification=read("lib/flight-certification.ts");
+  const correction=read("app/(protected)/flights/certification-actions.ts");
   assert.match(integrity,/remarks:\{task:text\(row\.task\),note:text\(row\.note\)/);
-  assert.match(certification,/f\.task/);
-  assert.match(certification,/flight_certified_revisions/);
+  assert.match(certification,/f\.commander,f\.instructor,f\.role,f\.task,f\.note,f\.purpose_code/);
+  assert.match(correction,/flight_certified_revisions/);
 });
 
 test("E1.1 route assistance has one dedicated live region after the aligned route inputs",()=>{

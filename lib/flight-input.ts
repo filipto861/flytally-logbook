@@ -2,7 +2,7 @@ import { serializeOptionalBilling } from "./billing.ts";
 import { flightDateKey } from "./dashboard-math.ts";
 import { allocatedFunctionTimes,defaultEngineType,durationMinutes,EASA_ROLES,ENGINE_TYPES,OPERATION_TYPES } from "./easa-logbook.ts";
 import { manualFlightCandidate,type CandidateSemantic,type FlightDraftCandidate } from "./flight-draft-candidate.ts";
-import { flightPurposeTask,normalizeFlightPurposeCodes,primaryFlightPurposeCode,stripFlightPurposeTasks } from "./flight-purpose.ts";
+import { flightPurposeApplicable,flightPurposeTask,normalizeFlightPurposeCodes,primaryFlightPurposeCode,stripFlightPurposeTasks } from "./flight-purpose.ts";
 import { regulatoryAircraftCategory,type RegulatoryAircraftCategory } from "./flight-entry-profile.ts";
 import { aircraftCategoryCapabilities,EASA_AIRCRAFT_PROFILE_CLASSES,REGULATORY_AIRCRAFT_CATEGORIES } from "./aircraft-category.ts";
 import { normalizeProfessionalOperationContext,supportsProfessionalContext } from "./professional-context.ts";
@@ -124,11 +124,11 @@ export function normalizeFlightDraft(candidate:FlightDraftCandidate):{data?:Flig
   }
 
   const verificationName=text(candidate.verificationName,160),verificationReference=text(candidate.verificationReference,160),crewSpec=roleCrewSpec(role,evidence);if(!crewSpec)return{error:"Select a valid pilot role."};const crewError=roleCrewSaveError(crewSpec,{instructor,verificationName,verificationReference});if(crewError)return{error:crewError};
-  const allocation=allocatedFunctionTimes(role,creditedMinutes),rawTask=text(candidate.task,160),hasPurposeField=candidate.purposeSelectionPresent,selectedPurposes=normalizeFlightPurposeCodes(candidate.purposeCodes),legacyPurposes=!hasPurposeField&&role==="DUAL"&&LEGACY_REFRESHER.test(rawTask)?["LAPL_FCL140A_REFRESHER"] as const:[],allowedPurposes=role==="DUAL"?selectedPurposes:instructor?selectedPurposes.filter(code=>code==="AIRCRAFT_DIFFERENCES"||code==="AIRCRAFT_FAMILIARISATION"):[],purposes=allowedPurposes.length?allowedPurposes:legacyPurposes,purposeCode=primaryFlightPurposeCode(purposes),cleanTask=hasPurposeField?stripFlightPurposeTasks(rawTask):rawTask,purposeTask=flightPurposeTask(purposes),task=purposeTask?`${purposeTask}${cleanTask?` · ${cleanTask}`:""}`.slice(0,160):cleanTask;
+  const allocation=allocatedFunctionTimes(role,creditedMinutes),rawTask=text(candidate.task,160),hasPurposeField=candidate.purposeSelectionPresent,selectedPurposes=normalizeFlightPurposeCodes(candidate.purposeCodes),existingPurposes=new Set(normalizeFlightPurposeCodes(candidate.existingPurposeCodes)),purposeContext={regulatoryCategory,role,instructor},legacyPurposes=!hasPurposeField&&LEGACY_REFRESHER.test(rawTask)&&flightPurposeApplicable("LAPL_FCL140A_REFRESHER",purposeContext)?["LAPL_FCL140A_REFRESHER"] as const:[],allowedPurposes=selectedPurposes.filter(code=>existingPurposes.has(code)||flightPurposeApplicable(code,purposeContext)),purposes=allowedPurposes.length?allowedPurposes:legacyPurposes,purposeCode=primaryFlightPurposeCode(purposes),cleanTask=hasPurposeField?stripFlightPurposeTasks(rawTask):rawTask,purposeTask=flightPurposeTask(purposes),task=purposeTask?`${purposeTask}${cleanTask?` · ${cleanTask}`:""}`.slice(0,160):cleanTask;
 
   return{data:{date,registration,aircraftType:text(candidate.aircraftType,80),aircraftClass,regulatoryCategory,balloonClass,balloonGroup,balloonOperation,launchMethod,launches,evidence,departure:text(candidate.departure,16).toUpperCase(),arrival:text(candidate.arrival,16).toUpperCase(),offBlock:times[0],takeoff:times[1],landing:times[2],onBlock:times[3],starts,operationType,engineType,operatorName,flightNumber,operationContext,landingsDay:hasLandings?landingsDay:starts,landingsNight:hasLandings?landingsNight:0,movementEvidenceRecorded,takeoffsDay,takeoffsNight,approachesDay,approachesNight,nightMinutes,ifrMinutes,...allocation,verificationName,verificationReference,commander:text(candidate.commander,100),instructor,role,task,purposeCode,billingBasis,note:text(candidate.note,2000)}};
 }
 
-export function parseFlightInput(form:FormData):{data?:FlightInput;error?:string}{
-  return normalizeFlightDraft(manualFlightCandidate(form));
+export function parseFlightInput(form:FormData,options:{existingPurposeCodes?:unknown[]}={}):{data?:FlightInput;error?:string}{
+  return normalizeFlightDraft(manualFlightCandidate(form,options.existingPurposeCodes??[]));
 }

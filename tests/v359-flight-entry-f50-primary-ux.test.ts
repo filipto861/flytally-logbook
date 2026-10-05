@@ -88,8 +88,8 @@ test("F5.1 removes duplicated New Flight workflow prose but preserves the draft-
   assert.doesNotMatch(page,/Log a flight manually or import a GPS track/);
   assert.match(workspace,/>Manual entry<\/strong>/);
   assert.match(workspace,/>Import GPS track<\/strong>/);
-  assert.match(form,/Creates an editable draft for final review\./);
-  assert.match(form,/>\{editing\?"Save changes":"Save & review"\}<\/PendingActionButton>/);
+  assert.match(form,/Save draft keeps the record editable/);
+  assert.match(form,/Save &amp; certify flight/);assert.match(form,/>Save draft<\/PendingActionButton>/);
 });
 
 test("F5.2 keeps Role default provenance concise and New-only",()=>{

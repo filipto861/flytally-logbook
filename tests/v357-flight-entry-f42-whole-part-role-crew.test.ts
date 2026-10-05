@@ -120,5 +120,7 @@ test("F4.2 UI submits INHERIT or a complete supported override and clears overri
   assert.match(form,/name=\{\`part_\$\{index\}_roleCrew_instructor\`\}/);
   assert.match(form,/Override Role\/Crew/);
   assert.match(form,/Reset to common/);
-  assert.match(form,/roleCrewOverrides\[index\]\?\.mode==="OVERRIDE"\?review:\{\.\.\.review,reviewed:false\}/);
+  assert.match(form,/Override Role\/Crew/);
+  assert.match(form,/Reset to common/);
+  assert.doesNotMatch(form,/reviewed:false/);
 });
