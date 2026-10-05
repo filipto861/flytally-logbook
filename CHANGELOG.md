@@ -10,7 +10,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.4.0 Flight Entry Simplification — in development
+### 3.4.1 GPS Night-time reliability — design/review
+- Opened a narrow production-correction follow-up after GPS review showed a NIGHT landing suggestion while Night time remained unavailable/manual.
+- Independent review was reconciled against the current repository. 3.4.1 will add structured unavailable reasons first; it will not infer Night time from landing classification, auto-apply partial values, invent a second track-speed heuristic, or relax the 600-second segment guard before the actual failure reason is reproduced/characterized.
+- Added the frozen design contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No runtime, DB, certification or historical-record behavior changed by this design step.
+
+## 3.4.0 — 5 October 2026
+
+### Flight Entry Simplification
 - Local release verification now includes TypeScript PASS, 1230/1230 unit/regression PASS, 73/73 PostgreSQL core PASS, production build PASS, 13/13 targeted 3.4.0 contract PASS, 6/6 targeted authenticated desktop/mobile Playwright PASS, and a focused responsive Flight Entry smoke **1/1 PASS** covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark. GitHub CI is intentionally NOT RUN under the local-first policy.
 - Switched repository verification to local-first release gating; GitHub Verify and Browser Smoke are now manual-only diagnostics rather than automatic PR/release requirements.
 - Simplified the GPS import hierarchy: clean single-flight track review collapses by default, multi-flight/ambiguous/warned track review stays surfaced, and redundant clean-quality status copy was removed.
@@ -22,10 +29,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Updated authenticated browser coverage for the removed generic GPS review checkbox and added direct Manual/GPS certification, Enter-to-draft, multi-flight draft-only, and targeted GPS-quality acknowledgement acceptance cases.
 
 ### Documentation / versioning governance
-- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`; because historical CHANGELOG labels already reached v3.3, the first canonical unified target is `3.4.0`.
+- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; 3.4.0 is now the first canonical unified production release after the one-time reconciliation jump from 2.7.0.
 - New implementation phases use numeric Phase 1 / Phase 2 / … naming rather than new E/F/B/SP/M milestone families.
 - Database schema, certification payload and backup-format versions remain independent technical counters.
-- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
+- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence.
+- PR #240 merged as `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`; production deployment `dpl_3Zcyq7QmdSGPj1AcSHe2gj2Rn29r` is READY on that exact SHA and carries `fly-tally.com`.
+- Post-deploy runtime logs show successful 200 responses across authenticated dashboard/flight routes, and the checked runtime-error window contained no grouped errors.
+- Production DB remains schema v19 and certification payload remains v8; 3.4.0 introduced no schema migration or historical flight/certification rewrite.
 
 ## Legacy unversioned development / production history — through 4 October 2026
 
