@@ -127,3 +127,25 @@ test("3.4.0 replaces the generic GPS review checkbox with a targeted quality ack
   assert.match(actions,/form\.get\("gpsWarningReviewed"\)/);
   assert.match(actions,/Review the GPS quality warning before saving this import/);
 });
+
+test("3.4.0 Phase 2 keeps the clean GPS path compact and truthful",()=>{
+  const gps=read("components/kml-import-form.tsx");
+
+  assert.doesNotMatch(gps,/GPS track quality: good/);
+  assert.match(gps,/Complete flight details/);
+  assert.match(gps,/Save flight draft/);
+  assert.match(gps,/Save \$\{partCount\} flight drafts/);
+  assert.match(gps,/data-ready=\{sourceReady&&credible\?"true":"false"\}/);
+  assert.match(gps,/flight-review-card\[data-ready="false"\]/);
+});
+
+test("3.4.0 Phase 3 keeps Billing secondary to regulatory flight context",()=>{
+  const gps=read("components/kml-import-form.tsx");
+
+  assert.match(gps,/className="entry-section entry-section-optional gps-cost-details"/);
+  assert.match(gps,/billingSummary=billing==="INVALID"\?"Needs configuration"/);
+  assert.match(gps,/Resolve the stored aircraft billing setting/);
+
+  const contextAssignment=gps.match(/flightContextSummary=selectedProfile\?compactContextSummary\(\[([^\]]+)\]\)/)?.[1]??"";
+  assert.doesNotMatch(contextAssignment,/Billing|billing/);
+});
