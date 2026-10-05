@@ -104,11 +104,12 @@ test("B0.5 create and update continue through the same canonical input parser",(
   assert.ok(createStart>=0&&updateStart>createStart);
   const createBlock=actions.slice(createStart,actions.indexOf("export async function importKmlFlight",createStart));
   const updateBlock=actions.slice(updateStart);
-  for(const [name,block] of [["create",createBlock],["update",updateBlock]] as const){
-    assert.match(block,/const parsed=parseFlightInput\(form\),expenseResult=parseFlightExpenses\(form\)/,name);
-    assert.match(block,/const f=parsed\.data/,name);
-  }
-  assert.equal(actions.match(/parseFlightInput\(form\)/g)?.length,2);
+  assert.match(createBlock,/const parsed=parseFlightInput\(form\),expenseResult=parseFlightExpenses\(form\)/,"create");
+  assert.match(updateBlock,/existingPurposeCodes=normalizeFlightPurposeCodes/,"update");
+  assert.match(updateBlock,/parsed=parseFlightInput\(form,\{existingPurposeCodes\}\),expenseResult=parseFlightExpenses\(form\)/,"update");
+  assert.match(createBlock,/const f=parsed\.data/,"create");
+  assert.match(updateBlock,/const f=parsed\.data/,"update");
+  assert.equal(actions.match(/parseFlightInput\(form(?:,\{existingPurposeCodes\})?\)/g)?.length,2);
 });
 
 test("B0.5 selected-aircraft defaults no longer contain a fail-open ULL repair",()=>{
