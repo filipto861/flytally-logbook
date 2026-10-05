@@ -219,6 +219,7 @@ Rules:
 - successful certification requires no second certification click;
 - existing correction-revision workflow remains authoritative for certified-flight edits;
 - no sharing/invitation/verification side effect is triggered automatically.
+- post-save blocker messaging, workflow readiness and the legacy Certify button all consume the same category-aware `flightCertificationCompliance` result used by direct certification.
 
 ### Pre-certification summary
 Show next to the action:
