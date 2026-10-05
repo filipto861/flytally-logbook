@@ -282,7 +282,8 @@ Required evidence:
 - certification parity test between old explicit certification and new Save & certify on equivalent persisted rows;
 - authenticated browser coverage for Manual + GPS, Save draft + Save & certify, blockers, GPS warning acknowledgement, Enter-key behavior and responsive states;
 - production build;
-- PR CI;
+- exact-candidate local verification evidence recorded;
+- GitHub CI: **NOT REQUIRED**; manual-only diagnostic if explicitly requested;
 - production deployment + smoke + runtime-error check;
 - ROADMAP / FEATURES / CHANGELOG reconciliation;
 - one-time product-version reconciliation to **3.4.0** only at ship time.
