@@ -89,18 +89,20 @@ Repository review confirms that this is possible because landing classification 
 - add structured unavailable reason codes and human-readable UI feedback;
 - keep manual Night-time edits sticky;
 - do not auto-apply partial/lower-bound Night minutes;
-- do not invent a second generic speed/discontinuity heuristic;
-- do not relax the 600-second segment guard until the actual failing reason is reproduced/characterized;
+- reuse canonical track discontinuity thresholds rather than inventing a second quality model;
+- replace the blanket 600-second rejection only with a conservative same-state proof; a sparse segment that could contain twilight stays unavailable;
+- adaptive subdivision of an unsafe two-endpoint gap is not accepted as new evidence;
 - no DB migration or certification-version change is expected.
 
-## Phase 1 — Reproduction / diagnostics — ACTIVE
+## Single implementation phase — ACTIVE
 
-- preserve current numerical behavior while adding explicit reason diagnostics;
-- add targeted regression coverage for gap, timestamp, solar-envelope, confidence-guard and zero-duration conflict paths;
-- capture/anonymize the real EHAM → LKPR failing track if available, or use a clearly labelled real-like characterization fixture;
-- surface the unavailable reason in GPS review.
-
-Phase 2 numerical correction is gated by Phase 1 evidence. Adaptive subdivision of an unsafe two-endpoint gap is not accepted as new evidence.
+- structured unavailable diagnostics;
+- pilot-facing unavailable reason copy;
+- bounded sparse-segment evaluation using the shared GPS-continuity contract;
+- fail-closed timestamp/position/confidence/discontinuity handling;
+- stale automatic suggestion clearing while preserving sticky manual edits;
+- targeted and full regression verification;
+- real-like EHAM → LKPR twilight fixture proving NIGHT landing plus exact Night minutes when the crossing itself is sufficiently bracketed.
 
 ---
 
