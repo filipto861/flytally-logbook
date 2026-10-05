@@ -177,7 +177,7 @@ function civilTwilightCrossingFraction(a:KmlPoint,b:KmlPoint,aMillis:number,bMil
   return(low+high)/2;
 }
 
-export const CIVIL_TWILIGHT_LEGACY_MAX_SEGMENT_SECONDS=600;
+export const CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS=600;
 const EARTH_RADIUS_KM=6371.0088;
 const SOLAR_ALTITUDE_TIME_RATE_BOUND_DEG_PER_HOUR=15.1;
 const TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR=TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH/EARTH_RADIUS_KM*180/Math.PI;
@@ -199,7 +199,7 @@ function samePosition(a:KmlPoint,b:KmlPoint){
 /**
  * Conservative GPS Night-time suggestion.
  *
- * Sparse segments longer than the legacy 10-minute guard are no longer
+ * Sparse segments longer than the 10-minute direct-interpolation guard are no longer
  * rejected solely for their sampling interval when a conservative bound proves
  * the complete segment stays unambiguously on the same side of civil twilight.
  * The bound combines:
@@ -236,7 +236,7 @@ export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightT
     const aDelta=aAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG,bDelta=bAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
     if(Math.abs(aDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG||Math.abs(bDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return unavailableNightTime("TWILIGHT_CONFIDENCE_GUARD",index-1,duration);
 
-    if(duration>CIVIL_TWILIGHT_LEGACY_MAX_SEGMENT_SECONDS){
+    if(duration>CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS){
       if(!longSegmentSameStateProven(aDelta,bDelta,duration))return unavailableNightTime("SEGMENT_GAP_TOO_LARGE",index-1,duration);
       if(aDelta<0)nightSeconds+=duration;
       continue;
