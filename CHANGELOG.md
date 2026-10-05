@@ -11,7 +11,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 ## Unreleased
 
 ### 3.4.0 Flight Entry Simplification — in development
-- Local release verification now includes TypeScript PASS, 1230/1230 unit/regression PASS, 73/73 PostgreSQL core PASS, production build PASS, 13/13 targeted 3.4.0 contract PASS, and 6/6 targeted authenticated desktop/mobile Playwright PASS. GitHub CI is intentionally NOT RUN under the local-first policy.
+- Local release verification now includes TypeScript PASS, 1230/1230 unit/regression PASS, 73/73 PostgreSQL core PASS, production build PASS, 13/13 targeted 3.4.0 contract PASS, 6/6 targeted authenticated desktop/mobile Playwright PASS, and a focused responsive Flight Entry smoke **1/1 PASS** covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark. GitHub CI is intentionally NOT RUN under the local-first policy.
 - Switched repository verification to local-first release gating; GitHub Verify and Browser Smoke are now manual-only diagnostics rather than automatic PR/release requirements.
 - Simplified the GPS import hierarchy: clean single-flight track review collapses by default, multi-flight/ambiguous/warned track review stays surfaced, and redundant clean-quality status copy was removed.
 - Reduced primary GPS Flight context to aircraft/regulatory basis/role/applicable operation-engine; Billing and Cost share now live in a separate collapsed Costs disclosure while invalid stored billing still blocks save.
