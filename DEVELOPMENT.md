@@ -109,3 +109,23 @@ Current planning and releases follow `docs/product/VERSIONING.md`.
 - Keep `package.json`, any visible app version, release changelog heading and release tag aligned at ship time.
 - PostgreSQL migration versions, certification payload versions and backup format versions remain independent technical counters.
 - Historical letter-coded milestone names remain untouched where needed for traceability, but do not create new ones.
+
+
+## Local-first verification during active development
+
+For significant feature work, keep the pull request in **Draft** while implementation is active.
+
+During Draft development:
+- use the developer workstation for targeted tests, TypeScript, browser checks and PostgreSQL checks as required by the changed scope;
+- GitHub Verify and Browser Smoke are intentionally skipped for Draft PRs;
+- do not add `[full-ci]` to the PR title during normal implementation;
+- do not use GitHub Actions as the debugging loop for each commit.
+
+Before merge:
+1. complete the relevant local release gate;
+2. update ROADMAP / FEATURES / CHANGELOG for the exact candidate;
+3. mark the PR **Ready for review**;
+4. run the independent clean-checkout GitHub Verify + Browser Smoke once on that exact candidate;
+5. if CI finds a defect, fix it locally first, rerun the affected local gate, and only then request the final CI again.
+
+Use `[full-ci]` only when an exact release candidate genuinely requires the forced full/scale gate. A normal runtime PR already receives risk-based full tests when it is Ready for review.
