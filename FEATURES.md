@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **4 October 2026**
+Last reconciled: **5 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -113,9 +113,19 @@ Important boundary:
 - internal signature mechanisms are not represented as QES unless independently established;
 - legal/trademark/payment-provider approvals remain external decisions where applicable.
 
-## Planned
+## Planned / active follow-up
 
-### 3.4.0 — Flight Entry Simplification — RELEASE CANDIDATE
+### 3.4.1 — GPS Night-time reliability — ACTIVE
+- Keep GPS Night-time advisory/editable and fail closed when the complete exact total cannot be supported.
+- Add explicit unavailable reason codes and concise pilot-facing explanation instead of a silent generic manual fallback.
+- Preserve SERA geometric civil twilight at Sun centre = -6° and the existing ±0.5° confidence guard.
+- Preserve sticky manual Night-time edits and keep IFR fully pilot-entered.
+- Do not infer Night time from a NIGHT landing.
+- Do not auto-apply partial/lower-bound Night duration as the total.
+- Phase 1 preserves the current 600-second segment guard while reproducing the actual failing reason; numerical relaxation is gated by evidence.
+- Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`.
+
+### 3.4.0 — Flight Entry Simplification — IMPLEMENTED / PRODUCTION VERIFIED
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
 - Default single-flight GPS hierarchy is now compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics are conditional detail. Phase 2 also removes redundant clean-quality copy and keeps incomplete-import focus on the first unresolved flight.
 - Flight context is now one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine. Billing/Cost share moved to a separate collapsed Costs disclosure and malformed persisted billing still fails closed.
@@ -127,7 +137,7 @@ Important boundary:
 - Save & certify never sends PIC/crew/instructor invitations automatically.
 - Training-purpose filtering remains category-aware: ULL correctly hides non-applicable Part-FCL/SFCL/BFCL recency purposes. 3.4.0 adds no generic structured Training / practice marker.
 - 3.4.0 fixes the current Training-purpose UI/server parity gap by moving visibility and persistence eligibility onto one shared applicability contract.
-- Desktop, iPad landscape/portrait and mobile light/dark acceptance is required.
+- Desktop, iPad landscape/portrait and mobile light/dark acceptance passed in the 3.4.0 release gate.
 - Detailed design: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`.
 - Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`.
 
