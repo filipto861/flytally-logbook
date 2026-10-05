@@ -27,6 +27,8 @@ import { gpsImportSourceRequirements,resolveGpsImportCommonRoleCrew,resolveGpsIm
 import { authorizeProfileFlightContext,authorizeUnchangedSnapshotFlightContext,resolveFlightAircraftContextAuthority,type FlightAircraftAuthorityProfileInput,type FlightAircraftContextSnapshot,type FlightAircraftContextSnapshotInput } from "@/lib/flight-aircraft-context-authority";
 import { resolveSafetyPilotPic,resolveSafetyPilotPicForSave } from "@/lib/flight-connected-crew";
 import { flightPurposeCodesFromTask,normalizeFlightPurposeCodes } from "@/lib/flight-purpose";
+import { certifyStoredFlight } from "@/lib/flight-certification";
+import { revalidateFlightCertificationViews } from "@/lib/flight-revalidation";
 
 export type FlightActionState = { error?: string; success?: string };
 
@@ -142,7 +144,17 @@ export async function createFlight(_:FlightActionState,form:FormData):Promise<Fl
     if(connectedPicUserId>0){const recheck=await resolveSafetyPilotPicForSave({sourceUserId:userId,role:f.role,evidence:f.evidence,commander:f.commander,form});if(!recheck.ok)return{error:recheck.error}}
     return{error:"This flight already exists. Duplicate submission was blocked."};
   }
-  const id=Number(rows[0].id);revalidatePath("/dashboard");revalidatePath("/flights");redirect(String(form.get("intent"))==="another"?"/flights/new?added=1":`/flights/${id}?tab=logbook&saved=1`);
+  const id=Number(rows[0].id),intent=String(form.get("intent")||"draft");revalidatePath("/dashboard");revalidatePath("/flights");
+  if(intent==="certify"){
+    const certification=await certifyStoredFlight(userId,id);
+    if(certification.status==="certified"||certification.status==="already-certified"){
+      revalidateFlightCertificationViews(id);
+      redirect(`/flights/${id}?certified=1`);
+    }
+    const outcome=certification.status==="blocked"?"blocked":"deferred";
+    redirect(`/flights/${id}?tab=overview&saved=1&certify=${outcome}`);
+  }
+  redirect(intent==="another"?"/flights/new?added=1":`/flights/${id}?tab=logbook&saved=1`);
 }
 
 export async function importKmlFlight(_:FlightActionState,form:FormData):Promise<FlightActionState>{
