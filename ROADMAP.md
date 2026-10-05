@@ -201,7 +201,7 @@ Collapsed summaries must truthfully represent state and distinguish unset/unavai
 - make one shared applicability predicate authoritative for both picker visibility and server persistence;
 - preserve historical stored/certified purpose values even if current applicability differs.
 
-## Phase 4 — Single-flight Save & certify — IMPLEMENTED / VERIFICATION ACTIVE
+## Phase 4 — Single-flight Save & certify — DONE
 
 Primary explicit action:
 **Save & certify flight**
@@ -237,7 +237,7 @@ Show next to the action:
 Consequence copy:
 **Certified flights are locked; later changes are recorded as corrections.**
 
-## Phase 5 — GPS review-gate simplification / multi-flight safety — IMPLEMENTED / VERIFICATION ACTIVE
+## Phase 5 — GPS review-gate simplification / multi-flight safety — DONE
 
 - remove the generic `I reviewed this flight` checkbox and server requirement;
 - require targeted acknowledgement only for a non-blocking GPS-quality warning that the pilot is permitted to accept;
@@ -247,7 +247,7 @@ Consequence copy:
 - multi-flight import continues to save all parts atomically as drafts only;
 - no 3.4.0 batch certification.
 
-## Phase 6 — Responsive / interaction polish — IMPLEMENTED / VERIFICATION ACTIVE
+## Phase 6 — Responsive / interaction polish — DONE
 
 Required:
 - desktop;
@@ -272,7 +272,22 @@ Phase 6 implementation notes:
 - completion chrome was reduced to one `Review & finish` heading plus the certification consequence;
 - targeted authenticated browser coverage now includes the GPS-quality acknowledgement gate in addition to Manual/GPS direct certification and Enter-to-draft behavior.
 
-## Phase 7 — Release closeout
+## Phase 7 — Release closeout — ACTIVE
+
+Local verification evidence recorded on 5 October 2026:
+- TypeScript: **PASS**;
+- complete unit/regression suite: **1230/1230 PASS**;
+- PostgreSQL core acceptance: **73/73 PASS**;
+- production Next.js build: **PASS**;
+- targeted authenticated 3.4.0 browser acceptance: **6/6 PASS** across desktop Chromium and mobile Chromium;
+- targeted 3.4.0 source/contract pack: **13/13 PASS**;
+- GitHub CI: **NOT RUN by policy**; workflows are manual-only diagnostics.
+
+Remaining release evidence:
+- complete authenticated browser suite on the exact runtime candidate;
+- final documentation/version/tag reconciliation;
+- merge/deploy;
+- production smoke + runtime-error check.
 
 Required evidence:
 - targeted tests during implementation;
