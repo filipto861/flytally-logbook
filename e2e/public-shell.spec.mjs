@@ -272,7 +272,7 @@ test("F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG
   await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
 
   mutateF35ProfileAfterRender();
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-02'"))).toBe(0);
 
@@ -286,7 +286,7 @@ test("F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG
   await context.locator('select[name="regulatoryCategory"]').selectOption("SAILPLANE");
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-TMG1' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|TMG|SAILPLANE");
 });
@@ -305,12 +305,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await form.locator('select[name="operationType"]').selectOption("SP");
   await form.locator('select[name="engineType"]').selectOption("SE");
   await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="aircraftType";crafted.value="B23";form.appendChild(crafted)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02'"))).toBe(0);
 
   await form.evaluate(form=>{form.querySelectorAll('[name="aircraftType"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="aircraftType";canonical.value="OTHER";form.appendChild(canonical)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category FROM flights WHERE user_id=9001 AND registration='OK-F35O' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("EASA|OTHER|AEROPLANE");
 
@@ -323,12 +323,12 @@ test("F3.5 OTHER and Balloon keep profile-owned context separate from flight-spe
   await expect(form.locator('input[name="balloonGroup"]')).toHaveValue("A");
   await form.locator('select[name="balloonOperation"]').selectOption("FREE");
   await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const crafted=document.createElement("input");crafted.type="hidden";crafted.name="balloonGroup";crafted.value="B";form.appendChild(crafted)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(form.getByRole("alert")).toContainText("Aircraft profile changed or this flight context is no longer available.");
   expect(Number(browserSqlScalar("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02'"))).toBe(0);
 
   await form.evaluate(form=>{form.querySelectorAll('[name="balloonGroup"]').forEach(node=>node.remove());const canonical=document.createElement("input");canonical.type="hidden";canonical.name="balloonGroup";canonical.value="A";form.appendChild(canonical)});
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT aircraft_class||'|'||regulatory_category||'|'||balloon_class||'|'||balloon_group||'|'||balloon_operation FROM flights WHERE user_id=9001 AND registration='OK-F35B' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("BALLOON|BALLOON|HOT_AIR_BALLOON|A|FREE");
 });
@@ -352,7 +352,7 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   await form.locator('input[name="date"]').fill("2026-10-02");
   await expect(form.locator('input[name="evidence"]')).toHaveValue("ULL");
   await expect(form.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
 });
@@ -1115,7 +1115,8 @@ test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowl
     {tag:"input",name:"takeoff",text:""},
     {tag:"input",name:"landing",text:""},
     {tag:"input",name:"onBlock",text:""},
-    {tag:"button",name:"intent",text:"Save & review"},
+    {tag:"button",name:"intent",text:"Save draft"},
+    {tag:"button",name:"intent",text:"Save & certify flight"},
   ]);
 
   await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
@@ -1130,7 +1131,7 @@ test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowl
     {width:390,height:844},
   ]){
     await page.setViewportSize(viewport);
-    await expect(form.getByRole("button",{name:"Save & review"})).toBeVisible();
+    await expect(form.getByRole("button",{name:"Save draft"})).toBeVisible();
     await expect(form.locator(".flight-time-summary")).toBeVisible();
     await expectNoHorizontalOverflow(page);
   }
@@ -1226,7 +1227,7 @@ test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and
       await expect(supervisor).toHaveAttribute("required","");
       await expect(reference).toHaveAttribute("required","");
     }
-    await expect(form.getByRole("button",{name:"Save & review"})).toBeVisible();
+    await expect(form.getByRole("button",{name:"Save draft"})).toBeVisible();
     await expectNoHorizontalOverflow(page);
   };
 
@@ -1465,7 +1466,7 @@ test("Safety Pilot Actual PIC form keeps manual and connected identity explicit"
   await expect(page.locator('input[name="connectedPicUserId"]')).toHaveValue("");
 
   await page.locator('select[name="registration"]').selectOption("OK-SP2E");
-  await page.getByRole("button",{name:"Save & review"}).click();
+  await page.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-SP2E");
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
@@ -1492,7 +1493,7 @@ test("F2.3 Safety Pilot resolver snapshots server identity and fails closed afte
   await expect(form.locator('input[name="commander"]')).toHaveValue("Browser Friend");
 
   renameSafetyPilotPicFixture("Browser Friend Renamed");
-  await form.getByRole("button",{name:"Save & review"}).click();
+  await form.getByRole("button",{name:"Save draft"}).click();
   await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
   await expect(page.locator('select[name="role"]')).toHaveValue("SAFETY PILOT");
   await expect(page.locator('select[name="actualPicMode"]')).toHaveValue("connected");
@@ -1513,7 +1514,7 @@ test("F2.3 Safety Pilot resolver snapshots server identity and fails closed afte
   await rejected.locator('select[name="connectedPicUserId"]').selectOption("9002");
   revokeSafetyPilotPicConnectionFixture();
 
-  await rejected.getByRole("button",{name:"Save & review"}).click();
+  await rejected.getByRole("button",{name:"Save draft"}).click();
   await expect(rejected.getByRole("alert")).toContainText("Selected Actual PIC is no longer an accepted Connection.");
   await expect(page).toHaveURL(/\/flights\/new(?:\?.*)?$/);
   await expectNoHorizontalOverflow(page);
