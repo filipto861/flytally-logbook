@@ -1,5 +1,5 @@
 import { trackTimestampBasis } from "./track-time.ts";
-import { TRACK_GENERAL_IMPLAUSIBLE_SPEED_KMH,flightEnvelope,haversineKm,isImplausiblePositionTransition,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
+import { TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH,flightEnvelope,haversineKm,isImplausiblePositionTransition,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
 
 export const CIVIL_TWILIGHT_ALTITUDE_DEG=-6;
 export const CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG=.5;
@@ -180,7 +180,7 @@ function civilTwilightCrossingFraction(a:KmlPoint,b:KmlPoint,aMillis:number,bMil
 export const CIVIL_TWILIGHT_LEGACY_MAX_SEGMENT_SECONDS=600;
 const EARTH_RADIUS_KM=6371.0088;
 const SOLAR_ALTITUDE_TIME_RATE_BOUND_DEG_PER_HOUR=15.1;
-const TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR=TRACK_GENERAL_IMPLAUSIBLE_SPEED_KMH/EARTH_RADIUS_KM*180/Math.PI;
+const TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR=TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH/EARTH_RADIUS_KM*180/Math.PI;
 
 function longSegmentSolarChangeBoundDegrees(durationSeconds:number){
   return durationSeconds/3600*(SOLAR_ALTITUDE_TIME_RATE_BOUND_DEG_PER_HOUR+TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR);
@@ -204,7 +204,7 @@ function samePosition(a:KmlPoint,b:KmlPoint){
  * the complete segment stays unambiguously on the same side of civil twilight.
  * The bound combines:
  * - a conservative solar-altitude time-rate bound; and
- * - the existing canonical GPS continuity speed bound from track-processing.
+ * - the highest speed tolerated by the existing canonical GPS transition-quality rules.
  *
  * A sparse segment that could contain the twilight boundary remains
  * UNAVAILABLE. Linear subdivision never turns an unsafe gap into evidence.
