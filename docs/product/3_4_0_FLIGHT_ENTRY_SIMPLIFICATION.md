@@ -1,10 +1,11 @@
 # 3.4.0 — Flight Entry Simplification
 
-**Status:** DESIGN / REVIEW RECONCILED  
+**Status:** IMPLEMENTATION — PHASE 2 ACTIVE  
 **Date:** 4 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.4.0-flight-entry-simplification`  
-**Independent review reconciliation:** `docs/product/3_4_0_REVIEW_RECONCILIATION.md`
+**Independent review reconciliation:** `docs/product/3_4_0_REVIEW_RECONCILIATION.md`  
+**UI matrix:** `docs/product/3_4_0_FLIGHT_ENTRY_UI_MATRIX.md`
 
 ## Goal
 
@@ -66,7 +67,7 @@ Repository verification after independent review confirmed:
 - No new generic structured Training / practice purpose in 3.4.0.
 - No database migration is assumed.
 
-## Phase 1 — Discovery and contract freeze — ACTIVE
+## Phase 1 — Discovery and contract freeze — DONE
 
 Scope:
 - inventory effective Manual/GPS sections, fields, validation, save actions and certification dependencies;
