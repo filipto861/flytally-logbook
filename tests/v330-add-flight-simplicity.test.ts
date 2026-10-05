@@ -18,11 +18,12 @@ test("v3.3 U10 keeps a new manual entry neutral until the user selects aircraft 
   assert.doesNotMatch(form,/Last used aircraft selected|Continued from your previous arrival/);
 });
 
-test("v3.3 U10 removes fake wizard progress from manual entry",()=>{
+test("v3.3 U10 baseline stays valid while 3.4 removes fake wizard progress from both entry paths",()=>{
   const form=read("components/flight-form.tsx");
   const importer=read("components/kml-import-form.tsx");
   assert.doesNotMatch(form,/aria-label="Manual flight entry progress"/);
-  assert.match(importer,/aria-label="GPS import progress"/);
+  assert.doesNotMatch(importer,/aria-label="GPS import progress"/);
+  assert.doesNotMatch(importer,/className="entry-progress"/);
 });
 
 test("v3.3 U10 collapses routine experience while keeping required category evidence visible",()=>{
