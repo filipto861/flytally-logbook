@@ -38,7 +38,7 @@ CREATE SCHEMA public;
 
 CREATE TABLE flytally_schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_schema_migrations(version,name)
-SELECT value,'browser-smoke-preapplied' FROM generate_series(1,16) value;
+SELECT value,'browser-smoke-preapplied' FROM generate_series(1,19) value;
 
 CREATE TABLE flytally_feature_migrations(migration_key TEXT PRIMARY KEY,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 INSERT INTO flytally_feature_migrations(migration_key) VALUES
@@ -242,6 +242,8 @@ CREATE TABLE aircraft(
   part_fcl_credit_basis TEXT NOT NULL DEFAULT '',
   part_fcl_credit_from TEXT NOT NULL DEFAULT '',
   default_role TEXT NOT NULL DEFAULT 'PIC',
+  default_operation_type TEXT CHECK(default_operation_type IS NULL OR default_operation_type IN ('SP','MP')),
+  default_engine_type TEXT CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME')),
   billing_basis TEXT NOT NULL DEFAULT 'BLOCK',
   default_price_per_hour NUMERIC NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1,
@@ -250,6 +252,44 @@ CREATE TABLE aircraft(
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id,registration)
 );
+
+CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER AS $
+  DECLARE v_make TEXT; v_model TEXT; v_variant TEXT;
+  BEGIN
+    IF TG_OP='INSERT' THEN
+      IF NULLIF(TRIM(COALESCE(NEW.aircraft_make,'')),'') IS NULL
+        AND NULLIF(TRIM(COALESCE(NEW.aircraft_model,'')),'') IS NULL
+        AND NULLIF(TRIM(COALESCE(NEW.aircraft_variant,'')),'') IS NULL THEN
+        SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+               COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+               COALESCE(NULLIF(TRIM(a.aircraft_variant,'')),'')
+          INTO v_make,v_model,v_variant
+          FROM aircraft a
+          WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+          LIMIT 1;
+        NEW.aircraft_make:=COALESCE(v_make,'');
+        NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+        NEW.aircraft_variant:=COALESCE(v_variant,'');
+      END IF;
+    ELSIF NEW.registration IS DISTINCT FROM OLD.registration THEN
+      SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
+             COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
+             COALESCE(NULLIF(TRIM(a.aircraft_variant,'')),'')
+        INTO v_make,v_model,v_variant
+        FROM aircraft a
+        WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
+        LIMIT 1;
+      NEW.aircraft_make:=COALESCE(v_make,'');
+      NEW.aircraft_model:=COALESCE(v_model,NULLIF(TRIM(NEW.aircraft_type),''),'');
+      NEW.aircraft_variant:=COALESCE(v_variant,'');
+    END IF;
+    RETURN NEW;
+  END;
+$ LANGUAGE plpgsql;
+CREATE TRIGGER trg_logbook_snapshot_aircraft_identity
+  BEFORE INSERT OR UPDATE OF registration ON flights
+  FOR EACH ROW EXECUTE FUNCTION logbook_snapshot_aircraft_identity();
+
 CREATE TABLE rates(
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
