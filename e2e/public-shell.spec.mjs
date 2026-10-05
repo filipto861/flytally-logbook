@@ -357,6 +357,84 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   expect(browserSqlScalar("SELECT evidence||'|'||aircraft_class||'|'||regulatory_category||'|'||aircraft_type FROM flights WHERE user_id=9001 AND registration='OK-F35Q' AND date='2026-10-02' ORDER BY id DESC LIMIT 1")).toBe("ULL|ULL|ULL|F35 Quick");
 });
 
+test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 completion coverage requires the isolated browser database.");
+  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00')");
+  await loginBrowserPilot(page,"/flights/new");
+
+  const completeManual=async(offBlock,takeoff,landing,onBlock)=>{
+    const form=page.locator("#new-flight-manual-form");
+    await form.locator('input[name="date"]').fill("2026-10-05");
+    await form.locator('select[name="registration"]').selectOption("OK-E2E");
+    await form.locator('input[name="departure"]').fill("LKLT");
+    await form.locator('input[name="arrival"]').fill("LKPR");
+    await form.locator('input[name="offBlock"]').fill(offBlock);
+    await form.locator('input[name="takeoff"]').fill(takeoff);
+    await form.locator('input[name="landing"]').fill(landing);
+    await form.locator('input[name="onBlock"]').fill(onBlock);
+    const experience=form.locator("details.entry-section-experience");
+    if(!(await experience.getAttribute("open")))await experience.locator("summary").click();
+    await form.locator('input[name="landingsDay"]').fill("1");
+    await form.locator('input[name="landingsNight"]').fill("0");
+    const context=form.locator("details.aircraft-context-section");
+    if(!(await context.getAttribute("open")))await context.locator("summary").click();
+    await form.locator('select[name="operationType"]').selectOption("SP");
+    await form.locator('select[name="engineType"]').selectOption("SE");
+    await expect(form.locator(".entry-certification-summary")).toContainText("EASA");
+    return form;
+  };
+
+  let form=await completeManual("12:00","12:05","12:55","13:00");
+  await expect(form.getByRole("button",{name:"Save draft"})).toBeEnabled();
+  await expect(form.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await form.getByRole("button",{name:"Save & certify flight"}).click();
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='12:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
+
+  await page.goto("/flights/new");
+  form=await completeManual("13:00","13:05","13:55","14:00");
+  await form.locator('input[name="arrival"]').press("Enter");
+  await expect(page.getByText("Flight saved as draft.")).toBeVisible();
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NULL THEN 'DRAFT' ELSE 'CERTIFIED' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='13:00' ORDER BY id DESC LIMIT 1")).toBe("DRAFT");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
+  runBrowserSql("DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')");
+  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00'");
+  await loginBrowserPilot(page,"/flights/new");
+  await page.getByRole("button",{name:"Import GPS track"}).click();
+
+  const gpsForm=page.locator("form.kml-wizard");
+  const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track><when>2026-10-05T14:00:00Z</when><when>2026-10-05T14:01:00Z</when><when>2026-10-05T14:02:00Z</when><when>2026-10-05T14:03:00Z</when><when>2026-10-05T14:04:00Z</when><when>2026-10-05T14:05:00Z</when><gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord></gx:Track></kml>';
+  await gpsForm.locator('input[name="kml"]').setInputFiles({name:"v340-direct-certify.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
+  await gpsForm.locator('select[name="operationType"]').selectOption("SP");
+  await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await gpsForm.locator('input[name="part_0_date"]').fill("2026-10-05");
+  await gpsForm.locator('input[name="part_0_offBlock"]').fill("14:00");
+  await gpsForm.locator('input[name="part_0_takeoff"]').fill("14:01");
+  await gpsForm.locator('input[name="part_0_landing"]').fill("14:04");
+  await gpsForm.locator('input[name="part_0_onBlock"]').fill("14:05");
+  const starts=gpsForm.locator('input[name="part_0_starts"]');
+  const total=(await starts.inputValue())||"1";
+  await starts.fill(total);
+  await gpsForm.locator('input[name="part_0_landingsDay"]').fill(total);
+  await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
+  await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
+  await expect(gpsForm.locator(".gps-certification-summary")).toContainText("EASA");
+  await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
+  await gpsForm.getByRole("button",{name:"Save & certify flight"}).click();
+
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");
+  expect(browserSqlScalar("SELECT COUNT(*) FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')")).toBe("1");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("GPS import fails closed for invalid profile context and exposes only implemented F4 roles",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated GPS integrity browser coverage requires the isolated CI database.");
   await loginBrowserPilot(page,"/flights/new");
