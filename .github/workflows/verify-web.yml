@@ -2,46 +2,35 @@ name: Verify FlyTally web
 
 on:
   workflow_dispatch:
+    inputs:
+      full_tests:
+        description: Run the complete unit/regression suite instead of the targeted UI suite
+        required: true
+        type: boolean
+        default: true
+      postgres:
+        description: Run PostgreSQL acceptance
+        required: true
+        type: boolean
+        default: false
+      scale:
+        description: Use the full PostgreSQL scale gate when PostgreSQL acceptance is enabled
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: verify-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  classify:
-    name: Classify CI risk
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
-    outputs:
-      postgres: ${{ steps.changes.outputs.postgres }}
-      scale: ${{ steps.changes.outputs.scale }}
-      full_tests: ${{ steps.changes.outputs.full_tests }}
-      modules: ${{ steps.changes.outputs.modules }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: changes
-        name: Select required gates
-        shell: bash
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed-files.txt
-          node tooling/development-scope.mjs --files changed-files.txt --title "$PR_TITLE" >> "$GITHUB_OUTPUT"
-          echo "Changed files:"
-          cat changed-files.txt
-
   verify:
-    name: Fast application gate
-    needs: classify
+    name: Application gate
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -52,16 +41,15 @@ jobs:
       - name: TypeScript check
         run: npm run typecheck
       - name: Targeted UI regression tests
-        if: github.event.pull_request.draft == true || needs.classify.outputs.full_tests != 'true'
+        if: inputs.full_tests != true
         run: npm run test:ui
       - name: Full unit and regression tests
-        if: github.event.pull_request.draft == false && needs.classify.outputs.full_tests == 'true'
+        if: inputs.full_tests == true
         run: npm test
 
   postgres:
     name: PostgreSQL acceptance
-    needs: classify
-    if: github.event.pull_request.draft == false && needs.classify.outputs.postgres == 'true'
+    if: inputs.postgres == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -92,7 +80,7 @@ jobs:
       - name: PostgreSQL acceptance tests
         env:
           FLYTALLY_POSTGRES_INTEGRATION: "1"
-          SCALE_GATE: ${{ needs.classify.outputs.scale }}
+          SCALE_GATE: ${{ inputs.scale }}
         shell: bash
         run: |
           set -o pipefail
@@ -109,7 +97,7 @@ jobs:
           path: flytally-postgres-acceptance.txt
           retention-days: 14
       - name: Preserve scale evidence
-        if: always() && needs.classify.outputs.scale == 'true'
+        if: always() && inputs.scale == true
         uses: actions/upload-artifact@v4
         with:
           name: flytally-scale-evidence-${{ github.sha }}
