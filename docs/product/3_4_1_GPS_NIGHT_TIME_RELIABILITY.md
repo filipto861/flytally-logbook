@@ -153,7 +153,7 @@ Scope:
 5. Replace the blanket “>600 s means whole flight unavailable” rule with a bounded sparse-segment contract:
    - a segment at or below 600 s keeps the existing exact endpoint/crossing behavior;
    - a longer segment may be accepted only when both endpoints are on the same side of civil twilight and a conservative bound proves the entire segment cannot enter the ±0.5° twilight confidence region;
-   - the bound combines a conservative solar-altitude time-rate bound with the existing canonical 1200 km/h general GPS-continuity speed bound;
+   - the bound combines a conservative solar-altitude time-rate bound with the existing canonical 1800 km/h upper bound already tolerated by the canonical GPS transition-quality rules;
    - a long segment that could contain twilight remains `UNAVAILABLE / SEGMENT_GAP_TOO_LARGE`;
    - a long segment is never made safe merely by inventing/subdividing intermediate points.
 6. Fail closed on implausible position transitions, non-monotonic or ambiguous timestamps, unsupported solar envelope, confidence-guard endpoints and conflicting equal-time positions.
