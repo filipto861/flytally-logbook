@@ -108,3 +108,22 @@ test("3.4.0 Phase 2 removes fake GPS wizard chrome and collapses clean-track/con
   assert.match(gps,/regulatoryContextLabel/);
   assert.match(gps,/FLIGHT DETAILS/);
 });
+
+
+test("3.4.0 replaces the generic GPS review checkbox with a targeted quality acknowledgement",()=>{
+  const gps=read("components/kml-import-form.tsx");
+  const actions=read("app/(protected)/flights/actions.ts");
+
+  assert.doesNotMatch(gps,/part_\$\{index\}_reviewed/);
+  assert.doesNotMatch(gps,/I reviewed this flight/);
+  assert.doesNotMatch(gps,/review\.reviewed|reviewed:false/);
+  assert.match(gps,/name="gpsWarningReviewed"/);
+  assert.match(gps,/I reviewed the GPS quality warning/);
+  assert.match(gps,/gpsQualityNeedsAcknowledgement/);
+
+  assert.doesNotMatch(actions,/was not reviewed/);
+  assert.doesNotMatch(actions,/part_\$\{index\}_reviewed/);
+  assert.match(actions,/gpsQualityNeedsReview=trackQuality\(points\)\.status!=="good"/);
+  assert.match(actions,/form\.get\("gpsWarningReviewed"\)/);
+  assert.match(actions,/Review the GPS quality warning before saving this import/);
+});
