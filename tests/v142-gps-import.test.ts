@@ -66,7 +66,7 @@ test("v1.42.1 keeps only the authoritative import player map",()=>{
   assert.match(form,/GpsImportReviewPlayer/);
   assert.doesNotMatch(form,/const TracksMap=/);
   assert.doesNotMatch(form,/className="kml-preview"/);
-  assert.match(form,/FLIGHT \{index\+1\} OF \{parts\.length\}/);
+  assert.match(form,/parts\.length>1\?`FLIGHT \$\{index\+1\} OF \$\{parts\.length\}`:"FLIGHT"/);
   assert.match(form,/touch-review/);
   assert.match(form,/review-grid/);
 });
