@@ -68,6 +68,7 @@ export type FlightDraftCandidate={
   verificationReference:unknown;
   task:unknown;
   purposeCodes:unknown[];
+  existingPurposeCodes:unknown[];
   purposeSelectionPresent:boolean;
   billingBasis:unknown;
   billingShare:unknown;
@@ -139,6 +140,7 @@ export function manualFlightCandidate(form:FormData):FlightDraftCandidate{
     verificationReference:formValue(form,"verificationReference"),
     task:formValue(form,"task"),
     purposeCodes:form.getAll("purposeCode"),
+    existingPurposeCodes:form.getAll("existingPurposeCode"),
     purposeSelectionPresent:form.has("purposeSelectionPresent")||form.has("purposeCode"),
     billingBasis:formValue(form,"billingBasis"),
     billingShare:formValue(form,"billingShare"),
@@ -257,6 +259,7 @@ export function gpsFlightCandidate(input:GpsFlightCandidateInput):FlightDraftCan
     verificationReference:input.verificationReference??"",
     task:input.task,
     purposeCodes:[],
+    existingPurposeCodes:[],
     purposeSelectionPresent:false,
     billingBasis:input.billingBasis,
     billingShare:input.billingShare,
