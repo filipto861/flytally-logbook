@@ -123,7 +123,7 @@ type CivilTwilightNightTimeSuggestion =
       status: "UNAVAILABLE";
       reasons: NightTimeUnavailableReason[];
       firstAffectedSegment?: number;
-      largestGapSeconds?: number;
+      affectedSegmentSeconds?: number;
     };
 ```
 
