@@ -117,8 +117,8 @@ Important boundary:
 
 ### 3.4.0 — Flight Entry Simplification — ACTIVE
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.
-- Default single-flight GPS hierarchy becomes compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics become conditional detail.
-- Flight context becomes one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine; Billing remains secondary.
+- Default single-flight GPS hierarchy is now compact **Source → Flight details → Completion**; clean split controls, map/profile, provenance and diagnostics are conditional detail. Phase 2 also removes redundant clean-quality copy and keeps incomplete-import focus on the first unresolved flight.
+- Flight context is now one compact editable summary centered on Aircraft, regulatory evidence basis, Role and applicable Operation/Engine. Billing/Cost share moved to a separate collapsed Costs disclosure and malformed persisted billing still fails closed.
 - Single-flight **Save & certify** is the explicit primary completion action when eligible; **Save draft** remains available and is the implicit/default submit behavior.
 - Pressing Enter cannot certify. Certification always requires the explicit Save & certify action.
 - Certification reuses the existing persisted-row compliance/hash/revision authority. If draft save succeeds but certification is blocked, the record remains a draft with an explicit reason.
