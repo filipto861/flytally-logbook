@@ -9,7 +9,7 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 const actions=read("app/(protected)/flights/actions.ts");
 const flightInput=read("lib/flight-input.ts");
 const certification=read("lib/certification-integrity.ts");
-const certificationActions=read("app/(protected)/flights/certification-actions.ts");
+const certificationActions=read("lib/flight-certification.ts");
 const compliance=read("lib/fcl050-compliance.ts");
 const recency=read("lib/recency-service.ts");
 const dashboard=read("lib/data/dashboard.ts");
