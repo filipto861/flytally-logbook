@@ -262,7 +262,7 @@ CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER 
         AND NULLIF(TRIM(COALESCE(NEW.aircraft_variant,'')),'') IS NULL THEN
         SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
                COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
-               COALESCE(NULLIF(TRIM(a.aircraft_variant,'')),'')
+               COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
           INTO v_make,v_model,v_variant
           FROM aircraft a
           WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
@@ -274,7 +274,7 @@ CREATE OR REPLACE FUNCTION logbook_snapshot_aircraft_identity() RETURNS TRIGGER 
     ELSIF NEW.registration IS DISTINCT FROM OLD.registration THEN
       SELECT COALESCE(NULLIF(TRIM(a.aircraft_make),''),''),
              COALESCE(NULLIF(TRIM(a.aircraft_model),''),NULLIF(TRIM(a.aircraft_type),''),''),
-             COALESCE(NULLIF(TRIM(a.aircraft_variant,'')),'')
+             COALESCE(NULLIF(TRIM(a.aircraft_variant),''),'')
         INTO v_make,v_model,v_variant
         FROM aircraft a
         WHERE a.user_id=NEW.user_id AND UPPER(TRIM(a.registration))=UPPER(TRIM(NEW.registration))
