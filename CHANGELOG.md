@@ -10,10 +10,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.4.1 GPS Night-time reliability — design/review
+### 3.4.1 GPS Night-time reliability — in development
 - Opened a narrow production-correction follow-up after GPS review showed a NIGHT landing suggestion while Night time remained unavailable/manual.
-- Independent review was reconciled against the current repository. 3.4.1 will add structured unavailable reasons first; it will not infer Night time from landing classification, auto-apply partial values, invent a second track-speed heuristic, or relax the 600-second segment guard before the actual failure reason is reproduced/characterized.
-- Added the frozen design contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No runtime, DB, certification or historical-record behavior changed by this design step.
+- Added structured Night-time unavailable reasons and concise GPS-review explanation while preserving manual editable Night time and manual-only IFR.
+- Reused the canonical GPS position-discontinuity thresholds from track processing rather than creating a second quality model.
+- Replaced the blanket >600 s Night-time rejection with a conservative bounded rule: long sparse segments are accepted only when the complete segment can be proven to remain unambiguously DAY or NIGHT; sparse segments that could contain civil twilight remain unavailable.
+- Hardened equal-time conflicting positions, non-monotonic/ambiguous timestamps, unsupported solar envelope and twilight-confidence cases to explicit fail-closed reasons.
+- Added a real-like EHAM → LKPR regression with one sparse but provably DAY segment, a densely bracketed civil-twilight crossing and a final NIGHT landing; partial/lower-bound values are never auto-applied.
+- Added the frozen single-phase contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No DB migration, certification-version change or historical-record rewrite is part of 3.4.1.
 
 ## 3.4.0 — 5 October 2026
 
