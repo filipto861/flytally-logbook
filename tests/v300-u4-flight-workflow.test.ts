@@ -8,8 +8,9 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("v3.0 U4 makes Save hand off directly to final Logbook review",()=>{
   const actions=read("app/(protected)/flights/actions.ts"),page=read("app/(protected)/flights/new/page.tsx"),form=read("components/flight-form.tsx"),panel=read("components/intelligent-flight-entry-panel.tsx");
-  assert.match(actions,/intent=String\(form\.get\("intent"\)\|\|"draft"\)/);assert.match(actions,/redirect\(`\/flights\/\$\{id\}\?tab=logbook&saved=1`\)/);assert.match(actions,/redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
-  assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?tab=logbook&saved=1`\)/);
+  assert.match(actions,/intent=String\(form\.get\("intent"\)\|\|"draft"\)/);assert.match(actions,/if\(intent==="certify"\)/);assert.match(actions,/redirect\(`\/flights\/\$\{id\}\?certified=1`\)/);
+  assert.match(actions,/`\/flights\/\$\{id\}\?tab=logbook&saved=1`/);
+  assert.match(actions,/if\(completionIntent==="certify"&&prepared\.length===1\)/);assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?certified=1`\)/);assert.match(actions,/redirect\(`\/flights\/\$\{lastId\}\?tab=logbook&saved=1`\)/);
   assert.doesNotMatch(page,/takes you to review before certification/);
   assert.match(form,/Save draft keeps the record editable/);
   assert.match(form,/Save &amp; certify flight/);
