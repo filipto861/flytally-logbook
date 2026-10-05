@@ -11,7 +11,7 @@ test("v1.42.0 puts an interactive GPS player into add-flight review",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,42,0));
   const form=read("components/kml-import-form.tsx"),player=read("components/gps-import-review-player.tsx");
   assert.match(form,/GpsImportReviewPlayer/);
-  assert.match(form,/Check the detected flight visually/);
+  assert.match(form,/Review GPS track/);
   assert.match(form,/Takeoff, landing, touch-and-go and split detections/);
   assert.match(player,/GPS import review map/);
   assert.match(player,/Altitude, speed and detected events/);
@@ -36,8 +36,8 @@ test("v1.42.0 removes parser point numbers from normal import review",()=>{
   const form=read("components/kml-import-form.tsx");
   assert.doesNotMatch(form,/GPS point \{detected/);
   assert.doesNotMatch(form,/GPS point \{event/);
-  assert.match(form,/See takeoff marker above/);
-  assert.match(form,/See landing marker above/);
+  assert.match(form,/kind:"takeoff"/);
+  assert.match(form,/kind:"landing"/);
   assert.match(form,/Detected on profile/);
 });
 
@@ -66,7 +66,7 @@ test("v1.42.1 keeps only the authoritative import player map",()=>{
   assert.match(form,/GpsImportReviewPlayer/);
   assert.doesNotMatch(form,/const TracksMap=/);
   assert.doesNotMatch(form,/className="kml-preview"/);
-  assert.match(form,/Review flights/);
+  assert.match(form,/FLIGHT \{index\+1\} OF \{parts\.length\}/);
   assert.match(form,/touch-review/);
   assert.match(form,/review-grid/);
 });
