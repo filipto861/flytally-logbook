@@ -103,11 +103,12 @@ function importReviewEvents(analysis:Analysis,cuts:number[]):ImportReviewEvent[]
 }
 
 function Submit({ready,hasTrack,partCount,onReview}:{ready:boolean;hasTrack:boolean;partCount:number;onReview:()=>void}){
-  if(ready){
-    const label=partCount===1?"Save flight draft":`Save ${partCount} flight drafts`;
-    return <PendingActionButton className="primary-button" pendingLabel={partCount===1?"Saving draft…":`Saving ${partCount} drafts…`}>{label}</PendingActionButton>;
-  }
-  return <button type="button" className="primary-button" disabled={!hasTrack} onClick={onReview}>{hasTrack?"Complete flight details":"Upload track first"}</button>;
+  if(!ready)return <button type="button" className="primary-button" disabled={!hasTrack} onClick={onReview}>{hasTrack?"Complete flight details":"Upload track first"}</button>;
+  if(partCount===1)return <>
+    <PendingActionButton className="secondary-button" name="intent" value="draft" pendingLabel="Saving draft…">Save draft</PendingActionButton>
+    <PendingActionButton className="primary-button" name="intent" value="certify" pendingLabel="Saving & certifying…">Save &amp; certify flight</PendingActionButton>
+  </>;
+  return <PendingActionButton className="primary-button" name="intent" value="draft" pendingLabel={`Saving ${partCount} drafts…`}>{`Save ${partCount} flight drafts`}</PendingActionButton>;
 }
 
 function AirportReviewField({label,name,value,candidates,onChange}:{label:string;name:string;value:string;candidates:AirportCandidate[];onChange:(value:string)=>void}){
@@ -198,6 +199,9 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
   const gpsQualityNeedsAcknowledgement=Boolean(analysis&&(analysis.quality.status!=="good"||parts.some(part=>trackQuality(part).status!=="good"))),reviewReadyCount=sourceRequirements?reviews.filter(review=>review.date&&gpsSourceReviewReady(review,sourceRequirements)).length:0;
   const ready=Boolean(selectedProfile&&sourceRequirements)&&parts.length>0&&billing!=="INVALID"&&commonRoleCrewReady&&overridesReady&&(!requiresOperationEngine||(operationType!==""&&engineType!==""))&&parts.every(hasAirborneMovement)&&reviews.length===parts.length&&reviews.every(review=>review.date&&gpsSourceReviewReady(review,sourceRequirements!))&&(!selectedBalloon||["FREE","TETHERED"].includes(balloonOperation))&&(!gpsQualityNeedsAcknowledgement||gpsWarningAcknowledged);
   const gpsReviewNeedsAttention=Boolean(analysis&&(gpsQualityNeedsAcknowledgement||analysis.timeBasis==="ambiguous"||parts.length>1)),flightContextNeedsAttention=Boolean(!selectedProfile||profileError||(requiresOperationEngine&&(!operationType||!engineType))||!commonRoleCrewReady||(selectedBalloon&&!balloonOperation)),flightContextSummary=selectedProfile?compactContextSummary([registration,aircraftContextSummary,role,requiresOperationEngine?operationType:"",requiresOperationEngine?engineType:""]):"Select aircraft and flight context",billingSummary=billing==="INVALID"?"Needs configuration":billing?`${billing} · 1/${billingShare}`:"Not tracked";
+  const singleReview=parts.length===1?(reviews[0]||reviewFor(parts[0])):null,singleRoleCrew=parts.length===1&&roleCrewOverrides[0]?.mode==="OVERRIDE"?roleCrewOverrides[0]:commonRoleCrewBuffer;
+  const singleAircraftSummary=selectedProfile?compactContextSummary([registration,aircraftContextSummary]):registration||"No aircraft",singleOperationSummary=requiresOperationEngine?compactContextSummary([operationType||"Operation missing",engineType||"Engine missing"]):"Not applicable";
+  const singleLandingSummary=singleReview?(sourceRequirements?.landingMode==="DAY_NIGHT"?`${singleReview.landingsDay||"—"} day · ${singleReview.landingsNight||"—"} night`:singleReview.landingsDay||singleReview.starts||"—"):"—";
   const addCut=()=>{if(!analysis||parts.length>=20)return;const boundaries=[0,...cuts.map(value=>value+1),analysis.points.length],segments=boundaries.slice(0,-1).map((start,index)=>({start,end:boundaries[index+1]-1})),largest=segments.sort((a,b)=>(b.end-b.start)-(a.end-a.start))[0];if(largest.end-largest.start<6)return;resetParts([...cuts,Math.floor((largest.start+largest.end)/2)])};
 
   const reviewImported=()=>{const target=document.querySelector<HTMLElement>('.flight-review-card[data-ready="false"]')??document.querySelector<HTMLElement>(".flight-review-card");target?.scrollIntoView({behavior:"smooth",block:"start"});target?.focus({preventScroll:true})};
@@ -295,6 +299,16 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
         </article>;
       })}</div>
     </>:null}
+    {analysis&&singleReview&&parts.length===1?<section className="entry-certification-summary gps-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Ready to finish?</h2><p className="muted">Review the key GPS-derived and pilot-confirmed evidence that will be sealed if you choose Save &amp; certify.</p></div></div><div className="entry-certification-grid">
+      <div><span>Date</span><strong>{singleReview.date||"—"}</strong></div>
+      <div><span>Route</span><strong>{singleReview.departure||"—"} → {singleReview.arrival||"—"}</strong></div>
+      <div><span>Aircraft / basis</span><strong>{singleAircraftSummary}</strong></div>
+      <div><span>Role / crew</span><strong>{roleCrewSummary(singleRoleCrew,picConnections)}</strong></div>
+      <div><span>Operation / engine</span><strong>{singleOperationSummary}</strong></div>
+      <div><span>UTC times</span><strong>{singleReview.offBlock||"—"} / {singleReview.takeoff||"—"} / {singleReview.landing||"—"} / {singleReview.onBlock||"—"}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
+      <div><span>Landings</span><strong>{singleLandingSummary}</strong></div>
+      <div><span>Night / IFR</span><strong>{singleReview.nightTime||"0:00"} / {singleReview.ifrTime||"0:00"}</strong></div>
+    </div><p className="value-origin-note"><span>Certification</span> Certified flights are locked; later changes are recorded as corrections.</p></section>:null}
     {analysis?<section className="import-save-summary" aria-live="polite"><div><strong>{parts.length===1?"Flight import":`${parts.length} flight import`}</strong><small>{profileError?"Selected aircraft needs configuration before GPS import can be saved.":requiresOperationEngine&&(!operationType||!engineType)?"Select Operation and Engine before saving.":billing==="INVALID"?"Resolve the stored aircraft billing setting.":gpsQualityNeedsAcknowledgement&&!gpsWarningAcknowledged?"Review the GPS quality warning.":selectedBalloon&&!balloonOperation?"Select free / tethered operation.":ready?"Ready to save.":`${reviewReadyCount} of ${parts.length} flights have complete logbook evidence.`}</small></div><span className={ready?"ready":"needs-attention"}>{ready?"Ready to save":profileError?"Needs configuration":"Needs attention"}</span>{dirty?<small className="unsaved-indicator">Unsaved import</small>:null}</section>:null}
     {state.error?<p ref={errorRef} className="form-error" role="alert" tabIndex={-1}>{state.error}</p>:null}
     <div className="form-actions field-actions"><Submit ready={ready} hasTrack={Boolean(analysis&&parts.length)} partCount={parts.length} onReview={reviewImported}/></div>
