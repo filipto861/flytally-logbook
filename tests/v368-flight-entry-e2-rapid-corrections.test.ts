@@ -55,15 +55,17 @@ test("E2 ordinary ULL GPS review no longer requires Part-FCL PF evidence without
   assert.equal(gpsImportSourceRequirements(profile("SEP")).movementMode,"FCL060_PF");
 });
 
-test("E2 GPS Night-time suggestion returns day zero, night duration, and fails closed on ambiguous timestamps or gaps",()=>{
+test("E2 GPS Night-time baseline remains conservative while 3.4.1 can prove safe sparse same-state segments",()=>{
   const points=(start:string,end:string):KmlPoint[]=>[
     {lat:50.09,lon:14.43,alt:300,time:start},
     {lat:50.10,lon:14.44,alt:320,time:end},
   ];
   assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T12:00:00Z","2026-07-19T12:10:00Z")),{status:"AVAILABLE",minutes:0});
   assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T22:00:00Z","2026-07-19T22:10:00Z")),{status:"AVAILABLE",minutes:10});
-  assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T22:00:00","2026-07-19T22:10:00")),{status:"UNAVAILABLE"});
-  assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T22:00:00Z","2026-07-19T22:10:01Z")),{status:"UNAVAILABLE"});
+  const ambiguous=gpsNightMinutesSuggestion(points("2026-07-19T22:00:00","2026-07-19T22:10:00"));
+  assert.equal(ambiguous.status,"UNAVAILABLE");
+  if(ambiguous.status==="UNAVAILABLE")assert.deepEqual(ambiguous.reasons,["MISSING_OR_AMBIGUOUS_TIMESTAMP"]);
+  assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T12:00:00Z","2026-07-19T12:10:01Z")),{status:"AVAILABLE",minutes:0});
 });
 
 test("E2 GPS UX extends SERA to ULL, keeps IFR manual and makes PF evidence optional",()=>{
