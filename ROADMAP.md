@@ -73,7 +73,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 # 3.4.0 — Flight Entry Simplification — ACTIVE
 
 Detailed contract: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`  
-Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`
+Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`  
+UI matrix: `docs/product/3_4_0_FLIGHT_ENTRY_UI_MATRIX.md`
 
 ## Product goal
 
@@ -107,7 +108,7 @@ with secondary/contextual information progressively disclosed.
 - Existing purpose codes/history remain backward-compatible.
 - No DB migration is assumed.
 
-## Phase 1 — Discovery / contract freeze — ACTIVE
+## Phase 1 — Discovery / contract freeze — DONE
 
 Repository reconciliation is substantially complete.
 
@@ -121,14 +122,14 @@ Confirmed current-state facts:
 - `purpose_code` is certification-protected from certification payload v3 onward;
 - Training-purpose UI is category-aware but server normalization also applies role/evidence gating, so one shared applicability contract is required.
 
-Phase 1 remaining acceptance:
-- finalize KEEP / COLLAPSE / CONDITIONAL / REMOVE-DUPLICATE matrix;
-- define exact pre-certification summary fields and blocker-to-disclosure mapping;
-- characterize Enter/default-submit behavior with tests;
-- define shared Training-purpose applicability predicate;
-- then begin runtime implementation.
+Phase 1 closeout:
+- KEEP / COLLAPSE / CONDITIONAL / REMOVE-DUPLICATE matrix frozen;
+- pre-certification summary fields and blocker-to-disclosure mapping frozen;
+- Enter/default-submit rule frozen: implicit submit = draft only;
+- shared Training-purpose applicability predicate implemented and source-covered;
+- independent review reconciled against actual repository behavior.
 
-## Phase 2 — Information hierarchy
+## Phase 2 — Information hierarchy — ACTIVE
 
 ### GPS source
 Default visible:
