@@ -7,7 +7,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("SP5 correction supersedes only pending current-revision invitations and preserves the connected-PIC link",()=>{
-  const certification=read("lib/flight-certification.ts");
+  const certification=read("app/(protected)/flights/certification-actions.ts");
   const start=certification.indexOf("export async function startCertifiedCorrection");
   assert.ok(start>=0);
   const correction=certification.slice(start);
@@ -19,7 +19,7 @@ test("SP5 correction supersedes only pending current-revision invitations and pr
 });
 
 test("SP5 correction leaves already materialized accepted recipient records independent",()=>{
-  const certification=read("lib/flight-certification.ts");
+  const certification=read("app/(protected)/flights/certification-actions.ts");
   const start=certification.indexOf("export async function startCertifiedCorrection");
   const correction=certification.slice(start);
   assert.match(correction,/status='pending'/);
