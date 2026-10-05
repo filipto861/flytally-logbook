@@ -139,14 +139,18 @@ function unavailableNightTime(reason:NightTimeUnavailableReason,firstAffectedSeg
   return{status:"UNAVAILABLE",reasons:[reason],...(firstAffectedSegment===undefined?{}:{firstAffectedSegment}),...(affectedSegmentSeconds===undefined?{}:{affectedSegmentSeconds})};
 }
 
-function timedPoint(point:KmlPoint){
+type TimedPointResult=
+  |{status:"AVAILABLE";millis:number}
+  |{status:"UNAVAILABLE";reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"|"UNSUPPORTED_SOLAR_ENVELOPE"};
+
+function timedPoint(point:KmlPoint):TimedPointResult{
   const timestamp=String(point.time??"").trim(),basis=trackTimestampBasis(timestamp);
-  if(basis!=="utc"&&basis!=="offset")return{reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP" as const};
+  if(basis!=="utc"&&basis!=="offset")return{status:"UNAVAILABLE",reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"};
   const millis=Date.parse(timestamp);
-  if(!Number.isFinite(millis))return{reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP" as const};
+  if(!Number.isFinite(millis))return{status:"UNAVAILABLE",reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"};
   const year=new Date(millis).getUTCFullYear();
-  if(year<CIVIL_TWILIGHT_MIN_YEAR||year>CIVIL_TWILIGHT_MAX_YEAR)return{reason:"UNSUPPORTED_SOLAR_ENVELOPE" as const};
-  return{millis};
+  if(year<CIVIL_TWILIGHT_MIN_YEAR||year>CIVIL_TWILIGHT_MAX_YEAR)return{status:"UNAVAILABLE",reason:"UNSUPPORTED_SOLAR_ENVELOPE"};
+  return{status:"AVAILABLE",millis};
 }
 
 function pointSupportReason(point:KmlPoint):NightTimeUnavailableReason|null{
@@ -219,8 +223,8 @@ export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightT
     if(bSupport)return unavailableNightTime(bSupport,index-1);
 
     const aTime=timedPoint(a),bTime=timedPoint(b);
-    if("reason"in aTime)return unavailableNightTime(aTime.reason,index-1);
-    if("reason"in bTime)return unavailableNightTime(bTime.reason,index-1);
+    if(aTime.status==="UNAVAILABLE")return unavailableNightTime(aTime.reason,index-1);
+    if(bTime.status==="UNAVAILABLE")return unavailableNightTime(bTime.reason,index-1);
     const aMillis=aTime.millis,bMillis=bTime.millis;
     if(bMillis<aMillis)return unavailableNightTime("NON_MONOTONIC_TIMESTAMP",index-1);
     if(bMillis===aMillis){
