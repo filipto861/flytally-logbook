@@ -299,7 +299,7 @@ export function KmlImportForm({action,airportAction,aircraft,picConnections,nigh
         </article>;
       })}</div>
     </>:null}
-    {analysis&&singleReview&&parts.length===1?<section className="entry-certification-summary gps-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Ready to finish?</h2><p className="muted">Review the key GPS-derived and pilot-confirmed evidence that will be sealed if you choose Save &amp; certify.</p></div></div><div className="entry-certification-grid">
+    {analysis&&singleReview&&parts.length===1?<section className="entry-certification-summary gps-certification-summary" aria-label="Certification summary"><div className="section-heading"><div><p className="eyebrow">COMPLETION</p><h2>Review &amp; finish</h2></div></div><div className="entry-certification-grid">
       <div><span>Flight</span><strong>{singleReview.date||"—"} · {singleReview.departure||"—"} → {singleReview.arrival||"—"}</strong></div>
       <div><span>Aircraft / role</span><strong>{singleAircraftSummary} · {roleCrewSummary(singleRoleCrew,picConnections)}</strong><small>{singleOperationSummary}</small></div>
       <div><span>UTC times</span><strong>{singleReview.offBlock||"—"} / {singleReview.takeoff||"—"} / {singleReview.landing||"—"} / {singleReview.onBlock||"—"}</strong><small>Off-block / Takeoff / Landing / On-block</small></div>
