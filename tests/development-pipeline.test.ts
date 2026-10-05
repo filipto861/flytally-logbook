@@ -17,28 +17,29 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
-test("CI runs one fast PR gate and delegates expensive release checks",()=>{
+test("manual cloud verification mirrors the local-first release policy without automatic PR runs",()=>{
   const workflow=read(".github/workflows/verify-web.yml"),browser=read(".github/workflows/browser-smoke.yml");
-  assert.match(workflow,/branches:\s*\n\s*- main/);
-  assert.doesNotMatch(workflow,/codex\/vercel-migration-v080/);
+  assert.match(workflow,/workflow_dispatch:/);
+  assert.match(browser,/workflow_dispatch:/);
+  assert.doesNotMatch(workflow,/\n\s*pull_request:/);
+  assert.doesNotMatch(browser,/\n\s*pull_request:/);
+  assert.doesNotMatch(workflow,/\n\s*push:/);
+  assert.doesNotMatch(browser,/\n\s*schedule:/);
   assert.match(workflow,/cancel-in-progress: true/);
-  assert.match(workflow,/Classify CI risk/);
-  assert.match(workflow,/node tooling\/development-scope[.]mjs --files changed-files[.]txt/);
-  assert.match(workflow,/Fast application gate/);
+  assert.match(workflow,/Application gate/);
   assert.match(workflow,/TypeScript check/);
   assert.match(workflow,/npm run typecheck/);
   assert.match(workflow,/Targeted UI regression tests/);
+  assert.match(workflow,/inputs\.full_tests != true/);
   assert.match(workflow,/Full unit and regression tests/);
-  assert.match(workflow,/needs\.classify\.outputs\.full_tests != 'true'/);
-  assert.match(workflow,/needs\.classify\.outputs\.full_tests == 'true'/);
+  assert.match(workflow,/inputs\.full_tests == true/);
   assert.match(workflow,/npm run test:ui/);
   assert.doesNotMatch(workflow,/name: Production build/);
   assert.match(browser,/name: Production build/);
   assert.match(browser,/run: npm run build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
+  assert.match(workflow,/inputs\.postgres == true/);
   assert.match(workflow,/test:postgres:full/);
-  assert.doesNotMatch(workflow,/lib\/db-optimization[.]ts\|lib\/data\/dashboard[.]ts/);
-  assert.doesNotMatch(workflow,/\n  push:/);
 });
 
 test("large PostgreSQL fixtures are isolated from the normal core acceptance loop",()=>{
