@@ -63,6 +63,17 @@ GitHub Actions are **manual-only** and are not part of the normal FlyTally merge
 
 The local gate remains risk-based: TypeScript/unit-regression, PostgreSQL, browser, build and scale coverage are required only where the changed surface justifies them.
 
+## Browser verification cadence
+
+The authenticated browser suite is intentionally serialized because it mutates one shared isolated PostgreSQL fixture. A repository-wide Playwright run is therefore relatively expensive and is **not** a mandatory gate for every feature release.
+
+Use:
+- targeted changed-flow browser tests during implementation;
+- targeted responsive matrices when the changed UI needs desktop/iPad/mobile/light/dark coverage;
+- the complete Playwright suite only for broad cross-product shell changes, browser-harness changes that can affect unrelated flows, or when a specific regression risk justifies it.
+
+When a test already iterates its own viewport/theme matrix, running that matrix under both Playwright device projects is normally redundant. Prefer a single desktop project for that matrix unless the test explicitly depends on mobile user-agent/touch semantics.
+
 ## Authenticated browser acceptance
 
 The authenticated Playwright suite uses one isolated mutable PostgreSQL fixture database for both desktop and mobile projects. `playwright.config.mjs` therefore pins the suite to **one worker** in local runs and CI. Do not override this with a higher worker count unless every worker/project receives an independently bootstrapped database.
