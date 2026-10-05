@@ -133,7 +133,7 @@ test("3.4.0 Phase 2 keeps the clean GPS path compact and truthful",()=>{
 
   assert.doesNotMatch(gps,/GPS track quality: good/);
   assert.match(gps,/Complete flight details/);
-  assert.match(gps,/Save flight draft/);
+  assert.match(gps,/Save draft/);assert.match(gps,/Save &amp; certify flight/);
   assert.match(gps,/Save \$\{partCount\} flight drafts/);
   assert.match(gps,/data-ready=\{sourceReady&&credible\?"true":"false"\}/);
   assert.match(gps,/flight-review-card\[data-ready="false"\]/);
