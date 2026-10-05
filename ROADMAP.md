@@ -246,7 +246,7 @@ Consequence copy:
 - multi-flight import continues to save all parts atomically as drafts only;
 - no 3.4.0 batch certification.
 
-## Phase 6 — Responsive / interaction polish — VERIFICATION ACTIVE
+## Phase 6 — Responsive / interaction polish — IMPLEMENTED / VERIFICATION ACTIVE
 
 Required:
 - desktop;
@@ -265,6 +265,11 @@ Acceptance:
 - keyboard/focus order remains usable;
 - save/certification result is announced accessibly;
 - no raw errors.
+
+Phase 6 implementation notes:
+- completion evidence is grouped into four concise semantic rows rather than eight nested cards;
+- completion chrome was reduced to one `Review & finish` heading plus the certification consequence;
+- targeted authenticated browser coverage now includes the GPS-quality acknowledgement gate in addition to Manual/GPS direct certification and Enter-to-draft behavior.
 
 ## Phase 7 — Release closeout
 
