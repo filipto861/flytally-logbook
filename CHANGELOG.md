@@ -18,6 +18,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Hardened equal-time conflicting positions, non-monotonic/ambiguous timestamps, unsupported solar envelope and twilight-confidence cases to explicit fail-closed reasons.
 - Added a real-like EHAM → LKPR regression with one sparse but provably DAY segment, a densely bracketed civil-twilight crossing and a final NIGHT landing; partial/lower-bound values are never auto-applied.
 - Added the frozen single-phase contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No DB migration, certification-version change or historical-record rewrite is part of 3.4.1.
+- Release verification also reconciled stale repository contract tests with the already-adopted manual-only GitHub Actions policy, browser fixture schema v19, the compact 3.4 certification summary, and the 3.4.1 roadmap state; the manual Verify workflow is now self-contained instead of depending on pull-request event fields.
 
 ## 3.4.0 — 5 October 2026
 
