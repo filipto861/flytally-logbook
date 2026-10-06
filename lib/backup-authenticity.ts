@@ -2,7 +2,7 @@ import { signVerificationPayload,verifyVerificationSignature } from "./verificat
 
 export type BackupAuthenticityStatus="verified"|"unsigned"|"invalid";
 export type BackupAuthenticityInput={version:number;profile:Record<string,unknown>;integrity:{signature_version?:number;server_signature?:string}};
-export const SERVER_AUTHORITATIVE_BACKUP_SECTIONS:ReadonlySet<string>=new Set(["pilot_connections","instructor_flight_approvals","flight_participations","flight_verifications","connection_audit_log"]);
+export const SERVER_AUTHORITATIVE_BACKUP_SECTIONS:ReadonlySet<string>=new Set(["pilot_connections","instructor_flight_approvals","flight_participations","flight_verifications","connection_audit_log","voided_certified_flights","voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items","flight_source_provenance"]);
 
 const signaturePayload=(version:number,sourceUserId:number,digest:string)=>({purpose:"flytally-portable-backup",signatureVersion:1,backupVersion:Math.trunc(version),sourceUserId:Math.trunc(sourceUserId),payloadSha256:String(digest)});
 const validDigest=(value:string)=>/^[a-f0-9]{64}$/.test(value);
