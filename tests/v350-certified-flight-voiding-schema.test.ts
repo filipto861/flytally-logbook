@@ -55,3 +55,20 @@ test("v20 blocks reusing a voided source database identity as an active flight",
   assert.match(dbOptimizations,/v\.user_id=NEW\.user_id AND v\.original_flight_id=NEW\.id/);
   assert.match(dbOptimizations,/BEFORE INSERT ON flights FOR EACH ROW EXECUTE FUNCTION logbook_prevent_voided_flight_id_reuse\(\)/);
 });
+
+test("v20 rejects committed tombstones that still coexist with the active source row",()=>{
+  assert.match(dbOptimizations,/CREATE CONSTRAINT TRIGGER trg_logbook_require_void_archive_separation/);
+  assert.match(dbOptimizations,/DEFERRABLE INITIALLY DEFERRED/);
+  assert.match(dbOptimizations,/WHERE f\.id=NEW\.original_flight_id AND f\.user_id=NEW\.user_id/);
+  assert.match(dbOptimizations,/Voided certified flight archive cannot coexist with its active flight/);
+});
+
+test("v20 freezes archive child membership to the tombstone transaction",()=>{
+  assert.match(dbOptimizations,/CREATE OR REPLACE FUNCTION logbook_validate_void_archive_child_insert\(\)/);
+  assert.match(dbOptimizations,/v\.id=NEW\.voided_flight_id AND v\.created_txid=txid_current\(\)/);
+  for(const trigger of [
+    "trg_logbook_validate_voided_flight_revisions_insert",
+    "trg_logbook_validate_voided_flight_verifications_insert",
+    "trg_logbook_validate_voided_flight_archive_items_insert",
+  ])assert.match(dbOptimizations,new RegExp(`CREATE TRIGGER ${trigger}`));
+});
