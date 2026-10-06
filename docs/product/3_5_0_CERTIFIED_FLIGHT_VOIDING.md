@@ -215,7 +215,7 @@ Required before merge:
 
 ## Independent review reconciliation — 6 October 2026
 
-Independent review verdict: **APPROVE WITH CHANGES**. The core archive+delete direction is accepted. review-placeholder
+Independent review verdict: **APPROVE WITH CHANGES**. The core archive+delete direction is accepted.
 
 Accepted changes:
 - do not use an in-row `voided_at` as the sole operational exclusion mechanism;
