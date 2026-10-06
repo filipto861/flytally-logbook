@@ -410,7 +410,19 @@ Fourth browser execution on `593ebc1`: browser **0/2 PASS**, but the two failure
 
 Fifth browser execution on `ad18689`: **2/2 PASS** across desktop Chromium and mobile Chromium. The acceptance created and certified a real test flight, removed it through the destructive modal, observed the completed Server Action, proved the active `flights` row was deleted, proved the immutable tombstone/reason/hash remained, verified the exact flight id disappeared from the active Flights list, opened the permanent void audit, and verified the legacy audit URL redirected to the tombstone. M2/M3 are therefore end-to-end verified locally.
 
-### M4 — Backup / restore v13 — ACTIVE
+### M4 — Backup / restore v13 — IMPLEMENTED / VERIFICATION PENDING
+M4 implementation batch:
+- generated portable backup version advanced from v12 to **v13**;
+- v13 exports the five permanent void/provenance history sections;
+- v13 generated payloads omit stale legacy `track_points`; v4–v12 parser compatibility remains;
+- exact restore no longer queries or inserts a current `track_points` table;
+- parser validates v13 section counts, ownership, tombstone relationships, active+tombstone conflicts and provenance revision/hash binding;
+- exact restore preserves tombstones/history only, regenerates only transaction-control `created_txid`, and inserts children in the same transaction under existing v20 triggers;
+- symmetric active/tombstone preflight guards supplement the DB triggers;
+- unsigned/invalid v13 portable history is rejected while stored backups remain trusted;
+- participant source provenance now has explicit DB immutability/binding enforcement.
+
+M4 verification: **PENDING exact-head TypeScript + portable-backup tests + PostgreSQL restore acceptance + build**.
 - export/archive sections;
 - parser/authenticity/count validation;
 - exact restore support;
