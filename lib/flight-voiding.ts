@@ -157,7 +157,7 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
     FROM candidate c
     RETURNING id`;
 
-  const revisionArchive=revisionRaw.map((raw,index)=>{
+  const revisionArchive=revisionRaw.map((_,index)=>{
     const item=revisions[index];
     return sql`INSERT INTO voided_flight_certified_revisions(
       voided_flight_id,source_revision_id,revision_number,certification_hash,certification_version,
@@ -173,7 +173,7 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
     ON CONFLICT(voided_flight_id,source_revision_id) DO NOTHING`;
   });
 
-  const verificationArchive=verificationRaw.map((raw,index)=>{
+  const verificationArchive=verificationRaw.map((_,index)=>{
     const item=verifications[index];
     return sql`INSERT INTO voided_flight_verifications(
       voided_flight_id,source_verification_id,record_revision,verification_role,status,signer_user_id,
@@ -253,7 +253,6 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
     ...archiveShare,...archiveExpense,...archiveTrack,...archivePointGroups,...archiveProvenance,
   ];
 
-  const hasParent=`EXISTS(SELECT 1 FROM voided_certified_flights v WHERE v.operation_token='${operationToken}'::uuid AND v.created_txid=txid_current())`;
   // Each mutation below is independently parent-gated. The final DELETE additionally
   // proves source/archive counts; if any evidence changed after discovery, the active
   // row remains and the deferred active+tombstone constraint rolls the transaction back.
