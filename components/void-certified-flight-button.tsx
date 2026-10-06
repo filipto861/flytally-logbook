@@ -1,23 +1,13 @@
 "use client";
 
-import { useActionState,useEffect,useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState,useState } from "react";
 
 type State={error?:string;voided?:boolean;tombstoneId?:number};
 type Action=(previous:State,form:FormData)=>Promise<State>;
 
-export function VoidCertifiedFlightButton({action,returnHref="/flights"}:{action:Action;returnHref?:string}){
+export function VoidCertifiedFlightButton({action}:{action:Action}){
   const[open,setOpen]=useState(false);
   const[state,formAction,pending]=useActionState(action,{});
-  const router=useRouter();
-
-  useEffect(()=>{
-    if(!state.voided||!state.tombstoneId)return;
-    const separator=returnHref.includes("?")?"&":"?";
-    router.replace(`${returnHref}${separator}voided=1&audit=${state.tombstoneId}`);
-    router.refresh();
-  },[returnHref,router,state.tombstoneId,state.voided]);
-
   return <>
     <button type="button" className="danger-button" onClick={()=>setOpen(true)}>Remove certified flight</button>
     {open?<div className="modal-backdrop certified-void-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget&&!pending)setOpen(false)}}>
