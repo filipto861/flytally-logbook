@@ -186,7 +186,7 @@ function stageFstd(row:BackupRow):BackupRow{return{...row,certified_at:null,cert
 
 export async function executeExactAccountRestore(userId:number,backup:PortableBackup,plan:ExactRestorePlan){
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
-  validateBackupCertificationHistory(backup,userId);
+  validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const maxAudit=await sql`SELECT COALESCE(MAX(id),0)::bigint id FROM flight_audit_log` as Array<{id:number|string}>;const auditFloor=Number(maxAudit[0]?.id||0);
   const queries:any[]=[];
   const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId} AND COALESCE(TRIM(display_name),'')=''`);
@@ -210,9 +210,24 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   for(const batch of chunks(newFstd,RESTORE_BATCH_SIZES.fstd_sessions))queries.push(sql`UPDATE fstd_sessions s SET certified_at=NULLIF(item->>'certified_at','')::timestamptz,certified_by_user_id=NULLIF(item->>'certified_by_user_id','')::bigint,certification_hash=COALESCE(item->>'certification_hash',''),certification_version=COALESCE(NULLIF(item->>'certification_version','')::int,1) FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) WHERE s.user_id=${userId} AND s.id=(item->>'id')::bigint`);
 
   for(const batch of chunks(plan.addRows.flight_tracks??[],RESTORE_BATCH_SIZES.flight_tracks))queries.push(sql`INSERT INTO flight_tracks SELECT (json_populate_record(NULL::flight_tracks,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
-  for(const batch of chunks(plan.addRows.track_points??[],RESTORE_BATCH_SIZES.track_points))queries.push(sql`INSERT INTO track_points SELECT (json_populate_record(NULL::track_points,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.flight_certified_revisions??[],RESTORE_BATCH_SIZES.flight_certified_revisions))queries.push(sql`INSERT INTO flight_certified_revisions SELECT (json_populate_record(NULL::flight_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.fstd_certified_revisions??[],RESTORE_BATCH_SIZES.fstd_certified_revisions))queries.push(sql`INSERT INTO fstd_certified_revisions SELECT (json_populate_record(NULL::fstd_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
+
+  for(const batch of chunks(plan.addRows.voided_certified_flights??[],RESTORE_BATCH_SIZES.voided_certified_flights))queries.push(sql`INSERT INTO voided_certified_flights(
+    id,user_id,original_flight_id,record_revision,certification_hash,certification_version,certified_at,certified_by_user_id,
+    flight_snapshot,flight_snapshot_sha256,archive_version,voided_at,voided_by_user_id,void_reason,operation_token,created_txid
+  )
+  SELECT
+    (item->>'id')::bigint,(item->>'user_id')::bigint,(item->>'original_flight_id')::bigint,(item->>'record_revision')::integer,
+    item->>'certification_hash',(item->>'certification_version')::integer,(item->>'certified_at')::timestamptz,NULLIF(item->>'certified_by_user_id','')::bigint,
+    item->'flight_snapshot',item->>'flight_snapshot_sha256',COALESCE(NULLIF(item->>'archive_version','')::integer,1),
+    (item->>'voided_at')::timestamptz,(item->>'voided_by_user_id')::bigint,item->>'void_reason',(item->>'operation_token')::uuid,txid_current()
+  FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+
+  for(const batch of chunks(plan.addRows.voided_flight_certified_revisions??[],RESTORE_BATCH_SIZES.voided_flight_certified_revisions))queries.push(sql`INSERT INTO voided_flight_certified_revisions SELECT (json_populate_record(NULL::voided_flight_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.voided_flight_verifications??[],RESTORE_BATCH_SIZES.voided_flight_verifications))queries.push(sql`INSERT INTO voided_flight_verifications SELECT (json_populate_record(NULL::voided_flight_verifications,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.voided_flight_archive_items??[],RESTORE_BATCH_SIZES.voided_flight_archive_items))queries.push(sql`INSERT INTO voided_flight_archive_items SELECT (json_populate_record(NULL::voided_flight_archive_items,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.flight_source_provenance??[],RESTORE_BATCH_SIZES.flight_source_provenance))queries.push(sql`INSERT INTO flight_source_provenance SELECT (json_populate_record(NULL::flight_source_provenance,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
 
   if(newFlights.length){const ids=JSON.stringify(newFlights.map(row=>String(row.id)));queries.push(sql`DELETE FROM flight_audit_log WHERE user_id=${userId} AND id>${auditFloor} AND flight_id IN (SELECT value::bigint FROM jsonb_array_elements_text(${ids}::jsonb))`)}
   for(const batch of chunks(plan.addRows.audit_log??[],RESTORE_BATCH_SIZES.audit_log))queries.push(sql`INSERT INTO flight_audit_log SELECT (json_populate_record(NULL::flight_audit_log,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
@@ -228,7 +243,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
     for(const batch of chunks(plan.addRows.connection_audit_log??[],RESTORE_BATCH_SIZES.connection_audit_log))queries.push(sql`INSERT INTO connection_audit_log SELECT (json_populate_record(NULL::connection_audit_log,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   }
 
-  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log'),('flight_expenses'),('spl_recency_evidence'),('helicopter_recency_evidence'),('bpl_recency_evidence')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
+  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log'),('flight_expenses'),('spl_recency_evidence'),('helicopter_recency_evidence'),('bpl_recency_evidence'),('voided_certified_flights'),('voided_flight_certified_revisions'),('voided_flight_verifications'),('voided_flight_archive_items'),('flight_source_provenance')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
   if(queries.length>EXACT_RESTORE_STATEMENT_LIMIT)throw new Error(`Backup restore plan requires ${queries.length} statements; the atomic safety limit is ${EXACT_RESTORE_STATEMENT_LIMIT}.`);
   await sql.transaction(queries);
   return{added:Object.values(plan.preview.add).reduce((sum,value)=>sum+value,0),queries:queries.length};
