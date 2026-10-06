@@ -391,7 +391,9 @@ M3 implementation batch:
 - legacy `/flights/[id]/audit` links redirect to the tombstone audit when the active source no longer exists;
 - source-level UX contract tests added.
 
-M3 verification: **PENDING exact-head TypeScript + targeted tests**.
+M3 source/build gate on `e72ee05b35595c70a01a209e9d6ac903e7656e61`: TypeScript PASS; targeted certification/domain/UI contracts **28/28 PASS**; production Next.js build PASS.
+
+Authenticated browser acceptance is now implemented and pending execution. It creates and certifies a real test flight through the UI, removes it through the certified-flight modal, verifies the active row/list disappear, verifies the immutable tombstone/reason/hashes remain, opens the permanent audit route, and proves the legacy audit URL redirects to the tombstone.
 - Flight detail → More → Remove certified flight;
 - destructive confirmation + mandatory reason;
 - duplicate-submit protection;
