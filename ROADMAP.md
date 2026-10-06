@@ -397,7 +397,7 @@ Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
 Implementation milestones:
 - **M1 — Schema v20 + archive invariants: VERIFIED LOCAL** — TypeScript PASS; migration/schema contract 10/10 PASS; PostgreSQL acceptance 6/6 PASS on 6 October 2026.
 - **M2 — Domain mutation: PRE-GATE VERIFIED / END-TO-END PENDING**
-- **M3 — Audit-only UX: IMPLEMENTED / VERIFICATION PENDING**
+- **M3 — Audit-only UX: SOURCE/BUILD VERIFIED · BROWSER ACCEPTANCE PENDING**
 - M4 — Backup / restore v13
 - M5 — Consumer and integration verification
 - M6 — Release gate / documentation
