@@ -62,7 +62,7 @@ Several regulatory consumers explicitly select `FROM flights ... WHERE certified
 
 Current database protection also deliberately rejects DELETE of a certified `flights` row. Certified-linked tables include CASCADE foreign keys for instructor approvals, participations, verifications, connected crew, expenses and public shares. Certified revision history and the generic flight audit log are separate historical stores.
 
-Portable backup is currently versioned through v11 and assumes certified-flight revisions/verifications belong to a live owned `flights` parent. A permanent void archive therefore requires an explicit backup-format extension rather than allowing protected evidence to disappear from disaster-recovery data.
+Portable backup currently emits **version 12**. Version 12 added server authenticity/signature semantics while retaining the v11 section set; certified-flight revisions/verifications still assume a live owned `flights` parent. A permanent void archive therefore requires an explicit backup-format extension rather than allowing protected evidence to disappear from disaster-recovery data.
 
 ### Draft architecture recommendation
 
@@ -94,7 +94,7 @@ The certified-flight protection trigger should be changed narrowly: DELETE of a 
 
 ### Backup/recovery consequence
 
-This feature is not schema-only. Portable backup must gain a new format revision that includes permanent void tombstones. Restore must restore tombstones as historical evidence only and must never recreate them as active flights.
+This feature is not schema-only. Portable backup must gain **version 13** with permanent void-tombstone sections. Version 12 must remain fully restorable. Restore must restore tombstones as historical evidence only and must never recreate them as active flights.
 
 ### Open design points for independent review
 
@@ -211,3 +211,184 @@ Required before merge:
 - silently editing the certified revision into a different flight;
 - treating voiding as a substitute for ordinary correction when the flight itself should remain valid;
 - regulatory/legal claims that FlyTally voiding alone satisfies a specific authority procedure without separate evidence.
+
+
+## Independent review reconciliation — 6 October 2026
+
+Independent review verdict: **APPROVE WITH CHANGES**. The core archive+delete direction is accepted. review-placeholder
+
+Accepted changes:
+- do not use an in-row `voided_at` as the sole operational exclusion mechanism;
+- do not make the permanent tombstone a single unstructured JSON blob;
+- preserve protected evidence under an immutable tombstone parent with queryable archive children;
+- add explicit participant-copy provenance before enabling source-flight deletion;
+- bind certified DELETE to an exact tombstone created in the same database transaction;
+- make tombstone/archive records append-only / immutable;
+- use a separate audit-only route for voided records;
+- bump portable backup from the actual current version 12 to **version 13**, and restore tombstones as history only;
+- treat active-flight + matching-tombstone coexistence as an invalid restore state;
+- regression-lock concurrency, direct-delete rejection, recency exclusion, participant-copy survival, share invalidation, backup/restore and correction compatibility.
+
+Repository correction to the reviewer handoff:
+- the handoff stated that portable backup was v11;
+- current code already emits **portable backup v12** with server authenticity/signature requirements;
+- therefore the voiding feature must use **v13**, not v12.
+
+One review recommendation is narrowed rather than copied mechanically:
+- the repository uses one server-side `DATABASE_URL` client and does not currently establish a separately verified restricted runtime database role;
+- this phase will therefore **not invent a new DB-role/privilege architecture** merely to claim that direct table DML is revoked;
+- instead, the safety boundary must be enforceable by existing database invariants: exact tombstone matching, same-transaction binding, immutable archive rows, row locking, unique keys, and server-side authenticated ownership checks;
+- a future dedicated runtime DB role may strengthen this further, but is not assumed without deployment evidence.
+
+## Frozen persistence design
+
+### Schema v20
+
+3.5.0 Phase 1 requires database schema **v20**.
+
+Canonical permanent parent:
+- `voided_certified_flights`
+
+Required parent evidence:
+- archive id;
+- original flight id;
+- owner user id;
+- current record revision;
+- certification hash and certification version;
+- certified timestamp / certifying user;
+- complete certified flight snapshot;
+- deterministic snapshot SHA-256;
+- archive schema version;
+- void timestamp / voiding user / mandatory reason;
+- unique void-operation token;
+- creating transaction id used only to prove same-transaction DELETE authorization.
+
+Required immutable archive children:
+- certified revision history;
+- flight verification/signature evidence;
+- workflow evidence snapshots for instructor approvals, participations, connected crew and public shares;
+- expense evidence;
+- GPS track evidence, including full stored track payload needed for audit/backup.
+
+Archive children may use typed relational rows with versioned JSON payloads for the original source record, but protected cryptographic identifiers/status/signature fields and source identifiers must remain independently addressable and hash-verifiable. Missing required evidence is never converted to an empty/default row.
+
+### Participant-copy provenance
+
+Add a permanent provenance record for materialized shared-flight copies before source voiding is enabled.
+
+For each accepted participant copy preserve:
+- participant-owned flight id/user;
+- original source flight id/user;
+- source revision and certification hash;
+- participant role / PIC commander basis where applicable;
+- acceptance/materialization timestamp when available;
+- source void tombstone id once the source is voided.
+
+Current repository behavior already protects the independent participant-owned `flights` row from source deletion; the vulnerable object is the source `flight_participations` row, which currently has an `ON DELETE CASCADE` source FK and would otherwise erase provenance. Phase 1 must backfill permanent provenance before enabling certified voiding.
+
+### Certified DELETE database invariant
+
+The existing certified-flight protection remains the default.
+
+A certified `flights` row may be deleted only when all are true:
+1. a permanent tombstone for the same owner/original flight/revision/certification hash exists;
+2. the tombstone snapshot hash matches the exact certified row being removed;
+3. the tombstone was created in the **same database transaction** as the DELETE;
+4. the operation has a unique id and the row is locked against concurrent correction/void;
+5. all mandatory archive children/provenance transitions have succeeded.
+
+A tombstone created in an earlier committed transaction must **not** authorize a later DELETE.
+
+The void transaction must lock the active flight row before snapshotting. Two concurrent requests may yield only one tombstone; the second request must resolve to an explicit already-voided/not-found outcome, never a second archive.
+
+### Current-table cleanup after archive
+
+After all protected snapshots are safely stored:
+- pending participations are transitioned/snapshotted as superseded/cancelled and related notifications are made non-actionable;
+- pending instructor approvals / verifications are transitioned/snapshotted;
+- active public shares are revoked before their live rows disappear;
+- accepted participant-copy provenance is bound to the tombstone;
+- current `flight_certified_revisions` rows for the source are copied into the tombstone archive and removed from the active revision archive so no future direct consumer can mistake them for active evidence;
+- live dependent rows may then cascade/delete only after their permanent archive copy exists;
+- the active `flights` row is removed last.
+
+The tombstone parent and children are immutable after commit.
+
+### Operational exclusion
+
+Because the active `flights` row is removed, ordinary Flights/detail/navigation, Dashboard, Statistics, Map, Print/Export, professional experience and all category recency engines exclude the voided flight by construction.
+
+Any consumer that reads `flight_certified_revisions`, audit history or collaboration tables directly must still be audited so archived evidence cannot re-enter an active calculation.
+
+### Audit surface
+
+Use a dedicated immutable route:
+- `/audit/voided-flights/[id]`
+
+The route is authenticated/read-only and never exposes edit, correction, share, certification or ordinary flight-navigation actions.
+
+The legacy active-flight audit route may redirect an authorized owner to the tombstone audit route when the active flight no longer exists, but the tombstone is not represented as an active flight.
+
+### Backup / restore v13
+
+Portable backup v13 adds permanent certified-void archive/provenance sections while retaining all v12 authenticity requirements.
+
+Restore invariants:
+- tombstones restore as history only;
+- a tombstone is never materialized into `flights`;
+- a backup containing both an active flight and a matching tombstone is rejected;
+- existing v12 and older supported backups remain restorable;
+- void actor/time/reason, certification hash/revision/version and archive hashes are preserved exactly;
+- repeated restore is idempotent;
+- accepted participant copies remain active and retain provenance to the restored tombstone;
+- a restored tombstone cannot authorize a future active-flight resurrection or certified DELETE because same-transaction authorization is not satisfied.
+
+## Implementation milestones
+
+### M1 — Schema v20 + archive invariants
+- tombstone parent;
+- immutable archive children;
+- same-transaction DELETE authorization;
+- participant provenance table/backfill;
+- migration and rollback/preflight tests.
+
+### M2 — Domain mutation
+- one canonical server-side void operation;
+- authenticated ownership + mandatory reason;
+- row lock/concurrency behavior;
+- archive snapshots;
+- workflow/share/provenance transitions;
+- active-row removal;
+- recency refresh and cache/view invalidation.
+
+### M3 — Audit-only UX
+- Flight detail → More → Remove certified flight;
+- destructive confirmation + mandatory reason;
+- duplicate-submit protection;
+- redirect to Flights after success;
+- separate immutable void-audit route.
+
+### M4 — Backup / restore v13
+- export/archive sections;
+- parser/authenticity/count validation;
+- exact restore support;
+- resurrection/conflict guards;
+- v12 backward compatibility.
+
+### M5 — Consumer and integration verification
+- active read-model exclusion;
+- all category recency/compliance;
+- professional export / print / map / statistics / dashboard;
+- sharing/notifications/collaboration;
+- participant-copy survival/provenance;
+- correction workflow compatibility.
+
+### M6 — Release gate / documentation
+- full unit/regression;
+- PostgreSQL integration;
+- authenticated browser acceptance;
+- production build;
+- ROADMAP / FEATURES / CHANGELOG;
+- migration deployment prerequisite;
+- production smoke and post-deploy runtime checks.
+
