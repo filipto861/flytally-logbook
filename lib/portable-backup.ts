@@ -71,11 +71,21 @@ export function validateVoidHistoryRelationships(backup:PortableBackup){
     const snapshot=row.flight_snapshot;
     if(!snapshot||typeof snapshot!=="object"||Array.isArray(snapshot))throw new Error("A voided certified flight has no valid protected snapshot.");
     const snap=snapshot as BackupRow;
-    if(String(snap.id??"")!==original||Number(snap.user_id||0)!==owner||Number(snap.record_revision||1)!==Number(row.record_revision||1)||String(snap.certification_hash??"")!==String(row.certification_hash??""))throw new Error("A voided certified flight snapshot does not match its tombstone identity.");
+    if(String(snap.id??"")!==original||Number(snap.user_id||0)!==owner||Number(snap.record_revision||1)!==Number(row.record_revision||1)||String(snap.certification_hash??"")!==String(row.certification_hash??"")||Number(snap.certification_version||1)!==Number(row.certification_version||1)||timeKey(snap.certified_at)!==timeKey(row.certified_at)||Number(snap.certified_by_user_id||0)!==Number(row.certified_by_user_id||0))throw new Error("A voided certified flight snapshot does not match its tombstone identity.");
     tombstoneIds.add(rowId);tombstoneKeys.add(key);tombstoneById.set(rowId,row);
   }
   for(const [label,rows] of [["revision",revisions],["verification",verifications],["archive item",items]] as const){
     for(const row of rows)if(!tombstoneIds.has(String(row.voided_flight_id??"")))throw new Error(`A voided-flight ${label} refers to a missing tombstone.`);
+  }
+  for(const row of revisions){
+    const parent=tombstoneById.get(String(row.voided_flight_id??""))!,snapshot=row.snapshot_data as BackupRow|undefined;
+    const revisionNumber=Number(row.revision_number||0);
+    if(!snapshot||typeof snapshot!=="object"||Array.isArray(snapshot)||String(snapshot.id??"")!==String(parent.original_flight_id??"")||Number(snapshot.user_id||0)!==Number(parent.user_id||0)||Number(snapshot.record_revision||1)!==revisionNumber||revisionNumber<1||revisionNumber>=Number(parent.record_revision||1))throw new Error("A voided certified revision does not match its source tombstone history.");
+  }
+  for(const row of verifications){
+    const parent=tombstoneById.get(String(row.voided_flight_id??""))!,source=row.source_data as BackupRow|undefined;
+    const revisionNumber=Number(row.record_revision||0);
+    if(!source||typeof source!=="object"||Array.isArray(source)||String(source.id??"")!==String(row.source_verification_id??"")||String(source.flight_id??"")!==String(parent.original_flight_id??"")||Number(source.flight_user_id||0)!==Number(parent.user_id||0)||revisionNumber<1||revisionNumber>Number(parent.record_revision||1))throw new Error("A voided verification does not match its source tombstone history.");
   }
   const flightIds=new Set(flights.map(row=>sourceId(row)));
   for(const row of provenance){
