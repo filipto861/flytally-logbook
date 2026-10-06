@@ -359,6 +359,18 @@ M1 local verification on exact head `676a18d0ed9829abe0b6e5fd7eebf34a6c3c69e4`:
 - migration and rollback/preflight tests.
 
 ### M2 — Domain mutation — ACTIVE
+
+M2 implementation batch:
+- canonical `voidCertifiedFlightRecord()` service;
+- authenticated server action delegates to the domain service;
+- exact certified row is protected by owner scope + revision/hash + `xmin` + row lock;
+- all current protected evidence is snapshotted before deletion and stale evidence fails closed;
+- pending workflow rows are superseded, public shares revoked, pending request notifications made non-actionable, accepted-copy provenance bound to the tombstone;
+- source certified revisions and GPS tracks/legacy points are removed from active stores only after archive-count proof;
+- final `flights` DELETE is gated on complete archive/source counts, after which recency and all active views are invalidated;
+- shared-copy materialization creates provenance before linking the participant-owned copy.
+
+M2 verification: **PENDING exact-head TypeScript + targeted contracts**.
 - one canonical server-side void operation;
 - authenticated ownership + mandatory reason;
 - row lock/concurrency behavior;
