@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { validateBackupCertificationHistory,type BackupCertificationSummary } from "@/lib/backup-certification";
-import { flightRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
@@ -27,7 +27,6 @@ const rateKey=(row:BackupRow)=>`${upper(row.registration)}|${text(row.valid_from
 const airportKey=(row:BackupRow)=>upper(row.ident);
 const expiryKey=(row:BackupRow)=>`${upper(row.category)}|${upper(row.label)}|${text(row.expiry_date).slice(0,10)}`;
 const trackKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${text(row.file_name)}|${text(row.start_utc)}|${text(row.end_utc)}|${Number(row.point_count||0)}`;
-const pointKey=(row:BackupRow)=>`${String(row.track_id??"")}|${String(row.seq??"")}`;
 const fstdKey=(row:BackupRow)=>`${text(row.session_date).slice(0,10)}|${upper(row.device_type)}|${upper(row.qualification_number)}|${upper(row.instruction)}|${Number(row.total_minutes||0)}`;
 const flightRevisionKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${Number(row.revision_number||0)}`;
 const fstdRevisionKey=(row:BackupRow)=>`${String(row.fstd_session_id??"")}|${Number(row.revision_number||0)}`;
@@ -38,6 +37,11 @@ const splEvidenceKey=(row:BackupRow)=>`${upper(row.aircraft_context)}|${text(row
 const helicopterEvidenceKey=(row:BackupRow)=>`${upper(row.helicopter_type)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const stableIdKey=(row:BackupRow)=>id(row);
+const voidedFlightKey=(row:BackupRow)=>`${String(row.user_id??"")}|${String(row.original_flight_id??"")}`;
+const voidedRevisionKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.source_revision_id??"")}`;
+const voidedVerificationKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.source_verification_id??"")}`;
+const voidedItemKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.item_kind??"")}|${String(row.source_key??"")}`;
+const provenanceKey=(row:BackupRow)=>`${String(row.participant_user_id??"")}|${String(row.participant_flight_id??"")}`;
 
 function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,requireStableId=true){
   const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
@@ -62,6 +66,22 @@ function checkExistingCertification(source:BackupRow[],current:BackupRow[],label
 function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],parentField:string,label:string){
   const byKey=new Map(current.map(row=>[`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,row]));
   for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(!existing)continue;const conflict=archivedCertificationConflict(row,existing,parentField,label);if(conflict)throw new AccountRestoreConflictError(conflict)}
+}
+
+function protectedSignature(row:BackupRow,fields:string[]){return fields.map(field=>JSON.stringify(row[field]??null)).join("|")}
+function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,fields:string[]){
+  const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
+  let skip=0;
+  for(const row of source){
+    const sourceId=id(row),natural=key(row),byIdMatch=sourceId?byId.get(sourceId):undefined,byNatural=natural?byKey.get(natural):undefined,match=byIdMatch??byNatural;
+    if(match){
+      if(sourceId&&id(match)!==sourceId)throw new AccountRestoreConflictError(recordIdentityConflict(label,natural,sourceId,id(match)));
+      if(protectedSignature(row,fields)!==protectedSignature(match,fields))throw new AccountRestoreConflictError(`${label} conflicts with immutable history already stored for ${natural||sourceId}.`);
+      skip++;continue;
+    }
+    add.push(row);
+  }
+  return{add,skip};
 }
 
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
