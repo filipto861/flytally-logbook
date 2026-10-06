@@ -404,6 +404,8 @@ First browser execution on `bc0fd31`: **0/2 PASS**. Both desktop and mobile fail
 
 Second browser execution on `dbcefaf`: TypeScript PASS, targeted contracts **28/28 PASS**, PostgreSQL schema acceptance **6/6 PASS**, production build PASS, but browser **0/2 PASS** because the page remained on the certified flight detail after submit. No domain-service exception was emitted in this run, but the original test asserted navigation before database state, so it did not prove whether the mutation committed. The completion flow is therefore hardened in two ways: success now redirects **server-side** from the Server Action instead of relying on a client `useEffect` after deleting the current route's backing row, and browser acceptance now proves active-row deletion + tombstone existence before asserting navigation.
 
+Third browser execution on `4ec111b`: TypeScript PASS; targeted contracts **28/28 PASS**; production build PASS; browser **0/2 PASS**. The new assertion queried PostgreSQL immediately after the click promise resolved and observed the active row still present. Because Playwright click completion does not guarantee a Server Action POST has finished, and the test then tore down the page/server connection immediately after failing, this did not establish a product mutation failure. The acceptance test now waits for one of two authoritative outcomes before reading the database: server-side success redirect, or a surfaced action error. Database deletion/tombstone assertions run only after the Server Action completion state is observed.
+
 ### M4 — Backup / restore v13
 - export/archive sections;
 - parser/authenticity/count validation;
