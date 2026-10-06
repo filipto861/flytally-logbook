@@ -8,7 +8,7 @@ import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
-import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
+import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,protectedHistoryConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
 import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 import { EXACT_RESTORE_STATEMENT_LIMIT,RESTORE_BATCH_SIZES } from "@/lib/recovery-scale";
 
@@ -76,7 +76,7 @@ function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:Backu
     const sourceId=id(row),natural=key(row),byIdMatch=sourceId?byId.get(sourceId):undefined,byNatural=natural?byKey.get(natural):undefined,match=byIdMatch??byNatural;
     if(match){
       if(sourceId&&id(match)!==sourceId)throw new AccountRestoreConflictError(recordIdentityConflict(label,natural,sourceId,id(match)));
-      if(protectedSignature(row,fields)!==protectedSignature(match,fields))throw new AccountRestoreConflictError(`${label} conflicts with immutable history already stored for ${natural||sourceId}.`);
+      if(protectedSignature(row,fields)!==protectedSignature(match,fields))throw new AccountRestoreConflictError(protectedHistoryConflict(`${label} conflict`,natural||sourceId||label,`${label} conflicts with immutable history already stored for ${natural||sourceId}.`));
       skip++;continue;
     }
     add.push(row);
@@ -86,7 +86,7 @@ function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:Backu
 
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
   await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
-  if(Number(backup.version)>=13&&!options.trustedSharedState&&options.authenticity!=="verified")throw new AccountRestoreConflictError("Version 13 protected history requires a verified server signature.");
+  if(Number(backup.version)>=13&&!options.trustedSharedState&&options.authenticity!=="verified")throw new AccountRestoreConflictError(protectedHistoryConflict("Protected backup authenticity required","Portable backup v13","Version 13 protected history requires a verified server signature."));
   const certification=validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const externalVoidIds=[...new Set((backup.flight_source_provenance??[]).filter(row=>Number(row.source_user_id||0)!==userId&&Number(row.source_voided_flight_id||0)>0).map(row=>String(row.source_voided_flight_id)))];
   const [flights,aircraft,rates,airports,expiries,tracks,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit,voidedFlights,voidedRevisions,voidedVerifications,voidedItems,sourceProvenance,externalVoids]=await Promise.all([
@@ -124,12 +124,12 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
   checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
 
   const incomingTombstones=backup.voided_certified_flights??[],targetActiveIds=new Set(flights.map(row=>String(row.id??""))),targetTombstoneIds=new Set(voidedFlights.map(row=>String(row.original_flight_id??"")));
-  for(const row of incomingTombstones)if(targetActiveIds.has(String(row.original_flight_id??"")))throw new AccountRestoreConflictError("A voided certified flight cannot be restored while its active flight identity exists.");
-  for(const row of backup.flights)if(targetTombstoneIds.has(String(row.id??"")))throw new AccountRestoreConflictError("An active flight cannot be restored because that identity is permanently voided.");
+  for(const row of incomingTombstones)if(targetActiveIds.has(String(row.original_flight_id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Voided flight identity conflict",`Flight ${String(row.original_flight_id??"?")}`,"A voided certified flight cannot be restored while its active flight identity exists."));
+  for(const row of backup.flights)if(targetTombstoneIds.has(String(row.id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Voided flight identity conflict",`Flight ${String(row.id??"?")}`,"An active flight cannot be restored because that identity is permanently voided."));
   for(const row of backup.flight_source_provenance??[]){
     const bound=String(row.source_voided_flight_id??"").trim();if(!bound||Number(row.source_user_id||0)===userId)continue;
     const external=externalVoids.find(item=>String(item.id??"")===bound);
-    if(!external||Number(external.user_id||0)!==Number(row.source_user_id||0)||String(external.original_flight_id??"")!==String(row.source_flight_id??"")||Number(external.record_revision||1)!==Number(row.source_revision||1)||String(external.certification_hash??"")!==String(row.source_hash??""))throw new AccountRestoreConflictError("Participant provenance refers to unavailable or mismatched external void history.");
+    if(!external||Number(external.user_id||0)!==Number(row.source_user_id||0)||String(external.original_flight_id??"")!==String(row.source_flight_id??"")||Number(external.record_revision||1)!==Number(row.source_revision||1)||String(external.certification_hash??"")!==String(row.source_hash??""))throw new AccountRestoreConflictError(protectedHistoryConflict("Source provenance conflict",`Source flight ${String(row.source_flight_id??"?")}`,"Participant provenance refers to unavailable or mismatched external void history."));
   }
 
   const sections:[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,boolean][]=[
@@ -175,7 +175,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     if(name==="voided_certified_flights")for(const row of addRows[name])newParentIds.add(String(row.id??""));
   }
   for(const name of ["voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items"]){
-    for(const row of addRows[name]??[])if(!newParentIds.has(String(row.voided_flight_id??"")))throw new AccountRestoreConflictError("Existing immutable void archive is missing protected child evidence and cannot be modified during restore.");
+    for(const row of addRows[name]??[])if(!newParentIds.has(String(row.voided_flight_id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Immutable void archive conflict",`Tombstone ${String(row.voided_flight_id??"?")}`,"Existing immutable void archive is missing protected child evidence and cannot be modified during restore."));
   }
 
   return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:(backup.track_points??[]).length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
