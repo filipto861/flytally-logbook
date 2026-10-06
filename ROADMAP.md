@@ -367,9 +367,34 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft remaining integrity audit — ACTIVE
+# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — ACTIVE
 
-Goal: finish the remaining historical/dynamic applicability integrity work without reintroducing mutable-current-profile dependence into historical evidence.
+Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
+
+## Phase 1 — Certified flight voiding — DESIGN / REVIEW ACTIVE
+
+Frozen product behavior:
+- a certified flight may be explicitly **voided/removed from the active logbook**;
+- the voided flight must disappear from normal Flights, Dashboard, Statistics, Map, Print/Export, recency/compliance totals and every other operational/read-model consumer;
+- a voided flight contributes **zero** operational/regulatory credit after the void operation;
+- the original certified record, certification hash/revision, who voided it, when, and the mandatory reason remain preserved as audit evidence;
+- this is **not** a hard delete and is not the existing 90-day draft Trash workflow;
+- public shares are revoked and pending workflow requests are superseded as part of the void transaction;
+- already-created participant-owned copies are not destructively deleted from another pilot's account;
+- no one-click undo may silently resurrect the prior certification fingerprint;
+- the action must be server-authorized, atomic and fail closed.
+
+Design gate before implementation:
+- choose and independently review the persistence/tombstone model;
+- enumerate every consumer of `flights` that can expose or count certified records;
+- define sharing/verification/audit behavior and migration compatibility;
+- define recency refresh/invalidation semantics;
+- add PostgreSQL acceptance proving voided records cannot leak into totals/read models;
+- add browser acceptance for destructive confirmation + mandatory reason + post-void disappearance.
+
+Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
+
+## Phase 2 — Remaining multi-aircraft integrity audit — NEXT
 
 Scope:
 - audit remaining recency consumers for current-profile dependencies;
@@ -378,7 +403,7 @@ Scope:
 - verify Manual/GPS snapshot equivalence where applicable;
 - preserve certification/revision compatibility.
 
-No migration is assumed until evidence proves one necessary.
+A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
 # 3.6.0 — Saved-date / timezone semantics — PLANNED
 
