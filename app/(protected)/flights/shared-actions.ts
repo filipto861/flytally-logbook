@@ -81,9 +81,26 @@ async function materializeParticipation(participationId:number,userId:number){
    SELECT id FROM existing WHERE role=${role} OR (${participantRole==="INSTRUCTOR"} AND role='INSTRUCTOR')
    UNION ALL SELECT id FROM inserted LIMIT 1
  ),
- linked AS(
-   UPDATE flight_participations p SET status='accepted',responded_at=COALESCE(p.responded_at,NOW()),participant_flight_id=chosen.id
+ provenance AS(
+   INSERT INTO flight_source_provenance(
+     participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,
+     participant_role,pic_commander_basis,accepted_at
+   )
+   SELECT chosen.id,${userId},${Number(row.source_flight_id)},${Number(row.source_user_id)},${Number(row.source_revision)},${text(row.source_hash)},
+     ${participantRole},${row.pic_commander_basis===null?null:text(row.pic_commander_basis)},
+     COALESCE((SELECT responded_at FROM flight_participations WHERE id=${participationId}),NOW())
    FROM chosen,current_source
+   ON CONFLICT(participant_flight_id,participant_user_id) DO UPDATE
+     SET updated_at=NOW()
+     WHERE flight_source_provenance.source_flight_id=EXCLUDED.source_flight_id
+       AND flight_source_provenance.source_user_id=EXCLUDED.source_user_id
+       AND flight_source_provenance.source_revision=EXCLUDED.source_revision
+       AND flight_source_provenance.source_hash=EXCLUDED.source_hash
+   RETURNING participant_flight_id
+ ),
+ linked AS(
+   UPDATE flight_participations p SET status='accepted',responded_at=COALESCE(p.responded_at,NOW()),participant_flight_id=provenance.participant_flight_id
+   FROM provenance,current_source
    WHERE p.id=${participationId} AND p.participant_user_id=${userId} AND p.status IN ('pending','accepted')
    RETURNING p.participant_flight_id
  )
