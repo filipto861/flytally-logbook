@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** DESIGN FROZEN — M1 VERIFIED / M2 ACTIVE  
+**Status:** DESIGN FROZEN — M1 VERIFIED / M2 PRE-GATE VERIFIED / M3 IMPLEMENTED  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
@@ -358,7 +358,7 @@ M1 local verification on exact head `676a18d0ed9829abe0b6e5fd7eebf34a6c3c69e4`:
 - participant provenance table/backfill;
 - migration and rollback/preflight tests.
 
-### M2 — Domain mutation — ACTIVE
+### M2 — Domain mutation — PRE-GATE VERIFIED / END-TO-END PENDING
 
 M2 implementation batch:
 - canonical `voidCertifiedFlightRecord()` service;
@@ -370,7 +370,7 @@ M2 implementation batch:
 - final `flights` DELETE is gated on complete archive/source counts, after which recency and all active views are invalidated;
 - shared-copy materialization creates provenance before linking the participant-owned copy.
 
-M2 verification: **PENDING exact-head TypeScript + targeted contracts**.
+M2 pre-gate on `55088124d14c4e0fe6dfb6249f06407975085009`: TypeScript PASS; targeted source/domain contracts **35/35 PASS**; FI/PIC PostgreSQL materialization **3/3 PASS**. End-to-end execution of the canonical void transaction remains part of the browser/integration gate.
 - one canonical server-side void operation;
 - authenticated ownership + mandatory reason;
 - row lock/concurrency behavior;
@@ -379,7 +379,19 @@ M2 verification: **PENDING exact-head TypeScript + targeted contracts**.
 - active-row removal;
 - recency refresh and cache/view invalidation.
 
-### M3 — Audit-only UX
+### M3 — Audit-only UX — IMPLEMENTED / VERIFICATION PENDING
+
+M3 implementation batch:
+- certified Flight detail → More → **Remove certified flight**;
+- explicit destructive modal explains exclusion from Flights, totals, statistics, map, exports and recency/compliance;
+- mandatory 8–1000 character removal reason;
+- pending/disabled duplicate-submit protection and non-raw error handling;
+- success returns to Flights with a one-time completion notice and link to the permanent audit record;
+- dedicated authenticated read-only `/audit/voided-flights/[id]` route verifies the permanent archive hash and preserved certification fingerprint;
+- legacy `/flights/[id]/audit` links redirect to the tombstone audit when the active source no longer exists;
+- source-level UX contract tests added.
+
+M3 verification: **PENDING exact-head TypeScript + targeted tests**.
 - Flight detail → More → Remove certified flight;
 - destructive confirmation + mandatory reason;
 - duplicate-submit protection;
