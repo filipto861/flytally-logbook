@@ -88,7 +88,7 @@ Proposed permanent archive payload:
 - connected-crew rows;
 - public-share rows;
 - expense rows;
-- GPS track rows and any legacy track-point evidence required by backup/audit semantics.
+- GPS track rows, including the complete persisted `coordinates_json` / `overview_coordinates_json` payload carried by canonical `flight_tracks` rows.
 
 The certified-flight protection trigger should be changed narrowly: DELETE of a certified row remains forbidden **unless** a matching permanent tombstone already exists for the same owner, flight id, current revision and certification hash. The insert + dependent-workflow transitions + delete must occur in one transaction.
 
@@ -366,7 +366,7 @@ M2 implementation batch:
 - exact certified row is protected by owner scope + revision/hash + `xmin` + row lock;
 - all current protected evidence is snapshotted before deletion and stale evidence fails closed;
 - pending workflow rows are superseded, public shares revoked, pending request notifications made non-actionable, accepted-copy provenance bound to the tombstone;
-- source certified revisions and GPS tracks/legacy points are removed from active stores only after archive-count proof;
+- source certified revisions and canonical `flight_tracks` rows are removed from active stores only after archive-count proof;
 - final `flights` DELETE is gated on complete archive/source counts, after which recency and all active views are invalidated;
 - shared-copy materialization creates provenance before linking the participant-owned copy.
 
@@ -393,7 +393,9 @@ M3 implementation batch:
 
 M3 source/build gate on `e72ee05b35595c70a01a209e9d6ac903e7656e61`: TypeScript PASS; targeted certification/domain/UI contracts **28/28 PASS**; production Next.js build PASS.
 
-Authenticated browser acceptance is now implemented and pending execution. It creates and certifies a real test flight through the UI, removes it through the certified-flight modal, verifies the active row/list disappear, verifies the immutable tombstone/reason/hashes remain, opens the permanent audit route, and proves the legacy audit URL redirects to the tombstone.
+Authenticated browser acceptance is now implemented and pending execution.
+
+First browser execution on `bc0fd31`: **0/2 PASS**. Both desktop and mobile failed closed before mutation because the new domain service queried a non-existent `track_points` table. Repository reconciliation confirmed that FlyTally stores the complete GPS payload directly in `flight_tracks.coordinates_json` / `overview_coordinates_json`; there is no canonical secondary point table. The unsupported assumption was removed from runtime, schema archive kinds and tests. Exact-current-head verification is required. It creates and certifies a real test flight through the UI, removes it through the certified-flight modal, verifies the active row/list disappear, verifies the immutable tombstone/reason/hashes remain, opens the permanent audit route, and proves the legacy audit URL redirects to the tombstone.
 - Flight detail → More → Remove certified flight;
 - destructive confirmation + mandatory reason;
 - duplicate-submit protection;
