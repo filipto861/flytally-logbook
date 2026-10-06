@@ -1,11 +1,12 @@
 # 3.4.1 — GPS Night-time reliability
 
-**Status:** ACTIVE — SINGLE-PHASE IMPLEMENTATION  
+**Status:** DONE — PRODUCTION VERIFIED  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `fix/3.4.1-gps-night-time-reliability`  
-**Production baseline:** `3.4.0` / `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`
+**Production baseline at start:** `3.4.0` / `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`  
+**Production release:** `3.4.1` / `b3e1de097b6d16cdaa96082d281602a2765b8ae0`
 
 ## Trigger
 
@@ -140,7 +141,7 @@ Examples:
 
 Manual input remains available in every unavailable case.
 
-## Single implementation phase — ACTIVE
+## Single implementation phase — DONE
 
 Filip explicitly approved completing diagnostics, numerical correction, UI feedback and regression hardening in one 3.4.1 phase.
 
@@ -229,3 +230,20 @@ PostgreSQL/DB migration testing is **N/A** unless scope changes.
 - tests/build/browser evidence pass;
 - ROADMAP / FEATURES / CHANGELOG are reconciled;
 - production deployment and runtime smoke are verified.
+
+
+## Production closeout
+
+Closed on 6 October 2026.
+
+- Runtime candidate: TypeScript PASS, full unit/regression **1238/1238 PASS**, production Next.js build PASS.
+- Targeted authenticated sparse-gap browser acceptance: **2/2 PASS** across desktop and mobile Chromium.
+- Exact 3.4.1 metadata candidate: TypeScript PASS, versioning governance **4/4 PASS**, production build PASS.
+- PR #241 merged to `main` as `b3e1de097b6d16cdaa96082d281602a2765b8ae0`.
+- Vercel deployment `dpl_3911vZiDAFduLhsPbyMnB1YtHKwn` is READY on the exact merge SHA and carries `fly-tally.com`.
+- Public deployment smoke returned HTTP 200 on the deployed root/login surface.
+- Grouped runtime-error query found no errors in the checked post-deploy window.
+- PostgreSQL migration: N/A. Production schema remains v19.
+- Certification payload remains v8.
+- GitHub CI: NOT RUN by local-first policy.
+- No historical flight/certification/audit rewrite occurred.
