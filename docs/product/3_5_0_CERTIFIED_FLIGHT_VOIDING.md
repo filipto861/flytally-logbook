@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** DESIGN FROZEN — M1 VERIFIED / M2 PRE-GATE VERIFIED / M3 IMPLEMENTED  
+**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 ACTIVE  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
@@ -358,7 +358,7 @@ M1 local verification on exact head `676a18d0ed9829abe0b6e5fd7eebf34a6c3c69e4`:
 - participant provenance table/backfill;
 - migration and rollback/preflight tests.
 
-### M2 — Domain mutation — PRE-GATE VERIFIED / END-TO-END PENDING
+### M2 — Domain mutation — END-TO-END VERIFIED LOCAL
 
 M2 implementation batch:
 - canonical `voidCertifiedFlightRecord()` service;
@@ -379,7 +379,7 @@ M2 pre-gate on `55088124d14c4e0fe6dfb6249f06407975085009`: TypeScript PASS; targ
 - active-row removal;
 - recency refresh and cache/view invalidation.
 
-### M3 — Audit-only UX — IMPLEMENTED / VERIFICATION PENDING
+### M3 — Audit-only UX — END-TO-END VERIFIED LOCAL
 
 M3 implementation batch:
 - certified Flight detail → More → **Remove certified flight**;
@@ -408,7 +408,9 @@ Third browser execution on `4ec111b`: TypeScript PASS; targeted contracts **28/2
 
 Fourth browser execution on `593ebc1`: browser **0/2 PASS**, but the two failures were test-isolation/readiness issues rather than the same product failure. Desktop successfully reached the certified flight detail (server detail queries ran) but the test depended on a transient post-save banner and failed before voiding. Mobile progressed through the void transaction, database active-row/tombstone assertions, redirect, success status, archive reason/hash and audit-link preparation; it failed only because the list assertion matched the leftover desktop test flight by shared date/registration. Acceptance is corrected to wait on the durable `CERTIFIED R1` state and to prove list disappearance by the exact removed flight id, so sibling project rows cannot produce a false failure.
 
-### M4 — Backup / restore v13
+Fifth browser execution on `ad18689`: **2/2 PASS** across desktop Chromium and mobile Chromium. The acceptance created and certified a real test flight, removed it through the destructive modal, observed the completed Server Action, proved the active `flights` row was deleted, proved the immutable tombstone/reason/hash remained, verified the exact flight id disappeared from the active Flights list, opened the permanent void audit, and verified the legacy audit URL redirected to the tombstone. M2/M3 are therefore end-to-end verified locally.
+
+### M4 — Backup / restore v13 — ACTIVE
 - export/archive sections;
 - parser/authenticity/count validation;
 - exact restore support;
