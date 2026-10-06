@@ -86,15 +86,16 @@ function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:Backu
 
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
   await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
-  const certification=validateBackupCertificationHistory(backup,userId);
-  const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit]=await Promise.all([
+  if(Number(backup.version)>=13&&!options.trustedSharedState&&options.authenticity!=="verified")throw new AccountRestoreConflictError("Version 13 protected history requires a verified server signature.");
+  const certification=validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
+  const externalVoidIds=[...new Set((backup.flight_source_provenance??[]).filter(row=>Number(row.source_user_id||0)!==userId&&Number(row.source_voided_flight_id||0)>0).map(row=>String(row.source_voided_flight_id)))];
+  const [flights,aircraft,rates,airports,expiries,tracks,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit,voidedFlights,voidedRevisions,voidedVerifications,voidedItems,sourceProvenance,externalVoids]=await Promise.all([
     sql`SELECT id,date::text date,registration,off_block,departure,arrival,record_revision,certified_at,certification_hash FROM flights WHERE user_id=${userId}`,
     sql`SELECT id,registration FROM aircraft WHERE user_id=${userId}`,
     sql`SELECT id,registration,COALESCE(valid_from,'') valid_from FROM rates WHERE user_id=${userId}`,
     sql`SELECT id,ident FROM airports WHERE user_id=${userId}`,
     sql`SELECT id,category,label,expiry_date::text expiry_date FROM user_expiries WHERE user_id=${userId}`,
     sql`SELECT id,flight_id,file_name,start_utc::text start_utc,end_utc::text end_utc,point_count FROM flight_tracks WHERE user_id=${userId}`,
-    sql`SELECT track_id,seq FROM track_points WHERE user_id=${userId}`,
     sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes,record_revision,certified_at,certification_hash FROM fstd_sessions WHERE user_id=${userId}`,
     sql`SELECT id,flight_id,revision_number,certification_hash FROM flight_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
@@ -112,8 +113,24 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     sql`SELECT id FROM user_notifications WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_verifications WHERE flight_user_id=${userId} OR signer_user_id=${userId}`,
     sql`SELECT id FROM connection_audit_log WHERE actor_user_id=${userId} OR subject_user_id=${userId}`,
+    sql`SELECT id,user_id,original_flight_id,record_revision,certification_hash,certification_version,flight_snapshot_sha256,archive_version,voided_at,voided_by_user_id,void_reason,operation_token FROM voided_certified_flights WHERE user_id=${userId}`,
+    sql`SELECT r.* FROM voided_flight_certified_revisions r JOIN voided_certified_flights v ON v.id=r.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT x.* FROM voided_flight_verifications x JOIN voided_certified_flights v ON v.id=x.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT a.* FROM voided_flight_archive_items a JOIN voided_certified_flights v ON v.id=a.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT * FROM flight_source_provenance WHERE participant_user_id=${userId}`,
+    externalVoidIds.length?sql`SELECT id,user_id,original_flight_id,record_revision,certification_hash FROM voided_certified_flights WHERE id IN(SELECT value::bigint FROM jsonb_array_elements_text(${JSON.stringify(externalVoidIds)}::jsonb))`:Promise.resolve([] as BackupRow[]),
   ]) as Array<Array<BackupRow>>;
+
   checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
+
+  const incomingTombstones=backup.voided_certified_flights??[],incomingActiveIds=new Set(backup.flights.map(row=>String(row.id??""))),targetActiveIds=new Set(flights.map(row=>String(row.id??""))),targetTombstoneIds=new Set(voidedFlights.map(row=>String(row.original_flight_id??"")));
+  for(const row of incomingTombstones)if(targetActiveIds.has(String(row.original_flight_id??"")))throw new AccountRestoreConflictError("A voided certified flight cannot be restored while its active flight identity exists.");
+  for(const row of backup.flights)if(targetTombstoneIds.has(String(row.id??"")))throw new AccountRestoreConflictError("An active flight cannot be restored because that identity is permanently voided.");
+  for(const row of backup.flight_source_provenance??[]){
+    const bound=String(row.source_voided_flight_id??"").trim();if(!bound||Number(row.source_user_id||0)===userId)continue;
+    const external=externalVoids.find(item=>String(item.id??"")===bound);
+    if(!external||Number(external.user_id||0)!==Number(row.source_user_id||0)||String(external.original_flight_id??"")!==String(row.source_flight_id??"")||Number(external.record_revision||1)!==Number(row.source_revision||1)||String(external.certification_hash??"")!==String(row.source_hash??""))throw new AccountRestoreConflictError("Participant provenance refers to unavailable or mismatched external void history.");
+  }
 
   const sections:[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,boolean][]=[
     ["flights",backup.flights,flights,flightKey,"Flight",true],
@@ -122,7 +139,6 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     ["airports",backup.airports,airports,airportKey,"Airport",true],
     ["expiries",backup.expiries,expiries,expiryKey,"Licence/document",true],
     ["flight_tracks",backup.flight_tracks,tracks,trackKey,"GPS track",true],
-    ["track_points",backup.track_points,points,pointKey,"Legacy GPS point",false],
     ["fstd_sessions",backup.fstd_sessions,fstd,fstdKey,"FSTD session",true],
     ["flight_certified_revisions",backup.flight_certified_revisions,flightRevisions,flightRevisionKey,"Certified flight revision",true],
     ["fstd_certified_revisions",backup.fstd_certified_revisions,fstdRevisions,fstdRevisionKey,"Certified FSTD revision",true],
@@ -143,7 +159,26 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
   ];
   const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},withheld:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
   for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
-  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:backup.track_points.length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
+
+  const protectedSections=[
+    ["voided_certified_flights",incomingTombstones,voidedFlights,voidedFlightKey,"Voided certified flight",["user_id","original_flight_id","record_revision","certification_hash","certification_version","flight_snapshot_sha256","archive_version","voided_at","voided_by_user_id","void_reason","operation_token"]],
+    ["voided_flight_certified_revisions",backup.voided_flight_certified_revisions??[],voidedRevisions,voidedRevisionKey,"Voided certified revision",["voided_flight_id","source_revision_id","revision_number","certification_hash","certification_version","snapshot_sha256","archived_at"]],
+    ["voided_flight_verifications",backup.voided_flight_verifications??[],voidedVerifications,voidedVerificationKey,"Voided verification",["voided_flight_id","source_verification_id","record_revision","verification_role","status","flight_hash","payload_hash","server_signature","source_sha256","archived_at"]],
+    ["voided_flight_archive_items",backup.voided_flight_archive_items??[],voidedItems,voidedItemKey,"Voided archive item",["voided_flight_id","item_kind","source_key","source_sha256","archived_at"]],
+    ["flight_source_provenance",backup.flight_source_provenance??[],sourceProvenance,provenanceKey,"Flight source provenance",["participant_flight_id","participant_user_id","source_flight_id","source_user_id","source_revision","source_hash","participant_role","pic_commander_basis","accepted_at","source_voided_flight_id","created_at"]],
+  ] as const;
+
+  const newParentIds=new Set<string>();
+  for(const [name,backupRows,currentRows,key,label,fields] of protectedSections){
+    const result=classifyProtected([...backupRows],[...currentRows],key,label,[...fields]),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;
+    source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add;
+    if(name==="voided_certified_flights")for(const row of addRows[name])newParentIds.add(String(row.id??""));
+  }
+  for(const name of ["voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items"]){
+    for(const row of addRows[name]??[])if(!newParentIds.has(String(row.voided_flight_id??"")))throw new AccountRestoreConflictError("Existing immutable void archive is missing protected child evidence and cannot be modified during restore.");
+  }
+
+  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:(backup.track_points??[]).length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
 }
 
 function stageFlight(row:BackupRow):BackupRow{return{...row,aircraft_make:"",aircraft_model:"",aircraft_variant:"",certified_at:null,certified_by_user_id:null,certification_hash:"",locked_at:null,locked_by_user_id:null}}
