@@ -740,7 +740,7 @@ const migrationQueries=(version:number)=>{
     sql`DROP TRIGGER IF EXISTS trg_logbook_prevent_voided_flight_id_reuse ON flights`,
     sql`CREATE TRIGGER trg_logbook_prevent_voided_flight_id_reuse
       BEFORE INSERT ON flights FOR EACH ROW EXECUTE FUNCTION logbook_prevent_voided_flight_id_reuse()`,
-    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $
       DECLARE correction_transition BOOLEAN:=FALSE; certified_void_transition BOOLEAN:=FALSE;
       BEGIN
         IF TG_OP='DELETE' THEN
@@ -789,7 +789,11 @@ const migrationQueries=(version:number)=>{
         END IF;
         RETURN NEW;
       END;
-    $$ LANGUAGE plpgsql`,
+    $ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_locked_flight ON flights`,
+    sql`CREATE TRIGGER trg_logbook_protect_locked_flight
+      BEFORE UPDATE OR DELETE ON flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight()`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
