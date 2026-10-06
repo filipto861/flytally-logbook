@@ -1,5 +1,7 @@
 # Independent review handoff — 3.5.0 Certified Flight Voiding
 
+**Review status:** COMPLETED — APPROVE WITH CHANGES, reconciled 6 October 2026
+
 ## Request
 
 Read-only architecture/data-integrity review. Do not write implementation code.
@@ -28,7 +30,7 @@ Hard deletion of protected evidence is forbidden.
 - instructor approvals, participations and verifications have `ON DELETE CASCADE` source-flight FKs.
 - connected crew, expenses and public shares also have flight-owner FKs with delete cascade.
 - participant-created copies are independently owned `flights`; they must not be deleted when the source pilot voids their source.
-- portable backup is currently version 11 and assumes certified revision/verification evidence belongs to a live owned flight.
+- reviewer handoff originally assumed portable backup v11; repository reconciliation found that current export is v12 (server-authenticated backup), so certified-void archive support is assigned to v13.
 
 ## Draft recommendation
 
