@@ -10,7 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.4.1 GPS Night-time reliability — in development
+## 3.4.1 — 6 October 2026
+
+### GPS Night-time reliability
 - Opened a narrow production-correction follow-up after GPS review showed a NIGHT landing suggestion while Night time remained unavailable/manual.
 - Added structured Night-time unavailable reasons and concise GPS-review explanation while preserving manual editable Night time and manual-only IFR.
 - Reused the canonical GPS position-discontinuity thresholds from track processing rather than creating a second quality model.
@@ -19,6 +21,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added a real-like EHAM → LKPR regression that preserves the valid distinction between a confidently NIGHT landing event and unavailable exact Night time when an earlier sparse gap prevents a complete total; partial/lower-bound values are never auto-applied.
 - Added the frozen single-phase contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No DB migration, certification-version change or historical-record rewrite is part of 3.4.1.
 - Added authenticated browser coverage for the sparse-gap fallback: automatic Night time stays blank with an explicit reason, and a pilot-entered manual value remains sticky.
+- Final local runtime candidate verification: TypeScript PASS, full unit/regression suite **1238/1238 PASS**, production Next.js build PASS, and targeted authenticated sparse-gap browser acceptance **2/2 PASS** across desktop and mobile Chromium.
 - Release verification also reconciled stale repository contract tests with the already-adopted manual-only GitHub Actions policy, browser fixture schema v19, the compact 3.4 certification summary, and the 3.4.1 roadmap state; the manual Verify workflow is now self-contained instead of depending on pull-request event fields.
 
 ## 3.4.0 — 5 October 2026
