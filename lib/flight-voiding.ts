@@ -65,7 +65,7 @@ async function activeOrVoided(userId:number,flightId:number){
       COALESCE(f.certification_version,1)::integer certification_version,
       f.certified_at,f.certified_by_user_id
       FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT id FROM voided_certified_flights WHERE original_flight_id=${flightId} AND user_id=${userId} LIMIT 1` as Promise<Array<{id:number|string}>>,
+    sql`SELECT id FROM voided_certified_flights WHERE original_flight_id=${flightId} AND user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
   ]);
   return{active:active[0]??null,voidedId:number(voided[0]?.id)||0};
 }
