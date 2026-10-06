@@ -406,6 +406,8 @@ Second browser execution on `dbcefaf`: TypeScript PASS, targeted contracts **28/
 
 Third browser execution on `4ec111b`: TypeScript PASS; targeted contracts **28/28 PASS**; production build PASS; browser **0/2 PASS**. The new assertion queried PostgreSQL immediately after the click promise resolved and observed the active row still present. Because Playwright click completion does not guarantee a Server Action POST has finished, and the test then tore down the page/server connection immediately after failing, this did not establish a product mutation failure. The acceptance test now waits for one of two authoritative outcomes before reading the database: server-side success redirect, or a surfaced action error. Database deletion/tombstone assertions run only after the Server Action completion state is observed.
 
+Fourth browser execution on `593ebc1`: browser **0/2 PASS**, but the two failures were test-isolation/readiness issues rather than the same product failure. Desktop successfully reached the certified flight detail (server detail queries ran) but the test depended on a transient post-save banner and failed before voiding. Mobile progressed through the void transaction, database active-row/tombstone assertions, redirect, success status, archive reason/hash and audit-link preparation; it failed only because the list assertion matched the leftover desktop test flight by shared date/registration. Acceptance is corrected to wait on the durable `CERTIFIED R1` state and to prove list disappearance by the exact removed flight id, so sibling project rows cannot produce a false failure.
+
 ### M4 — Backup / restore v13
 - export/archive sections;
 - parser/authenticity/count validation;
