@@ -2,7 +2,7 @@
 
 **Status:** ACTIVE — SINGLE-PHASE IMPLEMENTATION  
 **Owner:** Filip Točík  
-**Date:** 5 October 2026  
+**Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `fix/3.4.1-gps-night-time-reliability`  
 **Production baseline:** `3.4.0` / `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`
@@ -144,28 +144,28 @@ Manual input remains available in every unavailable case.
 
 Filip explicitly approved completing diagnostics, numerical correction, UI feedback and regression hardening in one 3.4.1 phase.
 
+Final safety reconciliation changed one implementation decision before merge: the attempted long-gap same-state proof was removed. The canonical GPS transition-quality threshold constrains endpoint displacement over elapsed time; it does **not** prove the aircraft's unobserved intermediate path. Treating that threshold as a path bound would overstate the available evidence.
+
 Scope:
 
 1. Add structured unavailable reason classification.
 2. Surface concise pilot-facing reason copy while preserving manual input.
 3. Keep manual Night-time edits sticky and clear only stale automatic suggestions.
 4. Reuse the canonical position-discontinuity thresholds from `track-processing.ts`; do not create a second generic quality model.
-5. Replace the blanket “>600 s means whole flight unavailable” rule with a bounded sparse-segment contract:
-   - a segment at or below 600 s keeps the existing exact endpoint/crossing behavior;
-   - a longer segment may be accepted only when both endpoints are on the same side of civil twilight and a conservative bound proves the entire segment cannot enter the ±0.5° twilight confidence region;
-   - the bound combines a conservative solar-altitude time-rate bound with the existing canonical 1800 km/h upper bound already tolerated by the canonical GPS transition-quality rules;
-   - a long segment that could contain twilight remains `UNAVAILABLE / SEGMENT_GAP_TOO_LARGE`;
-   - a long segment is never made safe merely by inventing/subdividing intermediate points.
+5. Preserve the existing direct-interpolation guard:
+   - a segment at or below 600 s keeps the established endpoint/crossing behavior;
+   - a longer segment returns `UNAVAILABLE / SEGMENT_GAP_TOO_LARGE`;
+   - endpoint position-quality thresholds are not treated as proof of the unobserved path;
+   - inventing/subdividing intermediate points never turns an unsupported gap into evidence.
 6. Fail closed on implausible position transitions, non-monotonic or ambiguous timestamps, unsupported solar envelope, confidence-guard endpoints and conflicting equal-time positions.
-7. Add a real-like EHAM → LKPR twilight-crossing regression with one sparse but provably DAY segment, a densely bracketed civil-twilight crossing and a final NIGHT landing.
+7. Add a real-like EHAM → LKPR regression that preserves the observed product distinction: the final landing can be confidently classified NIGHT while exact Night time remains unavailable because an earlier sparse segment prevents a complete exact total.
 
 Acceptance:
 
 - ordinary dense all-day/all-night/crossing behavior remains exact;
-- a sparse same-state segment can be accepted only when the conservative bound proves it cannot contain twilight;
-- sparse ambiguous twilight remains unavailable with an explicit reason;
+- any segment longer than the current 600 s direct-interpolation guard remains unavailable with an explicit gap reason;
 - a NIGHT landing still does not imply Night time;
-- real-like EHAM → LKPR returns a NIGHT landing suggestion and exact calculated Night minutes when the crossing itself is sufficiently bracketed;
+- the EHAM → LKPR real-like case explicitly regression-locks NIGHT landing + unavailable exact Night time when sparse coverage prevents a complete total;
 - no partial/lower-bound value is auto-applied;
 - manual edits remain sticky;
 - IFR remains manual;
@@ -182,7 +182,7 @@ At minimum:
 | Dense civil-twilight crossing | AVAILABLE, expected crossing-derived minutes |
 | Exactly 10:00 segment | Characterization preserved in Phase 1 |
 | 10:01 segment | UNAVAILABLE + `SEGMENT_GAP_TOO_LARGE` in Phase 1 |
-| Sparse continuous twilight-crossing fixture | Exact result only if later Phase 2 contract proves interpolation safe |
+| Sparse segment >10:00 | UNAVAILABLE + `SEGMENT_GAP_TOO_LARGE`; no endpoint-only path proof |
 | Genuine GPS position discontinuity | UNAVAILABLE + continuity reason |
 | Non-monotonic timestamp | UNAVAILABLE + timestamp reason |
 | Timestamp without UTC/offset | UNAVAILABLE + timestamp reason |
@@ -223,7 +223,7 @@ PostgreSQL/DB migration testing is **N/A** unless scope changes.
 
 3.4.1 is DONE only when:
 
-- the real/representative failure mechanism is identified;
+- the real/representative failure shape is regression-locked without inventing unsupported path evidence;
 - diagnostics are explicit;
 - any numerical change is evidence-backed and fail-closed;
 - tests/build/browser evidence pass;
