@@ -465,11 +465,21 @@ test("3.5.0 certified flight can be voided from active logbook while permanent a
   await clicking;
   await gate.cleanup();
 
+  await expect.poll(async()=>{
+    if(/\/flights\?.*voided=1.*audit=\d+/.test(page.url()))return"redirected";
+    const alert=page.getByRole("alert").first();
+    if(await alert.count()){
+      const message=String(await alert.textContent()||"").trim();
+      if(message)return`error:${message}`;
+    }
+    return"pending";
+  },{timeout:15000,intervals:[100,250,500]}).toBe("redirected");
+
   expect(browserSqlScalar(`SELECT COUNT(*) FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("0");
   const tombstoneId=Number(browserSqlScalar(`SELECT id FROM voided_certified_flights WHERE original_flight_id=${flightId} AND user_id=9001`));
   expect(tombstoneId).toBeGreaterThan(0);
 
-  await expect(page).toHaveURL(/\/flights\?.*voided=1.*audit=\d+/,{timeout:15000});
+  await expect(page).toHaveURL(/\/flights\?.*voided=1.*audit=\d+/);
   await expect(page.getByRole("status")).toContainText("Certified flight removed from the active logbook.");
   await expect(page.getByRole("status")).toContainText("It no longer contributes to totals, statistics, exports or recency.");
 
