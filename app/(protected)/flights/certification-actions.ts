@@ -7,7 +7,8 @@ import { ensureV132Schema } from "@/lib/v132-schema";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
 import { ensureFlightSharingSchema } from "@/lib/flight-sharing";
 import { certifyStoredFlight } from "@/lib/flight-certification";
-import { revalidateFlightCertificationViews } from "@/lib/flight-revalidation";
+import { revalidateFlightCertificationViews,revalidateFlightVoidViews } from "@/lib/flight-revalidation";
+import { voidCertifiedFlightRecord } from "@/lib/flight-voiding";
 
 const text=(value:unknown)=>String(value??"").trim();
 export async function certifyFlight(flightId:number,form:FormData){
@@ -31,4 +32,24 @@ export async function startCertifiedCorrection(flightId:number,form:FormData){
     sql`UPDATE flight_verifications SET status='superseded' WHERE flight_id=${flightId} AND flight_user_id=${userId} AND record_revision=${Number(current.record_revision)||1} AND status='pending'`,
     sql`UPDATE flight_public_shares SET revoked_at=NOW() WHERE user_id=${userId} AND flight_id=${flightId} AND revoked_at IS NULL`,
   ]);await refreshRecencySnapshot(userId);revalidateFlightCertificationViews(flightId);
+}
+export type VoidCertifiedFlightActionState={error?:string;voided?:boolean;tombstoneId?:number};
+export async function voidCertifiedFlight(flightId:number,_previous:VoidCertifiedFlightActionState,form:FormData):Promise<VoidCertifiedFlightActionState>{
+  const {userId}=await requireUser();
+  const reason=text(form.get("reason")).slice(0,1000);
+  try{
+    const result=await voidCertifiedFlightRecord(userId,flightId,reason);
+    if(result.status==="voided"||result.status==="already-voided"){
+      revalidateFlightVoidViews(flightId);
+      return{voided:true,tombstoneId:result.tombstoneId};
+    }
+    if(result.status==="invalid-reason")return{error:"Enter a reason of at least 8 characters."};
+    if(result.status==="not-certified")return{error:"Only a currently certified flight can be removed this way."};
+    if(result.status==="evidence-incomplete")return{error:"Removal is blocked because protected sharing evidence is incomplete."};
+    if(result.status==="stale")return{error:"The flight changed while removal was being prepared. Reload and try again."};
+    return{error:"The certified flight was not found."};
+  }catch(error){
+    console.error("certified-flight-void-failed",{flightId,userId,error});
+    return{error:"The certified flight could not be removed. Existing logbook data is unchanged."};
+  }
 }
