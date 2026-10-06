@@ -400,6 +400,98 @@ test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter r
   await expectNoHorizontalOverflow(page);
 });
 
+test("3.5.0 certified flight can be voided from active logbook while permanent audit remains",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.5.0 certified-void acceptance requires the isolated browser database.");
+
+  const project=test.info().project.name;
+  const offBlock=project.includes("mobile")?"17:00":"16:00";
+  const takeoff=project.includes("mobile")?"17:05":"16:05";
+  const landing=project.includes("mobile")?"17:55":"16:55";
+  const onBlock=project.includes("mobile")?"18:00":"17:00";
+  const reason=`3.5.0 browser acceptance ${project}`;
+
+  await loginBrowserPilot(page,"/flights/new");
+  const form=page.locator("#new-flight-manual-form");
+  await form.locator('input[name="date"]').fill("2026-10-06");
+  await form.locator('select[name="registration"]').selectOption("OK-E2E");
+  await form.locator('input[name="departure"]').fill("LKLT");
+  await form.locator('input[name="arrival"]').fill("LKPR");
+  await form.locator('input[name="offBlock"]').fill(offBlock);
+  await form.locator('input[name="takeoff"]').fill(takeoff);
+  await form.locator('input[name="landing"]').fill(landing);
+  await form.locator('input[name="onBlock"]').fill(onBlock);
+  const experience=form.locator("details.entry-section-experience");
+  if(!(await experience.getAttribute("open")))await experience.locator("summary").click();
+  await form.locator('input[name="landingsDay"]').fill("1");
+  await form.locator('input[name="landingsNight"]').fill("0");
+  const aircraftContext=form.locator("details.aircraft-context-section");
+  if(!(await aircraftContext.getAttribute("open")))await aircraftContext.locator("summary").click();
+  await form.locator('select[name="operationType"]').selectOption("SP");
+  await form.locator('select[name="engineType"]').selectOption("SE");
+
+  await form.getByRole("button",{name:"Save & certify flight"}).click();
+  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  const detailUrl=page.url();
+  const flightMatch=detailUrl.match(/\/flights\/(\d+)/);
+  expect(flightMatch).toBeTruthy();
+  const flightId=Number(flightMatch?.[1]||0);
+  expect(flightId).toBeGreaterThan(0);
+  expect(browserSqlScalar(`SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("8|64");
+
+  const more=page.locator("details.flight-detail-more");
+  await more.locator("summary").click();
+  const launch=more.getByRole("button",{name:"Remove certified flight"});
+  await expect(launch).toBeVisible();
+  await launch.click();
+
+  const dialog=page.getByRole("dialog",{name:"Remove certified flight?"});
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("It will no longer appear in Flights, totals, statistics, map, exports or recency/compliance calculations.");
+  await expect(dialog).toContainText("The original certification, revision history and removal reason stay permanently preserved in the audit record.");
+  const reasonField=dialog.getByLabel(/Reason for removal/);
+  await reasonField.fill(reason);
+
+  const gate=await holdPost(page,"**/flights/**");
+  const remove=dialog.getByRole("button",{name:"Remove certified flight"});
+  const clicking=remove.click();
+  const pending=dialog.getByRole("button",{name:"Removing…"});
+  await expect(pending).toBeDisabled();
+  await expect(pending).toHaveAttribute("aria-busy","true");
+  await page.evaluate(()=>document.querySelector(".certified-void-dialog form button[type='submit']")?.click());
+  await page.waitForTimeout(100);
+  expect(gate.count()).toBe(1);
+  gate.release();
+  await clicking;
+  await gate.cleanup();
+
+  await expect(page).toHaveURL(/\/flights\?.*voided=1.*audit=\d+/,{timeout:15000});
+  await expect(page.getByRole("status")).toContainText("Certified flight removed from the active logbook.");
+  await expect(page.getByRole("status")).toContainText("It no longer contributes to totals, statistics, exports or recency.");
+  expect(browserSqlScalar(`SELECT COUNT(*) FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("0");
+
+  const tombstoneId=Number(browserSqlScalar(`SELECT id FROM voided_certified_flights WHERE original_flight_id=${flightId} AND user_id=9001`));
+  expect(tombstoneId).toBeGreaterThan(0);
+  expect(browserSqlScalar(`SELECT void_reason FROM voided_certified_flights WHERE id=${tombstoneId}`)).toBe(reason);
+  expect(browserSqlScalar(`SELECT CASE WHEN length(certification_hash)=64 AND length(flight_snapshot_sha256)=64 THEN 'OK' ELSE 'BAD' END FROM voided_certified_flights WHERE id=${tombstoneId}`)).toBe("OK");
+
+  const matchingRows=page.locator("tr.flight-list-row").filter({hasText:"06/10/2026"}).filter({hasText:"OK-E2E"});
+  await expect(matchingRows).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("link",{name:"View permanent audit record"}).click();
+  await expect(page).toHaveURL(new RegExp(`/audit/voided-flights/${tombstoneId}$`));
+  await expect(page.getByRole("heading",{name:/OK-E2E ·/})).toBeVisible();
+  await expect(page.getByText("VOIDED",{exact:true})).toBeVisible();
+  await expect(page.getByText("Not active logbook data")).toBeVisible();
+  await expect(page.getByText(reason,{exact:true})).toBeVisible();
+  await expect(page.getByText("Verified",{exact:true}).first()).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto(`/flights/${flightId}/audit`);
+  await expect(page).toHaveURL(new RegExp(`/audit/voided-flights/${tombstoneId}$`));
+});
+
 test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
   runBrowserSql("DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')");
