@@ -76,6 +76,7 @@ async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,for
 export async function restorePortableBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
   const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
   const authenticity=portableBackupAuthenticity(parsed.backup,parsed.digest);
+  if(Number(parsed.backup.version)>=13&&authenticity!=="verified")return{error:"Version 13 backups containing protected void history require a valid FlyTally server signature."};
   return restoreParsedBackup(userId,parsed,form,{trustedSharedState:authenticity==="verified",authenticity});
 }
 
