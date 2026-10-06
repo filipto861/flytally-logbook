@@ -122,9 +122,9 @@ Important boundary:
 - Preserve sticky manual Night-time edits and keep IFR fully pilot-entered.
 - Do not infer Night time from a NIGHT landing.
 - Do not auto-apply partial/lower-bound Night duration as the total.
-- Replace blanket >600 s rejection with a conservative same-state proof that reuses the canonical GPS transition-quality upper bound; sparse segments that could contain civil twilight remain unavailable.
-- Fail closed on ambiguous/non-monotonic timestamps, implausible position transitions, unsupported solar envelope, confidence-boundary endpoints and conflicting equal-time positions.
-- Include a real-like EHAM → LKPR twilight regression proving a NIGHT landing and exact Night minutes only when the crossing itself is sufficiently bracketed.
+- Preserve the >600 s fail-closed guard until a future evidence-backed sparse-path contract exists; endpoint displacement/quality thresholds are not treated as proof of the unobserved route between samples.
+- Fail closed on ambiguous/non-monotonic timestamps, sparse gaps, implausible position transitions, unsupported solar envelope, confidence-boundary endpoints and conflicting equal-time positions.
+- Include a real-like EHAM → LKPR regression proving that a NIGHT landing may coexist with unavailable exact Night time when sparse coverage prevents a complete total.
 - Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`.
 
 ### 3.4.0 — Flight Entry Simplification — IMPLEMENTED / PRODUCTION VERIFIED
