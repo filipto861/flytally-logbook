@@ -26,6 +26,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Final M2/M3 browser acceptance passed **2/2** across desktop and mobile Chromium, proving certified-flight removal, active-row exclusion, permanent tombstone/audit retention and legacy-audit redirect end to end.
 - Portable backup format v13 is implemented pending verification: signed backups include permanent void/provenance history, exact restore is history-only and conflict-guarded, legacy v4–v12 `track_points` remains parser-compatible without current-schema queries, and participant source provenance is append-only.
 - Backup v13 implementation is present and awaits verification; schema v20 is **not applied to production**.
+- First M4 verification run failed on typed recovery-conflict wiring and stale test assumptions; these were corrected on the feature branch and an exact-head rerun is required. No production migration/deploy occurred.
 
 
 ## 3.4.1 — 6 October 2026
