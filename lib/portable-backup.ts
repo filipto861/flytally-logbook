@@ -1,3 +1,5 @@
+import { canonicalEvidenceJson } from "./canonical-evidence.ts";
+
 export type BackupRow=Record<string,unknown>;
 export type PortableBackup={
   format:string;version:number;schema_version?:number;exported_at:string;profile:BackupRow;counts:Record<string,number>;
@@ -89,6 +91,18 @@ export function validateVoidHistoryRelationships(backup:PortableBackup){
   return{tombstones:tombstones.length,revisions:revisions.length,verifications:verifications.length,items:items.length,provenance:provenance.length};
 }
 
+async function validateVoidHistoryDigests(backup:PortableBackup){
+  if(Number(backup.version)<13)return;
+  const check=async(value:unknown,expected:unknown,label:string)=>{
+    const stored=String(expected??"").trim(),actual=await portableBackupDigest(canonicalEvidenceJson(value));
+    if(!/^[a-f0-9]{64}$/.test(stored)||stored!==actual)throw new Error(`${label} SHA-256 does not match its protected JSON evidence.`);
+  };
+  for(const row of backup.voided_certified_flights??[])await check(row.flight_snapshot,row.flight_snapshot_sha256,`Voided certified flight ${String(row.id??"?")}`);
+  for(const row of backup.voided_flight_certified_revisions??[])await check(row.snapshot_data,row.snapshot_sha256,`Voided certified revision ${String(row.id??"?")}`);
+  for(const row of backup.voided_flight_verifications??[])await check(row.source_data,row.source_sha256,`Voided verification ${String(row.id??"?")}`);
+  for(const row of backup.voided_flight_archive_items??[])await check(row.source_data,row.source_sha256,`Voided archive item ${String(row.id??"?")}`);
+}
+
 function validateOwnership(payload:Record<string,unknown>){
   const sourceUserId=Number((payload.profile as BackupRow|undefined)?.id||0);if(!Number.isSafeInteger(sourceUserId)||sourceUserId<=0)throw new Error("Version 6 backup profile has no valid source account identifier.");
   for(const key of v6Arrays)for(const row of payload[key] as BackupRow[])if("user_id" in row&&Number(row.user_id)!==sourceUserId)throw new Error(`Backup section ${key} contains a record from another account.`);
@@ -125,6 +139,6 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   for(const key of requiredSections)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(version>=6)validateOwnership(payload);
   const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected,signature_version:Number(integrity?.signature_version||0)||undefined,server_signature:String(integrity?.server_signature??"").trim()||undefined}} as PortableBackup;
-  validateBackupRelationships(backup);if(version>=6)validateBackupArchiveRelationships(backup);if(version>=13)validateVoidHistoryRelationships(backup);
+  validateBackupRelationships(backup);if(version>=6)validateBackupArchiveRelationships(backup);if(version>=13){validateVoidHistoryRelationships(backup);await validateVoidHistoryDigests(backup)}
   return{backup,digest};
 }
