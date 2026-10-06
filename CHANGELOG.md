@@ -20,6 +20,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added the certified-flight removal UX and dedicated immutable void-audit route, including mandatory reason, duplicate-submit protection, active-logbook exclusion warning, success-to-audit link, and legacy audit-link fallback.
 - Added authenticated browser acceptance that creates and certifies a real test flight, removes it via the UI, verifies active-logbook disappearance and permanent tombstone/audit retention, and runs in both desktop and mobile Chromium.
 - First browser execution correctly exposed an unsupported `track_points` assumption in the new void service. FlyTally has no such canonical table; GPS evidence is stored completely on `flight_tracks`, so the runtime/schema/tests were corrected to archive only the real persisted source.
+- Second browser execution reached the real void flow without the prior database exception but did not leave the current flight-detail URL. Completion is now redirected server-side after successful mutation, and the browser test proves database deletion/tombstone creation before checking navigation.
 - UI, audit-only route and backup v13 are **not implemented yet**; schema v20 is **not applied to production**.
 
 
