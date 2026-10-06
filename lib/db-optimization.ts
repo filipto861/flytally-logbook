@@ -49,7 +49,7 @@ const migrationQueries=(version:number)=>{
         IF TG_OP='DELETE' THEN RETURN OLD; END IF;
         RETURN NEW;
       END;
-    $$$$ LANGUAGE plpgsql`,
+    $$ LANGUAGE plpgsql`,
     sql`DO $$ BEGIN
       IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_protect_locked_flight' AND tgrelid='flights'::regclass AND NOT tgisinternal) THEN
         CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();
@@ -549,7 +549,7 @@ const migrationQueries=(version:number)=>{
   ];
   if(version===19)return[
     sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_engine_type TEXT`,
-    sql`DO $ BEGIN
+    sql`DO $$ BEGIN
       IF NOT EXISTS(
         SELECT 1 FROM pg_constraint
         WHERE conname='ck_aircraft_default_engine_type'
@@ -559,7 +559,7 @@ const migrationQueries=(version:number)=>{
           ADD CONSTRAINT ck_aircraft_default_engine_type
           CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME'));
       END IF;
-    END $`,
+    END $$`,
   ];
   if(version===20)return[
     sql`CREATE TABLE IF NOT EXISTS voided_certified_flights (
@@ -572,34 +572,7 @@ const migrationQueries=(version:number)=>{
       certified_at TIMESTAMPTZ NOT NULL,
       certified_by_user_id BIGINT,
       flight_snapshot JSONB NOT NULL,
-      flight_snapshot_sha256 TEXT NOT NULL CHECK(flight_snapshot_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
-};
-
-async function migrateDatabase(){
-  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
-    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
-  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
-    await sql.transaction([
-      sql`SELECT pg_advisory_xact_lock(704190104)`,
-      ...migrationQueries(version),
-      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
-    ]);
-  }
-}
-
-export function ensureDatabaseOptimizations():Promise<void>{
-  if(!globalThis.__logbookOptimization){
-    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
-      globalThis.__logbookOptimization=undefined;
-      console.error("database-migration-failed",error);
-      throw error;
-    });
-  }
-  return globalThis.__logbookOptimization;
-}
-),
+      flight_snapshot_sha256 TEXT NOT NULL CHECK(flight_snapshot_sha256 ~ '^[a-f0-9]{64}$'),
       archive_version INTEGER NOT NULL DEFAULT 1 CHECK(archive_version>=1),
       voided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       voided_by_user_id BIGINT NOT NULL,
@@ -620,34 +593,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
       superseded_at TIMESTAMPTZ,
       correction_reason TEXT NOT NULL DEFAULT '',
       snapshot_data JSONB NOT NULL,
-      snapshot_sha256 TEXT NOT NULL CHECK(snapshot_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
-};
-
-async function migrateDatabase(){
-  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
-    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
-  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
-    await sql.transaction([
-      sql`SELECT pg_advisory_xact_lock(704190104)`,
-      ...migrationQueries(version),
-      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
-    ]);
-  }
-}
-
-export function ensureDatabaseOptimizations():Promise<void>{
-  if(!globalThis.__logbookOptimization){
-    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
-      globalThis.__logbookOptimization=undefined;
-      console.error("database-migration-failed",error);
-      throw error;
-    });
-  }
-  return globalThis.__logbookOptimization;
-}
-),
+      snapshot_sha256 TEXT NOT NULL CHECK(snapshot_sha256 ~ '^[a-f0-9]{64}$'),
       archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(voided_flight_id,revision_number),
       UNIQUE(voided_flight_id,source_revision_id)
@@ -667,34 +613,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
       revoked_at TIMESTAMPTZ,
       credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
       source_data JSONB NOT NULL,
-      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
-};
-
-async function migrateDatabase(){
-  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
-    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
-  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
-    await sql.transaction([
-      sql`SELECT pg_advisory_xact_lock(704190104)`,
-      ...migrationQueries(version),
-      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
-    ]);
-  }
-}
-
-export function ensureDatabaseOptimizations():Promise<void>{
-  if(!globalThis.__logbookOptimization){
-    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
-      globalThis.__logbookOptimization=undefined;
-      console.error("database-migration-failed",error);
-      throw error;
-    });
-  }
-  return globalThis.__logbookOptimization;
-}
-),
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
       archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(voided_flight_id,source_verification_id)
     )`,
@@ -704,34 +623,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
       item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','TRACK_POINT','SOURCE_PROVENANCE')),
       source_key TEXT NOT NULL,
       source_data JSONB NOT NULL,
-      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
-};
-
-async function migrateDatabase(){
-  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
-    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`;
-  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
-  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
-    await sql.transaction([
-      sql`SELECT pg_advisory_xact_lock(704190104)`,
-      ...migrationQueries(version),
-      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
-    ]);
-  }
-}
-
-export function ensureDatabaseOptimizations():Promise<void>{
-  if(!globalThis.__logbookOptimization){
-    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
-      globalThis.__logbookOptimization=undefined;
-      console.error("database-migration-failed",error);
-      throw error;
-    });
-  }
-  return globalThis.__logbookOptimization;
-}
-),
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
       archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(voided_flight_id,item_kind,source_key)
     )`,
