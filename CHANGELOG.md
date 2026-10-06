@@ -23,6 +23,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Second browser execution reached the real void flow without the prior database exception but did not leave the current flight-detail URL. Completion is now redirected server-side after successful mutation, and the browser test proves database deletion/tombstone creation before checking navigation.
 - Third browser execution exposed a test sequencing race: the test read PostgreSQL before the asynchronous Server Action had an authoritative completion state. It now waits for server redirect or a surfaced action error before asserting database state.
 - Fourth browser execution showed the mobile void path reached successful deletion/tombstone/redirect assertions; remaining failures were caused by a transient certification-banner dependency on desktop and a broad date/registration list selector that matched the failed desktop fixture. The acceptance test now uses durable certified state and exact flight-id disappearance.
+- Final M2/M3 browser acceptance passed **2/2** across desktop and mobile Chromium, proving certified-flight removal, active-row exclusion, permanent tombstone/audit retention and legacy-audit redirect end to end.
 - UI, audit-only route and backup v13 are **not implemented yet**; schema v20 is **not applied to production**.
 
 
