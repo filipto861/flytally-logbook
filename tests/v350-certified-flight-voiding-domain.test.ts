@@ -27,12 +27,13 @@ test("3.5.0 M2 archives protected evidence before active-row removal",()=>{
   const service=read("lib/flight-voiding.ts");
   for(const source of [
     "flight_certified_revisions","flight_verifications","instructor_flight_approvals","flight_participations",
-    "flight_connected_crew","flight_public_shares","flight_expenses","flight_tracks","track_points","flight_source_provenance",
+    "flight_connected_crew","flight_public_shares","flight_expenses","flight_tracks","flight_source_provenance",
   ])assert.ok(service.includes(source),`missing protected evidence source ${source}`);
-  for(const kind of ["INSTRUCTOR_APPROVAL","PARTICIPATION","CONNECTED_CREW","PUBLIC_SHARE","EXPENSE","TRACK","TRACK_POINT","SOURCE_PROVENANCE"]){
+  for(const kind of ["INSTRUCTOR_APPROVAL","PARTICIPATION","CONNECTED_CREW","PUBLIC_SHARE","EXPENSE","TRACK","SOURCE_PROVENANCE"]){
     assert.ok(service.includes(`'${kind}'`),`missing archive kind ${kind}`);
   }
   assert.match(service,/voidEvidenceSha256/);
+  assert.doesNotMatch(service,/track_points|TRACK_POINT/);
   assert.match(service,/to_jsonb\([a-z]+\) IS NOT DISTINCT FROM/);
 });
 
@@ -41,7 +42,7 @@ test("3.5.0 M2 final delete is evidence-count gated and rolls back through the d
   assert.match(service,/DELETE FROM flights f[\s\S]*v\.flight_snapshot IS NOT DISTINCT FROM to_jsonb\(f\)/);
   assert.match(service,/COUNT\(\*\) FROM voided_flight_certified_revisions/);
   assert.match(service,/COUNT\(\*\) FROM voided_flight_verifications/);
-  for(const kind of ["INSTRUCTOR_APPROVAL","PARTICIPATION","CONNECTED_CREW","PUBLIC_SHARE","EXPENSE","TRACK","TRACK_POINT","SOURCE_PROVENANCE"]){
+  for(const kind of ["INSTRUCTOR_APPROVAL","PARTICIPATION","CONNECTED_CREW","PUBLIC_SHARE","EXPENSE","TRACK","SOURCE_PROVENANCE"]){
     assert.match(service,new RegExp(`item_kind='${kind}'`));
   }
   assert.match(service,/NOT EXISTS\(SELECT 1 FROM flight_certified_revisions/);
