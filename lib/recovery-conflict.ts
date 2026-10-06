@@ -1,4 +1,4 @@
-export type RecoveryConflictCode="record-identity"|"newer-backup-revision"|"certification-fingerprint"|"archived-certification-fingerprint";
+export type RecoveryConflictCode="record-identity"|"newer-backup-revision"|"certification-fingerprint"|"archived-certification-fingerprint"|"protected-history";
 export type RecoveryConflict={code:RecoveryConflictCode;title:string;record:string;detail:string};
 
 type Row=Record<string,unknown>;
@@ -26,4 +26,8 @@ export function archivedCertificationConflict(source:Row,current:Row,parentField
   const parent=text(source[parentField])||"?",revisionNumber=Number(source.revision_number||0),sourceHash=text(source.certification_hash),currentHash=text(current.certification_hash);
   if(sourceHash===currentHash)return null;
   return{code:"archived-certification-fingerprint",title:"Archived certification history conflict",record:`${label} ${parent} · revision ${revisionNumber}`,detail:"The archived revision already stored in this account has a different certification fingerprint from the backup. Recovery is blocked before any data is changed."};
+}
+
+export function protectedHistoryConflict(title:string,record:string,detail:string):RecoveryConflict{
+  return{code:"protected-history",title,record,detail};
 }
