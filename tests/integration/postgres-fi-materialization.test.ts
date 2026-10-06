@@ -155,7 +155,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
   const shared=read("app/(protected)/flights/shared-actions.ts");
   const materialize=materializeSql(shared);
   const values:Record<string,unknown>={
-    fingerprint:"fi-materialize-901-82",userId:82,
+    fingerprint:"fi-materialize-901-82",userId:82,participantRole:"INSTRUCTOR",
     "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"FI","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":null,"participantRole!==\"PIC\"":true,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
@@ -187,7 +187,7 @@ test("SP4 connected PIC materialization creates an independent PIC record from c
   const shared=read("app/(protected)/flights/shared-actions.ts");
   const materialize=materializeSql(shared);
   const values:Record<string,unknown>={
-    fingerprint:"pic-materialize-902-83",userId:83,
+    fingerprint:"pic-materialize-902-83",userId:83,participantRole:"PIC",
     "text(row.registration)":"OK-SP4","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"PIC","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":902,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-sp4-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":"CERTIFIED_SOURCE_COMMANDER","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":false,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
@@ -228,7 +228,7 @@ test("generic PIC materialization from INSTRUCTOR source copies the complete eve
   const shared=read("app/(protected)/flights/shared-actions.ts");
   const materialize=materializeSql(shared);
   const values:Record<string,unknown>={
-    fingerprint:"generic-pic-903-84",userId:84,
+    fingerprint:"generic-pic-903-84",userId:84,participantRole:"PIC",
     "text(row.registration)":"OK-GPIC","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"PIC","text(row.billing_basis)||'BLOCK'":"BLOCK",
     "Number(row.source_flight_id)":903,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-gpic-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":"RECIPIENT_ACCOUNT","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":false,
