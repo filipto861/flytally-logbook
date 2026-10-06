@@ -123,7 +123,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
 
   checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
 
-  const incomingTombstones=backup.voided_certified_flights??[],incomingActiveIds=new Set(backup.flights.map(row=>String(row.id??""))),targetActiveIds=new Set(flights.map(row=>String(row.id??""))),targetTombstoneIds=new Set(voidedFlights.map(row=>String(row.original_flight_id??"")));
+  const incomingTombstones=backup.voided_certified_flights??[],targetActiveIds=new Set(flights.map(row=>String(row.id??""))),targetTombstoneIds=new Set(voidedFlights.map(row=>String(row.original_flight_id??"")));
   for(const row of incomingTombstones)if(targetActiveIds.has(String(row.original_flight_id??"")))throw new AccountRestoreConflictError("A voided certified flight cannot be restored while its active flight identity exists.");
   for(const row of backup.flights)if(targetTombstoneIds.has(String(row.id??"")))throw new AccountRestoreConflictError("An active flight cannot be restored because that identity is permanently voided.");
   for(const row of backup.flight_source_provenance??[]){
@@ -160,13 +160,13 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
   const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},withheld:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
   for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
 
-  const protectedSections=[
+  const protectedSections:Array<[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,string[]]>=[
     ["voided_certified_flights",incomingTombstones,voidedFlights,voidedFlightKey,"Voided certified flight",["user_id","original_flight_id","record_revision","certification_hash","certification_version","flight_snapshot_sha256","archive_version","voided_at","voided_by_user_id","void_reason","operation_token"]],
     ["voided_flight_certified_revisions",backup.voided_flight_certified_revisions??[],voidedRevisions,voidedRevisionKey,"Voided certified revision",["voided_flight_id","source_revision_id","revision_number","certification_hash","certification_version","snapshot_sha256","archived_at"]],
     ["voided_flight_verifications",backup.voided_flight_verifications??[],voidedVerifications,voidedVerificationKey,"Voided verification",["voided_flight_id","source_verification_id","record_revision","verification_role","status","flight_hash","payload_hash","server_signature","source_sha256","archived_at"]],
     ["voided_flight_archive_items",backup.voided_flight_archive_items??[],voidedItems,voidedItemKey,"Voided archive item",["voided_flight_id","item_kind","source_key","source_sha256","archived_at"]],
     ["flight_source_provenance",backup.flight_source_provenance??[],sourceProvenance,provenanceKey,"Flight source provenance",["participant_flight_id","participant_user_id","source_flight_id","source_user_id","source_revision","source_hash","participant_role","pic_commander_basis","accepted_at","source_voided_flight_id","created_at"]],
-  ] as const;
+  ];
 
   const newParentIds=new Set<string>();
   for(const [name,backupRows,currentRows,key,label,fields] of protectedSections){
