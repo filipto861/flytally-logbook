@@ -666,6 +666,38 @@ const migrationQueries=(version:number)=>{
       ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
       ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_source_provenance() RETURNS TRIGGER AS $provenance$
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          RAISE EXCEPTION 'Flight source provenance is immutable';
+        END IF;
+        IF OLD.source_voided_flight_id IS NULL
+          AND NEW.source_voided_flight_id IS NOT NULL
+          AND (to_jsonb(OLD)-'source_voided_flight_id'-'updated_at')
+              IS NOT DISTINCT FROM
+              (to_jsonb(NEW)-'source_voided_flight_id'-'updated_at')
+          AND EXISTS(
+            SELECT 1 FROM voided_certified_flights v
+            WHERE v.id=NEW.source_voided_flight_id
+              AND v.user_id=NEW.source_user_id
+              AND v.original_flight_id=NEW.source_flight_id
+              AND v.record_revision=NEW.source_revision
+              AND v.certification_hash=NEW.source_hash
+              AND v.created_txid=txid_current()
+          )
+        THEN
+          RETURN NEW;
+        END IF;
+        IF to_jsonb(OLD) IS DISTINCT FROM to_jsonb(NEW) THEN
+          RAISE EXCEPTION 'Flight source provenance is immutable';
+        END IF;
+        RETURN NEW;
+      END;
+    $provenance$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_source_provenance ON flight_source_provenance`,
+    sql`CREATE TRIGGER trg_logbook_protect_source_provenance
+      BEFORE UPDATE OR DELETE ON flight_source_provenance
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_source_provenance()`,
     sql`CREATE OR REPLACE FUNCTION logbook_validate_source_provenance() RETURNS TRIGGER AS $
       DECLARE parent RECORD;
       BEGIN
