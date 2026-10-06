@@ -115,6 +115,17 @@ Important boundary:
 
 ## Planned / active follow-up
 
+### 3.5.0 — Certified flight voiding — DESIGN / REVIEW ACTIVE
+- Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
+- Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
+- Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
+- Revoke active public sharing and supersede pending collaboration requests atomically.
+- Do not destructively remove independently owned participant copies.
+- Do not reuse the ordinary 90-day draft Trash/restore semantics for protected certified evidence.
+- No silent restoration of the old certification after voiding.
+- Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
+
+
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED
 - Keep GPS Night-time advisory/editable and fail closed when the complete exact total cannot be supported.
 - Add explicit unavailable reason codes and concise pilot-facing explanation instead of a silent generic manual fallback.
