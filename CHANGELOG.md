@@ -17,6 +17,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Repository reconciliation corrected the portable-backup baseline: current exports are v12 with server authenticity; certified-void archive support is therefore reserved for portable backup v13.
 - M2 now includes the canonical authenticated atomic void mutation: exact-row optimistic locking, permanent evidence archiving, pending workflow supersession, public-share revocation, participant-copy provenance binding, active revision/track removal, final evidence-count-gated flight deletion, recency refresh and active-view invalidation.
 - Shared-flight materialization now persists source provenance before an accepted participant copy is linked.
+- Added the certified-flight removal UX and dedicated immutable void-audit route, including mandatory reason, duplicate-submit protection, active-logbook exclusion warning, success-to-audit link, and legacy audit-link fallback.
 - UI, audit-only route and backup v13 are **not implemented yet**; schema v20 is **not applied to production**.
 
 
