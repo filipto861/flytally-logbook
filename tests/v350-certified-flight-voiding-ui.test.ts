@@ -23,16 +23,16 @@ test("certified removal confirmation explains active-logbook exclusion and requi
   assert.match(component,/disabled=\{pending\}/);
 });
 
-test("successful certified removal leaves the active flight list and surfaces only a permanent audit link",()=>{
+test("successful certified removal redirects server-side to the active flight list with a permanent audit link",()=>{
   const component=read("components/void-certified-flight-button.tsx");
+  const action=read("app/(protected)/flights/certification-actions.ts");
   const flights=read("app/(protected)/flights/page.tsx");
-  assert.match(component,/router\.replace/);
-  assert.match(component,/voided=1&audit=/);
+  assert.doesNotMatch(component,/useRouter|router\.replace|useEffect/);
+  assert.match(action,/redirect\(\`\/flights\?voided=1&audit=\$\{result\.tombstoneId\}\`\)/);
   assert.match(flights,/Certified flight removed from the active logbook/);
   assert.match(flights,/View permanent audit record/);
   assert.match(flights,/\/audit\/voided-flights\/\$\{Number\(audit\)\}/);
 });
-
 test("voided-flight audit route is owner-scoped and read-only",()=>{
   const audit=read("app/(protected)/audit/voided-flights/[id]/page.tsx");
   assert.match(audit,/WHERE v\.id=\$\{id\} AND v\.user_id=\$\{userId\} LIMIT 1/);
