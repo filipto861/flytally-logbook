@@ -423,6 +423,8 @@ M4 implementation batch:
 - participant source provenance now has explicit DB immutability/binding enforcement.
 
 M4 verification: **PENDING exact-head TypeScript + portable-backup tests + PostgreSQL restore acceptance + build**.
+
+First M4 gate on `52e3d51`: **FAILED, no release claim**. TypeScript/build exposed stale recovery-conflict constructor calls plus the retired `track_points` batch assertion; targeted tests exposed one fixture count-reset bug and one stale provenance-function assertion; PostgreSQL exposed a duplicate provenance immutability assertion expecting a message the DB does not promise. The product invariants that did execute remained fail-closed. Follow-up commits corrected the typed conflict construction and test contracts without weakening the v13 restore model. Exact-head rerun is required, including `postgres-backup-v13-void-history.test.ts`.
 - export/archive sections;
 - parser/authenticity/count validation;
 - exact restore support;
