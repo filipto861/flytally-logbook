@@ -117,3 +117,15 @@ At minimum:
 - repeated identical restore is idempotent; conflicting protected history fails closed;
 - invalid/unsigned v13 protected-history restore rejected;
 - TypeScript, targeted suite, full PostgreSQL restore acceptance, production build.
+
+
+### 6. Participant provenance immutability — HARDENED
+
+Repository review found that `flight_source_provenance` was permanent by product contract but still lacked its own mutation guard. v20 now enforces it explicitly:
+- DELETE is rejected;
+- protected source/participant fields cannot change;
+- an existing non-null `source_voided_flight_id` cannot be changed or cleared;
+- the normal operational NULL → tombstone binding is allowed only when the exact source tombstone (user/id/revision/hash) was created in the same transaction;
+- restore may INSERT an already-bound provenance row only when the referenced tombstone matches the stored source identity exactly.
+
+This closes the reviewer’s provenance-integrity concern without introducing a restore bypass.
