@@ -24,6 +24,7 @@ test("v20 creates a permanent certified-flight tombstone and immutable protected
   assert.match(dbOptimizations,/flight_snapshot_sha256 TEXT NOT NULL CHECK\(flight_snapshot_sha256 ~ '\^\[a-f0-9\]\{64\}\$'\)/);
   assert.match(dbOptimizations,/void_reason TEXT NOT NULL CHECK\(char_length\(TRIM\(void_reason\)\) BETWEEN 8 AND 1000\)/);
   assert.match(dbOptimizations,/created_txid BIGINT NOT NULL DEFAULT txid_current\(\)/);
+  assert.doesNotMatch(dbOptimizations,/TRACK_POINT/);
   assert.match(dbOptimizations,/CREATE OR REPLACE FUNCTION logbook_protect_void_archive\(\)/);
   assert.match(dbOptimizations,/Certified flight void archive is immutable/);
 });
