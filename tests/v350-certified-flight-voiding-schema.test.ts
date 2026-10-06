@@ -90,3 +90,11 @@ test("v20 freezes participant source provenance and only permits exact same-tran
   assert.match(dbOptimizations,/parent\.created_txid<>txid_current\(\)/);
   assert.match(dbOptimizations,/BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance/);
 });
+
+test("flight source provenance is append-only except exact same-transaction tombstone binding",()=>{
+  assert.match(dbOptimizations,/CREATE OR REPLACE FUNCTION logbook_protect_source_provenance/);
+  assert.match(dbOptimizations,/OLD\.source_voided_flight_id IS NULL[\s\S]*NEW\.source_voided_flight_id IS NOT NULL/);
+  assert.match(dbOptimizations,/v\.user_id=NEW\.source_user_id[\s\S]*v\.original_flight_id=NEW\.source_flight_id[\s\S]*v\.record_revision=NEW\.source_revision[\s\S]*v\.certification_hash=NEW\.source_hash[\s\S]*v\.created_txid=txid_current\(\)/);
+  assert.match(dbOptimizations,/Flight source provenance is immutable/);
+  assert.match(dbOptimizations,/BEFORE UPDATE OR DELETE ON flight_source_provenance/);
+});
