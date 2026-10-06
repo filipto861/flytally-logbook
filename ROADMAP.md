@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 5 October 2026  
+**Last updated:** 6 October 2026  
 **Current production product version:** `3.4.0`  
 **Current active release:** `3.4.1`
 
@@ -90,7 +90,7 @@ Repository review confirms that this is possible because landing classification 
 - keep manual Night-time edits sticky;
 - do not auto-apply partial/lower-bound Night minutes;
 - reuse canonical track discontinuity thresholds rather than inventing a second quality model;
-- replace the blanket 600-second rejection only with a conservative same-state proof; a sparse segment that could contain twilight stays unavailable;
+- preserve the current >600-second fail-closed guard in 3.4.1; endpoint quality/displacement does not prove the unobserved sparse path, so sparse auto-classification is deferred until an evidence-backed contract exists;
 - adaptive subdivision of an unsafe two-endpoint gap is not accepted as new evidence;
 - no DB migration or certification-version change is expected.
 
@@ -98,11 +98,12 @@ Repository review confirms that this is possible because landing classification 
 
 - structured unavailable diagnostics;
 - pilot-facing unavailable reason copy;
-- bounded sparse-segment evaluation using the shared GPS-continuity contract;
+- fail-closed >600 s sparse-gap handling; no endpoint-only path proof;
+- shared GPS discontinuity contract for actual endpoint-quality rejection;
 - fail-closed timestamp/position/confidence/discontinuity handling;
 - stale automatic suggestion clearing while preserving sticky manual edits;
 - targeted and full regression verification;
-- real-like EHAM → LKPR twilight fixture proving NIGHT landing plus exact Night minutes when the crossing itself is sufficiently bracketed.
+- real-like EHAM → LKPR fixture proving that NIGHT landing classification is independent from unavailable exact Night time when an earlier sparse gap blocks the whole-track total.
 
 ---
 
