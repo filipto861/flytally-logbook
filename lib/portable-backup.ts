@@ -18,6 +18,18 @@ const v9Arrays=[...v8Arrays,"spl_recency_evidence"] as const;
 const v10Arrays=[...v9Arrays,"helicopter_recency_evidence"] as const;
 const v11Arrays=[...v10Arrays,"bpl_recency_evidence"] as const;
 const v13Arrays=[...currentCoreArrays,"audit_log","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","deleted_flights","pilot_connections","flight_participations","instructor_flight_approvals","pilot_licences","pilot_qualifications","user_notifications","flight_verifications","connection_audit_log","flight_expenses","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence","voided_certified_flights","voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items","flight_source_provenance"] as const;
+export function portableBackupRequiredSections(versionInput:number):readonly string[]{
+  const version=Math.trunc(Number(versionInput)||0);
+  if(version>=13)return v13Arrays;
+  if(version>=11)return v11Arrays;
+  if(version>=10)return v10Arrays;
+  if(version>=9)return v9Arrays;
+  if(version>=8)return v8Arrays;
+  if(version>=7)return v7Arrays;
+  if(version>=6)return v6Arrays;
+  if(version>=5)return [...legacyArrays,"audit_log"];
+  return legacyArrays;
+}
 export const portableBackupDigest=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value))),byte=>byte.toString(16).padStart(2,"0")).join("");
 const clean=(value:unknown)=>String(value??"").trim().toUpperCase();
 const timeKey=(value:unknown)=>{const raw=String(value??"").trim();if(!raw)return"";const date=new Date(raw);return Number.isNaN(date.getTime())?raw:date.toISOString()};
@@ -106,19 +118,11 @@ export async function parsePortableBackup(source:string):Promise<{backup:Portabl
   const expected=String(integrity?.payload_sha256??""),digest=await portableBackupDigest(JSON.stringify(payload));
   if(String(integrity?.algorithm??"").toUpperCase()!=="SHA-256"||!expected)throw new Error("Backup has no supported SHA-256 integrity value.");
   if(expected!==digest)throw new Error("Integrity check failed. The file is damaged or was modified.");
-  if(version>=13){for(const key of v13Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`)}
-  else for(const key of legacyArrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=5&&!Array.isArray(payload.audit_log))throw new Error("Backup section audit_log is missing.");
-  if(version>=6)for(const key of ["fstd_sessions","flight_certified_revisions","fstd_certified_revisions","deleted_flights"] as const)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=7&&version<13)for(const key of v7Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=8&&version<13)for(const key of v8Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=9&&version<13)for(const key of v9Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=10&&version<13)for(const key of v10Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
-  if(version>=11&&version<13)for(const key of v11Arrays)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
+  const requiredSections=portableBackupRequiredSections(version);for(const key of requiredSections)if(!Array.isArray(payload[key]))throw new Error(`Backup section ${key} is missing.`);
   if((payload.flights as unknown[]).length>20_000||(payload.flight_tracks as unknown[]).length>30_000)throw new Error("Backup exceeds the safe number of flights or GPS tracks.");
   if(!Array.isArray(payload.track_points))payload.track_points=[];if(!Array.isArray(payload.audit_log))payload.audit_log=[];if(!Array.isArray(payload.fstd_sessions))payload.fstd_sessions=[];if(!Array.isArray(payload.flight_certified_revisions))payload.flight_certified_revisions=[];if(!Array.isArray(payload.fstd_certified_revisions))payload.fstd_certified_revisions=[];if(!Array.isArray(payload.deleted_flights))payload.deleted_flights=[];for(const key of v7Arrays)if(!Array.isArray(payload[key]))payload[key]=[];if(!Array.isArray(payload.flight_expenses))payload.flight_expenses=[];if(!Array.isArray(payload.spl_recency_evidence))payload.spl_recency_evidence=[];if(!Array.isArray(payload.helicopter_recency_evidence))payload.helicopter_recency_evidence=[];if(!Array.isArray(payload.bpl_recency_evidence))payload.bpl_recency_evidence=[];for(const key of ["voided_certified_flights","voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items","flight_source_provenance"] as const)if(!Array.isArray(payload[key]))payload[key]=[];
-  const counts=payload.counts as Record<string,unknown>|undefined,countKeys:readonly string[]=version>=13?v13Arrays:version>=11?v11Arrays:version>=10?v10Arrays:version>=9?v9Arrays:version>=8?v8Arrays:version>=7?v7Arrays:version>=6?v6Arrays:version>=5?[...legacyArrays,"audit_log"]:legacyArrays;
-  for(const key of countKeys)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
+  const counts=payload.counts as Record<string,unknown>|undefined;
+  for(const key of requiredSections)if(Number(counts?.[key]??-1)!==(payload[key] as unknown[]).length)throw new Error(`Declared ${key} count does not match the backup content.`);
   if(version>=6)validateOwnership(payload);
   const backup={...(payload as Omit<PortableBackup,"integrity">),integrity:{algorithm:"SHA-256",payload_sha256:expected,signature_version:Number(integrity?.signature_version||0)||undefined,server_signature:String(integrity?.server_signature??"").trim()||undefined}} as PortableBackup;
   validateBackupRelationships(backup);if(version>=6)validateBackupArchiveRelationships(backup);if(version>=13)validateVoidHistoryRelationships(backup);
