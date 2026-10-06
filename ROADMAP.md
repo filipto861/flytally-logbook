@@ -60,7 +60,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | ---: | ---: | --- | :---: | --- |
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
-| 3 | **3.5.0** | Multi-aircraft remaining integrity audit | 🚧 | Current active release after 3.4.1 production closeout |
+| 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | 🚧 | Certified voiding is Phase 1; remaining multi-aircraft integrity resumes in Phase 2 |
 | 4 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
 | 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
 | 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
