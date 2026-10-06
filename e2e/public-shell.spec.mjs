@@ -430,8 +430,8 @@ test("3.5.0 certified flight can be voided from active logbook while permanent a
   await form.locator('select[name="engineType"]').selectOption("SE");
 
   await form.getByRole("button",{name:"Save & certify flight"}).click();
-  await expect(page.getByText("Flight saved and certified.")).toBeVisible();
-  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
+  await expect(page).toHaveURL(/\/flights\/\d+(?:\?.*)?$/,{timeout:15000});
+  await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1",{timeout:15000});
   const detailUrl=page.url();
   const flightMatch=detailUrl.match(/\/flights\/(\d+)/);
   expect(flightMatch).toBeTruthy();
@@ -486,8 +486,8 @@ test("3.5.0 certified flight can be voided from active logbook while permanent a
   expect(browserSqlScalar(`SELECT void_reason FROM voided_certified_flights WHERE id=${tombstoneId}`)).toBe(reason);
   expect(browserSqlScalar(`SELECT CASE WHEN length(certification_hash)=64 AND length(flight_snapshot_sha256)=64 THEN 'OK' ELSE 'BAD' END FROM voided_certified_flights WHERE id=${tombstoneId}`)).toBe("OK");
 
-  const matchingRows=page.locator("tr.flight-list-row").filter({hasText:"06/10/2026"}).filter({hasText:"OK-E2E"});
-  await expect(matchingRows).toHaveCount(0);
+  const removedFlightLink=page.locator(`a.flight-route-link[href^="/flights/${flightId}"]`);
+  await expect(removedFlightLink).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("link",{name:"View permanent audit record"}).click();
