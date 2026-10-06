@@ -32,25 +32,18 @@ test("3.4.1 keeps dense exact day night and twilight-crossing suggestions",()=>{
   assert.deepEqual(crossing,{status:"AVAILABLE",minutes:3});
 });
 
-test("3.4.1 accepts a sparse same-state segment only when the conservative bound proves it cannot contain twilight",()=>{
-  assert.deepEqual(gpsNightMinutesSuggestion([
-    point(52.31,4.76,"2026-10-05T16:00:00Z"),
-    point(52.10,7.00,"2026-10-05T16:15:00Z"),
-  ]),{status:"AVAILABLE",minutes:0});
-
-  assert.deepEqual(gpsNightMinutesSuggestion([
-    point(50.09,14.43,"2026-01-15T23:00:00Z"),
-    point(50.10,14.44,"2026-01-15T23:20:00Z"),
-  ]),{status:"AVAILABLE",minutes:20});
-
-  const unsafe=gpsNightMinutesSuggestion([
-    point(50.10,14.40,"2026-10-05T17:00:00Z"),
-    point(50.10,14.40,"2026-10-05T17:15:00Z"),
-  ]);
-  assert.equal(unsafe.status,"UNAVAILABLE");
-  if(unsafe.status==="UNAVAILABLE"){
-    assert.deepEqual(unsafe.reasons,["SEGMENT_GAP_TOO_LARGE"]);
-    assert.equal(unsafe.affectedSegmentSeconds,900);
+test("3.4.1 keeps sparse segments fail closed because endpoint quality does not prove the unobserved path",()=>{
+  for(const [start,end,seconds] of [
+    [point(52.31,4.76,"2026-10-05T16:00:00Z"),point(52.10,7.00,"2026-10-05T16:15:00Z"),900],
+    [point(50.09,14.43,"2026-01-15T23:00:00Z"),point(50.10,14.44,"2026-01-15T23:20:00Z"),1200],
+    [point(50.10,14.40,"2026-10-05T17:00:00Z"),point(50.10,14.40,"2026-10-05T17:15:00Z"),900],
+  ] as const){
+    const result=gpsNightMinutesSuggestion([start,end]);
+    assert.equal(result.status,"UNAVAILABLE");
+    if(result.status==="UNAVAILABLE"){
+      assert.deepEqual(result.reasons,["SEGMENT_GAP_TOO_LARGE"]);
+      assert.equal(result.affectedSegmentSeconds,seconds);
+    }
   }
 });
 
@@ -114,21 +107,27 @@ test("3.4.1 remains fail closed outside the supported solar envelope",()=>{
   if(year.status==="UNAVAILABLE")assert.deepEqual(year.reasons,["UNSUPPORTED_SOLAR_ENVELOPE"]);
 });
 
-test("3.4.1 real-like EHAM to LKPR sparse route keeps NIGHT landing and derives exact Night time without bridging twilight unsafely",()=>{
+test("3.4.1 real-like EHAM to LKPR sparse route can prove NIGHT landing while exact Night time remains unavailable",()=>{
   const route:KmlPoint[]=[
     point(52.31,4.76,"2026-10-05T16:00:00Z"),
-    point(52.10,7.00,"2026-10-05T16:15:00Z"), // sparse but conservatively proven DAY
+    point(52.10,7.00,"2026-10-05T16:15:00Z"),
     point(51.80,8.50,"2026-10-05T16:25:00Z"),
     point(51.40,10.00,"2026-10-05T16:35:00Z"),
     point(51.00,11.50,"2026-10-05T16:45:00Z"),
     point(50.60,12.50,"2026-10-05T16:55:00Z"),
     point(50.31,13.378,"2026-10-05T17:03:00Z"),
-    point(50.13,14.134,"2026-10-05T17:09:00Z"), // crossing bracket is six minutes
+    point(50.13,14.134,"2026-10-05T17:09:00Z"),
     point(50.10,14.26,"2026-10-05T17:10:00Z"),
   ];
 
   assert.deepEqual(gpsLandingDayNightSuggestion(route),{status:"AVAILABLE",day:0,night:1,total:1});
-  assert.deepEqual(gpsNightMinutesSuggestion(route),{status:"AVAILABLE",minutes:3});
+  const night=gpsNightMinutesSuggestion(route);
+  assert.equal(night.status,"UNAVAILABLE");
+  if(night.status==="UNAVAILABLE"){
+    assert.deepEqual(night.reasons,["SEGMENT_GAP_TOO_LARGE"]);
+    assert.equal(night.firstAffectedSegment,0);
+    assert.equal(night.affectedSegmentSeconds,900);
+  }
 });
 
 test("3.4.1 GPS UI explains unavailable Night time and keeps manual edits sticky",()=>{
