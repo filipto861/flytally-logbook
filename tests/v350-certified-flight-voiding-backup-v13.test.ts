@@ -73,6 +73,6 @@ test("participant provenance is DB-protected and restore-compatible",()=>{
   const schema=read("lib/db-optimization.ts");
   assert.match(schema,/CREATE OR REPLACE FUNCTION logbook_validate_source_provenance/);
   assert.match(schema,/BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance/);
-  assert.match(schema,/parent\.created_txid<>txid_current\(\)/);
-  assert.match(schema,/Flight source provenance void binding is immutable/);
+  assert.match(schema,/v\\.created_txid=txid_current\\(\\)/);
+  assert.match(schema,/Flight source provenance is immutable/);
 });
