@@ -402,6 +402,8 @@ First browser execution on `bc0fd31`: **0/2 PASS**. Both desktop and mobile fail
 - redirect to Flights after success;
 - separate immutable void-audit route.
 
+Second browser execution on `dbcefaf`: TypeScript PASS, targeted contracts **28/28 PASS**, PostgreSQL schema acceptance **6/6 PASS**, production build PASS, but browser **0/2 PASS** because the page remained on the certified flight detail after submit. No domain-service exception was emitted in this run, but the original test asserted navigation before database state, so it did not prove whether the mutation committed. The completion flow is therefore hardened in two ways: success now redirects **server-side** from the Server Action instead of relying on a client `useEffect` after deleting the current route's backing row, and browser acceptance now proves active-row deletion + tombstone existence before asserting navigation.
+
 ### M4 — Backup / restore v13
 - export/archive sections;
 - parser/authenticity/count validation;
