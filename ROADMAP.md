@@ -398,7 +398,7 @@ Implementation milestones:
 - **M1 — Schema v20 + archive invariants: VERIFIED LOCAL** — TypeScript PASS; migration/schema contract 10/10 PASS; PostgreSQL acceptance 6/6 PASS on 6 October 2026.
 - **M2 — Domain mutation: END-TO-END VERIFIED LOCAL**
 - **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
-- **M4 — Backup / restore v13: ACTIVE**
+- **M4 — Backup / restore v13: IMPLEMENTED / VERIFICATION PENDING**
 - M5 — Consumer and integration verification
 - M6 — Release gate / documentation
 
