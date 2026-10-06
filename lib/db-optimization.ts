@@ -27,6 +27,7 @@ const migrationNames:Record<number,string>={
   17:"historical flight aircraft identity preservation",
   18:"aircraft default operation type",
   19:"aircraft default engine type",
+  20:"certified flight void archive and provenance",
 };
 
 const migrationQueries=(version:number)=>{
@@ -548,7 +549,7 @@ const migrationQueries=(version:number)=>{
   ];
   if(version===19)return[
     sql`ALTER TABLE aircraft ADD COLUMN IF NOT EXISTS default_engine_type TEXT`,
-    sql`DO $$ BEGIN
+    sql`DO $ BEGIN
       IF NOT EXISTS(
         SELECT 1 FROM pg_constraint
         WHERE conname='ck_aircraft_default_engine_type'
@@ -558,7 +559,306 @@ const migrationQueries=(version:number)=>{
           ADD CONSTRAINT ck_aircraft_default_engine_type
           CHECK(default_engine_type IS NULL OR default_engine_type IN ('SE','ME'));
       END IF;
-    END $$`,
+    END $`,
+  ];
+  if(version===20)return[
+    sql`CREATE TABLE IF NOT EXISTS voided_certified_flights (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      original_flight_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      certification_hash TEXT NOT NULL CHECK(NULLIF(TRIM(certification_hash),'') IS NOT NULL),
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      flight_snapshot JSONB NOT NULL,
+      flight_snapshot_sha256 TEXT NOT NULL CHECK(flight_snapshot_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+),
+      archive_version INTEGER NOT NULL DEFAULT 1 CHECK(archive_version>=1),
+      voided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      voided_by_user_id BIGINT NOT NULL,
+      void_reason TEXT NOT NULL CHECK(char_length(TRIM(void_reason)) BETWEEN 8 AND 1000),
+      operation_token UUID NOT NULL UNIQUE,
+      created_txid BIGINT NOT NULL DEFAULT txid_current(),
+      UNIQUE(user_id,original_flight_id),
+      UNIQUE(user_id,original_flight_id,record_revision,certification_hash)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_revision_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      superseded_at TIMESTAMPTZ,
+      correction_reason TEXT NOT NULL DEFAULT '',
+      snapshot_data JSONB NOT NULL,
+      snapshot_sha256 TEXT NOT NULL CHECK(snapshot_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,revision_number),
+      UNIQUE(voided_flight_id,source_revision_id)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_verifications (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_verification_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      verification_role TEXT NOT NULL,
+      status TEXT NOT NULL,
+      signer_user_id BIGINT,
+      flight_hash TEXT NOT NULL,
+      payload_hash TEXT NOT NULL DEFAULT '',
+      server_signature TEXT NOT NULL DEFAULT '',
+      signed_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,source_verification_id)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS voided_flight_archive_items (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','TRACK_POINT','SOURCE_PROVENANCE')),
+      source_key TEXT NOT NULL,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}  throw new Error(`Unknown database migration ${version}`);
+};
+
+async function migrateDatabase(){
+  await sql`CREATE TABLE IF NOT EXISTS flytally_schema_migrations (
+    version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  const rows=await sql`SELECT version FROM flytally_schema_migrations WHERE version<=${DATABASE_SCHEMA_VERSION} ORDER BY version` as Array<{version:number|string}>;
+  for(const version of pendingMigrationVersions(rows.map(row=>Number(row.version)))){
+    await sql.transaction([
+      sql`SELECT pg_advisory_xact_lock(704190104)`,
+      ...migrationQueries(version),
+      sql`INSERT INTO flytally_schema_migrations(version,name) VALUES(${version},${migrationNames[version]}) ON CONFLICT(version) DO NOTHING`,
+    ]);
+  }
+}
+
+export function ensureDatabaseOptimizations():Promise<void>{
+  if(!globalThis.__logbookOptimization){
+    globalThis.__logbookOptimization=migrateDatabase().catch(error=>{
+      globalThis.__logbookOptimization=undefined;
+      console.error("database-migration-failed",error);
+      throw error;
+    });
+  }
+  return globalThis.__logbookOptimization;
+}
+),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,item_kind,source_key)
+    )`,
+    sql`CREATE TABLE IF NOT EXISTS flight_source_provenance (
+      id BIGSERIAL PRIMARY KEY,
+      participant_flight_id BIGINT NOT NULL,
+      participant_user_id BIGINT NOT NULL,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL,
+      source_revision INTEGER NOT NULL CHECK(source_revision>=1),
+      source_hash TEXT NOT NULL,
+      participant_role TEXT NOT NULL,
+      pic_commander_basis TEXT,
+      accepted_at TIMESTAMPTZ,
+      source_voided_flight_id BIGINT REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_source_provenance_participant_owner_fk
+        FOREIGN KEY(participant_flight_id,participant_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      UNIQUE(participant_flight_id,participant_user_id)
+    )`,
+    sql`INSERT INTO flight_source_provenance(
+      participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,
+      participant_role,pic_commander_basis,accepted_at
+    )
+    SELECT p.participant_flight_id,p.participant_user_id,p.source_flight_id,p.source_user_id,
+      GREATEST(COALESCE(p.source_revision,1),1),COALESCE(p.source_hash,''),
+      COALESCE(p.participant_role,''),p.pic_commander_basis,COALESCE(p.responded_at,p.created_at)
+    FROM flight_participations p
+    JOIN flights own ON own.id=p.participant_flight_id AND own.user_id=p.participant_user_id
+    WHERE p.status='accepted' AND p.participant_flight_id IS NOT NULL
+    ON CONFLICT(participant_flight_id,participant_user_id) DO NOTHING`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_certified_flights_user_date
+      ON voided_certified_flights(user_id,voided_at DESC,id DESC)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_flight_archive_items_parent_kind
+      ON voided_flight_archive_items(voided_flight_id,item_kind,id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_voided_flight_verifications_parent_revision
+      ON voided_flight_verifications(voided_flight_id,record_revision,id)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_source
+      ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
+    sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
+      ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_void_archive() RETURNS TRIGGER AS $
+      BEGIN
+        RAISE EXCEPTION 'Certified flight void archive is immutable';
+      END;
+    $ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_certified_flights ON voided_certified_flights`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_certified_flights
+      BEFORE UPDATE OR DELETE ON voided_certified_flights
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_revisions ON voided_flight_certified_revisions`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_revisions
+      BEFORE UPDATE OR DELETE ON voided_flight_certified_revisions
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_verifications ON voided_flight_verifications`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_verifications
+      BEFORE UPDATE OR DELETE ON voided_flight_verifications
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_flight_archive_items ON voided_flight_archive_items`,
+    sql`CREATE TRIGGER trg_logbook_protect_voided_flight_archive_items
+      BEFORE UPDATE OR DELETE ON voided_flight_archive_items
+      FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_prevent_voided_flight_id_reuse() RETURNS TRIGGER AS $
+      BEGIN
+        IF EXISTS(
+          SELECT 1 FROM voided_certified_flights v
+          WHERE v.user_id=NEW.user_id AND v.original_flight_id=NEW.id
+        ) THEN
+          RAISE EXCEPTION 'Voided certified flight identity cannot be recreated as an active flight';
+        END IF;
+        RETURN NEW;
+      END;
+    $ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_prevent_voided_flight_id_reuse ON flights`,
+    sql`CREATE TRIGGER trg_logbook_prevent_voided_flight_id_reuse
+      BEFORE INSERT ON flights FOR EACH ROW EXECUTE FUNCTION logbook_prevent_voided_flight_id_reuse()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $
+      DECLARE correction_transition BOOLEAN:=FALSE; certified_void_transition BOOLEAN:=FALSE;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          IF OLD.certified_at IS NOT NULL THEN
+            certified_void_transition:=EXISTS(
+              SELECT 1 FROM voided_certified_flights v
+              WHERE v.user_id=OLD.user_id
+                AND v.original_flight_id=OLD.id
+                AND v.record_revision=COALESCE(OLD.record_revision,1)
+                AND v.certification_hash=COALESCE(OLD.certification_hash,'')
+                AND v.created_txid=txid_current()
+                AND v.flight_snapshot IS NOT DISTINCT FROM to_jsonb(OLD)
+            );
+            IF NOT certified_void_transition THEN
+              RAISE EXCEPTION 'Certified flight cannot be deleted without a matching same-transaction void archive';
+            END IF;
+            RETURN OLD;
+          END IF;
+          IF OLD.locked_at IS NOT NULL THEN RAISE EXCEPTION 'Locked flight cannot be deleted'; END IF;
+          RETURN OLD;
+        END IF;
+
+        IF OLD.certified_at IS NOT NULL THEN
+          correction_transition :=
+            NEW.certified_at IS NULL
+            AND COALESCE(NEW.certification_hash,'')=''
+            AND NEW.locked_at IS NULL
+            AND COALESCE(NEW.record_revision,1)=COALESCE(OLD.record_revision,1)+1
+            AND NULLIF(TRIM(COALESCE(NEW.correction_reason,'')),'') IS NOT NULL
+            AND (to_jsonb(OLD)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+                IS NOT DISTINCT FROM
+                (to_jsonb(NEW)-'certified_at'-'certified_by_user_id'-'certification_hash'-'locked_at'-'locked_by_user_id'-'record_revision'-'correction_reason'-'correction_opened_at'-'correction_opened_by_user_id')
+            AND EXISTS(
+              SELECT 1 FROM flight_certified_revisions r
+              WHERE r.user_id=OLD.user_id AND r.flight_id=OLD.id
+                AND r.revision_number=COALESCE(OLD.record_revision,1)
+                AND r.certification_hash=COALESCE(OLD.certification_hash,'')
+            );
+          IF NOT correction_transition THEN RAISE EXCEPTION 'Certified flight is immutable; start a traceable correction instead'; END IF;
+          RETURN NEW;
+        END IF;
+
+        IF OLD.locked_at IS NOT NULL
+          AND (to_jsonb(OLD)-'locked_at'-'locked_by_user_id') IS DISTINCT FROM (to_jsonb(NEW)-'locked_at'-'locked_by_user_id') THEN
+          RAISE EXCEPTION 'Locked flight cannot be changed';
+        END IF;
+        RETURN NEW;
+      END;
+    $ LANGUAGE plpgsql`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
