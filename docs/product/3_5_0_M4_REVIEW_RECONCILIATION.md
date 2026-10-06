@@ -1,7 +1,7 @@
 # FlyTally Logbook 3.5.0 — M4 Backup v13 Review Reconciliation
 
 **Date:** 6 October 2026  
-**Status:** FROZEN FOR IMPLEMENTATION  
+**Status:** IMPLEMENTED — VERIFICATION PENDING  
 **Scope:** Portable backup / exact account restore v13 for certified-flight void history
 
 ## Independent review result
@@ -80,6 +80,15 @@ Rules:
 - v13 requires the five history/provenance sections;
 - unsigned/invalid v13 portable files are not allowed to restore protected void history; stored server backups remain trusted;
 - v12 behavior is not retroactively tightened.
+
+### 6. Internal protected-evidence integrity — REQUIRED
+
+The outer v13 server signature authenticates the complete portable payload, but restore also validates the archive's own evidence model before mutation:
+- deterministic SHA-256 is recomputed for parent `flight_snapshot`, certified revision `snapshot_data`, verification `source_data` and generic archive-item `source_data`;
+- preserved current/revision certification fingerprints are re-verified with the canonical certification engine;
+- archived signed/revoked verification evidence must still pass the existing HMAC verification contract;
+- child revision/verification identity is bound to its parent tombstone before restore.
+
 
 ## M4 restore invariants
 
