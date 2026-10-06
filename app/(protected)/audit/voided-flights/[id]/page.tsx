@@ -12,7 +12,7 @@ export const metadata={title:"Voided flight audit | FlyTally"};
 
 const text=(value:unknown)=>String(value??"").trim();
 const dateTime=(value:unknown)=>{const d=new Date(String(value??""));return Number.isNaN(d.getTime())?text(value):new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"UTC"}).format(d)+" UTC"};
-const countByKind=(rows:Array<Record<string,unknown>>)=>rows.reduce((out,row)=>{const key=text(row.item_kind)||"OTHER";out[key]=(out[key]||0)+1;return out},{} as Record<string,number>);
+const countByKind=(rows:Array<Record<string,unknown>>):Record<string,number>=>rows.reduce<Record<string,number>>((out,row)=>{const key=text(row.item_kind)||"OTHER";out[key]=(out[key]??0)+1;return out},{});
 type CertifiedRow=Record<string,unknown>&{certification_hash:unknown;certification_version:unknown};
 
 export default async function VoidedFlightAuditPage({params}:{params:Promise<{id:string}>}){
