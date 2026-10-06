@@ -95,6 +95,23 @@ before(()=>{
       id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,flight_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,signer_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
       verification_role TEXT NOT NULL,record_revision INTEGER NOT NULL,flight_hash TEXT NOT NULL,credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,payload_hash TEXT NOT NULL DEFAULT '',server_signature TEXT NOT NULL DEFAULT '',status TEXT NOT NULL DEFAULT 'pending',signed_at TIMESTAMPTZ
     );
+    CREATE TABLE flight_source_provenance(
+      id BIGSERIAL PRIMARY KEY,
+      participant_flight_id BIGINT NOT NULL,
+      participant_user_id BIGINT NOT NULL,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL,
+      source_revision INTEGER NOT NULL,
+      source_hash TEXT NOT NULL,
+      participant_role TEXT NOT NULL,
+      pic_commander_basis TEXT,
+      accepted_at TIMESTAMPTZ,
+      source_voided_flight_id BIGINT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      FOREIGN KEY(participant_flight_id,participant_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      UNIQUE(participant_flight_id,participant_user_id)
+    );
     INSERT INTO users(id,display_name) VALUES(81,'Test Student'),(82,'Test Instructor'),(83,'Linked Actual PIC'),(84,'Generic PIC Recipient');
     INSERT INTO flights(id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,aircraft_make,aircraft_model,departure,arrival,off_block,takeoff,landing,on_block,starts,commander,instructor,role,task,purpose_code,price_per_hour,billing_basis,operation_type,engine_type,operator_name,flight_number,operation_context,landings_day,dual_minutes,certified_at,certification_hash,record_revision)
       VALUES
@@ -140,7 +157,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
     fingerprint:"fi-materialize-901-82",userId:82,
     "text(row.registration)":"OK-FI1","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"FI","text(row.billing_basis)||'BLOCK'":"BLOCK",
-    "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1","participantRole!==\"PIC\"":true,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
+    "Number(row.source_flight_id)":901,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":null,"participantRole!==\"PIC\"":true,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
     "text(row.date)":"2026-08-28","text(row.departure)":"LKPR","text(row.arrival)":"LKBE","text(row.off_block)":"08:00","text(row.registration).toUpperCase()":"OK-FI1","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
     "participantRole===\"INSTRUCTOR\"":true,"text(row.takeoff)":"08:05","text(row.landing)":"09:00","text(row.on_block)":"09:05","Number(row.starts)||0":1,
     commander:"Test Instructor",instructorName:"","text(row.task)":"FCL.140.A refresher training","text(row.purpose_code)":"LAPL_FCL140A_REFRESHER",
@@ -155,6 +172,7 @@ test("AC-11 sign and add FI entry creates a separate instructor-owned record wit
   assert.equal(String(fi.note),"FI entry linked to Test Student's verified training flight");
   assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_tracks WHERE user_id=82 AND flight_id=${fiFlightId}`)[0].count),1);
   assert.equal(String(rows("SELECT certification_hash FROM flights WHERE id=901 AND user_id=81")[0].certification_hash),"hash-r1");
+  assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_source_provenance WHERE participant_flight_id=${fiFlightId} AND participant_user_id=82 AND source_flight_id=901 AND source_hash='hash-r1'`)[0].count),1);
 
   run(`DELETE FROM flights WHERE id=${fiFlightId} AND user_id=82`);
   const participation=rows("SELECT participant_flight_id,status FROM flight_participations WHERE id=9001")[0];
@@ -171,7 +189,7 @@ test("SP4 connected PIC materialization creates an independent PIC record from c
     fingerprint:"pic-materialize-902-83",userId:83,
     "text(row.registration)":"OK-SP4","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"PIC","text(row.billing_basis)||'BLOCK'":"BLOCK",
-    "Number(row.source_flight_id)":902,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-sp4-r1","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":false,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
+    "Number(row.source_flight_id)":902,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-sp4-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":"CERTIFIED_SOURCE_COMMANDER","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":false,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":true,
     "text(row.date)":"2026-09-20","text(row.departure)":"LKPR","text(row.arrival)":"LKBE","text(row.off_block)":"10:00","text(row.registration).toUpperCase()":"OK-SP4","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKBE",
     "participantRole===\"INSTRUCTOR\"":false,"text(row.takeoff)":"10:05","text(row.landing)":"11:05","text(row.on_block)":"11:12","Number(row.starts)||0":3,
     commander:"Linked Actual PIC",instructorName:"","text(row.task)":"","text(row.purpose_code)":"",
@@ -189,6 +207,7 @@ test("SP4 connected PIC materialization creates an independent PIC record from c
   assert.equal(String(rows("SELECT commander FROM flights WHERE id=902 AND user_id=81")[0].commander),"Linked Actual PIC");
   assert.equal(Number(rows("SELECT pic_minutes FROM flights WHERE id=902 AND user_id=81")[0].pic_minutes),0);
   assert.equal(Number(rows("SELECT participant_flight_id FROM flight_participations WHERE id=9002")[0].participant_flight_id),picFlightId);
+  assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_source_provenance WHERE participant_flight_id=${picFlightId} AND participant_user_id=83 AND source_flight_id=902 AND source_hash='hash-sp4-r1'`)[0].count),1);
 
   run(`UPDATE flight_participations SET participant_flight_id=NULL,status='accepted' WHERE id=9002`);
   const duplicateId=Number(run(renderMaterialize(materialize,values)));
@@ -211,7 +230,7 @@ test("generic PIC materialization from INSTRUCTOR source copies the complete eve
     fingerprint:"generic-pic-903-84",userId:84,
     "text(row.registration)":"OK-GPIC","text(row.aircraft_type)":"B23","text(row.aircraft_make)":"Bristell","text(row.aircraft_model)":"B23","text(row.aircraft_variant)":"","text(row.icao_type)":"BR23","text(row.aircraft_class)":"SEP","text(row.regulatory_category)":"AEROPLANE","text(row.balloon_class)":"","text(row.balloon_group)":"","text(row.balloon_operation)":"","text(row.launch_method)":"","Number(row.launches)||0":0,"text(row.evidence)":"EASA",
     "row.price_per_hour===null?null:Number(row.price_per_hour)||0":3000,role:"PIC","text(row.billing_basis)||'BLOCK'":"BLOCK",
-    "Number(row.source_flight_id)":903,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-gpic-r1","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":false,
+    "Number(row.source_flight_id)":903,"Number(row.source_user_id)":81,"Number(row.source_revision)":1,"text(row.source_hash)":"hash-gpic-r1","row.pic_commander_basis===null?null:text(row.pic_commander_basis)":"RECIPIENT_ACCOUNT","participantRole!==\"PIC\"":false,"picCommanderBasis!==\"CERTIFIED_SOURCE_COMMANDER\"":true,"picCommanderBasis!==\"RECIPIENT_ACCOUNT\"":false,
     "text(row.date)":"2026-09-21","text(row.departure)":"LKPR","text(row.arrival)":"LKTB","text(row.off_block)":"12:00","text(row.registration).toUpperCase()":"OK-GPIC","text(row.departure).toUpperCase()":"LKPR","text(row.arrival).toUpperCase()":"LKTB",
     "participantRole===\"INSTRUCTOR\"":false,"text(row.takeoff)":"12:08","text(row.landing)":"13:02","text(row.on_block)":"13:10","Number(row.starts)||0":2,
     commander:"Generic PIC Recipient",instructorName:"","text(row.task)":"Training detail","text(row.purpose_code)":"TRAINING",
@@ -238,6 +257,7 @@ test("generic PIC materialization from INSTRUCTOR source copies the complete eve
   assert.equal(Number(pic.approaches_day),2);
   assert.equal(Number(pic.night_minutes),25);
   assert.equal(Number(pic.ifr_minutes),18);
+  assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_source_provenance WHERE participant_flight_id=${picFlightId} AND participant_user_id=84 AND source_flight_id=903 AND source_hash='hash-gpic-r1'`)[0].count),1);
   assert.equal(String(pic.task),"Training detail");
   assert.equal(String(pic.purpose_code),"TRAINING");
   assert.equal(Number(rows(`SELECT COUNT(*) count FROM flight_tracks WHERE user_id=84 AND flight_id=${picFlightId}`)[0].count),1);
