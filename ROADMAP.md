@@ -371,7 +371,7 @@ Required evidence:
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
-## Phase 1 — Certified flight voiding — DESIGN / REVIEW ACTIVE
+## Phase 1 — Certified flight voiding — DESIGN FROZEN / IMPLEMENTATION NEXT
 
 Frozen product behavior:
 - a certified flight may be explicitly **voided/removed from the active logbook**;
@@ -384,13 +384,13 @@ Frozen product behavior:
 - no one-click undo may silently resurrect the prior certification fingerprint;
 - the action must be server-authorized, atomic and fail closed.
 
-Design gate before implementation:
-- choose and independently review the persistence/tombstone model;
-- enumerate every consumer of `flights` that can expose or count certified records;
-- define sharing/verification/audit behavior and migration compatibility;
-- define recency refresh/invalidation semantics;
-- add PostgreSQL acceptance proving voided records cannot leak into totals/read models;
-- add browser acceptance for destructive confirmation + mandatory reason + post-void disappearance.
+Design gate before implementation — **PASSED 6 October 2026**:
+- independent review returned **APPROVE WITH CHANGES**;
+- archive+delete was accepted as the fail-closed model;
+- repository discovery confirmed the large direct-`flights` consumer surface;
+- actual portable-backup baseline was corrected from the review handoff's v11 assumption to **v12**; voiding therefore requires **backup v13**;
+- schema v20, permanent tombstone/archive children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit route and restore resurrection guards are now frozen;
+- implementation proceeds in M1–M6 from `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
 
 Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
 
