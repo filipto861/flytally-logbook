@@ -10,6 +10,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.5.0 Certified flight voiding — in development
+- Froze the archive+delete model after independent review: certified flights will be removable from all active logbook consumers while permanent certification/audit evidence remains.
+- Started schema v20 with a permanent certified-void tombstone, protected revision/verification archive tables, typed dependent-evidence archive rows, accepted participant-copy provenance, same-transaction certified DELETE authorization and active/tombstone coexistence protection.
+- Added source-level and PostgreSQL acceptance coverage for migration v20, archive immutability, participant provenance, direct-delete rejection, same-transaction deletion and certified-correction compatibility.
+- Repository reconciliation corrected the portable-backup baseline: current exports are v12 with server authenticity; certified-void archive support is therefore reserved for portable backup v13.
+- Runtime void action, UI, audit-only route and backup v13 are **not implemented yet**; schema v20 is **not applied to production**.
+
+
 ## 3.4.1 — 6 October 2026
 
 ### GPS Night-time reliability
