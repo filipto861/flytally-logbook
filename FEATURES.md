@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.4.1 — GPS Night-time reliability — ACTIVE
+### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED
 - Keep GPS Night-time advisory/editable and fail closed when the complete exact total cannot be supported.
 - Add explicit unavailable reason codes and concise pilot-facing explanation instead of a silent generic manual fallback.
 - Preserve SERA geometric civil twilight at Sun centre = -6° and the existing ±0.5° confidence guard.
@@ -126,6 +126,7 @@ Important boundary:
 - Fail closed on ambiguous/non-monotonic timestamps, sparse gaps, implausible position transitions, unsupported solar envelope, confidence-boundary endpoints and conflicting equal-time positions.
 - Include a real-like EHAM → LKPR regression proving that a NIGHT landing may coexist with unavailable exact Night time when sparse coverage prevents a complete total.
 - Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`.
+- Production closeout: PR #241 merged as `b3e1de097b6d16cdaa96082d281602a2765b8ae0`; Vercel deployment `dpl_3911vZiDAFduLhsPbyMnB1YtHKwn` is READY on the exact merge SHA with `fly-tally.com`; public smoke returned 200 and the checked post-deploy runtime-error window was clean.
 
 ### 3.4.0 — Flight Entry Simplification — IMPLEMENTED / PRODUCTION VERIFIED
 - Reduce New Flight and GPS review density with progressive disclosure and one clear completion path.

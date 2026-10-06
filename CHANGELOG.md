@@ -23,6 +23,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Added authenticated browser coverage for the sparse-gap fallback: automatic Night time stays blank with an explicit reason, and a pilot-entered manual value remains sticky.
 - Final local runtime candidate verification: TypeScript PASS, full unit/regression suite **1238/1238 PASS**, production Next.js build PASS, and targeted authenticated sparse-gap browser acceptance **2/2 PASS** across desktop and mobile Chromium.
 - Release verification also reconciled stale repository contract tests with the already-adopted manual-only GitHub Actions policy, browser fixture schema v19, the compact 3.4 certification summary, and the 3.4.1 roadmap state; the manual Verify workflow is now self-contained instead of depending on pull-request event fields.
+- PR #241 merged to `main` as `b3e1de097b6d16cdaa96082d281602a2765b8ae0`; production deployment `dpl_3911vZiDAFduLhsPbyMnB1YtHKwn` is READY on that exact SHA, carries `fly-tally.com`, returned HTTP 200 on the public smoke surface, and had no grouped runtime errors in the checked post-deploy window.
 
 ## 3.4.0 — 5 October 2026
 

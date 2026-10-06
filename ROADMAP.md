@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 6 October 2026  
-**Current production product version:** `3.4.0`  
-**Current active release:** `3.4.1`
+**Current production product version:** `3.4.1`  
+**Current active release:** `3.5.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -43,8 +43,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | --- | --- |
 | Core logbook / certified record integrity | ✅ Production |
 | Aeroplane / Helicopter / Sailplane / Balloon / ULL / conservative Other | ✅ Production |
-| Manual + GPS flight entry | ✅ 3.4.0 production simplification deployed |
-| GPS review / Day-Night / Night-time suggestions | ✅ Production baseline; 3.4.1 reliability/diagnostics follow-up ACTIVE |
+| Manual + GPS flight entry | ✅ 3.4.1 production baseline |
+| GPS review / Day-Night / Night-time suggestions | ✅ 3.4.1 production-verified fail-closed reliability/diagnostics |
 | Certification / correction revisions / audit history | ✅ Production |
 | Recency / licences / evidence | ✅ Production |
 | Sharing / Connections / instructor workflows | ✅ Production |
@@ -52,15 +52,15 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v19** — independent from product version |
-| Product release version | **3.4.0** |
+| Product release version | **3.4.1** |
 
 ## Canonical release sequence
 
 | Order | Target | Workstream | Status | Dependency / reason |
 | ---: | ---: | --- | :---: | --- |
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
-| 2 | **3.4.1** | GPS Night-time reliability | 🚧 | Production use exposed opaque false-unavailable risk; narrow patch pre-empts 3.5.0 |
-| 3 | **3.5.0** | Multi-aircraft remaining integrity audit | ➡️ | Resume historical/dynamic applicability audit after 3.4.1 closes |
+| 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
+| 3 | **3.5.0** | Multi-aircraft remaining integrity audit | 🚧 | Current active release after 3.4.1 production closeout |
 | 4 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
 | 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
 | 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -71,7 +71,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 
 ---
 
-# 3.4.1 — GPS Night-time reliability — ACTIVE
+# 3.4.1 — GPS Night-time reliability — DONE
 
 Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`
 
@@ -94,7 +94,7 @@ Repository review confirms that this is possible because landing classification 
 - adaptive subdivision of an unsafe two-endpoint gap is not accepted as new evidence;
 - no DB migration or certification-version change is expected.
 
-## Single implementation phase — ACTIVE
+## Single implementation phase — DONE
 
 - structured unavailable diagnostics;
 - pilot-facing unavailable reason copy;
@@ -104,6 +104,14 @@ Repository review confirms that this is possible because landing classification 
 - stale automatic suggestion clearing while preserving sticky manual edits;
 - targeted and full regression verification;
 - real-like EHAM → LKPR fixture proving that NIGHT landing classification is independent from unavailable exact Night time when an earlier sparse gap blocks the whole-track total.
+
+Production closeout on 6 October 2026:
+- PR #241 merged to `main` as `b3e1de097b6d16cdaa96082d281602a2765b8ae0`;
+- Vercel production deployment `dpl_3911vZiDAFduLhsPbyMnB1YtHKwn` is READY on that exact SHA and carries `fly-tally.com`;
+- public production smoke returned HTTP 200 on the deployed root/login surface;
+- grouped runtime-error query found no errors in the checked post-deploy window;
+- DB schema remains v19 and certification payload remains v8;
+- no migration or historical flight/certification/audit rewrite occurred.
 
 ---
 
@@ -359,7 +367,7 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft remaining integrity audit — NEXT
+# 3.5.0 — Multi-aircraft remaining integrity audit — ACTIVE
 
 Goal: finish the remaining historical/dynamic applicability integrity work without reintroducing mutable-current-profile dependence into historical evidence.
 

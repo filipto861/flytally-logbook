@@ -68,10 +68,10 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-Current production baseline after 3.4.0 closeout:
+Current production baseline after 3.4.1 closeout:
 - production database schema is **v19**;
 - flight certification payload is **v8**;
-- production product package is **3.4.0**.
+- production product package is **3.4.1**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -89,8 +89,8 @@ PR titles should start with the numeric target version when practical.
 | Target | Scope | Status |
 | --- | --- | :---: |
 | 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
-| 3.4.1 | GPS Night-time reliability | ACTIVE |
-| 3.5.0 | Multi-aircraft remaining integrity audit | NEXT |
+| 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
+| 3.5.0 | Multi-aircraft remaining integrity audit | ACTIVE |
 | 3.6.0 | Saved-date / timezone semantics | PLANNED |
 | 3.7.0 | Currency / monetary semantics | PLANNED |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
