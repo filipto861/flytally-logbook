@@ -104,8 +104,8 @@ test("version 13 rejects orphan void children and mismatched same-account proven
   await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/archive item refers to a missing tombstone/);
 
   const flight={id:20,user_id:7,date:"2026-09-01",registration:"OK-COPY",off_block:"11:00",departure:"LKPR",arrival:"LKPR"};
-  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"d".repeat(64)};
-  payload.flights=[flight];payload.voided_flight_archive_items=[];payload.counts.voided_flight_archive_items=0;payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"d".repeat(64),certification_version:8,flight_snapshot:snapshot,flight_snapshot_sha256:"e".repeat(64),archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000002"}];
+  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"d".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7};
+  payload.flights=[flight];payload.voided_flight_archive_items=[];payload.counts.voided_flight_archive_items=0;payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"d".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7,flight_snapshot:snapshot,flight_snapshot_sha256:"e".repeat(64),archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000002"}];
   payload.flight_source_provenance=[{id:50,participant_flight_id:20,participant_user_id:7,source_flight_id:10,source_user_id:7,source_revision:2,source_hash:"f".repeat(64),participant_role:"PIC",source_voided_flight_id:30}];
   payload.counts.flights=1;payload.counts.voided_certified_flights=1;payload.counts.flight_source_provenance=1;
   integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
@@ -115,8 +115,8 @@ test("version 13 rejects orphan void children and mismatched same-account proven
 test("void-history relationship helper accepts history-only tombstone plus independent participant copy",async()=>{
   const parsed=JSON.parse(await backup(13)),{integrity:_integrity,...payload}=parsed;
   const copy={id:20,user_id:7,date:"2026-09-01",registration:"OK-COPY",off_block:"11:00",departure:"LKPR",arrival:"LKPR"};
-  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"a".repeat(64)};
-  const snapshotDigest=await portableBackupDigest(canonicalEvidenceJson(snapshot));payload.flights=[copy];payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,flight_snapshot:snapshot,flight_snapshot_sha256:snapshotDigest,archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000003"}];
+  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7};
+  const snapshotDigest=await portableBackupDigest(canonicalEvidenceJson(snapshot));payload.flights=[copy];payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7,flight_snapshot:snapshot,flight_snapshot_sha256:snapshotDigest,archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000003"}];
   payload.flight_source_provenance=[{id:50,participant_flight_id:20,participant_user_id:7,source_flight_id:10,source_user_id:7,source_revision:1,source_hash:"a".repeat(64),participant_role:"PIC",source_voided_flight_id:30}];
   payload.counts.flights=1;payload.counts.voided_certified_flights=1;payload.counts.flight_source_provenance=1;
   const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
@@ -126,8 +126,8 @@ test("void-history relationship helper accepts history-only tombstone plus indep
 
 test("version 13 rejects internally mismatched void evidence digests even when outer backup digest is valid",async()=>{
   const parsed=JSON.parse(await backup(13)),{integrity:_integrity,...payload}=parsed;
-  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"a".repeat(64)};
-  payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,flight_snapshot:snapshot,flight_snapshot_sha256:"b".repeat(64),archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000004"}];
+  const snapshot={id:10,user_id:7,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7};
+  payload.voided_certified_flights=[{id:30,user_id:7,original_flight_id:10,record_revision:1,certification_hash:"a".repeat(64),certification_version:8,certified_at:"2026-10-06T10:00:00Z",certified_by_user_id:7,flight_snapshot:snapshot,flight_snapshot_sha256:"b".repeat(64),archive_version:1,voided_at:"2026-10-06T12:00:00Z",voided_by_user_id:7,void_reason:"Duplicate certified record",operation_token:"00000000-0000-0000-0000-000000000004"}];
   payload.counts.voided_certified_flights=1;
   const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
   await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/SHA-256 does not match its protected JSON evidence/);
