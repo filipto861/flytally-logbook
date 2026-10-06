@@ -620,7 +620,7 @@ const migrationQueries=(version:number)=>{
     sql`CREATE TABLE IF NOT EXISTS voided_flight_archive_items (
       id BIGSERIAL PRIMARY KEY,
       voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
-      item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','TRACK_POINT','SOURCE_PROVENANCE')),
+      item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','SOURCE_PROVENANCE')),
       source_key TEXT NOT NULL,
       source_data JSONB NOT NULL,
       source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
