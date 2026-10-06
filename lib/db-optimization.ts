@@ -774,11 +774,11 @@ export function ensureDatabaseOptimizations():Promise<void>{
       ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
       ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
-    sql`CREATE OR REPLACE FUNCTION logbook_protect_void_archive() RETURNS TRIGGER AS $
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_void_archive() RETURNS TRIGGER AS $$
       BEGIN
         RAISE EXCEPTION 'Certified flight void archive is immutable';
       END;
-    $ LANGUAGE plpgsql`,
+    $$ LANGUAGE plpgsql`,
     sql`DROP TRIGGER IF EXISTS trg_logbook_protect_voided_certified_flights ON voided_certified_flights`,
     sql`CREATE TRIGGER trg_logbook_protect_voided_certified_flights
       BEFORE UPDATE OR DELETE ON voided_certified_flights
@@ -795,7 +795,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
     sql`CREATE TRIGGER trg_logbook_protect_voided_flight_archive_items
       BEFORE UPDATE OR DELETE ON voided_flight_archive_items
       FOR EACH ROW EXECUTE FUNCTION logbook_protect_void_archive()`,
-    sql`CREATE OR REPLACE FUNCTION logbook_prevent_voided_flight_id_reuse() RETURNS TRIGGER AS $
+    sql`CREATE OR REPLACE FUNCTION logbook_prevent_voided_flight_id_reuse() RETURNS TRIGGER AS $$
       BEGIN
         IF EXISTS(
           SELECT 1 FROM voided_certified_flights v
@@ -805,11 +805,11 @@ export function ensureDatabaseOptimizations():Promise<void>{
         END IF;
         RETURN NEW;
       END;
-    $ LANGUAGE plpgsql`,
+    $$ LANGUAGE plpgsql`,
     sql`DROP TRIGGER IF EXISTS trg_logbook_prevent_voided_flight_id_reuse ON flights`,
     sql`CREATE TRIGGER trg_logbook_prevent_voided_flight_id_reuse
       BEFORE INSERT ON flights FOR EACH ROW EXECUTE FUNCTION logbook_prevent_voided_flight_id_reuse()`,
-    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $
+    sql`CREATE OR REPLACE FUNCTION logbook_protect_locked_flight() RETURNS TRIGGER AS $$
       DECLARE correction_transition BOOLEAN:=FALSE; certified_void_transition BOOLEAN:=FALSE;
       BEGIN
         IF TG_OP='DELETE' THEN
@@ -858,7 +858,7 @@ export function ensureDatabaseOptimizations():Promise<void>{
         END IF;
         RETURN NEW;
       END;
-    $ LANGUAGE plpgsql`,
+    $$ LANGUAGE plpgsql`,
   ];
   throw new Error(`Unknown database migration ${version}`);
 };
