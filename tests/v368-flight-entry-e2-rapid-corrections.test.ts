@@ -55,7 +55,7 @@ test("E2 ordinary ULL GPS review no longer requires Part-FCL PF evidence without
   assert.equal(gpsImportSourceRequirements(profile("SEP")).movementMode,"FCL060_PF");
 });
 
-test("E2 GPS Night-time baseline remains conservative while 3.4.1 can prove safe sparse same-state segments",()=>{
+test("E2 GPS Night-time baseline remains conservative and 3.4.1 explains sparse-gap unavailability",()=>{
   const points=(start:string,end:string):KmlPoint[]=>[
     {lat:50.09,lon:14.43,alt:300,time:start},
     {lat:50.10,lon:14.44,alt:320,time:end},
@@ -65,7 +65,12 @@ test("E2 GPS Night-time baseline remains conservative while 3.4.1 can prove safe
   const ambiguous=gpsNightMinutesSuggestion(points("2026-07-19T22:00:00","2026-07-19T22:10:00"));
   assert.equal(ambiguous.status,"UNAVAILABLE");
   if(ambiguous.status==="UNAVAILABLE")assert.deepEqual(ambiguous.reasons,["MISSING_OR_AMBIGUOUS_TIMESTAMP"]);
-  assert.deepEqual(gpsNightMinutesSuggestion(points("2026-07-19T12:00:00Z","2026-07-19T12:10:01Z")),{status:"AVAILABLE",minutes:0});
+  const sparse=gpsNightMinutesSuggestion(points("2026-07-19T12:00:00Z","2026-07-19T12:10:01Z"));
+  assert.equal(sparse.status,"UNAVAILABLE");
+  if(sparse.status==="UNAVAILABLE"){
+    assert.deepEqual(sparse.reasons,["SEGMENT_GAP_TOO_LARGE"]);
+    assert.equal(sparse.affectedSegmentSeconds,601);
+  }
 });
 
 test("E2 GPS UX extends SERA to ULL, keeps IFR manual and makes PF evidence optional",()=>{
