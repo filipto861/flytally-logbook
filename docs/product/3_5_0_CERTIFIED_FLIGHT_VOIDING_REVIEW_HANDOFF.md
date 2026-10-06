@@ -52,7 +52,7 @@ Draft tombstone payload:
 - participation/connected-crew snapshot;
 - public-share snapshot;
 - expenses;
-- GPS tracks / legacy track evidence needed for audit/backup.
+- GPS evidence from canonical `flight_tracks` rows, whose persisted JSON columns carry the complete track payload needed for audit/backup.
 
 Protection trigger change:
 - certified DELETE remains forbidden unless a matching permanent tombstone already exists for the same owner, flight id, revision and certification hash;
