@@ -49,7 +49,7 @@ const migrationQueries=(version:number)=>{
         IF TG_OP='DELETE' THEN RETURN OLD; END IF;
         RETURN NEW;
       END;
-    $$ LANGUAGE plpgsql`,
+    $$$$ LANGUAGE plpgsql`,
     sql`DO $$ BEGIN
       IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgname='trg_logbook_protect_locked_flight' AND tgrelid='flights'::regclass AND NOT tgisinternal) THEN
         CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();
