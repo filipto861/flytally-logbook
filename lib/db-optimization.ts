@@ -774,6 +774,45 @@ export function ensureDatabaseOptimizations():Promise<void>{
       ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
       ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
+    sql`CREATE OR REPLACE FUNCTION logbook_require_void_archive_separation() RETURNS TRIGGER AS $$
+      BEGIN
+        IF EXISTS(
+          SELECT 1 FROM flights f
+          WHERE f.id=NEW.original_flight_id AND f.user_id=NEW.user_id
+        ) THEN
+          RAISE EXCEPTION 'Voided certified flight archive cannot coexist with its active flight';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_require_void_archive_separation ON voided_certified_flights`,
+    sql`CREATE CONSTRAINT TRIGGER trg_logbook_require_void_archive_separation
+      AFTER INSERT ON voided_certified_flights
+      DEFERRABLE INITIALLY DEFERRED
+      FOR EACH ROW EXECUTE FUNCTION logbook_require_void_archive_separation()`,
+    sql`CREATE OR REPLACE FUNCTION logbook_validate_void_archive_child_insert() RETURNS TRIGGER AS $$
+      BEGIN
+        IF NOT EXISTS(
+          SELECT 1 FROM voided_certified_flights v
+          WHERE v.id=NEW.voided_flight_id AND v.created_txid=txid_current()
+        ) THEN
+          RAISE EXCEPTION 'Void archive evidence must be captured in the tombstone transaction';
+        END IF;
+        RETURN NEW;
+      END;
+    $$ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_revisions_insert ON voided_flight_certified_revisions`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_revisions_insert
+      BEFORE INSERT ON voided_flight_certified_revisions
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_verifications_insert ON voided_flight_verifications`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_verifications_insert
+      BEFORE INSERT ON voided_flight_verifications
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_voided_flight_archive_items_insert ON voided_flight_archive_items`,
+    sql`CREATE TRIGGER trg_logbook_validate_voided_flight_archive_items_insert
+      BEFORE INSERT ON voided_flight_archive_items
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_void_archive_child_insert()`,
     sql`CREATE OR REPLACE FUNCTION logbook_protect_void_archive() RETURNS TRIGGER AS $$
       BEGIN
         RAISE EXCEPTION 'Certified flight void archive is immutable';
