@@ -77,3 +77,16 @@ test("v20 freezes archive child membership to the tombstone transaction",()=>{
     "trg_logbook_validate_voided_flight_archive_items_insert",
   ])assert.match(dbOptimizations,new RegExp(`CREATE TRIGGER ${trigger}`));
 });
+
+
+test("v20 freezes participant source provenance and only permits exact same-transaction void binding",()=>{
+  assert.match(dbOptimizations,/CREATE OR REPLACE FUNCTION logbook_validate_source_provenance\(\)/);
+  assert.match(dbOptimizations,/Flight source provenance is immutable/);
+  assert.match(dbOptimizations,/OLD\.source_voided_flight_id IS NULL AND NEW\.source_voided_flight_id IS NOT NULL/);
+  assert.match(dbOptimizations,/parent\.user_id<>NEW\.source_user_id/);
+  assert.match(dbOptimizations,/parent\.original_flight_id<>NEW\.source_flight_id/);
+  assert.match(dbOptimizations,/parent\.record_revision<>NEW\.source_revision/);
+  assert.match(dbOptimizations,/parent\.certification_hash<>NEW\.source_hash/);
+  assert.match(dbOptimizations,/parent\.created_txid<>txid_current\(\)/);
+  assert.match(dbOptimizations,/BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance/);
+});
