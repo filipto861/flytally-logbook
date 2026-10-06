@@ -42,6 +42,8 @@ test("certified DELETE remains forbidden unless an exact tombstone was created i
   assert.match(dbOptimizations,/v\.created_txid=txid_current\(\)/);
   assert.match(dbOptimizations,/v\.flight_snapshot IS NOT DISTINCT FROM to_jsonb\(OLD\)/);
   assert.match(dbOptimizations,/Certified flight cannot be deleted without a matching same-transaction void archive/);
+  assert.match(dbOptimizations,/DROP TRIGGER IF EXISTS trg_logbook_protect_locked_flight ON flights/);
+  assert.match(dbOptimizations,/CREATE TRIGGER trg_logbook_protect_locked_flight[\s\S]*BEFORE UPDATE OR DELETE ON flights[\s\S]*EXECUTE FUNCTION logbook_protect_locked_flight\(\)/);
 });
 
 test("v20 retains the certified correction transition and never disables integrity triggers",()=>{
