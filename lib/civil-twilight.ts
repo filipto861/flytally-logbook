@@ -1,5 +1,5 @@
 import { trackTimestampBasis } from "./track-time.ts";
-import { TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH,flightEnvelope,haversineKm,isImplausiblePositionTransition,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
+import { flightEnvelope,haversineKm,isImplausiblePositionTransition,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
 
 export const CIVIL_TWILIGHT_ALTITUDE_DEG=-6;
 export const CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG=.5;
@@ -182,19 +182,6 @@ function civilTwilightCrossingFraction(a:KmlPoint,b:KmlPoint,aMillis:number,bMil
 }
 
 export const CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS=600;
-const EARTH_RADIUS_KM=6371.0088;
-const SOLAR_ALTITUDE_TIME_RATE_BOUND_DEG_PER_HOUR=15.1;
-const TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR=TRACK_SHORT_IMPLAUSIBLE_SPEED_KMH/EARTH_RADIUS_KM*180/Math.PI;
-
-function longSegmentSolarChangeBoundDegrees(durationSeconds:number){
-  return durationSeconds/3600*(SOLAR_ALTITUDE_TIME_RATE_BOUND_DEG_PER_HOUR+TRACK_POSITION_ANGULAR_RATE_BOUND_DEG_PER_HOUR);
-}
-
-function longSegmentSameStateProven(aDelta:number,bDelta:number,durationSeconds:number){
-  if(aDelta===0||bDelta===0||Math.sign(aDelta)!==Math.sign(bDelta))return false;
-  const requiredMargin=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG+longSegmentSolarChangeBoundDegrees(durationSeconds);
-  return Math.min(Math.abs(aDelta),Math.abs(bDelta))>requiredMargin;
-}
 
 function samePosition(a:KmlPoint,b:KmlPoint){
   return haversineKm(a,b)<.001;
@@ -203,15 +190,12 @@ function samePosition(a:KmlPoint,b:KmlPoint){
 /**
  * Conservative GPS Night-time suggestion.
  *
- * Sparse segments longer than the 10-minute direct-interpolation guard are no longer
- * rejected solely for their sampling interval when a conservative bound proves
- * the complete segment stays unambiguously on the same side of civil twilight.
- * The bound combines:
- * - a conservative solar-altitude time-rate bound; and
- * - the highest speed tolerated by the existing canonical GPS transition-quality rules.
+ * Segments longer than the 10-minute direct-interpolation guard remain
+ * UNAVAILABLE. Endpoint displacement and the generic GPS transition-quality
+ * thresholds do not prove the aircraft's unobserved path between sparse samples,
+ * so they cannot establish an exact whole-segment Day/Night state.
  *
- * A sparse segment that could contain the twilight boundary remains
- * UNAVAILABLE. Linear subdivision never turns an unsafe gap into evidence.
+ * Linear subdivision never turns an unsupported gap into evidence.
  * Manual input remains authoritative and IFR is intentionally outside this helper.
  */
 export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightTimeSuggestion{
@@ -240,11 +224,7 @@ export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightT
     const aDelta=aAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG,bDelta=bAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
     if(Math.abs(aDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG||Math.abs(bDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return unavailableNightTime("TWILIGHT_CONFIDENCE_GUARD",index-1,duration);
 
-    if(duration>CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS){
-      if(!longSegmentSameStateProven(aDelta,bDelta,duration))return unavailableNightTime("SEGMENT_GAP_TOO_LARGE",index-1,duration);
-      if(aDelta<0)nightSeconds+=duration;
-      continue;
-    }
+    if(duration>CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS)return unavailableNightTime("SEGMENT_GAP_TOO_LARGE",index-1,duration);
 
     if(aDelta<0&&bDelta<0){nightSeconds+=duration;continue}
     if(aDelta>0&&bDelta>0)continue;
