@@ -89,7 +89,7 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
   if(!flight.certifiedAt||!flight.certificationHash)return{status:"not-certified",flightId};
 
   const [
-    revisionRaw,verificationRaw,approvalRaw,participationRaw,crewRaw,shareRaw,expenseRaw,trackRaw,pointRaw,provenanceRaw,
+    revisionRaw,verificationRaw,approvalRaw,participationRaw,crewRaw,shareRaw,expenseRaw,trackRaw,provenanceRaw,
   ]=await Promise.all([
     sql`SELECT r.id,r.xmin::text row_xmin,to_jsonb(r) source_data FROM flight_certified_revisions r
       WHERE r.user_id=${userId} AND r.flight_id=${flightId} ORDER BY r.revision_number,r.id` as Promise<Array<Record<string,unknown>>>,
@@ -107,33 +107,18 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
       WHERE e.user_id=${userId} AND e.flight_id=${flightId} ORDER BY e.id` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT t.id,t.xmin::text row_xmin,to_jsonb(t) source_data FROM flight_tracks t
       WHERE t.user_id=${userId} AND t.flight_id=${flightId} ORDER BY t.id` as Promise<Array<Record<string,unknown>>>,
-    sql`SELECT p.id,p.track_id,p.xmin::text row_xmin,to_jsonb(p) source_data
-      FROM track_points p JOIN flight_tracks t ON t.id=p.track_id AND t.user_id=p.user_id
-      WHERE p.user_id=${userId} AND t.flight_id=${flightId} ORDER BY p.track_id,p.seq,p.id` as Promise<Array<Record<string,unknown>>>,
     sql`SELECT p.id,p.xmin::text row_xmin,to_jsonb(p) source_data FROM flight_source_provenance p
       WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId} ORDER BY p.id` as Promise<Array<Record<string,unknown>>>,
   ]);
 
   const revisions=rows(revisionRaw),verifications=rows(verificationRaw),approvals=rows(approvalRaw),participations=rows(participationRaw);
   const crew=rows(crewRaw),shares=rows(shareRaw),expenses=rows(expenseRaw),tracks=rows(trackRaw),provenance=rows(provenanceRaw);
-  const pointRows=pointRaw.map(row=>({...snapshotRow(row),trackId:number(row.track_id)}));
 
   const acceptedMaterialized=participations
     .map(item=>item.data)
     .filter(item=>text(item.status).toLowerCase()==="accepted"&&number(item.participant_flight_id)>0);
   const provenanceCopies=new Set(provenance.map(item=>number(item.data.participant_flight_id)).filter(Boolean));
   if(acceptedMaterialized.some(item=>!provenanceCopies.has(number(item.participant_flight_id))))return{status:"evidence-incomplete",flightId};
-
-  const pointsByTrack=new Map<number,SnapshotRow[]>();
-  for(const point of pointRows){
-    const group=pointsByTrack.get(point.trackId)??[];
-    group.push(point);
-    pointsByTrack.set(point.trackId,group);
-  }
-  const pointGroups=[...pointsByTrack.entries()].map(([trackId,items])=>{
-    const data=items.map(item=>item.data);
-    return{trackId,data,sha256:voidEvidenceSha256(data),count:items.length};
-  });
 
   const operationToken=randomUUID();
   const lockQuery=sql`SELECT pg_advisory_xact_lock(hashtextextended(${`certified-void:${userId}:${flightId}`},0))`;
@@ -239,18 +224,10 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
     WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current()
       AND p.xmin::text=${item.xmin} AND to_jsonb(p) IS NOT DISTINCT FROM ${json(item.data)}::jsonb
     ON CONFLICT(voided_flight_id,item_kind,source_key) DO NOTHING`);
-  const archivePointGroups=pointGroups.map(group=>sql`INSERT INTO voided_flight_archive_items(voided_flight_id,item_kind,source_key,source_data,source_sha256)
-    SELECT v.id,'TRACK_POINT',${String(group.trackId)},${json(group.data)}::jsonb,${group.sha256}
-    FROM voided_certified_flights v
-    WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current()
-      AND (SELECT COUNT(*)::integer FROM track_points p WHERE p.user_id=${userId} AND p.track_id=${group.trackId})=${group.count}
-      AND COALESCE((SELECT jsonb_agg(to_jsonb(p) ORDER BY p.seq,p.id) FROM track_points p WHERE p.user_id=${userId} AND p.track_id=${group.trackId}),'[]'::jsonb)
-          IS NOT DISTINCT FROM ${json(group.data)}::jsonb
-    ON CONFLICT(voided_flight_id,item_kind,source_key) DO NOTHING`);
 
   const archiveQueries=[
     ...revisionArchive,...verificationArchive,...archiveApproval,...archiveParticipation,...archiveCrew,
-    ...archiveShare,...archiveExpense,...archiveTrack,...archivePointGroups,...archiveProvenance,
+    ...archiveShare,...archiveExpense,...archiveTrack,...archiveProvenance,
   ];
 
   // Each mutation below is independently parent-gated. The final DELETE additionally
@@ -295,17 +272,8 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
         AND (SELECT COUNT(*) FROM voided_flight_certified_revisions a WHERE a.voided_flight_id=v.id)=${revisions.length})
       AND (SELECT COUNT(*) FROM flight_certified_revisions current WHERE current.user_id=${userId} AND current.flight_id=${flightId})=${revisions.length}`;
 
-  const deletePointsQuery=sql`DELETE FROM track_points p
-    WHERE p.user_id=${userId}
-      AND p.track_id IN(SELECT t.id FROM flight_tracks t WHERE t.user_id=${userId} AND t.flight_id=${flightId})
-      AND EXISTS(SELECT 1 FROM voided_certified_flights v WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current()
-        AND (SELECT COUNT(*) FROM voided_flight_archive_items a WHERE a.voided_flight_id=v.id AND a.item_kind='TRACK_POINT')=${pointGroups.length})
-      AND (SELECT COUNT(*) FROM track_points allp JOIN flight_tracks t ON t.id=allp.track_id AND t.user_id=allp.user_id
-        WHERE allp.user_id=${userId} AND t.flight_id=${flightId})=${pointRows.length}`;
-
   const deleteTracksQuery=sql`DELETE FROM flight_tracks t
     WHERE t.user_id=${userId} AND t.flight_id=${flightId}
-      AND NOT EXISTS(SELECT 1 FROM track_points p WHERE p.user_id=t.user_id AND p.track_id=t.id)
       AND EXISTS(SELECT 1 FROM voided_certified_flights v WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current()
         AND (SELECT COUNT(*) FROM voided_flight_archive_items a WHERE a.voided_flight_id=v.id AND a.item_kind='TRACK')=${tracks.length})
       AND (SELECT COUNT(*) FROM flight_tracks current WHERE current.user_id=${userId} AND current.flight_id=${flightId})=${tracks.length}`;
@@ -330,7 +298,6 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
           AND (SELECT COUNT(*) FROM voided_flight_archive_items x WHERE x.voided_flight_id=v.id AND x.item_kind='PUBLIC_SHARE')=${shares.length}
           AND (SELECT COUNT(*) FROM voided_flight_archive_items x WHERE x.voided_flight_id=v.id AND x.item_kind='EXPENSE')=${expenses.length}
           AND (SELECT COUNT(*) FROM voided_flight_archive_items x WHERE x.voided_flight_id=v.id AND x.item_kind='TRACK')=${tracks.length}
-          AND (SELECT COUNT(*) FROM voided_flight_archive_items x WHERE x.voided_flight_id=v.id AND x.item_kind='TRACK_POINT')=${pointGroups.length}
           AND (SELECT COUNT(*) FROM voided_flight_archive_items x WHERE x.voided_flight_id=v.id AND x.item_kind='SOURCE_PROVENANCE')=${provenance.length}
           AND (SELECT COUNT(*) FROM flight_participations p WHERE p.source_user_id=f.user_id AND p.source_flight_id=f.id)=${participations.length}
           AND (SELECT COUNT(*) FROM instructor_flight_approvals a WHERE a.student_user_id=f.user_id AND a.flight_id=f.id)=${approvals.length}
@@ -347,7 +314,7 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
 
   const queries=[
     lockQuery,tombstoneQuery,...archiveQueries,...transitionQueries,
-    deleteRevisionQuery,deletePointsQuery,deleteTracksQuery,finalDeleteQuery,
+    deleteRevisionQuery,deleteTracksQuery,finalDeleteQuery,
   ];
   const tombstoneIndex=1,deleteIndex=queries.length-1;
   let results;
