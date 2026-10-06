@@ -1,5 +1,5 @@
 import { trackTimestampBasis } from "./track-time.ts";
-import { flightEnvelope,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
+import { flightEnvelope,haversineKm,isImplausiblePositionTransition,touchAndGoEvents,type KmlPoint } from "./track-processing.ts";
 
 export const CIVIL_TWILIGHT_ALTITUDE_DEG=-6;
 export const CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG=.5;
@@ -11,9 +11,20 @@ export type CivilTwilightClass="DAY"|"NIGHT"|"UNAVAILABLE";
 export type CivilTwilightLandingSuggestion=
   |{status:"AVAILABLE";day:number;night:number;total:number}
   |{status:"UNAVAILABLE";total:number};
+export type NightTimeUnavailableReason=
+  |"INSUFFICIENT_POINTS"
+  |"MISSING_OR_AMBIGUOUS_TIMESTAMP"
+  |"NON_MONOTONIC_TIMESTAMP"
+  |"INVALID_OR_UNSUPPORTED_POSITION"
+  |"UNSUPPORTED_SOLAR_ENVELOPE"
+  |"ZERO_DURATION_CONFLICT"
+  |"SEGMENT_GAP_TOO_LARGE"
+  |"TRACK_DISCONTINUITY"
+  |"TWILIGHT_CONFIDENCE_GUARD"
+  |"CROSSING_UNRESOLVED";
 export type CivilTwilightNightTimeSuggestion=
   |{status:"AVAILABLE";minutes:number}
-  |{status:"UNAVAILABLE"};
+  |{status:"UNAVAILABLE";reasons:NightTimeUnavailableReason[];firstAffectedSegment?:number;affectedSegmentSeconds?:number};
 export type CivilTwilightMovementSuggestion=
   |{status:"AVAILABLE";takeoffsDay:number;takeoffsNight:number;approachesDay:number;approachesNight:number}
   |{status:"UNAVAILABLE"};
@@ -124,11 +135,28 @@ export function gpsPfMovementDayNightSuggestion(points:KmlPoint[]):CivilTwilight
 }
 
 
-function timedPointMillis(point:KmlPoint){
-  const basis=trackTimestampBasis(point.time);
-  if(basis!=="utc"&&basis!=="offset")return null;
-  const millis=Date.parse(String(point.time));
-  return Number.isFinite(millis)?millis:null;
+function unavailableNightTime(reason:NightTimeUnavailableReason,firstAffectedSegment?:number,affectedSegmentSeconds?:number):CivilTwilightNightTimeSuggestion{
+  return{status:"UNAVAILABLE",reasons:[reason],...(firstAffectedSegment===undefined?{}:{firstAffectedSegment}),...(affectedSegmentSeconds===undefined?{}:{affectedSegmentSeconds})};
+}
+
+type TimedPointResult=
+  |{status:"AVAILABLE";millis:number}
+  |{status:"UNAVAILABLE";reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"|"UNSUPPORTED_SOLAR_ENVELOPE"};
+
+function timedPoint(point:KmlPoint):TimedPointResult{
+  const timestamp=String(point.time??"").trim(),basis=trackTimestampBasis(timestamp);
+  if(basis!=="utc"&&basis!=="offset")return{status:"UNAVAILABLE",reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"};
+  const millis=Date.parse(timestamp);
+  if(!Number.isFinite(millis))return{status:"UNAVAILABLE",reason:"MISSING_OR_AMBIGUOUS_TIMESTAMP"};
+  const year=new Date(millis).getUTCFullYear();
+  if(year<CIVIL_TWILIGHT_MIN_YEAR||year>CIVIL_TWILIGHT_MAX_YEAR)return{status:"UNAVAILABLE",reason:"UNSUPPORTED_SOLAR_ENVELOPE"};
+  return{status:"AVAILABLE",millis};
+}
+
+function pointSupportReason(point:KmlPoint):NightTimeUnavailableReason|null{
+  if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||Math.abs(point.lat)>90||Math.abs(point.lon)>180)return"INVALID_OR_UNSUPPORTED_POSITION";
+  if(Math.abs(point.lat)>CIVIL_TWILIGHT_MAX_ABS_LATITUDE)return"UNSUPPORTED_SOLAR_ENVELOPE";
+  return null;
 }
 
 function interpolatedPoint(a:KmlPoint,b:KmlPoint,fraction:number,millis:number):KmlPoint{
@@ -153,28 +181,55 @@ function civilTwilightCrossingFraction(a:KmlPoint,b:KmlPoint,aMillis:number,bMil
   return(low+high)/2;
 }
 
+export const CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS=600;
+
+function samePosition(a:KmlPoint,b:KmlPoint){
+  return haversineKm(a,b)<.001;
+}
+
 /**
- * Conservative GPS Night-time suggestion. Every timed segment must be monotonic,
- * no longer than ten minutes, and inside the supported solar-calculation envelope.
+ * Conservative GPS Night-time suggestion.
+ *
+ * Segments longer than the 10-minute direct-interpolation guard remain
+ * UNAVAILABLE. Endpoint displacement and the generic GPS transition-quality
+ * thresholds do not prove the aircraft's unobserved path between sparse samples,
+ * so they cannot establish an exact whole-segment Day/Night state.
+ *
+ * Linear subdivision never turns an unsupported gap into evidence.
  * Manual input remains authoritative and IFR is intentionally outside this helper.
  */
 export function gpsNightMinutesSuggestion(points:KmlPoint[]):CivilTwilightNightTimeSuggestion{
-  if(points.length<2)return{status:"UNAVAILABLE"};
+  if(points.length<2)return unavailableNightTime("INSUFFICIENT_POINTS");
   let nightSeconds=0;
   for(let index=1;index<points.length;index++){
-    const a=points[index-1],b=points[index],aMillis=timedPointMillis(a),bMillis=timedPointMillis(b);
-    if(aMillis===null||bMillis===null||bMillis<aMillis)return{status:"UNAVAILABLE"};
-    if(bMillis===aMillis)continue;
+    const a=points[index-1],b=points[index],aSupport=pointSupportReason(a),bSupport=pointSupportReason(b);
+    if(aSupport)return unavailableNightTime(aSupport,index-1);
+    if(bSupport)return unavailableNightTime(bSupport,index-1);
+
+    const aTime=timedPoint(a),bTime=timedPoint(b);
+    if(aTime.status==="UNAVAILABLE")return unavailableNightTime(aTime.reason,index-1);
+    if(bTime.status==="UNAVAILABLE")return unavailableNightTime(bTime.reason,index-1);
+    const aMillis=aTime.millis,bMillis=bTime.millis;
+    if(bMillis<aMillis)return unavailableNightTime("NON_MONOTONIC_TIMESTAMP",index-1);
+    if(bMillis===aMillis){
+      if(!samePosition(a,b))return unavailableNightTime("ZERO_DURATION_CONFLICT",index-1);
+      continue;
+    }
+
     const duration=(bMillis-aMillis)/1000;
-    if(duration>600)return{status:"UNAVAILABLE"};
+    if(isImplausiblePositionTransition(a,b,duration))return unavailableNightTime("TRACK_DISCONTINUITY",index-1,duration);
+
     const aAltitude=geometricSolarAltitudeDegrees(a.time,a.lat,a.lon),bAltitude=geometricSolarAltitudeDegrees(b.time,b.lat,b.lon);
-    if(aAltitude===null||bAltitude===null)return{status:"UNAVAILABLE"};
+    if(aAltitude===null||bAltitude===null)return unavailableNightTime("UNSUPPORTED_SOLAR_ENVELOPE",index-1,duration);
     const aDelta=aAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG,bDelta=bAltitude-CIVIL_TWILIGHT_ALTITUDE_DEG;
-    if(Math.abs(aDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG||Math.abs(bDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return{status:"UNAVAILABLE"};
+    if(Math.abs(aDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG||Math.abs(bDelta)<=CIVIL_TWILIGHT_CONFIDENCE_GUARD_DEG)return unavailableNightTime("TWILIGHT_CONFIDENCE_GUARD",index-1,duration);
+
+    if(duration>CIVIL_TWILIGHT_DIRECT_INTERPOLATION_MAX_SEGMENT_SECONDS)return unavailableNightTime("SEGMENT_GAP_TOO_LARGE",index-1,duration);
+
     if(aDelta<0&&bDelta<0){nightSeconds+=duration;continue}
     if(aDelta>0&&bDelta>0)continue;
     const crossing=civilTwilightCrossingFraction(a,b,aMillis,bMillis,aAltitude,bAltitude);
-    if(crossing===null)return{status:"UNAVAILABLE"};
+    if(crossing===null)return unavailableNightTime("CROSSING_UNRESOLVED",index-1,duration);
     nightSeconds+=aDelta<0?duration*crossing:duration*(1-crossing);
   }
   return{status:"AVAILABLE",minutes:Math.max(0,Math.round(nightSeconds/60))};

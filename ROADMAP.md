@@ -2,9 +2,9 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 4 October 2026  
-**Current production product version:** `2.7.0`  
-**Next canonical unified release:** `3.4.0`
+**Last updated:** 6 October 2026  
+**Current production product version:** `3.4.0`  
+**Current active release:** `3.4.1`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -43,8 +43,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | --- | --- |
 | Core logbook / certified record integrity | ✅ Production |
 | Aeroplane / Helicopter / Sailplane / Balloon / ULL / conservative Other | ✅ Production |
-| Manual + GPS flight entry | ✅ Production baseline; simplification planned in 3.4.0 |
-| GPS review / Day-Night / Night-time suggestions | ✅ Production; GPS remains advisory |
+| Manual + GPS flight entry | ✅ 3.4.0 production simplification deployed |
+| GPS review / Day-Night / Night-time suggestions | ✅ Production baseline; 3.4.1 reliability/diagnostics follow-up ACTIVE |
 | Certification / correction revisions / audit history | ✅ Production |
 | Recency / licences / evidence | ✅ Production |
 | Sharing / Connections / instructor workflows | ✅ Production |
@@ -52,25 +52,62 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v19** — independent from product version |
-| Product release version | **2.7.0** |
+| Product release version | **3.4.0** |
 
 ## Canonical release sequence
 
 | Order | Target | Workstream | Status | Dependency / reason |
 | ---: | ---: | --- | :---: | --- |
-| 1 | **3.4.0** | Flight Entry Simplification | 🚧 | Production use exposed excessive cognitive load in otherwise-correct Manual/GPS flow |
-| 2 | **3.5.0** | Multi-aircraft remaining integrity audit | ➡️ | Resume historical/dynamic applicability audit after entry workflow stabilizes |
-| 3 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
-| 4 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
-| 5 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 6 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
+| 2 | **3.4.1** | GPS Night-time reliability | 🚧 | Production use exposed opaque false-unavailable risk; narrow patch pre-empts 3.5.0 |
+| 3 | **3.5.0** | Multi-aircraft remaining integrity audit | ➡️ | Resume historical/dynamic applicability audit after 3.4.1 closes |
+| 4 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
+| 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 7 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
 **Pre-emption rule:** confirmed production, security or data-integrity defects may interrupt this order. Convenience/visual polish may not weaken evidence, validation, certification or historical integrity.
 
 ---
 
-# 3.4.0 — Flight Entry Simplification — ACTIVE
+# 3.4.1 — GPS Night-time reliability — ACTIVE
+
+Detailed contract: `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`
+
+## Trigger
+
+A production GPS review showed a confidently suggested NIGHT landing while Night time remained blank/manual.
+
+Repository review confirms that this is possible because landing classification is event-level while Night-time accumulation is whole-track and currently returns `UNAVAILABLE` if any required segment fails its conservative guards.
+
+## Frozen direction
+
+- keep SERA geometric Sun-centre -6° and the ±0.5° confidence guard;
+- keep GPS advisory/editable and IFR manual;
+- never infer Night time from a night landing;
+- add structured unavailable reason codes and human-readable UI feedback;
+- keep manual Night-time edits sticky;
+- do not auto-apply partial/lower-bound Night minutes;
+- reuse canonical track discontinuity thresholds rather than inventing a second quality model;
+- preserve the current >600-second fail-closed guard in 3.4.1; endpoint quality/displacement does not prove the unobserved sparse path, so sparse auto-classification is deferred until an evidence-backed contract exists;
+- adaptive subdivision of an unsafe two-endpoint gap is not accepted as new evidence;
+- no DB migration or certification-version change is expected.
+
+## Single implementation phase — ACTIVE
+
+- structured unavailable diagnostics;
+- pilot-facing unavailable reason copy;
+- fail-closed >600 s sparse-gap handling; no endpoint-only path proof;
+- shared GPS discontinuity contract for actual endpoint-quality rejection;
+- fail-closed timestamp/position/confidence/discontinuity handling;
+- stale automatic suggestion clearing while preserving sticky manual edits;
+- targeted and full regression verification;
+- real-like EHAM → LKPR fixture proving that NIGHT landing classification is independent from unavailable exact Night time when an earlier sparse gap blocks the whole-track total.
+
+---
+
+# 3.4.0 — Flight Entry Simplification — DONE
 
 Detailed contract: `docs/product/3_4_0_FLIGHT_ENTRY_SIMPLIFICATION.md`  
 Independent review reconciliation: `docs/product/3_4_0_REVIEW_RECONCILIATION.md`  
@@ -272,7 +309,7 @@ Phase 6 implementation notes:
 - completion chrome was reduced to one `Review & finish` heading plus the certification consequence;
 - targeted authenticated browser coverage now includes the GPS-quality acknowledgement gate in addition to Manual/GPS direct certification and Enter-to-draft behavior.
 
-## Phase 7 — Release closeout — ACTIVE
+## Phase 7 — Release closeout — DONE
 
 Local verification evidence recorded on 5 October 2026:
 - TypeScript: **PASS**;
@@ -284,10 +321,14 @@ Local verification evidence recorded on 5 October 2026:
 - targeted 3.4.0 source/contract pack: **13/13 PASS**;
 - GitHub CI: **NOT RUN by policy**; workflows are manual-only diagnostics.
 
-Remaining release evidence:
-- final documentation/version/tag reconciliation;
-- merge/deploy;
-- production smoke + runtime-error check.
+Production closeout on 5 October 2026:
+- PR #240 merged to `main` as `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`;
+- `package.json` on the merge SHA is `3.4.0`;
+- Vercel production deployment `dpl_3Zcyq7QmdSGPj1AcSHe2gj2Rn29r` is READY on the exact merge SHA and carries the `fly-tally.com` alias;
+- production runtime logs on that deployment show successful 200 responses across authenticated flight/dashboard routes;
+- grouped runtime-error query found no errors in the checked post-deploy window;
+- DB schema remains v19 and certification payload remains v8;
+- no historical flight/certification/audit rewrite occurred.
 
 Required evidence:
 - targeted tests during implementation;

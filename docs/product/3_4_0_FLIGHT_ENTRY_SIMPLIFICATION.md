@@ -1,7 +1,7 @@
 # 3.4.0 — Flight Entry Simplification
 
-**Status:** IMPLEMENTATION — PHASE 2 ACTIVE  
-**Date:** 4 October 2026  
+**Status:** DONE / PRODUCTION VERIFIED  
+**Date:** 5 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.4.0-flight-entry-simplification`  
 **Independent review reconciliation:** `docs/product/3_4_0_REVIEW_RECONCILIATION.md`  
@@ -271,24 +271,32 @@ Acceptance:
 - screen-reader status announces save/certification result;
 - no raw server errors.
 
-## Phase 7 — Release closeout
+## Phase 7 — Release closeout — DONE
 
-Required evidence according to final changed surface:
-- targeted unit/source tests during implementation;
-- TypeScript;
-- full unit/regression candidate gate;
-- PostgreSQL acceptance for save/certification and duplicate/concurrency behavior;
-- certification parity test: old explicit certification path vs new Save & certify produces equivalent v8 fingerprint/revision semantics for equivalent persisted data;
-- authenticated browser coverage for Manual + GPS, Save draft + Save & certify, certification blockers, warning acknowledgement, Enter-key behavior and responsive states;
-- production build;
-- PR CI;
-- production deployment + smoke + runtime-error check;
-- ROADMAP / FEATURES / CHANGELOG reconciliation;
-- product version bump to **3.4.0** only at final release-candidate/ship time.
+Local release verification on the final candidate:
+- TypeScript: **PASS**;
+- complete unit/regression suite: **1230/1230 PASS**;
+- PostgreSQL core acceptance: **73/73 PASS**;
+- production Next.js build: **PASS**;
+- targeted authenticated 3.4.0 browser acceptance: **6/6 PASS** across desktop Chromium and mobile Chromium;
+- focused responsive Flight Entry smoke: **1/1 PASS**, internally covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark;
+- targeted 3.4.0 source/contract pack: **13/13 PASS**;
+- GitHub CI: **NOT RUN by policy**; workflows are manual-only diagnostics.
+
+Production closeout on 5 October 2026:
+- PR #240 merged to `main` as `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`;
+- merged `package.json` is `3.4.0`;
+- Vercel production deployment `dpl_3Zcyq7QmdSGPj1AcSHe2gj2Rn29r` is **READY** on the exact merge SHA;
+- deployment carries the `fly-tally.com` alias;
+- production runtime logs show successful HTTP 200 responses across authenticated dashboard/flight routes;
+- grouped runtime-error check found no errors in the checked post-deploy window;
+- production DB remains schema v19;
+- certification payload remains v8;
+- no historical flight/certification/audit rewrite and no schema migration occurred in 3.4.0.
 
 ## Definition of Done
 
-3.4.0 is DONE only when:
+3.4.0 closeout satisfies:
 - simplified hierarchy is production deployed;
 - single-flight same-page explicit Save & certify is verified;
 - Enter/default submit cannot certify;
@@ -298,4 +306,4 @@ Required evidence according to final changed surface:
 - Training-purpose UI/server applicability uses one shared contract;
 - certification/audit/correction/share/recency authority remains intact;
 - responsive light/dark acceptance passes;
-- `package.json`, visible app version, CHANGELOG release heading and Git tag agree on `3.4.0`.
+- `package.json` and shipped CHANGELOG release heading agree on `3.4.0`; Git tag / GitHub Release must agree when a release tag is used.

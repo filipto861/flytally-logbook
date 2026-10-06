@@ -48,9 +48,11 @@ test("v3.0 historical UX evidence is archived while numeric roadmap owns current
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
 
   assert.match(roadmap,/## Canonical release sequence/);
-  assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| 🚧 \|/);
-  assert.match(roadmap,/\| 2 \| \*\*3\.5\.0\*\* \| Multi-aircraft remaining integrity audit \| ➡️ \|/);
-  assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — ACTIVE/);
+  assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
+  assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| 🚧 \|/);
+  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Multi-aircraft remaining integrity audit \| ➡️ \|/);
+  assert.match(roadmap,/# 3\.4\.1 — GPS Night-time reliability — ACTIVE/);
+  assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/docs\/history\/ROADMAP_PRE_NUMERIC_2026-10-04\.md/);
 
   assert.match(legacy,/\| UX & design consistency \| ✅ \|/);

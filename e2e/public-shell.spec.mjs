@@ -1234,6 +1234,37 @@ test("E1.3 SERA GPS suggestion is accessible, invalidates on total change and ke
   }
 });
 
+test("3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.4.1 Night-time coverage requires the isolated browser database.");
+  resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("SERA");
+  try{
+    await loginBrowserPilot(page,"/flights/new");
+    await page.getByRole("button",{name:"Import GPS track"}).click();
+    const gps=page.locator("form.kml-wizard");
+    const kml='<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>'+
+      '<when>2026-07-19T12:00:00Z</when><when>2026-07-19T12:01:00Z</when><when>2026-07-19T12:02:00Z</when><when>2026-07-19T12:13:00Z</when><when>2026-07-19T12:14:00Z</when><when>2026-07-19T12:15:00Z</when>'+
+      '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 850</gx:coord><gx:coord>14.29 50.24 500</gx:coord><gx:coord>14.31 50.26 300</gx:coord>'+
+      '</gx:Track></kml>';
+    await gps.locator('input[name="kml"]').setInputFiles({name:"v341-sparse-night.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+    await gps.locator('select[name="registration"]').selectOption("OK-E2E");
+
+    await expect(gps.locator('input[name="part_0_landingsDay"]')).toHaveValue("1");
+    await expect(gps.locator('input[name="part_0_landingsNight"]')).toHaveValue("0");
+    const nightTime=gps.locator('input[name="part_0_nightTime"]');
+    await expect(nightTime).toHaveValue("");
+    await expect(gps.getByText(/GPS Night-time unavailable — 11 minute track gap is too large for an exact civil-twilight result/)).toBeVisible();
+
+    await nightTime.fill("0:04");
+    await gps.locator('input[name="part_0_departure"]').fill("LKLT");
+    await expect(nightTime).toHaveValue("0:04");
+    await expect(gps.getByText(/GPS Night-time unavailable — 11 minute track gap is too large for an exact civil-twilight result/)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  }finally{
+    resetAccountSettingsFixture();
+  }
+});
+
 test("F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F5 browser coverage requires the isolated browser database.");
   await loginBrowserPilot(page,"/flights/new");

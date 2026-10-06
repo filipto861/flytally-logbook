@@ -10,7 +10,23 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.4.0 Flight Entry Simplification — in development
+## 3.4.1 — 6 October 2026
+
+### GPS Night-time reliability
+- Opened a narrow production-correction follow-up after GPS review showed a NIGHT landing suggestion while Night time remained unavailable/manual.
+- Added structured Night-time unavailable reasons and concise GPS-review explanation while preserving manual editable Night time and manual-only IFR.
+- Reused the canonical GPS position-discontinuity thresholds from track processing rather than creating a second quality model.
+- Final correctness review rejected the attempted >600 s same-state proof: endpoint displacement/quality does not prove the unobserved intermediate path. Sparse segments above the existing 600 s direct-interpolation guard therefore remain fail-closed with `SEGMENT_GAP_TOO_LARGE`.
+- Hardened equal-time conflicting positions, non-monotonic/ambiguous timestamps, unsupported solar envelope and twilight-confidence cases to explicit fail-closed reasons.
+- Added a real-like EHAM → LKPR regression that preserves the valid distinction between a confidently NIGHT landing event and unavailable exact Night time when an earlier sparse gap prevents a complete total; partial/lower-bound values are never auto-applied.
+- Added the frozen single-phase contract at `docs/product/3_4_1_GPS_NIGHT_TIME_RELIABILITY.md`. No DB migration, certification-version change or historical-record rewrite is part of 3.4.1.
+- Added authenticated browser coverage for the sparse-gap fallback: automatic Night time stays blank with an explicit reason, and a pilot-entered manual value remains sticky.
+- Final local runtime candidate verification: TypeScript PASS, full unit/regression suite **1238/1238 PASS**, production Next.js build PASS, and targeted authenticated sparse-gap browser acceptance **2/2 PASS** across desktop and mobile Chromium.
+- Release verification also reconciled stale repository contract tests with the already-adopted manual-only GitHub Actions policy, browser fixture schema v19, the compact 3.4 certification summary, and the 3.4.1 roadmap state; the manual Verify workflow is now self-contained instead of depending on pull-request event fields.
+
+## 3.4.0 — 5 October 2026
+
+### Flight Entry Simplification
 - Local release verification now includes TypeScript PASS, 1230/1230 unit/regression PASS, 73/73 PostgreSQL core PASS, production build PASS, 13/13 targeted 3.4.0 contract PASS, 6/6 targeted authenticated desktop/mobile Playwright PASS, and a focused responsive Flight Entry smoke **1/1 PASS** covering desktop 1440, iPad landscape, iPad portrait and mobile 390 in light + dark. GitHub CI is intentionally NOT RUN under the local-first policy.
 - Switched repository verification to local-first release gating; GitHub Verify and Browser Smoke are now manual-only diagnostics rather than automatic PR/release requirements.
 - Simplified the GPS import hierarchy: clean single-flight track review collapses by default, multi-flight/ambiguous/warned track review stays surfaced, and redundant clean-quality status copy was removed.
@@ -22,10 +38,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Updated authenticated browser coverage for the removed generic GPS review checkbox and added direct Manual/GPS certification, Enter-to-draft, multi-flight draft-only, and targeted GPS-quality acknowledgement acceptance cases.
 
 ### Documentation / versioning governance
-- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; current production remains `2.7.0`; because historical CHANGELOG labels already reached v3.3, the first canonical unified target is `3.4.0`.
+- Standardized future product releases and ROADMAP targets on numeric `MAJOR.MINOR.PATCH` versions; 3.4.0 is now the first canonical unified production release after the one-time reconciliation jump from 2.7.0.
 - New implementation phases use numeric Phase 1 / Phase 2 / … naming rather than new E/F/B/SP/M milestone families.
 - Database schema, certification payload and backup-format versions remain independent technical counters.
-- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence. No runtime, DB, certification or production behavior changed by this documentation work.
+- Added the 3.4.0 design/review-reconciliation contract and numeric forward release sequence.
+- PR #240 merged as `76b57c5674ffcc8c62bfbe73c59974cfde341a7a`; production deployment `dpl_3Zcyq7QmdSGPj1AcSHe2gj2Rn29r` is READY on that exact SHA and carries `fly-tally.com`.
+- Post-deploy runtime logs show successful 200 responses across authenticated dashboard/flight routes, and the checked runtime-error window contained no grouped errors.
+- Production DB remains schema v19 and certification payload remains v8; 3.4.0 introduced no schema migration or historical flight/certification rewrite.
 
 ## Legacy unversioned development / production history — through 4 October 2026
 

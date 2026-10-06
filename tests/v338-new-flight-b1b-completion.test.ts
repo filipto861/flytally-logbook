@@ -28,7 +28,7 @@ test("B1B relocated review information remains visible inside the 3.4.0 completi
   assert.ok(profileSummary>=0&&optional>profileSummary);
   assert.ok(summary>optional&&actions>summary);
   assert.match(form,/profileSummary=profileNeedsConfiguration\?"Needs configuration":aircraftContextSummary/);
-  assert.match(form,/Aircraft \/ basis/);
+  assert.match(form,/Aircraft \/ role/);
   assert.match(form,/Certified flights are locked; later changes are recorded as corrections\./);
   assert.match(form,/\{dirty\?<small className="unsaved-indicator">Unsaved changes<\/small>:null\}/);
 });
@@ -70,7 +70,7 @@ test("B1B does not move route/time completeness into draft-save blockers",()=>{
   assert.match(compliance,/issue\("arrival","arrival","Arrival place is required\."\)/);
   assert.match(compliance,/issue\("off_block","off_block","Departure time must be recorded in UTC\."\)/);
   assert.match(compliance,/issue\("on_block","on_block","Arrival time must be recorded in UTC\."\)/);
-  assert.match(detail,/blockingComplianceIssues\(compliance\)/);
+  assert.match(detail,/blockingComplianceIssues\(certificationCompliance\)/);
 });
 
 test("B1B action layout supports one secondary draft action plus one primary certification action",()=>{

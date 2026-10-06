@@ -17,14 +17,15 @@ async function signedBackup(overrides:Record<string,unknown>={}){
   return JSON.stringify({...payload,integrity:{algorithm:"SHA-256",payload_sha256:digest}});
 }
 
-test("v1.44.0 prevents duplicate production verification runs",()=>{
+test("v1.44.0 verification remains deduplicated under the current manual-only cloud policy",()=>{
   assert.ok(releaseAtLeast(JSON.parse(read("package.json")).version,1,44,0));
   const workflow=read(".github/workflows/verify-web.yml");
-  assert.match(workflow,/pull_request:\s*\n\s*branches:\s*\n\s*- main/);
+  assert.match(workflow,/workflow_dispatch:/);
   assert.match(workflow,/concurrency:/);
-  assert.match(workflow,/github\.event\.pull_request\.number \|\| github\.ref/);
+  assert.match(workflow,/github\.ref/);
   assert.match(workflow,/cancel-in-progress: true/);
-  assert.doesNotMatch(workflow,/\n  push:/);
+  assert.doesNotMatch(workflow,/\n\s*push:/);
+  assert.doesNotMatch(workflow,/\n\s*pull_request:/);
   assert.match(workflow,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
 });
 

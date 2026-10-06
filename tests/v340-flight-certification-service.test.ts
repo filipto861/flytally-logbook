@@ -56,7 +56,7 @@ test("3.4.0 Manual entry makes draft the implicit submit and certification expli
 
 test("3.4.0 pre-certification summary exposes the materially sealed evidence",()=>{
   const form=read("components/flight-form.tsx");
-  for(const label of ["Date","Route","Aircraft / basis","Role / crew","Operation / engine","UTC times","Landings","Night / IFR"])assert.match(form,new RegExp(`<span>${label.replace(/[.*+?^$\{\}()|[\\]\\\\]/g,"\\\\$&")}</span>`));
+  for(const label of ["Flight","Aircraft / role","UTC times","Evidence"])assert.ok(form.includes(`<span>${label}</span>`));
   assert.match(form,/Certified flights are locked; later changes are recorded as corrections\./);
   assert.match(form,/name="nightTime"[\s\S]*value=\{nightTime\}/);
   assert.match(form,/name="ifrTime"[\s\S]*value=\{ifrTime\}/);

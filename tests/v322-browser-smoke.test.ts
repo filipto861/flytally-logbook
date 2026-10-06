@@ -6,11 +6,11 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v3.2 U3 browser smoke is selective and pinned",()=>{
+test("v3.2 U3 browser smoke is manual-only and pinned",()=>{
   const workflow=read(".github/workflows/browser-smoke.yml");
-  assert.match(workflow,/pull_request:/);
-  assert.match(workflow,/paths:/);
-  assert.match(workflow,/schedule:/);
+  assert.match(workflow,/workflow_dispatch:/);
+  assert.doesNotMatch(workflow,/\n\s*pull_request:/);
+  assert.doesNotMatch(workflow,/\n\s*schedule:/);
   assert.match(workflow,/@playwright\/test@1[.]55[.]0/);
   assert.match(workflow,/playwright install --with-deps chromium/);
   assert.match(workflow,/Chromium desktop \+ mobile/);
