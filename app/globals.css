@@ -1382,3 +1382,24 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
 .legacy-task-badge{padding:4px 7px}
 .legacy-task-inline{margin-left:7px;padding:2px 5px;vertical-align:middle}
 @media(max-width:600px){.legacy-task-note{align-items:flex-start}.legacy-task-inline{display:flex;margin:4px 0 0}}
+
+
+/* 3.5.0 — certified flight voiding */
+.certified-void-backdrop{z-index:1700}
+.certified-void-dialog{width:min(620px,100%);padding:20px}
+.certified-void-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.certified-void-dialog>header h2{margin:2px 0 0}
+.certified-void-warning{display:grid;gap:8px;padding:14px 15px;border:1px solid color-mix(in srgb,#e36b6b 42%,var(--line));border-radius:9px;background:color-mix(in srgb,#3f111c 54%,var(--panel))}
+.certified-void-warning p{margin:0;color:var(--muted);line-height:1.5}
+.certified-void-form{display:grid;gap:14px;margin-top:16px}
+.certified-void-form label{display:grid;gap:7px}
+.certified-void-form textarea{min-height:118px;resize:vertical}
+.certified-void-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+.certified-void-success{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.certified-void-success a{font-weight:800;color:var(--accent2);white-space:nowrap}
+@media(max-width:600px){
+  .certified-void-dialog{width:100%;max-height:92dvh;padding:18px 14px calc(16px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
+  .certified-void-actions{display:grid;grid-template-columns:1fr}
+  .certified-void-actions .danger-button{order:-1}
+  .certified-void-success{align-items:flex-start;flex-direction:column}
+}
