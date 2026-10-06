@@ -666,6 +666,56 @@ const migrationQueries=(version:number)=>{
       ON flight_source_provenance(source_user_id,source_flight_id,source_revision)`,
     sql`CREATE INDEX IF NOT EXISTS idx_flight_source_provenance_voided
       ON flight_source_provenance(source_voided_flight_id) WHERE source_voided_flight_id IS NOT NULL`,
+    sql`CREATE OR REPLACE FUNCTION logbook_validate_source_provenance() RETURNS TRIGGER AS $
+      DECLARE parent RECORD;
+      BEGIN
+        IF TG_OP='DELETE' THEN
+          RAISE EXCEPTION 'Flight source provenance is immutable';
+        END IF;
+
+        IF TG_OP='UPDATE' THEN
+          IF (to_jsonb(NEW)-'updated_at'-'source_voided_flight_id')
+              IS DISTINCT FROM
+             (to_jsonb(OLD)-'updated_at'-'source_voided_flight_id') THEN
+            RAISE EXCEPTION 'Flight source provenance is immutable';
+          END IF;
+
+          IF OLD.source_voided_flight_id IS NOT NULL
+             AND NEW.source_voided_flight_id IS DISTINCT FROM OLD.source_voided_flight_id THEN
+            RAISE EXCEPTION 'Flight source provenance void binding is immutable';
+          END IF;
+
+          IF OLD.source_voided_flight_id IS NULL AND NEW.source_voided_flight_id IS NOT NULL THEN
+            SELECT * INTO parent FROM voided_certified_flights v WHERE v.id=NEW.source_voided_flight_id;
+            IF NOT FOUND
+               OR parent.user_id<>NEW.source_user_id
+               OR parent.original_flight_id<>NEW.source_flight_id
+               OR parent.record_revision<>NEW.source_revision
+               OR parent.certification_hash<>NEW.source_hash
+               OR parent.created_txid<>txid_current() THEN
+              RAISE EXCEPTION 'Flight source provenance void binding does not match the same-transaction source tombstone';
+            END IF;
+          END IF;
+          RETURN NEW;
+        END IF;
+
+        IF NEW.source_voided_flight_id IS NOT NULL THEN
+          SELECT * INTO parent FROM voided_certified_flights v WHERE v.id=NEW.source_voided_flight_id;
+          IF NOT FOUND
+             OR parent.user_id<>NEW.source_user_id
+             OR parent.original_flight_id<>NEW.source_flight_id
+             OR parent.record_revision<>NEW.source_revision
+             OR parent.certification_hash<>NEW.source_hash THEN
+            RAISE EXCEPTION 'Flight source provenance does not match its source tombstone';
+          END IF;
+        END IF;
+        RETURN NEW;
+      END;
+    $ LANGUAGE plpgsql`,
+    sql`DROP TRIGGER IF EXISTS trg_logbook_validate_source_provenance ON flight_source_provenance`,
+    sql`CREATE TRIGGER trg_logbook_validate_source_provenance
+      BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance
+      FOR EACH ROW EXECUTE FUNCTION logbook_validate_source_provenance()`,
     sql`CREATE OR REPLACE FUNCTION logbook_require_void_archive_separation() RETURNS TRIGGER AS $$
       BEGIN
         IF EXISTS(
