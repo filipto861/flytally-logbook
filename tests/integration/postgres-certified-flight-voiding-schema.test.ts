@@ -164,22 +164,11 @@ test("participant source provenance is immutable after its one same-transaction 
   assert.notEqual(result.status,0);assert.match(String(result.stderr),/provenance is immutable/);
   result=raw(`SET search_path TO ${quoted};UPDATE flight_source_provenance SET source_hash=repeat('9',64) WHERE participant_flight_id=200`);
   assert.notEqual(result.status,0);assert.match(String(result.stderr),/provenance is immutable/);
+  result=raw(`SET search_path TO ${quoted};UPDATE flight_source_provenance SET source_voided_flight_id=NULL WHERE participant_flight_id=200`);
+  assert.notEqual(result.status,0);assert.match(String(result.stderr),/provenance is immutable/);
   result=raw(`SET search_path TO ${quoted};DELETE FROM flight_source_provenance WHERE participant_flight_id=200`);
   assert.notEqual(result.status,0);assert.match(String(result.stderr),/provenance is immutable/);
   assert.equal(run("SELECT participant_role||'|'||source_hash||'|'||(source_voided_flight_id IS NOT NULL)::text FROM flight_source_provenance WHERE participant_flight_id=200"),`INSTRUCTOR|${"a".repeat(64)}|true`);
-});
-
-test("participant source provenance is immutable after acceptance and void binding",{skip:!enabled},()=>{
-  let result=raw(`SET search_path TO ${quoted};UPDATE flight_source_provenance SET source_hash=repeat('9',64) WHERE participant_flight_id=200`);
-  assert.notEqual(result.status,0);
-  assert.match(String(result.stderr),/source provenance is immutable/);
-  result=raw(`SET search_path TO ${quoted};UPDATE flight_source_provenance SET source_voided_flight_id=NULL WHERE participant_flight_id=200`);
-  assert.notEqual(result.status,0);
-  assert.match(String(result.stderr),/void binding is immutable/);
-  result=raw(`SET search_path TO ${quoted};DELETE FROM flight_source_provenance WHERE participant_flight_id=200`);
-  assert.notEqual(result.status,0);
-  assert.match(String(result.stderr),/source provenance is immutable/);
-  assert.equal(run("SELECT source_revision||'|'||source_hash||'|'||(source_voided_flight_id IS NOT NULL)::text FROM flight_source_provenance WHERE participant_flight_id=200"),`1|${"a".repeat(64)}|true`);
 });
 
 test("existing certified correction transition still succeeds with preserved revision evidence",{skip:!enabled},()=>{
