@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** DESIGN / REVIEW ACTIVE  
+**Status:** DESIGN FROZEN — M1 IMPLEMENTATION IN PROGRESS  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
