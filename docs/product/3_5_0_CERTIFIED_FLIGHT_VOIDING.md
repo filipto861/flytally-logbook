@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** DESIGN FROZEN — M1 IMPLEMENTATION IN PROGRESS  
+**Status:** DESIGN FROZEN — M1 VERIFIED / M2 ACTIVE  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
@@ -345,14 +345,20 @@ Restore invariants:
 
 ## Implementation milestones
 
-### M1 — Schema v20 + archive invariants
+### M1 — Schema v20 + archive invariants — VERIFIED LOCAL
+
+M1 local verification on exact head `676a18d0ed9829abe0b6e5fd7eebf34a6c3c69e4`:
+- TypeScript: PASS;
+- migration/schema source contract: **10/10 PASS**;
+- PostgreSQL acceptance: **6/6 PASS**;
+- negative PostgreSQL log messages for unauthorized DELETE, active+tombstone coexistence, archive mutation and late archive-child insertion are expected assertions, not failures.
 - tombstone parent;
 - immutable archive children;
 - same-transaction DELETE authorization;
 - participant provenance table/backfill;
 - migration and rollback/preflight tests.
 
-### M2 — Domain mutation
+### M2 — Domain mutation — ACTIVE
 - one canonical server-side void operation;
 - authenticated ownership + mandatory reason;
 - row lock/concurrency behavior;
