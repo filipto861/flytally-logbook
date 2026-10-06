@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.0 — Certified flight voiding — DESIGN FROZEN / IMPLEMENTATION NEXT
+### 3.5.0 — Certified flight voiding — IMPLEMENTATION ACTIVE
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
 - Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
@@ -125,6 +125,8 @@ Important boundary:
 - No silent restoration of the old certification after voiding.
 - Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
 - Frozen implementation architecture: schema v20 permanent archive+delete, immutable protected-evidence children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit-only route, and portable backup v13 history-only restore.
+- M1 schema/invariants are locally verified; M2 canonical void mutation and M3 destructive UI/audit route are end-to-end verified across desktop and mobile Chromium.
+- M4 portable backup v13 is active: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED
