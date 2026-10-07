@@ -109,6 +109,14 @@ async function selectGpsCommonRole(gpsForm,value){
   return role;
 }
 
+async function selectGpsActualPicMode(gpsForm,value){
+  await openGpsFlightContext(gpsForm);
+  const source=gpsForm.locator('select[name="actualPicMode"]');
+  await source.selectOption(value);
+  await openGpsFlightContext(gpsForm);
+  return source;
+}
+
 async function openGpsTrackReview(gpsForm){
   await ensureDetailsOpen(gpsForm.locator("details.gps-track-review"));
 }
@@ -1615,17 +1623,15 @@ test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes 
       await expect(instructor).toHaveAttribute("required","");
     }else if(state==="SAFETY_MANUAL"){
       await selectGpsCommonRole(gpsForm,"SAFETY PILOT");
-      const source=gpsForm.locator('select[name="actualPicMode"]');
-      await expect(source).toBeVisible();
-      await source.selectOption("manual");
+      const source=await selectGpsActualPicMode(gpsForm,"manual");
+      await expect(source).toHaveValue("manual");
       const commander=gpsForm.locator('input[name="commander"]:not([type="hidden"])');
       await expect(commander).toBeVisible();
       await expect(commander).toHaveAttribute("required","");
     }else if(state==="SAFETY_CONNECTION"){
       await selectGpsCommonRole(gpsForm,"SAFETY PILOT");
-      const source=gpsForm.locator('select[name="actualPicMode"]');
-      await expect(source).toBeVisible();
-      await source.selectOption("connected");
+      const source=await selectGpsActualPicMode(gpsForm,"connected");
+      await expect(source).toHaveValue("connected");
       const connected=gpsForm.locator('select[name="connectedPicUserId"]');
       await expect(connected).toBeVisible();
       await expect(connected.getByRole("option",{name:"Browser Friend"})).toHaveCount(1);
