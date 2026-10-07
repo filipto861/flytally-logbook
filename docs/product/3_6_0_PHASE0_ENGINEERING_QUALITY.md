@@ -503,6 +503,16 @@ The full run again emitted Windows/PostgreSQL `could not reserve shared memory r
 
 **0C.2 Batch 2 is CLOSED / VERIFIED.**
 
+0C.2 Batch 3 implementation candidate — Manual RoleCrew / verification:
+- moved exactly five existing tests into `e2e/manual-rolecrew-verification.spec.mjs`: F2.2 Manual RoleCrew, F2.4C verifier evidence, Safety Pilot Actual PIC form, F2.3 Safety Pilot resolver, and certified Safety Pilot PIC invitation;
+- test names and assertions are unchanged;
+- the new domain spec imports only the already-shared login/overflow primitives and centralized browser DB reset/query helpers;
+- `expectAuthenticatedRoute` remains domain-local in this batch rather than being promoted to shared ownership before 0C.2a;
+- source inventory remains exactly **48 unique logical acceptance tests**: 32 public-shell + 7 advisory + 5 Manual RoleCrew/verification + 4 settings/connections mutations;
+- no fixture ID, browser DB implementation, bootstrap, product runtime, schema, Playwright project, worker or retry change.
+
+0C.2 Batch 3 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused Manual RoleCrew/verification spec under both projects, then the complete serialized browser gate.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
