@@ -71,8 +71,6 @@
       "tests": [
         "tests/development-pipeline.test.ts",
         "tests/development-scope.test.ts",
-        "tests/v322-browser-smoke.test.ts",
-        "tests/v323-auth-browser.test.ts",
         "tests/vercel-ignore-build.test.ts"
       ]
     }
@@ -115,7 +113,8 @@
         "browser-ui"
       ],
       "testGroups": [
-        "development-pipeline"
+        "development-pipeline",
+        "ui-contract"
       ],
       "gates": {
         "postgres": false,
