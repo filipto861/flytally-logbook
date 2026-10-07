@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.0 — Certified flight voiding — IMPLEMENTED / RELEASE GATE ACTIVE
+### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — ACTIVE
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
 - Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
@@ -128,7 +128,8 @@ Important boundary:
 - M1 schema/invariants are locally verified; M2 canonical void mutation and M3 destructive UI/audit route are end-to-end verified across desktop and mobile Chromium.
 - M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS.
 - M5 consumer/integration verification is locally complete: M5A redirects owner source-flight notification history to the permanent audit and neutralizes recipient workflow links before cascade; M5B PostgreSQL collaboration/provenance acceptance is **86/86 PASS**; M5C authenticated browser acceptance is **2/2 PASS** across desktop and mobile Chromium, including permanent-audit navigation from retained notification history.
-- M6 release gate is active. Production remains 3.4.1 / schema v19 until release verification and the schema-v20 deployment prerequisite are explicitly completed.
+- Phase 1 certified-flight voiding has completed its local release gate: exact-head `a2d3f65` TypeScript PASS, full unit/regression **1285/1285 PASS**, full PostgreSQL integration + scale **99/99 PASS**, production build PASS, with authenticated desktop/mobile M5C **2/2 PASS** on runtime-equivalent `a423239`.
+- Phase 2 remaining multi-aircraft integrity audit is now active. Production migration/deploy is deferred until the complete canonical `3.5.0` scope is release-ready; production remains 3.4.1 / schema v19.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED

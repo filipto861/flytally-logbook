@@ -10,7 +10,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.5.0 Certified flight voiding — in development
+### 3.5.0 Certified flight voiding + multi-aircraft integrity — in development
 - Froze the archive+delete model after independent review: certified flights will be removable from all active logbook consumers while permanent certification/audit evidence remains.
 - Started schema v20 with a permanent certified-void tombstone, protected revision/verification archive tables, typed dependent-evidence archive rows, accepted participant-copy provenance, same-transaction certified DELETE authorization and active/tombstone coexistence protection.
 - Added source-level and PostgreSQL acceptance coverage for migration v20, archive immutability, participant provenance, direct-delete rejection, same-transaction deletion and certified-correction compatibility.
@@ -35,7 +35,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - M5B adds isolated PostgreSQL collaboration acceptance proving that a void transaction can archive live collaboration evidence, supersede pending work, revoke the public share, redirect/neutralize notification links before cascade, preserve an accepted participant-owned flight, bind its immutable provenance to the tombstone, and remove the source-side live workflow rows.
 - M5B verification on exact head `efd9b62`: PostgreSQL core **86/86 PASS**, including the new collaboration teardown acceptance. M5B is **VERIFIED LOCAL**.
 - M5C extends the existing authenticated desktop/mobile certified-void browser acceptance: after void, the source is absent from the active flight list, the permanent audit remains reachable, the legacy active-flight audit URL redirects to that audit, and retained owner notification history opens the permanent audit instead of a dead source-flight route.
-- M5C browser execution reached the actual certified-void flow. An initial fully configured run passed desktop and exposed only a serialized test-notification collision on mobile; the fixture was isolated without changing runtime behavior. Final rerun on exact head `a423239` passed **2/2** across desktop and mobile Chromium, including certified removal, active-logbook exclusion, permanent audit retention, legacy audit redirect, and retained owner-notification navigation to the permanent audit. M5 is **VERIFIED LOCAL**; M6 release gate is active.
+- M5C browser execution reached the actual certified-void flow. An initial fully configured run passed desktop and exposed only a serialized test-notification collision on mobile; the fixture was isolated without changing runtime behavior. Final rerun on exact head `a423239` passed **2/2** across desktop and mobile Chromium, including certified removal, active-logbook exclusion, permanent audit retention, legacy audit redirect, and retained owner-notification navigation to the permanent audit. M5 is **VERIFIED LOCAL**.
+- Phase 1 M6 local release gate on exact head `a2d3f65` is green: TypeScript PASS; full unit/regression **1285/1285 PASS**; full PostgreSQL integration + retained scale fixtures **99/99 PASS**; production Next.js build PASS. GitHub CI is **NOT RUN — local-first policy**. No production migration or deployment occurred; `3.5.0` remains unreleased while Phase 2 of the canonical combined scope proceeds.
 
 
 ## 3.4.1 — 6 October 2026

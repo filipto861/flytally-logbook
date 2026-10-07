@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 VERIFIED / M5 VERIFIED / M6 ACTIVE  
+**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 VERIFIED / M5 VERIFIED / M6 LOCAL GATE VERIFIED  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
@@ -463,12 +463,13 @@ M5 implementation batches:
 2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck — VERIFIED LOCAL** — exact-head `efd9b62`: PostgreSQL core 86/86 PASS, including the collaboration teardown fixture;
 3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — VERIFIED LOCAL** — after isolating the dedicated `m5_void_source` fixture between serialized projects, the canonical certified-void acceptance passed **2/2** on exact head `a423239` across desktop and mobile Chromium. It proves source deletion from the active logbook, permanent tombstone/audit access, legacy audit redirect, and retained owner notification history opening the permanent audit rather than a dead source-flight route.
 
-### M6 — Release gate / documentation — ACTIVE
-- full unit/regression;
-- PostgreSQL integration;
-- authenticated browser acceptance;
-- production build;
-- ROADMAP / FEATURES / CHANGELOG;
-- migration deployment prerequisite;
-- production smoke and post-deploy runtime checks.
+### M6 — Release gate / documentation — LOCAL GATE VERIFIED
+- exact-head `a2d3f65`: TypeScript PASS;
+- full unit/regression **1285/1285 PASS**;
+- full PostgreSQL integration + retained scale fixtures **99/99 PASS**;
+- production build PASS;
+- authenticated desktop/mobile certified-void acceptance **2/2 PASS** on runtime-equivalent `a423239`;
+- ROADMAP / FEATURES / CHANGELOG reconciled;
+- GitHub CI **NOT RUN — local-first policy**;
+- production migration/deploy **NOT RUN**. Schema v20 remains a deployment prerequisite, but canonical product release `3.5.0` also contains the remaining multi-aircraft integrity Phase 2. Production closeout is therefore deferred until that complete release scope is ready; production remains `3.4.1` / schema v19.
 

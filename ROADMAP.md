@@ -371,7 +371,7 @@ Required evidence:
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
-## Phase 1 — Certified flight voiding — M6 RELEASE GATE ACTIVE
+## Phase 1 — Certified flight voiding — LOCAL GATE VERIFIED
 
 Frozen product behavior:
 - a certified flight may be explicitly **voided/removed from the active logbook**;
@@ -400,9 +400,9 @@ Implementation milestones:
 - **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
 - **M4 — Backup / restore v13: VERIFIED LOCAL** — exact-head TypeScript PASS; unit/regression 1280/1280 PASS on the immediately preceding runtime-equivalent head; PostgreSQL core 85/85 PASS on `7d18fb9`; production build PASS on the immediately preceding runtime-equivalent head.
 - **M5 — Consumer and integration verification: VERIFIED LOCAL** — M5A source/runtime consumer contract PASS on `bb3fcd2`; M5B PostgreSQL collaboration/provenance acceptance **86/86 PASS** on `efd9b62`; M5C authenticated certified-void acceptance **2/2 PASS** across desktop + mobile Chromium on `a423239` after isolating the dedicated test notification fixture.
-- **M6 — Release gate / documentation: ACTIVE** — final local candidate verification, release/documentation reconciliation, schema-v20 deployment prerequisite, then production migration/deploy/smoke only after the gate is complete.
+- **M6 — Release gate / documentation: LOCAL GATE VERIFIED** — exact-head `a2d3f65`: TypeScript PASS; full unit/regression **1285/1285 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS. The runtime-equivalent M5C head `a423239` already has authenticated desktop/mobile browser **2/2 PASS**. GitHub CI is **NOT RUN — local-first policy**. Production migration/deploy is intentionally **NOT RUN** here because canonical `3.5.0` still includes Phase 2; production remains `3.4.1` / schema v19 until the complete 3.5.0 scope is release-ready.
 
-## Phase 2 — Remaining multi-aircraft integrity audit — NEXT
+## Phase 2 — Remaining multi-aircraft integrity audit — ACTIVE
 
 Scope:
 - audit remaining recency consumers for current-profile dependencies;
