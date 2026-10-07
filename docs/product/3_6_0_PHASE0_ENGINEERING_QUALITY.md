@@ -355,7 +355,16 @@ Implementation candidate on the active branch:
 - changed-scope output now includes browser/build gates, risks, test groups and resolved targeted tests in addition to PostgreSQL/scale/full-test decisions;
 - regression coverage was rewritten around the Phase 0B contract, including CSS presentation classification, unknown-runtime conservative handling, test ownership, PostgreSQL/browser harness escalation and fail-closed unknown test-group execution.
 
-0B.1 verification is **PENDING** until the targeted scope/pipeline tests, registry-backed UI group, TypeScript and relevant build/tooling checks run on this candidate.
+0B.1 verification on the first candidate:
+- targeted scope/pipeline set: **24/25 PASS**; the only failure was a stale DEVELOPMENT source assertion that still expected the pre-0B.1 phrase `shared or previously unknown runtime code remains conservative`;
+- registry-backed `test:ui`: **113/113 PASS** across the 16 registry-owned files;
+- TypeScript: **PASS**;
+- full unit/regression: **1322/1323 PASS**; the same stale DEVELOPMENT source assertion was the sole failure;
+- production build: **PASS**, Next.js 16.3.2 with 41/41 static pages.
+
+The stale assertion has been corrected to verify the actual 0B.1 contract: unknown app/components/lib runtime files fail conservative, while PostgreSQL/browser dependencies are not invented automatically. This is an assertion-only test correction; registry/runtime tooling behavior is unchanged.
+
+0B.1 remains **VERIFICATION PENDING** only for a targeted rerun of `tests/development-pipeline.test.ts`. The already-valid UI, TypeScript, full-suite remainder and build evidence do not need to be repeated unless that targeted rerun exposes a new uncertainty.
 
 **0B.2 — stable-module coverage**
 - expand module ownership beyond the current 31.8% baseline for stable app/components/lib domains;
