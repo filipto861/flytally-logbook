@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **0B.2 — stable-module coverage**. Phase 0B.1 authoritative registry foundation is ✅ DONE / VERIFIED; expand stable app/components/lib ownership beyond the original 121/381 (31.8%) baseline while preserving explicit shared handling for genuinely cross-cutting or not-yet-owned runtime files. 0B.3 then converges commands/workflows.
+Current milestone: **0B.2 — stable-module coverage — IMPLEMENTED, VERIFICATION PENDING**. Phase 0B.1 is ✅ DONE / VERIFIED. The candidate expands stable ownership from **121/381 (31.8%)** to **368/381 (96.6%)**, with the remaining **13** reviewed files explicitly classified as `shared-runtime`; 0B.3 converges commands/workflows after 0B.2 verification.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
