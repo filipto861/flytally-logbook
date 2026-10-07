@@ -30,6 +30,7 @@ test("v3.2 U4 browser database is isolated and uses production password format",
   assert.match(bootstrap,/OK-E2E/);
   assert.match(bootstrap,/CREATE TABLE push_preferences/);
   assert.match(bootstrap,/CREATE TABLE push_subscriptions/);
+  assert.match(bootstrap,/PGCONNECT_TIMEOUT:"5"/);
 });
 
 test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external secrets",()=>{
@@ -40,6 +41,7 @@ test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external 
   assert.match(workflow,/npm run test:browser/);
   const runner=read("tooling/run-auth-browser.mjs");
   assert.match(runner,/FLYTALLY_AUTH_BROWSER!=="1"/);
+  assert.match(runner,/FLYTALLY_LOCAL_POSTGRES!=="1"/);
   assert.match(runner,/bootstrap-browser-smoke-db[.]mjs/);
   assert.match(runner,/--no-install","playwright","test/);
   assert.doesNotMatch(workflow,/secrets[.]/);
