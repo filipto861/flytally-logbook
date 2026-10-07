@@ -20,6 +20,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Corrected the browser PostgreSQL bootstrap timeout variable to `PGCONNECT_TIMEOUT`.
 - Phase 0A gate-safety/reproducibility is verified locally: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, authenticated browser acceptance **96 PASS / 2 intentional skips / 0 failed**, and the final corrected historical v1.44 source contract **5/5 PASS** after the preceding full suite proved the other 1,316 tests.
 - Runtime product behavior is unchanged by this engineering-infrastructure work; FEATURES remains unchanged. Phase 0B risk-model / deterministic-selection work is now active.
+- Started Phase 0B.1 registry convergence: development risk/gate metadata and named targeted test groups now share one v2 registry, CSS is UI/presentation instead of documentation, unknown runtime no longer invents PostgreSQL risk, and `test:ui` delegates to the registry-backed group runner rather than duplicating its 16-file list in package scripts. Verification is pending.
 
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
