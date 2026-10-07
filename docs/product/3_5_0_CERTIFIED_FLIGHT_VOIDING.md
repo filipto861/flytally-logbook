@@ -460,8 +460,8 @@ M5 collaboration edge case found during discovery:
 
 M5 implementation batches:
 1. **M5A — active-consumer/source contract + notification-link teardown — VERIFIED LOCAL** — exact-head `bb3fcd2`: TypeScript PASS, targeted consumer/domain contracts 13/13 PASS, full unit/regression 1285/1285 PASS, production build PASS;
-2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck — IMPLEMENTED / VERIFICATION PENDING**;
-3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6**.
+2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck — VERIFIED LOCAL** — exact-head `efd9b62`: PostgreSQL core 86/86 PASS, including the collaboration teardown fixture;
+3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — IMPLEMENTED / VERIFICATION PENDING** — the existing certified-void acceptance remains the canonical desktop/mobile path and now also proves retained owner notification history resolves to the permanent void audit.
 
 ### M6 — Release gate / documentation
 - full unit/regression;

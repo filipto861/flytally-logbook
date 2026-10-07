@@ -33,6 +33,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - M5A consumer audit found that workflow notification rows outlive source participation/approval rows by design. Certified voiding now prevents stale inbox links: owner notifications that pointed at the removed source flight/audit are redirected to the permanent void-audit route, and recipient `/connections/shared/*` / `/connections/flight/*` links tied to the removed source are cleared before cascade. Notification text/history remains intact and is not promoted to protected certification evidence.
 - M5A verification on exact head `bb3fcd2`: TypeScript **PASS**; targeted consumer/domain contract **13/13 PASS**; full unit/regression **1285/1285 PASS**; production build **PASS**. M5A is **VERIFIED LOCAL**.
 - M5B adds isolated PostgreSQL collaboration acceptance proving that a void transaction can archive live collaboration evidence, supersede pending work, revoke the public share, redirect/neutralize notification links before cascade, preserve an accepted participant-owned flight, bind its immutable provenance to the tombstone, and remove the source-side live workflow rows.
+- M5B verification on exact head `efd9b62`: PostgreSQL core **86/86 PASS**, including the new collaboration teardown acceptance. M5B is **VERIFIED LOCAL**.
+- M5C extends the existing authenticated desktop/mobile certified-void browser acceptance: after void, the source is absent from the active flight list, the permanent audit remains reachable, the legacy active-flight audit URL redirects to that audit, and retained owner notification history opens the permanent audit instead of a dead source-flight route.
 
 
 ## 3.4.1 — 6 October 2026
