@@ -410,7 +410,7 @@ Fourth browser execution on `593ebc1`: browser **0/2 PASS**, but the two failure
 
 Fifth browser execution on `ad18689`: **2/2 PASS** across desktop Chromium and mobile Chromium. The acceptance created and certified a real test flight, removed it through the destructive modal, observed the completed Server Action, proved the active `flights` row was deleted, proved the immutable tombstone/reason/hash remained, verified the exact flight id disappeared from the active Flights list, opened the permanent void audit, and verified the legacy audit URL redirected to the tombstone. M2/M3 are therefore end-to-end verified locally.
 
-### M4 — Backup / restore v13 — IMPLEMENTED / VERIFICATION PENDING
+### M4 — Backup / restore v13 — VERIFIED LOCAL
 M4 implementation batch:
 - generated portable backup version advanced from v12 to **v13**;
 - v13 exports the five permanent void/provenance history sections;
@@ -422,20 +422,22 @@ M4 implementation batch:
 - unsigned/invalid v13 portable history is rejected while stored backups remain trusted;
 - participant source provenance now has explicit DB immutability/binding enforcement.
 
-M4 verification: **PENDING exact-head TypeScript + portable-backup tests + PostgreSQL restore acceptance + build**.
+M4 verification: **VERIFIED LOCAL**.
 
 First M4 gate on `52e3d51`: **FAILED, no release claim**. TypeScript/build exposed stale recovery-conflict constructor calls plus the retired `track_points` batch assertion; targeted tests exposed one fixture count-reset bug and one stale provenance-function assertion; PostgreSQL exposed a duplicate provenance immutability assertion expecting a message the DB does not promise. The product invariants that did execute remained fail-closed. Follow-up commits corrected the typed conflict construction and test contracts without weakening the v13 restore model.
 
 Second M4 gate on `25d73e6`: TypeScript **PASS** and production build **PASS**. Full unit/regression reached **1259/1273 PASS**; the 14 failures were reconciled to historical assertions still pinning pre-M4 implementation details (`participant_flight_id=chosen.id`, generated `track_points`, backup v12, schema v19, pre-3.5 roadmap/release metadata) plus one direct Node-test import alias in `void-evidence.ts`. PostgreSQL acceptance did not execute because `FLYTALLY_POSTGRES_INTEGRATION=1` was set without a `DATABASE_URL`, so all 93 cases failed their setup guard before database work.
 
-Third M4 gate on `e311a4e`: TypeScript **PASS**, full unit/regression **1280/1280 PASS**, production build **PASS**. After restoring local PostgreSQL/`psql` availability, core PostgreSQL acceptance executed and reached **82/85 PASS**. The three failures were isolated to stale fixture boundaries rather than runtime behavior: `postgres-certification.test.ts` installed the current v20 locked-flight trigger without the `voided_certified_flights` relation it now references, and `postgres-e2-engine-default.test.ts` used a migration-19 extractor whose end marker expanded into migration 20 after schema v20 was added. Follow-up fixture corrections now extract the production tombstone table where required and bound migration-19 parsing at the start of migration 20. Exact-head PostgreSQL rerun remains required, including `postgres-backup-v13-void-history.test.ts`.
+Third M4 gate on `e311a4e`: TypeScript **PASS**, full unit/regression **1280/1280 PASS**, production build **PASS**. After restoring local PostgreSQL/`psql` availability, core PostgreSQL acceptance executed and reached **82/85 PASS**. The three failures were isolated to stale fixture boundaries rather than runtime behavior: `postgres-certification.test.ts` installed the current v20 locked-flight trigger without the `voided_certified_flights` relation it now references, and `postgres-e2-engine-default.test.ts` used a migration-19 extractor whose end marker expanded into migration 20 after schema v20 was added. Follow-up fixture corrections extracted the production tombstone table where required and bounded migration-19 parsing at the start of migration 20.
+
+Final M4 rerun on exact head `7d18fb95b1f2a830f2649c961b9da36473726902`: TypeScript **PASS** and PostgreSQL core **85/85 PASS**. The v13 restore suite passed all five dedicated history/immutability/resurrection cases, schema-v20 certified-delete/provenance/correction compatibility passed, and migration-19 acceptance returned green. The immediately preceding runtime-equivalent head `e311a4e` already had full unit/regression **1280/1280 PASS** and production build **PASS**; `7d18fb9` changed only PostgreSQL acceptance fixtures and documentation. M4 is therefore **VERIFIED LOCAL**.
 - export/archive sections;
 - parser/authenticity/count validation;
 - exact restore support;
 - resurrection/conflict guards;
 - v12 backward compatibility.
 
-### M5 — Consumer and integration verification
+### M5 — Consumer and integration verification — ACTIVE
 - active read-model exclusion;
 - all category recency/compliance;
 - professional export / print / map / statistics / dashboard;

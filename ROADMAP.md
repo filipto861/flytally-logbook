@@ -371,7 +371,7 @@ Required evidence:
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
-## Phase 1 — Certified flight voiding — DESIGN FROZEN / IMPLEMENTATION NEXT
+## Phase 1 — Certified flight voiding — M5 CONSUMER VERIFICATION ACTIVE
 
 Frozen product behavior:
 - a certified flight may be explicitly **voided/removed from the active logbook**;
@@ -398,8 +398,8 @@ Implementation milestones:
 - **M1 — Schema v20 + archive invariants: VERIFIED LOCAL** — TypeScript PASS; migration/schema contract 10/10 PASS; PostgreSQL acceptance 6/6 PASS on 6 October 2026.
 - **M2 — Domain mutation: END-TO-END VERIFIED LOCAL**
 - **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
-- **M4 — Backup / restore v13: IMPLEMENTED / VERIFICATION PENDING**
-- M5 — Consumer and integration verification
+- **M4 — Backup / restore v13: VERIFIED LOCAL** — exact-head TypeScript PASS; unit/regression 1280/1280 PASS on the immediately preceding runtime-equivalent head; PostgreSQL core 85/85 PASS on `7d18fb9`; production build PASS on the immediately preceding runtime-equivalent head.
+- **M5 — Consumer and integration verification: ACTIVE**
 - M6 — Release gate / documentation
 
 ## Phase 2 — Remaining multi-aircraft integrity audit — NEXT
