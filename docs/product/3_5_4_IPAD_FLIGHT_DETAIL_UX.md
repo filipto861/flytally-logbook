@@ -1,6 +1,6 @@
 # 3.5.4 — iPad flight-detail visual hotfix
 
-**Status:** IMPLEMENTED · VERIFICATION PENDING  
+**Status:** IMPLEMENTED · LOCAL GATE PASS · PRODUCTION VISUAL RECHECK PENDING  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -48,18 +48,18 @@ The 3.5.3 navigation data authority, ordering, query-context preservation and di
 - regression tests
   - freeze iPad navigation behavior and skip-link visibility/focus behavior.
 
-## Verification required
+## Verification
 
-- new 3.5.4 regression test;
-- existing 3.5.3 flight-detail navigation regression;
-- existing v3.0 U6 skip-navigation/accessibility regression;
-- versioning/navigation governance tests;
-- TypeScript;
-- full unit/regression suite;
-- production build;
-- production iPad visual acceptance after deploy.
+Final runtime exact-head local gate on `f7c80df84fbd6fd3bf18ede169ac54a9a2bcc768`:
+- targeted 3.5.4 / 3.5.3 / accessibility / governance tests: **21/21 PASS**;
+- TypeScript: **PASS**;
+- full unit/regression suite: **1305/1305 PASS**;
+- production build: **PASS**, including 41/41 static pages;
+- PostgreSQL migration: **N/A**.
 
-PostgreSQL migration: **N/A**.
+The only local warning is the existing Next.js notice about a parent `C:\Users\Filip Točík\package-lock.json` outside the repository; it does not affect the repository build.
+
+Production iPad visual acceptance remains required after deploy.
 
 ## Do not
 
