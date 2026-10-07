@@ -1,6 +1,6 @@
 # 3.5.3 — Flight detail navigation UX
 
-**Status:** IMPLEMENTED · VERIFICATION PENDING  
+**Status:** IMPLEMENTED · LOCAL GATE PASS · VISUAL ACCEPTANCE PENDING  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -69,6 +69,14 @@ That navigation service already:
 - More menu behavior is unchanged.
 
 ## Verification
+
+Final exact-head local gate on `4d4feeb1fa7d1cc6e4b089b490a59566a0406d09`:
+- targeted navigation/workflow/governance tests: **18/18 PASS**;
+- TypeScript: **PASS**;
+- full unit/regression suite: **1302/1302 PASS**;
+- production build: **PASS**, 41/41 static pages;
+- PostgreSQL migration: **N/A**;
+- responsive visual acceptance: **PENDING**.
 
 Before merge:
 - targeted navigation/source regression tests;
