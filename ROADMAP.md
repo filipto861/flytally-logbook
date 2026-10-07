@@ -4,7 +4,7 @@
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
 **Current production product version:** `3.5.0`  
-**Current active release:** `3.6.0`
+**Current active release:** `3.5.1`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -61,13 +61,67 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
 | 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
-| 4 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Persisted default date can be wrong around timezone boundaries |
-| 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
-| 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 7 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 4 | **3.5.1** | GPS T&G false-positive containment | 🚧 | Confirmed real-track false-positive evidence defect; tightening-only hotfix pre-empts 3.6.0 |
+| 5 | **3.5.2** | GPS T&G time-normalized / evidence-limited follow-up | ➡️ | Confirmed ±10-point qualification defect can miss a real T&G; recovery must not weaken fail-closed evidence |
+| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Resumes after the GPS reliability hotfix/follow-up |
+| 7 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 8 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 9 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
 **Pre-emption rule:** confirmed production, security or data-integrity defects may interrupt this order. Convenience/visual polish may not weaken evidence, validation, certification or historical integrity.
+
+---
+
+# 3.5.1 — GPS Touch-and-Go false-positive containment — ACTIVE
+
+Detailed contract: `docs/product/3_5_1_GPS_TOUCH_AND_GO_RELIABILITY.md`
+
+## Trigger
+
+Three additional real SkyDemon KMLs exposed confirmed advisory T&G defects in the current detector:
+
+- a false altitude T&G after a sensor level shift;
+- a false altitude T&G during noisy climb-out;
+- a false HIGH speed T&G caused by duplicate/stale position samples while the aircraft was climbing;
+- a separate real T&G is still missed because the rolling-altitude qualification uses ±10 array points.
+
+The false positives are the immediate data-integrity risk because `landingCount()` counts every returned T&G regardless of HIGH/MEDIUM confidence.
+
+## Frozen 3.5.1 direction
+
+- tightening-only hotfix: it may remove unsupported automatic T&G events but must not add a new auto-counted event;
+- keep 28–145 km/h and 30 m rolling-altitude thresholds unchanged;
+- keep the existing 25 m/s altitude discontinuity rule as a gross corruption guard, not an aircraft-performance model;
+- do not add aircraft-specific flight-path-angle/performance assumptions;
+- do not add spatial clustering or repeated-runway rescue;
+- do not change takeoff detection helpers;
+- require post-minimum climb evidence to be sustained beyond one timed altitude edge before a rolling-altitude T&G may count;
+- admit speed/ground events as T&G only when their direct event motion is compatible with the existing 145 km/h rolling ceiling and usable altitude does not vary by 30 m or more during the alleged ground phase;
+- rejected speed events must not suppress a valid altitude event;
+- no DB/schema/certification/history rewrite.
+
+Expected real-track outcomes:
+- 0510261 false T&G: rejected;
+- 0510262 immediate post-takeoff false T&G: rejected;
+- 0510262 false speed T&G near 16:01:48: rejected;
+- 0510263 positive control: exactly five T&Gs remain detected;
+- 0510262 real T&G near 15:59: remains non-auto-counted in 3.5.1 because its approach evidence crosses a gross altitude discontinuity.
+
+## Local verification status
+
+3.5.1 implementation is **VERIFIED LOCAL** on the feature branch: targeted regressions 6/6 PASS, focused GPS/track corpus 62/62 PASS, full unit/regression 1297/1297 PASS, TypeScript PASS and production build PASS (41/41 static pages). PostgreSQL is N/A for this pure inference change; authenticated browser acceptance and production deployment are NOT RUN. The release stays ACTIVE until merge and production closeout.
+
+## 3.5.2 follow-up — NEXT
+
+New evidence proves that ±10 array points is not a reliable physical qualification window: the known real 15:59 T&G misses +30 m climb evidence by ~0.27 m at point +10 and clearly exceeds it at point +11.
+
+3.5.2 owns:
+- elapsed-time / physical evidence-window research;
+- an evidence-limited, non-counted "possible T&G" review tier if justified;
+- density-invariance tests;
+- explicit duplicate/stale-fix quality classification if needed;
+- no spatial rescue unless separate evidence demonstrates that it cannot bootstrap low passes/go-arounds into landing evidence.
 
 ---
 

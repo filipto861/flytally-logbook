@@ -18,7 +18,8 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
   assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| 🚧 \|/);
+  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| ✅ \|/);
+  assert.match(roadmap,/\| 4 \| \*\*3\.5\.1\*\* \| GPS T&G false-positive containment \| 🚧 \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
@@ -44,14 +45,18 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.5.0 release candidate metadata is aligned without claiming production deployment",()=>{
+test("3.5.1 release candidate metadata stays aligned with the 3.5.0 production baseline",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
-  assert.equal(pkg.version,"3.5.0");
+  assert.equal(pkg.version,"3.5.1");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
-  assert.match(read("ROADMAP.md"),/# 3\.5\.0 — Multi-aircraft integrity \+ certified-flight voiding — RELEASE CANDIDATE/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.0 \| Certified flight voiding \+ remaining multi-aircraft integrity audit \| RELEASE CANDIDATE \|/);
-  assert.match(read("ROADMAP.md"),/Production remains `3\.4\.1` \/ schema v19/);
+  assert.match(read("ROADMAP.md"),/# 3\.5\.0 — Multi-aircraft integrity \+ certified-flight voiding — DONE \/ PRODUCTION/);
+  assert.match(read("ROADMAP.md"),/# 3\.5\.1 — GPS Touch-and-Go false-positive containment — ACTIVE/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.0 \| Certified flight voiding \+ remaining multi-aircraft integrity audit \| DONE \/ PRODUCTION \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.1 \| GPS T&G false-positive containment \| ACTIVE \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.5\.0\*\*/);
+  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.5\.0`/);
+  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.5\.1`/);
 });

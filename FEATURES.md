@@ -115,6 +115,20 @@ Important boundary:
 
 ## Planned / active follow-up
 
+### 3.5.1 — GPS T&G false-positive containment — ACTIVE
+- Tighten advisory T&G inference against three reproduced real-track false positives without adding new auto-counted events.
+- Preserve the existing 28–145 km/h rolling-speed range, 30 m descent/climb requirement, output DTO and takeoff semantics.
+- Require rolling-altitude T&G climb evidence to be sustained beyond a single timed altitude edge.
+- Reject short speed/ground events when direct event motion exceeds the existing rolling-T&G ceiling or usable altitude changes by at least the existing 30 m evidence threshold during the alleged ground phase.
+- Preserve the real positive-control track with exactly five detected T&Gs.
+- Keep the known evidence-limited 15:59 real T&G non-auto-counted until a safer time-normalized/review-tier follow-up.
+- Detailed contract: `docs/product/3_5_1_GPS_TOUCH_AND_GO_RELIABILITY.md`.
+
+### 3.5.2 — GPS T&G time-normalized / evidence-limited follow-up — NEXT
+- Replace the now-confirmed ±10-array-point qualification defect only after a separate add-event risk review.
+- Investigate elapsed-time evidence windows, density invariance and a non-counted "possible T&G" review signal.
+- Do not use spatial clustering as an automatic landing rescue without independent evidence that it cannot promote low passes/go-arounds.
+
 ### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — IMPLEMENTED / PRODUCTION VERIFIED
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.

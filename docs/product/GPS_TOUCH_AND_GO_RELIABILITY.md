@@ -276,6 +276,27 @@ No full personal GPS route was committed.
 
 Deferred technical-debt items below remain deliberately outside this milestone.
 
+## 7 October 2026 follow-up evidence
+
+The September fix above remains DONE and its historical decisions are preserved. Three new real SkyDemon tracks now provide evidence that some previously deferred items are no longer merely hypotheses.
+
+New confirmed facts:
+- the ±10-point altitude qualification window can miss a real T&G solely because irregular sampling places the +30 m climb crossing at point +11;
+- a single timed altitude edge can currently supply the full +30 m post-minimum climb evidence and create a false rolling T&G;
+- point-count speed smoothing can create a false short ground event from duplicate/stale coordinates while the aircraft is visibly climbing;
+- confidence labels do not protect landing-count integrity: `landingCount()` counts every returned T&G event.
+
+The new production-correction contract is `docs/product/3_5_1_GPS_TOUCH_AND_GO_RELIABILITY.md`.
+
+Reconciled status of previously deferred debt:
+- altitude qualification ±10-point windows: **CONFIRMED DEFECT — 3.5.2 follow-up**;
+- speed/altitude point-count suppression/smoothing: **CONFIRMED RISK — 3.5.1 admission guard, broader refactor deferred**;
+- explicit duplicate/stale timestamp/fix quality: **CONFIRMED RISK — broader classification deferred unless required by 3.5.1 regression**;
+- candidate <8-point grouping: **still deferred; no new evidence implicates it**;
+- broader time-normalized detector refactor: **3.5.2 research / add-event risk gate**.
+
+The 3.5.1 hotfix is intentionally tightening-only. It does not auto-recover the known real 15:59 T&G because that candidate also crosses gross-corrupt approach altitude evidence. A missed advisory event is preferred over an unsupported automatic landing count.
+
 ## Production follow-up
 
 No new user telemetry is required by this milestone.

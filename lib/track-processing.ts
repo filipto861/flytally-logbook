@@ -67,6 +67,10 @@ export function isImplausiblePositionTransition(a:KmlPoint,b:KmlPoint,durationSe
 }
 const seconds=(a:KmlPoint,b:KmlPoint)=>{if(!a.time||!b.time)return 0;const value=(Date.parse(b.time)-Date.parse(a.time))/1000;return Number.isFinite(value)&&value>0?value:0};
 function speeds(points:KmlPoint[]){const raw=points.map((point,index)=>{if(!index)return 0;const duration=seconds(points[index-1],point);return duration?Math.min(900,haversineKm(points[index-1],point)/(duration/3600)):0});return raw.map((_,index)=>{const window=raw.slice(Math.max(0,index-2),Math.min(raw.length,index+3)).sort((a,b)=>a-b);return window[Math.floor(window.length/2)]||0})}
+const TOUCH_AND_GO_MIN_SPEED_KMH=28;
+const TOUCH_AND_GO_MAX_SPEED_KMH=145;
+const TOUCH_AND_GO_ALTITUDE_EVIDENCE_M=30;
+
 function groundEvents(points:KmlPoint[]){const speed=speeds(points),events:Array<{start:number;end:number;duration:number}>=[];let start=-1;for(let i=2;i<speed.length-2;i++){const slow=speed[i]<20;if(slow&&start<0&&speed.slice(Math.max(0,i-10),i).some(value=>value>42))start=i;if(start>=0&&!slow&&speed.slice(i,Math.min(speed.length,i+10)).some(value=>value>42)){const duration=seconds(points[start],points[i]);if(duration>0)events.push({start,end:i,duration});start=-1}}return events}
 
 /** GPS barometric/altitude discontinuities must never become landing evidence. */
@@ -111,7 +115,7 @@ function altitudeTouchAndGoIndices(points:KmlPoint[]){
   const speed=speeds(points),candidates:Array<{index:number;altitude:number}>=[];
   for(let index=4;index<points.length-4;index++){
     const altitude=points[index].alt,rollingSpeed=speed[index];
-    if(altitude===null||!Number.isFinite(altitude)||rollingSpeed<28||rollingSpeed>145)continue;
+    if(altitude===null||!Number.isFinite(altitude)||rollingSpeed<TOUCH_AND_GO_MIN_SPEED_KMH||rollingSpeed>TOUCH_AND_GO_MAX_SPEED_KMH)continue;
     const leftStart=Math.max(0,index-10),rightEnd=Math.min(points.length-1,index+10);
     const left=points.slice(leftStart,index).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
     const right=points.slice(index+1,rightEnd+1).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
@@ -119,9 +123,18 @@ function altitudeTouchAndGoIndices(points:KmlPoint[]){
     const local=points.slice(index-2,index+3).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
     if(!local.length||altitude>Math.min(...local)+2)continue;
     let descentEvidence=-1,climbEvidence=-1;
-    for(let cursor=index-1;cursor>=leftStart;cursor--){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=30){descentEvidence=cursor;break}}
-    for(let cursor=index+1;cursor<=rightEnd;cursor++){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=30){climbEvidence=cursor;break}}
+    for(let cursor=index-1;cursor>=leftStart;cursor--){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=TOUCH_AND_GO_ALTITUDE_EVIDENCE_M){descentEvidence=cursor;break}}
+    for(let cursor=index+1;cursor<=rightEnd;cursor++){const value=points[cursor].alt;if(value!==null&&Number.isFinite(value)&&value-altitude>=TOUCH_AND_GO_ALTITUDE_EVIDENCE_M){climbEvidence=cursor;break}}
     if(descentEvidence<0||climbEvidence<0)continue;
+    // A single GPS edge must not create the complete post-touchdown climb.
+    // Require one intermediate timed altitude sample that has already moved
+    // above the candidate minimum before the +30 m climb anchor is accepted.
+    let sustainedClimb=false;
+    for(let cursor=index+1;cursor<climbEvidence;cursor++){
+      const value=points[cursor].alt;
+      if(value!==null&&Number.isFinite(value)&&value>altitude&&seconds(points[cursor-1],points[cursor])>0){sustainedClimb=true;break}
+    }
+    if(!sustainedClimb)continue;
     if(hasImplausibleAltitudeJumpWithin(points,descentEvidence,climbEvidence))continue;
     candidates.push({index,altitude});
   }
@@ -201,8 +214,17 @@ export function suggestedSplitDetails(points:KmlPoint[]):SplitSuggestion[]{
     return{index,reason:"Extended ground stop between credible flight sections.",gapMinutes:null,endpointKm:null};
   });
 }
+function credibleTouchAndGoGroundEvent(points:KmlPoint[],event:{start:number;end:number;duration:number}){
+  if(event.duration<=0)return false;
+  const directSpeed=haversineKm(points[event.start],points[event.end])/(event.duration/3600);
+  if(directSpeed>TOUCH_AND_GO_MAX_SPEED_KMH)return false;
+  const altitudes=points.slice(event.start,event.end+1).map(point=>point.alt).filter((value):value is number=>value!==null&&Number.isFinite(value));
+  if(altitudes.length>=2&&Math.max(...altitudes)-Math.min(...altitudes)>=TOUCH_AND_GO_ALTITUDE_EVIDENCE_M)return false;
+  return true;
+}
+
 export function touchAndGoEvents(points:KmlPoint[]):TouchAndGoEvent[]{
-  const events=groundEvents(points).filter(event=>event.duration>5&&event.duration<90).map<TouchAndGoEvent>(event=>{const index=Math.round((event.start+event.end)/2);return{index,time:points[index]?.time||null,signal:"speed",confidence:"high"}});
+  const events=groundEvents(points).filter(event=>event.duration>5&&event.duration<90&&credibleTouchAndGoGroundEvent(points,event)).map<TouchAndGoEvent>(event=>{const index=Math.round((event.start+event.end)/2);return{index,time:points[index]?.time||null,signal:"speed",confidence:"high"}});
   for(const index of altitudeTouchAndGoIndices(points))if(!events.some(event=>Math.abs(event.index-index)<=10))events.push({index,time:points[index]?.time||null,signal:"altitude",confidence:"medium"});
   return events.sort((a,b)=>a.index-b.index);
 }

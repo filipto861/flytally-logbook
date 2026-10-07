@@ -92,7 +92,9 @@ PR titles should start with the numeric target version when practical.
 | 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
 | 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
 | 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
-| 3.6.0 | Saved-date / timezone semantics | ACTIVE |
+| 3.5.1 | GPS T&G false-positive containment | ACTIVE |
+| 3.5.2 | GPS T&G time-normalized / evidence-limited follow-up | NEXT |
+| 3.6.0 | Saved-date / timezone semantics | PLANNED |
 | 3.7.0 | Currency / monetary semantics | PLANNED |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
