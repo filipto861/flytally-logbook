@@ -527,6 +527,16 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - preserve all current test names, assertions, DB fixture IDs and one-worker/two-project execution semantics;
 - keep `holdPost` domain-local for the certified-void flow during the split; helper ownership is reconciled only in 0C.2a.
 
+0C.2 Batch 4 implementation candidate:
+- created `e2e/manual-authority-certification.spec.mjs` and moved exactly those eight tests with unchanged names/assertions;
+- moved the authority-only reset helpers with the new spec; GPS-specific reset helpers remain in `public-shell.spec.mjs`;
+- moved `holdPost` with the certified-void domain flow and removed its local definition from the remaining monolith;
+- current source inventory remains exactly **48 unique logical acceptance tests**: 24 public-shell + 8 Manual authority/certification + 7 advisory + 5 Manual RoleCrew/verification + 4 settings/connections mutations;
+- centralized `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry behavior are unchanged;
+- structure regression proves all eight names live only in the Manual authority/certification spec and that `holdPost` no longer remains in the monolith.
+
+0C.2 Batch 4 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused Manual authority/certification spec under both projects, then the complete serialized browser gate.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
