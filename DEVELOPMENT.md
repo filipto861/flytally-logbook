@@ -78,9 +78,24 @@ When a test already iterates its own viewport/theme matrix, running that matrix 
 
 The authenticated Playwright suite uses one isolated mutable PostgreSQL fixture database for both desktop and mobile projects. `playwright.config.mjs` therefore pins the suite to **one worker** in local runs and CI. Do not override this with a higher worker count unless every worker/project receives an independently bootstrapped database.
 
-After configuring the local browser-test database and environment, the canonical browser command is:
+After configuring the local browser-test database and environment, the application server must be told to use the localhost PostgreSQL adapter rather than the Neon HTTP client. A localhost `DATABASE_URL` without `FLYTALLY_LOCAL_POSTGRES=1` is invalid for authenticated browser acceptance.
+
+Canonical local setup:
 
 ```bash
+DATABASE_URL=postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser
+FLYTALLY_LOCAL_POSTGRES=1
+FLYTALLY_AUTH_BROWSER=1
+node tooling/bootstrap-browser-smoke-db.mjs
+npx playwright test --config=playwright.config.mjs
+```
+
+PowerShell equivalent:
+
+```powershell
+$env:DATABASE_URL="postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser"
+$env:FLYTALLY_LOCAL_POSTGRES="1"
+$env:FLYTALLY_AUTH_BROWSER="1"
 node tooling/bootstrap-browser-smoke-db.mjs
 npx playwright test --config=playwright.config.mjs
 ```
