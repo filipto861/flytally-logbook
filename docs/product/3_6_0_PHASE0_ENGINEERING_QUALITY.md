@@ -37,11 +37,11 @@ These counts describe source structure only. No test/build command is claimed as
 
 `tooling/run-postgres-tests.mjs` launches the selected PostgreSQL test files with the caller's environment unchanged.
 
-The integration tests examined gate themselves with:
+All **33/33** PostgreSQL integration/scale files were inspected and reference:
 
 `process.env.FLYTALLY_POSTGRES_INTEGRATION === "1"`
 
-and use Node test `skip` when that flag is absent.
+as the suite-level integration intent. The existing files then use that state to bypass setup and/or skip PostgreSQL cases when the flag is absent. The blast radius is therefore suite-wide, not an isolated test-file defect.
 
 Therefore:
 
@@ -116,19 +116,59 @@ Do not mass-rename them: that would create large churn without improving runtime
 
 **Direction:** freeze historical names for traceability; new tests should use stable domain/behavior names unless a release-specific contract genuinely requires a release label.
 
-### P2 — Toolchain runtime is not explicitly pinned
+### P2 — Toolchain runtime was not explicitly pinned
 
-GitHub workflows currently use Node 22, while package metadata does not define a root Node engine/version file and `@types/node` is on the 24 line.
+At audit start, GitHub workflows used Node 22 while package metadata had no root Node engine/version file and `@types/node` was on the 24 line.
 
-This is not evidence of a runtime defect, but it is avoidable environment ambiguity.
+Live Vercel project inspection resolved the ambiguity: the production Logbook project is configured for **Node 24.x**.
 
-**Decision required:** choose and document one supported Node runtime line after checking local/Vercel compatibility, then align package/workflow/developer setup.
+**Frozen Phase 0A direction:** Node 24.x is the canonical runtime line. Align `.nvmrc`, `package.json#engines`, manual GitHub workflows and development documentation to that production runtime.
 
 ### P2 — Git/PR hygiene has accumulated stale state
 
 At audit start, five older PRs remained open (#187, #201, #206, #231, #232) and more than twenty non-`main` branches remained.
 
 Do not delete them blindly. First prove each is merged-equivalent, superseded or intentionally retained; then close/delete only the proven stale set.
+
+## Independent review reconciliation
+
+A second-AI read-only review was reconciled against the actual repository before implementation.
+
+Accepted:
+- the PostgreSQL false-green is P0 because it undermines the local-first release model;
+- Playwright runner drift, the browser monolith, CSS risk misclassification and historical test proliferation are real maintenance risks;
+- browser DB serialization must remain one-worker until independently isolated worker databases exist;
+- timing/flakiness evidence is missing and should be measured before optimizing expensive suites.
+
+Repository verification strengthened the review:
+- all 33 PostgreSQL integration/scale files reference the integration-intent flag, so the silent-skip exposure is suite-wide locally;
+- the manual GitHub PostgreSQL workflow did set the flag, so this specific false-green was a **local command contract** defect rather than evidence that the existing cloud PostgreSQL job also skipped;
+- the Vercel Logbook project actually runs Node 24.x, resolving the Node 22/24 ambiguity in favor of Node 24.
+
+Review recommendations deliberately **not** adopted:
+- do not create a 272-entry per-test registry unless evidence proves that granularity is necessary. Phase 0B should evolve the existing module manifest into grouped risk/test metadata, with explicit exceptions where needed;
+- do not remove historical/version-named tests from the default full regression suite merely because they are old. Exclusion/deletion requires proven redundant coverage first;
+- do not make the complete browser suite mandatory for every release. Browser evidence remains risk-based; a release gate is assembled from the candidate's actual risk.
+
+### Phase 0A implementation state — IN PROGRESS / NOT YET VERIFIED
+
+Implemented on the Phase 0 branch:
+- PostgreSQL runner preflights `DATABASE_URL` and `psql`, then injects `FLYTALLY_POSTGRES_INTEGRATION=1` into the selected test process itself;
+- regression coverage proves the PostgreSQL gate fails before test execution when DB configuration is absent;
+- `@playwright/test` 1.55.0 is pinned in repository dependency metadata instead of installed ad hoc in the manual workflow;
+- authenticated browser acceptance has a wrapper that requires explicit browser/local-PostgreSQL test mode before fixture bootstrap;
+- the browser bootstrap connection-timeout environment variable was corrected to `PGCONNECT_TIMEOUT`;
+- Node 24.x is aligned across Vercel production configuration, `.nvmrc`, package engines and manual workflows;
+- DEVELOPMENT has been corrected to describe the executable workflow rather than claiming the scope registry is already consumed by GitHub Actions.
+
+Still required before Phase 0A can close:
+- exact-candidate dependency install / lockfile verification;
+- targeted development-pipeline/browser source regressions;
+- PostgreSQL core/full execution against the isolated test database;
+- authenticated browser acceptance because this phase changes its harness;
+- production build evidence.
+
+No PASS is claimed for those items until they actually run.
 
 ## Phase 0 implementation plan
 
