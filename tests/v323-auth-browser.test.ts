@@ -33,6 +33,18 @@ test("v3.2 U4 browser database is isolated and uses production password format",
   assert.match(bootstrap,/PGCONNECT_TIMEOUT:"5"/);
 });
 
+test("authenticated browser fixture cleanup is localhost-only and scopes certified trigger bypass to one transaction",()=>{
+  const db=read("e2e/browser-db.mjs");
+  assert.match(db,/Authenticated mutation smoke may only reset a localhost database/);
+  assert.match(db,/runBrowserFlightFixtureCleanup/);
+  assert.match(db,/BEGIN;/);
+  assert.match(db,/ALTER TABLE flights DISABLE TRIGGER USER/);
+  assert.match(db,/ALTER TABLE flights ENABLE TRIGGER USER/);
+  assert.match(db,/COMMIT;/);
+  assert.match(db,/PGCONNECT_TIMEOUT:"5"/);
+  assert.doesNotMatch(db,/PGCONNECTTIMEOUT/);
+});
+
 test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external secrets",()=>{
   const workflow=read(".github/workflows/browser-smoke.yml");
   assert.match(workflow,/image: postgres:16/);
