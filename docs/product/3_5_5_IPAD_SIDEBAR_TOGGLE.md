@@ -1,6 +1,6 @@
 # 3.5.5 — iPad sidebar collapse-control alignment
 
-**Status:** IMPLEMENTED · VERIFICATION PENDING  
+**Status:** IMPLEMENTED · LOCAL GATE PASS · PRODUCTION VISUAL RECHECK PENDING  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -56,13 +56,15 @@ The `-44px` offset accounts for the sidebar brand living inside the padded sideb
 - Fine-pointer desktop behavior is unchanged.
 - No horizontal page overflow is introduced.
 
-## Verification required
+## Verification
 
-- dedicated 3.5.5 source regression;
-- existing v3.0 sidebar/accessibility/mobile regressions;
-- TypeScript;
-- full unit/regression suite;
-- production build;
-- production iPad visual acceptance after deploy.
+Final exact-head local gate on `a98d6071b380de56325d1230887dd0385f419f05`:
+- targeted 3.5.5 / v3.0 accessibility / roadmap / versioning tests: **17/17 PASS**;
+- TypeScript: **PASS**;
+- full unit/regression suite: **1308/1308 PASS**;
+- production build: **PASS**, including 41/41 static pages;
+- PostgreSQL migration: **N/A**.
 
-PostgreSQL migration: **N/A**.
+The only local warning is the existing Next.js notice about a parent `C:\Users\Filip Točík\package-lock.json` outside the repository; it does not affect the repository build.
+
+Production iPad visual acceptance remains required after deploy.
