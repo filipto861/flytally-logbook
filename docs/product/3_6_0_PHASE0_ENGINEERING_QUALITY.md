@@ -124,6 +124,16 @@ Live Vercel project inspection resolved the ambiguity: the production Logbook pr
 
 **Frozen Phase 0A direction:** Node 24.x is the canonical runtime line. Align `.nvmrc`, `package.json#engines`, manual GitHub workflows and development documentation to that production runtime.
 
+### P1 — Vercel preview policy and development docs had drifted
+
+Repository inspection after the initial audit found that `tooling/vercel-ignore-build.mjs` intentionally exits successfully for **every non-production Vercel deployment**, so feature-branch previews are canceled/skipped regardless of whether runtime files changed.
+
+The skip message still claimed feature branches were validated by GitHub Actions, while current governance makes GitHub Actions manual-only and local verification authoritative. DEVELOPMENT also still implied that runtime candidate commits created Vercel previews.
+
+This is workflow/documentation drift, not evidence of a failed production build.
+
+**Phase 0A decision:** preserve the existing no-preview policy for now rather than changing deployment cost/behavior implicitly. Correct the stale messages and documentation to local-first truth. Whether to restore runtime preview builds is a separate Phase 0E workflow decision with explicit cost/evidence trade-offs.
+
 ### P2 — Git/PR hygiene has accumulated stale state
 
 At audit start, five older PRs remained open (#187, #201, #206, #231, #232) and more than twenty non-`main` branches remained.
@@ -159,7 +169,8 @@ Implemented on the Phase 0 branch:
 - authenticated browser acceptance has a wrapper that requires explicit browser/local-PostgreSQL test mode before fixture bootstrap;
 - the browser bootstrap connection-timeout environment variable was corrected to `PGCONNECT_TIMEOUT`;
 - Node 24.x is aligned across Vercel production configuration, `.nvmrc`, package engines and manual workflows;
-- DEVELOPMENT has been corrected to describe the executable workflow rather than claiming the scope registry is already consumed by GitHub Actions.
+- DEVELOPMENT has been corrected to describe the executable workflow rather than claiming the scope registry is already consumed by GitHub Actions;
+- Vercel preview documentation and the ignore-script message now reflect the actual policy: non-production previews are intentionally skipped and local gates are authoritative.
 
 Still required before Phase 0A can close:
 - exact-candidate dependency install / lockfile verification;
