@@ -78,9 +78,7 @@ function explicitCategoryCompatible(evidence:string,aircraftClass:string,request
   return false;
 }
 
-type AircraftCreditValidationMode="strict"|"stored-legacy-compatible";
-
-function validateAircraftProfileWithCreditMode(input:AircraftProfileValidationInput,creditMode:AircraftCreditValidationMode):AircraftProfileValidationResult{
+export function validateAircraftProfile(input:AircraftProfileValidationInput):AircraftProfileValidationResult{
   const make=text(input.aircraftMake),model=text(input.aircraftModel),requestedEvidence=upper(input.evidence),requestedClass=upper(input.aircraftClass),requestedCategory=upper(input.regulatoryCategory);
 
   if(requestedCategory&&!explicitCategoryCompatible(requestedEvidence,requestedClass,requestedCategory)){
@@ -116,15 +114,12 @@ function validateAircraftProfileWithCreditMode(input:AircraftProfileValidationIn
     }
   }
 
-  const creditRaw=upper(input.partFclCreditClass),creditBasis=text(input.partFclCreditBasis).slice(0,300),creditFrom=text(input.partFclCreditFrom);
+  const creditRaw=upper(input.partFclCreditClass),creditBasis=text(input.partFclCreditBasis).slice(0,300),creditFrom=text(input.partFclCreditFrom).slice(0,10);
   if(creditRaw&&!PART_FCL_CREDIT_CLASSES.includes(creditRaw as Exclude<PartFclCreditClass,"">)){
     return{error:"Select a valid Part-FCL credit class."};
   }
-  if(creditFrom&&!validIsoDate(creditFrom)){
-    return{error:"Part-FCL credit needs a valid-from date."};
-  }
   const partFclCreditClass=(creditRaw||"") as PartFclCreditClass;
-  if(partFclCreditClass&&creditMode==="strict"&&(!creditBasis||!creditFrom)){
+  if(partFclCreditClass&&(!creditBasis||!validIsoDate(creditFrom))){
     return{error:"Part-FCL credit needs a basis/reference and a valid-from date."};
   }
 
@@ -138,17 +133,4 @@ function validateAircraftProfileWithCreditMode(input:AircraftProfileValidationIn
     partFclCreditBasis:creditBasis,
     partFclCreditFrom:creditFrom,
   }};
-}
-
-export function validateAircraftProfile(input:AircraftProfileValidationInput):AircraftProfileValidationResult{
-  return validateAircraftProfileWithCreditMode(input,"strict");
-}
-
-/**
- * Validates a profile already persisted by FlyTally while preserving the v1.51.3
- * explicit Part-FCL override contract, where basis and valid-from were optional.
- * New/imported profile writes must continue to use validateAircraftProfile().
- */
-export function validateStoredAircraftProfile(input:AircraftProfileValidationInput):AircraftProfileValidationResult{
-  return validateAircraftProfileWithCreditMode(input,"stored-legacy-compatible");
 }

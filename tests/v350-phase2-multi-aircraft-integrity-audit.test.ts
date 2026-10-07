@@ -3,9 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { validateAircraftProfile,validateStoredAircraftProfile } from "../lib/aircraft-profile-validation.ts";
-import { allowedFlightContexts } from "../lib/flight-aircraft-context-authority.ts";
-import { isAnnexCreditForClass,resolveAnnexCredit,type RecencyFlight } from "../lib/recency-engine.ts";
+import { validateAircraftProfile } from "../lib/aircraft-profile-validation.ts";
+import { isAnnexCreditForClass,type RecencyFlight } from "../lib/recency-engine.ts";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -109,69 +108,4 @@ test("3.5 Phase 2 characterizes the legacy explicit-credit compatibility boundar
 
   const future=ullFlight({partFclCreditClass:"TMG",partFclCreditBasis:"legacy reference",partFclCreditFrom:"2026-10-01"});
   assert.equal(isAnnexCreditForClass(future,"TMG"),false);
-});
-
-
-test("3.5 Phase 2 preserves v1.51.3 stored override shapes without weakening strict new writes",()=>{
-  const legacyShapes=[
-    {partFclCreditClass:"TMG"},
-    {partFclCreditClass:"TMG",partFclCreditBasis:"legacy note"},
-    {partFclCreditClass:"TMG",partFclCreditFrom:"2026-01-15"},
-    {partFclCreditClass:"TMG",partFclCreditBasis:"legacy note",partFclCreditFrom:"2026-01-15"},
-  ];
-  for(const shape of legacyShapes){
-    const input={evidence:"ULL",aircraftClass:"ULL",regulatoryCategory:"ULL",...shape};
-    assert.equal(validateStoredAircraftProfile(input).error,undefined,JSON.stringify(shape));
-  }
-  assert.match(validateAircraftProfile({evidence:"ULL",aircraftClass:"ULL",regulatoryCategory:"ULL",partFclCreditClass:"TMG"}).error??"",/basis\/reference/i);
-  assert.match(validateStoredAircraftProfile({evidence:"ULL",aircraftClass:"ULL",regulatoryCategory:"ULL",partFclCreditClass:"TMG",partFclCreditFrom:"2026-01-15junk"}).error??"",/valid-from date/i);
-});
-
-test("3.5 Phase 2 existing legacy credit metadata cannot block Manual/GPS aircraft context authority",()=>{
-  const resolved=allowedFlightContexts({
-    aircraft_type:"ULL",
-    aircraft_make:"",
-    aircraft_model:"",
-    evidence:"ULL",
-    aircraft_class:"ULL",
-    regulatory_category:"ULL",
-    part_fcl_credit_class:"TMG",
-    part_fcl_credit_basis:"",
-    part_fcl_credit_from:"",
-  });
-  assert.equal(resolved.error,undefined);
-  assert.equal(resolved.profile?.partFclCreditClass,"TMG");
-  assert.equal(resolved.contexts?.[0]?.regulatoryCategory,"ULL");
-
-  const source=read("app/(protected)/database/actions.ts");
-  assert.match(source,/existingCredit\?validateStoredAircraftProfile\(profileInput\):validateAircraftProfile\(profileInput\)/);
-  assert.match(source,/COALESCE\(part_fcl_credit_class,''\) part_fcl_credit_class/);
-});
-
-test("3.5 Phase 2 canonical Annex-I resolver preserves legacy semantics and fails closed on malformed effectivity",()=>{
-  const classOnly=ullFlight({partFclCreditClass:"TMG"});
-  assert.deepEqual(resolveAnnexCredit(classOnly),{kind:"explicit",creditClass:"TMG",effectiveFrom:"",provenance:"legacy-compatible"});
-  assert.equal(isAnnexCreditForClass(classOnly,"TMG"),true);
-
-  const basisOnly=ullFlight({partFclCreditClass:"TMG",partFclCreditBasis:"legacy note"});
-  assert.equal(resolveAnnexCredit(basisOnly).kind,"explicit");
-  assert.equal(isAnnexCreditForClass(basisOnly,"TMG"),true);
-
-  const effectiveOnlyBefore=ullFlight({date:"2026-01-14",partFclCreditClass:"TMG",partFclCreditFrom:"2026-01-15"});
-  const effectiveOnlyOn=ullFlight({date:"2026-01-15",partFclCreditClass:"TMG",partFclCreditFrom:"2026-01-15"});
-  assert.equal(isAnnexCreditForClass(effectiveOnlyBefore,"TMG"),false);
-  assert.equal(isAnnexCreditForClass(effectiveOnlyOn,"TMG"),true);
-
-  const malformed=ullFlight({partFclCreditClass:"TMG",partFclCreditFrom:"2026-01-15junk"});
-  assert.deepEqual(resolveAnnexCredit(malformed),{kind:"invalid",reason:"effective-date"});
-  assert.equal(isAnnexCreditForClass(malformed,"TMG"),false);
-  assert.equal(isAnnexCreditForClass(malformed,"SEP"),false);
-});
-
-test("3.5 Phase 2 recency audit and calculation stay on the same Annex-I eligibility resolver",()=>{
-  const audit=read("lib/recency-audit.ts");
-  assert.match(audit,/import \{ isAnnexCreditForClass/);
-  assert.match(audit,/isAnnexCreditForClass\(/);
-  const engineSource=read("lib/recency-engine.ts");
-  assert.match(engineSource,/const annexCredit=isAnnexCreditForClass/);
 });

@@ -422,13 +422,16 @@ Discovery on 7 October 2026:
 - no evidence currently justifies copying `part_fcl_credit_*` into certified flight snapshots or adding another schema migration.
 
 Open integrity question before implementation:
-- the aircraft-profile write validator requires a complete class + basis/reference + valid-from tuple, but the recency evaluator can still consume a class override without proving that the accompanying provenance tuple is complete. Historical v1.51.3 class-only metadata may also exist, so tightening this path without a data census could break backward compatibility.
+- the aircraft-profile write validator requires a complete class + basis/reference + valid-from tuple, while the recency evaluator intentionally tolerates optional legacy metadata;
+- repository history shows the v1.51.3 UI/engine called basis/from optional, but the server-side Add/Edit action still required both for an explicit stored class. Therefore class-only persisted rows are **possible but not proven legitimate production state** (for example through exact restore or historical/manual data paths);
+- no compatibility relaxation or new migration is allowed until the aggregate production data census establishes what shapes actually exist.
 
 Phase 2 execution order:
 1. freeze the consumer/dependency census with characterization tests — **VERIFIED LOCAL 4/4** on `69310a3`;
-2. obtain independent review of the external-credit mapping boundary and legacy compatibility — **COMPLETE**, reconciled against v1.51.3/v1.51.4/M1 repository history;
-3. Runtime Batch 1 — preserve stored legacy credit metadata without weakening strict new writes; make Annex-I resolution explicit; fail closed on malformed non-empty effectivity — **IMPLEMENTED / VERIFICATION PENDING**;
-4. run targeted recency/snapshot/PostgreSQL tests, then the release gate only when Phase 2 runtime scope is complete.
+2. obtain independent review of the external-credit mapping boundary and legacy compatibility — **COMPLETE**; reviewer agrees with snapshot/external separation and no-migration default, but requires a bounded legacy rule before compatibility is widened;
+3. reconcile v1.51.3/v1.51.4 persistence history — **COMPLETE**: the v1.51.3 UI/engine described basis/from as optional, but the server-side Aircraft Add/Edit action still required both whenever an explicit class was persisted; exact restore remained outside that validator;
+4. run the read-only production `part_fcl_credit_*` shape census — **NEXT / REQUIRED BEFORE RUNTIME CHANGE**;
+5. implement only the behavior justified by that production evidence, then run targeted recency/snapshot/PostgreSQL tests and the final 3.5 release gate.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 

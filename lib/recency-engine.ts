@@ -32,27 +32,7 @@ const pilotFlyingRole=(role:unknown)=>["PIC","DUAL","SOLO","CO-PILOT","COPILOT",
 const picRole=(role:unknown)=>["PIC","SOLO","INSTRUCTOR","EXAMINER"].includes(upper(role));
 const legacyRefresher=(flight:RecencyFlight)=>/(FCL[.]140[.]A|LAPL\s+recency|recency\s+training|refresher\s+training)/i.test(`${flight.task??""} ${flight.note??""}`);
 const dateFrom=(value:unknown)=>/^\d{4}-\d{2}-\d{2}$/.test(String(value??""))?String(value):"";
-export type AnnexCreditResolution=
-  |{kind:"none"}
-  |{kind:"invalid";reason:"class"|"effective-date"}
-  |{kind:"automatic";creditClass:"SEP";effectiveFrom:""}
-  |{kind:"explicit";creditClass:"SEP"|"TMG";effectiveFrom:string;provenance:"complete"|"legacy-compatible"};
-
-export function resolveAnnexCredit(flight:RecencyFlight):AnnexCreditResolution{
-  if(upper(flight.evidence)!=="ULL")return{kind:"none"};
-  const explicitClass=upper(flight.partFclCreditClass),fromRaw=String(flight.partFclCreditFrom??"").trim(),basis=String(flight.partFclCreditBasis??"").trim();
-  if(explicitClass){
-    if(!["SEP","TMG"].includes(explicitClass))return{kind:"invalid",reason:"class"};
-    if(fromRaw&&!dateFrom(fromRaw))return{kind:"invalid",reason:"effective-date"};
-    return{kind:"explicit",creditClass:explicitClass as "SEP"|"TMG",effectiveFrom:fromRaw,provenance:basis&&fromRaw?"complete":"legacy-compatible"};
-  }
-  return classKey(flight.aircraftClass)==="ULL"?{kind:"automatic",creditClass:"SEP",effectiveFrom:""}:{kind:"none"};
-}
-export const isAnnexCreditForClass=(flight:RecencyFlight,target:string)=>{
-  const resolved=resolveAnnexCredit(flight);
-  if(resolved.kind==="none"||resolved.kind==="invalid"||resolved.creditClass!==upper(target))return false;
-  return !resolved.effectiveFrom||flight.date>=resolved.effectiveFrom;
-};
+export const isAnnexCreditForClass=(flight:RecencyFlight,target:string)=>{if(upper(flight.evidence)!=="ULL")return false;const explicitClass=upper(flight.partFclCreditClass),automaticClass=classKey(flight.aircraftClass)==="ULL"?"SEP":"",creditClass=explicitClass||automaticClass;if(creditClass!==target)return false;const from=dateFrom(flight.partFclCreditFrom);return !from||flight.date>=from};
 const annexCredit=isAnnexCreditForClass;
 const directClass=(flight:RecencyFlight,target:string)=>upper(flight.evidence)!=="ULL"&&classKey(flight.aircraftClass)===target;
 export const isFcl060ClassEligible=(flight:RecencyFlight,target:"SEP"|"TMG")=>directClass(flight,target)||annexCredit(flight,target);
