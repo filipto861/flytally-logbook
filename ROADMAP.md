@@ -130,7 +130,7 @@ Research scope:
 - explicit duplicate/stale-fix quality classification if needed;
 - no spatial rescue unless separate evidence demonstrates that it cannot bootstrap low passes/go-arounds into landing evidence.
 
-The earlier provisional `3.5.2` reservation is superseded: no release number is assigned until a broader real-track corpus supports a safe add-event contract.
+The earlier **T&G-only** provisional `3.5.2` reservation is superseded. This research remains unnumbered until a broader real-track corpus supports a safe add-event contract; product release `3.5.2` is now assigned to always-on GPS/SERA Night suggestions.
 
 ---
 
