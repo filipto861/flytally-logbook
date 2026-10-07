@@ -234,9 +234,25 @@ Verification after the TypeScript-safe regression fix:
 
 This is another Phase 0A browser-runner portability defect, not product runtime evidence. The runner now resolves the repository-pinned `@playwright/test` CLI and executes it directly through `process.execPath`, removing the Windows command-wrapper dependency while keeping the exact locked Playwright version. A new source-contract regression guards against reintroducing `npx.cmd` execution.
 
+Follow-up after the direct-Playwright-CLI change:
+- Playwright now launches successfully on Windows and the authenticated browser fixture bootstrap succeeds;
+- the full browser run executed **98 tests using one worker** and finished **66 PASS / 30 FAIL / 2 skipped in 15.2 minutes**;
+- the source-contract subset exposed one stale assertion that still expected the superseded `npx --no-install playwright test` wrapper;
+- the browser failures cluster into test-harness drift rather than one product regression: current auto-collapsing GPS `<details>` sections were being manipulated while hidden, 3.5.2 had intentionally removed the account-level Night-definition control while old E1.3 browser expectations remained, and certified-fixture teardown attempted ordinary `DELETE` operations that production immutability triggers correctly reject.
+
+Phase 0A corrective browser-harness batch:
+- update the stale v3.2 U4 runner assertion to the direct repository-pinned Playwright CLI;
+- make browser tests reopen GPS Track / Flight context sections through their visible `<summary>` before mutating controls that the current UI intentionally collapses;
+- align the legacy Night-definition browser cases with the frozen 3.5.2 always-on GPS/SERA contract; persisted legacy keys remain compatibility data only;
+- add localhost-only browser fixture cleanup that temporarily disables only `USER` triggers on `flights` inside one transaction, then immediately re-enables them; production runtime/delete semantics are unchanged;
+- correct the browser DB helper timeout variable to `PGCONNECT_TIMEOUT`.
+
+Iteration policy after the 15.2-minute diagnostic run: use Playwright `--grep` targeted clusters while fixing the harness; run the complete serialized 98-test browser gate only once on the final Phase 0A candidate.
+
 Still required before Phase 0A can close:
-- rerun the targeted development-pipeline/browser source regression set after the direct-Playwright-CLI change;
-- successful authenticated browser acceptance against the isolated localhost PostgreSQL cluster.
+- targeted source-contract regression after this corrective batch;
+- targeted browser runs for the GPS-context/split, certified-fixture-reset and 3.5.2 Night-suggestion clusters;
+- one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
 
