@@ -245,7 +245,8 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
         AND (
           n.href IN(SELECT '/connections/shared/'||p.id FROM flight_participations p WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId})
           OR n.href IN(SELECT '/connections/flight/'||a.id FROM instructor_flight_approvals a WHERE a.student_user_id=${userId} AND a.flight_id=${flightId})
-        )`,    sql`UPDATE flight_participations p
+        )`,
+    sql`UPDATE flight_participations p
       SET status='superseded',superseded_at=NOW(),responded_at=COALESCE(p.responded_at,NOW()),
           decision_note=CASE WHEN NULLIF(TRIM(COALESCE(p.decision_note,'')),'') IS NULL THEN 'Source certified flight was removed by the owner.' ELSE p.decision_note END
       WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId} AND p.status='pending'

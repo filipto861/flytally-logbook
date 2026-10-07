@@ -62,10 +62,10 @@ test("3.5.0 M2 supersedes pending workflow, revokes shares, binds provenance and
 
 test("3.5.0 M5 notification history cannot retain dead source-workflow links after void",()=>{
   const service=read("lib/flight-voiding.ts");
-  assert.match(service,/href='\\/audit\\/voided-flights\\/'\\|\\|v\\.id::text/);
-  assert.match(service,/UPDATE user_notifications n SET read_at=COALESCE\\(n\\.read_at,NOW\\(\\)\\),href=''/);
-  assert.match(service,/\\/connections\\/shared\\//);
-  assert.match(service,/\\/connections\\/flight\\//);
+  assert.ok(service.includes("href='/audit/voided-flights/'||v.id::text"));
+  assert.ok(service.includes("UPDATE user_notifications n SET read_at=COALESCE(n.read_at,NOW()),href=''"));
+  assert.ok(service.includes("'/connections/shared/'||p.id"));
+  assert.ok(service.includes("'/connections/flight/'||a.id"));
 });
 test("3.5.0 authenticated action delegates to the canonical void service and hides raw errors",()=>{
   const action=read("app/(protected)/flights/certification-actions.ts");
