@@ -1,6 +1,6 @@
 # 3.5.1 — GPS Touch-and-Go Reliability
 
-**Status:** ACTIVE — regression-first implementation  
+**Status:** IMPLEMENTED / VERIFIED LOCAL — pending merge and production closeout  
 **Date:** 7 October 2026  
 **Scope:** advisory GPS T&G inference only
 
@@ -145,3 +145,19 @@ Required before merge:
 - no DB migration.
 
 A check is PASS only when actually executed.
+
+## Local verification closeout — 7 October 2026
+
+Verified in an isolated Vercel sandbox against the feature-branch candidate:
+- targeted 3.5.1 regressions: **6/6 PASS**;
+- focused GPS/track regression corpus: **62/62 PASS**;
+- full unit/regression suite: **1297/1297 PASS**;
+- TypeScript: **PASS**;
+- production Next.js build: **PASS**, 41/41 static pages generated.
+
+Not run / not applicable:
+- PostgreSQL: **N/A** — no persistence, schema or database contract changed;
+- authenticated browser GPS acceptance: **NOT RUN** — no GPS UI or browser interaction contract changed, and feature-branch Vercel previews are intentionally skipped by repository policy;
+- production deploy: **NOT RUN**.
+
+The release remains open until merge and production closeout.
