@@ -477,7 +477,23 @@ Read-only inventory on the active branch:
 - baseline contract still requires the exact 48 logical names, centralized `browser-db.mjs`, unchanged fixture IDs, two projects, workers=1 and the existing retry contract;
 - no product runtime, DB schema, browser DB fixture implementation, bootstrap, Playwright project or worker change.
 
-0C.2 Batch 1 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, then run the new mutation spec under both projects and finally the complete serialized browser gate because splitting files can expose hidden DB/reset ordering dependencies.
+0C.2 Batch 1 verification:
+- targeted browser-structure/scope/pipeline set: **36/36 PASS**;
+- TypeScript: **PASS**;
+- focused new mutation spec: **8/8 PASS** across both Playwright projects in **23.3 seconds**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **4.8 minutes**.
+
+**0C.2 Batch 1 is CLOSED / VERIFIED.**
+
+0C.2 Batch 2 implementation candidate — advisory presentation:
+- moved exactly seven existing advisory/presentation tests into `e2e/advisory-presentation.spec.mjs`: E1.1 route assistance, E1.2 operation defaults, E1.4 legacy GPS Task, 3.5.2 Night-setting removal, legacy MANUAL applicability, E1.3 SERA suggestion, and sparse GPS Night-time;
+- test names and assertions are unchanged;
+- the new spec uses only the already-shared login/overflow primitives plus centralized `browser-db.mjs` reset/query helpers;
+- the monolith no longer imports advisory-only reset helpers;
+- current source inventory remains exactly **48 unique logical acceptance tests**: 37 in `public-shell.spec.mjs`, 7 in `advisory-presentation.spec.mjs`, and 4 in `settings-connections-mutations.spec.mjs`;
+- no DB fixture implementation, fixture ID, product runtime, schema, Playwright project, worker or retry change.
+
+0C.2 Batch 2 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused advisory spec under both projects, then the complete serialized browser gate because the new file sorts before the remaining monolith and can expose hidden DB/reset-order coupling.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
