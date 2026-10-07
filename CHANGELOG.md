@@ -10,6 +10,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### GPS touch-and-go reliability — 3.5.1 candidate
+- Tightened advisory GPS touch-and-go inference against three reproduced real-track false positives without adding a new auto-counted T&G path.
+- Rolling-altitude T&G now requires post-minimum climb evidence beyond a single timed altitude edge; the existing 28–145 km/h rolling-speed range, 30 m altitude evidence and 25 m/s gross-discontinuity guard remain unchanged.
+- Short speed/ground events are no longer accepted as T&G when direct event motion exceeds the existing 145 km/h rolling ceiling or usable altitude changes by at least 30 m during the alleged ground interval.
+- Takeoff inference, shared ground-stop split detection, the public T&G DTO, database schema, certification data and historical flights are unchanged.
+- Added anonymized real-derived regressions for the level-shift false event, climb-out sawtooth false event and duplicate/stale-fix false HIGH event, plus positive controls for five rolling T&Gs and a genuine stop-and-go.
+- The separate real T&G missed near 15:59 remains intentionally non-auto-counted: new evidence proves the current ±10-array-point qualification window is defective, but that event also crosses gross-corrupt approach altitude evidence. Time-normalized qualification and an evidence-limited non-counted review tier are tracked separately for 3.5.2 rather than weakening fail-closed behavior.
+- Local isolated verification on the feature branch: targeted 3.5.1 **6/6 PASS**, focused GPS/track corpus **62/62 PASS**, full unit/regression **1297/1297 PASS**, TypeScript **PASS**, production build **PASS** with 41/41 static pages. PostgreSQL and browser acceptance are **N/A / NOT RUN** for this pure track-inference change; no DB or UI runtime contract changed.
+
+
 ## 3.5.0 — 7 October 2026
 
 ### Certified flight voiding + multi-aircraft integrity
