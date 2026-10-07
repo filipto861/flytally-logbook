@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
-**Current production product version:** `3.5.1`  
-**Current active release:** `3.5.2`
+**Current production product version:** `3.5.2`  
+**Current active release:** `3.6.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -44,7 +44,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Core logbook / certified record integrity | ✅ Production |
 | Aeroplane / Helicopter / Sailplane / Balloon / ULL / conservative Other | ✅ Production |
 | Manual + GPS flight entry | ✅ 3.4.1 production baseline |
-| GPS review / T&G / Day-Night / Night-time suggestions | ✅ 3.5.1 production-verified fail-closed T&G containment + 3.4.1 Night-time diagnostics |
+| GPS review / T&G / Day-Night / Night-time suggestions | ✅ 3.5.2 production: always-on context-gated SERA suggestions + 3.5.1 fail-closed T&G containment |
 | Certification / correction revisions / audit history | ✅ Production |
 | Recency / licences / evidence | ✅ Production |
 | Sharing / Connections / instructor workflows | ✅ Production |
@@ -52,7 +52,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v20** — independent from product version |
-| Product release version | **3.5.1** |
+| Product release version | **3.5.2** |
 
 ## Canonical release sequence
 
@@ -62,9 +62,9 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
 | 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
 | 4 | **3.5.1** | GPS T&G false-positive containment | ✅ | Merged and production deployed on 7 October 2026; tightening-only reliability hotfix |
-| 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | 🚧 | Product decision: remove the account Night-definition switch and always attempt source-backed GPS/SERA suggestions where the flight context supports them |
-| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.2 production closeout |
-| 7 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | ✅ | Merged and production deployed on 7 October 2026; no DB/certification/history rewrite |
+| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Active after 3.5.2 production closeout |
+| 7 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Account currency vs stored monetary denomination needs one contract |
 | 8 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 9 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
@@ -509,11 +509,11 @@ Phase 2 execution order:
 
 **Production closeout:** PR #243 squash-merged to `main` as `881f4b2159a00a23609bf9a3d4a783084a0ec5f1`; Vercel deployment `dpl_FTPxxhKFWnRRBvKZZPcNrYUYeZXn` reached READY and serves `fly-tally.com`; post-deploy provenance reconciliation completed; final read-only v20 postflight preserved all operational counts with 7/7 provenance rows and zero void-history rows; immediate runtime-error check found no errors.
 
-**Next:** 3.5.2 always-on GPS/SERA Night suggestions.
+**Subsequent release:** 3.5.2 always-on GPS/SERA Night suggestions.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
-# 3.5.2 — Always-on GPS/SERA Night suggestions — ACTIVE
+# 3.5.2 — Always-on GPS/SERA Night suggestions — DONE / PRODUCTION
 
 Detailed contract: `docs/product/3_5_2_ALWAYS_ON_NIGHT_SUGGESTIONS.md`
 
@@ -544,9 +544,20 @@ The account-level **Night definition** switch is removed. For GPS imports, FlyTa
 - TypeScript, targeted tests, full unit/regression gate and production build before merge;
 - PostgreSQL migration: N/A unless implementation scope changes.
 
+## Production closeout
+
+3.5.2 is **DONE / PRODUCTION**:
+- PR #248 squash-merged to `main` as `60be6fd23f283302dadc7a3d611a19ff0bc8ebf3`;
+- final exact-head local verification: TypeScript **PASS**, full unit/regression **1298/1298 PASS**, production build **PASS** with 41/41 static pages;
+- targeted 3.5.2 / 3.4.1 / E2 GPS contract: **24/24 PASS**;
+- PostgreSQL migration: **N/A**; schema remains v20, certification payload remains v8, portable backup remains v13;
+- Vercel production deployment `dpl_4pyJEv2pjWQLNcmNPpFYcjsf3PHj` reached READY on the exact merge SHA and serves the production project/domain;
+- deployment root/login smoke returned HTTP 200;
+- immediate grouped runtime-error check found no errors.
+
 ---
 
-# 3.6.0 — Saved-date / timezone semantics — NEXT
+# 3.6.0 — Saved-date / timezone semantics — ACTIVE
 
 Issue: #144
 
