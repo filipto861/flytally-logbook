@@ -4,7 +4,7 @@
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
 **Current production product version:** `3.5.2`  
-**Current active release:** `3.6.0`
+**Current active release:** `3.5.3`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -63,10 +63,11 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
 | 4 | **3.5.1** | GPS T&G false-positive containment | ✅ | Merged and production deployed on 7 October 2026; tightening-only reliability hotfix |
 | 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | ✅ | Merged and production deployed on 7 October 2026; no DB/certification/history rewrite |
-| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Active after 3.5.2 production closeout |
-| 7 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Account currency vs stored monetary denomination needs one contract |
-| 8 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 9 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 6 | **3.5.3** | Flight detail navigation UX | 🚧 | User-prioritized polish before timezone work; existing navigation logic is reused |
+| 7 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.3 production closeout |
+| 8 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 9 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 10 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
@@ -557,7 +558,34 @@ The account-level **Night definition** switch is removed. For GPS imports, FlyTa
 
 ---
 
-# 3.6.0 — Saved-date / timezone semantics — ACTIVE
+# 3.5.3 — Flight detail navigation UX — ACTIVE
+
+Detailed contract: `docs/product/3_5_3_FLIGHT_DETAIL_NAVIGATION.md`
+
+## Product decision
+
+Flight detail already has filter-aware Previous/Next navigation and a Back to flights link, but the controls are visually too quiet. Keep the existing navigation semantics and make them obvious and stable across desktop, iPad and mobile.
+
+## Frozen behavior
+
+- preserve `getFlightNavigationFast()` ordering, filtering and context-query behavior;
+- keep `FLIGHT x/y` position evidence;
+- expose an obvious **Back to flights** control;
+- render **Previous flight** and **Next flight** as clear peer controls;
+- keep both movement controls visible at list boundaries, with the unavailable direction explicitly disabled rather than removed;
+- preserve the current flight-list filter/sort context in Back/Previous/Next destinations;
+- no flight data, certification, recency, DB or persistence semantics change.
+
+## Required verification
+
+- source regression for Back/Previous/Next labels, stable disabled edge states and context-preserving links;
+- responsive CSS contract for desktop and mobile layout;
+- TypeScript, targeted tests, full unit/regression gate and production build before merge;
+- PostgreSQL migration: N/A.
+
+---
+
+# 3.6.0 — Saved-date / timezone semantics — NEXT
 
 Issue: #144
 
