@@ -1,13 +1,12 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** RELEASE CANDIDATE — M1–M6 VERIFIED LOCAL / PRODUCTION SCHEMA v20 APPLIED / RUNTIME DEPLOY PENDING  
+**Status:** DONE / PRODUCTION VERIFIED  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
-**Candidate package:** `3.5.0`  
-**Production runtime:** `3.4.1`  
-**Production schema:** v20 applied and immediate postflight verified 7 October 2026  
+**Production runtime:** `3.5.0`  
+**Production schema:** v20 applied and final postflight verified 7 October 2026  
 **Pre-migration recovery branch:** `pre-v20-2026-10-07` / `br-dry-moon-b1n30x0b`
 
 ## Product intent
