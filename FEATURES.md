@@ -123,12 +123,19 @@ Important boundary:
 - Detailed contract: `docs/product/3_5_3_FLIGHT_DETAIL_NAVIGATION.md`.
 - Production visual review identified two presentation-only iPad follow-ups tracked in 3.5.4.
 
-### 3.5.4 — iPad flight-detail visual hotfix — ACTIVE
+### 3.5.4 — iPad flight-detail visual hotfix — IMPLEMENTED / PRODUCTION VERIFIED
 - Keep Back / Previous / Next / More on one stable row on wider iPad layouts instead of allowing only More to wrap.
 - At narrower tablet widths, reflow the whole flight-detail header/navigation group as one unit.
 - Keep the accessibility **Skip to content** link fully hidden until keyboard focus so iPad safe areas never show a residual focus-colored border.
 - Preserve all 3.5.3 navigation destinations, list-context semantics and mobile behavior.
 - Detailed contract: `docs/product/3_5_4_IPAD_FLIGHT_DETAIL_UX.md`.
+- Production iPad acceptance confirmed the navigation wrapping and safe-area border fragment are resolved.
+
+### 3.5.5 — iPad sidebar collapse-control alignment — ACTIVE
+- Keep the coarse-pointer sidebar collapse action at the canonical 44 px touch size.
+- Reposition it clear of the notification bell and align it vertically to the brand-row controls.
+- Preserve sidebar collapse state, notification behavior and phone/mobile navigation.
+- Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`.
 
 ### 3.6.0 — Saved-date / timezone semantics — NEXT
 - Define which user-facing saved-date defaults follow the configured calendar timezone.

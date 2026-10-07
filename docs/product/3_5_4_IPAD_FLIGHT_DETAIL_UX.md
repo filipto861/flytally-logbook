@@ -1,6 +1,6 @@
 # 3.5.4 — iPad flight-detail visual hotfix
 
-**Status:** IMPLEMENTED · LOCAL GATE PASS · PRODUCTION VISUAL RECHECK PENDING  
+**Status:** DONE · PRODUCTION VERIFIED  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -59,7 +59,13 @@ Final runtime exact-head local gate on `f7c80df84fbd6fd3bf18ede169ac54a9a2bcc768
 
 The only local warning is the existing Next.js notice about a parent `C:\Users\Filip Točík\package-lock.json` outside the repository; it does not affect the repository build.
 
-Production iPad visual acceptance remains required after deploy.
+Production closeout:
+- PR #251 squash-merged as `8ed7567ca3f1f2ffb2834ecca0f29359bbd330c6`;
+- Vercel production deployment `dpl_BceR2z3B27eXwnFuNzDL3AugQNjc` reached **READY** on the exact merge SHA;
+- root/login smoke returned **HTTP 200** and the immediate runtime-error window was clean;
+- production iPad visual acceptance confirmed both targeted 3.5.4 defects are resolved.
+
+A separate sidebar collapse-button placement observation from the same iPad review is isolated to 3.5.5 and does not reopen the 3.5.4 flight-detail contract.
 
 ## Do not
 

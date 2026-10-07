@@ -677,3 +677,13 @@ button[data-loading="true"]::after{
   border:2px solid var(--accent2);
   transform:none;
 }
+
+
+/* 3.5.5 — keep the coarse-pointer sidebar collapse target clear of the bell and aligned to the rail. */
+@media screen and (min-width:821px) and (pointer:coarse){
+  .sidebar-toggle{
+    right:-44px;
+    top:50%;
+    transform:translateY(-50%);
+  }
+}

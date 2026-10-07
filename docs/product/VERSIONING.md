@@ -68,11 +68,11 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-3.5.3 completed production rollout on 7 October 2026. Current production baseline:
+3.5.4 completed production rollout on 7 October 2026. Current production baseline:
 - production database schema is **v20**;
 - flight certification payload remains **v8**;
 - portable backup/export format is **v13**;
-- production product package/runtime is **3.5.3**.
+- production product package/runtime is **3.5.4**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -95,7 +95,8 @@ PR titles should start with the numeric target version when practical.
 | 3.5.1 | GPS T&G false-positive containment | DONE / PRODUCTION |
 | 3.5.2 | Always-on GPS/SERA Night suggestions | DONE / PRODUCTION |
 | 3.5.3 | Flight detail navigation UX | DONE / PRODUCTION |
-| 3.5.4 | iPad flight-detail visual hotfix | ACTIVE |
+| 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
+| 3.5.5 | iPad sidebar collapse-control alignment | ACTIVE |
 | 3.6.0 | Saved-date / timezone semantics | NEXT |
 | 3.7.0 | Currency / monetary semantics | PLANNED |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |

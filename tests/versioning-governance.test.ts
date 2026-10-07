@@ -22,9 +22,10 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/\| 4 \| \*\*3\.5\.1\*\* \| GPS T&G false-positive containment \| ✅ \|/);
   assert.match(roadmap,/\| 5 \| \*\*3\.5\.2\*\* \| Always-on GPS\/SERA Night suggestions \| ✅ \|/);
   assert.match(roadmap,/\| 6 \| \*\*3\.5\.3\*\* \| Flight detail navigation UX \| ✅ \|/);
-  assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| 🚧 \|/);
-  assert.match(roadmap,/\| 8 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ➡️ \|/);
-  assert.match(roadmap,/\| 9 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| ⏳ \|/);
+  assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
+  assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| 🚧 \|/);
+  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ➡️ \|/);
+  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| ⏳ \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
@@ -50,19 +51,18 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.5.4 release candidate metadata stays aligned with the 3.5.3 production baseline",()=>{
+test("3.5.5 release candidate metadata stays aligned with the 3.5.4 production baseline",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
-  assert.equal(pkg.version,"3.5.4");
+  assert.equal(pkg.version,"3.5.5");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
-  assert.match(read("ROADMAP.md"),/# 3\.5\.3 — Flight detail navigation UX — DONE \/ PRODUCTION/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.3 \| Flight detail navigation UX \| DONE \/ PRODUCTION \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.5\.3\*\*/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.4 \| iPad flight-detail visual hotfix \| ACTIVE \|/);
-  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.5\.3`/);
-  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.5\.4`/);
+  assert.match(read("ROADMAP.md"),/# 3\.5\.4 — iPad flight-detail visual hotfix — DONE \/ PRODUCTION/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.4 \| iPad flight-detail visual hotfix \| DONE \/ PRODUCTION \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.5\.4\*\*/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.5 \| iPad sidebar collapse-control alignment \| ACTIVE \|/);
+  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.5\.4`/);
+  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.5\.5`/);
   assert.match(read("docs/product/VERSIONING.md"),/\| 3\.6\.0 \| Saved-date \/ timezone semantics \| NEXT \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/GPS T&G time-normalized \/ evidence-limited follow-up \| RESEARCH/);
 });
