@@ -1,6 +1,6 @@
 # 3.5.2 — Always-on GPS/SERA Night suggestions
 
-**Status:** ACTIVE  
+**Status:** VERIFIED LOCAL · RELEASE CANDIDATE  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -78,6 +78,21 @@ Required before merge:
 - full unit/regression suite;
 - production build;
 - DB/PostgreSQL migration: N/A.
+
+## Candidate verification
+
+Local verification completed on 7 October 2026 after the residual Night-definition PF gate and stale roadmap/versioning assertions were corrected:
+
+- targeted 3.5.2 / 3.4.1 / E2 GPS contract: **24/24 PASS**;
+- TypeScript: **PASS**;
+- full unit/regression suite: **1298/1298 PASS**;
+- production build: **PASS**, including **41/41** generated static pages;
+- PostgreSQL migration: **N/A** — no schema or persistence contract changed;
+- browser acceptance: **NOT RUN** for this patch; the affected Settings control and GPS applicability are covered by source/behavior regression tests, while the runtime build completed successfully.
+
+The local Next.js build emitted a non-blocking workspace warning about a parent-directory `package-lock.json`; the build still completed successfully and used the repository application source.
+
+Production deployment and smoke remain pending until PR merge.
 
 ## Do not
 
