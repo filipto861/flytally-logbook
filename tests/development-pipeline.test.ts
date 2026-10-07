@@ -15,6 +15,8 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(pkg.scripts["scope:changed"],"node tooling/development-scope.mjs");
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
+  assert.equal(pkg.scripts["test:browser"],"node tooling/run-auth-browser.mjs");
+  assert.equal(pkg.scripts["verify:browser"],"npm run build && npm run test:browser");
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
@@ -41,6 +43,33 @@ test("PostgreSQL runner owns integration intent instead of relying on the caller
   assert.doesNotMatch(runner,/env: process\.env/);
 });
 
+test("authenticated browser gate fails closed before fixture reset when auth mode is absent",()=>{
+  const result=spawnSync(
+    process.execPath,
+    [path.join(root,"tooling/run-auth-browser.mjs")],
+    {
+      cwd:root,
+      encoding:"utf8",
+      env:{...process.env,FLYTALLY_AUTH_BROWSER:""},
+    },
+  );
+  assert.equal(result.status,2,result.stderr||result.stdout);
+  assert.match(result.stderr,/FLYTALLY_AUTH_BROWSER=1 is required/);
+  assert.match(result.stderr,/browser gate did not run/);
+});
+
+test("Node and Playwright versions are repository-pinned to the production toolchain",()=>{
+  const pkg=JSON.parse(read("package.json"));
+  const lock=JSON.parse(read("package-lock.json"));
+  assert.equal(pkg.engines.node,"24.x");
+  assert.equal(read(".nvmrc").trim(),"24");
+  assert.equal(pkg.devDependencies["@playwright/test"],"1.55.0");
+  assert.equal(lock.packages[""].devDependencies["@playwright/test"],"1.55.0");
+  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.55.0");
+  assert.equal(lock.packages["node_modules/playwright"].version,"1.55.0");
+  assert.equal(lock.packages["node_modules/playwright-core"].version,"1.55.0");
+});
+
 test("manual cloud verification mirrors the local-first release policy without automatic PR runs",()=>{
   const workflow=read(".github/workflows/verify-web.yml"),browser=read(".github/workflows/browser-smoke.yml");
   assert.match(workflow,/workflow_dispatch:/);
@@ -64,6 +93,11 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/inputs\.postgres == true/);
   assert.match(workflow,/test:postgres:full/);
+  assert.doesNotMatch(workflow,/FLYTALLY_POSTGRES_INTEGRATION/);
+  assert.match(workflow,/node-version: 24/);
+  assert.match(browser,/node-version: 24/);
+  assert.match(browser,/npm run test:browser/);
+  assert.doesNotMatch(browser,/npm install --no-save --package-lock=false @playwright\/test/);
 });
 
 test("large PostgreSQL fixtures are isolated from the normal core acceptance loop",()=>{
