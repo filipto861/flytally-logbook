@@ -18,7 +18,7 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
   assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Multi-aircraft remaining integrity audit \| 🚧 \|/);
+  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| 🚧 \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });

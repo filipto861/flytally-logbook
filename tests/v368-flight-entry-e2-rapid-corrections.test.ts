@@ -26,7 +26,8 @@ const profile=(partFclCreditClass="")=>({
 
 test("E2 schema v19 is additive nullable SE ME with no backfill",()=>{
   const plan=read("lib/migration-plan.ts"),db=read("lib/db-optimization.ts");
-  assert.match(plan,/DATABASE_SCHEMA_VERSION=19/);
+  const currentSchema=Number(plan.match(/DATABASE_SCHEMA_VERSION=(\d+)/)?.[1]??0);
+  assert.ok(currentSchema>=19,"current schema must retain migration v19 or later");
   assert.match(plan,/version:19,name:"aircraft default engine type"/);
   assert.match(db,/19:"aircraft default engine type"/);
   const start=db.indexOf("if(version===19)return[");

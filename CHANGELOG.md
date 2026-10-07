@@ -26,7 +26,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Final M2/M3 browser acceptance passed **2/2** across desktop and mobile Chromium, proving certified-flight removal, active-row exclusion, permanent tombstone/audit retention and legacy-audit redirect end to end.
 - Portable backup format v13 is implemented pending verification: signed backups include permanent void/provenance history, exact restore is history-only and conflict-guarded, legacy v4–v12 `track_points` remains parser-compatible without current-schema queries, and participant source provenance is append-only.
 - Backup v13 implementation is present and awaits verification; schema v20 is **not applied to production**.
-- First M4 verification run failed on typed recovery-conflict wiring and stale test assumptions; these were corrected on the feature branch and an exact-head rerun is required. No production migration/deploy occurred.
+- First M4 verification run failed on typed recovery-conflict wiring and stale test assumptions; these were corrected on the feature branch.
+- Second M4 gate on `25d73e6`: TypeScript PASS and production build PASS; unit/regression was **1259/1273 PASS** with 14 failures traced to historical source-contract drift plus one Node direct-import alias in `void-evidence.ts`. PostgreSQL did **not execute** because the shell had no `DATABASE_URL` (all 93 integration cases failed setup). Follow-up corrections update historical assertions to v13/schema-v20/current-roadmap semantics, keep legacy `track_points` parser compatibility explicit, and make the void-evidence helper directly Node-testable. Exact-head rerun remains required. No production migration/deploy occurred.
 
 
 ## 3.4.1 — 6 October 2026

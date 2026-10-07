@@ -57,9 +57,10 @@ test("v1.43.0 print preview reports size and handles empty or invalid selections
 });
 
 test("v1.43.0 leaves regulatory record and backup direction unchanged",()=>{
-  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),backup=read("lib/account-backup.ts");
+  const roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md"),backup=read("lib/account-backup.ts"),portable=read("lib/portable-backup.ts");
   assert.match(roadmap,/same FCL\.050 columns 1–12, 10-row A4 landscape renderer/);
   assert.match(roadmap,/preserve certification payloads\/hashes\/revisions/);
-  assert.match(backup,/track_points/);
+  assert.match(portable,/const legacyArrays=.*"track_points"/);
+  assert.doesNotMatch(backup,/FROM track_points|track_points:/);
   assert.match(backup,/instructor_flight_approvals/);
 });
