@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
-**Current production product version:** `3.5.0`  
-**Current active release:** `3.5.1`
+**Current production product version:** `3.5.1`  
+**Current active release:** `3.6.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -44,7 +44,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Core logbook / certified record integrity | ✅ Production |
 | Aeroplane / Helicopter / Sailplane / Balloon / ULL / conservative Other | ✅ Production |
 | Manual + GPS flight entry | ✅ 3.4.1 production baseline |
-| GPS review / Day-Night / Night-time suggestions | ✅ 3.4.1 production-verified fail-closed reliability/diagnostics |
+| GPS review / T&G / Day-Night / Night-time suggestions | ✅ 3.5.1 production-verified fail-closed T&G containment + 3.4.1 Night-time diagnostics |
 | Certification / correction revisions / audit history | ✅ Production |
 | Recency / licences / evidence | ✅ Production |
 | Sharing / Connections / instructor workflows | ✅ Production |
@@ -52,7 +52,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v20** — independent from product version |
-| Product release version | **3.5.0** |
+| Product release version | **3.5.1** |
 
 ## Canonical release sequence
 
@@ -61,19 +61,19 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
 | 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
-| 4 | **3.5.1** | GPS T&G false-positive containment | 🚧 | Confirmed real-track false-positive evidence defect; tightening-only hotfix pre-empts 3.6.0 |
-| 5 | **3.5.2** | GPS T&G time-normalized / evidence-limited follow-up | ➡️ | Confirmed ±10-point qualification defect can miss a real T&G; recovery must not weaken fail-closed evidence |
-| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Resumes after the GPS reliability hotfix/follow-up |
-| 7 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
-| 8 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 9 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 4 | **3.5.1** | GPS T&G false-positive containment | ✅ | Merged and production deployed on 7 October 2026; tightening-only reliability hotfix |
+| 5 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Resumes after 3.5.1 production closeout |
+| 6 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Account currency vs stored monetary denomination needs one contract |
+| 7 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 8 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
 **Pre-emption rule:** confirmed production, security or data-integrity defects may interrupt this order. Convenience/visual polish may not weaken evidence, validation, certification or historical integrity.
 
 ---
 
-# 3.5.1 — GPS Touch-and-Go false-positive containment — ACTIVE
+# 3.5.1 — GPS Touch-and-Go false-positive containment — DONE / PRODUCTION
 
 Detailed contract: `docs/product/3_5_1_GPS_TOUCH_AND_GO_RELIABILITY.md`
 
@@ -108,20 +108,28 @@ Expected real-track outcomes:
 - 0510263 positive control: exactly five T&Gs remain detected;
 - 0510262 real T&G near 15:59: remains non-auto-counted in 3.5.1 because its approach evidence crosses a gross altitude discontinuity.
 
-## Local verification status
+## Production closeout
 
-3.5.1 implementation is **VERIFIED LOCAL** on the feature branch: targeted regressions 6/6 PASS, focused GPS/track corpus 62/62 PASS, full unit/regression 1297/1297 PASS, TypeScript PASS and production build PASS (41/41 static pages). PostgreSQL is N/A for this pure inference change; authenticated browser acceptance and production deployment are NOT RUN. The release stays ACTIVE until merge and production closeout.
+3.5.1 is **DONE / PRODUCTION**:
+- PR #245 merged to `main` as `230d835a9e4c3fddb02bf7b729242632626cb9a7`;
+- Vercel deployment `dpl_AGLoght4FF1khhviPaZvMu5SZ2oT` is READY on that exact merge SHA and carries `fly-tally.com`;
+- deployment root/login smoke returned HTTP 200;
+- grouped runtime-error review found no errors in the checked post-deploy window;
+- final candidate verification before merge: 1297/1297 unit/regression PASS, TypeScript PASS, production build PASS (41/41 static pages);
+- PostgreSQL remains N/A: no persistence or schema contract changed.
 
-## 3.5.2 follow-up — NEXT
+## GPS T&G evidence-limited follow-up — RESEARCH
 
 New evidence proves that ±10 array points is not a reliable physical qualification window: the known real 15:59 T&G misses +30 m climb evidence by ~0.27 m at point +10 and clearly exceeds it at point +11.
 
-3.5.2 owns:
+Research scope:
 - elapsed-time / physical evidence-window research;
 - an evidence-limited, non-counted "possible T&G" review tier if justified;
 - density-invariance tests;
 - explicit duplicate/stale-fix quality classification if needed;
 - no spatial rescue unless separate evidence demonstrates that it cannot bootstrap low passes/go-arounds into landing evidence.
+
+The earlier provisional `3.5.2` reservation is superseded: no release number is assigned until a broader real-track corpus supports a safe add-event contract.
 
 ---
 
