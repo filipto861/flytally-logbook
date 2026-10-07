@@ -108,6 +108,10 @@ Expected real-track outcomes:
 - 0510263 positive control: exactly five T&Gs remain detected;
 - 0510262 real T&G near 15:59: remains non-auto-counted in 3.5.1 because its approach evidence crosses a gross altitude discontinuity.
 
+## Local verification status
+
+3.5.1 implementation is **VERIFIED LOCAL** on the feature branch: targeted regressions 6/6 PASS, focused GPS/track corpus 62/62 PASS, full unit/regression 1297/1297 PASS, TypeScript PASS and production build PASS (41/41 static pages). PostgreSQL is N/A for this pure inference change; authenticated browser acceptance and production deployment are NOT RUN. The release stays ACTIVE until merge and production closeout.
+
 ## 3.5.2 follow-up — NEXT
 
 New evidence proves that ±10 array points is not a reliable physical qualification window: the known real 15:59 T&G misses +30 m climb evidence by ~0.27 m at point +10 and clearly exceeds it at point +11.
