@@ -1,49 +1,47 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { nightDefinitionFromPreferences,normalizeNightDefinition } from "../lib/night-definition.ts";
 
 const profilePage=fs.readFileSync("app/(protected)/profile/page.tsx","utf8");
 const profileActions=fs.readFileSync("app/(protected)/profile/actions.ts","utf8");
 const newFlight=fs.readFileSync("app/(protected)/flights/new/page.tsx","utf8");
 const gps=fs.readFileSync("components/kml-import-form.tsx","utf8");
 
-test("E1.3 night-definition preference fails closed to MANUAL",()=>{
-  assert.equal(normalizeNightDefinition("SERA"),"SERA");
-  assert.equal(normalizeNightDefinition("sera"),"SERA");
-  assert.equal(normalizeNightDefinition("AUTO"),"MANUAL");
-  assert.equal(normalizeNightDefinition(undefined),"MANUAL");
-  assert.equal(nightDefinitionFromPreferences({night_definition:"SERA"}),"SERA");
-  assert.equal(nightDefinitionFromPreferences({}),"MANUAL");
-  assert.equal(nightDefinitionFromPreferences('{"night_definition":"SERA"}'),"SERA");
-  assert.equal(nightDefinitionFromPreferences("broken"),"MANUAL");
+test("3.5.2 removes the account Night-definition switch from active Settings and flight-entry runtime",()=>{
+  assert.doesNotMatch(profilePage,/name="night_definition"/);
+  assert.doesNotMatch(profilePage,/Manual · no automatic Day\/Night split/);
+  assert.doesNotMatch(profilePage,/SERA · GPS civil-twilight suggestion/);
+  assert.doesNotMatch(profileActions,/night_definition:normalizeNightDefinition/);
+  assert.doesNotMatch(profileActions,/pick\(f,"night_definition"/);
+  assert.doesNotMatch(newFlight,/getUserNightDefinition/);
+  assert.doesNotMatch(newFlight,/nightDefinition=\{/);
+  assert.doesNotMatch(gps,/NightDefinition/);
 });
 
-test("E1.3 account settings expose and persist explicit MANUAL or SERA applicability",()=>{
-  assert.match(profilePage,/name="night_definition"/);
-  assert.match(profilePage,/Manual · no automatic Day\/Night split/);
-  assert.match(profilePage,/SERA · GPS civil-twilight suggestion/);
-  assert.match(profileActions,/night_definition:normalizeNightDefinition\(pick\(f,"night_definition",existing\.night_definition\)\)/);
-  assert.match(newFlight,/getUserNightDefinition\(userId\)/);
-  assert.match(newFlight,/nightDefinition=\{nightDefinition\}/);
-});
-
-test("E1.3 GPS suggestion is gated by explicit account SERA plus DAY_NIGHT context",()=>{
-  assert.match(gps,/nightDefinition==="SERA"&&sourceRequirements\?\.landingMode==="DAY_NIGHT"/);
-  assert.doesNotMatch(gps,/nightDefinition==="SERA"&&selectedProfile\?\.evidence==="EASA"/);
+test("3.5.2 GPS SERA suggestions are automatic but remain gated by canonical flight-context applicability",()=>{
+  assert.match(gps,/const seraLandingSuggestionEnabled=sourceRequirements\?\.landingMode==="DAY_NIGHT",seraNightTimeSuggestionEnabled=sourceRequirements\?\.reviewNightIfr===true/);
+  assert.doesNotMatch(gps,/nightDefinition==="SERA"/);
   assert.match(gps,/gpsLandingDayNightSuggestion\(parts\[index\]\?\?\[\]\)/);
+  assert.match(gps,/gpsNightMinutesSuggestion\(parts\[index\]\?\?\[\]\)/);
   assert.match(gps,/suggestion\.status!=="AVAILABLE"\|\|Number\(review\.starts\)!==suggestion\.total/);
 });
 
-test("E1.3 landing split state is sticky for direct edits and clears suggested split on total change",()=>{
+test("3.5.2 landing split state stays sticky for direct edits and clears only stale automatic suggestions",()=>{
   assert.match(gps,/type LandingSplitSource="UNSET"\|"SUGGESTED"\|"MANUAL"/);
+  assert.match(gps,/if\(review\.landingSplitSource==="MANUAL"\)return review/);
   assert.match(gps,/review\.landingSplitSource==="SUGGESTED"\?\{\.\.\.review,starts:value,landingsDay:"",landingsNight:"",landingSplitSource:"UNSET",pfMovement:"",takeoffsDay:"",takeoffsNight:"",approachesDay:"",approachesNight:""\}/);
   assert.match(gps,/\[field\]:value,landingSplitSource:"MANUAL"/);
-  assert.doesNotMatch(gps,/reviewed:false/);
-  assert.match(gps,/landingSplitSource:"UNSET",pfMovement/);
 });
 
-test("E1.3 Day Night suggestion provenance is accessible and remains pilot-editable",()=>{
+test("3.5.2 Night-time state stays sticky and unavailable GPS evidence still falls back to manual entry",()=>{
+  assert.match(gps,/if\(review\.nightTimeSource==="MANUAL"\)return review/);
+  assert.match(gps,/review\.nightTimeSource==="SUGGESTED"\?\{\.\.\.review,nightTime:"",nightTimeSource:"UNSET"\}:review/);
+  assert.match(gps,/GPS Night-time unavailable —/);
+  assert.match(gps,/Enter manually/);
+  assert.match(gps,/GPS does not prove IFR/);
+});
+
+test("3.5.2 Day Night suggestion provenance remains visible and pilot-editable",()=>{
   assert.match(gps,/aria-describedby=\{seraLandingSuggestionEnabled\?landingHelpId:undefined\}/);
   assert.match(gps,/SERA civil-twilight suggestion · GPS event time\/location/);
   assert.match(gps,/Pilot-edited Day\/Night split/);
