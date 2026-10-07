@@ -50,7 +50,8 @@ test("v3.0 historical UX evidence is archived while numeric roadmap owns current
   assert.match(roadmap,/## Canonical release sequence/);
   assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
   assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| 🚧 \|/);
+  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| ✅ \|/);
+  assert.match(roadmap,/\| 4 \| \*\*3\.5\.1\*\* \| GPS T&G false-positive containment \| 🚧 \|/);
   assert.match(roadmap,/# 3\.4\.1 — GPS Night-time reliability — DONE/);
   assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/docs\/history\/ROADMAP_PRE_NUMERIC_2026-10-04\.md/);
