@@ -151,10 +151,7 @@
     "lib/data/pilot-insights.ts",
     "lib/pending-actions.ts",
     "app/api/export/route.ts",
-    "app/(protected)/print/page.tsx",
-    "tests/integration/postgres-scale-readiness.test.ts",
-    "tests/integration/postgres-v169-production-hardening.test.ts",
-    "tests/integration/postgres-v230-large-logbook-performance.test.ts"
+    "app/(protected)/print/page.tsx"
   ],
   "modules": [
     {
@@ -726,5 +723,12 @@
     "auditedTotal": 381,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
+  },
+  "postgresAcceptance": {
+    "scaleTests": [
+      "tests/integration/postgres-scale-readiness.test.ts",
+      "tests/integration/postgres-v169-production-hardening.test.ts",
+      "tests/integration/postgres-v230-large-logbook-performance.test.ts"
+    ]
   }
 }
