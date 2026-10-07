@@ -23,6 +23,25 @@ function classify(files:string[],title=""){
   }));
 }
 
+function listRuntimeFiles(){
+  const extensions=new Set([".ts",".tsx",".css"]);
+  const files:string[]=[];
+  const visit=(absolute:string,relative:string)=>{
+    for(const entry of fs.readdirSync(absolute,{withFileTypes:true})){
+      const childAbsolute=path.join(absolute,entry.name);
+      const childRelative=path.posix.join(relative,entry.name);
+      if(entry.isDirectory())visit(childAbsolute,childRelative);
+      else if(extensions.has(path.extname(entry.name)))files.push(childRelative);
+    }
+  };
+  for(const rootName of ["app","components","lib"])visit(path.join(root,rootName),rootName);
+  return files.sort();
+}
+
+function registryEntryMatches(entry:{files?:string[],prefixes?:string[]},file:string){
+  return (entry.files??[]).includes(file)||(entry.prefixes??[]).some(prefix=>file.startsWith(prefix));
+}
+
 test("documentation remains lightweight without runtime gates",()=>{
   const result=classify(["README.md","docs/product/example.md"]);
   assert.equal(result.postgres,"false");
@@ -126,6 +145,53 @@ test("PostgreSQL harness changes select its source contracts and real acceptance
   assert.match(result.modules,/development-infrastructure/);
   assert.match(result.test_groups,/development-pipeline/);
   assert.match(result.targeted_tests,/tests\/development-pipeline\.test\.ts/);
+});
+
+test("stable module ownership covers at least ninety percent of the audited runtime surface",()=>{
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const runtimeFiles=listRuntimeFiles();
+  const shared=manifest.modules.find((module:{id:string})=>module.id==="shared-runtime");
+  assert.ok(shared,"shared-runtime module must make reviewed cross-cutting ownership explicit");
+
+  const stableModules=manifest.modules.filter((module:{id:string})=>module.id!=="shared-runtime");
+  const stableOwned=runtimeFiles.filter(file=>stableModules.some((module:{files?:string[],prefixes?:string[]})=>registryEntryMatches(module,file)));
+  const explicitShared=runtimeFiles.filter(file=>registryEntryMatches(shared,file));
+  const uncovered=runtimeFiles.filter(file=>
+    !stableModules.some((module:{files?:string[],prefixes?:string[]})=>registryEntryMatches(module,file)) &&
+    !registryEntryMatches(shared,file)
+  );
+
+  assert.equal(runtimeFiles.length,manifest.ownership.auditedTotal);
+  assert.equal(manifest.ownership.baselineStableOwned,121);
+  assert.ok(stableOwned.length/runtimeFiles.length>=manifest.ownership.minimumStableCoverage,
+    `stable ownership coverage ${stableOwned.length}/${runtimeFiles.length} is below registry minimum`);
+  assert.equal(uncovered.length,0,"every current runtime file must be stable-owned or explicitly shared");
+  assert.ok(explicitShared.length>0,"cross-cutting runtime handling must remain explicit rather than disappear by broad prefix");
+});
+
+test("new stable modules own representative aircraft GPS auth notification and shell boundaries",()=>{
+  const result=classify([
+    "components/aircraft-manager.tsx",
+    "lib/track-processing.ts",
+    "app/login/actions.ts",
+    "app/api/push/preferences/route.ts",
+    "app/layout.tsx",
+  ]);
+  assert.match(result.modules,/aircraft-airports/);
+  assert.match(result.modules,/gps-tracks/);
+  assert.match(result.modules,/identity-auth/);
+  assert.match(result.modules,/notifications-push/);
+  assert.match(result.modules,/shell-presentation/);
+});
+
+test("reviewed cross-cutting files stay explicit shared runtime instead of receiving guessed ownership",()=>{
+  const result=classify(["lib/pilot-workspace.ts"]);
+  assert.match(result.modules,/shared-runtime/);
+  assert.match(result.risks,/shared-runtime/);
+  assert.equal(result.postgres,"false");
+  assert.equal(result.browser,"false");
+  assert.equal(result.full_tests,"true");
+  assert.equal(result.build,"true");
 });
 
 test("development registry has unique ids scale paths and test ownership",()=>{
