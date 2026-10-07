@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
-**Current production product version:** `3.5.3`  
-**Current active release:** `3.5.4`
+**Current production product version:** `3.5.4`  
+**Current active release:** `3.5.5`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -52,7 +52,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v20** — independent from product version |
-| Product release version | **3.5.3** |
+| Product release version | **3.5.4** |
 
 ## Canonical release sequence
 
@@ -64,11 +64,12 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 4 | **3.5.1** | GPS T&G false-positive containment | ✅ | Merged and production deployed on 7 October 2026; tightening-only reliability hotfix |
 | 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | ✅ | Merged and production deployed on 7 October 2026; no DB/certification/history rewrite |
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
-| 7 | **3.5.4** | iPad flight-detail visual hotfix | 🚧 | Fix production iPad navigation wrapping and hidden skip-link safe-area artifact without changing navigation semantics |
-| 8 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.4 production closeout |
-| 9 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
-| 10 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 11 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
+| 8 | **3.5.5** | iPad sidebar collapse-control alignment | 🚧 | Keep the coarse-pointer collapse control clear of the notification bell and aligned to the sidebar rail |
+| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.5 production closeout |
+| 10 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
@@ -588,7 +589,7 @@ Flight detail already has filter-aware Previous/Next navigation and a Back to fl
 
 ---
 
-# 3.5.4 — iPad flight-detail visual hotfix — ACTIVE
+# 3.5.4 — iPad flight-detail visual hotfix — DONE / PRODUCTION
 
 Detailed contract: `docs/product/3_5_4_IPAD_FLIGHT_DETAIL_UX.md`
 
@@ -614,6 +615,33 @@ Production iPad visual acceptance of 3.5.3 showed two presentation-only defects:
 - existing 3.5.3 navigation and v3.0 accessibility regressions;
 - TypeScript, targeted tests, full unit/regression suite and production build;
 - PostgreSQL migration: N/A.
+
+---
+
+# 3.5.5 — iPad sidebar collapse-control alignment — ACTIVE
+
+Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`
+
+## Trigger
+
+Production iPad review after 3.5.4 confirmed the flight-detail navigation and safe-area fixes are substantially improved, but exposed a separate shell presentation defect: the coarse-pointer enlargement of the sidebar collapse button leaves it visually overlapping the notification bell because the button is absolutely positioned relative to the padded brand row.
+
+## Frozen behavior
+
+- keep sidebar expand/collapse behavior and persisted `logbook-sidebar` state unchanged;
+- keep the iPad/coarse-pointer 44 px touch target;
+- align the collapse target vertically with the brand-row controls;
+- move it horizontally into the sidebar rail/gutter so it no longer overlaps the notification bell;
+- do not change phone/mobile navigation, notification behavior, sidebar contents or route semantics;
+- no DB, flight, certification, recency, sharing or persistence semantics change.
+
+## Required verification
+
+- source regression for coarse-pointer placement and 44 px target preservation;
+- existing sidebar/mobile/accessibility regressions;
+- TypeScript, targeted tests, full unit/regression suite and production build;
+- PostgreSQL migration: N/A;
+- production iPad visual acceptance after deploy.
 
 ---
 
