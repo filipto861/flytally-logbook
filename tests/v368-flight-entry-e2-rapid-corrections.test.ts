@@ -76,8 +76,10 @@ test("E2 GPS Night-time baseline remains conservative and 3.4.1 explains sparse-
 
 test("E2 GPS UX extends SERA to ULL, keeps IFR manual and makes PF evidence optional",()=>{
   const gps=read("components/kml-import-form.tsx");
-  assert.match(gps,/nightDefinition==="SERA"&&sourceRequirements\?\.landingMode==="DAY_NIGHT"/);
-  assert.doesNotMatch(gps,/nightDefinition==="SERA"&&selectedProfile\?\.evidence==="EASA"/);
+  assert.match(gps,/seraLandingSuggestionEnabled=sourceRequirements\?\.landingMode==="DAY_NIGHT"/);
+  assert.match(gps,/seraNightTimeSuggestionEnabled=sourceRequirements\?\.reviewNightIfr===true/);
+  assert.doesNotMatch(gps,/\bnightDefinition\b/);
+  assert.match(gps,/pfSuggestion=sourceRequirements\?\.movementMode==="FCL060_PF"\?gpsPfMovementDayNightSuggestion\(part\):null/);
   assert.match(gps,/gpsNightMinutesSuggestion\(parts\[index\]\?\?\[\]\)/);
   assert.match(gps,/GPS does not prove IFR/);
   assert.match(gps,/type="checkbox" value="yes" checked=\{review\.pfMovement==="yes"\}/);
