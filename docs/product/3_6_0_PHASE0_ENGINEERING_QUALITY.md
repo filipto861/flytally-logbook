@@ -382,7 +382,11 @@ Implementation candidate:
 - a registry ownership contract now requires at least **90% stable coverage**, zero unclassified current runtime files, and explicit shared-runtime handling;
 - representative regression coverage verifies aircraft, GPS, auth, push and shell ownership plus conservative shared-runtime gates.
 
-0B.2 verification is **PENDING** until the targeted development-scope/pipeline tests and TypeScript run on this candidate.
+0B.2 verification:
+- targeted development-scope/pipeline set: **28/28 PASS**;
+- TypeScript: **PASS**.
+
+**0B.2 is CLOSED / VERIFIED.** The next active milestone is **0B.3 — workflow/command convergence**.
 
 **0B.3 — workflow/command convergence**
 - wire canonical group execution through one registry-backed runner;
