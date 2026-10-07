@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **5 October 2026**
+Last reconciled: **7 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — RELEASE CANDIDATE
+### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — IMPLEMENTED / PRODUCTION VERIFIED
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
 - Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
@@ -131,6 +131,7 @@ Important boundary:
 - Phase 1 certified-flight voiding has completed its local release gate: exact-head `a2d3f65` TypeScript PASS, full unit/regression **1285/1285 PASS**, full PostgreSQL integration + scale **99/99 PASS**, production build PASS, with authenticated desktop/mobile M5C **2/2 PASS** on runtime-equivalent `a423239`.
 - Phase 2 remaining multi-aircraft integrity audit is complete without a runtime change. Characterization is **4/4 PASS** on `69310a3`; independent review confirmed the snapshot/external-applicability architecture; repository-history reconciliation showed strict server persistence for explicit overrides; and the read-only production census found **25/25 profiles with no explicit `part_fcl_credit_*` metadata**, covering 295 saved flights and 36 certified ULL flights. No legacy compatibility layer, schema v21 or certification payload change is justified.
 - Canonical final local gate on exact head `f0a1f1a`: TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS.
+- Production deployment `dpl_FTPxxhKFWnRRBvKZZPcNrYUYeZXn` is READY on merged `main@881f4b2`, serves `fly-tally.com`, and final schema-v20 reconcile/postflight completed with no immediate runtime errors.
 - Schema-v20 rollout tooling is locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`. Candidate version/build delta on `c0daa46` is **5/5 PASS** with production build PASS. Production v20 preflight passed against exact schema v19; schema v20 was then applied after explicit approval with a pre-write Neon recovery branch. Immediate postflight confirms exact v1..v20, **7/7** provenance rows, unchanged operational row counts and zero void-history rows. Production runtime remains 3.4.1 until the 3.5.0 deploy; final reconcile/postflight/smoke are pending.
 
 
