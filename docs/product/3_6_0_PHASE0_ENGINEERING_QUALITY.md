@@ -428,6 +428,42 @@ Preserve:
 
 Avoid executing a self-managed viewport/theme matrix under both Playwright device projects unless the test explicitly needs both user-agent/device contexts.
 
+#### Phase 0C discovery baseline
+
+Read-only inventory on the active branch:
+
+- `e2e/public-shell.spec.mjs`: **2,053 lines / ~127.6 kB**, **48 logical tests**, **13 local helper functions**, and **25 imports** from the shared browser DB fixture helper;
+- `e2e/browser-db.mjs`: **363 lines** of fixture/reset/query helpers;
+- `tooling/bootstrap-browser-smoke-db.mjs`: **600 lines** of isolated browser-database bootstrap;
+- Playwright currently has two projects (desktop Chrome + Pixel 7), `fullyParallel:false`, and **workers:1** because both projects mutate the same isolated PostgreSQL fixture;
+- the normal full gate therefore executes the 48 public-shell tests under both projects (**96 executions**) plus the dedicated UI-audit capture test under both projects (**2 intentionally skipped executions unless explicitly enabled**) = the observed **98 executions**;
+- several presentation tests already manage their own viewport/theme matrices with `page.setViewportSize` / shared F6 presentation state, so running those same matrices again under both device projects is potentially redundant unless mobile UA/touch semantics are actually part of the assertion;
+- the current UI-audit capture spec already demonstrates the desired pattern: it skips the mobile project because it owns its viewport/theme matrix internally.
+
+Provisional implementation sequence, pending independent review:
+
+**0C.1 — shared helper extraction, no behavioral change**
+- move genuinely reusable navigation/login/overflow/details/GPS interaction helpers out of the monolith;
+- keep DB fixture ownership in `browser-db.mjs`;
+- preserve test names, fixture IDs, order-sensitive reset semantics, two projects and workers=1.
+
+**0C.2 — domain spec split**
+- split public/auth/shell boundaries;
+- split Manual flight authority/certification;
+- split GPS/RoleCrew flows;
+- split settings/connections/transaction mutations;
+- split responsive presentation matrices;
+- preserve the exact same logical test inventory and grep-able names.
+
+**0C.3 — redundant project-matrix removal**
+- only for tests that fully own their viewport/theme matrix and do not depend on mobile user-agent/touch semantics, run under one Playwright project;
+- retain both projects for ordinary workflow tests whose real device project semantics are part of coverage;
+- prove the resulting execution-count reduction without reducing required viewport/theme states.
+
+**Not part of 0C by default:** per-worker database isolation or raising `workers` above 1. That is a separate architecture change because the current suite and bootstrap assume one mutable database. It may be designed after the spec split, but must not be smuggled into this refactor.
+
+Before any 0C implementation, obtain an independent second-AI review of the domain boundaries, helper extraction, execution-matrix deduplication, shared-DB hazards and the decision to defer per-worker isolation.
+
 ### Phase 0D — Test contract policy
 
 Document and enforce four evidence classes:
