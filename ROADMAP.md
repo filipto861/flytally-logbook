@@ -367,7 +367,7 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — RELEASE PREP ACTIVE
+# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — RELEASE CANDIDATE
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
@@ -436,7 +436,9 @@ Phase 2 execution order:
 
 **Canonical final local gate: VERIFIED** on exact head `f0a1f1a` — TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS. GitHub CI remains **NOT RUN — local-first policy**.
 
-**Next:** verify the explicit schema-v20 production preflight/migration/reconcile/postflight tooling, then candidate version reconciliation. Production remains `3.4.1` / schema v19 until the migration/deploy closeout is explicitly executed.
+**Release candidate metadata:** package/app-visible version is now `3.5.0`; this identifies the unreleased candidate and does not claim production deployment. Schema-v20 production preflight/migration/reconcile/postflight tooling is implemented and locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`.
+
+**Next:** verify the `3.5.0` candidate metadata/build delta, then execute the read-only production v20 preflight. Production remains `3.4.1` / schema v19 until the migration/deploy closeout is explicitly executed.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 

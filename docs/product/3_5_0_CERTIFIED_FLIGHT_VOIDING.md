@@ -1,11 +1,12 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 VERIFIED / M5 VERIFIED / M6 LOCAL GATE VERIFIED  
+**Status:** RELEASE CANDIDATE — M1–M6 VERIFIED LOCAL / PRODUCTION ROLLOUT PENDING  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
-**Production baseline:** `3.4.1`
+**Candidate package:** `3.5.0`  
+**Production baseline:** `3.4.1` / PostgreSQL schema v19
 
 ## Product intent
 
