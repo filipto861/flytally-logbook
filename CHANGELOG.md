@@ -10,16 +10,21 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.5.2 — Always-on GPS/SERA Night suggestions
-- Removed the account-level **Night definition** selector from Settings; GPS/SERA Night suggestion behavior is no longer user-toggleable.
-- GPS import now attempts the existing SERA Day/Night landing split and conservative Night-time suggestion automatically whenever the canonical flight context supports those fields.
-- Preserved the existing civil-twilight calculation and fail-closed evidence contract: -6° geometric boundary, ±0.5° confidence guard, explicit UTC/offset evidence, sparse-gap/track-integrity rejection, sticky pilot edits and manual fallback when exact GPS evidence is unavailable.
-- IFR remains manual. Legacy stored `night_definition` values are ignored by active flight-entry behavior; no DB migration, certification-payload change or historical-flight rewrite is introduced.
-- Added/reconciled source regression coverage for the removed Settings switch, always-on applicability gating and sticky manual Day/Night/Night-time edits.
-
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
+
+## 3.5.2 — 7 October 2026
+
+### Always-on GPS/SERA Night suggestions
+- Removed the account-level **Night definition** selector from Settings; GPS/SERA Night suggestion behavior is no longer user-toggleable.
+- GPS import now attempts the existing SERA Day/Night landing split and conservative Night-time suggestion automatically whenever the canonical flight context supports those fields.
+- Preserved the existing civil-twilight calculation and fail-closed evidence contract: -6° geometric boundary, ±0.5° confidence guard, explicit UTC/offset evidence, sparse-gap/track-integrity rejection, sticky pilot edits and manual fallback when exact GPS evidence is unavailable.
+- IFR remains manual. Legacy stored `night_definition` values are ignored by active flight-entry behavior; no DB migration, certification-payload change or historical-flight rewrite was introduced.
+- Added/reconciled source regression coverage for the removed Settings switch, always-on applicability gating and sticky manual Day/Night/Night-time edits.
+- Final exact-head local verification: targeted 3.5.2 / 3.4.1 / E2 GPS contract **24/24 PASS**, TypeScript **PASS**, full unit/regression **1298/1298 PASS**, production build **PASS** with 41/41 static pages.
+- PR #248 squash-merged to `main` as `60be6fd23f283302dadc7a3d611a19ff0bc8ebf3`; Vercel production deployment `dpl_4pyJEv2pjWQLNcmNPpFYcjsf3PHj` reached READY on that exact SHA, root/login smoke returned HTTP 200, and the checked immediate runtime-error window was clean.
+- PostgreSQL migration **N/A**; production schema remains v20, certification payload v8 and portable backup v13.
 
 ## 3.5.1 — 7 October 2026
 
