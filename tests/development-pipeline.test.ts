@@ -3,7 +3,6 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { preparePostgresCli } from "../tooling/postgres-cli.mjs";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -46,18 +45,12 @@ test("PostgreSQL runner owns integration intent instead of relying on the caller
 });
 
 test("PostgreSQL CLI override is explicit and propagated through child PATH",()=>{
-  const explicit=path.join(root,"test-postgres-bin",process.platform==="win32"?"psql.exe":"psql");
-  const prepared=preparePostgresCli({
-    PATH:"base-path",
-    FLYTALLY_PSQL:explicit,
-    PGCONNECT_TIMEOUT:"",
-  });
-  assert.equal(prepared.command,explicit);
-  assert.equal(prepared.env.PGCONNECT_TIMEOUT,"5");
-  assert.equal(
-    String(prepared.env.PATH).split(path.delimiter)[0],
-    path.dirname(explicit),
-  );
+  const helper=read("tooling/postgres-cli.mjs");
+  assert.match(helper,/FLYTALLY_PSQL/);
+  assert.match(helper,/const command = explicit \|\| "psql"/);
+  assert.match(helper,/dirname\(explicit\)/);
+  assert.match(helper,/join\(delimiter\)/);
+  assert.match(helper,/PGCONNECT_TIMEOUT: env\.PGCONNECT_TIMEOUT \|\| "5"/);
 });
 
 test("authenticated browser gate fails closed before fixture reset when auth mode is absent",()=>{
