@@ -2,6 +2,9 @@
   "name": "pilot-logbook-web",
   "version": "3.5.5",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,7 +18,9 @@
     "test:postgres:scale": "node tooling/run-postgres-tests.mjs scale",
     "test:postgres:full": "node tooling/run-postgres-tests.mjs full",
     "verify": "npm run typecheck && npm test && npm run build",
-    "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build"
+    "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build",
+    "test:browser": "node tooling/run-auth-browser.mjs",
+    "verify:browser": "npm run build && npm run test:browser"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -31,6 +36,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@playwright/test": "1.55.0"
   }
 }
