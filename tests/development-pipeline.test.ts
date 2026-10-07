@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { preparePostgresCli } from "../tooling/postgres-cli.mjs";
 
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
@@ -37,11 +38,26 @@ test("PostgreSQL acceptance gate fails closed when DATABASE_URL is absent",()=>{
 
 test("PostgreSQL runner owns integration intent instead of relying on the caller flag",()=>{
   const runner=read("tooling/run-postgres-tests.mjs");
-  assert.match(runner,/preflightPostgresGate\(env\)/);
+  assert.match(runner,/const gateEnv = preflightPostgresGate\(env\)/);
   assert.match(runner,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
-  assert.match(runner,/spawnSync\(\s*"psql",\s*\["-d", databaseUrl, "-X", "-v", "ON_ERROR_STOP=1", "-Atqc", "SELECT 1"\]/s);
-  assert.match(runner,/could not connect to DATABASE_URL\. The gate did not run/);
+  assert.match(runner,/probePostgresConnection\(databaseUrl/);
+  assert.match(runner,/\.\.\.gateEnv/);
   assert.doesNotMatch(runner,/env: process\.env/);
+});
+
+test("PostgreSQL CLI override is explicit and propagated through child PATH",()=>{
+  const explicit=path.join(root,"test-postgres-bin",process.platform==="win32"?"psql.exe":"psql");
+  const prepared=preparePostgresCli({
+    PATH:"base-path",
+    FLYTALLY_PSQL:explicit,
+    PGCONNECT_TIMEOUT:"",
+  });
+  assert.equal(prepared.command,explicit);
+  assert.equal(prepared.env.PGCONNECT_TIMEOUT,"5");
+  assert.equal(
+    String(prepared.env.PATH).split(path.delimiter)[0],
+    path.dirname(explicit),
+  );
 });
 
 test("authenticated browser gate fails closed before fixture reset when auth mode is absent",()=>{
@@ -62,11 +78,11 @@ test("authenticated browser gate fails closed before fixture reset when auth mod
 test("authenticated browser gate preflights a localhost database connection before bootstrap",()=>{
   const runner=read("tooling/run-auth-browser.mjs");
   assert.match(runner,/may only reset a localhost PostgreSQL fixture/);
-  assert.match(runner,/PGCONNECT_TIMEOUT/);
-  assert.match(runner,/"-Atqc","SELECT 1"/);
-  assert.match(runner,/could not connect to DATABASE_URL\. The browser gate did not run/);
+  assert.match(runner,/probePostgresConnection\(databaseUrl/);
+  assert.match(runner,/failureSuffix:"The browser gate did not run\."/);
+  assert.match(runner,/env:browserEnv/);
   assert.ok(
-    runner.indexOf('"SELECT 1"')<runner.indexOf("bootstrap-browser-smoke-db.mjs"),
+    runner.indexOf("probePostgresConnection(databaseUrl")<runner.indexOf("bootstrap-browser-smoke-db.mjs"),
     "database connectivity probe must run before the destructive fixture bootstrap",
   );
 });
