@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **0B.3 — workflow/command convergence — ACTIVE**. Phase 0B.1 and 0B.2 are ✅ DONE / VERIFIED. Stable ownership is **368/381 (96.6%)**, with **13** reviewed files explicitly `shared-runtime`. 0B.3 removes the remaining duplicated suite membership, wires manual-cloud targeted execution through the registry-backed group runner, and freezes the targeted-vs-heavy gate contract before Phase 0C.
+Current milestone: **0B.3 — workflow/command convergence — IMPLEMENTED, VERIFICATION PENDING**. Phase 0B.1 and 0B.2 are ✅ DONE / VERIFIED. PostgreSQL scale membership is now single-sourced in the registry, manual-cloud targeted execution uses the generic registry-backed group runner, and the targeted-vs-heavy gate contract is frozen in DEVELOPMENT. Phase 0C begins only after targeted 0B.3 verification.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
