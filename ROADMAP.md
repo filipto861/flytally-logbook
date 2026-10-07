@@ -404,12 +404,31 @@ Implementation milestones:
 
 ## Phase 2 — Remaining multi-aircraft integrity audit — ACTIVE
 
+Detailed discovery / review contract: `docs/product/3_5_0_MULTI_AIRCRAFT_INTEGRITY_PHASE2.md`.
+
 Scope:
 - audit remaining recency consumers for current-profile dependencies;
 - preserve established ordinary ULL → SEP behavior;
 - preserve explicit effective-dated `part_fcl_credit_*` provenance;
 - verify Manual/GPS snapshot equivalence where applicable;
 - preserve certification/revision compatibility.
+
+Discovery on 7 October 2026:
+- normal historical regulatory classification is already snapshot-owned: Dashboard, Statistics, Print/export, professional experience, SPL/BPL recency and helicopter flight eligibility read stored `flights` context rather than today's aircraft profile;
+- Manual and GPS create paths both use PROFILE authority for the selected aircraft and persist the same flight-owned regulatory context; same-registration edits use SNAPSHOT authority rather than re-resolving today's profile;
+- helicopter type recency uses the stored flight model/type; the current active helicopter profile is used only to enumerate/setup type workspaces, not to rewrite historical flight type;
+- the only authoritative aeroplane-recency dependency on the current aircraft row is the intentional external Annex-I/ULL mapping tuple `part_fcl_credit_class/basis/from` in `recency-service.ts` and `recency-audit-service.ts`;
+- ordinary ULL → SEP credit remains automatic and profile-independent. The explicit tuple is only the atypical class override/effectivity provenance path;
+- no evidence currently justifies copying `part_fcl_credit_*` into certified flight snapshots or adding another schema migration.
+
+Open integrity question before implementation:
+- the aircraft-profile write validator requires a complete class + basis/reference + valid-from tuple, but the recency evaluator can still consume a class override without proving that the accompanying provenance tuple is complete. Historical v1.51.3 class-only metadata may also exist, so tightening this path without a data census could break backward compatibility.
+
+Phase 2 execution order:
+1. freeze the consumer/dependency census with characterization tests;
+2. obtain independent review of the external-credit mapping boundary and legacy compatibility;
+3. implement only evidence-backed changes with minimal blast radius;
+4. run targeted recency/snapshot/PostgreSQL tests, then the release gate only when Phase 2 runtime scope is complete.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
