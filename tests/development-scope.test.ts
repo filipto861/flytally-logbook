@@ -130,6 +130,15 @@ test("PostgreSQL integration tests select PostgreSQL without reclassifying as ap
   assert.match(result.risks,/test-contract/);
 });
 
+test("registered PostgreSQL scale tests select the scale gate from the same registry",()=>{
+  const result=classify(["tests/integration/postgres-scale-readiness.test.ts"]);
+  assert.equal(result.postgres,"true");
+  assert.equal(result.scale,"true");
+  assert.equal(result.browser,"false");
+  assert.equal(result.full_tests,"false");
+  assert.match(result.risks,/scale-performance/);
+});
+
 test("browser specs select browser acceptance explicitly",()=>{
   const result=classify(["e2e/public-shell.spec.mjs"]);
   assert.equal(result.browser,"true");
@@ -200,6 +209,12 @@ test("development registry has unique ids scale paths and test ownership",()=>{
   const ids=manifest.modules.map((module:{id:string})=>module.id);
   assert.equal(new Set(ids).size,ids.length);
   assert.equal(new Set(manifest.scalePaths).size,manifest.scalePaths.length);
+  assert.equal(new Set(manifest.postgresAcceptance.scaleTests).size,manifest.postgresAcceptance.scaleTests.length);
+  assert.equal(
+    manifest.scalePaths.filter((file:string)=>manifest.postgresAcceptance.scaleTests.includes(file)).length,
+    0,
+    "runtime scale paths and PostgreSQL scale-test membership must not be duplicated",
+  );
   assert.ok(manifest.modules.some((module:{id:string})=>module.id==="development-infrastructure"));
 
   const testOwners=new Map<string,string>();
