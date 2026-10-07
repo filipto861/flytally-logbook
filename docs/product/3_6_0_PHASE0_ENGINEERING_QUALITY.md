@@ -461,9 +461,25 @@ Read-only inventory on the active branch:
 - no Playwright project/worker/retry, browser DB fixture, bootstrap, product runtime or schema change;
 - structure regression now rejects GPS/RoleCrew-specific helpers from the shared action module and proves the two extracted helpers are no longer locally redefined.
 
-0C.1 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract, TypeScript, then the complete serialized authenticated browser gate because helper behavior is now shared across many browser tests.
+0C.1 verification:
+- targeted browser-structure/scope/pipeline set: **35/35 PASS**;
+- TypeScript: **PASS**;
+- full serialized authenticated browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **4.9 minutes**.
 
-Provisional implementation sequence, pending independent review:
+**0C.1 is CLOSED / VERIFIED.**
+
+0C.2 Batch 1 implementation candidate — settings/connections mutations:
+- moved exactly four existing tests into `e2e/settings-connections-mutations.spec.mjs`: appearance mutation, connection acceptance, account settings transaction, and connection access update;
+- test names and assertions are unchanged;
+- the local `holdPost` helper is intentionally duplicated for this domain during the split rather than prematurely promoted to the shared action module; 0C.2a will reconcile helper ownership after domains exist;
+- `resetAccountSettingsFixture` remains imported by the monolith because advisory/Night tests still use it; only mutation-only reset imports moved with the new spec;
+- new spec sorts after `public-shell.spec.mjs`, preserving the previous broad execution order of these end-of-file mutation tests while the suite remains workers=1;
+- baseline contract still requires the exact 48 logical names, centralized `browser-db.mjs`, unchanged fixture IDs, two projects, workers=1 and the existing retry contract;
+- no product runtime, DB schema, browser DB fixture implementation, bootstrap, Playwright project or worker change.
+
+0C.2 Batch 1 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, then run the new mutation spec under both projects and finally the complete serialized browser gate because splitting files can expose hidden DB/reset ordering dependencies.
+
+Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
 - move genuinely reusable navigation/login/overflow/details/GPS interaction helpers out of the monolith;
