@@ -440,6 +440,14 @@ Read-only inventory on the active branch:
 - several presentation tests already manage their own viewport/theme matrices with `page.setViewportSize` / shared F6 presentation state, so running those same matrices again under both device projects is potentially redundant unless mobile UA/touch semantics are actually part of the assertion;
 - the current UI-audit capture spec already demonstrates the desired pattern: it skips the mobile project because it owns its viewport/theme matrix internally.
 
+0C.0 baseline implementation candidate:
+- added `tooling/browser-suite-baseline.json` with the exact 48 authenticated browser test names, current project/worker/retry contract, known browser DB helper exports/fixture IDs/users, required presentation states and the previously verified 96/2/0 execution result;
+- added `tests/browser-suite-structure.test.ts` to enforce those invariants across future spec splitting;
+- registered that structure contract in the development-pipeline targeted group;
+- no Playwright spec, browser DB helper, bootstrap, product runtime or DB schema changed.
+
+0C.0 verification is **PENDING** until the targeted browser-structure/development-scope/development-pipeline tests and TypeScript run on this candidate.
+
 Provisional implementation sequence, pending independent review:
 
 **0C.1 — shared helper extraction, no behavioral change**
@@ -463,6 +471,71 @@ Provisional implementation sequence, pending independent review:
 **Not part of 0C by default:** per-worker database isolation or raising `workers` above 1. That is a separate architecture change because the current suite and bootstrap assume one mutable database. It may be designed after the spec split, but must not be smuggled into this refactor.
 
 Before any 0C implementation, obtain an independent second-AI review of the domain boundaries, helper extraction, execution-matrix deduplication, shared-DB hazards and the decision to defer per-worker isolation.
+
+Independent review result: **ACCEPT WITH CHANGES**. Reconciliation:
+- accepted: add a machine-checkable 0C.0 baseline before refactoring;
+- accepted: make 0C.1 minimal and extract only proven cross-domain primitives;
+- accepted: keep `browser-db.mjs` centralized for all of Phase 0C;
+- accepted: use a modest seven-domain spec layout, with broad responsive/theme matrices kept together rather than scattered into functional specs;
+- accepted: preserve workers=1 / fullyParallel=false / one isolated mutable PostgreSQL fixture throughout Phase 0C;
+- accepted: full browser acceptance after every domain-split batch because file splitting can expose hidden order/reset dependencies even under one worker;
+- accepted: project × self-managed matrix deduplication is the highest-risk 0C step and requires explicit proof that mobile UA/touch/device-scale/pointer semantics are irrelevant before skipping a project;
+- accepted: per-worker DB isolation stays out of scope and requires a separate harness design;
+- implementation note: local Playwright already defaults to retries=0; 0C.3 will still run final local acceptance explicitly with `--retries=0`.
+
+Frozen Phase 0C milestones after review:
+
+**0C.0 — baseline / invariant gate**
+- preserve the exact 48 logical authenticated browser test names across any future spec split;
+- preserve desktop-chromium + mobile-chromium, workers=1, fullyParallel=false and the current local/CI retry contract;
+- preserve centralized browser DB helper ownership, known fixture IDs and primary browser users;
+- preserve required F6 viewport/theme states and the existing single-project UI-audit self-managed matrix;
+- baseline evidence remains the already-verified full gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions**;
+- implement source/structure invariants before moving any browser test.
+
+**0C.1 — minimal shared helper extraction**
+- extract only proven cross-domain primitives such as login/navigation, horizontal-overflow assertion, generic details open/reopen and request hold where reuse is proven;
+- keep GPS-specific, authority-specific and RoleCrew-specific helpers domain-local until the split demonstrates genuine reuse;
+- no test movement, no project changes, no DB helper split, no weakened waits/selectors/assertions;
+- verification: targeted structure contract + TypeScript + full browser acceptance; logical-name baseline must remain exact.
+
+**0C.2 — domain split in batches**
+Target layout:
+1. `public-shell.spec.mjs` — public/auth/shell;
+2. `manual-authority-certification.spec.mjs`;
+3. `gps-rolecrew.spec.mjs`;
+4. `manual-rolecrew-verification.spec.mjs`;
+5. `settings-connections-mutations.spec.mjs`;
+6. `responsive-presentation.spec.mjs`;
+7. `advisory-presentation.spec.mjs`.
+
+Rules:
+- preserve the exact 48 logical names and grep-ability;
+- preserve fixture IDs/reset semantics and centralized `browser-db.mjs`;
+- no new mutable `beforeAll` state without explicit proof of retry safety;
+- after each split batch, run the moved/new spec under both projects and then the complete serialized browser gate.
+
+**0C.2a — helper ownership reconciliation**
+- only after the split, promote domain helpers to shared ownership when multiple domains actually use them;
+- reject a generic browser-helper dumping ground.
+
+**0C.3 — proven project × matrix deduplication**
+A test may skip the second Playwright project only when all are true:
+- it explicitly owns the complete required viewport/theme matrix;
+- it does not rely on mobile UA, `isMobile`, `hasTouch`, deviceScaleFactor, safe-area, virtual keyboard, pointer/hover or mobile browser chrome;
+- every required desktop/iPad landscape/iPad portrait/mobile/320px or reflow/light/dark state remains evidenced;
+- no project skip exists only for speed;
+- full acceptance passes explicitly with `--retries=0` and the before/after execution matrix is documented.
+
+**0C.4 — final Phase 0C acceptance**
+- 48 logical tests preserved unless independently approved otherwise;
+- fixture/reset identities unchanged;
+- `browser-db.mjs` centralized;
+- workers=1 unchanged;
+- required responsive/theme evidence preserved;
+- TypeScript + targeted structure contract + full browser acceptance PASS;
+- no product runtime, timezone semantics or DB schema change;
+- per-worker DB isolation not introduced.
 
 ### Phase 0D — Test contract policy
 
