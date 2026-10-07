@@ -42,7 +42,7 @@ jobs:
         run: npm run typecheck
       - name: Targeted UI regression tests
         if: inputs.full_tests != true
-        run: npm run test:ui
+        run: npm run test:group -- ui-contract
       - name: Full unit and regression tests
         if: inputs.full_tests == true
         run: npm test
