@@ -1,6 +1,6 @@
 # 3.5.2 — Always-on GPS/SERA Night suggestions
 
-**Status:** VERIFIED LOCAL · RELEASE CANDIDATE  
+**Status:** DONE / PRODUCTION  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
@@ -92,7 +92,12 @@ Local verification completed on 7 October 2026 after the residual Night-definiti
 
 The local Next.js build emitted a non-blocking workspace warning about a parent-directory `package-lock.json`; the build still completed successfully and used the repository application source.
 
-Production deployment and smoke remain pending until PR merge.
+Production closeout:
+- PR #248 squash-merged to `main` as `60be6fd23f283302dadc7a3d611a19ff0bc8ebf3`;
+- Vercel deployment `dpl_4pyJEv2pjWQLNcmNPpFYcjsf3PHj` reached **READY** on that exact merge SHA;
+- production root/login smoke returned HTTP 200;
+- immediate grouped runtime-error check found no errors;
+- no DB migration, certification payload change or historical-flight rewrite occurred.
 
 ## Do not
 
