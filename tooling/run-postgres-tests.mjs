@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { probePostgresConnection } from "./postgres-cli.mjs";
 
 const integrationDir = fileURLToPath(new URL("../tests/integration/", import.meta.url));
+const LOCAL_POSTGRES_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 const scaleTests = new Set([
   "postgres-scale-readiness.test.ts",
   "postgres-v169-production-hardening.test.ts",
@@ -34,6 +35,16 @@ export function preflightPostgresGate(env = process.env) {
   }
 
   const databaseUrl = String(env.DATABASE_URL).trim();
+  let parsed;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch {
+    throw new Error("DATABASE_URL must be a valid PostgreSQL URL. The gate did not run.");
+  }
+  if (!LOCAL_POSTGRES_HOSTS.has(parsed.hostname)) {
+    throw new Error("PostgreSQL acceptance may only target a localhost database. The gate did not run.");
+  }
+
   return probePostgresConnection(databaseUrl, {
     env,
     label: "PostgreSQL acceptance",
