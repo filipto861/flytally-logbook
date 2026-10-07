@@ -422,6 +422,7 @@ button[data-loading="true"]::after{
   justify-content:flex-end;
   flex-wrap:wrap;
   gap:10px;
+  overflow:visible;
 }
 .flight-detail-back,
 .flight-detail-step{
