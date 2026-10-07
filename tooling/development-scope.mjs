@@ -30,6 +30,11 @@ function isPresentation(file) {
   return hasExtension(file, manifest.presentation.extensions);
 }
 
+function isScalePath(file) {
+  return (manifest.scalePaths ?? []).includes(file) ||
+    (manifest.postgresAcceptance?.scaleTests ?? []).includes(file);
+}
+
 function owningTestGroups(file) {
   const groups = [];
   for (const [id, group] of Object.entries(manifest.testGroups)) {
@@ -88,7 +93,7 @@ export function classifyDevelopmentScope(files, title = "") {
         risks.add("unowned-test");
         gates.fullTests = true;
       }
-      if (manifest.scalePaths.includes(file)) {
+      if (isScalePath(file)) {
         risks.add("scale-performance");
         gates.postgres = true;
         gates.scale = true;
@@ -110,7 +115,7 @@ export function classifyDevelopmentScope(files, title = "") {
       gates.build = true;
     }
 
-    if (manifest.scalePaths.includes(file)) {
+    if (isScalePath(file)) {
       risks.add("scale-performance");
       gates.postgres = true;
       gates.scale = true;
