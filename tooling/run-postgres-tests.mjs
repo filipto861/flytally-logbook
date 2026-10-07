@@ -1,16 +1,22 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { probePostgresConnection } from "./postgres-cli.mjs";
 
 const integrationDir = fileURLToPath(new URL("../tests/integration/", import.meta.url));
+const manifestPath = fileURLToPath(new URL("./development-modules.json", import.meta.url));
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const LOCAL_POSTGRES_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
-const scaleTests = new Set([
-  "postgres-scale-readiness.test.ts",
-  "postgres-v169-production-hardening.test.ts",
-  "postgres-v230-large-logbook-performance.test.ts",
-]);
+const scaleTests = new Set(
+  (manifest.postgresAcceptance?.scaleTests ?? []).map((path) => {
+    const prefix = "tests/integration/";
+    if (!String(path).startsWith(prefix)) {
+      throw new Error("PostgreSQL scale test must live under tests/integration/: " + path);
+    }
+    return String(path).slice(prefix.length);
+  }),
+);
 
 export function selectPostgresTests(mode) {
   const allowedModes = new Set(["core", "scale", "full"]);
