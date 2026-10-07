@@ -511,7 +511,21 @@ The full run again emitted Windows/PostgreSQL `could not reserve shared memory r
 - source inventory remains exactly **48 unique logical acceptance tests**: 32 public-shell + 7 advisory + 5 Manual RoleCrew/verification + 4 settings/connections mutations;
 - no fixture ID, browser DB implementation, bootstrap, product runtime, schema, Playwright project, worker or retry change.
 
-0C.2 Batch 3 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused Manual RoleCrew/verification spec under both projects, then the complete serialized browser gate.
+0C.2 Batch 3 verification:
+- targeted browser-structure/scope/pipeline set: **38/38 PASS**;
+- TypeScript: **PASS**;
+- focused Manual RoleCrew/verification spec: **10/10 PASS** across both Playwright projects in **41.2 seconds**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **5.0 minutes**.
+
+The full run again emitted a Windows/PostgreSQL `could not reserve shared memory region` warning, but no browser assertion or persistence gate failed. Keep it as the existing local-environment watch item.
+
+**0C.2 Batch 3 is CLOSED / VERIFIED.**
+
+0C.2 Batch 4 implementation target — Manual aircraft authority / certification:
+- next split owns the eight remaining Manual authority/certification tests: profile-owned aircraft context, F3.4 Manual compact context, the four F3.5 authority variants, Manual Save & certify, and certified-flight void/audit;
+- keep GPS-specific certification/quality tests in the GPS domain;
+- preserve all current test names, assertions, DB fixture IDs and one-worker/two-project execution semantics;
+- keep `holdPost` domain-local for the certified-void flow during the split; helper ownership is reconciled only in 0C.2a.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
