@@ -80,6 +80,15 @@ test("authenticated browser gate preflights a localhost database connection befo
   );
 });
 
+test("authenticated browser gate executes the repository-pinned Playwright CLI through Node",()=>{
+  const runner=read("tooling/run-auth-browser.mjs");
+  assert.match(runner,/createRequire\(import\.meta\.url\)/);
+  assert.match(runner,/require\.resolve\("@playwright\/test\/package\.json"\)/);
+  assert.match(runner,/join\(dirname\(playwrightPackage\),"cli\.js"\)/);
+  assert.match(runner,/spawnSync\(process\.execPath,\[playwrightCli,"test","--config=playwright\.config\.mjs"/);
+  assert.doesNotMatch(runner,/npx\.cmd|const command=.*npx/);
+});
+
 test("Node and Playwright versions are repository-pinned to the production toolchain",()=>{
   const pkg=JSON.parse(read("package.json"));
   const lock=JSON.parse(read("package-lock.json"));
