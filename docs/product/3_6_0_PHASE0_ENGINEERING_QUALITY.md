@@ -205,8 +205,20 @@ Follow-up after the connectivity-preflight change:
 - workstation PostgreSQL 16 binaries are available at `C:\Program Files\PostgreSQL\16\bin`: `psql.exe`, `initdb.exe`, `pg_ctl.exe` and `createdb.exe`;
 - Docker remains unavailable, but is no longer required for Phase 0A verification because an isolated temporary local PostgreSQL cluster can be created with the installed PostgreSQL 16 binaries.
 
+A second workstation then reproduced the canonical toolchain with Node 24.19.0 and PostgreSQL 16.15. An isolated temporary cluster on `127.0.0.1:55432` initialized successfully, accepted connections, and returned `flytally_test|flytally`. Production build also passed again with 41/41 static pages.
+
+That workstation exposed one more reproducibility defect: PostgreSQL was installed correctly but its `bin` directory was not on the Windows process `PATH`. The acceptance runners therefore failed with `spawnSync psql ENOENT` even though the explicit `C:\Program Files\PostgreSQL\16\bin\psql.exe` worked. This is an environment/harness portability issue, not product regression evidence.
+
+The branch now supports an explicit `FLYTALLY_PSQL` executable path. The shared PostgreSQL CLI resolver prepends that executable's directory to child `PATH`, so:
+- the connection preflight uses the exact requested client;
+- all PostgreSQL integration child tests inherit the same executable path;
+- browser fixture bootstrap inherits the same path;
+- Playwright/browser child processes inherit the same prepared environment;
+- PATH discovery remains the fallback when no override is needed.
+
 Still required before Phase 0A can close:
-- successful PostgreSQL core/full execution against the temporary isolated PostgreSQL 16 cluster;
+- rerun the targeted development-pipeline/browser source regression set after the explicit-psql-path change;
+- successful PostgreSQL core/full execution against the temporary isolated PostgreSQL 16 cluster using `FLYTALLY_PSQL`;
 - successful authenticated browser acceptance against that same isolated localhost cluster.
 
 No PASS is claimed for those remaining items until they actually run.
