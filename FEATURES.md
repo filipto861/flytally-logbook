@@ -115,7 +115,14 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.6.0 — Saved-date / timezone semantics — ACTIVE
+### 3.5.3 — Flight detail navigation UX — ACTIVE
+- Make the existing filter-aware **Back to flights**, **Previous flight** and **Next flight** controls visually obvious on flight detail.
+- Keep Previous/Next controls visible at list boundaries using explicit disabled states so the layout does not shift.
+- Preserve the current Flights filter/sort context and existing `FLIGHT x/y` position indicator.
+- Reflow the controls for desktop, iPad and mobile without changing flight-record semantics.
+- Detailed contract: `docs/product/3_5_3_FLIGHT_DETAIL_NAVIGATION.md`.
+
+### 3.6.0 — Saved-date / timezone semantics — NEXT
 - Define which user-facing saved-date defaults follow the configured calendar timezone.
 - Keep GPS/FCL.050 evidence UTC where UTC is the authoritative stored meaning.
 - Add explicit midnight/day-boundary handling and tests before implementation.
