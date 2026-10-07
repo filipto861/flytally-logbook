@@ -102,6 +102,23 @@ test("Phase 0C.1 shared browser actions stay minimal and cross-domain",()=>{
   assert.doesNotMatch(shell,/async function loginBrowserPilot/);
 });
 
+test("Phase 0C.2 batch 1 owns settings and connection mutations in one domain spec",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const mutations=read("e2e/settings-connections-mutations.spec.mjs");
+  for(const name of [
+    "appearance mutation disables duplicate submit and persists",
+    "connection acceptance disables duplicate submit and persists",
+    "account settings transaction disables duplicate submit and persists both records",
+    "connection access update disables duplicate submit and persists",
+  ]){
+    assert.match(mutations,new RegExp('test\\("'+escapeRegExp(name)+'"'));
+    assert.doesNotMatch(shell,new RegExp('test\\("'+escapeRegExp(name)+'"'));
+  }
+  assert.match(mutations,/async function holdPost/);
+  assert.match(mutations,/from "\.\/browser-db\.mjs"/);
+  assert.match(mutations,/from "\.\/browser-actions\.mjs"/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
