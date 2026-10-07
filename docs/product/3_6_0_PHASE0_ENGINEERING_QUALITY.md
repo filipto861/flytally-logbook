@@ -183,10 +183,25 @@ Verification evidence from the developer workstation after the first Phase 0A ba
 
 The stale source assertion was corrected in a test-only follow-up. Per the local-first policy, the already-valid TypeScript/build evidence is not invalidated by that assertion-only change.
 
+Follow-up workstation evidence:
+- corrected targeted development/browser/Vercel source-contract set: **27/27 PASS**;
+- Docker is **not installed** on the workstation, so the proposed containerized PostgreSQL fixture could not be started;
+- the workstation does have the `psql` client, so setting a localhost URL without a running server exposed a second harness defect: the Phase 0A PostgreSQL preflight checked only that `psql` existed, then fanned out into 30 core files / 86 failing cases, all with the same connection-refused cause;
+- `test:postgres:full` likewise started all 33 files / 99 cases and failed for the same unavailable localhost server;
+- Chromium installation succeeded;
+- authenticated browser acceptance did not reach Playwright tests because the browser DB bootstrap failed on the same localhost connection refusal.
+
+These PostgreSQL/browser failures are **environment/harness failures, not product regression evidence**. They also prove that the PostgreSQL runner now forces the integration flag rather than silently skipping tests.
+
+The newly observed preflight weakness was fixed in a second Phase 0A hardening step:
+- PostgreSQL acceptance now runs a real `SELECT 1` connectivity probe against `DATABASE_URL` before spawning any integration test files;
+- authenticated browser acceptance validates a localhost URL and runs the same connectivity probe before the destructive fixture bootstrap;
+- source-contract coverage now guards those preflight requirements.
+
 Still required before Phase 0A can close:
-- rerun the corrected targeted development-pipeline/browser source regression set;
-- PostgreSQL core/full execution against the isolated test database;
-- authenticated browser acceptance because this phase changes its harness.
+- rerun the corrected targeted development-pipeline/browser source regression set after the connectivity-preflight change;
+- successful PostgreSQL core/full execution against a real isolated PostgreSQL server;
+- successful authenticated browser acceptance against a real isolated localhost PostgreSQL server.
 
 No PASS is claimed for those remaining items until they actually run.
 
