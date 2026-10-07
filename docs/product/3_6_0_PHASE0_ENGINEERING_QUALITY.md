@@ -1,6 +1,6 @@
 # 3.6.0 Phase 0 — Engineering quality and test architecture gate
 
-**Status:** ACTIVE audit / design gate  
+**Status:** ACTIVE — Phase 0A DONE / VERIFIED; Phase 0B ACTIVE  
 **Production baseline:** 3.5.5  
 **Target release:** 3.6.0  
 **Runtime product change in this phase:** none  
@@ -160,7 +160,7 @@ Review recommendations deliberately **not** adopted:
 - do not remove historical/version-named tests from the default full regression suite merely because they are old. Exclusion/deletion requires proven redundant coverage first;
 - do not make the complete browser suite mandatory for every release. Browser evidence remains risk-based; a release gate is assembled from the candidate's actual risk.
 
-### Phase 0A implementation state — IN PROGRESS / NOT YET VERIFIED
+### Phase 0A implementation state — DONE / VERIFIED
 
 Implemented on the Phase 0 branch:
 - PostgreSQL runner preflights `DATABASE_URL` and `psql`, then injects `FLYTALLY_POSTGRES_INTEGRATION=1` into the selected test process itself;
@@ -285,17 +285,24 @@ Final Phase 0A safety correction:
 - accepted hosts are localhost / loopback only;
 - a regression test proves a remote URL is rejected before any client connection attempt.
 
-Still required before Phase 0A can close:
-- rerun the targeted development-pipeline regression after the localhost-only PostgreSQL change;
-- rerun PostgreSQL core and full acceptance on the isolated localhost PostgreSQL cluster because the PostgreSQL runner changed;
-- run the final applicable non-browser application checks (TypeScript + full unit/regression; production build evidence remains valid unless a runtime/build input changes);
-- reconcile ROADMAP / CHANGELOG / DEVELOPMENT and mark Phase 0A complete only after that evidence exists.
+Phase 0A closeout evidence on the exact safety candidate:
+- targeted development/browser/Vercel governance regression: **32/32 PASS**;
+- PostgreSQL core acceptance: **86/86 PASS**, 0 failed / 0 skipped;
+- PostgreSQL full acceptance: **99/99 PASS**, 0 failed / 0 skipped, including retained 10k / 50k / 100k scale fixtures within their published thresholds;
+- TypeScript: **PASS**;
+- full unit/regression suite: **1316/1317 PASS** with one stale v1.44 source-contract assertion that still expected the integration flag in workflow YAML;
+- production build: **PASS**, Next.js 16.3.2, 41/41 static pages;
+- the stale v1.44 test was corrected to assert the current ownership contract: workflow does not inject the flag; `tooling/run-postgres-tests.mjs` owns `FLYTALLY_POSTGRES_INTEGRATION=1`;
+- targeted rerun of that corrected historical contract: **5/5 PASS**;
+- final full authenticated browser acceptance remains **96 PASS / 2 intentionally skipped / 0 failed** across 98 executions in 7.5 minutes.
 
-The successful full browser acceptance remains valid because the localhost-only PostgreSQL correction does not modify the browser runner, browser fixture, Playwright spec, application runtime or build inputs.
+Per the candidate-first development policy, the full 1,317-test suite was not rerun after the final assertion-only correction: the preceding full run proved the other 1,316 tests, and the only modified test file then passed its complete 5-test targeted suite. PostgreSQL, browser and production-build evidence remain valid because that final change touched only the stale source assertion.
+
+**Phase 0A is CLOSED.** The next active step is Phase 0B — risk model and deterministic test selection. No 3.6.0 saved-date/timezone runtime semantics have started.
 
 ## Phase 0 implementation plan
 
-### Phase 0A — Gate safety / reproducibility
+### Phase 0A — Gate safety / reproducibility — DONE
 
 Mandatory before any broader refactor:
 
@@ -310,7 +317,7 @@ Mandatory before any broader refactor:
    - authenticated acceptance must fail clearly when its required fixture/environment is absent.
 4. Decide and pin the supported Node runtime line; align local docs and manual workflows.
 
-### Phase 0B — Risk model and deterministic test selection
+### Phase 0B — Risk model and deterministic test selection — ACTIVE
 
 Replace duplicated manual suite lists with one development-test manifest.
 
