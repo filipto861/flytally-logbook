@@ -140,6 +140,26 @@ test("Phase 0C.2 batch 2 owns advisory presentation flows in one domain spec",()
   assert.match(advisory,/from "\.\/browser-actions\.mjs"/);
 });
 
+test("Phase 0C.2 batch 3 owns manual RoleCrew verification in one domain spec",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const domain=read("e2e/manual-rolecrew-verification.spec.mjs");
+  const names=[
+    "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+    "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+    "Safety Pilot Actual PIC form keeps manual and connected identity explicit",
+    "F2.3 Safety Pilot resolver snapshots server identity and fails closed after Connection revocation",
+    "certified Safety Pilot can invite only the stored connected Actual PIC",
+  ];
+  for(const name of names){
+    assert.equal(domain.includes('test("'+name+'"'),true);
+    assert.equal(shell.includes('test("'+name+'"'),false);
+  }
+  assert.equal((domain.match(/^test\("/gm)??[]).length,names.length);
+  assert.match(domain,/async function expectAuthenticatedRoute/);
+  assert.match(domain,/browser-db\.mjs/);
+  assert.match(domain,/browser-actions\.mjs/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
