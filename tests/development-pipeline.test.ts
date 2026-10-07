@@ -185,6 +185,9 @@ test("development policy documents candidate-first iteration, module scope and r
   assert.match(doc,/tooling\/development-modules[.]json/);
   assert.match(doc,/unknown .* runtime files fail conservative/i);
   assert.match(doc,/do not automatically invent PostgreSQL\/browser dependencies/i);
+  assert.match(doc,/scope:changed.*planner.*not an executor/i);
+  assert.match(doc,/full_tests.*does not silently imply PostgreSQL or browser work/i);
+  assert.match(doc,/PostgreSQL runner reads its scale membership from that registry/i);
   assert.match(doc,/npm run verify:release/);
   assert.match(doc,/canonical production branch is `main`/i);
   assert.match(doc,/deleted after merge/i);
