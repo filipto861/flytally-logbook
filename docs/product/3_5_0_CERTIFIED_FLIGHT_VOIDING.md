@@ -459,7 +459,7 @@ M5 collaboration edge case found during discovery:
 - notification text/history itself is not certification evidence and is not added to the protected archive.
 
 M5 implementation batches:
-1. **M5A — active-consumer/source contract + notification-link teardown**;
+1. **M5A — active-consumer/source contract + notification-link teardown — IMPLEMENTED / VERIFICATION PENDING**;
 2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck**;
 3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6**.
 

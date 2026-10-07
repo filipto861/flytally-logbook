@@ -127,6 +127,7 @@ Important boundary:
 - Frozen implementation architecture: schema v20 permanent archive+delete, immutable protected-evidence children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit-only route, and portable backup v13 history-only restore.
 - M1 schema/invariants are locally verified; M2 canonical void mutation and M3 destructive UI/audit route are end-to-end verified across desktop and mobile Chromium.
 - M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS; M5 consumer/integration verification is now active.
+- M5 consumer closeout preserves notification history without dead workflow links: owner-side source-flight notifications are redirected to the permanent void audit, while recipient workflow links that depend on source participation/approval rows are neutralized before those live rows cascade.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED

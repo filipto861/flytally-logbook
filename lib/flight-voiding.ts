@@ -234,14 +234,18 @@ export async function voidCertifiedFlightRecord(userId:number,flightId:number,re
   // proves source/archive counts; if any evidence changed after discovery, the active
   // row remains and the deferred active+tombstone constraint rolls the transaction back.
   const transitionQueries=[
-    sql`UPDATE user_notifications n SET read_at=COALESCE(n.read_at,NOW())
-      WHERE n.read_at IS NULL
-        AND EXISTS(SELECT 1 FROM voided_certified_flights v WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current())
+    sql`UPDATE user_notifications n
+      SET read_at=COALESCE(n.read_at,NOW()),href='/audit/voided-flights/'||v.id::text
+      FROM voided_certified_flights v
+      WHERE n.user_id=${userId}
+        AND n.href IN(${`/flights/${flightId}`},${`/flights/${flightId}/audit`})
+        AND v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current()`,
+    sql`UPDATE user_notifications n SET read_at=COALESCE(n.read_at,NOW()),href=''
+      WHERE EXISTS(SELECT 1 FROM voided_certified_flights v WHERE v.operation_token=${operationToken}::uuid AND v.created_txid=txid_current())
         AND (
-          n.href IN(SELECT '/connections/shared/'||p.id FROM flight_participations p WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId} AND p.status='pending')
-          OR n.href IN(SELECT '/connections/flight/'||a.id FROM instructor_flight_approvals a WHERE a.student_user_id=${userId} AND a.flight_id=${flightId} AND a.status='pending')
-        )`,
-    sql`UPDATE flight_participations p
+          n.href IN(SELECT '/connections/shared/'||p.id FROM flight_participations p WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId})
+          OR n.href IN(SELECT '/connections/flight/'||a.id FROM instructor_flight_approvals a WHERE a.student_user_id=${userId} AND a.flight_id=${flightId})
+        )`,    sql`UPDATE flight_participations p
       SET status='superseded',superseded_at=NOW(),responded_at=COALESCE(p.responded_at,NOW()),
           decision_note=CASE WHEN NULLIF(TRIM(COALESCE(p.decision_note,'')),'') IS NULL THEN 'Source certified flight was removed by the owner.' ELSE p.decision_note END
       WHERE p.source_user_id=${userId} AND p.source_flight_id=${flightId} AND p.status='pending'
