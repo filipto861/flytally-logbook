@@ -339,6 +339,25 @@ Rules:
 - changed tests select their owning suite rather than changing runtime risk by accident;
 - selection logic is itself regression-tested.
 
+Phase 0B implementation is split into small milestones:
+
+**0B.1 — authoritative registry foundation**
+- move the duplicated `test:ui` membership into the registry;
+- add explicit documentation, UI/presentation, runtime, persistence, auth/browser, scale and tooling risk/gate metadata;
+- make `scope:changed` emit selected risks, gates and targeted test groups;
+- make changed registered tests select their owning group without inheriting unrelated runtime risk;
+- keep unknown runtime conservative through full unit/build evidence, but do not invent PostgreSQL/browser dependencies.
+
+**0B.2 — stable-module coverage**
+- expand module ownership beyond the current 31.8% baseline for stable app/components/lib domains;
+- retain explicit `shared` handling for genuinely cross-cutting or not-yet-owned runtime files;
+- add regression coverage for representative ownership boundaries.
+
+**0B.3 — workflow/command convergence**
+- wire canonical group execution through one registry-backed runner;
+- remove remaining duplicated suite lists from package/workflow/tooling surfaces;
+- document the exact targeted-vs-heavy-gate contract before Phase 0C.
+
 ### Phase 0C — Browser suite structure
 
 Split the monolithic browser spec into stable domain specs, for example:
