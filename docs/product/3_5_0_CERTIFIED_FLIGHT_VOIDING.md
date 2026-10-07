@@ -461,7 +461,7 @@ M5 collaboration edge case found during discovery:
 M5 implementation batches:
 1. **M5A — active-consumer/source contract + notification-link teardown — VERIFIED LOCAL** — exact-head `bb3fcd2`: TypeScript PASS, targeted consumer/domain contracts 13/13 PASS, full unit/regression 1285/1285 PASS, production build PASS;
 2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck — VERIFIED LOCAL** — exact-head `efd9b62`: PostgreSQL core 86/86 PASS, including the collaboration teardown fixture;
-3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — IMPLEMENTED / VERIFICATION PENDING** — the existing certified-void acceptance remains the canonical desktop/mobile path and now also proves retained owner notification history resolves to the permanent void audit. First execution on `9750a24` was environment-blocked because the app server lacked `FLYTALLY_LOCAL_POSTGRES=1`; the fixture DB itself bootstrapped successfully and no browser assertion reached the certified-void flow.
+3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — IMPLEMENTED / VERIFICATION PENDING** — the existing certified-void acceptance remains the canonical desktop/mobile path and now also proves retained owner notification history resolves to the permanent void audit. Browser execution is still environment-blocked before the certified-void flow: the localhost adapter flag was fixed, then the next rerun exposed missing auth/signing test secrets. Canonical local setup now mirrors the browser workflow environment; rerun pending.
 
 ### M6 — Release gate / documentation
 - full unit/regression;

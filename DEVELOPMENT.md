@@ -86,6 +86,9 @@ Canonical local setup:
 DATABASE_URL=postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser
 FLYTALLY_LOCAL_POSTGRES=1
 FLYTALLY_AUTH_BROWSER=1
+FLYTALLY_BROWSER_PASSWORD=FlyTally-Browser-2026!
+SESSION_SECRET=flytally-browser-session-secret-not-production
+SIGNING_SECRET=flytally-browser-signing-secret-not-production
 node tooling/bootstrap-browser-smoke-db.mjs
 npx playwright test --config=playwright.config.mjs
 ```
@@ -96,6 +99,9 @@ PowerShell equivalent:
 $env:DATABASE_URL="postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser"
 $env:FLYTALLY_LOCAL_POSTGRES="1"
 $env:FLYTALLY_AUTH_BROWSER="1"
+$env:FLYTALLY_BROWSER_PASSWORD="FlyTally-Browser-2026!"
+$env:SESSION_SECRET="flytally-browser-session-secret-not-production"
+$env:SIGNING_SECRET="flytally-browser-signing-secret-not-production"
 node tooling/bootstrap-browser-smoke-db.mjs
 npx playwright test --config=playwright.config.mjs
 ```
