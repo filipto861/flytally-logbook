@@ -1,5 +1,5 @@
 import {
-  validateAircraftProfile,
+  validateStoredAircraftProfile,
   type AircraftBalloonClass,
   type AircraftBalloonGroup,
   type CanonicalAircraftProfileRegulatoryFields,
@@ -95,7 +95,7 @@ function orderedCategories(profile:CanonicalAircraftProfileRegulatoryFields):Air
  * Only TMG and OTHER may expose more than one regulatory category.
  */
 export function allowedFlightContexts(input:FlightAircraftAuthorityProfileInput):AllowedFlightContextsResult{
-  const validated=validateAircraftProfile({
+  const validated=validateStoredAircraftProfile({
     aircraftMake:input.aircraft_make,
     aircraftModel:input.aircraft_model,
     evidence:input.evidence,

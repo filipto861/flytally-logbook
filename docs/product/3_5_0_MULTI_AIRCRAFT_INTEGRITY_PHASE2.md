@@ -1,6 +1,6 @@
 # 3.5.0 Phase 2 — Remaining multi-aircraft integrity audit
 
-**Status:** DISCOVERY COMPLETE / CHARACTERIZATION VERIFICATION PENDING  
+**Status:** REVIEW COMPLETE / RUNTIME BATCH 1 IMPLEMENTED / VERIFICATION PENDING  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
@@ -76,9 +76,34 @@ That creates a contract mismatch between write-time profile validation and read-
 
 However, v1.51.3 historically allowed a class-only override with optional valid-from, and v1.51.4 intentionally hid the override UI without deleting stored metadata. Therefore a strict read-time change could invalidate legitimate legacy records. Backward compatibility forbids changing this blindly.
 
-## Draft direction for independent review
+## Independent review + repository reconciliation
 
-Preferred direction, subject to reviewer/data evidence:
+The independent review accepted the core separation: historical flight facts stay snapshot-owned, the explicit Part-FCL mapping stays external/effective-dated, one shared resolver is the right minimal boundary, and neither schema v21 nor a certification payload change is justified.
+
+Repository history then narrowed the legacy question further:
+
+- commit `5f100350` (v1.51.3) explicitly exposed the override as `Credit as SEP/TMG` with **optional** valid-from and **optional** basis/reference;
+- commit `8329aaaf` (v1.51.4) hid those controls but deliberately preserved all three stored fields as hidden values;
+- commit `3a14d21` later introduced a strict canonical validator for **new/edited/imported** profiles and explicitly said exact restore and ULL/Annex-I semantics were to remain unchanged;
+- exact account restore still inserts the stored aircraft row without running current profile validation.
+
+Therefore a class-only, basis-only-with-class, or valid-from-only-with-class tuple is not evidence of corruption by itself: it is a legitimate v1.51.3 shape. There is no reliable row-level marker that can distinguish those historical shapes after later edits/restores. A synthetic cutoff or guessed legacy flag would be weaker than the repository evidence.
+
+The actual regression is elsewhere: Flight Entry PROFILE authority reused the later strict validator, and ordinary Aircraft Edit also revalidated hidden legacy credit metadata. A legitimate v1.51.3 profile can therefore become unusable for Manual/GPS entry or unrelated Aircraft edits even though recency still intentionally accepts it.
+
+Runtime Batch 1 fixes that boundary without weakening new writes:
+- strict `validateAircraftProfile` remains authoritative for new/imported profile writes;
+- `validateStoredAircraftProfile` accepts the historical optional basis/from contract for already-persisted profiles, while rejecting malformed non-empty effective dates;
+- Manual/GPS PROFILE authority uses the stored-profile validator because Part-FCL credit is external applicability, not flight context;
+- Aircraft Add/Edit preserves an existing hidden credit tuple server-side instead of trusting/modifying hidden form values; brand-new profiles still use strict validation;
+- `resolveAnnexCredit` makes automatic / explicit / legacy-compatible / invalid states explicit and `isAnnexCreditForClass` remains the shared calculation+audit eligibility boundary;
+- a malformed non-empty effective date now fails closed instead of being treated as no boundary.
+
+Shared-profile import remains strict. Its broader legacy-sharing/recovery behavior belongs to the planned 3.9 sharing/recovery closeout unless new evidence makes it a 3.5 blocker.
+
+## Resolved design direction
+
+Resolved direction after review and repository-history reconciliation:
 
 - **Do not add flight columns and do not introduce schema v21 solely for this issue.**
 - Keep ordinary ULL → SEP automatic and profile-independent.
@@ -87,15 +112,15 @@ Preferred direction, subject to reviewer/data evidence:
 - Resolver must distinguish:
   - no explicit override → automatic ULL → SEP path;
   - complete current explicit tuple → mapped class applies on/after its effective date;
-  - malformed current tuple → fail closed for the explicit override, never silently coerce it;
-  - proven legacy class-only tuple → preserve only under an explicit compatibility rule if production evidence shows such rows exist and the rule can be bounded safely.
+  - malformed non-empty effectivity → fail closed for the explicit override, never silently coerce it;
+  - v1.51.3 legacy explicit tuples → preserve their documented optional basis/from semantics when consuming an already-persisted profile;
 - Do not change certification payload/hash version merely for an external eligibility mapping.
 - Add regression evidence proving current profile changes cannot alter historical flight category/type, except through the explicit external credit mapping by design.
 
 ## Acceptance matrix for implementation
 
 Before runtime change:
-- characterization suite: `tests/v350-phase2-multi-aircraft-integrity-audit.test.ts` — implemented, local verification pending;
+- characterization suite: `tests/v350-phase2-multi-aircraft-integrity-audit.test.ts` — initial 4/4 PASS on `69310a3`; expanded Runtime Batch 1 coverage pending verification;
 - source/contract test: no recency consumer may source historical evidence/class/category/type from current aircraft profile;
 - source/contract test: the only aeroplane recency current-profile join is the explicit `part_fcl_credit_*` tuple;
 - Manual/GPS equivalence test for persisted flight context and identity snapshot;

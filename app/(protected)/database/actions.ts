@@ -7,7 +7,7 @@ import { validIsoDate } from "@/lib/rate-history";
 import { airportCodeMigrations,canonicalAirportIdent } from "@/lib/airport-catalog";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
-import { parseAircraftDefaultEngineType,parseAircraftDefaultOperationType,validateAircraftProfile } from "@/lib/aircraft-profile-validation";
+import { parseAircraftDefaultEngineType,parseAircraftDefaultOperationType,validateAircraftProfile,validateStoredAircraftProfile } from "@/lib/aircraft-profile-validation";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
 import { ensureV300AircraftSharingSchema } from "@/lib/v300-aircraft-sharing-schema";
 const s=(f:FormData,k:string)=>String(f.get(k)??"").trim(); const n=(f:FormData,k:string)=>{const v=Number(s(f,k));return Number.isFinite(v)?v:null};
@@ -16,10 +16,18 @@ export type AircraftSaveResult={ok:boolean;message:string};
 export type AircraftDeleteResult={ok:boolean;message:string};
 async function persistAircraft(form:FormData):Promise<AircraftSaveResult>{
   const {userId}=await requireUser();await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV164Schema()]);const id=n(form,"id"),reg=s(form,"registration").toUpperCase(),billingResult=serializeOptionalBilling(s(form,"billing_basis"),s(form,"billing_share"));if(billingResult.error)return{ok:false,message:billingResult.error};const billing=billingResult.value,operationDefault=parseAircraftDefaultOperationType(s(form,"default_operation_type"));if(operationDefault.error)return{ok:false,message:operationDefault.error};const engineDefault=parseAircraftDefaultEngineType(s(form,"default_engine_type"));if(engineDefault.error)return{ok:false,message:engineDefault.error};const defaultOperationType=operationDefault.value||null,defaultEngineType=engineDefault.value||null;if(!reg)return{ok:false,message:"Aircraft registration is required."};
-  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),validated=validateAircraftProfile({
-    aircraftMake:make,aircraftModel:model,evidence:s(form,"evidence"),aircraftClass:s(form,"aircraft_class"),regulatoryCategory:s(form,"regulatory_category"),
-    balloonClass:s(form,"balloon_class"),balloonGroup:s(form,"balloon_group"),partFclCreditClass:s(form,"part_fcl_credit_class"),partFclCreditBasis:s(form,"part_fcl_credit_basis"),partFclCreditFrom:s(form,"part_fcl_credit_from"),
-  });
+  const existingRows=id
+    ?await sql`SELECT COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE id=${id} AND user_id=${userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1` as Array<{part_fcl_credit_class:string;part_fcl_credit_basis:string;part_fcl_credit_from:string}>
+    :await sql`SELECT COALESCE(part_fcl_credit_class,'') part_fcl_credit_class,COALESCE(part_fcl_credit_basis,'') part_fcl_credit_basis,COALESCE(part_fcl_credit_from,'') part_fcl_credit_from FROM aircraft WHERE user_id=${userId} AND UPPER(TRIM(registration))=${reg} LIMIT 1` as Array<{part_fcl_credit_class:string;part_fcl_credit_basis:string;part_fcl_credit_from:string}>;
+  if(id&&!existingRows[0])return{ok:false,message:"Aircraft not found."};
+  const existingCredit=existingRows[0],profileInput={
+    aircraftMake:s(form,"aircraft_make"),aircraftModel:s(form,"aircraft_model"),evidence:s(form,"evidence"),aircraftClass:s(form,"aircraft_class"),regulatoryCategory:s(form,"regulatory_category"),
+    balloonClass:s(form,"balloon_class"),balloonGroup:s(form,"balloon_group"),
+    partFclCreditClass:existingCredit?.part_fcl_credit_class??s(form,"part_fcl_credit_class"),
+    partFclCreditBasis:existingCredit?.part_fcl_credit_basis??s(form,"part_fcl_credit_basis"),
+    partFclCreditFrom:existingCredit?.part_fcl_credit_from??s(form,"part_fcl_credit_from"),
+  };
+  const make=s(form,"aircraft_make"),model=s(form,"aircraft_model"),variant=s(form,"aircraft_variant"),displayType=s(form,"aircraft_type")||[model,variant].filter(Boolean).join(" "),validated=existingCredit?validateStoredAircraftProfile(profileInput):validateAircraftProfile(profileInput);
   if(!validated.profile)return{ok:false,message:validated.error};
   const{evidence,aircraftClass,regulatoryCategory,balloonClass,balloonGroup,partFclCreditClass:creditClass,partFclCreditBasis:creditBasis,partFclCreditFrom:creditFrom}=validated.profile;
   if(id){
