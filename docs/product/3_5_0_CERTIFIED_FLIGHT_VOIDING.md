@@ -1,6 +1,6 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 ACTIVE  
+**Status:** M1 VERIFIED / M2 VERIFIED / M3 VERIFIED / M4 VERIFIED / M5 VERIFIED / M6 ACTIVE  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
@@ -437,7 +437,7 @@ Final M4 rerun on exact head `7d18fb95b1f2a830f2649c961b9da36473726902`: TypeScr
 - resurrection/conflict guards;
 - v12 backward compatibility.
 
-### M5 — Consumer and integration verification — ACTIVE
+### M5 — Consumer and integration verification — VERIFIED LOCAL
 
 M5 discovery on 7 October 2026 confirms the core exclusion mechanism is structural: owner-side operational consumers read the active `flights` graph (or `flight_tracks` joined back to active `flights`), while category recency/professional reporting require active certified rows. Because a successful void physically removes the source row only after permanent archive capture, archived tombstone/history must never be joined back into these operational consumers.
 
@@ -461,9 +461,9 @@ M5 collaboration edge case found during discovery:
 M5 implementation batches:
 1. **M5A — active-consumer/source contract + notification-link teardown — VERIFIED LOCAL** — exact-head `bb3fcd2`: TypeScript PASS, targeted consumer/domain contracts 13/13 PASS, full unit/regression 1285/1285 PASS, production build PASS;
 2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck — VERIFIED LOCAL** — exact-head `efd9b62`: PostgreSQL core 86/86 PASS, including the collaboration teardown fixture;
-3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — IMPLEMENTED / VERIFICATION PENDING** — the existing certified-void acceptance remains the canonical desktop/mobile path and now also proves retained owner notification history resolves to the permanent void audit. The first fully configured run reached the real flow: desktop passed; mobile completed void/audit and failed only because the serialized desktop project left a second dedicated test notification with the same title. The fixture now removes only `m5_void_source` test notifications before each project; 2-project rerun pending.
+3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6 — VERIFIED LOCAL** — after isolating the dedicated `m5_void_source` fixture between serialized projects, the canonical certified-void acceptance passed **2/2** on exact head `a423239` across desktop and mobile Chromium. It proves source deletion from the active logbook, permanent tombstone/audit access, legacy audit redirect, and retained owner notification history opening the permanent audit rather than a dead source-flight route.
 
-### M6 — Release gate / documentation
+### M6 — Release gate / documentation — ACTIVE
 - full unit/regression;
 - PostgreSQL integration;
 - authenticated browser acceptance;

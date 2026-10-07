@@ -371,7 +371,7 @@ Required evidence:
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
-## Phase 1 — Certified flight voiding — M5 CONSUMER VERIFICATION ACTIVE
+## Phase 1 — Certified flight voiding — M6 RELEASE GATE ACTIVE
 
 Frozen product behavior:
 - a certified flight may be explicitly **voided/removed from the active logbook**;
@@ -399,8 +399,8 @@ Implementation milestones:
 - **M2 — Domain mutation: END-TO-END VERIFIED LOCAL**
 - **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
 - **M4 — Backup / restore v13: VERIFIED LOCAL** — exact-head TypeScript PASS; unit/regression 1280/1280 PASS on the immediately preceding runtime-equivalent head; PostgreSQL core 85/85 PASS on `7d18fb9`; production build PASS on the immediately preceding runtime-equivalent head.
-- **M5 — Consumer and integration verification: ACTIVE** — M5A source/runtime consumer contract VERIFIED LOCAL on `bb3fcd2`; M5B PostgreSQL collaboration/provenance acceptance VERIFIED LOCAL on `efd9b62` (86/86 core PASS); M5C reached the real flow with desktop PASS, while mobile exposed only a serialized test-notification collision after successful void/audit behavior. Fixture isolation is fixed; 2-project rerun pending.
-- M6 — Release gate / documentation
+- **M5 — Consumer and integration verification: VERIFIED LOCAL** — M5A source/runtime consumer contract PASS on `bb3fcd2`; M5B PostgreSQL collaboration/provenance acceptance **86/86 PASS** on `efd9b62`; M5C authenticated certified-void acceptance **2/2 PASS** across desktop + mobile Chromium on `a423239` after isolating the dedicated test notification fixture.
+- **M6 — Release gate / documentation: ACTIVE** — final local candidate verification, release/documentation reconciliation, schema-v20 deployment prerequisite, then production migration/deploy/smoke only after the gate is complete.
 
 ## Phase 2 — Remaining multi-aircraft integrity audit — NEXT
 

@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.0 — Certified flight voiding — IMPLEMENTATION ACTIVE
+### 3.5.0 — Certified flight voiding — IMPLEMENTED / RELEASE GATE ACTIVE
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
 - Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
@@ -126,8 +126,9 @@ Important boundary:
 - Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
 - Frozen implementation architecture: schema v20 permanent archive+delete, immutable protected-evidence children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit-only route, and portable backup v13 history-only restore.
 - M1 schema/invariants are locally verified; M2 canonical void mutation and M3 destructive UI/audit route are end-to-end verified across desktop and mobile Chromium.
-- M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS; M5 consumer/integration verification is now active.
-- M5A consumer closeout is locally verified: owner-side source-flight notifications are redirected to the permanent void audit, while recipient workflow links that depend on source participation/approval rows are neutralized before those live rows cascade. M5B PostgreSQL acceptance is also locally verified at 86/86 core tests, including participant-copy survival and tombstone-bound provenance. M5C extends the existing authenticated desktop/mobile void flow to prove that retained owner notification history opens the permanent audit rather than a dead source route.
+- M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS.
+- M5 consumer/integration verification is locally complete: M5A redirects owner source-flight notification history to the permanent audit and neutralizes recipient workflow links before cascade; M5B PostgreSQL collaboration/provenance acceptance is **86/86 PASS**; M5C authenticated browser acceptance is **2/2 PASS** across desktop and mobile Chromium, including permanent-audit navigation from retained notification history.
+- M6 release gate is active. Production remains 3.4.1 / schema v19 until release verification and the schema-v20 deployment prerequisite are explicitly completed.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED
