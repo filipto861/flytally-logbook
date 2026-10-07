@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C — browser suite structure — ACTIVE (DISCOVERY / DESIGN)**. Phase 0B.1–0B.3 are ✅ DONE / VERIFIED. 0B.3 evidence: targeted scope/pipeline **29/29 PASS**, TypeScript **PASS**. Phase 0C must first map the current Playwright monolith, helper/fixture ownership, serial shared-DB assumptions and domain boundaries, then obtain an independent second-AI review before implementation.
+Current milestone: **Phase 0C.0 — browser split discovery / independent review — ACTIVE**. Phase 0B.1–0B.3 are ✅ DONE / VERIFIED. Discovery found a 2,053-line / ~127.6 kB public-shell monolith with 48 logical tests, 25 browser-DB helper imports, two Playwright device projects and a deliberate one-worker shared-DB contract. Draft sequence: 0C.1 helper extraction, 0C.2 domain spec split, 0C.3 remove only proven redundant project×self-managed-matrix duplication. Per-worker DB isolation is explicitly deferred unless separately designed and reviewed.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
