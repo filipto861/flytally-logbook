@@ -198,10 +198,16 @@ The newly observed preflight weakness was fixed in a second Phase 0A hardening s
 - authenticated browser acceptance validates a localhost URL and runs the same connectivity probe before the destructive fixture bootstrap;
 - source-contract coverage now guards those preflight requirements.
 
+Follow-up after the connectivity-preflight change:
+- targeted development/browser/Vercel source-contract set: **28/28 PASS**;
+- PostgreSQL core with an unavailable localhost server: **FAIL-CLOSED AS DESIGNED** before test fanout, with an explicit `DATABASE_URL` connectivity error;
+- authenticated browser acceptance with the same unavailable localhost server: **FAIL-CLOSED AS DESIGNED** before fixture bootstrap;
+- workstation PostgreSQL 16 binaries are available at `C:\Program Files\PostgreSQL\16\bin`: `psql.exe`, `initdb.exe`, `pg_ctl.exe` and `createdb.exe`;
+- Docker remains unavailable, but is no longer required for Phase 0A verification because an isolated temporary local PostgreSQL cluster can be created with the installed PostgreSQL 16 binaries.
+
 Still required before Phase 0A can close:
-- rerun the corrected targeted development-pipeline/browser source regression set after the connectivity-preflight change;
-- successful PostgreSQL core/full execution against a real isolated PostgreSQL server;
-- successful authenticated browser acceptance against a real isolated localhost PostgreSQL server.
+- successful PostgreSQL core/full execution against the temporary isolated PostgreSQL 16 cluster;
+- successful authenticated browser acceptance against that same isolated localhost cluster.
 
 No PASS is claimed for those remaining items until they actually run.
 
