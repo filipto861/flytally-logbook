@@ -94,8 +94,9 @@ PR titles should start with the numeric target version when practical.
 | 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
 | 3.5.1 | GPS T&G false-positive containment | DONE / PRODUCTION |
 | 3.5.2 | Always-on GPS/SERA Night suggestions | DONE / PRODUCTION |
-| 3.6.0 | Saved-date / timezone semantics | ACTIVE |
-| 3.7.0 | Currency / monetary semantics | NEXT |
+| 3.5.3 | Flight detail navigation UX | ACTIVE |
+| 3.6.0 | Saved-date / timezone semantics | NEXT |
+| 3.7.0 | Currency / monetary semantics | PLANNED |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
 | — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; remains unnumbered until scope/evidence are frozen; 3.5.2 is assigned to always-on GPS/SERA Night suggestions |

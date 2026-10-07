@@ -417,14 +417,39 @@ button[data-loading="true"]::after{
   transform:translateX(1px);
 }
 .flight-detail-navigation{
-  align-items:center;
-  gap:8px;
-}
-.flight-detail-nav-main{
   display:flex;
   align-items:center;
+  justify-content:flex-end;
   flex-wrap:wrap;
+  gap:10px;
+  overflow:visible;
+}
+.flight-detail-back,
+.flight-detail-step{
+  min-height:44px;
+  text-decoration:none;
+}
+.flight-detail-back{
+  border-color:color-mix(in srgb,var(--accent2) 34%,var(--line));
+  background:color-mix(in srgb,var(--accent2) 6%,var(--panel));
+}
+.flight-detail-step-group{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(132px,max-content));
   gap:8px;
+  min-width:0;
+}
+.flight-detail-step{
+  width:100%;
+  justify-content:center;
+  white-space:nowrap;
+}
+.flight-detail-step:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+  background:var(--panel);
+  border-color:var(--line);
+  color:var(--muted);
 }
 .flight-detail-more{position:relative}
 .flight-detail-more>summary{
@@ -487,19 +512,28 @@ button[data-loading="true"]::after{
   .flight-open-cta{min-height:34px;padding-inline:11px}
   .flight-detail-navigation{
     width:100%;
-    display:flex;
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
     align-items:stretch;
-    justify-content:space-between;
+    gap:8px;
     overflow:visible;
   }
-  .flight-detail-nav-main{
-    flex:1 1 auto;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    scrollbar-width:none;
+  .flight-detail-back{
+    width:100%;
+    justify-content:center;
   }
-  .flight-detail-nav-main::-webkit-scrollbar{display:none}
-  .flight-detail-more{flex:0 0 auto}
+  .flight-detail-step-group{
+    width:100%;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .flight-detail-step{
+    min-width:0;
+    white-space:normal;
+    text-align:center;
+  }
+  .flight-detail-more{
+    justify-self:end;
+  }
   .flight-detail-more-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}
   .flight-workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
   .flight-post-save{align-items:stretch;flex-direction:column}

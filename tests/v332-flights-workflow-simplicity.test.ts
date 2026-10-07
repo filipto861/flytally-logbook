@@ -18,7 +18,8 @@ test("v3.3 U11 makes the route itself the primary flight-list open action",()=>{
 
 test("v3.3 U11 separates navigation from secondary flight-detail actions",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(page,/flight-detail-nav-main/);
+  assert.match(page,/flight-detail-back/);
+  assert.match(page,/flight-detail-step-group/);
   assert.match(page,/flight-detail-more/);
   assert.match(page,/>Audit history</);
   assert.doesNotMatch(page,/certified\?<Link className="secondary-link" href=\{`\/flights\/\$\{id\}\/share`\}>Share<\/Link>/);
@@ -44,7 +45,7 @@ test("v3.3 U11 gives certification and public sharing explicit pending feedback"
 
 test("v3.3 U11 ships responsive list, workflow and More-action styling",()=>{
   const css=read("app/ui-system.css");
-  for(const token of [".flight-route-link",".flight-open-cta",".flight-detail-more-menu",".flight-workflow-step"])assert.ok(css.includes(token),token);
+  for(const token of [".flight-route-link",".flight-open-cta",".flight-detail-back",".flight-detail-step-group",".flight-detail-more-menu",".flight-workflow-step"])assert.ok(css.includes(token),token);
   assert.match(css,/@media\(max-width:700px\)[\s\S]*\.flight-detail-more-menu/);
   assert.match(css,/\.flight-workflow-steps\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
 });

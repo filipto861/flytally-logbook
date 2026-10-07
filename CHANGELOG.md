@@ -10,6 +10,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.5.3 — Flight detail navigation UX
+- Reworked the existing flight-detail navigation into an obvious **Back to flights** control plus explicit **Previous flight** / **Next flight** controls.
+- Previous/Next continue to use the existing filter-aware server navigation and preserve the active Flights query context.
+- Boundary directions remain visible but disabled instead of disappearing, keeping the navigation layout stable.
+- Mobile now gives Back its own row and keeps Previous/Next in a two-column row without horizontal core-navigation scrolling.
+- No flight ordering, record, certification, recency, persistence or database semantics changed.
+
+
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
