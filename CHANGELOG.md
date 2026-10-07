@@ -10,6 +10,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Print / PDF
+- Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
+- Added a source regression guard so the accessibility link cannot silently reappear in print output.
+
 ## 3.5.1 — 7 October 2026
 
 ### GPS touch-and-go reliability
