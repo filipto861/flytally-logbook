@@ -1,11 +1,11 @@
 # 3.5.5 — iPad sidebar collapse-control alignment
 
-**Status:** IMPLEMENTED · CORRECTIVE LOCAL GATE PASS · PRODUCTION VISUAL RECHECK PENDING  
+**Status:** DONE · PRODUCTION VERIFIED  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `fix/3.5.5-ipad-sidebar-handle`  
-**Production baseline:** `3.5.4`
+**Production baseline:** `3.5.4` → deployed as `3.5.5`
 
 ## Trigger
 
@@ -88,4 +88,10 @@ Corrective exact-head local gate on `10133bc0c1450893fb99000cf30ebb6d95934ce9`:
 - production build: **PASS**, including 41/41 static pages;
 - PostgreSQL migration: **N/A**.
 
-Production iPad visual acceptance remains required after the corrective deploy.
+Production closeout:
+- first production placement from PR #252 was **rejected in visual acceptance** and superseded;
+- corrective PR #253 squash-merged as `ec75388ab437218086ef4fb86d1d53648fb77dbe`;
+- Vercel production deployment `dpl_4NbxFjAa6dJyQn1VdiSwf4wndiUW` reached **READY** on the exact corrective merge SHA;
+- root/login smoke returned **HTTP 200** and the immediate runtime-error window was clean;
+- production iPad visual acceptance confirmed the centered sidebar-edge handle is accepted in the real device layout;
+- no DB migration was required.
