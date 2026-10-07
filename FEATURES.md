@@ -39,7 +39,7 @@ It answers **what the product has, what is intentionally constrained, and what i
 - Track playback and aircraft marker presentation.
 - Map/profile display without treating GPS as authority for unsupported regulatory evidence.
 - Rolling touch-and-go altitude-discontinuity validation is bounded to the candidate's physical descent/minimum/climb evidence span, preventing unrelated sparse-sampling anomalies from suppressing valid advisory detections while preserving conservative in-span rejection.
-- Advisory take-off timing is hardened around GPS teleports/gaps; explicit SERA Day/Night suggestions extend to supported ULL review; conservative GPS Night-time suggestion is available while IFR remains manual; PF movement evidence is optional and absent evidence gives no recency credit.
+- Advisory take-off timing is hardened around GPS teleports/gaps; SERA Day/Night and conservative GPS Night-time suggestions are attempted automatically wherever the canonical flight context supports them, with no account-level enable/disable switch; IFR remains manual; PF movement evidence is optional and absent evidence gives no recency credit.
 
 ## Licences, recency and evidence — IMPLEMENTED
 
@@ -115,6 +115,15 @@ Important boundary:
 
 ## Planned / active follow-up
 
+### 3.5.2 — Always-on GPS/SERA Night suggestions — ACTIVE
+- Remove the account-level **Night definition** preference from Settings.
+- Always attempt the existing SERA civil-twilight Day/Night and Night-time suggestions when the canonical flight context supports those fields.
+- Preserve the existing -6° geometric SERA boundary, ±0.5° confidence guard, UTC/offset requirements, sparse-gap and track-integrity fail-closed rules.
+- Keep all automatic values advisory/editable; manual edits stay sticky and unavailable evidence stays manual/unset rather than becoming zero.
+- IFR remains pilot-entered.
+- Legacy persisted `night_definition` preference values are ignored by active runtime behavior; no DB migration, certification-version change or historical-flight rewrite.
+- Detailed contract: `docs/product/3_5_2_ALWAYS_ON_NIGHT_SUGGESTIONS.md`.
+
 ### 3.5.1 — GPS T&G false-positive containment — IMPLEMENTED / PRODUCTION VERIFIED
 - Tighten advisory T&G inference against three reproduced real-track false positives without adding new auto-counted events.
 - Preserve the existing 28–145 km/h rolling-speed range, 30 m descent/climb requirement, output DTO and takeoff semantics.
@@ -126,7 +135,7 @@ Important boundary:
 - Production closeout: PR #245 merged as `230d835a9e4c3fddb02bf7b729242632626cb9a7`; Vercel deployment `dpl_AGLoght4FF1khhviPaZvMu5SZ2oT` is READY on that exact SHA, serves `fly-tally.com`, root/login smoke returned HTTP 200, and the checked post-deploy runtime-error window was clean.
 
 ### GPS T&G time-normalized / evidence-limited follow-up — RESEARCH
-- The earlier provisional 3.5.2 reservation is superseded; assign no release number until a broader real-track corpus supports a safe add-event contract.
+- The earlier T&G-only provisional 3.5.2 reservation is superseded; this research remains unnumbered until a broader real-track corpus supports a safe add-event contract. Product release 3.5.2 is now assigned to always-on GPS/SERA Night suggestions.
 - Replace the now-confirmed ±10-array-point qualification defect only after a separate add-event risk review.
 - Investigate elapsed-time evidence windows, density invariance and a non-counted "possible T&G" review signal.
 - Do not use spatial clustering as an automatic landing rescue without independent evidence that it cannot promote low passes/go-arounds.
@@ -148,7 +157,7 @@ Important boundary:
 - Phase 2 remaining multi-aircraft integrity audit is complete without a runtime change. Characterization is **4/4 PASS** on `69310a3`; independent review confirmed the snapshot/external-applicability architecture; repository-history reconciliation showed strict server persistence for explicit overrides; and the read-only production census found **25/25 profiles with no explicit `part_fcl_credit_*` metadata**, covering 295 saved flights and 36 certified ULL flights. No legacy compatibility layer, schema v21 or certification payload change is justified.
 - Canonical final local gate on exact head `f0a1f1a`: TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS.
 - Production deployment `dpl_FTPxxhKFWnRRBvKZZPcNrYUYeZXn` is READY on merged `main@881f4b2`, serves `fly-tally.com`, and final schema-v20 reconcile/postflight completed with no immediate runtime errors.
-- Schema-v20 rollout tooling is locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`. Candidate version/build delta on `c0daa46` is **5/5 PASS** with production build PASS. Production v20 preflight passed against exact schema v19; schema v20 was then applied after explicit approval with a pre-write Neon recovery branch. Immediate postflight confirms exact v1..v20, **7/7** provenance rows, unchanged operational row counts and zero void-history rows. Production runtime remains 3.4.1 until the 3.5.0 deploy; final reconcile/postflight/smoke are pending.
+- Schema-v20 rollout tooling was locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`. Candidate version/build delta on `c0daa46` was **5/5 PASS** with production build PASS. Production v20 preflight passed against exact schema v19; schema v20 was then applied after explicit approval with a pre-write Neon recovery branch, and final reconcile/postflight/deploy smoke closed successfully in the 3.5.0 production release.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED

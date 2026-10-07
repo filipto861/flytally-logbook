@@ -93,11 +93,12 @@ PR titles should start with the numeric target version when practical.
 | 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
 | 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
 | 3.5.1 | GPS T&G false-positive containment | DONE / PRODUCTION |
-| 3.6.0 | Saved-date / timezone semantics | ACTIVE |
+| 3.5.2 | Always-on GPS/SERA Night suggestions | ACTIVE |
+| 3.6.0 | Saved-date / timezone semantics | NEXT |
 | 3.7.0 | Currency / monetary semantics | NEXT |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
-| — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; provisional 3.5.2 reservation superseded until scope/evidence are frozen |
+| — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; remains unnumbered until scope/evidence are frozen; 3.5.2 is assigned to always-on GPS/SERA Night suggestions |
 | — | Professional Logbook Platform | RESEARCH; no release number until scope is frozen |
 
 Confirmed production, security or data-integrity defects may pre-empt this sequence.

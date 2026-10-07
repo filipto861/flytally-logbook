@@ -4,7 +4,7 @@
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
 **Current production product version:** `3.5.1`  
-**Current active release:** `3.6.0`
+**Current active release:** `3.5.2`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -62,10 +62,11 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
 | 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
 | 4 | **3.5.1** | GPS T&G false-positive containment | ✅ | Merged and production deployed on 7 October 2026; tightening-only reliability hotfix |
-| 5 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Resumes after 3.5.1 production closeout |
-| 6 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Account currency vs stored monetary denomination needs one contract |
-| 7 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
-| 8 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | 🚧 | Product decision: remove the account Night-definition switch and always attempt source-backed GPS/SERA suggestions where the flight context supports them |
+| 6 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.2 production closeout |
+| 7 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 8 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 9 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
@@ -129,7 +130,7 @@ Research scope:
 - explicit duplicate/stale-fix quality classification if needed;
 - no spatial rescue unless separate evidence demonstrates that it cannot bootstrap low passes/go-arounds into landing evidence.
 
-The earlier provisional `3.5.2` reservation is superseded: no release number is assigned until a broader real-track corpus supports a safe add-event contract.
+The earlier **T&G-only** provisional `3.5.2` reservation is superseded. This research remains unnumbered until a broader real-track corpus supports a safe add-event contract; product release `3.5.2` is now assigned to always-on GPS/SERA Night suggestions.
 
 ---
 
@@ -508,11 +509,44 @@ Phase 2 execution order:
 
 **Production closeout:** PR #243 squash-merged to `main` as `881f4b2159a00a23609bf9a3d4a783084a0ec5f1`; Vercel deployment `dpl_FTPxxhKFWnRRBvKZZPcNrYUYeZXn` reached READY and serves `fly-tally.com`; post-deploy provenance reconciliation completed; final read-only v20 postflight preserved all operational counts with 7/7 provenance rows and zero void-history rows; immediate runtime-error check found no errors.
 
-**Next:** 3.6.0 saved-date / timezone semantics.
+**Next:** 3.5.2 always-on GPS/SERA Night suggestions.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
-# 3.6.0 — Saved-date / timezone semantics — PLANNED
+# 3.5.2 — Always-on GPS/SERA Night suggestions — ACTIVE
+
+Detailed contract: `docs/product/3_5_2_ALWAYS_ON_NIGHT_SUGGESTIONS.md`
+
+## Product decision
+
+The account-level **Night definition** switch is removed. For GPS imports, FlyTally always attempts the existing SERA civil-twilight suggestions when the selected aircraft/logbook context supports the relevant Day/Night or Night-time fields.
+
+## Frozen behavior
+
+- remove the Night definition control from Settings;
+- do not require or read an account preference to enable GPS/SERA suggestions;
+- keep the existing geometric SERA civil-twilight model, confidence guard and fail-closed evidence rules unchanged;
+- Day/Night landing suggestions remain applicable only where the canonical source requirements use a Day/Night landing split;
+- Night-time suggestions remain applicable only where the canonical source requirements expose Night/IFR review;
+- automatic values remain **suggestions**, not authoritative evidence;
+- pilot edits remain sticky and must not be overwritten by later recomputation;
+- unavailable/ambiguous GPS evidence still returns unavailable and leaves manual entry available;
+- IFR remains manual;
+- legacy persisted `night_definition` preference values may remain in historical settings JSON but are ignored by runtime behavior;
+- no DB migration, certification-payload change or historical flight rewrite.
+
+## Required verification
+
+- Settings no longer renders or persists an active Night-definition choice;
+- both legacy MANUAL and SERA accounts receive identical runtime GPS/SERA suggestion behavior;
+- applicability gating by aircraft/logbook context remains intact;
+- 3.4.1 Night-time fail-closed diagnostics remain intact;
+- TypeScript, targeted tests, full unit/regression gate and production build before merge;
+- PostgreSQL migration: N/A unless implementation scope changes.
+
+---
+
+# 3.6.0 — Saved-date / timezone semantics — NEXT
 
 Issue: #144
 

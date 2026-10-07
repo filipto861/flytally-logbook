@@ -10,6 +10,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.5.2 — Always-on GPS/SERA Night suggestions
+- Removed the account-level **Night definition** selector from Settings; GPS/SERA Night suggestion behavior is no longer user-toggleable.
+- GPS import now attempts the existing SERA Day/Night landing split and conservative Night-time suggestion automatically whenever the canonical flight context supports those fields.
+- Preserved the existing civil-twilight calculation and fail-closed evidence contract: -6° geometric boundary, ±0.5° confidence guard, explicit UTC/offset evidence, sparse-gap/track-integrity rejection, sticky pilot edits and manual fallback when exact GPS evidence is unavailable.
+- IFR remains manual. Legacy stored `night_definition` values are ignored by active flight-entry behavior; no DB migration, certification-payload change or historical-flight rewrite is introduced.
+- Added/reconciled source regression coverage for the removed Settings switch, always-on applicability gating and sticky manual Day/Night/Night-time edits.
+
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
@@ -22,7 +29,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Short speed/ground events are no longer accepted as T&G when direct event motion exceeds the existing 145 km/h rolling ceiling or usable altitude changes by at least 30 m during the alleged ground interval.
 - Takeoff inference, shared ground-stop split detection, the public T&G DTO, database schema, certification data and historical flights are unchanged.
 - Added anonymized real-derived regressions for the level-shift false event, climb-out sawtooth false event and duplicate/stale-fix false HIGH event, plus positive controls for five rolling T&Gs and a genuine stop-and-go.
-- The separate real T&G missed near 15:59 remains intentionally non-auto-counted: new evidence proves the current ±10-array-point qualification window is defective, but that event also crosses gross-corrupt approach altitude evidence. Time-normalized qualification and an evidence-limited non-counted review tier are tracked separately for 3.5.2 rather than weakening fail-closed behavior.
+- The separate real T&G missed near 15:59 remains intentionally non-auto-counted: new evidence proves the current ±10-array-point qualification window is defective, but that event also crosses gross-corrupt approach altitude evidence. Time-normalized qualification and an evidence-limited non-counted review tier remain separate unnumbered research rather than weakening fail-closed behavior.
 - Local isolated verification on the feature branch: targeted 3.5.1 **6/6 PASS**, focused GPS/track corpus **62/62 PASS**, full unit/regression **1297/1297 PASS**, TypeScript **PASS**, production build **PASS** with 41/41 static pages. PostgreSQL and browser acceptance are **N/A / NOT RUN** for this pure track-inference change; no DB or UI runtime contract changed.
 - PR #245 merged to `main` as `230d835a9e4c3fddb02bf7b729242632626cb9a7`; Vercel production deployment `dpl_AGLoght4FF1khhviPaZvMu5SZ2oT` is READY on that exact SHA, carries `fly-tally.com`, returned HTTP 200 on the root/login smoke surface, and had no grouped runtime errors in the checked post-deploy window.
 

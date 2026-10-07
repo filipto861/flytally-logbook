@@ -14,7 +14,6 @@ import { PushNotificationSettings } from "@/components/push-notification-control
 import { PendingActionButton } from "@/components/pending-action-button";
 import { formatLocalDateTime } from "@/lib/display-format";
 import { getUserTimezone } from "@/lib/data/user-settings";
-import { normalizeNightDefinition } from "@/lib/night-definition";
 
 export const metadata={title:"Settings | FlyTally"};
 const t=(v:unknown)=>String(v??"");
@@ -33,7 +32,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
       sql`SELECT display_name,email FROM users WHERE id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
       sql`SELECT timezone,currency,home_airport,default_role,preferences_json FROM user_settings WHERE user_id=${userId} LIMIT 1` as Promise<Array<Record<string,unknown>>>,
     ]);
-    const user=userRows[0]??{},settings=settingsRows[0]??{},preferences=parsePilotPreferences(settings.preferences_json),appearance=normalizeAppearance(preferences.appearance),nightDefinition=normalizeNightDefinition(preferences.night_definition);
+    const user=userRows[0]??{},settings=settingsRows[0]??{},preferences=parsePilotPreferences(settings.preferences_json),appearance=normalizeAppearance(preferences.appearance);
     return <div className="ui-page-stack">
       <Header view={view}/>
       <main className="u33-settings-workspace">
@@ -41,7 +40,7 @@ export default async function ProfilePage({searchParams}:{searchParams:Promise<{
         <form action={saveAccountSettings} className="account-settings-form u33-general-form">
           <div className="profile-grid">
             <section className="panel"><p className="eyebrow">PERSONAL</p><h2>Pilot details</h2><div className="stack-form"><label><span>Name <span className="field-hint" aria-hidden="true">Required</span></span><input name="display_name" defaultValue={t(user.display_name)} required/></label><label>Account email<input type="email" value={t(user.email)} readOnly/><small>Your sign-in identity. Email changes require verification.</small></label></div></section>
-            <section className="panel"><p className="eyebrow">LOGBOOK</p><h2>Flight defaults</h2><div className="stack-form"><label>Home airport<input name="home_airport" defaultValue={t(settings.home_airport)} placeholder="LKLT"/></label><label>Default role<select name="default_role" defaultValue={t(settings.default_role)||"PIC"}>{EASA_ROLES.map(role=><option key={role} value={role}>{role}</option>)}</select></label><label>Default logbook<select name="default_evidence" defaultValue={t(preferences.default_evidence)||"ULL"}><option>ULL</option><option>EASA</option></select></label><label>Night definition<select name="night_definition" defaultValue={nightDefinition}><option value="MANUAL">Manual · no automatic Day/Night split</option><option value="SERA">SERA · GPS civil-twilight suggestion</option></select><small>SERA uses GPS event time/location only as a review suggestion. Pilot-confirmed Day/Night counts remain authoritative.</small></label><label>Currency<select name="currency" defaultValue={t(settings.currency)||"CZK"}><option>CZK</option><option>EUR</option><option>USD</option><option>GBP</option></select></label><label>Time zone<input name="timezone" defaultValue={t(settings.timezone)||"Europe/Prague"}/><small>Screen dates use this zone. Official FCL.050 flight times remain UTC.</small></label></div></section>
+            <section className="panel"><p className="eyebrow">LOGBOOK</p><h2>Flight defaults</h2><div className="stack-form"><label>Home airport<input name="home_airport" defaultValue={t(settings.home_airport)} placeholder="LKLT"/></label><label>Default role<select name="default_role" defaultValue={t(settings.default_role)||"PIC"}>{EASA_ROLES.map(role=><option key={role} value={role}>{role}</option>)}</select></label><label>Default logbook<select name="default_evidence" defaultValue={t(preferences.default_evidence)||"ULL"}><option>ULL</option><option>EASA</option></select></label><label>Currency<select name="currency" defaultValue={t(settings.currency)||"CZK"}><option>CZK</option><option>EUR</option><option>USD</option><option>GBP</option></select></label><label>Time zone<input name="timezone" defaultValue={t(settings.timezone)||"Europe/Prague"}/><small>Screen dates use this zone. Official FCL.050 flight times remain UTC.</small></label></div></section>
           </div>
           <div className="settings-save"><span>Personal details and flight defaults are saved together.</span><PendingActionButton className="primary-button" pendingLabel="Saving…">Save changes</PendingActionButton></div>
         </form>
