@@ -438,7 +438,11 @@ Phase 2 execution order:
 
 **Release candidate metadata:** package/app-visible version is now `3.5.0`; this identifies the unreleased candidate and does not claim production deployment. Schema-v20 production preflight/migration/reconcile/postflight tooling is implemented and locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`.
 
-**Next:** verify the `3.5.0` candidate metadata/build delta, then execute the read-only production v20 preflight. Production remains `3.4.1` / schema v19 until the migration/deploy closeout is explicitly executed.
+**Candidate metadata/build delta: VERIFIED LOCAL** on exact head `c0daa46` — version-governance **5/5 PASS**; production Next.js build PASS with **41/41** static pages generated.
+
+**Production v20 preflight: VERIFIED READ-ONLY** on 7 October 2026 against production Primary / `neondb` — transaction read-only ON; exact migration registry v1..v19; no partial v20 tables/functions/triggers; 5 users, 25 aircraft, 295 flights, 95 certified flights, 56 certified revisions, 5 verifications, 16 participations / 11 accepted, 8 deleted flights; **7** provenance backfill candidates; preflight integrity guards passed.
+
+**GO/NO-GO:** schema-v20 migration is **GO PENDING FILIP APPROVAL**. No production write has been performed. Production remains `3.4.1` / schema v19.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 

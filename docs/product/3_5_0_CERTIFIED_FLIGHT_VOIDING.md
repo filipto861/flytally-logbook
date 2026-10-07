@@ -1,12 +1,13 @@
 # 3.5.0 — Certified flight voiding
 
-**Status:** RELEASE CANDIDATE — M1–M6 VERIFIED LOCAL / PRODUCTION ROLLOUT PENDING  
+**Status:** RELEASE CANDIDATE — M1–M6 VERIFIED LOCAL / PRODUCTION PREFLIGHT VERIFIED / MIGRATION APPROVAL PENDING  
 **Owner:** Filip Točík  
 **Date:** 6 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
 **Candidate package:** `3.5.0`  
-**Production baseline:** `3.4.1` / PostgreSQL schema v19
+**Production baseline:** `3.4.1` / PostgreSQL schema v19  
+**Production v20 preflight:** VERIFIED READ-ONLY 7 October 2026; migration not yet applied
 
 ## Product intent
 

@@ -5,7 +5,7 @@
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
 **Production baseline:** product `3.4.1`, PostgreSQL schema v19  
-**Phase 1 candidate state:** release candidate `3.5.0`; local gate verified; schema v20 not deployed
+**Phase 1 candidate state:** release candidate `3.5.0`; local gate + production v20 read-only preflight verified; schema v20 not deployed
 
 ## Objective
 
