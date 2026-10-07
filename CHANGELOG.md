@@ -11,8 +11,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 ## Unreleased
 
 ### 3.5.5 — iPad sidebar collapse-control alignment
-- Repositions the coarse-pointer sidebar collapse button clear of the notification bell while preserving its 44 px touch target.
-- Vertically aligns the collapse control with the brand-row controls instead of leaving the enlarged iPad target offset downward.
+- Reworks the coarse-pointer collapse chevron into a dedicated 44 px sidebar-edge handle, separate from the logo and notification controls.
+- Centers the handle vertically in the viewport and tracks the expanded/collapsed sidebar width so it stays attached to the rail in both states.
+- Supersedes the first production placement near the brand row, which remained visually awkward on iPad.
 - Scope is presentation-only: sidebar state, notifications, routes and mobile navigation semantics are unchanged.
 
 ### Print / PDF

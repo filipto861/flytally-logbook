@@ -65,7 +65,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | ✅ | Merged and production deployed on 7 October 2026; no DB/certification/history rewrite |
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
-| 8 | **3.5.5** | iPad sidebar collapse-control alignment | 🚧 | Keep the coarse-pointer collapse control clear of the notification bell and aligned to the sidebar rail |
+| 8 | **3.5.5** | iPad sidebar collapse-control alignment | 🚧 | Production visual recheck rejected the top-control placement; corrective edge-handle placement is in verification |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.5 production closeout |
 | 10 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
 | 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |

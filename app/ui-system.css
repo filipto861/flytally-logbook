@@ -679,11 +679,22 @@ button[data-loading="true"]::after{
 }
 
 
-/* 3.5.5 — keep the coarse-pointer sidebar collapse target clear of the bell and aligned to the rail. */
+/* 3.5.5 — iPad uses a dedicated edge handle, separate from the brand/header controls. */
 @media screen and (min-width:821px) and (pointer:coarse){
+  .sidebar{--coarse-sidebar-width:238px}
+  .sidebar.collapsed{--coarse-sidebar-width:74px}
   .sidebar-toggle{
-    right:-44px;
-    top:50%;
+    position:fixed;
+    left:calc(var(--coarse-sidebar-width) - 22px);
+    right:auto;
+    top:50dvh;
+    width:44px;
+    height:44px;
     transform:translateY(-50%);
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
+    box-shadow:0 4px 16px rgba(0,0,0,.12);
+    z-index:1450;
   }
 }
