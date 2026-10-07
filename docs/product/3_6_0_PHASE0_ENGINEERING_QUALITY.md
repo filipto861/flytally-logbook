@@ -249,9 +249,19 @@ Phase 0A corrective browser-harness batch:
 
 Iteration policy after the 15.2-minute diagnostic run: use Playwright `--grep` targeted clusters while fixing the harness; run the complete serialized 98-test browser gate only once on the final Phase 0A candidate.
 
+Targeted verification of that corrective batch:
+- development/browser/Vercel source-contract set: **31/31 PASS**;
+- TypeScript: **PASS**;
+- certified/certification fixture cluster: **10/10 PASS** in 53.9 seconds;
+- 3.5.2 / E1.3 current Night-suggestion cluster: **6/6 PASS** in 18.0 seconds;
+- GPS Role/Crew/split cluster: **8/20 PASS**; all 12 failures were the same remaining stale browser-harness assumption, not divergent product behavior: the current single-flight GPS UI presents `Split into multiple flights` for the first split, while those tests still waited for the later-state `Add split` control; the F6 single-flight matrix also still needed to reopen the auto-collapsing Flight context before each Role transition.
+
+Follow-up fix:
+- centralize the first GPS split through a `splitGpsIntoTwo` helper that uses the current visible `Split into multiple flights` control and asserts `partCount=2`;
+- make the F6 single-flight state matrix reopen Flight context before each Role transition.
+
 Still required before Phase 0A can close:
-- targeted source-contract regression after this corrective batch;
-- targeted browser runs for the GPS-context/split, certified-fixture-reset and 3.5.2 Night-suggestion clusters;
+- rerun only the GPS Role/Crew/split targeted cluster after this last harness fix;
 - one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
