@@ -549,6 +549,17 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - this batch is file-ownership only: **no project×matrix deduplication yet**; every test continues to run under the same two Playwright projects until 0C.3;
 - preserve exact names, viewport/theme state labels, fixture resets and shared DB/project/worker/retry semantics.
 
+0C.2 Batch 5 implementation candidate:
+- created `e2e/responsive-presentation.spec.mjs` and moved exactly those nine presentation/matrix tests with unchanged test names and assertions;
+- retained the F6 viewport list and `applyF6PresentationState` inside the responsive domain, so required desktop/iPad/mobile/320px/reflow/light/dark state labels remain colocated with the tests that own them;
+- duplicated the currently domain-specific GPS interaction helpers into the responsive spec only for this split; the functional GPS copy remains in `public-shell.spec.mjs` until 0C.2a helper-ownership reconciliation;
+- **no Playwright project skip or project×matrix deduplication was introduced**; 0C.3 remains the only phase allowed to remove a project after mobile-semantics proof;
+- current source inventory remains exactly **48 unique logical acceptance tests**: 15 public-shell + 9 responsive presentation + 8 Manual authority/certification + 7 advisory + 5 Manual RoleCrew/verification + 4 settings/connections mutations;
+- centralized `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry behavior are unchanged;
+- structure regression proves all nine test names moved, F6 matrix ownership moved with them, and the responsive spec has no project-name skip logic.
+
+0C.2 Batch 5 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused responsive spec under both projects, then the complete serialized browser gate.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
