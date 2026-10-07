@@ -24,6 +24,7 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 - **Node.js 24.x** is the canonical runtime line for Logbook development and verification. It matches the Vercel project runtime, `.nvmrc`, `package.json#engines` and the manual GitHub workflows.
 - **Playwright Test 1.55.0** is a direct locked development dependency. Local and manual-cloud browser acceptance must use that repository copy; do not install an ad-hoc runner version in the workflow.
 - Run `npm ci` after dependency metadata changes. Do not treat a build from a different Node/Playwright toolchain as equivalent release evidence.
+- PostgreSQL acceptance commands are destructive test-fixture gates and therefore accept only localhost/loopback `DATABASE_URL` targets. Use the repository's isolated local/CI PostgreSQL database; never point `test:postgres*` at Neon, production, staging, or any other remote database.
 
 ## Module scope registry
 
