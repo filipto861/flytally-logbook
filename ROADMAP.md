@@ -2,9 +2,9 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 6 October 2026  
-**Current production product version:** `3.4.1` (temporary 3.5 rollout state: PostgreSQL schema v20 applied; 3.5.0 runtime not deployed yet)  
-**Current active release:** `3.5.0`
+**Last updated:** 7 October 2026  
+**Current production product version:** `3.5.0`  
+**Current active release:** `3.6.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -51,8 +51,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Aircraft profiles / profile sharing / canonical validation | ✅ Production |
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
-| Production DB schema | **v19** — independent from product version |
-| Product release version | **3.4.1** |
+| Production DB schema | **v20** — independent from product version |
+| Product release version | **3.5.0** |
 
 ## Canonical release sequence
 
@@ -60,8 +60,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | ---: | ---: | --- | :---: | --- |
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
-| 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | 🚧 | Certified voiding is Phase 1; remaining multi-aircraft integrity resumes in Phase 2 |
-| 4 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
+| 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | ✅ | Merged and production deployed on 7 October 2026; schema v20 verified |
+| 4 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Persisted default date can be wrong around timezone boundaries |
 | 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
 | 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 7 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
@@ -367,7 +367,7 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — RELEASE CANDIDATE
+# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — DONE / PRODUCTION
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
@@ -444,7 +444,9 @@ Phase 2 execution order:
 
 **Production schema-v20 migration: APPLIED / VERIFIED** on 7 October 2026 after explicit approval. A pre-migration Neon branch `pre-v20-2026-10-07` (`br-dry-moon-b1n30x0b`) preserves the exact pre-write production state. Migration registry is now exact v1..v20; all required v20 objects/triggers/functions exist; provenance backfill produced **7/7** rows; immediate read-only postflight preserved 295 flights / 95 certified flights / 56 certified revisions / 16 participations / 11 accepted and created zero void-history rows. Final post-deploy reconciliation + postflight are still pending.
 
-**Next:** deploy candidate 3.5.0, immediately run idempotent provenance reconciliation to close the old-runtime/deploy window, then final v20 postflight + production smoke. Production runtime is still `3.4.1` while the database is now schema v20.
+**Production closeout:** PR #243 squash-merged to `main` as `881f4b2159a00a23609bf9a3d4a783084a0ec5f1`; Vercel deployment `dpl_FTPxxhKFWnRRBvKZZPcNrYUYeZXn` reached READY and serves `fly-tally.com`; post-deploy provenance reconciliation completed; final read-only v20 postflight preserved all operational counts with 7/7 provenance rows and zero void-history rows; immediate runtime-error check found no errors.
+
+**Next:** 3.6.0 saved-date / timezone semantics.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
