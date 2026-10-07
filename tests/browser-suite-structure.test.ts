@@ -184,6 +184,33 @@ test("Phase 0C.2 batch 4 owns Manual authority and certification in one domain s
   assert.match(domain,/browser-actions\.mjs/);
 });
 
+test("Phase 0C.2 batch 5 owns responsive presentation matrices in one domain spec",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const domain=read("e2e/responsive-presentation.spec.mjs");
+  const names=[
+    "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
+    "F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports and themes",
+    "F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",
+    "F5.3 role change keeps required DUAL identity inline and removes the default cue",
+    "F6 Manual RoleCrew matrix covers required roles modes viewports themes and 200 percent reflow",
+    "F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes and reflow",
+    "F6 GPS multi-part inheritance override matrix stays usable at every required presentation state",
+    "F6 invalid-profile recovery remains explicit in Manual and GPS across the full presentation matrix",
+    "F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in light and dark",
+  ];
+  for(const name of names){
+    assert.equal(domain.includes('test("'+name+'"'),true);
+    assert.equal(shell.includes('test("'+name+'"'),false);
+  }
+  assert.equal((domain.match(/^test\("/gm)??[]).length,names.length);
+  assert.match(domain,/const F6_PRESENTATION_VIEWPORTS=/);
+  assert.match(domain,/async function applyF6PresentationState/);
+  assert.doesNotMatch(shell,/F6_PRESENTATION_VIEWPORTS/);
+  assert.doesNotMatch(shell,/applyF6PresentationState/);
+  assert.equal(domain.includes("test.info().project.name"),false,
+    "0C.2 is ownership-only; project-matrix deduplication belongs to 0C.3");
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
