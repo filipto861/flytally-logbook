@@ -43,7 +43,9 @@ test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external 
   assert.match(runner,/FLYTALLY_AUTH_BROWSER!=="1"/);
   assert.match(runner,/FLYTALLY_LOCAL_POSTGRES!=="1"/);
   assert.match(runner,/bootstrap-browser-smoke-db[.]mjs/);
-  assert.match(runner,/--no-install","playwright","test/);
+  assert.match(runner,/require\.resolve\("@playwright\/test\/package\.json"\)/);
+  assert.match(runner,/spawnSync\(process\.execPath,\[playwrightCli,"test","--config=playwright\.config\.mjs"/);
+  assert.doesNotMatch(runner,/npx\.cmd|--no-install","playwright","test/);
   assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
