@@ -19,13 +19,19 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 6. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
 7. Merge only after the required **local** release gates for the exact candidate succeed. GitHub Actions are not a required merge/release gate; Vercel still performs the production build when the released commit can affect runtime output.
 
+## Toolchain baseline
+
+- **Node.js 24.x** is the canonical runtime line for Logbook development and verification. It matches the Vercel project runtime, `.nvmrc`, `package.json#engines` and the manual GitHub workflows.
+- **Playwright Test 1.55.0** is a direct locked development dependency. Local and manual-cloud browser acceptance must use that repository copy; do not install an ad-hoc runner version in the workflow.
+- Run `npm ci` after dependency metadata changes. Do not treat a build from a different Node/Playwright toolchain as equivalent release evidence.
+
 ## Module scope registry
 
 `tooling/development-modules.json` is the single development-only registry for module ownership and CI risk metadata. It does not participate in runtime application behaviour and existing runtime files should not be moved merely to satisfy the registry.
 
-When a new product module is added, register its stable path prefixes there. Shared or previously unknown code remains conservative: it is reported as `shared` and receives the normal PostgreSQL gate. Documentation and CSS remain lightweight. Known performance hot paths are also registered centrally and trigger the retained scale gate.
+The current v1 registry is still a transitional classifier. Shared or previously unknown runtime code remains conservative, but the present mapping is too coarse: it still treats CSS as lightweight and escalates broad runtime changes to PostgreSQL. Phase 0B must replace that behavior with explicit UI/domain/persistence/auth/scale risk metadata before scope output becomes authoritative.
 
-`tooling/development-scope.mjs` consumes this registry both locally and in GitHub Actions. This keeps CI path logic out of workflow YAML and prevents future module additions from requiring another set of duplicated shell conditions.
+`tooling/development-scope.mjs` is currently consumed locally. The manual GitHub workflows do **not** currently invoke it; earlier documentation claiming otherwise was drift. Phase 0B will establish one executable source of truth for changed-scope selection rather than duplicating lists in scripts and workflow YAML.
 
 ## Vercel build filtering
 
@@ -83,28 +89,32 @@ After configuring the local browser-test database and environment, the applicati
 Canonical local setup:
 
 ```bash
-DATABASE_URL=postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser
-FLYTALLY_LOCAL_POSTGRES=1
-FLYTALLY_AUTH_BROWSER=1
-FLYTALLY_BROWSER_PASSWORD=FlyTally-Browser-2026!
-SESSION_SECRET=flytally-browser-session-secret-not-production
-SIGNING_SECRET=flytally-browser-signing-secret-not-production
-node tooling/bootstrap-browser-smoke-db.mjs
-npx playwright test --config=playwright.config.mjs
+npm ci
+npx --no-install playwright install chromium
+export DATABASE_URL=postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser
+export FLYTALLY_LOCAL_POSTGRES=1
+export FLYTALLY_AUTH_BROWSER=1
+export FLYTALLY_BROWSER_PASSWORD=FlyTally-Browser-2026!
+export SESSION_SECRET=flytally-browser-session-secret-not-production
+export SIGNING_SECRET=flytally-browser-signing-secret-not-production
+npm run verify:browser
 ```
 
 PowerShell equivalent:
 
 ```powershell
+npm ci
+npx --no-install playwright install chromium
 $env:DATABASE_URL="postgresql://flytally:flytally@127.0.0.1:55432/flytally_browser"
 $env:FLYTALLY_LOCAL_POSTGRES="1"
 $env:FLYTALLY_AUTH_BROWSER="1"
 $env:FLYTALLY_BROWSER_PASSWORD="FlyTally-Browser-2026!"
 $env:SESSION_SECRET="flytally-browser-session-secret-not-production"
 $env:SIGNING_SECRET="flytally-browser-signing-secret-not-production"
-node tooling/bootstrap-browser-smoke-db.mjs
-npx playwright test --config=playwright.config.mjs
+npm run verify:browser
 ```
+
+`npm run test:browser` is the authenticated browser gate without the build step. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. `npm run verify:browser` adds the production build first.
 
 ## PostgreSQL commands
 
@@ -112,6 +122,8 @@ npx playwright test --config=playwright.config.mjs
 - `npm run test:postgres:scale` — retained 10k/50k/100k performance fixtures only.
 - `npm run test:postgres:full` — all PostgreSQL integration tests.
 - `npm run verify:release` — explicit TypeScript, complete unit/regression, PostgreSQL and production-build verification when a suitable PostgreSQL test database is configured.
+
+The PostgreSQL runner now owns the integration-test intent: an explicitly invoked PostgreSQL command injects `FLYTALLY_POSTGRES_INTEGRATION=1` into its child test process after preflight. It fails before the suite when `DATABASE_URL` is missing or the `psql` client cannot be executed. A PostgreSQL gate must never report success by silently skipping the integration suite.
 
 ## Deployment discipline
 
