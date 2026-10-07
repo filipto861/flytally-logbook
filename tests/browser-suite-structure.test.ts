@@ -119,6 +119,27 @@ test("Phase 0C.2 batch 1 owns settings and connection mutations in one domain sp
   assert.match(mutations,/from "\.\/browser-actions\.mjs"/);
 });
 
+test("Phase 0C.2 batch 2 owns advisory presentation flows in one domain spec",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const advisory=read("e2e/advisory-presentation.spec.mjs");
+  const names=[
+    "E1.1 route assistance stays below aligned Route fields and remains keyboard reachable",
+    "E1.2 aircraft default operation prefills Manual and GPS but remains flight-editable",
+    "E1.4 certified legacy GPS Task stays raw and annotated in owner and shared read-only views",
+    "3.5.2 Settings ignores legacy Night definition preference and exposes no account control",
+    "3.5.2 legacy MANUAL preference does not suppress applicable GPS SERA suggestions",
+    "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+    "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+  ];
+  for(const name of names){
+    assert.match(advisory,new RegExp('test\\("'+escapeRegExp(name)+'"'));
+    assert.doesNotMatch(shell,new RegExp('test\\("'+escapeRegExp(name)+'"'));
+  }
+  assert.equal((advisory.match(/^test\("/gm)??[]).length,names.length);
+  assert.match(advisory,/from "\.\/browser-db\.mjs"/);
+  assert.match(advisory,/from "\.\/browser-actions\.mjs"/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
