@@ -105,6 +105,14 @@ async function openGpsTrackReview(gpsForm){
   await ensureDetailsOpen(gpsForm.locator("details.gps-track-review"));
 }
 
+async function splitGpsIntoTwo(gpsForm){
+  await openGpsTrackReview(gpsForm);
+  const firstSplit=gpsForm.getByRole("button",{name:"Split into multiple flights"});
+  await expect(firstSplit).toBeVisible();
+  await firstSplit.click();
+  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+}
+
 async function holdPost(page,pattern){
   let releaseRequest=()=>{};
   let posts=0;
@@ -831,9 +839,7 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-mixed-rolecrew.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await openGpsTrackReview(gpsForm);
-  await gpsForm.getByRole("button",{name:/Add split/}).click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await splitGpsIntoTwo(gpsForm);
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
@@ -907,9 +913,7 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-split-reset.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await openGpsTrackReview(gpsForm);
-  await gpsForm.getByRole("button",{name:/Add split/}).click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await splitGpsIntoTwo(gpsForm);
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
 
   const second=gpsForm.locator(".flight-review-card").nth(1);
@@ -1027,9 +1031,7 @@ test("F4.3 revoked per-flight connected Safety Pilot fails closed without partia
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f43-override-revoked.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await openGpsTrackReview(gpsForm);
-  await gpsForm.getByRole("button",{name:/Add split/}).click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await splitGpsIntoTwo(gpsForm);
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
@@ -1071,9 +1073,7 @@ test("F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports an
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f44-responsive-overrides.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await openGpsTrackReview(gpsForm);
-  await gpsForm.getByRole("button",{name:/Add split/}).click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await splitGpsIntoTwo(gpsForm);
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
@@ -1597,6 +1597,7 @@ test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes 
   await expect(role.locator("option")).toHaveText(["PIC","DUAL","SAFETY PILOT"]);
 
   const assertState=async state=>{
+    await openGpsFlightContext(gpsForm);
     if(state==="PIC"){
       await role.selectOption("PIC");
       await expect(gpsForm.locator('input[name="instructor"][type="hidden"]')).toHaveCount(1);
@@ -1649,9 +1650,7 @@ test("F6 GPS multi-part inheritance override matrix stays usable at every requir
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f6-gps-multipart.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
-  await openGpsTrackReview(gpsForm);
-  await gpsForm.getByRole("button",{name:/Add split/}).click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
+  await splitGpsIntoTwo(gpsForm);
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
