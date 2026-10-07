@@ -409,6 +409,7 @@ test("3.5.0 certified flight can be voided from active logbook while permanent a
   const landing=project.includes("mobile")?"17:55":"16:55";
   const onBlock=project.includes("mobile")?"18:00":"17:00";
   const reason=`3.5.0 browser acceptance ${project}`;
+  runBrowserSql("DELETE FROM user_notifications WHERE user_id=9001 AND kind='m5_void_source'");
 
   await loginBrowserPilot(page,"/flights/new");
   const form=page.locator("#new-flight-manual-form");
