@@ -4,8 +4,8 @@
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
-**Production runtime:** product `3.4.1`; PostgreSQL schema v20 applied during 3.5 rollout  
-**Phase 1 candidate state:** release candidate `3.5.0`; local gate verified; production schema v20 applied; runtime deploy pending
+**Production runtime:** product `3.5.0`; PostgreSQL schema v20  
+**Phase 1 state:** `3.5.0` production verified; schema v20 deployed and postflight verified
 
 ## Objective
 

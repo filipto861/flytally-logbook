@@ -68,10 +68,11 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-3.4.1 originally closed on database schema **v19**. During the staged 3.5.0 rollout on 7 October 2026, the backward-compatible schema **v20** was applied before the 3.5.0 runtime deployment. Current rollout state:
+3.5.0 completed production rollout on 7 October 2026. Current production baseline:
 - production database schema is **v20**;
 - flight certification payload remains **v8**;
-- production product runtime/package remains **3.4.1** until the 3.5.0 deploy completes.
+- portable backup/export format is **v13**;
+- production product package/runtime is **3.5.0**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -90,8 +91,8 @@ PR titles should start with the numeric target version when practical.
 | --- | --- | :---: |
 | 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
 | 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
-| 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | RELEASE CANDIDATE |
-| 3.6.0 | Saved-date / timezone semantics | PLANNED |
+| 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
+| 3.6.0 | Saved-date / timezone semantics | ACTIVE |
 | 3.7.0 | Currency / monetary semantics | PLANNED |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
