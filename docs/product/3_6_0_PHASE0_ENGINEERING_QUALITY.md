@@ -172,14 +172,23 @@ Implemented on the Phase 0 branch:
 - DEVELOPMENT has been corrected to describe the executable workflow rather than claiming the scope registry is already consumed by GitHub Actions;
 - Vercel preview documentation and the ignore-script message now reflect the actual policy: non-production previews are intentionally skipped and local gates are authoritative.
 
-Still required before Phase 0A can close:
-- exact-candidate dependency install / lockfile verification;
-- targeted development-pipeline/browser source regressions;
-- PostgreSQL core/full execution against the isolated test database;
-- authenticated browser acceptance because this phase changes its harness;
-- production build evidence.
+Verification evidence from the developer workstation after the first Phase 0A batch:
+- Node runtime: **v24.19.0**;
+- `npm ci`: **PASS** (37 packages installed; npm retried a transient `@img/colour` tarball warning and completed successfully);
+- targeted development/browser/Vercel source-contract set: **26/27 PASS, 1 FAIL**;
+- the sole failure was a stale documentation/source assertion: DEVELOPMENT now says `Shared or previously unknown runtime code remains conservative`, while the test still expected the older wording;
+- TypeScript: **PASS**;
+- production build: **PASS**, Next.js 16.3.2, 41/41 static pages;
+- the build emitted a non-fatal workstation warning about a separate `C:\\Users\\Filip Točík\\package-lock.json` outside the repository; the repository lockfile itself was accepted by `npm ci`.
 
-No PASS is claimed for those items until they actually run.
+The stale source assertion was corrected in a test-only follow-up. Per the local-first policy, the already-valid TypeScript/build evidence is not invalidated by that assertion-only change.
+
+Still required before Phase 0A can close:
+- rerun the corrected targeted development-pipeline/browser source regression set;
+- PostgreSQL core/full execution against the isolated test database;
+- authenticated browser acceptance because this phase changes its harness.
+
+No PASS is claimed for those remaining items until they actually run.
 
 ## Phase 0 implementation plan
 
