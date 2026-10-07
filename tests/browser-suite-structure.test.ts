@@ -91,6 +91,17 @@ test("Phase 0C baseline records every required viewport and theme state",()=>{
   );
 });
 
+test("Phase 0C.1 shared browser actions stay minimal and cross-domain",()=>{
+  const helpers=read("e2e/browser-actions.mjs");
+  const shell=read("e2e/public-shell.spec.mjs");
+  assert.match(helpers,/export async function expectNoHorizontalOverflow/);
+  assert.match(helpers,/export async function loginBrowserPilot/);
+  assert.doesNotMatch(helpers,/openGps|splitGps|RoleCrew|F35|F43/);
+  assert.match(shell,/from "\.\/browser-actions\.mjs"/);
+  assert.doesNotMatch(shell,/async function expectNoHorizontalOverflow/);
+  assert.doesNotMatch(shell,/async function loginBrowserPilot/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
