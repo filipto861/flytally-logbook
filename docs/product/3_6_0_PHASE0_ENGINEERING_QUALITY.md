@@ -256,13 +256,18 @@ Targeted verification of that corrective batch:
 - 3.5.2 / E1.3 current Night-suggestion cluster: **6/6 PASS** in 18.0 seconds;
 - GPS Role/Crew/split cluster: **8/20 PASS**; all 12 failures were the same remaining stale browser-harness assumption, not divergent product behavior: the current single-flight GPS UI presents `Split into multiple flights` for the first split, while those tests still waited for the later-state `Add split` control; the F6 single-flight matrix also still needed to reopen the auto-collapsing Flight context before each Role transition.
 
-Follow-up fix:
-- centralize the first GPS split through a `splitGpsIntoTwo` helper that uses the current visible `Split into multiple flights` control and asserts `partCount=2`;
-- make the F6 single-flight state matrix reopen Flight context before each Role transition.
+Follow-up verification:
+- GPS Role/Crew/split cluster improved to **16/20 PASS**;
+- the remaining four failures are two test cases repeated across desktop/mobile: F4.2 common Role transition and F6 single-flight Safety Pilot transition;
+- both failures still manipulated dependent controls immediately after a Role change that can auto-collapse Flight context.
+
+Final targeted harness fix:
+- add `selectGpsCommonRole`, which explicitly opens Flight context, performs the Role transition, then reopens the current context before dependent controls are touched;
+- use it for the remaining F4.2 and F6 single-flight transitions.
 
 Still required before Phase 0A can close:
-- rerun only the GPS Role/Crew/split targeted cluster after this last harness fix;
-- one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
+- rerun only those two browser cases (desktop + mobile = four executions);
+- if green, one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
 
