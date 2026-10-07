@@ -4,7 +4,7 @@
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
-**Branch:** `fix/3.5.5-ipad-sidebar-toggle`  
+**Branch:** `fix/3.5.5-ipad-sidebar-handle`  
 **Production baseline:** `3.5.4`
 
 ## Trigger
@@ -22,9 +22,9 @@ The cause is presentation-only:
 1. Preserve the existing sidebar expand/collapse action and `logbook-sidebar` persisted state.
 2. Preserve the coarse-pointer minimum 44 px touch target.
 3. On coarse-pointer layouts wider than the phone/mobile breakpoint:
-   - move the collapse target rightward into the sidebar rail/gutter;
-   - do not overlap the notification bell;
-   - vertically center the collapse target on the brand row.
+   - render the collapse control as a dedicated sidebar-edge handle, visually separate from the brand/header controls;
+   - center it vertically in the viewport so it does not compete with the notification bell or logo;
+   - keep the handle centered on the current expanded/collapsed sidebar edge.
 4. Keep fine-pointer desktop placement unchanged.
 5. Keep the <=820 px mobile shell unchanged; it continues to use the hamburger control and hides the desktop collapse button.
 6. Preserve notification behavior, sidebar navigation, routes and active-state semantics.
@@ -32,24 +32,36 @@ The cause is presentation-only:
 
 ## Implementation
 
-`app/ui-system.css` is the final application CSS layer and applies one narrow override:
+The first production placement kept the control near the brand row. Production iPad review showed that this still read as a misplaced header control, particularly in collapsed mode.
+
+The corrective 3.5.5 implementation keeps the same control and behavior but changes only its coarse-pointer presentation:
 
 ```css
 @media screen and (min-width:821px) and (pointer:coarse){
+  .sidebar{--coarse-sidebar-width:238px}
+  .sidebar.collapsed{--coarse-sidebar-width:74px}
   .sidebar-toggle{
-    right:-44px;
-    top:50%;
+    position:fixed;
+    left:calc(var(--coarse-sidebar-width) - 22px);
+    right:auto;
+    top:50dvh;
+    width:44px;
+    height:44px;
     transform:translateY(-50%);
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--panel);
   }
 }
 ```
 
-The `-44px` offset accounts for the sidebar brand living inside the padded sidebar: the 44 px coarse target moves out of the brand content area and into the edge/gutter instead of covering the bell.
+This makes the chevron a true edge handle: half inside and half outside the current sidebar edge, independent from the logo/bell layout.
 
 ## Acceptance criteria
 
-- Expanded iPad sidebar: collapse chevron does not overlap the notification bell.
-- Chevron is vertically aligned with the brand-row controls.
+- Expanded iPad sidebar: collapse chevron does not overlap or visually group with the notification bell.
+- Collapsed iPad sidebar: expand chevron remains attached to the rail rather than floating among the top controls.
+- Chevron is vertically centered as a persistent sidebar-edge handle.
 - Collapse and expand both remain usable.
 - Collapsed iPad sidebar still exposes the expand control.
 - Phone/mobile layout continues to use the hamburger and does not expose the desktop chevron.
@@ -67,4 +79,4 @@ Final exact-head local gate on `a98d6071b380de56325d1230887dd0385f419f05`:
 
 The only local warning is the existing Next.js notice about a parent `C:\Users\Filip Točík\package-lock.json` outside the repository; it does not affect the repository build.
 
-Production iPad visual acceptance remains required after deploy.
+The first production visual attempt was rejected because the control still looked misplaced in both expanded and collapsed states. The edge-handle correction above supersedes that placement. Production iPad visual acceptance remains required after the corrective deploy.
