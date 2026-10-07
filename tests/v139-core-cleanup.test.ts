@@ -49,10 +49,11 @@ test("v1.39.0 mapped legacy approval URLs converge on the shared workflow",()=>{
 });
 
 test("v1.39.0 deliberately preserves backup restore compatibility tables",()=>{
-  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
-  assert.match(backup,/track_points/);
+  const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts"),roadmap=read("docs/history/ROADMAP_LEGACY_2026-09-26.md");
+  assert.doesNotMatch(backup,/FROM track_points|track_points:/);
+  assert.match(portable,/const legacyArrays=.*"track_points"/);
   assert.match(backup,/instructor_flight_approvals/);
-  assert.match(restore,/track_points/);
+  assert.doesNotMatch(restore,/SELECT[^\n]*FROM track_points|INSERT INTO track_points|NULL::track_points/);
   assert.match(restore,/instructor_flight_approvals/);
   assert.match(roadmap,/explicitly retain legacy `track_points`/);
   assert.match(roadmap,/no longer populated by the modern request path/);

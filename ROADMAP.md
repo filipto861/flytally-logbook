@@ -3,7 +3,7 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 6 October 2026  
-**Current production product version:** `3.4.1`  
+**Current production product version:** `3.4.1` (temporary 3.5 rollout state: PostgreSQL schema v20 applied; 3.5.0 runtime not deployed yet)  
 **Current active release:** `3.5.0`
 
 This is the canonical forward plan for `flytally-logbook`.
@@ -60,7 +60,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | ---: | ---: | --- | :---: | --- |
 | 1 | **3.4.0** | Flight Entry Simplification | ✅ | Merged and production deployed on 5 October 2026 |
 | 2 | **3.4.1** | GPS Night-time reliability | ✅ | Merged and production deployed on 6 October 2026 |
-| 3 | **3.5.0** | Multi-aircraft remaining integrity audit | 🚧 | Current active release after 3.4.1 production closeout |
+| 3 | **3.5.0** | Certified flight voiding + multi-aircraft integrity audit | 🚧 | Certified voiding is Phase 1; remaining multi-aircraft integrity resumes in Phase 2 |
 | 4 | **3.6.0** | Saved-date / timezone semantics · #144 | ⏳ | Persisted default date can be wrong around timezone boundaries |
 | 5 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
 | 6 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
@@ -367,9 +367,44 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft remaining integrity audit — ACTIVE
+# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — RELEASE CANDIDATE
 
-Goal: finish the remaining historical/dynamic applicability integrity work without reintroducing mutable-current-profile dependence into historical evidence.
+Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
+
+## Phase 1 — Certified flight voiding — LOCAL GATE VERIFIED
+
+Frozen product behavior:
+- a certified flight may be explicitly **voided/removed from the active logbook**;
+- the voided flight must disappear from normal Flights, Dashboard, Statistics, Map, Print/Export, recency/compliance totals and every other operational/read-model consumer;
+- a voided flight contributes **zero** operational/regulatory credit after the void operation;
+- the original certified record, certification hash/revision, who voided it, when, and the mandatory reason remain preserved as audit evidence;
+- this is **not** a hard delete and is not the existing 90-day draft Trash workflow;
+- public shares are revoked and pending workflow requests are superseded as part of the void transaction;
+- already-created participant-owned copies are not destructively deleted from another pilot's account;
+- no one-click undo may silently resurrect the prior certification fingerprint;
+- the action must be server-authorized, atomic and fail closed.
+
+Design gate before implementation — **PASSED 6 October 2026**:
+- independent review returned **APPROVE WITH CHANGES**;
+- archive+delete was accepted as the fail-closed model;
+- repository discovery confirmed the large direct-`flights` consumer surface;
+- actual portable-backup baseline was corrected from the review handoff's v11 assumption to **v12**; voiding therefore requires **backup v13**;
+- schema v20, permanent tombstone/archive children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit route and restore resurrection guards are now frozen;
+- implementation proceeds in M1–M6 from `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
+
+Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
+
+Implementation milestones:
+- **M1 — Schema v20 + archive invariants: VERIFIED LOCAL** — TypeScript PASS; migration/schema contract 10/10 PASS; PostgreSQL acceptance 6/6 PASS on 6 October 2026.
+- **M2 — Domain mutation: END-TO-END VERIFIED LOCAL**
+- **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
+- **M4 — Backup / restore v13: VERIFIED LOCAL** — exact-head TypeScript PASS; unit/regression 1280/1280 PASS on the immediately preceding runtime-equivalent head; PostgreSQL core 85/85 PASS on `7d18fb9`; production build PASS on the immediately preceding runtime-equivalent head.
+- **M5 — Consumer and integration verification: VERIFIED LOCAL** — M5A source/runtime consumer contract PASS on `bb3fcd2`; M5B PostgreSQL collaboration/provenance acceptance **86/86 PASS** on `efd9b62`; M5C authenticated certified-void acceptance **2/2 PASS** across desktop + mobile Chromium on `a423239` after isolating the dedicated test notification fixture.
+- **M6 — Release gate / documentation: LOCAL GATE VERIFIED** — exact-head `a2d3f65`: TypeScript PASS; full unit/regression **1285/1285 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS. The runtime-equivalent M5C head `a423239` already has authenticated desktop/mobile browser **2/2 PASS**. GitHub CI is **NOT RUN — local-first policy**. Production migration/deploy is intentionally **NOT RUN** here because canonical `3.5.0` still includes Phase 2; production remains `3.4.1` / schema v19 until the complete 3.5.0 scope is release-ready.
+
+## Phase 2 — Remaining multi-aircraft integrity audit — VERIFIED / NO RUNTIME CHANGE REQUIRED
+
+Detailed discovery / review contract: `docs/product/3_5_0_MULTI_AIRCRAFT_INTEGRITY_PHASE2.md`.
 
 Scope:
 - audit remaining recency consumers for current-profile dependencies;
@@ -378,7 +413,40 @@ Scope:
 - verify Manual/GPS snapshot equivalence where applicable;
 - preserve certification/revision compatibility.
 
-No migration is assumed until evidence proves one necessary.
+Discovery on 7 October 2026:
+- normal historical regulatory classification is already snapshot-owned: Dashboard, Statistics, Print/export, professional experience, SPL/BPL recency and helicopter flight eligibility read stored `flights` context rather than today's aircraft profile;
+- Manual and GPS create paths both use PROFILE authority for the selected aircraft and persist the same flight-owned regulatory context; same-registration edits use SNAPSHOT authority rather than re-resolving today's profile;
+- helicopter type recency uses the stored flight model/type; the current active helicopter profile is used only to enumerate/setup type workspaces, not to rewrite historical flight type;
+- the only authoritative aeroplane-recency dependency on the current aircraft row is the intentional external Annex-I/ULL mapping tuple `part_fcl_credit_class/basis/from` in `recency-service.ts` and `recency-audit-service.ts`;
+- ordinary ULL → SEP credit remains automatic and profile-independent. The explicit tuple is only the atypical class override/effectivity provenance path;
+- no evidence currently justifies copying `part_fcl_credit_*` into certified flight snapshots or adding another schema migration.
+
+Resolved integrity question:
+- the aircraft-profile write validator requires a complete class + basis/reference + valid-from tuple, while the recency evaluator intentionally tolerates broader legacy input shapes;
+- repository history showed v1.51.3 Add/Edit still required complete explicit tuples despite UI copy calling basis/from optional;
+- a read-only production census on 7 October 2026 found **25/25 aircraft profiles with no explicit `part_fcl_credit_*` metadata**, including **295 saved flights** and **36 certified ULL flights**. There were zero complete overrides, partial tuples, orphan metadata, invalid dates or unsupported classes;
+- therefore no compatibility relaxation, canonical-resolver runtime rewrite, flight snapshot expansion, schema v21 or certification-version change is justified for 3.5.
+
+Phase 2 execution order:
+1. freeze the consumer/dependency census with characterization tests — **VERIFIED LOCAL 4/4** on `69310a3`;
+2. obtain independent review of the external-credit mapping boundary and legacy compatibility — **COMPLETE**; reviewer agrees with snapshot/external separation and no-migration default, but requires a bounded legacy rule before compatibility is widened;
+3. reconcile v1.51.3/v1.51.4 persistence history — **COMPLETE**: the v1.51.3 UI/engine described basis/from as optional, but the server-side Aircraft Add/Edit action still required both whenever an explicit class was persisted; exact restore remained outside that validator;
+4. run the read-only production `part_fcl_credit_*` shape census — **VERIFIED PRODUCTION READ-ONLY**: 25 profiles, all `NONE`; 25 active / 0 inactive; 295 saved flights; 36 certified ULL flights; no anomalous or explicit override shapes;
+5. runtime decision — **NO CHANGE REQUIRED**. Keep strict profile writes, snapshot-owned historical facts, automatic ULL → SEP behavior and the existing external override concept. No schema v21 / certification payload change.
+
+**Canonical final local gate: VERIFIED** on exact head `f0a1f1a` — TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS. GitHub CI remains **NOT RUN — local-first policy**.
+
+**Release candidate metadata:** package/app-visible version is now `3.5.0`; this identifies the unreleased candidate and does not claim production deployment. Schema-v20 production preflight/migration/reconcile/postflight tooling is implemented and locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`.
+
+**Candidate metadata/build delta: VERIFIED LOCAL** on exact head `c0daa46` — version-governance **5/5 PASS**; production Next.js build PASS with **41/41** static pages generated.
+
+**Production v20 preflight: VERIFIED READ-ONLY** on 7 October 2026 against production Primary / `neondb` — transaction read-only ON; exact migration registry v1..v19; no partial v20 tables/functions/triggers; 5 users, 25 aircraft, 295 flights, 95 certified flights, 56 certified revisions, 5 verifications, 16 participations / 11 accepted, 8 deleted flights; **7** provenance backfill candidates; preflight integrity guards passed.
+
+**Production schema-v20 migration: APPLIED / VERIFIED** on 7 October 2026 after explicit approval. A pre-migration Neon branch `pre-v20-2026-10-07` (`br-dry-moon-b1n30x0b`) preserves the exact pre-write production state. Migration registry is now exact v1..v20; all required v20 objects/triggers/functions exist; provenance backfill produced **7/7** rows; immediate read-only postflight preserved 295 flights / 95 certified flights / 56 certified revisions / 16 participations / 11 accepted and created zero void-history rows. Final post-deploy reconciliation + postflight are still pending.
+
+**Next:** deploy candidate 3.5.0, immediately run idempotent provenance reconciliation to close the old-runtime/deploy window, then final v20 postflight + production smoke. Production runtime is still `3.4.1` while the database is now schema v20.
+
+A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
 # 3.6.0 — Saved-date / timezone semantics — PLANNED
 

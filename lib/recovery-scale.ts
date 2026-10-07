@@ -13,7 +13,6 @@ export const RESTORE_BATCH_SIZES={
   bpl_recency_evidence:100,
   fstd_sessions:500,
   flight_tracks:100,
-  track_points:1000,
   flight_certified_revisions:250,
   fstd_certified_revisions:250,
   audit_log:500,
@@ -26,6 +25,11 @@ export const RESTORE_BATCH_SIZES={
   flight_verifications:250,
   user_notifications:500,
   connection_audit_log:500,
+  voided_certified_flights:100,
+  voided_flight_certified_revisions:250,
+  voided_flight_verifications:250,
+  voided_flight_archive_items:500,
+  flight_source_provenance:250,
 } as const;
 
 export type RecoveryBatchSection=keyof typeof RESTORE_BATCH_SIZES;

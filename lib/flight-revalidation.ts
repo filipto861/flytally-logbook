@@ -14,3 +14,10 @@ export function revalidateFlightCertificationViews(flightId:number){
   revalidatePath("/credentials");
   revalidatePath("/dashboard");
 }
+export function revalidateFlightVoidViews(flightId:number){
+  revalidateFlightCertificationViews(flightId);
+  revalidatePath("/statistics");
+  revalidatePath("/map");
+  revalidatePath("/export");
+  revalidatePath("/data");
+}

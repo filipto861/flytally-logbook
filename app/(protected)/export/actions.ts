@@ -38,7 +38,7 @@ async function buildPreview(userId:number,backup:PortableBackup,digest:string):P
   const counts={flights:backup.flights.length,aircraft:backup.aircraft.length,rates:backup.rates.length,airports:backup.airports.length,expiries:backup.expiries.length,flight_tracks:backup.flight_tracks.length};
   const add={flights:backup.flights.filter(row=>!existingFlights.has(flightRestoreKey(row))).length,aircraft:backup.aircraft.filter(row=>!existingAircraft.has(upper(row,"registration"))).length,rates:backup.rates.filter(row=>!existingRates.has(`${upper(row,"registration")}|${text(row,"valid_from")}`)).length,airports:backup.airports.filter(row=>!existingAirports.has(upper(row,"ident"))).length,expiries:backup.expiries.filter(row=>!existingExpiries.has(`${upper(row,"category")}|${upper(row,"label")}|${text(row,"expiry_date").slice(0,10)}`)).length,flight_tracks:backupTrackKeys.filter(key=>key&&!existingTracks.has(key)).length};
   const skip=Object.fromEntries(Object.entries(counts).map(([key,value])=>[key,value-(add[key as keyof typeof add]||0)]));
-  return{digest,exportedAt:String(backup.exported_at||""),source:counts,add,skip,settings:Boolean(backup.settings[0]),legacyPoints:backup.track_points.length};
+  return{digest,exportedAt:String(backup.exported_at||""),source:counts,add,skip,settings:Boolean(backup.settings[0]),legacyPoints:(backup.track_points??[]).length};
 }
 
 async function restoreLegacy(userId:number,backup:PortableBackup,preview:RestorePreview){
@@ -76,6 +76,7 @@ async function restoreParsedBackup(userId:number,parsed:ParsedPortableBackup,for
 export async function restorePortableBackup(_:RestoreState,form:FormData):Promise<RestoreState>{
   const {userId}=await requireUser();let parsed;try{parsed=await readBackup(form)}catch(error){return{error:error instanceof Error?error.message:"Backup could not be read."}}
   const authenticity=portableBackupAuthenticity(parsed.backup,parsed.digest);
+  if(Number(parsed.backup.version)>=13&&authenticity!=="verified")return{error:"Version 13 backups containing protected void history require a valid FlyTally server signature."};
   return restoreParsedBackup(userId,parsed,form,{trustedSharedState:authenticity==="verified",authenticity});
 }
 

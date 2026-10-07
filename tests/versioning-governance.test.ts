@@ -18,7 +18,7 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
   assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Multi-aircraft remaining integrity audit \| 🚧 \|/);
+  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| 🚧 \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
@@ -41,4 +41,17 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
   assert.match(design,/3\.4\.0 does \*\*not\*\* add direct batch certification/);
   assert.match(design,/Training purpose/);
   assert.match(design,/one shared applicability predicate/i);
+});
+
+
+test("3.5.0 release candidate metadata is aligned without claiming production deployment",()=>{
+  const pkg=JSON.parse(read("package.json")) as {version:string};
+  const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
+  assert.equal(pkg.version,"3.5.0");
+  assert.equal(lock.version,pkg.version);
+  assert.equal(lock.packages[""].version,pkg.version);
+  assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
+  assert.match(read("ROADMAP.md"),/# 3\.5\.0 — Multi-aircraft integrity \+ certified-flight voiding — RELEASE CANDIDATE/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.0 \| Certified flight voiding \+ remaining multi-aircraft integrity audit \| RELEASE CANDIDATE \|/);
+  assert.match(read("ROADMAP.md"),/Production remains `3\.4\.1` \/ schema v19/);
 });

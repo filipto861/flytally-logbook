@@ -47,11 +47,16 @@ const definitions:Definition[]=[
   {key:"deleted_flights",label:"Trash recovery history",group:"history",protectedEvidence:true},
   {key:"flight_verifications",label:"Signed flight verifications",group:"history",protectedEvidence:true},
   {key:"instructor_flight_approvals",label:"Instructor approvals",group:"history",protectedEvidence:true},
+  {key:"voided_certified_flights",label:"Voided certified flights",group:"history",protectedEvidence:true},
+  {key:"voided_flight_certified_revisions",label:"Voided certified revisions",group:"history",protectedEvidence:true},
+  {key:"voided_flight_verifications",label:"Voided verification evidence",group:"history",protectedEvidence:true},
+  {key:"voided_flight_archive_items",label:"Voided dependent evidence",group:"history",protectedEvidence:true},
 
   {key:"pilot_licences",label:"Pilot licences",group:"pilot"},
   {key:"pilot_qualifications",label:"Pilot qualifications",group:"pilot"},
   {key:"pilot_connections",label:"Pilot connections",group:"pilot"},
   {key:"flight_participations",label:"Shared flight participations",group:"pilot",protectedEvidence:true},
+  {key:"flight_source_provenance",label:"Shared-flight source provenance",group:"pilot",protectedEvidence:true},
   {key:"user_notifications",label:"Notifications",group:"pilot"},
   {key:"connection_audit_log",label:"Connection audit history",group:"pilot",protectedEvidence:true},
 

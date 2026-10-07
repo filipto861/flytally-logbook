@@ -30,15 +30,16 @@ test("v1.44.0 verification remains deduplicated under the current manual-only cl
 });
 
 test("v1.44.0 hardens current hot paths without removing compatibility data",()=>{
-  const runtime=read("lib/runtime-schema.ts"),schema=read("lib/v144-schema.ts"),backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts");
+  const runtime=read("lib/runtime-schema.ts"),schema=read("lib/v144-schema.ts"),backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),portable=read("lib/portable-backup.ts");
   assert.match(runtime,/ensureV144Schema/);
   assert.match(schema,/idx_v144_track_points_user_track_seq/);
   assert.match(schema,/idx_v144_participations_source_status/);
   assert.match(schema,/idx_v144_participations_received/);
   assert.match(schema,/idx_v144_verifications_exact_revision/);
   assert.match(schema,/idx_v144_notifications_user_href/);
-  assert.match(backup,/track_points/);
-  assert.match(restore,/track_points/);
+  assert.match(portable,/const legacyArrays=.*"track_points"/);
+  assert.doesNotMatch(backup,/FROM track_points|track_points:/);
+  assert.doesNotMatch(restore,/SELECT[^\n]*FROM track_points|INSERT INTO track_points|NULL::track_points/);
 });
 
 test("v1.44.0 rejects unrelated connection audit evidence even with a recomputed digest",async()=>{

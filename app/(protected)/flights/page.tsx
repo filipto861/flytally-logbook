@@ -8,7 +8,7 @@ import { formatDateOnly } from "@/lib/display-format";
 
 export const metadata={title:"Flights | FlyTally"};
 
-type Params={page?:string;size?:string;q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;status?:string;workflow?:string};
+type Params={page?:string;size?:string;q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;status?:string;workflow?:string;voided?:string;audit?:string};
 type FilterKey=keyof Params;
 
 function href(params:Params,changes:Params){const out=new URLSearchParams();for(const [key,value] of Object.entries({...params,...changes}))if(value)out.set(key,value);const query=out.toString();return `/flights${query?`?${query}`:""}`;}
@@ -27,7 +27,7 @@ const filterValue=(key:FilterKey,value:string)=>key==="category"?(categoryLabels
 function HiddenParams({params,exclude}:{params:Params;exclude:FilterKey[]}){return <>{Object.entries(params).map(([key,value])=>value&&!exclude.includes(key as FilterKey)?<input key={key} type="hidden" name={key} value={value}/>:null)}</>}
 
 export default async function FlightsPage({searchParams}:{searchParams:Promise<Params>}){
-  const session=await requireUser(),params=await searchParams;
+  const session=await requireUser(),rawParams=await searchParams,{voided,audit,...params}=rawParams;
   const all=params.size==="all",filters={...params,page:Number(params.page||1),size:all?5000:Number(params.size||50)};
   const [result,options]=await Promise.all([getFlightsPage(session.userId,filters),getFlightFilterOptions(session.userId)]),pages=Math.max(1,Math.ceil(result.total/result.size));
   const activeFilters=(Object.entries(params) as Array<[FilterKey,string|undefined]>).filter(([key,value])=>Boolean(value)&&!(["page","size"] as FilterKey[]).includes(key)&&!(key==="sort"&&value==="newest"));
@@ -36,6 +36,8 @@ export default async function FlightsPage({searchParams}:{searchParams:Promise<P
     <header className="page-header"><div><p className="eyebrow">LOGBOOK</p><h1>Flights</h1><p className="muted">Find a flight, see whether it is editable or certified, and check shared-flight status without opening every record.</p></div><Link className="primary-link" href="/flights/new">＋ Add flight</Link></header>
 
     <FlightWorkspaceNav active="flights"/>
+
+    {voided==="1"?<div className="form-success certified-void-success" role="status"><span>Certified flight removed from the active logbook. It no longer contributes to totals, statistics, exports or recency.</span>{Number(audit)>0?<Link href={`/audit/voided-flights/${Number(audit)}`}>View permanent audit record</Link>:null}</div>:null}
 
     <section className="flight-finder" aria-label="Find a flight">
       <form method="get" className="flight-search-form">

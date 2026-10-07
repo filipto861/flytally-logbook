@@ -113,7 +113,8 @@ test("F2.4C shared materialization stays revision/hash-bound and preserves PIC c
   assert.match(shared,/sourceRole!=="SAFETY PILOT"/);
   assert.match(shared,/flight_connected_crew linked/);
   assert.match(shared,/const commander=pic\?\(picCommanderBasis==="CERTIFIED_SOURCE_COMMANDER"\?text\(row\.commander\):participantName\)/);
-  assert.match(shared,/participant_flight_id=chosen\.id/);
+  assert.match(shared,/INSERT INTO flight_source_provenance/);
+  assert.match(shared,/participant_flight_id=provenance\.participant_flight_id/);
 });
 
 test("F2.4C print/read-only/export preserve RoleCrew display semantics and raw evidence",()=>{

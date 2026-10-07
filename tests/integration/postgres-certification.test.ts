@@ -49,6 +49,7 @@ before(()=>{
   const auditFunction=productionSqlBlock(source,"CREATE OR REPLACE FUNCTION logbook_audit_flight_change()");
   const deletedFlightsTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS deleted_flights");
   const revisionTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_certified_revisions");
+  const voidedFlightsTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS voided_certified_flights");
   const protectionFunction=productionSqlBlock(source,"CREATE OR REPLACE FUNCTION logbook_protect_locked_flight()","last");
   const participationTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_participations");
   const verificationTable=productionSqlBlock(source,"CREATE TABLE IF NOT EXISTS flight_verifications");
@@ -75,6 +76,7 @@ before(()=>{
     ${auditTable};
     ${deletedFlightsTable};
     ${revisionTable};
+    ${voidedFlightsTable};
     ${protectionFunction};
     ${auditFunction};
     CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight();

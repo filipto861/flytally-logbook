@@ -12,20 +12,22 @@ test("v2.7 large-account disaster recovery stays inside the atomic statement bud
     settings:1,aircraft:100,rates:1000,airports:500,expiries:100,
     flights:100_000,flight_expenses:25_000,
     spl_recency_evidence:100,helicopter_recency_evidence:100,bpl_recency_evidence:100,
-    fstd_sessions:1000,flight_tracks:5000,track_points:100_000,
+    fstd_sessions:1000,flight_tracks:5000,
     flight_certified_revisions:500,fstd_certified_revisions:100,audit_log:5000,deleted_flights:100,
     pilot_licences:50,pilot_qualifications:100,pilot_connections:100,instructor_flight_approvals:100,
     flight_participations:1000,flight_verifications:500,user_notifications:5000,connection_audit_log:1000,
+    voided_certified_flights:500,voided_flight_certified_revisions:1000,voided_flight_verifications:1000,voided_flight_archive_items:5000,flight_source_provenance:1000,
   } as const;
   const statements=estimateExactRestoreStatements(fixture,{profileUpdate:true});
-  assert.equal(statements,710);
+  assert.equal(statements,637);
   assert.ok(statements<EXACT_RESTORE_STATEMENT_LIMIT,`large recovery needs ${statements} statements`);
 });
 
 test("v2.7 recovery keeps coordinate-heavy GPS batches conservative while scaling flight rows",()=>{
   assert.equal(RESTORE_BATCH_SIZES.flights,500);
   assert.equal(RESTORE_BATCH_SIZES.flight_tracks,100);
-  assert.equal(RESTORE_BATCH_SIZES.track_points,1000);
+  assert.equal(RESTORE_BATCH_SIZES.voided_certified_flights,100);
+  assert.equal(RESTORE_BATCH_SIZES.voided_flight_archive_items,500);
   assert.ok(RESTORE_BATCH_SIZES.flight_tracks<RESTORE_BATCH_SIZES.flights);
 });
 

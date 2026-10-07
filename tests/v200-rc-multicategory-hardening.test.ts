@@ -62,7 +62,7 @@ test("v2.0-RC certification action uses the category router and revision archive
 
 test("v2.0-RC portable backup, restore and trash paths preserve category evidence",()=>{
   const backup=read("lib/account-backup.ts"),restore=read("lib/account-restore-v6.ts"),authenticity=read("lib/backup-authenticity.ts"),trash=read("lib/flight-trash.ts");
-  assert.match(backup,/format:"pilot-logbook-portable",version:12/);
+  assert.match(backup,/format:"pilot-logbook-portable",version:13/);
   assert.match(backup,/signPortableBackup\(payload\.version,userId,digest\)/);
   assert.match(backup,/server_signature:signature/);
   assert.match(authenticity,/purpose:"flytally-portable-backup"/);

@@ -1,14 +1,14 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { validateBackupCertificationHistory,type BackupCertificationSummary } from "@/lib/backup-certification";
-import { flightRestoreKey,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV165Schema } from "@/lib/v165-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
 import { ensureDatabaseOptimizations } from "@/lib/db-optimization";
-import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
+import { AccountRestoreConflictError,archivedCertificationConflict,currentCertificationConflict,protectedHistoryConflict,recordIdentityConflict } from "@/lib/recovery-conflict";
 import { SERVER_AUTHORITATIVE_BACKUP_SECTIONS } from "@/lib/backup-authenticity";
 import { EXACT_RESTORE_STATEMENT_LIMIT,RESTORE_BATCH_SIZES } from "@/lib/recovery-scale";
 
@@ -27,7 +27,6 @@ const rateKey=(row:BackupRow)=>`${upper(row.registration)}|${text(row.valid_from
 const airportKey=(row:BackupRow)=>upper(row.ident);
 const expiryKey=(row:BackupRow)=>`${upper(row.category)}|${upper(row.label)}|${text(row.expiry_date).slice(0,10)}`;
 const trackKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${text(row.file_name)}|${text(row.start_utc)}|${text(row.end_utc)}|${Number(row.point_count||0)}`;
-const pointKey=(row:BackupRow)=>`${String(row.track_id??"")}|${String(row.seq??"")}`;
 const fstdKey=(row:BackupRow)=>`${text(row.session_date).slice(0,10)}|${upper(row.device_type)}|${upper(row.qualification_number)}|${upper(row.instruction)}|${Number(row.total_minutes||0)}`;
 const flightRevisionKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${Number(row.revision_number||0)}`;
 const fstdRevisionKey=(row:BackupRow)=>`${String(row.fstd_session_id??"")}|${Number(row.revision_number||0)}`;
@@ -38,6 +37,11 @@ const splEvidenceKey=(row:BackupRow)=>`${upper(row.aircraft_context)}|${text(row
 const helicopterEvidenceKey=(row:BackupRow)=>`${upper(row.helicopter_type)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const stableIdKey=(row:BackupRow)=>id(row);
+const voidedFlightKey=(row:BackupRow)=>`${String(row.user_id??"")}|${String(row.original_flight_id??"")}`;
+const voidedRevisionKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.source_revision_id??"")}`;
+const voidedVerificationKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.source_verification_id??"")}`;
+const voidedItemKey=(row:BackupRow)=>`${String(row.voided_flight_id??"")}|${String(row.item_kind??"")}|${String(row.source_key??"")}`;
+const provenanceKey=(row:BackupRow)=>`${String(row.participant_user_id??"")}|${String(row.participant_flight_id??"")}`;
 
 function classify(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,requireStableId=true){
   const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
@@ -64,17 +68,34 @@ function checkExistingRevisionHashes(source:BackupRow[],current:BackupRow[],pare
   for(const row of source){const key=`${String(row[parentField]??"")}|${Number(row.revision_number||0)}`,existing=byKey.get(key);if(!existing)continue;const conflict=archivedCertificationConflict(row,existing,parentField,label);if(conflict)throw new AccountRestoreConflictError(conflict)}
 }
 
+function protectedSignature(row:BackupRow,fields:string[]){return fields.map(field=>JSON.stringify(row[field]??null)).join("|")}
+function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:BackupRow)=>string,label:string,fields:string[]){
+  const byId=new Map(current.filter(row=>id(row)).map(row=>[id(row),row])),byKey=new Map(current.filter(row=>key(row)).map(row=>[key(row),row])),add:BackupRow[]=[];
+  let skip=0;
+  for(const row of source){
+    const sourceId=id(row),natural=key(row),byIdMatch=sourceId?byId.get(sourceId):undefined,byNatural=natural?byKey.get(natural):undefined,match=byIdMatch??byNatural;
+    if(match){
+      if(sourceId&&id(match)!==sourceId)throw new AccountRestoreConflictError(recordIdentityConflict(label,natural,sourceId,id(match)));
+      if(protectedSignature(row,fields)!==protectedSignature(match,fields))throw new AccountRestoreConflictError(protectedHistoryConflict(`${label} conflict`,natural||sourceId||label,`${label} conflicts with immutable history already stored for ${natural||sourceId}.`));
+      skip++;continue;
+    }
+    add.push(row);
+  }
+  return{add,skip};
+}
+
 export async function prepareExactAccountRestore(userId:number,backup:PortableBackup,digest:string,options:ExactRestoreOptions={}):Promise<ExactRestorePlan>{
   await Promise.all([ensureDatabaseOptimizations(),ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
-  const certification=validateBackupCertificationHistory(backup,userId);
-  const [flights,aircraft,rates,airports,expiries,tracks,points,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit]=await Promise.all([
+  if(Number(backup.version)>=13&&!options.trustedSharedState&&options.authenticity!=="verified")throw new AccountRestoreConflictError(protectedHistoryConflict("Protected backup authenticity required","Portable backup v13","Version 13 protected history requires a verified server signature."));
+  const certification=validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
+  const externalVoidIds=[...new Set((backup.flight_source_provenance??[]).filter(row=>Number(row.source_user_id||0)!==userId&&Number(row.source_voided_flight_id||0)>0).map(row=>String(row.source_voided_flight_id)))];
+  const [flights,aircraft,rates,airports,expiries,tracks,fstd,flightRevisions,fstdRevisions,audit,deleted,expenses,splEvidence,helicopterEvidence,bplEvidence,licences,qualifications,connections,approvals,participations,notifications,verifications,connectionAudit,voidedFlights,voidedRevisions,voidedVerifications,voidedItems,sourceProvenance,externalVoids]=await Promise.all([
     sql`SELECT id,date::text date,registration,off_block,departure,arrival,record_revision,certified_at,certification_hash FROM flights WHERE user_id=${userId}`,
     sql`SELECT id,registration FROM aircraft WHERE user_id=${userId}`,
     sql`SELECT id,registration,COALESCE(valid_from,'') valid_from FROM rates WHERE user_id=${userId}`,
     sql`SELECT id,ident FROM airports WHERE user_id=${userId}`,
     sql`SELECT id,category,label,expiry_date::text expiry_date FROM user_expiries WHERE user_id=${userId}`,
     sql`SELECT id,flight_id,file_name,start_utc::text start_utc,end_utc::text end_utc,point_count FROM flight_tracks WHERE user_id=${userId}`,
-    sql`SELECT track_id,seq FROM track_points WHERE user_id=${userId}`,
     sql`SELECT id,session_date::text session_date,device_type,qualification_number,instruction,total_minutes,record_revision,certified_at,certification_hash FROM fstd_sessions WHERE user_id=${userId}`,
     sql`SELECT id,flight_id,revision_number,certification_hash FROM flight_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
@@ -92,8 +113,24 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     sql`SELECT id FROM user_notifications WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_verifications WHERE flight_user_id=${userId} OR signer_user_id=${userId}`,
     sql`SELECT id FROM connection_audit_log WHERE actor_user_id=${userId} OR subject_user_id=${userId}`,
+    sql`SELECT id,user_id,original_flight_id,record_revision,certification_hash,certification_version,flight_snapshot_sha256,archive_version,voided_at,voided_by_user_id,void_reason,operation_token FROM voided_certified_flights WHERE user_id=${userId}`,
+    sql`SELECT r.* FROM voided_flight_certified_revisions r JOIN voided_certified_flights v ON v.id=r.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT x.* FROM voided_flight_verifications x JOIN voided_certified_flights v ON v.id=x.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT a.* FROM voided_flight_archive_items a JOIN voided_certified_flights v ON v.id=a.voided_flight_id WHERE v.user_id=${userId}`,
+    sql`SELECT * FROM flight_source_provenance WHERE participant_user_id=${userId}`,
+    externalVoidIds.length?sql`SELECT id,user_id,original_flight_id,record_revision,certification_hash FROM voided_certified_flights WHERE id IN(SELECT value::bigint FROM jsonb_array_elements_text(${JSON.stringify(externalVoidIds)}::jsonb))`:Promise.resolve([] as BackupRow[]),
   ]) as Array<Array<BackupRow>>;
+
   checkExistingCertification(backup.flights,flights,"Flight");checkExistingCertification(backup.fstd_sessions,fstd,"FSTD session");checkExistingRevisionHashes(backup.flight_certified_revisions,flightRevisions,"flight_id","Certified flight revision");checkExistingRevisionHashes(backup.fstd_certified_revisions,fstdRevisions,"fstd_session_id","Certified FSTD revision");
+
+  const incomingTombstones=backup.voided_certified_flights??[],targetActiveIds=new Set(flights.map(row=>String(row.id??""))),targetTombstoneIds=new Set(voidedFlights.map(row=>String(row.original_flight_id??"")));
+  for(const row of incomingTombstones)if(targetActiveIds.has(String(row.original_flight_id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Voided flight identity conflict",`Flight ${String(row.original_flight_id??"?")}`,"A voided certified flight cannot be restored while its active flight identity exists."));
+  for(const row of backup.flights)if(targetTombstoneIds.has(String(row.id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Voided flight identity conflict",`Flight ${String(row.id??"?")}`,"An active flight cannot be restored because that identity is permanently voided."));
+  for(const row of backup.flight_source_provenance??[]){
+    const bound=String(row.source_voided_flight_id??"").trim();if(!bound||Number(row.source_user_id||0)===userId)continue;
+    const external=externalVoids.find(item=>String(item.id??"")===bound);
+    if(!external||Number(external.user_id||0)!==Number(row.source_user_id||0)||String(external.original_flight_id??"")!==String(row.source_flight_id??"")||Number(external.record_revision||1)!==Number(row.source_revision||1)||String(external.certification_hash??"")!==String(row.source_hash??""))throw new AccountRestoreConflictError(protectedHistoryConflict("Source provenance conflict",`Source flight ${String(row.source_flight_id??"?")}`,"Participant provenance refers to unavailable or mismatched external void history."));
+  }
 
   const sections:[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,boolean][]=[
     ["flights",backup.flights,flights,flightKey,"Flight",true],
@@ -102,7 +139,6 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     ["airports",backup.airports,airports,airportKey,"Airport",true],
     ["expiries",backup.expiries,expiries,expiryKey,"Licence/document",true],
     ["flight_tracks",backup.flight_tracks,tracks,trackKey,"GPS track",true],
-    ["track_points",backup.track_points,points,pointKey,"Legacy GPS point",false],
     ["fstd_sessions",backup.fstd_sessions,fstd,fstdKey,"FSTD session",true],
     ["flight_certified_revisions",backup.flight_certified_revisions,flightRevisions,flightRevisionKey,"Certified flight revision",true],
     ["fstd_certified_revisions",backup.fstd_certified_revisions,fstdRevisions,fstdRevisionKey,"Certified FSTD revision",true],
@@ -123,7 +159,26 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
   ];
   const source:Record<string,number>={},add:Record<string,number>={},skip:Record<string,number>={},withheld:Record<string,number>={},addRows:Record<string,BackupRow[]>={};
   for(const [name,backupRows,currentRows,key,label,stable] of sections){const result=classify(backupRows,currentRows,key,label,stable),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add}
-  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:backup.track_points.length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
+
+  const protectedSections:Array<[string,BackupRow[],BackupRow[],(row:BackupRow)=>string,string,string[]]>=[
+    ["voided_certified_flights",incomingTombstones,voidedFlights,voidedFlightKey,"Voided certified flight",["user_id","original_flight_id","record_revision","certification_hash","certification_version","flight_snapshot_sha256","archive_version","voided_at","voided_by_user_id","void_reason","operation_token"]],
+    ["voided_flight_certified_revisions",backup.voided_flight_certified_revisions??[],voidedRevisions,voidedRevisionKey,"Voided certified revision",["voided_flight_id","source_revision_id","revision_number","certification_hash","certification_version","snapshot_sha256","archived_at"]],
+    ["voided_flight_verifications",backup.voided_flight_verifications??[],voidedVerifications,voidedVerificationKey,"Voided verification",["voided_flight_id","source_verification_id","record_revision","verification_role","status","flight_hash","payload_hash","server_signature","source_sha256","archived_at"]],
+    ["voided_flight_archive_items",backup.voided_flight_archive_items??[],voidedItems,voidedItemKey,"Voided archive item",["voided_flight_id","item_kind","source_key","source_sha256","archived_at"]],
+    ["flight_source_provenance",backup.flight_source_provenance??[],sourceProvenance,provenanceKey,"Flight source provenance",["participant_flight_id","participant_user_id","source_flight_id","source_user_id","source_revision","source_hash","participant_role","pic_commander_basis","accepted_at","source_voided_flight_id","created_at"]],
+  ];
+
+  const newParentIds=new Set<string>();
+  for(const [name,backupRows,currentRows,key,label,fields] of protectedSections){
+    const result=classifyProtected([...backupRows],[...currentRows],key,label,[...fields]),held=!options.trustedSharedState&&SERVER_AUTHORITATIVE_BACKUP_SECTIONS.has(name)?result.add.length:0;
+    source[name]=backupRows.length;add[name]=result.add.length-held;skip[name]=result.skip;withheld[name]=held;addRows[name]=held?[]:result.add;
+    if(name==="voided_certified_flights")for(const row of addRows[name])newParentIds.add(String(row.id??""));
+  }
+  for(const name of ["voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items"]){
+    for(const row of addRows[name]??[])if(!newParentIds.has(String(row.voided_flight_id??"")))throw new AccountRestoreConflictError(protectedHistoryConflict("Immutable void archive conflict",`Tombstone ${String(row.voided_flight_id??"?")}`,"Existing immutable void archive is missing protected child evidence and cannot be modified during restore."));
+  }
+
+  return{preview:{digest,exportedAt:String(backup.exported_at||""),source,add,skip,withheld,settings:Boolean(backup.settings[0]),legacyPoints:(backup.track_points??[]).length,accountBound:true,schemaVersion:Number(backup.schema_version||0),authenticity:options.authenticity??(options.trustedSharedState?"stored":"unsigned"),certification},addRows};
 }
 
 function stageFlight(row:BackupRow):BackupRow{return{...row,aircraft_make:"",aircraft_model:"",aircraft_variant:"",certified_at:null,certified_by_user_id:null,certification_hash:"",locked_at:null,locked_by_user_id:null}}
@@ -131,7 +186,7 @@ function stageFstd(row:BackupRow):BackupRow{return{...row,certified_at:null,cert
 
 export async function executeExactAccountRestore(userId:number,backup:PortableBackup,plan:ExactRestorePlan){
   await Promise.all([ensureV162Schema(),ensureV163Schema(),ensureV164Schema(),ensureV165Schema(),ensureV166Schema()]);
-  validateBackupCertificationHistory(backup,userId);
+  validateBackupCertificationHistory(backup,userId);validateVoidHistoryRelationships(backup);
   const maxAudit=await sql`SELECT COALESCE(MAX(id),0)::bigint id FROM flight_audit_log` as Array<{id:number|string}>;const auditFloor=Number(maxAudit[0]?.id||0);
   const queries:any[]=[];
   const profileName=text(backup.profile?.display_name);if(profileName)queries.push(sql`UPDATE users SET display_name=${profileName},updated_at=NOW() WHERE id=${userId} AND COALESCE(TRIM(display_name),'')=''`);
@@ -155,9 +210,24 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
   for(const batch of chunks(newFstd,RESTORE_BATCH_SIZES.fstd_sessions))queries.push(sql`UPDATE fstd_sessions s SET certified_at=NULLIF(item->>'certified_at','')::timestamptz,certified_by_user_id=NULLIF(item->>'certified_by_user_id','')::bigint,certification_hash=COALESCE(item->>'certification_hash',''),certification_version=COALESCE(NULLIF(item->>'certification_version','')::int,1) FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) WHERE s.user_id=${userId} AND s.id=(item->>'id')::bigint`);
 
   for(const batch of chunks(plan.addRows.flight_tracks??[],RESTORE_BATCH_SIZES.flight_tracks))queries.push(sql`INSERT INTO flight_tracks SELECT (json_populate_record(NULL::flight_tracks,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
-  for(const batch of chunks(plan.addRows.track_points??[],RESTORE_BATCH_SIZES.track_points))queries.push(sql`INSERT INTO track_points SELECT (json_populate_record(NULL::track_points,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.flight_certified_revisions??[],RESTORE_BATCH_SIZES.flight_certified_revisions))queries.push(sql`INSERT INTO flight_certified_revisions SELECT (json_populate_record(NULL::flight_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   for(const batch of chunks(plan.addRows.fstd_certified_revisions??[],RESTORE_BATCH_SIZES.fstd_certified_revisions))queries.push(sql`INSERT INTO fstd_certified_revisions SELECT (json_populate_record(NULL::fstd_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
+
+  for(const batch of chunks(plan.addRows.voided_certified_flights??[],RESTORE_BATCH_SIZES.voided_certified_flights))queries.push(sql`INSERT INTO voided_certified_flights(
+    id,user_id,original_flight_id,record_revision,certification_hash,certification_version,certified_at,certified_by_user_id,
+    flight_snapshot,flight_snapshot_sha256,archive_version,voided_at,voided_by_user_id,void_reason,operation_token,created_txid
+  )
+  SELECT
+    (item->>'id')::bigint,(item->>'user_id')::bigint,(item->>'original_flight_id')::bigint,(item->>'record_revision')::integer,
+    item->>'certification_hash',(item->>'certification_version')::integer,(item->>'certified_at')::timestamptz,NULLIF(item->>'certified_by_user_id','')::bigint,
+    item->'flight_snapshot',item->>'flight_snapshot_sha256',COALESCE(NULLIF(item->>'archive_version','')::integer,1),
+    (item->>'voided_at')::timestamptz,(item->>'voided_by_user_id')::bigint,item->>'void_reason',(item->>'operation_token')::uuid,txid_current()
+  FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+
+  for(const batch of chunks(plan.addRows.voided_flight_certified_revisions??[],RESTORE_BATCH_SIZES.voided_flight_certified_revisions))queries.push(sql`INSERT INTO voided_flight_certified_revisions SELECT (json_populate_record(NULL::voided_flight_certified_revisions,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.voided_flight_verifications??[],RESTORE_BATCH_SIZES.voided_flight_verifications))queries.push(sql`INSERT INTO voided_flight_verifications SELECT (json_populate_record(NULL::voided_flight_verifications,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.voided_flight_archive_items??[],RESTORE_BATCH_SIZES.voided_flight_archive_items))queries.push(sql`INSERT INTO voided_flight_archive_items SELECT (json_populate_record(NULL::voided_flight_archive_items,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
+  for(const batch of chunks(plan.addRows.flight_source_provenance??[],RESTORE_BATCH_SIZES.flight_source_provenance))queries.push(sql`INSERT INTO flight_source_provenance SELECT (json_populate_record(NULL::flight_source_provenance,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item)`);
 
   if(newFlights.length){const ids=JSON.stringify(newFlights.map(row=>String(row.id)));queries.push(sql`DELETE FROM flight_audit_log WHERE user_id=${userId} AND id>${auditFloor} AND flight_id IN (SELECT value::bigint FROM jsonb_array_elements_text(${ids}::jsonb))`)}
   for(const batch of chunks(plan.addRows.audit_log??[],RESTORE_BATCH_SIZES.audit_log))queries.push(sql`INSERT INTO flight_audit_log SELECT (json_populate_record(NULL::flight_audit_log,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
@@ -173,7 +243,7 @@ export async function executeExactAccountRestore(userId:number,backup:PortableBa
     for(const batch of chunks(plan.addRows.connection_audit_log??[],RESTORE_BATCH_SIZES.connection_audit_log))queries.push(sql`INSERT INTO connection_audit_log SELECT (json_populate_record(NULL::connection_audit_log,item)).* FROM json_array_elements(${JSON.stringify(batch)}::json) AS items(item) ON CONFLICT DO NOTHING`);
   }
 
-  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log'),('flight_expenses'),('spl_recency_evidence'),('helicopter_recency_evidence'),('bpl_recency_evidence')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
+  queries.push(sql`DO $$ DECLARE item record;seq_name text;current_value bigint;max_value bigint;BEGIN FOR item IN SELECT * FROM (VALUES ('flights'),('aircraft'),('rates'),('airports'),('user_expiries'),('flight_tracks'),('flight_audit_log'),('fstd_sessions'),('flight_certified_revisions'),('fstd_certified_revisions'),('deleted_flights'),('pilot_licences'),('pilot_qualifications'),('pilot_connections'),('instructor_flight_approvals'),('flight_participations'),('flight_verifications'),('user_notifications'),('connection_audit_log'),('flight_expenses'),('spl_recency_evidence'),('helicopter_recency_evidence'),('bpl_recency_evidence'),('voided_certified_flights'),('voided_flight_certified_revisions'),('voided_flight_verifications'),('voided_flight_archive_items'),('flight_source_provenance')) AS v(table_name) LOOP seq_name:=pg_get_serial_sequence(item.table_name,'id');IF seq_name IS NOT NULL THEN EXECUTE format('SELECT last_value FROM %s',seq_name) INTO current_value;EXECUTE format('SELECT COALESCE(MAX(id),0) FROM %I',item.table_name) INTO max_value;IF max_value>current_value THEN PERFORM setval(seq_name,max_value,true);END IF;END IF;END LOOP;END $$`);
   if(queries.length>EXACT_RESTORE_STATEMENT_LIMIT)throw new Error(`Backup restore plan requires ${queries.length} statements; the atomic safety limit is ${EXACT_RESTORE_STATEMENT_LIMIT}.`);
   await sql.transaction(queries);
   return{added:Object.values(plan.preview.add).reduce((sum,value)=>sum+value,0),queries:queries.length};

@@ -30,6 +30,31 @@ function assertVerificationEvidence(backup:PortableBackup,sourceUserId:number){
   }
 }
 
+function assertVoidedCertificationEvidence(backup:PortableBackup,sourceUserId:number){
+  if(Number(backup.version)<13)return;
+  for(const tombstone of backup.voided_certified_flights??[]){
+    const id=String(tombstone.id??"?"),snapshot=object(tombstone.flight_snapshot),revision=Math.max(1,number(tombstone.record_revision)||1);
+    if(number(snapshot.id)!==number(tombstone.original_flight_id)||number(snapshot.user_id)!==sourceUserId||Math.max(1,number(snapshot.record_revision)||1)!==revision)throw new Error(`Voided certified flight ${id} does not match its protected snapshot identity.`);
+    const candidate={...snapshot,certification_hash:text(tombstone.certification_hash),certification_version:number(tombstone.certification_version)||1};
+    const result=verifyFlightCertification(candidate,sourceUserId);if(result.status!=="verified")throw new Error(`Voided certified flight ${id} failed fingerprint verification (${result.status}).`);
+  }
+  for(const revision of backup.voided_flight_certified_revisions??[]){
+    const id=String(revision.id??"?"),snapshot=object(revision.snapshot_data),revisionNumber=Math.max(1,number(revision.revision_number)||1);
+    if(number(snapshot.user_id)!==sourceUserId||Math.max(1,number(snapshot.record_revision)||1)!==revisionNumber)throw new Error(`Voided certified revision ${id} does not match its protected snapshot identity.`);
+    const candidate={...snapshot,certification_hash:text(revision.certification_hash),certification_version:number(revision.certification_version)||1};
+    const result=verifyFlightCertification(candidate,sourceUserId);if(result.status!=="verified")throw new Error(`Voided certified revision ${id} failed fingerprint verification (${result.status}).`);
+  }
+  for(const archived of backup.voided_flight_verifications??[]){
+    const id=String(archived.id??"?"),source=object(archived.source_data);
+    for(const [archiveField,sourceField] of [["source_verification_id","id"],["record_revision","record_revision"],["verification_role","verification_role"],["status","status"],["flight_hash","flight_hash"],["payload_hash","payload_hash"],["server_signature","server_signature"]] as const){
+      if(String(archived[archiveField]??"")!==String(source[sourceField]??""))throw new Error(`Voided verification ${id} does not match its protected source evidence.`);
+    }
+    const status=text(archived.status).toLowerCase(),signature=text(archived.server_signature);
+    if((status==="signed"||status==="revoked")&&!signature)throw new Error(`Voided verification ${id} is ${status} but has no server signature.`);
+    if(signature){const result=verificationCryptographicStatus(source);if(result!=="verified")throw new Error(`Voided verification ${id} failed HMAC verification (${result}).`)}
+  }
+}
+
 export type BackupCertificationSummary={certifiedFlights:number;flightRevisions:number;certifiedFstd:number;fstdRevisions:number};
 
 export function validateBackupCertificationHistory(backup:PortableBackup,currentUserId:number):BackupCertificationSummary{
@@ -41,6 +66,6 @@ export function validateBackupCertificationHistory(backup:PortableBackup,current
   let certifiedFlights=0,certifiedFstd=0;
   for(const flight of backup.flights){const revisions=flightRevisionMap.get(String(flight.id??""))??[];assertCompleteRevisionChain(flight,revisions,"flight");const certified=Boolean(text(flight.certified_at)),hash=text(flight.certification_hash);if(certified){certifiedFlights++;const result=verifyFlightCertification(flight,sourceUserId);if(result.status!=="verified")throw new Error(`Certified flight ${String(flight.id??"?")} failed fingerprint verification (${result.status}).`)}else if(hash)throw new Error(`Flight ${String(flight.id??"?")} is not certified but still contains a certification fingerprint.`);for(const revision of revisions){const snapshot=object(revision.snapshot_data),revisionNumber=number(revision.revision_number);if(number(snapshot.id)!==number(flight.id)||number(snapshot.user_id)!==sourceUserId||number(snapshot.record_revision||1)!==revisionNumber)throw new Error(`Flight ${String(flight.id??"?")} revision ${revisionNumber} does not match its archived snapshot identity.`);const candidate={...snapshot,certification_hash:text(revision.certification_hash),certification_version:number(revision.certification_version)||1};const result=verifyFlightCertification(candidate,sourceUserId);if(result.status!=="verified")throw new Error(`Flight ${String(flight.id??"?")} revision ${revisionNumber} failed fingerprint verification (${result.status}).`)}}
   for(const session of backup.fstd_sessions){const revisions=fstdRevisionMap.get(String(session.id??""))??[];assertCompleteRevisionChain(session,revisions,"FSTD");const certified=Boolean(text(session.certified_at)),hash=text(session.certification_hash);if(certified){certifiedFstd++;const result=verifyFstdCertification(session,sourceUserId);if(result.status!=="verified")throw new Error(`Certified FSTD session ${String(session.id??"?")} failed fingerprint verification (${result.status}).`)}else if(hash)throw new Error(`FSTD session ${String(session.id??"?")} is not certified but still contains a certification fingerprint.`);for(const revision of revisions){const snapshot=object(revision.snapshot_data),revisionNumber=number(revision.revision_number);if(number(snapshot.id)!==number(session.id)||number(snapshot.user_id)!==sourceUserId||number(snapshot.record_revision||1)!==revisionNumber)throw new Error(`FSTD session ${String(session.id??"?")} revision ${revisionNumber} does not match its archived snapshot identity.`);const candidate={...snapshot,certification_hash:text(revision.certification_hash),certification_version:number(revision.certification_version)||1};const result=verifyFstdCertification(candidate,sourceUserId);if(result.status!=="verified")throw new Error(`FSTD session ${String(session.id??"?")} revision ${revisionNumber} failed fingerprint verification (${result.status}).`)}}
-  assertVerificationEvidence(backup,sourceUserId);
+  assertVerificationEvidence(backup,sourceUserId);assertVoidedCertificationEvidence(backup,sourceUserId);
   return{certifiedFlights,flightRevisions:backup.flight_certified_revisions.length,certifiedFstd,fstdRevisions:backup.fstd_certified_revisions.length};
 }

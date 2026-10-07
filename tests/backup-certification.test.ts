@@ -30,3 +30,16 @@ test("v6 backup verifies archived flight revision fingerprints",()=>{
   const revision={id:501,user_id:userId,flight_id:101,revision_number:1,snapshot_data:r1,certification_hash:r1.certification_hash,certification_version:2,certified_at:r1.certified_at,certified_by_user_id:userId,superseded_at:"2026-08-25T09:00:00Z",superseded_by_user_id:userId,correction_reason:"Corrected route"};
   const result=validateBackupCertificationHistory(base([current],[],[revision]),userId);assert.equal(result.flightRevisions,1);
 });
+
+test("v13 backup verifies voided certified snapshot fingerprints",()=>{
+  const snapshot=flight();snapshot.certification_hash=flightCertificationHash(snapshot,userId,2);snapshot.certified_at="2026-08-25T09:00:00Z";
+  const backup={...base([],[]),version:13,voided_certified_flights:[{id:701,user_id:userId,original_flight_id:101,record_revision:1,certification_hash:snapshot.certification_hash,certification_version:2,flight_snapshot:snapshot}],voided_flight_certified_revisions:[],voided_flight_verifications:[],voided_flight_archive_items:[],flight_source_provenance:[]} as PortableBackup;
+  assert.deepEqual(validateBackupCertificationHistory(backup,userId),{certifiedFlights:0,flightRevisions:0,certifiedFstd:0,fstdRevisions:0});
+  (backup.voided_certified_flights?.[0] as Record<string,unknown>).certification_hash="0".repeat(64);
+  assert.throws(()=>validateBackupCertificationHistory(backup,userId),/failed fingerprint verification/);
+});
+
+test("v13 backup rejects signed voided verification evidence without its preserved server signature",()=>{
+  const backup={...base([],[]),version:13,voided_certified_flights:[],voided_flight_certified_revisions:[],voided_flight_archive_items:[],flight_source_provenance:[],voided_flight_verifications:[{id:702,source_verification_id:900,record_revision:1,verification_role:"INSTRUCTOR",status:"signed",flight_hash:"a".repeat(64),payload_hash:"b".repeat(64),server_signature:"",source_data:{id:900,record_revision:1,verification_role:"INSTRUCTOR",status:"signed",flight_hash:"a".repeat(64),payload_hash:"b".repeat(64),server_signature:""}}]} as PortableBackup;
+  assert.throws(()=>validateBackupCertificationHistory(backup,userId),/has no server signature/);
+});

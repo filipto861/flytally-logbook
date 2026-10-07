@@ -9,7 +9,7 @@ import { portableBackupAuthenticity,SERVER_AUTHORITATIVE_BACKUP_SECTIONS,signPor
 const root=path.resolve(import.meta.dirname,"..");
 
 test("v2.7 recovery preview covers every modern exact-restore section",()=>{
-  const expected=["flights","aircraft","rates","airports","expiries","flight_tracks","track_points","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","audit_log","deleted_flights","flight_expenses","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence","pilot_licences","pilot_qualifications","pilot_connections","instructor_flight_approvals","flight_participations","user_notifications","flight_verifications","connection_audit_log"];
+  const expected=["flights","aircraft","rates","airports","expiries","flight_tracks","track_points","fstd_sessions","flight_certified_revisions","fstd_certified_revisions","audit_log","deleted_flights","flight_expenses","spl_recency_evidence","helicopter_recency_evidence","bpl_recency_evidence","pilot_licences","pilot_qualifications","pilot_connections","instructor_flight_approvals","flight_participations","flight_source_provenance","user_notifications","flight_verifications","connection_audit_log","voided_certified_flights","voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items"];
   assert.deepEqual([...RECOVERY_PREVIEW_SECTION_KEYS].sort(),expected.sort());
   assert.equal(new Set(RECOVERY_PREVIEW_SECTION_KEYS).size,expected.length);
 });
@@ -86,14 +86,14 @@ test("v2.7 authenticates new portable backups with a domain-separated server sig
 });
 
 test("v2.7 keeps cross-account workflow state server-authoritative for unsigned uploads",()=>{
-  assert.deepEqual([...SERVER_AUTHORITATIVE_BACKUP_SECTIONS].sort(),["connection_audit_log","flight_participations","flight_verifications","instructor_flight_approvals","pilot_connections"].sort());
+  assert.deepEqual([...SERVER_AUTHORITATIVE_BACKUP_SECTIONS].sort(),["connection_audit_log","flight_participations","flight_verifications","instructor_flight_approvals","pilot_connections","voided_certified_flights","voided_flight_certified_revisions","voided_flight_verifications","voided_flight_archive_items","flight_source_provenance"].sort());
   const summary=buildRecoveryPreviewSummary({source:{flights:1,pilot_connections:2},add:{flights:1,pilot_connections:0},skip:{flights:0,pilot_connections:0},withheld:{pilot_connections:2}});
   assert.equal(summary.missing,1);assert.equal(summary.withheld,2);assert.equal(summary.present,0);
   assert.equal(summary.groups.find(group=>group.id==="pilot")?.withheld,2);
 });
 
-test("v2.7 release backup builder emits signed portable format v12",()=>{
+test("recovery builder emits signed portable format v13",()=>{
   const builder=fs.readFileSync(path.join(root,"lib/account-backup.ts"),"utf8"),portable=fs.readFileSync(path.join(root,"lib/portable-backup.ts"),"utf8");
-  assert.match(builder,/version:12/);assert.match(builder,/signPortableBackup/);assert.match(builder,/server_signature/);
+  assert.match(builder,/version:13/);assert.match(builder,/signPortableBackup/);assert.match(builder,/server_signature/);
   assert.match(portable,/signature_version/);assert.match(portable,/server_signature/);
 });

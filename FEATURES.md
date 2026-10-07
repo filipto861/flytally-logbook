@@ -115,6 +115,25 @@ Important boundary:
 
 ## Planned / active follow-up
 
+### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — RELEASE CANDIDATE
+- Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
+- Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
+- Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
+- Revoke active public sharing and supersede pending collaboration requests atomically.
+- Do not destructively remove independently owned participant copies.
+- Do not reuse the ordinary 90-day draft Trash/restore semantics for protected certified evidence.
+- No silent restoration of the old certification after voiding.
+- Detailed contract: `docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md`.
+- Frozen implementation architecture: schema v20 permanent archive+delete, immutable protected-evidence children, participant-copy provenance, same-transaction certified DELETE authorization, dedicated audit-only route, and portable backup v13 history-only restore.
+- M1 schema/invariants are locally verified; M2 canonical void mutation and M3 destructive UI/audit route are end-to-end verified across desktop and mobile Chromium.
+- M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS.
+- M5 consumer/integration verification is locally complete: M5A redirects owner source-flight notification history to the permanent audit and neutralizes recipient workflow links before cascade; M5B PostgreSQL collaboration/provenance acceptance is **86/86 PASS**; M5C authenticated browser acceptance is **2/2 PASS** across desktop and mobile Chromium, including permanent-audit navigation from retained notification history.
+- Phase 1 certified-flight voiding has completed its local release gate: exact-head `a2d3f65` TypeScript PASS, full unit/regression **1285/1285 PASS**, full PostgreSQL integration + scale **99/99 PASS**, production build PASS, with authenticated desktop/mobile M5C **2/2 PASS** on runtime-equivalent `a423239`.
+- Phase 2 remaining multi-aircraft integrity audit is complete without a runtime change. Characterization is **4/4 PASS** on `69310a3`; independent review confirmed the snapshot/external-applicability architecture; repository-history reconciliation showed strict server persistence for explicit overrides; and the read-only production census found **25/25 profiles with no explicit `part_fcl_credit_*` metadata**, covering 295 saved flights and 36 certified ULL flights. No legacy compatibility layer, schema v21 or certification payload change is justified.
+- Canonical final local gate on exact head `f0a1f1a`: TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS.
+- Schema-v20 rollout tooling is locally source-verified **10/10 PASS** with TypeScript PASS on `eddbfb5`. Candidate version/build delta on `c0daa46` is **5/5 PASS** with production build PASS. Production v20 preflight passed against exact schema v19; schema v20 was then applied after explicit approval with a pre-write Neon recovery branch. Immediate postflight confirms exact v1..v20, **7/7** provenance rows, unchanged operational row counts and zero void-history rows. Production runtime remains 3.4.1 until the 3.5.0 deploy; final reconcile/postflight/smoke are pending.
+
+
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED
 - Keep GPS Night-time advisory/editable and fail closed when the complete exact total cannot be supported.
 - Add explicit unavailable reason codes and concise pilot-facing explanation instead of a silent generic manual fallback.
