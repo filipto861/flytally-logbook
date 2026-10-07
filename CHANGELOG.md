@@ -10,7 +10,18 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.5.0 Certified flight voiding + multi-aircraft integrity — in development
+## 3.5.0 — 7 October 2026
+
+### Certified flight voiding + multi-aircraft integrity
+- Certified flight voiding: owners can remove an incorrectly certified flight from active-logbook use while preserving immutable certification and audit evidence.
+- Permanent void audit: the original certified snapshot, certification fingerprint and revisions, verification evidence, void actor/time and mandatory reason are retained.
+- Collaboration safety: public shares are revoked, pending source workflows are superseded, and independently owned participant copies remain intact with permanent source provenance.
+- Backup/restore v13: protected void and provenance history is portable as authenticated history-only evidence and cannot silently resurrect an active certified flight.
+- Multi-aircraft integrity audit: historical regulatory facts remain flight-snapshot authoritative; production census found no malformed or legacy Part-FCL override state requiring a runtime compatibility layer.
+- Database schema v20: permanent void archive/provenance protections were deployed with preflight, recovery branch, reconciliation and postflight verification.
+- Production verification: final local gate passed 1289/1289 unit/regression and 99/99 PostgreSQL integration+scale; authenticated certified-voiding acceptance passed desktop/mobile 2/2; production deployment reached READY and immediate runtime-error check is clear.
+
+### Detailed implementation record
 - Froze the archive+delete model after independent review: certified flights will be removable from all active logbook consumers while permanent certification/audit evidence remains.
 - Started schema v20 with a permanent certified-void tombstone, protected revision/verification archive tables, typed dependent-evidence archive rows, accepted participant-copy provenance, same-transaction certified DELETE authorization and active/tombstone coexistence protection.
 - Added source-level and PostgreSQL acceptance coverage for migration v20, archive immutability, participant provenance, direct-delete rejection, same-transaction deletion and certified-correction compatibility.
