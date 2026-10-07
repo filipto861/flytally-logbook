@@ -35,6 +35,22 @@ test("PostgreSQL acceptance gate fails closed when DATABASE_URL is absent",()=>{
   assert.match(result.stderr,/gate did not run/);
 });
 
+test("PostgreSQL acceptance rejects remote DATABASE_URL before any client connection",()=>{
+  const result=spawnSync(
+    process.execPath,
+    [path.join(root,"tooling/run-postgres-tests.mjs"),"core"],
+    {
+      cwd:root,
+      encoding:"utf8",
+      env:{...process.env,DATABASE_URL:"postgresql://flytally@example.com/flytally_test",FLYTALLY_PSQL:path.join(root,"definitely-not-psql")},
+    },
+  );
+  assert.equal(result.status,2,result.stderr||result.stdout);
+  assert.match(result.stderr,/may only target a localhost database/);
+  assert.match(result.stderr,/gate did not run/);
+  assert.doesNotMatch(result.stderr,/requires the psql client|could not connect/);
+});
+
 test("PostgreSQL runner owns integration intent instead of relying on the caller flag",()=>{
   const runner=read("tooling/run-postgres-tests.mjs");
   assert.match(runner,/const gateEnv = preflightPostgresGate\(env\)/);
