@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { probePostgresConnection } from "./postgres-cli.mjs";
 
 if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
@@ -42,7 +44,9 @@ const bootstrapResult=spawnSync(process.execPath,[bootstrap],{stdio:"inherit",en
 if(bootstrapResult.error)throw bootstrapResult.error;
 if(bootstrapResult.status!==0)process.exit(bootstrapResult.status??1);
 
-const command=process.platform==="win32"?"npx.cmd":"npx";
-const browserResult=spawnSync(command,["--no-install","playwright","test","--config=playwright.config.mjs",...process.argv.slice(2)],{stdio:"inherit",env:browserEnv});
+const require=createRequire(import.meta.url);
+const playwrightPackage=require.resolve("@playwright/test/package.json");
+const playwrightCli=join(dirname(playwrightPackage),"cli.js");
+const browserResult=spawnSync(process.execPath,[playwrightCli,"test","--config=playwright.config.mjs",...process.argv.slice(2)],{stdio:"inherit",env:browserEnv});
 if(browserResult.error)throw browserResult.error;
 process.exit(browserResult.status??1);
