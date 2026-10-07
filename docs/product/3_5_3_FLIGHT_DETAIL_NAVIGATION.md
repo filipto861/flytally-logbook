@@ -1,11 +1,11 @@
 # 3.5.3 — Flight detail navigation UX
 
-**Status:** IMPLEMENTED · LOCAL GATE PASS · VISUAL ACCEPTANCE PENDING  
+**Status:** SHIPPED · PRODUCTION · VISUAL FOLLOW-UP IN 3.5.4  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `fix/3.5.3-flight-detail-navigation`  
-**Production baseline:** `3.5.2`
+**Production baseline:** `3.5.2` → deployed as `3.5.3`
 
 ## Trigger
 
@@ -76,16 +76,14 @@ Final exact-head local gate on `4d4feeb1fa7d1cc6e4b089b490a59566a0406d09`:
 - full unit/regression suite: **1302/1302 PASS**;
 - production build: **PASS**, 41/41 static pages;
 - PostgreSQL migration: **N/A**;
-- responsive visual acceptance: **PENDING**.
+- production deployment: PR #250 merged as `7068c5f03a3bf5b05ef5f0b45793db54848b9c9e`, Vercel `dpl_5w2vFSXpSbVEruqcP8mzjXRLuqag` **READY**;
+- production root/login smoke: **HTTP 200**; immediate runtime error window: **clean**;
+- responsive visual acceptance: **FAILED on two presentation-only iPad details** after deploy:
+  - **More** can wrap below the other navigation controls when the title is wider;
+  - the off-screen **Skip to content** link can leave a cyan border fragment in the iPad safe area.
+- corrective scope is isolated to 3.5.4; navigation authority and flight semantics remain unchanged.
 
-Before merge:
-- targeted navigation/source regression tests;
-- existing flight-workflow regression;
-- TypeScript;
-- full unit/regression suite;
-- production build;
-- browser acceptance: targeted responsive check if available;
-- PostgreSQL migration: N/A.
+The pre-merge execution gate completed. The two post-deploy visual findings are tracked in `docs/product/3_5_4_IPAD_FLIGHT_DETAIL_UX.md`.
 
 ## Do not
 
