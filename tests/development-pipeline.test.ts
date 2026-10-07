@@ -116,7 +116,7 @@ test("development policy documents candidate-first iteration, module scope and r
   assert.match(doc,/one coherent candidate commit/);
   assert.match(doc,/npm run test:target/);
   assert.match(doc,/tooling\/development-modules[.]json/);
-  assert.match(doc,/unknown code remains conservative|previously unknown code remains conservative/i);
+  assert.match(doc,/shared or previously unknown runtime code remains conservative/i);
   assert.match(doc,/npm run verify:release/);
   assert.match(doc,/canonical production branch is `main`/i);
   assert.match(doc,/deleted after merge/i);
