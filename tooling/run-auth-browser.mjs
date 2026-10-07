@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-if(process.env.FLYTALLY_AUTH_BROWSER!=="1"){
-  console.error("FLYTALLY_AUTH_BROWSER=1 is required for authenticated browser acceptance. The browser gate did not run.");
+if(process.env.FLYTALLY_AUTH_BROWSER!=="1"||process.env.FLYTALLY_LOCAL_POSTGRES!=="1"){
+  console.error("FLYTALLY_AUTH_BROWSER=1 and FLYTALLY_LOCAL_POSTGRES=1 are required for authenticated browser acceptance. The browser gate did not run.");
   process.exit(2);
 }
 
