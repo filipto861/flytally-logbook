@@ -374,6 +374,16 @@ The stale assertion has been corrected to verify the actual 0B.1 contract: unkno
 - retain explicit `shared` handling for genuinely cross-cutting or not-yet-owned runtime files;
 - add regression coverage for representative ownership boundaries.
 
+Implementation candidate:
+- audited runtime surface remains **381** `.ts/.tsx/.css` files across `app/`, `components/` and `lib/`;
+- stable module ownership expands from **121/381 (31.8%)** to **368/381 (96.6%)**;
+- **13/381** reviewed cross-cutting/not-yet-owned files remain explicitly listed under `shared-runtime` instead of receiving guessed ownership;
+- added stable ownership for aircraft/airports, GPS/tracks, notifications/push, identity/auth, legal/commercial, professional experience and shell/presentation, while expanding the existing flight, credentials, connections, analytics, recovery and platform domains;
+- a registry ownership contract now requires at least **90% stable coverage**, zero unclassified current runtime files, and explicit shared-runtime handling;
+- representative regression coverage verifies aircraft, GPS, auth, push and shell ownership plus conservative shared-runtime gates.
+
+0B.2 verification is **PENDING** until the targeted development-scope/pipeline tests and TypeScript run on this candidate.
+
 **0B.3 — workflow/command convergence**
 - wire canonical group execution through one registry-backed runner;
 - remove remaining duplicated suite lists from package/workflow/tooling surfaces;
