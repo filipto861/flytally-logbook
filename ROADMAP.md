@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.2 Batch 5 — responsive presentation spec split — ACTIVE**. Batch 4 Manual authority/certification is ✅ DONE / VERIFIED: targeted **39/39 PASS**, TypeScript **PASS**, focused spec **16/16 PASS**, full browser **96 PASS / 2 skips / 0 failed** in **4.8m**. Batch 5 will isolate the remaining broad viewport/theme matrix tests only; project×matrix deduplication remains explicitly deferred to 0C.3.
+Current milestone: **Phase 0C.2 Batch 5 — responsive presentation spec split — IMPLEMENTED, VERIFICATION PENDING**. Batch 4 is ✅ DONE / VERIFIED. Batch 5 moves nine responsive/theme matrix tests into `responsive-presentation.spec.mjs` while preserving every existing Playwright project execution; no project×matrix deduplication occurs before 0C.3. Current acceptance inventory remains exactly 48 unique logical tests.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
