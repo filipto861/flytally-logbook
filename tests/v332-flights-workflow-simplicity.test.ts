@@ -18,7 +18,8 @@ test("v3.3 U11 makes the route itself the primary flight-list open action",()=>{
 
 test("v3.3 U11 separates navigation from secondary flight-detail actions",()=>{
   const page=read("app/(protected)/flights/[id]/page.tsx");
-  assert.match(page,/flight-detail-back/);\n  assert.match(page,/flight-detail-step-group/);
+  assert.match(page,/flight-detail-back/);
+  assert.match(page,/flight-detail-step-group/);
   assert.match(page,/flight-detail-more/);
   assert.match(page,/>Audit history</);
   assert.doesNotMatch(page,/certified\?<Link className="secondary-link" href=\{`\/flights\/\$\{id\}\/share`\}>Share<\/Link>/);
