@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.2 Batch 3 — manual RoleCrew / verification spec split — IMPLEMENTED, VERIFICATION PENDING**. Batch 2 advisory presentation is ✅ DONE / VERIFIED. Batch 3 moves five F2.x/Safety Pilot verification tests into `manual-rolecrew-verification.spec.mjs`; current acceptance inventory remains exactly 48 unique logical tests (32 public-shell + 7 advisory + 5 Manual RoleCrew/verification + 4 mutations). Centralized browser DB fixtures, workers=1 and both Playwright projects remain unchanged.
+Current milestone: **Phase 0C.2 Batch 4 — Manual authority / certification spec split — ACTIVE**. Batch 3 Manual RoleCrew/verification is ✅ DONE / VERIFIED: targeted **38/38 PASS**, TypeScript **PASS**, focused spec **10/10 PASS**, full browser **96 PASS / 2 skips / 0 failed** in **5.0m**. Batch 4 will isolate eight Manual authority/certification tests while leaving GPS-specific certification flows in the GPS domain and preserving all DB/project/worker/retry contracts.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
