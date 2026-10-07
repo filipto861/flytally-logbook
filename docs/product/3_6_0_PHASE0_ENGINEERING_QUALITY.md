@@ -272,22 +272,26 @@ Final targeted harness fix:
 - add `selectGpsActualPicMode`, which explicitly opens Flight context, changes Actual PIC source, then reopens Flight context before dependent Safety Pilot controls are touched;
 - use it in the F6 single-flight manual and connected Safety Pilot states.
 
-Final targeted verification:
-- F6 GPS single-flight matrix: **2/2 PASS** in 22.0 seconds;
-- all previously isolated GPS/browser failure clusters are green under targeted verification.
+Final browser verification:
+- F6 Manual RoleCrew targeted rerun: **2/2 PASS** in 15.6 seconds;
+- final full authenticated browser acceptance: **96 PASS / 2 skipped / 0 failed** across 98 executions in **7.5 minutes**;
+- browser fixture bootstrap completed before both runs;
+- this closes the browser-harness regression sequence. No product runtime behavior changed.
 
-Full authenticated browser acceptance on that candidate:
-- **94 PASS / 2 skipped / 2 FAIL in 6.6 minutes** across 98 executions;
-- both failures were the same F6 Manual RoleCrew test on desktop/mobile;
-- both stopped immediately because the manual-form matrix referenced a GPS-only helper variable that is not defined in that test;
-- the stray GPS-only helper call has been removed. No product runtime, PostgreSQL runner or application behavior changed in this correction.
+Final PostgreSQL safety review found one remaining fail-closed gap before Phase 0A closure: the acceptance runner would probe and then execute destructive integration fixtures against any caller-supplied DATABASE_URL. The manual workflow and current local evidence both use isolated localhost PostgreSQL, so remote targets are neither required nor acceptable for this gate.
+
+Final Phase 0A safety correction:
+- PostgreSQL acceptance now rejects malformed or non-localhost DATABASE_URL values before invoking psql;
+- accepted hosts are localhost / loopback only;
+- a regression test proves a remote URL is rejected before any client connection attempt.
 
 Still required before Phase 0A can close:
-- rerun only the F6 Manual RoleCrew matrix (desktop + mobile = two executions);
-- if green, run one final exact-candidate full authenticated browser acceptance;
-- then reconcile exact-candidate non-browser release checks before marking Phase 0A done.
+- rerun the targeted development-pipeline regression after the localhost-only PostgreSQL change;
+- rerun PostgreSQL core and full acceptance on the isolated localhost PostgreSQL cluster because the PostgreSQL runner changed;
+- run the final applicable non-browser application checks (TypeScript + full unit/regression; production build evidence remains valid unless a runtime/build input changes);
+- reconcile ROADMAP / CHANGELOG / DEVELOPMENT and mark Phase 0A complete only after that evidence exists.
 
-No PASS is claimed for the final browser gate until it actually runs on the corrected candidate.
+The successful full browser acceptance remains valid because the localhost-only PostgreSQL correction does not modify the browser runner, browser fixture, Playwright spec, application runtime or build inputs.
 
 ## Phase 0 implementation plan
 
