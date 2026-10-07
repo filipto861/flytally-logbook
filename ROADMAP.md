@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **0B.3 — workflow/command convergence — IMPLEMENTED, VERIFICATION PENDING**. Phase 0B.1 and 0B.2 are ✅ DONE / VERIFIED. PostgreSQL scale membership is now single-sourced in the registry, manual-cloud targeted execution uses the generic registry-backed group runner, and the targeted-vs-heavy gate contract is frozen in DEVELOPMENT. Phase 0C begins only after targeted 0B.3 verification.
+Current milestone: **Phase 0C — browser suite structure — ACTIVE (DISCOVERY / DESIGN)**. Phase 0B.1–0B.3 are ✅ DONE / VERIFIED. 0B.3 evidence: targeted scope/pipeline **29/29 PASS**, TypeScript **PASS**. Phase 0C must first map the current Playwright monolith, helper/fixture ownership, serial shared-DB assumptions and domain boundaries, then obtain an independent second-AI review before implementation.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
