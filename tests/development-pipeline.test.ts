@@ -54,7 +54,7 @@ test("authenticated browser gate fails closed before fixture reset when auth mod
     },
   );
   assert.equal(result.status,2,result.stderr||result.stdout);
-  assert.match(result.stderr,/FLYTALLY_AUTH_BROWSER=1 is required/);
+  assert.match(result.stderr,/FLYTALLY_AUTH_BROWSER=1 and FLYTALLY_LOCAL_POSTGRES=1 are required/);
   assert.match(result.stderr,/browser gate did not run/);
 });
 
