@@ -14,18 +14,28 @@ export function runBrowserSql(statement){
   if(process.env.FLYTALLY_AUTH_BROWSER!=="1")throw new Error("Browser DB reset is only available in authenticated smoke mode.");
   const result=spawnSync("psql",["-d",databaseUrl(),"-X","-q","-v","ON_ERROR_STOP=1"],{input:statement,
     encoding:"utf8",
-    env:{...process.env,PGCONNECTTIMEOUT:"5"},
+    env:{...process.env,PGCONNECT_TIMEOUT:"5"},
     maxBuffer:4*1024*1024,
   });
   if(result.error)throw result.error;
   if(result.status!==0)throw new Error(`Browser fixture reset failed: ${String(result.stderr||result.stdout).trim()}`);
 }
 
+export function runBrowserFlightFixtureCleanup(statement){
+  const sql=String(statement??"").trim();
+  if(!sql)return;
+  runBrowserSql(`BEGIN;
+    ALTER TABLE flights DISABLE TRIGGER USER;
+    ${sql}
+    ALTER TABLE flights ENABLE TRIGGER USER;
+    COMMIT;`);
+}
+
 export function browserSqlScalar(statement){
   if(process.env.FLYTALLY_AUTH_BROWSER!=="1")throw new Error("Browser DB query is only available in authenticated smoke mode.");
   const result=spawnSync("psql",["-d",databaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1"],{input:statement,
     encoding:"utf8",
-    env:{...process.env,PGCONNECTTIMEOUT:"5"},
+    env:{...process.env,PGCONNECT_TIMEOUT:"5"},
     maxBuffer:4*1024*1024,
   });
   if(result.error)throw result.error;
@@ -218,11 +228,15 @@ export function resetF24VerificationFixture(){
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='instructor',
         accepted_at=NOW(),updated_at=NOW()
     WHERE id=7001;
+  `);
+  runBrowserFlightFixtureCleanup(`
     DELETE FROM user_notifications WHERE user_id=9002 AND href LIKE '/connections/shared/%';
     DELETE FROM flight_verifications WHERE flight_id=9904 AND flight_user_id=9001;
     DELETE FROM instructor_flight_approvals WHERE flight_id=9904 AND student_user_id=9001;
     DELETE FROM flight_participations WHERE source_flight_id=9904 AND source_user_id=9001;
     DELETE FROM flights WHERE id=9904 AND user_id=9001;
+  `);
+  runBrowserSql(`
     INSERT INTO flights(
       id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
       aircraft_make,aircraft_model,departure,arrival,off_block,takeoff,landing,on_block,
@@ -272,10 +286,14 @@ export function resetSafetyPilotPicInviteFixture(){
     SET relationship='pilot',status='accepted',requester_label='friend',recipient_label='friend',
         accepted_at=NOW(),updated_at=NOW()
     WHERE id=7001;
+  `);
+  runBrowserFlightFixtureCleanup(`
     DELETE FROM user_notifications WHERE user_id=9002 AND href LIKE '/connections/shared/%';
     DELETE FROM flight_participations WHERE source_flight_id=9903 AND source_user_id=9001;
     DELETE FROM flight_connected_crew WHERE source_flight_id=9903 AND source_user_id=9001;
     DELETE FROM flights WHERE id=9903 AND user_id=9001;
+  `);
+  runBrowserSql(`
     INSERT INTO flights(
       id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
       departure,arrival,off_block,takeoff,landing,on_block,role,starts,commander,
@@ -295,9 +313,12 @@ export function resetSafetyPilotPicInviteFixture(){
 export function resetE14LegacyTaskFixture(){
   runBrowserSql(`
     UPDATE users SET display_name='Browser Friend' WHERE id=9002;
+  `);
+  runBrowserFlightFixtureCleanup(`
     DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN (9914,9915);
     DELETE FROM flights WHERE id IN (9914,9915);
-
+  `);
+  runBrowserSql(`
     INSERT INTO flights(
       id,user_id,date,evidence,registration,aircraft_type,aircraft_class,regulatory_category,
       departure,arrival,off_block,takeoff,landing,on_block,role,starts,task,
@@ -328,7 +349,7 @@ export function resetE14LegacyTaskFixture(){
 }
 
 export function clearE14LegacyTaskFixture(){
-  runBrowserSql(`
+  runBrowserFlightFixtureCleanup(`
     DELETE FROM flight_participations WHERE id=9915 OR source_flight_id IN (9914,9915);
     DELETE FROM flights WHERE id IN (9914,9915);
   `);
