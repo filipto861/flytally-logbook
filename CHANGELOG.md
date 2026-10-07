@@ -10,6 +10,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Development / verification governance
+- Added the 3.6.0 Phase 0 engineering-quality gate before any saved-date/timezone runtime implementation.
+- Recorded the current test/development audit, including fail-closed PostgreSQL-gate requirements, test-scope registry drift, browser-runner reproducibility, browser-suite ownership and stale Git/PR hygiene.
+- Runtime product behavior is unchanged by this planning/audit step; FEATURES remains unchanged.
+
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
