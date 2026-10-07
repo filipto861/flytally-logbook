@@ -163,7 +163,22 @@
         "app/(protected)/flights/",
         "components/flight",
         "lib/flight",
-        "lib/data/flights"
+        "lib/data/flights",
+        "app/(protected)/audit/",
+        "app/f/",
+        "components/delete-flight",
+        "components/intelligent-flight-entry",
+        "components/readonly-logbook",
+        "components/void-certified-flight",
+        "lib/certification-integrity",
+        "lib/crew",
+        "lib/easa-logbook",
+        "lib/legacy-flight-task",
+        "lib/role-crew",
+        "lib/void-evidence",
+        "lib/output-range",
+        "lib/aviation-units",
+        "lib/display-format"
       ],
       "files": [],
       "risks": [
@@ -190,7 +205,20 @@
         "lib/recency",
         "lib/sfcl",
         "lib/bfcl",
-        "lib/helicopter"
+        "lib/helicopter",
+        "components/advanced-qualifications",
+        "components/balloon-recency",
+        "components/helicopter-recency",
+        "components/spl-recency",
+        "components/licence-save",
+        "lib/balloon",
+        "lib/credential",
+        "lib/fcl050",
+        "lib/qualification",
+        "lib/regulatory",
+        "lib/spl-recency",
+        "lib/canonical-evidence",
+        "lib/legacy-movement"
       ],
       "files": [],
       "risks": [
@@ -216,7 +244,14 @@
         "app/(protected)/actions/",
         "app/(protected)/notifications/",
         "lib/pending-actions",
-        "lib/training-verification"
+        "lib/training-verification",
+        "components/pilot-connection",
+        "components/in-person-signature",
+        "components/training-flight-candidates",
+        "lib/aircraft-training-verification",
+        "lib/shared-flight-credit",
+        "lib/training-privacy",
+        "lib/verification-signature"
       ],
       "files": [],
       "risks": [
@@ -243,7 +278,14 @@
         "app/(protected)/statistics/",
         "app/(protected)/map/",
         "lib/data/dashboard",
-        "lib/data/pilot-insights"
+        "lib/data/pilot-insights",
+        "components/dashboard-",
+        "components/monthly-chart",
+        "components/pilot-insights",
+        "components/route-overview-map",
+        "lib/dashboard-",
+        "lib/performance",
+        "lib/pilot-insights"
       ],
       "files": [],
       "risks": [
@@ -272,7 +314,19 @@
         "app/api/export/",
         "lib/account-backup",
         "lib/account-restore",
-        "lib/portable-backup"
+        "lib/portable-backup",
+        "app/api/backups/",
+        "app/api/cron/backups/",
+        "components/backup-",
+        "components/data-",
+        "components/database-",
+        "components/print-button",
+        "lib/backup-",
+        "lib/recovery-",
+        "lib/privacy-account",
+        "lib/logbook-print",
+        "lib/category-print",
+        "lib/easa-print-layout"
       ],
       "files": [],
       "risks": [
@@ -323,7 +377,17 @@
         "app/api/auth/",
         "lib/auth",
         "lib/runtime-schema",
-        "lib/db"
+        "lib/db",
+        "app/api/cron/recency/",
+        "lib/local-postgres",
+        "lib/migration-plan",
+        "lib/system-health",
+        "lib/data/database",
+        "lib/data/profile",
+        "lib/data/user-settings",
+        "lib/v1",
+        "lib/v2",
+        "lib/v3"
       ],
       "files": [],
       "risks": [
@@ -370,6 +434,297 @@
         "fullTests": true,
         "build": true
       }
+    },
+    {
+      "id": "aircraft-airports",
+      "prefixes": [
+        "app/api/aircraft-",
+        "components/aircraft",
+        "components/airport",
+        "components/quick-aircraft",
+        "lib/aircraft",
+        "lib/airport",
+        "lib/rate-history"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "gps-tracks",
+      "prefixes": [
+        "app/api/flights/",
+        "app/api/map-tile/",
+        "components/gps-",
+        "components/track",
+        "components/tracks-",
+        "components/lazy-flight-track",
+        "components/leaflet-mobile",
+        "lib/gps-",
+        "lib/track-",
+        "lib/kml",
+        "lib/civil-twilight",
+        "lib/night-definition",
+        "lib/data/tracks",
+        "lib/data/flight-track-review"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "notifications-push",
+      "prefixes": [
+        "app/api/notifications/",
+        "app/api/push/",
+        "components/notification-",
+        "components/push-",
+        "lib/notification",
+        "lib/notifications",
+        "lib/push-"
+      ],
+      "files": [],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "identity-auth",
+      "prefixes": [
+        "app/login/",
+        "app/forgot-password/",
+        "app/reset-password/",
+        "app/join/"
+      ],
+      "files": [
+        "components/auth-invite-creator.tsx",
+        "lib/email.ts",
+        "lib/cron-auth.ts"
+      ],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "legal-commercial",
+      "prefixes": [
+        "app/legal/",
+        "lib/commercial",
+        "lib/billing",
+        "lib/entitlement",
+        "lib/brand-claims",
+        "lib/legal"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "professional-experience",
+      "prefixes": [
+        "components/professional-",
+        "lib/professional-"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "shell-presentation",
+      "prefixes": [
+        "components/app-shell",
+        "components/nav-icon",
+        "components/sidebar",
+        "components/theme-",
+        "components/public-theme",
+        "components/pwa-client",
+        "components/install-app",
+        "components/legal-footer",
+        "components/details-navigation",
+        "components/settings-workspace-navigation",
+        "components/pending-action-",
+        "components/use-unsaved-form-guard"
+      ],
+      "files": [
+        "app/(protected)/layout.tsx",
+        "app/layout.tsx",
+        "app/error.tsx",
+        "app/not-found.tsx",
+        "app/page.tsx",
+        "app/manifest.ts",
+        "app/(protected)/notifications/notifications.module.css",
+        "app/(protected)/print/print.module.css",
+        "app/dashboard-customization.css",
+        "app/globals.css",
+        "app/light-interactions.css",
+        "app/theme.css",
+        "app/ui-system.css",
+        "app/v1342-ui-polish.css",
+        "app/v135-recency.css",
+        "app/v1352-recency.css",
+        "app/v1353-fcl060.css",
+        "app/v1354-recency-audit.css",
+        "app/v136-mobile.css",
+        "app/v137-shared-flights.css",
+        "app/v138-dashboard-insights.css",
+        "app/v140-flights.css",
+        "app/v141-gps-review.css",
+        "app/v142-gps-import.css",
+        "app/v145-credentials.css",
+        "app/v146-credentials.css",
+        "app/v147-everyday.css",
+        "app/v148-training.css",
+        "app/v149-linkage.css",
+        "app/v150-ui-system.css",
+        "app/v151-regulatory.css",
+        "app/v153-everyday-ux.css",
+        "app/v156-mobile-hardening.css",
+        "app/v157-flight-entry-workflow.css",
+        "app/v158-flight-entry-polish.css",
+        "app/v159-flight-entry-structure.css",
+        "app/v160-adaptive-pilot-workspace.css",
+        "app/v161-category-flight-entry.css",
+        "app/v162-sailplane.css",
+        "app/v250-recency-workspace.css",
+        "app/v300-aircraft-sharing.css",
+        "app/v300-push.css",
+        "app/v300-u2-credentials.css",
+        "app/v300-u31-aircraft-airports.css",
+        "app/v300-u32-data.css",
+        "app/v300-u33-settings.css",
+        "app/v300-u4-flight-workflow.css",
+        "app/v300-u6-acceptance.css",
+        "app/v301-public-flight-viewer.css",
+        "components/sidebar.module.css"
+      ],
+      "risks": [
+        "ui-presentation",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "shared-runtime",
+      "prefixes": [],
+      "files": [
+        "components/credentials-navigation.tsx",
+        "components/kml-import-form.tsx",
+        "components/share-public-link.tsx",
+        "components/signature-preview.tsx",
+        "lib/actionable-intelligent-attention.ts",
+        "lib/data/aircraft.ts",
+        "lib/data/flight-audit.ts",
+        "lib/intelligent-logbook-client-types.ts",
+        "lib/intelligent-logbook-service.ts",
+        "lib/intelligent-logbook.ts",
+        "lib/pilot-workspace.ts",
+        "lib/route-filter.ts",
+        "lib/ui-preferences.ts"
+      ],
+      "risks": [
+        "shared-runtime"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
     }
-  ]
+  ],
+  "ownership": {
+    "runtimeRoots": [
+      "app/",
+      "components/",
+      "lib/"
+    ],
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".css"
+    ],
+    "auditedTotal": 381,
+    "baselineStableOwned": 121,
+    "minimumStableCoverage": 0.9
+  }
 }
