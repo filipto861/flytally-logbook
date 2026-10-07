@@ -37,7 +37,11 @@ test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external 
   assert.match(workflow,/image: postgres:16/);
   assert.match(workflow,/postgresql:\/\/flytally:flytally@127[.]0[.]0[.]1:5432\/flytally_browser/);
   assert.match(workflow,/FLYTALLY_LOCAL_POSTGRES: "1"/);
-  assert.match(workflow,/Bootstrap isolated browser database/);
+  assert.match(workflow,/npm run test:browser/);
+  const runner=read("tooling/run-auth-browser.mjs");
+  assert.match(runner,/FLYTALLY_AUTH_BROWSER!=="1"/);
+  assert.match(runner,/bootstrap-browser-smoke-db[.]mjs/);
+  assert.match(runner,/--no-install","playwright","test/);
   assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
