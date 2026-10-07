@@ -28,11 +28,21 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 
 ## Module scope registry
 
-`tooling/development-modules.json` is the single development-only registry for module ownership and CI risk metadata. It does not participate in runtime application behaviour and existing runtime files should not be moved merely to satisfy the registry.
+`tooling/development-modules.json` is the single development-only registry for module ownership, risk metadata and named targeted test groups. It does not participate in runtime application behaviour and existing runtime files should not be moved merely to satisfy the registry.
 
-The current v1 registry is still a transitional classifier. Shared or previously unknown runtime code remains conservative, but the present mapping is too coarse: it still treats CSS as lightweight and escalates broad runtime changes to PostgreSQL. Phase 0B must replace that behavior with explicit UI/domain/persistence/auth/scale risk metadata before scope output becomes authoritative.
+Phase 0B.1 uses registry version 2:
+- Markdown/docs remain lightweight documentation;
+- CSS is classified as `ui-presentation`, selects the UI contract group and build evidence, and does **not** invent PostgreSQL risk;
+- registered tests select their owning test group rather than being treated as runtime changes;
+- unknown `app/`, `components/` or `lib/` runtime files fail conservative to full unit/regression + build evidence, but do not automatically invent PostgreSQL/browser dependencies;
+- explicit persistence, browser and scale paths can escalate only the relevant heavy gates;
+- `[full-ci]` remains the explicit escape hatch that selects every heavy gate.
 
-`tooling/development-scope.mjs` is currently consumed locally. The manual GitHub workflows do **not** currently invoke it; earlier documentation claiming otherwise was drift. Phase 0B will establish one executable source of truth for changed-scope selection rather than duplicating lists in scripts and workflow YAML.
+`tooling/development-scope.mjs` reports `postgres`, `scale`, `browser`, `full_tests`, `build`, matched `modules`, `risks`, `test_groups` and the resolved `targeted_tests`.
+
+Named groups are executed through `npm run test:group -- <group>`. `npm run test:ui` is now only an alias for the registry-owned `ui-contract` group; the 16-file UI list is no longer duplicated in `package.json`.
+
+The stable module map is still incomplete relative to the 381-file audited runtime surface. Phase 0B.2 expands ownership beyond the original 31.8% baseline while preserving explicit `shared` handling for genuinely cross-cutting code. The manual GitHub workflows still do **not** consume changed-scope selection automatically; command/workflow convergence belongs to Phase 0B.3.
 
 ## Vercel build filtering
 
