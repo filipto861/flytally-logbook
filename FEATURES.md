@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.1 — GPS T&G false-positive containment — ACTIVE
+### 3.5.1 — GPS T&G false-positive containment — IMPLEMENTED / PRODUCTION VERIFIED
 - Tighten advisory T&G inference against three reproduced real-track false positives without adding new auto-counted events.
 - Preserve the existing 28–145 km/h rolling-speed range, 30 m descent/climb requirement, output DTO and takeoff semantics.
 - Require rolling-altitude T&G climb evidence to be sustained beyond a single timed altitude edge.
@@ -123,8 +123,10 @@ Important boundary:
 - Preserve the real positive-control track with exactly five detected T&Gs.
 - Keep the known evidence-limited 15:59 real T&G non-auto-counted until a safer time-normalized/review-tier follow-up.
 - Detailed contract: `docs/product/3_5_1_GPS_TOUCH_AND_GO_RELIABILITY.md`.
+- Production closeout: PR #245 merged as `230d835a9e4c3fddb02bf7b729242632626cb9a7`; Vercel deployment `dpl_AGLoght4FF1khhviPaZvMu5SZ2oT` is READY on that exact SHA, serves `fly-tally.com`, root/login smoke returned HTTP 200, and the checked post-deploy runtime-error window was clean.
 
-### 3.5.2 — GPS T&G time-normalized / evidence-limited follow-up — NEXT
+### GPS T&G time-normalized / evidence-limited follow-up — RESEARCH
+- The earlier provisional 3.5.2 reservation is superseded; assign no release number until a broader real-track corpus supports a safe add-event contract.
 - Replace the now-confirmed ±10-array-point qualification defect only after a separate add-event risk review.
 - Investigate elapsed-time evidence windows, density invariance and a non-counted "possible T&G" review signal.
 - Do not use spatial clustering as an automatic landing rescue without independent evidence that it cannot promote low passes/go-arounds.

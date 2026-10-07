@@ -1,6 +1,6 @@
 # 3.5.1 — GPS Touch-and-Go Reliability
 
-**Status:** IMPLEMENTED / VERIFIED LOCAL — pending merge and production closeout  
+**Status:** DONE / PRODUCTION VERIFIED  
 **Date:** 7 October 2026  
 **Scope:** advisory GPS T&G inference only
 
@@ -8,7 +8,7 @@
 
 Additional real SkyDemon tracks reproduced three false-positive touch-and-go suggestions in the current detector. Because `landingCount(points)` is `1 + touchAndGoEvents(points).length`, HIGH/MEDIUM confidence does not alter the automatic landing count. Unsupported events therefore present a data-integrity risk if accepted unnoticed.
 
-A fourth observation is a real T&G that the current ±10-point rolling-altitude qualification misses. That is a confirmed defect, but recovering it can add events and is deliberately separated into 3.5.2.
+A fourth observation is a real T&G that the current ±10-point rolling-altitude qualification misses. That is a confirmed defect, but recovering it can add events and is deliberately separated into a later evidence-limited research track.
 
 ## Real-track evidence
 
@@ -44,7 +44,7 @@ The minimum is about 224.35 m. Point +10 reaches only ~254.08 m, ~0.27 m short o
 
 However the approach also contains a gross altitude discontinuity. 3.5.1 therefore does not auto-count this event.
 
-Expected 3.5.1: remains non-auto-counted. 3.5.2 owns the add-event/review-tier design.
+Expected 3.5.1: remains non-auto-counted. A later evidence-limited research track owns the add-event/review-tier design.
 
 ## Independent review and reconciliation
 
@@ -103,7 +103,7 @@ A short speed event is rejected as T&G when either:
 
 This avoids changing shared speed calculation, takeoff inference or split behavior while preventing a point-median collapse from becoming landing evidence.
 
-## Explicitly deferred to 3.5.2
+## Explicitly deferred to evidence-limited follow-up research
 
 - replacing ±10 altitude qualification with elapsed-time/physical windows;
 - auto-recovering the known 15:59 event;
@@ -160,4 +160,16 @@ Not run / not applicable:
 - authenticated browser GPS acceptance: **NOT RUN** — no GPS UI or browser interaction contract changed, and feature-branch Vercel previews are intentionally skipped by repository policy;
 - production deploy: **NOT RUN**.
 
-The release remains open until merge and production closeout.
+
+
+
+## Production closeout — 7 October 2026
+
+- PR #245 merged to `main` as `230d835a9e4c3fddb02bf7b729242632626cb9a7`.
+- Vercel production deployment `dpl_AGLoght4FF1khhviPaZvMu5SZ2oT` is READY on that exact merge SHA.
+- The deployment carries `fly-tally.com`.
+- Direct deployment root/login smoke returned HTTP 200.
+- Grouped runtime-error review found no errors in the checked post-deploy window.
+- Database migration: **N/A**; schema remains v20.
+- Authenticated browser GPS acceptance remains **NOT RUN / N/A for scope** because no GPS UI interaction contract changed.
+- The provisional `3.5.2` release reservation is superseded. The confirmed ±10-point add-event problem remains tracked as unnumbered RESEARCH until a broader real-track corpus supports a safe contract.

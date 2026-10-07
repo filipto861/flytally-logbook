@@ -68,11 +68,11 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-3.5.0 completed production rollout on 7 October 2026. Current production baseline:
+3.5.1 completed production rollout on 7 October 2026. Current production baseline:
 - production database schema is **v20**;
 - flight certification payload remains **v8**;
 - portable backup/export format is **v13**;
-- production product package/runtime is **3.5.0**.
+- production product package/runtime is **3.5.1**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -92,12 +92,12 @@ PR titles should start with the numeric target version when practical.
 | 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
 | 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
 | 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
-| 3.5.1 | GPS T&G false-positive containment | ACTIVE |
-| 3.5.2 | GPS T&G time-normalized / evidence-limited follow-up | NEXT |
-| 3.6.0 | Saved-date / timezone semantics | PLANNED |
-| 3.7.0 | Currency / monetary semantics | PLANNED |
+| 3.5.1 | GPS T&G false-positive containment | DONE / PRODUCTION |
+| 3.6.0 | Saved-date / timezone semantics | ACTIVE |
+| 3.7.0 | Currency / monetary semantics | NEXT |
 | 3.8.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
+| — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; provisional 3.5.2 reservation superseded until scope/evidence are frozen |
 | — | Professional Logbook Platform | RESEARCH; no release number until scope is frozen |
 
 Confirmed production, security or data-integrity defects may pre-empt this sequence.
