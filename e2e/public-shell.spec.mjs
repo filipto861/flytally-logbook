@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { browserSqlScalar,runBrowserSql,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture,clearE14LegacyTaskFixture } from "./browser-db.mjs";
+import { browserSqlScalar,runBrowserSql,runBrowserFlightFixtureCleanup,resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,setE13NightDefinitionFixture,resetConnectionManagerFixture,resetIntelligentReviewFormScopeFixture,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,resetF35SnapshotFixture,resetF35QuickAddFixture,resetF35AuthorityFixtures,mutateF35ProfileAfterRender,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture,resetE14LegacyTaskFixture,clearE14LegacyTaskFixture } from "./browser-db.mjs";
 
 async function expectNoHorizontalOverflow(page){
   const state=await page.evaluate(()=>{
@@ -90,6 +90,19 @@ async function loginBrowserPilot(page,returnTo){
   await page.getByLabel("Password").fill(process.env.FLYTALLY_BROWSER_PASSWORD||"FlyTally-Browser-2026!");
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`),{timeout:15000});
+}
+
+async function ensureDetailsOpen(details){
+  if(!(await details.evaluate(node=>node.open)))await details.locator("summary").first().click();
+  await expect.poll(()=>details.evaluate(node=>node.open)).toBe(true);
+}
+
+async function openGpsFlightContext(gpsForm){
+  await ensureDetailsOpen(gpsForm.locator("details.gps-flight-context"));
+}
+
+async function openGpsTrackReview(gpsForm){
+  await ensureDetailsOpen(gpsForm.locator("details.gps-track-review"));
 }
 
 async function holdPost(page,pattern){
@@ -359,7 +372,7 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
 
 test("3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 completion coverage requires the isolated browser database.");
-  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00')");
+  runBrowserFlightFixtureCleanup("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block IN ('12:00','13:00');");
   await loginBrowserPilot(page,"/flights/new");
 
   const completeManual=async(offBlock,takeoff,landing,onBlock)=>{
@@ -519,8 +532,10 @@ test("3.5.0 certified flight can be voided from active logbook while permanent a
 
 test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
-  runBrowserSql("DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00')");
-  runBrowserSql("DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00'");
+  runBrowserFlightFixtureCleanup(`
+    DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00');
+    DELETE FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00';
+  `);
   await loginBrowserPilot(page,"/flights/new");
   await page.getByRole("button",{name:"Import GPS track"}).click();
 
@@ -670,6 +685,7 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await gpsForm.locator('input[name="part_0_landingsNight"]').fill("0");
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).not.toBeChecked();
 
+  await openGpsFlightContext(gpsForm);
   await registration.selectOption("OK-TMG1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("TMG");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("EASA");
@@ -681,6 +697,7 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await expect(regulatory).toHaveValue("SAILPLANE");
   await expect(gpsForm.locator("[data-aircraft-context-card]")).toContainText("Sailplane · Part-SFCL");
 
+  await openGpsFlightContext(gpsForm);
   await registration.selectOption("OK-ULL1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("ULL");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("ULL");
@@ -689,6 +706,7 @@ test("GPS import fails closed for invalid profile context and exposes only imple
   await expect(gpsForm.locator('select[name="engineType"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="part_0_movementEvidenceRecorded"]')).toHaveCount(0);
 
+  await openGpsFlightContext(gpsForm);
   await registration.selectOption("OK-BAD1");
   await expect(gpsForm.locator('input[name="aircraftClass"]')).toHaveValue("");
   await expect(gpsForm.locator('input[name="evidence"]')).toHaveValue("");
@@ -778,6 +796,7 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
   await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
 
   const role=gpsForm.locator('select[name="role"]');
+  await openGpsFlightContext(gpsForm);
   await role.selectOption("DUAL");
   const instructor=gpsForm.locator('input[name="instructor"]');
   await expect(instructor).toBeVisible();
@@ -812,6 +831,7 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-mixed-rolecrew.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await openGpsTrackReview(gpsForm);
   await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
@@ -887,6 +907,7 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f42-split-reset.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await openGpsTrackReview(gpsForm);
   await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
@@ -940,6 +961,7 @@ test("F4.3 common Manual Safety Pilot persists explicit Actual PIC without accou
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await openGpsFlightContext(gpsForm);
   await gpsForm.locator('select[name="role"]').selectOption("SAFETY PILOT");
   await gpsForm.locator('select[name="actualPicMode"]').selectOption("manual");
   await gpsForm.locator('input[name="commander"]').fill("Manual GPS Captain");
@@ -972,6 +994,7 @@ test("F4.3 common connected Safety Pilot snapshots server identity and persists 
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await openGpsFlightContext(gpsForm);
   await gpsForm.locator('select[name="role"]').selectOption("SAFETY PILOT");
   await gpsForm.locator('select[name="actualPicMode"]').selectOption("connected");
   await gpsForm.locator('select[name="connectedPicUserId"]').selectOption("9002");
@@ -1004,6 +1027,7 @@ test("F4.3 revoked per-flight connected Safety Pilot fails closed without partia
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f43-override-revoked.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await openGpsTrackReview(gpsForm);
   await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
@@ -1047,11 +1071,13 @@ test("F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports an
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f44-responsive-overrides.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await openGpsTrackReview(gpsForm);
   await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await openGpsFlightContext(gpsForm);
   await gpsForm.locator('select[name="role"]').selectOption("DUAL");
   await gpsForm.locator('input[name="instructor"]').fill("Responsive Common Instructor");
 
@@ -1267,24 +1293,21 @@ test("E1.4 certified legacy GPS Task stays raw and annotated in owner and shared
   }
 });
 
-test("E1.3 night definition setting persists explicit MANUAL and SERA applicability",async({page})=>{
-  test.skip(!authenticatedBrowser,"Authenticated E1.3 settings coverage requires the isolated browser database.");
+test("3.5.2 Settings ignores legacy Night definition preference and exposes no account control",async({page})=>{
+  test.skip(!authenticatedBrowser,"Authenticated 3.5.2 Settings coverage requires the isolated browser database.");
   resetAccountSettingsFixture();
+  setE13NightDefinitionFixture("MANUAL");
   try{
     await loginBrowserPilot(page,"/profile");
-    const nightDefinition=page.getByLabel("Night definition");
-    await expect(nightDefinition).toHaveValue("MANUAL");
-    await nightDefinition.selectOption("SERA");
-    await page.getByRole("button",{name:"Save changes"}).click();
-    await page.reload();
-    await expect(page.getByLabel("Night definition")).toHaveValue("SERA");
-    expect(browserSqlScalar("SELECT COALESCE(preferences_json->>'night_definition','') FROM user_settings WHERE user_id=9001")).toBe("SERA");
+    await expect(page.getByLabel("Night definition")).toHaveCount(0);
+    await expect(page.getByLabel("Time zone")).toBeVisible();
+    expect(browserSqlScalar("SELECT COALESCE(preferences_json->>'night_definition','') FROM user_settings WHERE user_id=9001")).toBe("MANUAL");
   }finally{
     resetAccountSettingsFixture();
   }
 });
 
-test("E1.3 MANUAL account applicability leaves GPS Day Night classification explicit",async({page})=>{
+test("3.5.2 legacy MANUAL preference does not suppress applicable GPS SERA suggestions",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated E1.3 manual-applicability coverage requires the isolated browser database.");
   resetAccountSettingsFixture();
   setE13NightDefinitionFixture("MANUAL");
@@ -1299,10 +1322,10 @@ test("E1.3 MANUAL account applicability leaves GPS Day Night classification expl
     await gps.locator('input[name="kml"]').setInputFiles({name:"e13-manual.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
     await gps.locator('select[name="registration"]').selectOption("OK-E2E");
     const day=gps.locator('input[name="part_0_landingsDay"]'),night=gps.locator('input[name="part_0_landingsNight"]');
-    await expect(day).toHaveValue("");
-    await expect(night).toHaveValue("");
-    await expect(day).not.toHaveAttribute("aria-describedby",/part-0-landing-suggestion/);
-    await expect(gps.getByText("SERA civil-twilight suggestion")).toHaveCount(0);
+    await expect(day).toHaveValue("1");
+    await expect(night).toHaveValue("0");
+    await expect(day).toHaveAttribute("aria-describedby",/part-0-landing-suggestion/);
+    await expect(gps.getByText("SERA civil-twilight suggestion")).toHaveCount(1);
   }finally{
     resetAccountSettingsFixture();
   }
@@ -1507,6 +1530,7 @@ test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and
   const role=form.locator('select[name="role"]');
 
   const assertState=async state=>{
+    await openGpsFlightContext(gpsForm);
     if(state==="PIC"){
       await role.selectOption("PIC");
       await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
@@ -1625,11 +1649,13 @@ test("F6 GPS multi-part inheritance override matrix stays usable at every requir
     '<gx:coord>14.33 50.27 300</gx:coord><gx:coord>14.37 50.30 500</gx:coord><gx:coord>14.41 50.33 800</gx:coord><gx:coord>14.45 50.36 850</gx:coord><gx:coord>14.49 50.39 500</gx:coord><gx:coord>14.53 50.42 300</gx:coord>'+
     '</gx:Track></kml>';
   await gpsForm.locator('input[name="kml"]').setInputFiles({name:"f6-gps-multipart.kml",mimeType:"application/vnd.google-earth.kml+xml",buffer:Buffer.from(kml)});
+  await openGpsTrackReview(gpsForm);
   await gpsForm.getByRole("button",{name:/Add split/}).click();
   await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
   await gpsForm.locator('select[name="registration"]').selectOption("OK-E2E");
   await gpsForm.locator('select[name="operationType"]').selectOption("SP");
   await gpsForm.locator('select[name="engineType"]').selectOption("SE");
+  await openGpsFlightContext(gpsForm);
   await gpsForm.locator('select[name="role"]').selectOption("DUAL");
   await gpsForm.locator('input[name="instructor"]').fill("F6 Common Instructor");
   await completeF43GpsPart(gpsForm,0,{offBlock:"22:20",takeoff:"22:21",landing:"22:24",onBlock:"22:25",note:"F6 inherited DUAL"});
