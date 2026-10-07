@@ -42,7 +42,7 @@ Phase 0B.1 uses registry version 2:
 
 Named groups are executed through `npm run test:group -- <group>`. `npm run test:ui` is now only an alias for the registry-owned `ui-contract` group; the 16-file UI list is no longer duplicated in `package.json`.
 
-The stable module map is still incomplete relative to the 381-file audited runtime surface. Phase 0B.2 expands ownership beyond the original 31.8% baseline while preserving explicit `shared` handling for genuinely cross-cutting code. The manual GitHub workflows still do **not** consume changed-scope selection automatically; command/workflow convergence belongs to Phase 0B.3.
+The Phase 0B.2 candidate expands stable ownership from the original **121/381 (31.8%)** baseline to **368/381 (96.6%)**. The remaining **13** reviewed cross-cutting/not-yet-owned runtime files are explicitly listed under `shared-runtime`; future unmatched runtime files still fail conservative instead of receiving guessed ownership. Registry regression coverage requires at least 90% stable ownership and zero unclassified files in the current audited surface. The manual GitHub workflows still do **not** consume changed-scope selection automatically; command/workflow convergence belongs to Phase 0B.3.
 
 ## Vercel build filtering
 
