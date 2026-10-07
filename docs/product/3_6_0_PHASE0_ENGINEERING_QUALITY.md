@@ -317,7 +317,7 @@ Mandatory before any broader refactor:
    - authenticated acceptance must fail clearly when its required fixture/environment is absent.
 4. Decide and pin the supported Node runtime line; align local docs and manual workflows.
 
-### Phase 0B — Risk model and deterministic test selection — ACTIVE
+### Phase 0B — Risk model and deterministic test selection — DONE / VERIFIED
 
 Replace duplicated manual suite lists with one development-test manifest.
 
@@ -401,9 +401,13 @@ Implementation candidate:
 - DEVELOPMENT now freezes `scope:changed` as a planner-only command: it reports targeted groups and independent heavy-gate booleans but never executes PostgreSQL, browser, build or destructive fixture work itself;
 - regression coverage functionally compares PostgreSQL core/scale/full selection against the current integration directory and registry, guards the workflow's generic group execution, and protects the targeted-vs-heavy contract.
 
-0B.3 verification is **PENDING** until the targeted development-scope/pipeline tests and TypeScript run on this candidate.
+0B.3 verification:
+- targeted development-scope/pipeline set: **29/29 PASS**;
+- TypeScript: **PASS**.
 
-### Phase 0C — Browser suite structure
+**0B.3 is CLOSED / VERIFIED. Phase 0B is CLOSED / VERIFIED.** The next active phase is **Phase 0C — Browser suite structure**. Before implementation, perform read-only discovery of the current Playwright monolith/fixture ownership and obtain an independent second-AI review of the proposed split and any future worker-isolation design.
+
+### Phase 0C — Browser suite structure — ACTIVE
 
 Split the monolithic browser spec into stable domain specs, for example:
 
