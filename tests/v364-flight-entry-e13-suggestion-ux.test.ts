@@ -21,6 +21,8 @@ test("3.5.2 removes the account Night-definition switch from active Settings and
 test("3.5.2 GPS SERA suggestions are automatic but remain gated by canonical flight-context applicability",()=>{
   assert.match(gps,/const seraLandingSuggestionEnabled=sourceRequirements\?\.landingMode==="DAY_NIGHT",seraNightTimeSuggestionEnabled=sourceRequirements\?\.reviewNightIfr===true/);
   assert.doesNotMatch(gps,/nightDefinition==="SERA"/);
+  assert.doesNotMatch(gps,/\bnightDefinition\b/);
+  assert.match(gps,/pfSuggestion=sourceRequirements\?\.movementMode==="FCL060_PF"\?gpsPfMovementDayNightSuggestion\(part\):null/);
   assert.match(gps,/gpsLandingDayNightSuggestion\(parts\[index\]\?\?\[\]\)/);
   assert.match(gps,/gpsNightMinutesSuggestion\(parts\[index\]\?\?\[\]\)/);
   assert.match(gps,/suggestion\.status!=="AVAILABLE"\|\|Number\(review\.starts\)!==suggestion\.total/);
