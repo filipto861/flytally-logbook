@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 
 const root=path.resolve(import.meta.dirname,"..");
@@ -133,7 +134,8 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.match(workflow,/inputs\.full_tests != true/);
   assert.match(workflow,/Full unit and regression tests/);
   assert.match(workflow,/inputs\.full_tests == true/);
-  assert.match(workflow,/npm run test:ui/);
+  assert.match(workflow,/npm run test:group -- ui-contract/);
+  assert.doesNotMatch(workflow,/npm run test:ui/);
   assert.doesNotMatch(workflow,/name: Production build/);
   assert.match(browser,/name: Production build/);
   assert.match(browser,/run: npm run build/);
@@ -147,14 +149,32 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.doesNotMatch(browser,/npm install --no-save --package-lock=false @playwright\/test/);
 });
 
-test("large PostgreSQL fixtures are isolated from the normal core acceptance loop",()=>{
+test("PostgreSQL core scale and full membership comes from the development registry",()=>{
   const runner=read("tooling/run-postgres-tests.mjs");
-  for(const file of [
-    "postgres-scale-readiness.test.ts",
-    "postgres-v169-production-hardening.test.ts",
-    "postgres-v230-large-logbook-performance.test.ts",
-  ])assert.ok(runner.includes(file),`missing scale classification for ${file}`);
-  assert.match(runner,/mode === "scale" \? isScale : !isScale/);
+  const manifest=JSON.parse(read("tooling/development-modules.json"));
+  const scalePaths=manifest.postgresAcceptance.scaleTests as string[];
+  assert.equal(new Set(scalePaths).size,scalePaths.length);
+  assert.ok(scalePaths.length>0);
+  assert.match(runner,/development-modules[.]json/);
+  assert.match(runner,/manifest\.postgresAcceptance\?\.scaleTests/);
+  for(const file of scalePaths){
+    assert.match(file,/^tests\/integration\/.*[.]test[.]ts$/);
+    assert.doesNotMatch(runner,new RegExp(path.basename(file).replaceAll(".","[.]")));
+  }
+
+  const moduleUrl=pathToFileURL(path.join(root,"tooling/run-postgres-tests.mjs")).href;
+  const script=[
+    `import { selectPostgresTests } from ${JSON.stringify(moduleUrl)};`,
+    `console.log(JSON.stringify({core:selectPostgresTests("core"),scale:selectPostgresTests("scale"),full:selectPostgresTests("full")}));`,
+  ].join("");
+  const result=spawnSync(process.execPath,["--input-type=module","-e",script],{cwd:root,encoding:"utf8"});
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  const selected=JSON.parse(result.stdout.trim());
+  const all=fs.readdirSync(path.join(root,"tests","integration")).filter(name=>name.endsWith(".test.ts")).sort();
+  const expectedScale=scalePaths.map(file=>path.basename(file)).sort();
+  assert.deepEqual(selected.scale,expectedScale);
+  assert.deepEqual(selected.full,all);
+  assert.deepEqual(selected.core,all.filter(name=>!expectedScale.includes(name)));
 });
 
 test("development policy documents candidate-first iteration, module scope and release verification",()=>{
