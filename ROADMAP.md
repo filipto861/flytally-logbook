@@ -399,7 +399,7 @@ Implementation milestones:
 - **M2 — Domain mutation: END-TO-END VERIFIED LOCAL**
 - **M3 — Audit-only UX: END-TO-END VERIFIED LOCAL**
 - **M4 — Backup / restore v13: VERIFIED LOCAL** — exact-head TypeScript PASS; unit/regression 1280/1280 PASS on the immediately preceding runtime-equivalent head; PostgreSQL core 85/85 PASS on `7d18fb9`; production build PASS on the immediately preceding runtime-equivalent head.
-- **M5 — Consumer and integration verification: ACTIVE**
+- **M5 — Consumer and integration verification: ACTIVE** — audit active/read-model consumers, collaboration/notification teardown, participant-copy independence and correction compatibility; source contract first, then targeted PostgreSQL/browser evidence.
 - M6 — Release gate / documentation
 
 ## Phase 2 — Remaining multi-aircraft integrity audit — NEXT

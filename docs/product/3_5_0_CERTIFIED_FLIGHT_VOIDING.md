@@ -438,12 +438,30 @@ Final M4 rerun on exact head `7d18fb95b1f2a830f2649c961b9da36473726902`: TypeScr
 - v12 backward compatibility.
 
 ### M5 — Consumer and integration verification — ACTIVE
-- active read-model exclusion;
-- all category recency/compliance;
-- professional export / print / map / statistics / dashboard;
-- sharing/notifications/collaboration;
-- participant-copy survival/provenance;
-- correction workflow compatibility.
+
+M5 discovery on 7 October 2026 confirms the core exclusion mechanism is structural: owner-side operational consumers read the active `flights` graph (or `flight_tracks` joined back to active `flights`), while category recency/professional reporting require active certified rows. Because a successful void physically removes the source row only after permanent archive capture, archived tombstone/history must never be joined back into these operational consumers.
+
+Acceptance matrix:
+- Flights list/detail/navigation/filter options and recent routes: active `flights` only;
+- Dashboard and intelligent-attention summaries: active `flights` only;
+- Statistics/pilot insights and professional experience/export: active `flights`; professional credit remains certified-only;
+- Map/route overview: `flight_tracks` joined to active `flights`, plus active-flight route summaries;
+- Print and ordinary CSV/XLS export: active `flights` only; portable JSON backup remains the intentional exception because it preserves void history;
+- Aeroplane/LAPL/SEP/TMG, Helicopter, Sailplane and Balloon recency/compliance: active certified `flights` only;
+- Action Center / pending collaboration: requests must require a live certified source row;
+- public share: no active source row means no live public flight;
+- accepted participant-owned copy: remains an independent active `flights` row and keeps permanent `flight_source_provenance` bound to the tombstone;
+- ordinary certified correction remains valid for non-voided rows.
+
+M5 collaboration edge case found during discovery:
+- live participation/approval rows cascade with the removed source, but `user_notifications` is intentionally independent and can otherwise retain a dead `/connections/shared/*`, `/connections/flight/*` or owner `/flights/*` link;
+- M5 will neutralize recipient workflow links before cascade and redirect owner-side source-flight notification history to the permanent void-audit route;
+- notification text/history itself is not certification evidence and is not added to the protected archive.
+
+M5 implementation batches:
+1. **M5A — active-consumer/source contract + notification-link teardown**;
+2. **M5B — targeted PostgreSQL/collaboration evidence and participant-copy survival recheck**;
+3. **M5C — risk-based authenticated browser verification of post-void active surfaces before M6**.
 
 ### M6 — Release gate / documentation
 - full unit/regression;
