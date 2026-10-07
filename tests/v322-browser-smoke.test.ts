@@ -6,13 +6,18 @@ import test from "node:test";
 const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
-test("v3.2 U3 browser smoke is manual-only and pinned",()=>{
+test("v3.2 U3 browser smoke is manual-only and repository-pinned",()=>{
   const workflow=read(".github/workflows/browser-smoke.yml");
+  const pkg=JSON.parse(read("package.json"));
+  const lock=JSON.parse(read("package-lock.json"));
   assert.match(workflow,/workflow_dispatch:/);
   assert.doesNotMatch(workflow,/\n\s*pull_request:/);
   assert.doesNotMatch(workflow,/\n\s*schedule:/);
-  assert.match(workflow,/@playwright\/test@1[.]55[.]0/);
-  assert.match(workflow,/playwright install --with-deps chromium/);
+  assert.equal(pkg.devDependencies["@playwright/test"],"1.55.0");
+  assert.equal(lock.packages["node_modules/@playwright/test"].version,"1.55.0");
+  assert.match(workflow,/npx --no-install playwright install --with-deps chromium/);
+  assert.match(workflow,/npm run test:browser/);
+  assert.doesNotMatch(workflow,/npm install --no-save --package-lock=false @playwright\/test/);
   assert.match(workflow,/Chromium desktop \+ mobile/);
   assert.doesNotMatch(workflow,/secrets[.]/);
 });
@@ -40,7 +45,6 @@ test("login uses the shared pending-action contract",()=>{
   assert.match(login,/PendingActionButton/);
   assert.match(login,/pendingLabel="Signing in…"/);
 });
-
 
 test("browser smoke flight fixture includes historical aircraft identity columns required by runtime migrations",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
