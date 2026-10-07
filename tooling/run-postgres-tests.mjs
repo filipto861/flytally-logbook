@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { probePostgresConnection } from "./postgres-cli.mjs";
 
 const integrationDir = fileURLToPath(new URL("../tests/integration/", import.meta.url));
 const scaleTests = new Set([
@@ -33,20 +34,11 @@ export function preflightPostgresGate(env = process.env) {
   }
 
   const databaseUrl = String(env.DATABASE_URL).trim();
-  const probe = spawnSync(
-    "psql",
-    ["-d", databaseUrl, "-X", "-v", "ON_ERROR_STOP=1", "-Atqc", "SELECT 1"],
-    {
-      encoding: "utf8",
-      env: { ...env, PGCONNECT_TIMEOUT: env.PGCONNECT_TIMEOUT || "5" },
-    },
-  );
-  if (probe.error) {
-    throw new Error(`PostgreSQL acceptance requires the psql client: ${probe.error.message}`);
-  }
-  if (probe.status !== 0 || probe.stdout.trim() !== "1") {
-    throw new Error(`PostgreSQL acceptance could not connect to DATABASE_URL. The gate did not run. ${probe.stderr || probe.stdout}`);
-  }
+  return probePostgresConnection(databaseUrl, {
+    env,
+    label: "PostgreSQL acceptance",
+    failureSuffix: "The gate did not run.",
+  });
 }
 
 export function runPostgresGate(mode, env = process.env) {
@@ -55,7 +47,7 @@ export function runPostgresGate(mode, env = process.env) {
     throw new Error(`No PostgreSQL ${mode} tests were selected.`);
   }
 
-  preflightPostgresGate(env);
+  const gateEnv = preflightPostgresGate(env);
 
   console.log(`Running ${selected.length} PostgreSQL ${mode} test files.`);
   const result = spawnSync(
@@ -69,7 +61,7 @@ export function runPostgresGate(mode, env = process.env) {
     {
       stdio: "inherit",
       env: {
-        ...env,
+        ...gateEnv,
         FLYTALLY_POSTGRES_INTEGRATION: "1",
       },
     },
