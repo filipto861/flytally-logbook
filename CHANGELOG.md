@@ -10,17 +10,28 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.5.3 — Flight detail navigation UX
-- Reworked the existing flight-detail navigation into an obvious **Back to flights** control plus explicit **Previous flight** / **Next flight** controls.
-- Previous/Next continue to use the existing filter-aware server navigation and preserve the active Flights query context.
-- Boundary directions remain visible but disabled instead of disappearing, keeping the navigation layout stable.
-- Mobile now gives Back its own row and keeps Previous/Next in a two-column row without horizontal core-navigation scrolling.
-- No flight ordering, record, certification, recency, persistence or database semantics changed.
-
+### 3.5.4 — iPad flight-detail visual hotfix
+- Keeps Back / Previous / Next / More together on wider iPad/desktop flight-detail headers instead of allowing only **More** to wrap onto a second line.
+- Reflows the whole flight-detail header navigation below the flight identity on narrower tablet widths.
+- Fully hides the keyboard **Skip to content** link until focus so its focus-colored border cannot leak into the iPad safe area.
+- Preserves 3.5.3 navigation destinations, filter/sort query context, edge-state behavior and mobile hierarchy.
+- No DB, certification, recency, sharing, persistence or flight-record semantics changed.
 
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
+
+## 3.5.3 — 7 October 2026
+
+### Flight detail navigation UX
+- Reworked the existing flight-detail navigation into an obvious **Back to flights** control plus explicit **Previous flight** / **Next flight** controls.
+- Previous/Next continue to use the existing filter-aware server navigation and preserve the active Flights query context.
+- Boundary directions remain visible but disabled instead of disappearing, keeping the navigation layout stable.
+- Mobile gives Back its own row and keeps Previous/Next in a two-column row without horizontal core-navigation scrolling.
+- Final pre-merge local gate: targeted **18/18 PASS**, TypeScript **PASS**, full unit/regression **1302/1302 PASS**, production build **PASS** with 41/41 static pages.
+- PR #250 squash-merged to `main` as `7068c5f03a3bf5b05ef5f0b45793db54848b9c9e`; Vercel production deployment `dpl_5w2vFSXpSbVEruqcP8mzjXRLuqag` reached READY on that exact SHA, root/login smoke returned HTTP 200, and the immediate runtime-error window was clean.
+- PostgreSQL migration **N/A**; schema remains v20, certification payload v8 and portable backup v13.
+- Post-deploy iPad visual review found two presentation-only defects (More wrapping and a hidden skip-link safe-area border fragment); corrective scope is isolated in 3.5.4.
 
 ## 3.5.2 — 7 October 2026
 

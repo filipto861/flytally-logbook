@@ -142,6 +142,19 @@ button[data-loading="true"]::after{
   gap:var(--ui-space-2);
 }
 
+@media(max-width:1180px){
+  .flight-detail-header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    align-items:start;
+    gap:12px;
+  }
+  .flight-detail-navigation{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
 @media(max-width:700px){
   .ui-page-stack{gap:var(--ui-space-5)}
   :where(.connection-actions,.form-actions,.settings-save){
@@ -420,7 +433,8 @@ button[data-loading="true"]::after{
   display:flex;
   align-items:center;
   justify-content:flex-end;
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
+  flex:0 0 auto;
   gap:10px;
   overflow:visible;
 }
@@ -451,7 +465,7 @@ button[data-loading="true"]::after{
   border-color:var(--line);
   color:var(--muted);
 }
-.flight-detail-more{position:relative}
+.flight-detail-more{position:relative;flex:0 0 auto}
 .flight-detail-more>summary{
   list-style:none;
   cursor:pointer;
@@ -634,4 +648,32 @@ button[data-loading="true"]::after{
 
 @media(forced-colors:active){
   .entry-blocker-link{border:1px solid ButtonText}
+}
+
+
+/* 3.5.4 — iPad safe-area and focus visibility hardening. */
+.skip-link:not(:focus):not(:focus-visible){
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+  border:0;
+  transform:none;
+}
+.skip-link:focus,
+.skip-link:focus-visible{
+  width:auto;
+  height:auto;
+  padding:10px 14px;
+  margin:0;
+  overflow:visible;
+  clip:auto;
+  clip-path:none;
+  white-space:normal;
+  border:2px solid var(--accent2);
+  transform:none;
 }

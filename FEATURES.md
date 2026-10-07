@@ -115,12 +115,20 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.3 — Flight detail navigation UX — ACTIVE
+### 3.5.3 — Flight detail navigation UX — IMPLEMENTED / PRODUCTION
 - Make the existing filter-aware **Back to flights**, **Previous flight** and **Next flight** controls visually obvious on flight detail.
 - Keep Previous/Next controls visible at list boundaries using explicit disabled states so the layout does not shift.
 - Preserve the current Flights filter/sort context and existing `FLIGHT x/y` position indicator.
 - Reflow the controls for desktop, iPad and mobile without changing flight-record semantics.
 - Detailed contract: `docs/product/3_5_3_FLIGHT_DETAIL_NAVIGATION.md`.
+- Production visual review identified two presentation-only iPad follow-ups tracked in 3.5.4.
+
+### 3.5.4 — iPad flight-detail visual hotfix — ACTIVE
+- Keep Back / Previous / Next / More on one stable row on wider iPad layouts instead of allowing only More to wrap.
+- At narrower tablet widths, reflow the whole flight-detail header/navigation group as one unit.
+- Keep the accessibility **Skip to content** link fully hidden until keyboard focus so iPad safe areas never show a residual focus-colored border.
+- Preserve all 3.5.3 navigation destinations, list-context semantics and mobile behavior.
+- Detailed contract: `docs/product/3_5_4_IPAD_FLIGHT_DETAIL_UX.md`.
 
 ### 3.6.0 — Saved-date / timezone semantics — NEXT
 - Define which user-facing saved-date defaults follow the configured calendar timezone.
