@@ -101,6 +101,14 @@ async function openGpsFlightContext(gpsForm){
   await ensureDetailsOpen(gpsForm.locator("details.gps-flight-context"));
 }
 
+async function selectGpsCommonRole(gpsForm,value){
+  await openGpsFlightContext(gpsForm);
+  const role=gpsForm.locator('select[name="role"]');
+  await role.selectOption(value);
+  await openGpsFlightContext(gpsForm);
+  return role;
+}
+
 async function openGpsTrackReview(gpsForm){
   await ensureDetailsOpen(gpsForm.locator("details.gps-track-review"));
 }
@@ -873,10 +881,10 @@ test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=
   await overrideInstructor.fill("Browser F42 Instructor");
   await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
-  const commonRole=gpsForm.locator('select[name="role"]');
-  await commonRole.selectOption("DUAL");
+  const commonRole=await selectGpsCommonRole(gpsForm,"DUAL");
   await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toHaveCount(0);
-  await commonRole.selectOption("PIC");
+  await selectGpsCommonRole(gpsForm,"PIC");
+  await expect(commonRole).toHaveValue("PIC");
   await expect(gpsForm.getByRole("button",{name:"Save 2 flight drafts"})).toBeEnabled();
 
   await second.getByRole("button",{name:"Reset to common"}).click();
@@ -1597,25 +1605,26 @@ test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes 
   await expect(role.locator("option")).toHaveText(["PIC","DUAL","SAFETY PILOT"]);
 
   const assertState=async state=>{
-    await openGpsFlightContext(gpsForm);
     if(state==="PIC"){
-      await role.selectOption("PIC");
+      await selectGpsCommonRole(gpsForm,"PIC");
       await expect(gpsForm.locator('input[name="instructor"][type="hidden"]')).toHaveCount(1);
     }else if(state==="DUAL"){
-      await role.selectOption("DUAL");
+      await selectGpsCommonRole(gpsForm,"DUAL");
       const instructor=gpsForm.locator('input[name="instructor"]:not([type="hidden"])');
       await expect(instructor).toBeVisible();
       await expect(instructor).toHaveAttribute("required","");
     }else if(state==="SAFETY_MANUAL"){
-      await role.selectOption("SAFETY PILOT");
+      await selectGpsCommonRole(gpsForm,"SAFETY PILOT");
       const source=gpsForm.locator('select[name="actualPicMode"]');
+      await expect(source).toBeVisible();
       await source.selectOption("manual");
       const commander=gpsForm.locator('input[name="commander"]:not([type="hidden"])');
       await expect(commander).toBeVisible();
       await expect(commander).toHaveAttribute("required","");
     }else if(state==="SAFETY_CONNECTION"){
-      await role.selectOption("SAFETY PILOT");
+      await selectGpsCommonRole(gpsForm,"SAFETY PILOT");
       const source=gpsForm.locator('select[name="actualPicMode"]');
+      await expect(source).toBeVisible();
       await source.selectOption("connected");
       const connected=gpsForm.locator('select[name="connectedPicUserId"]');
       await expect(connected).toBeVisible();
