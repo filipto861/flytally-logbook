@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.0 — browser baseline / invariant gate — IMPLEMENTED, VERIFICATION PENDING**. Independent review returned **ACCEPT WITH CHANGES** and is reconciled. Discovery found a 2,053-line / ~127.6 kB monolith with 48 logical tests and one-worker shared-DB execution. Frozen sequence: 0C.0 baseline → 0C.1 minimal helper extraction → 0C.2 seven-domain split in batches → 0C.2a helper reconciliation → 0C.3 proven project×matrix deduplication → 0C.4 final acceptance. Per-worker DB isolation remains out of scope.
+Current milestone: **Phase 0C.1 — minimal shared helper extraction — IMPLEMENTED, VERIFICATION PENDING**. 0C.0 baseline/invariant gate is ✅ DONE / VERIFIED with targeted **34/34 PASS** + TypeScript **PASS**. 0C.1 extracts only the proven cross-domain login and horizontal-overflow primitives; no tests move, GPS/domain helpers stay local, browser DB ownership/workers/projects/retries remain unchanged. Full serialized browser acceptance is required before 0C.1 closes.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
