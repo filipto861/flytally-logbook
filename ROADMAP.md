@@ -657,7 +657,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 **Current step: Phase 0A — gate safety / reproducibility — IMPLEMENTED, VERIFICATION PENDING.**
 
 Implemented on the active branch:
-- fail-closed PostgreSQL gate ownership/preflight;
+- fail-closed PostgreSQL gate ownership plus real connection preflight before test fanout;
 - repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
 - Node 24.x alignment with the Vercel production runtime;
 - corrected browser DB connection-timeout variable;
