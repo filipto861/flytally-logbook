@@ -131,13 +131,13 @@ Important boundary:
 - Detailed contract: `docs/product/3_5_4_IPAD_FLIGHT_DETAIL_UX.md`.
 - Production iPad acceptance confirmed the navigation wrapping and safe-area border fragment are resolved.
 
-### 3.5.5 — iPad sidebar collapse-control alignment — ACTIVE
+### 3.5.5 — iPad sidebar collapse-control alignment — IMPLEMENTED / PRODUCTION VERIFIED
 - Keep the coarse-pointer sidebar collapse action at the canonical 44 px touch size.
 - Reposition it clear of the notification bell and align it vertically to the brand-row controls.
 - Preserve sidebar collapse state, notification behavior and phone/mobile navigation.
 - Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`.
 
-### 3.6.0 — Saved-date / timezone semantics — NEXT
+### 3.6.0 — Saved-date / timezone semantics — ACTIVE
 - Define which user-facing saved-date defaults follow the configured calendar timezone.
 - Keep GPS/FCL.050 evidence UTC where UTC is the authoritative stored meaning.
 - Add explicit midnight/day-boundary handling and tests before implementation.
