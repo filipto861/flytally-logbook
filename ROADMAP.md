@@ -654,16 +654,17 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 0A — gate safety / reproducibility — IMPLEMENTED, VERIFICATION PENDING.**
+**Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Implemented on the active branch:
+Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
 - repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
 - Node 24.x alignment with the Vercel production runtime;
 - corrected browser DB connection-timeout variable;
-- DEVELOPMENT/Vercel policy drift reconciliation.
+- DEVELOPMENT/Vercel policy drift reconciliation;
+- exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Do not advance to Phase 0B until the exact Phase 0A candidate completes the required local dependency, targeted regression, PostgreSQL, browser and build verification.
+Phase 0B now owns the next work: replace duplicated/manual suite selection with one authoritative risk/test registry and deterministic changed-scope selection. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
