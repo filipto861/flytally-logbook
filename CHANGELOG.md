@@ -18,7 +18,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Hardened authenticated browser acceptance against current product contracts: certified test-fixture cleanup is local-only and transaction-scoped, GPS tests explicitly reopen auto-collapsing review sections and use the current first-split control before interaction, and obsolete pre-3.5.2 Night-definition browser expectations were replaced with the frozen always-on GPS/SERA behavior.
 - Aligned the development/manual-workflow Node line to the production Vercel project's Node 24.x runtime.
 - Corrected the browser PostgreSQL bootstrap timeout variable to `PGCONNECT_TIMEOUT`.
-- Runtime product behavior is unchanged by this engineering-infrastructure work; FEATURES remains unchanged. Verification remains pending until the Phase 0A exact-candidate gates actually run.
+- Phase 0A gate-safety/reproducibility is verified locally: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, authenticated browser acceptance **96 PASS / 2 intentional skips / 0 failed**, and the final corrected historical v1.44 source contract **5/5 PASS** after the preceding full suite proved the other 1,316 tests.
+- Runtime product behavior is unchanged by this engineering-infrastructure work; FEATURES remains unchanged. Phase 0B risk-model / deterministic-selection work is now active.
 
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
