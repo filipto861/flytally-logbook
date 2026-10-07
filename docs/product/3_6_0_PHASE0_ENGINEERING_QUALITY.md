@@ -535,7 +535,19 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - centralized `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry behavior are unchanged;
 - structure regression proves all eight names live only in the Manual authority/certification spec and that `holdPost` no longer remains in the monolith.
 
-0C.2 Batch 4 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused Manual authority/certification spec under both projects, then the complete serialized browser gate.
+0C.2 Batch 4 verification:
+- targeted browser-structure/scope/pipeline set: **39/39 PASS**;
+- TypeScript: **PASS**;
+- focused Manual authority/certification spec: **16/16 PASS** across both Playwright projects in **1.2 minutes**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **4.8 minutes**.
+
+**0C.2 Batch 4 is CLOSED / VERIFIED.**
+
+0C.2 Batch 5 implementation target — responsive presentation:
+- next split owns the remaining broad self-managed viewport/theme matrix tests, without changing their project execution yet;
+- expected domain includes the 3.4 responsive entry shell, F4.4 GPS RoleCrew responsive UX, both F5.3 presentation-focused Manual RoleCrew tests, F6 Manual, F6 GPS single-flight, F6 GPS multi-part, F6 invalid-profile recovery, and F2.5 RoleCrew presentation;
+- this batch is file-ownership only: **no project×matrix deduplication yet**; every test continues to run under the same two Playwright projects until 0C.3;
+- preserve exact names, viewport/theme state labels, fixture resets and shared DB/project/worker/retry semantics.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
