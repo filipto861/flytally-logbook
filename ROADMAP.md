@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 7 October 2026  
-**Current production product version:** `3.5.4`  
-**Current active release:** `3.5.5`
+**Current production product version:** `3.5.5`  
+**Current active release:** `3.6.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -52,7 +52,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v20** — independent from product version |
-| Product release version | **3.5.4** |
+| Product release version | **3.5.5** |
 
 ## Canonical release sequence
 
@@ -65,9 +65,9 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 5 | **3.5.2** | Always-on GPS/SERA Night suggestions | ✅ | Merged and production deployed on 7 October 2026; no DB/certification/history rewrite |
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
-| 8 | **3.5.5** | iPad sidebar collapse-control alignment | 🚧 | Production visual recheck rejected the top-control placement; corrective edge-handle placement is in verification |
-| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ➡️ | Resumes after 3.5.5 production closeout |
-| 10 | **3.7.0** | Currency / monetary semantics · #136 | ⏳ | Account currency vs stored monetary denomination needs one contract |
+| 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
+| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Active after 3.5.5 production closeout |
+| 10 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Next after 3.6.0 |
 | 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
@@ -618,7 +618,7 @@ Production iPad visual acceptance of 3.5.3 showed two presentation-only defects:
 
 ---
 
-# 3.5.5 — iPad sidebar collapse-control alignment — ACTIVE
+# 3.5.5 — iPad sidebar collapse-control alignment — DONE / PRODUCTION
 
 Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`
 
@@ -645,7 +645,7 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 
 ---
 
-# 3.6.0 — Saved-date / timezone semantics — NEXT
+# 3.6.0 — Saved-date / timezone semantics — ACTIVE
 
 Issue: #144
 
