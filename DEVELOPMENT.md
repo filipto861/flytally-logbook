@@ -114,6 +114,11 @@ When a test already iterates its own viewport/theme matrix, running that matrix 
 
 The authenticated Playwright suite uses one isolated mutable PostgreSQL fixture database for both desktop and mobile projects. `playwright.config.mjs` therefore pins the suite to **one worker** in local runs and CI. Do not override this with a higher worker count unless every worker/project receives an independently bootstrapped database.
 
+During Phase 0C browser-structure work, `tooling/browser-suite-baseline.json` and `tests/browser-suite-structure.test.ts` freeze the current acceptance invariants: 48 logical authenticated test names, the two-project/one-worker contract, centralized browser DB fixture ownership, known fixture identities and required responsive/theme states. Split specs may move tests between files, but those invariants must remain green unless an independent product/test-architecture decision explicitly changes them.
+
+A self-managed viewport matrix is not equivalent to a mobile Playwright device project. `page.setViewportSize()` does not recreate mobile user agent, touch, `isMobile`, device scale factor, safe-area, virtual-keyboard or pointer/hover semantics. A second project may therefore be removed only after those semantics are proven irrelevant for that test. Phase 0C.3 will make deduplication evidence explicit with a local full gate using `--retries=0`.
+
+
 After configuring the local browser-test database and environment, the application server must be told to use the localhost PostgreSQL adapter rather than the Neon HTTP client. A localhost `DATABASE_URL` without `FLYTALLY_LOCAL_POSTGRES=1` is invalid for authenticated browser acceptance.
 
 Canonical local setup:
