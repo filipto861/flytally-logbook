@@ -261,12 +261,19 @@ Follow-up verification:
 - the remaining four failures are two test cases repeated across desktop/mobile: F4.2 common Role transition and F6 single-flight Safety Pilot transition;
 - both failures still manipulated dependent controls immediately after a Role change that can auto-collapse Flight context.
 
+Verification of the narrowed two-case rerun:
+- F4.2 common Role transition: **PASS** on desktop and mobile;
+- F6 GPS single-flight matrix: **FAIL** on desktop and mobile at the next dependent Safety Pilot control;
+- narrowed run result: **2/4 PASS in 33.4 seconds**.
+
+Root cause remained the same current UI behavior: changing `actualPicMode` can auto-collapse Flight context, so `connectedPicUserId` was present but intentionally hidden when the browser test tried to use it.
+
 Final targeted harness fix:
-- add `selectGpsCommonRole`, which explicitly opens Flight context, performs the Role transition, then reopens the current context before dependent controls are touched;
-- use it for the remaining F4.2 and F6 single-flight transitions.
+- add `selectGpsActualPicMode`, which explicitly opens Flight context, changes Actual PIC source, then reopens Flight context before dependent Safety Pilot controls are touched;
+- use it in the F6 single-flight manual and connected Safety Pilot states.
 
 Still required before Phase 0A can close:
-- rerun only those two browser cases (desktop + mobile = four executions);
+- rerun only the F6 GPS single-flight matrix (desktop + mobile = two executions);
 - if green, one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
