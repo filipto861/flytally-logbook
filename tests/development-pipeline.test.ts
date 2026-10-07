@@ -39,7 +39,8 @@ test("PostgreSQL runner owns integration intent instead of relying on the caller
   const runner=read("tooling/run-postgres-tests.mjs");
   assert.match(runner,/preflightPostgresGate\(env\)/);
   assert.match(runner,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
-  assert.match(runner,/spawnSync\("psql", \["--version"\]/);
+  assert.match(runner,/spawnSync\(\s*"psql",\s*\["-d", databaseUrl, "-X", "-v", "ON_ERROR_STOP=1", "-Atqc", "SELECT 1"\]/s);
+  assert.match(runner,/could not connect to DATABASE_URL\. The gate did not run/);
   assert.doesNotMatch(runner,/env: process\.env/);
 });
 
@@ -56,6 +57,18 @@ test("authenticated browser gate fails closed before fixture reset when auth mod
   assert.equal(result.status,2,result.stderr||result.stdout);
   assert.match(result.stderr,/FLYTALLY_AUTH_BROWSER=1 and FLYTALLY_LOCAL_POSTGRES=1 are required/);
   assert.match(result.stderr,/browser gate did not run/);
+});
+
+test("authenticated browser gate preflights a localhost database connection before bootstrap",()=>{
+  const runner=read("tooling/run-auth-browser.mjs");
+  assert.match(runner,/may only reset a localhost PostgreSQL fixture/);
+  assert.match(runner,/PGCONNECT_TIMEOUT/);
+  assert.match(runner,/"-Atqc","SELECT 1"/);
+  assert.match(runner,/could not connect to DATABASE_URL\. The browser gate did not run/);
+  assert.ok(
+    runner.indexOf('"SELECT 1"')<runner.indexOf("bootstrap-browser-smoke-db.mjs"),
+    "database connectivity probe must run before the destructive fixture bootstrap",
+  );
 });
 
 test("Node and Playwright versions are repository-pinned to the production toolchain",()=>{
