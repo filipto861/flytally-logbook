@@ -225,9 +225,17 @@ Verification after the explicit-psql-path change:
 
 That TypeScript failure is a Phase 0A test-harness regression, not product runtime evidence. The regression test was corrected to validate the helper as a source contract instead of importing the `.mjs` module into TypeScript. No PostgreSQL runner/browser-runner implementation changed after the successful PostgreSQL acceptance runs.
 
+Verification after the TypeScript-safe regression fix:
+- targeted development/browser/Vercel source-contract set: **29/29 PASS**;
+- TypeScript: **PASS**;
+- production build: **PASS**, 41/41 static pages;
+- authenticated browser fixture bootstrap: **PASS** (`Browser smoke database ready.`);
+- Playwright itself still did **NOT RUN** because Node 24 on Windows rejected `spawnSync npx.cmd` with `EINVAL`.
+
+This is another Phase 0A browser-runner portability defect, not product runtime evidence. The runner now resolves the repository-pinned `@playwright/test` CLI and executes it directly through `process.execPath`, removing the Windows command-wrapper dependency while keeping the exact locked Playwright version. A new source-contract regression guards against reintroducing `npx.cmd` execution.
+
 Still required before Phase 0A can close:
-- rerun the targeted development-pipeline/browser source regression set after the TypeScript-safe test fix;
-- TypeScript/build verification on the corrected candidate;
+- rerun the targeted development-pipeline/browser source regression set after the direct-Playwright-CLI change;
 - successful authenticated browser acceptance against the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
