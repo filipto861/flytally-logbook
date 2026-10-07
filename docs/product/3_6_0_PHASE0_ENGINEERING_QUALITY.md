@@ -493,7 +493,15 @@ Read-only inventory on the active branch:
 - current source inventory remains exactly **48 unique logical acceptance tests**: 37 in `public-shell.spec.mjs`, 7 in `advisory-presentation.spec.mjs`, and 4 in `settings-connections-mutations.spec.mjs`;
 - no DB fixture implementation, fixture ID, product runtime, schema, Playwright project, worker or retry change.
 
-0C.2 Batch 2 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused advisory spec under both projects, then the complete serialized browser gate because the new file sorts before the remaining monolith and can expose hidden DB/reset-order coupling.
+0C.2 Batch 2 verification:
+- targeted browser-structure/scope/pipeline set: **37/37 PASS**;
+- TypeScript: **PASS**;
+- focused advisory spec: **14/14 PASS** across both Playwright projects in **27.3 seconds**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **4.7 minutes**.
+
+The full run again emitted Windows/PostgreSQL `could not reserve shared memory region` log lines, but no browser assertion or persistence gate failed. Treat this as a local-environment watch item, not as proof that the warning is harmless in all cases; investigate if it coincides with a future DB/browser failure.
+
+**0C.2 Batch 2 is CLOSED / VERIFIED.**
 
 Superseded pre-review implementation draft (preserved for decision history):
 
