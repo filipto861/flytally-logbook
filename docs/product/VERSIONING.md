@@ -68,10 +68,10 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-Current production baseline after 3.4.1 closeout:
-- production database schema is **v19**;
-- flight certification payload is **v8**;
-- production product package is **3.4.1**.
+3.4.1 originally closed on database schema **v19**. During the staged 3.5.0 rollout on 7 October 2026, the backward-compatible schema **v20** was applied before the 3.5.0 runtime deployment. Current rollout state:
+- production database schema is **v20**;
+- flight certification payload remains **v8**;
+- production product runtime/package remains **3.4.1** until the 3.5.0 deploy completes.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 

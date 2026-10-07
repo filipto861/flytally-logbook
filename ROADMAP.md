@@ -3,7 +3,7 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 6 October 2026  
-**Current production product version:** `3.4.1`  
+**Current production product version:** `3.4.1` (temporary 3.5 rollout state: PostgreSQL schema v20 applied; 3.5.0 runtime not deployed yet)  
 **Current active release:** `3.5.0`
 
 This is the canonical forward plan for `flytally-logbook`.
@@ -442,7 +442,9 @@ Phase 2 execution order:
 
 **Production v20 preflight: VERIFIED READ-ONLY** on 7 October 2026 against production Primary / `neondb` — transaction read-only ON; exact migration registry v1..v19; no partial v20 tables/functions/triggers; 5 users, 25 aircraft, 295 flights, 95 certified flights, 56 certified revisions, 5 verifications, 16 participations / 11 accepted, 8 deleted flights; **7** provenance backfill candidates; preflight integrity guards passed.
 
-**GO/NO-GO:** schema-v20 migration is **GO PENDING FILIP APPROVAL**. No production write has been performed. Production remains `3.4.1` / schema v19.
+**Production schema-v20 migration: APPLIED / VERIFIED** on 7 October 2026 after explicit approval. A pre-migration Neon branch `pre-v20-2026-10-07` (`br-dry-moon-b1n30x0b`) preserves the exact pre-write production state. Migration registry is now exact v1..v20; all required v20 objects/triggers/functions exist; provenance backfill produced **7/7** rows; immediate read-only postflight preserved 295 flights / 95 certified flights / 56 certified revisions / 16 participations / 11 accepted and created zero void-history rows. Final post-deploy reconciliation + postflight are still pending.
+
+**Next:** deploy candidate 3.5.0, immediately run idempotent provenance reconciliation to close the old-runtime/deploy window, then final v20 postflight + production smoke. Production runtime is still `3.4.1` while the database is now schema v20.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
