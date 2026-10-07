@@ -654,6 +654,17 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
+**Current step: Phase 0A — gate safety / reproducibility — IMPLEMENTED, VERIFICATION PENDING.**
+
+Implemented on the active branch:
+- fail-closed PostgreSQL gate ownership/preflight;
+- repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
+- Node 24.x alignment with the Vercel production runtime;
+- corrected browser DB connection-timeout variable;
+- DEVELOPMENT/Vercel policy drift reconciliation.
+
+Do not advance to Phase 0B until the exact Phase 0A candidate completes the required local dependency, targeted regression, PostgreSQL, browser and build verification.
+
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
 - replace duplicated/manual fast-suite lists with one authoritative risk/test registry;
