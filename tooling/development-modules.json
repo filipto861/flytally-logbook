@@ -1,9 +1,150 @@
 {
-  "version": 1,
-  "lightweight": {
-    "extensions": [".md", ".css"],
-    "prefixes": ["docs/"]
+  "version": 2,
+  "documentation": {
+    "extensions": [
+      ".md"
+    ],
+    "prefixes": [
+      "docs/"
+    ]
   },
+  "presentation": {
+    "extensions": [
+      ".css"
+    ],
+    "risks": [
+      "ui-presentation"
+    ],
+    "testGroups": [
+      "ui-contract"
+    ],
+    "gates": {
+      "postgres": false,
+      "scale": false,
+      "browser": false,
+      "fullTests": false,
+      "build": true
+    }
+  },
+  "testGroups": {
+    "ui-contract": {
+      "risks": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      },
+      "tests": [
+        "tests/v121-ui-simplification.test.ts",
+        "tests/v1342-ui-polish.test.ts",
+        "tests/v156-mobile-layout-audit.test.ts",
+        "tests/v300-navigation-hierarchy.test.ts",
+        "tests/v300-u6-final-ux.test.ts",
+        "tests/v320-ui-consistency.test.ts",
+        "tests/v321-route-ui-audit.test.ts",
+        "tests/v322-browser-smoke.test.ts",
+        "tests/v323-auth-browser.test.ts",
+        "tests/v324-auth-mutations.test.ts",
+        "tests/v325-transaction-mutations.test.ts",
+        "tests/v327-ui-ux-consistency-audit.test.ts",
+        "tests/v328-aircraft-library-ux.test.ts",
+        "tests/v329-actions-budget.test.ts",
+        "tests/v330-add-flight-simplicity.test.ts",
+        "tests/v332-flights-workflow-simplicity.test.ts"
+      ]
+    },
+    "development-pipeline": {
+      "risks": [
+        "tooling"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      },
+      "tests": [
+        "tests/development-pipeline.test.ts",
+        "tests/development-scope.test.ts",
+        "tests/v322-browser-smoke.test.ts",
+        "tests/v323-auth-browser.test.ts",
+        "tests/vercel-ignore-build.test.ts"
+      ]
+    }
+  },
+  "specialRules": [
+    {
+      "id": "postgres-harness",
+      "prefixes": [],
+      "files": [
+        "tooling/run-postgres-tests.mjs",
+        "tooling/postgres-cli.mjs"
+      ],
+      "risks": [
+        "tooling",
+        "persistence-schema"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": false
+      }
+    },
+    {
+      "id": "browser-harness",
+      "prefixes": [
+        "e2e/"
+      ],
+      "files": [
+        "tooling/run-auth-browser.mjs",
+        "tooling/bootstrap-browser-smoke-db.mjs",
+        "playwright.config.mjs"
+      ],
+      "risks": [
+        "tooling",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": false
+      }
+    },
+    {
+      "id": "postgres-integration-tests",
+      "prefixes": [
+        "tests/integration/"
+      ],
+      "files": [],
+      "risks": [
+        "persistence-schema",
+        "test-contract"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      }
+    }
+  ],
   "scalePaths": [
     "lib/db-optimization.ts",
     "lib/data/dashboard.ts",
@@ -19,43 +160,217 @@
   "modules": [
     {
       "id": "flight-records",
-      "prefixes": ["app/(protected)/flights/", "components/flight", "lib/flight", "lib/data/flights"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/flights/",
+        "components/flight",
+        "lib/flight",
+        "lib/data/flights"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "credentials-compliance",
-      "prefixes": ["app/(protected)/credentials/", "components/recency", "lib/recency", "lib/sfcl", "lib/bfcl", "lib/helicopter"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/credentials/",
+        "components/recency",
+        "lib/recency",
+        "lib/sfcl",
+        "lib/bfcl",
+        "lib/helicopter"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "connections-workflows",
-      "prefixes": ["app/(protected)/connections/", "app/(protected)/actions/", "app/(protected)/notifications/", "lib/pending-actions", "lib/training-verification"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/connections/",
+        "app/(protected)/actions/",
+        "app/(protected)/notifications/",
+        "lib/pending-actions",
+        "lib/training-verification"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "auth-security",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "analytics",
-      "prefixes": ["app/(protected)/dashboard/", "app/(protected)/statistics/", "app/(protected)/map/", "lib/data/dashboard", "lib/data/pilot-insights"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/dashboard/",
+        "app/(protected)/statistics/",
+        "app/(protected)/map/",
+        "lib/data/dashboard",
+        "lib/data/pilot-insights"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "data-recovery",
-      "prefixes": ["app/(protected)/data/", "app/(protected)/database/", "app/(protected)/export/", "app/(protected)/print/", "app/api/export/", "lib/account-backup", "lib/account-restore", "lib/portable-backup"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/data/",
+        "app/(protected)/database/",
+        "app/(protected)/export/",
+        "app/(protected)/print/",
+        "app/api/export/",
+        "lib/account-backup",
+        "lib/account-restore",
+        "lib/portable-backup"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "fstd",
-      "prefixes": ["app/(protected)/fstd/", "lib/fstd"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/fstd/",
+        "lib/fstd"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "platform",
-      "prefixes": ["app/(protected)/admin/", "app/(protected)/profile/", "app/(protected)/settings/", "app/api/auth/", "lib/auth", "lib/runtime-schema", "lib/db"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/admin/",
+        "app/(protected)/profile/",
+        "app/(protected)/settings/",
+        "app/api/auth/",
+        "lib/auth",
+        "lib/runtime-schema",
+        "lib/db"
+      ],
+      "files": [],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "development-pipeline",
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "development-infrastructure",
-      "prefixes": [".github/", "tooling/"],
-      "files": ["package.json", "package-lock.json", "tsconfig.json", "next.config.ts", "vercel.json", "DEVELOPMENT.md"]
+      "prefixes": [
+        ".github/",
+        "tooling/"
+      ],
+      "files": [
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "next.config.ts",
+        "vercel.json",
+        "DEVELOPMENT.md"
+      ],
+      "risks": [
+        "tooling"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
     }
   ]
 }
