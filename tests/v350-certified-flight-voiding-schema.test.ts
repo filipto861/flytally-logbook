@@ -88,3 +88,41 @@ test("flight source provenance is append-only except exact same-transaction tomb
   assert.match(dbOptimizations,/BEFORE INSERT OR UPDATE OR DELETE ON flight_source_provenance/);
   assert.match(dbOptimizations,/Flight source provenance does not match its source tombstone/);
 });
+
+
+test("3.5.0 production v20 tooling mirrors runtime migration and closes the deploy-window provenance race",()=>{
+  const pre=fs.readFileSync(path.join(root,"tooling/v350-v20-preflight.sql"),"utf8");
+  const mig=fs.readFileSync(path.join(root,"tooling/v350-v20-migrate.sql"),"utf8");
+  const reconcile=fs.readFileSync(path.join(root,"tooling/v350-v20-reconcile-provenance.sql"),"utf8");
+  const post=fs.readFileSync(path.join(root,"tooling/v350-v20-postflight.sql"),"utf8");
+
+  assert.match(pre,/BEGIN TRANSACTION READ ONLY/);
+  assert.match(pre,/registry is not exact versions 1\.\.19/);
+  assert.match(pre,/partial v20 table state detected/);
+  assert.match(pre,/accepted participant provenance is incomplete/);
+  assert.doesNotMatch(pre,/\bINSERT\b|\bUPDATE\b|\bDELETE\b|ALTER TABLE|CREATE TABLE/i);
+
+  const runtimeStart=dbOptimizations.indexOf("if(version===20)return[");
+  const runtimeEnd=dbOptimizations.indexOf("  ];",runtimeStart);
+  assert.ok(runtimeStart>=0&&runtimeEnd>runtimeStart);
+  const runtimeBlocks=[...dbOptimizations.slice(runtimeStart,runtimeEnd).matchAll(/sql\`([\s\S]*?)\`/g)].map(match=>match[1].trim());
+  const normalizedMigration=mig.replace(/\s+/g," ");
+  for(const block of runtimeBlocks){
+    assert.ok(normalizedMigration.includes(block.replace(/\s+/g," ")),`production migration is missing runtime v20 statement: ${block.slice(0,80)}`);
+  }
+  assert.match(mig,/pg_advisory_xact_lock\(704190104\)/);
+  assert.match(mig,/VALUES\(20,'certified flight void archive and provenance'\)/);
+  assert.match(mig,/provenance backfill content mismatch/);
+  assert.match(mig,/COMMIT;/);
+
+  assert.match(reconcile,/INSERT INTO public\.flight_source_provenance/);
+  assert.match(reconcile,/ON CONFLICT\(participant_flight_id,participant_user_id\) DO NOTHING/);
+  assert.match(reconcile,/accepted participant provenance mismatch remains/);
+  assert.doesNotMatch(reconcile,/\bUPDATE\b|\bDELETE\b|ALTER TABLE|DROP TABLE/i);
+
+  assert.match(post,/BEGIN TRANSACTION READ ONLY/);
+  assert.match(post,/registry is not exact versions 1\.\.20/);
+  assert.match(post,/accepted participant provenance is incomplete or mismatched/);
+  assert.match(post,/voided_flight_rows/);
+  assert.match(post,/ROLLBACK/);
+});

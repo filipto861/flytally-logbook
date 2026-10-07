@@ -367,7 +367,7 @@ Required evidence:
 
 ---
 
-# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — ACTIVE
+# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — RELEASE PREP ACTIVE
 
 Goal: complete the remaining historical/dynamic applicability integrity work and add a safe way for a pilot to remove an incorrectly certified flight from all operational logbook use without destroying its protected audit evidence.
 
@@ -434,7 +434,9 @@ Phase 2 execution order:
 4. run the read-only production `part_fcl_credit_*` shape census — **VERIFIED PRODUCTION READ-ONLY**: 25 profiles, all `NONE`; 25 active / 0 inactive; 295 saved flights; 36 certified ULL flights; no anomalous or explicit override shapes;
 5. runtime decision — **NO CHANGE REQUIRED**. Keep strict profile writes, snapshot-owned historical facts, automatic ULL → SEP behavior and the existing external override concept. No schema v21 / certification payload change.
 
-**Next:** final canonical 3.5 release gate + version/release reconciliation. Production remains `3.4.1` / schema v19 until that closeout is complete.
+**Canonical final local gate: VERIFIED** on exact head `f0a1f1a` — TypeScript PASS; unit/regression **1289/1289 PASS**; full PostgreSQL integration + scale **99/99 PASS**; production build PASS. GitHub CI remains **NOT RUN — local-first policy**.
+
+**Next:** verify the explicit schema-v20 production preflight/migration/reconcile/postflight tooling, then candidate version reconciliation. Production remains `3.4.1` / schema v19 until the migration/deploy closeout is explicitly executed.
 
 A migration is allowed only when the Phase 1 data model or later evidence proves one necessary.
 
