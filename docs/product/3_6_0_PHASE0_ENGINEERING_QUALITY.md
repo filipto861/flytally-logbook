@@ -272,11 +272,22 @@ Final targeted harness fix:
 - add `selectGpsActualPicMode`, which explicitly opens Flight context, changes Actual PIC source, then reopens Flight context before dependent Safety Pilot controls are touched;
 - use it in the F6 single-flight manual and connected Safety Pilot states.
 
-Still required before Phase 0A can close:
-- rerun only the F6 GPS single-flight matrix (desktop + mobile = two executions);
-- if green, one final complete authenticated browser acceptance run on the isolated localhost PostgreSQL cluster.
+Final targeted verification:
+- F6 GPS single-flight matrix: **2/2 PASS** in 22.0 seconds;
+- all previously isolated GPS/browser failure clusters are green under targeted verification.
 
-No PASS is claimed for those remaining items until they actually run.
+Full authenticated browser acceptance on that candidate:
+- **94 PASS / 2 skipped / 2 FAIL in 6.6 minutes** across 98 executions;
+- both failures were the same F6 Manual RoleCrew test on desktop/mobile;
+- both stopped immediately because the manual-form matrix referenced a GPS-only helper variable that is not defined in that test;
+- the stray GPS-only helper call has been removed. No product runtime, PostgreSQL runner or application behavior changed in this correction.
+
+Still required before Phase 0A can close:
+- rerun only the F6 Manual RoleCrew matrix (desktop + mobile = two executions);
+- if green, run one final exact-candidate full authenticated browser acceptance;
+- then reconcile exact-candidate non-browser release checks before marking Phase 0A done.
+
+No PASS is claimed for the final browser gate until it actually runs on the corrected candidate.
 
 ## Phase 0 implementation plan
 
