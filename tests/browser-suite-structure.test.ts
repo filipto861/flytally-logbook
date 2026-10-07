@@ -160,6 +160,30 @@ test("Phase 0C.2 batch 3 owns manual RoleCrew verification in one domain spec",(
   assert.match(domain,/browser-actions\.mjs/);
 });
 
+test("Phase 0C.2 batch 4 owns Manual authority and certification in one domain spec",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const domain=read("e2e/manual-authority-certification.spec.mjs");
+  const names=[
+    "GPS and Manual keep profile-owned aircraft context out of generic drift editors",
+    "F3.4 Manual compact context exposes only A+ choice and blocks invalid profiles",
+    "F3.5 same-registration SNAPSHOT survives invalid current profile and rejects crafted drift",
+    "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+    "F3.5 OTHER and Balloon keep profile-owned context separate from flight-specific choices",
+    "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+    "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+    "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+  ];
+  for(const name of names){
+    assert.equal(domain.includes('test("'+name+'"'),true);
+    assert.equal(shell.includes('test("'+name+'"'),false);
+  }
+  assert.equal((domain.match(/^test\("/gm)??[]).length,names.length);
+  assert.match(domain,/async function holdPost/);
+  assert.doesNotMatch(shell,/async function holdPost/);
+  assert.match(domain,/browser-db\.mjs/);
+  assert.match(domain,/browser-actions\.mjs/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
