@@ -10,15 +10,21 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
-### 3.5.5 — iPad sidebar collapse-control alignment
-- Reworks the coarse-pointer collapse chevron into a dedicated 44 px sidebar-edge handle, separate from the logo and notification controls.
-- Centers the handle vertically in the viewport and tracks the expanded/collapsed sidebar width so it stays attached to the rail in both states.
-- Supersedes the first production placement near the brand row, which remained visually awkward on iPad.
-- Scope is presentation-only: sidebar state, notifications, routes and mobile navigation semantics are unchanged.
-
 ### Print / PDF
 - Hid the keyboard accessibility `Skip to content` link from printed logbook and Save-as-PDF output while preserving it in the interactive app.
 - Added a source regression guard so the accessibility link cannot silently reappear in print output.
+
+## 3.5.5 — 7 October 2026
+
+### iPad sidebar collapse-control alignment
+- Reworked the coarse-pointer collapse chevron into a dedicated 44 px sidebar-edge handle, separate from the logo and notification controls.
+- Centers the handle vertically in the viewport and tracks the expanded/collapsed sidebar width so it stays attached to the rail in both states.
+- The first production placement from PR #252 was visually rejected on iPad and intentionally superseded rather than treated as accepted.
+- Corrective exact-head local gate before the final production fix: targeted **17/17 PASS**, TypeScript **PASS**, full unit/regression **1308/1308 PASS**, production build **PASS** with 41/41 static pages.
+- PR #253 squash-merged to `main` as `ec75388ab437218086ef4fb86d1d53648fb77dbe`; Vercel production deployment `dpl_4NbxFjAa6dJyQn1VdiSwf4wndiUW` reached READY on that exact SHA, root/login smoke returned HTTP 200, and the immediate runtime-error window was clean.
+- Production iPad visual acceptance confirmed the final centered edge-handle placement is accepted.
+- Scope is presentation-only: sidebar state, notifications, routes and mobile navigation semantics are unchanged.
+- PostgreSQL migration **N/A**; schema remains v20, certification payload v8 and portable backup v13.
 
 ## 3.5.4 — 7 October 2026
 
