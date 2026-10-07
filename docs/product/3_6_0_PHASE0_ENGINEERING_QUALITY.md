@@ -216,10 +216,19 @@ The branch now supports an explicit `FLYTALLY_PSQL` executable path. The shared 
 - Playwright/browser child processes inherit the same prepared environment;
 - PATH discovery remains the fallback when no override is needed.
 
+Verification after the explicit-psql-path change:
+- targeted development/browser/Vercel source-contract set: **29/29 PASS**;
+- PostgreSQL core: **86/86 PASS** across 30 files;
+- PostgreSQL full: **99/99 PASS** across 33 files, including the 10k / 50k / 100k scale suites within their published thresholds;
+- explicit `FLYTALLY_PSQL` path successfully propagated to the PostgreSQL integration child processes;
+- authenticated browser verification rebuilt the application successfully through compilation, then TypeScript correctly stopped the candidate before browser execution because `tests/development-pipeline.test.ts` imported the JavaScript helper without a declaration file.
+
+That TypeScript failure is a Phase 0A test-harness regression, not product runtime evidence. The regression test was corrected to validate the helper as a source contract instead of importing the `.mjs` module into TypeScript. No PostgreSQL runner/browser-runner implementation changed after the successful PostgreSQL acceptance runs.
+
 Still required before Phase 0A can close:
-- rerun the targeted development-pipeline/browser source regression set after the explicit-psql-path change;
-- successful PostgreSQL core/full execution against the temporary isolated PostgreSQL 16 cluster using `FLYTALLY_PSQL`;
-- successful authenticated browser acceptance against that same isolated localhost cluster.
+- rerun the targeted development-pipeline/browser source regression set after the TypeScript-safe test fix;
+- TypeScript/build verification on the corrected candidate;
+- successful authenticated browser acceptance against the isolated localhost PostgreSQL cluster.
 
 No PASS is claimed for those remaining items until they actually run.
 
