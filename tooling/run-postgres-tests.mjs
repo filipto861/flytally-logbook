@@ -32,15 +32,20 @@ export function preflightPostgresGate(env = process.env) {
     throw new Error("DATABASE_URL is required for PostgreSQL acceptance. The gate did not run.");
   }
 
-  const version = spawnSync("psql", ["--version"], {
-    encoding: "utf8",
-    env: { ...env, PGCONNECT_TIMEOUT: env.PGCONNECT_TIMEOUT || "5" },
-  });
-  if (version.error) {
-    throw new Error(`PostgreSQL acceptance requires the psql client: ${version.error.message}`);
+  const databaseUrl = String(env.DATABASE_URL).trim();
+  const probe = spawnSync(
+    "psql",
+    ["-d", databaseUrl, "-X", "-v", "ON_ERROR_STOP=1", "-Atqc", "SELECT 1"],
+    {
+      encoding: "utf8",
+      env: { ...env, PGCONNECT_TIMEOUT: env.PGCONNECT_TIMEOUT || "5" },
+    },
+  );
+  if (probe.error) {
+    throw new Error(`PostgreSQL acceptance requires the psql client: ${probe.error.message}`);
   }
-  if (version.status !== 0) {
-    throw new Error(`PostgreSQL acceptance could not execute psql --version: ${version.stderr || version.stdout}`);
+  if (probe.status !== 0 || probe.stdout.trim() !== "1") {
+    throw new Error(`PostgreSQL acceptance could not connect to DATABASE_URL. The gate did not run. ${probe.stderr || probe.stdout}`);
   }
 }
 
