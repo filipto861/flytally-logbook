@@ -6,60 +6,130 @@ const manifestPath = fileURLToPath(new URL("./development-modules.json", import.
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
 const normalize = (value) => String(value ?? "").replaceAll("\\", "/").replace(/^\.\/+/, "");
+const emptyGates = () => ({ postgres: false, scale: false, browser: false, fullTests: false, build: false });
 
-function isLightweight(file) {
-  const path = normalize(file);
-  return manifest.lightweight.extensions.some((extension) => path.endsWith(extension)) ||
-    manifest.lightweight.prefixes.some((prefix) => path.startsWith(prefix));
+function mergeGates(target, source = {}) {
+  for (const key of Object.keys(target)) target[key] = Boolean(target[key] || source[key]);
 }
 
-const fastUiTests = new Set([
-  "tests/v121-ui-simplification.test.ts",
-  "tests/v1342-ui-polish.test.ts",
-  "tests/v156-mobile-layout-audit.test.ts",
-  "tests/v300-navigation-hierarchy.test.ts",
-  "tests/v300-u6-final-ux.test.ts",
-  "tests/v320-ui-consistency.test.ts",
-  "tests/v321-route-ui-audit.test.ts",
-  "tests/v322-browser-smoke.test.ts",
-  "tests/v323-auth-browser.test.ts",
-  "tests/v324-auth-mutations.test.ts",
-  "tests/v325-transaction-mutations.test.ts",
-]);
-
-function isFastUiTest(file) {
-  return fastUiTests.has(normalize(file));
+function pathMatches(entry, file) {
+  const path = normalize(file);
+  return (entry.files ?? []).includes(path) || (entry.prefixes ?? []).some((prefix) => path.startsWith(prefix));
 }
 
-function moduleMatches(module, file) {
-  const path = normalize(file);
-  return module.files.includes(path) || module.prefixes.some((prefix) => path.startsWith(prefix));
+function hasExtension(file, extensions = []) {
+  return extensions.some((extension) => file.endsWith(extension));
+}
+
+function isDocumentation(file) {
+  return hasExtension(file, manifest.documentation.extensions) ||
+    manifest.documentation.prefixes.some((prefix) => file.startsWith(prefix));
+}
+
+function isPresentation(file) {
+  return hasExtension(file, manifest.presentation.extensions);
+}
+
+function owningTestGroups(file) {
+  const groups = [];
+  for (const [id, group] of Object.entries(manifest.testGroups)) {
+    if ((group.tests ?? []).includes(file)) groups.push(id);
+  }
+  return groups;
+}
+
+function addTestGroup(id, selectedGroups, targetedTests, risks, gates) {
+  const group = manifest.testGroups[id];
+  if (!group) throw new Error("Unknown development test group: " + id);
+  selectedGroups.add(id);
+  for (const risk of group.risks ?? []) risks.add(risk);
+  mergeGates(gates, group.gates);
+  for (const test of group.tests ?? []) targetedTests.add(test);
+}
+
+function addRule(entry, selectedGroups, targetedTests, risks, gates) {
+  for (const risk of entry.risks ?? []) risks.add(risk);
+  mergeGates(gates, entry.gates);
+  for (const id of entry.testGroups ?? []) addTestGroup(id, selectedGroups, targetedTests, risks, gates);
 }
 
 export function classifyDevelopmentScope(files, title = "") {
   const normalizedFiles = files.map(normalize).filter(Boolean);
   const forceFull = title.includes("[full-ci]");
-  const scale = forceFull || normalizedFiles.some((file) => manifest.scalePaths.includes(file));
-  const runtimeFiles = normalizedFiles.filter((file) => !isLightweight(file) && !isFastUiTest(file));
-  const postgres = forceFull || scale || runtimeFiles.length > 0;
-  const fullTests = forceFull || runtimeFiles.length > 0;
+  const gates = emptyGates();
   const modules = new Set();
+  const risks = new Set();
+  const selectedGroups = new Set();
+  const targetedTests = new Set();
 
   for (const file of normalizedFiles) {
-    let matched = false;
-    for (const module of manifest.modules) {
-      if (!moduleMatches(module, file)) continue;
-      modules.add(module.id);
-      matched = true;
+    const matchedModules = manifest.modules.filter((module) => pathMatches(module, file));
+    for (const module of matchedModules) modules.add(module.id);
+
+    const ownedGroups = owningTestGroups(file);
+    for (const groupId of ownedGroups) addTestGroup(groupId, selectedGroups, targetedTests, risks, gates);
+
+    const specialRules = manifest.specialRules.filter((rule) => pathMatches(rule, file));
+    for (const rule of specialRules) addRule(rule, selectedGroups, targetedTests, risks, gates);
+
+    if (isDocumentation(file)) {
+      risks.add("documentation");
+      continue;
     }
-    if (!matched) modules.add(isLightweight(file) || isFastUiTest(file) ? "documentation-style" : "shared");
+
+    if (isPresentation(file)) {
+      addRule(manifest.presentation, selectedGroups, targetedTests, risks, gates);
+      continue;
+    }
+
+    if (file.startsWith("tests/")) {
+      risks.add("test-contract");
+      if (ownedGroups.length === 0 && specialRules.length === 0) {
+        risks.add("unowned-test");
+        gates.fullTests = true;
+      }
+      if (manifest.scalePaths.includes(file)) {
+        risks.add("scale-performance");
+        gates.postgres = true;
+        gates.scale = true;
+      }
+      continue;
+    }
+
+    if (matchedModules.length > 0) {
+      for (const module of matchedModules) addRule(module, selectedGroups, targetedTests, risks, gates);
+    } else if (/^(app|components|lib)\//.test(file)) {
+      modules.add("shared");
+      risks.add("shared-runtime");
+      gates.fullTests = true;
+      gates.build = true;
+    } else if (specialRules.length === 0) {
+      modules.add("shared");
+      risks.add("shared-tooling");
+      gates.fullTests = true;
+      gates.build = true;
+    }
+
+    if (manifest.scalePaths.includes(file)) {
+      risks.add("scale-performance");
+      gates.postgres = true;
+      gates.scale = true;
+      gates.fullTests = true;
+    }
+  }
+
+  if (forceFull) {
+    risks.add("full-ci");
+    for (const key of Object.keys(gates)) gates[key] = true;
+    for (const id of Object.keys(manifest.testGroups)) addTestGroup(id, selectedGroups, targetedTests, risks, gates);
   }
 
   return {
-    postgres,
-    scale,
-    fullTests,
+    ...gates,
     modules: [...modules].sort(),
+    risks: [...risks].sort(),
+    testGroups: [...selectedGroups].sort(),
+    targetedTests: [...targetedTests].sort(),
   };
 }
 
@@ -97,10 +167,29 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
 
-  const result = classifyDevelopmentScope(files, title);
-  process.stdout.write(`postgres=${result.postgres}\n`);
-  process.stdout.write(`scale=${result.scale}\n`);
-  process.stdout.write(`full_tests=${result.fullTests}\n`);
-  process.stdout.write(`modules=${result.modules.join(",") || "none"}\n`);
-  console.error(`Development scope: ${result.modules.join(", ") || "none"}; PostgreSQL=${result.postgres}; scale=${result.scale}; fullTests=${result.fullTests}`);
+  try {
+    const result = classifyDevelopmentScope(files, title);
+    process.stdout.write("postgres=" + result.postgres + "\n");
+    process.stdout.write("scale=" + result.scale + "\n");
+    process.stdout.write("browser=" + result.browser + "\n");
+    process.stdout.write("full_tests=" + result.fullTests + "\n");
+    process.stdout.write("build=" + result.build + "\n");
+    process.stdout.write("modules=" + (result.modules.join(",") || "none") + "\n");
+    process.stdout.write("risks=" + (result.risks.join(",") || "none") + "\n");
+    process.stdout.write("test_groups=" + (result.testGroups.join(",") || "none") + "\n");
+    process.stdout.write("targeted_tests=" + (result.targetedTests.join(",") || "none") + "\n");
+    console.error(
+      "Development scope: " + (result.modules.join(", ") || "none") +
+      "; risks=" + (result.risks.join(", ") || "none") +
+      "; PostgreSQL=" + result.postgres +
+      "; scale=" + result.scale +
+      "; browser=" + result.browser +
+      "; fullTests=" + result.fullTests +
+      "; build=" + result.build +
+      "; testGroups=" + (result.testGroups.join(", ") || "none"),
+    );
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
 }
