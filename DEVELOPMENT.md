@@ -116,6 +116,9 @@ The authenticated Playwright suite uses one isolated mutable PostgreSQL fixture 
 
 During Phase 0C browser-structure work, `tooling/browser-suite-baseline.json` and `tests/browser-suite-structure.test.ts` freeze the current acceptance invariants: 48 logical authenticated test names, the two-project/one-worker contract, centralized browser DB fixture ownership, known fixture identities and required responsive/theme states. Split specs may move tests between files, but those invariants must remain green unless an independent product/test-architecture decision explicitly changes them.
 
+Phase 0C.1 keeps shared browser actions intentionally small. `e2e/browser-actions.mjs` may contain only proven cross-domain UI primitives; GPS, aircraft-authority, RoleCrew and other domain workflows stay local until post-split reuse proves otherwise. Helper extraction must preserve selectors, waits, assertions and timeout semantics exactly enough that the complete authenticated browser gate remains equivalent.
+
+
 A self-managed viewport matrix is not equivalent to a mobile Playwright device project. `page.setViewportSize()` does not recreate mobile user agent, touch, `isMobile`, device scale factor, safe-area, virtual-keyboard or pointer/hover semantics. A second project may therefore be removed only after those semantics are proven irrelevant for that test. Phase 0C.3 will make deduplication evidence explicit with a local full gate using `--retries=0`.
 
 
