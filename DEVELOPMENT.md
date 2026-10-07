@@ -16,7 +16,7 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
    - unrelated heavy suites are not a default milestone requirement.
 4. Before the final PR/release candidate, run one complete local release gate appropriate to the change. `npm run verify` remains the normal application gate; add PostgreSQL/browser/scale coverage when the changed surface requires it.
 5. Do **not** rerun the full local gate merely because documentation, comments, or a stale test/source assertion was corrected after an already-valid full gate. Run the affected targeted test(s). Repeat a heavy local gate only when the correction changes runtime behaviour, persistence/schema, auth/security, certification/recency logic, performance-critical code, or invalidates earlier evidence.
-6. Publish one coherent candidate commit when practical. That commit creates the PR/Vercel preview when runtime-relevant files changed.
+6. Publish one coherent candidate commit when practical. That commit creates/updates the PR. Vercel previews are currently intentionally skipped on non-production branches; local verification is the authoritative pre-merge gate.
 7. Merge only after the required **local** release gates for the exact candidate succeed. GitHub Actions are not a required merge/release gate; Vercel still performs the production build when the released commit can affect runtime output.
 
 ## Toolchain baseline
@@ -35,13 +35,17 @@ The current v1 registry is still a transitional classifier. Shared or previously
 
 ## Vercel build filtering
 
-`vercel.json` delegates the Ignored Build Step to `tooling/vercel-ignore-build.mjs`. The guard skips a deployment only when every changed file is development-only: Markdown documentation, `docs/`, `.github/`, `tests/`, or non-deployment `tooling/` files. The ignored-build guard itself is never treated as development-only because changing it must always exercise a real Vercel build.
+`vercel.json` delegates the Ignored Build Step to `tooling/vercel-ignore-build.mjs`.
 
-Anything that may affect runtime or the build environment continues to deploy. This includes `app/`, `components/`, `lib/`, dependency metadata, TypeScript/Next configuration, `vercel.json` and `tooling/vercel-ignore-build.mjs` itself.
+Current policy is explicit:
+- **non-production branches:** Vercel preview builds are intentionally skipped; local-first verification is authoritative and GitHub Actions remain optional manual diagnostics;
+- **production/main:** development-only changes may skip the production build, while runtime/dependency/deployment changes require it.
 
-The guard first uses `VERCEL_GIT_PREVIOUS_SHA` when Vercel provides a usable commit. In this project Vercel preview checkouts may omit that variable and may not expose an `origin` remote. The safe fallback therefore matches the candidate-first workflow: production deployments compare the released commit with its first parent, while a preview without `VERCEL_GIT_PREVIOUS_SHA` may use its parent only when that parent is a GitHub-created merge commit from the normal production history. A preview with additional candidate commits after that production merge fails safe and requires the build rather than comparing only the latest commit.
+For production, the guard treats Markdown documentation, `docs/`, `.github/`, `tests/`, and non-deployment `tooling/` files as development-only. The ignored-build guard itself is never development-only because changing it must exercise the production build decision path.
 
-If a safe diff base cannot be established, the guard requires the build. Do not broaden the development-only allowlist or weaken the trusted-parent rule merely to save a preview.
+Anything that may affect runtime or the build environment continues to require a production build. This includes `app/`, `components/`, `lib/`, dependency metadata, TypeScript/Next configuration, `vercel.json` and `tooling/vercel-ignore-build.mjs` itself.
+
+The preview-skip policy is a deliberate cost/workflow decision, not evidence that a preview build passed. Phase 0 may revisit this policy separately if independent preview-build evidence is judged worth the additional Vercel build volume; do not silently rely on a preview that was intentionally canceled/skipped.
 
 ## Risk-based verification cadence
 
