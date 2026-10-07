@@ -393,6 +393,16 @@ Implementation candidate:
 - remove remaining duplicated suite lists from package/workflow/tooling surfaces;
 - document the exact targeted-vs-heavy-gate contract before Phase 0C.
 
+Implementation candidate:
+- PostgreSQL scale-suite membership moved into the same v2 development registry; the PostgreSQL runner now reads that membership instead of carrying its own literal three-file list;
+- runtime scale hot paths and PostgreSQL scale-test membership are separate registry fields, so they are not duplicated while both can select the scale gate;
+- manual-cloud targeted verification now executes `npm run test:group -- ui-contract` directly through the canonical registry-backed group runner;
+- `test:ui` remains only a convenience alias and contains no file list;
+- DEVELOPMENT now freezes `scope:changed` as a planner-only command: it reports targeted groups and independent heavy-gate booleans but never executes PostgreSQL, browser, build or destructive fixture work itself;
+- regression coverage functionally compares PostgreSQL core/scale/full selection against the current integration directory and registry, guards the workflow's generic group execution, and protects the targeted-vs-heavy contract.
+
+0B.3 verification is **PENDING** until the targeted development-scope/pipeline tests and TypeScript run on this candidate.
+
 ### Phase 0C — Browser suite structure
 
 Split the monolithic browser spec into stable domain specs, for example:
