@@ -348,6 +348,15 @@ Phase 0B implementation is split into small milestones:
 - make changed registered tests select their owning group without inheriting unrelated runtime risk;
 - keep unknown runtime conservative through full unit/build evidence, but do not invent PostgreSQL/browser dependencies.
 
+Implementation candidate on the active branch:
+- registry schema advanced to v2 with explicit documentation, presentation, test-group, special-rule and module gate metadata;
+- the 16-file UI contract list now lives only in the registry;
+- `npm run test:ui` delegates to the generic registry-backed `test:group` runner;
+- changed-scope output now includes browser/build gates, risks, test groups and resolved targeted tests in addition to PostgreSQL/scale/full-test decisions;
+- regression coverage was rewritten around the Phase 0B contract, including CSS presentation classification, unknown-runtime conservative handling, test ownership, PostgreSQL/browser harness escalation and fail-closed unknown test-group execution.
+
+0B.1 verification is **PENDING** until the targeted scope/pipeline tests, registry-backed UI group, TypeScript and relevant build/tooling checks run on this candidate.
+
 **0B.2 — stable-module coverage**
 - expand module ownership beyond the current 31.8% baseline for stable app/components/lib domains;
 - retain explicit `shared` handling for genuinely cross-cutting or not-yet-owned runtime files;
