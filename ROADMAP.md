@@ -425,7 +425,7 @@ Open integrity question before implementation:
 - the aircraft-profile write validator requires a complete class + basis/reference + valid-from tuple, but the recency evaluator can still consume a class override without proving that the accompanying provenance tuple is complete. Historical v1.51.3 class-only metadata may also exist, so tightening this path without a data census could break backward compatibility.
 
 Phase 2 execution order:
-1. freeze the consumer/dependency census with characterization tests;
+1. freeze the consumer/dependency census with characterization tests — **IMPLEMENTED / LOCAL VERIFICATION PENDING**;
 2. obtain independent review of the external-credit mapping boundary and legacy compatibility;
 3. implement only evidence-backed changes with minimal blast radius;
 4. run targeted recency/snapshot/PostgreSQL tests, then the release gate only when Phase 2 runtime scope is complete.

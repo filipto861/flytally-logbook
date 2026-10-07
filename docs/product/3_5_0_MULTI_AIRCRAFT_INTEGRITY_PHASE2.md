@@ -1,6 +1,6 @@
 # 3.5.0 Phase 2 — Remaining multi-aircraft integrity audit
 
-**Status:** DISCOVERY COMPLETE / INDEPENDENT REVIEW NEXT  
+**Status:** DISCOVERY COMPLETE / CHARACTERIZATION VERIFICATION PENDING  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
@@ -95,6 +95,7 @@ Preferred direction, subject to reviewer/data evidence:
 ## Acceptance matrix for implementation
 
 Before runtime change:
+- characterization suite: `tests/v350-phase2-multi-aircraft-integrity-audit.test.ts` — implemented, local verification pending;
 - source/contract test: no recency consumer may source historical evidence/class/category/type from current aircraft profile;
 - source/contract test: the only aeroplane recency current-profile join is the explicit `part_fcl_credit_*` tuple;
 - Manual/GPS equivalence test for persisted flight context and identity snapshot;
