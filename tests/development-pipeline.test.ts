@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -15,6 +16,29 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.doesNotMatch(pkg.scripts.build,/test/);
+});
+
+test("PostgreSQL acceptance gate fails closed when DATABASE_URL is absent",()=>{
+  const result=spawnSync(
+    process.execPath,
+    [path.join(root,"tooling/run-postgres-tests.mjs"),"core"],
+    {
+      cwd:root,
+      encoding:"utf8",
+      env:{...process.env,DATABASE_URL:"",FLYTALLY_POSTGRES_INTEGRATION:""},
+    },
+  );
+  assert.equal(result.status,2,result.stderr||result.stdout);
+  assert.match(result.stderr,/DATABASE_URL is required for PostgreSQL acceptance/);
+  assert.match(result.stderr,/gate did not run/);
+});
+
+test("PostgreSQL runner owns integration intent instead of relying on the caller flag",()=>{
+  const runner=read("tooling/run-postgres-tests.mjs");
+  assert.match(runner,/preflightPostgresGate\(env\)/);
+  assert.match(runner,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
+  assert.match(runner,/spawnSync\("psql", \["--version"\]/);
+  assert.doesNotMatch(runner,/env: process\.env/);
 });
 
 test("manual cloud verification mirrors the local-first release policy without automatic PR runs",()=>{
