@@ -647,13 +647,35 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 
 # 3.6.0 — Saved-date / timezone semantics — ACTIVE
 
-Issue: #144
+Issue: #144  
+Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
+
+## Phase 0 — Engineering quality / test architecture gate — ACTIVE
+
+Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
+
+Mandatory Phase 0 scope:
+- make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
+- replace duplicated/manual fast-suite lists with one authoritative risk/test registry;
+- distinguish documentation, UI/presentation, domain, persistence/schema, auth/security, browser and scale risk;
+- pin the browser test runner for local/manual-cloud parity;
+- split the growing browser monolith into stable domain-owned specs without weakening isolated DB serialization;
+- reconcile DEVELOPMENT documentation with executable tooling;
+- review stale PR/branch state without deleting anything until supersession is proven.
+
+No 3.6.0 saved-date/timezone runtime semantics are changed in Phase 0.
+
+Phase 0 acceptance is defined in the detailed contract. Required closeout includes the applicable TypeScript, unit/regression, PostgreSQL, browser and build evidence plus ROADMAP / CHANGELOG / DEVELOPMENT reconciliation. FEATURES changes only if product capability changes.
+
+## Phase 1 — Saved-date / timezone semantics — BLOCKED BY PHASE 0
 
 Before code:
 - define which defaults use configured user calendar timezone;
 - identify evidence that must remain UTC;
-- define midnight/day-boundary tests;
-- decide whether any existing persisted data requires treatment.
+- define midnight/day-boundary and DST tests;
+- define timezone-setting changes versus already-persisted records;
+- decide whether any existing persisted data requires treatment;
+- define backup/export/edit consequences.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
