@@ -42,7 +42,22 @@ Phase 0B.1 uses registry version 2:
 
 Named groups are executed through `npm run test:group -- <group>`. `npm run test:ui` is now only an alias for the registry-owned `ui-contract` group; the 16-file UI list is no longer duplicated in `package.json`.
 
-The Phase 0B.2 candidate expands stable ownership from the original **121/381 (31.8%)** baseline to **368/381 (96.6%)**. The remaining **13** reviewed cross-cutting/not-yet-owned runtime files are explicitly listed under `shared-runtime`; future unmatched runtime files still fail conservative instead of receiving guessed ownership. Registry regression coverage requires at least 90% stable ownership and zero unclassified files in the current audited surface. The manual GitHub workflows still do **not** consume changed-scope selection automatically; command/workflow convergence belongs to Phase 0B.3.
+The Phase 0B.2 registry expands stable ownership from the original **121/381 (31.8%)** baseline to **368/381 (96.6%)**. The remaining **13** reviewed cross-cutting/not-yet-owned runtime files are explicitly listed under `shared-runtime`; future unmatched runtime files still fail conservative instead of receiving guessed ownership. Registry regression coverage requires at least 90% stable ownership and zero unclassified files in the current audited surface.
+
+### Changed-scope execution contract
+
+`npm run scope:changed -- <path> [<path> ...]` is a **planner**, not an executor. It must never connect to PostgreSQL, reset browser fixtures, start Playwright or run a build by itself. Its output is the explicit verification contract for the supplied change set:
+
+- `test_groups`: named registry-backed targeted groups for fast iteration; run them with `npm run test:group -- <group>`;
+- `full_tests=true`: the final candidate needs the complete `npm test` application regression gate;
+- `postgres=true`: run PostgreSQL acceptance against an isolated localhost fixture; `scale=true` means use the full/scale acceptance path rather than the core-only path;
+- `browser=true`: run authenticated browser acceptance with its isolated localhost browser fixture;
+- `build=true`: run `npm run build` for final candidate evidence;
+- a heavy gate is required only when its own flag is true; `full_tests` does not silently imply PostgreSQL or browser work.
+
+Targeted group membership, PostgreSQL scale-test membership, and module/risk ownership are single-sourced in `tooling/development-modules.json`. The PostgreSQL runner reads its scale membership from that registry, and the manual cloud targeted path executes the registry-backed `ui-contract` group directly. `npm run test:ui` remains only a local convenience alias for the same group.
+
+The manual GitHub workflows remain **manual-only diagnostics**. They do not infer a diff or override the local risk decision; their targeted mode uses the same registry-backed group runner, while heavy PostgreSQL/browser jobs still require explicit manual selection.
 
 ## Vercel build filtering
 
