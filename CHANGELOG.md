@@ -13,7 +13,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 ### Development / verification governance
 - Added the 3.6.0 Phase 0 engineering-quality gate before any saved-date/timezone runtime implementation.
 - Recorded and independently reviewed the current test/development audit, including the suite-wide PostgreSQL silent-skip exposure, test-scope registry drift, browser-runner reproducibility, browser-suite ownership and stale Git/PR hygiene.
-- Started Phase 0A hardening: explicitly invoked PostgreSQL acceptance now preflights DB tooling/configuration and owns the integration-test flag instead of relying on caller state.
+- Started Phase 0A hardening: explicitly invoked PostgreSQL acceptance now owns the integration-test flag and preflights both DB tooling/configuration and a real database connection before test fanout.
 - Pinned Playwright Test 1.55.0 in repository dependencies, added an explicit authenticated browser gate, and removed the ad-hoc manual-workflow runner install.
 - Aligned the development/manual-workflow Node line to the production Vercel project's Node 24.x runtime.
 - Corrected the browser PostgreSQL bootstrap timeout variable to `PGCONNECT_TIMEOUT`.
