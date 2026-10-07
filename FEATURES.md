@@ -115,7 +115,7 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — ACTIVE
+### 3.5.0 — Certified flight voiding + remaining multi-aircraft integrity — IMPLEMENTED / FINAL RELEASE GATE NEXT
 - Allow the owning pilot to void/remove a certified flight from the active logbook without hard-deleting the protected evidence.
 - Voided flights must be absent from normal flight lists and from Dashboard, Statistics, Map, Print/Export, recency/compliance and other operational totals/read models.
 - Preserve the original certified snapshot/fingerprint plus void actor, timestamp and mandatory reason in audit history.
@@ -129,7 +129,8 @@ Important boundary:
 - M4 portable backup v13 is locally verified: new backups preserve void history/provenance as server-authenticated history-only sections; v4–v12 legacy `track_points` remains parser-compatible but is not queried/restored into the current schema. Exact-head PostgreSQL core acceptance is 85/85 PASS.
 - M5 consumer/integration verification is locally complete: M5A redirects owner source-flight notification history to the permanent audit and neutralizes recipient workflow links before cascade; M5B PostgreSQL collaboration/provenance acceptance is **86/86 PASS**; M5C authenticated browser acceptance is **2/2 PASS** across desktop and mobile Chromium, including permanent-audit navigation from retained notification history.
 - Phase 1 certified-flight voiding has completed its local release gate: exact-head `a2d3f65` TypeScript PASS, full unit/regression **1285/1285 PASS**, full PostgreSQL integration + scale **99/99 PASS**, production build PASS, with authenticated desktop/mobile M5C **2/2 PASS** on runtime-equivalent `a423239`.
-- Phase 2 remaining multi-aircraft integrity audit is now active. Initial discovery confirms historical category/class/type consumers are flight-snapshot based; the remaining intentional current-profile dependency is the effective-dated Annex-I/ULL `part_fcl_credit_*` mapping used by aeroplane recency/audit. Its legacy/provenance semantics are under independent review before any runtime change. Production migration/deploy is deferred until the complete canonical `3.5.0` scope is release-ready; production remains 3.4.1 / schema v19.
+- Phase 2 remaining multi-aircraft integrity audit is complete without a runtime change. Characterization is **4/4 PASS** on `69310a3`; independent review confirmed the snapshot/external-applicability architecture; repository-history reconciliation showed strict server persistence for explicit overrides; and the read-only production census found **25/25 profiles with no explicit `part_fcl_credit_*` metadata**, covering 295 saved flights and 36 certified ULL flights. No legacy compatibility layer, schema v21 or certification payload change is justified.
+- Production migration/deploy remains deferred until the final canonical `3.5.0` release gate; production remains 3.4.1 / schema v19.
 
 
 ### 3.4.1 — GPS Night-time reliability — IMPLEMENTED / PRODUCTION VERIFIED

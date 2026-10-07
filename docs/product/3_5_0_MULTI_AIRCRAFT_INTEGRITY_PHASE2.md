@@ -1,6 +1,6 @@
 # 3.5.0 Phase 2 — Remaining multi-aircraft integrity audit
 
-**Status:** REVIEW COMPLETE / PRODUCTION CREDIT CENSUS NEXT  
+**Status:** VERIFIED / NO RUNTIME CHANGE REQUIRED  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
 **Branch:** `feat/3.5.0-certified-flight-voiding`  
@@ -90,15 +90,30 @@ Therefore a class-only or partially populated explicit tuple is **not proven to 
 
 ## Decision after review
 
-No Phase 2 runtime behavior is changed yet.
+No Phase 2 runtime behavior is changed.
 
-An experimental unverified batch that relaxed stored-profile validation was superseded before verification once the server-side v1.51.3 history above was confirmed. Runtime and characterization code are restored to the exact `69310a3` state that already passed the initial Phase 2 suite 4/4.
+An experimental unverified batch that relaxed stored-profile validation was superseded before verification once the server-side v1.51.3 history above was confirmed. Runtime and characterization code remain at the exact `69310a3` behavior that passed the initial Phase 2 suite 4/4.
 
-The next gate is a **read-only production aggregate census** of `part_fcl_credit_*` shapes. No row contents, user identity, registration or free-text basis need to be exported for this decision.
+The required read-only production aggregate census was then executed against the production Primary branch / `neondb`. It returned:
 
-Census script: `tooling/3_5_phase2_credit_census.sql`.
+| credit_shape | aircraft_profiles | active | inactive | saved_flights | certified_ULL_flights |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `NONE` | 25 | 25 | 0 | 295 | 36 |
 
-## What the production census must establish
+Additional aggregate orphan checks returned zero basis/date metadata where credit class was blank. Production schema was independently confirmed as v19.
+
+Therefore:
+- there is no production explicit override state to preserve or remediate;
+- there are no partial/malformed/orphan tuple shapes;
+- the strict current profile validator remains appropriate;
+- ordinary ULL → SEP remains automatic/profile-independent;
+- the optional external override concept remains available for future complete, provenance-backed mappings;
+- no canonical-resolver runtime rewrite is necessary in 3.5;
+- no schema v21 or certification payload change is justified.
+
+Census script: `tooling/3_5_phase2_credit_census.sql` (corrected and successfully executed read-only).
+
+## Production census criteria and result
 
 For all aircraft profiles, grouped only as aggregate counts:
 
@@ -113,11 +128,9 @@ For all aircraft profiles, grouped only as aggregate counts:
 - number of certified ULL flights attached to each shape.
 
 Decision rule:
-
-- if anomalous/partial shapes are zero, keep strict stored-profile validation and do not create legacy compatibility machinery;
-- if anomalous shapes exist, determine whether they have credible product provenance before changing eligibility;
-- only if preservation is required and cannot be represented safely in existing fields may an additive migration be proposed;
-- no basis/reference may be invented.
+- anomalous/partial shapes were zero, so strict stored-profile validation stays in place and no legacy compatibility machinery is added;
+- no basis/reference or effective date is invented;
+- no additive migration is required.
 
 ## Acceptance evidence so far
 
@@ -127,7 +140,9 @@ Decision rule:
   - snapshot-owned category/type consumers;
   - Manual/GPS PROFILE + same-registration SNAPSHOT boundaries;
   - current evaluator behavior for class-only explicit credit.
-- No Phase 2 runtime change is verified or claimed yet.
+- Production aggregate census: **VERIFIED READ-ONLY** — 25/25 profiles `NONE`, 295 saved flights, 36 certified ULL flights, zero anomalous shapes.
+- Production schema: **v19 confirmed**.
+- Phase 2 runtime change: **N/A — none required by evidence**.
 
 ## DO NOT
 
