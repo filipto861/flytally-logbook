@@ -115,7 +115,13 @@ Important boundary:
 
 ## Planned / active follow-up
 
-### 3.5.2 — Always-on GPS/SERA Night suggestions — ACTIVE
+### 3.6.0 — Saved-date / timezone semantics — ACTIVE
+- Define which user-facing saved-date defaults follow the configured calendar timezone.
+- Keep GPS/FCL.050 evidence UTC where UTC is the authoritative stored meaning.
+- Add explicit midnight/day-boundary handling and tests before implementation.
+- Do not rewrite persisted evidence without a source-backed migration need.
+
+### 3.5.2 — Always-on GPS/SERA Night suggestions — IMPLEMENTED / PRODUCTION VERIFIED
 - Remove the account-level **Night definition** preference from Settings.
 - Always attempt the existing SERA civil-twilight Day/Night and Night-time suggestions when the canonical flight context supports those fields.
 - Preserve the existing -6° geometric SERA boundary, ±0.5° confidence guard, UTC/offset requirements, sparse-gap and track-integrity fail-closed rules.
@@ -123,6 +129,7 @@ Important boundary:
 - IFR remains pilot-entered.
 - Legacy persisted `night_definition` preference values are ignored by active runtime behavior; no DB migration, certification-version change or historical-flight rewrite.
 - Detailed contract: `docs/product/3_5_2_ALWAYS_ON_NIGHT_SUGGESTIONS.md`.
+- Production closeout: PR #248 merged as `60be6fd23f283302dadc7a3d611a19ff0bc8ebf3`; Vercel deployment `dpl_4pyJEv2pjWQLNcmNPpFYcjsf3PHj` is READY, root/login smoke returned HTTP 200, and the checked post-deploy runtime-error window was clean.
 
 ### 3.5.1 — GPS T&G false-positive containment — IMPLEMENTED / PRODUCTION VERIFIED
 - Tighten advisory T&G inference against three reproduced real-track false positives without adding new auto-counted events.
