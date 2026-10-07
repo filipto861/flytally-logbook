@@ -1,6 +1,6 @@
 # 3.5.3 — Flight detail navigation UX
 
-**Status:** ACTIVE  
+**Status:** IMPLEMENTED · VERIFICATION PENDING  
 **Owner:** Filip Točík  
 **Date:** 7 October 2026  
 **Repo:** `flytally-logbook`  
