@@ -69,6 +69,7 @@
         "build": false
       },
       "tests": [
+        "tests/browser-suite-structure.test.ts",
         "tests/development-pipeline.test.ts",
         "tests/development-scope.test.ts",
         "tests/vercel-ignore-build.test.ts"
