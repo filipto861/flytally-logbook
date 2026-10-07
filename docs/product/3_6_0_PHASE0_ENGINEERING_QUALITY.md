@@ -446,7 +446,22 @@ Read-only inventory on the active branch:
 - registered that structure contract in the development-pipeline targeted group;
 - no Playwright spec, browser DB helper, bootstrap, product runtime or DB schema changed.
 
-0C.0 verification is **PENDING** until the targeted browser-structure/development-scope/development-pipeline tests and TypeScript run on this candidate.
+0C.0 verification:
+- targeted browser-structure/scope/pipeline set: **34/34 PASS**;
+- TypeScript: **PASS**.
+
+**0C.0 is CLOSED / VERIFIED.**
+
+0C.1 implementation candidate:
+- extracted only two proven cross-domain primitives into `e2e/browser-actions.mjs`: `expectNoHorizontalOverflow` and `loginBrowserPilot`;
+- both implementations were moved byte-for-byte in behavior from the monolith: selectors, waits, assertions, credentials and timeout semantics are unchanged;
+- GPS/details/split/RoleCrew helpers remain local to the monolith because they are domain-specific at this stage;
+- `holdPost` also remains local because current reuse spans only certification plus settings/connections mutation areas, not the three-or-more-domain threshold from review;
+- no browser test moved files; all 48 logical names remain under the current acceptance spec;
+- no Playwright project/worker/retry, browser DB fixture, bootstrap, product runtime or schema change;
+- structure regression now rejects GPS/RoleCrew-specific helpers from the shared action module and proves the two extracted helpers are no longer locally redefined.
+
+0C.1 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract, TypeScript, then the complete serialized authenticated browser gate because helper behavior is now shared across many browser tests.
 
 Provisional implementation sequence, pending independent review:
 
