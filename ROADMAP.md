@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.2 Batch 1 — settings/connections mutation spec split — IMPLEMENTED, VERIFICATION PENDING**. 0C.1 is ✅ DONE / VERIFIED with targeted **35/35 PASS**, TypeScript **PASS**, and full browser **96 PASS / 2 intentional skips / 0 failed** in **4.9m**. Batch 1 moves four end-of-suite settings/connections mutation tests into their domain spec while preserving names, assertions, centralized DB fixtures, workers=1 and broad execution order. New-spec both-project coverage + full serialized browser acceptance are required before the next split batch.
+Current milestone: **Phase 0C.2 Batch 2 — advisory presentation spec split — IMPLEMENTED, VERIFICATION PENDING**. Batch 1 settings/connections mutations is ✅ DONE / VERIFIED: targeted **36/36 PASS**, TypeScript **PASS**, focused spec **8/8 PASS**, full browser **96 PASS / 2 skips / 0 failed** in **4.8m**. Batch 2 moves seven E1/Night/SERA advisory tests into `advisory-presentation.spec.mjs`; the acceptance inventory remains exactly 48 unique logical tests and all DB/project/worker/retry contracts remain unchanged.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
