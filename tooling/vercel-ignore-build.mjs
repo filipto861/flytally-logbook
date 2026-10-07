@@ -82,7 +82,7 @@ function filesFromArguments(argv) {
 
 if (!isProductionBuild()) {
   const ref = currentGitRef() || "non-production ref";
-  console.log(`Skipping Vercel preview build for ${ref}. Feature branches are validated by GitHub Actions; Vercel builds production only.`);
+  console.log(`Skipping Vercel preview build for ${ref}. Feature branches are validated by the local-first release gates; Vercel previews are intentionally disabled unless that policy is changed explicitly.`);
   process.exit(0);
 }
 
