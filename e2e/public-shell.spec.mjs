@@ -1546,7 +1546,6 @@ test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and
   const role=form.locator('select[name="role"]');
 
   const assertState=async state=>{
-    await openGpsFlightContext(gpsForm);
     if(state==="PIC"){
       await role.selectOption("PIC");
       await expect(form.locator(".role-crew-inline-grid")).toHaveCount(0);
