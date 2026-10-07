@@ -364,7 +364,10 @@ Implementation candidate on the active branch:
 
 The stale assertion has been corrected to verify the actual 0B.1 contract: unknown app/components/lib runtime files fail conservative, while PostgreSQL/browser dependencies are not invented automatically. This is an assertion-only test correction; registry/runtime tooling behavior is unchanged.
 
-0B.1 remains **VERIFICATION PENDING** only for a targeted rerun of `tests/development-pipeline.test.ts`. The already-valid UI, TypeScript, full-suite remainder and build evidence do not need to be repeated unless that targeted rerun exposes a new uncertainty.
+0B.1 final targeted rerun:
+- `tests/development-pipeline.test.ts`: **12/12 PASS** in 180 ms.
+
+**0B.1 is CLOSED / VERIFIED.** The next active milestone is **0B.2 — stable-module coverage**. The already-valid UI, TypeScript, full-suite remainder and build evidence remain accepted because the final correction changed only the stale source assertion.
 
 **0B.2 — stable-module coverage**
 - expand module ownership beyond the current 31.8% baseline for stable app/components/lib domains;
