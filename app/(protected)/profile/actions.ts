@@ -8,6 +8,7 @@ import { recordAuthEvent } from "@/lib/auth/security";
 import { sql } from "@/lib/db";
 import { licenceProfileMap,parsePilotPreferences,type PilotPreferences } from "@/lib/logbook-print";
 import { refreshRecencySnapshot } from "@/lib/recency-service";
+import { normalizeSaveableTimeZone } from "@/lib/calendar-date";
 import { eraseAccountForPrivacy,revokeAccountPublicShares } from "@/lib/privacy-account";
 import { eraseTrainingDataForAccount } from "@/lib/training-privacy";
 
@@ -41,7 +42,9 @@ export async function saveProfile(f:FormData){const {userId}=await requireUser()
 export async function saveSettings(f:FormData){
   const {userId}=await requireUser(),current=await currentSettings(userId),existing=current.preferences,row=current.row;
   const preferences=JSON.stringify({...existing,default_evidence:pick(f,"default_evidence",existing.default_evidence)||"ULL"});
-  const timezone=pick(f,"timezone",row.timezone)||"Europe/Prague",currency=pick(f,"currency",row.currency)||"CZK",homeAirport=pick(f,"home_airport",row.home_airport).toUpperCase(),defaultRole=pick(f,"default_role",row.default_role)||"PIC";
+  const timezone=normalizeSaveableTimeZone(pick(f,"timezone",row.timezone));
+  if(!timezone)redirect("/profile?settingsError=timezone");
+  const currency=pick(f,"currency",row.currency)||"CZK",homeAirport=pick(f,"home_airport",row.home_airport).toUpperCase(),defaultRole=pick(f,"default_role",row.default_role)||"PIC";
   await sql`INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json,created_at,updated_at) VALUES(${userId},${timezone},${currency},${homeAirport},${defaultRole},${preferences},NOW(),NOW()) ON CONFLICT(user_id) DO UPDATE SET timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,home_airport=EXCLUDED.home_airport,default_role=EXCLUDED.default_role,preferences_json=EXCLUDED.preferences_json,updated_at=NOW()`;
   refresh();
 }
@@ -50,7 +53,9 @@ export async function saveAccountSettings(f:FormData){
   const {userId}=await requireUser(),current=await currentSettings(userId),existing=current.preferences,row=current.row;
   const name=s(f,"display_name");if(!name)return;
   const preferences=JSON.stringify({...existing,default_evidence:pick(f,"default_evidence",existing.default_evidence)||"ULL"});
-  const timezone=pick(f,"timezone",row.timezone)||"Europe/Prague",currency=pick(f,"currency",row.currency)||"CZK",homeAirport=pick(f,"home_airport",row.home_airport).toUpperCase(),defaultRole=pick(f,"default_role",row.default_role)||"PIC";
+  const timezone=normalizeSaveableTimeZone(pick(f,"timezone",row.timezone));
+  if(!timezone)redirect("/profile?settingsError=timezone");
+  const currency=pick(f,"currency",row.currency)||"CZK",homeAirport=pick(f,"home_airport",row.home_airport).toUpperCase(),defaultRole=pick(f,"default_role",row.default_role)||"PIC";
   await sql.transaction([
     sql`UPDATE users SET display_name=${name},updated_at=NOW() WHERE id=${userId}`,
     sql`INSERT INTO user_settings(user_id,timezone,currency,home_airport,default_role,preferences_json,created_at,updated_at) VALUES(${userId},${timezone},${currency},${homeAirport},${defaultRole},${preferences},NOW(),NOW()) ON CONFLICT(user_id) DO UPDATE SET timezone=EXCLUDED.timezone,currency=EXCLUDED.currency,home_airport=EXCLUDED.home_airport,default_role=EXCLUDED.default_role,preferences_json=EXCLUDED.preferences_json,updated_at=NOW()`,
