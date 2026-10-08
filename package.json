@@ -17,12 +17,15 @@
     "test:postgres": "node tooling/run-postgres-tests.mjs core",
     "test:postgres:scale": "node tooling/run-postgres-tests.mjs scale",
     "test:postgres:full": "node tooling/run-postgres-tests.mjs full",
-    "verify": "npm run typecheck && npm test && npm run build",
+    "verify": "node tooling/verify-app.mjs",
     "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build",
     "test:browser": "node tooling/run-auth-browser.mjs",
     "verify:browser": "npm run build && npm run test:browser",
     "test:group": "node tooling/run-development-test-group.mjs",
-    "verify:plan": "node tooling/verify-plan.mjs"
+    "verify:plan": "node tooling/verify-plan.mjs",
+    "verify:app": "node tooling/verify-app.mjs",
+    "verify:postgres": "node tooling/verify-postgres.mjs",
+    "verify:domain": "node tooling/verify-domain.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
