@@ -96,7 +96,7 @@ Rules:
 Canonical verification executors now bind their observations to the exact `candidateId` produced by the planner and write local machine-readable records under ignored `.flytally/verification/<candidateId>/`.
 
 Available command surface in this implementation batch:
-- `npm run verify:app -- <candidate args>` — TypeScript, aggregate Node regression and production build. The legacy `npm run verify -- <candidate args>` is an alias. Aggregate regression remains non-behavioral evidence.
+- `npm run verify:app -- <candidate args>` — TypeScript, aggregate Node regression and production build. Legacy `npm run verify` remains no-argument compatible by treating the candidate as `--all`; when explicit candidate args are supplied it forwards them to `verify:app`. Aggregate regression remains non-behavioral evidence.
 - `npm run verify:domain -- <candidate args>` — only the registry-approved direct `domain-unit` tests for the affected modules; required-but-unavailable direct evidence exits 3 before execution.
 - `npm run verify:postgres -- <candidate args>` — complete PostgreSQL acceptance against the existing localhost-only fail-closed harness.
 - `npm run verify:browser -- <candidate args>` — browser-only authenticated acceptance. It requires a successful build ledger for the same candidate and a matching current Next.js build identity before any browser fixture reset.
@@ -248,7 +248,7 @@ export FLYTALLY_AUTH_BROWSER=1
 export FLYTALLY_BROWSER_PASSWORD=FlyTally-Browser-2026!
 export SESSION_SECRET=flytally-browser-session-secret-not-production
 export SIGNING_SECRET=flytally-browser-signing-secret-not-production
-npm run verify:browser
+npm run verify:browser:with-build -- --all
 ```
 
 PowerShell equivalent:
