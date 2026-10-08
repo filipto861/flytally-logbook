@@ -720,6 +720,13 @@ Exit contract:
 Revised 0E milestones:
 1. **0E.0 — semantics / ledger / compatibility freeze — DONE (design only)**;
 2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — ACTIVE**;
+   - implementation candidate added: `tooling/verification-candidate.mjs` resolves exactly one explicit source (paths / `--files` / `--base` / `--all`), normalizes and hashes exact candidate content, and rejects missing/ambiguous inputs;
+   - `tooling/verify-plan.mjs` now exposes human and `--json` plans over the existing classifier;
+   - planner now exposes `typecheck` explicitly: non-documentation candidates require it, documentation-only candidates do not;
+   - `--force-all` reuses the existing full-ci policy without changing candidate membership;
+   - `npm run verify:plan` is added; `scope:changed` remains untouched for compatibility;
+   - dedicated planner regression coverage is registered under `development-pipeline`;
+   - **verification pending**; 0E.1 is not DONE yet.
 3. **0E.2 — registry available-evidence metadata + direct domain selection**;
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers**;
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
