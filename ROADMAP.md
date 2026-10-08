@@ -693,17 +693,19 @@ Frozen evidence/execution model:
 - stale/mismatched build or evidence entries are unusable;
 - required but unavailable direct evidence fails closed **before** expensive gates.
 
-Frozen command surface:
+Frozen 0E.0 command-surface proposal (historical design snapshot):
 - `test:target` — explicit low-level Node tests;
 - `test:group` — homogeneous registry-backed groups;
 - `verify:plan` — canonical side-effect-free planner with human + JSON output; `scope:changed` remains compatibility surface;
 - `verify:app` — application gate only: typecheck + aggregate Node regression + production build; legacy `verify` remains alias;
 - `verify:postgres` — full PostgreSQL acceptance;
-- `verify:browser` — browser-only full authenticated acceptance; requires fresh same-candidate build evidence;
+- `verify:browser` — originally proposed as browser-only full authenticated acceptance;
 - `verify:browser:with-build` — migration compatibility convenience;
 - `verify:domain` — registry-approved direct domain-unit evidence only;
-- `verify:release` — risk-based planner/executor/ledger;
-- `verify:release:full` and/or `--force-all` — compatibility/full escape hatch during migration.
+- `verify:release` — originally proposed as the risk-based planner/executor/ledger;
+- `verify:release:full` / `--force-all` — originally proposed compatibility/full escape hatch.
+
+Final implementation supersedes the proposal only where later evidence/review required it: static `verify:release` remains unchanged compatibility behavior, `verify:release:risk` is the canonical candidate-bound release executor, `verify:browser` / `verify:browser:with-build` are legacy full-browser diagnostics, `verify:browser:risk` is authoritative browser release evidence, and no `verify:release:full` script exists; forced full candidate verification is `verify:release:risk --force-all`.
 
 Candidate sources for 0E:
 - explicit positional paths;
@@ -860,11 +862,11 @@ Phase 0 acceptance is defined in the detailed contract. Required closeout includ
 Discovery:
 - DEVELOPMENT command documentation matches the executable package command surface for `test:target`, `test:group`, `scope:changed`, `verify:plan`, `verify:iterate`, `verify:app`, `verify:domain`, `verify:postgres`, `verify:browser:risk`, the legacy diagnostic browser commands, static `verify:release`, and canonical `verify:release:risk`;
 - seven historical branches are proven ancestors of `main` and are safe cleanup candidates by ancestry: `chore/pre-f3-integration-anchor`, `codex/v335-batch8-routes-headers-legal`, `docs/flight-entry-f1-closeout`, `feat/flight-entry-f33-aircraft-authority`, `feat/flight-entry-f34-aircraft-context-ux`, `fix/story-map-toggle`, and `test/flight-entry-f35-closeout`;
-- five older open feature PRs (#187, #201, #206, #231, #232) are diverged/non-mergeable against current `main`; do not close or delete them until supersession is proven explicitly;
+- supersession is now proven for the five previously-open parallel PRs and they were closed without merge: #187 → merged #188/F0.1, #201 → merged #200/F1.4, #206 → merged #207/F2.2, and #231/#232 → final F3.3 head `065896d3c9aa75fee8c2c0c7cc7a2f6abc20e52a` plus later F3.4/F3.5 stack already ancestral to `main`; their branches remain intact;
 - PR #255 is the active Phase 0 integration PR; no destructive branch/PR cleanup has been performed.
 
 Next:
-- prove or reject supersession for each diverged open PR;
+- preserve the explicit `chore/pre-f3-integration-anchor` rollback branch unless its retirement is separately approved; do not delete diverged historical branches without equivalent proof;
 - remove only stale documentation drift and record the branch-cleanup decision set;
 - finish Phase 0 acceptance reconciliation, then close Phase 0 before any 3.6.0 timezone-runtime work.
 
