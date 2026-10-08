@@ -124,12 +124,14 @@ test("connection access update disables duplicate submit and persists",async({pa
   gate.release();
   await clicking;
   await gate.cleanup();
+  await expect(manager.getByRole("button",{name:"Save access"})).toBeEnabled();
 
   await page.reload();
   const persisted=page.locator("details.connection-manager").filter({hasText:"Browser Friend"});
-  await expect(persisted).toContainText("Instructor");
-  await expect(persisted).toContainText("Can view your logbook");
-  await persisted.locator("summary").first().click();
+  const summary=persisted.locator("summary").first();
+  await expect(summary).toContainText("Instructor");
+  await expect(summary).toContainText("Can view your logbook");
+  await summary.click();
   await expect(persisted.getByLabel("Relationship")).toHaveValue("instructor");
   await expect(persisted.getByLabel("Allow read-only logbook view")).toBeChecked();
 });
