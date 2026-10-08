@@ -5,15 +5,28 @@ import { evaluateEvidenceObservation } from "./evidence-contract.mjs";
 import { preflightPostgresGate,selectPostgresTests } from "./run-postgres-tests.mjs";
 import { runNodeTests } from "./verification-execution.mjs";
 import { writeVerificationLedgerEntry } from "./verification-ledger.mjs";
+import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
 
 function canonicalCommand(argv){
   return "npm run verify:postgres -- "+argv.join(" ");
+}
+
+export function postgresVerificationConfiguration(){
+  const tests=configuration.testFiles;
+  return {
+    mode:"full",
+    localhostOnly:true,
+    testFiles:tests,
+    configHash:verificationConfigIdentity().hash,
+    toolchainHash:declaredToolchainIdentity().hash,
+  };
 }
 
 export async function runPostgresVerification(argv,env=process.env){
   const plan=createVerificationPlan(argv);
   const {candidate}=plan;
   let gateEnv;
+  const configuration=postgresVerificationConfiguration();
 
   try{
     gateEnv=preflightPostgresGate(env);
@@ -25,7 +38,7 @@ export async function runPostgresVerification(argv,env=process.env){
       candidate,
       canonicalCommand:canonicalCommand(argv),
       exitCode:2,
-      effectiveConfiguration:{mode:"full",localhostOnly:true},
+      effectiveConfiguration:configuration,
       evaluation:{status:"NOT RUN",reason},
     });
     return {exitCode:2,plan,ledger};
@@ -53,7 +66,7 @@ export async function runPostgresVerification(argv,env=process.env){
     candidate,
     canonicalCommand:canonicalCommand(argv),
     exitCode,
-    effectiveConfiguration:{mode:"full",localhostOnly:true,testFiles:tests},
+    effectiveConfiguration:configuration,
     observation,
     evaluation,
   });
