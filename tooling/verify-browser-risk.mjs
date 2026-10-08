@@ -230,6 +230,11 @@ export async function runBrowserRiskVerification(argv,env=process.env){
     }
 
     const report=JSON.parse(readFileSync(reportPath,"utf8"));
+    if(report.schemaVersion!==2){
+      executionFailure=1;
+      mismatchReason="Risk-scoped browser execution produced an unsupported evidence report schema.";
+      break;
+    }
     const effective=report.effectiveConfiguration??{};
     if(effective.workers!==1||effective.fullyParallel!==false){
       executionFailure=1;
