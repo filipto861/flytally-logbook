@@ -33,6 +33,7 @@ export function verificationConfigIdentity(){
     "tooling/verification-source.mjs",
     "tooling/verification-typecheck.mjs",
     "tooling/verification-build.mjs",
+    "tooling/verification-browser-risk.mjs",
     "tooling/verify-iterate.mjs",
     "tooling/verify-browser-risk.mjs",
     "tooling/verify-browser.mjs",
