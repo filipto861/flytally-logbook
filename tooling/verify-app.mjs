@@ -31,16 +31,17 @@ export async function runAppVerification(argv,env=process.env){
       exitCode:typecheck.code,
       effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
       steps,
+      evaluation:{status:"FAIL",reason:"TypeScript gate failed; later application steps did not run."},
     });
     return {exitCode:typecheck.code,plan,ledger};
   }
 
   const tests=await runNpm(["test"],{env});
-  let testSummary=null;
+  let testSummary=null,summaryError=null;
   try{
     testSummary=parseNodeTestSummary(tests.stdout+"\n"+tests.stderr);
   }catch(error){
-    if(tests.code===0)throw error;
+    summaryError=error instanceof Error?error.message:String(error);
   }
   steps.aggregateRegression={
     status:tests.code===0&&testSummary?"PASS":"FAIL",
@@ -59,6 +60,10 @@ export async function runAppVerification(argv,env=process.env){
       exitCode,
       effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
       steps,
+      evaluation:{
+        status:"FAIL",
+        reason:tests.code!==0?"Aggregate regression gate failed.":summaryError??"Aggregate regression evidence summary was unavailable.",
+      },
     });
     return {exitCode,plan,ledger};
   }
@@ -86,6 +91,7 @@ export async function runAppVerification(argv,env=process.env){
       exitCode:build.code,
       effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
       steps,
+      evaluation:{status:"FAIL",reason:"Production build failed."},
     });
     return {exitCode:build.code,plan,ledger};
   }
@@ -112,6 +118,7 @@ export async function runAppVerification(argv,env=process.env){
       exitCode:1,
       effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
       steps,
+      evaluation:{status:"PARTIAL",reason},
     });
     return {exitCode:1,plan,ledger};
   }
@@ -136,6 +143,7 @@ export async function runAppVerification(argv,env=process.env){
     exitCode:0,
     effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
     steps,
+    evaluation:{status:"PASS",reason:"TypeScript, aggregate regression and production build completed successfully."},
   });
   return {exitCode:0,plan,ledger};
 }
