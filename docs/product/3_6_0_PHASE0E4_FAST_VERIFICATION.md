@@ -1,6 +1,6 @@
 # 3.6.0 Phase 0E.4 — Fast iteration and risk-based release verification
 
-**Status:** REVIEWED DESIGN / ACCEPT WITH CHANGES / 0E.4a ACTIVE  
+**Status:** REVIEWED DESIGN / ACCEPT WITH CHANGES / 0E.4b DONE / 0E.4c ACTIVE  
 **Parent:** `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`  
 **Scope:** development verification tooling only; no product runtime, database schema, certification, backup or timezone-semantic change.
 
@@ -216,7 +216,7 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 - correct `buildArtifactRequired = build || browser`;
 - tests only; no release-command replacement yet.
 
-### 0E.4b — fast iteration executor — ACTIVE
+### 0E.4b — fast iteration executor — DONE / VERIFIED
 - canonical source-contract group execution/ledger;
 - `verify:iterate`;
 - exact-candidate ledger reuse;
@@ -233,7 +233,26 @@ Current 0E.4b implementation candidate:
 - `--with-browser` is explicitly unavailable until 0E.4c rather than silently producing non-authoritative browser evidence;
 - existing `verify:release`, `verify:app`, PostgreSQL and browser command semantics remain unchanged.
 
-0E.4b verification is pending.
+0E.4b verification closeout:
+- exact candidate: `d01813c978c63cd5fc14945fca9a310226d338d2`;
+- first fast iteration: development-pipeline **98/98 PASS**, domain N/A, TypeScript PASS, release **NOT EVALUATED**;
+- immediate repeat: source PASS / domain N/A / TypeScript PASS all reused from the exact candidate ledger;
+- same-candidate `verify:app`: TypeScript PASS, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**;
+- PostgreSQL/browser: N/A for this 0E.4b tooling-only candidate.
+
+### 0E.4c — authoritative risk browser executor — ACTIVE
+
+Current implementation candidate:
+- `browser-acceptance` authority moves from legacy `browser` full-matrix output to planner-bound `browser-risk` targeted evidence;
+- Playwright evidence report v2 records exact `{spec,title,project}` planned and actual cases;
+- executor recomputes and enforces the exact planner selection, selection hash, config/toolchain identity and fixture contract identity;
+- same-candidate production build is required and may be created automatically when missing;
+- retries=0, workers=1 and fullyParallel=false remain mandatory with the shared mutable browser DB;
+- raw skips/fixme/interruption or target mismatch fail closed;
+- legacy `verify:browser` is explicitly diagnostic and no longer carries `browser-acceptance` authority;
+- `verify:iterate --with-browser` may run or reuse the exact risk-scoped browser evidence without converting iteration PASS into release PASS.
+
+0E.4c verification is pending.
 
 ### 0E.4c — risk-scoped browser executor
 - `verify:browser:risk`;
