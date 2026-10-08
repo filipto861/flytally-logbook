@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
@@ -89,8 +90,8 @@ test("verify:iterate does not expose browser execution before 0E.4c",()=>{
   assert.match(result.stderr,/reserved for Phase 0E\.4c/);
 });
 
-test("package command keeps legacy release semantics and adds iterate separately",async()=>{
-  const pkg=(await import(pathToFileURL(path.join(root,"package.json")).href,{with:{type:"json"}})).default;
+test("package command keeps legacy release semantics and adds iterate separately",()=>{
+  const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
   assert.equal(pkg.scripts["verify:iterate"],"node tooling/verify-iterate.mjs");
   assert.equal(pkg.scripts["verify:release"],"npm run typecheck && npm test && npm run test:postgres:full && npm run build");
 });
