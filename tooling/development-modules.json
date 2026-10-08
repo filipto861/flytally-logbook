@@ -38,10 +38,14 @@
     },
     "dedicatedAcceptanceSources": {
       "postgres-acceptance": "postgres",
-      "browser-acceptance": "browser"
+      "browser-acceptance": "browser-risk"
     },
     "directEvidenceSources": {
       "domain-unit": "domain-unit"
+    },
+    "dedicatedAcceptanceCoverage": {
+      "postgres-acceptance": "full",
+      "browser-acceptance": "targeted"
     }
   },
   "documentation": {
@@ -163,6 +167,7 @@
         "tooling/bootstrap-browser-smoke-db.mjs",
         "tooling/playwright-evidence-reporter.mjs",
         "tooling/run-auth-browser.mjs",
+        "tooling/verify-browser-risk.mjs",
         "tooling/verify-browser-with-build.mjs",
         "tooling/verify-browser.mjs"
       ],
