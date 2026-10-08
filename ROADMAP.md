@@ -728,6 +728,14 @@ Revised 0E milestones:
    - dedicated planner regression coverage is registered under `development-pipeline`;
    - final local verification on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`: development-pipeline **72/72 PASS**, TypeScript **PASS**, aggregate regression **1361/1361 PASS**, production build **PASS (41/41 static pages)**, and `verify:plan -- package.json --json` returned the expected development-infrastructure plan with `typecheck=true`, `fullTests=true`, `build=true`, source-contract evidence required, and PostgreSQL/browser disabled.
 3. **0E.2 — registry available-evidence metadata + direct domain selection — ACTIVE**;
+   - implementation candidate added: all current `domain-data-integrity` modules now declare exact reviewed `evidenceTests.domain-unit` paths in the existing registry;
+   - two small pure direct suites were added for aircraft-profile and professional-experience behavior so those modules do not rely on static/source-contract files;
+   - registry schema now validates direct evidence metadata;
+   - `tooling/development-evidence.mjs` resolves required domain modules to approved direct tests and reports missing module coverage fail closed;
+   - `verify:plan` now exposes `plan.directEvidence.domain-unit` and candidate blocking reasons; a future missing approved domain suite exits 3 after the plan is printed;
+   - current registry audit shows **10/10 domain-risk modules** have approved direct evidence and all referenced test files exist;
+   - aggregate `npm test` remains independent regression coverage and still cannot synthesize domain evidence;
+   - **verification pending**; 0E.2 is not DONE yet.
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers**;
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
