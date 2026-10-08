@@ -7,21 +7,24 @@ import { runTypecheckVerification,typecheckVerificationConfiguration } from "./v
 import { readVerificationLedgerEntry,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 import { reusableLedgerEntry } from "./verification-reuse.mjs";
 import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
+import { reusableBrowserRiskLedger,runBrowserRiskVerification } from "./verify-browser-risk.mjs";
 
 function parseIterationArgs(argv){
   const candidateArgs=[];
   let rerun=false;
+  let withBrowser=false;
   for(const value of argv){
     if(value==="--rerun"){
       rerun=true;
       continue;
     }
     if(value==="--with-browser"){
-      throw new CandidateInputError("--with-browser is reserved for Phase 0E.4c and is not available yet.");
+      withBrowser=true;
+      continue;
     }
     candidateArgs.push(value);
   }
-  return {candidateArgs,rerun,json:candidateArgs.includes("--json")};
+  return {candidateArgs,rerun,withBrowser,json:candidateArgs.includes("--json")};
 }
 
 function stepFromLedger(entry,reused){
@@ -33,13 +36,13 @@ function stepFromLedger(entry,reused){
   };
 }
 
-function pendingReleaseWork(plan){
+function pendingReleaseWork(plan,{browserSatisfied=false,buildSatisfied=false}={}){
   const pending=[];
   if(plan.fullTests)pending.push("aggregate-regression");
-  if(plan.buildArtifactRequired)pending.push("production-build");
+  if(plan.buildArtifactRequired&&!buildSatisfied)pending.push("production-build");
   if(plan.postgres)pending.push("postgres-acceptance");
   if(plan.scale)pending.push("scale");
-  if(plan.browser)pending.push("browser-risk");
+  if(plan.browser&&!browserSatisfied)pending.push("browser-risk");
   return pending;
 }
 
@@ -108,13 +111,37 @@ export async function runIterationVerification(argv,{env=process.env}={}){
   }
   steps.typecheck=stepFromLedger(typecheckLedger,typecheckReuse.reusable);
 
-  const executedFailure=[sourceLedger,domainLedger,typecheckLedger].some((entry)=>
-    entry?.exitCode!==0&&entry?.exitCode!==3,
+  const cheapLedgers=[sourceLedger,domainLedger,typecheckLedger];
+  const cheapInvalid=cheapLedgers.some((entry)=>entry?.exitCode===2);
+  const cheapFailure=cheapLedgers.some((entry)=>entry?.exitCode!==0&&entry?.exitCode!==2&&entry?.exitCode!==3);
+  const cheapBlocked=plan.blockedEvidence.length>0||cheapLedgers.some((entry)=>entry?.exitCode===3);
+
+  let browserLedger=null;
+  let browserReused=false;
+  if(parsed.withBrowser&&!cheapInvalid&&!cheapFailure&&!cheapBlocked){
+    browserLedger=parsed.rerun?null:readVerificationLedgerEntry(candidate.candidateId,"browser-risk");
+    const browserReuse=browserLedger
+      ?reusableBrowserRiskLedger(candidate,plan.browserEvidence,browserLedger)
+      :{reusable:false,reason:"missing"};
+    browserReused=browserReuse.reusable;
+    if(!browserReused){
+      const browser=await runBrowserRiskVerification(parsed.candidateArgs,env);
+      browserLedger=browser.ledger;
+    }
+    steps.browser=stepFromLedger(browserLedger,browserReused);
+  }
+
+  const ledgers=browserLedger?[...cheapLedgers,browserLedger]:cheapLedgers;
+  const invalid=ledgers.some((entry)=>entry?.exitCode===2);
+  const executedFailure=ledgers.some((entry)=>entry?.exitCode!==0&&entry?.exitCode!==2&&entry?.exitCode!==3);
+  const blocked=plan.blockedEvidence.length>0||ledgers.some((entry)=>entry?.exitCode===3);
+  const exitCode=invalid?2:(executedFailure?1:(blocked?3:0));
+  const browserSatisfied=Boolean(
+    parsed.withBrowser&&browserLedger&&
+    (browserLedger.evaluation?.status==="PASS"||(!plan.browser&&browserLedger.evaluation?.status==="N/A")),
   );
-  const blocked=plan.blockedEvidence.length>0||
-    [sourceLedger,domainLedger,typecheckLedger].some((entry)=>entry?.exitCode===3);
-  const exitCode=executedFailure?1:(blocked?3:0);
-  const releasePending=pendingReleaseWork(plan);
+  const buildSatisfied=Boolean(plan.browser&&browserLedger?.evaluation?.status==="PASS");
+  const releasePending=pendingReleaseWork(plan,{browserSatisfied,buildSatisfied});
   const identity={
     configHash:verificationConfigIdentity().hash,
     toolchainHash:declaredToolchainIdentity().hash,
@@ -132,6 +159,7 @@ export async function runIterationVerification(argv,{env=process.env}={}){
     exitCode,
     effectiveConfiguration:{
       rerun:parsed.rerun,
+      withBrowser:parsed.withBrowser,
       source:sourceConfig,
       domain:domainConfig,
       typecheck:typecheckConfig,
@@ -165,6 +193,7 @@ function printHuman(summary){
   line("source",summary.steps.source.status+(summary.steps.source.reused?":reused":""));
   line("domain",summary.steps.domain.status+(summary.steps.domain.reused?":reused":""));
   line("typecheck",summary.steps.typecheck.status+(summary.steps.typecheck.reused?":reused":""));
+  if(summary.steps.browser)line("browser",summary.steps.browser.status+(summary.steps.browser.reused?":reused":""));
   line("blocked_evidence",summary.blockedEvidence.join(",")||"none");
   line("release_status",summary.releaseStatus);
   line("release_pending",summary.releasePending.join(",")||"none");
