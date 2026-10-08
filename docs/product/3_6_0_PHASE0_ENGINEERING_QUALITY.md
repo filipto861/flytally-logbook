@@ -911,14 +911,16 @@ The build gate records a candidate-bound build manifest including the candidate 
 - canonical full browser acceptance executed all **94** serialized desktop/mobile cases but finished **90 PASS / 2 FAIL / 2 intentional skips** in 11.6 min. The two failures were mobile-only (GPS normalized draft-save navigation and Connection logbook-share persistence presentation). Browser evidence is therefore **FAIL** and 0E.3 cannot close; focused reproduction is required before any correction.
 - focused mobile reproduction passed both failing cases independently at retries=0/workers=1. The corrective candidate changes only browser-test synchronization: an explicit bounded wait for the GPS server-action redirect and an explicit Connection pending-completion wait before reload with summary-scoped persistence assertions. This does not alter product runtime semantics; final full browser acceptance remains pending.
 - targeted repeat of those two corrected flows passed **6/6**. A subsequent full serialized gate improved to **91 PASS / 1 FAIL / 2 intentional skips** in 11.7 min; the sole remaining failure is mobile Quick Add waiting 5 s for the success status after the server action. Final browser acceptance remains FAIL until that case is independently reproduced and resolved.
-- isolated mobile Quick Add reproduction passed **5/5** at retries=0/workers=1. The correction remains test-only: browser acceptance now waits for the success-path dialog close and success status with a bounded 15 s server-action window. Final targeted repeat and full browser acceptance remain pending.
+- isolated mobile Quick Add reproduction passed **5/5** at retries=0/workers=1. The correction remains test-only: browser acceptance now waits for the success-path dialog close and success status with a bounded 15 s server-action window.
+- product decision: do **not** rerun the full 94-test serialized browser matrix for 0E.3 closeout. Its ~12-minute runtime is no longer acceptable as a normal development gate. Full `verify:browser` remains an explicit manual diagnostic only; 0E.3 now closes on targeted corrected-flow evidence plus source-contract/static gate evidence. No full-browser PASS may be claimed when it is not run.
 - first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
 5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
-   - full serialized browser acceptance remains required only when release policy selects it for browser-harness changes, milestone closeout or the final relevant release candidate;
+   - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
    - audit current desktop/mobile replay and keep both projects only where they provide distinct behavior/presentation evidence;
-   - record runtime measurements before and after any matrix reduction;
+   - add a distinct risk-scoped targeted-browser evidence path so targeted results cannot be reported as legacy full browser acceptance;
+   - record targeted runtime measurements and keep fail-closed semantics for the selected flows;
    - do not increase Playwright workers against the current shared mutable database; per-worker DB isolation requires a separate design/review.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
