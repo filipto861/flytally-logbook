@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { billingLabel,calculatedFlightPrice,parseBilling,parseOptionalBilling,serializeBilling,serializeOptionalBilling } from "../lib/billing.ts";
-import { effectiveRateForDate,shouldResolveStoredPrice,validIsoDate } from "../lib/rate-history.ts";
+import { effectiveRateForDate,initialRateDateError,shouldResolveStoredPrice,validIsoDate } from "../lib/rate-history.ts";
 
 test("BLOCK and AIR prices include the selected share",()=>{
   assert.equal(calculatedFlightPrice(2400,90,60,"BLOCK/2"),1800);
@@ -51,4 +51,13 @@ test("effective dates require a real ISO date",()=>{
   assert.equal(validIsoDate("2026-08-21"),true);
   assert.equal(validIsoDate("21.08.2026"),false);
   assert.equal(validIsoDate(""),false);
+});
+
+
+test("initial aircraft rate requires an explicit valid effective date",()=>{
+  assert.equal(initialRateDateError("", ""),null);
+  assert.equal(initialRateDateError(0, ""),null);
+  assert.equal(initialRateDateError(2500, "2026-10-08"),null);
+  assert.match(initialRateDateError(2500, "")??"",/effective date/i);
+  assert.match(initialRateDateError(2500, "08.10.2026")??"",/effective date/i);
 });

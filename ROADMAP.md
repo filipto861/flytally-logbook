@@ -962,14 +962,23 @@ Delivered behavior:
 - resolver read failure fails closed to an empty editable date with temporary-unavailable guidance;
 - off-block/takeoff/landing/on-block remain explicitly UTC; canonical parsing and certification are unchanged.
 
-### P1.4 — Aircraft / rate defaults — ACTIVE
+### P1.4 — Aircraft / rate defaults — ACTIVE / IMPLEMENTATION CANDIDATE
 
-Next scope:
-- remove the module-level Prague `today` constants from Aircraft Manager and Quick Add;
-- derive new `initial_valid_from` / rate `valid_from` defaults from the strict server user-calendar result;
-- preserve explicit user-entered effective dates and all existing historical rate dates;
-- Quick Add with an entered hourly rate must fail closed if no valid effective date is available/submitted; saving an aircraft without an initial rate remains allowed;
-- no reinterpretation of existing `rates.valid_from` after timezone changes.
+Implementation candidate:
+- Aircraft & Airports resolves the strict user-calendar result server-side and passes it into Aircraft Manager;
+- New Flight passes the already-resolved strict calendar result through FlightEntryWorkspace into Quick Add;
+- both module-level Prague `today` constants are removed;
+- new-aircraft `initial_valid_from` and new rate-history `valid_from` derive only from a resolved strict user-calendar date;
+- unresolved/invalid configuration leaves visible Aircraft Manager date inputs empty and manually editable with controlled Settings guidance;
+- Quick Add keeps its effective date hidden only when it has a resolved server date; unresolved state shows controlled guidance and does not invent Prague/UTC/browser-local time;
+- a positive initial hourly rate with a missing/invalid effective date is rejected **before** the aircraft/rate transaction, so Quick Add cannot silently save the aircraft while dropping its rate;
+- adding an aircraft without an initial hourly rate remains allowed;
+- explicit user-entered effective dates remain authoritative;
+- existing historical `rates.valid_from` rows and date-only lookup semantics are unchanged;
+- direct rate-entry `Valid from` remains required and manually editable when automatic derivation is unavailable.
+- initial planner verification exposed stale registry ownership: `app/(protected)/database/` was classified as `data-recovery`, which has intentionally no authoritative browser target ownership; ownership is corrected to `aircraft-airports`, matching the actual Aircraft & Airports workspace and its approved aircraft browser targets, with dedicated planner regression tests. This is a governance correction, not a browser-evidence waiver. Because the route owns persistent aircraft/rate mutations, `aircraft-airports` is also marked `persistence-schema` with PostgreSQL acceptance required; the correction must not reduce database evidence.
+
+Verification pending. No PASS is claimed until targeted/domain/typecheck and planner-selected release evidence run on the exact candidate.
 
 ### P1.5 — GPS / backup invariance + exact-candidate closeout — BLOCKED BY P1.3/P1.4
 

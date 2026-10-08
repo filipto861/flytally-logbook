@@ -428,7 +428,6 @@
       "id": "data-recovery",
       "prefixes": [
         "app/(protected)/data/",
-        "app/(protected)/database/",
         "app/(protected)/export/",
         "app/(protected)/print/",
         "app/api/export/",
@@ -571,6 +570,7 @@
     {
       "id": "aircraft-airports",
       "prefixes": [
+        "app/(protected)/database/",
         "app/api/aircraft-",
         "components/aircraft",
         "components/airport",
@@ -582,13 +582,14 @@
       "files": [],
       "risks": [
         "domain-data-integrity",
+        "persistence-schema",
         "browser-ui"
       ],
       "testGroups": [
         "ui-contract"
       ],
       "gates": {
-        "postgres": false,
+        "postgres": true,
         "scale": false,
         "browser": true,
         "fullTests": true,

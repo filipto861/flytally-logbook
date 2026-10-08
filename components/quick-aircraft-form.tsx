@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AircraftTypePicker } from "@/components/aircraft-type-picker";
 import { AIRCRAFT_PROFILE_CLASSES,aircraftProfileRegulatoryCategory } from "@/lib/aircraft-profile-context";
+import type { SaveableCalendarDefault } from "@/lib/data/user-calendar";
 
  type AircraftSaveResult={ok:boolean;message:string};
 type SaveAction=(form:FormData)=>Promise<AircraftSaveResult>;
@@ -20,7 +22,6 @@ const roles=[
   {value:"CO-PILOT",label:"CO-PILOT"},
   {value:"CRUISE-RELIEF CO-PILOT",label:"CRUISE-RELIEF CO-PILOT"},
 ];
-const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 const classLabel=(value:string)=>value==="HELICOPTER"?"Helicopter":value==="BALLOON"?"Balloon":value;
 const balloonClasses=[
   {value:"HOT_AIR_BALLOON",label:"Hot-air balloon"},
@@ -29,9 +30,10 @@ const balloonClasses=[
   {value:"MIXED_BALLOON",label:"Mixed balloon"},
 ];
 
-export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:()=>void}){
+export function QuickAircraftForm({action,calendarDefault,onSaved}:{action:SaveAction;calendarDefault:SaveableCalendarDefault;onSaved?:()=>void}){
   const router=useRouter();
   const[logbook,setLogbook]=useState("ULL"),[aircraftClass,setAircraftClass]=useState("ULL"),[regulatoryCategory,setRegulatoryCategory]=useState("ULL"),[balloonClass,setBalloonClass]=useState("HOT_AIR_BALLOON"),[defaultEngineType,setDefaultEngineType]=useState(""),[engineDefaultTouched,setEngineDefaultTouched]=useState(false),[saving,setSaving]=useState(false),[status,setStatus]=useState<AircraftSaveResult|null>(null);
+  const initialRateDate=calendarDefault.status==="resolved"?calendarDefault.date:"";
   const changeLogbook=(value:string)=>{const nextClass=value==="ULL"?"ULL":aircraftClass==="ULL"?"SEP":aircraftClass;setLogbook(value);setAircraftClass(nextClass);setRegulatoryCategory(aircraftProfileRegulatoryCategory(value,nextClass,regulatoryCategory))};
   const changeClass=(value:string)=>{setAircraftClass(value);setRegulatoryCategory(aircraftProfileRegulatoryCategory(logbook,value,regulatoryCategory))};
   const submit=async(form:FormData)=>{setSaving(true);setStatus(null);try{const result=await action(form);setStatus(result);if(result.ok){router.refresh();onSaved?.()}}catch{setStatus({ok:false,message:"Aircraft could not be saved."})}finally{setSaving(false)}};
@@ -50,8 +52,8 @@ export function QuickAircraftForm({action,onSaved}:{action:SaveAction;onSaved?:(
       <label>Default operation<select name="default_operation_type" defaultValue=""><option value="">No default</option><option value="SP">SP · single-pilot</option><option value="MP">MP · multi-pilot</option></select><small>Optional prefill for new flights.</small></label>
       <label>Default engine<select name="default_engine_type" value={defaultEngineType} onChange={event=>{setEngineDefaultTouched(true);setDefaultEngineType(event.target.value)}}><option value="">No default</option><option value="SE">SE · single-engine</option><option value="ME">ME · multi-engine</option></select><small>{!engineDefaultTouched&&defaultEngineType?"Suggested from the selected catalogue type · editable.":"Optional prefill for new flights."}</small></label>
       <label>Billing time<select name="billing_basis" defaultValue=""><option value="">Not tracked</option><option>BLOCK</option><option>AIR</option></select><small>Optional aircraft-cost default.</small></label>
-      <label>Hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="Optional"/></label>
-      <input type="hidden" name="initial_valid_from" value={today}/>
+      <label>Hourly rate<input name="initial_price_per_hour" type="number" min="0" step="0.01" placeholder="Optional"/>{calendarDefault.status==="needs_configuration"?<small className="field-message-error">Automatic rate date needs timezone configuration. Add the aircraft without a rate or <Link href="/profile">open Settings</Link> first.</small>:calendarDefault.status==="unavailable"?<small>Automatic rate date is temporarily unavailable. Add the aircraft without a rate and set it later.</small>:null}</label>
+      <input type="hidden" name="initial_valid_from" value={initialRateDate}/>
       <label className="wide">Notes<textarea name="note" rows={2} placeholder="Optional"/></label>
     </div></details>
     {status&&!status.ok?<p className="form-error wide" role="alert">{status.message}</p>:null}
