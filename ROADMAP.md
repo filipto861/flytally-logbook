@@ -719,15 +719,15 @@ Exit contract:
 
 Revised 0E milestones:
 1. **0E.0 — semantics / ledger / compatibility freeze — DONE (design only)**;
-2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — ACTIVE**;
+2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — DONE / VERIFIED**;
    - implementation candidate added: `tooling/verification-candidate.mjs` resolves exactly one explicit source (paths / `--files` / `--base` / `--all`), normalizes and hashes exact candidate content, and rejects missing/ambiguous inputs;
    - `tooling/verify-plan.mjs` now exposes human and `--json` plans over the existing classifier;
    - planner now exposes `typecheck` explicitly: non-documentation candidates require it, documentation-only candidates do not;
    - `--force-all` reuses the existing full-ci policy without changing candidate membership;
    - `npm run verify:plan` is added; `scope:changed` remains untouched for compatibility;
    - dedicated planner regression coverage is registered under `development-pipeline`;
-   - **verification pending**; 0E.1 is not DONE yet.
-3. **0E.2 — registry available-evidence metadata + direct domain selection**;
+   - final local verification on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`: development-pipeline **72/72 PASS**, TypeScript **PASS**, aggregate regression **1361/1361 PASS**, production build **PASS (41/41 static pages)**, and `verify:plan -- package.json --json` returned the expected development-infrastructure plan with `typecheck=true`, `fullTests=true`, `build=true`, source-contract evidence required, and PostgreSQL/browser disabled.
+3. **0E.2 — registry available-evidence metadata + direct domain selection — ACTIVE**;
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers**;
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
