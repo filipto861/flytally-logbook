@@ -111,6 +111,10 @@ test("candidate identity changes when an untracked worktree file changes",async(
     assert.notEqual(second.candidateId,third.candidateId);
     assert.deepEqual(second.worktree.outsideCandidate,["untracked.txt"]);
     assert.match(second.worktree.hash,/^[a-f0-9]{64}$/);
+
+    const baseCandidate=mod.resolveVerificationCandidate(["--base","HEAD"],temp).candidate;
+    assert.deepEqual(baseCandidate.files,["untracked.txt"]);
+    assert.deepEqual(baseCandidate.worktree.outsideCandidate,[]);
   }finally{
     fs.rmSync(temp,{recursive:true,force:true});
   }
