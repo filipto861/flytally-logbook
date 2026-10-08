@@ -667,6 +667,48 @@ Phase 0D closeout:
 
 Phase 0E now owns the next work: create a small canonical verification command surface for targeted iteration, changed-scope selection, complete application verification, explicit PostgreSQL/browser gates and risk-assembled release verification. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
+Phase 0E discovery/design is complete enough for independent review; implementation has **not** started.
+
+Current command-surface findings:
+- `verify` is the existing complete application gate (`typecheck + npm test + build`) but its name is too generic;
+- `verify:release` is currently static and semantically wrong for the new risk model: it always forces PostgreSQL full acceptance, never runs browser acceptance, and ignores `scope:changed`;
+- `verify:browser` currently bundles the build prerequisite with browser acceptance and does not force explicit `--retries=0`;
+- `scope:changed` is already the correct planner boundary and must remain side-effect free;
+- PostgreSQL core/scale/full runners and the authenticated browser runner already fail closed and should be reused rather than replaced;
+- manual GitHub workflows duplicate command composition and should consume the canonical commands after the local surface is frozen;
+- **critical 0E gap:** `domain-unit` may be required by the Phase 0D evidence policy, but there is no canonical direct domain-evidence command or registry-backed domain-test selection. The heterogeneous full suite is explicitly forbidden from satisfying that evidence class.
+
+Draft canonical command surface:
+- `test:target` — unchanged raw targeted Node tests;
+- `test:group` — unchanged homogeneous registry-backed targeted groups;
+- `verify:plan` — side-effect-free candidate planner, sharing the `scope:changed` classifier; `scope:changed` remains a compatibility alias;
+- `verify:app` — canonical complete application gate: TypeScript + full Node regression + production build; existing `verify` remains a compatibility alias;
+- `verify:postgres` — canonical final PostgreSQL acceptance = full PostgreSQL gate; core/scale commands remain iteration/milestone tools;
+- `verify:browser` — canonical full browser acceptance with explicit retries=0; it may build as an operational prerequisite because Playwright starts `npm start`, but build remains a separate evidence concept;
+- `verify:domain` — direct domain-unit evidence over **explicit registry-approved test files only**; no inference from `npm test`;
+- `verify:release` — risk-assembled local release orchestrator using an explicit candidate change set. It runs selected source-contract groups even when `npm test` is also required, runs direct domain evidence when required, and then only the heavy gates selected by the planner.
+
+Candidate input must be explicit: positional paths, `--files <file>`, or `--base <git-ref>`; no guessed/default merge base. An explicit `--all` escape hatch may replace the legacy `[full-ci]` title convention while preserving backward compatibility.
+
+Direct domain evidence is proposed as **opt-in per module** in the existing registry (for example module-level `evidenceTests.domain-unit`). Missing required domain evidence must fail closed before expensive gates rather than silently treating aggregate `npm test` as proof. No mass per-test classification project is proposed for 0E.
+
+Proposed 0E milestones:
+1. **0E.0 — discovery / command semantics freeze** — current step, independent review pending;
+2. **0E.1 — shared explicit candidate-input + planner surface**;
+3. **0E.2 — canonical app/PostgreSQL/browser/domain commands with compatibility aliases**;
+4. **0E.3 — risk-based release orchestrator, fail-closed missing evidence, no implicit heavy gates**;
+5. **0E.4 — regression tests for command selection, retries, candidate input and domain-evidence refusal**;
+6. **0E.5 — manual workflow + DEVELOPMENT alignment**;
+7. **0E.6 — exact-candidate verification / closeout**.
+
+Frozen constraints for review:
+- no product runtime, DB schema, certification, backup or timezone-semantic changes;
+- no browser DB architecture or worker-count change;
+- no remote/destructive PostgreSQL target;
+- no aggregate `fullTests` → `domain-unit` inference;
+- no automatic candidate base guess;
+- preserve existing low-level commands and aliases where practical.
+
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
 - repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
