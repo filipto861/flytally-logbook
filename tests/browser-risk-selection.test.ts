@@ -29,6 +29,10 @@ test("flight candidate selects deterministic risk-scoped browser targets and bui
   assert.equal(payload.plan.browserEvidence.authoritativeSource,"browser-risk");
   assert.equal(payload.plan.browserEvidence.authority,"release");
   assert.match(payload.plan.browserEvidence.selectionHash,/^[a-f0-9]{64}$/);
+  assert.match(payload.plan.browserEvidence.configHash,/^[a-f0-9]{64}$/);
+  assert.match(payload.plan.browserEvidence.toolchainHash,/^[a-f0-9]{64}$/);
+  assert.match(payload.plan.browserEvidence.fixtureContractHash,/^[a-f0-9]{64}$/);
+  assert.equal(payload.plan.browserEvidence.plannerVersion,2);
   const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
   for(const id of [
     "flight-manual-save-desktop","flight-manual-save-mobile",
