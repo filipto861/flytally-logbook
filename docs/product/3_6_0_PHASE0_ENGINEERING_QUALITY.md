@@ -932,14 +932,18 @@ The build gate records a candidate-bound build manifest including the candidate 
    - strict negative coverage for missing browser ownership, diagnostic-only E2E changes, stale/mismatched reuse, blocked release planning and legacy-browser authority passed in the same development-pipeline closeout;
    - DEVELOPMENT/ROADMAP/CHANGELOG and the detailed contract are reconciled; FEATURES was reviewed and remains unchanged because no product capability changed;
    - do not increase Playwright workers against the current shared mutable database; per-worker DB isolation requires a separate design/review.
-6. **0E.5 — negative/selection/freshness/config regression coverage — ACTIVE**.
-   - extend candidate freshness regression coverage to tracked dirty files outside an explicit candidate;
-   - make build/browser reuse freshness directly testable without changing their default production behavior;
-   - reject stale schema/gate/evidence/config/status reuse explicitly;
-   - prove browser-risk selection/config/toolchain/fixture/build drift invalidates release evidence;
-   - prove the deterministic identity hashes cover the actual verification/config/toolchain/fixture inputs;
+6. **0E.5 — negative/selection/freshness/config regression coverage — DONE / VERIFIED**.
+   - exact candidate `68351c78a0dac2b1f95de3530d2ceac116f2475e`: development-pipeline **113/113 PASS**, planner no blockers, iteration **226/226 PASS** + TypeScript PASS, aggregate **1408/1408 PASS**, build **41/41 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), PostgreSQL/scale N/A, final `release_status=PASS`;
+   - candidate freshness now covers tracked and untracked dirty work outside explicit candidates;
+   - build/browser reuse freshness is directly regression-tested without changing default production behavior;
+   - stale schema/gate/evidence/config/status reuse and browser selection/config/toolchain/fixture/build drift fail closed;
+   - deterministic identity coverage is asserted for the release/config/toolchain/fixture inputs;
    - test/governance tooling only; product runtime and persistence semantics remain unchanged.
-7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
+7. **0E.6 — manual workflow + DEVELOPMENT alignment — ACTIVE**.
+   - make `verify:release:risk` the documented canonical final candidate release decision while preserving `npm run verify` as compatibility application verification;
+   - keep both GitHub workflows manual-only diagnostic surfaces with no candidate-bound release authority;
+   - label legacy full-browser cloud execution as diagnostic, retain repository-pinned toolchain use and remove stale pull-request-specific job logic;
+   - regression-cover the workflow authority boundary and reconcile DEVELOPMENT/ROADMAP/CHANGELOG.
 8. **0E.7 — exact-candidate verification / closeout**.
 
 #### 0E.1 verification closeout
