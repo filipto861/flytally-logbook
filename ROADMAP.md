@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.2 Batch 6 — GPS / RoleCrew functional spec split — IMPLEMENTED, VERIFICATION PENDING**. Batch 5 is ✅ DONE / VERIFIED. Batch 6 is the final planned file/domain split: ten GPS functional tests now live in `gps-rolecrew.spec.mjs`; `public-shell.spec.mjs` now contains exactly five public/auth/shell tests and no direct browser-DB/GPS helper ownership. Acceptance inventory remains exactly 48 unique logical tests.
+Current milestone: **Phase 0C.2a — helper-ownership reconciliation — ACTIVE**. Phase 0C.2 domain splitting is ✅ DONE / VERIFIED. Final Batch 6 evidence: targeted **41/41 PASS**, TypeScript **PASS**, focused GPS / RoleCrew **20/20 PASS**, full browser **96 PASS / 2 skips / 0 failed** in **11.8m**. The browser suite remains exactly 48 unique logical acceptance tests across focused domain specs; public-shell now owns only five public/auth/shell tests.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
