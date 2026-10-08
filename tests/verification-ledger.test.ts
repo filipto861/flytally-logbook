@@ -14,6 +14,8 @@ async function importTooling(relativePath:string){
 test("Phase 0E canonical verification modules are syntactically parseable",()=>{
   for(const file of [
     "tooling/verification-ledger.mjs",
+    "tooling/verification-identity.mjs",
+    "tooling/browser-risk-selection.mjs",
     "tooling/verification-execution.mjs",
     "tooling/verification-build.mjs",
     "tooling/verify-app.mjs",
@@ -37,13 +39,14 @@ test("verification ledger writes and reads one candidate-bound gate entry",async
   fs.rmSync(path.dirname(target),{recursive:true,force:true});
   try{
     const candidate={
-      schemaVersion:1,
+      schemaVersion:2,
       candidateId,
       headSha:"b".repeat(40),
       baseSha:null,
       filesHash:"c".repeat(64),
       source:{kind:"paths",value:null},
       files:["lib/commercial-readiness.ts"],
+      worktree:{files:[],hash:"d".repeat(64),outsideCandidate:[]},
     };
     writeVerificationLedgerEntry({
       gate:"domain",
@@ -54,10 +57,11 @@ test("verification ledger writes and reads one candidate-bound gate entry",async
       evaluation:{status:"PASS",reason:"test"},
     });
     const stored=readVerificationLedgerEntry(candidateId,"domain");
-    assert.equal(stored?.schemaVersion,1);
+    assert.equal(stored?.schemaVersion,2);
     assert.equal(stored?.gate,"domain");
     assert.equal(stored?.candidate.candidateId,candidateId);
     assert.deepEqual(stored?.candidate.files,["lib/commercial-readiness.ts"]);
+    assert.deepEqual(stored?.candidate.worktree.outsideCandidate,[]);
     assert.match(stored?.recordedAt,/^\d{4}-\d{2}-\d{2}T/);
   }finally{
     fs.rmSync(path.dirname(target),{recursive:true,force:true});
