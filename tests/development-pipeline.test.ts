@@ -21,7 +21,8 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.equal(pkg.scripts["test:browser"],"node tooling/run-auth-browser.mjs");
-  assert.equal(pkg.scripts["verify:browser"],"npm run build && npm run test:browser");
+  assert.equal(pkg.scripts["verify:browser"],"node tooling/verify-browser.mjs");
+  assert.equal(pkg.scripts["verify:browser:with-build"],"node tooling/verify-browser-with-build.mjs");
   assert.doesNotMatch(pkg.scripts.build,/test/);
 });
 
