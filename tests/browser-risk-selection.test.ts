@@ -54,6 +54,23 @@ test("multiple changed files in one browser module share ownership without false
   assert.ok(covered.every((entry:{targets:string[]})=>entry.targets.length>0));
 });
 
+test("database aircraft workspace selects approved aircraft browser evidence without recovery blockers",()=>{
+  const {result,payload}=plan([
+    "app/(protected)/database/page.tsx",
+    "app/(protected)/database/actions.ts",
+  ]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+  const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
+  for(const id of [
+    "aircraft-profile-authority-desktop",
+    "aircraft-profile-authority-mobile",
+    "aircraft-quick-add-desktop",
+    "aircraft-quick-add-mobile",
+  ])assert.ok(ids.includes(id),id+" must be selected for database aircraft workspace changes");
+});
+
 test("browser-relevant module with no approved target ownership blocks before Playwright",()=>{
   const {result,payload}=plan(["app/(protected)/credentials/page.tsx"]);
   assert.equal(result.status,3,result.stderr||result.stdout);
