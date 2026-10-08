@@ -267,6 +267,36 @@ test("development registry v3 evidence schema is explicit and self-consistent",(
   }
 });
 
+test("every current domain-risk module has approved direct domain evidence",()=>{
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const domainRisks=new Set(
+    Object.entries(manifest.evidencePolicy.riskRequirements)
+      .filter(([,classes])=>(classes as string[]).includes("domain-unit"))
+      .map(([risk])=>risk),
+  );
+  const sourceOwned=new Set(
+    Object.values(manifest.testGroups)
+      .flatMap((group)=>((group as {tests?:string[]}).tests??[])),
+  );
+
+  for(const module of manifest.modules as {id:string,risks:string[],evidenceTests?:Record<string,string[]>}[]){
+    const requiresDomain=module.risks.some(risk=>domainRisks.has(risk));
+    const direct=module.evidenceTests?.["domain-unit"]??[];
+    if(!requiresDomain){
+      assert.equal(direct.length,0,module.id+" must not invent domain evidence when policy does not require it");
+      continue;
+    }
+    assert.ok(direct.length>0,module.id+" requires approved direct domain evidence");
+    assert.equal(new Set(direct).size,direct.length,module.id+" direct evidence paths must be unique");
+    for(const file of direct){
+      assert.match(file,/^tests\/.*[.]test[.]ts$/,module.id+" direct evidence must be an exact test path");
+      assert.equal(fs.existsSync(path.join(root,file)),true,module.id+" direct evidence file must exist: "+file);
+      assert.equal(file.startsWith("tests/integration/"),false,module.id+" direct unit evidence must not be PostgreSQL acceptance");
+      assert.equal(sourceOwned.has(file),false,module.id+" direct unit evidence must not reuse a source-contract group file");
+    }
+  }
+});
+
 test("source-contract groups do not import browser PostgreSQL or DB acceptance fixtures",()=>{
   const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
   const forbidden=/@playwright\/test|(?:^|\/)e2e\/|browser-db|bootstrap-browser-smoke-db|@neondatabase|(?:^|\/)lib\/db(?:[./]|$)|FLYTALLY_POSTGRES_INTEGRATION/;
