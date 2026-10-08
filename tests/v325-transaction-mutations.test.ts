@@ -36,7 +36,7 @@ test("v3.2 U6 browser fixture supports settings and connection updates",()=>{
 });
 
 test("v3.2 U6 exercises transaction-backed pending state and persistence",()=>{
-  const smoke=read("e2e/public-shell.spec.mjs");
+  const smoke=read("e2e/settings-connections-mutations.spec.mjs");
   assert.match(smoke,/account settings transaction disables duplicate submit and persists both records/);
   assert.match(smoke,/connection access update disables duplicate submit and persists/);
   assert.match(smoke,/getByRole\("button",\{name:"Save changes"\}\)/);
