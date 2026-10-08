@@ -83,12 +83,14 @@ test("verification execution parses Node spec and TAP summaries without inventin
 
 test("browser reporter maps only the registered audit exclusion to explicit N/A",()=>{
   assert.equal(explicitBrowserNotApplicable({
-    annotations:[{type:"skip",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}],
+    annotations:[{type:"flytally-na",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}],
   }),true);
   assert.equal(explicitBrowserNotApplicable({
     annotations:[{type:"skip",description:"Unexpected browser skip"}],
   }),false);
   assert.equal(explicitBrowserNotApplicable({annotations:[]}),false);
+  const audit=fs.readFileSync(path.join(root,"e2e","ui-audit-capture.spec.mjs"),"utf8");
+  assert.match(audit,/annotation:\{type:"flytally-na",description:"UI audit capture runs only/);
 });
 
 test("canonical browser acceptance requires the recorded same-candidate build before Playwright",()=>{
