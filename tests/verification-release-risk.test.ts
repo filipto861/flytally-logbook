@@ -16,7 +16,7 @@ function run(args:string[]){
 }
 
 test("risk release documentation candidate is PASS without hidden heavy gates",()=>{
-  const result=run(["DEVELOPMENT.md"]);
+  const result=run(["README.md"]);
   assert.equal(result.status,0,result.stderr||result.stdout);
   assert.match(result.stdout,/release_status=PASS/);
   assert.match(result.stdout,/source=N\/A/);
@@ -32,9 +32,9 @@ test("risk release documentation candidate is PASS without hidden heavy gates",(
 });
 
 test("risk release reuses exact cheap N/A evidence for the same documentation candidate",()=>{
-  const first=run(["DEVELOPMENT.md"]);
+  const first=run(["README.md"]);
   assert.equal(first.status,0,first.stderr||first.stdout);
-  const second=run(["DEVELOPMENT.md"]);
+  const second=run(["README.md"]);
   assert.equal(second.status,0,second.stderr||second.stdout);
   assert.match(second.stdout,/source=N\/A:reused/);
   assert.match(second.stdout,/domain=N\/A:reused/);
@@ -43,9 +43,9 @@ test("risk release reuses exact cheap N/A evidence for the same documentation ca
 });
 
 test("risk release rerun bypasses reusable cheap evidence",()=>{
-  const seeded=run(["DEVELOPMENT.md"]);
+  const seeded=run(["README.md"]);
   assert.equal(seeded.status,0,seeded.stderr||seeded.stdout);
-  const rerun=run(["DEVELOPMENT.md","--rerun"]);
+  const rerun=run(["README.md","--rerun"]);
   assert.equal(rerun.status,0,rerun.stderr||rerun.stdout);
   assert.doesNotMatch(rerun.stdout,/source=N\/A:reused/);
   assert.doesNotMatch(rerun.stdout,/domain=N\/A:reused/);
@@ -62,7 +62,7 @@ test("risk release blocks before execution when planner evidence ownership is in
 });
 
 test("risk release JSON reports candidate-bound final evidence state",()=>{
-  const result=run(["DEVELOPMENT.md","--json"]);
+  const result=run(["README.md","--json"]);
   assert.equal(result.status,0,result.stderr||result.stdout);
   const payload=JSON.parse(result.stdout);
   assert.match(payload.candidateId,/^[a-f0-9]{64}$/);
