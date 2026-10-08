@@ -400,13 +400,28 @@ Exact release evidence on implementation head `c38ac15a673f770c2ae8cd13a4b02a32c
 
 No Manual Flight, Aircraft Manager, Quick Add or GPS consumer rewiring was included in P1.2.
 
-### P1.3 — Manual flight default
+### P1.3 — Manual flight default — DONE / VERIFIED
 
-Scope:
-- server-provided user-calendar default;
-- remove UTC fallback as new-flight authority;
-- preserve edit/stored date;
-- verify UTC time semantics unchanged.
+Delivered through PR #261 and merged to canonical `main` as `12b31ba6d837bdda17ae9e3d676ed9261ef816c7`:
+- New Flight resolves the strict saveable-calendar result server-side;
+- `FlightForm` receives the result explicitly;
+- hard-coded Prague date generation is removed from `getManualEntryDefaults()`;
+- client UTC `toISOString().slice(0,10)` is removed as new-flight authority;
+- resolved default is stable for the mounted form while explicit pilot edits remain authoritative;
+- Edit continues to initialize from the stored date;
+- unresolved/invalid configuration fails closed to an empty editable date with controlled guidance;
+- UTC flight-time labels, parsing and certification semantics are unchanged.
+
+Exact release evidence on implementation head `99babf404656f02cd3a07dcb53636a37d0eae9d5`, candidate `fa17f53001d3691fd510fa1b00049d47935e8b4cf39400b82c27ed38642a6b11`:
+- source PASS (reused);
+- domain PASS (reused);
+- TypeScript PASS (reused);
+- aggregate **1421/1421 PASS**;
+- build **41/41 PASS**;
+- PostgreSQL **99/99 PASS**;
+- browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- scale N/A;
+- required evidence satisfied; blocked evidence none.
 
 ### P1.4 — Aircraft / rate defaults
 
