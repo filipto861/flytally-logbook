@@ -775,6 +775,11 @@ Revised 0E milestones:
    - independent review verdict **ACCEPT WITH CHANGES**: machine-enforce browser authority/selection identity, fail closed on missing/stale/ambiguous targets, reset/identify the shared browser DB fixture, harden dirty/untracked candidate identity, keep iteration evidence distinct from release PASS, and do not silently repurpose `verify:release`;
    - reconciled command decision: existing `verify:release` keeps its current full/static semantics; new risk-based orchestration will be `verify:release:risk`;
    - 0E.4a is now **ACTIVE** and begins with candidate/reuse identity hardening, browser-target registry/schema, deterministic target selection/hash, and `buildArtifactRequired = build || browser`.
+   - 0E.4a implementation candidate added: candidate schema v2 binds dirty/untracked worktree identity; base/all candidates include current dirty/untracked paths; ledger schema v2 preserves that identity; deterministic config/toolchain/browser-fixture contract hashes are available;
+   - browser registry now contains **41 exact `{spec,title,project}` targets** across currently evidenced domains, plus module/path ownership and a complete registered harness target set; modules with browser risk but no defensible targeted coverage intentionally block instead of receiving generic smoke evidence;
+   - `browser-risk-selection.mjs` validates target existence/project/baseline uniqueness, produces deterministic target union + selection hash, and blocks changed diagnostic-only/unowned E2E specs;
+   - planner schema v2 exposes `browserEvidence` and browser candidates now require a production build artifact even when the product module itself did not otherwise select build;
+   - implementation verification is **pending**; no browser runner/release semantics changed yet, and legacy `verify:release` / full `verify:browser` remain untouched.
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
