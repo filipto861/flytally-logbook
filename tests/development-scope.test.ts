@@ -259,6 +259,10 @@ test("development registry v3 evidence schema is explicit and self-consistent",(
   });
   assert.deepEqual(manifest.evidencePolicy.directEvidenceSources,{"domain-unit":"domain-unit"});
   assert.equal(schema.properties.modules.items.properties.evidenceTests.properties["domain-unit"].minItems,1);
+  assert.deepEqual(manifest.browserAcceptance.explicitNotApplicableSkipReasons,[
+    "UI audit capture runs only for the dedicated audit branch or explicit local opt-in.",
+  ]);
+  assert.equal(schema.properties.browserAcceptance.properties.explicitNotApplicableSkipReasons.minItems,1);
 
   for(const [groupId,group] of Object.entries(manifest.testGroups) as [string,{evidenceClass:string,coverage:string,tests:string[]}][]){
     assert.ok(manifest.evidencePolicy.groupClasses.includes(group.evidenceClass),"invalid evidence class for group: "+groupId);
