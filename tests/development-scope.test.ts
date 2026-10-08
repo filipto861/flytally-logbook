@@ -164,6 +164,20 @@ test("PostgreSQL harness changes select its source contracts and real acceptance
   }
 });
 
+test("risk release orchestrator changes require source PostgreSQL browser aggregate and build verification",()=>{
+  const result=classify(["tooling/verify-release-risk.mjs"]);
+  assert.equal(result.postgres,"true");
+  assert.equal(result.browser,"true");
+  assert.equal(result.full_tests,"true");
+  assert.equal(result.build,"true");
+  assert.equal(result.build_artifact,"required");
+  assert.match(result.test_groups,/development-pipeline/);
+  assert.match(result.test_groups,/ui-contract/);
+  assert.match(result.required_evidence,/application-source-contract/);
+  assert.match(result.required_evidence,/postgres-acceptance/);
+  assert.match(result.required_evidence,/browser-acceptance/);
+});
+
 test("canonical browser harness changes still require browser acceptance",()=>{
   for(const file of [
     "tooling/verify-browser.mjs",
