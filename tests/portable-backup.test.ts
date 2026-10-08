@@ -132,3 +132,18 @@ test("version 13 rejects internally mismatched void evidence digests even when o
   const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
   await assert.rejects(()=>parsePortableBackup(JSON.stringify({...payload,integrity})),/SHA-256 does not match its protected JSON evidence/);
 });
+
+
+test("P1.5 portable backup keeps flight and rate calendar dates literal across timezone settings",async()=>{
+  const parsed=JSON.parse(await backup(13)),{integrity:_integrity,...payload}=parsed;
+  payload.settings=[{user_id:7,timezone:"Pacific/Auckland"}];
+  payload.flights=[{id:10,user_id:7,date:"2026-01-01",registration:"OK-TST",off_block:"00:15",departure:"NZAA",arrival:"NZAA"}];
+  payload.rates=[{id:20,user_id:7,registration:"OK-TST",aircraft_type:"B23",valid_from:"2025-12-31",price_per_hour:2500}];
+  payload.counts.settings=1;payload.counts.flights=1;payload.counts.rates=1;
+  const integrity={algorithm:"SHA-256",payload_sha256:await portableBackupDigest(JSON.stringify(payload))};
+  const result=await parsePortableBackup(JSON.stringify({...payload,integrity}));
+  assert.equal(result.backup.settings[0]?.timezone,"Pacific/Auckland");
+  assert.equal(result.backup.flights[0]?.date,"2026-01-01");
+  assert.equal(result.backup.rates[0]?.valid_from,"2025-12-31");
+  assert.match(flightRestoreKey(result.backup.flights[0]),/^2026-01-01\|OK-TST\|00:15\|NZAA\|NZAA$/);
+});
