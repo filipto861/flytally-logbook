@@ -151,9 +151,11 @@ export function classifyDevelopmentScope(files, title = "") {
 
   addPolicyEvidence(risks, gates, requiredEvidence);
   const aggregateGates = gates.fullTests ? [...(manifest.evidencePolicy?.aggregateGates ?? [])] : [];
+  const typecheck = forceFull || normalizedFiles.some((file) => !isDocumentation(file));
 
   return {
     ...gates,
+    typecheck,
     schemaVersion: manifest.schemaVersion ?? manifest.version,
     modules: [...modules].sort(),
     risks: [...risks].sort(),
@@ -202,6 +204,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     const result = classifyDevelopmentScope(files, title);
     process.stdout.write("schema_version=" + result.schemaVersion + "\n");
+    process.stdout.write("typecheck=" + result.typecheck + "\n");
     process.stdout.write("postgres=" + result.postgres + "\n");
     process.stdout.write("scale=" + result.scale + "\n");
     process.stdout.write("browser=" + result.browser + "\n");
@@ -217,6 +220,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error(
       "Development scope: " + (result.modules.join(", ") || "none") +
       "; risks=" + (result.risks.join(", ") || "none") +
+      "; typecheck=" + result.typecheck +
       "; PostgreSQL=" + result.postgres +
       "; scale=" + result.scale +
       "; browser=" + result.browser +
