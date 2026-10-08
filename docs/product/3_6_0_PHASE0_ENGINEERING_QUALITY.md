@@ -955,6 +955,8 @@ The build gate records a candidate-bound build manifest including the candidate 
 
 **PHASE 0E — CLOSED / VERIFIED.**
 
+Final docs-only reconciliation candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f8318937865f75a6694c732` on head `2969fae73e151044f0a2e6962d7abd57e8983da9` also returned `release_status=PASS` with every behavioral/heavy gate correctly N/A, no required evidence and no blockers.
+
 #### 0E.1 verification closeout
 
 Verified locally on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`:
@@ -970,6 +972,13 @@ The build emitted only the pre-existing local Turbopack workspace warning about 
 Do not change product runtime, browser fixture architecture, DB schema, certification/backup contracts or 3.6.0 timezone semantics in Phase 0E.
 
 ### Phase 0F — Hygiene and closeout — ACTIVE
+
+Initial audit:
+- DEVELOPMENT and executable package commands are aligned for the canonical/compatibility verification surface;
+- ancestry audit proved seven historical branches are fully contained in `main`; they are cleanup candidates but have not been deleted;
+- open PRs #187, #201, #206, #231 and #232 are diverged/non-mergeable and must not be closed merely because equivalent later behavior appears to exist; explicit supersession proof is required;
+- active Phase 0 PR is #255;
+- no product runtime, schema, certification, backup or timezone semantics changed.
 
 - reconcile `DEVELOPMENT.md` with executable tooling;
 - review stale PRs/branches and clean only proven superseded state;
