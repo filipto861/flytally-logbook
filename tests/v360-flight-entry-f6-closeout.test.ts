@@ -7,7 +7,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("F6 closeout matrix freezes every required viewport including the 200 percent reflow equivalent",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   for(const token of [
     'name:"desktop-1440",width:1440,height:900',
     'name:"ipad-landscape",width:1024,height:768',
@@ -20,7 +20,7 @@ test("F6 closeout matrix freezes every required viewport including the 200 perce
 });
 
 test("F6 Manual presentation matrix covers every required role and both Safety Pilot identity modes",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   const start=e2e.indexOf('test("F6 Manual RoleCrew matrix');
   const end=e2e.indexOf('test("F6 GPS single-flight matrix',start);
   assert.ok(start>=0&&end>start);
@@ -34,7 +34,7 @@ test("F6 Manual presentation matrix covers every required role and both Safety P
 });
 
 test("F6 GPS presentation matrix covers PIC DUAL Safety Pilot and strict implemented-role scope",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   const start=e2e.indexOf('test("F6 GPS single-flight matrix');
   const end=e2e.indexOf('test("F6 GPS multi-part inheritance',start);
   assert.ok(start>=0&&end>start);
@@ -46,7 +46,7 @@ test("F6 GPS presentation matrix covers PIC DUAL Safety Pilot and strict impleme
 });
 
 test("F6 multi-part matrix keeps inherited DUAL and whole-part connected Safety Pilot override visible",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   const start=e2e.indexOf('test("F6 GPS multi-part inheritance');
   const end=e2e.indexOf('test("F6 invalid-profile recovery',start);
   assert.ok(start>=0&&end>start);
@@ -62,7 +62,7 @@ test("F6 multi-part matrix keeps inherited DUAL and whole-part connected Safety 
 });
 
 test("F6 invalid-profile matrix verifies explicit recovery in both Manual and GPS modes",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   const start=e2e.indexOf('test("F6 invalid-profile recovery');
   const end=e2e.indexOf('test("F2.5 RoleCrew presentation',start);
   assert.ok(start>=0&&end>start);
@@ -76,7 +76,7 @@ test("F6 invalid-profile matrix verifies explicit recovery in both Manual and GP
 });
 
 test("F6 matrix runs light and dark with the shared overflow assertion and changes no runtime contract",()=>{
-  const e2e=read("e2e/public-shell.spec.mjs");
+  const e2e=read("e2e/responsive-presentation.spec.mjs");
   const contract=read("docs/product/FLIGHT_ENTRY_WORKFLOW_3_0.md");
   assert.match(e2e,/for\(const theme of \["light","dark"\]\)/);
   assert.match(e2e,/async function applyF6PresentationState/);
