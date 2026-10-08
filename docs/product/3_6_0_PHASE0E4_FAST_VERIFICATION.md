@@ -207,7 +207,7 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 
 ## Milestones
 
-### 0E.4a — identity + registry + planner selection
+### 0E.4a — identity + registry + planner selection — DONE / VERIFIED
 - expand candidate/reuse identity to account for dirty/untracked worktree state and deterministic verification config/toolchain/fixture contracts;
 - add browser target schema/registry;
 - add deterministic selector + selection hash;
@@ -216,11 +216,24 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 - correct `buildArtifactRequired = build || browser`;
 - tests only; no release-command replacement yet.
 
-### 0E.4b — fast iteration executor
+### 0E.4b — fast iteration executor — ACTIVE
 - canonical source-contract group execution/ledger;
 - `verify:iterate`;
 - exact-candidate ledger reuse;
 - human summary of release-pending gates.
+
+Current 0E.4b implementation candidate:
+- planner exposes registry-derived `sourceEvidence.groups/tests` and blocks required source evidence with no approved group;
+- `verification-source.mjs` runs the exact selected application-source-contract test union directly and writes candidate-bound source evidence;
+- `verification-typecheck.mjs` writes a separate candidate-bound TypeScript ledger;
+- domain/source/typecheck effective configuration carries verification-config and declared-toolchain identity for exact reuse;
+- `verification-reuse.mjs` rejects candidate, gate, evidence-class, evaluation or effective-configuration drift;
+- `verify:iterate` runs/reuses only source/domain/typecheck evidence, reports release work as **NOT EVALUATED**, and deliberately does not run aggregate regression, PostgreSQL, production build or browser;
+- `--rerun` bypasses reusable source/domain/typecheck evidence;
+- `--with-browser` is explicitly unavailable until 0E.4c rather than silently producing non-authoritative browser evidence;
+- existing `verify:release`, `verify:app`, PostgreSQL and browser command semantics remain unchanged.
+
+0E.4b verification is pending.
 
 ### 0E.4c — risk-scoped browser executor
 - `verify:browser:risk`;
