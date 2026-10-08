@@ -873,7 +873,7 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.4 AIRCRAFT / RATE DEFAULTS)
+## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.5 GPS / BACKUP INVARIANCE + CLOSEOUT)
 
 Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
 Issue: #144  
@@ -962,27 +962,43 @@ Delivered behavior:
 - resolver read failure fails closed to an empty editable date with temporary-unavailable guidance;
 - off-block/takeoff/landing/on-block remain explicitly UTC; canonical parsing and certification are unchanged.
 
-### P1.4 — Aircraft / rate defaults — ACTIVE / IMPLEMENTATION CANDIDATE
+### P1.4 — Aircraft / rate defaults — DONE / VERIFIED
 
-Implementation candidate:
+Merged through PR #263 as `7920164f2e461cacbd99279488cc092ad3fc4674`.
+
+Verified exact implementation head `4caaae0e4e917f3d20f31db18096b1c953ff5559`, candidate `a67621e0618d2a847fef597f34ea7bf093781f572e4e55854f1ae1a6d3fdf952`:
+- source-contract PASS (reused);
+- direct domain-unit PASS (reused);
+- TypeScript PASS (reused);
+- aggregate regression **1427/1427 PASS**;
+- production build **41/41 PASS**;
+- PostgreSQL acceptance **99/99 PASS**;
+- authoritative browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- scale N/A;
+- required evidence satisfied; blocked evidence none.
+
+Delivered behavior:
 - Aircraft & Airports resolves the strict user-calendar result server-side and passes it into Aircraft Manager;
-- New Flight passes the already-resolved strict calendar result through FlightEntryWorkspace into Quick Add;
+- New Flight reuses its strict calendar result for Quick Add;
 - both module-level Prague `today` constants are removed;
-- new-aircraft `initial_valid_from` and new rate-history `valid_from` derive only from a resolved strict user-calendar date;
-- unresolved/invalid configuration leaves visible Aircraft Manager date inputs empty and manually editable with controlled Settings guidance;
-- Quick Add keeps its effective date hidden only when it has a resolved server date; unresolved state shows controlled guidance and does not invent Prague/UTC/browser-local time;
-- a positive initial hourly rate with a missing/invalid effective date is rejected **before** the aircraft/rate transaction, so Quick Add cannot silently save the aircraft while dropping its rate;
-- adding an aircraft without an initial hourly rate remains allowed;
-- explicit user-entered effective dates remain authoritative;
-- existing historical `rates.valid_from` rows and date-only lookup semantics are unchanged;
-- direct rate-entry `Valid from` remains required and manually editable when automatic derivation is unavailable.
-- initial planner verification exposed stale registry ownership: `app/(protected)/database/` was classified as `data-recovery`, which has intentionally no authoritative browser target ownership; ownership is corrected to `aircraft-airports`, matching the actual Aircraft & Airports workspace and its approved aircraft browser targets, with dedicated planner regression tests. This is a governance correction, not a browser-evidence waiver. Because the route owns persistent aircraft/rate mutations, `aircraft-airports` is also marked `persistence-schema` with PostgreSQL acceptance required; the correction must not reduce database evidence.
+- new-aircraft `initial_valid_from` and new rate-history `valid_from` derive only from a resolved account timezone;
+- unresolved/invalid configuration leaves visible rate dates empty and manually editable instead of guessing;
+- Quick Add does not invent a rate date when calendar resolution is unavailable;
+- a positive initial hourly rate with a missing/invalid effective date is rejected before the aircraft/rate transaction;
+- aircraft creation without an initial rate remains allowed;
+- explicit effective dates and historical `rates.valid_from` values remain authoritative and date-only;
+- database workspace ownership was corrected from stale `data-recovery` classification to `aircraft-airports` without weakening evidence: aircraft-airports now retains browser acceptance and requires PostgreSQL acceptance for persistence risk.
 
-Verification pending. No PASS is claimed until targeted/domain/typecheck and planner-selected release evidence run on the exact candidate.
+### P1.5 — GPS / backup invariance + exact-candidate closeout — ACTIVE
 
-### P1.5 — GPS / backup invariance + exact-candidate closeout — BLOCKED BY P1.3/P1.4
-
-Prove GPS UTC behavior unchanged, preserve backup/restore/export calendar-date authority and date-only rate selection, perform/read-record a production timezone-value census, decide legacy helper retirement only from evidence, run exact risk-scoped verification, and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
+Next scope:
+- prove the active GPS/FCL.050 timestamp path remains UTC and fail-closed;
+- decide dormant legacy Prague `localParts` retirement only from actual dependency evidence;
+- prove backup/restore/export/print preserve `flights.date` and `rates.valid_from` without timezone reinterpretation;
+- prove rate selection remains date-only;
+- perform a production **read-only** timezone-value census using the same runtime validation semantics before declaring the fail-closed rollout safe;
+- if production census access is unavailable or finds invalid persisted values, release remains blocked until explicitly resolved;
+- run exact risk-scoped verification and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
