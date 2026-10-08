@@ -1,5 +1,23 @@
 import { runNpm } from "./verification-execution.mjs";
-import { currentBuildIdentity,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
+import { buildIdentityMatches,currentBuildIdentity,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
+
+export function reusableBuildLedger(candidate,entry){
+  if(!entry)return {reusable:false,reason:"missing"};
+  if(entry.schemaVersion!==2)return {reusable:false,reason:"ledger-schema"};
+  if(entry?.candidate?.candidateId!==candidate?.candidateId)return {reusable:false,reason:"candidate"};
+  if(entry.gate!=="build"||entry.artifactClass!=="build")return {reusable:false,reason:"gate"};
+  if(entry.exitCode!==0||entry.evaluation?.status!=="PASS"||!entry.artifact){
+    return {reusable:false,reason:"evaluation"};
+  }
+  try{
+    if(!buildIdentityMatches(entry.artifact,currentBuildIdentity())){
+      return {reusable:false,reason:"build-output"};
+    }
+  }catch{
+    return {reusable:false,reason:"build-output"};
+  }
+  return {reusable:true,reason:"exact-match"};
+}
 
 export async function runCandidateBuild(candidate,{env=process.env,producerCommand="npm run build"}={}){
   const build=await runNpm(["run","build"],{env});
