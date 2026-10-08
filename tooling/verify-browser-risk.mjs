@@ -51,7 +51,6 @@ export function browserRiskConfiguration(browserEvidence,buildArtifact=null){
 
 export function reusableBrowserRiskLedger(candidate,browserEvidence,entry){
   const artifact=entry?.effectiveConfiguration?.buildArtifact??null;
-  if(!artifact)return {reusable:false,reason:"build-artifact"};
   const reuse=reusableLedgerEntry(entry,{
     candidate,
     gate:"browser-risk",
@@ -60,6 +59,8 @@ export function reusableBrowserRiskLedger(candidate,browserEvidence,entry){
     allowNA:!browserEvidence.required,
   });
   if(!reuse.reusable)return reuse;
+  if(!browserEvidence.required)return {reusable:true,reason:"exact-match"};
+  if(!artifact)return {reusable:false,reason:"build-artifact"};
 
   const build=readVerificationLedgerEntry(candidate.candidateId,"build");
   if(!build||build.exitCode!==0||build.evaluation?.status!=="PASS"||
