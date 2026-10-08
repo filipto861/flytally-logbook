@@ -623,7 +623,28 @@ Next milestone is **0C.3 — proven project × matrix deduplication**. No execut
 - desktop-chromium still executes each tagged test across its complete self-managed viewport/theme matrix; the five partial/focused responsive tests still execute under both desktop and Pixel 7 projects;
 - expected full-gate execution count changes from **98 to 94**: 92 passing acceptance executions + the existing 2 intentional UI-audit skips, if runtime behavior remains unchanged. Actual verification output remains authoritative.
 
-0C.3 candidate verification is **PENDING**. Required evidence: targeted structure/scope/pipeline contracts + TypeScript, focused responsive spec proving the expected project filtering, and complete serialized browser acceptance explicitly with local retries=0. If the observed matrix/count differs or any mobile-specific regression appears, revert the deduplication rather than weakening coverage.
+0C.3 verification:
+- targeted browser-structure/scope/pipeline set: **44/44 PASS**;
+- TypeScript: **PASS**;
+- focused responsive presentation spec: **14/14 PASS**, confirming 9 desktop executions + 5 retained mobile-project executions;
+- complete serialized browser acceptance with explicit `--retries=0`: **92 PASS / 2 intentional skips / 0 failed** across **94 executions** in **10.3 minutes**;
+- the observed 94-execution matrix exactly matches the proof-driven design: four complete self-managed F6 matrices run once, while the other five responsive tests retain both Playwright projects.
+
+**0C.3 is CLOSED / VERIFIED.**
+
+0C.4 final Phase 0C acceptance:
+- all **48 logical acceptance tests** remain present and unique;
+- fixture/reset identities remain unchanged and `browser-db.mjs` remains centralized;
+- `workers=1` and `fullyParallel=false` remain unchanged;
+- the required desktop/iPad/mobile/320px/reflow × light/dark evidence remains owned by the F6 presentation matrices;
+- TypeScript, targeted structure contracts and the complete serialized browser gate all pass on the final 0C code candidate;
+- PR #255 changes no `app/`, `components/` or `lib/` runtime files, so 0C introduces no product behavior or timezone-semantic change;
+- no DB schema change and no per-worker DB isolation were introduced.
+
+**0C.4 is CLOSED / VERIFIED.**
+**PHASE 0C — BROWSER TEST ARCHITECTURE — CLOSED / VERIFIED.**
+
+Next milestone: **Phase 0D — test contract / evidence taxonomy**.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
