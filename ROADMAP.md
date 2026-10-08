@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 7 October 2026  
+**Last updated:** 8 October 2026  
 **Current production product version:** `3.5.5`  
 **Current active release:** `3.6.0`
 
@@ -656,7 +656,18 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0D — test contract / evidence taxonomy — ACTIVE.**
 
-Current milestone: **Phase 0D — test contract / evidence taxonomy — ACTIVE**. Phase 0C browser architecture is ✅ DONE / VERIFIED. Final 0C evidence: targeted **44/44 PASS**, TypeScript **PASS**, focused responsive **14/14 PASS**, complete serialized browser acceptance with explicit retries=0 **92 PASS / 2 intentional skips / 0 failed** across **94 executions** in **10.3m**. All 48 logical tests, centralized browser DB fixtures, workers=1 and required presentation evidence are preserved.
+Current milestone: **Phase 0D — test contract / evidence taxonomy — ACTIVE / VERIFICATION PENDING**. Phase 0C browser architecture is ✅ DONE / VERIFIED. Final 0C evidence: targeted **44/44 PASS**, TypeScript **PASS**, focused responsive **14/14 PASS**, complete serialized browser acceptance with explicit retries=0 **92 PASS / 2 intentional skips / 0 failed** across **94 executions** in **10.3m**. All 48 logical tests, centralized browser DB fixtures, workers=1 and required presentation evidence are preserved.
+
+Phase 0D independent review returned **ACCEPT WITH CHANGES** and is reconciled. The implementation candidate now:
+- upgrades the development registry to schema v3 with four behavioral evidence classes and homogeneous named-group evidence metadata;
+- keeps build as independent non-behavioral artifact evidence and `fullTests` as aggregate regression only;
+- makes `scope:changed` report required behavioral evidence separately from aggregate gates and build;
+- adds fail-closed observed-evidence semantics for missing required evidence, raw skips, retries and wrong-source claims;
+- prevents source-contract, aggregate full-suite or build PASS results from masquerading as domain, PostgreSQL or browser acceptance;
+- keeps `scope:changed` planner-only: it does not fabricate observed PASS/FAIL evidence;
+- changes no `app/`, `components/`, `lib/`, DB schema, browser fixture architecture or timezone semantics.
+
+Phase 0D verification is still required. For this tooling-only candidate the expected risk contract is targeted development-pipeline/evidence tests + TypeScript + aggregate full unit/regression + build. PostgreSQL and browser acceptance remain N/A unless final diff inspection shows those surfaces were touched.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
@@ -666,7 +677,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0D now owns the next work: make the repository distinguish domain/unit, application/source-contract, PostgreSQL acceptance, browser acceptance and build evidence without treating static source assertions as runtime proof. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0D now owns the next work: verify and close the evidence-taxonomy candidate, then move to Phase 0E canonical verification commands. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
