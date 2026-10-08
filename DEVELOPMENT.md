@@ -99,17 +99,19 @@ Available command surface in this implementation batch:
 - `npm run verify:app -- <candidate args>` — TypeScript, aggregate Node regression and production build. Legacy `npm run verify` remains no-argument compatible by treating the candidate as `--all`; when explicit candidate args are supplied it forwards them to `verify:app`. Aggregate regression remains non-behavioral evidence.
 - `npm run verify:domain -- <candidate args>` — only the registry-approved direct `domain-unit` tests for the affected modules; required-but-unavailable direct evidence exits 3 before execution.
 - `npm run verify:postgres -- <candidate args>` — complete PostgreSQL acceptance against the existing localhost-only fail-closed harness.
-- `npm run verify:browser -- <candidate args>` — browser-only authenticated acceptance. It requires a successful build ledger for the same candidate and a matching current Next.js build identity before any browser fixture reset.
-- `npm run verify:browser:with-build -- <candidate args>` — compatibility convenience that creates the candidate-bound production build first, then runs the browser-only gate.
+- `npm run verify:browser:risk -- <candidate args>` — authoritative planner-bound browser acceptance for the exact registered risk target set. It requires a same-candidate production build, enforces retries=0/workers=1/fullyParallel=false, records exact `{spec,title,project}` cases and fails closed on selection/report mismatch.
+- `npm run verify:browser -- <candidate args>` — legacy repository-wide authenticated browser **diagnostic** only. It still requires a matching candidate build, but it no longer satisfies release `browser-acceptance`.
+- `npm run verify:browser:with-build -- <candidate args>` — compatibility convenience for the legacy full browser diagnostic; it creates the candidate-bound production build first and then runs `verify:browser`.
 
 The low-level `test:postgres*`, `test:browser`, `test:target` and `test:group` commands remain available for iteration. The existing static `verify:release` compatibility path remains unchanged until Phase 0E.4 replaces it with the risk-based orchestrator.
 
 Browser acceptance is deliberately stricter than raw Playwright success:
-- canonical browser execution forces `--retries=0` and `--workers=1`;
-- `playwright.config.mjs` must remain `fullyParallel=false`;
-- a stale/missing/mismatched build ledger blocks the browser gate with exit 3;
-- raw Playwright skips are not acceptance PASS;
-- the dedicated UI-audit capture skip is registered explicitly as an N/A exclusion, so it remains distinguishable from an unexpected skipped acceptance test.
+- release authority belongs only to `browser-risk`, never the legacy full diagnostic;
+- risk execution forces `--retries=0` and `--workers=1`, while `playwright.config.mjs` must remain `fullyParallel=false`;
+- a stale/missing/mismatched build blocks authoritative browser evidence;
+- planner selection hash, config/toolchain identity and browser fixture-contract identity are carried into the risk ledger;
+- planned and actual Playwright `{spec,title,project}` sets must exactly equal the planner-selected target set;
+- raw skips/fixme/interruption are not acceptance PASS; only an explicitly registered N/A is permitted.
 
 Ledger files are local evidence artifacts, not repository state, and `.flytally/` is ignored by Git.
 
@@ -138,7 +140,7 @@ Exit-code contract for canonical verification tooling:
 - `2` — invalid invocation, configuration or environment;
 - `3` — valid candidate blocked before required execution (for example missing approved evidence/target or stale prerequisite).
 
-### Phase 0E.4b fast iteration candidate
+### Phase 0E.4b fast iteration — DONE / VERIFIED
 
 `npm run verify:iterate -- <candidate>` is the fast development executor. It uses the same explicit candidate forms as `verify:plan` and currently runs only:
 - registry-selected application/source-contract groups;
@@ -159,7 +161,15 @@ npm run verify:iterate -- --base <explicit-base>
 npm run verify:iterate -- --base <explicit-base> --rerun
 ```
 
-`--with-browser` is reserved and rejected until 0E.4c. The 94-test browser matrix remains manual diagnostics and is not part of the fast iteration lane.
+0E.4b exact closeout candidate `d01813c978c63cd5fc14945fca9a310226d338d2` passed development-pipeline **98/98**, TypeScript, aggregate regression **1393/1393** and production build **41/41**; an immediate repeat of the cheap lane reused source/domain/typecheck evidence.
+
+### Phase 0E.4c risk browser — ACTIVE
+
+`npm run verify:browser:risk -- <candidate>` is the authoritative candidate-scoped browser gate. It executes only planner-selected registry targets and may create a same-candidate production build when no fresh build ledger/output exists.
+
+`npm run verify:iterate -- <candidate> --with-browser` adds that same authoritative browser-risk gate to the fast iteration flow after cheap source/domain/typecheck checks. Successful exact-candidate browser evidence may be reused when the selection, config/toolchain identity, fixture identity and current build identity still match.
+
+The legacy 94-test `verify:browser` matrix remains available only as a manual diagnostic. It cannot satisfy release `browser-acceptance`.
 
 
 
@@ -314,7 +324,7 @@ $env:SIGNING_SECRET="flytally-browser-signing-secret-not-production"
 npm run verify:browser
 ```
 
-`npm run test:browser` remains the low-level authenticated browser runner. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. Canonical `npm run verify:browser -- <candidate args>` is browser-only and first requires a fresh candidate-bound build ledger. Use `npm run verify:browser:with-build -- <candidate args>` when the compatibility build+browser flow is desired.
+`npm run test:browser` remains the low-level authenticated browser runner. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. Canonical release browser evidence uses `npm run verify:browser:risk -- <candidate args>`; it owns or reuses a fresh candidate-bound build and executes only the exact planner-selected risk targets. `npm run verify:browser -- <candidate args>` and `verify:browser:with-build` are legacy full-matrix diagnostics only.
 
 ## PostgreSQL commands
 
