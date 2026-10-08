@@ -226,7 +226,8 @@ test("database workspace is owned by aircraft-airports rather than the unrelated
   assert.match(result.modules,/aircraft-airports/);
   assert.doesNotMatch(result.modules,/data-recovery/);
   assert.equal(result.browser,"true");
-  assert.equal(result.postgres,"false");
+  assert.equal(result.postgres,"true");
+  assert.match(result.risks,/persistence-schema/);
 });
 
 test("new stable modules own representative aircraft GPS auth notification and shell boundaries",()=>{
