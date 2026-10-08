@@ -376,15 +376,21 @@ Reconciliation against the actual repository:
 
 The reviewer could not access the private repository directly; repository-specific findings above were therefore re-verified against the actual repo before acceptance.
 
-### P1.2 — Strict calendar primitive + configuration boundary — NEXT / IMPLEMENTATION READY
+### P1.2 — Strict calendar primitive + configuration boundary — ACTIVE / IMPLEMENTATION CANDIDATE
 
-Scope:
-- pure date-in-zone helper;
-- strict saveable-default timezone resolver;
-- Settings write validation/error behavior;
-- direct unit/source-contract tests.
+Implementation candidate:
+- added `lib/calendar-date.ts` with strict named-timezone validation and deterministic `YYYY-MM-DD` derivation from an injected instant;
+- added `lib/data/user-calendar.ts` with the frozen `resolved / needs_configuration / unavailable` result contract and injectable reader for deterministic tests;
+- kept display-only `getUserTimezone()` fallback unchanged and separate;
+- Settings account writes now validate timezone before the transaction and redirect to a controlled field error instead of persisting an invalid/offset timezone;
+- invalid timezone blocks the whole account-settings transaction, so unrelated field edits cannot partially persist;
+- development ownership registry now explicitly owns the two new runtime files;
+- focused unit/source-contract coverage added for UTC/Prague/Los Angeles/Auckland/Kathmandu/Lord Howe, DST boundaries, aliases, raw offsets, invalid/missing/blank/read-failure states and authority separation;
+- existing authoritative Settings browser case now also proves invalid timezone blocks the transaction and preserves the previously persisted account values.
 
-No flight/aircraft consumer rewiring yet unless required to prove the primitive.
+No Manual Flight, Aircraft Manager, Quick Add or GPS consumer rewiring is included in P1.2.
+
+Verification is pending; no PASS is claimed until local planner-selected evidence is observed.
 
 ### P1.3 — Manual flight default
 
