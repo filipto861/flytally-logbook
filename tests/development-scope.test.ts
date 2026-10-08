@@ -248,6 +248,11 @@ test("development registry has unique ids scale paths and test ownership",()=>{
   assert.equal(manifest.schemaVersion,3);
   const ids=manifest.modules.map((module:{id:string})=>module.id);
   assert.equal(new Set(ids).size,ids.length);
+  const specialIds=manifest.specialRules.map((rule:{id:string})=>rule.id);
+  assert.equal(new Set(specialIds).size,specialIds.length);
+  const verificationHarness=manifest.specialRules.find((rule:{id:string})=>rule.id==="verification-harness");
+  assert.ok(verificationHarness);
+  assert.ok(verificationHarness.files.includes("tooling/verify-release-risk.mjs"));
   assert.equal(new Set(manifest.scalePaths).size,manifest.scalePaths.length);
   assert.equal(new Set(manifest.postgresAcceptance.scaleTests).size,manifest.postgresAcceptance.scaleTests.length);
   assert.equal(
