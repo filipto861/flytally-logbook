@@ -21,7 +21,7 @@ export function createVerificationPlan(argv) {
   const blockedEvidence=[...domainBlocked,...browserEvidence.blockers];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     candidate,
     forceAll: options.forceAll,
     plan: {
