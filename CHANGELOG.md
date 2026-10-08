@@ -10,6 +10,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.6.0 Phase 1 — saved-date / timezone semantics
+- Completed P1.0 read-only discovery on `main@eafc347fe00e781f966cc328da67ec24e52c8287` and drafted the Phase 1 contract. Confirmed Prague-hard-coded saveable defaults in Manual New Flight, Aircraft Manager and Quick Add; a separate UTC fallback in FlightForm; raw timezone persistence in Settings; date-only authority for stored flight/rate dates; UTC authority for current GPS/FCL.050 server consumers; and backup/restore preservation of stored dates/settings.
+- P1.1 contract review is active. Runtime implementation is **NOT STARTED**. Proposed contract fails closed on invalid saveable-default timezone configuration, preserves presentation fallback separately, leaves existing records/GPS UTC evidence unchanged, and currently requires no DB migration, historical backfill or portable-backup version bump.
+
+
 ### Development / verification governance
 - Added the 3.6.0 Phase 0 engineering-quality gate before any saved-date/timezone runtime implementation.
 - Recorded and independently reviewed the current test/development audit, including the suite-wide PostgreSQL silent-skip exposure, test-scope registry drift, browser-runner reproducibility, browser-suite ownership and stale Git/PR hygiene.
