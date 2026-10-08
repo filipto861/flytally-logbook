@@ -104,14 +104,14 @@ export function selectBrowserEvidence(candidate,classification){
   const targets=browser.targets??{};
   const harness=browserHarnessRule();
   if(classification.risks?.includes("full-ci")){
-    addIds(targetIds,browser.harnessTargets);
+    addIds(fileTargetIds,browser.harnessTargets);
     if((browser.harnessTargets??[]).length===0)blockers.push("browser:full-ci:browser-harness-target-set-empty");
   }
 
   for(const file of candidate.files){
     const single=classifyDevelopmentScope([file]);
     if(!single.browser)continue;
-    const before=new Set(targetIds);
+    const fileTargetIds=new Set();
     const reasons=[];
 
     if(file.startsWith("e2e/")&&file.endsWith(".spec.mjs")){
@@ -120,9 +120,9 @@ export function selectBrowserEvidence(candidate,classification){
         .map(([id])=>id)
         .sort();
       if(owned.length===0)reasons.push("changed-e2e-spec-has-no-authoritative-target");
-      addIds(targetIds,owned);
+      addIds(fileTargetIds,owned);
     }else if(harness&&pathMatches(harness,file)){
-      addIds(targetIds,browser.harnessTargets);
+      addIds(fileTargetIds,browser.harnessTargets);
       if((browser.harnessTargets??[]).length===0)reasons.push("browser-harness-target-set-empty");
     }
 
@@ -131,19 +131,20 @@ export function selectBrowserEvidence(candidate,classification){
       if(!module?.gates?.browser)continue;
       const owned=browser.moduleTargets?.[moduleId]??[];
       if(owned.length===0)reasons.push("browser-module:"+moduleId+":missing-target-ownership");
-      addIds(targetIds,owned);
+      addIds(fileTargetIds,owned);
     }
 
     for(const entry of browser.pathTargets??[]){
-      if(pathMatches(entry,file))addIds(targetIds,entry.targets);
+      if(pathMatches(entry,file))addIds(fileTargetIds,entry.targets);
     }
 
-    const addedTargets=[...targetIds].filter((id)=>!before.has(id)).sort();
-    if(addedTargets.length===0&&reasons.length===0)reasons.push("browser-relevant-path-has-no-target");
+    const ownedTargets=[...fileTargetIds].sort();
+    if(ownedTargets.length===0&&reasons.length===0)reasons.push("browser-relevant-path-has-no-target");
+    addIds(targetIds,ownedTargets);
     if(reasons.length>0){
       for(const reason of reasons)blockers.push("browser:"+file+":"+reason);
     }
-    fileCoverage.push({file,addedTargets,reasons});
+    fileCoverage.push({file,targets:ownedTargets,reasons});
   }
 
   if(required&&targetIds.size===0)blockers.push("browser:required:no-targets-selected");
