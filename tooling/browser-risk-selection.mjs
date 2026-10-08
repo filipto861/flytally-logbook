@@ -160,6 +160,7 @@ export function selectBrowserEvidence(candidate,classification){
     plannerVersion:2,
     selectionVersion:browser.selectionVersion??0,
     registrySchemaVersion:manifest.schemaVersion??manifest.version??0,
+    configHash:config.hash,
     candidateFiles:candidate.files,
     targets:selected.map(({id,spec,title,project})=>({id,spec,title,project})),
   };
