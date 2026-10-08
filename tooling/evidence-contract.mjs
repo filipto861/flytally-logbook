@@ -26,12 +26,15 @@ function sourceSupportsClass(evidenceClass, source) {
   if (aggregateSources.has(source)) return false;
 
   const group = manifest.testGroups?.[source];
-  if (group && group.evidenceClass !== evidenceClass) return false;
+  if (group) return group.evidenceClass === evidenceClass;
 
   const dedicated = policy.dedicatedAcceptanceSources?.[evidenceClass];
-  if (dedicated && source !== dedicated) return false;
+  if (dedicated) return source === dedicated;
 
-  return true;
+  const direct = policy.directEvidenceSources?.[evidenceClass];
+  if (direct) return source === direct;
+
+  return false;
 }
 
 export function evaluateEvidenceObservation(evidenceClass, observation) {
