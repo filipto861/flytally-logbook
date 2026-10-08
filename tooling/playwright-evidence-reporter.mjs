@@ -77,7 +77,7 @@ export default class FlyTallyEvidenceReporter{
     if(!output)throw new Error("FLYTALLY_BROWSER_EVIDENCE_FILE is required for the FlyTally evidence reporter.");
     mkdirSync(path.dirname(output),{recursive:true});
     writeFileSync(output,JSON.stringify({
-      schemaVersion:1,
+      schemaVersion:2,
       status:result.status,
       planned:this.planned,
       passed:this.passed,
