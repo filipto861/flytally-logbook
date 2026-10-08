@@ -60,14 +60,10 @@ function printHuman(result) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
     const result = createVerificationPlan(process.argv.slice(2));
-    if (result.forceAll || !process.argv.includes("--json")) {
-      if (process.argv.includes("--json")) {
-        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-      } else {
-        printHuman(result);
-      }
-    } else {
+    if (process.argv.includes("--json")) {
       process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    } else {
+      printHuman(result);
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
