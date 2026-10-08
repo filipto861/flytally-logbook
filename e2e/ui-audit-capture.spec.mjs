@@ -122,7 +122,7 @@ async function captureNewFlightStates(page,viewport,theme,metrics){
   await snap(page,"new-flight--all-disclosures",viewport,theme,metrics);
 }
 
-test("capture deterministic UI UX audit screenshots",async({browser},testInfo)=>{
+test("capture deterministic UI UX audit screenshots",{annotation:{type:"flytally-na",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}},async({browser},testInfo)=>{
   test.skip(!captureEnabled,"UI audit capture runs only for the dedicated audit branch or explicit local opt-in.");
   test.skip(!authenticatedBrowser,"Authenticated UI audit capture requires the isolated browser fixture.");
   test.skip(testInfo.project.name!=="desktop-chromium","The audit test manages its own viewport matrix.");
