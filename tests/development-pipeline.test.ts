@@ -136,7 +136,8 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.doesNotMatch(workflow,/\n\s*push:/);
   assert.doesNotMatch(browser,/\n\s*schedule:/);
   assert.match(workflow,/cancel-in-progress: true/);
-  assert.match(workflow,/Application gate/);
+  assert.match(workflow,/Manual application diagnostic/);
+  assert.match(workflow,/Manual PostgreSQL diagnostic/);
   assert.match(workflow,/TypeScript check/);
   assert.match(workflow,/npm run typecheck/);
   assert.match(workflow,/Targeted UI regression tests/);
@@ -146,7 +147,9 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.match(workflow,/npm run test:group -- ui-contract/);
   assert.doesNotMatch(workflow,/npm run test:ui/);
   assert.doesNotMatch(workflow,/name: Production build/);
-  assert.match(browser,/name: Production build/);
+  assert.match(browser,/name: Legacy full Chromium diagnostic/);
+  assert.match(browser,/name: Diagnostic production build/);
+  assert.match(browser,/name: Legacy full browser diagnostic/);
   assert.match(browser,/run: npm run build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/inputs\.postgres == true/);
