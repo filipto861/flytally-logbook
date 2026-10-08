@@ -168,6 +168,7 @@ test("canonical browser harness changes still require browser acceptance",()=>{
   for(const file of [
     "tooling/verify-browser.mjs",
     "tooling/verify-browser-with-build.mjs",
+    "tooling/verify-browser-risk.mjs",
     "tooling/playwright-evidence-reporter.mjs",
   ]){
     const result=classify([file]);
@@ -273,7 +274,11 @@ test("development registry v3 evidence schema is explicit and self-consistent",(
   });
   assert.deepEqual(manifest.evidencePolicy.dedicatedAcceptanceSources,{
     "postgres-acceptance":"postgres",
-    "browser-acceptance":"browser",
+    "browser-acceptance":"browser-risk",
+  });
+  assert.deepEqual(manifest.evidencePolicy.dedicatedAcceptanceCoverage,{
+    "postgres-acceptance":"full",
+    "browser-acceptance":"targeted",
   });
   assert.deepEqual(manifest.evidencePolicy.directEvidenceSources,{"domain-unit":"domain-unit"});
   assert.equal(schema.properties.modules.items.properties.evidenceTests.properties["domain-unit"].minItems,1);
