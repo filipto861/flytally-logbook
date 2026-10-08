@@ -669,6 +669,8 @@ Phase 0D independent review returned **ACCEPT WITH CHANGES** and is reconciled. 
 
 Phase 0D verification is still required. For this tooling-only candidate the expected risk contract is targeted development-pipeline/evidence tests + TypeScript + aggregate full unit/regression + build. PostgreSQL and browser acceptance remain N/A unless final diff inspection shows those surfaces were touched.
 
+First verification pass: development-pipeline **65/65 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**. Aggregate `npm test` reached **1340/1354 PASS** with 14 stale historical source-contract assertions that still targeted the pre-0C monolithic `public-shell.spec.mjs`. Repository inspection confirmed the expected browser behavior remains in the new domain-owned specs/helpers. The assertions have been retargeted; focused correction verification is pending. This does not convert the failed aggregate run into PASS until the corrected assertions are actually rerun.
+
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
 - repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
