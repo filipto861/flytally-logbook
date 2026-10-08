@@ -656,7 +656,7 @@ Timezone runtime implementation is paused until the repository's verification pa
 
 **Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
 
-Current milestone: **Phase 0C.3 — proven project × matrix deduplication — DISCOVERY / PROOF**. Phase 0C.2a helper ownership is ✅ DONE / VERIFIED: targeted **43/43 PASS**, TypeScript **PASS**, focused GPS **20/20 PASS**, focused responsive **18/18 PASS**, full browser **96 PASS / 2 skips / 0 failed** in **11.4m**. 0C.3 may remove a second-project execution only after explicit proof that mobile-project semantics are irrelevant; otherwise both projects stay.
+Current milestone: **Phase 0C.3 — proven project × matrix deduplication — IMPLEMENTED, VERIFICATION PENDING**. Proof limited deduplication to the four F6 tests that each own the complete required viewport/theme matrix and have no mobile-project semantic dependency; the five narrower responsive tests retain both projects. Candidate uses tag `@self-managed-presentation` plus mobile-project `grepInvert`, targeting **94 total full-gate executions** instead of 98 without changing the 48 logical test inventory.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
