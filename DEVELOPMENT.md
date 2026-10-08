@@ -218,7 +218,7 @@ Documentation-only candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f83189378
 
 Phase 0F is documentation/repository hygiene and final Phase 0 closure only. Reconcile executable tooling with docs, inspect stale PR/branch state before deleting anything, retain exact verification evidence, and review ROADMAP / FEATURES / CHANGELOG consistency. Do not start 3.6.0 saved-date/timezone runtime implementation until Phase 0F closes.
 
-Initial 0F discovery confirms the documented verification command surface matches `package.json`. Seven branch heads are direct ancestors of `main` and therefore proven superseded by ancestry; five older open feature PRs remain diverged/non-mergeable and require explicit supersession proof before closure. PR #255 remains the active Phase 0 integration PR. No branch or PR has been deleted or closed as part of this discovery.
+Initial 0F discovery confirms the documented verification command surface matches `package.json`. Seven branch heads are direct ancestors of `main`; no branch was deleted, and `chore/pre-f3-integration-anchor` remains intentionally retained as the recorded F3 rollback anchor. Explicit supersession was then proven for the five stale parallel PRs: #187 was replaced by merged #188/F0.1, #201 by merged #200/F1.4, #206 by merged #207/F2.2, and #231/#232 by the final F3.3/F3.4/F3.5 stack already ancestral to `main`. Those five PRs were closed without merge; their branches remain intact. PR #255 remains the active Phase 0 integration PR.
 
 
 
