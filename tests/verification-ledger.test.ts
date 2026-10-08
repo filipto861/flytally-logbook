@@ -27,6 +27,7 @@ test("Phase 0E canonical verification modules are syntactically parseable",()=>{
     "tooling/verify-iterate.mjs",
     "tooling/verify-postgres.mjs",
     "tooling/verify-browser.mjs",
+    "tooling/verify-browser-risk.mjs",
     "tooling/verify-browser-with-build.mjs",
     "tooling/playwright-evidence-reporter.mjs",
     "playwright.config.mjs",
@@ -92,7 +93,7 @@ test("verification execution parses Node spec and TAP summaries without inventin
 });
 
 test("browser reporter maps only the registered audit exclusion to explicit N/A",async()=>{
-  const {explicitBrowserNotApplicable}=await importTooling("tooling/playwright-evidence-reporter.mjs");
+  const {browserCaseIdentity,explicitBrowserNotApplicable}=await importTooling("tooling/playwright-evidence-reporter.mjs");
   assert.equal(explicitBrowserNotApplicable({
     annotations:[{type:"flytally-na",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}],
   }),true);
@@ -100,22 +101,33 @@ test("browser reporter maps only the registered audit exclusion to explicit N/A"
     annotations:[{type:"skip",description:"Unexpected browser skip"}],
   }),false);
   assert.equal(explicitBrowserNotApplicable({annotations:[]}),false);
+  assert.deepEqual(browserCaseIdentity({
+    title:"Exact case",
+    location:{file:path.join(root,"e2e","sample.spec.mjs")},
+    parent:{project:()=>({name:"mobile-chromium"})},
+  },root),{
+    spec:"e2e/sample.spec.mjs",
+    title:"Exact case",
+    project:"mobile-chromium",
+  });
   const audit=fs.readFileSync(path.join(root,"e2e","ui-audit-capture.spec.mjs"),"utf8");
   assert.match(audit,/annotation:\{type:"flytally-na",description:"UI audit capture runs only/);
 });
 
-test("canonical browser acceptance requires the recorded same-candidate build before Playwright",()=>{
-  const browser=fs.readFileSync(path.join(root,"tooling","verify-browser.mjs"),"utf8");
+test("risk browser acceptance owns exact planner selection and same-candidate build",()=>{
+  const risk=fs.readFileSync(path.join(root,"tooling","verify-browser-risk.mjs"),"utf8");
+  const diagnostic=fs.readFileSync(path.join(root,"tooling","verify-browser.mjs"),"utf8");
   const withBuild=fs.readFileSync(path.join(root,"tooling","verify-browser-with-build.mjs"),"utf8");
-  assert.match(browser,/readVerificationLedgerEntry\(candidate\.candidateId,"build"\)/);
-  assert.match(browser,/buildIdentityMatches\(build\.artifact,current\)/);
-  assert.match(browser,/\[runner,"--retries=0","--workers=1"\]/);
-  assert.match(browser,/FLYTALLY_BROWSER_EVIDENCE_FILE/);
-  assert.ok(
-    browser.indexOf('readVerificationLedgerEntry(candidate.candidateId,"build")')<
-    browser.indexOf('run-auth-browser.mjs'),
-    "build freshness must be checked before authenticated browser execution",
-  );
+  assert.match(risk,/readVerificationLedgerEntry\(candidate\.candidateId,"build"\)/);
+  assert.match(risk,/buildIdentityMatches\(build\.artifact,current\)/);
+  assert.match(risk,/runCandidateBuild/);
+  assert.match(risk,/sourceGate:"browser-risk"/);
+  assert.match(risk,/selectionHash:browserEvidence\.selectionHash/);
+  assert.match(risk,/compareExactTargetSet/);
+  assert.match(risk,/FLYTALLY_BROWSER_EVIDENCE_FILE/);
+  assert.match(diagnostic,/gate:"browser-diagnostic"/);
+  assert.match(diagnostic,/sourceGate:"browser-diagnostic"/);
+  assert.doesNotMatch(diagnostic,/evidenceClass:"browser-acceptance"/);
   assert.match(withBuild,/runCandidateBuild/);
   assert.match(withBuild,/runBrowserVerification/);
 });
@@ -128,6 +140,7 @@ test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migr
   assert.equal(pkg.scripts["verify:iterate"],"node tooling/verify-iterate.mjs");
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
   assert.equal(pkg.scripts["verify:browser"],"node tooling/verify-browser.mjs");
+  assert.equal(pkg.scripts["verify:browser:risk"],"node tooling/verify-browser-risk.mjs");
   assert.equal(pkg.scripts["verify:browser:with-build"],"node tooling/verify-browser-with-build.mjs");
   const compat=fs.readFileSync(path.join(root,"tooling","verify-app-compat.mjs"),"utf8");
   assert.match(compat,/argv\.length>0\?argv:\["--all"\]/);
