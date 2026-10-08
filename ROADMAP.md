@@ -810,6 +810,7 @@ Revised 0E milestones:
    - keep manual GitHub workflows manual-only diagnostics and prevent them from being mistaken for candidate-bound release authority;
    - label the legacy full browser cloud workflow explicitly as diagnostic and remove stale pull-request-only conditionals from its manual-only job;
    - regression-cover workflow labels/authority so future edits cannot silently promote cloud diagnostics into the release gate;
+   - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); corrected only those source-contract expectations, with product runtime unchanged; fixed-head verification pending;
 8. **0E.7 — exact-candidate verification / closeout**.
 
 Frozen constraints remain:
