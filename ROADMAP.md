@@ -989,16 +989,30 @@ Delivered behavior:
 - explicit effective dates and historical `rates.valid_from` values remain authoritative and date-only;
 - database workspace ownership was corrected from stale `data-recovery` classification to `aircraft-airports` without weakening evidence: aircraft-airports now retains browser acceptance and requires PostgreSQL acceptance for persistence risk.
 
-### P1.5 — GPS / backup invariance + exact-candidate closeout — ACTIVE
+### P1.5 — GPS / backup invariance + exact-candidate closeout — ACTIVE / EVIDENCE CANDIDATE
 
-Next scope:
-- prove the active GPS/FCL.050 timestamp path remains UTC and fail-closed;
-- decide dormant legacy Prague `localParts` retirement only from actual dependency evidence;
-- prove backup/restore/export/print preserve `flights.date` and `rates.valid_from` without timezone reinterpretation;
-- prove rate selection remains date-only;
-- perform a production **read-only** timezone-value census using the same runtime validation semantics before declaring the fail-closed rollout safe;
-- if production census access is unavailable or finds invalid persisted values, release remains blocked until explicitly resolved;
-- run exact risk-scoped verification and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
+Evidence candidate:
+- active server GPS consumers continue to import `localParts` only through `@/lib/kml`, whose explicit export maps it to UTC `utcParts`;
+- client GPS review imports `utcParts` directly from `lib/track-time`; explicit offsets normalize to UTC and timezone-less timestamps remain unavailable;
+- date-boundary tests now cover +14:00 / -11:00 source offsets without user-timezone participation;
+- the dormant Prague `localParts` helper in `lib/track-processing.ts` is **retained, not promoted**: no active audited authoritative path uses it, but removal is deferred because exhaustive repo-wide retirement proof was not established in this milestone;
+- account backup exports raw flights, rates and settings rows; exact restore inserts date-only rows with PostgreSQL `json_populate_record` and does not run `flights.date` / `rates.valid_from` through JavaScript Date conversion;
+- portable-backup evidence now proves a saved timezone plus `flight.date` and `rate.valid_from` retain their literal calendar strings;
+- CSV/XLS/print keep flight dates date-only; the export route UTC date used for the **filename stamp** is not flight-date authority;
+- historical rate selection remains lexical/date-only and is covered at a calendar-year boundary;
+- adjacent licence/recency/print-status "today" behavior remains issue #258 and is not changed here.
+
+Production read-only census — **PASS, point-in-time 8 October 2026**:
+- 5 users total; 5/5 have `user_settings`;
+- missing settings: 0; NULL timezone: 0; blank timezone: 0;
+- configured timezone values: `Europe/Prague` ×5;
+- invalid under the same Node 24 `Intl.DateTimeFormat` + raw-offset rejection semantics as `normalizeSaveableTimeZone`: **0**;
+- census used aggregate/grouped SELECT-only queries against the production database; no user identity data was emitted and no mutation was executed;
+- the temporary non-persistent execution sandbox was stopped after the census.
+
+No runtime semantic change, DB migration, historical backfill or backup-format bump is introduced by this P1.5 evidence candidate.
+
+Verification pending on the exact repository candidate. Phase 1 is not DONE until targeted evidence and planner-selected release verification pass and final docs are reconciled.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
