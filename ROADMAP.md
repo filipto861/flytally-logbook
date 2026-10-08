@@ -797,14 +797,19 @@ Revised 0E milestones:
    - FEATURES was reviewed and remains unchanged because 0E.4 is development verification infrastructure only; DEVELOPMENT, ROADMAP, CHANGELOG and the detailed 0E.4 contract are reconciled;
    - legacy full `verify:browser` remains a manual diagnostic and legacy static `verify:release` remains the compatibility full path; neither was silently redefined;
    - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred.
-6. **0E.5 — negative/selection/freshness/config regression coverage — ACTIVE**;
-   - harden exact-ledger reuse negatives for schema, candidate, gate, evidence class, exit status and effective configuration;
-   - prove build evidence is reusable only while the current production-build identity still matches the ledger artifact;
-   - prove browser-risk evidence invalidates on selection, verification-config, toolchain, fixture-contract or build freshness drift;
-   - extend candidate freshness coverage from untracked files to tracked dirty files outside an explicit path candidate, while base candidates absorb the dirty file instead of hiding it;
-   - assert verification-config/toolchain/browser-fixture identity covers the files that actually define release evidence;
+6. **0E.5 — negative/selection/freshness/config regression coverage — DONE / VERIFIED**;
+   - exact candidate `68351c78a0dac2b1f95de3530d2ceac116f2475e`: development-pipeline **113/113 PASS**, planner no blockers, fast iteration **226/226 PASS** + TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), PostgreSQL/scale N/A, final `release_status=PASS`;
+   - exact-ledger reuse negatives now cover schema, candidate, gate, evidence class, exit status and effective-configuration drift;
+   - build evidence is reusable only while current production-build identity matches the ledger artifact;
+   - browser-risk reuse invalidates on selection, verification-config, toolchain, fixture-contract, build-ledger or current-build drift;
+   - candidate freshness covers tracked and untracked dirty work outside explicit path candidates; base candidates absorb current dirty files into candidate membership;
+   - identity tests assert the release/config/toolchain/fixture inputs that define reusable evidence;
    - no product runtime, DB schema, certification, backup, timezone semantics, browser DB architecture or worker-count change.
-7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
+7. **0E.6 — manual workflow + DEVELOPMENT alignment — ACTIVE**;
+   - reconcile DEVELOPMENT so `verify:release:risk` is the canonical final candidate decision and `npm run verify` remains compatibility-only;
+   - keep manual GitHub workflows manual-only diagnostics and prevent them from being mistaken for candidate-bound release authority;
+   - label the legacy full browser cloud workflow explicitly as diagnostic and remove stale pull-request-only conditionals from its manual-only job;
+   - regression-cover workflow labels/authority so future edits cannot silently promote cloud diagnostics into the release gate;
 8. **0E.7 — exact-candidate verification / closeout**.
 
 Frozen constraints remain:
