@@ -3,12 +3,13 @@
 import { useEffect,useRef,useState,type ReactNode } from "react";
 import { QuickAircraftForm } from "@/components/quick-aircraft-form";
 import { NavIcon } from "@/components/nav-icon";
+import type { SaveableCalendarDefault } from "@/lib/data/user-calendar";
 
 type Mode="gps"|"manual";
 type AircraftSaveResult={ok:boolean;message:string};
 type AircraftAction=(form:FormData)=>Promise<AircraftSaveResult>;
 
-export function FlightEntryWorkspace({gps,manual,aircraftAction,aircraftCount,initialMode="manual"}:{gps:ReactNode;manual:ReactNode;aircraftAction:AircraftAction;aircraftCount:number;initialMode?:Mode}){
+export function FlightEntryWorkspace({gps,manual,aircraftAction,aircraftCount,calendarDefault,initialMode="manual"}:{gps:ReactNode;manual:ReactNode;aircraftAction:AircraftAction;aircraftCount:number;calendarDefault:SaveableCalendarDefault;initialMode?:Mode}){
   const[mode,setMode]=useState<Mode>(initialMode),[aircraftOpen,setAircraftOpen]=useState(false),[aircraftNotice,setAircraftNotice]=useState("");
   const closeButton=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLElement>(null),opener=useRef<HTMLButtonElement|null>(null);
   const openAircraft=(button:HTMLButtonElement)=>{opener.current=button;setAircraftOpen(true)};
@@ -40,6 +41,6 @@ export function FlightEntryWorkspace({gps,manual,aircraftAction,aircraftCount,in
       <div hidden={mode!=="gps"}>{gps}</div>
       <div hidden={mode!=="manual"}>{manual}</div>
     </section>
-    {aircraftOpen?<div className="modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)closeAircraft()}}><section ref={dialog} id="quick-aircraft-dialog" className="modal-card" role="dialog" aria-modal="true" aria-labelledby="aircraft-dialog-title"><header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-dialog-title">Add aircraft</h2><p className="muted">Registration, model and normal logbook are enough to start. Everything else is optional.</p></div><button ref={closeButton} type="button" className="modal-close" aria-label="Close" onClick={closeAircraft}><NavIcon name="close"/></button></header><QuickAircraftForm action={aircraftAction} onSaved={aircraftSaved}/></section></div>:null}
+    {aircraftOpen?<div className="modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)closeAircraft()}}><section ref={dialog} id="quick-aircraft-dialog" className="modal-card" role="dialog" aria-modal="true" aria-labelledby="aircraft-dialog-title"><header><div><p className="eyebrow">AIRCRAFT</p><h2 id="aircraft-dialog-title">Add aircraft</h2><p className="muted">Registration, model and normal logbook are enough to start. Everything else is optional.</p></div><button ref={closeButton} type="button" className="modal-close" aria-label="Close" onClick={closeAircraft}><NavIcon name="close"/></button></header><QuickAircraftForm action={aircraftAction} calendarDefault={calendarDefault} onSaved={aircraftSaved}/></section></div>:null}
   </div>;
 }
