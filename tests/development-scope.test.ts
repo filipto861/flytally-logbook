@@ -9,6 +9,7 @@ const root=path.resolve(import.meta.dirname,"..");
 const scopeScript=path.join(root,"tooling/development-scope.mjs");
 const groupRunner=path.join(root,"tooling/run-development-test-group.mjs");
 const manifestPath=path.join(root,"tooling/development-modules.json");
+const manifestSchemaPath=path.join(root,"tooling/development-modules.schema.json");
 
 function classify(files:string[],title=""){
   const tempDir=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-scope-"));
@@ -205,7 +206,8 @@ test("reviewed cross-cutting files stay explicit shared runtime instead of recei
 
 test("development registry has unique ids scale paths and test ownership",()=>{
   const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
-  assert.equal(manifest.version,2);
+  assert.equal(manifest.version,3);
+  assert.equal(manifest.schemaVersion,3);
   const ids=manifest.modules.map((module:{id:string})=>module.id);
   assert.equal(new Set(ids).size,ids.length);
   assert.equal(new Set(manifest.scalePaths).size,manifest.scalePaths.length);
@@ -225,6 +227,81 @@ test("development registry has unique ids scale paths and test ownership",()=>{
       testOwners.set(file,groupId);
     }
   }
+});
+
+test("development registry v3 evidence schema is explicit and self-consistent",()=>{
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const schema=JSON.parse(fs.readFileSync(manifestSchemaPath,"utf8"));
+  const expectedBehavioral=["domain-unit","application-source-contract","postgres-acceptance","browser-acceptance"];
+
+  assert.equal(manifest.$schema,"./development-modules.schema.json");
+  assert.equal(manifest.schemaVersion,3);
+  assert.equal(schema.properties.schemaVersion.const,3);
+  assert.equal(schema.properties.version.const,3);
+  assert.deepEqual(new Set(manifest.evidencePolicy.behavioralClasses),new Set(expectedBehavioral));
+  assert.deepEqual(
+    new Set(schema.properties.evidencePolicy.properties.behavioralClasses.items.enum),
+    new Set(expectedBehavioral),
+  );
+  assert.deepEqual(new Set(manifest.evidencePolicy.statuses),new Set(["PASS","FAIL","NOT RUN","N/A","PARTIAL"]));
+  assert.equal(manifest.evidencePolicy.buildArtifact,"build");
+  assert.deepEqual(manifest.evidencePolicy.gateRequirements,{
+    postgres:"postgres-acceptance",
+    browser:"browser-acceptance",
+  });
+  assert.deepEqual(manifest.evidencePolicy.dedicatedAcceptanceSources,{
+    "postgres-acceptance":"postgres",
+    "browser-acceptance":"browser",
+  });
+
+  for(const [groupId,group] of Object.entries(manifest.testGroups) as [string,{evidenceClass:string,coverage:string,tests:string[]}][]){
+    assert.ok(manifest.evidencePolicy.groupClasses.includes(group.evidenceClass),"invalid evidence class for group: "+groupId);
+    assert.equal(group.evidenceClass,"application-source-contract","current named groups must remain homogeneous source-contract groups");
+    assert.equal(group.coverage,"targeted");
+    assert.ok(group.tests.length>0);
+  }
+});
+
+test("source-contract groups do not import browser PostgreSQL or DB acceptance fixtures",()=>{
+  const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
+  const forbidden=/@playwright\/test|(?:^|\/)e2e\/|browser-db|bootstrap-browser-smoke-db|@neondatabase|(?:^|\/)lib\/db(?:[./]|$)|FLYTALLY_POSTGRES_INTEGRATION/;
+
+  for(const [groupId,group] of Object.entries(manifest.testGroups) as [string,{evidenceClass:string,tests:string[]}][]){
+    if(group.evidenceClass!=="application-source-contract")continue;
+    for(const file of group.tests){
+      const source=fs.readFileSync(path.join(root,file),"utf8");
+      const imports=[...source.matchAll(/^\s*import(?:[\s\S]*?\sfrom\s*)?["']([^"']+)["'];?/gm)].map(match=>match[1]);
+      for(const specifier of imports){
+        if(specifier.startsWith("node:"))continue;
+        assert.doesNotMatch(specifier,forbidden,groupId+" must not import runtime acceptance fixture "+specifier);
+      }
+    }
+  }
+});
+
+test("scope planner reports required evidence separately from aggregate regression and build",()=>{
+  const sourceContract=classify(["tests/v320-ui-consistency.test.ts"]);
+  assert.equal(sourceContract.required_evidence,"application-source-contract");
+  assert.equal(sourceContract.aggregate_gates,"none");
+  assert.equal(sourceContract.build_artifact,"not-required");
+
+  const domain=classify(["lib/commercial-pricing.ts"]);
+  assert.equal(domain.required_evidence,"domain-unit");
+  assert.equal(domain.aggregate_gates,"full-tests");
+  assert.equal(domain.build_artifact,"required");
+
+  const aggregateOnly=classify(["tests/future-unowned.test.ts"]);
+  assert.equal(aggregateOnly.full_tests,"true");
+  assert.equal(aggregateOnly.required_evidence,"none");
+  assert.equal(aggregateOnly.aggregate_gates,"full-tests");
+  assert.doesNotMatch(aggregateOnly.required_evidence,/domain-unit/);
+
+  const crossDomain=classify(["app/(protected)/flights/page.tsx"]);
+  assert.equal(
+    crossDomain.required_evidence,
+    "application-source-contract,browser-acceptance,domain-unit,postgres-acceptance",
+  );
+  assert.equal(crossDomain.build_artifact,"required");
 });
 
 test("UI command consumes the registry instead of duplicating the file list",()=>{
