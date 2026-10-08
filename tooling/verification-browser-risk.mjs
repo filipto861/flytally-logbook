@@ -50,7 +50,7 @@ export function browserRiskConfiguration(browserEvidence,buildArtifact=null){
   };
 }
 
-export function reusableBrowserRiskLedger(candidate,browserEvidence,entry){
+export function reusableBrowserRiskLedger(candidate,browserEvidence,entry,{buildLedger,currentBuildArtifact}={}){
   const artifact=entry?.effectiveConfiguration?.buildArtifact??null;
   const reuse=reusableLedgerEntry(entry,{
     candidate,
@@ -63,13 +63,16 @@ export function reusableBrowserRiskLedger(candidate,browserEvidence,entry){
   if(!browserEvidence.required)return {reusable:true,reason:"exact-match"};
   if(!artifact)return {reusable:false,reason:"build-artifact"};
 
-  const build=readVerificationLedgerEntry(candidate.candidateId,"build");
+  const build=buildLedger===undefined
+    ?readVerificationLedgerEntry(candidate.candidateId,"build")
+    :buildLedger;
   if(!build||build.exitCode!==0||build.evaluation?.status!=="PASS"||
      !buildIdentityMatches(build.artifact,artifact)){
     return {reusable:false,reason:"build-ledger"};
   }
   try{
-    if(!buildIdentityMatches(currentBuildIdentity(),artifact)){
+    const current=currentBuildArtifact===undefined?currentBuildIdentity():currentBuildArtifact;
+    if(!buildIdentityMatches(current,artifact)){
       return {reusable:false,reason:"build-output"};
     }
   }catch{
