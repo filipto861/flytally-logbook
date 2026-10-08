@@ -12,8 +12,7 @@ concurrency:
 
 jobs:
   chromium:
-    name: Chromium desktop + mobile
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    name: Legacy full Chromium diagnostic
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -47,15 +46,15 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx --no-install playwright install --with-deps chromium
-      - name: Production build
+      - name: Diagnostic production build
         run: npm run build
-      - name: Authenticated browser acceptance
+      - name: Legacy full browser diagnostic
         run: npm run test:browser
       - name: Preserve browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flytally-browser-smoke-${{ github.sha }}
+          name: flytally-browser-diagnostic-${{ github.sha }}
           path: |
             playwright-report/
             test-results/
