@@ -9,7 +9,8 @@ const explicitNaReasons=new Set(manifest.browserAcceptance?.explicitNotApplicabl
 export function explicitBrowserNotApplicable(test){
   const annotations=Array.isArray(test?.annotations)?test.annotations:[];
   return annotations.some((annotation)=>
-    annotation?.type==="skip"&&explicitNaReasons.has(String(annotation.description??""))
+    (annotation?.type==="flytally-na"||annotation?.type==="skip")&&
+    explicitNaReasons.has(String(annotation.description??""))
   );
 }
 
