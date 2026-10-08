@@ -135,6 +135,97 @@ test("risk browser acceptance owns exact planner selection and same-candidate bu
   assert.match(withBuild,/runBrowserVerification/);
 });
 
+test("verification identities cover planner release toolchain and browser fixture inputs",async()=>{
+  const {browserFixtureContractIdentity,declaredToolchainIdentity,verificationConfigIdentity}=await importTooling("tooling/verification-identity.mjs");
+  const config=verificationConfigIdentity();
+  const fixture=browserFixtureContractIdentity();
+  const toolchain=declaredToolchainIdentity();
+
+  assert.match(config.hash,/^[a-f0-9]{64}$/);
+  for(const file of [
+    "tooling/development-modules.json",
+    "tooling/verification-reuse.mjs",
+    "tooling/verification-build.mjs",
+    "tooling/verification-browser-risk.mjs",
+    "tooling/verify-release-risk.mjs",
+  ])assert.ok(config.files.some((entry:{name:string})=>entry.name===file),file);
+
+  assert.match(fixture.hash,/^[a-f0-9]{64}$/);
+  assert.deepEqual(fixture.files.map((entry:{name:string})=>entry.name),[
+    "e2e/browser-db.mjs",
+    "tooling/bootstrap-browser-smoke-db.mjs",
+  ]);
+
+  assert.match(toolchain.hash,/^[a-f0-9]{64}$/);
+  assert.match(toolchain.packageLockSha256,/^[a-f0-9]{64}$/);
+  assert.ok(String(toolchain.nodeRuntime).startsWith("v"));
+  assert.ok(String(toolchain.playwright).length>0);
+});
+
+test("browser-risk reuse rejects selection config toolchain fixture and build freshness drift",async()=>{
+  const {browserRiskConfiguration,reusableBrowserRiskLedger}=await importTooling("tooling/verification-browser-risk.mjs");
+  const candidate={candidateId:"9".repeat(64)};
+  const artifact={kind:"next-build-id",value:"build-1"};
+  const evidence={
+    required:true,
+    selectionHash:"1".repeat(64),
+    configHash:"2".repeat(64),
+    toolchainHash:"3".repeat(64),
+    fixtureContractHash:"4".repeat(64),
+    targets:[{id:"target-a",spec:"e2e/a.spec.mjs",title:"A",project:"desktop-chromium"}],
+  };
+  const entry={
+    schemaVersion:2,
+    candidate:{candidateId:candidate.candidateId},
+    gate:"browser-risk",
+    evidenceClass:"browser-acceptance",
+    exitCode:0,
+    effectiveConfiguration:browserRiskConfiguration(evidence,artifact),
+    evaluation:{status:"PASS"},
+  };
+  const buildLedger={exitCode:0,evaluation:{status:"PASS"},artifact};
+  const exact={buildLedger,currentBuildArtifact:artifact};
+
+  assert.deepEqual(
+    reusableBrowserRiskLedger(candidate,evidence,entry,exact),
+    {reusable:true,reason:"exact-match"},
+  );
+
+  for(const changed of [
+    {...evidence,selectionHash:"5".repeat(64)},
+    {...evidence,configHash:"6".repeat(64)},
+    {...evidence,toolchainHash:"7".repeat(64)},
+    {...evidence,fixtureContractHash:"8".repeat(64)},
+    {...evidence,targets:[{...evidence.targets[0],project:"mobile-chromium"}]},
+  ]){
+    assert.equal(reusableBrowserRiskLedger(candidate,changed,entry,exact).reason,"configuration");
+  }
+
+  assert.equal(
+    reusableBrowserRiskLedger(candidate,evidence,entry,{
+      buildLedger:{...buildLedger,artifact:{kind:"next-build-id",value:"build-2"}},
+      currentBuildArtifact:artifact,
+    }).reason,
+    "build-ledger",
+  );
+  assert.equal(
+    reusableBrowserRiskLedger(candidate,evidence,entry,{
+      buildLedger,
+      currentBuildArtifact:{kind:"next-build-id",value:"build-2"},
+    }).reason,
+    "build-output",
+  );
+
+  const noArtifactEntry={
+    ...entry,
+    effectiveConfiguration:browserRiskConfiguration(evidence,null),
+  };
+  assert.equal(
+    reusableBrowserRiskLedger(candidate,evidence,noArtifactEntry,{buildLedger:null,currentBuildArtifact:null}).reason,
+    "build-artifact",
+  );
+});
+
 test("risk browser exact target comparison is order-independent and identity-strict",async()=>{
   const {browserRiskConfiguration,buildBrowserRiskTitleGrep,compareExactTargetSet}=await importTooling("tooling/verification-browser-risk.mjs");
   const targets=[
