@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { spawn } from "node:child_process";
+import { repositoryRoot } from "./verification-candidate.mjs";
 
 export const npmExecutable=process.platform==="win32"?"npm.cmd":"npm";
 
@@ -9,7 +11,7 @@ export function commandText(command,args=[]){
 
 export async function runCommand(command,args=[],options={}){
   const child=spawn(command,args,{
-    cwd:options.cwd,
+    cwd:options.cwd??repositoryRoot,
     env:options.env??process.env,
     stdio:["inherit","pipe","pipe"],
     shell:false,
@@ -45,6 +47,18 @@ export function parseNodeTestSummary(output){
     throw new Error("Could not parse Node test summary for verification evidence.");
   }
   return {planned:tests,passed,failed,skipped,notApplicable:0,retries:0};
+}
+
+export async function runNpm(args,{env=process.env,cwd=repositoryRoot}={}){
+  const npmCli=String(process.env.npm_execpath??"").trim();
+  if(npmCli&&existsSync(npmCli)){
+    return runCommand(process.execPath,[npmCli,...args],{env,cwd});
+  }
+  if(process.platform==="win32"){
+    const comspec=process.env.ComSpec||"cmd.exe";
+    return runCommand(comspec,["/d","/s","/c","npm",...args],{env,cwd});
+  }
+  return runCommand("npm",args,{env,cwd});
 }
 
 export async function runNodeTests(testFiles,{env=process.env,coverage="targeted"}={}){
