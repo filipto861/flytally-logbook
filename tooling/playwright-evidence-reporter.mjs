@@ -6,6 +6,18 @@ const manifestPath=fileURLToPath(new URL("./development-modules.json",import.met
 const manifest=JSON.parse(readFileSync(manifestPath,"utf8"));
 const explicitNaReasons=new Set(manifest.browserAcceptance?.explicitNotApplicableSkipReasons??[]);
 
+function normalizePath(value){
+  return String(value??"").replaceAll("\\","/");
+}
+
+export function browserCaseIdentity(test,root=process.cwd()){
+  const file=normalizePath(path.relative(root,String(test?.location?.file??"")));
+  const project=typeof test?.parent?.project==="function"
+    ?String(test.parent.project()?.name??"")
+    :"";
+  return {spec:file,title:String(test?.title??""),project};
+}
+
 export function explicitBrowserNotApplicable(test){
   const annotations=Array.isArray(test?.annotations)?test.annotations:[];
   return annotations.some((annotation)=>
@@ -23,10 +35,14 @@ export default class FlyTallyEvidenceReporter{
     this.notApplicable=0;
     this.retries=0;
     this.effectiveConfiguration={};
+    this.plannedCases=[];
+    this.cases=[];
   }
 
   onBegin(config,suite){
-    this.planned=suite.allTests().length;
+    const tests=suite.allTests();
+    this.planned=tests.length;
+    this.plannedCases=tests.map((test)=>browserCaseIdentity(test));
     this.effectiveConfiguration={
       workers:config.workers,
       fullyParallel:config.fullyParallel,
@@ -36,6 +52,14 @@ export default class FlyTallyEvidenceReporter{
 
   onTestEnd(test,result){
     this.retries=Math.max(this.retries,Number(result.retry??0));
+    const identity=browserCaseIdentity(test);
+    const notApplicable=result.status==="skipped"&&explicitBrowserNotApplicable(test);
+    this.cases.push({
+      ...identity,
+      status:result.status,
+      retry:Number(result.retry??0),
+      notApplicable,
+    });
     if(result.status==="passed"){
       this.passed+=1;
       return;
@@ -62,6 +86,8 @@ export default class FlyTallyEvidenceReporter{
       notApplicable:this.notApplicable,
       retries:this.retries,
       effectiveConfiguration:this.effectiveConfiguration,
+      plannedCases:this.plannedCases,
+      cases:this.cases,
     },null,2)+"\n","utf8");
   }
 }
