@@ -38,16 +38,40 @@ Phase 0B.1 uses registry version 2:
 - explicit persistence, browser and scale paths can escalate only the relevant heavy gates;
 - `[full-ci]` remains the explicit escape hatch that selects every heavy gate.
 
-`tooling/development-scope.mjs` reports `postgres`, `scale`, `browser`, `full_tests`, `build`, matched `modules`, `risks`, `test_groups`, resolved `targeted_tests`, `required_evidence`, `aggregate_gates` and `build_artifact`.
+`tooling/development-scope.mjs` reports `typecheck`, `postgres`, `scale`, `browser`, `full_tests`, `build`, matched `modules`, `risks`, `test_groups`, resolved `targeted_tests`, `required_evidence`, `aggregate_gates` and `build_artifact`.
 
 Named groups are executed through `npm run test:group -- <group>`. `npm run test:ui` is now only an alias for the registry-owned `ui-contract` group; the 16-file UI list is no longer duplicated in `package.json`.
 
 The Phase 0B.2 registry expands stable ownership from the original **121/381 (31.8%)** baseline to **368/381 (96.6%)**. The remaining **13** reviewed cross-cutting/not-yet-owned runtime files are explicitly listed under `shared-runtime`; future unmatched runtime files still fail conservative instead of receiving guessed ownership. Registry regression coverage requires at least 90% stable ownership and zero unclassified files in the current audited surface.
 
+### Phase 0E canonical planner candidate
+
+`npm run verify:plan -- <candidate>` is the new canonical Phase 0E planner surface. It is implemented as a side-effect-free wrapper around the same registry classifier used by `scope:changed`.
+
+Accepted candidate sources are explicit:
+- repository-relative positional paths;
+- `--files <path>` containing one repo-relative path per line;
+- `--base <git-ref>` for an explicitly supplied committed comparison;
+- `--all` for all tracked repository paths.
+
+No candidate input is an error. Multiple candidate sources are an error. The planner does not guess `origin/main`, a merge base, or a branch target.
+
+Use `--json` for machine-readable plan output. Every plan includes:
+- a content-aware `candidateId`;
+- current HEAD SHA and optional resolved base SHA;
+- exact normalized candidate paths and a deterministic files hash;
+- modules, risks, targeted groups and required evidence;
+- explicit `typecheck`, aggregate/full-test, PostgreSQL, scale, browser and build requirements.
+
+`--force-all` changes gate selection only; it does not change candidate membership. This is deliberately distinct from `--all`, which changes the candidate to all tracked paths.
+
+Phase 0E.1 does **not** execute tests, builds, PostgreSQL or browser fixtures and does not yet claim evidence PASS. Evidence availability blocking and the execution ledger are subsequent 0E milestones.
+
 ### Changed-scope execution contract
 
 `npm run scope:changed -- <path> [<path> ...]` is a **planner**, not an executor. It must never connect to PostgreSQL, reset browser fixtures, start Playwright or run a build by itself. Its output is the explicit verification contract for the supplied change set:
 
+- `typecheck=true`: TypeScript checking is required; this defaults true for non-documentation candidates and false for documentation-only candidates;
 - `test_groups`: named registry-backed targeted groups for fast iteration; run them with `npm run test:group -- <group>`;
 - `full_tests=true`: the final candidate needs the complete `npm test` application regression gate;
 - `postgres=true`: run PostgreSQL acceptance against an isolated localhost fixture; `scale=true` means use the full/scale acceptance path rather than the core-only path;
