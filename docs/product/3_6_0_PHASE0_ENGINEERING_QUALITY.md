@@ -881,13 +881,25 @@ The build gate records a candidate-bound build manifest including the candidate 
 #### 0E milestones
 
 1. **0E.0 — semantics / ledger / compatibility freeze — DONE (design only)**.
-2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — ACTIVE**.
-3. **0E.2 — registry available-evidence metadata + direct domain selection**.
+2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — DONE / VERIFIED**.
+3. **0E.2 — registry available-evidence metadata + direct domain selection — ACTIVE**.
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gates**.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
 8. **0E.7 — exact-candidate verification / closeout**.
+
+#### 0E.1 verification closeout
+
+Verified locally on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`:
+- Node **24.19.0**;
+- development-pipeline **72/72 PASS**;
+- TypeScript **PASS**;
+- aggregate regression **1361/1361 PASS**;
+- production build **PASS**, **41/41** static pages;
+- canonical planner smoke for `package.json` produced a deterministic candidate fingerprint and selected only development-infrastructure/application-source-contract + aggregate full tests + build, with PostgreSQL/browser disabled.
+
+The build emitted only the pre-existing local Turbopack workspace warning about an unrelated parent-directory `package-lock.json`; it did not fail the repository build and is not a 0E.1 code regression.
 
 Do not change product runtime, browser fixture architecture, DB schema, certification/backup contracts or 3.6.0 timezone semantics in Phase 0E.
 
