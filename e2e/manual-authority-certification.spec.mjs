@@ -202,7 +202,11 @@ test("F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
   await quick.locator('input[name="registration"]').fill("OK-F35Q");
   await quick.locator('input[name="aircraft_model"]').fill("F35 Quick");
   await quick.getByRole("button",{name:"Add aircraft"}).click();
-  await expect(page.getByRole("status")).toContainText("Aircraft added. Select it below to continue with the flight.");
+  await expect(page.locator("#quick-aircraft-dialog")).toBeHidden({timeout:15000});
+  await expect(page.getByRole("status")).toContainText(
+    "Aircraft added. Select it below to continue with the flight.",
+    {timeout:15000},
+  );
 
   const form=page.locator("#new-flight-manual-form");
   const registration=form.locator('select[name="registration"]');
