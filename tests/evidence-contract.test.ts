@@ -105,7 +105,7 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
     requiredEvidence:["browser-acceptance"],
     observations:{
       "browser-acceptance":observation({
-        command:"npm run test:browser -- --retries=0",
+        command:"npm run verify:browser:risk -- --base HEAD~1",
         sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,notApplicable:2,retries:0,
         authority:"release",selectionHash:"a".repeat(64),targets:browserTargets,
       }),
@@ -117,7 +117,7 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
     requiredEvidence:["browser-acceptance"],
     observations:{
       "browser-acceptance":observation({
-        command:"npm run test:browser -- --retries=0",
+        command:"npm run verify:browser:risk -- --base HEAD~1",
         sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,skipped:2,retries:0,
         authority:"release",selectionHash:"a".repeat(64),targets:browserTargets,
       }),
@@ -125,6 +125,35 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
   });
   assert.equal(skipped.evidence["browser-acceptance"].status,"PARTIAL");
   assert.equal(skipped.overallStatus,"FAIL");
+});
+
+test("risk browser acceptance requires release authority selection hash and exact target declaration",()=>{
+  const base={
+    command:"npm run verify:browser:risk -- --base HEAD~1",
+    sourceGates:["browser-risk"],
+    coverage:"targeted",
+    planned:6,
+    passed:6,
+    failed:0,
+    skipped:0,
+    notApplicable:0,
+    retries:0,
+    authority:"release",
+    selectionHash:"a".repeat(64),
+    targets:browserTargets,
+  };
+  for(const observation of [
+    {...base,authority:"diagnostic"},
+    {...base,selectionHash:"invalid"},
+    {...base,targets:browserTargets.slice(0,5)},
+  ]){
+    const result=evaluate({
+      requiredEvidence:["browser-acceptance"],
+      observations:{"browser-acceptance":observation},
+    });
+    assert.equal(result.evidence["browser-acceptance"].status,"PARTIAL");
+    assert.equal(result.overallStatus,"FAIL");
+  }
 });
 
 test("legacy full browser diagnostics cannot satisfy authoritative browser acceptance",()=>{
