@@ -92,7 +92,6 @@ test("unknown runtime code remains conservative without automatically requiring 
 test("known hot paths select persistence scale browser and application gates centrally",()=>{
   const result=classify(["lib/data/dashboard.ts"]);
   assert.equal(result.typecheck,"true");
-  assert.equal(result.typecheck,"true");
   assert.equal(result.postgres,"true");
   assert.equal(result.scale,"true");
   assert.equal(result.browser,"true");
