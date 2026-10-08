@@ -1,6 +1,6 @@
 import { test,expect } from "@playwright/test";
 import { expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
-import { openGpsFlightContext,selectGpsActualPicMode,selectGpsCommonRole,splitGpsIntoTwo,completeF43GpsPart } from "./gps-actions.mjs";
+import { openGpsFlightContext,selectGpsCommonRole,splitGpsIntoTwo,completeF43GpsPart } from "./gps-actions.mjs";
 import { browserSqlScalar,runBrowserFlightFixtureCleanup,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture } from "./browser-db.mjs";
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
