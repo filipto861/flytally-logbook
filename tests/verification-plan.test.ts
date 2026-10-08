@@ -70,6 +70,9 @@ test("documentation-only verify:plan does not require typecheck or runtime gates
     assert.equal(plan.browser,false);
     assert.equal(plan.fullTests,false);
     assert.equal(plan.build,false);
+    assert.equal(plan.sourceEvidence.required,false);
+    assert.deepEqual(plan.sourceEvidence.groups,[]);
+    assert.deepEqual(plan.sourceEvidence.tests,[]);
     assert.match(plan.risks.join(","),/documentation/);
   });
 });
@@ -134,6 +137,9 @@ test("verify:plan keeps direct domain evidence module-scoped for a cross-gate fl
   assert.equal(payload.plan.browserEvidence.authoritativeSource,"browser-risk");
   assert.match(payload.plan.browserEvidence.selectionHash,/^[a-f0-9]{64}$/);
   assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  assert.equal(payload.plan.sourceEvidence.required,true);
+  assert.deepEqual(payload.plan.sourceEvidence.groups,["ui-contract"]);
+  assert.ok(payload.plan.sourceEvidence.tests.includes("tests/v320-ui-consistency.test.ts"));
 });
 
 test("verify:plan human output exposes candidate and gate contract",()=>{
@@ -146,6 +152,7 @@ test("verify:plan human output exposes candidate and gate contract",()=>{
   assert.match(result.stdout,/build=true/);
   assert.match(result.stdout,/browser_source=browser-risk/);
   assert.match(result.stdout,/browser_selection_hash=[a-f0-9]{64}/);
+  assert.match(result.stdout,/source_groups=development-pipeline/);
   assert.match(result.stdout,/required_evidence=/);
   assert.match(result.stdout,/blocked_evidence=none/);
 });
