@@ -911,7 +911,13 @@ The build gate records a candidate-bound build manifest including the candidate 
 - canonical full browser acceptance executed all **94** serialized desktop/mobile cases but finished **90 PASS / 2 FAIL / 2 intentional skips** in 11.6 min. The two failures were mobile-only (GPS normalized draft-save navigation and Connection logbook-share persistence presentation). Browser evidence is therefore **FAIL** and 0E.3 cannot close; focused reproduction is required before any correction.
 - focused mobile reproduction passed both failing cases independently at retries=0/workers=1. The corrective candidate changes only browser-test synchronization: an explicit bounded wait for the GPS server-action redirect and an explicit Connection pending-completion wait before reload with summary-scoped persistence assertions. This does not alter product runtime semantics; final full browser acceptance remains pending.
 - first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
-5. **0E.4 — risk-based release orchestrator + compatibility full path**.
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**.
+   - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
+   - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
+   - full serialized browser acceptance remains required only when release policy selects it for browser-harness changes, milestone closeout or the final relevant release candidate;
+   - audit current desktop/mobile replay and keep both projects only where they provide distinct behavior/presentation evidence;
+   - record runtime measurements before and after any matrix reduction;
+   - do not increase Playwright workers against the current shared mutable database; per-worker DB isolation requires a separate design/review.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
 8. **0E.7 — exact-candidate verification / closeout**.
