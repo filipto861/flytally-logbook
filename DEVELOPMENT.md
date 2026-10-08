@@ -113,6 +113,32 @@ Browser acceptance is deliberately stricter than raw Playwright success:
 
 Ledger files are local evidence artifacts, not repository state, and `.flytally/` is ignored by Git.
 
+### Phase 0E.4a risk-scoped planning candidate
+
+0E.4a adds planning/identity infrastructure only. The new risk-scoped browser executor and release orchestrator are **not active yet**.
+
+Current additions:
+- verification candidate schema v2 records dirty/untracked worktree identity; `--base` and `--all` include current dirty/untracked files in candidate membership, while explicit path/file candidates expose any dirty files outside the candidate for later release blocking;
+- browser candidates now require a production build artifact in the plan because authenticated Playwright runs the production server;
+- `browserAcceptance.targets` in the registry contains exact authoritative `{spec,title,project}` executions;
+- module/path ownership selects a deterministic union of browser targets;
+- every selected target is statically validated against the frozen logical browser baseline and source declaration before Playwright exists in the loop;
+- a browser-relevant file/module without approved ownership adds a planner blocker and `verify:plan` exits 3;
+- selection output includes `browser-risk` source intent, exact target ids, selection hash, verification-config hash, declared-toolchain hash and browser-fixture contract hash.
+
+Not every current browser-marked product module has approved targeted browser ownership yet. That is deliberate: such a candidate is blocked rather than silently receiving weak generic coverage.
+
+The existing `verify:release` command keeps its current static/full semantics. The reviewed future risk-based release command is named `verify:release:risk`; 0E.4 must not silently change the meaning of `verify:release`.
+
+The legacy 94-test `verify:browser` command remains a manual diagnostic. Its existing evidence-source contract is not changed until 0E.4c introduces the authoritative `browser-risk` executor.
+
+Exit-code contract for canonical verification tooling:
+- `0` — requested contract completed successfully;
+- `1` — an executed gate/evidence set failed or evaluated PARTIAL;
+- `2` — invalid invocation, configuration or environment;
+- `3` — valid candidate blocked before required execution (for example missing approved evidence/target or stale prerequisite).
+
+
 
 
 ### Changed-scope execution contract
