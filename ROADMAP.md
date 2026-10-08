@@ -737,7 +737,7 @@ Revised 0E milestones:
    - aggregate `npm test` remains independent regression coverage and still cannot synthesize domain evidence;
    - final local verification on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
    - canonical planner smoke for `lib/commercial-readiness.ts` selected `legal-commercial`, required only `domain-unit`, resolved the two approved direct tests, reported no missing modules / blocked evidence, and kept PostgreSQL/browser disabled.
-4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers — ACTIVE**;
+4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers — DONE / VERIFIED**;
    - implementation candidate added: local ignored `.flytally/verification/<candidateId>/` ledger entries now bind canonical gate results to the planner candidate fingerprint;
    - `verify:app` (and legacy `verify`) now run TypeScript + aggregate Node regression + production build and record the independent build artifact identity without treating aggregate tests as domain evidence;
    - `verify:domain` executes only module-approved direct `domain-unit` paths and exits 3 when required direct evidence is unavailable;
@@ -760,11 +760,13 @@ Revised 0E milestones:
    - isolated mobile Quick Add reproduction then passed **5/5** at retries=0/workers=1, confirming the failure is suite-load timing rather than deterministic product behavior;
    - test-only correction now waits for the successful Quick Add dialog close and success status with a bounded 15 s server-action window before continuing. Product runtime is unchanged;
    - product decision: the full serialized browser matrix is no longer a routine or Phase-0 closeout gate because its ~12-minute runtime is disproportionate to the iteration cycle. The command remains available as an explicit manual diagnostic, but targeted risk-owned browser evidence replaces it as the normal gate;
+   - final 0E.3 correction verification: mobile F3.5 Quick Add targeted repeat **5/5 PASS** at retries=0/workers=1 after the bounded server-action wait hardening; no product runtime changes were required;
+   - 0E.3 closes on the previously verified development-pipeline **83/83 PASS**, planner PASS, `verify:domain` N/A, `verify:app` PASS (TypeScript + aggregate regression **1378/1378** + production build **41/41**), PostgreSQL full **99/99 PASS**, plus targeted browser correction evidence (**6/6** GPS/Connections and **5/5** Quick Add). Legacy full browser acceptance is explicitly **NOT RUN** after the policy change and must not be represented as PASS.
    - 0E.3 closeout now requires only a cheap targeted repeat of the corrected Quick Add flow plus the existing source-contract/static gate evidence. Do **not** rerun the 94-test full matrix for 0E.3.
    - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
    - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
    - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
-5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**;
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — ACTIVE**;
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
