@@ -169,6 +169,7 @@ test("canonical browser harness changes still require browser acceptance",()=>{
     "tooling/verify-browser.mjs",
     "tooling/verify-browser-with-build.mjs",
     "tooling/verify-browser-risk.mjs",
+    "tooling/verification-browser-risk.mjs",
     "tooling/playwright-evidence-reporter.mjs",
   ]){
     const result=classify([file]);
