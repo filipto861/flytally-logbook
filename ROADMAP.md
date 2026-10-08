@@ -784,6 +784,10 @@ Revised 0E milestones:
    - follow-up fix ignores those generated local verification artifacts and adds a regression proving ignored artifacts do not affect candidate identity;
    - final exact-head 0E.4a verification at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92 PASS**, planner v2 clean candidate with no generated artifacts and no blockers, TypeScript PASS, aggregate regression **1387/1387 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for this tooling batch;
    - 0E.4b **ACTIVE**: canonical application-source-contract ledger execution, candidate-bound TypeScript evidence, exact ledger reuse and `verify:iterate` fast feedback.
+   - 0E.4b implementation candidate adds registry-derived `sourceEvidence`, fail-closed missing-source ownership, canonical source/typecheck ledgers, config/toolchain-bound domain evidence, exact ledger reuse, and `npm run verify:iterate -- <candidate>`;
+   - fast iteration runs only source-contract groups + direct domain tests + TypeScript as required; aggregate regression/build/PostgreSQL/browser are reported as release-pending and are not silently executed;
+   - repeated exact-candidate iteration reuses PASS/N/A cheap evidence unless `--rerun` is supplied; `--with-browser` remains rejected until 0E.4c;
+   - 0E.4b verification pending; no product runtime, DB schema, release command or browser executor semantics changed.
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
