@@ -939,12 +939,17 @@ The build gate records a candidate-bound build manifest including the candidate 
    - stale schema/gate/evidence/config/status reuse and browser selection/config/toolchain/fixture/build drift fail closed;
    - deterministic identity coverage is asserted for the release/config/toolchain/fixture inputs;
    - test/governance tooling only; product runtime and persistence semantics remain unchanged.
-7. **0E.6 — manual workflow + DEVELOPMENT alignment — ACTIVE**.
-   - make `verify:release:risk` the documented canonical final candidate release decision while preserving `npm run verify` as compatibility application verification;
-   - keep both GitHub workflows manual-only diagnostic surfaces with no candidate-bound release authority;
-   - label legacy full-browser cloud execution as diagnostic, retain repository-pinned toolchain use and remove stale pull-request-specific job logic;
-   - regression-cover the workflow authority boundary and reconcile DEVELOPMENT/ROADMAP/CHANGELOG.
-8. **0E.7 — exact-candidate verification / closeout**.
+7. **0E.6 — manual workflow + DEVELOPMENT alignment — DONE / VERIFIED**.
+   - `verify:release:risk` is the documented canonical final candidate release decision; `npm run verify` remains compatibility application verification;
+   - both GitHub workflows remain manual-only diagnostic surfaces with no candidate-bound release authority;
+   - legacy full-browser cloud execution is explicitly diagnostic, repository-pinned toolchain use is preserved, and stale pull-request-specific job logic is removed;
+   - workflow authority is regression-covered and DEVELOPMENT/ROADMAP/CHANGELOG are reconciled;
+   - first candidate `088aa71c6a8a43b48b40962c3eb667647d93d202` correctly failed aggregate at **1406/1408** on two stale historical label assertions; corrected fixed head `734473252fe1acf64388fa15d9373777112d4977` passed targeted label tests **9/9**, TypeScript, aggregate **1408/1408**, build **41/41**, with PostgreSQL/scale/browser N/A and final `release_status=PASS`.
+8. **0E.7 — exact-candidate verification / closeout — ACTIVE**.
+   - final candidate boundary is Phase 0D verified head `686734911f5c3f45e395fdda6b7d98a5021e84ae` through the final Phase 0E head;
+   - execute one `verify:release:risk --force-all` on that exact candidate so every risk-scoped authoritative gate is observed on the final head;
+   - full PostgreSQL acceptance supplies registered scale evidence; authoritative browser evidence remains planner-bound `browser-risk`, not the legacy 94-case diagnostic;
+   - after PASS, reconcile required docs and review FEATURES before Phase 0E is closed.
 
 #### 0E.1 verification closeout
 
