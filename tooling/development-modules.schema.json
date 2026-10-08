@@ -35,6 +35,7 @@
         "gateRequirements",
         "riskRequirements",
         "dedicatedAcceptanceSources",
+        "dedicatedAcceptanceCoverage",
         "directEvidenceSources"
       ],
       "properties": {
@@ -133,7 +134,23 @@
               "const": "postgres"
             },
             "browser-acceptance": {
-              "const": "browser"
+              "const": "browser-risk"
+            }
+          },
+          "additionalProperties": false
+        },
+        "dedicatedAcceptanceCoverage": {
+          "type": "object",
+          "required": [
+            "postgres-acceptance",
+            "browser-acceptance"
+          ],
+          "properties": {
+            "postgres-acceptance": {
+              "const": "full"
+            },
+            "browser-acceptance": {
+              "const": "targeted"
             }
           },
           "additionalProperties": false
