@@ -654,9 +654,9 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 0E — canonical verification commands — ACTIVE.**
+**Current step: Phase 0F — hygiene and Phase 0 closeout — ACTIVE.**
 
-Current milestone: **Phase 0E — canonical verification commands — ACTIVE**. Phase 0D evidence taxonomy is ✅ DONE / VERIFIED.
+Current milestone: **Phase 0F — hygiene and Phase 0 closeout — ACTIVE**. Phase 0E canonical verification commands are ✅ DONE / VERIFIED.
 
 Phase 0D closeout:
 - independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
@@ -665,7 +665,7 @@ Phase 0D closeout:
 - final exact-code-head verification on `686734911f5c3f45e395fdda6b7d98a5021e84ae`: development-pipeline **65/65 PASS**, TypeScript **PASS**, aggregate regression **1354/1354 PASS**, production build **PASS (41/41 static pages)**;
 - `domain-unit`: **N/A**; PostgreSQL acceptance: **N/A**; browser acceptance: **N/A** for this tooling/source-contract candidate.
 
-Phase 0E now owns the next work: create a small canonical verification command surface for targeted iteration, changed-scope selection, complete application verification, explicit PostgreSQL/browser gates and risk-assembled release verification. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0E is closed. Phase 0F now owns hygiene and Phase 0 closeout. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Phase 0E independent review verdict: **ACCEPT WITH CHANGES**. Reconciliation is frozen before implementation.
 
@@ -811,13 +811,15 @@ Revised 0E milestones:
    - the legacy full browser cloud workflow is explicitly labeled diagnostic, stale pull-request-only job logic is removed, and workflow authority is regression-covered;
    - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); both were corrected without product-runtime change;
    - fixed-head `734473252fe1acf64388fa15d9373777112d4977`: targeted historical label tests **9/9 PASS**; risk release source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, build **41/41 PASS**, PostgreSQL/scale/browser N/A, no blocked evidence, final `release_status=PASS`.
-8. **0E.7 — exact-candidate verification / closeout — ACTIVE**;
+8. **0E.7 — exact-candidate verification / closeout — DONE / VERIFIED**;
    - first cumulative attempt used the Phase 0D baseline `686734911f5c3f45e395fdda6b7d98a5021e84ae`, but the planner correctly returned **NOT RUN** because that historical range contains `e2e/ui-audit-capture.spec.mjs`, an explicitly diagnostic-only spec with no authoritative browser target;
-   - do **not** weaken the fail-closed selector, invent release authority for the audit-only spec, or run the legacy 94-case browser as substitute evidence;
-   - final closeout boundary is the last fully verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through the final Phase 0E head, which includes the substantive 0E.6 workflow/test alignment while excluding the already-verified 0E.3 diagnostic-only annotation change;
-   - run one exact candidate-aware `verify:release:risk --force-all` so TypeScript, aggregate regression, production build, full PostgreSQL acceptance/scale accounting and authoritative planner-bound browser-risk evidence are all exercised on the final Phase 0E head;
-   - legacy 94-case browser remains diagnostic-only and is not a 0E.7 gate;
-   - reconcile ROADMAP / CHANGELOG / DEVELOPMENT / Phase 0 contract and review FEATURES; no product capability change is expected.
+   - the fail-closed selector was preserved: no release target was invented for the audit-only spec and the legacy 94-case browser was not used as substitute evidence;
+   - final verified boundary was the last fully verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through exact head `335704c1125ee0336528f5f1e43c3bc1528c92d3`, candidate `221190494ba79b32bb25f9e32c3ce09041dfd624f3f3a514cc8fb7a905c9477a`;
+   - planner `--force-all` selected TypeScript, aggregate regression, production build, full PostgreSQL acceptance, scale and authoritative browser-risk with no blocked evidence;
+   - release evidence PASS: source-contract **226/226**, TypeScript PASS, aggregate **1408/1408**, build **41/41**, PostgreSQL **99/99**, scale PASS, browser-risk **41/41** (21 desktop + 20 mobile, one worker), domain N/A, final `release_status=PASS`;
+   - legacy 94-case browser remained diagnostic-only / NOT RUN; FEATURES was reviewed and remains unchanged because Phase 0E changed verification/development infrastructure, not product capability.
+
+**PHASE 0E — CLOSED / VERIFIED.**
 
 Frozen constraints remain:
 - no product runtime, DB schema, certification, backup or timezone-semantic changes;
