@@ -781,7 +781,7 @@ Verification history:
 
 New release work must state which behavioral classes apply and why the others are N/A. Quality is not measured by raw test count alone.
 
-### Phase 0E — Canonical verification commands — ACTIVE
+### Phase 0E — Canonical verification commands — ACTIVE / DESIGN REVIEW PENDING
 
 Create a small, unambiguous command surface.
 
@@ -795,6 +795,51 @@ Target behavior:
 - release gate assembled from the risks actually applicable to the candidate.
 
 A command named as a gate must not silently downgrade itself to skipped evidence.
+
+#### 0E discovery
+
+Current repository behavior:
+- `npm run verify` = TypeScript + complete Node regression + build;
+- `npm run verify:release` = TypeScript + complete Node regression + PostgreSQL full + build, regardless of actual risk, and never browser acceptance;
+- `npm run verify:browser` = build + authenticated browser gate;
+- `scope:changed` already provides the correct side-effect-free risk/gate/evidence plan;
+- PostgreSQL and browser runners already fail closed and are repository-pinned/local-only;
+- manual GitHub workflows are diagnostics and currently duplicate command composition.
+
+The blocking semantic gap is direct `domain-unit` evidence. Phase 0D correctly forbids the heterogeneous `npm test` aggregate from satisfying `domain-unit`, but the current repository has no canonical direct domain-evidence command/selection contract.
+
+#### Draft 0E command contract
+
+- **`test:target`** — keep as the low-level explicit Node test-file runner.
+- **`test:group`** — keep as the low-level homogeneous registry group runner.
+- **`verify:plan`** — side-effect-free candidate plan using the same classifier as `scope:changed`; keep `scope:changed` as a compatibility alias.
+- **`verify:app`** — TypeScript + full Node regression + production build. Keep `verify` as a compatibility alias.
+- **`verify:postgres`** — final PostgreSQL acceptance and therefore the existing **full** PostgreSQL gate. Keep core/scale test commands for iteration.
+- **`verify:browser`** — full authenticated browser acceptance with explicit `--retries=0`. A build may run as the browser server prerequisite; that does not merge the build evidence class into browser acceptance.
+- **`verify:domain`** — explicit direct domain-unit evidence, allowed only for registry-approved domain test files.
+- **`verify:release`** — executor over an explicit candidate change set. It consumes the planner result, runs selected source-contract groups even if the aggregate suite is also required, requires direct domain evidence when `domain-unit` is required, then runs only required heavy gates.
+
+Candidate input is explicit:
+- positional changed paths;
+- `--files <path>`;
+- `--base <git-ref>` using the exact supplied ref;
+- optional explicit `--all` to force every heavy gate.
+
+There is no implicit/default merge-base guess.
+
+Direct domain test ownership should be added **per module in the existing registry** (for example `evidenceTests.domain-unit`) and remain opt-in. If `domain-unit` is required and the selected modules have no approved direct tests, `verify:release` must stop with an actionable NOT RUN/fail-closed result before expensive gates. 0E must not mass-classify the whole historical test suite.
+
+#### Proposed milestones
+
+1. **0E.0 — discovery / semantics freeze** — current; independent review required before implementation.
+2. **0E.1 — shared explicit candidate-input and planner surface**.
+3. **0E.2 — canonical app/PostgreSQL/browser/domain commands + compatibility aliases**.
+4. **0E.3 — risk-based release executor**.
+5. **0E.4 — negative/selection regression coverage**.
+6. **0E.5 — manual workflow and DEVELOPMENT alignment**.
+7. **0E.6 — exact-candidate verification and closeout**.
+
+Do not change product runtime, browser fixture architecture, DB schema, certification/backup contracts or 3.6.0 timezone semantics in Phase 0E.
 
 ### Phase 0F — Hygiene and closeout
 
