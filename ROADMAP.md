@@ -738,6 +738,16 @@ Revised 0E milestones:
    - final local verification on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
    - canonical planner smoke for `lib/commercial-readiness.ts` selected `legal-commercial`, required only `domain-unit`, resolved the two approved direct tests, reported no missing modules / blocked evidence, and kept PostgreSQL/browser disabled.
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers — ACTIVE**;
+   - implementation candidate added: local ignored `.flytally/verification/<candidateId>/` ledger entries now bind canonical gate results to the planner candidate fingerprint;
+   - `verify:app` (and legacy `verify`) now run TypeScript + aggregate Node regression + production build and record the independent build artifact identity without treating aggregate tests as domain evidence;
+   - `verify:domain` executes only module-approved direct `domain-unit` paths and exits 3 when required direct evidence is unavailable;
+   - `verify:postgres` owns full PostgreSQL acceptance through the existing localhost-only preflight and writes dedicated acceptance evidence;
+   - `verify:browser` is now browser-only, requires a same-candidate successful build ledger + matching current Next.js build identity, forces retries=0/workers=1, and preserves `fullyParallel=false`;
+   - `verify:browser:with-build` preserves the migration convenience for build + browser;
+   - the existing UI-audit capture skip is explicitly registered as browser N/A; unexpected/raw skips remain non-PASS;
+   - canonical PostgreSQL/browser wrapper files are classified as their respective acceptance-harness risks so changes cannot evade the heavy gate;
+   - low-level commands remain available; static `verify:release` remains untouched until 0E.4;
+   - **verification pending**; 0E.3 is not DONE yet.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
