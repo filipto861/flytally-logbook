@@ -26,7 +26,8 @@
     "verify:app": "node tooling/verify-app.mjs",
     "verify:postgres": "node tooling/verify-postgres.mjs",
     "verify:domain": "node tooling/verify-domain.mjs",
-    "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs"
+    "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs",
+    "verify:iterate": "node tooling/verify-iterate.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
