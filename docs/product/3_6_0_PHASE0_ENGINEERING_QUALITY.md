@@ -603,7 +603,7 @@ Next milestone is **0C.2a helper-ownership reconciliation**. This is a read/owne
 - exact source inventory remains **48 unique logical acceptance tests** with no duplicate names; `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry semantics are unchanged;
 - structure tests now guard generic-vs-GPS helper ownership and reject reintroduced local duplicates.
 
-0C.2a verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contracts + TypeScript, focused GPS and responsive specs because both consume the new GPS helper module, focused mutation/authority or full browser coverage for shared `holdPost`, and the complete serialized browser gate. No 0C.3 project×matrix change starts until this evidence is green.
+0C.2a verification is **PENDING**. The first focused GPS/responsive attempt exposed a refactor defect before any test discovery: the helper-extraction edit left the body tail of `completeF43GpsPart` in both consuming specs, producing a syntax error (`Unexpected token )`). This is a 0C.2a test-code defect, not a product/runtime regression. The stale tails were removed and the structure contract was strengthened with a fail-closed `node --check` pass over every `e2e/*.mjs` module so syntax-invalid browser modules cannot again pass the targeted structure gate. Required evidence must now be rerun from the corrected head: targeted browser-structure/scope/pipeline contracts + TypeScript, focused GPS and responsive specs because both consume the new GPS helper module, then the complete serialized browser gate. No 0C.3 project×matrix change starts until this evidence is green.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
