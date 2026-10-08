@@ -975,7 +975,7 @@ The build emitted only the pre-existing local Turbopack workspace warning about 
 
 Do not change product runtime, browser fixture architecture, DB schema, certification/backup contracts or 3.6.0 timezone semantics in Phase 0E.
 
-### Phase 0F — Hygiene and closeout — ACTIVE
+### Phase 0F — Hygiene and closeout — DONE / VERIFIED
 
 Initial audit:
 - DEVELOPMENT and executable package commands are aligned for the canonical/compatibility verification surface;
@@ -984,11 +984,15 @@ Initial audit:
 - active Phase 0 PR is #255;
 - no product runtime, schema, certification, backup or timezone semantics changed.
 
-- reconcile `DEVELOPMENT.md` with executable tooling;
-- review stale PRs/branches and clean only proven superseded state;
-- keep ROADMAP / FEATURES / CHANGELOG discipline;
-- record measured test/build/browser/PostgreSQL evidence exactly as run;
-- do not modify 3.6.0 saved-date/timezone runtime semantics during Phase 0.
+Closeout:
+- `DEVELOPMENT.md` was reconciled against the executable command surface;
+- stale PR/branch state was reviewed conservatively: five proven-superseded parallel PRs were closed without merge, no historical branch was deleted, and the explicit pre-F3 rollback anchor remains;
+- ROADMAP / FEATURES / CHANGELOG discipline is reconciled; FEATURES remains unchanged because no product capability changed;
+- exact Phase 0F documentation/governance candidate `792ef0f2c8430a01f4bb1e24474b05991d0a83abee63650b7d72b8cb274892df` on head `68ba83167c27e6de1e1027e007ea3b81acad17cc` returned `release_status=PASS`;
+- source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none;
+- no 3.6.0 saved-date/timezone runtime semantics, production schema, certification, backup or product runtime behavior changed in Phase 0F.
+
+**PHASE 0 — DONE / VERIFIED ON BRANCH.** Integration through PR #255 into canonical `main` is the final repository action before Phase 1 runtime work begins.
 
 ## Acceptance criteria
 
