@@ -85,7 +85,7 @@ test("F3.5 Quick Add commits canonical aircraft before refreshing the entry work
 });
 
 test("F3.5 browser closeout targets historical SNAPSHOT, submit-time PROFILE, A+ and Quick Add",()=>{
-  const browser=read("e2e/public-shell.spec.mjs");
+  const browser=read("e2e/manual-authority-certification.spec.mjs");
   for(const title of [
     "F3.5 same-registration SNAPSHOT survives invalid current profile and rejects crafted drift",
     "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
