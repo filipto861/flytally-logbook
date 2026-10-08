@@ -91,15 +91,17 @@ test("Phase 0C baseline records every required viewport and theme state",()=>{
   );
 });
 
-test("Phase 0C.1 shared browser actions stay minimal and cross-domain",()=>{
+test("Phase 0C.1 shared browser actions stay generic and cross-domain",()=>{
   const helpers=read("e2e/browser-actions.mjs");
   const shell=read("e2e/public-shell.spec.mjs");
-  assert.match(helpers,/export async function expectNoHorizontalOverflow/);
-  assert.match(helpers,/export async function loginBrowserPilot/);
+  for(const name of ["expectNoHorizontalOverflow","loginBrowserPilot","expectAuthenticatedRoute","ensureDetailsOpen","holdPost"]){
+    assert.match(helpers,new RegExp("export async function "+name));
+  }
   assert.doesNotMatch(helpers,/openGps|splitGps|RoleCrew|F35|F43/);
   assert.match(shell,/from "\.\/browser-actions\.mjs"/);
   assert.doesNotMatch(shell,/async function expectNoHorizontalOverflow/);
   assert.doesNotMatch(shell,/async function loginBrowserPilot/);
+  assert.doesNotMatch(shell,/async function expectAuthenticatedRoute/);
 });
 
 test("Phase 0C.2 batch 1 owns settings and connection mutations in one domain spec",()=>{
@@ -114,7 +116,8 @@ test("Phase 0C.2 batch 1 owns settings and connection mutations in one domain sp
     assert.match(mutations,new RegExp('test\\("'+escapeRegExp(name)+'"'));
     assert.doesNotMatch(shell,new RegExp('test\\("'+escapeRegExp(name)+'"'));
   }
-  assert.match(mutations,/async function holdPost/);
+  assert.doesNotMatch(mutations,/async function holdPost/);
+  assert.match(mutations,/holdPost/);
   assert.match(mutations,/from "\.\/browser-db\.mjs"/);
   assert.match(mutations,/from "\.\/browser-actions\.mjs"/);
 });
@@ -155,7 +158,8 @@ test("Phase 0C.2 batch 3 owns manual RoleCrew verification in one domain spec",(
     assert.equal(shell.includes('test("'+name+'"'),false);
   }
   assert.equal((domain.match(/^test\("/gm)??[]).length,names.length);
-  assert.match(domain,/async function expectAuthenticatedRoute/);
+  assert.doesNotMatch(domain,/async function expectAuthenticatedRoute/);
+  assert.match(domain,/expectAuthenticatedRoute/);
   assert.match(domain,/browser-db\.mjs/);
   assert.match(domain,/browser-actions\.mjs/);
 });
@@ -178,7 +182,8 @@ test("Phase 0C.2 batch 4 owns Manual authority and certification in one domain s
     assert.equal(shell.includes('test("'+name+'"'),false);
   }
   assert.equal((domain.match(/^test\("/gm)??[]).length,names.length);
-  assert.match(domain,/async function holdPost/);
+  assert.doesNotMatch(domain,/async function holdPost/);
+  assert.match(domain,/holdPost/);
   assert.doesNotMatch(shell,/async function holdPost/);
   assert.match(domain,/browser-db\.mjs/);
   assert.match(domain,/browser-actions\.mjs/);
@@ -232,10 +237,45 @@ test("Phase 0C.2 batch 6 owns GPS RoleCrew functionals and leaves public shell f
   }
   assert.equal((gps.match(/^test\("/gm)??[]).length,names.length);
   assert.equal((shell.match(/^test\("/gm)??[]).length,5);
-  assert.match(gps,/async function splitGpsIntoTwo/);
-  assert.match(gps,/async function completeF43GpsPart/);
+  assert.match(gps,/from "\.\/gps-actions\.mjs"/);
+  assert.doesNotMatch(gps,/async function openGpsFlightContext|async function splitGpsIntoTwo|async function completeF43GpsPart/);
   assert.doesNotMatch(shell,/browser-db\.mjs/);
   assert.doesNotMatch(shell,/openGpsFlightContext|splitGpsIntoTwo|completeF43GpsPart/);
+});
+
+test("Phase 0C.2a reconciles generic and GPS-specific browser helper ownership",()=>{
+  const generic=read("e2e/browser-actions.mjs");
+  const gpsActions=read("e2e/gps-actions.mjs");
+  const gps=read("e2e/gps-rolecrew.spec.mjs");
+  const responsive=read("e2e/responsive-presentation.spec.mjs");
+  const authority=read("e2e/manual-authority-certification.spec.mjs");
+  const mutations=read("e2e/settings-connections-mutations.spec.mjs");
+  const shell=read("e2e/public-shell.spec.mjs");
+  const manualRoleCrew=read("e2e/manual-rolecrew-verification.spec.mjs");
+
+  for(const name of ["expectAuthenticatedRoute","ensureDetailsOpen","holdPost"]){
+    assert.match(generic,new RegExp("export async function "+name));
+  }
+  assert.doesNotMatch(generic,/openGpsFlightContext|selectGpsCommonRole|selectGpsActualPicMode|splitGpsIntoTwo|completeF43GpsPart/);
+
+  for(const name of ["openGpsFlightContext","selectGpsCommonRole","selectGpsActualPicMode","openGpsTrackReview","splitGpsIntoTwo","completeF43GpsPart"]){
+    assert.match(gpsActions,new RegExp("export async function "+name));
+  }
+  assert.match(gpsActions,/ensureDetailsOpen/);
+  assert.match(gps,/from "\.\/gps-actions\.mjs"/);
+  assert.match(responsive,/from "\.\/gps-actions\.mjs"/);
+  assert.doesNotMatch(gps,/async function (?:ensureDetailsOpen|openGpsFlightContext|selectGpsCommonRole|selectGpsActualPicMode|openGpsTrackReview|splitGpsIntoTwo|completeF43GpsPart)/);
+  assert.doesNotMatch(responsive,/async function (?:ensureDetailsOpen|openGpsFlightContext|selectGpsCommonRole|selectGpsActualPicMode|openGpsTrackReview|splitGpsIntoTwo|completeF43GpsPart)/);
+
+  assert.match(authority,/holdPost/);
+  assert.match(mutations,/holdPost/);
+  assert.doesNotMatch(authority,/async function holdPost/);
+  assert.doesNotMatch(mutations,/async function holdPost/);
+
+  assert.match(shell,/expectAuthenticatedRoute/);
+  assert.match(manualRoleCrew,/expectAuthenticatedRoute/);
+  assert.doesNotMatch(shell,/async function expectAuthenticatedRoute/);
+  assert.doesNotMatch(manualRoleCrew,/async function expectAuthenticatedRoute/);
 });
 
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
