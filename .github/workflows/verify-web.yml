@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Application gate
+    name: Manual application diagnostic
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,7 +48,7 @@ jobs:
         run: npm test
 
   postgres:
-    name: PostgreSQL acceptance
+    name: Manual PostgreSQL diagnostic
     if: inputs.postgres == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
