@@ -52,6 +52,20 @@ test("source-contract output cannot masquerade as browser acceptance",()=>{
   assert.equal(result.overallStatus,"FAIL");
 });
 
+test("direct domain-unit evidence requires the canonical domain source",()=>{
+  const result=evaluate({
+    requiredEvidence:["domain-unit"],
+    observations:{
+      "domain-unit":observation({
+        command:"npm run test:target -- tests/domain-behavior.test.ts",
+        sourceGates:["domain-unit"],coverage:"targeted",
+      }),
+    },
+  });
+  assert.equal(result.evidence["domain-unit"].status,"PASS");
+  assert.equal(result.overallStatus,"PASS");
+});
+
 test("aggregate full tests cannot synthesize domain-unit evidence",()=>{
   const result=evaluate({
     requiredEvidence:["domain-unit"],
