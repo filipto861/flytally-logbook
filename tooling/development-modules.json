@@ -880,7 +880,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 381,
+    "auditedTotal": 383,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
