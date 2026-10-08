@@ -917,6 +917,10 @@ The build gate records a candidate-bound build manifest including the candidate 
 - 0E.3 final evidence set therefore remains development-pipeline **83/83 PASS**, planner PASS, `verify:domain` N/A, `verify:app` PASS with TypeScript + aggregate regression **1378/1378** + build **41/41**, PostgreSQL full **99/99 PASS**, and targeted browser correction evidence **11/11 PASS** across the three previously unstable mobile flows. Legacy full browser acceptance is **NOT RUN** under the new policy, not PASS.
 - first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
 5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — ACTIVE**.
+   - detailed reviewed contract: `docs/product/3_6_0_PHASE0E4_FAST_VERIFICATION.md`;
+   - 0E.4a implementation candidate is present: candidate/ledger identity v2, deterministic verification identity hashes, explicit exact browser target registry + fail-closed selector, planner browser-selection output, and browser-implies-build correction;
+   - existing `verify:release` and legacy full `verify:browser` semantics are unchanged in 0E.4a; risk-scoped execution is a later batch;
+   - 0E.4a verification pending.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
