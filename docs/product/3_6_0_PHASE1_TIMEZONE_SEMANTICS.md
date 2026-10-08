@@ -449,15 +449,33 @@ Exact release evidence on implementation head `4caaae0e4e917f3d20f31db18096b1c95
 - scale N/A;
 - required evidence satisfied; blocked evidence none.
 
-### P1.5 — GPS / backup invariance + closeout
+### P1.5 — GPS / backup invariance + closeout — ACTIVE / EVIDENCE CANDIDATE
 
-Scope:
-- prove GPS UTC path is unchanged/fail-closed;
-- decide whether the dormant legacy Prague helper is safely retired or merely guarded;
-- verify backup/restore/export invariance and date-only rate selection;
-- perform a production read-only timezone-value census using the same runtime validation semantics before shipping fail-closed behavior; if production access is unavailable, release remains blocked rather than assuming all rows are valid;
-- exact candidate release verification;
-- reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT as applicable.
+Repository evidence:
+- `lib/kml.ts` explicitly overrides the legacy `localParts` name with `utcParts` for server logbook consumers;
+- current audited server GPS save/review consumers import that name from `@/lib/kml`, not directly from `track-processing`;
+- client GPS review imports `utcParts` from `track-time`;
+- explicit source offsets can cross a UTC calendar boundary deterministically; timezone-less timestamps remain ambiguous/unavailable;
+- the Prague `track-processing.localParts` helper remains dormant and is retained for backward compatibility in 3.6.0 because this milestone did not establish exhaustive repo-wide proof that deletion is a no-op. It is not a permitted timestamp authority for GPS/FCL.050;
+- account backup reads flights/rates/settings as stored rows, and exact restore uses PostgreSQL record population for those rows without timezone conversion;
+- portable backup parsing/restore keys keep flight/rate dates as literal `YYYY-MM-DD` strings;
+- CSV/XLS and print consume stored flight dates as date-only values and filter using `date::text`; UTC `new Date().toISOString()` in export remains filename metadata only;
+- historical rate selection compares validated ISO calendar strings and never converts `valid_from` or the flight date into a local instant.
+
+Production timezone census — **PASS at the observed 8 October 2026 snapshot**:
+- total users: 5;
+- users with settings: 5;
+- missing settings: 0;
+- NULL timezone: 0;
+- blank timezone: 0;
+- `Europe/Prague`: 5;
+- invalid timezone values under the same runtime semantics as `normalizeSaveableTimeZone`: 0.
+
+The census was read-only, aggregate/grouped, executed with Node 24 against the production database, emitted no user-identifying rows, and the temporary non-persistent execution environment was stopped afterwards. This proves the observed production snapshot is compatible with fail-closed saveable-date behavior; it is not a guarantee about future rows.
+
+Evidence-only repository changes add focused GPS/date-boundary, portable-backup, date-only rate and source-authority regressions. No product runtime behavior, schema, historical rows or portable-backup version are changed.
+
+Exact-candidate verification remains pending.
 
 ## Do not
 
