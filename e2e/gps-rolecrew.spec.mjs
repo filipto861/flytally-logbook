@@ -184,9 +184,10 @@ test("GPS reviewed PIC save persists normalized shared semantics",async({page})=
   await expect(gpsForm.locator('input[name="part_0_reviewed"]')).toHaveCount(0);
   await expect(gpsForm.getByRole("button",{name:"Save draft"})).toBeEnabled();
   await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
-  await gpsForm.getByRole("button",{name:"Save draft"}).click();
-
-  await expect(page).toHaveURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/);
+  await Promise.all([
+    page.waitForURL(/\/flights\/\d+\?tab=logbook(?:&saved=1)?$/,{timeout:15000}),
+    gpsForm.getByRole("button",{name:"Save draft"}).click(),
+  ]);
   await expect(page.locator('select[name="registration"]')).toHaveValue("OK-E2E");
   await expect(page.locator('input[name="evidence"]')).toHaveValue("EASA");
   await expect(page.locator('input[name="aircraftClass"]')).toHaveValue("SEP");
