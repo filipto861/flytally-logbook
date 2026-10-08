@@ -13,6 +13,9 @@ npm-debug.log*
 # Runtime exports / temporary files
 .flytally/
 exports/
+test-results/
+flytally-scale-evidence.json
+flytally-v*-scale-evidence.json
 *.tmp
 
 # Local databases and source imports are never repository artifacts
