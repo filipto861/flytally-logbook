@@ -21,6 +21,7 @@ test("Phase 0E canonical verification modules are syntactically parseable",()=>{
     "tooling/verification-source.mjs",
     "tooling/verification-typecheck.mjs",
     "tooling/verification-build.mjs",
+    "tooling/verification-browser-risk.mjs",
     "tooling/verify-app.mjs",
     "tooling/verify-app-compat.mjs",
     "tooling/verify-domain.mjs",
@@ -133,7 +134,7 @@ test("risk browser acceptance owns exact planner selection and same-candidate bu
 });
 
 test("risk browser exact target comparison is order-independent and identity-strict",async()=>{
-  const {browserRiskConfiguration,compareExactTargetSet}=await importTooling("tooling/verify-browser-risk.mjs");
+  const {browserRiskConfiguration,compareExactTargetSet}=await importTooling("tooling/verification-browser-risk.mjs");
   const targets=[
     {id:"a",spec:"e2e/a.spec.mjs",title:"A",project:"desktop-chromium"},
     {id:"b",spec:"e2e/b.spec.mjs",title:"B",project:"mobile-chromium"},
