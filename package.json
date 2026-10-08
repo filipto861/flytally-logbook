@@ -20,12 +20,13 @@
     "verify": "node tooling/verify-app.mjs",
     "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build",
     "test:browser": "node tooling/run-auth-browser.mjs",
-    "verify:browser": "npm run build && npm run test:browser",
+    "verify:browser": "node tooling/verify-browser.mjs",
     "test:group": "node tooling/run-development-test-group.mjs",
     "verify:plan": "node tooling/verify-plan.mjs",
     "verify:app": "node tooling/verify-app.mjs",
     "verify:postgres": "node tooling/verify-postgres.mjs",
-    "verify:domain": "node tooling/verify-domain.mjs"
+    "verify:domain": "node tooling/verify-domain.mjs",
+    "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
