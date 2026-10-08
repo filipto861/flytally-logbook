@@ -222,7 +222,7 @@ async function applyF6PresentationState(page,viewport,theme){
   await expectNoHorizontalOverflow(page);
 }
 
-test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and 200 percent reflow",async({page})=>{
+test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and 200 percent reflow",{tag:"@self-managed-presentation"},async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F6 Manual matrix requires the isolated browser database.");
   resetSafetyPilotPicFixture();
   await loginBrowserPilot(page,"/flights/new");
@@ -280,7 +280,7 @@ test("F6 Manual RoleCrew matrix covers required roles modes viewports themes and
   resetSafetyPilotPicFixture();
 });
 
-test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes and reflow",async({page})=>{
+test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes and reflow",{tag:"@self-managed-presentation"},async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F6 GPS matrix requires the isolated browser database.");
   resetF43GpsSafetyPilotFixture();
   await loginBrowserPilot(page,"/flights/new");
@@ -337,7 +337,7 @@ test("F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes 
   resetF43GpsSafetyPilotFixture();
 });
 
-test("F6 GPS multi-part inheritance override matrix stays usable at every required presentation state",async({page})=>{
+test("F6 GPS multi-part inheritance override matrix stays usable at every required presentation state",{tag:"@self-managed-presentation"},async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F6 GPS multi-part matrix requires the isolated browser database.");
   resetF43GpsSafetyPilotFixture();
   await loginBrowserPilot(page,"/flights/new");
@@ -382,7 +382,7 @@ test("F6 GPS multi-part inheritance override matrix stays usable at every requir
   resetF43GpsSafetyPilotFixture();
 });
 
-test("F6 invalid-profile recovery remains explicit in Manual and GPS across the full presentation matrix",async({page})=>{
+test("F6 invalid-profile recovery remains explicit in Manual and GPS across the full presentation matrix",{tag:"@self-managed-presentation"},async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F6 invalid-profile matrix requires the isolated browser database.");
   await loginBrowserPilot(page,"/flights/new");
 
