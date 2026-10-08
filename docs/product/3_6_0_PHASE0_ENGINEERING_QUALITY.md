@@ -771,6 +771,8 @@ Independent second-AI review verdict: **ACCEPT WITH CHANGES**. Reconciliation ag
 - **0D.5 — reporting documentation:** DEVELOPMENT defines PASS / FAIL / NOT RUN / N/A / PARTIAL semantics and the command/count/retry/source-gate evidence fields;
 - **0D.6 — verification/closeout:** pending. Phase 0D is not DONE until candidate verification and ROADMAP/CHANGELOG reconciliation are complete.
 
+Verification note: the first aggregate regression run produced **1340/1354 PASS**. All 14 failures were historical source-contract assertions still reading the pre-0C `public-shell.spec.mjs` after browser ownership had already been split and independently accepted in Phase 0C. Those assertions are being retargeted to the verified domain-owned specs/helpers; this is test-contract drift, not browser acceptance evidence. The corrected source-contract set must PASS before 0D closeout.
+
 New release work must state which behavioral classes apply and why the others are N/A. Quality is not measured by raw test count alone.
 
 ### Phase 0E — Canonical verification commands
