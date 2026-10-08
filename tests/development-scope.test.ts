@@ -153,12 +153,29 @@ test("browser specs select browser acceptance explicitly",()=>{
 });
 
 test("PostgreSQL harness changes select its source contracts and real acceptance",()=>{
-  const result=classify(["tooling/run-postgres-tests.mjs"]);
-  assert.equal(result.postgres,"true");
-  assert.equal(result.full_tests,"true");
-  assert.match(result.modules,/development-infrastructure/);
-  assert.match(result.test_groups,/development-pipeline/);
-  assert.match(result.targeted_tests,/tests\/development-pipeline\.test\.ts/);
+  for(const file of ["tooling/run-postgres-tests.mjs","tooling/verify-postgres.mjs"]){
+    const result=classify([file]);
+    assert.equal(result.postgres,"true",file);
+    assert.equal(result.full_tests,"true",file);
+    assert.match(result.modules,/development-infrastructure/);
+    assert.match(result.test_groups,/development-pipeline/);
+    assert.match(result.targeted_tests,/tests\/development-pipeline\.test\.ts/);
+  }
+});
+
+test("canonical browser harness changes still require browser acceptance",()=>{
+  for(const file of [
+    "tooling/verify-browser.mjs",
+    "tooling/verify-browser-with-build.mjs",
+    "tooling/playwright-evidence-reporter.mjs",
+  ]){
+    const result=classify([file]);
+    assert.equal(result.browser,"true",file);
+    assert.equal(result.full_tests,"true",file);
+    assert.match(result.modules,/development-infrastructure/);
+    assert.match(result.test_groups,/development-pipeline/);
+    assert.match(result.test_groups,/ui-contract/);
+  }
 });
 
 test("stable module ownership covers at least ninety percent of the audited runtime surface",()=>{
