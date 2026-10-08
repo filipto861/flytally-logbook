@@ -18,7 +18,7 @@ test("v3.2 U3 browser smoke is manual-only and repository-pinned",()=>{
   assert.match(workflow,/npx --no-install playwright install --with-deps chromium/);
   assert.match(workflow,/npm run test:browser/);
   assert.doesNotMatch(workflow,/npm install --no-save --package-lock=false @playwright\/test/);
-  assert.match(workflow,/Chromium desktop \+ mobile/);
+  assert.match(workflow,/Legacy full Chromium diagnostic/);
   assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
