@@ -40,7 +40,7 @@ test("verify:plan JSON binds plan to deterministic content-aware candidate ident
     assert.equal(first.status,0,first.stderr||first.stdout);
     assert.equal(second.status,0,second.stderr||second.stdout);
     const a=JSON.parse(first.stdout),b=JSON.parse(second.stdout);
-    assert.equal(a.schemaVersion,1);
+    assert.equal(a.schemaVersion,2);
     assert.equal(a.candidate.schemaVersion,2);
     assert.match(a.candidate.candidateId,/^[a-f0-9]{64}$/);
     assert.match(a.candidate.filesHash,/^[a-f0-9]{64}$/);
