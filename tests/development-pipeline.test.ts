@@ -14,6 +14,7 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(pkg.scripts.verify,"npm run typecheck && npm test && npm run build");
   assert.equal(typeof pkg.scripts["test:target"],"string");
   assert.equal(pkg.scripts["scope:changed"],"node tooling/development-scope.mjs");
+  assert.equal(pkg.scripts["verify:plan"],"node tooling/verify-plan.mjs");
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.equal(pkg.scripts["test:browser"],"node tooling/run-auth-browser.mjs");
@@ -186,6 +187,7 @@ test("development policy documents candidate-first iteration, module scope and r
   assert.match(doc,/unknown .* runtime files fail conservative/i);
   assert.match(doc,/do not automatically invent PostgreSQL\/browser dependencies/i);
   assert.match(doc,/scope:changed.*planner.*not an executor/i);
+  assert.match(doc,/verify:plan/i);
   assert.match(doc,/full_tests.*does not silently imply PostgreSQL or browser work/i);
   assert.match(doc,/Evidence taxonomy and reporting/i);
   assert.match(doc,/required_evidence/);
