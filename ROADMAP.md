@@ -757,7 +757,14 @@ Revised 0E milestones:
    - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
    - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
    - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
-5. **0E.4 — risk-based release orchestrator + compatibility full path**;
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**;
+   - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
+   - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
+   - keep full `verify:browser` authoritative and serialized, but reserve it for browser-harness changes, major milestone closeout, or the final relevant release candidate;
+   - map the existing split E2E specs to affected modules/contexts so targeted browser reproduction is selected automatically instead of composing spec/grep arguments manually;
+   - audit desktop/mobile duplication by test intent. A test may become desktop-only or mobile-only only when the omitted project adds no distinct evidence; critical cross-device flows remain on both projects;
+   - measure browser runtime before/after and preserve fail-closed acceptance semantics;
+   - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred unless selection/matrix work leaves the final full gate unacceptably slow.
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
 8. **0E.7 — exact-candidate verification / closeout**.
