@@ -83,15 +83,29 @@ test("verify:iterate documentation candidate is fast and never claims release PA
   assert.match(second.stdout,/release_status=NOT EVALUATED/);
 });
 
-test("verify:iterate does not expose browser execution before 0E.4c",()=>{
+test("verify:iterate with-browser keeps a non-browser candidate N/A and reusable",()=>{
   const script=path.join(root,"tooling","verify-iterate.mjs");
-  const result=spawnSync(process.execPath,[script,"DEVELOPMENT.md","--with-browser"],{cwd:root,encoding:"utf8"});
-  assert.equal(result.status,2,result.stderr||result.stdout);
-  assert.match(result.stderr,/reserved for Phase 0E\.4c/);
+  const first=spawnSync(process.execPath,[script,"DEVELOPMENT.md","--with-browser"],{
+    cwd:root,
+    encoding:"utf8",
+    env:{...process.env,FLYTALLY_AUTH_BROWSER:"",FLYTALLY_LOCAL_POSTGRES:"",DATABASE_URL:""},
+  });
+  assert.equal(first.status,0,first.stderr||first.stdout);
+  assert.match(first.stdout,/browser=N\/A/);
+  assert.match(first.stdout,/release_status=NOT EVALUATED/);
+
+  const second=spawnSync(process.execPath,[script,"DEVELOPMENT.md","--with-browser"],{
+    cwd:root,
+    encoding:"utf8",
+    env:{...process.env,FLYTALLY_AUTH_BROWSER:"",FLYTALLY_LOCAL_POSTGRES:"",DATABASE_URL:""},
+  });
+  assert.equal(second.status,0,second.stderr||second.stdout);
+  assert.match(second.stdout,/browser=N\/A:reused/);
 });
 
 test("package command keeps legacy release semantics and adds iterate separately",()=>{
   const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
   assert.equal(pkg.scripts["verify:iterate"],"node tooling/verify-iterate.mjs");
+  assert.equal(pkg.scripts["verify:browser:risk"],"node tooling/verify-browser-risk.mjs");
   assert.equal(pkg.scripts["verify:release"],"npm run typecheck && npm test && npm run test:postgres:full && npm run build");
 });
