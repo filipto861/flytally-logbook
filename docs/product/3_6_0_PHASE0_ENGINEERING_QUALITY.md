@@ -582,7 +582,16 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - no test name, assertion, fixture ID, browser DB implementation, bootstrap, Playwright project, worker or retry behavior changed;
 - structure regression proves the ten GPS names no longer live in the shell spec, the shell contains exactly five tests, and GPS-only helpers/browser-DB ownership are absent from the shell.
 
-0C.2 Batch 6 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused GPS / RoleCrew spec under both projects, then the complete serialized browser gate. After that, 0C.2 splitting can close and 0C.2a helper-ownership reconciliation begins before any 0C.3 project×matrix deduplication.
+0C.2 Batch 6 verification:
+- targeted browser-structure/scope/pipeline set: **41/41 PASS**;
+- TypeScript: **PASS**;
+- focused GPS / RoleCrew spec: **20/20 PASS** across both Playwright projects in **2.6 minutes**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **11.8 minutes**.
+
+**0C.2 Batch 6 is CLOSED / VERIFIED.**
+**0C.2 domain splitting is CLOSED.**
+
+Next milestone is **0C.2a helper-ownership reconciliation**. This is a read/ownership cleanup only: review helpers duplicated across the newly split domain specs, promote only genuinely cross-domain primitives, keep domain-specific GPS/presentation helpers local, preserve centralized browser DB fixtures, exact 48 logical tests, workers=1 and both Playwright projects.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
