@@ -123,6 +123,7 @@
         "tests/development-scope.test.ts",
         "tests/evidence-contract.test.ts",
         "tests/vercel-ignore-build.test.ts",
+        "tests/verification-iterate.test.ts",
         "tests/verification-ledger.test.ts",
         "tests/verification-plan.test.ts"
       ]
