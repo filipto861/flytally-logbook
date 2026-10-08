@@ -6,7 +6,20 @@ import {
 import { reusableLedgerEntry } from "./verification-reuse.mjs";
 
 export function regexpEscape(value){
+  return String(value).replace(/[.*+?^$(){}|[\]\\]/g,"\\export function regexpEscape(value){
   return String(value).replace(/[.*+?^$(){}|[\]\\]/g,"\\$&");
+}
+
+");
+}
+
+export function buildBrowserRiskTitleGrep(titles){
+  const unique=[...new Set((titles??[]).map((value)=>String(value)))].sort();
+  if(unique.length===0)throw new Error("Risk-scoped browser execution requires at least one test title.");
+  // Playwright --grep is matched against the full test title (project/file/suite/title),
+  // so anchoring to ^title$ would incorrectly select zero tests. Exactness is enforced
+  // separately by the evidence reporter's {spec,title,project} comparison.
+  return "(?:"+unique.map(regexpEscape).join("|")+")";
 }
 
 function targetKey(target){
