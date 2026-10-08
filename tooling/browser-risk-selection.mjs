@@ -66,7 +66,11 @@ export function validateBrowserTargetRegistry(){
     else executionKeys.set(key,id);
   }
   const referenced=[];
+  const moduleIds=new Map((manifest.modules??[]).map((entry)=>[entry.id,entry]));
   for(const [moduleId,ids] of Object.entries(browser.moduleTargets??{})){
+    const module=moduleIds.get(moduleId);
+    if(!module)reasons.push("browser-module-target-owner:"+moduleId+":unknown-module");
+    else if(!module.gates?.browser)reasons.push("browser-module-target-owner:"+moduleId+":module-does-not-require-browser");
     for(const id of ids??[])referenced.push(["module:"+moduleId,id]);
   }
   for(const [index,entry] of (browser.pathTargets??[]).entries()){
