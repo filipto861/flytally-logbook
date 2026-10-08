@@ -4,15 +4,28 @@ import { CandidateInputError } from "./verification-candidate.mjs";
 import { evaluateEvidenceObservation } from "./evidence-contract.mjs";
 import { runNodeTests } from "./verification-execution.mjs";
 import { writeVerificationLedgerEntry } from "./verification-ledger.mjs";
+import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
 
 function canonicalCommand(argv){
   return "npm run verify:domain -- "+argv.join(" ");
+}
+
+export function domainVerificationConfiguration(plan){
+  const direct=plan.directEvidence["domain-unit"];
+  return {
+    coverage:"targeted",
+    modules:direct.modules,
+    tests:direct.tests,
+    configHash:verificationConfigIdentity().hash,
+    toolchainHash:declaredToolchainIdentity().hash,
+  };
 }
 
 export async function runDomainVerification(argv){
   const result=createVerificationPlan(argv);
   const {candidate,plan}=result;
   const direct=plan.directEvidence["domain-unit"];
+  const configuration=domainVerificationConfiguration(plan);
 
   const domainBlocked=plan.blockedEvidence.filter((reason)=>reason.startsWith("domain-unit:"));
   if(domainBlocked.length>0){
@@ -22,7 +35,7 @@ export async function runDomainVerification(argv){
       candidate,
       canonicalCommand:canonicalCommand(argv),
       exitCode:3,
-      effectiveConfiguration:{coverage:"targeted",modules:direct.modules,tests:direct.tests},
+      effectiveConfiguration:configuration,
       evaluation:{
         status:"NOT RUN",
         reason:"Required direct domain evidence is unavailable: "+domainBlocked.join(", "),
@@ -38,7 +51,7 @@ export async function runDomainVerification(argv){
       candidate,
       canonicalCommand:canonicalCommand(argv),
       exitCode:0,
-      effectiveConfiguration:{coverage:"targeted",modules:[],tests:[]},
+      effectiveConfiguration:configuration,
       evaluation:{status:"N/A",reason:"Domain-unit evidence is not required for this candidate."},
     });
     return {exitCode:0,plan:result,ledger};
@@ -62,7 +75,7 @@ export async function runDomainVerification(argv){
     candidate,
     canonicalCommand:canonicalCommand(argv),
     exitCode,
-    effectiveConfiguration:{coverage:"targeted",modules:direct.modules,tests:direct.tests},
+    effectiveConfiguration:configuration,
     observation,
     evaluation,
   });
