@@ -925,6 +925,7 @@ The build gate records a candidate-bound build manifest including the candidate 
    - 0E.4b fast iteration executor is **DONE / VERIFIED** on exact candidate `d01813c978c63cd5fc14945fca9a310226d338d2`: development-pipeline **98/98 PASS**, TypeScript PASS, exact-candidate cheap-evidence reuse confirmed, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the batch.
    - iteration PASS never promotes itself to release PASS: aggregate regression, build, PostgreSQL and browser remain explicit pending work unless their authoritative gates run.
    - 0E.4c is **ACTIVE**: authoritative planner-bound `browser-risk` evidence, exact case identity and optional `verify:iterate --with-browser` are under implementation; the legacy full browser executor is retained only as a manual diagnostic.
+   - first 0E.4c exact-candidate app verification passed TypeScript + **1396/1396** aggregate tests + **41/41** build; browser execution then failed closed with zero selected cases because the initial grep was anchored to the raw title rather than Playwright's composed full title; selector fixed with regression coverage, fixed-head browser verification pending.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
