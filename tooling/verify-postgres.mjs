@@ -12,7 +12,7 @@ function canonicalCommand(argv){
 }
 
 export function postgresVerificationConfiguration(){
-  const tests=configuration.testFiles;
+  const tests=selectPostgresTests("full").map((name)=>"tests/integration/"+name);
   return {
     mode:"full",
     localhostOnly:true,
@@ -44,7 +44,7 @@ export async function runPostgresVerification(argv,env=process.env){
     return {exitCode:2,plan,ledger};
   }
 
-  const tests=selectPostgresTests("full").map((name)=>"tests/integration/"+name);
+  const tests=configuration.testFiles;
   const execution=await runNodeTests(tests,{
     coverage:"full",
     env:{...gateEnv,FLYTALLY_POSTGRES_INTEGRATION:"1"},
