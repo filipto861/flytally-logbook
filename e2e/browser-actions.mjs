@@ -30,3 +30,33 @@ export async function loginBrowserPilot(page,returnTo){
   await page.getByRole("button",{name:"Sign in"}).click();
   await expect(page).toHaveURL(new RegExp(`${returnTo}(?:\\?|$)`),{timeout:15000});
 }
+
+export async function expectAuthenticatedRoute(page,heading){
+  await expect(page.getByRole("heading",{name:heading,level:1})).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+}
+
+export async function ensureDetailsOpen(details){
+  if(!(await details.evaluate(node=>node.open)))await details.locator("summary").first().click();
+  await expect.poll(()=>details.evaluate(node=>node.open)).toBe(true);
+}
+
+export async function holdPost(page,pattern){
+  let releaseRequest=()=>{};
+  let posts=0;
+  const gate=new Promise(resolve=>{releaseRequest=resolve});
+  const handler=async route=>{
+    if(route.request().method()==="POST"){
+      posts+=1;
+      await gate;
+    }
+    await route.continue();
+  };
+  await page.route(pattern,handler);
+  return{
+    count:()=>posts,
+    release:releaseRequest,
+    cleanup:()=>page.unroute(pattern,handler),
+  };
+}
+
