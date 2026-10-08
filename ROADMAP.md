@@ -805,13 +805,17 @@ Revised 0E milestones:
    - candidate freshness covers tracked and untracked dirty work outside explicit path candidates; base candidates absorb current dirty files into candidate membership;
    - identity tests assert the release/config/toolchain/fixture inputs that define reusable evidence;
    - no product runtime, DB schema, certification, backup, timezone semantics, browser DB architecture or worker-count change.
-7. **0E.6 — manual workflow + DEVELOPMENT alignment — ACTIVE**;
-   - reconcile DEVELOPMENT so `verify:release:risk` is the canonical final candidate decision and `npm run verify` remains compatibility-only;
-   - keep manual GitHub workflows manual-only diagnostics and prevent them from being mistaken for candidate-bound release authority;
-   - label the legacy full browser cloud workflow explicitly as diagnostic and remove stale pull-request-only conditionals from its manual-only job;
-   - regression-cover workflow labels/authority so future edits cannot silently promote cloud diagnostics into the release gate;
-   - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); corrected only those source-contract expectations, with product runtime unchanged; fixed-head verification pending;
-8. **0E.7 — exact-candidate verification / closeout**.
+7. **0E.6 — manual workflow + DEVELOPMENT alignment — DONE / VERIFIED**;
+   - DEVELOPMENT now names `verify:release:risk` as the canonical final candidate decision while `npm run verify` remains compatibility-only;
+   - both GitHub workflows remain manual-only diagnostics and cannot supply candidate-bound release authority;
+   - the legacy full browser cloud workflow is explicitly labeled diagnostic, stale pull-request-only job logic is removed, and workflow authority is regression-covered;
+   - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); both were corrected without product-runtime change;
+   - fixed-head `734473252fe1acf64388fa15d9373777112d4977`: targeted historical label tests **9/9 PASS**; risk release source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, build **41/41 PASS**, PostgreSQL/scale/browser N/A, no blocked evidence, final `release_status=PASS`.
+8. **0E.7 — exact-candidate verification / closeout — ACTIVE**;
+   - close the complete Phase 0E candidate against the Phase 0D verified baseline `686734911f5c3f45e395fdda6b7d98a5021e84ae`;
+   - run one exact candidate-aware `verify:release:risk --force-all` so TypeScript, aggregate regression, production build, full PostgreSQL acceptance/scale accounting and authoritative planner-bound browser-risk evidence are all exercised on the final Phase 0E head;
+   - legacy 94-case browser remains diagnostic-only and is not a 0E.7 gate;
+   - reconcile ROADMAP / CHANGELOG / DEVELOPMENT / Phase 0 contract and review FEATURES; no product capability change is expected.
 
 Frozen constraints remain:
 - no product runtime, DB schema, certification, backup or timezone-semantic changes;
