@@ -45,6 +45,7 @@ function registryEntryMatches(entry:{files?:string[],prefixes?:string[]},file:st
 
 test("documentation remains lightweight without runtime gates",()=>{
   const result=classify(["README.md","docs/product/example.md"]);
+  assert.equal(result.typecheck,"false");
   assert.equal(result.postgres,"false");
   assert.equal(result.scale,"false");
   assert.equal(result.browser,"false");
@@ -55,6 +56,7 @@ test("documentation remains lightweight without runtime gates",()=>{
 
 test("CSS is UI presentation risk rather than documentation or PostgreSQL risk",()=>{
   const result=classify(["app/globals.css"]);
+  assert.equal(result.typecheck,"true");
   assert.equal(result.postgres,"false");
   assert.equal(result.scale,"false");
   assert.equal(result.browser,"false");
@@ -77,6 +79,7 @@ test("registered changed tests select their owning group without inventing runti
 
 test("unknown runtime code remains conservative without automatically requiring PostgreSQL",()=>{
   const result=classify(["lib/future-module.ts"]);
+  assert.equal(result.typecheck,"true");
   assert.equal(result.postgres,"false");
   assert.equal(result.scale,"false");
   assert.equal(result.browser,"false");
@@ -88,6 +91,8 @@ test("unknown runtime code remains conservative without automatically requiring 
 
 test("known hot paths select persistence scale browser and application gates centrally",()=>{
   const result=classify(["lib/data/dashboard.ts"]);
+  assert.equal(result.typecheck,"true");
+  assert.equal(result.typecheck,"true");
   assert.equal(result.postgres,"true");
   assert.equal(result.scale,"true");
   assert.equal(result.browser,"true");
