@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import playwrightConfig from "../playwright.config.mjs";
 import { createVerificationPlan } from "./verify-plan.mjs";
 import { CandidateInputError,repositoryRoot } from "./verification-candidate.mjs";
-import { evaluateEvidenceObservation } from "./evidence-contract.mjs";
 import { runCommand } from "./verification-execution.mjs";
 import {
   buildIdentityMatches,
@@ -20,9 +19,8 @@ function canonicalCommand(argv){
 
 function blockedLedger(candidate,argv,reason){
   return writeVerificationLedgerEntry({
-    gate:"browser",
-    evidenceClass:"browser-acceptance",
-    candidate,
+    gate:"browser-diagnostic",
+        candidate,
     canonicalCommand:canonicalCommand(argv),
     exitCode:3,
     effectiveConfiguration:{coverage:"full",workers:1,retries:0,fullyParallel:false},
@@ -37,9 +35,8 @@ export async function runBrowserVerification(argv,env=process.env){
   if(playwrightConfig.fullyParallel!==false||playwrightConfig.workers!==1){
     const reason="Canonical browser acceptance requires fullyParallel=false and workers=1 in playwright.config.mjs.";
     const ledger=writeVerificationLedgerEntry({
-      gate:"browser",
-      evidenceClass:"browser-acceptance",
-      candidate,
+      gate:"browser-diagnostic",
+            candidate,
       canonicalCommand:canonicalCommand(argv),
       exitCode:2,
       effectiveConfiguration:{
@@ -85,9 +82,8 @@ export async function runBrowserVerification(argv,env=process.env){
       ?"Authenticated browser acceptance configuration/preflight failed before Playwright evidence was produced."
       :"Authenticated browser acceptance did not produce its evidence report.";
     const ledger=writeVerificationLedgerEntry({
-      gate:"browser",
-      evidenceClass:"browser-acceptance",
-      candidate,
+      gate:"browser-diagnostic",
+            candidate,
       canonicalCommand:canonicalCommand(argv),
       exitCode:execution.code,
       effectiveConfiguration:{coverage:"full",workers:1,retries:0,fullyParallel:false},
@@ -107,21 +103,28 @@ export async function runBrowserVerification(argv,env=process.env){
     skipped:Number(report.skipped??0),
     notApplicable:Number(report.notApplicable??0),
     retries:Number(report.retries??0),
-    sourceGate:"browser",
+    sourceGate:"browser-diagnostic",
   };
-  let evaluation=evaluateEvidenceObservation("browser-acceptance",observation);
   const effective=report.effectiveConfiguration??{};
+  const executed=observation.passed+observation.failed+observation.skipped+observation.notApplicable;
+  let evaluation;
   if(effective.workers!==1||effective.fullyParallel!==false){
-    evaluation={
-      status:"PARTIAL",
-      reason:"Playwright effective configuration did not preserve workers=1 and fullyParallel=false.",
-    };
+    evaluation={status:"FAIL",reason:"Playwright effective configuration did not preserve workers=1 and fullyParallel=false."};
+  }else if(observation.planned===0||executed===0||executed!==observation.planned){
+    evaluation={status:"FAIL",reason:"Legacy browser diagnostic did not execute its complete planned matrix."};
+  }else if(observation.failed>0||execution.code!==0){
+    evaluation={status:"FAIL",reason:"One or more legacy browser diagnostic cases failed."};
+  }else if(observation.skipped>0){
+    evaluation={status:"FAIL",reason:"Unexpected raw skips are not accepted by the legacy browser diagnostic."};
+  }else if(observation.retries!==0){
+    evaluation={status:"FAIL",reason:"Legacy browser diagnostic requires retries=0."};
+  }else{
+    evaluation={status:"PASS",reason:"Legacy full browser diagnostic completed successfully; it is not release browser evidence."};
   }
   const exitCode=execution.code!==0?execution.code:(evaluation.status==="PASS"?0:1);
   const ledger=writeVerificationLedgerEntry({
-    gate:"browser",
-    evidenceClass:"browser-acceptance",
-    candidate,
+    gate:"browser-diagnostic",
+        candidate,
     canonicalCommand:canonicalCommand(argv),
     exitCode,
     effectiveConfiguration:{
