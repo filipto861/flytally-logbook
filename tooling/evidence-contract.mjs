@@ -72,6 +72,17 @@ export function evaluateEvidenceObservation(evidenceClass, observation) {
   if (dedicated && retries !== 0) {
     return { status: "PARTIAL", reason: "Acceptance evidence requires retries=0." };
   }
+  if (evidenceClass === "browser-acceptance" && dedicated === "browser-risk") {
+    if (observation.authority !== "release") {
+      return { status: "PARTIAL", reason: "Risk-scoped browser evidence requires explicit release authority." };
+    }
+    if (!/^[a-f0-9]{64}$/.test(String(observation.selectionHash ?? ""))) {
+      return { status: "PARTIAL", reason: "Risk-scoped browser evidence requires a valid planner selection hash." };
+    }
+    if (!Array.isArray(observation.targets) || observation.targets.length !== planned) {
+      return { status: "PARTIAL", reason: "Risk-scoped browser evidence must carry the exact planned target set." };
+    }
+  }
 
   return {
     status: "PASS",
