@@ -1,46 +1,9 @@
 import { test,expect } from "@playwright/test";
 import { expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
+import { openGpsFlightContext,selectGpsActualPicMode,selectGpsCommonRole,splitGpsIntoTwo,completeF43GpsPart } from "./gps-actions.mjs";
 import { browserSqlScalar,runBrowserFlightFixtureCleanup,resetGpsNormalizedImportFixture,resetF41CommonRoleCrewFixture,resetF42WholePartRoleCrewFixture,resetF43GpsSafetyPilotFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture } from "./browser-db.mjs";
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
-
-async function ensureDetailsOpen(details){
-  if(!(await details.evaluate(node=>node.open)))await details.locator("summary").first().click();
-  await expect.poll(()=>details.evaluate(node=>node.open)).toBe(true);
-}
-
-async function openGpsFlightContext(gpsForm){
-  await ensureDetailsOpen(gpsForm.locator("details.gps-flight-context"));
-}
-
-async function selectGpsCommonRole(gpsForm,value){
-  await openGpsFlightContext(gpsForm);
-  const role=gpsForm.locator('select[name="role"]');
-  await role.selectOption(value);
-  await openGpsFlightContext(gpsForm);
-  return role;
-}
-
-async function selectGpsActualPicMode(gpsForm,value){
-  await openGpsFlightContext(gpsForm);
-  const source=gpsForm.locator('select[name="actualPicMode"]');
-  await source.selectOption(value);
-  await openGpsFlightContext(gpsForm);
-  return source;
-}
-
-async function openGpsTrackReview(gpsForm){
-  await ensureDetailsOpen(gpsForm.locator("details.gps-track-review"));
-}
-
-async function splitGpsIntoTwo(gpsForm){
-  await openGpsTrackReview(gpsForm);
-  const firstSplit=gpsForm.getByRole("button",{name:"Split into multiple flights"});
-  await expect(firstSplit).toBeVisible();
-  await firstSplit.click();
-  await expect(gpsForm.locator('input[name="partCount"]')).toHaveValue("2");
-}
-
 
 test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
@@ -293,7 +256,6 @@ test("F4.1 common DUAL invalidates inherited review and persists normalized Role
 });
 
 
-
 test("F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F4.2 whole-part RoleCrew coverage requires the isolated browser database.");
   resetF42WholePartRoleCrewFixture();
@@ -405,8 +367,7 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
 });
 
 
-
-async function completeF43GpsPart(gpsForm,index,{offBlock,takeoff,landing,onBlock,note}){
+){
   await gpsForm.locator('input[name="part_'+index+'_date"]').fill("2026-10-03");
   await gpsForm.locator('input[name="part_'+index+'_offBlock"]').fill(offBlock);
   await gpsForm.locator('input[name="part_'+index+'_takeoff"]').fill(takeoff);
