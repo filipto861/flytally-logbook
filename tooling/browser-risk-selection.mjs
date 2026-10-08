@@ -94,7 +94,8 @@ function browserHarnessRule(){
 export function selectBrowserEvidence(candidate,classification){
   const required=Boolean(classification.browser);
   const targetIds=new Set();
-  const blockers=[...validateBrowserTargetRegistry()];
+  const registryBlockers=validateBrowserTargetRegistry();
+  const blockers=required?[...registryBlockers]:[];
   const fileCoverage=[];
   const targets=browser.targets??{};
   const harness=browserHarnessRule();
