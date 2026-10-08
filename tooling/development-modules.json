@@ -840,5 +840,10 @@
       "tests/integration/postgres-v169-production-hardening.test.ts",
       "tests/integration/postgres-v230-large-logbook-performance.test.ts"
     ]
+  },
+  "browserAcceptance": {
+    "explicitNotApplicableSkipReasons": [
+      "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
+    ]
   }
 }
