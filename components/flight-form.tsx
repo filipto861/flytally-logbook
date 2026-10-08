@@ -19,6 +19,7 @@ import { useUnsavedFormGuard } from "@/components/use-unsaved-form-guard";
 import { FlightExpensesEditor } from "@/components/flight-expenses-editor";
 import { ProfessionalContextFields } from "@/components/professional-context-fields";
 import type { FlightExpenseRecord } from "@/lib/flight-expenses";
+import type { SaveableCalendarDefault } from "@/lib/data/user-calendar";
 
 type Action=(state:FlightActionState,data:FormData)=>Promise<FlightActionState>;
 type Initial=Partial<FlightRow>&Record<string,unknown>;
@@ -41,12 +42,14 @@ function Submit({editing=false,certifyDisabled=false,onAttempt}:{editing?:boolea
   </>;
 }
 
-export function FlightForm({action,aircraft,initial={},instructors=[],picConnections=[],connectedPic=null,expenses=[],formId}:{action:Action;aircraft:AircraftOption[];initial?:Initial;instructors?:Array<{name:string}>;picConnections?:PicConnection[];connectedPic?:ConnectedPicInitial;expenses?:FlightExpenseRecord[];formId?:string}){
+export function FlightForm({action,aircraft,initial={},calendarDefault,instructors=[],picConnections=[],connectedPic=null,expenses=[],formId}:{action:Action;aircraft:AircraftOption[];initial?:Initial;calendarDefault?:SaveableCalendarDefault;instructors?:Array<{name:string}>;picConnections?:PicConnection[];connectedPic?:ConnectedPicInitial;expenses?:FlightExpenseRecord[];formId?:string}){
   const[state,formAction]=useActionState(action,{}),field=(name:string,fallback="")=>String(initial[name]??fallback),editing=Boolean(initial.id);
   const{dirty,markDirty,beginSubmit}=useUnsavedFormGuard(),errorRef=useRef<HTMLParagraphElement>(null),formRef=useRef<HTMLFormElement>(null),[submitAttempted,setSubmitAttempted]=useState(false);
   const normalizedAircraft=useMemo(()=>aircraft.map(item=>({...item,registration:normalizeRegistration(item.registration)})),[aircraft]);
   const initialRegistration=normalizeRegistration(field("registration"));
-  const[registration,setRegistration]=useState(initialRegistration),[date,setDate]=useState(field("date",new Date().toISOString().slice(0,10)));
+  const resolvedCalendarDate=!editing&&calendarDefault?.status==="resolved"?calendarDefault.date:"";
+  const initialDate=editing?field("date"):field("date",resolvedCalendarDate);
+  const[registration,setRegistration]=useState(initialRegistration),[date,setDate]=useState(initialDate);
   const selected=useMemo(()=>normalizedAircraft.find(x=>x.registration===registration),[normalizedAircraft,registration]);
   const registrationOptions=useMemo(()=>initialRegistration&&!normalizedAircraft.some(item=>item.registration===initialRegistration)?[{registration:initialRegistration} as AircraftOption,...normalizedAircraft]:normalizedAircraft,[initialRegistration,normalizedAircraft]);
   const storedEvidence=normalizeChoice(field("evidence"),EVIDENCE,""),storedClass=normalizeChoice(field("aircraft_class"),CLASSES,""),storedRegulatoryCategory=field("regulatory_category").trim().toUpperCase(),storedRole=normalizeChoice(field("role"),ROLES,""),storedPurpose=field("purpose_code")?[field("purpose_code"),...flightPurposeCodesFromTask(field("task"))]:[],storedTask=storedPurpose.length?stripFlightPurposeTasks(field("task")):field("task");
@@ -107,7 +110,7 @@ export function FlightForm({action,aircraft,initial={},instructors=[],picConnect
     {!safetyCrewInline?<input type="hidden" name="connectedPicUserId" value=""/>:null}
     <section className="entry-section entry-section-primary"><p className="section-kicker">Flight essentials</p>
       <div className="form-grid essential-grid essential-identity-grid">
-        <label><span>Date <span className="field-hint" aria-hidden="true">Required</span></span><input name="date" type="date" value={date} onChange={event=>setDate(event.target.value)} required aria-invalid={submitAttempted&&!date||undefined}/>{submitAttempted&&!date?<small className="field-message-error">Required before save.</small>:null}</label>
+        <label><span>Date <span className="field-hint" aria-hidden="true">Required</span></span><input name="date" type="date" value={date} onChange={event=>setDate(event.target.value)} required aria-invalid={submitAttempted&&!date||undefined}/>{submitAttempted&&!date?<small className="field-message-error">Required before save.</small>:!editing&&calendarDefault?.status==="needs_configuration"?<small className="field-message-error">Needs configuration for automatic date. <Link href="/profile">Open Settings</Link> or enter the flight date manually.</small>:!editing&&calendarDefault?.status==="unavailable"?<small>Automatic date is temporarily unavailable. Enter the flight date manually or reload the page.</small>:null}</label>
         <label><span>Registration <span className="field-hint" aria-hidden="true">Required</span></span><select name="registration" value={registration} onChange={e=>pickAircraft(e.target.value)} required aria-invalid={submitAttempted&&!registration||profileNeedsConfiguration||undefined}><option value="">Select</option>{registrationOptions.map(a=><option key={a.registration} value={a.registration}>{a.registration}{a.aircraft_type?` · ${a.aircraft_type}`:""}</option>)}</select>{submitAttempted&&!registration?<small className="field-message-error">Required before save.</small>:profileNeedsConfiguration?<small className="field-message-error">Needs configuration · {profileAuthority?.error||selectedProfile?.error||"Aircraft profile defaults are incomplete."} <Link href="/database" target="_blank" rel="noreferrer" data-aircraft-config-link>Open Aircraft</Link></small>:snapshotAuthority?<small>Stored flight context will be preserved.</small>:registration?<small><Link href="/database">Manage aircraft</Link></small>:null}</label>
         <label><span>Role <span className="field-hint" aria-hidden="true">Required</span></span><select name="role" value={role} onChange={e=>setRole(e.target.value)} required aria-invalid={submitAttempted&&!role||undefined}><option value="">Select role</option>{ROLES.map(x=><option key={x} value={x}>{roleOptionLabel(x)}</option>)}</select>{submitAttempted&&!role?<small className="field-message-error">Required before save.</small>:!editing&&selected&&role===profileRole?<small>Aircraft default</small>:null}</label>
       </div>

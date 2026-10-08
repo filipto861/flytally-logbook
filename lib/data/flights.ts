@@ -52,8 +52,7 @@ export async function getManualEntryDefaults(userId:number){
     sql`SELECT display_name FROM users WHERE id=${userId} LIMIT 1`,
   ]) as Array<Array<Record<string,unknown>>>;
   const cfg=settings[0]??{};
-  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  return {date:today,registration:"",departure:"",arrival:"",evidence:"",regulatory_category:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1};
+  return {registration:"",departure:"",arrival:"",evidence:"",regulatory_category:"",role:String(cfg.default_role||"PIC").toUpperCase(),commander:String(user[0]?.display_name||""),starts:1};
 }
 
 export async function getFlightNavigation(userId:number,id:number,filters:FlightFilters={}){

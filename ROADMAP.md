@@ -936,15 +936,21 @@ Delivered boundary:
 - presentation-only Prague fallback remains unchanged and separate;
 - no Manual Flight/Aircraft/Quick Add/GPS rewiring yet.
 
-### P1.3 — Manual flight default — ACTIVE
+### P1.3 — Manual flight default — ACTIVE / IMPLEMENTATION CANDIDATE
 
-Next scope:
-- New Flight page resolves strict user-calendar default server-side;
-- Manual Flight receives that date/result from the server;
-- remove the client UTC-calendar fallback as new-flight authority;
-- stored/edit date remains authoritative and unchanged;
-- off-block/takeoff/landing/on-block remain explicitly UTC;
-- fail closed with editable date + controlled Needs configuration state when no derived default is available.
+Implementation candidate:
+- New Flight resolves `getUserSaveableCalendarDefault(userId)` once on the authenticated server page;
+- the resolved result is passed explicitly into `FlightForm`;
+- `getManualEntryDefaults()` no longer computes or owns any calendar date;
+- the client UTC fallback `new Date().toISOString().slice(0,10)` is removed;
+- a resolved user-calendar date initializes a new form once and then remains stable for that mounted form;
+- Edit continues to initialize from the stored `flight.date`;
+- missing/blank/invalid timezone leaves the automatic date empty, shows controlled **Needs configuration** guidance, and keeps manual date entry available;
+- resolver read failure leaves the automatic date empty with a controlled temporary-unavailable message;
+- off-block/takeoff/landing/on-block remain explicitly UTC and canonical parsing/certification is unchanged;
+- focused source-contract coverage proves the server wiring, removal of Prague/UTC fallback authority, edit-date preservation path and unchanged UTC timeline labels.
+
+Verification pending. No PASS is claimed until planner-selected evidence runs on the exact candidate.
 
 ### P1.4 — Aircraft / rate defaults — BLOCKED BY P1.2
 
