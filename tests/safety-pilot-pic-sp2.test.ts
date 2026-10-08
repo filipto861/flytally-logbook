@@ -73,7 +73,7 @@ test("SP2 edit reloads stored connected identity by flight id instead of matchin
 
 
 test("SP2 browser coverage exercises manual and connected Actual PIC modes on the current fixture",()=>{
-  const browser=read("e2e/public-shell.spec.mjs");
+  const browser=read("e2e/manual-rolecrew-verification.spec.mjs");
   const db=read("e2e/browser-db.mjs");
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
   assert.match(browser,/Safety Pilot Actual PIC form keeps manual and connected identity explicit/);
