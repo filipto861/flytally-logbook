@@ -39,6 +39,9 @@
     "dedicatedAcceptanceSources": {
       "postgres-acceptance": "postgres",
       "browser-acceptance": "browser"
+    },
+    "directEvidenceSources": {
+      "domain-unit": "domain-unit"
     }
   },
   "documentation": {
