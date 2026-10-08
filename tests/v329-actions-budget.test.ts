@@ -6,11 +6,11 @@ const verify=fs.readFileSync(".github/workflows/verify-web.yml","utf8");
 const browser=fs.readFileSync(".github/workflows/browser-smoke.yml","utf8");
 
 test("v3.2 U9 keeps optional manual cloud verification lightweight",()=>{
-  assert.match(verify,/name: Application gate/);
+  assert.match(verify,/name: Manual application diagnostic/);
   assert.match(verify,/run: npm run typecheck/);
   assert.match(verify,/inputs\.full_tests != true/);
   assert.match(verify,/inputs\.full_tests == true/);
-  assert.doesNotMatch(verify,/Application gate[\s\S]*name: Production build/);
+  assert.doesNotMatch(verify,/Manual application diagnostic[\s\S]*name: Diagnostic production build/);
 });
 
 test("v3.2 U9 runs PostgreSQL acceptance only when explicitly requested",()=>{
