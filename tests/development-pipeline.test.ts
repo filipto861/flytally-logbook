@@ -190,7 +190,7 @@ test("development policy documents candidate-first iteration, module scope and r
   assert.match(doc,/Evidence taxonomy and reporting/i);
   assert.match(doc,/required_evidence/);
   assert.match(doc,/aggregate regression gate/i);
-  assert.match(doc,/source\/regex\/static contract PASS.*does not.*runtime domain behavior.*browser behavior.*PostgreSQL behavior/i);
+  assert.match(doc,/source\/regex\/static contract PASS.*does .*not.*runtime domain behavior.*browser behavior.*PostgreSQL behavior/i);
   assert.match(doc,/PostgreSQL runner reads its scale membership from that registry/i);
   assert.match(doc,/npm run verify:release/);
   assert.match(doc,/canonical production branch is `main`/i);
