@@ -253,6 +253,7 @@ test("development registry v3 evidence schema is explicit and self-consistent",(
     "postgres-acceptance":"postgres",
     "browser-acceptance":"browser",
   });
+  assert.deepEqual(manifest.evidencePolicy.directEvidenceSources,{"domain-unit":"domain-unit"});
 
   for(const [groupId,group] of Object.entries(manifest.testGroups) as [string,{evidenceClass:string,coverage:string,tests:string[]}][]){
     assert.ok(manifest.evidencePolicy.groupClasses.includes(group.evidenceClass),"invalid evidence class for group: "+groupId);
