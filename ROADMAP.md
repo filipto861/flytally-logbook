@@ -997,6 +997,7 @@ Evidence candidate:
 - date-boundary tests now cover +14:00 / -11:00 source offsets without user-timezone participation;
 - the dormant Prague `localParts` helper in `lib/track-processing.ts` is **retained, not promoted**: no active audited authoritative path uses it, but removal is deferred because exhaustive repo-wide retirement proof was not established in this milestone;
 - account backup exports raw flights, rates and settings rows; exact restore inserts date-only rows with PostgreSQL `json_populate_record` and does not run `flights.date` / `rates.valid_from` through JavaScript Date conversion;
+- independent final review found no timezone-semantic defect but flagged that source inspection alone was weaker than PostgreSQL-backed proof for restore; accepted and strengthened with a dedicated PostgreSQL integration assertion showing `json_populate_record` preserves date-only values identically under Pacific/Auckland and America/Los_Angeles session time zones while production restore continues to use that primitive for flights/rates;
 - portable-backup evidence now proves a saved timezone plus `flight.date` and `rate.valid_from` retain their literal calendar strings;
 - CSV/XLS/print keep flight dates date-only; the export route UTC date used for the **filename stamp** is not flight-date authority;
 - historical rate selection remains lexical/date-only and is covered at a calendar-year boundary;
