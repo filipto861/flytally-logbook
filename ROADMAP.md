@@ -727,7 +727,7 @@ Revised 0E milestones:
    - `npm run verify:plan` is added; `scope:changed` remains untouched for compatibility;
    - dedicated planner regression coverage is registered under `development-pipeline`;
    - final local verification on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`: development-pipeline **72/72 PASS**, TypeScript **PASS**, aggregate regression **1361/1361 PASS**, production build **PASS (41/41 static pages)**, and `verify:plan -- package.json --json` returned the expected development-infrastructure plan with `typecheck=true`, `fullTests=true`, `build=true`, source-contract evidence required, and PostgreSQL/browser disabled.
-3. **0E.2 — registry available-evidence metadata + direct domain selection — ACTIVE**;
+3. **0E.2 — registry available-evidence metadata + direct domain selection — DONE / VERIFIED**;
    - implementation candidate added: all current `domain-data-integrity` modules now declare exact reviewed `evidenceTests.domain-unit` paths in the existing registry;
    - two small pure direct suites were added for aircraft-profile and professional-experience behavior so those modules do not rely on static/source-contract files;
    - registry schema now validates direct evidence metadata;
@@ -735,8 +735,9 @@ Revised 0E milestones:
    - `verify:plan` now exposes `plan.directEvidence.domain-unit` and candidate blocking reasons; a future missing approved domain suite exits 3 after the plan is printed;
    - current registry audit shows **10/10 domain-risk modules** have approved direct evidence and all referenced test files exist;
    - aggregate `npm test` remains independent regression coverage and still cannot synthesize domain evidence;
-   - **verification pending**; 0E.2 is not DONE yet.
-4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers**;
+   - final local verification on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
+   - canonical planner smoke for `lib/commercial-readiness.ts` selected `legal-commercial`, required only `domain-unit`, resolved the two approved direct tests, reported no missing modules / blocked evidence, and kept PostgreSQL/browser disabled.
+4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers — ACTIVE**;
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
