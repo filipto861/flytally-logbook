@@ -211,6 +211,33 @@ test("Phase 0C.2 batch 5 owns responsive presentation matrices in one domain spe
     "0C.2 is ownership-only; project-matrix deduplication belongs to 0C.3");
 });
 
+test("Phase 0C.2 batch 6 owns GPS RoleCrew functionals and leaves public shell focused",()=>{
+  const shell=read("e2e/public-shell.spec.mjs");
+  const gps=read("e2e/gps-rolecrew.spec.mjs");
+  const names=[
+    "3.4.0 single GPS Save & certify seals the imported persisted row",
+    "3.4.0 GPS quality warning requires one targeted acknowledgement before completion",
+    "GPS import fails closed for invalid profile context and exposes only implemented F4 roles",
+    "GPS reviewed PIC save persists normalized shared semantics",
+    "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+    "F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",
+    "F4.2 split-boundary change clears RoleCrew overrides with a visible notice",
+    "F4.3 common Manual Safety Pilot persists explicit Actual PIC without account link",
+    "F4.3 common connected Safety Pilot snapshots server identity and persists one PIC link",
+    "F4.3 revoked per-flight connected Safety Pilot fails closed without partial split persistence",
+  ];
+  for(const name of names){
+    assert.equal(gps.includes('test("'+name+'"'),true);
+    assert.equal(shell.includes('test("'+name+'"'),false);
+  }
+  assert.equal((gps.match(/^test\("/gm)??[]).length,names.length);
+  assert.equal((shell.match(/^test\("/gm)??[]).length,5);
+  assert.match(gps,/async function splitGpsIntoTwo/);
+  assert.match(gps,/async function completeF43GpsPart/);
+  assert.doesNotMatch(shell,/browser-db\.mjs/);
+  assert.doesNotMatch(shell,/openGpsFlightContext|splitGpsIntoTwo|completeF43GpsPart/);
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
