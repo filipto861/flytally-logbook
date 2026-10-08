@@ -134,11 +134,15 @@ test("risk browser acceptance owns exact planner selection and same-candidate bu
 });
 
 test("risk browser exact target comparison is order-independent and identity-strict",async()=>{
-  const {browserRiskConfiguration,compareExactTargetSet}=await importTooling("tooling/verification-browser-risk.mjs");
+  const {browserRiskConfiguration,buildBrowserRiskTitleGrep,compareExactTargetSet}=await importTooling("tooling/verification-browser-risk.mjs");
   const targets=[
     {id:"a",spec:"e2e/a.spec.mjs",title:"A",project:"desktop-chromium"},
     {id:"b",spec:"e2e/b.spec.mjs",title:"B",project:"mobile-chromium"},
   ];
+  const grep=new RegExp(buildBrowserRiskTitleGrep(["A (exact)"]));
+  assert.equal(grep.test("desktop-chromium › e2e/a.spec.mjs:10 › A (exact)"),true);
+  assert.equal(grep.test("desktop-chromium › e2e/a.spec.mjs:10 › Unrelated test"),false);
+
   assert.equal(compareExactTargetSet(targets,[targets[1],targets[0]]),true);
   assert.equal(compareExactTargetSet(targets,[targets[0]]),false);
   assert.equal(compareExactTargetSet(targets,[
