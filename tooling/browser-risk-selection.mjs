@@ -102,7 +102,7 @@ export function selectBrowserEvidence(candidate,classification){
   for(const file of candidate.files){
     const single=classifyDevelopmentScope([file]);
     if(!single.browser)continue;
-    const before=targetIds.size;
+    const before=new Set(targetIds);
     const reasons=[];
 
     if(file.startsWith("e2e/")&&file.endsWith(".spec.mjs")){
@@ -129,11 +129,12 @@ export function selectBrowserEvidence(candidate,classification){
       if(pathMatches(entry,file))addIds(targetIds,entry.targets);
     }
 
-    if(targetIds.size===before&&reasons.length===0)reasons.push("browser-relevant-path-has-no-target");
+    const addedTargets=[...targetIds].filter((id)=>!before.has(id)).sort();
+    if(addedTargets.length===0&&reasons.length===0)reasons.push("browser-relevant-path-has-no-target");
     if(reasons.length>0){
       for(const reason of reasons)blockers.push("browser:"+file+":"+reason);
     }
-    fileCoverage.push({file,addedTargets:[...targetIds].slice(before).sort(),reasons});
+    fileCoverage.push({file,addedTargets,reasons});
   }
 
   if(required&&targetIds.size===0)blockers.push("browser:required:no-targets-selected");
