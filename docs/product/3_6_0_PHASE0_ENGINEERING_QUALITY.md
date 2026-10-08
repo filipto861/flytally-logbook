@@ -574,6 +574,16 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - preserve exact test names/assertions, centralized browser DB fixture implementation, fixture IDs, both Playwright projects, workers=1 and retry semantics;
 - this is still file/domain ownership only; no project×matrix deduplication before 0C.3.
 
+0C.2 Batch 6 implementation candidate:
+- created `e2e/gps-rolecrew.spec.mjs` with exactly the ten remaining GPS functional acceptance tests and their GPS-only interaction helpers;
+- reduced `e2e/public-shell.spec.mjs` to exactly five public/auth/shell tests: login shell, unauthenticated redirect, pending login state, authenticated core-shell navigation, and offline banner;
+- removed direct `browser-db.mjs` ownership from `public-shell.spec.mjs`; GPS DB reset/query helpers remain centralized in `browser-db.mjs` and are imported only by the GPS domain where needed;
+- current source inventory remains exactly **48 unique logical acceptance tests**: 10 GPS / RoleCrew + 9 responsive presentation + 8 Manual authority/certification + 7 advisory + 5 Manual RoleCrew/verification + 5 public/auth/shell + 4 settings/connections mutations;
+- no test name, assertion, fixture ID, browser DB implementation, bootstrap, Playwright project, worker or retry behavior changed;
+- structure regression proves the ten GPS names no longer live in the shell spec, the shell contains exactly five tests, and GPS-only helpers/browser-DB ownership are absent from the shell.
+
+0C.2 Batch 6 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused GPS / RoleCrew spec under both projects, then the complete serialized browser gate. After that, 0C.2 splitting can close and 0C.2a helper-ownership reconciliation begins before any 0C.3 project×matrix deduplication.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
