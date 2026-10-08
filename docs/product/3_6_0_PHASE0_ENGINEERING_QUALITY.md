@@ -921,7 +921,8 @@ The build gate records a candidate-bound build manifest including the candidate 
    - 0E.4a implementation candidate is present: candidate/ledger identity v2, deterministic verification identity hashes, explicit exact browser target registry + fail-closed selector, planner browser-selection output, and browser-implies-build correction;
    - existing `verify:release` and legacy full `verify:browser` semantics are unchanged in 0E.4a; risk-scoped execution is a later batch;
    - first local verification passed source/static + TypeScript + aggregate regression + build, but exposed generated local verification artifacts as candidate members; those artifacts are now ignored and regression-covered;
-   - final exact-current-head 0E.4a verification pending.
+   - final exact-head 0E.4a verification PASS at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92**, planner v2 clean/no blockers, TypeScript PASS, aggregate regression **1387/1387**, production build **41/41**; 0E.4a DONE / VERIFIED;
+   - 0E.4b fast iteration executor is ACTIVE; implementation candidate adds source/typecheck ledgers, exact reuse and `verify:iterate`, with verification pending.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
