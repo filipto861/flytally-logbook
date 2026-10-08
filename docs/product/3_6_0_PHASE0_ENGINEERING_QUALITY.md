@@ -558,7 +558,21 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 - centralized `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry behavior are unchanged;
 - structure regression proves all nine test names moved, F6 matrix ownership moved with them, and the responsive spec has no project-name skip logic.
 
-0C.2 Batch 5 verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contract + TypeScript, focused responsive spec under both projects, then the complete serialized browser gate.
+0C.2 Batch 5 verification:
+- targeted browser-structure/scope/pipeline set: **40/40 PASS**;
+- TypeScript: **PASS**;
+- focused responsive presentation spec: **18/18 PASS** across both Playwright projects in **3.1 minutes**;
+- complete serialized browser gate: **96 PASS / 2 intentional skips / 0 failed** across **98 executions** in **12.0 minutes** on the second local PC;
+- the second PC required its own isolated PostgreSQL fixture plus a valid local `SESSION_SECRET`; the earlier all-test login failure was an environment/configuration failure, not a Batch 5 product/test assertion failure.
+
+**0C.2 Batch 5 is CLOSED / VERIFIED.**
+
+0C.2 Batch 6 implementation target — GPS / RoleCrew:
+- move the ten remaining GPS functional acceptance tests from `public-shell.spec.mjs` into `e2e/gps-rolecrew.spec.mjs`;
+- keep the five actual public/auth/shell tests in `public-shell.spec.mjs`;
+- move the remaining GPS-only helper/reset/query ownership with the GPS domain where proven exclusive;
+- preserve exact test names/assertions, centralized browser DB fixture implementation, fixture IDs, both Playwright projects, workers=1 and retry semantics;
+- this is still file/domain ownership only; no project×matrix deduplication before 0C.3.
 
 Superseded pre-review implementation draft (preserved for decision history):
 
