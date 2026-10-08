@@ -873,7 +873,7 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.2 IMPLEMENTATION READY)
+## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.3 MANUAL FLIGHT)
 
 Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
 Issue: #144  
@@ -914,18 +914,37 @@ Frozen decisions:
 - production timezone-value census is required before release, not before P1.2 implementation;
 - adjacent UTC/`CURRENT_DATE` status semantics discovered in credentials/recency/print are tracked separately in #258 and do not expand #144.
 
-### P1.2 — Strict calendar primitive + configuration boundary — ACTIVE
+### P1.2 — Strict calendar primitive + configuration boundary — DONE / VERIFIED
 
-Scope:
-- pure deterministic date-in-zone helper with injected instant;
-- strict saveable-calendar resolver with explicit failure states;
-- server write-boundary timezone validation + controlled Settings action state;
-- focused unit/source-contract tests, including DST and non-whole-hour zones;
-- no consumer rewiring beyond what is necessary to establish/verify the primitive.
+Merged through PR #259 as `445454b73bfad305264ed10ce74bc02335474c8c`.
 
-### P1.3 — Manual flight default — BLOCKED BY P1.2
+Verified exact implementation head `c38ac15a673f770c2ae8cd13a4b02a32c70188dd`, candidate `b8520903792d8af18f502469b028b3ab59c9c098bb47bf5bcbd42e5021fc13b5`:
+- source-contract PASS;
+- TypeScript PASS;
+- aggregate regression **1419/1419 PASS**;
+- production build **41/41 PASS**;
+- PostgreSQL acceptance **99/99 PASS**;
+- authoritative browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- domain/scale N/A;
+- required evidence satisfied; blocked evidence none.
 
-Server-provided user-calendar date/result for New Flight; remove UTC fallback as new-flight authority; preserve stored/edit date and all UTC flight-time semantics.
+Delivered boundary:
+- pure deterministic named-timezone `YYYY-MM-DD` derivation with injected instant;
+- strict `resolved | needs_configuration | unavailable` user-calendar resolver;
+- server-authoritative Settings timezone validation with raw numeric offsets rejected;
+- invalid timezone blocks the complete account-settings transaction and surfaces controlled UI feedback;
+- presentation-only Prague fallback remains unchanged and separate;
+- no Manual Flight/Aircraft/Quick Add/GPS rewiring yet.
+
+### P1.3 — Manual flight default — ACTIVE
+
+Next scope:
+- New Flight page resolves strict user-calendar default server-side;
+- Manual Flight receives that date/result from the server;
+- remove the client UTC-calendar fallback as new-flight authority;
+- stored/edit date remains authoritative and unchanged;
+- off-block/takeoff/landing/on-block remain explicitly UTC;
+- fail closed with editable date + controlled Needs configuration state when no derived default is available.
 
 ### P1.4 — Aircraft / rate defaults — BLOCKED BY P1.2
 

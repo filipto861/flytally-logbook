@@ -376,21 +376,29 @@ Reconciliation against the actual repository:
 
 The reviewer could not access the private repository directly; repository-specific findings above were therefore re-verified against the actual repo before acceptance.
 
-### P1.2 — Strict calendar primitive + configuration boundary — ACTIVE / IMPLEMENTATION CANDIDATE
+### P1.2 — Strict calendar primitive + configuration boundary — DONE / VERIFIED
 
-Implementation candidate:
+Delivered through PR #259 and merged to canonical `main` as `445454b73bfad305264ed10ce74bc02335474c8c`:
 - added `lib/calendar-date.ts` with strict named-timezone validation and deterministic `YYYY-MM-DD` derivation from an injected instant;
 - added `lib/data/user-calendar.ts` with the frozen `resolved / needs_configuration / unavailable` result contract and injectable reader for deterministic tests;
 - kept display-only `getUserTimezone()` fallback unchanged and separate;
-- Settings account writes now validate timezone before the transaction and redirect to a controlled field error instead of persisting an invalid/offset timezone;
+- Settings account writes validate timezone before the transaction and surface a controlled field error instead of persisting an invalid/offset timezone;
 - invalid timezone blocks the whole account-settings transaction, so unrelated field edits cannot partially persist;
-- development ownership registry now explicitly owns the two new runtime files;
-- focused unit/source-contract coverage added for UTC/Prague/Los Angeles/Auckland/Kathmandu/Lord Howe, DST boundaries, aliases, raw offsets, invalid/missing/blank/read-failure states and authority separation;
-- existing authoritative Settings browser case now also proves invalid timezone blocks the transaction and preserves the previously persisted account values.
+- development ownership registry explicitly owns the two new runtime files;
+- focused unit/source-contract coverage proves UTC/Prague/Los Angeles/Auckland/Kathmandu/Lord Howe, DST boundaries, aliases, raw offsets, invalid/missing/blank/read-failure states and authority separation;
+- authoritative Settings browser acceptance proves invalid timezone blocks the transaction and preserves previously persisted account values.
 
-No Manual Flight, Aircraft Manager, Quick Add or GPS consumer rewiring is included in P1.2.
+Exact release evidence on implementation head `c38ac15a673f770c2ae8cd13a4b02a32c70188dd`, candidate `b8520903792d8af18f502469b028b3ab59c9c098bb47bf5bcbd42e5021fc13b5`:
+- source PASS;
+- TypeScript PASS;
+- aggregate **1419/1419 PASS**;
+- build **41/41 PASS**;
+- PostgreSQL **99/99 PASS**;
+- browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- domain/scale N/A;
+- required evidence satisfied; blocked evidence none.
 
-Verification is pending; no PASS is claimed until local planner-selected evidence is observed.
+No Manual Flight, Aircraft Manager, Quick Add or GPS consumer rewiring was included in P1.2.
 
 ### P1.3 — Manual flight default
 
