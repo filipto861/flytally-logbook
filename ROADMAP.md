@@ -797,7 +797,13 @@ Revised 0E milestones:
    - FEATURES was reviewed and remains unchanged because 0E.4 is development verification infrastructure only; DEVELOPMENT, ROADMAP, CHANGELOG and the detailed 0E.4 contract are reconciled;
    - legacy full `verify:browser` remains a manual diagnostic and legacy static `verify:release` remains the compatibility full path; neither was silently redefined;
    - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred.
-6. **0E.5 — negative/selection/freshness/config regression coverage — NEXT**;
+6. **0E.5 — negative/selection/freshness/config regression coverage — ACTIVE**;
+   - harden exact-ledger reuse negatives for schema, candidate, gate, evidence class, exit status and effective configuration;
+   - prove build evidence is reusable only while the current production-build identity still matches the ledger artifact;
+   - prove browser-risk evidence invalidates on selection, verification-config, toolchain, fixture-contract or build freshness drift;
+   - extend candidate freshness coverage from untracked files to tracked dirty files outside an explicit path candidate, while base candidates absorb the dirty file instead of hiding it;
+   - assert verification-config/toolchain/browser-fixture identity covers the files that actually define release evidence;
+   - no product runtime, DB schema, certification, backup, timezone semantics, browser DB architecture or worker-count change.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
 8. **0E.7 — exact-candidate verification / closeout**.
 
