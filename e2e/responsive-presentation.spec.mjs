@@ -5,21 +5,6 @@ import { resetF43GpsSafetyPilotFixture,resetSafetyPilotPicFixture } from "./brow
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
 
-){
-  await gpsForm.locator('input[name="part_'+index+'_date"]').fill("2026-10-03");
-  await gpsForm.locator('input[name="part_'+index+'_offBlock"]').fill(offBlock);
-  await gpsForm.locator('input[name="part_'+index+'_takeoff"]').fill(takeoff);
-  await gpsForm.locator('input[name="part_'+index+'_landing"]').fill(landing);
-  await gpsForm.locator('input[name="part_'+index+'_onBlock"]').fill(onBlock);
-  const starts=gpsForm.locator('input[name="part_'+index+'_starts"]');
-  const total=(await starts.inputValue())||"1";
-  await starts.fill(total);
-  await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
-  await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
-  await expect(gpsForm.locator('input[name="part_'+index+'_movementEvidenceRecorded"]')).not.toBeChecked();
-  await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(note);
-}
-
 test("3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 responsive coverage requires the isolated browser database.");
   await loginBrowserPilot(page,"/flights/new");
