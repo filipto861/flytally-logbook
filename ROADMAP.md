@@ -780,6 +780,8 @@ Revised 0E milestones:
    - `browser-risk-selection.mjs` validates target existence/project/baseline uniqueness, produces deterministic target union + selection hash, and blocks changed diagnostic-only/unowned E2E specs;
    - planner schema v2 exposes `browserEvidence` and browser candidates now require a production build artifact even when the product module itself did not otherwise select build;
    - implementation verification is **pending**; no browser runner/release semantics changed yet, and legacy `verify:release` / full `verify:browser` remain untouched.
+   - first local 0E.4a verification attempt at `c9c73a0` passed development-pipeline **91/91**, planner, TypeScript, aggregate regression **1386/1386** and production build **41/41**, but the planner exposed four generated local artifacts (`test-results/.last-run.json` and three scale-evidence JSON files) as dirty/untracked candidate members; this is evidence-integrity noise, so the attempt is not the final exact-candidate closeout;
+   - follow-up fix ignores those generated local verification artifacts and adds a regression proving ignored artifacts do not affect candidate identity; exact current-head verification remains pending.
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
