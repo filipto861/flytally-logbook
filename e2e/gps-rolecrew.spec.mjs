@@ -367,21 +367,6 @@ test("F4.2 split-boundary change clears RoleCrew overrides with a visible notice
 });
 
 
-){
-  await gpsForm.locator('input[name="part_'+index+'_date"]').fill("2026-10-03");
-  await gpsForm.locator('input[name="part_'+index+'_offBlock"]').fill(offBlock);
-  await gpsForm.locator('input[name="part_'+index+'_takeoff"]').fill(takeoff);
-  await gpsForm.locator('input[name="part_'+index+'_landing"]').fill(landing);
-  await gpsForm.locator('input[name="part_'+index+'_onBlock"]').fill(onBlock);
-  const starts=gpsForm.locator('input[name="part_'+index+'_starts"]');
-  const total=(await starts.inputValue())||"1";
-  await starts.fill(total);
-  await gpsForm.locator('input[name="part_'+index+'_landingsDay"]').fill(total);
-  await gpsForm.locator('input[name="part_'+index+'_landingsNight"]').fill("0");
-  await expect(gpsForm.locator('input[name="part_'+index+'_movementEvidenceRecorded"]')).not.toBeChecked();
-  await gpsForm.locator('textarea[name="part_'+index+'_note"]').fill(note);
-}
-
 
 test("F4.3 common Manual Safety Pilot persists explicit Actual PIC without account link",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F4.3 Manual Safety Pilot coverage requires the isolated browser database.");
