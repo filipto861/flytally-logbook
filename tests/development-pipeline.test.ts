@@ -150,6 +150,8 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.match(browser,/name: Legacy full Chromium diagnostic/);
   assert.match(browser,/name: Diagnostic production build/);
   assert.match(browser,/name: Legacy full browser diagnostic/);
+  assert.match(browser,/flytally-browser-diagnostic-/);
+  assert.doesNotMatch(browser,/Authenticated browser acceptance/);
   assert.match(browser,/run: npm run build/);
   assert.match(workflow,/PostgreSQL acceptance tests/);
   assert.match(workflow,/inputs\.postgres == true/);
@@ -158,6 +160,8 @@ test("manual cloud verification mirrors the local-first release policy without a
   assert.match(workflow,/node-version: 24/);
   assert.match(browser,/node-version: 24/);
   assert.match(browser,/npm run test:browser/);
+  assert.doesNotMatch(workflow,/verify:release:risk/);
+  assert.doesNotMatch(browser,/verify:release:risk|verify:browser:risk/);
   assert.doesNotMatch(browser,/npm install --no-save --package-lock=false @playwright\/test/);
 });
 
