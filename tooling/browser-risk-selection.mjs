@@ -104,7 +104,7 @@ export function selectBrowserEvidence(candidate,classification){
   const targets=browser.targets??{};
   const harness=browserHarnessRule();
   if(classification.risks?.includes("full-ci")){
-    addIds(fileTargetIds,browser.harnessTargets);
+    addIds(targetIds,browser.harnessTargets);
     if((browser.harnessTargets??[]).length===0)blockers.push("browser:full-ci:browser-harness-target-set-empty");
   }
 
