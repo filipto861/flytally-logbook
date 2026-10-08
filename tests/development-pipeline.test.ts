@@ -11,7 +11,10 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 test("development pipeline keeps Vercel build separate from tests",()=>{
   const pkg=JSON.parse(read("package.json"));
   assert.equal(pkg.scripts.build,"next build");
-  assert.equal(pkg.scripts.verify,"node tooling/verify-app.mjs");\n  assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");\n  assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");\n  assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
+  assert.equal(pkg.scripts.verify,"node tooling/verify-app.mjs");
+  assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");
+  assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");
+  assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
   assert.equal(typeof pkg.scripts["test:target"],"string");
   assert.equal(pkg.scripts["scope:changed"],"node tooling/development-scope.mjs");
   assert.equal(pkg.scripts["verify:plan"],"node tooling/verify-plan.mjs");
