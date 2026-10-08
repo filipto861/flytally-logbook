@@ -873,17 +873,57 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (DISCOVERY / DESIGN)
+## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.1 CONTRACT REVIEW)
 
-Phase 1 starts with discovery/design only. Runtime implementation remains blocked until the contract below is frozen and reviewed.
+Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
+Issue: #144
 
-Before code:
-- define which defaults use configured user calendar timezone;
-- identify evidence that must remain UTC;
-- define midnight/day-boundary and DST tests;
-- define timezone-setting changes versus already-persisted records;
-- decide whether any existing persisted data requires treatment;
-- define backup/export/edit consequences.
+### P1.0 — Discovery / semantic inventory — DONE
+
+Repository discovery on `main@eafc347fe00e781f966cc328da67ec24e52c8287` confirmed:
+- Manual New Flight date is hard-coded to Prague in `getManualEntryDefaults()`;
+- Aircraft Manager and Quick Add use module-level Prague `today` values for saveable rate dates;
+- FlightForm has an independent UTC-calendar fallback when an initial date is absent;
+- existing viewer-timezone helpers are deliberately presentation-resilient and therefore are **not** suitable as saveable-default authority;
+- Settings currently persists raw timezone text without IANA validation;
+- `flights.date` and `rates.valid_from` are persisted date-only authority and must not be reinterpreted after save;
+- current server GPS/FCL.050 path is explicitly UTC through `lib/kml.ts -> utcParts()`; the Prague `track-processing.localParts()` helper is legacy/dormant for server consumers;
+- portable backup/restore preserves settings and stored calendar dates directly, so no migration or backup-version change is currently justified.
+
+### P1.1 — Contract freeze + independent review — ACTIVE
+
+Frozen draft direction:
+- future saveable "today" defaults use the signed-in user's valid configured IANA timezone;
+- invalid/missing persisted timezone fails closed for saveable defaults instead of silently becoming Prague;
+- presentation-only timestamp fallback remains unchanged;
+- Settings rejects new invalid timezone values;
+- explicit pilot-entered calendar date wins and is never auto-converted at save;
+- timezone changes affect future defaults only, never existing flight/rate dates;
+- GPS/FCL.050 timeline evidence remains UTC;
+- DB migration / historical backfill / portable-backup version bump are N/A unless new evidence changes the contract;
+- no module-level saveable `today` constants;
+- an already-open form is an in-progress draft and is not silently rolled over at midnight.
+
+Before runtime code:
+- obtain independent second-AI review of the detailed contract;
+- reconcile review findings against actual repo and project fail-closed rules;
+- update this roadmap if scope/decisions change.
+
+### P1.2 — Strict calendar primitive + configuration boundary — BLOCKED BY P1.1
+
+Pure date-in-zone helper, strict saveable-default timezone resolver, Settings timezone validation/error state, focused unit/source-contract tests.
+
+### P1.3 — Manual flight default — BLOCKED BY P1.2
+
+Server-provided user-calendar date for New Flight; remove UTC fallback as new-flight authority; preserve stored/edit date and all UTC flight-time semantics.
+
+### P1.4 — Aircraft / rate defaults — BLOCKED BY P1.2
+
+Remove Prague module-level `today` values from Aircraft Manager and Quick Add; use strict user-calendar context while preserving explicit dates and historical rates.
+
+### P1.5 — GPS / backup invariance + exact-candidate closeout — BLOCKED BY P1.3/P1.4
+
+Prove GPS UTC behavior unchanged, preserve backup/restore/export calendar-date authority, decide legacy helper retirement only from evidence, run exact risk-scoped verification, and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
