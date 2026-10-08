@@ -593,6 +593,18 @@ The full run again emitted a Windows/PostgreSQL `could not reserve shared memory
 
 Next milestone is **0C.2a helper-ownership reconciliation**. This is a read/ownership cleanup only: review helpers duplicated across the newly split domain specs, promote only genuinely cross-domain primitives, keep domain-specific GPS/presentation helpers local, preserve centralized browser DB fixtures, exact 48 logical tests, workers=1 and both Playwright projects.
 
+0C.2a implementation candidate:
+- promoted only generic cross-domain primitives into `e2e/browser-actions.mjs`: `expectAuthenticatedRoute`, `ensureDetailsOpen`, and `holdPost`; existing `expectNoHorizontalOverflow` and `loginBrowserPilot` remain there;
+- removed duplicated local `expectAuthenticatedRoute` implementations from public-shell and Manual RoleCrew/verification;
+- removed duplicated local `holdPost` implementations from Manual authority/certification and settings/connections mutations;
+- created domain-scoped `e2e/gps-actions.mjs` for the six GPS interaction helpers genuinely shared by GPS functional and responsive-presentation domains: `openGpsFlightContext`, `selectGpsCommonRole`, `selectGpsActualPicMode`, `openGpsTrackReview`, `splitGpsIntoTwo`, and `completeF43GpsPart`;
+- `gps-actions.mjs` consumes the generic `ensureDetailsOpen` primitive instead of duplicating generic details behavior;
+- GPS-specific helpers were **not** added to the generic browser-action module; presentation-specific `applyF6PresentationState` remains local to responsive presentation; shell-only `navigateMain` remains local to public-shell;
+- exact source inventory remains **48 unique logical acceptance tests** with no duplicate names; `browser-db.mjs`, fixture IDs, bootstrap, both Playwright projects, workers=1 and retry semantics are unchanged;
+- structure tests now guard generic-vs-GPS helper ownership and reject reintroduced local duplicates.
+
+0C.2a verification is **PENDING**. Required evidence: targeted browser-structure/scope/pipeline contracts + TypeScript, focused GPS and responsive specs because both consume the new GPS helper module, focused mutation/authority or full browser coverage for shared `holdPost`, and the complete serialized browser gate. No 0C.3 project×matrix change starts until this evidence is green.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
