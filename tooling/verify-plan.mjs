@@ -17,8 +17,13 @@ export function createVerificationPlan(argv) {
   const domainBlocked=domainRequired
     ?directDomain.missingModules.map((moduleId)=>"domain-unit:"+moduleId+":missing-approved-tests")
     :[];
+  const sourceRequired=classification.requiredEvidence.includes("application-source-contract");
+  const sourceGroups=classification.testGroups.filter((groupId)=>groupId==="development-pipeline"||groupId==="ui-contract");
+  const sourceBlocked=sourceRequired&&sourceGroups.length===0
+    ?["application-source-contract:missing-approved-group"]
+    :[];
   const browserEvidence=selectBrowserEvidence(candidate,classification);
-  const blockedEvidence=[...domainBlocked,...browserEvidence.blockers];
+  const blockedEvidence=[...domainBlocked,...sourceBlocked,...browserEvidence.blockers];
 
   return {
     schemaVersion: 2,
@@ -39,6 +44,10 @@ export function createVerificationPlan(argv) {
       aggregateGates: classification.aggregateGates,
       buildArtifactRequired: classification.buildArtifactRequired,
       browserEvidence,
+      sourceEvidence:{
+        required:sourceRequired,
+        groups:sourceGroups,
+      },
       directEvidence: {
         "domain-unit": {
           required: domainRequired,
@@ -78,6 +87,7 @@ function printHuman(result) {
   line("browser_selection_hash",plan.browserEvidence.selectionHash);
   line("browser_targets",plan.browserEvidence.targets.map((target)=>target.id).join(",")||"none");
   line("browser_blockers",plan.browserEvidence.blockers.join(",")||"none");
+  line("source_groups",plan.sourceEvidence.groups.join(",")||"none");
   line("domain_unit_modules", plan.directEvidence["domain-unit"].modules.join(",") || "none");
   line("domain_unit_tests", plan.directEvidence["domain-unit"].tests.join(",") || "none");
   line("blocked_evidence", plan.blockedEvidence.join(",") || "none");
