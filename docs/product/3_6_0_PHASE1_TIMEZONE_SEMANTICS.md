@@ -423,12 +423,21 @@ Exact release evidence on implementation head `99babf404656f02cd3a07dcb53636a37d
 - scale N/A;
 - required evidence satisfied; blocked evidence none.
 
-### P1.4 — Aircraft / rate defaults
+### P1.4 — Aircraft / rate defaults — ACTIVE / IMPLEMENTATION CANDIDATE
 
-Scope:
-- remove both module-level Prague `today` constants;
-- wire Aircraft Manager and Quick Add to the strict calendar context;
-- preserve explicit date edits and stored rate history.
+Candidate wiring:
+- Aircraft & Airports resolves `getUserSaveableCalendarDefault(userId)` server-side and passes the result to Aircraft Manager;
+- New Flight reuses its already-resolved strict calendar result for Quick Add;
+- Aircraft Manager and Quick Add contain no module-level Prague/UTC/browser-local `today` authority;
+- resolved date initializes new `initial_valid_from` and new rate-history `valid_from`;
+- visible Aircraft Manager dates remain manually editable when automatic derivation is unavailable;
+- Quick Add unresolved state shows controlled guidance and submits an empty effective date rather than guessing;
+- `initialRateDateError()` rejects a positive initial hourly rate without a valid explicit effective date before persistence;
+- no-rate aircraft creation remains allowed;
+- historical rate rows are not rewritten or reinterpreted after timezone changes;
+- rate lookup remains date-only.
+
+Verification pending on the exact candidate.
 
 ### P1.5 — GPS / backup invariance + closeout
 
