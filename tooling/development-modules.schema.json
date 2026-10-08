@@ -33,7 +33,8 @@
         "buildArtifact",
         "gateRequirements",
         "riskRequirements",
-        "dedicatedAcceptanceSources"
+        "dedicatedAcceptanceSources",
+        "directEvidenceSources"
       ],
       "properties": {
         "behavioralClasses": {
@@ -132,6 +133,18 @@
             },
             "browser-acceptance": {
               "const": "browser"
+            }
+          },
+          "additionalProperties": false
+        },
+        "directEvidenceSources": {
+          "type": "object",
+          "required": [
+            "domain-unit"
+          ],
+          "properties": {
+            "domain-unit": {
+              "const": "domain-unit"
             }
           },
           "additionalProperties": false
