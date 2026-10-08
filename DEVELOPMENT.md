@@ -214,11 +214,13 @@ Final Phase 0E closeout used verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac
 
 Documentation-only candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f8318937865f75a6694c732` on exact head `2969fae73e151044f0a2e6962d7abd57e8983da9` passed `verify:release:risk` with no required evidence or blockers; source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly N/A.
 
-### Phase 0F hygiene and Phase 0 closeout — ACTIVE
+### Phase 0F hygiene and Phase 0 closeout — DONE / VERIFIED
 
-Phase 0F is documentation/repository hygiene and final Phase 0 closure only. Reconcile executable tooling with docs, inspect stale PR/branch state before deleting anything, retain exact verification evidence, and review ROADMAP / FEATURES / CHANGELOG consistency. Do not start 3.6.0 saved-date/timezone runtime implementation until Phase 0F closes.
+Phase 0F was documentation/repository hygiene and final Phase 0 closure only. Executable tooling was reconciled with docs, stale PR/branch state was inspected conservatively, exact verification evidence was retained, and ROADMAP / FEATURES / CHANGELOG consistency was reviewed. No product runtime or timezone semantics changed.
 
 Initial 0F discovery confirms the documented verification command surface matches `package.json`. Seven branch heads are direct ancestors of `main`; no branch was deleted, and `chore/pre-f3-integration-anchor` remains intentionally retained as the recorded F3 rollback anchor. Explicit supersession was then proven for the five stale parallel PRs: #187 was replaced by merged #188/F0.1, #201 by merged #200/F1.4, #206 by merged #207/F2.2, and #231/#232 by the final F3.3/F3.4/F3.5 stack already ancestral to `main`. Those five PRs were closed without merge; their branches remain intact. PR #255 remains the active Phase 0 integration PR.
+
+Final Phase 0F verification used exact head `68ba83167c27e6de1e1027e007ea3b81acad17cc`, candidate `792ef0f2c8430a01f4bb1e24474b05991d0a83abee63650b7d72b8cb274892df`: `release_status=PASS`, all behavioral/heavy gates N/A, required evidence none, blocked evidence none. Phase 0 is therefore DONE / VERIFIED on the branch. Phase 1 runtime work remains blocked until PR #255 is merged into canonical `main`.
 
 
 
