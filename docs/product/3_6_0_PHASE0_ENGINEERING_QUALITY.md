@@ -894,6 +894,19 @@ The build gate records a candidate-bound build manifest including the candidate 
 - verified locally on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
 - planner smoke for `lib/commercial-readiness.ts` resolved `legal-commercial` to the two approved direct tests with `missingModules=[]` and `blockedEvidence=[]`; PostgreSQL/browser remained not selected.
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gates — ACTIVE**.
+
+0E.3 implementation candidate:
+- candidate-bound ledger records live only under ignored `.flytally/verification/<candidateId>/`;
+- `verify:app` / legacy `verify` run TypeScript, aggregate regression and build while keeping aggregate coverage outside behavioral evidence;
+- successful builds record a Next.js build identity; browser acceptance refuses missing, stale or mismatched build evidence with exit 3;
+- `verify:domain` runs only reviewed module-scoped direct tests;
+- `verify:postgres` runs the full localhost-only PostgreSQL acceptance path;
+- `verify:browser` is browser-only, forces retries=0/workers=1, requires `fullyParallel=false`, and consumes only same-candidate build evidence;
+- `verify:browser:with-build` is the compatibility build+browser wrapper;
+- the known UI-audit capture exclusion is machine-registered as explicit browser N/A, while any other raw skip prevents acceptance PASS;
+- canonical browser/PostgreSQL wrapper changes are themselves mapped back to browser/PostgreSQL acceptance risk;
+- `verify:release` remains the old compatibility path until 0E.4;
+- verification is pending before 0E.3 closeout.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
