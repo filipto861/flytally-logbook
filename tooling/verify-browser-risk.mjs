@@ -15,8 +15,8 @@ import {
 } from "./verification-ledger.mjs";
 import {
   browserRiskConfiguration,
+  buildBrowserRiskTitleGrep,
   compareExactTargetSet,
-  regexpEscape,
   reusableBrowserRiskLedger,
 } from "./verification-browser-risk.mjs";
 
@@ -143,7 +143,7 @@ export async function runBrowserRiskVerification(argv,env=process.env){
     rmSync(reportPath,{force:true});
     const specs=[...new Set(group.targets.map((target)=>target.spec))].sort();
     const titles=[...new Set(group.targets.map((target)=>target.title))].sort();
-    const grep="^(?:"+titles.map(regexpEscape).join("|")+")$";
+    const grep=buildBrowserRiskTitleGrep(titles);
     const runner=path.join(repositoryRoot,"tooling","run-auth-browser.mjs");
     const args=[
       runner,
