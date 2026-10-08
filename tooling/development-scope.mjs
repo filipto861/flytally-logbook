@@ -43,19 +43,38 @@ function owningTestGroups(file) {
   return groups;
 }
 
-function addTestGroup(id, selectedGroups, targetedTests, risks, gates) {
+function addEvidenceClass(evidenceClass, requiredEvidence) {
+  if (!evidenceClass || evidenceClass === "aggregate-regression") return;
+  const allowed = manifest.evidencePolicy?.behavioralClasses ?? [];
+  if (!allowed.includes(evidenceClass)) throw new Error("Unknown behavioral evidence class: " + evidenceClass);
+  requiredEvidence.add(evidenceClass);
+}
+
+function addTestGroup(id, selectedGroups, targetedTests, risks, gates, requiredEvidence) {
   const group = manifest.testGroups[id];
   if (!group) throw new Error("Unknown development test group: " + id);
   selectedGroups.add(id);
+  addEvidenceClass(group.evidenceClass, requiredEvidence);
   for (const risk of group.risks ?? []) risks.add(risk);
   mergeGates(gates, group.gates);
   for (const test of group.tests ?? []) targetedTests.add(test);
 }
 
-function addRule(entry, selectedGroups, targetedTests, risks, gates) {
+function addRule(entry, selectedGroups, targetedTests, risks, gates, requiredEvidence) {
   for (const risk of entry.risks ?? []) risks.add(risk);
   mergeGates(gates, entry.gates);
-  for (const id of entry.testGroups ?? []) addTestGroup(id, selectedGroups, targetedTests, risks, gates);
+  for (const id of entry.testGroups ?? []) addTestGroup(id, selectedGroups, targetedTests, risks, gates, requiredEvidence);
+}
+
+function addPolicyEvidence(risks, gates, requiredEvidence) {
+  for (const risk of risks) {
+    for (const evidenceClass of manifest.evidencePolicy?.riskRequirements?.[risk] ?? []) {
+      addEvidenceClass(evidenceClass, requiredEvidence);
+    }
+  }
+  for (const [gate, evidenceClass] of Object.entries(manifest.evidencePolicy?.gateRequirements ?? {})) {
+    if (gates[gate]) addEvidenceClass(evidenceClass, requiredEvidence);
+  }
 }
 
 export function classifyDevelopmentScope(files, title = "") {
@@ -66,16 +85,17 @@ export function classifyDevelopmentScope(files, title = "") {
   const risks = new Set();
   const selectedGroups = new Set();
   const targetedTests = new Set();
+  const requiredEvidence = new Set();
 
   for (const file of normalizedFiles) {
     const matchedModules = manifest.modules.filter((module) => pathMatches(module, file));
     for (const module of matchedModules) modules.add(module.id);
 
     const ownedGroups = owningTestGroups(file);
-    for (const groupId of ownedGroups) addTestGroup(groupId, selectedGroups, targetedTests, risks, gates);
+    for (const groupId of ownedGroups) addTestGroup(groupId, selectedGroups, targetedTests, risks, gates, requiredEvidence);
 
     const specialRules = manifest.specialRules.filter((rule) => pathMatches(rule, file));
-    for (const rule of specialRules) addRule(rule, selectedGroups, targetedTests, risks, gates);
+    for (const rule of specialRules) addRule(rule, selectedGroups, targetedTests, risks, gates, requiredEvidence);
 
     if (isDocumentation(file)) {
       risks.add("documentation");
@@ -83,7 +103,7 @@ export function classifyDevelopmentScope(files, title = "") {
     }
 
     if (isPresentation(file)) {
-      addRule(manifest.presentation, selectedGroups, targetedTests, risks, gates);
+      addRule(manifest.presentation, selectedGroups, targetedTests, risks, gates, requiredEvidence);
       continue;
     }
 
@@ -102,7 +122,7 @@ export function classifyDevelopmentScope(files, title = "") {
     }
 
     if (matchedModules.length > 0) {
-      for (const module of matchedModules) addRule(module, selectedGroups, targetedTests, risks, gates);
+      for (const module of matchedModules) addRule(module, selectedGroups, targetedTests, risks, gates, requiredEvidence);
     } else if (/^(app|components|lib)\//.test(file)) {
       modules.add("shared");
       risks.add("shared-runtime");
@@ -126,15 +146,22 @@ export function classifyDevelopmentScope(files, title = "") {
   if (forceFull) {
     risks.add("full-ci");
     for (const key of Object.keys(gates)) gates[key] = true;
-    for (const id of Object.keys(manifest.testGroups)) addTestGroup(id, selectedGroups, targetedTests, risks, gates);
+    for (const id of Object.keys(manifest.testGroups)) addTestGroup(id, selectedGroups, targetedTests, risks, gates, requiredEvidence);
   }
+
+  addPolicyEvidence(risks, gates, requiredEvidence);
+  const aggregateGates = gates.fullTests ? [...(manifest.evidencePolicy?.aggregateGates ?? [])] : [];
 
   return {
     ...gates,
+    schemaVersion: manifest.schemaVersion ?? manifest.version,
     modules: [...modules].sort(),
     risks: [...risks].sort(),
     testGroups: [...selectedGroups].sort(),
     targetedTests: [...targetedTests].sort(),
+    requiredEvidence: [...requiredEvidence].sort(),
+    aggregateGates: [...aggregateGates].sort(),
+    buildArtifactRequired: Boolean(gates.build),
   };
 }
 
@@ -174,6 +201,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
   try {
     const result = classifyDevelopmentScope(files, title);
+    process.stdout.write("schema_version=" + result.schemaVersion + "\n");
     process.stdout.write("postgres=" + result.postgres + "\n");
     process.stdout.write("scale=" + result.scale + "\n");
     process.stdout.write("browser=" + result.browser + "\n");
@@ -183,6 +211,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.stdout.write("risks=" + (result.risks.join(",") || "none") + "\n");
     process.stdout.write("test_groups=" + (result.testGroups.join(",") || "none") + "\n");
     process.stdout.write("targeted_tests=" + (result.targetedTests.join(",") || "none") + "\n");
+    process.stdout.write("required_evidence=" + (result.requiredEvidence.join(",") || "none") + "\n");
+    process.stdout.write("aggregate_gates=" + (result.aggregateGates.join(",") || "none") + "\n");
+    process.stdout.write("build_artifact=" + (result.buildArtifactRequired ? "required" : "not-required") + "\n");
     console.error(
       "Development scope: " + (result.modules.join(", ") || "none") +
       "; risks=" + (result.risks.join(", ") || "none") +
@@ -191,7 +222,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       "; browser=" + result.browser +
       "; fullTests=" + result.fullTests +
       "; build=" + result.build +
-      "; testGroups=" + (result.testGroups.join(", ") || "none"),
+      "; testGroups=" + (result.testGroups.join(", ") || "none") +
+      "; requiredEvidence=" + (result.requiredEvidence.join(", ") || "none") +
+      "; aggregateGates=" + (result.aggregateGates.join(", ") || "none") +
+      "; buildArtifact=" + (result.buildArtifactRequired ? "required" : "not-required"),
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
