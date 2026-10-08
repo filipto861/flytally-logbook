@@ -63,7 +63,8 @@ test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external 
 
 test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=>{
   const smoke=read("e2e/public-shell.spec.mjs");
-  assert.match(smoke,/browser-auth@example[.]test/);
+  const actions=read("e2e/browser-actions.mjs");
+  assert.match(actions,/browser-auth@example[.]test/);
   assert.match(smoke,/logbook_session/);
   assert.match(smoke,/navigateMain\(page,"Flights"\)/);
   assert.match(smoke,/navigateMain\(page,"Settings"\)/);
