@@ -1,27 +1,8 @@
 import { test,expect } from "@playwright/test";
-import { loginBrowserPilot } from "./browser-actions.mjs";
+import { holdPost,loginBrowserPilot } from "./browser-actions.mjs";
 import { resetAppearanceFixture,resetConnectionFixture,resetAccountSettingsFixture,resetConnectionManagerFixture } from "./browser-db.mjs";
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
-
-async function holdPost(page,pattern){
-  let releaseRequest=()=>{};
-  let posts=0;
-  const gate=new Promise(resolve=>{releaseRequest=resolve});
-  const handler=async route=>{
-    if(route.request().method()==="POST"){
-      posts+=1;
-      await gate;
-    }
-    await route.continue();
-  };
-  await page.route(pattern,handler);
-  return{
-    count:()=>posts,
-    release:releaseRequest,
-    cleanup:()=>page.unroute(pattern,handler),
-  };
-}
 
 test("appearance mutation disables duplicate submit and persists",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated mutation smoke requires the isolated CI database.");
