@@ -7,6 +7,7 @@ import { CandidateInputError,repositoryRoot } from "./verification-candidate.mjs
 import { evaluateEvidenceObservation } from "./evidence-contract.mjs";
 import { runCandidateBuild } from "./verification-build.mjs";
 import { runCommand } from "./verification-execution.mjs";
+import { reusableLedgerEntry } from "./verification-reuse.mjs";
 import {
   buildIdentityMatches,
   currentBuildIdentity,
@@ -46,6 +47,33 @@ export function browserRiskConfiguration(browserEvidence,buildArtifact=null){
     fixtureContractHash:browserEvidence.fixtureContractHash,
     buildArtifact:buildArtifact??null,
   };
+}
+
+export function reusableBrowserRiskLedger(candidate,browserEvidence,entry){
+  const artifact=entry?.effectiveConfiguration?.buildArtifact??null;
+  if(!artifact)return {reusable:false,reason:"build-artifact"};
+  const reuse=reusableLedgerEntry(entry,{
+    candidate,
+    gate:"browser-risk",
+    evidenceClass:"browser-acceptance",
+    configuration:browserRiskConfiguration(browserEvidence,artifact),
+    allowNA:!browserEvidence.required,
+  });
+  if(!reuse.reusable)return reuse;
+
+  const build=readVerificationLedgerEntry(candidate.candidateId,"build");
+  if(!build||build.exitCode!==0||build.evaluation?.status!=="PASS"||
+     !buildIdentityMatches(build.artifact,artifact)){
+    return {reusable:false,reason:"build-ledger"};
+  }
+  try{
+    if(!buildIdentityMatches(currentBuildIdentity(),artifact)){
+      return {reusable:false,reason:"build-output"};
+    }
+  }catch{
+    return {reusable:false,reason:"build-output"};
+  }
+  return {reusable:true,reason:"exact-match"};
 }
 
 function blockedLedger(candidate,argv,browserEvidence,reason,exitCode=3,buildArtifact=null){
