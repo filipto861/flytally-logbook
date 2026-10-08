@@ -119,6 +119,40 @@ test("ignored local verification artifacts do not contaminate candidate identity
   }
 });
 
+test("candidate identity changes when a tracked file outside an explicit candidate becomes dirty",async()=>{
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-candidate-tracked-dirty-"));
+  try{
+    const git=(args:string[])=>{
+      const result=spawnSync("git",args,{cwd:temp,encoding:"utf8"});
+      assert.equal(result.status,0,result.stderr||result.stdout);
+    };
+    git(["init"]);
+    git(["config","user.email","test@example.test"]);
+    git(["config","user.name","FlyTally Test"]);
+    fs.writeFileSync(path.join(temp,"tracked.txt"),"candidate\n");
+    fs.writeFileSync(path.join(temp,"other.txt"),"base\n");
+    git(["add","tracked.txt","other.txt"]);
+    git(["commit","-m","base"]);
+
+    const moduleUrl=pathToFileURL(path.join(root,"tooling","verification-candidate.mjs")).href;
+    const mod=await import(moduleUrl);
+    const first=mod.resolveVerificationCandidate(["tracked.txt"],temp).candidate;
+
+    fs.writeFileSync(path.join(temp,"other.txt"),"changed\n");
+    const second=mod.resolveVerificationCandidate(["tracked.txt"],temp).candidate;
+
+    assert.notEqual(second.candidateId,first.candidateId);
+    assert.deepEqual(second.worktree.files,["other.txt"]);
+    assert.deepEqual(second.worktree.outsideCandidate,["other.txt"]);
+
+    const baseCandidate=mod.resolveVerificationCandidate(["--base","HEAD"],temp).candidate;
+    assert.deepEqual(baseCandidate.files,["other.txt"]);
+    assert.deepEqual(baseCandidate.worktree.outsideCandidate,[]);
+  }finally{
+    fs.rmSync(temp,{recursive:true,force:true});
+  }
+});
+
 test("candidate identity changes when an untracked worktree file changes",async()=>{
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-candidate-v2-"));
   try{
