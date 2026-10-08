@@ -21,7 +21,8 @@
     "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build",
     "test:browser": "node tooling/run-auth-browser.mjs",
     "verify:browser": "npm run build && npm run test:browser",
-    "test:group": "node tooling/run-development-test-group.mjs"
+    "test:group": "node tooling/run-development-test-group.mjs",
+    "verify:plan": "node tooling/verify-plan.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
