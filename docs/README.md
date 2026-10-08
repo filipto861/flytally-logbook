@@ -12,6 +12,7 @@ This directory contains supporting documentation for the Logbook repository.
 - `design-language.md` — active design-language guidance.
 - `ux-audit.md` — current design/UI audit findings and closeout history.
 - `product/3_6_0_PHASE0_ENGINEERING_QUALITY.md` — active 3.6.0 pre-runtime engineering quality, test-architecture and development-workflow gate.
+- `product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md` — active 3.6.0 saved-date/timezone semantic contract and implementation milestones.
 - `product/V3_0_UX_CONSOLIDATION.md` — detailed UX/product consolidation record.
 - `product/MULTI_AIRCRAFT_SCALE_CONTRACT.md` — active Multi-aircraft source-of-truth contract.
 - `product/GPS_TOUCH_AND_GO_RELIABILITY.md` — Priority 1 GPS landing-detection investigation contract.
