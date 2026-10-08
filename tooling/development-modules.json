@@ -132,8 +132,9 @@
       "id": "postgres-harness",
       "prefixes": [],
       "files": [
+        "tooling/postgres-cli.mjs",
         "tooling/run-postgres-tests.mjs",
-        "tooling/postgres-cli.mjs"
+        "tooling/verify-postgres.mjs"
       ],
       "risks": [
         "tooling",
@@ -156,9 +157,12 @@
         "e2e/"
       ],
       "files": [
-        "tooling/run-auth-browser.mjs",
+        "playwright.config.mjs",
         "tooling/bootstrap-browser-smoke-db.mjs",
-        "playwright.config.mjs"
+        "tooling/playwright-evidence-reporter.mjs",
+        "tooling/run-auth-browser.mjs",
+        "tooling/verify-browser-with-build.mjs",
+        "tooling/verify-browser.mjs"
       ],
       "risks": [
         "tooling",
