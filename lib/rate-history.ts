@@ -5,6 +5,12 @@ export function validIsoDate(value:unknown):value is string{
   return /^\d{4}-\d{2}-\d{2}$/.test(text)&&!Number.isNaN(Date.parse(`${text}T00:00:00Z`));
 }
 
+export function initialRateDateError(price:unknown,validFrom:unknown){
+  const amount=Number(price);
+  if(!Number.isFinite(amount)||amount<=0)return null;
+  return validIsoDate(validFrom)?null:"Enter a valid effective date for the initial hourly rate.";
+}
+
 export function effectiveRateForDate(rates:EffectiveRate[],date:string):EffectiveRate|null{
   if(!validIsoDate(date))return null;
   return rates
