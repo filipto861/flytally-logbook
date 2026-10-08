@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { classifyDevelopmentScope } from "./development-scope.mjs";
+import { selectDirectEvidenceForModules } from "./development-evidence.mjs";
 import { CandidateInputError, resolveVerificationCandidate } from "./verification-candidate.mjs";
 
 export function createVerificationPlan(argv) {
@@ -8,6 +9,13 @@ export function createVerificationPlan(argv) {
     candidate.files,
     options.forceAll ? "[full-ci] verify:plan --force-all" : "",
   );
+  const domainRequired=classification.requiredEvidence.includes("domain-unit");
+  const directDomain=domainRequired
+    ?selectDirectEvidenceForModules(classification.modules,"domain-unit")
+    :{evidenceClass:"domain-unit",modules:[],tests:[],missingModules:[]};
+  const blockedEvidence=domainRequired
+    ?directDomain.missingModules.map((moduleId)=>"domain-unit:"+moduleId+":missing-approved-tests")
+    :[];
 
   return {
     schemaVersion: 1,
@@ -27,7 +35,15 @@ export function createVerificationPlan(argv) {
       requiredEvidence: classification.requiredEvidence,
       aggregateGates: classification.aggregateGates,
       buildArtifactRequired: classification.buildArtifactRequired,
-      blockedEvidence: [],
+      directEvidence: {
+        "domain-unit": {
+          required: domainRequired,
+          modules: directDomain.modules,
+          tests: directDomain.tests,
+          missingModules: directDomain.missingModules,
+        },
+      },
+      blockedEvidence,
     },
   };
 }
@@ -54,6 +70,8 @@ function printHuman(result) {
   line("required_evidence", plan.requiredEvidence.join(",") || "none");
   line("aggregate_gates", plan.aggregateGates.join(",") || "none");
   line("build_artifact", plan.buildArtifactRequired ? "required" : "not-required");
+  line("domain_unit_modules", plan.directEvidence["domain-unit"].modules.join(",") || "none");
+  line("domain_unit_tests", plan.directEvidence["domain-unit"].tests.join(",") || "none");
   line("blocked_evidence", plan.blockedEvidence.join(",") || "none");
 }
 
@@ -65,6 +83,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     } else {
       printHuman(result);
     }
+    if(result.plan.blockedEvidence.length>0)process.exitCode=3;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(error instanceof CandidateInputError ? error.exitCode : 2);
