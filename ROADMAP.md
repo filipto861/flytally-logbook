@@ -748,6 +748,9 @@ Revised 0E milestones:
    - canonical PostgreSQL/browser wrapper files are classified as their respective acceptance-harness risks so changes cannot evade the heavy gate;
    - low-level commands remain available; static `verify:release` remains untouched until 0E.4;
    - **verification pending**; 0E.3 is not DONE yet.
+   - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
+   - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
+   - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**;
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
