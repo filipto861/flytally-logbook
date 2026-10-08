@@ -19,6 +19,7 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   assert.equal(typeof pkg.scripts["test:target"],"string");
   assert.equal(pkg.scripts["scope:changed"],"node tooling/development-scope.mjs");
   assert.equal(pkg.scripts["verify:plan"],"node tooling/verify-plan.mjs");
+  assert.equal(pkg.scripts["verify:iterate"],"node tooling/verify-iterate.mjs");
   assert.equal(typeof pkg.scripts["test:postgres:full"],"string");
   assert.match(pkg.scripts["test:postgres"],/tooling\/run-postgres-tests[.]mjs core/);
   assert.equal(pkg.scripts["test:browser"],"node tooling/run-auth-browser.mjs");
