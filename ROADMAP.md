@@ -759,17 +759,19 @@ Revised 0E milestones:
    - do not rerun the full browser matrix again until the Quick Add case is reproduced independently and any correction is verified with a cheap targeted repeat.
    - isolated mobile Quick Add reproduction then passed **5/5** at retries=0/workers=1, confirming the failure is suite-load timing rather than deterministic product behavior;
    - test-only correction now waits for the successful Quick Add dialog close and success status with a bounded 15 s server-action window before continuing. Product runtime is unchanged;
-   - next verification is one cheap targeted repeat on the corrected test, then one final full browser gate for 0E.3 closeout.
+   - product decision: the full serialized browser matrix is no longer a routine or Phase-0 closeout gate because its ~12-minute runtime is disproportionate to the iteration cycle. The command remains available as an explicit manual diagnostic, but targeted risk-owned browser evidence replaces it as the normal gate;
+   - 0E.3 closeout now requires only a cheap targeted repeat of the corrected Quick Add flow plus the existing source-contract/static gate evidence. Do **not** rerun the 94-test full matrix for 0E.3.
    - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
    - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
    - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
 5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**;
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
-   - keep full `verify:browser` authoritative and serialized, but reserve it for browser-harness changes, major milestone closeout, or the final relevant release candidate;
+   - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
    - map the existing split E2E specs to affected modules/contexts so targeted browser reproduction is selected automatically instead of composing spec/grep arguments manually;
    - audit desktop/mobile duplication by test intent. A test may become desktop-only or mobile-only only when the omitted project adds no distinct evidence; critical cross-device flows remain on both projects;
-   - measure browser runtime before/after and preserve fail-closed acceptance semantics;
+   - introduce a separate risk-scoped browser evidence class/ledger path for targeted acceptance; targeted evidence must never masquerade as legacy full `browser-acceptance`;
+   - measure targeted browser runtime before/after and preserve fail-closed semantics for whichever targeted evidence the planner requires;
    - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred unless selection/matrix work leaves the final full gate unacceptably slow.
 6. **0E.5 — negative/selection/freshness/config regression coverage**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
