@@ -90,6 +90,8 @@ That permits local/cloud runner drift.
 
 **Required correction:** pin the browser test runner in the repository and use the same locked dependency locally and in the manual cloud workflow.
 
+**Resolved in Phase 0A:** `@playwright/test` is now a repository-pinned direct dev dependency at 1.55.0, the lockfile carries the same version, local runners execute the repository-pinned CLI, and the manual cloud workflow installs only locked application dependencies before using that pinned runner.
+
 ### P1 — Browser suite is a growing monolith
 
 `e2e/public-shell.spec.mjs` now combines public auth-boundary smoke, authenticated product navigation, flight-entry contracts, certification/voiding, settings/connections mutations and several responsive/theme matrices.
@@ -819,18 +821,20 @@ Ledger entries record at minimum:
 
 Stale/mismatched entries are not evidence.
 
-#### Canonical commands
+#### Canonical commands — 0E.0 design snapshot
 
 - `test:target` — low-level explicit Node test-file runner.
 - `test:group` — homogeneous registry-backed source-contract groups.
 - `verify:plan` — side-effect-free plan with human and JSON output; `scope:changed` remains compatible.
 - `verify:app` — application-level gate only: TypeScript + aggregate Node regression + production build. It does not satisfy domain/PostgreSQL/browser evidence by itself.
 - `verify:postgres` — full PostgreSQL acceptance. Core/scale/full test commands remain lower-level iteration/milestone tools.
-- `verify:browser` — browser-only full authenticated acceptance. It requires a fresh build artifact/ledger from the same candidate, forces retries=0 and workers=1, preserves fullyParallel=false, and rejects narrowing/filtering/sharding.
+- `verify:browser` — originally proposed as browser-only full authenticated acceptance.
 - `verify:browser:with-build` — temporary compatibility convenience for the previous build+browser behavior.
 - `verify:domain` — direct domain-unit evidence using registry-approved exact test paths only.
-- `verify:release` — risk-based plan + executor + ledger.
-- `verify:release:full` / explicit `--force-all` — compatibility/full escape hatch during migration.
+- `verify:release` — originally proposed as risk-based plan + executor + ledger.
+- `verify:release:full` / explicit `--force-all` — originally proposed compatibility/full escape hatch.
+
+Final implementation deliberately supersedes those proposal names where required by compatibility review: static `verify:release` remains unchanged, `verify:release:risk` is the canonical candidate-bound release executor, `verify:browser:risk` is the only authoritative planner-bound browser release evidence, `verify:browser` and `verify:browser:with-build` remain legacy full-matrix diagnostics, and `verify:release:full` was not implemented. Forced all-gate verification is `verify:release:risk --force-all`.
 
 No separate `verify:source` command is required: direct `test:group` executions may emit authoritative `application-source-contract` ledger entries.
 
@@ -975,8 +979,8 @@ Do not change product runtime, browser fixture architecture, DB schema, certific
 
 Initial audit:
 - DEVELOPMENT and executable package commands are aligned for the canonical/compatibility verification surface;
-- ancestry audit proved seven historical branches are fully contained in `main`; they are cleanup candidates but have not been deleted;
-- open PRs #187, #201, #206, #231 and #232 are diverged/non-mergeable and must not be closed merely because equivalent later behavior appears to exist; explicit supersession proof is required;
+- ancestry audit proved seven historical branches are fully contained in `main`; no branch was deleted. The named `chore/pre-f3-integration-anchor` remains intentionally retained as the recorded F3 rollback anchor, and other historical branch deletion is deferred unless retirement is explicitly approved;
+- explicit supersession was proven and the five parallel PRs were closed without merge: #187 is replaced by merged #188/F0.1, #201 by merged #200/F1.4, #206 by merged #207/F2.2, and #231/#232 by the final F3.3/F3.4/F3.5 stack already ancestral to `main`;
 - active Phase 0 PR is #255;
 - no product runtime, schema, certification, backup or timezone semantics changed.
 
