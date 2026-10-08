@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { classifyDevelopmentScope } from "./development-scope.mjs";
+import { selectBrowserEvidence } from "./browser-risk-selection.mjs";
 import { selectDirectEvidenceForModules } from "./development-evidence.mjs";
 import { CandidateInputError, resolveVerificationCandidate } from "./verification-candidate.mjs";
 
@@ -13,9 +14,11 @@ export function createVerificationPlan(argv) {
   const directDomain=domainRequired
     ?selectDirectEvidenceForModules(classification.modules,"domain-unit")
     :{evidenceClass:"domain-unit",modules:[],tests:[],missingModules:[]};
-  const blockedEvidence=domainRequired
+  const domainBlocked=domainRequired
     ?directDomain.missingModules.map((moduleId)=>"domain-unit:"+moduleId+":missing-approved-tests")
     :[];
+  const browserEvidence=selectBrowserEvidence(candidate,classification);
+  const blockedEvidence=[...domainBlocked,...browserEvidence.blockers];
 
   return {
     schemaVersion: 1,
@@ -35,6 +38,7 @@ export function createVerificationPlan(argv) {
       requiredEvidence: classification.requiredEvidence,
       aggregateGates: classification.aggregateGates,
       buildArtifactRequired: classification.buildArtifactRequired,
+      browserEvidence,
       directEvidence: {
         "domain-unit": {
           required: domainRequired,
@@ -70,6 +74,10 @@ function printHuman(result) {
   line("required_evidence", plan.requiredEvidence.join(",") || "none");
   line("aggregate_gates", plan.aggregateGates.join(",") || "none");
   line("build_artifact", plan.buildArtifactRequired ? "required" : "not-required");
+  line("browser_source",plan.browserEvidence.authoritativeSource);
+  line("browser_selection_hash",plan.browserEvidence.selectionHash);
+  line("browser_targets",plan.browserEvidence.targets.map((target)=>target.id).join(",")||"none");
+  line("browser_blockers",plan.browserEvidence.blockers.join(",")||"none");
   line("domain_unit_modules", plan.directEvidence["domain-unit"].modules.join(",") || "none");
   line("domain_unit_tests", plan.directEvidence["domain-unit"].tests.join(",") || "none");
   line("blocked_evidence", plan.blockedEvidence.join(",") || "none");
