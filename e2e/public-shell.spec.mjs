@@ -1,5 +1,5 @@
 import { test,expect } from "@playwright/test";
-import { expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
+import { expectAuthenticatedRoute,expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
 
 test("login shell is usable without horizontal overflow",async({page})=>{
   await page.goto("/login");
@@ -47,11 +47,6 @@ test("login submission exposes a disabled pending state before the request compl
 });
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
-
-async function expectAuthenticatedRoute(page,heading){
-  await expect(page.getByRole("heading",{name:heading,level:1})).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-}
 
 async function navigateMain(page,label){
   const toggle=page.getByRole("button",{name:"Open navigation"});
