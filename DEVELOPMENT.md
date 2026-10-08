@@ -67,6 +67,31 @@ Use `--json` for machine-readable plan output. Every plan includes:
 
 Phase 0E.1 does **not** execute tests, builds, PostgreSQL or browser fixtures and does not yet claim evidence PASS. Evidence availability blocking and the execution ledger are subsequent 0E milestones.
 
+
+### Phase 0E.2 direct domain evidence registry
+
+Direct `domain-unit` evidence is now explicit **available evidence** on the existing module registry. Required evidence is still derived only from the canonical risk/gate policy; modules do not duplicate a `requiredEvidence` field.
+
+A module whose risks require `domain-unit` declares exact reviewed test paths under:
+
+```json
+{
+  "evidenceTests": {
+    "domain-unit": ["tests/example.test.ts"]
+  }
+}
+```
+
+Rules:
+- exact repository-relative test paths only; no globs or inferred filenames;
+- current domain-risk modules must have at least one approved direct test;
+- direct domain evidence files must not be PostgreSQL integration tests or source-contract group members;
+- the same approved pure behavioral test may support more than one module when it directly exercises both contracts;
+- adding a file to aggregate `npm test` does not make it direct evidence automatically.
+
+`verify:plan` now exposes the approved direct-domain modules/tests under `plan.directEvidence["domain-unit"]`. Missing approved tests are reported in `blockedEvidence`; a blocked plan exits 3 after emitting the plan. The current registry is fully covered, so normal current domain modules have no missing-domain block.
+
+
 ### Changed-scope execution contract
 
 `npm run scope:changed -- <path> [<path> ...]` is a **planner**, not an executor. It must never connect to PostgreSQL, reset browser fixtures, start Playwright or run a build by itself. Its output is the explicit verification contract for the supplied change set:
