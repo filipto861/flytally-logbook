@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -11,6 +12,24 @@ import {
 } from "../tooling/verification-ledger.mjs";
 
 const root=path.resolve(import.meta.dirname,"..");
+
+test("Phase 0E canonical verification modules are syntactically parseable",()=>{
+  for(const file of [
+    "tooling/verification-ledger.mjs",
+    "tooling/verification-execution.mjs",
+    "tooling/verification-build.mjs",
+    "tooling/verify-app.mjs",
+    "tooling/verify-domain.mjs",
+    "tooling/verify-postgres.mjs",
+    "tooling/verify-browser.mjs",
+    "tooling/verify-browser-with-build.mjs",
+    "tooling/playwright-evidence-reporter.mjs",
+    "playwright.config.mjs",
+  ]){
+    const result=spawnSync(process.execPath,["--check",path.join(root,file)],{cwd:root,encoding:"utf8"});
+    assert.equal(result.status,0,file+" failed node --check:\n"+result.stderr);
+  }
+});
 
 test("verification ledger writes and reads one candidate-bound gate entry",()=>{
   const candidateId="a".repeat(64);
