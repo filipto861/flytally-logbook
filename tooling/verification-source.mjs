@@ -1,18 +1,13 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { selectTestGroupsByEvidenceClass } from "./development-evidence.mjs";
 import { evaluateEvidenceObservation } from "./evidence-contract.mjs";
 import { runNodeTests } from "./verification-execution.mjs";
 import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
 import { writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 
-const manifestPath=fileURLToPath(new URL("./development-modules.json",import.meta.url));
-const manifest=JSON.parse(readFileSync(manifestPath,"utf8"));
-
 export function selectApplicationSourceContract(plan){
-  const groups=(plan.testGroups??[]).filter((id)=>manifest.testGroups?.[id]?.evidenceClass==="application-source-contract").sort();
-  const tests=[...new Set(groups.flatMap((id)=>manifest.testGroups[id]?.tests??[]))].sort();
+  const selected=selectTestGroupsByEvidenceClass(plan.testGroups,"application-source-contract");
   const required=(plan.requiredEvidence??[]).includes("application-source-contract");
-  return {required,groups,tests};
+  return {required,groups:selected.groups,tests:selected.tests};
 }
 
 export function applicationSourceConfiguration(plan){
