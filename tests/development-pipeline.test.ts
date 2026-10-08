@@ -12,6 +12,7 @@ test("development pipeline keeps Vercel build separate from tests",()=>{
   const pkg=JSON.parse(read("package.json"));
   assert.equal(pkg.scripts.build,"next build");
   assert.equal(pkg.scripts.verify,"node tooling/verify-app-compat.mjs");
+  assert.equal(pkg.scripts["verify:release"],"npm run typecheck && npm test && npm run test:postgres:full && npm run build");
   assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");
   assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
