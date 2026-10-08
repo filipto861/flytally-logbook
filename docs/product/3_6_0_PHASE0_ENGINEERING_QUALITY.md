@@ -932,7 +932,13 @@ The build gate records a candidate-bound build manifest including the candidate 
    - strict negative coverage for missing browser ownership, diagnostic-only E2E changes, stale/mismatched reuse, blocked release planning and legacy-browser authority passed in the same development-pipeline closeout;
    - DEVELOPMENT/ROADMAP/CHANGELOG and the detailed contract are reconciled; FEATURES was reviewed and remains unchanged because no product capability changed;
    - do not increase Playwright workers against the current shared mutable database; per-worker DB isolation requires a separate design/review.
-6. **0E.5 — negative/selection/freshness/config regression coverage — NEXT**.
+6. **0E.5 — negative/selection/freshness/config regression coverage — ACTIVE**.
+   - extend candidate freshness regression coverage to tracked dirty files outside an explicit candidate;
+   - make build/browser reuse freshness directly testable without changing their default production behavior;
+   - reject stale schema/gate/evidence/config/status reuse explicitly;
+   - prove browser-risk selection/config/toolchain/fixture/build drift invalidates release evidence;
+   - prove the deterministic identity hashes cover the actual verification/config/toolchain/fixture inputs;
+   - test/governance tooling only; product runtime and persistence semantics remain unchanged.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
 8. **0E.7 — exact-candidate verification / closeout**.
 
