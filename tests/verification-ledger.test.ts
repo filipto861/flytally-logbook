@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { parseNodeTestSummary } from "../tooling/verification-execution.mjs";
+import { explicitBrowserNotApplicable } from "../tooling/playwright-evidence-reporter.mjs";
 import {
   readVerificationLedgerEntry,
   verificationLedgerPath,
@@ -61,12 +62,23 @@ test("verification execution parses Node spec and TAP summaries without inventin
   assert.throws(()=>parseNodeTestSummary("no summary"),/Could not parse Node test summary/);
 });
 
+test("browser reporter maps only the registered audit exclusion to explicit N/A",()=>{
+  assert.equal(explicitBrowserNotApplicable({
+    annotations:[{type:"skip",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}],
+  }),true);
+  assert.equal(explicitBrowserNotApplicable({
+    annotations:[{type:"skip",description:"Unexpected browser skip"}],
+  }),false);
+  assert.equal(explicitBrowserNotApplicable({annotations:[]}),false);
+});
+
 test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migration separate",()=>{
   const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
   assert.equal(pkg.scripts.verify,"node tooling/verify-app.mjs");
   assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");
   assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
-  assert.equal(pkg.scripts["verify:browser"],"npm run build && npm run test:browser");
+  assert.equal(pkg.scripts["verify:browser"],"node tooling/verify-browser.mjs");
+  assert.equal(pkg.scripts["verify:browser:with-build"],"node tooling/verify-browser-with-build.mjs");
   assert.match(fs.readFileSync(path.join(root,".gitignore"),"utf8"),/^\.flytally\/$/m);
 });
