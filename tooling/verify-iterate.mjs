@@ -7,7 +7,6 @@ import { runTypecheckVerification,typecheckVerificationConfiguration } from "./v
 import { readVerificationLedgerEntry,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 import { reusableLedgerEntry } from "./verification-reuse.mjs";
 import { verificationConfigIdentity,declaredToolchainIdentity } from "./verification-identity.mjs";
-import { reusableBrowserRiskLedger,runBrowserRiskVerification } from "./verify-browser-risk.mjs";
 
 function parseIterationArgs(argv){
   const candidateArgs=[];
@@ -119,12 +118,14 @@ export async function runIterationVerification(argv,{env=process.env}={}){
   let browserLedger=null;
   let browserReused=false;
   if(parsed.withBrowser&&!cheapInvalid&&!cheapFailure&&!cheapBlocked){
+    const {reusableBrowserRiskLedger}=await import("./verification-browser-risk.mjs");
     browserLedger=parsed.rerun?null:readVerificationLedgerEntry(candidate.candidateId,"browser-risk");
     const browserReuse=browserLedger
       ?reusableBrowserRiskLedger(candidate,plan.browserEvidence,browserLedger)
       :{reusable:false,reason:"missing"};
     browserReused=browserReuse.reusable;
     if(!browserReused){
+      const {runBrowserRiskVerification}=await import("./verify-browser-risk.mjs");
       const browser=await runBrowserRiskVerification(parsed.candidateArgs,env);
       browserLedger=browser.ledger;
     }
