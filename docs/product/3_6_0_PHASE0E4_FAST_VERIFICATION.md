@@ -511,7 +511,9 @@ Current implementation candidate:
 , while Playwright applies grep to the composed full title containing project/file context;
 - selector corrected to match the escaped registered title as a fragment of Playwright's full title; exact planner-vs-planned-vs-actual `{spec,title,project}` equality remains the fail-closed authority check, so removing the anchor does not weaken evidence completeness;
 - regression added for Playwright full-title grep semantics;
-- exact fixed-head browser verification pending.
+- fresh-PC follow-up then failed the development-pipeline before browser execution (**98/101 PASS**) because the title-grep helper itself had been malformed by the source edit; all three failures shared that syntax root cause;
+- the malformed helper is repaired, the full-title grep regression remains, and generated `playwright-report/` output is ignored/regression-covered so it cannot contaminate candidate identity;
+- exact fixed-head verification pending.
 
 ### 0E.4c — risk-scoped browser executor
 - `verify:browser:risk`;
