@@ -91,6 +91,29 @@ Rules:
 
 `verify:plan` now exposes the approved direct-domain modules/tests under `plan.directEvidence["domain-unit"]`. Missing approved tests are reported in `blockedEvidence`; a blocked plan exits 3 after emitting the plan. The current registry is fully covered, so normal current domain modules have no missing-domain block.
 
+### Phase 0E.3 candidate-bound verification ledger and canonical gates
+
+Canonical verification executors now bind their observations to the exact `candidateId` produced by the planner and write local machine-readable records under ignored `.flytally/verification/<candidateId>/`.
+
+Available command surface in this implementation batch:
+- `npm run verify:app -- <candidate args>` — TypeScript, aggregate Node regression and production build. The legacy `npm run verify -- <candidate args>` is an alias. Aggregate regression remains non-behavioral evidence.
+- `npm run verify:domain -- <candidate args>` — only the registry-approved direct `domain-unit` tests for the affected modules; required-but-unavailable direct evidence exits 3 before execution.
+- `npm run verify:postgres -- <candidate args>` — complete PostgreSQL acceptance against the existing localhost-only fail-closed harness.
+- `npm run verify:browser -- <candidate args>` — browser-only authenticated acceptance. It requires a successful build ledger for the same candidate and a matching current Next.js build identity before any browser fixture reset.
+- `npm run verify:browser:with-build -- <candidate args>` — compatibility convenience that creates the candidate-bound production build first, then runs the browser-only gate.
+
+The low-level `test:postgres*`, `test:browser`, `test:target` and `test:group` commands remain available for iteration. The existing static `verify:release` compatibility path remains unchanged until Phase 0E.4 replaces it with the risk-based orchestrator.
+
+Browser acceptance is deliberately stricter than raw Playwright success:
+- canonical browser execution forces `--retries=0` and `--workers=1`;
+- `playwright.config.mjs` must remain `fullyParallel=false`;
+- a stale/missing/mismatched build ledger blocks the browser gate with exit 3;
+- raw Playwright skips are not acceptance PASS;
+- the dedicated UI-audit capture skip is registered explicitly as an N/A exclusion, so it remains distinguishable from an unexpected skipped acceptance test.
+
+Ledger files are local evidence artifacts, not repository state, and `.flytally/` is ignored by Git.
+
+
 
 ### Changed-scope execution contract
 
@@ -242,14 +265,15 @@ $env:SIGNING_SECRET="flytally-browser-signing-secret-not-production"
 npm run verify:browser
 ```
 
-`npm run test:browser` is the authenticated browser gate without the build step. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. `npm run verify:browser` adds the production build first.
+`npm run test:browser` remains the low-level authenticated browser runner. It fails before resetting the fixture unless both explicit browser-test flags are set; the bootstrap itself rejects a missing or non-local `DATABASE_URL`. Canonical `npm run verify:browser -- <candidate args>` is browser-only and first requires a fresh candidate-bound build ledger. Use `npm run verify:browser:with-build -- <candidate args>` when the compatibility build+browser flow is desired.
 
 ## PostgreSQL commands
 
 - `npm run test:postgres` — core database/integrity acceptance tests, excluding large scale fixtures.
 - `npm run test:postgres:scale` — retained 10k/50k/100k performance fixtures only.
 - `npm run test:postgres:full` — all PostgreSQL integration tests.
-- `npm run verify:release` — explicit TypeScript, complete unit/regression, PostgreSQL and production-build verification when a suitable PostgreSQL test database is configured.
+- `npm run verify:postgres -- <candidate args>` — canonical full PostgreSQL acceptance with candidate-bound ledger evidence.
+- `npm run verify:release` — temporary static compatibility path until the Phase 0E.4 risk-based orchestrator replaces it.
 
 The PostgreSQL runner now owns the integration-test intent: an explicitly invoked PostgreSQL command injects `FLYTALLY_POSTGRES_INTEGRATION=1` into its child test process after preflight. It fails before the suite when `DATABASE_URL` is missing or the `psql` client cannot be executed. A PostgreSQL gate must never report success by silently skipping the integration suite.
 
