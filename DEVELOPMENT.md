@@ -14,7 +14,7 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
    - persistence/schema/data-integrity work: relevant PostgreSQL acceptance.
    - known scale/performance hot paths: the retained scale fixture for that path.
    - unrelated heavy suites are not a default milestone requirement.
-4. Before the final PR/release candidate, run one complete local release gate appropriate to the change. `npm run verify` remains the normal application gate; add PostgreSQL/browser/scale coverage when the changed surface requires it.
+4. Before the final PR/release candidate, run the candidate-aware local release gate appropriate to the change: `npm run verify:release:risk -- <candidate>`. It consumes the planner and runs or reuses only the selected authoritative gates. `npm run verify` remains a compatibility application gate, not the final risk-based release decision.
 5. Do **not** rerun the full local gate merely because documentation, comments, or a stale test/source assertion was corrected after an already-valid full gate. Run the affected targeted test(s). Repeat a heavy local gate only when the correction changes runtime behaviour, persistence/schema, auth/security, certification/recency logic, performance-critical code, or invalidates earlier evidence.
 6. Publish one coherent candidate commit when practical. That commit creates/updates the PR. Vercel previews are currently intentionally skipped on non-production branches; local verification is the authoritative pre-merge gate.
 7. Merge only after the required **local** release gates for the exact candidate succeed. GitHub Actions are not a required merge/release gate; Vercel still performs the production build when the released commit can affect runtime output.
@@ -213,7 +213,7 @@ The hardening contract is fail-closed:
 
 Targeted group membership, PostgreSQL scale-test membership, and module/risk ownership are single-sourced in `tooling/development-modules.json`. The PostgreSQL runner reads its scale membership from that registry, and the manual cloud targeted path executes the registry-backed `ui-contract` group directly. `npm run test:ui` remains only a local convenience alias for the same group.
 
-The manual GitHub workflows remain **manual-only diagnostics**. They do not infer a diff or override the local risk decision; their targeted mode uses the same registry-backed group runner, while heavy PostgreSQL/browser jobs still require explicit manual selection.
+The manual GitHub workflows remain **manual-only diagnostics**. They do not infer a diff, write candidate-bound release authority, or override the local `verify:release:risk` decision. Their targeted mode uses the same registry-backed group runner; the PostgreSQL workflow requires explicit selection, and `Browser smoke` intentionally runs the legacy full browser diagnostic rather than `browser-risk`.
 
 ## Evidence taxonomy and reporting
 
@@ -288,7 +288,7 @@ This policy does not relax fail-closed behaviour, schema/certification integrity
 
 GitHub Actions are **manual-only** and are not part of the normal FlyTally merge/release gate.
 
-- `Verify FlyTally web` and `Browser smoke` may be started manually with `workflow_dispatch` only when an independent cloud reproduction is useful.
+- `Verify FlyTally web` and `Browser smoke` may be started manually with `workflow_dispatch` only when an independent cloud reproduction is useful. Their jobs are labeled as diagnostics; they must not be reported as the candidate-bound release verdict.
 - Normal development and release verification are performed on the developer workstation.
 - Do not use GitHub Actions as the primary debugging loop or as a mandatory release ritual.
 - A release may be merged with GitHub CI **NOT RUN by decision** when the required local evidence for the changed surface is complete.
