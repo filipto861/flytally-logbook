@@ -17,6 +17,7 @@ test("Phase 0E canonical verification modules are syntactically parseable",()=>{
     "tooling/verification-execution.mjs",
     "tooling/verification-build.mjs",
     "tooling/verify-app.mjs",
+    "tooling/verify-app-compat.mjs",
     "tooling/verify-domain.mjs",
     "tooling/verify-postgres.mjs",
     "tooling/verify-browser.mjs",
@@ -113,7 +114,7 @@ test("canonical browser acceptance requires the recorded same-candidate build be
 
 test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migration separate",()=>{
   const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
-  assert.equal(pkg.scripts.verify,"node tooling/verify-app.mjs");
+  assert.equal(pkg.scripts.verify,"node tooling/verify-app-compat.mjs");
   assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");
   assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
