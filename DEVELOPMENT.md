@@ -38,7 +38,7 @@ Phase 0B.1 uses registry version 2:
 - explicit persistence, browser and scale paths can escalate only the relevant heavy gates;
 - `[full-ci]` remains the explicit escape hatch that selects every heavy gate.
 
-`tooling/development-scope.mjs` reports `postgres`, `scale`, `browser`, `full_tests`, `build`, matched `modules`, `risks`, `test_groups` and the resolved `targeted_tests`.
+`tooling/development-scope.mjs` reports `postgres`, `scale`, `browser`, `full_tests`, `build`, matched `modules`, `risks`, `test_groups`, resolved `targeted_tests`, `required_evidence`, `aggregate_gates` and `build_artifact`.
 
 Named groups are executed through `npm run test:group -- <group>`. `npm run test:ui` is now only an alias for the registry-owned `ui-contract` group; the 16-file UI list is no longer duplicated in `package.json`.
 
@@ -58,6 +58,47 @@ The Phase 0B.2 registry expands stable ownership from the original **121/381 (31
 Targeted group membership, PostgreSQL scale-test membership, and module/risk ownership are single-sourced in `tooling/development-modules.json`. The PostgreSQL runner reads its scale membership from that registry, and the manual cloud targeted path executes the registry-backed `ui-contract` group directly. `npm run test:ui` remains only a local convenience alias for the same group.
 
 The manual GitHub workflows remain **manual-only diagnostics**. They do not infer a diff or override the local risk decision; their targeted mode uses the same registry-backed group runner, while heavy PostgreSQL/browser jobs still require explicit manual selection.
+
+## Evidence taxonomy and reporting
+
+Phase 0D separates three concepts that must not be conflated:
+
+- **risk** — what a change may have affected;
+- **gate** — which command/suite should be executed;
+- **evidence class** — what a successful observation is actually allowed to prove.
+
+The canonical behavioral evidence classes are:
+
+1. `domain-unit` — direct business-rule / fail-closed behavior;
+2. `application-source-contract` — wiring, governance and static/source presentation invariants;
+3. `postgres-acceptance` — real PostgreSQL persistence, constraint and transaction behavior;
+4. `browser-acceptance` — user-visible browser workflow, responsive and async behavior.
+
+The production build is reported independently as the non-behavioral `build` artifact. `npm test` / `fullTests` remains an **aggregate regression gate**; its aggregate PASS count does not by itself prove `domain-unit` or any other behavioral evidence class.
+
+`tooling/development-modules.json` schema v3 owns the evidence taxonomy and homogeneous named-group metadata. Current named groups `ui-contract` and `development-pipeline` are `application-source-contract`; source-contract groups must not import Playwright, PostgreSQL clients, browser fixtures or DB fixtures.
+
+`npm run scope:changed -- ...` remains a **planner only**. In addition to the existing gate flags it reports:
+- `required_evidence` — behavioral evidence classes required by the selected risk/gate contract;
+- `aggregate_gates` — aggregate gates such as `full-tests` that are useful regression coverage but are not evidence classes;
+- `build_artifact` — whether an independent build result is required.
+
+The planner does **not** emit observed PASS/FAIL evidence because it does not execute tests. Observed evidence is recorded only after a command actually ran.
+
+### Evidence status contract
+
+For each applicable behavioral class and for build, report one of `PASS`, `FAIL`, `NOT RUN`, `N/A` or diagnostic `PARTIAL`.
+
+- Required + no execution = `NOT RUN`; it is never `N/A`.
+- `N/A` is valid only when the planner/risk contract does not require that evidence class.
+- A source/regex/static contract PASS proves only `application-source-contract`; it does **not** prove runtime domain behavior, browser behavior or PostgreSQL behavior.
+- A build PASS proves only that the build artifact completed; it does not satisfy any behavioral evidence class.
+- `fullTests` is aggregate regression evidence only and must not synthesize `domain-unit`.
+- `postgres-acceptance` and `browser-acceptance` may be PASS only from their dedicated full acceptance gates, with retries = 0.
+- Raw skipped acceptance cases prevent PASS. Intentional exclusions must be classified explicitly as N/A cases so planned = passed + failed + explicit N/A.
+- Evidence reports should record command, planned/executed counts, failures, explicit N/A count, retries, coverage and source gate.
+
+`tooling/evidence-contract.mjs` is the machine-checkable status evaluator for these semantics. It intentionally fails required missing evidence as `NOT RUN` and rejects aggregate/build/source-contract results that attempt to masquerade as a different behavioral class.
 
 ## Vercel build filtering
 
