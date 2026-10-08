@@ -33,7 +33,7 @@ export function writeVerificationLedgerEntry(entry){
   const target=verificationLedgerPath(entry.candidate.candidateId,entry.gate);
   mkdirSync(path.dirname(target),{recursive:true});
   const payload={
-    schemaVersion:1,
+    schemaVersion:2,
     recordedAt:new Date().toISOString(),
     ...entry,
     candidate:{
@@ -44,6 +44,7 @@ export function writeVerificationLedgerEntry(entry){
       filesHash:entry.candidate.filesHash,
       source:entry.candidate.source,
       files:entry.candidate.files,
+      worktree:entry.candidate.worktree??{files:[],hash:null,outsideCandidate:[]},
     },
   };
   const temp=target+".tmp-"+process.pid;
