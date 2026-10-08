@@ -198,9 +198,15 @@ The hardening contract is fail-closed:
 
 Exact candidate `68351c78a0dac2b1f95de3530d2ceac116f2475e` closed with development-pipeline **113/113 PASS**, planner no blockers, fast iteration **226/226 PASS** + TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), PostgreSQL/scale N/A and final `release_status=PASS`.
 
-### Phase 0E.6 manual workflow alignment — ACTIVE
+### Phase 0E.6 manual workflow alignment — DONE / VERIFIED
 
 Manual cloud workflows remain independent diagnostics only. `Verify FlyTally web` keeps targeted/full unit and optional PostgreSQL reproduction; `Browser smoke` keeps the legacy repository-wide browser diagnostic. Neither workflow invokes `verify:release:risk` or `verify:browser:risk`, so cloud diagnostics cannot silently acquire candidate-bound release authority. Workflow/job labels must make that distinction explicit.
+
+Fixed-head 0E.6 verification on `734473252fe1acf64388fa15d9373777112d4977` passed targeted historical workflow-label tests **9/9**, then `verify:release:risk` returned source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, production build **41/41 PASS**, PostgreSQL/scale/browser N/A and final `release_status=PASS`. The preceding `088aa71c...` attempt remains recorded as an intentional fail-closed catch of two stale label assertions.
+
+### Phase 0E.7 exact-candidate closeout — ACTIVE
+
+Final Phase 0E closeout uses the verified Phase 0D head `686734911f5c3f45e395fdda6b7d98a5021e84ae` as the explicit base. Run the final candidate through `npm run verify:release:risk -- --base 686734911f5c3f45e395fdda6b7d98a5021e84ae --force-all`. This intentionally exercises every risk-scoped authoritative gate on one exact candidate: source/domain evidence as selected, TypeScript, aggregate regression, production build, full PostgreSQL acceptance including registered scale coverage, and planner-bound `browser-risk`. The legacy repository-wide 94-case browser command remains diagnostic-only and is not part of 0E.7 release authority.
 
 
 
