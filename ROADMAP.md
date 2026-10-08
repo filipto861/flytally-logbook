@@ -650,13 +650,13 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 Issue: #144  
 Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
-## Phase 0 — Engineering quality / test architecture gate — ACTIVE
+## Phase 0 — Engineering quality / test architecture gate — DONE / VERIFIED
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 0F — hygiene and Phase 0 closeout — ACTIVE.**
+**Current step: integrate verified Phase 0 through PR #255; Phase 1 runtime work remains blocked until `main` contains Phase 0.**
 
-Current milestone: **Phase 0F — hygiene and Phase 0 closeout — ACTIVE**. Phase 0E canonical verification commands are ✅ DONE / VERIFIED.
+Current milestone: **Phase 0F — hygiene and Phase 0 closeout — DONE / VERIFIED**. Phase 0A–0F are complete on the Phase 0 branch; repository integration through PR #255 remains.
 
 Phase 0D closeout:
 - independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
@@ -665,7 +665,7 @@ Phase 0D closeout:
 - final exact-code-head verification on `686734911f5c3f45e395fdda6b7d98a5021e84ae`: development-pipeline **65/65 PASS**, TypeScript **PASS**, aggregate regression **1354/1354 PASS**, production build **PASS (41/41 static pages)**;
 - `domain-unit`: **N/A**; PostgreSQL acceptance: **N/A**; browser acceptance: **N/A** for this tooling/source-contract candidate.
 
-Phase 0E is closed. Phase 0F now owns hygiene and Phase 0 closeout. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0E and Phase 0F are closed on the verified branch. Do not start 3.6.0 timezone runtime work until PR #255 is integrated into canonical `main`.
 
 Phase 0E independent review verdict: **ACCEPT WITH CHANGES**. Reconciliation is frozen before implementation.
 
@@ -842,7 +842,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0F owns the next work. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0F is complete. The next repository action is PR #255 integration; do not start 3.6.0 timezone runtime work before that merge.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
@@ -857,7 +857,7 @@ No 3.6.0 saved-date/timezone runtime semantics are changed in Phase 0.
 
 Phase 0 acceptance is defined in the detailed contract. Required closeout includes the applicable TypeScript, unit/regression, PostgreSQL, browser and build evidence plus ROADMAP / CHANGELOG / DEVELOPMENT reconciliation. FEATURES changes only if product capability changes.
 
-## Phase 0F — Hygiene and Phase 0 closeout — ACTIVE
+## Phase 0F — Hygiene and Phase 0 closeout — DONE / VERIFIED
 
 Discovery:
 - DEVELOPMENT command documentation matches the executable package command surface for `test:target`, `test:group`, `scope:changed`, `verify:plan`, `verify:iterate`, `verify:app`, `verify:domain`, `verify:postgres`, `verify:browser:risk`, the legacy diagnostic browser commands, static `verify:release`, and canonical `verify:release:risk`;
@@ -865,12 +865,15 @@ Discovery:
 - supersession is now proven for the five previously-open parallel PRs and they were closed without merge: #187 → merged #188/F0.1, #201 → merged #200/F1.4, #206 → merged #207/F2.2, and #231/#232 → final F3.3 head `065896d3c9aa75fee8c2c0c7cc7a2f6abc20e52a` plus later F3.4/F3.5 stack already ancestral to `main`; their branches remain intact;
 - PR #255 is the active Phase 0 integration PR; no destructive branch/PR cleanup has been performed.
 
-Next:
-- preserve the explicit `chore/pre-f3-integration-anchor` rollback branch unless its retirement is separately approved; do not delete diverged historical branches without equivalent proof;
-- remove only stale documentation drift and record the branch-cleanup decision set;
-- finish Phase 0 acceptance reconciliation, then close Phase 0 before any 3.6.0 timezone-runtime work.
+Closeout:
+- explicit `chore/pre-f3-integration-anchor` rollback branch is retained; no historical branch was deleted;
+- stale documentation drift was reconciled without changing product runtime or verification authority;
+- exact 0F documentation/governance candidate `792ef0f2c8430a01f4bb1e24474b05991d0a83abee63650b7d72b8cb274892df` on head `68ba83167c27e6de1e1027e007ea3b81acad17cc` returned `release_status=PASS`;
+- source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none;
+- FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
+- Phase 0 acceptance is satisfied on the branch. PR #255 integration into canonical `main` is the remaining repository action before Phase 1 starts.
 
-## Phase 1 — Saved-date / timezone semantics — BLOCKED BY PHASE 0
+## Phase 1 — Saved-date / timezone semantics — BLOCKED BY PR #255 INTEGRATION
 
 Before code:
 - define which defaults use configured user calendar timezone;
