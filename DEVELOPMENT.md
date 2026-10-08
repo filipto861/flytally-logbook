@@ -138,6 +138,29 @@ Exit-code contract for canonical verification tooling:
 - `2` — invalid invocation, configuration or environment;
 - `3` — valid candidate blocked before required execution (for example missing approved evidence/target or stale prerequisite).
 
+### Phase 0E.4b fast iteration candidate
+
+`npm run verify:iterate -- <candidate>` is the fast development executor. It uses the same explicit candidate forms as `verify:plan` and currently runs only:
+- registry-selected application/source-contract groups;
+- module-approved direct domain evidence when required;
+- TypeScript when required.
+
+It intentionally does **not** run aggregate `npm test`, PostgreSQL acceptance, a production build or Playwright. The summary always reports release state as `NOT EVALUATED` and lists any heavy release work still pending.
+
+Successful source/domain/typecheck ledger entries may be reused only for the exact candidate and exact effective configuration/toolchain identity. Use `--rerun` to bypass reuse. A documentation-only candidate should finish without starting TypeScript or behavioral tests.
+
+Example:
+```powershell
+npm run verify:plan -- --base <explicit-base>
+npm run verify:iterate -- --base <explicit-base>
+# run the same command again to reuse exact candidate evidence
+npm run verify:iterate -- --base <explicit-base>
+# force fresh cheap evidence
+npm run verify:iterate -- --base <explicit-base> --rerun
+```
+
+`--with-browser` is reserved and rejected until 0E.4c. The 94-test browser matrix remains manual diagnostics and is not part of the fast iteration lane.
+
 
 
 
