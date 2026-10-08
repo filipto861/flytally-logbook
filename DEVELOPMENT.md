@@ -204,9 +204,15 @@ Manual cloud workflows remain independent diagnostics only. `Verify FlyTally web
 
 Fixed-head 0E.6 verification on `734473252fe1acf64388fa15d9373777112d4977` passed targeted historical workflow-label tests **9/9**, then `verify:release:risk` returned source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, production build **41/41 PASS**, PostgreSQL/scale/browser N/A and final `release_status=PASS`. The preceding `088aa71c...` attempt remains recorded as an intentional fail-closed catch of two stale label assertions.
 
-### Phase 0E.7 exact-candidate closeout — ACTIVE
+### Phase 0E.7 exact-candidate closeout — DONE / VERIFIED
 
-The first 0E.7 cumulative attempt from Phase 0D head `686734911f5c3f45e395fdda6b7d98a5021e84ae` correctly returned **NOT RUN** before execution because that historical candidate includes `e2e/ui-audit-capture.spec.mjs`, an explicitly diagnostic-only spec that intentionally has no authoritative browser target. Do not weaken the selector or promote that diagnostic spec into release authority. Final Phase 0E closeout therefore uses the last fully verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` as the explicit base; 0E.1–0E.5 keep their own exact-candidate evidence, while the final candidate contains the substantive 0E.6 workflow/test alignment and closeout docs. Run `npm run verify:release:risk -- --base 68351c78a0dac2b1f95de3530d2ceac116f2475e --force-all`. This exercises every risk-scoped authoritative gate on the final exact head: source/domain evidence as selected, TypeScript, aggregate regression, production build, full PostgreSQL acceptance including registered scale coverage, and planner-bound `browser-risk`. The legacy repository-wide 94-case browser command remains diagnostic-only and is not part of 0E.7 release authority.
+The first 0E.7 cumulative attempt from Phase 0D head `686734911f5c3f45e395fdda6b7d98a5021e84ae` correctly returned **NOT RUN** before execution because that historical candidate includes `e2e/ui-audit-capture.spec.mjs`, an explicitly diagnostic-only spec that intentionally has no authoritative browser target. The selector remained fail-closed and that diagnostic spec was not promoted into release authority.
+
+Final Phase 0E closeout used verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` as base and exact head `335704c1125ee0336528f5f1e43c3bc1528c92d3`, candidate `221190494ba79b32bb25f9e32c3ce09041dfd624f3f3a514cc8fb7a905c9477a`. `npm run verify:release:risk -- --base 68351c78a0dac2b1f95de3530d2ceac116f2475e --force-all` completed with source-contract **226/226 PASS**, domain N/A, TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, scale PASS, browser-risk **41/41 PASS** (21 desktop + 20 mobile, one worker), no blocked evidence and final `release_status=PASS`. The legacy repository-wide 94-case browser command remained diagnostic-only / NOT RUN.
+
+### Phase 0F hygiene and Phase 0 closeout — ACTIVE
+
+Phase 0F is documentation/repository hygiene and final Phase 0 closure only. Reconcile executable tooling with docs, inspect stale PR/branch state before deleting anything, retain exact verification evidence, and review ROADMAP / FEATURES / CHANGELOG consistency. Do not start 3.6.0 saved-date/timezone runtime implementation until Phase 0F closes.
 
 
 
