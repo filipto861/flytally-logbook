@@ -735,18 +735,43 @@ A test may skip the second Playwright project only when all are true:
 - no product runtime, timezone semantics or DB schema change;
 - per-worker DB isolation not introduced.
 
-### Phase 0D — Test contract policy
+### Phase 0D — Test contract / evidence taxonomy — ACTIVE
 
-Document and enforce four evidence classes:
+Phase 0D makes **risk**, **gate** and **evidence class** separate machine contracts so a green static/source assertion cannot be presented as proof of runtime behavior.
 
-1. **Domain/unit behavior** — preferred for pure business rules and fail-closed semantics.
-2. **Application/source contract** — allowed for wiring, governance and static presentation invariants; not a substitute for runtime behavior.
-3. **PostgreSQL acceptance** — real persistence/constraint/transaction evidence.
-4. **Browser acceptance** — user-visible workflow, responsive and async interaction evidence.
+Canonical behavioral evidence classes:
 
-New release work must state which classes apply and why others are N/A.
+1. **`domain-unit`** — direct business-rule and fail-closed behavior.
+2. **`application-source-contract`** — wiring, governance and static/source presentation invariants; never a substitute for runtime behavior.
+3. **`postgres-acceptance`** — real persistence, constraint and transaction behavior against PostgreSQL.
+4. **`browser-acceptance`** — user-visible workflow, responsive and async interaction behavior.
 
-Do not measure quality by raw test count alone.
+Build remains independent non-behavioral artifact evidence. The heterogeneous full Node regression suite remains an **aggregate regression gate**, not an evidence class.
+
+Independent second-AI review verdict: **ACCEPT WITH CHANGES**. Reconciliation against the repository:
+
+- accepted: keep the taxonomy in the existing development registry rather than create a second manifest;
+- accepted: upgrade the registry to schema v3 and add a JSON Schema contract;
+- accepted: current named groups must be homogeneous; `ui-contract` and `development-pipeline` are explicitly `application-source-contract`;
+- accepted: `fullTests` must never synthesize `domain-unit`;
+- accepted: build must never synthesize any behavioral evidence class;
+- accepted: dedicated PostgreSQL/browser acceptance can be PASS only from the dedicated full gate with retries=0;
+- accepted: raw skipped acceptance cases cannot be reported as PASS; intentional exclusions must be explicit N/A cases inside the planned count;
+- accepted: required evidence that did not execute is `NOT RUN`, never `N/A`;
+- accepted with placement correction: required-vs-observed evidence is separate, but `scope:changed` remains a planner and therefore emits **required** evidence only. Observed PASS/FAIL/count/retry data belongs to the post-execution evidence report/evaluator; the planner must not invent observations;
+- accepted with scope correction: no PR/CI reporter currently consumes `scope:changed`, so 0D extends its stable additive CLI output and DEVELOPMENT reporting contract rather than inventing a second reporting subsystem;
+- not adopted for this candidate: a mandatory full browser rerun or PostgreSQL rerun merely because evidence-taxonomy tooling changed. Under the existing risk-based gate contract, those classes remain N/A unless browser/PostgreSQL harness/runtime surface changes. The final 0D candidate still requires the aggregate full regression gate and independent build artifact.
+
+0D implementation candidate:
+
+- **0D.1 — taxonomy/schema:** development registry v3 + `development-modules.schema.json`;
+- **0D.2 — homogeneous group metadata:** named groups declare evidence class and coverage; no per-test registry is introduced;
+- **0D.3 — planner/evaluator:** `scope:changed` reports `required_evidence`, `aggregate_gates` and `build_artifact`; `evidence-contract.mjs` evaluates observed status fail-closed;
+- **0D.4 — negative enforcement:** source-contract PASS cannot become domain/browser/PostgreSQL PASS; aggregate full tests cannot become domain-unit; build cannot become behavioral evidence; raw skips/retries prevent acceptance PASS;
+- **0D.5 — reporting documentation:** DEVELOPMENT defines PASS / FAIL / NOT RUN / N/A / PARTIAL semantics and the command/count/retry/source-gate evidence fields;
+- **0D.6 — verification/closeout:** pending. Phase 0D is not DONE until candidate verification and ROADMAP/CHANGELOG reconciliation are complete.
+
+New release work must state which behavioral classes apply and why the others are N/A. Quality is not measured by raw test count alone.
 
 ### Phase 0E — Canonical verification commands
 
