@@ -94,6 +94,15 @@ export function parseVerificationArgs(argv) {
   return { positional, filesPath, baseRef, all, json, forceAll };
 }
 
+function worktreeFiles(root = repositoryRoot) {
+  const tracked=[
+    ...parseLines(runGit(["diff","--name-only","--diff-filter=ACMRD"],root)),
+    ...parseLines(runGit(["diff","--cached","--name-only","--diff-filter=ACMRD"],root)),
+  ];
+  const untracked=parseLines(runGit(["ls-files","--others","--exclude-standard"],root));
+  return [...new Set([...tracked,...untracked].map(normalizeCandidatePath))].sort();
+}
+
 function candidateFilesFromArgs(parsed, root = repositoryRoot) {
   if (parsed.positional.length > 0) {
     return { kind: "paths", value: null, files: parsed.positional };
@@ -111,10 +120,10 @@ function candidateFilesFromArgs(parsed, root = repositoryRoot) {
     const headSha = runGit(["rev-parse", "HEAD"], root);
     const baseSha = runGit(["rev-parse", "--verify", parsed.baseRef + "^{commit}"], root);
     runGit(["merge-base", baseSha, headSha], root);
-    const files = parseLines(runGit(["diff", "--name-only", "--diff-filter=ACMRD", baseSha + "..."+ headSha], root));
-    return { kind: "base", value: parsed.baseRef, baseSha, headSha, files };
+    const committed = parseLines(runGit(["diff", "--name-only", "--diff-filter=ACMRD", baseSha + "..."+ headSha], root));
+    return { kind: "base", value: parsed.baseRef, baseSha, headSha, files: [...committed,...worktreeFiles(root)] };
   }
-  return { kind: "all", value: null, files: parseLines(runGit(["ls-files"], root)) };
+  return { kind: "all", value: null, files: [...parseLines(runGit(["ls-files"], root)),...worktreeFiles(root)] };
 }
 
 function hashCandidateFiles(files, root = repositoryRoot) {
@@ -144,6 +153,7 @@ function hashCandidateFiles(files, root = repositoryRoot) {
 export function resolveVerificationCandidate(argv, root = repositoryRoot) {
   const parsed = parseVerificationArgs(argv);
   const source = candidateFilesFromArgs(parsed, root);
+  const dirtyFiles=worktreeFiles(root);
   const files = [...new Set(source.files.map(normalizeCandidatePath))].sort();
   if (files.length === 0) {
     throw new CandidateInputError("The explicit candidate contains no files.");
@@ -152,22 +162,31 @@ export function resolveVerificationCandidate(argv, root = repositoryRoot) {
   const headSha = source.headSha ?? runGit(["rev-parse", "HEAD"], root);
   const baseSha = source.baseSha ?? null;
   const filesHash = hashCandidateFiles(files, root);
+  const worktreeHash=hashCandidateFiles(dirtyFiles,root);
+  const outsideCandidate=dirtyFiles.filter((file)=>!files.includes(file));
   const candidateId = createHash("sha256")
-    .update("flytally-verification-candidate-v1\0")
+    .update("flytally-verification-candidate-v2\0")
     .update(headSha)
     .update("\0")
     .update(filesHash)
+    .update("\0")
+    .update(worktreeHash)
     .digest("hex");
 
   return {
     candidate: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       candidateId,
       headSha,
       baseSha,
       filesHash,
       source: { kind: source.kind, value: source.value },
       files,
+      worktree: {
+        files: dirtyFiles,
+        hash: worktreeHash,
+        outsideCandidate,
+      },
     },
     options: {
       json: parsed.json,
