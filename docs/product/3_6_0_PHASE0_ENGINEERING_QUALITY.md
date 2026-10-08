@@ -922,8 +922,9 @@ The build gate records a candidate-bound build manifest including the candidate 
    - existing `verify:release` and legacy full `verify:browser` semantics are unchanged in 0E.4a; risk-scoped execution is a later batch;
    - first local verification passed source/static + TypeScript + aggregate regression + build, but exposed generated local verification artifacts as candidate members; those artifacts are now ignored and regression-covered;
    - final exact-head 0E.4a verification PASS at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92**, planner v2 clean/no blockers, TypeScript PASS, aggregate regression **1387/1387**, production build **41/41**; 0E.4a DONE / VERIFIED;
-   - 0E.4b fast iteration executor is ACTIVE; implementation candidate adds source/typecheck ledgers, exact reuse and `verify:iterate`, with verification pending.
-   - the iteration candidate never promotes an iteration PASS to release PASS: aggregate regression, build, PostgreSQL and browser remain explicit pending work when selected by the planner; `--with-browser` is unavailable until the authoritative 0E.4c executor exists.
+   - 0E.4b fast iteration executor is **DONE / VERIFIED** on exact candidate `d01813c978c63cd5fc14945fca9a310226d338d2`: development-pipeline **98/98 PASS**, TypeScript PASS, exact-candidate cheap-evidence reuse confirmed, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the batch.
+   - iteration PASS never promotes itself to release PASS: aggregate regression, build, PostgreSQL and browser remain explicit pending work unless their authoritative gates run.
+   - 0E.4c is **ACTIVE**: authoritative planner-bound `browser-risk` evidence, exact case identity and optional `verify:iterate --with-browser` are under implementation; the legacy full browser executor is retained only as a manual diagnostic.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
