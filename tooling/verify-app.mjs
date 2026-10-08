@@ -2,7 +2,8 @@ import { fileURLToPath } from "node:url";
 import { createVerificationPlan } from "./verify-plan.mjs";
 import { CandidateInputError } from "./verification-candidate.mjs";
 import { parseNodeTestSummary,runNpm } from "./verification-execution.mjs";
-import { currentBuildIdentity,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
+import { runCandidateBuild } from "./verification-build.mjs";
+import { writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 
 function canonicalCommand(argv){
   return "npm run verify:app -- "+argv.join(" ");
@@ -68,74 +69,27 @@ export async function runAppVerification(argv,env=process.env){
     return {exitCode,plan,ledger};
   }
 
-  const build=await runNpm(["run","build"],{env});
-  steps.build={
-    status:build.code===0?"PASS":"FAIL",
-    exitCode:build.code,
-    command:build.command,
-  };
-  if(build.code!==0){
-    writeVerificationLedgerEntry({
-      gate:"build",
-      artifactClass:"build",
-      candidate,
-      canonicalCommand:build.command,
-      exitCode:build.code,
-      effectiveConfiguration:{productionBuild:true},
-      evaluation:{status:"FAIL",reason:"Production build failed."},
-    });
-    const ledger=writeVerificationLedgerEntry({
-      gate:"app",
-      candidate,
-      canonicalCommand:canonicalCommand(argv),
-      exitCode:build.code,
-      effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
-      steps,
-      evaluation:{status:"FAIL",reason:"Production build failed."},
-    });
-    return {exitCode:build.code,plan,ledger};
-  }
-
-  let artifact;
-  try{
-    artifact=currentBuildIdentity();
-  }catch(error){
-    const reason=error instanceof Error?error.message:String(error);
-    writeVerificationLedgerEntry({
-      gate:"build",
-      artifactClass:"build",
-      candidate,
-      canonicalCommand:build.command,
-      exitCode:1,
-      effectiveConfiguration:{productionBuild:true},
-      evaluation:{status:"PARTIAL",reason},
-    });
-    steps.build={...steps.build,status:"PARTIAL",reason};
-    const ledger=writeVerificationLedgerEntry({
-      gate:"app",
-      candidate,
-      canonicalCommand:canonicalCommand(argv),
-      exitCode:1,
-      effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
-      steps,
-      evaluation:{status:"PARTIAL",reason},
-    });
-    return {exitCode:1,plan,ledger};
-  }
-
-  writeVerificationLedgerEntry({
-    gate:"build",
-    artifactClass:"build",
-    candidate,
-    canonicalCommand:build.command,
-    exitCode:0,
-    effectiveConfiguration:{productionBuild:true},
-    artifact,
-    evaluation:{
-      status:"PASS",
-      reason:"Production build completed and a candidate-bound Next.js build identity was recorded.",
-    },
+  const buildResult=await runCandidateBuild(candidate,{
+    env,
+    producerCommand:"npm run verify:app -- "+argv.join(" "),
   });
+  steps.build=buildResult.step;
+  if(buildResult.exitCode!==0){
+    const ledger=writeVerificationLedgerEntry({
+      gate:"app",
+      candidate,
+      canonicalCommand:canonicalCommand(argv),
+      exitCode:buildResult.exitCode,
+      effectiveConfiguration:{typecheck:true,aggregateRegression:true,productionBuild:true},
+      steps,
+      evaluation:{
+        status:buildResult.step.status==="PARTIAL"?"PARTIAL":"FAIL",
+        reason:buildResult.step.reason??"Production build failed.",
+      },
+    });
+    return {exitCode:buildResult.exitCode,plan,ledger};
+  }
+
   const ledger=writeVerificationLedgerEntry({
     gate:"app",
     candidate,
