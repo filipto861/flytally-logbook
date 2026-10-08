@@ -976,6 +976,7 @@ Implementation candidate:
 - explicit user-entered effective dates remain authoritative;
 - existing historical `rates.valid_from` rows and date-only lookup semantics are unchanged;
 - direct rate-entry `Valid from` remains required and manually editable when automatic derivation is unavailable.
+- initial planner verification exposed stale registry ownership: `app/(protected)/database/` was classified as `data-recovery`, which has intentionally no authoritative browser target ownership; ownership is corrected to `aircraft-airports`, matching the actual Aircraft & Airports workspace and its approved aircraft browser targets, with dedicated planner regression tests. This is a governance correction, not a browser-evidence waiver.
 
 Verification pending. No PASS is claimed until targeted/domain/typecheck and planner-selected release evidence run on the exact candidate.
 
