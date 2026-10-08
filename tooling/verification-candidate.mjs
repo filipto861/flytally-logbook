@@ -94,7 +94,7 @@ export function parseVerificationArgs(argv) {
   return { positional, filesPath, baseRef, all, json, forceAll };
 }
 
-function candidateFilesFromArgs(parsed) {
+function candidateFilesFromArgs(parsed, root = repositoryRoot) {
   if (parsed.positional.length > 0) {
     return { kind: "paths", value: null, files: parsed.positional };
   }
@@ -108,13 +108,13 @@ function candidateFilesFromArgs(parsed) {
     return { kind: "files", value: parsed.filesPath, files: parseLines(contents) };
   }
   if (parsed.baseRef) {
-    const headSha = runGit(["rev-parse", "HEAD"]);
-    const baseSha = runGit(["rev-parse", "--verify", parsed.baseRef + "^{commit}"]);
-    runGit(["merge-base", baseSha, headSha]);
-    const files = parseLines(runGit(["diff", "--name-only", "--diff-filter=ACMRD", baseSha + "..."+ headSha]));
+    const headSha = runGit(["rev-parse", "HEAD"], root);
+    const baseSha = runGit(["rev-parse", "--verify", parsed.baseRef + "^{commit}"], root);
+    runGit(["merge-base", baseSha, headSha], root);
+    const files = parseLines(runGit(["diff", "--name-only", "--diff-filter=ACMRD", baseSha + "..."+ headSha], root));
     return { kind: "base", value: parsed.baseRef, baseSha, headSha, files };
   }
-  return { kind: "all", value: null, files: parseLines(runGit(["ls-files"])) };
+  return { kind: "all", value: null, files: parseLines(runGit(["ls-files"], root)) };
 }
 
 function hashCandidateFiles(files, root = repositoryRoot) {
@@ -143,7 +143,7 @@ function hashCandidateFiles(files, root = repositoryRoot) {
 
 export function resolveVerificationCandidate(argv, root = repositoryRoot) {
   const parsed = parseVerificationArgs(argv);
-  const source = candidateFilesFromArgs(parsed);
+  const source = candidateFilesFromArgs(parsed, root);
   const files = [...new Set(source.files.map(normalizeCandidatePath))].sort();
   if (files.length === 0) {
     throw new CandidateInputError("The explicit candidate contains no files.");
