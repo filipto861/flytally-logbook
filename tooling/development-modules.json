@@ -848,6 +848,372 @@
   "browserAcceptance": {
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
-    ]
+    ],
+    "selectionVersion": 1,
+    "moduleTargets": {
+      "flight-records": [
+        "flight-manual-save-desktop",
+        "flight-manual-save-mobile",
+        "flight-gps-save-desktop",
+        "flight-gps-save-mobile",
+        "flight-void-desktop",
+        "flight-void-mobile"
+      ],
+      "connections-workflows": [
+        "connections-accept-desktop",
+        "connections-accept-mobile",
+        "connections-access-desktop",
+        "connections-access-mobile",
+        "safety-pilot-invite-desktop",
+        "safety-pilot-invite-mobile"
+      ],
+      "analytics": [
+        "shell-core-desktop",
+        "shell-core-mobile"
+      ],
+      "platform": [
+        "settings-transaction-desktop",
+        "settings-transaction-mobile",
+        "appearance-desktop",
+        "appearance-mobile",
+        "shell-core-desktop",
+        "shell-core-mobile"
+      ],
+      "aircraft-airports": [
+        "aircraft-quick-add-desktop",
+        "aircraft-quick-add-mobile",
+        "aircraft-profile-authority-desktop",
+        "aircraft-profile-authority-mobile"
+      ],
+      "gps-tracks": [
+        "flight-gps-save-desktop",
+        "flight-gps-save-mobile",
+        "sera-gps-desktop",
+        "sera-gps-mobile",
+        "gps-night-gap-desktop",
+        "gps-night-gap-mobile"
+      ],
+      "identity-auth": [
+        "auth-login-shell-desktop",
+        "auth-login-shell-mobile",
+        "auth-protected-redirect-desktop",
+        "auth-protected-redirect-mobile",
+        "auth-login-pending-desktop",
+        "auth-login-pending-mobile"
+      ],
+      "shell-presentation": [
+        "shell-core-desktop",
+        "shell-core-mobile",
+        "responsive-entry-desktop"
+      ]
+    },
+    "pathTargets": [
+      {
+        "prefixes": [
+          "lib/role-crew",
+          "lib/crew",
+          "components/flight-form",
+          "components/kml-import-form"
+        ],
+        "files": [],
+        "targets": [
+          "rolecrew-manual-desktop",
+          "rolecrew-manual-mobile",
+          "rolecrew-gps-desktop",
+          "rolecrew-gps-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "lib/certification-integrity",
+          "lib/void-evidence"
+        ],
+        "files": [],
+        "targets": [
+          "flight-manual-save-desktop",
+          "flight-manual-save-mobile",
+          "flight-gps-save-desktop",
+          "flight-gps-save-mobile",
+          "flight-void-desktop",
+          "flight-void-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "lib/civil-twilight",
+          "lib/night-definition"
+        ],
+        "files": [],
+        "targets": [
+          "sera-gps-desktop",
+          "sera-gps-mobile",
+          "gps-night-gap-desktop",
+          "gps-night-gap-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/quick-aircraft",
+          "lib/aircraft"
+        ],
+        "files": [],
+        "targets": [
+          "aircraft-quick-add-desktop",
+          "aircraft-quick-add-mobile",
+          "aircraft-profile-authority-desktop",
+          "aircraft-profile-authority-mobile"
+        ]
+      }
+    ],
+    "harnessTargets": [
+      "aircraft-profile-authority-desktop",
+      "aircraft-profile-authority-mobile",
+      "aircraft-quick-add-desktop",
+      "aircraft-quick-add-mobile",
+      "appearance-desktop",
+      "appearance-mobile",
+      "auth-login-pending-desktop",
+      "auth-login-pending-mobile",
+      "auth-login-shell-desktop",
+      "auth-login-shell-mobile",
+      "auth-protected-redirect-desktop",
+      "auth-protected-redirect-mobile",
+      "connections-accept-desktop",
+      "connections-accept-mobile",
+      "connections-access-desktop",
+      "connections-access-mobile",
+      "flight-gps-save-desktop",
+      "flight-gps-save-mobile",
+      "flight-manual-save-desktop",
+      "flight-manual-save-mobile",
+      "flight-void-desktop",
+      "flight-void-mobile",
+      "gps-night-gap-desktop",
+      "gps-night-gap-mobile",
+      "responsive-entry-desktop",
+      "rolecrew-gps-desktop",
+      "rolecrew-gps-mobile",
+      "rolecrew-manual-desktop",
+      "rolecrew-manual-mobile",
+      "safety-pilot-invite-desktop",
+      "safety-pilot-invite-mobile",
+      "sera-gps-desktop",
+      "sera-gps-mobile",
+      "settings-transaction-desktop",
+      "settings-transaction-mobile",
+      "shell-core-desktop",
+      "shell-core-mobile",
+      "shell-offline-desktop",
+      "shell-offline-mobile",
+      "verifier-evidence-desktop",
+      "verifier-evidence-mobile"
+    ],
+    "targets": {
+      "shell-core-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "authenticated pilot can navigate the core product shell",
+        "project": "desktop-chromium"
+      },
+      "shell-core-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "authenticated pilot can navigate the core product shell",
+        "project": "mobile-chromium"
+      },
+      "shell-offline-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected shell shows and clears the offline connection banner",
+        "project": "desktop-chromium"
+      },
+      "shell-offline-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected shell shows and clears the offline connection banner",
+        "project": "mobile-chromium"
+      },
+      "auth-login-shell-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login shell is usable without horizontal overflow",
+        "project": "desktop-chromium"
+      },
+      "auth-login-shell-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login shell is usable without horizontal overflow",
+        "project": "mobile-chromium"
+      },
+      "auth-protected-redirect-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected routes redirect unauthenticated browsers to sign in",
+        "project": "desktop-chromium"
+      },
+      "auth-protected-redirect-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected routes redirect unauthenticated browsers to sign in",
+        "project": "mobile-chromium"
+      },
+      "auth-login-pending-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login submission exposes a disabled pending state before the request completes",
+        "project": "desktop-chromium"
+      },
+      "auth-login-pending-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login submission exposes a disabled pending state before the request completes",
+        "project": "mobile-chromium"
+      },
+      "flight-manual-save-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+        "project": "desktop-chromium"
+      },
+      "flight-manual-save-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+        "project": "mobile-chromium"
+      },
+      "flight-gps-save-desktop": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "3.4.0 single GPS Save & certify seals the imported persisted row",
+        "project": "desktop-chromium"
+      },
+      "flight-gps-save-mobile": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "3.4.0 single GPS Save & certify seals the imported persisted row",
+        "project": "mobile-chromium"
+      },
+      "flight-void-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+        "project": "desktop-chromium"
+      },
+      "flight-void-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+        "project": "mobile-chromium"
+      },
+      "aircraft-quick-add-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+        "project": "desktop-chromium"
+      },
+      "aircraft-quick-add-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+        "project": "mobile-chromium"
+      },
+      "aircraft-profile-authority-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+        "project": "desktop-chromium"
+      },
+      "aircraft-profile-authority-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+        "project": "mobile-chromium"
+      },
+      "rolecrew-manual-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+        "project": "desktop-chromium"
+      },
+      "rolecrew-manual-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+        "project": "mobile-chromium"
+      },
+      "rolecrew-gps-desktop": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+        "project": "desktop-chromium"
+      },
+      "rolecrew-gps-mobile": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+        "project": "mobile-chromium"
+      },
+      "connections-accept-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection acceptance disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "connections-accept-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection acceptance disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "connections-access-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection access update disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "connections-access-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection access update disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "safety-pilot-invite-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "certified Safety Pilot can invite only the stored connected Actual PIC",
+        "project": "desktop-chromium"
+      },
+      "safety-pilot-invite-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "certified Safety Pilot can invite only the stored connected Actual PIC",
+        "project": "mobile-chromium"
+      },
+      "settings-transaction-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "account settings transaction disables duplicate submit and persists both records",
+        "project": "desktop-chromium"
+      },
+      "settings-transaction-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "account settings transaction disables duplicate submit and persists both records",
+        "project": "mobile-chromium"
+      },
+      "appearance-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "appearance mutation disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "appearance-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "appearance mutation disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "sera-gps-desktop": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+        "project": "desktop-chromium"
+      },
+      "sera-gps-mobile": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+        "project": "mobile-chromium"
+      },
+      "gps-night-gap-desktop": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+        "project": "desktop-chromium"
+      },
+      "gps-night-gap-mobile": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+        "project": "mobile-chromium"
+      },
+      "verifier-evidence-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+        "project": "desktop-chromium"
+      },
+      "verifier-evidence-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+        "project": "mobile-chromium"
+      },
+      "responsive-entry-desktop": {
+        "spec": "e2e/responsive-presentation.spec.mjs",
+        "title": "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
+        "project": "desktop-chromium"
+      }
+    }
   }
 }
