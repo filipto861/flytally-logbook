@@ -117,6 +117,7 @@
         "build": false
       },
       "tests": [
+        "tests/browser-risk-selection.test.ts",
         "tests/browser-suite-structure.test.ts",
         "tests/development-pipeline.test.ts",
         "tests/development-scope.test.ts",
