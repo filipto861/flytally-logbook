@@ -24,7 +24,7 @@ test("v3.2 U5 fixture resets are localhost-only and browser-only",()=>{
 });
 
 test("v3.2 U5 verifies pending state duplicate-submit protection and persistence",()=>{
-  const smoke=read("e2e/public-shell.spec.mjs");
+  const smoke=read("e2e/settings-connections-mutations.spec.mjs");
   assert.match(smoke,/appearance mutation disables duplicate submit and persists/);
   assert.match(smoke,/connection acceptance disables duplicate submit and persists/);
   assert.match(smoke,/toHaveAttribute\("aria-busy","true"\)/);

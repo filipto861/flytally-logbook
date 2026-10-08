@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "acceptanceLogicalTests": [
+    "login shell is usable without horizontal overflow",
+    "protected routes redirect unauthenticated browsers to sign in",
+    "login submission exposes a disabled pending state before the request completes",
+    "authenticated pilot can navigate the core product shell",
+    "GPS and Manual keep profile-owned aircraft context out of generic drift editors",
+    "F3.4 Manual compact context exposes only A+ choice and blocks invalid profiles",
+    "F3.5 same-registration SNAPSHOT survives invalid current profile and rejects crafted drift",
+    "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+    "F3.5 OTHER and Balloon keep profile-owned context separate from flight-specific choices",
+    "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+    "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+    "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+    "3.4.0 single GPS Save & certify seals the imported persisted row",
+    "3.4.0 GPS quality warning requires one targeted acknowledgement before completion",
+    "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
+    "GPS import fails closed for invalid profile context and exposes only implemented F4 roles",
+    "GPS reviewed PIC save persists normalized shared semantics",
+    "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+    "F4.2 mixed INHERIT and DUAL OVERRIDE persist independently",
+    "F4.2 split-boundary change clears RoleCrew overrides with a visible notice",
+    "F4.3 common Manual Safety Pilot persists explicit Actual PIC without account link",
+    "F4.3 common connected Safety Pilot snapshots server identity and persists one PIC link",
+    "F4.3 revoked per-flight connected Safety Pilot fails closed without partial split persistence",
+    "F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports and themes",
+    "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+    "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+    "E1.1 route assistance stays below aligned Route fields and remains keyboard reachable",
+    "E1.2 aircraft default operation prefills Manual and GPS but remains flight-editable",
+    "E1.4 certified legacy GPS Task stays raw and annotated in owner and shared read-only views",
+    "3.5.2 Settings ignores legacy Night definition preference and exposes no account control",
+    "3.5.2 legacy MANUAL preference does not suppress applicable GPS SERA suggestions",
+    "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+    "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+    "F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",
+    "F5.3 role change keeps required DUAL identity inline and removes the default cue",
+    "F6 Manual RoleCrew matrix covers required roles modes viewports themes and 200 percent reflow",
+    "F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes and reflow",
+    "F6 GPS multi-part inheritance override matrix stays usable at every required presentation state",
+    "F6 invalid-profile recovery remains explicit in Manual and GPS across the full presentation matrix",
+    "F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in light and dark",
+    "Safety Pilot Actual PIC form keeps manual and connected identity explicit",
+    "F2.3 Safety Pilot resolver snapshots server identity and fails closed after Connection revocation",
+    "certified Safety Pilot can invite only the stored connected Actual PIC",
+    "protected shell shows and clears the offline connection banner",
+    "appearance mutation disables duplicate submit and persists",
+    "connection acceptance disables duplicate submit and persists",
+    "account settings transaction disables duplicate submit and persists both records",
+    "connection access update disables duplicate submit and persists"
+  ],
+  "excludedSpecs": [
+    "ui-audit-capture.spec.mjs"
+  ],
+  "playwright": {
+    "projects": [
+      "desktop-chromium",
+      "mobile-chromium"
+    ],
+    "workers": 1,
+    "fullyParallel": false,
+    "localRetries": 0,
+    "ciRetries": 1
+  },
+  "expectedFullGate": {
+    "passed": 96,
+    "skipped": 2,
+    "failed": 0,
+    "totalExecutions": 98
+  },
+  "fixtureContract": {
+    "browserDb": "e2e/browser-db.mjs",
+    "bootstrap": "tooling/bootstrap-browser-smoke-db.mjs",
+    "exportedHelpers": [
+      "runBrowserSql",
+      "runBrowserFlightFixtureCleanup",
+      "browserSqlScalar",
+      "resetAppearanceFixture",
+      "resetConnectionFixture",
+      "resetAccountSettingsFixture",
+      "setE13NightDefinitionFixture",
+      "resetConnectionManagerFixture",
+      "resetIntelligentReviewFormScopeFixture",
+      "resetGpsNormalizedImportFixture",
+      "resetF41CommonRoleCrewFixture",
+      "resetF42WholePartRoleCrewFixture",
+      "resetF43GpsSafetyPilotFixture",
+      "resetF35SnapshotFixture",
+      "resetF35QuickAddFixture",
+      "resetF35AuthorityFixtures",
+      "mutateF35ProfileAfterRender",
+      "resetF24VerificationFixture",
+      "resetSafetyPilotPicFixture",
+      "renameSafetyPilotPicFixture",
+      "revokeSafetyPilotPicConnectionFixture",
+      "resetSafetyPilotPicInviteFixture",
+      "resetE14LegacyTaskFixture",
+      "clearE14LegacyTaskFixture",
+      "revokeSafetyPilotPicInviteConnectionFixture"
+    ],
+    "numericFixtureIds": [
+      "9001",
+      "9002",
+      "9903",
+      "9904",
+      "9911",
+      "9912",
+      "9913",
+      "9914",
+      "9915",
+      "9920",
+      "9921"
+    ],
+    "primaryUsers": [
+      "browser-auth@example.test",
+      "browser-friend@example.test"
+    ]
+  },
+  "requiredPresentationStates": {
+    "f6Viewports": [
+      "desktop-1440",
+      "ipad-landscape",
+      "ipad-portrait",
+      "mobile-390",
+      "mobile-320",
+      "reflow-200-equivalent"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "uiAuditViewports": [
+      "desktop",
+      "ipad-landscape",
+      "ipad-portrait",
+      "mobile"
+    ]
+  }
+}

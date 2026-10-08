@@ -1,9 +1,249 @@
 {
-  "version": 1,
-  "lightweight": {
-    "extensions": [".md", ".css"],
-    "prefixes": ["docs/"]
+  "$schema": "./development-modules.schema.json",
+  "schemaVersion": 3,
+  "version": 3,
+  "evidencePolicy": {
+    "behavioralClasses": [
+      "domain-unit",
+      "application-source-contract",
+      "postgres-acceptance",
+      "browser-acceptance"
+    ],
+    "groupClasses": [
+      "domain-unit",
+      "application-source-contract",
+      "postgres-acceptance",
+      "browser-acceptance",
+      "aggregate-regression"
+    ],
+    "statuses": [
+      "PASS",
+      "FAIL",
+      "NOT RUN",
+      "N/A",
+      "PARTIAL"
+    ],
+    "aggregateGates": [
+      "full-tests"
+    ],
+    "buildArtifact": "build",
+    "gateRequirements": {
+      "postgres": "postgres-acceptance",
+      "browser": "browser-acceptance"
+    },
+    "riskRequirements": {
+      "domain-data-integrity": [
+        "domain-unit"
+      ]
+    },
+    "dedicatedAcceptanceSources": {
+      "postgres-acceptance": "postgres",
+      "browser-acceptance": "browser-risk"
+    },
+    "directEvidenceSources": {
+      "domain-unit": "domain-unit"
+    },
+    "dedicatedAcceptanceCoverage": {
+      "postgres-acceptance": "full",
+      "browser-acceptance": "targeted"
+    }
   },
+  "documentation": {
+    "extensions": [
+      ".md"
+    ],
+    "prefixes": [
+      "docs/"
+    ]
+  },
+  "presentation": {
+    "extensions": [
+      ".css"
+    ],
+    "risks": [
+      "ui-presentation"
+    ],
+    "testGroups": [
+      "ui-contract"
+    ],
+    "gates": {
+      "postgres": false,
+      "scale": false,
+      "browser": false,
+      "fullTests": false,
+      "build": true
+    }
+  },
+  "testGroups": {
+    "ui-contract": {
+      "evidenceClass": "application-source-contract",
+      "coverage": "targeted",
+      "risks": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      },
+      "tests": [
+        "tests/v121-ui-simplification.test.ts",
+        "tests/v1342-ui-polish.test.ts",
+        "tests/v156-mobile-layout-audit.test.ts",
+        "tests/v300-navigation-hierarchy.test.ts",
+        "tests/v300-u6-final-ux.test.ts",
+        "tests/v320-ui-consistency.test.ts",
+        "tests/v321-route-ui-audit.test.ts",
+        "tests/v322-browser-smoke.test.ts",
+        "tests/v323-auth-browser.test.ts",
+        "tests/v324-auth-mutations.test.ts",
+        "tests/v325-transaction-mutations.test.ts",
+        "tests/v327-ui-ux-consistency-audit.test.ts",
+        "tests/v328-aircraft-library-ux.test.ts",
+        "tests/v329-actions-budget.test.ts",
+        "tests/v330-add-flight-simplicity.test.ts",
+        "tests/v332-flights-workflow-simplicity.test.ts"
+      ]
+    },
+    "development-pipeline": {
+      "evidenceClass": "application-source-contract",
+      "coverage": "targeted",
+      "risks": [
+        "tooling"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      },
+      "tests": [
+        "tests/browser-risk-selection.test.ts",
+        "tests/browser-suite-structure.test.ts",
+        "tests/development-pipeline.test.ts",
+        "tests/development-scope.test.ts",
+        "tests/evidence-contract.test.ts",
+        "tests/vercel-ignore-build.test.ts",
+        "tests/verification-iterate.test.ts",
+        "tests/verification-ledger.test.ts",
+        "tests/verification-plan.test.ts",
+        "tests/verification-release-risk.test.ts"
+      ]
+    }
+  },
+  "specialRules": [
+    {
+      "id": "verification-harness",
+      "prefixes": [],
+      "files": [
+        "tooling/verification-aggregate.mjs",
+        "tooling/verification-build.mjs",
+        "tooling/verification-candidate.mjs",
+        "tooling/verification-execution.mjs",
+        "tooling/verification-identity.mjs",
+        "tooling/verification-ledger.mjs",
+        "tooling/verification-reuse.mjs",
+        "tooling/verification-source.mjs",
+        "tooling/verification-typecheck.mjs",
+        "tooling/verify-app.mjs",
+        "tooling/verify-domain.mjs",
+        "tooling/verify-iterate.mjs",
+        "tooling/verify-plan.mjs",
+        "tooling/verify-release-risk.mjs"
+      ],
+      "risks": [
+        "tooling"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "postgres-harness",
+      "prefixes": [],
+      "files": [
+        "tooling/postgres-cli.mjs",
+        "tooling/run-postgres-tests.mjs",
+        "tooling/verify-postgres.mjs",
+        "tooling/verify-release-risk.mjs"
+      ],
+      "risks": [
+        "tooling",
+        "persistence-schema"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": false
+      }
+    },
+    {
+      "id": "browser-harness",
+      "prefixes": [
+        "e2e/"
+      ],
+      "files": [
+        "playwright.config.mjs",
+        "tooling/bootstrap-browser-smoke-db.mjs",
+        "tooling/playwright-evidence-reporter.mjs",
+        "tooling/run-auth-browser.mjs",
+        "tooling/verification-browser-risk.mjs",
+        "tooling/verify-browser-risk.mjs",
+        "tooling/verify-browser-with-build.mjs",
+        "tooling/verify-browser.mjs",
+        "tooling/verify-release-risk.mjs"
+      ],
+      "risks": [
+        "tooling",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "development-pipeline",
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": false
+      }
+    },
+    {
+      "id": "postgres-integration-tests",
+      "prefixes": [
+        "tests/integration/"
+      ],
+      "files": [],
+      "risks": [
+        "persistence-schema",
+        "test-contract"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": false,
+        "fullTests": false,
+        "build": false
+      }
+    }
+  ],
   "scalePaths": [
     "lib/db-optimization.ts",
     "lib/data/dashboard.ts",
@@ -11,51 +251,1013 @@
     "lib/data/pilot-insights.ts",
     "lib/pending-actions.ts",
     "app/api/export/route.ts",
-    "app/(protected)/print/page.tsx",
-    "tests/integration/postgres-scale-readiness.test.ts",
-    "tests/integration/postgres-v169-production-hardening.test.ts",
-    "tests/integration/postgres-v230-large-logbook-performance.test.ts"
+    "app/(protected)/print/page.tsx"
   ],
   "modules": [
     {
       "id": "flight-records",
-      "prefixes": ["app/(protected)/flights/", "components/flight", "lib/flight", "lib/data/flights"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/flights/",
+        "components/flight",
+        "lib/flight",
+        "lib/data/flights",
+        "app/(protected)/audit/",
+        "app/f/",
+        "components/delete-flight",
+        "components/intelligent-flight-entry",
+        "components/readonly-logbook",
+        "components/void-certified-flight",
+        "lib/certification-integrity",
+        "lib/crew",
+        "lib/easa-logbook",
+        "lib/legacy-flight-task",
+        "lib/role-crew",
+        "lib/void-evidence",
+        "lib/output-range",
+        "lib/aviation-units",
+        "lib/display-format"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/flight-input.test.ts",
+          "tests/flight-role-crew.test.ts",
+          "tests/certification-integrity.test.ts"
+        ]
+      }
     },
     {
       "id": "credentials-compliance",
-      "prefixes": ["app/(protected)/credentials/", "components/recency", "lib/recency", "lib/sfcl", "lib/bfcl", "lib/helicopter"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/credentials/",
+        "components/recency",
+        "lib/recency",
+        "lib/sfcl",
+        "lib/bfcl",
+        "lib/helicopter",
+        "components/advanced-qualifications",
+        "components/balloon-recency",
+        "components/helicopter-recency",
+        "components/spl-recency",
+        "components/licence-save",
+        "lib/balloon",
+        "lib/credential",
+        "lib/fcl050",
+        "lib/qualification",
+        "lib/regulatory",
+        "lib/spl-recency",
+        "lib/canonical-evidence",
+        "lib/legacy-movement"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/fcl050-compliance.test.ts"
+        ]
+      }
     },
     {
       "id": "connections-workflows",
-      "prefixes": ["app/(protected)/connections/", "app/(protected)/actions/", "app/(protected)/notifications/", "lib/pending-actions", "lib/training-verification"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/connections/",
+        "app/(protected)/actions/",
+        "app/(protected)/notifications/",
+        "lib/pending-actions",
+        "lib/training-verification",
+        "components/pilot-connection",
+        "components/in-person-signature",
+        "components/training-flight-candidates",
+        "lib/aircraft-training-verification",
+        "lib/shared-flight-credit",
+        "lib/training-privacy",
+        "lib/verification-signature"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "auth-security",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/v130-crew-verification.test.ts"
+        ]
+      }
     },
     {
       "id": "analytics",
-      "prefixes": ["app/(protected)/dashboard/", "app/(protected)/statistics/", "app/(protected)/map/", "lib/data/dashboard", "lib/data/pilot-insights"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/dashboard/",
+        "app/(protected)/statistics/",
+        "app/(protected)/map/",
+        "lib/data/dashboard",
+        "lib/data/pilot-insights",
+        "components/dashboard-",
+        "components/monthly-chart",
+        "components/pilot-insights",
+        "components/route-overview-map",
+        "lib/dashboard-",
+        "lib/performance",
+        "lib/pilot-insights"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/dashboard-math.test.ts",
+          "tests/v168-pilot-insights.test.ts"
+        ]
+      }
     },
     {
       "id": "data-recovery",
-      "prefixes": ["app/(protected)/data/", "app/(protected)/database/", "app/(protected)/export/", "app/(protected)/print/", "app/api/export/", "lib/account-backup", "lib/account-restore", "lib/portable-backup"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/data/",
+        "app/(protected)/database/",
+        "app/(protected)/export/",
+        "app/(protected)/print/",
+        "app/api/export/",
+        "lib/account-backup",
+        "lib/account-restore",
+        "lib/portable-backup",
+        "app/api/backups/",
+        "app/api/cron/backups/",
+        "components/backup-",
+        "components/data-",
+        "components/database-",
+        "components/print-button",
+        "lib/backup-",
+        "lib/recovery-",
+        "lib/privacy-account",
+        "lib/logbook-print",
+        "lib/category-print",
+        "lib/easa-print-layout"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/portable-backup.test.ts"
+        ]
+      }
     },
     {
       "id": "fstd",
-      "prefixes": ["app/(protected)/fstd/", "lib/fstd"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/fstd/",
+        "lib/fstd"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/certification-integrity.test.ts",
+          "tests/fcl050-compliance.test.ts"
+        ]
+      }
     },
     {
       "id": "platform",
-      "prefixes": ["app/(protected)/admin/", "app/(protected)/profile/", "app/(protected)/settings/", "app/api/auth/", "lib/auth", "lib/runtime-schema", "lib/db"],
-      "files": []
+      "prefixes": [
+        "app/(protected)/admin/",
+        "app/(protected)/profile/",
+        "app/(protected)/settings/",
+        "app/api/auth/",
+        "lib/auth",
+        "lib/runtime-schema",
+        "lib/db",
+        "app/api/cron/recency/",
+        "lib/local-postgres",
+        "lib/migration-plan",
+        "lib/system-health",
+        "lib/data/database",
+        "lib/data/profile",
+        "lib/data/user-settings",
+        "lib/v1",
+        "lib/v2",
+        "lib/v3"
+      ],
+      "files": [],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "development-pipeline",
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
     },
     {
       "id": "development-infrastructure",
-      "prefixes": [".github/", "tooling/"],
-      "files": ["package.json", "package-lock.json", "tsconfig.json", "next.config.ts", "vercel.json", "DEVELOPMENT.md"]
+      "prefixes": [
+        ".github/",
+        "tooling/"
+      ],
+      "files": [
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "next.config.ts",
+        "vercel.json",
+        "DEVELOPMENT.md"
+      ],
+      "risks": [
+        "tooling"
+      ],
+      "testGroups": [
+        "development-pipeline"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "aircraft-airports",
+      "prefixes": [
+        "app/api/aircraft-",
+        "components/aircraft",
+        "components/airport",
+        "components/quick-aircraft",
+        "lib/aircraft",
+        "lib/airport",
+        "lib/rate-history"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/airport-code.test.ts",
+          "tests/aircraft-profile-domain.test.ts",
+          "tests/billing-rate-history.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "gps-tracks",
+      "prefixes": [
+        "app/api/flights/",
+        "app/api/map-tile/",
+        "components/gps-",
+        "components/track",
+        "components/tracks-",
+        "components/lazy-flight-track",
+        "components/leaflet-mobile",
+        "lib/gps-",
+        "lib/track-",
+        "lib/kml",
+        "lib/civil-twilight",
+        "lib/night-definition",
+        "lib/data/tracks",
+        "lib/data/flight-track-review"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/track-processing.test.ts",
+          "tests/track-time.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "notifications-push",
+      "prefixes": [
+        "app/api/notifications/",
+        "app/api/push/",
+        "components/notification-",
+        "components/push-",
+        "lib/notification",
+        "lib/notifications",
+        "lib/push-"
+      ],
+      "files": [],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "identity-auth",
+      "prefixes": [
+        "app/login/",
+        "app/forgot-password/",
+        "app/reset-password/",
+        "app/join/"
+      ],
+      "files": [
+        "components/auth-invite-creator.tsx",
+        "lib/email.ts",
+        "lib/cron-auth.ts"
+      ],
+      "risks": [
+        "auth-security",
+        "persistence-schema",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": true,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "legal-commercial",
+      "prefixes": [
+        "app/legal/",
+        "lib/commercial",
+        "lib/billing",
+        "lib/entitlement",
+        "lib/brand-claims",
+        "lib/legal"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/billing-rate-history.test.ts",
+          "tests/v290-commercial-readiness.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "professional-experience",
+      "prefixes": [
+        "components/professional-",
+        "lib/professional-"
+      ],
+      "files": [],
+      "risks": [
+        "domain-data-integrity",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/professional-experience-domain.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "shell-presentation",
+      "prefixes": [
+        "components/app-shell",
+        "components/nav-icon",
+        "components/sidebar",
+        "components/theme-",
+        "components/public-theme",
+        "components/pwa-client",
+        "components/install-app",
+        "components/legal-footer",
+        "components/details-navigation",
+        "components/settings-workspace-navigation",
+        "components/pending-action-",
+        "components/use-unsaved-form-guard"
+      ],
+      "files": [
+        "app/(protected)/layout.tsx",
+        "app/layout.tsx",
+        "app/error.tsx",
+        "app/not-found.tsx",
+        "app/page.tsx",
+        "app/manifest.ts",
+        "app/(protected)/notifications/notifications.module.css",
+        "app/(protected)/print/print.module.css",
+        "app/dashboard-customization.css",
+        "app/globals.css",
+        "app/light-interactions.css",
+        "app/theme.css",
+        "app/ui-system.css",
+        "app/v1342-ui-polish.css",
+        "app/v135-recency.css",
+        "app/v1352-recency.css",
+        "app/v1353-fcl060.css",
+        "app/v1354-recency-audit.css",
+        "app/v136-mobile.css",
+        "app/v137-shared-flights.css",
+        "app/v138-dashboard-insights.css",
+        "app/v140-flights.css",
+        "app/v141-gps-review.css",
+        "app/v142-gps-import.css",
+        "app/v145-credentials.css",
+        "app/v146-credentials.css",
+        "app/v147-everyday.css",
+        "app/v148-training.css",
+        "app/v149-linkage.css",
+        "app/v150-ui-system.css",
+        "app/v151-regulatory.css",
+        "app/v153-everyday-ux.css",
+        "app/v156-mobile-hardening.css",
+        "app/v157-flight-entry-workflow.css",
+        "app/v158-flight-entry-polish.css",
+        "app/v159-flight-entry-structure.css",
+        "app/v160-adaptive-pilot-workspace.css",
+        "app/v161-category-flight-entry.css",
+        "app/v162-sailplane.css",
+        "app/v250-recency-workspace.css",
+        "app/v300-aircraft-sharing.css",
+        "app/v300-push.css",
+        "app/v300-u2-credentials.css",
+        "app/v300-u31-aircraft-airports.css",
+        "app/v300-u32-data.css",
+        "app/v300-u33-settings.css",
+        "app/v300-u4-flight-workflow.css",
+        "app/v300-u6-acceptance.css",
+        "app/v301-public-flight-viewer.css",
+        "components/sidebar.module.css"
+      ],
+      "risks": [
+        "ui-presentation",
+        "browser-ui"
+      ],
+      "testGroups": [
+        "ui-contract"
+      ],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": true,
+        "fullTests": true,
+        "build": true
+      }
+    },
+    {
+      "id": "shared-runtime",
+      "prefixes": [],
+      "files": [
+        "components/credentials-navigation.tsx",
+        "components/kml-import-form.tsx",
+        "components/share-public-link.tsx",
+        "components/signature-preview.tsx",
+        "lib/actionable-intelligent-attention.ts",
+        "lib/data/aircraft.ts",
+        "lib/data/flight-audit.ts",
+        "lib/intelligent-logbook-client-types.ts",
+        "lib/intelligent-logbook-service.ts",
+        "lib/intelligent-logbook.ts",
+        "lib/pilot-workspace.ts",
+        "lib/route-filter.ts",
+        "lib/ui-preferences.ts"
+      ],
+      "risks": [
+        "shared-runtime"
+      ],
+      "testGroups": [],
+      "gates": {
+        "postgres": false,
+        "scale": false,
+        "browser": false,
+        "fullTests": true,
+        "build": true
+      }
     }
-  ]
+  ],
+  "ownership": {
+    "runtimeRoots": [
+      "app/",
+      "components/",
+      "lib/"
+    ],
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".css"
+    ],
+    "auditedTotal": 381,
+    "baselineStableOwned": 121,
+    "minimumStableCoverage": 0.9
+  },
+  "postgresAcceptance": {
+    "scaleTests": [
+      "tests/integration/postgres-scale-readiness.test.ts",
+      "tests/integration/postgres-v169-production-hardening.test.ts",
+      "tests/integration/postgres-v230-large-logbook-performance.test.ts"
+    ]
+  },
+  "browserAcceptance": {
+    "explicitNotApplicableSkipReasons": [
+      "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
+    ],
+    "selectionVersion": 1,
+    "moduleTargets": {
+      "flight-records": [
+        "flight-manual-save-desktop",
+        "flight-manual-save-mobile",
+        "flight-gps-save-desktop",
+        "flight-gps-save-mobile",
+        "flight-void-desktop",
+        "flight-void-mobile"
+      ],
+      "connections-workflows": [
+        "connections-accept-desktop",
+        "connections-accept-mobile",
+        "connections-access-desktop",
+        "connections-access-mobile",
+        "safety-pilot-invite-desktop",
+        "safety-pilot-invite-mobile"
+      ],
+      "analytics": [
+        "shell-core-desktop",
+        "shell-core-mobile"
+      ],
+      "platform": [
+        "settings-transaction-desktop",
+        "settings-transaction-mobile",
+        "appearance-desktop",
+        "appearance-mobile",
+        "shell-core-desktop",
+        "shell-core-mobile"
+      ],
+      "aircraft-airports": [
+        "aircraft-quick-add-desktop",
+        "aircraft-quick-add-mobile",
+        "aircraft-profile-authority-desktop",
+        "aircraft-profile-authority-mobile"
+      ],
+      "gps-tracks": [
+        "flight-gps-save-desktop",
+        "flight-gps-save-mobile",
+        "sera-gps-desktop",
+        "sera-gps-mobile",
+        "gps-night-gap-desktop",
+        "gps-night-gap-mobile"
+      ],
+      "identity-auth": [
+        "auth-login-shell-desktop",
+        "auth-login-shell-mobile",
+        "auth-protected-redirect-desktop",
+        "auth-protected-redirect-mobile",
+        "auth-login-pending-desktop",
+        "auth-login-pending-mobile"
+      ],
+      "shell-presentation": [
+        "shell-core-desktop",
+        "shell-core-mobile",
+        "responsive-entry-desktop"
+      ]
+    },
+    "pathTargets": [
+      {
+        "prefixes": [
+          "lib/role-crew",
+          "lib/crew",
+          "components/flight-form",
+          "components/kml-import-form"
+        ],
+        "files": [],
+        "targets": [
+          "rolecrew-manual-desktop",
+          "rolecrew-manual-mobile",
+          "rolecrew-gps-desktop",
+          "rolecrew-gps-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "lib/certification-integrity",
+          "lib/void-evidence"
+        ],
+        "files": [],
+        "targets": [
+          "flight-manual-save-desktop",
+          "flight-manual-save-mobile",
+          "flight-gps-save-desktop",
+          "flight-gps-save-mobile",
+          "flight-void-desktop",
+          "flight-void-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "lib/civil-twilight",
+          "lib/night-definition"
+        ],
+        "files": [],
+        "targets": [
+          "sera-gps-desktop",
+          "sera-gps-mobile",
+          "gps-night-gap-desktop",
+          "gps-night-gap-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/quick-aircraft",
+          "lib/aircraft"
+        ],
+        "files": [],
+        "targets": [
+          "aircraft-quick-add-desktop",
+          "aircraft-quick-add-mobile",
+          "aircraft-profile-authority-desktop",
+          "aircraft-profile-authority-mobile"
+        ]
+      }
+    ],
+    "harnessTargets": [
+      "aircraft-profile-authority-desktop",
+      "aircraft-profile-authority-mobile",
+      "aircraft-quick-add-desktop",
+      "aircraft-quick-add-mobile",
+      "appearance-desktop",
+      "appearance-mobile",
+      "auth-login-pending-desktop",
+      "auth-login-pending-mobile",
+      "auth-login-shell-desktop",
+      "auth-login-shell-mobile",
+      "auth-protected-redirect-desktop",
+      "auth-protected-redirect-mobile",
+      "connections-accept-desktop",
+      "connections-accept-mobile",
+      "connections-access-desktop",
+      "connections-access-mobile",
+      "flight-gps-save-desktop",
+      "flight-gps-save-mobile",
+      "flight-manual-save-desktop",
+      "flight-manual-save-mobile",
+      "flight-void-desktop",
+      "flight-void-mobile",
+      "gps-night-gap-desktop",
+      "gps-night-gap-mobile",
+      "responsive-entry-desktop",
+      "rolecrew-gps-desktop",
+      "rolecrew-gps-mobile",
+      "rolecrew-manual-desktop",
+      "rolecrew-manual-mobile",
+      "safety-pilot-invite-desktop",
+      "safety-pilot-invite-mobile",
+      "sera-gps-desktop",
+      "sera-gps-mobile",
+      "settings-transaction-desktop",
+      "settings-transaction-mobile",
+      "shell-core-desktop",
+      "shell-core-mobile",
+      "shell-offline-desktop",
+      "shell-offline-mobile",
+      "verifier-evidence-desktop",
+      "verifier-evidence-mobile"
+    ],
+    "targets": {
+      "shell-core-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "authenticated pilot can navigate the core product shell",
+        "project": "desktop-chromium"
+      },
+      "shell-core-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "authenticated pilot can navigate the core product shell",
+        "project": "mobile-chromium"
+      },
+      "shell-offline-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected shell shows and clears the offline connection banner",
+        "project": "desktop-chromium"
+      },
+      "shell-offline-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected shell shows and clears the offline connection banner",
+        "project": "mobile-chromium"
+      },
+      "auth-login-shell-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login shell is usable without horizontal overflow",
+        "project": "desktop-chromium"
+      },
+      "auth-login-shell-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login shell is usable without horizontal overflow",
+        "project": "mobile-chromium"
+      },
+      "auth-protected-redirect-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected routes redirect unauthenticated browsers to sign in",
+        "project": "desktop-chromium"
+      },
+      "auth-protected-redirect-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "protected routes redirect unauthenticated browsers to sign in",
+        "project": "mobile-chromium"
+      },
+      "auth-login-pending-desktop": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login submission exposes a disabled pending state before the request completes",
+        "project": "desktop-chromium"
+      },
+      "auth-login-pending-mobile": {
+        "spec": "e2e/public-shell.spec.mjs",
+        "title": "login submission exposes a disabled pending state before the request completes",
+        "project": "mobile-chromium"
+      },
+      "flight-manual-save-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+        "project": "desktop-chromium"
+      },
+      "flight-manual-save-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.4.0 Manual explicit Save & certify seals the persisted row while Enter remains draft-only",
+        "project": "mobile-chromium"
+      },
+      "flight-gps-save-desktop": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "3.4.0 single GPS Save & certify seals the imported persisted row",
+        "project": "desktop-chromium"
+      },
+      "flight-gps-save-mobile": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "3.4.0 single GPS Save & certify seals the imported persisted row",
+        "project": "mobile-chromium"
+      },
+      "flight-void-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+        "project": "desktop-chromium"
+      },
+      "flight-void-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "3.5.0 certified flight can be voided from active logbook while permanent audit remains",
+        "project": "mobile-chromium"
+      },
+      "aircraft-quick-add-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+        "project": "desktop-chromium"
+      },
+      "aircraft-quick-add-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 Quick Add refreshes aircraft authority before immediate flight Save",
+        "project": "mobile-chromium"
+      },
+      "aircraft-profile-authority-desktop": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+        "project": "desktop-chromium"
+      },
+      "aircraft-profile-authority-mobile": {
+        "spec": "e2e/manual-authority-certification.spec.mjs",
+        "title": "F3.5 PROFILE authority re-resolves on submit and persists only allowed TMG context",
+        "project": "mobile-chromium"
+      },
+      "rolecrew-manual-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+        "project": "desktop-chromium"
+      },
+      "rolecrew-manual-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",
+        "project": "mobile-chromium"
+      },
+      "rolecrew-gps-desktop": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+        "project": "desktop-chromium"
+      },
+      "rolecrew-gps-mobile": {
+        "spec": "e2e/gps-rolecrew.spec.mjs",
+        "title": "F4.1 common DUAL invalidates inherited review and persists normalized RoleCrew",
+        "project": "mobile-chromium"
+      },
+      "connections-accept-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection acceptance disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "connections-accept-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection acceptance disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "connections-access-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection access update disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "connections-access-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "connection access update disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "safety-pilot-invite-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "certified Safety Pilot can invite only the stored connected Actual PIC",
+        "project": "desktop-chromium"
+      },
+      "safety-pilot-invite-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "certified Safety Pilot can invite only the stored connected Actual PIC",
+        "project": "mobile-chromium"
+      },
+      "settings-transaction-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "account settings transaction disables duplicate submit and persists both records",
+        "project": "desktop-chromium"
+      },
+      "settings-transaction-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "account settings transaction disables duplicate submit and persists both records",
+        "project": "mobile-chromium"
+      },
+      "appearance-desktop": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "appearance mutation disables duplicate submit and persists",
+        "project": "desktop-chromium"
+      },
+      "appearance-mobile": {
+        "spec": "e2e/settings-connections-mutations.spec.mjs",
+        "title": "appearance mutation disables duplicate submit and persists",
+        "project": "mobile-chromium"
+      },
+      "sera-gps-desktop": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+        "project": "desktop-chromium"
+      },
+      "sera-gps-mobile": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "E1.3 SERA GPS suggestion is accessible, invalidates on total change and keeps pilot edits sticky",
+        "project": "mobile-chromium"
+      },
+      "gps-night-gap-desktop": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+        "project": "desktop-chromium"
+      },
+      "gps-night-gap-mobile": {
+        "spec": "e2e/advisory-presentation.spec.mjs",
+        "title": "3.4.1 sparse GPS Night-time stays manual with an explicit gap reason",
+        "project": "mobile-chromium"
+      },
+      "verifier-evidence-desktop": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+        "project": "desktop-chromium"
+      },
+      "verifier-evidence-mobile": {
+        "spec": "e2e/manual-rolecrew-verification.spec.mjs",
+        "title": "F2.4C certified verifier evidence stays unbound and exposes both explicit verification paths",
+        "project": "mobile-chromium"
+      },
+      "responsive-entry-desktop": {
+        "spec": "e2e/responsive-presentation.spec.mjs",
+        "title": "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
+        "project": "desktop-chromium"
+      }
+    }
+  }
 }

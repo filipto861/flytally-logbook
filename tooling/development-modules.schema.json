@@ -1,0 +1,402 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fly-tally.com/schemas/development-modules.schema.json",
+  "title": "FlyTally development module and evidence registry",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "version",
+    "evidencePolicy",
+    "documentation",
+    "presentation",
+    "testGroups",
+    "specialRules",
+    "scalePaths",
+    "modules",
+    "ownership",
+    "browserAcceptance",
+    "postgresAcceptance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 3
+    },
+    "version": {
+      "const": 3
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "required": [
+        "behavioralClasses",
+        "groupClasses",
+        "statuses",
+        "aggregateGates",
+        "buildArtifact",
+        "gateRequirements",
+        "riskRequirements",
+        "dedicatedAcceptanceSources",
+        "dedicatedAcceptanceCoverage",
+        "directEvidenceSources"
+      ],
+      "properties": {
+        "behavioralClasses": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "domain-unit",
+              "application-source-contract",
+              "postgres-acceptance",
+              "browser-acceptance"
+            ]
+          }
+        },
+        "groupClasses": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "domain-unit",
+              "application-source-contract",
+              "postgres-acceptance",
+              "browser-acceptance",
+              "aggregate-regression"
+            ]
+          }
+        },
+        "statuses": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT RUN",
+              "N/A",
+              "PARTIAL"
+            ]
+          }
+        },
+        "aggregateGates": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "buildArtifact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gateRequirements": {
+          "type": "object",
+          "required": [
+            "postgres",
+            "browser"
+          ],
+          "properties": {
+            "postgres": {
+              "const": "postgres-acceptance"
+            },
+            "browser": {
+              "const": "browser-acceptance"
+            }
+          },
+          "additionalProperties": false
+        },
+        "riskRequirements": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "domain-unit",
+                "application-source-contract",
+                "postgres-acceptance",
+                "browser-acceptance"
+              ]
+            }
+          }
+        },
+        "dedicatedAcceptanceSources": {
+          "type": "object",
+          "required": [
+            "postgres-acceptance",
+            "browser-acceptance"
+          ],
+          "properties": {
+            "postgres-acceptance": {
+              "const": "postgres"
+            },
+            "browser-acceptance": {
+              "const": "browser-risk"
+            }
+          },
+          "additionalProperties": false
+        },
+        "dedicatedAcceptanceCoverage": {
+          "type": "object",
+          "required": [
+            "postgres-acceptance",
+            "browser-acceptance"
+          ],
+          "properties": {
+            "postgres-acceptance": {
+              "const": "full"
+            },
+            "browser-acceptance": {
+              "const": "targeted"
+            }
+          },
+          "additionalProperties": false
+        },
+        "directEvidenceSources": {
+          "type": "object",
+          "required": [
+            "domain-unit"
+          ],
+          "properties": {
+            "domain-unit": {
+              "const": "domain-unit"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "testGroups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "evidenceClass",
+          "coverage",
+          "risks",
+          "gates",
+          "tests"
+        ],
+        "properties": {
+          "evidenceClass": {
+            "enum": [
+              "domain-unit",
+              "application-source-contract",
+              "postgres-acceptance",
+              "browser-acceptance",
+              "aggregate-regression"
+            ]
+          },
+          "coverage": {
+            "enum": [
+              "targeted",
+              "full"
+            ]
+          },
+          "risks": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "gates": {
+            "type": "object",
+            "required": [
+              "postgres",
+              "scale",
+              "browser",
+              "fullTests",
+              "build"
+            ],
+            "properties": {
+              "postgres": {
+                "type": "boolean"
+              },
+              "scale": {
+                "type": "boolean"
+              },
+              "browser": {
+                "type": "boolean"
+              },
+              "fullTests": {
+                "type": "boolean"
+              },
+              "build": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "tests": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^tests/.+[.]test[.]ts$"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "risks",
+          "testGroups",
+          "gates"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidenceTests": {
+            "type": "object",
+            "properties": {
+              "domain-unit": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^tests/.+[.]test[.]ts$"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "browserAcceptance": {
+      "type": "object",
+      "required": [
+        "explicitNotApplicableSkipReasons",
+        "selectionVersion",
+        "moduleTargets",
+        "pathTargets",
+        "harnessTargets",
+        "targets"
+      ],
+      "properties": {
+        "explicitNotApplicableSkipReasons": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selectionVersion": {
+          "const": 1
+        },
+        "moduleTargets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "pathTargets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "prefixes",
+              "files",
+              "targets"
+            ],
+            "properties": {
+              "prefixes": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "files": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "targets": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "harnessTargets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "spec",
+              "title",
+              "project"
+            ],
+            "properties": {
+              "spec": {
+                "type": "string",
+                "pattern": "^e2e/.+[.]spec[.]mjs$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "project": {
+                "enum": [
+                  "desktop-chromium",
+                  "mobile-chromium"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

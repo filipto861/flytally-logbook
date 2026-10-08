@@ -591,7 +591,7 @@ INSERT INTO flights(
 
 const result=spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-q"],{input:sql,
   encoding:"utf8",
-  env:{...process.env,PGCONNECTTIMEOUT:"5"},
+  env:{...process.env,PGCONNECT_TIMEOUT:"5"},
   maxBuffer:16*1024*1024,
 });
 if(result.error)throw result.error;

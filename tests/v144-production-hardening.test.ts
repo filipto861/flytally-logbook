@@ -26,7 +26,9 @@ test("v1.44.0 verification remains deduplicated under the current manual-only cl
   assert.match(workflow,/cancel-in-progress: true/);
   assert.doesNotMatch(workflow,/\n\s*push:/);
   assert.doesNotMatch(workflow,/\n\s*pull_request:/);
-  assert.match(workflow,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
+  assert.doesNotMatch(workflow,/FLYTALLY_POSTGRES_INTEGRATION/);
+  const postgresRunner=read("tooling/run-postgres-tests.mjs");
+  assert.match(postgresRunner,/FLYTALLY_POSTGRES_INTEGRATION: "1"/);
 });
 
 test("v1.44.0 hardens current hot paths without removing compatibility data",()=>{

@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 7 October 2026  
+**Last updated:** 8 October 2026  
 **Current production product version:** `3.5.5`  
 **Current active release:** `3.6.0`
 
@@ -647,13 +647,241 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 
 # 3.6.0 — Saved-date / timezone semantics — ACTIVE
 
-Issue: #144
+Issue: #144  
+Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
+
+## Phase 0 — Engineering quality / test architecture gate — DONE / VERIFIED
+
+Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
+
+**Current step: integrate verified Phase 0 through PR #255; Phase 1 runtime work remains blocked until `main` contains Phase 0.**
+
+Current milestone: **Phase 0F — hygiene and Phase 0 closeout — DONE / VERIFIED**. Phase 0A–0F are complete on the Phase 0 branch; repository integration through PR #255 remains.
+
+Phase 0D closeout:
+- independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
+- development registry schema v3, homogeneous evidence metadata, planner/evaluator separation and fail-closed evidence semantics are implemented;
+- first verification attempt exposed 14 stale historical source-location assertions from the already-verified Phase 0C browser split; they were retargeted without changing product runtime, browser behavior, DB schema or timezone semantics;
+- final exact-code-head verification on `686734911f5c3f45e395fdda6b7d98a5021e84ae`: development-pipeline **65/65 PASS**, TypeScript **PASS**, aggregate regression **1354/1354 PASS**, production build **PASS (41/41 static pages)**;
+- `domain-unit`: **N/A**; PostgreSQL acceptance: **N/A**; browser acceptance: **N/A** for this tooling/source-contract candidate.
+
+Phase 0E and Phase 0F are closed on the verified branch. Do not start 3.6.0 timezone runtime work until PR #255 is integrated into canonical `main`.
+
+Phase 0E independent review verdict: **ACCEPT WITH CHANGES**. Reconciliation is frozen before implementation.
+
+Accepted:
+- release PASS must derive from machine-readable executed evidence, not from intended command composition;
+- canonical browser acceptance becomes browser-only and requires a fresh build artifact from the **same candidate fingerprint**; the legacy build+browser convenience path remains during migration;
+- `verify:release` becomes risk-based only after a compatibility path preserves the old static full behavior;
+- candidate input is explicit and no default merge base is guessed;
+- `--all` means all tracked candidate paths; `--force-all` forces all gates;
+- typecheck becomes an explicit planner gate, default-required for non-documentation candidates;
+- source-contract evidence runs directly even when aggregate `npm test` also runs;
+- final PostgreSQL verification means full PostgreSQL acceptance; core/scale remain lower-level iteration tools;
+- browser full evidence must prohibit filters/sharding and force retries=0, workers=1, fullyParallel=false.
+
+Adapted:
+- **required evidence remains single-sourced by existing risk/gate policy** (`evidencePolicy.riskRequirements` + gate requirements). We will **not** duplicate `requiredEvidence` into every module because that would create two sources of truth. Modules may declare only **available direct evidence**, e.g. `evidenceTests.domain-unit`; the planner derives whether that evidence is required from the module's risks.
+- the evidence record uses a content-aware **candidate fingerprint**, not commit SHA alone. This keeps evidence exact for explicitly supplied dirty/local paths as well as committed candidates.
+- no separate `verify:source` command is required in 0E; registry-backed homogeneous `test:group` executions can emit source-contract ledger entries.
+- `--worktree` / `--staged` are deferred unless explicit path/`--files` input proves insufficient; they are not needed to make uncommitted candidates expressible.
+
+Frozen evidence/execution model:
+- a side-effect-free plan has a stable `candidateId`, exact normalized file list, content-aware files hash, head SHA, optional base SHA, modules, risks, gates and required evidence;
+- every canonical executor writes a machine-readable ledger entry tied to that exact `candidateId`;
+- final release PASS is computed only from required ledger entries for the same candidate, with successful exit status and effective configuration matching the gate contract;
+- stale/mismatched build or evidence entries are unusable;
+- required but unavailable direct evidence fails closed **before** expensive gates.
+
+Frozen 0E.0 command-surface proposal (historical design snapshot):
+- `test:target` — explicit low-level Node tests;
+- `test:group` — homogeneous registry-backed groups;
+- `verify:plan` — canonical side-effect-free planner with human + JSON output; `scope:changed` remains compatibility surface;
+- `verify:app` — application gate only: typecheck + aggregate Node regression + production build; legacy `verify` remains alias;
+- `verify:postgres` — full PostgreSQL acceptance;
+- `verify:browser` — originally proposed as browser-only full authenticated acceptance;
+- `verify:browser:with-build` — migration compatibility convenience;
+- `verify:domain` — registry-approved direct domain-unit evidence only;
+- `verify:release` — originally proposed as the risk-based planner/executor/ledger;
+- `verify:release:full` / `--force-all` — originally proposed compatibility/full escape hatch.
+
+Final implementation supersedes the proposal only where later evidence/review required it: static `verify:release` remains unchanged compatibility behavior, `verify:release:risk` is the canonical candidate-bound release executor, `verify:browser` / `verify:browser:with-build` are legacy full-browser diagnostics, `verify:browser:risk` is authoritative browser release evidence, and no `verify:release:full` script exists; forced full candidate verification is `verify:release:risk --force-all`.
+
+Candidate sources for 0E:
+- explicit positional paths;
+- `--files <path>`;
+- `--base <git-ref>` with explicit ref resolution and no guessed merge base;
+- `--all` = all tracked candidate paths.
+No candidate input = exit 2. `--force-all` changes gate selection, not candidate membership.
+
+Exit contract:
+- 0 = valid plan / successful required evidence;
+- 2 = invalid candidate/configuration/invocation;
+- 3 = valid candidate blocked by missing required evidence or stale prerequisite.
+
+Revised 0E milestones:
+1. **0E.0 — semantics / ledger / compatibility freeze — DONE (design only)**;
+2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — DONE / VERIFIED**;
+   - implementation candidate added: `tooling/verification-candidate.mjs` resolves exactly one explicit source (paths / `--files` / `--base` / `--all`), normalizes and hashes exact candidate content, and rejects missing/ambiguous inputs;
+   - `tooling/verify-plan.mjs` now exposes human and `--json` plans over the existing classifier;
+   - planner now exposes `typecheck` explicitly: non-documentation candidates require it, documentation-only candidates do not;
+   - `--force-all` reuses the existing full-ci policy without changing candidate membership;
+   - `npm run verify:plan` is added; `scope:changed` remains untouched for compatibility;
+   - dedicated planner regression coverage is registered under `development-pipeline`;
+   - final local verification on exact code head `34146fdc2cf8dc7645acfb1aea9de66078cd430a`: development-pipeline **72/72 PASS**, TypeScript **PASS**, aggregate regression **1361/1361 PASS**, production build **PASS (41/41 static pages)**, and `verify:plan -- package.json --json` returned the expected development-infrastructure plan with `typecheck=true`, `fullTests=true`, `build=true`, source-contract evidence required, and PostgreSQL/browser disabled.
+3. **0E.2 — registry available-evidence metadata + direct domain selection — DONE / VERIFIED**;
+   - implementation candidate added: all current `domain-data-integrity` modules now declare exact reviewed `evidenceTests.domain-unit` paths in the existing registry;
+   - two small pure direct suites were added for aircraft-profile and professional-experience behavior so those modules do not rely on static/source-contract files;
+   - registry schema now validates direct evidence metadata;
+   - `tooling/development-evidence.mjs` resolves required domain modules to approved direct tests and reports missing module coverage fail closed;
+   - `verify:plan` now exposes `plan.directEvidence.domain-unit` and candidate blocking reasons; a future missing approved domain suite exits 3 after the plan is printed;
+   - current registry audit shows **10/10 domain-risk modules** have approved direct evidence and all referenced test files exist;
+   - aggregate `npm test` remains independent regression coverage and still cannot synthesize domain evidence;
+   - final local verification on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
+   - canonical planner smoke for `lib/commercial-readiness.ts` selected `legal-commercial`, required only `domain-unit`, resolved the two approved direct tests, reported no missing modules / blocked evidence, and kept PostgreSQL/browser disabled.
+4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gate wrappers — DONE / VERIFIED**;
+   - implementation candidate added: local ignored `.flytally/verification/<candidateId>/` ledger entries now bind canonical gate results to the planner candidate fingerprint;
+   - `verify:app` (and legacy `verify`) now run TypeScript + aggregate Node regression + production build and record the independent build artifact identity without treating aggregate tests as domain evidence;
+   - `verify:domain` executes only module-approved direct `domain-unit` paths and exits 3 when required direct evidence is unavailable;
+   - `verify:postgres` owns full PostgreSQL acceptance through the existing localhost-only preflight and writes dedicated acceptance evidence;
+   - `verify:browser` is now browser-only, requires a same-candidate successful build ledger + matching current Next.js build identity, forces retries=0/workers=1, and preserves `fullyParallel=false`;
+   - `verify:browser:with-build` preserves the migration convenience for build + browser;
+   - the existing UI-audit capture skip is explicitly registered as browser N/A; unexpected/raw skips remain non-PASS;
+   - canonical PostgreSQL/browser wrapper files are classified as their respective acceptance-harness risks so changes cannot evade the heavy gate;
+   - low-level commands remain available; static `verify:release` remains untouched until 0E.4;
+   - **verification pending**; 0E.3 is not DONE yet.
+   - corrected verification on `bfcba06a719e436c9dcc58716a4ee0f2c69e01a6`: development-pipeline **83/83 PASS**, planner **PASS**, `verify:domain` correctly N/A, `verify:app` **PASS** with TypeScript + aggregate regression **1378/1378 PASS** + production build **41/41**, PostgreSQL full acceptance **99/99 PASS**;
+   - canonical browser acceptance executed the full serialized **94-test** matrix with **90 PASS / 2 FAIL / 2 intentional skips** in 11.6 min. Both failures were mobile-only: GPS normalized draft save remained on `/flights/new` past the 5 s navigation assertion, and Connection access update persisted `Instructor` but the expected logbook-share state was not observed; browser acceptance therefore remains **FAIL**, not PARTIAL/PASS;
+   - no browser fix is accepted from this run yet. Next step is focused mobile reproduction of exactly those two failures before changing runtime or weakening assertions.
+   - focused mobile repro then passed both failures independently (**1/1 GPS**, **1/1 Connections**, retries=0/workers=1), indicating suite-load/synchronization sensitivity rather than a deterministic product-runtime failure;
+   - stabilization candidate is test-only: GPS waits explicitly for the post-save URL with a bounded 15 s server-action navigation window, and Connections waits for `Save access` to leave pending before reload while asserting persisted status on the summary itself;
+   - targeted repeat verification pending before one final full browser acceptance run.
+   - targeted mobile repeat on the synchronization correction then passed **6/6** across three repetitions per previously failing flow; `verify:app` passed TypeScript + aggregate regression **1378/1378** + production build **41/41**;
+   - the subsequent full serialized browser gate improved to **91 PASS / 1 FAIL / 2 intentional skips** in 11.7 min. The only remaining failure is mobile F3.5 Quick Add, which timed out after 5 s waiting for the post-add status notice; desktop and all other mobile cases passed;
+   - do not rerun the full browser matrix again until the Quick Add case is reproduced independently and any correction is verified with a cheap targeted repeat.
+   - isolated mobile Quick Add reproduction then passed **5/5** at retries=0/workers=1, confirming the failure is suite-load timing rather than deterministic product behavior;
+   - test-only correction now waits for the successful Quick Add dialog close and success status with a bounded 15 s server-action window before continuing. Product runtime is unchanged;
+   - product decision: the full serialized browser matrix is no longer a routine or Phase-0 closeout gate because its ~12-minute runtime is disproportionate to the iteration cycle. The command remains available as an explicit manual diagnostic, but targeted risk-owned browser evidence replaces it as the normal gate;
+   - final 0E.3 correction verification: mobile F3.5 Quick Add targeted repeat **5/5 PASS** at retries=0/workers=1 after the bounded server-action wait hardening; no product runtime changes were required;
+   - 0E.3 closes on the previously verified development-pipeline **83/83 PASS**, planner PASS, `verify:domain` N/A, `verify:app` PASS (TypeScript + aggregate regression **1378/1378** + production build **41/41**), PostgreSQL full **99/99 PASS**, plus targeted browser correction evidence (**6/6** GPS/Connections and **5/5** Quick Add). Legacy full browser acceptance is explicitly **NOT RUN** after the policy change and must not be represented as PASS.
+   - 0E.3 closeout now requires only a cheap targeted repeat of the corrected Quick Add flow plus the existing source-contract/static gate evidence. Do **not** rerun the 94-test full matrix for 0E.3.
+   - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
+   - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
+   - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — DONE / VERIFIED**;
+   - detailed design: `docs/product/3_6_0_PHASE0E4_FAST_VERIFICATION.md`;
+   - discovery confirms the current planner has exact candidates, module/risk ownership, direct domain evidence and candidate-bound ledgers, but browser evidence is still repository-wide and source-contract groups do not yet emit canonical ledger evidence;
+   - draft design freezes four implementation batches: **0E.4a registry/planner browser selection**, **0E.4b fast iteration executor**, **0E.4c risk-scoped browser executor**, **0E.4d release orchestrator**, then compatibility/verification closeout;
+   - important planner defect to correct in 0E.4a: browser execution requires a production build for `npm start`, so `buildArtifactRequired` must be `build || browser`, not only the current build gate flag;
+   - architecture proposal preserves the existing `browser-acceptance` evidence class but makes a new planner-bound `browser-risk` source authoritative; legacy full `verify:browser` remains manual diagnostics and cannot satisfy release browser evidence;
+   - independent review verdict **ACCEPT WITH CHANGES**: machine-enforce browser authority/selection identity, fail closed on missing/stale/ambiguous targets, reset/identify the shared browser DB fixture, harden dirty/untracked candidate identity, keep iteration evidence distinct from release PASS, and do not silently repurpose `verify:release`;
+   - reconciled command decision: existing `verify:release` keeps its current full/static semantics; new risk-based orchestration will be `verify:release:risk`;
+   - 0E.4a is **DONE / VERIFIED**: candidate/reuse identity hardening, browser-target registry/schema, deterministic target selection/hash, and `buildArtifactRequired = build || browser` are implemented.
+   - 0E.4a implementation candidate added: candidate schema v2 binds dirty/untracked worktree identity; base/all candidates include current dirty/untracked paths; ledger schema v2 preserves that identity; deterministic config/toolchain/browser-fixture contract hashes are available;
+   - browser registry now contains **41 exact `{spec,title,project}` targets** across currently evidenced domains, plus module/path ownership and a complete registered harness target set; modules with browser risk but no defensible targeted coverage intentionally block instead of receiving generic smoke evidence;
+   - `browser-risk-selection.mjs` validates target existence/project/baseline uniqueness, produces deterministic target union + selection hash, and blocks changed diagnostic-only/unowned E2E specs;
+   - planner schema v2 exposes `browserEvidence` and browser candidates now require a production build artifact even when the product module itself did not otherwise select build;
+   - implementation verification is **pending**; no browser runner/release semantics changed yet, and legacy `verify:release` / full `verify:browser` remain untouched.
+   - first local 0E.4a verification attempt at `c9c73a0` passed development-pipeline **91/91**, planner, TypeScript, aggregate regression **1386/1386** and production build **41/41**, but the planner exposed four generated local artifacts (`test-results/.last-run.json` and three scale-evidence JSON files) as dirty/untracked candidate members; this is evidence-integrity noise, so the attempt is not the final exact-candidate closeout;
+   - follow-up fix ignores those generated local verification artifacts and adds a regression proving ignored artifacts do not affect candidate identity;
+   - final exact-head 0E.4a verification at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92 PASS**, planner v2 clean candidate with no generated artifacts and no blockers, TypeScript PASS, aggregate regression **1387/1387 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for this tooling batch;
+   - 0E.4b **DONE / VERIFIED**: canonical application-source-contract ledger execution, candidate-bound TypeScript evidence, exact ledger reuse and `verify:iterate` fast feedback.
+   - exact 0E.4b candidate `d01813c978c63cd5fc14945fca9a310226d338d2`: first `verify:iterate` ran development-pipeline **98/98 PASS** + TypeScript PASS and reported release **NOT EVALUATED**; immediate repeat reused source PASS, domain N/A and TypeScript PASS without re-execution;
+   - 0E.4b release-side closeout on the same exact candidate passed `verify:app`: TypeScript PASS, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the 0E.4b tooling batch;
+   - fast iteration remains separate from release PASS: aggregate/build/PostgreSQL/browser are pending unless their authoritative gates run;
+   - 0E.4c **DONE / VERIFIED**: authoritative planner-bound risk browser execution, exact Playwright case identity and optional `verify:iterate --with-browser`; legacy 94-case browser remains diagnostic only.
+   - first local 0E.4c exact-candidate attempt on `4c103dafc4eb1c53315e788ab3ca6d2f9e218922` passed TypeScript, aggregate regression **1396/1396 PASS** and production build **41/41**, but `verify:browser:risk` selected zero Playwright cases because its `--grep` was incorrectly anchored to the raw test title while Playwright matches grep against the composed full title;
+   - corrected risk title selection to match the escaped registered title within Playwright's full title, while exact `{spec,title,project}` completeness remains enforced separately by the evidence reporter; added a regression for full-title grep semantics; exact fixed-head browser verification pending.
+   - fresh-PC verification then exposed a malformed source-edit in `verification-browser-risk.mjs` before browser execution (development-pipeline **98/101**, 3 failures all caused by the same syntax error) plus untracked `playwright-report/` candidate noise; repaired the helper, added syntax/runtime regression coverage and ignored/regression-covered Playwright report output; fixed-head verification pending.
+   - final 0E.4c exact-head closeout at `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**; authoritative browser-risk **41/41 PASS** (desktop **21/21**, mobile **20/20**, retries=0, workers=1); TypeScript PASS; aggregate regression **1396/1396 PASS**; production build **41/41 PASS**; PostgreSQL full N/A for the browser-harness candidate; legacy 94-case browser NOT RUN by policy; **0E.4c DONE / VERIFIED**;
+   - 0E.4d **DONE / VERIFIED**: risk-based release orchestrator adds planner-driven gate execution/reuse, aggregate/build/PostgreSQL/browser evidence composition, explicit scale-via-full-PostgreSQL accounting, and one candidate-bound release ledger; existing static `verify:release` remains unchanged.
+   - exact 0E.4d implementation candidate `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0` closed cleanly: development-pipeline **109/109 PASS**, planner no blockers, iteration **222/222 PASS** with release correctly NOT EVALUATED, then `verify:release:risk` returned **PASS** with aggregate regression **1404/1404**, build **41/41**, PostgreSQL full **99/99**, browser-risk **41/41** (21 desktop + 20 mobile), scale N/A and exact source/domain/typecheck reuse;
+   - FEATURES was reviewed and remains unchanged because 0E.4 is development verification infrastructure only; DEVELOPMENT, ROADMAP, CHANGELOG and the detailed 0E.4 contract are reconciled;
+   - legacy full `verify:browser` remains a manual diagnostic and legacy static `verify:release` remains the compatibility full path; neither was silently redefined;
+   - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred.
+6. **0E.5 — negative/selection/freshness/config regression coverage — DONE / VERIFIED**;
+   - exact candidate `68351c78a0dac2b1f95de3530d2ceac116f2475e`: development-pipeline **113/113 PASS**, planner no blockers, fast iteration **226/226 PASS** + TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), PostgreSQL/scale N/A, final `release_status=PASS`;
+   - exact-ledger reuse negatives now cover schema, candidate, gate, evidence class, exit status and effective-configuration drift;
+   - build evidence is reusable only while current production-build identity matches the ledger artifact;
+   - browser-risk reuse invalidates on selection, verification-config, toolchain, fixture-contract, build-ledger or current-build drift;
+   - candidate freshness covers tracked and untracked dirty work outside explicit path candidates; base candidates absorb current dirty files into candidate membership;
+   - identity tests assert the release/config/toolchain/fixture inputs that define reusable evidence;
+   - no product runtime, DB schema, certification, backup, timezone semantics, browser DB architecture or worker-count change.
+7. **0E.6 — manual workflow + DEVELOPMENT alignment — DONE / VERIFIED**;
+   - DEVELOPMENT now names `verify:release:risk` as the canonical final candidate decision while `npm run verify` remains compatibility-only;
+   - both GitHub workflows remain manual-only diagnostics and cannot supply candidate-bound release authority;
+   - the legacy full browser cloud workflow is explicitly labeled diagnostic, stale pull-request-only job logic is removed, and workflow authority is regression-covered;
+   - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); both were corrected without product-runtime change;
+   - fixed-head `734473252fe1acf64388fa15d9373777112d4977`: targeted historical label tests **9/9 PASS**; risk release source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, build **41/41 PASS**, PostgreSQL/scale/browser N/A, no blocked evidence, final `release_status=PASS`.
+8. **0E.7 — exact-candidate verification / closeout — DONE / VERIFIED**;
+   - first cumulative attempt used the Phase 0D baseline `686734911f5c3f45e395fdda6b7d98a5021e84ae`, but the planner correctly returned **NOT RUN** because that historical range contains `e2e/ui-audit-capture.spec.mjs`, an explicitly diagnostic-only spec with no authoritative browser target;
+   - the fail-closed selector was preserved: no release target was invented for the audit-only spec and the legacy 94-case browser was not used as substitute evidence;
+   - final verified boundary was the last fully verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through exact head `335704c1125ee0336528f5f1e43c3bc1528c92d3`, candidate `221190494ba79b32bb25f9e32c3ce09041dfd624f3f3a514cc8fb7a905c9477a`;
+   - planner `--force-all` selected TypeScript, aggregate regression, production build, full PostgreSQL acceptance, scale and authoritative browser-risk with no blocked evidence;
+   - release evidence PASS: source-contract **226/226**, TypeScript PASS, aggregate **1408/1408**, build **41/41**, PostgreSQL **99/99**, scale PASS, browser-risk **41/41** (21 desktop + 20 mobile, one worker), domain N/A, final `release_status=PASS`;
+   - legacy 94-case browser remained diagnostic-only / NOT RUN; FEATURES was reviewed and remains unchanged because Phase 0E changed verification/development infrastructure, not product capability.
+
+**PHASE 0E — CLOSED / VERIFIED.**
+
+Final documentation-only reconciliation candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f8318937865f75a6694c732` on exact head `2969fae73e151044f0a2e6962d7abd57e8983da9` also passed `verify:release:risk`; source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none.
+
+Frozen constraints remain:
+- no product runtime, DB schema, certification, backup or timezone-semantic changes;
+- no browser DB architecture or worker-count change;
+- no remote/destructive PostgreSQL target;
+- no aggregate `fullTests` → `domain-unit` inference;
+- no automatic candidate base guess;
+- no mass historical-test classification;
+- preserve low-level commands and explicit compatibility aliases during migration.
+
+Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
+- fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
+- repository-pinned Playwright 1.55.0 + explicit authenticated browser gate;
+- Node 24.x alignment with the Vercel production runtime;
+- corrected browser DB connection-timeout variable;
+- DEVELOPMENT/Vercel policy drift reconciliation;
+- exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
+
+Phase 0F is complete. The next repository action is PR #255 integration; do not start 3.6.0 timezone runtime work before that merge.
+
+Mandatory Phase 0 scope:
+- make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
+- replace duplicated/manual fast-suite lists with one authoritative risk/test registry;
+- distinguish documentation, UI/presentation, domain, persistence/schema, auth/security, browser and scale risk;
+- pin the browser test runner for local/manual-cloud parity;
+- split the growing browser monolith into stable domain-owned specs without weakening isolated DB serialization;
+- reconcile DEVELOPMENT documentation with executable tooling;
+- review stale PR/branch state without deleting anything until supersession is proven.
+
+No 3.6.0 saved-date/timezone runtime semantics are changed in Phase 0.
+
+Phase 0 acceptance is defined in the detailed contract. Required closeout includes the applicable TypeScript, unit/regression, PostgreSQL, browser and build evidence plus ROADMAP / CHANGELOG / DEVELOPMENT reconciliation. FEATURES changes only if product capability changes.
+
+## Phase 0F — Hygiene and Phase 0 closeout — DONE / VERIFIED
+
+Discovery:
+- DEVELOPMENT command documentation matches the executable package command surface for `test:target`, `test:group`, `scope:changed`, `verify:plan`, `verify:iterate`, `verify:app`, `verify:domain`, `verify:postgres`, `verify:browser:risk`, the legacy diagnostic browser commands, static `verify:release`, and canonical `verify:release:risk`;
+- seven historical branches are proven ancestors of `main` and are safe cleanup candidates by ancestry: `chore/pre-f3-integration-anchor`, `codex/v335-batch8-routes-headers-legal`, `docs/flight-entry-f1-closeout`, `feat/flight-entry-f33-aircraft-authority`, `feat/flight-entry-f34-aircraft-context-ux`, `fix/story-map-toggle`, and `test/flight-entry-f35-closeout`;
+- supersession is now proven for the five previously-open parallel PRs and they were closed without merge: #187 → merged #188/F0.1, #201 → merged #200/F1.4, #206 → merged #207/F2.2, and #231/#232 → final F3.3 head `065896d3c9aa75fee8c2c0c7cc7a2f6abc20e52a` plus later F3.4/F3.5 stack already ancestral to `main`; their branches remain intact;
+- PR #255 is the active Phase 0 integration PR; no destructive branch/PR cleanup has been performed.
+
+Closeout:
+- explicit `chore/pre-f3-integration-anchor` rollback branch is retained; no historical branch was deleted;
+- stale documentation drift was reconciled without changing product runtime or verification authority;
+- exact 0F documentation/governance candidate `792ef0f2c8430a01f4bb1e24474b05991d0a83abee63650b7d72b8cb274892df` on head `68ba83167c27e6de1e1027e007ea3b81acad17cc` returned `release_status=PASS`;
+- source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none;
+- FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
+- Phase 0 acceptance is satisfied on the branch. PR #255 integration into canonical `main` is the remaining repository action before Phase 1 starts.
+
+## Phase 1 — Saved-date / timezone semantics — BLOCKED BY PR #255 INTEGRATION
 
 Before code:
 - define which defaults use configured user calendar timezone;
 - identify evidence that must remain UTC;
-- define midnight/day-boundary tests;
-- decide whether any existing persisted data requires treatment.
+- define midnight/day-boundary and DST tests;
+- define timezone-setting changes versus already-persisted records;
+- decide whether any existing persisted data requires treatment;
+- define backup/export/edit consequences.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 

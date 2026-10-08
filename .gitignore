@@ -11,7 +11,12 @@ npm-debug.log*
 *.tsbuildinfo
 
 # Runtime exports / temporary files
+.flytally/
 exports/
+test-results/
+playwright-report/
+flytally-scale-evidence.json
+flytally-v*-scale-evidence.json
 *.tmp
 
 # Local databases and source imports are never repository artifacts

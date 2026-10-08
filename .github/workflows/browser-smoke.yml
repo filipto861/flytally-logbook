@@ -12,8 +12,7 @@ concurrency:
 
 jobs:
   chromium:
-    name: Chromium desktop + mobile
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    name: Legacy full Chromium diagnostic
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -41,25 +40,21 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - name: Install locked application dependencies
         run: npm ci
-      - name: Install pinned browser test runner
-        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Bootstrap isolated browser database
-        run: node tooling/bootstrap-browser-smoke-db.mjs
-      - name: Production build
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Diagnostic production build
         run: npm run build
-      - name: Real browser smoke
-        run: npx playwright test --config=playwright.config.mjs
+      - name: Legacy full browser diagnostic
+        run: npm run test:browser
       - name: Preserve browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flytally-browser-smoke-${{ github.sha }}
+          name: flytally-browser-diagnostic-${{ github.sha }}
           path: |
             playwright-report/
             test-results/

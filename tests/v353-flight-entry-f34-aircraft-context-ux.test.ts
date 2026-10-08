@@ -114,7 +114,7 @@ test("F3.4 compact summaries de-duplicate repeated ULL context labels",()=>{
 
 test("F3.4 browser fixture carries authority provenance and exercises compact Manual/GPS states",()=>{
   const bootstrap=read("tooling/bootstrap-browser-smoke-db.mjs");
-  const browser=read("e2e/public-shell.spec.mjs");
+  const browser=read("e2e/manual-authority-certification.spec.mjs");
   for(const column of ["part_fcl_credit_class","part_fcl_credit_basis","part_fcl_credit_from"])assert.match(bootstrap,new RegExp(column+" TEXT NOT NULL DEFAULT ''"));
   assert.match(bootstrap,/OK-TMG1/);
   assert.match(browser,/F3\.4 Manual compact context exposes only A\+ choice and blocks invalid profiles/);

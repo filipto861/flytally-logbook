@@ -30,6 +30,19 @@ test("v3.2 U4 browser database is isolated and uses production password format",
   assert.match(bootstrap,/OK-E2E/);
   assert.match(bootstrap,/CREATE TABLE push_preferences/);
   assert.match(bootstrap,/CREATE TABLE push_subscriptions/);
+  assert.match(bootstrap,/PGCONNECT_TIMEOUT:"5"/);
+});
+
+test("authenticated browser fixture cleanup is localhost-only and scopes certified trigger bypass to one transaction",()=>{
+  const db=read("e2e/browser-db.mjs");
+  assert.match(db,/Authenticated mutation smoke may only reset a localhost database/);
+  assert.match(db,/runBrowserFlightFixtureCleanup/);
+  assert.match(db,/BEGIN;/);
+  assert.match(db,/ALTER TABLE flights DISABLE TRIGGER USER/);
+  assert.match(db,/ALTER TABLE flights ENABLE TRIGGER USER/);
+  assert.match(db,/COMMIT;/);
+  assert.match(db,/PGCONNECT_TIMEOUT:"5"/);
+  assert.doesNotMatch(db,/PGCONNECTTIMEOUT/);
 });
 
 test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external secrets",()=>{
@@ -37,13 +50,21 @@ test("v3.2 U4 browser workflow provisions ephemeral PostgreSQL without external 
   assert.match(workflow,/image: postgres:16/);
   assert.match(workflow,/postgresql:\/\/flytally:flytally@127[.]0[.]0[.]1:5432\/flytally_browser/);
   assert.match(workflow,/FLYTALLY_LOCAL_POSTGRES: "1"/);
-  assert.match(workflow,/Bootstrap isolated browser database/);
+  assert.match(workflow,/npm run test:browser/);
+  const runner=read("tooling/run-auth-browser.mjs");
+  assert.match(runner,/FLYTALLY_AUTH_BROWSER!=="1"/);
+  assert.match(runner,/FLYTALLY_LOCAL_POSTGRES!=="1"/);
+  assert.match(runner,/bootstrap-browser-smoke-db[.]mjs/);
+  assert.match(runner,/require\.resolve\("@playwright\/test\/package\.json"\)/);
+  assert.match(runner,/spawnSync\(process\.execPath,\[playwrightCli,"test","--config=playwright\.config\.mjs"/);
+  assert.doesNotMatch(runner,/npx\.cmd|--no-install","playwright","test/);
   assert.doesNotMatch(workflow,/secrets[.]/);
 });
 
 test("v3.2 U4 exercises real authenticated navigation on desktop and mobile",()=>{
   const smoke=read("e2e/public-shell.spec.mjs");
-  assert.match(smoke,/browser-auth@example[.]test/);
+  const actions=read("e2e/browser-actions.mjs");
+  assert.match(actions,/browser-auth@example[.]test/);
   assert.match(smoke,/logbook_session/);
   assert.match(smoke,/navigateMain\(page,"Flights"\)/);
   assert.match(smoke,/navigateMain\(page,"Settings"\)/);

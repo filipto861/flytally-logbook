@@ -2,6 +2,9 @@
   "name": "pilot-logbook-web",
   "version": "3.5.5",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,13 +12,24 @@
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types tests/*.test.ts",
     "test:target": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types",
-    "test:ui": "npm run test:target -- tests/v121-ui-simplification.test.ts tests/v1342-ui-polish.test.ts tests/v156-mobile-layout-audit.test.ts tests/v300-navigation-hierarchy.test.ts tests/v300-u6-final-ux.test.ts tests/v320-ui-consistency.test.ts tests/v321-route-ui-audit.test.ts tests/v322-browser-smoke.test.ts tests/v323-auth-browser.test.ts tests/v324-auth-mutations.test.ts tests/v325-transaction-mutations.test.ts tests/v327-ui-ux-consistency-audit.test.ts tests/v328-aircraft-library-ux.test.ts tests/v329-actions-budget.test.ts tests/v330-add-flight-simplicity.test.ts tests/v332-flights-workflow-simplicity.test.ts",
+    "test:ui": "npm run test:group -- ui-contract",
     "scope:changed": "node tooling/development-scope.mjs",
     "test:postgres": "node tooling/run-postgres-tests.mjs core",
     "test:postgres:scale": "node tooling/run-postgres-tests.mjs scale",
     "test:postgres:full": "node tooling/run-postgres-tests.mjs full",
-    "verify": "npm run typecheck && npm test && npm run build",
-    "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build"
+    "verify": "node tooling/verify-app-compat.mjs",
+    "verify:release": "npm run typecheck && npm test && npm run test:postgres:full && npm run build",
+    "test:browser": "node tooling/run-auth-browser.mjs",
+    "verify:browser": "node tooling/verify-browser.mjs",
+    "test:group": "node tooling/run-development-test-group.mjs",
+    "verify:plan": "node tooling/verify-plan.mjs",
+    "verify:app": "node tooling/verify-app.mjs",
+    "verify:postgres": "node tooling/verify-postgres.mjs",
+    "verify:domain": "node tooling/verify-domain.mjs",
+    "verify:browser:with-build": "node tooling/verify-browser-with-build.mjs",
+    "verify:iterate": "node tooling/verify-iterate.mjs",
+    "verify:browser:risk": "node tooling/verify-browser-risk.mjs",
+    "verify:release:risk": "node tooling/verify-release-risk.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -31,6 +45,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@playwright/test": "1.55.0"
   }
 }
