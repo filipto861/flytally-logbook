@@ -883,6 +883,15 @@ The build gate records a candidate-bound build manifest including the candidate 
 1. **0E.0 — semantics / ledger / compatibility freeze — DONE (design only)**.
 2. **0E.1 — explicit candidate input + `verify:plan` + candidate fingerprint — DONE / VERIFIED**.
 3. **0E.2 — registry available-evidence metadata + direct domain selection — ACTIVE**.
+
+0E.2 implementation candidate:
+- every current module carrying a risk mapped to `domain-unit` has explicit exact-path `evidenceTests.domain-unit` metadata;
+- the direct selector unions approved evidence only for affected modules and keeps missing-module coverage explicit;
+- direct evidence paths are schema-validated, must exist, and must not be PostgreSQL acceptance or members of source-contract groups;
+- dedicated pure behavioral tests were added for aircraft-profile validation and professional experience instead of promoting mixed historical source-contract files;
+- current registry coverage is **10/10 domain-risk modules** with no missing direct-evidence files;
+- `verify:plan` emits direct domain modules/tests and blocked-evidence reasons; aggregate full tests remain non-authoritative for domain evidence;
+- verification is pending before 0E.2 closeout.
 4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gates**.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
