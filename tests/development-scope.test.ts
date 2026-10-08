@@ -149,6 +149,7 @@ test("browser specs select browser acceptance explicitly",()=>{
   assert.equal(result.browser,"true");
   assert.equal(result.postgres,"false");
   assert.equal(result.full_tests,"true");
+  assert.equal(result.build_artifact,"required");
   assert.match(result.risks,/browser-ui/);
 });
 
@@ -280,6 +281,11 @@ test("development registry v3 evidence schema is explicit and self-consistent",(
     "UI audit capture runs only for the dedicated audit branch or explicit local opt-in.",
   ]);
   assert.equal(schema.properties.browserAcceptance.properties.explicitNotApplicableSkipReasons.minItems,1);
+  assert.equal(manifest.browserAcceptance.selectionVersion,1);
+  assert.ok(Object.keys(manifest.browserAcceptance.targets).length>=20);
+  assert.ok(manifest.browserAcceptance.harnessTargets.length>=20);
+  assert.equal(schema.properties.browserAcceptance.properties.selectionVersion.const,1);
+  assert.equal(schema.properties.browserAcceptance.properties.targets.minProperties,1);
 
   for(const [groupId,group] of Object.entries(manifest.testGroups) as [string,{evidenceClass:string,coverage:string,tests:string[]}][]){
     assert.ok(manifest.evidencePolicy.groupClasses.includes(group.evidenceClass),"invalid evidence class for group: "+groupId);
