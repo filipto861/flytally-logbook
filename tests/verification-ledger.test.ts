@@ -72,6 +72,22 @@ test("browser reporter maps only the registered audit exclusion to explicit N/A"
   assert.equal(explicitBrowserNotApplicable({annotations:[]}),false);
 });
 
+test("canonical browser acceptance requires the recorded same-candidate build before Playwright",()=>{
+  const browser=fs.readFileSync(path.join(root,"tooling","verify-browser.mjs"),"utf8");
+  const withBuild=fs.readFileSync(path.join(root,"tooling","verify-browser-with-build.mjs"),"utf8");
+  assert.match(browser,/readVerificationLedgerEntry\(candidate\.candidateId,"build"\)/);
+  assert.match(browser,/buildIdentityMatches\(build\.artifact,current\)/);
+  assert.match(browser,/\["--retries=0","--workers=1"\]/);
+  assert.match(browser,/FLYTALLY_BROWSER_EVIDENCE_FILE/);
+  assert.ok(
+    browser.indexOf('readVerificationLedgerEntry(candidate.candidateId,"build")')<
+    browser.indexOf('run-auth-browser.mjs'),
+    "build freshness must be checked before authenticated browser execution",
+  );
+  assert.match(withBuild,/runCandidateBuild/);
+  assert.match(withBuild,/runBrowserVerification/);
+});
+
 test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migration separate",()=>{
   const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
   assert.equal(pkg.scripts.verify,"node tooling/verify-app.mjs");
