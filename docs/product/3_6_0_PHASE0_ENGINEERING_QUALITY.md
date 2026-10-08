@@ -992,7 +992,7 @@ Closeout:
 - source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none;
 - no 3.6.0 saved-date/timezone runtime semantics, production schema, certification, backup or product runtime behavior changed in Phase 0F.
 
-**PHASE 0 — DONE / VERIFIED ON BRANCH.** Integration through PR #255 into canonical `main` is the final repository action before Phase 1 runtime work begins.
+**PHASE 0 — DONE / VERIFIED / INTEGRATED.** PR #255 merged into canonical `main` as `2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`. Vercel created production deployment `dpl_3hb8gebeWMYcxJWdsDmn6vumhK5f`, state **READY**, with `fly-tally.com` attached. Public HTTP smoke from this tool was NOT RUN because the external site was not accessible through the available web fetch surface.
 
 ## Acceptance criteria
 
@@ -1019,7 +1019,7 @@ Phase 0 is DONE only when:
 
 ## 3.6.0 handoff after Phase 0
 
-After Phase 0 closes, 3.6.0 Phase 1 returns to issue #144 with a stronger test foundation.
+After Phase 0 integration, 3.6.0 Phase 1 returns to issue #144 with a stronger test foundation. Discovery/design may begin now; runtime implementation must still wait for the timezone contract and migration/backup consequences to be frozen.
 
 Timezone work must then separately freeze and test:
 
