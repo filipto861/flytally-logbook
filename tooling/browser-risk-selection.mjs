@@ -98,6 +98,10 @@ export function selectBrowserEvidence(candidate,classification){
   const fileCoverage=[];
   const targets=browser.targets??{};
   const harness=browserHarnessRule();
+  if(classification.risks?.includes("full-ci")){
+    addIds(targetIds,browser.harnessTargets);
+    if((browser.harnessTargets??[]).length===0)blockers.push("browser:full-ci:browser-harness-target-set-empty");
+  }
 
   for(const file of candidate.files){
     const single=classifyDevelopmentScope([file]);
