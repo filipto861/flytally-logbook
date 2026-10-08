@@ -268,7 +268,12 @@
     "browserAcceptance": {
       "type": "object",
       "required": [
-        "explicitNotApplicableSkipReasons"
+        "explicitNotApplicableSkipReasons",
+        "selectionVersion",
+        "moduleTargets",
+        "pathTargets",
+        "harnessTargets",
+        "targets"
       ],
       "properties": {
         "explicitNotApplicableSkipReasons": {
@@ -278,6 +283,98 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "selectionVersion": {
+          "const": 1
+        },
+        "moduleTargets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "pathTargets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "prefixes",
+              "files",
+              "targets"
+            ],
+            "properties": {
+              "prefixes": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "files": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "targets": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "harnessTargets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "spec",
+              "title",
+              "project"
+            ],
+            "properties": {
+              "spec": {
+                "type": "string",
+                "pattern": "^e2e/.+[.]spec[.]mjs$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "project": {
+                "enum": [
+                  "desktop-chromium",
+                  "mobile-chromium"
+                ]
+              }
+            },
+            "additionalProperties": false
           }
         }
       },
