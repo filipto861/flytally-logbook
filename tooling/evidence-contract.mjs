@@ -65,8 +65,9 @@ export function evaluateEvidenceObservation(evidenceClass, observation) {
   }
 
   const dedicated = policy.dedicatedAcceptanceSources?.[evidenceClass];
-  if (dedicated && observation.coverage !== "full") {
-    return { status: "PARTIAL", reason: "Acceptance evidence requires the dedicated full gate." };
+  const requiredCoverage = policy.dedicatedAcceptanceCoverage?.[evidenceClass] ?? "full";
+  if (dedicated && observation.coverage !== requiredCoverage) {
+    return { status: "PARTIAL", reason: "Acceptance evidence coverage does not match the canonical source contract." };
   }
   if (dedicated && retries !== 0) {
     return { status: "PARTIAL", reason: "Acceptance evidence requires retries=0." };
