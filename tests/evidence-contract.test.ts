@@ -18,6 +18,13 @@ function evaluate(payload:Record<string,unknown>){
   return JSON.parse(result.stdout.trim());
 }
 
+const browserTargets=Array.from({length:6},(_,index)=>({
+  id:"browser-"+index,
+  spec:"e2e/example.spec.mjs",
+  title:"Example "+index,
+  project:index%2===0?"desktop-chromium":"mobile-chromium",
+}));
+
 const observation=(overrides:Record<string,unknown>={})=>({
   command:"npm run test:group -- ui-contract",
   sourceGates:["ui-contract"],
@@ -100,6 +107,7 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
       "browser-acceptance":observation({
         command:"npm run test:browser -- --retries=0",
         sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,notApplicable:2,retries:0,
+        authority:"release",selectionHash:"a".repeat(64),targets:browserTargets,
       }),
     },
   });
@@ -111,6 +119,7 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
       "browser-acceptance":observation({
         command:"npm run test:browser -- --retries=0",
         sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,skipped:2,retries:0,
+        authority:"release",selectionHash:"a".repeat(64),targets:browserTargets,
       }),
     },
   });
