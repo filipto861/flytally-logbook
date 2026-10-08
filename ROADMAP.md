@@ -772,7 +772,9 @@ Revised 0E milestones:
    - draft design freezes four implementation batches: **0E.4a registry/planner browser selection**, **0E.4b fast iteration executor**, **0E.4c risk-scoped browser executor**, **0E.4d release orchestrator**, then compatibility/verification closeout;
    - important planner defect to correct in 0E.4a: browser execution requires a production build for `npm start`, so `buildArtifactRequired` must be `build || browser`, not only the current build gate flag;
    - architecture proposal preserves the existing `browser-acceptance` evidence class but makes a new planner-bound `browser-risk` source authoritative; legacy full `verify:browser` remains manual diagnostics and cannot satisfy release browser evidence;
-   - **independent review pending before implementation** because this changes evidence/orchestration semantics.
+   - independent review verdict **ACCEPT WITH CHANGES**: machine-enforce browser authority/selection identity, fail closed on missing/stale/ambiguous targets, reset/identify the shared browser DB fixture, harden dirty/untracked candidate identity, keep iteration evidence distinct from release PASS, and do not silently repurpose `verify:release`;
+   - reconciled command decision: existing `verify:release` keeps its current full/static semantics; new risk-based orchestration will be `verify:release:risk`;
+   - 0E.4a is now **ACTIVE** and begins with candidate/reuse identity hardening, browser-target registry/schema, deterministic target selection/hash, and `buildArtifactRequired = build || browser`.
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
