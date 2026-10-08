@@ -84,6 +84,39 @@ test("force-all has a deterministic registered harness target set",()=>{
   assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
 });
 
+test("ignored local verification artifacts do not contaminate candidate identity",async()=>{
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-candidate-ignore-"));
+  try{
+    const git=(args:string[])=>{
+      const result=spawnSync("git",args,{cwd:temp,encoding:"utf8"});
+      assert.equal(result.status,0,result.stderr||result.stdout);
+    };
+    git(["init"]);
+    git(["config","user.email","test@example.test"]);
+    git(["config","user.name","FlyTally Test"]);
+    fs.writeFileSync(path.join(temp,".gitignore"),"test-results/\nflytally-scale-evidence.json\nflytally-v*-scale-evidence.json\n");
+    fs.writeFileSync(path.join(temp,"tracked.txt"),"base\n");
+    git(["add",".gitignore","tracked.txt"]);
+    git(["commit","-m","base"]);
+
+    const moduleUrl=pathToFileURL(path.join(root,"tooling","verification-candidate.mjs")).href;
+    const mod=await import(moduleUrl);
+    const first=mod.resolveVerificationCandidate(["tracked.txt"],temp).candidate;
+
+    fs.mkdirSync(path.join(temp,"test-results"),{recursive:true});
+    fs.writeFileSync(path.join(temp,"test-results",".last-run.json"),"{}\n");
+    fs.writeFileSync(path.join(temp,"flytally-scale-evidence.json"),"{}\n");
+    fs.writeFileSync(path.join(temp,"flytally-v230-100k-scale-evidence.json"),"{}\n");
+
+    const second=mod.resolveVerificationCandidate(["tracked.txt"],temp).candidate;
+    assert.equal(second.candidateId,first.candidateId);
+    assert.deepEqual(second.worktree.files,[]);
+    assert.deepEqual(second.worktree.outsideCandidate,[]);
+  }finally{
+    fs.rmSync(temp,{recursive:true,force:true});
+  }
+});
+
 test("candidate identity changes when an untracked worktree file changes",async()=>{
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),"flytally-candidate-v2-"));
   try{
