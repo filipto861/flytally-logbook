@@ -812,7 +812,9 @@ Revised 0E milestones:
    - first exact-candidate release attempt on `088aa71c6a8a43b48b40962c3eb667647d93d202` exposed two stale historical v3.2 label assertions (**1406/1408 aggregate PASS**); both were corrected without product-runtime change;
    - fixed-head `734473252fe1acf64388fa15d9373777112d4977`: targeted historical label tests **9/9 PASS**; risk release source PASS, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, build **41/41 PASS**, PostgreSQL/scale/browser N/A, no blocked evidence, final `release_status=PASS`.
 8. **0E.7 — exact-candidate verification / closeout — ACTIVE**;
-   - close the complete Phase 0E candidate against the Phase 0D verified baseline `686734911f5c3f45e395fdda6b7d98a5021e84ae`;
+   - first cumulative attempt used the Phase 0D baseline `686734911f5c3f45e395fdda6b7d98a5021e84ae`, but the planner correctly returned **NOT RUN** because that historical range contains `e2e/ui-audit-capture.spec.mjs`, an explicitly diagnostic-only spec with no authoritative browser target;
+   - do **not** weaken the fail-closed selector, invent release authority for the audit-only spec, or run the legacy 94-case browser as substitute evidence;
+   - final closeout boundary is the last fully verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through the final Phase 0E head, which includes the substantive 0E.6 workflow/test alignment while excluding the already-verified 0E.3 diagnostic-only annotation change;
    - run one exact candidate-aware `verify:release:risk --force-all` so TypeScript, aggregate regression, production build, full PostgreSQL acceptance/scale accounting and authoritative planner-bound browser-risk evidence are all exercised on the final Phase 0E head;
    - legacy 94-case browser remains diagnostic-only and is not a 0E.7 gate;
    - reconcile ROADMAP / CHANGELOG / DEVELOPMENT / Phase 0 contract and review FEATURES; no product capability change is expected.
