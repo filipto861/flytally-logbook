@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { createVerificationPlan } from "./verify-plan.mjs";
 import { CandidateInputError } from "./verification-candidate.mjs";
-import { npmExecutable,parseNodeTestSummary,runCommand } from "./verification-execution.mjs";
+import { parseNodeTestSummary,runNpm } from "./verification-execution.mjs";
 import { currentBuildIdentity,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 
 function canonicalCommand(argv){
@@ -17,7 +17,7 @@ export async function runAppVerification(argv,env=process.env){
     build:{status:"NOT RUN"},
   };
 
-  const typecheck=await runCommand(npmExecutable,["run","typecheck"],{env});
+  const typecheck=await runNpm(["run","typecheck"],{env});
   steps.typecheck={
     status:typecheck.code===0?"PASS":"FAIL",
     exitCode:typecheck.code,
@@ -35,7 +35,7 @@ export async function runAppVerification(argv,env=process.env){
     return {exitCode:typecheck.code,plan,ledger};
   }
 
-  const tests=await runCommand(npmExecutable,["test"],{env});
+  const tests=await runNpm(["test"],{env});
   let testSummary=null;
   try{
     testSummary=parseNodeTestSummary(tests.stdout+"\n"+tests.stderr);
@@ -63,7 +63,7 @@ export async function runAppVerification(argv,env=process.env){
     return {exitCode,plan,ledger};
   }
 
-  const build=await runCommand(npmExecutable,["run","build"],{env});
+  const build=await runNpm(["run","build"],{env});
   steps.build={
     status:build.code===0?"PASS":"FAIL",
     exitCode:build.code,
