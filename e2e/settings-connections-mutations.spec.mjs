@@ -69,7 +69,7 @@ test("account settings transaction disables duplicate submit and persists both r
   resetAccountSettingsFixture();
   await loginBrowserPilot(page,"/profile");
 
-  await page.getByLabel("Name").fill("Browser Transaction Pilot");
+  await page.getByLabel("Name",{exact:true}).fill("Browser Transaction Pilot");
   await page.getByLabel("Home airport").fill("LKPR");
   await page.getByLabel("Currency").selectOption("EUR");
   await page.getByLabel("Default logbook").selectOption("EASA");
@@ -92,16 +92,16 @@ test("account settings transaction disables duplicate submit and persists both r
   await expect(page.getByRole("button",{name:"Save changes"})).toBeEnabled();
 
   await page.reload();
-  await expect(page.getByLabel("Name")).toHaveValue("Browser Transaction Pilot");
+  await expect(page.getByLabel("Name",{exact:true})).toHaveValue("Browser Transaction Pilot");
   await expect(page.getByLabel("Home airport")).toHaveValue("LKPR");
   await expect(page.getByLabel("Currency")).toHaveValue("EUR");
   await expect(page.getByLabel("Default logbook")).toHaveValue("EASA");
 
-  await page.getByLabel("Name").fill("Must Not Persist");
+  await page.getByLabel("Name",{exact:true}).fill("Must Not Persist");
   await page.getByLabel("Time zone").fill("+02:00");
   await page.getByRole("button",{name:"Save changes"}).click();
   await expect(page.getByText("Enter a valid named time zone")).toBeVisible();
-  await expect(page.getByLabel("Name")).toHaveValue("Browser Transaction Pilot");
+  await expect(page.getByLabel("Name",{exact:true})).toHaveValue("Browser Transaction Pilot");
   await expect(page.getByLabel("Time zone")).toHaveValue("Europe/Prague");
 });
 
