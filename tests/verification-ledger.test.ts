@@ -3,15 +3,13 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { parseNodeTestSummary } from "../tooling/verification-execution.mjs";
-import { explicitBrowserNotApplicable } from "../tooling/playwright-evidence-reporter.mjs";
-import {
-  readVerificationLedgerEntry,
-  verificationLedgerPath,
-  writeVerificationLedgerEntry,
-} from "../tooling/verification-ledger.mjs";
+import { pathToFileURL } from "node:url";
 
 const root=path.resolve(import.meta.dirname,"..");
+
+async function importTooling(relativePath:string){
+  return import(pathToFileURL(path.join(root,relativePath)).href);
+}
 
 test("Phase 0E canonical verification modules are syntactically parseable",()=>{
   for(const file of [
@@ -31,7 +29,8 @@ test("Phase 0E canonical verification modules are syntactically parseable",()=>{
   }
 });
 
-test("verification ledger writes and reads one candidate-bound gate entry",()=>{
+test("verification ledger writes and reads one candidate-bound gate entry",async()=>{
+  const {readVerificationLedgerEntry,verificationLedgerPath,writeVerificationLedgerEntry}=await importTooling("tooling/verification-ledger.mjs");
   const candidateId="a".repeat(64);
   const target=verificationLedgerPath(candidateId,"domain");
   fs.rmSync(path.dirname(target),{recursive:true,force:true});
@@ -64,12 +63,14 @@ test("verification ledger writes and reads one candidate-bound gate entry",()=>{
   }
 });
 
-test("verification ledger rejects malformed candidate and gate identities",()=>{
+test("verification ledger rejects malformed candidate and gate identities",async()=>{
+  const {verificationLedgerPath}=await importTooling("tooling/verification-ledger.mjs");
   assert.throws(()=>verificationLedgerPath("../escape","domain"),/Invalid verification candidate id/);
   assert.throws(()=>verificationLedgerPath("a".repeat(64),"../domain"),/Invalid verification gate name/);
 });
 
-test("verification execution parses Node spec and TAP summaries without inventing evidence",()=>{
+test("verification execution parses Node spec and TAP summaries without inventing evidence",async()=>{
+  const {parseNodeTestSummary}=await importTooling("tooling/verification-execution.mjs");
   assert.deepEqual(
     parseNodeTestSummary("ℹ tests 6\nℹ pass 6\nℹ fail 0\nℹ skipped 0\n"),
     {planned:6,passed:6,failed:0,skipped:0,notApplicable:0,retries:0},
@@ -81,7 +82,8 @@ test("verification execution parses Node spec and TAP summaries without inventin
   assert.throws(()=>parseNodeTestSummary("no summary"),/Could not parse Node test summary/);
 });
 
-test("browser reporter maps only the registered audit exclusion to explicit N/A",()=>{
+test("browser reporter maps only the registered audit exclusion to explicit N/A",async()=>{
+  const {explicitBrowserNotApplicable}=await importTooling("tooling/playwright-evidence-reporter.mjs");
   assert.equal(explicitBrowserNotApplicable({
     annotations:[{type:"flytally-na",description:"UI audit capture runs only for the dedicated audit branch or explicit local opt-in."}],
   }),true);
@@ -98,7 +100,7 @@ test("canonical browser acceptance requires the recorded same-candidate build be
   const withBuild=fs.readFileSync(path.join(root,"tooling","verify-browser-with-build.mjs"),"utf8");
   assert.match(browser,/readVerificationLedgerEntry\(candidate\.candidateId,"build"\)/);
   assert.match(browser,/buildIdentityMatches\(build\.artifact,current\)/);
-  assert.match(browser,/\["--retries=0","--workers=1"\]/);
+  assert.match(browser,/\[runner,"--retries=0","--workers=1"\]/);
   assert.match(browser,/FLYTALLY_BROWSER_EVIDENCE_FILE/);
   assert.ok(
     browser.indexOf('readVerificationLedgerEntry(candidate.candidateId,"build")')<
