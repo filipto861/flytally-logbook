@@ -735,7 +735,7 @@ A test may skip the second Playwright project only when all are true:
 - no product runtime, timezone semantics or DB schema change;
 - per-worker DB isolation not introduced.
 
-### Phase 0D — Test contract / evidence taxonomy — ACTIVE
+### Phase 0D — Test contract / evidence taxonomy — DONE / VERIFIED
 
 Phase 0D makes **risk**, **gate** and **evidence class** separate machine contracts so a green static/source assertion cannot be presented as proof of runtime behavior.
 
@@ -769,13 +769,19 @@ Independent second-AI review verdict: **ACCEPT WITH CHANGES**. Reconciliation ag
 - **0D.3 — planner/evaluator:** `scope:changed` reports `required_evidence`, `aggregate_gates` and `build_artifact`; `evidence-contract.mjs` evaluates observed status fail-closed;
 - **0D.4 — negative enforcement:** source-contract PASS cannot become domain/browser/PostgreSQL PASS; aggregate full tests cannot become domain-unit; build cannot become behavioral evidence; raw skips/retries prevent acceptance PASS;
 - **0D.5 — reporting documentation:** DEVELOPMENT defines PASS / FAIL / NOT RUN / N/A / PARTIAL semantics and the command/count/retry/source-gate evidence fields;
-- **0D.6 — verification/closeout:** pending. Phase 0D is not DONE until candidate verification and ROADMAP/CHANGELOG reconciliation are complete.
+- **0D.6 — verification/closeout:** DONE. Final correction candidate verification passed and required closeout documentation is reconciled.
 
-Verification note: the first aggregate regression run produced **1340/1354 PASS**. All 14 failures were historical source-contract assertions still reading the pre-0C `public-shell.spec.mjs` after browser ownership had already been split and independently accepted in Phase 0C. Those assertions are being retargeted to the verified domain-owned specs/helpers; this is test-contract drift, not browser acceptance evidence. The corrected source-contract set must PASS before 0D closeout.
+Verification history:
+- first aggregate regression run: **1340/1354 PASS, 14 FAIL**; all 14 failures were stale source-location contracts left behind by the verified Phase 0C browser split;
+- those historical assertions were retargeted to the verified domain-owned specs/helpers without changing product runtime, browser behavior, DB schema or timezone semantics;
+- final exact-code-head verification on `686734911f5c3f45e395fdda6b7d98a5021e84ae`: development-pipeline **65/65 PASS**, TypeScript **PASS**, aggregate regression **1354/1354 PASS**, production build **PASS** with **41/41** static pages;
+- `domain-unit`: **N/A**; `postgres-acceptance`: **N/A**; `browser-acceptance`: **N/A** for this tooling/source-contract candidate.
+
+**PHASE 0D — CLOSED / VERIFIED.**
 
 New release work must state which behavioral classes apply and why the others are N/A. Quality is not measured by raw test count alone.
 
-### Phase 0E — Canonical verification commands
+### Phase 0E — Canonical verification commands — ACTIVE
 
 Create a small, unambiguous command surface.
 
