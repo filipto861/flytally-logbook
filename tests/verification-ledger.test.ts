@@ -17,10 +17,14 @@ test("Phase 0E canonical verification modules are syntactically parseable",()=>{
     "tooling/verification-identity.mjs",
     "tooling/browser-risk-selection.mjs",
     "tooling/verification-execution.mjs",
+    "tooling/verification-reuse.mjs",
+    "tooling/verification-source.mjs",
+    "tooling/verification-typecheck.mjs",
     "tooling/verification-build.mjs",
     "tooling/verify-app.mjs",
     "tooling/verify-app-compat.mjs",
     "tooling/verify-domain.mjs",
+    "tooling/verify-iterate.mjs",
     "tooling/verify-postgres.mjs",
     "tooling/verify-browser.mjs",
     "tooling/verify-browser-with-build.mjs",
@@ -121,6 +125,7 @@ test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migr
   assert.equal(pkg.scripts.verify,"node tooling/verify-app-compat.mjs");
   assert.equal(pkg.scripts["verify:app"],"node tooling/verify-app.mjs");
   assert.equal(pkg.scripts["verify:domain"],"node tooling/verify-domain.mjs");
+  assert.equal(pkg.scripts["verify:iterate"],"node tooling/verify-iterate.mjs");
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
   assert.equal(pkg.scripts["verify:browser"],"node tooling/verify-browser.mjs");
   assert.equal(pkg.scripts["verify:browser:with-build"],"node tooling/verify-browser-with-build.mjs");
