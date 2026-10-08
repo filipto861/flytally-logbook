@@ -11,6 +11,7 @@ npm-debug.log*
 *.tsbuildinfo
 
 # Runtime exports / temporary files
+.flytally/
 exports/
 *.tmp
 
