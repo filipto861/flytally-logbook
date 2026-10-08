@@ -873,7 +873,7 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.3 MANUAL FLIGHT)
+## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.4 AIRCRAFT / RATE DEFAULTS)
 
 Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
 Issue: #144  
@@ -936,25 +936,40 @@ Delivered boundary:
 - presentation-only Prague fallback remains unchanged and separate;
 - no Manual Flight/Aircraft/Quick Add/GPS rewiring yet.
 
-### P1.3 — Manual flight default — ACTIVE / IMPLEMENTATION CANDIDATE
+### P1.3 — Manual flight default — DONE / VERIFIED
 
-Implementation candidate:
-- New Flight resolves `getUserSaveableCalendarDefault(userId)` once on the authenticated server page;
-- the resolved result is passed explicitly into `FlightForm`;
-- `getManualEntryDefaults()` no longer computes or owns any calendar date;
-- the client UTC fallback `new Date().toISOString().slice(0,10)` is removed;
-- a resolved user-calendar date initializes a new form once and then remains stable for that mounted form;
-- Edit continues to initialize from the stored `flight.date`;
-- missing/blank/invalid timezone leaves the automatic date empty, shows controlled **Needs configuration** guidance, and keeps manual date entry available;
-- resolver read failure leaves the automatic date empty with a controlled temporary-unavailable message;
-- off-block/takeoff/landing/on-block remain explicitly UTC and canonical parsing/certification is unchanged;
-- focused source-contract coverage proves the server wiring, removal of Prague/UTC fallback authority, edit-date preservation path and unchanged UTC timeline labels.
+Merged through PR #261 as `12b31ba6d837bdda17ae9e3d676ed9261ef816c7`.
 
-Verification pending. No PASS is claimed until planner-selected evidence runs on the exact candidate.
+Verified exact implementation head `99babf404656f02cd3a07dcb53636a37d0eae9d5`, candidate `fa17f53001d3691fd510fa1b00049d47935e8b4cf39400b82c27ed38642a6b11`:
+- source-contract PASS (reused);
+- direct domain-unit PASS (reused);
+- TypeScript PASS (reused);
+- aggregate regression **1421/1421 PASS**;
+- production build **41/41 PASS**;
+- PostgreSQL acceptance **99/99 PASS**;
+- authoritative browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- scale N/A;
+- required evidence satisfied; blocked evidence none.
 
-### P1.4 — Aircraft / rate defaults — BLOCKED BY P1.2
+Delivered behavior:
+- New Flight resolves the strict user-calendar default once on the authenticated server page;
+- Manual Flight receives that result explicitly;
+- `getManualEntryDefaults()` no longer computes a calendar date;
+- the client UTC `toISOString().slice(0,10)` fallback is removed as saveable-date authority;
+- resolved defaults remain stable for the mounted form; explicit manual date remains authoritative;
+- Edit preserves stored `flight.date`;
+- missing/blank/invalid timezone fails closed to an empty editable date with controlled Settings guidance;
+- resolver read failure fails closed to an empty editable date with temporary-unavailable guidance;
+- off-block/takeoff/landing/on-block remain explicitly UTC; canonical parsing and certification are unchanged.
 
-Remove Prague module-level `today` values from Aircraft Manager and Quick Add; use strict server-provided calendar context; preserve explicit dates and historical rates; fail closed if an initial rate is submitted without a valid effective date.
+### P1.4 — Aircraft / rate defaults — ACTIVE
+
+Next scope:
+- remove the module-level Prague `today` constants from Aircraft Manager and Quick Add;
+- derive new `initial_valid_from` / rate `valid_from` defaults from the strict server user-calendar result;
+- preserve explicit user-entered effective dates and all existing historical rate dates;
+- Quick Add with an entered hourly rate must fail closed if no valid effective date is available/submitted; saving an aircraft without an initial rate remains allowed;
+- no reinterpretation of existing `rates.valid_from` after timezone changes.
 
 ### P1.5 — GPS / backup invariance + exact-candidate closeout — BLOCKED BY P1.3/P1.4
 
