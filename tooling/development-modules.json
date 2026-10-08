@@ -243,6 +243,13 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/flight-input.test.ts",
+          "tests/flight-role-crew.test.ts",
+          "tests/certification-integrity.test.ts"
+        ]
       }
     },
     {
@@ -283,6 +290,11 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/fcl050-compliance.test.ts"
+        ]
       }
     },
     {
@@ -317,6 +329,11 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/v130-crew-verification.test.ts"
+        ]
       }
     },
     {
@@ -350,6 +367,12 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/dashboard-math.test.ts",
+          "tests/v168-pilot-insights.test.ts"
+        ]
       }
     },
     {
@@ -391,6 +414,11 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/portable-backup.test.ts"
+        ]
       }
     },
     {
@@ -414,6 +442,12 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/certification-integrity.test.ts",
+          "tests/fcl050-compliance.test.ts"
+        ]
       }
     },
     {
@@ -508,6 +542,13 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/airport-code.test.ts",
+          "tests/aircraft-profile-domain.test.ts",
+          "tests/billing-rate-history.test.ts"
+        ]
       }
     },
     {
@@ -542,6 +583,12 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/track-processing.test.ts",
+          "tests/track-time.test.ts"
+        ]
       }
     },
     {
@@ -622,6 +669,12 @@
         "browser": false,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/billing-rate-history.test.ts",
+          "tests/v290-commercial-readiness.test.ts"
+        ]
       }
     },
     {
@@ -644,6 +697,11 @@
         "browser": true,
         "fullTests": true,
         "build": true
+      },
+      "evidenceTests": {
+        "domain-unit": [
+          "tests/professional-experience-domain.test.ts"
+        ]
       }
     },
     {
