@@ -873,10 +873,11 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.1 CONTRACT REVIEW)
+## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.2 IMPLEMENTATION READY)
 
 Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
-Issue: #144
+Issue: #144  
+Adjacent follow-up: #258 — credential/recency/print current-date semantics
 
 ### P1.0 — Discovery / semantic inventory — DONE
 
@@ -887,43 +888,52 @@ Repository discovery on `main@eafc347fe00e781f966cc328da67ec24e52c8287` confirme
 - existing viewer-timezone helpers are deliberately presentation-resilient and therefore are **not** suitable as saveable-default authority;
 - Settings currently persists raw timezone text without IANA validation;
 - `flights.date` and `rates.valid_from` are persisted date-only authority and must not be reinterpreted after save;
-- current server GPS/FCL.050 path is explicitly UTC through `lib/kml.ts -> utcParts()`; the Prague `track-processing.localParts()` helper is legacy/dormant for server consumers;
-- portable backup/restore preserves settings and stored calendar dates directly, so no migration or backup-version change is currently justified.
+- current server GPS/FCL.050 path is explicitly UTC through `lib/kml.ts -> utcParts()`;
+- runtime dependency audit found active GPS save/review consumers either use the `lib/kml.ts` UTC override or explicitly import `utcParts`; no active runtime consumer found uses Prague `track-processing.localParts()` as timestamp authority;
+- in-scope flight/rate date inputs remain string-backed, rate comparison is date-only, and current CSV/XLS/print paths preserve stored flight dates without timezone conversion;
+- portable backup/restore preserves settings and stored calendar dates directly, so no migration or backup-version change is justified.
 
-### P1.1 — Contract freeze + independent review — ACTIVE
+### P1.1 — Contract freeze + independent review — DONE / REVIEW RECONCILED
 
-Frozen draft direction:
-- future saveable "today" defaults use the signed-in user's valid configured IANA timezone;
-- invalid/missing persisted timezone fails closed for saveable defaults instead of silently becoming Prague;
-- presentation-only timestamp fallback remains unchanged;
-- Settings rejects new invalid timezone values;
-- explicit pilot-entered calendar date wins and is never auto-converted at save;
+Independent reviewer verdict: **APPROVE WITH CHANGES**. The reviewer could not access the private repository, so every repository-specific recommendation was checked against actual code before acceptance.
+
+Frozen decisions:
+- saveable calendar resolver is an explicit `resolved | needs_configuration | unavailable` union;
+- missing/blank/invalid persisted timezone never fabricates Prague/UTC/browser-local/server-local `today`;
+- data-read failure is unavailable, not configuration repair;
+- timezone validation is server-authoritative; named runtime-recognized zones including `UTC` are accepted, raw numeric offsets are rejected;
+- presentation-only Prague fallback remains unchanged and separate;
+- explicit pilot-entered date wins and is never auto-converted at save;
 - timezone changes affect future defaults only, never existing flight/rate dates;
+- a mounted form does not silently change across midnight or another-tab timezone changes; fresh mount/reset derives a fresh default;
+- FlightForm receives its new-flight default from the authenticated server path and loses the independent UTC fallback;
+- Quick Add must not silently drop an entered hourly rate when no valid effective date exists;
 - GPS/FCL.050 timeline evidence remains UTC;
-- DB migration / historical backfill / portable-backup version bump are N/A unless new evidence changes the contract;
-- no module-level saveable `today` constants;
-- an already-open form is an in-progress draft and is not silently rolled over at midnight.
+- cross-timezone restore must preserve `flights.date` and `rates.valid_from` exactly;
+- DB migration / historical backfill / portable-backup version bump remain N/A;
+- production timezone-value census is required before release, not before P1.2 implementation;
+- adjacent UTC/`CURRENT_DATE` status semantics discovered in credentials/recency/print are tracked separately in #258 and do not expand #144.
 
-Before runtime code:
-- obtain independent second-AI review of the detailed contract;
-- reconcile review findings against actual repo and project fail-closed rules;
-- update this roadmap if scope/decisions change.
+### P1.2 — Strict calendar primitive + configuration boundary — ACTIVE
 
-### P1.2 — Strict calendar primitive + configuration boundary — BLOCKED BY P1.1
-
-Pure date-in-zone helper, strict saveable-default timezone resolver, Settings timezone validation/error state, focused unit/source-contract tests.
+Scope:
+- pure deterministic date-in-zone helper with injected instant;
+- strict saveable-calendar resolver with explicit failure states;
+- server write-boundary timezone validation + controlled Settings action state;
+- focused unit/source-contract tests, including DST and non-whole-hour zones;
+- no consumer rewiring beyond what is necessary to establish/verify the primitive.
 
 ### P1.3 — Manual flight default — BLOCKED BY P1.2
 
-Server-provided user-calendar date for New Flight; remove UTC fallback as new-flight authority; preserve stored/edit date and all UTC flight-time semantics.
+Server-provided user-calendar date/result for New Flight; remove UTC fallback as new-flight authority; preserve stored/edit date and all UTC flight-time semantics.
 
 ### P1.4 — Aircraft / rate defaults — BLOCKED BY P1.2
 
-Remove Prague module-level `today` values from Aircraft Manager and Quick Add; use strict user-calendar context while preserving explicit dates and historical rates.
+Remove Prague module-level `today` values from Aircraft Manager and Quick Add; use strict server-provided calendar context; preserve explicit dates and historical rates; fail closed if an initial rate is submitted without a valid effective date.
 
 ### P1.5 — GPS / backup invariance + exact-candidate closeout — BLOCKED BY P1.3/P1.4
 
-Prove GPS UTC behavior unchanged, preserve backup/restore/export calendar-date authority, decide legacy helper retirement only from evidence, run exact risk-scoped verification, and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
+Prove GPS UTC behavior unchanged, preserve backup/restore/export calendar-date authority and date-only rate selection, perform/read-record a production timezone-value census, decide legacy helper retirement only from evidence, run exact risk-scoped verification, and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
