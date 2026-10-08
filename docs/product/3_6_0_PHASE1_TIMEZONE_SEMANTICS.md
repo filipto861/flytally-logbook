@@ -1,6 +1,6 @@
 # FlyTally 3.6.0 — Phase 1 saved-date / timezone semantics
 
-Status: **REVIEW RECONCILED — CONTRACT FROZEN FOR P1.2 IMPLEMENTATION**  
+Status: **DONE / VERIFIED — PR #265 MERGE / PRODUCTION CLOSEOUT PENDING**  
 Issue: **#144**  
 Base: `main@eafc347fe00e781f966cc328da67ec24e52c8287`
 
@@ -449,7 +449,7 @@ Exact release evidence on implementation head `4caaae0e4e917f3d20f31db18096b1c95
 - scale N/A;
 - required evidence satisfied; blocked evidence none.
 
-### P1.5 — GPS / backup invariance + closeout — ACTIVE / EVIDENCE CANDIDATE
+### P1.5 — GPS / backup invariance + closeout — DONE / VERIFIED
 
 Repository evidence:
 - `lib/kml.ts` explicitly overrides the legacy `localParts` name with `utcParts` for server logbook consumers;
@@ -476,7 +476,9 @@ The census was read-only, aggregate/grouped, executed with Node 24 against the p
 
 Evidence-only repository changes add focused GPS/date-boundary, portable-backup, date-only rate and source-authority regressions. No product runtime behavior, schema, historical rows or portable-backup version are changed.
 
-Exact-candidate verification remains pending.
+Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f988` on exact head `56e3b05620ee4c35693994e1e60276387a41fe97` is VERIFIED. Targeted P1.5 tests passed **38/38**; TypeScript passed; the planner selected aggregate full-tests and PostgreSQL acceptance with no blocked evidence; `verify:iterate` passed; final `verify:release:risk` passed aggregate regression **1433/1433** and PostgreSQL **100/100**, including the dedicated `json_populate_record` date-only invariance test under Pacific/Auckland and America/Los_Angeles session time zones. Build, scale and browser were correctly N/A. Required `postgres-acceptance` is satisfied and blocked evidence is none.
+
+Phase 1 acceptance is satisfied on that exact candidate. FEATURES was reconciled to the delivered capability and DEVELOPMENT was reviewed with no change required. PR #265 merge and production closeout remain outside this exact-candidate verification step.
 
 ## Do not
 
