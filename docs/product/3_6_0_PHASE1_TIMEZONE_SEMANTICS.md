@@ -423,21 +423,31 @@ Exact release evidence on implementation head `99babf404656f02cd3a07dcb53636a37d
 - scale N/A;
 - required evidence satisfied; blocked evidence none.
 
-### P1.4 — Aircraft / rate defaults — ACTIVE / IMPLEMENTATION CANDIDATE
+### P1.4 — Aircraft / rate defaults — DONE / VERIFIED
 
-Candidate wiring:
+Delivered through PR #263 and merged to canonical `main` as `7920164f2e461cacbd99279488cc092ad3fc4674`:
 - Aircraft & Airports resolves `getUserSaveableCalendarDefault(userId)` server-side and passes the result to Aircraft Manager;
-- New Flight reuses its already-resolved strict calendar result for Quick Add;
+- New Flight reuses the already-resolved strict calendar result for Quick Add;
 - Aircraft Manager and Quick Add contain no module-level Prague/UTC/browser-local `today` authority;
 - resolved date initializes new `initial_valid_from` and new rate-history `valid_from`;
 - visible Aircraft Manager dates remain manually editable when automatic derivation is unavailable;
-- Quick Add unresolved state shows controlled guidance and submits an empty effective date rather than guessing;
+- Quick Add unresolved state submits an empty effective date rather than guessing;
 - `initialRateDateError()` rejects a positive initial hourly rate without a valid explicit effective date before persistence;
 - no-rate aircraft creation remains allowed;
 - historical rate rows are not rewritten or reinterpreted after timezone changes;
-- rate lookup remains date-only.
+- rate lookup remains date-only;
+- development registry ownership for `app/(protected)/database/` was corrected to `aircraft-airports`; browser target ownership is explicit and PostgreSQL acceptance remains required for persistence risk.
 
-Verification pending on the exact candidate.
+Exact release evidence on implementation head `4caaae0e4e917f3d20f31db18096b1c953ff5559`, candidate `a67621e0618d2a847fef597f34ea7bf093781f572e4e55854f1ae1a6d3fdf952`:
+- source PASS (reused);
+- domain PASS (reused);
+- TypeScript PASS (reused);
+- aggregate **1427/1427 PASS**;
+- build **41/41 PASS**;
+- PostgreSQL **99/99 PASS**;
+- browser-risk **10/10 PASS** (5 desktop + 5 mobile, one worker);
+- scale N/A;
+- required evidence satisfied; blocked evidence none.
 
 ### P1.5 — GPS / backup invariance + closeout
 
