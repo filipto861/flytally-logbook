@@ -217,6 +217,18 @@ test("stable module ownership covers at least ninety percent of the audited runt
   assert.ok(explicitShared.length>0,"cross-cutting runtime handling must remain explicit rather than disappear by broad prefix");
 });
 
+test("database workspace is owned by aircraft-airports rather than the unrelated recovery module",()=>{
+  const result=classify([
+    "app/(protected)/database/page.tsx",
+    "app/(protected)/database/actions.ts",
+    "app/(protected)/database/aircraft-photo-actions.ts",
+  ]);
+  assert.match(result.modules,/aircraft-airports/);
+  assert.doesNotMatch(result.modules,/data-recovery/);
+  assert.equal(result.browser,"true");
+  assert.equal(result.postgres,"false");
+});
+
 test("new stable modules own representative aircraft GPS auth notification and shell boundaries",()=>{
   const result=classify([
     "components/aircraft-manager.tsx",
