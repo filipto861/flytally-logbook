@@ -654,9 +654,9 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 0B — risk model and deterministic test selection — ACTIVE.**
+**Current step: Phase 0D — test contract / evidence taxonomy — ACTIVE.**
 
-Current milestone: **Phase 0C.3 — proven project × matrix deduplication — IMPLEMENTED, VERIFICATION PENDING**. Proof limited deduplication to the four F6 tests that each own the complete required viewport/theme matrix and have no mobile-project semantic dependency; the five narrower responsive tests retain both projects. Candidate uses tag `@self-managed-presentation` plus mobile-project `grepInvert`, targeting **94 total full-gate executions** instead of 98 without changing the 48 logical test inventory.
+Current milestone: **Phase 0D — test contract / evidence taxonomy — ACTIVE**. Phase 0C browser architecture is ✅ DONE / VERIFIED. Final 0C evidence: targeted **44/44 PASS**, TypeScript **PASS**, focused responsive **14/14 PASS**, complete serialized browser acceptance with explicit retries=0 **92 PASS / 2 intentional skips / 0 failed** across **94 executions** in **10.3m**. All 48 logical tests, centralized browser DB fixtures, workers=1 and required presentation evidence are preserved.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
@@ -666,7 +666,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0B now owns the next work: replace duplicated/manual suite selection with one authoritative risk/test registry and deterministic changed-scope selection. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0D now owns the next work: make the repository distinguish domain/unit, application/source-contract, PostgreSQL acceptance, browser acceptance and build evidence without treating static source assertions as runtime proof. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
