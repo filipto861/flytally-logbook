@@ -14,7 +14,8 @@ export async function runDomainVerification(argv){
   const {candidate,plan}=result;
   const direct=plan.directEvidence["domain-unit"];
 
-  if(plan.blockedEvidence.length>0){
+  const domainBlocked=plan.blockedEvidence.filter((reason)=>reason.startsWith("domain-unit:"));
+  if(domainBlocked.length>0){
     const ledger=writeVerificationLedgerEntry({
       gate:"domain",
       evidenceClass:"domain-unit",
@@ -24,7 +25,7 @@ export async function runDomainVerification(argv){
       effectiveConfiguration:{coverage:"targeted",modules:direct.modules,tests:direct.tests},
       evaluation:{
         status:"NOT RUN",
-        reason:"Required direct domain evidence is unavailable: "+plan.blockedEvidence.join(", "),
+        reason:"Required direct domain evidence is unavailable: "+domainBlocked.join(", "),
       },
     });
     return {exitCode:3,plan:result,ledger};
