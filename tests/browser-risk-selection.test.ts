@@ -94,7 +94,7 @@ test("ignored local verification artifacts do not contaminate candidate identity
     git(["init"]);
     git(["config","user.email","test@example.test"]);
     git(["config","user.name","FlyTally Test"]);
-    fs.writeFileSync(path.join(temp,".gitignore"),"test-results/\nflytally-scale-evidence.json\nflytally-v*-scale-evidence.json\n");
+    fs.writeFileSync(path.join(temp,".gitignore"),"test-results/\nplaywright-report/\nflytally-scale-evidence.json\nflytally-v*-scale-evidence.json\n");
     fs.writeFileSync(path.join(temp,"tracked.txt"),"base\n");
     git(["add",".gitignore","tracked.txt"]);
     git(["commit","-m","base"]);
@@ -105,6 +105,8 @@ test("ignored local verification artifacts do not contaminate candidate identity
 
     fs.mkdirSync(path.join(temp,"test-results"),{recursive:true});
     fs.writeFileSync(path.join(temp,"test-results",".last-run.json"),"{}\n");
+    fs.mkdirSync(path.join(temp,"playwright-report"),{recursive:true});
+    fs.writeFileSync(path.join(temp,"playwright-report","index.html"),"<html></html>\n");
     fs.writeFileSync(path.join(temp,"flytally-scale-evidence.json"),"{}\n");
     fs.writeFileSync(path.join(temp,"flytally-v230-100k-scale-evidence.json"),"{}\n");
 
