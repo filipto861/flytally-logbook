@@ -781,7 +781,7 @@ Verification history:
 
 New release work must state which behavioral classes apply and why the others are N/A. Quality is not measured by raw test count alone.
 
-### Phase 0E — Canonical verification commands — ACTIVE
+### Phase 0E — Canonical verification commands — CLOSED / VERIFIED
 
 Independent review verdict: **ACCEPT WITH CHANGES**. The design is reconciled as follows.
 
@@ -945,13 +945,15 @@ The build gate records a candidate-bound build manifest including the candidate 
    - legacy full-browser cloud execution is explicitly diagnostic, repository-pinned toolchain use is preserved, and stale pull-request-specific job logic is removed;
    - workflow authority is regression-covered and DEVELOPMENT/ROADMAP/CHANGELOG are reconciled;
    - first candidate `088aa71c6a8a43b48b40962c3eb667647d93d202` correctly failed aggregate at **1406/1408** on two stale historical label assertions; corrected fixed head `734473252fe1acf64388fa15d9373777112d4977` passed targeted label tests **9/9**, TypeScript, aggregate **1408/1408**, build **41/41**, with PostgreSQL/scale/browser N/A and final `release_status=PASS`.
-8. **0E.7 — exact-candidate verification / closeout — ACTIVE**.
-   - the first cumulative Phase 0D → Phase 0E candidate correctly failed closed before execution: `e2e/ui-audit-capture.spec.mjs` changed during 0E.3 only to carry an explicit diagnostic/N/A annotation and is intentionally excluded from authoritative browser targets;
-   - this **NOT RUN** result is not repaired by weakening ownership rules, promoting the audit capture into release authority, or substituting the legacy 94-case browser diagnostic;
-   - final closeout boundary is the verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through the final Phase 0E head; earlier 0E.1–0E.5 milestones already retain their own exact-candidate evidence, while this boundary includes the substantive 0E.6 workflow/test alignment;
-   - execute one `verify:release:risk --force-all` on that exact candidate so every risk-scoped authoritative gate is observed on the final head;
-   - full PostgreSQL acceptance supplies registered scale evidence; authoritative browser evidence remains planner-bound `browser-risk`, not the legacy 94-case diagnostic;
-   - after PASS, reconcile required docs and review FEATURES before Phase 0E is closed.
+8. **0E.7 — exact-candidate verification / closeout — DONE / VERIFIED**.
+   - the first cumulative Phase 0D → Phase 0E candidate correctly failed closed before execution because `e2e/ui-audit-capture.spec.mjs` is explicitly diagnostic-only and intentionally has no authoritative browser target;
+   - ownership remained fail-closed: no audit-only target was invented and the legacy 94-case browser diagnostic was not promoted into release authority;
+   - final closeout candidate used verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` as base and exact head `335704c1125ee0336528f5f1e43c3bc1528c92d3`, producing candidate id `221190494ba79b32bb25f9e32c3ce09041dfd624f3f3a514cc8fb7a905c9477a`;
+   - `verify:release:risk --force-all` selected every risk-scoped authoritative heavy gate with no blockers;
+   - final observed evidence: source-contract **226/226 PASS**, domain N/A, TypeScript PASS, aggregate **1408/1408 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, scale PASS, browser-risk **41/41 PASS** (21 desktop + 20 mobile, workers=1), and final `release_status=PASS`;
+   - FEATURES was reviewed and remains unchanged because no product capability/runtime, DB schema, certification, backup or timezone semantics changed.
+
+**PHASE 0E — CLOSED / VERIFIED.**
 
 #### 0E.1 verification closeout
 
@@ -967,7 +969,7 @@ The build emitted only the pre-existing local Turbopack workspace warning about 
 
 Do not change product runtime, browser fixture architecture, DB schema, certification/backup contracts or 3.6.0 timezone semantics in Phase 0E.
 
-### Phase 0F — Hygiene and closeout
+### Phase 0F — Hygiene and closeout — ACTIVE
 
 - reconcile `DEVELOPMENT.md` with executable tooling;
 - review stale PRs/branches and clean only proven superseded state;
