@@ -946,7 +946,9 @@ The build gate records a candidate-bound build manifest including the candidate 
    - workflow authority is regression-covered and DEVELOPMENT/ROADMAP/CHANGELOG are reconciled;
    - first candidate `088aa71c6a8a43b48b40962c3eb667647d93d202` correctly failed aggregate at **1406/1408** on two stale historical label assertions; corrected fixed head `734473252fe1acf64388fa15d9373777112d4977` passed targeted label tests **9/9**, TypeScript, aggregate **1408/1408**, build **41/41**, with PostgreSQL/scale/browser N/A and final `release_status=PASS`.
 8. **0E.7 — exact-candidate verification / closeout — ACTIVE**.
-   - final candidate boundary is Phase 0D verified head `686734911f5c3f45e395fdda6b7d98a5021e84ae` through the final Phase 0E head;
+   - the first cumulative Phase 0D → Phase 0E candidate correctly failed closed before execution: `e2e/ui-audit-capture.spec.mjs` changed during 0E.3 only to carry an explicit diagnostic/N/A annotation and is intentionally excluded from authoritative browser targets;
+   - this **NOT RUN** result is not repaired by weakening ownership rules, promoting the audit capture into release authority, or substituting the legacy 94-case browser diagnostic;
+   - final closeout boundary is the verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` through the final Phase 0E head; earlier 0E.1–0E.5 milestones already retain their own exact-candidate evidence, while this boundary includes the substantive 0E.6 workflow/test alignment;
    - execute one `verify:release:risk --force-all` on that exact candidate so every risk-scoped authoritative gate is observed on the final head;
    - full PostgreSQL acceptance supplies registered scale evidence; authoritative browser evidence remains planner-bound `browser-risk`, not the legacy 94-case diagnostic;
    - after PASS, reconcile required docs and review FEATURES before Phase 0E is closed.
