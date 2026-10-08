@@ -153,6 +153,7 @@ export function selectBrowserEvidence(candidate,classification){
   const fixture=browserFixtureContractIdentity();
   const toolchain=declaredToolchainIdentity();
   const selectionPayload={
+    plannerVersion:2,
     selectionVersion:browser.selectionVersion??0,
     registrySchemaVersion:manifest.schemaVersion??manifest.version??0,
     candidateFiles:candidate.files,
@@ -164,6 +165,7 @@ export function selectBrowserEvidence(candidate,classification){
     required,
     authoritativeSource:"browser-risk",
     authority:"release",
+    plannerVersion:2,
     selectionVersion:browser.selectionVersion??0,
     targets:selected,
     selectionHash,
