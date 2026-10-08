@@ -99,7 +99,7 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
     observations:{
       "browser-acceptance":observation({
         command:"npm run test:browser -- --retries=0",
-        sourceGates:["browser"],coverage:"full",planned:94,passed:92,notApplicable:2,retries:0,
+        sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,notApplicable:2,retries:0,
       }),
     },
   });
@@ -110,12 +110,26 @@ test("browser acceptance permits explicit N/A cases but not raw skips",()=>{
     observations:{
       "browser-acceptance":observation({
         command:"npm run test:browser -- --retries=0",
-        sourceGates:["browser"],coverage:"full",planned:94,passed:92,skipped:2,retries:0,
+        sourceGates:["browser-risk"],coverage:"targeted",planned:6,passed:4,skipped:2,retries:0,
       }),
     },
   });
   assert.equal(skipped.evidence["browser-acceptance"].status,"PARTIAL");
   assert.equal(skipped.overallStatus,"FAIL");
+});
+
+test("legacy full browser diagnostics cannot satisfy authoritative browser acceptance",()=>{
+  const result=evaluate({
+    requiredEvidence:["browser-acceptance"],
+    observations:{
+      "browser-acceptance":observation({
+        command:"npm run verify:browser -- --base HEAD~1",
+        sourceGates:["browser-diagnostic"],coverage:"full",planned:94,passed:92,notApplicable:2,retries:0,
+      }),
+    },
+  });
+  assert.equal(result.evidence["browser-acceptance"].status,"PARTIAL");
+  assert.equal(result.overallStatus,"FAIL");
 });
 
 test("acceptance evidence with retries is not PASS",()=>{
