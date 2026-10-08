@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -31,6 +32,17 @@ function browserDbExports(){
   }
   return names.sort();
 }
+
+test("Phase 0C browser modules are syntactically parseable before Playwright discovery",()=>{
+  const e2eDir=path.join(root,"e2e");
+  const files=fs.readdirSync(e2eDir).filter(name=>name.endsWith(".mjs")).sort();
+  assert.ok(files.length>0);
+  for(const file of files){
+    const absolute=path.join(e2eDir,file);
+    const result=spawnSync(process.execPath,["--check",absolute],{encoding:"utf8"});
+    assert.equal(result.status,0,file+" failed node --check:\n"+result.stderr);
+  }
+});
 
 test("Phase 0C preserves the exact 48 logical authenticated browser tests",()=>{
   const actual=logicalBrowserTests();
