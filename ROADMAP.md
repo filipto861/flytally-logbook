@@ -654,22 +654,18 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 0D — test contract / evidence taxonomy — ACTIVE.**
+**Current step: Phase 0E — canonical verification commands — ACTIVE.**
 
-Current milestone: **Phase 0D — test contract / evidence taxonomy — ACTIVE / VERIFICATION PENDING**. Phase 0C browser architecture is ✅ DONE / VERIFIED. Final 0C evidence: targeted **44/44 PASS**, TypeScript **PASS**, focused responsive **14/14 PASS**, complete serialized browser acceptance with explicit retries=0 **92 PASS / 2 intentional skips / 0 failed** across **94 executions** in **10.3m**. All 48 logical tests, centralized browser DB fixtures, workers=1 and required presentation evidence are preserved.
+Current milestone: **Phase 0E — canonical verification commands — ACTIVE**. Phase 0D evidence taxonomy is ✅ DONE / VERIFIED.
 
-Phase 0D independent review returned **ACCEPT WITH CHANGES** and is reconciled. The implementation candidate now:
-- upgrades the development registry to schema v3 with four behavioral evidence classes and homogeneous named-group evidence metadata;
-- keeps build as independent non-behavioral artifact evidence and `fullTests` as aggregate regression only;
-- makes `scope:changed` report required behavioral evidence separately from aggregate gates and build;
-- adds fail-closed observed-evidence semantics for missing required evidence, raw skips, retries and wrong-source claims;
-- prevents source-contract, aggregate full-suite or build PASS results from masquerading as domain, PostgreSQL or browser acceptance;
-- keeps `scope:changed` planner-only: it does not fabricate observed PASS/FAIL evidence;
-- changes no `app/`, `components/`, `lib/`, DB schema, browser fixture architecture or timezone semantics.
+Phase 0D closeout:
+- independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
+- development registry schema v3, homogeneous evidence metadata, planner/evaluator separation and fail-closed evidence semantics are implemented;
+- first verification attempt exposed 14 stale historical source-location assertions from the already-verified Phase 0C browser split; they were retargeted without changing product runtime, browser behavior, DB schema or timezone semantics;
+- final exact-code-head verification on `686734911f5c3f45e395fdda6b7d98a5021e84ae`: development-pipeline **65/65 PASS**, TypeScript **PASS**, aggregate regression **1354/1354 PASS**, production build **PASS (41/41 static pages)**;
+- `domain-unit`: **N/A**; PostgreSQL acceptance: **N/A**; browser acceptance: **N/A** for this tooling/source-contract candidate.
 
-Phase 0D verification is still required. For this tooling-only candidate the expected risk contract is targeted development-pipeline/evidence tests + TypeScript + aggregate full unit/regression + build. PostgreSQL and browser acceptance remain N/A unless final diff inspection shows those surfaces were touched.
-
-First verification pass: development-pipeline **65/65 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**. Aggregate `npm test` reached **1340/1354 PASS** with 14 stale historical source-contract assertions that still targeted the pre-0C monolithic `public-shell.spec.mjs`. Repository inspection confirmed the expected browser behavior remains in the new domain-owned specs/helpers. The assertions have been retargeted; focused correction verification is pending. This does not convert the failed aggregate run into PASS until the corrected assertions are actually rerun.
+Phase 0E now owns the next work: create a small canonical verification command surface for targeted iteration, changed-scope selection, complete application verification, explicit PostgreSQL/browser gates and risk-assembled release verification. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - fail-closed PostgreSQL gate ownership, localhost-only PostgreSQL acceptance targeting, real connection preflight before test fanout, explicit PostgreSQL CLI-path propagation, cross-platform direct execution of the pinned Playwright CLI, and deterministic localhost-only browser-fixture cleanup aligned with current GPS/3.5.2 UI contracts;
@@ -679,7 +675,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0D now owns the next work: verify and close the evidence-taxonomy candidate, then move to Phase 0E canonical verification commands. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0E owns the next work. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
