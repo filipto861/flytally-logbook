@@ -1,5 +1,46 @@
 {
-  "version": 2,
+  "$schema": "./development-modules.schema.json",
+  "schemaVersion": 3,
+  "version": 3,
+  "evidencePolicy": {
+    "behavioralClasses": [
+      "domain-unit",
+      "application-source-contract",
+      "postgres-acceptance",
+      "browser-acceptance"
+    ],
+    "groupClasses": [
+      "domain-unit",
+      "application-source-contract",
+      "postgres-acceptance",
+      "browser-acceptance",
+      "aggregate-regression"
+    ],
+    "statuses": [
+      "PASS",
+      "FAIL",
+      "NOT RUN",
+      "N/A",
+      "PARTIAL"
+    ],
+    "aggregateGates": [
+      "full-tests"
+    ],
+    "buildArtifact": "build",
+    "gateRequirements": {
+      "postgres": "postgres-acceptance",
+      "browser": "browser-acceptance"
+    },
+    "riskRequirements": {
+      "domain-data-integrity": [
+        "domain-unit"
+      ]
+    },
+    "dedicatedAcceptanceSources": {
+      "postgres-acceptance": "postgres",
+      "browser-acceptance": "browser"
+    }
+  },
   "documentation": {
     "extensions": [
       ".md"
@@ -28,6 +69,8 @@
   },
   "testGroups": {
     "ui-contract": {
+      "evidenceClass": "application-source-contract",
+      "coverage": "targeted",
       "risks": [
         "ui-contract"
       ],
@@ -58,6 +101,8 @@
       ]
     },
     "development-pipeline": {
+      "evidenceClass": "application-source-contract",
+      "coverage": "targeted",
       "risks": [
         "tooling"
       ],
@@ -72,7 +117,8 @@
         "tests/browser-suite-structure.test.ts",
         "tests/development-pipeline.test.ts",
         "tests/development-scope.test.ts",
-        "tests/vercel-ignore-build.test.ts"
+        "tests/vercel-ignore-build.test.ts",
+        "tests/evidence-contract.test.ts"
       ]
     }
   },
