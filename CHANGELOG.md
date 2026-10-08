@@ -10,6 +10,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.6.0 Phase 1 — saved-date / timezone semantics
+- Completed P1.0 read-only discovery on `main@eafc347fe00e781f966cc328da67ec24e52c8287` and drafted the Phase 1 contract. Confirmed Prague-hard-coded saveable defaults in Manual New Flight, Aircraft Manager and Quick Add; a separate UTC fallback in FlightForm; raw timezone persistence in Settings; date-only authority for stored flight/rate dates; UTC authority for current GPS/FCL.050 server consumers; and backup/restore preservation of stored dates/settings.
+- Independent P1.1 review returned **APPROVE WITH CHANGES**. Repository-specific recommendations were re-checked against the private actual repo before acceptance because the reviewer could not access it directly.
+- Reconciled/froze the design before runtime work: strict `resolved / needs_configuration / unavailable` saveable-calendar result; server-authoritative named-timezone validation with raw numeric offsets rejected; mounted-form defaults stable across midnight/timezone changes; server-provided Manual Flight default replacing the client UTC fallback; explicit Quick Add rate/effective-date fail-closed rule; cross-timezone restore invariance; and production timezone-value census required before release.
+- Completed the hidden-consumer audit relevant to #144: active GPS save/review paths use the `lib/kml.ts` UTC override or explicit `utcParts`; in-scope date inputs remain string-backed; rate selection remains date-only; CSV/XLS/print preserve stored flight dates without timezone conversion. Adjacent credential/recency/print current-date semantics are tracked separately as #258 rather than silently expanding this release.
+- P1.1 is **DONE / REVIEW RECONCILED** and P1.2 is implementation-ready. Runtime implementation remains **NOT STARTED** at this documentation head. DB migration, historical backfill and portable-backup version bump remain N/A on current evidence.
+
+
 ### Development / verification governance
 - Added the 3.6.0 Phase 0 engineering-quality gate before any saved-date/timezone runtime implementation.
 - Recorded and independently reviewed the current test/development audit, including the suite-wide PostgreSQL silent-skip exposure, test-scope registry drift, browser-runner reproducibility, browser-suite ownership and stale Git/PR hygiene.
