@@ -1,6 +1,6 @@
 # 3.6.0 Phase 0E.4 — Fast iteration and risk-based release verification
 
-**Status:** DRAFT DESIGN / INDEPENDENT REVIEW REQUIRED  
+**Status:** REVIEWED DESIGN / ACCEPT WITH CHANGES / 0E.4a ACTIVE  
 **Parent:** `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`  
 **Scope:** development verification tooling only; no product runtime, database schema, certification, backup or timezone-semantic change.
 
@@ -73,9 +73,9 @@ It:
 
 The legacy `verify:browser` command remains the repository-wide manual diagnostic and is not consumed as release browser evidence.
 
-### `verify:release`
+### `verify:release:risk`
 
-Risk-based release orchestrator for an explicit candidate.
+Risk-based release orchestrator for an explicit candidate. The existing `verify:release` name keeps its current full/static meaning throughout 0E.4; changing that public command requires a separate explicit product decision.
 
 Execution order:
 1. plan and fail-closed coverage check;
@@ -98,18 +98,20 @@ Successful same-candidate ledger entries may be reused only when:
 - existing low-level `test:target`, `test:group`, `test:postgres*` and `test:browser` remain;
 - `verify:app`, `verify:domain`, `verify:postgres` remain;
 - `verify:browser` remains the full manual diagnostic;
-- current static `verify:release` behavior is preserved before replacement as `verify:release:full`;
-- `--force-all` on the new release planner forces every **risk-scoped** gate, not the legacy 94-test browser diagnostic.
+- existing `verify:release` remains the compatibility full/static command and is not silently repurposed;
+- `verify:release:full` may be added only as an explicit alias for discoverability, not as a semantic migration prerequisite;
+- the new orchestrator is `verify:release:risk`;
+- `--force-all` on the risk-scoped planner forces every **risk-scoped** gate, not the legacy 94-test browser diagnostic.
 
 ## Browser evidence semantics
 
 Keep the existing behavioral class name `browser-acceptance`; do not add a fifth product evidence class merely to encode execution width.
 
-Change the authoritative dedicated source from legacy `browser` to `browser-risk`.
+Change the authoritative dedicated source from legacy `browser` to `browser-risk`. Authority is machine-enforced, not conventional: canonical risk evidence must carry `authority: release`, `source: browser-risk`, `coverage: targeted`, exact planner `selectionHash`, current `candidateId`, `configHash`, `toolchainHash`, build identity and browser fixture contract/reset identity. Legacy browser diagnostics never carry release authority.
 
-- `browser-risk` + planner-bound selection = authoritative candidate browser evidence.
-- legacy `browser` full-matrix output = diagnostic only and cannot satisfy release `browser-acceptance`.
-- risk-scoped browser observations use `coverage: targeted` and carry `selectionHash`, exact targets, specs, titles and projects.
+- `browser-risk` + planner-bound selection + matching authority/identity fields = authoritative candidate browser evidence.
+- legacy `browser` full-matrix output = diagnostic only and cannot satisfy release `browser-acceptance`, even when its raw tests pass.
+- risk-scoped browser observations use `coverage: targeted` and carry `selectionHash`, exact targets, specs, titles and projects. Release recomputes the required selection and rejects any actual-execution mismatch, missing target, extra target, skip/fixme/interruption or stale identity.
 - the dedicated evaluator must explicitly permit targeted coverage only from `browser-risk`; PostgreSQL acceptance remains full-only.
 - the browser executor, not prose, proves completeness by running the full planner-selected target set and writing the deterministic selection.
 
@@ -151,11 +153,12 @@ Proposed shape:
 Selection rules:
 - start with the baseline target(s) registered for every affected module whose gate requires browser evidence;
 - add path-specific escalation targets for high-risk sub-surfaces such as RoleCrew, certification, GPS/SERA, Connections and aircraft authority;
-- if an E2E spec itself changes, select the approved target(s) that own that spec;
-- browser harness files select a small cross-domain harness smoke target on both projects;
+- if an E2E spec itself changes, select the approved target(s) that own that spec; deleted/renamed/stale spec ownership blocks before Playwright;
+- every target resolves exactly one `{spec,title,project}` execution; zero, ambiguous or duplicate resolution blocks;
+- browser harness files select the complete registered authoritative risk-target set unless a separately reviewed dependency map proves a narrower set;
 - self-managed responsive matrices run only in the project needed for their explicit viewport/theme matrix unless touch/mobile-user-agent behavior is separately required;
 - deduplicate target ids, test titles and specs deterministically;
-- if `plan.browser=true` and any affected browser module/rule has no approved target ownership, add a blocked-evidence reason and exit 3.
+- if `plan.browser=true` and any affected browser-relevant changed path/module/rule has no approved target ownership, add a blocked-evidence reason and exit 3. Absence of a target is never interpreted as absence of browser risk.
 
 The first implementation must prefer conservative extra targeted cases over missing coverage. Runtime measurements can later justify narrower ownership.
 
@@ -181,15 +184,16 @@ Aggregate `npm test` remains non-authoritative and cannot synthesize source/doma
 
 ## Ledger reuse
 
-Reuse is an optimization, never inference.
+Reuse is an optimization, never inference. Browser-risk resets/seeds the isolated PostgreSQL fixture before every authoritative execution; the deterministic fixture contract/reset identity is derived from the exact seed/reset implementation and recorded with the observation.
 
 A release orchestrator may reuse a stored gate only if the exact candidate and current expected execution identity match. Otherwise it reruns or reports NOT RUN/blocked.
 
 Never reuse:
 - evidence from another candidate id;
+- a candidate whose dirty/untracked relevant worktree identity differs;
 - a stale build artifact;
 - a legacy full-browser diagnostic as risk-scoped browser evidence;
-- browser evidence whose selection hash differs;
+- browser evidence whose selection/config/toolchain/fixture identity differs;
 - a PARTIAL/FAIL/NOT RUN entry.
 
 ## Exit contract
@@ -203,7 +207,8 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 
 ## Milestones
 
-### 0E.4a — registry + planner selection
+### 0E.4a — identity + registry + planner selection
+- expand candidate/reuse identity to account for dirty/untracked worktree state and deterministic verification config/toolchain/fixture contracts;
 - add browser target schema/registry;
 - add deterministic selector + selection hash;
 - expose browser targets in `verify:plan`;
@@ -225,8 +230,8 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 - runtime measurement.
 
 ### 0E.4d — release orchestrator
-- preserve old static path as `verify:release:full`;
-- replace `verify:release` with risk-based orchestration;
+- keep old static `verify:release` semantics unchanged;
+- add risk-based orchestration as `verify:release:risk`;
 - consume/reuse exact candidate evidence;
 - release summary + release ledger.
 
@@ -248,3 +253,21 @@ The existing docs omitted exit 1; 0E.4 must make it explicit.
 - old static release behavior has an explicit compatibility command;
 - docs and executable command behavior agree;
 - no product runtime, DB schema, certification, backup or 3.6.0 timezone semantics changed.
+
+
+## Independent review reconciliation — 8 October 2026
+
+Independent review verdict: **ACCEPT WITH CHANGES**.
+
+Required changes accepted into the design:
+- release browser authority is validated through source + explicit authority + exact candidate/selection/config/toolchain/build/fixture identity;
+- every browser-relevant changed path must resolve approved ownership or block with exit 3;
+- every target must resolve exactly one Playwright execution before the runner starts;
+- browser-risk resets/seeds its localhost PostgreSQL fixture and records a deterministic fixture contract/reset identity;
+- actual executed browser cases must equal the planner selection exactly; skips/fixme/interruption/missing/extra cases cannot PASS;
+- `verify:iterate --with-browser` may produce authoritative reusable browser evidence only when it executes the exact current release-required selection; otherwise it is diagnostic/non-authoritative;
+- existing `verify:release` keeps its current semantics; the new command is `verify:release:risk`;
+- candidate/reuse identity is hardened for dirty/untracked worktree state;
+- the negative-test list from the review is mandatory across 0E.4a–0E.4e.
+
+The review also confirms that preserving the existing `browser-acceptance` evidence class is acceptable after these authority checks are machine-enforced.
