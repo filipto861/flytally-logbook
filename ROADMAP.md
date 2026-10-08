@@ -821,6 +821,8 @@ Revised 0E milestones:
 
 **PHASE 0E — CLOSED / VERIFIED.**
 
+Final documentation-only reconciliation candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f8318937865f75a6694c732` on exact head `2969fae73e151044f0a2e6962d7abd57e8983da9` also passed `verify:release:risk`; source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly **N/A**, required evidence none, blocked evidence none.
+
 Frozen constraints remain:
 - no product runtime, DB schema, certification, backup or timezone-semantic changes;
 - no browser DB architecture or worker-count change;
@@ -838,7 +840,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0E owns the next work. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
+Phase 0F owns the next work. Do not start 3.6.0 timezone runtime work while Phase 0 remains active.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
@@ -852,6 +854,19 @@ Mandatory Phase 0 scope:
 No 3.6.0 saved-date/timezone runtime semantics are changed in Phase 0.
 
 Phase 0 acceptance is defined in the detailed contract. Required closeout includes the applicable TypeScript, unit/regression, PostgreSQL, browser and build evidence plus ROADMAP / CHANGELOG / DEVELOPMENT reconciliation. FEATURES changes only if product capability changes.
+
+## Phase 0F — Hygiene and Phase 0 closeout — ACTIVE
+
+Discovery:
+- DEVELOPMENT command documentation matches the executable package command surface for `test:target`, `test:group`, `scope:changed`, `verify:plan`, `verify:iterate`, `verify:app`, `verify:domain`, `verify:postgres`, `verify:browser:risk`, the legacy diagnostic browser commands, static `verify:release`, and canonical `verify:release:risk`;
+- seven historical branches are proven ancestors of `main` and are safe cleanup candidates by ancestry: `chore/pre-f3-integration-anchor`, `codex/v335-batch8-routes-headers-legal`, `docs/flight-entry-f1-closeout`, `feat/flight-entry-f33-aircraft-authority`, `feat/flight-entry-f34-aircraft-context-ux`, `fix/story-map-toggle`, and `test/flight-entry-f35-closeout`;
+- five older open feature PRs (#187, #201, #206, #231, #232) are diverged/non-mergeable against current `main`; do not close or delete them until supersession is proven explicitly;
+- PR #255 is the active Phase 0 integration PR; no destructive branch/PR cleanup has been performed.
+
+Next:
+- prove or reject supersession for each diverged open PR;
+- remove only stale documentation drift and record the branch-cleanup decision set;
+- finish Phase 0 acceptance reconciliation, then close Phase 0 before any 3.6.0 timezone-runtime work.
 
 ## Phase 1 — Saved-date / timezone semantics — BLOCKED BY PHASE 0
 
