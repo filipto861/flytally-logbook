@@ -41,9 +41,12 @@ test("verify:plan JSON binds plan to deterministic content-aware candidate ident
     assert.equal(second.status,0,second.stderr||second.stdout);
     const a=JSON.parse(first.stdout),b=JSON.parse(second.stdout);
     assert.equal(a.schemaVersion,1);
-    assert.equal(a.candidate.schemaVersion,1);
+    assert.equal(a.candidate.schemaVersion,2);
     assert.match(a.candidate.candidateId,/^[a-f0-9]{64}$/);
     assert.match(a.candidate.filesHash,/^[a-f0-9]{64}$/);
+    assert.match(a.candidate.worktree.hash,/^[a-f0-9]{64}$/);
+    assert.ok(Array.isArray(a.candidate.worktree.files));
+    assert.ok(Array.isArray(a.candidate.worktree.outsideCandidate));
     assert.match(a.candidate.headSha,/^[a-f0-9]{40}$/);
     assert.deepEqual(a.candidate.files,["DEVELOPMENT.md","package.json"]);
     assert.equal(a.candidate.source.kind,"files");
@@ -127,6 +130,10 @@ test("verify:plan keeps direct domain evidence module-scoped for a cross-gate fl
   assert.equal(payload.plan.browser,true);
   assert.equal(payload.plan.fullTests,true);
   assert.equal(payload.plan.build,true);
+  assert.equal(payload.plan.buildArtifactRequired,true);
+  assert.equal(payload.plan.browserEvidence.authoritativeSource,"browser-risk");
+  assert.match(payload.plan.browserEvidence.selectionHash,/^[a-f0-9]{64}$/);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
 });
 
 test("verify:plan human output exposes candidate and gate contract",()=>{
@@ -137,6 +144,8 @@ test("verify:plan human output exposes candidate and gate contract",()=>{
   assert.match(result.stdout,/typecheck=true/);
   assert.match(result.stdout,/full_tests=true/);
   assert.match(result.stdout,/build=true/);
+  assert.match(result.stdout,/browser_source=browser-risk/);
+  assert.match(result.stdout,/browser_selection_hash=[a-f0-9]{64}/);
   assert.match(result.stdout,/required_evidence=/);
   assert.match(result.stdout,/blocked_evidence=none/);
 });
