@@ -137,11 +137,13 @@ Important boundary:
 - Preserve sidebar collapse state, notification behavior and phone/mobile navigation.
 - Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`.
 
-### 3.6.0 — Saved-date / timezone semantics — ACTIVE
-- Define which user-facing saved-date defaults follow the configured calendar timezone.
-- Keep GPS/FCL.050 evidence UTC where UTC is the authoritative stored meaning.
-- Add explicit midnight/day-boundary handling and tests before implementation.
-- Do not rewrite persisted evidence without a source-backed migration need.
+### 3.6.0 — Saved-date / timezone semantics — IMPLEMENTED / VERIFIED (PRODUCTION CLOSEOUT PENDING)
+- New saveable calendar-date defaults derive from the configured named account timezone through a strict server-authoritative resolver; missing, blank or invalid timezone state fails closed instead of guessing Prague, UTC, browser-local or server-local dates.
+- Manual New Flight, Aircraft Manager initial/rate-history effective dates and Quick Add use that strict calendar authority. Explicit/stored flight and rate dates remain date-only and are never reinterpreted after save or later timezone changes.
+- Settings validates saveable timezones at the server write boundary; runtime-recognized named zones including `UTC` are accepted and raw numeric offsets are rejected.
+- GPS/FCL.050 timestamp evidence remains UTC. Explicit-offset track timestamps normalize to UTC; timezone-less timestamps remain unavailable/ambiguous rather than guessed.
+- Backup/restore, CSV/XLS/print and historical rate selection preserve date-only semantics. PostgreSQL exact-restore invariance is verified across materially different session timezones.
+- Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
 
 ### 3.5.2 — Always-on GPS/SERA Night suggestions — IMPLEMENTED / PRODUCTION VERIFIED
 - Remove the account-level **Night definition** preference from Settings.
