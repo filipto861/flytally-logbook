@@ -893,7 +893,7 @@ The build gate records a candidate-bound build manifest including the candidate 
 - `verify:plan` emits direct domain modules/tests and blocked-evidence reasons; aggregate full tests remain non-authoritative for domain evidence;
 - verified locally on exact code head `3227bb587cd89a1d4d93cb8396b7a0388ebe4dc5`: development-pipeline **75/75 PASS**, dedicated direct-domain candidate **6/6 PASS**, TypeScript **PASS**, aggregate regression **1370/1370 PASS**, production build **PASS (41/41 static pages)**;
 - planner smoke for `lib/commercial-readiness.ts` resolved `legal-commercial` to the two approved direct tests with `missingModules=[]` and `blockedEvidence=[]`; PostgreSQL/browser remained not selected.
-4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gates — ACTIVE**.
+4. **0E.3 — evidence ledger + canonical app/PostgreSQL/browser/domain gates — DONE / VERIFIED**.
 
 0E.3 implementation candidate:
 - candidate-bound ledger records live only under ignored `.flytally/verification/<candidateId>/`;
@@ -913,8 +913,10 @@ The build gate records a candidate-bound build manifest including the candidate 
 - targeted repeat of those two corrected flows passed **6/6**. A subsequent full serialized gate improved to **91 PASS / 1 FAIL / 2 intentional skips** in 11.7 min; the sole remaining failure is mobile Quick Add waiting 5 s for the success status after the server action. Final browser acceptance remains FAIL until that case is independently reproduced and resolved.
 - isolated mobile Quick Add reproduction passed **5/5** at retries=0/workers=1. The correction remains test-only: browser acceptance now waits for the success-path dialog close and success status with a bounded 15 s server-action window.
 - product decision: do **not** rerun the full 94-test serialized browser matrix for 0E.3 closeout. Its ~12-minute runtime is no longer acceptable as a normal development gate. Full `verify:browser` remains an explicit manual diagnostic only; 0E.3 now closes on targeted corrected-flow evidence plus source-contract/static gate evidence. No full-browser PASS may be claimed when it is not run.
+- final correction evidence: mobile F3.5 Quick Add **5/5 PASS** at retries=0/workers=1 after the test-only bounded server-action wait; earlier corrected GPS/Connections targeted repeat remains **6/6 PASS**;
+- 0E.3 final evidence set therefore remains development-pipeline **83/83 PASS**, planner PASS, `verify:domain` N/A, `verify:app` PASS with TypeScript + aggregate regression **1378/1378** + build **41/41**, PostgreSQL full **99/99 PASS**, and targeted browser correction evidence **11/11 PASS** across the three previously unstable mobile flows. Legacy full browser acceptance is **NOT RUN** under the new policy, not PASS.
 - first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
-5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path**.
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — ACTIVE**.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
