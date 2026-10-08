@@ -163,7 +163,7 @@ export function classifyDevelopmentScope(files, title = "") {
     targetedTests: [...targetedTests].sort(),
     requiredEvidence: [...requiredEvidence].sort(),
     aggregateGates: [...aggregateGates].sort(),
-    buildArtifactRequired: Boolean(gates.build),
+    buildArtifactRequired: Boolean(gates.build || gates.browser),
   };
 }
 
