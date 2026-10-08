@@ -132,6 +132,33 @@ test("risk browser acceptance owns exact planner selection and same-candidate bu
   assert.match(withBuild,/runBrowserVerification/);
 });
 
+test("risk browser exact target comparison is order-independent and identity-strict",async()=>{
+  const {browserRiskConfiguration,compareExactTargetSet}=await importTooling("tooling/verify-browser-risk.mjs");
+  const targets=[
+    {id:"a",spec:"e2e/a.spec.mjs",title:"A",project:"desktop-chromium"},
+    {id:"b",spec:"e2e/b.spec.mjs",title:"B",project:"mobile-chromium"},
+  ];
+  assert.equal(compareExactTargetSet(targets,[targets[1],targets[0]]),true);
+  assert.equal(compareExactTargetSet(targets,[targets[0]]),false);
+  assert.equal(compareExactTargetSet(targets,[
+    targets[0],
+    {...targets[1],project:"desktop-chromium"},
+  ]),false);
+
+  const configuration=browserRiskConfiguration({
+    selectionHash:"a".repeat(64),
+    configHash:"b".repeat(64),
+    toolchainHash:"c".repeat(64),
+    fixtureContractHash:"d".repeat(64),
+    targets,
+  },{kind:"next-build-id",value:"build-1"});
+  assert.equal(configuration.authority,"release");
+  assert.equal(configuration.source,"browser-risk");
+  assert.equal(configuration.coverage,"targeted");
+  assert.equal(configuration.selectionHash,"a".repeat(64));
+  assert.deepEqual(configuration.buildArtifact,{kind:"next-build-id",value:"build-1"});
+});
+
 test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migration separate",()=>{
   const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
   assert.equal(pkg.scripts.verify,"node tooling/verify-app-compat.mjs");
