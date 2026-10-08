@@ -42,6 +42,18 @@ test("flight candidate selects deterministic risk-scoped browser targets and bui
   assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
 });
 
+test("multiple changed files in one browser module share ownership without false blockers",()=>{
+  const {result,payload}=plan([
+    "app/(protected)/flights/page.tsx",
+    "app/(protected)/flights/new/page.tsx",
+  ]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  const covered=payload.plan.browserEvidence.fileCoverage.filter((entry:{file:string})=>entry.file.includes("/flights/"));
+  assert.equal(covered.length,2);
+  assert.ok(covered.every((entry:{targets:string[]})=>entry.targets.length>0));
+});
+
 test("browser-relevant module with no approved target ownership blocks before Playwright",()=>{
   const {result,payload}=plan(["app/(protected)/credentials/page.tsx"]);
   assert.equal(result.status,3,result.stderr||result.stdout);
