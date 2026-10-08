@@ -45,6 +45,50 @@ test("exact ledger reuse rejects stale candidate config and failed evidence",asy
   assert.equal(mod.reusableLedgerEntry({...base,evaluation:{status:"FAIL"}},{
     candidate,gate:"source",evidenceClass:"application-source-contract",configuration,
   }).reusable,false);
+  assert.equal(mod.reusableLedgerEntry({...base,schemaVersion:1},{
+    candidate,gate:"source",evidenceClass:"application-source-contract",configuration,
+  }).reason,"ledger-schema");
+  assert.equal(mod.reusableLedgerEntry({...base,gate:"domain"},{
+    candidate,gate:"source",evidenceClass:"application-source-contract",configuration,
+  }).reason,"gate");
+  assert.equal(mod.reusableLedgerEntry({...base,evidenceClass:"domain-unit"},{
+    candidate,gate:"source",evidenceClass:"application-source-contract",configuration,
+  }).reason,"evidence-class");
+  assert.equal(mod.reusableLedgerEntry({...base,exitCode:1},{
+    candidate,gate:"source",evidenceClass:"application-source-contract",configuration,
+  }).reason,"exit-code");
+});
+
+test("build reuse requires the exact candidate artifact and current build output",async()=>{
+  const mod=await import(pathToFileURL(path.join(root,"tooling","verification-build.mjs")).href);
+  const candidate={candidateId:"e".repeat(64)};
+  const artifact={kind:"next-build-id",value:"build-1"};
+  const entry={
+    schemaVersion:2,
+    candidate:{candidateId:candidate.candidateId},
+    gate:"build",
+    artifactClass:"build",
+    exitCode:0,
+    artifact,
+    evaluation:{status:"PASS"},
+  };
+
+  assert.deepEqual(
+    mod.reusableBuildLedger(candidate,entry,{currentArtifact:artifact}),
+    {reusable:true,reason:"exact-match"},
+  );
+  assert.equal(
+    mod.reusableBuildLedger(candidate,entry,{currentArtifact:{kind:"next-build-id",value:"build-2"}}).reason,
+    "build-output",
+  );
+  assert.equal(
+    mod.reusableBuildLedger({...candidate,candidateId:"f".repeat(64)},entry,{currentArtifact:artifact}).reason,
+    "candidate",
+  );
+  assert.equal(
+    mod.reusableBuildLedger(candidate,{...entry,artifact:null},{currentArtifact:artifact}).reason,
+    "evaluation",
+  );
 });
 
 test("N/A evidence is reusable only when the caller explicitly permits it",async()=>{
