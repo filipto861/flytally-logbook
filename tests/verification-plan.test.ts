@@ -97,6 +97,38 @@ test("verify:plan rejects an unresolved explicit base ref",()=>{
   assert.match(result.stderr,/Git command failed/);
 });
 
+test("verify:plan exposes approved direct domain evidence without aggregate inference",()=>{
+  const result=run(["lib/commercial-readiness.ts","--json"]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  const payload=JSON.parse(result.stdout);
+  assert.ok(payload.plan.requiredEvidence.includes("domain-unit"));
+  assert.equal(payload.plan.directEvidence["domain-unit"].required,true);
+  assert.deepEqual(payload.plan.directEvidence["domain-unit"].modules,["legal-commercial"]);
+  assert.deepEqual(payload.plan.directEvidence["domain-unit"].tests,[
+    "tests/billing-rate-history.test.ts",
+    "tests/v290-commercial-readiness.test.ts",
+  ]);
+  assert.deepEqual(payload.plan.directEvidence["domain-unit"].missingModules,[]);
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+  assert.ok(payload.plan.aggregateGates.includes("full-tests"));
+});
+
+test("verify:plan keeps direct domain evidence module-scoped for a cross-gate flight candidate",()=>{
+  const result=run(["app/(protected)/flights/page.tsx","--json"]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  const payload=JSON.parse(result.stdout);
+  assert.deepEqual(payload.plan.directEvidence["domain-unit"].modules,["flight-records"]);
+  assert.deepEqual(payload.plan.directEvidence["domain-unit"].tests,[
+    "tests/certification-integrity.test.ts",
+    "tests/flight-input.test.ts",
+    "tests/flight-role-crew.test.ts",
+  ]);
+  assert.equal(payload.plan.postgres,true);
+  assert.equal(payload.plan.browser,true);
+  assert.equal(payload.plan.fullTests,true);
+  assert.equal(payload.plan.build,true);
+});
+
 test("verify:plan human output exposes candidate and gate contract",()=>{
   const result=run(["package.json"]);
   assert.equal(result.status,0,result.stderr||result.stdout);
