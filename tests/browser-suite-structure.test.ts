@@ -290,6 +290,36 @@ test("Phase 0C.2a reconciles generic and GPS-specific browser helper ownership",
   assert.doesNotMatch(manualRoleCrew,/async function expectAuthenticatedRoute/);
 });
 
+test("Phase 0C.3 deduplicates only full self-managed presentation matrices",()=>{
+  const responsive=read("e2e/responsive-presentation.spec.mjs");
+  const config=read("playwright.config.mjs");
+  const tag="@self-managed-presentation";
+  const names=[
+    "F6 Manual RoleCrew matrix covers required roles modes viewports themes and 200 percent reflow",
+    "F6 GPS single-flight matrix covers PIC DUAL Safety Pilot viewports themes and reflow",
+    "F6 GPS multi-part inheritance override matrix stays usable at every required presentation state",
+    "F6 invalid-profile recovery remains explicit in Manual and GPS across the full presentation matrix"
+  ];
+  for(const name of names){
+    assert.equal(responsive.includes('test("'+name+'",{tag:"'+tag+'"}'),true);
+  }
+  assert.equal((responsive.match(new RegExp('tag:"'+tag+'"',"g"))??[]).length,names.length);
+  assert.match(config,/mobile-chromium".*grepInvert:\/@self-managed-presentation\//);
+  assert.equal((responsive.match(/for\(const viewport of F6_PRESENTATION_VIEWPORTS\)/g)??[]).length,4);
+  assert.ok((responsive.match(/for\(const theme of \["light","dark"\]\)/g)??[]).length>=4);
+  assert.doesNotMatch(responsive,/navigator\.userAgent|userAgentData|hasTouch|deviceScaleFactor|visualViewport|matchMedia|pointerType/);
+  for(const name of [
+    "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
+    "F4.4 GPS RoleCrew override UX stays responsive across cockpit viewports and themes",
+    "F5.3 common Manual PIC keeps an explicit minimal control and helper allowlist across focused viewports",
+    "F5.3 role change keeps required DUAL identity inline and removes the default cue",
+    "F2.5 RoleCrew presentation stays usable on desktop iPad and mobile in light and dark",
+  ]){
+    assert.equal(responsive.includes('test("'+name+'",{tag:"'+tag+'"}'),false,
+      "partial/focused matrices must retain both Playwright projects");
+  }
+});
+
 test("Phase 0C baseline documents the previously verified full-gate execution count",()=>{
   assert.deepEqual(baseline.expectedFullGate,{passed:96,skipped:2,failed:0,totalExecutions:98});
 });
