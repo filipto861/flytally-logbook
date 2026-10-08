@@ -210,9 +210,15 @@ The first 0E.7 cumulative attempt from Phase 0D head `686734911f5c3f45e395fdda6b
 
 Final Phase 0E closeout used verified 0E.5 head `68351c78a0dac2b1f95de3530d2ceac116f2475e` as base and exact head `335704c1125ee0336528f5f1e43c3bc1528c92d3`, candidate `221190494ba79b32bb25f9e32c3ce09041dfd624f3f3a514cc8fb7a905c9477a`. `npm run verify:release:risk -- --base 68351c78a0dac2b1f95de3530d2ceac116f2475e --force-all` completed with source-contract **226/226 PASS**, domain N/A, TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, scale PASS, browser-risk **41/41 PASS** (21 desktop + 20 mobile, one worker), no blocked evidence and final `release_status=PASS`. The legacy repository-wide 94-case browser command remained diagnostic-only / NOT RUN.
 
+### Phase 0E final documentation reconciliation — VERIFIED
+
+Documentation-only candidate `dc3edcbb35b218aa2aceccafd139cf8187c86b0d3f8318937865f75a6694c732` on exact head `2969fae73e151044f0a2e6962d7abd57e8983da9` passed `verify:release:risk` with no required evidence or blockers; source/domain/typecheck/aggregate/build/PostgreSQL/scale/browser were all correctly N/A.
+
 ### Phase 0F hygiene and Phase 0 closeout — ACTIVE
 
 Phase 0F is documentation/repository hygiene and final Phase 0 closure only. Reconcile executable tooling with docs, inspect stale PR/branch state before deleting anything, retain exact verification evidence, and review ROADMAP / FEATURES / CHANGELOG consistency. Do not start 3.6.0 saved-date/timezone runtime implementation until Phase 0F closes.
+
+Initial 0F discovery confirms the documented verification command surface matches `package.json`. Seven branch heads are direct ancestors of `main` and therefore proven superseded by ancestry; five older open feature PRs remain diverged/non-mergeable and require explicit supersession proof before closure. PR #255 remains the active Phase 0 integration PR. No branch or PR has been deleted or closed as part of this discovery.
 
 
 
