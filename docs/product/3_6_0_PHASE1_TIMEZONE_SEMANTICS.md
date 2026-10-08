@@ -458,6 +458,7 @@ Repository evidence:
 - explicit source offsets can cross a UTC calendar boundary deterministically; timezone-less timestamps remain ambiguous/unavailable;
 - the Prague `track-processing.localParts` helper remains dormant and is retained for backward compatibility in 3.6.0 because this milestone did not establish exhaustive repo-wide proof that deletion is a no-op. It is not a permitted timestamp authority for GPS/FCL.050;
 - account backup reads flights/rates/settings as stored rows, and exact restore uses PostgreSQL record population for those rows without timezone conversion;
+- independent review found no semantic blocker; its one substantive verification concern was accepted: P1.5 now also includes PostgreSQL-backed evidence that `json_populate_record` preserves the literal date-only values across materially different session time zones. The review's legacy-helper naming and export `date::text` suggestions remain optional hardening, not Phase 1 blockers;
 - portable backup parsing/restore keys keep flight/rate dates as literal `YYYY-MM-DD` strings;
 - CSV/XLS and print consume stored flight dates as date-only values and filter using `date::text`; UTC `new Date().toISOString()` in export remains filename metadata only;
 - historical rate selection compares validated ISO calendar strings and never converts `valid_from` or the flight date into a local instant.
