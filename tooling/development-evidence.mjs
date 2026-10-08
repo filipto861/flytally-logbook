@@ -34,3 +34,16 @@ export function selectDirectEvidenceForModules(moduleIds,evidenceClass="domain-u
     missingModules,
   };
 }
+
+
+export function selectTestGroupsByEvidenceClass(groupIds,evidenceClass="application-source-contract",registry=manifest){
+  const groups=[];
+  const tests=new Set();
+  for(const groupId of [...new Set(groupIds??[])].sort()){
+    const group=registry.testGroups?.[groupId];
+    if(!group||group.evidenceClass!==evidenceClass)continue;
+    groups.push(groupId);
+    for(const file of group.tests??[])tests.add(file);
+  }
+  return {evidenceClass,groups,tests:[...tests].sort()};
+}
