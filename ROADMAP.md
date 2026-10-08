@@ -766,7 +766,7 @@ Revised 0E milestones:
    - first local 0E.3 verification attempt on `7427a3bc6198c1e708034d27cb6145512a2c9049`: planner **PASS**, development-pipeline **82/83 PASS** with one stale source-contract regex, `verify:domain` correctly returned N/A for a non-domain candidate, and `verify:app` stopped at TypeScript because the new TS contract test statically imported untyped `.mjs` tooling modules;
    - both failures were harness/test-contract defects, not product-runtime failures: the browser assertion now matches the actual fixed runner argument vector, the TS contract test uses dynamic URL imports so typecheck does not require ad-hoc declaration files, and legacy no-argument `npm run verify` compatibility is preserved through an explicit wrapper;
    - correction verification pending; no heavy PostgreSQL/browser acceptance from the failed attempt is counted as evidence.
-5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — ACTIVE**;
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — DONE / VERIFIED**;
    - detailed design: `docs/product/3_6_0_PHASE0E4_FAST_VERIFICATION.md`;
    - discovery confirms the current planner has exact candidates, module/risk ownership, direct domain evidence and candidate-bound ledgers, but browser evidence is still repository-wide and source-contract groups do not yet emit canonical ledger evidence;
    - draft design freezes four implementation batches: **0E.4a registry/planner browser selection**, **0E.4b fast iteration executor**, **0E.4c risk-scoped browser executor**, **0E.4d release orchestrator**, then compatibility/verification closeout;
@@ -787,21 +787,17 @@ Revised 0E milestones:
    - exact 0E.4b candidate `d01813c978c63cd5fc14945fca9a310226d338d2`: first `verify:iterate` ran development-pipeline **98/98 PASS** + TypeScript PASS and reported release **NOT EVALUATED**; immediate repeat reused source PASS, domain N/A and TypeScript PASS without re-execution;
    - 0E.4b release-side closeout on the same exact candidate passed `verify:app`: TypeScript PASS, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the 0E.4b tooling batch;
    - fast iteration remains separate from release PASS: aggregate/build/PostgreSQL/browser are pending unless their authoritative gates run;
-   - 0E.4c **ACTIVE**: authoritative planner-bound risk browser execution, exact Playwright case identity and optional `verify:iterate --with-browser`; legacy 94-case browser remains diagnostic only.
+   - 0E.4c **DONE / VERIFIED**: authoritative planner-bound risk browser execution, exact Playwright case identity and optional `verify:iterate --with-browser`; legacy 94-case browser remains diagnostic only.
    - first local 0E.4c exact-candidate attempt on `4c103dafc4eb1c53315e788ab3ca6d2f9e218922` passed TypeScript, aggregate regression **1396/1396 PASS** and production build **41/41**, but `verify:browser:risk` selected zero Playwright cases because its `--grep` was incorrectly anchored to the raw test title while Playwright matches grep against the composed full title;
    - corrected risk title selection to match the escaped registered title within Playwright's full title, while exact `{spec,title,project}` completeness remains enforced separately by the evidence reporter; added a regression for full-title grep semantics; exact fixed-head browser verification pending.
    - fresh-PC verification then exposed a malformed source-edit in `verification-browser-risk.mjs` before browser execution (development-pipeline **98/101**, 3 failures all caused by the same syntax error) plus untracked `playwright-report/` candidate noise; repaired the helper, added syntax/runtime regression coverage and ignored/regression-covered Playwright report output; fixed-head verification pending.
    - final 0E.4c exact-head closeout at `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**; authoritative browser-risk **41/41 PASS** (desktop **21/21**, mobile **20/20**, retries=0, workers=1); TypeScript PASS; aggregate regression **1396/1396 PASS**; production build **41/41 PASS**; PostgreSQL full N/A for the browser-harness candidate; legacy 94-case browser NOT RUN by policy; **0E.4c DONE / VERIFIED**;
-   - 0E.4d **ACTIVE**: risk-based release orchestrator implementation candidate adds planner-driven gate execution/reuse, aggregate/build/PostgreSQL/browser evidence composition, explicit scale-via-full-PostgreSQL accounting, and one candidate-bound release ledger; existing static `verify:release` remains unchanged.
-   - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
-   - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
-   - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
-   - map the existing split E2E specs to affected modules/contexts so targeted browser reproduction is selected automatically instead of composing spec/grep arguments manually;
-   - audit desktop/mobile duplication by test intent. A test may become desktop-only or mobile-only only when the omitted project adds no distinct evidence; critical cross-device flows remain on both projects;
-   - introduce a separate risk-scoped browser evidence class/ledger path for targeted acceptance; targeted evidence must never masquerade as legacy full `browser-acceptance`;
-   - measure targeted browser runtime before/after and preserve fail-closed semantics for whichever targeted evidence the planner requires;
-   - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred unless selection/matrix work leaves the final full gate unacceptably slow.
-6. **0E.5 — negative/selection/freshness/config regression coverage**;
+   - 0E.4d **DONE / VERIFIED**: risk-based release orchestrator adds planner-driven gate execution/reuse, aggregate/build/PostgreSQL/browser evidence composition, explicit scale-via-full-PostgreSQL accounting, and one candidate-bound release ledger; existing static `verify:release` remains unchanged.
+   - exact 0E.4d implementation candidate `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0` closed cleanly: development-pipeline **109/109 PASS**, planner no blockers, iteration **222/222 PASS** with release correctly NOT EVALUATED, then `verify:release:risk` returned **PASS** with aggregate regression **1404/1404**, build **41/41**, PostgreSQL full **99/99**, browser-risk **41/41** (21 desktop + 20 mobile), scale N/A and exact source/domain/typecheck reuse;
+   - FEATURES was reviewed and remains unchanged because 0E.4 is development verification infrastructure only; DEVELOPMENT, ROADMAP, CHANGELOG and the detailed 0E.4 contract are reconciled;
+   - legacy full `verify:browser` remains a manual diagnostic and legacy static `verify:release` remains the compatibility full path; neither was silently redefined;
+   - per-worker DB isolation / multi-worker Playwright remains a separate higher-blast-radius optimization and stays deferred.
+6. **0E.5 — negative/selection/freshness/config regression coverage — NEXT**;
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**;
 8. **0E.7 — exact-candidate verification / closeout**.
 

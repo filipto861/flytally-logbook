@@ -916,7 +916,7 @@ The build gate records a candidate-bound build manifest including the candidate 
 - final correction evidence: mobile F3.5 Quick Add **5/5 PASS** at retries=0/workers=1 after the test-only bounded server-action wait; earlier corrected GPS/Connections targeted repeat remains **6/6 PASS**;
 - 0E.3 final evidence set therefore remains development-pipeline **83/83 PASS**, planner PASS, `verify:domain` N/A, `verify:app` PASS with TypeScript + aggregate regression **1378/1378** + build **41/41**, PostgreSQL full **99/99 PASS**, and targeted browser correction evidence **11/11 PASS** across the three previously unstable mobile flows. Legacy full browser acceptance is **NOT RUN** under the new policy, not PASS.
 - first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
-5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — ACTIVE**.
+5. **0E.4 — fast iteration lane + risk-based release orchestrator + compatibility full path — DONE / VERIFIED**.
    - detailed reviewed contract: `docs/product/3_6_0_PHASE0E4_FAST_VERIFICATION.md`;
    - 0E.4a implementation candidate is present: candidate/ledger identity v2, deterministic verification identity hashes, explicit exact browser target registry + fail-closed selector, planner browser-selection output, and browser-implies-build correction;
    - existing `verify:release` and legacy full `verify:browser` semantics are unchanged in 0E.4a; risk-scoped execution is a later batch;
@@ -924,18 +924,15 @@ The build gate records a candidate-bound build manifest including the candidate 
    - final exact-head 0E.4a verification PASS at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92**, planner v2 clean/no blockers, TypeScript PASS, aggregate regression **1387/1387**, production build **41/41**; 0E.4a DONE / VERIFIED;
    - 0E.4b fast iteration executor is **DONE / VERIFIED** on exact candidate `d01813c978c63cd5fc14945fca9a310226d338d2`: development-pipeline **98/98 PASS**, TypeScript PASS, exact-candidate cheap-evidence reuse confirmed, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the batch.
    - iteration PASS never promotes itself to release PASS: aggregate regression, build, PostgreSQL and browser remain explicit pending work unless their authoritative gates run.
-   - 0E.4c is **ACTIVE**: authoritative planner-bound `browser-risk` evidence, exact case identity and optional `verify:iterate --with-browser` are under implementation; the legacy full browser executor is retained only as a manual diagnostic.
+   - 0E.4c is **DONE / VERIFIED**: authoritative planner-bound `browser-risk` evidence, exact case identity and optional `verify:iterate --with-browser` are implemented; the legacy full browser executor is retained only as a manual diagnostic.
    - first 0E.4c exact-candidate app verification passed TypeScript + **1396/1396** aggregate tests + **41/41** build; browser execution then failed closed with zero selected cases because the initial grep was anchored to the raw title rather than Playwright's composed full title; selector was corrected and regression-covered;
    - final 0E.4c exact-head closeout at `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), TypeScript PASS, aggregate **1396/1396 PASS**, build **41/41 PASS**; PostgreSQL full N/A, legacy full browser NOT RUN; 0E.4c DONE / VERIFIED;
-   - 0E.4d risk release orchestrator is ACTIVE; implementation candidate adds exact reusable aggregate/build/PostgreSQL/browser composition and a candidate-bound `verify:release:risk` ledger while preserving static `verify:release`.
-   - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
-   - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
-   - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
-   - audit current desktop/mobile replay and keep both projects only where they provide distinct behavior/presentation evidence;
-   - add a distinct risk-scoped targeted-browser evidence path so targeted results cannot be reported as legacy full browser acceptance;
-   - record targeted runtime measurements and keep fail-closed semantics for the selected flows;
+   - 0E.4d risk release orchestrator is **DONE / VERIFIED**; it provides exact reusable aggregate/build/PostgreSQL/browser composition and a candidate-bound `verify:release:risk` ledger while preserving static `verify:release`.
+   - exact 0E.4d candidate `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0` passed development-pipeline **109/109**, planner with no blockers, iteration **222/222** with release correctly NOT EVALUATED, and authoritative `verify:release:risk` with aggregate **1404/1404**, build **41/41**, PostgreSQL full **99/99**, browser-risk **41/41** (21 desktop + 20 mobile), scale N/A and final `release_status=PASS`;
+   - strict negative coverage for missing browser ownership, diagnostic-only E2E changes, stale/mismatched reuse, blocked release planning and legacy-browser authority passed in the same development-pipeline closeout;
+   - DEVELOPMENT/ROADMAP/CHANGELOG and the detailed contract are reconciled; FEATURES was reviewed and remains unchanged because no product capability changed;
    - do not increase Playwright workers against the current shared mutable database; per-worker DB isolation requires a separate design/review.
-6. **0E.5 — negative/selection/freshness/config regression coverage**.
+6. **0E.5 — negative/selection/freshness/config regression coverage — NEXT**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
 8. **0E.7 — exact-candidate verification / closeout**.
 

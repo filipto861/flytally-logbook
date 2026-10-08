@@ -1,6 +1,6 @@
 # 3.6.0 Phase 0E.4 — Fast iteration and risk-based release verification
 
-**Status:** REVIEWED DESIGN / ACCEPT WITH CHANGES / 0E.4c DONE / 0E.4d ACTIVE  
+**Status:** REVIEWED DESIGN / ACCEPT WITH CHANGES / DONE / VERIFIED  
 **Parent:** `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`  
 **Scope:** development verification tooling only; no product runtime, database schema, certification, backup or timezone-semantic change.
 
@@ -258,7 +258,7 @@ Verification history:
 - final exact-head closeout `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**, browser-risk **41/41 PASS** (desktop **21/21**, mobile **20/20**, retries=0, workers=1), TypeScript PASS, aggregate **1396/1396 PASS**, build **41/41 PASS**;
 - PostgreSQL full: N/A for this browser-harness candidate; legacy 94-case browser: NOT RUN by policy.
 
-### 0E.4d — release orchestrator — ACTIVE
+### 0E.4d — release orchestrator — DONE / VERIFIED
 - keep old static `verify:release` semantics unchanged;
 - add risk-based orchestration as `verify:release:risk`;
 - consume/reuse exact candidate evidence;
@@ -276,13 +276,21 @@ Current implementation candidate:
 - exit codes remain 0 PASS, 1 executed failure/PARTIAL, 2 invalid environment/configuration, 3 blocked candidate;
 - `verify:release` remains the unchanged static compatibility path.
 
-0E.4d verification pending.
+0E.4d exact-candidate closeout:
+- implementation candidate: `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0`;
+- clean worktree and deterministic candidate id `50046db0a9e353757daec27b98aa6056718702162763c97259602f4b6a7b382c`;
+- development-pipeline **109/109 PASS**;
+- planner selected source-contract, TypeScript, aggregate regression, production build, PostgreSQL full acceptance and the exact **41-target** browser-risk set with no blocked evidence;
+- fast iteration passed its exact selected set **222/222**, with source PASS, domain N/A and TypeScript PASS while correctly reporting release **NOT EVALUATED** and the four heavy gates still pending;
+- first authoritative `verify:release:risk` then produced `release_status=PASS`: source PASS/reused, domain N/A/reused, TypeScript PASS/reused, aggregate regression **1404/1404 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, browser-risk **41/41 PASS** (desktop **21/21**, mobile **20/20**), scale N/A and no blocked evidence;
+- the legacy 94-case browser diagnostic remained NOT RUN by policy and the existing static `verify:release` command was not repurposed.
 
-### 0E.4e — verification and compatibility closeout
-- negative selection/source/stale-ledger tests needed for this phase;
-- focused local command verification;
-- DEVELOPMENT/ROADMAP/CHANGELOG reconciliation;
-- no 94-test full browser run required by policy.
+### 0E.4e — verification and compatibility closeout — DONE / VERIFIED
+- negative browser ownership, exact-target, stale-ledger, N/A-reuse, blocked-release and compatibility-source cases are regression-covered in the development pipeline and passed in the 109/109 closeout run;
+- focused local command verification covered planner, iteration and the authoritative risk release path on one explicit candidate;
+- DEVELOPMENT, ROADMAP and CHANGELOG are reconciled to the executable command surface; FEATURES was reviewed and remains unchanged because Phase 0E.4 changes development tooling only, not product capability;
+- the legacy 94-test full browser run remains manual diagnostics and was not required for closeout;
+- Phase 0E.4 is therefore **DONE / VERIFIED**. The parent roadmap proceeds to 0E.5 negative/selection/freshness/config hardening beyond this milestone.
 
 ## Acceptance criteria
 

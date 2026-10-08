@@ -130,9 +130,9 @@ Current additions:
 
 Not every current browser-marked product module has approved targeted browser ownership yet. That is deliberate: such a candidate is blocked rather than silently receiving weak generic coverage.
 
-The existing `verify:release` command keeps its current static/full semantics. The reviewed future risk-based release command is named `verify:release:risk`; 0E.4 must not silently change the meaning of `verify:release`.
+The existing `verify:release` command keeps its current static/full semantics. The candidate-aware risk-based release command is `verify:release:risk`; it does not change the meaning of `verify:release`.
 
-The legacy 94-test `verify:browser` command remains a manual diagnostic. Its existing evidence-source contract is not changed until 0E.4c introduces the authoritative `browser-risk` executor.
+The legacy 94-test `verify:browser` command remains a manual diagnostic. Authoritative candidate browser evidence comes only from the planner-bound `browser-risk` executor.
 
 Exit-code contract for canonical verification tooling:
 - `0` — requested contract completed successfully;
@@ -173,7 +173,7 @@ The legacy 94-test `verify:browser` matrix remains available only as a manual di
 
 0E.4c exact-head closeout `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**, authoritative browser-risk **41/41 PASS** (21 desktop + 20 mobile, retries=0, workers=1), TypeScript PASS, aggregate regression **1396/1396 PASS**, production build **41/41 PASS**. PostgreSQL full was N/A for that browser-harness candidate; the legacy 94-case matrix was NOT RUN by policy.
 
-### Phase 0E.4d risk release — ACTIVE
+### Phase 0E.4d risk release — DONE / VERIFIED
 
 `npm run verify:release:risk -- <candidate>` is the planner-driven release executor. It preserves the exact-candidate boundary and runs or reuses only the gates selected by `verify:plan`: source-contract evidence, direct domain evidence, TypeScript, aggregate regression, production build, PostgreSQL full acceptance and browser-risk as applicable.
 
@@ -182,6 +182,8 @@ Release reuse is strict: candidate id, gate/evidence class, effective configurat
 The release summary distinguishes `PASS`, `FAIL`, `NOT RUN` and `N/A`, includes the required behavioral evidence matrix, and writes one candidate-bound `release-risk` ledger. `scale=true` is accounted for by the canonical PostgreSQL **full** suite, which contains the registered scale tests. The command stops before later expensive gates after a blocking/failing prerequisite.
 
 `npm run verify:release` is intentionally unchanged and remains the static compatibility full path.
+
+0E.4d exact closeout candidate `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0` passed development-pipeline **109/109**, planner with no blocked evidence, fast iteration **222/222** with release correctly reported as **NOT EVALUATED**, then authoritative `verify:release:risk` with aggregate regression **1404/1404 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), scale N/A and final `release_status=PASS`. Source/domain/typecheck were reused only from the exact matching candidate.
 
 
 
