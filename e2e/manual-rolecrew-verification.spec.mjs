@@ -1,13 +1,8 @@
 import { test,expect } from "@playwright/test";
-import { expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
+import { expectAuthenticatedRoute,expectNoHorizontalOverflow,loginBrowserPilot } from "./browser-actions.mjs";
 import { browserSqlScalar,resetF24VerificationFixture,resetSafetyPilotPicFixture,renameSafetyPilotPicFixture,revokeSafetyPilotPicConnectionFixture,resetSafetyPilotPicInviteFixture,revokeSafetyPilotPicInviteConnectionFixture } from "./browser-db.mjs";
 
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
-
-async function expectAuthenticatedRoute(page,heading){
-  await expect(page.getByRole("heading",{name:heading,level:1})).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-}
 
 test("F2.2 Manual RoleCrew identity is inline and survives unsaved role switches",async({page})=>{
   test.skip(!authenticatedBrowser,"Authenticated F2.2 RoleCrew browser coverage requires the isolated CI database.");
