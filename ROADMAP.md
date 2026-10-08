@@ -788,6 +788,8 @@ Revised 0E milestones:
    - 0E.4b release-side closeout on the same exact candidate passed `verify:app`: TypeScript PASS, aggregate regression **1393/1393 PASS**, production build **41/41 PASS**; PostgreSQL/browser N/A for the 0E.4b tooling batch;
    - fast iteration remains separate from release PASS: aggregate/build/PostgreSQL/browser are pending unless their authoritative gates run;
    - 0E.4c **ACTIVE**: authoritative planner-bound risk browser execution, exact Playwright case identity and optional `verify:iterate --with-browser`; legacy 94-case browser remains diagnostic only.
+   - first local 0E.4c exact-candidate attempt on `4c103dafc4eb1c53315e788ab3ca6d2f9e218922` passed TypeScript, aggregate regression **1396/1396 PASS** and production build **41/41**, but `verify:browser:risk` selected zero Playwright cases because its `--grep` was incorrectly anchored to the raw test title while Playwright matches grep against the composed full title;
+   - corrected risk title selection to match the escaped registered title within Playwright's full title, while exact `{spec,title,project}` completeness remains enforced separately by the evidence reporter; added a regression for full-title grep semantics; exact fixed-head browser verification pending.
    - normal implementation must not require the full ~12–15 minute browser acceptance after every small batch;
    - add a candidate-aware **iteration lane** that runs selected source/domain tests and only targeted browser specs/projects when useful; targeted runs are iteration evidence, never authoritative browser-acceptance PASS;
    - keep full `verify:browser` available as an explicit manual diagnostic, but do not make the 94-test serialized matrix a routine milestone/release blocker;
