@@ -923,6 +923,7 @@ The build gate records a candidate-bound build manifest including the candidate 
    - first local verification passed source/static + TypeScript + aggregate regression + build, but exposed generated local verification artifacts as candidate members; those artifacts are now ignored and regression-covered;
    - final exact-head 0E.4a verification PASS at `4b14f34585f8d1653112e964ed4043c444dfe655`: clean worktree, development-pipeline **92/92**, planner v2 clean/no blockers, TypeScript PASS, aggregate regression **1387/1387**, production build **41/41**; 0E.4a DONE / VERIFIED;
    - 0E.4b fast iteration executor is ACTIVE; implementation candidate adds source/typecheck ledgers, exact reuse and `verify:iterate`, with verification pending.
+   - the iteration candidate never promotes an iteration PASS to release PASS: aggregate regression, build, PostgreSQL and browser remain explicit pending work when selected by the planner; `--with-browser` is unavailable until the authoritative 0E.4c executor exists.
    - the development loop must distinguish **fast targeted iteration** from **authoritative full acceptance**;
    - targeted browser runs may use affected spec/project ownership and are not browser-acceptance PASS;
    - the full serialized browser matrix remains available manually but is not a routine milestone/release blocker;
