@@ -1,7 +1,7 @@
 import { runNpm } from "./verification-execution.mjs";
 import { buildIdentityMatches,currentBuildIdentity,writeVerificationLedgerEntry } from "./verification-ledger.mjs";
 
-export function reusableBuildLedger(candidate,entry){
+export function reusableBuildLedger(candidate,entry,{currentArtifact}={}){
   if(!entry)return {reusable:false,reason:"missing"};
   if(entry.schemaVersion!==2)return {reusable:false,reason:"ledger-schema"};
   if(entry?.candidate?.candidateId!==candidate?.candidateId)return {reusable:false,reason:"candidate"};
@@ -10,7 +10,8 @@ export function reusableBuildLedger(candidate,entry){
     return {reusable:false,reason:"evaluation"};
   }
   try{
-    if(!buildIdentityMatches(entry.artifact,currentBuildIdentity())){
+    const current=currentArtifact===undefined?currentBuildIdentity():currentArtifact;
+    if(!buildIdentityMatches(entry.artifact,current)){
       return {reusable:false,reason:"build-output"};
     }
   }catch{
