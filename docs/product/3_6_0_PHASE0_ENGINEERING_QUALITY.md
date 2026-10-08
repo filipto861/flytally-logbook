@@ -614,6 +614,17 @@ Next milestone is **0C.2a helper-ownership reconciliation**. This is a read/owne
 
 Next milestone is **0C.3 — proven project × matrix deduplication**. No execution may be removed for speed alone. Deduplication is allowed only where the test already owns the complete required viewport/theme matrix and source/runtime evidence shows that mobile-project-only semantics (UA, `isMobile`, touch, deviceScaleFactor, safe-area, virtual keyboard, pointer/hover, mobile browser chrome) are irrelevant. If proof is insufficient, retain both projects.
 
+0C.3 discovery/proof result:
+- the responsive domain contains nine logical tests, but only **four F6 tests** explicitly own the complete required `F6_PRESENTATION_VIEWPORTS` matrix (desktop 1440, iPad landscape, iPad portrait, mobile 390, mobile 320, 200% reflow equivalent) and both light/dark themes;
+- the other five responsive tests use intentionally narrower release/focused matrices, so they **retain both Playwright projects**;
+- the four full-matrix tests do not read project name, UA, touch/deviceScaleFactor, pointer/hover, safe-area, virtual-keyboard or viewport-device APIs; repository source search found no application runtime branching on `navigator.userAgent`, touch/pointer/hover, deviceScaleFactor, safe-area, visualViewport or matchMedia, and PR #255 changes no `app/`, `components/` or `lib/` runtime files;
+- therefore only those four full F6 matrices are tagged `@self-managed-presentation`;
+- `mobile-chromium` excludes that tag with project-level `grepInvert`, which removes those four mobile-project executions rather than counting runtime skips;
+- desktop-chromium still executes each tagged test across its complete self-managed viewport/theme matrix; the five partial/focused responsive tests still execute under both desktop and Pixel 7 projects;
+- expected full-gate execution count changes from **98 to 94**: 92 passing acceptance executions + the existing 2 intentional UI-audit skips, if runtime behavior remains unchanged. Actual verification output remains authoritative.
+
+0C.3 candidate verification is **PENDING**. Required evidence: targeted structure/scope/pipeline contracts + TypeScript, focused responsive spec proving the expected project filtering, and complete serialized browser acceptance explicitly with local retries=0. If the observed matrix/count differs or any mobile-specific regression appears, revert the deduplication rather than weakening coverage.
+
 Superseded pre-review implementation draft (preserved for decision history):
 
 **0C.1 — shared helper extraction, no behavioral change**
