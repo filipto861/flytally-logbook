@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { classifyDevelopmentScope } from "./development-scope.mjs";
 import { selectBrowserEvidence } from "./browser-risk-selection.mjs";
-import { selectDirectEvidenceForModules } from "./development-evidence.mjs";
+import { selectDirectEvidenceForModules,selectTestGroupsByEvidenceClass } from "./development-evidence.mjs";
 import { CandidateInputError, resolveVerificationCandidate } from "./verification-candidate.mjs";
 
 export function createVerificationPlan(argv) {
@@ -18,8 +18,8 @@ export function createVerificationPlan(argv) {
     ?directDomain.missingModules.map((moduleId)=>"domain-unit:"+moduleId+":missing-approved-tests")
     :[];
   const sourceRequired=classification.requiredEvidence.includes("application-source-contract");
-  const sourceGroups=classification.testGroups.filter((groupId)=>groupId==="development-pipeline"||groupId==="ui-contract");
-  const sourceBlocked=sourceRequired&&sourceGroups.length===0
+  const sourceSelection=selectTestGroupsByEvidenceClass(classification.testGroups,"application-source-contract");
+  const sourceBlocked=sourceRequired&&sourceSelection.groups.length===0
     ?["application-source-contract:missing-approved-group"]
     :[];
   const browserEvidence=selectBrowserEvidence(candidate,classification);
@@ -46,7 +46,8 @@ export function createVerificationPlan(argv) {
       browserEvidence,
       sourceEvidence:{
         required:sourceRequired,
-        groups:sourceGroups,
+        groups:sourceSelection.groups,
+        tests:sourceSelection.tests,
       },
       directEvidence: {
         "domain-unit": {
