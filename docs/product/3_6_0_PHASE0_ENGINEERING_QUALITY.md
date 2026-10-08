@@ -907,6 +907,7 @@ The build gate records a candidate-bound build manifest including the candidate 
 - canonical browser/PostgreSQL wrapper changes are themselves mapped back to browser/PostgreSQL acceptance risk;
 - `verify:release` remains the old compatibility path until 0E.4;
 - verification is pending before 0E.3 closeout.
+- first local verification attempt reached development-pipeline **82/83 PASS** and then stopped at TypeScript in `verify:app`; both defects were development-contract issues (an over-specific browser source assertion and static TS imports of untyped `.mjs` tooling), not product-runtime regressions. Corrections are committed and require rerun before any 0E.3 PASS claim.
 5. **0E.4 — risk-based release orchestrator + compatibility full path**.
 6. **0E.5 — negative/selection/freshness/config regression coverage**.
 7. **0E.6 — manual workflow + DEVELOPMENT alignment**.
