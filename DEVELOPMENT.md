@@ -185,7 +185,7 @@ The release summary distinguishes `PASS`, `FAIL`, `NOT RUN` and `N/A`, includes 
 
 0E.4d exact closeout candidate `7a8a98a587d0c2c80bac893ca0c50b24e86f06f0` passed development-pipeline **109/109**, planner with no blocked evidence, fast iteration **222/222** with release correctly reported as **NOT EVALUATED**, then authoritative `verify:release:risk` with aggregate regression **1404/1404 PASS**, production build **41/41 PASS**, PostgreSQL full **99/99 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), scale N/A and final `release_status=PASS`. Source/domain/typecheck were reused only from the exact matching candidate.
 
-### Phase 0E.5 verification hardening — ACTIVE
+### Phase 0E.5 verification hardening — DONE / VERIFIED
 
 0E.5 adds negative and freshness regression coverage around the already-frozen 0E.4 command semantics. It does not introduce a new command or broaden release authority.
 
@@ -195,6 +195,12 @@ The hardening contract is fail-closed:
 - build reuse also requires the currently present production-build identity to match the recorded artifact;
 - browser-risk reuse additionally requires exact planner selection, verification-config identity, toolchain identity, fixture-contract identity, candidate-bound build ledger and current build output;
 - testability seams may inject comparison artifacts in unit tests, but omitted options preserve the canonical filesystem/ledger behavior used by real verification commands.
+
+Exact candidate `68351c78a0dac2b1f95de3530d2ceac116f2475e` closed with development-pipeline **113/113 PASS**, planner no blockers, fast iteration **226/226 PASS** + TypeScript PASS, aggregate regression **1408/1408 PASS**, production build **41/41 PASS**, browser-risk **41/41 PASS** (21 desktop + 20 mobile), PostgreSQL/scale N/A and final `release_status=PASS`.
+
+### Phase 0E.6 manual workflow alignment — ACTIVE
+
+Manual cloud workflows remain independent diagnostics only. `Verify FlyTally web` keeps targeted/full unit and optional PostgreSQL reproduction; `Browser smoke` keeps the legacy repository-wide browser diagnostic. Neither workflow invokes `verify:release:risk` or `verify:browser:risk`, so cloud diagnostics cannot silently acquire candidate-bound release authority. Workflow/job labels must make that distinction explicit.
 
 
 
