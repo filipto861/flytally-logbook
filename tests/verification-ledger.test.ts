@@ -120,5 +120,7 @@ test("canonical Phase 0E gate scripts stay candidate-bound and keep browser migr
   assert.equal(pkg.scripts["verify:postgres"],"node tooling/verify-postgres.mjs");
   assert.equal(pkg.scripts["verify:browser"],"node tooling/verify-browser.mjs");
   assert.equal(pkg.scripts["verify:browser:with-build"],"node tooling/verify-browser-with-build.mjs");
+  const compat=fs.readFileSync(path.join(root,"tooling","verify-app-compat.mjs"),"utf8");
+  assert.match(compat,/argv\.length>0\?argv:\["--all"\]/);
   assert.match(fs.readFileSync(path.join(root,".gitignore"),"utf8"),/^\.flytally\/$/m);
 });
