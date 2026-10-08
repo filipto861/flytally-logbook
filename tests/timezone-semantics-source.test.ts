@@ -35,3 +35,52 @@ test("development registry owns the strict timezone boundary",()=>{
   assert.ok(platform.prefixes.includes("lib/data/user-calendar"));
   assert.equal(registry.ownership.auditedTotal,383);
 });
+
+test("P1.4 aircraft and rate defaults use strict server calendar authority",()=>{
+  const databasePage=read("app/(protected)/database/page.tsx");
+  const manager=read("components/aircraft-manager.tsx");
+  const newFlight=read("app/(protected)/flights/new/page.tsx");
+  const workspace=read("components/flight-entry-workspace.tsx");
+  const quick=read("components/quick-aircraft-form.tsx");
+
+  assert.match(databasePage,/getUserSaveableCalendarDefault\(userId\)/);
+  assert.match(databasePage,/calendarDefault=\{calendarDefault\}/);
+  assert.match(manager,/calendarDefault:SaveableCalendarDefault/);
+  assert.match(manager,/initialRateDate=calendarDefault\.status==="resolved"\?calendarDefault\.date:""/);
+  assert.match(manager,/defaultRateDate=calendarDefault\.status==="resolved"\?calendarDefault\.date:""/);
+  assert.doesNotMatch(manager,/timeZone:"Europe\/Prague"|const today=|new Date\(\)/);
+
+  assert.match(newFlight,/calendarDefault=\{calendarDefault\}/);
+  assert.match(workspace,/calendarDefault:SaveableCalendarDefault/);
+  assert.match(workspace,/QuickAircraftForm action=\{aircraftAction\} calendarDefault=\{calendarDefault\}/);
+  assert.match(quick,/calendarDefault:SaveableCalendarDefault/);
+  assert.match(quick,/initialRateDate=calendarDefault\.status==="resolved"\?calendarDefault\.date:""/);
+  assert.match(quick,/name="initial_valid_from" value=\{initialRateDate\}/);
+  assert.doesNotMatch(quick,/timeZone:"Europe\/Prague"|const today=|new Date\(\)/);
+});
+
+test("P1.4 unresolved calendar state stays visible and editable instead of inventing a rate date",()=>{
+  const manager=read("components/aircraft-manager.tsx");
+  const quick=read("components/quick-aircraft-form.tsx");
+
+  assert.match(manager,/Needs configuration for automatic date/);
+  assert.match(manager,/Enter the effective date manually/);
+  assert.match(manager,/Automatic date is temporarily unavailable/);
+  assert.match(quick,/Automatic rate date needs timezone configuration/);
+  assert.match(quick,/Add the aircraft without a rate/);
+  assert.match(quick,/Automatic rate date is temporarily unavailable/);
+});
+
+test("P1.4 rejects a rate-bearing aircraft save before persistence when the effective date is invalid",()=>{
+  const actions=read("app/(protected)/database/actions.ts");
+  const start=actions.indexOf("async function persistAircraft");
+  const end=actions.indexOf("export async function saveAircraft",start);
+  const persist=actions.slice(start,end);
+  const validation=persist.indexOf("initialRateDateError");
+  const transaction=persist.indexOf("await sql.transaction(queries)");
+
+  assert.ok(validation>=0&&transaction>validation,"initial rate date validation must happen before the aircraft/rate transaction");
+  assert.match(persist,/if\(initialRateError\)return\{ok:false,message:initialRateError\}/);
+  assert.match(persist,/if\(initialPrice!==null&&initialPrice>0\)queries\.push\(sql`INSERT INTO rates/);
+  assert.doesNotMatch(persist,/initialPrice!==null&&initialPrice>0&&validIsoDate\(validFrom\)/);
+});
