@@ -103,7 +103,7 @@ Available command surface in this implementation batch:
 - `npm run verify:browser -- <candidate args>` — legacy repository-wide authenticated browser **diagnostic** only. It still requires a matching candidate build, but it no longer satisfies release `browser-acceptance`.
 - `npm run verify:browser:with-build -- <candidate args>` — compatibility convenience for the legacy full browser diagnostic; it creates the candidate-bound production build first and then runs `verify:browser`.
 
-The low-level `test:postgres*`, `test:browser`, `test:target` and `test:group` commands remain available for iteration. The existing static `verify:release` compatibility path remains unchanged until Phase 0E.4 replaces it with the risk-based orchestrator.
+The low-level `test:postgres*`, `test:browser`, `test:target` and `test:group` commands remain available for diagnostics/iteration. The existing static `verify:release` command remains unchanged as the compatibility full path; the candidate-aware orchestrator is the separate `verify:release:risk` command.
 
 Browser acceptance is deliberately stricter than raw Playwright success:
 - release authority belongs only to `browser-risk`, never the legacy full diagnostic;
@@ -163,13 +163,25 @@ npm run verify:iterate -- --base <explicit-base> --rerun
 
 0E.4b exact closeout candidate `d01813c978c63cd5fc14945fca9a310226d338d2` passed development-pipeline **98/98**, TypeScript, aggregate regression **1393/1393** and production build **41/41**; an immediate repeat of the cheap lane reused source/domain/typecheck evidence.
 
-### Phase 0E.4c risk browser — ACTIVE
+### Phase 0E.4c risk browser — DONE / VERIFIED
 
 `npm run verify:browser:risk -- <candidate>` is the authoritative candidate-scoped browser gate. It executes only planner-selected registry targets and may create a same-candidate production build when no fresh build ledger/output exists.
 
 `npm run verify:iterate -- <candidate> --with-browser` adds that same authoritative browser-risk gate to the fast iteration flow after cheap source/domain/typecheck checks. Successful exact-candidate browser evidence may be reused when the selection, config/toolchain identity, fixture identity and current build identity still match.
 
 The legacy 94-test `verify:browser` matrix remains available only as a manual diagnostic. It cannot satisfy release `browser-acceptance`.
+
+0E.4c exact-head closeout `9e9ec3a3d3cb70f43f3ea7b83e168edf174b2e6a`: development-pipeline **101/101 PASS**, authoritative browser-risk **41/41 PASS** (21 desktop + 20 mobile, retries=0, workers=1), TypeScript PASS, aggregate regression **1396/1396 PASS**, production build **41/41 PASS**. PostgreSQL full was N/A for that browser-harness candidate; the legacy 94-case matrix was NOT RUN by policy.
+
+### Phase 0E.4d risk release — ACTIVE
+
+`npm run verify:release:risk -- <candidate>` is the planner-driven release executor. It preserves the exact-candidate boundary and runs or reuses only the gates selected by `verify:plan`: source-contract evidence, direct domain evidence, TypeScript, aggregate regression, production build, PostgreSQL full acceptance and browser-risk as applicable.
+
+Release reuse is strict: candidate id, gate/evidence class, effective configuration and toolchain/config identity must match; browser evidence additionally requires matching selection/fixture/build identity, and build reuse requires the current `.next` output identity to match its ledger artifact. Use `--rerun` to bypass reusable evidence.
+
+The release summary distinguishes `PASS`, `FAIL`, `NOT RUN` and `N/A`, includes the required behavioral evidence matrix, and writes one candidate-bound `release-risk` ledger. `scale=true` is accounted for by the canonical PostgreSQL **full** suite, which contains the registered scale tests. The command stops before later expensive gates after a blocking/failing prerequisite.
+
+`npm run verify:release` is intentionally unchanged and remains the static compatibility full path.
 
 
 
@@ -332,7 +344,8 @@ npm run verify:browser
 - `npm run test:postgres:scale` — retained 10k/50k/100k performance fixtures only.
 - `npm run test:postgres:full` — all PostgreSQL integration tests.
 - `npm run verify:postgres -- <candidate args>` — canonical full PostgreSQL acceptance with candidate-bound ledger evidence.
-- `npm run verify:release` — temporary static compatibility path until the Phase 0E.4 risk-based orchestrator replaces it.
+- `npm run verify:release` — unchanged static compatibility full path.
+- `npm run verify:release:risk -- <candidate args>` — planner-driven candidate release orchestration with exact ledger reuse and one final evidence matrix.
 
 The PostgreSQL runner now owns the integration-test intent: an explicitly invoked PostgreSQL command injects `FLYTALLY_POSTGRES_INTEGRATION=1` into its child test process after preflight. It fails before the suite when `DATABASE_URL` is missing or the `psql` client cannot be executed. A PostgreSQL gate must never report success by silently skipping the integration suite.
 
