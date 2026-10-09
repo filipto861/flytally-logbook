@@ -4,6 +4,7 @@ import { loginBrowserPilot } from "./browser-actions.mjs";
 import { resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
 
 const authenticatedBrowser = process.env.FLYTALLY_AUTH_BROWSER === "1";
+const satelliteTrial = process.env.NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS === "true";
 const TILE = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#abc6d4"/><path d="M0 128H256" stroke="#456c85"/></svg>';
 const coordinates = JSON.stringify([
   { lat: 50.10, lon: 14.10, alt: 300, time: "2026-09-18T10:05:00Z" },
@@ -113,6 +114,24 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
   const map = await checkStandardPanes(page, ".route-overview-map", true);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
+  const satelliteButton = map.getByRole("button", { name: "Satellite map" });
+  await expect(satelliteButton).toHaveCount(satelliteTrial ? 1 : 0);
+  if (satelliteTrial) {
+    // Local SVG-only interception proves no live/paid provider contact.
+    await map.locator(".leaflet-map-pane").evaluate(el => { el.dataset.satelliteIdentity = "preserved"; });
+    await satelliteButton.click();
+    await expect(satelliteButton).toHaveAttribute("aria-pressed", "true");
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("Esri");
+    await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+    await setTheme(page, "dark");
+    await expect(map.locator(".leaflet-flytallyBasemap-pane")).toHaveCSS("filter", "none");
+    await expect(map.locator(".leaflet-map-pane")).toHaveAttribute("data-satellite-identity", "preserved");
+    await map.getByRole("button", { name: "Standard map" }).click();
+    await expect(satelliteButton).toHaveAttribute("aria-pressed", "false");
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+    await expect(map.locator(".leaflet-flytallyBasemap-pane")).toHaveCSS("filter", /invert/);
+    await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+  }
   // Real hit-target interaction: noninteractive aviation pane must not swallow route clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
   await routeHit.hover();
@@ -128,6 +147,20 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
   const map = await checkStandardPanes(page, ".track-map.responsive-map");
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
+  if (satelliteTrial) {
+    // Fail closed on provider failure, without retrying or reinitializing the map.
+    await page.route("**/api/map-tile/**", route =>
+      route.request().url().includes("style=satellite")
+        ? route.fulfill({ status: 502, body: "Unavailable" })
+        : route.fulfill({ status: 200, contentType: "image/svg+xml", body: TILE }));
+    const satellite = map.getByRole("button", { name: "Satellite map" });
+    await satellite.click();
+    await expect(map.getByRole("status")).toContainText("Satellite unavailable");
+    await expect(satellite).toBeDisabled();
+    await expect(map.getByRole("button", { name: "Standard map" })).toHaveAttribute("aria-pressed", "true");
+    await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+  }
   await expect(map.locator(".leaflet-overlay-pane canvas").first()).toBeAttached();
 });
 
@@ -162,7 +195,8 @@ test("flight replay retains map and playback state through theme changes", async
     `);
     await page.goto("/f/" + token);
     await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
-    await checkStandardPanes(page, ".player-responsive-map");
+    const publicMap = await checkStandardPanes(page, ".player-responsive-map");
+    await expect(publicMap.getByRole("button", { name: "Satellite map" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
   } finally {
     runBrowserFlightFixtureCleanup(`
