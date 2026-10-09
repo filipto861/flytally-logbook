@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { inspectSatelliteRaster, SatelliteRasterStructureError } from "../lib/satellite-raster-validation.ts";
 import type { SatelliteRasterMime } from "../lib/satellite-bounded-fetch.ts";
 
-// Valid 1x1 Pillow RGB fixtures (JPEG optimize=True), NOT supplier tiles.
+// Valid 1x1 Pillow fixtures (PNG RGB, JPEG grayscale optimize=True), NOT supplier tiles.
 // These images are checked against the Pillow encoder outside this test suite.
 // 1px is a LAB fixture size, NOT the accepted production tile dimension.
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGOQ8KsDAAFmAOVTZ6irAAAAAElFTkSuQmCC", "base64");
-const jpeg = Buffer.from("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABgf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCQAoYc/9k=", "base64");
+const jpeg = Buffer.from("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgFBgcGBQgHBgcJCAgJDBMMDAsLDBgREg4THBgdHRsYGxofIywlHyEqIRobJjQnKi4vMTIxHiU2OjYwOiwwMTD/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAABP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AO//Z", "base64");
 
 function inspect(bytes: Uint8Array, contentType: SatelliteRasterMime) {
   return inspectSatelliteRaster({ bytes, contentType });
@@ -29,6 +30,9 @@ test("R2D.2 M2b: real minimal 1x1 PNG structure accepted", () => {
 });
 
 test("R2D.2 M2b: real minimal 1x1 baseline JPEG structure accepted", () => {
+  assert.equal(jpeg.byteLength, 159);
+  assert.equal(createHash("sha256").update(jpeg).digest("hex"),
+    "9742593d2affef0b7bffe24cb9d871218fb8b0da92c2d95d05ca9b2832f11216");
   const value = inspect(jpeg, "image/jpeg");
   assert.equal(value.width, 1);
   assert.equal(value.height, 1);
