@@ -1,6 +1,6 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 read-only source discovery COMPLETE; design DRAFT / independent review PENDING; runtime NOT STARTED.  
+**Status:** Phase 0 read-only source discovery COMPLETE; independent review **BLOCK** received and RECONCILED as a draft; technical Phase 1 contract clarified but not independently re-approved; satellite/openAIP external gates BLOCKED; runtime NOT STARTED.  
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
@@ -13,7 +13,7 @@ Users can choose a standard map or orthophoto/satellite imagery on an existing f
 
 Keep the current online-only, Leaflet-based user experience. Map background and aviation overlays are **presentation**, not canonical flight positions, airspace clearance, airspace activation, NOTAM interpretation, route validation, or certified operational aeronautical data. No flight record, T&G, SERA, recency, certification, sharing authority or GPS timing calculation may depend on these layers.
 
-**Scope for 3.7.0:** shared map layer controller; standard/satellite switch on the approved maps; optional initial openAIP airspace overlay only after external rights and technical gates; explicit availability/attribution/failure behavior; targeted browser, unit and release verification.
+**Scope for 3.7.0:** shared map layer controller; standard/satellite switch on authenticated map/flight/GPS-review surfaces; optional initial openAIP airspace overlay **only after** external rights and technical gates; explicit availability/attribution/failure behavior; targeted browser, unit and release verification. **No new satellite/openAIP layers on public share or Story export in 3.7.0.** Existing public map/Story behavior must remain unchanged.
 
 **Out of scope:** new EFB/flight-planning status, live/active airspace indication, NOTAM/AIRAC guarantees, airspace infringement alerting, flight-to-airspace intersection computation, altitude-based filtering without trustworthy profile/data, offline caching or downloads, paid data resale, automatic map preference persistence, bulk openAIP import, database migration, certified record/history rewrite, training repo changes.
 
@@ -60,30 +60,40 @@ Proposed UI state (not stored or implemented yet):
 - `airspacesEnabled: boolean`; initial state `false`, and **forced unavailable** if external approval/config/availability is absent.
 - Additional `airports`, `navaids`, `reportingPoints` are deferred options and must not appear enabled before they exist.
 - All switches are user-initiated and local to the map instance. Cross-page/account persistence is **NOT approved**; do not silently add last-used defaults or local storage.
-- Preserve map center/zoom, current track playback position/speed, clickable route/airport markers, current filters and mobile gesture locks. A theme change must preserve the chosen basemap and overlay values, even if a surrounding React component recreates its current map (current theme dependencies require characterization).
+- Preserve map center/zoom, current track playback position/speed, clickable route/airport markers, current filters and mobile gesture locks. Existing components currently recreate the map in their effects when `theme` changes after cleanup. Phase 1 must **first characterize**, then prevent map recreation for mere theme/layer changes; unmount/remount may legitimately create a new map after full teardown. Exactly one **live** `L.Map` instance per mounted container, not one constructor call across React Strict Mode remounts.
 
 Suggested responsibility split: `map-layer-controller` orchestrates layer identity/state/lifecycle; `map-provider-contract` centralizes provider URLs, attribution, error/availability states; `leaflet-mobile` keeps only shared responsive/touch behavior. Exact paths/interfaces are subject to review; no parallel map implementation.
 
-### 3.2 Pane contract and dark mode
+### 3.2 Exact pane and dark-mode contract — reconciled after independent review
 
-Separate:
-1. standard OR satellite basemap (one only), at/below default tile pane;
-2. noninteractive raster aviation context above basemap but **below** GPS/route/airport layers;
-3. canonical route/GPS overlays and interaction surfaces above aviation tiles.
+Freeze Leaflet layer placement **by existing names and measured z-index**, not invented names:
 
-The current CSS filter on the *whole* `tilePane` is **not** acceptable once satellite and openAIP coexist. Keep existing standard dark-map appearance, applying dark treatment **only** to standard map imagery. Satellite retains authentic imagery color; openAIP retains provider colors and text legibility. Preserve route and marker custom panes (450/470) and click targets. Specify exact pane z-index and attribution layering after visual review.
+| Pane | z-index | Responsibility |
+| --- | ---: | --- |
+| default `tilePane` | 200 | Untouched Leaflet pane; no global CSS filter |
+| new `flytallyBasemap` | **210** | One active Standard OR Satellite tile layer |
+| new `flytallyAviation` | **300** | Optional static, non-interactive openAIP raster; `pointer-events: none` |
+| default `overlayPane` | 400 | Existing GPS lines/circle markers unless already in another pane |
+| existing `routeLines` | **450** | Preserve route-overview route strokes and wide click targets |
+| existing `airportMarkers` | **470** | Preserve route-overview airport circles and clicks |
+| default `markerPane` | 600 | Aircraft marker icons above aviation context |
+| default `tooltipPane` / `popupPane` | 650 / 700 | Keep above all raster and vector content |
+
+The proposed reviewer aliases `routePane` and `airportPane` are **not** existing repo names; never rename just for the plan. Leaflet official [pane guidance](https://leafletjs.com/examples/map-panes/) supports named panes and disabling pointer events for noninteractive tile layers.
+
+Keep the legacy standard dark treatment by applying the existing CSS filter **only to `flytallyBasemap` when the selected basemap is `standard` and the effective theme is dark**. Clear it when Satellite is selected and on light themes; do not filter the default `tilePane`, aviation pane, map attributions, markers or UI controls. The controller must remove old tile layers without stale layer reappearance, avoid two active basemaps, retain existing route/GPS hit testing and preserve image colours. Validate in real Chromium for light/dark and provider transitions; deterministic fixture-image pixel or computed-style proof is preferable to a fragile average-luminance oracle.
 
 ### 3.3 Provider/backend boundary
 
-Retain current `/api/map-tile/[z]/[x]/[y]?style=map|satellite` contract for existing uses. Extend satellite selection through existing server endpoint; do not create another vendor-dependent browser URL. Do not expose ArcGIS access token to client, error, log or static HTML.
+Retain current `/api/map-tile/[z]/[x]/[y]?style=map|satellite` for existing uses and support **omitted** `style` as legacy standard. Require an explicit allowlist for present `style`: `map` or `satellite` only; unknown/typo/duplicate values must return a controlled 400 `unsupported_style` response with `no-store`, never silent standard tile success. Extend satellite selection through the same server endpoint; do not create another vendor-dependent browser URL. Do not expose ArcGIS access token to client, error, log or static HTML. OpenAIP must use a **separate** allowlisted aviation endpoint, not a new map `style` value.
 
-For future openAIP: prefer an explicitly named server-side **allowlisted per-layer tile endpoint** rather than arbitrary upstream URLs; accept strictly validated `layer/z/x/y`, supported zoom and provider configuration; fetch only approved upstream host/path, with credentials server-side; validate expected image types and size, propagate controlled 401/403/429/5xx/unavailable state, provider-compliant cache directives, sensible throttling/usage safeguards and no raw upstream error responses to users. No user/private GPS coordinates, account identifiers or tokens are passed to openAIP; tile coordinates necessarily express viewed geographic area. Public tile access is an explicit separate decision for shared-flight routes.
+For future openAIP: prefer an explicitly named server-side **allowlisted per-layer tile endpoint** rather than arbitrary upstream URLs; accept strictly validated `layer/z/x/y`, supported zoom and provider configuration; fetch only approved upstream host/path, with credentials server-side; validate expected image types and size, propagate controlled 401/403/429/5xx/unavailable state, provider-compliant cache directives, sensible throttling/usage safeguards and no raw upstream error responses to users. No user/private GPS coordinates, account identifiers or tokens are passed to openAIP; tile coordinates necessarily express viewed geographic area. **Public openAIP access is explicitly excluded in 3.7.0**, including guessed direct proxy URLs; the server must enforce authentication for its aviation endpoint. Any public use requires separate provider rights and a future explicit product decision.
 
 Do not assume a probe that returns one valid tile establishes global coverage or status for an entire rendered viewport. A display's state should distinguish requested, loading, available, partial and unavailable coverage, as far as reliably measurable, without fake success; satellite fallback must be visible as fallback, not mislabeled satellite. Fail closed on malformed or unauthorized responses; do not fall back to an unrelated aviation provider or fabricated geometry.
 
 ### 3.4 Attribution, aviation meaning and accessibility
 
-- Basemap attribution follows the **currently selected** provider (OSM for standard; Esri AND data suppliers for satellite). Show the openAIP attribution whenever openAIP pixels/data are visible, with exact wording and link after rights review. Never hide attribution under compact/iPad overlays or in the public replay.
+- Basemap attribution follows the **currently selected** provider (OSM for standard; Esri AND the relevant World Imagery/labels/reference data suppliers for satellite). Confirm exact attribution and fallback supplier coverage from Esri. Show openAIP attribution whenever licensed openAIP pixels/data are visible, with exact wording and link after rights review. Provide readable attribution in desktop, iPad landscape/portrait and mobile without overlap with zoom and `Enable map movement` controls; public replay retains its existing standard-map attribution and receives no new provider layers in 3.7.0.
 - `Airspaces` describes chart-like **reference context only**. A shown boundary does not prove activation or safe clearance at the historic/current flight time. Do not show `ACTIVE`, `CLEAR`, NOTAM status or an altitude/airspace penetration result. No operationally authoritative colors or alerts beyond licensed provider depiction.
 - `Airspace details` (names, class, lower/upper levels or click popups) require an independently source-backed Core API feature-data contract, provenance/age and geometric identification; PNG-only raster tiles cannot support trustworthy per-feature click lookup. Keep details out of Phase 3 unless reviewed as a separate milestone.
 - Controls are accessible buttons/checkboxes with status and focus, 44px usable coarse touch targets where applicable, non-overlapping with Leaflet zoom and `Enable map movement`. Verify light/dark and portrait/landscape.
@@ -106,13 +116,13 @@ Do not assume a probe that returns one valid tile establishes global coverage or
 
 ## 4. Phased delivery / dependency chain
 
-**Phase 0 — Read-only discovery & design: DONE for current source inventory.** This document and the independent review handoff capture implementation contract and unresolved external gates. The Phase 0 **design approval** remains PENDING; it is not a runtime sign-off.
+**Phase 0 — Read-only discovery & design: COMPLETE for source inventory; review BLOCK received and reconciled in documentation.** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md` records accepted findings, corrections, outstanding rights and the exact pane contract. Final independent sign-off of the revised Phase 1 proposal is PENDING; provider approvals remain separately BLOCKED. No runtime or production sign-off.
 
-**Phase 1 — Shared Leaflet layer abstraction:** standard-only behavior first, preservation of current map/touch/dark/proxy behavior; map lifecycle and view-state characterization tests. No vendor switch until visual acceptance.
+**Phase 1 — Shared Leaflet layer abstraction:** review and accept exact pane/lifecycle/test contract first; standard-only behavior, map ownership, style parser allowlist (legacy omitted style preserved), preservation of current map/touch/dark/proxy behavior; real browser map lifecycle and view-state characterization tests, no duplicate *live* map instance. Phase 1 tests are implementation acceptance, not a demand to test nonexistent new code before Phase 1. No satellite/vendor activation until visual acceptance.
 
-**Phase 2 — Satellite on existing maps:** route overview, GPS tracks, saved flight replay, GPS import review, and public share **only if ArcGIS rights cover it**. Reuse existing backend and distinct satellite availability/attribution; Story SVG pipeline remains separate and stable. Release may ship satellite independently if external openAIP approval is pending, but do not describe unfinished openAIP as delivered.
+**Phase 2 — Satellite on authenticated existing maps:** route overview, GPS tracks, saved flight replay, GPS import review. **Public flight share remains standard-only** in 3.7.0; new public satellite behavior and Story export integration are deferred until separate explicit licence and product approval. Reuse existing backend with explicit Esri + data-provider attribution, verified token/entitlement/cost/quotas, distinct satellite availability and non-misleading fallback. Story SVG pipeline remains separate and stable. Shipping satellite alone while openAIP is externally blocked requires an explicit release-scope/claims decision; do not claim the openAIP feature is delivered.
 
-**Phase 3 — openAIP aviation overlay (externally gated):** current API verification, explicit rights and provider/legal review, static airspace raster tiles, provider proxy/cache/security/attribution/error states, conditional public-map applicability. Airports/navaids/reporting points are later, separately approved additions.
+**Phase 3 — openAIP aviation overlay (externally BLOCKED):** current official Tiles schema and auth verification, explicit provider rights/qualified legal review covering FlyTally use, static airspace raster tiles, strictly authenticated/allowlisted server proxy, cache/security/attribution/error states. **No openAIP requests, controls, or layers in public sharing/Story output** for 3.7.0. Airports/navaids/reporting points are later, separately approved additions. Do not implement runtime while schema and grant are missing.
 
 **Phase 4 — Release verification / production closeout:** exact-candidate `verify:plan`, `verify:iterate`, `verify:release:risk` selection; map/browser acceptance across desktop/iPad landscape+portrait/mobile, light+dark, routes+GPS+saved flight+import+public share, failure injection; production provider smoke only after approved configuration; Vercel runtime errors/cost watch; release number/build/DB state and ROADMAP/FEATURES/CHANGELOG synchronization.
 
@@ -120,9 +130,9 @@ No phase is DONE until tests and, where applicable, production evidence satisfy 
 
 ## 5. Targeted tests and verification
 
-Before implementation, add/register dedicated map browser-acceptance targets when required by the current module ownership; characterize that existing `gps-tracks` and `analytics` registration currently selects broader browser/PostgreSQL work and may block if target evidence is missing. Do not edit verification ownership solely to bypass hard gates.
+During Phase 1, add/register dedicated map browser-acceptance targets before claiming it complete; characterize that existing `gps-tracks` and `analytics` registration currently selects broader browser/PostgreSQL work and may block if target evidence is missing. Keep the **existing** Node `node:test` + `@playwright/test` stack; no mandatory new Jest/Vitest/React Testing Library. Do not edit verification ownership solely to bypass hard gates.
 
-Retain current `v1314`–`v1317` map visual/source contracts, updating exact assertions **with proof**, and add behavioral tests for state switching/cleanup, stale layer removal, attribution and correct z-index, early invalid-input rejection, provider failure and rate limiting, no duplicate map instances and retained playback. A provider-unavailable deterministic test must not require a live API token.
+Retain current `v1314`–`v1317` map visual/source contracts, updating exact assertions **with proof**, and add behavioral tests for named pane DOM assignment, dark CSS isolation, one live instance per mounted container, theme and base switches without reset, stale layer cleanup, attribution and UI overlaps, exact z-index and click hitboxes, HTTP 400 unknown/duplicate `style`, 401/403/429/5xx provider failures, and retained playback. Use controlled tile fixtures, not paid/live APIs, in repeatable test gates. Negative test public share and Story export: zero openAIP calls. A provider-unavailable deterministic test must not require a live API token.
 
 Evidence baseline for Phase 0: **source inspection only; tests/typecheck/build/Playwright/PostgreSQL/deploy NOT RUN; DB migration N/A on proposed scope**.
 
@@ -131,7 +141,7 @@ Evidence baseline for Phase 0: **source inspection only; tests/typecheck/build/P
 1. **External openAIP license + tile permission** — blocking production Phase 3; verify official terms, commercial/free-distribution interpretation, attribution, public replay, caching and image-export rights. Direct permission or qualified legal analysis must be recorded, not guessed from CC wording.
 2. **Current openAIP API contract + key** — blocking Phase 3 implementation; exact live schema, supported layer names and zoom, rate limits, error/content type, cache, authentication.
 3. **Esri imagery entitlement and provider attribution** — blocking enabled production satellite selection; actual `ARCGIS_ACCESS_TOKEN` and plan, pricing, terms, downstream attribution requirements and usage controls.
-4. **Product behavior** — default standard and airspaces OFF proposed/frozen for review; any persistent preference is deferred. If Filip wants overlays on the public flight share, must explicitly confirm provider rights before release; Story image overlay remains OUT.
+4. **Product behavior** — default standard and airspaces OFF; persistent preference deferred. **No new satellite/openAIP public-share layer, and no openAIP Story image export, in 3.7.0**. Existing public standard map and existing Story imagery behavior remain untouched. Any future public expansion requires provider rights and explicit product approval.
 5. **Acceptance coverage** — map-specific browser cases and screenshot/interaction proof across portrait iPad, landscape iPad and mobile; ensure CI planner does not silently lack this evidence.
 
 ## 7. Review / frozen and not-frozen decisions
@@ -142,4 +152,4 @@ Evidence baseline for Phase 0: **source inspection only; tests/typecheck/build/P
 
 **Not approved / not evidenced:** provider licensing, operational suitability, public use, per-feature airspace details, cost model, current rate/zoom contract, runtime success, database/regulatory approval.
 
-Related review document: `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`.
+Review handoff: `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`. Independent BLOCK review reconciliation and definitive disposition table: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`. No tests, deployment, API fetch or licensing approval has been represented as passed.
