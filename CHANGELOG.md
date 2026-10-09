@@ -1,3 +1,7 @@
+## 2026-10-09 — Satellite R2D.0 review reconciliation (documentation only)
+
+Accepted DeepSeek independent `APPROVE WITH CHANGES` review, reconciled source-specific auth ordering, warm-cache bypass, non-image 503, exact server-env semantics, Story fallback and tests into `docs/product/3_7_0_SATELLITE_R2D_OPERATIONS_DESIGN.md`. Preserved original `no-store` 503 contract; defined that Standard fallback comes from a new Standard request, never the Satellite response. **No runtime changes or test PASS** in this document step. R2D.1 to proceed as a separate small code/test batch; external provider licensing analysis deferred by owner, without production activation authorization.
+
 ## 2026-10-09 — Satellite R2D technical workstream opened (documentation-only; unreleased)
 
 Following R2C local closeout, created dedicated review-only Satellite R2D operations design describing current production code paths and required future emergency-disable, timeout/byte, synthetic request-pressure and multi-instance budget semantics. Updated ROADMAP and FEATURES for owner-approved technical-work reprioritization; external provider rights research is deferred rather than claimed completed. **No runtime code, tests, map behavior, DB schema, auth, deployment environment, real provider calls, merge or deploy changed.** R2D local tests/build/HTTP/Playwright **NOT RUN**; last tested runtime remains R2C `66c3aec4d49bc576c67afd39720fe03d4e48b17c`.
