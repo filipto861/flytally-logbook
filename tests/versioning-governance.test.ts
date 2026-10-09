@@ -25,8 +25,9 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
   assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| ✅ \|/);
   assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ✅ \|/);
-  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| 🚧 \|/);
-  assert.match(roadmap,/\| 11 \| \*\*3\.8\.0\*\* \| Multi-aircraft heterogeneous onboarding proof \| ➡️ \|/);
+  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \| 🚧 \|/);
+  assert.match(roadmap,/\| 11 \| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \| ➡️ \|/);
+  assert.match(roadmap,/\| 12 \| \*\*3\.9\.0\*\* \| Multi-aircraft heterogeneous onboarding proof \| ⏳ \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
@@ -64,6 +65,7 @@ test("3.6.0 production metadata and 3.7.0 active roadmap stay aligned",()=>{
   assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.6\.0\*\*/);
   assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.6\.0`/);
   assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.7\.0`/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.7\.0 \| Currency \/ monetary semantics \| ACTIVE \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.8\.0 \| Multi-aircraft heterogeneous onboarding proof \| NEXT \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.7\.0 \| Maps & Aviation Layers \| ACTIVE\b/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.8\.0 \| Currency \/ monetary semantics · #136 \| NEXT\b/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.9\.0 \| Multi-aircraft heterogeneous onboarding proof \| PLANNED\b/);
 });
