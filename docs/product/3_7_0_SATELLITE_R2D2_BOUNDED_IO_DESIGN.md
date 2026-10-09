@@ -1,3 +1,28 @@
+## 2026-10-09 — R2D.2-A2 owner diagnostic evidence: cached reader-only cancellation DOES NOT stop cache sibling
+
+**Evidence:** owner uploaded full `r2d2-spike-25023cf103cf3fc2.json` and `memory-25023cf103cf3fc2.jsonl`. These files were independently parsed and cross-checked in this work cycle. Experiment source SHA `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`; Node `24.19.0`, Next `16.3.2`; local isolated mini Next `next build` / `next start`, fake loopback source only. Harness verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`, `error=null`. **12 test requests + 1 stderr tail entry, 11 observed upstream events, 232 memory records.** Not CI, not provider, not production Satellite route; no user authentication/DB used.
+
+| Lab case | Application consumed | Upstream fixture queued | Upstream completed/closed |
+| --- | ---: | ---: | --- |
+| Cached normal first, then same-key repeat | 65,536 B on each | One 65,536 B upstream event total; none on repeat | yes/yes |
+| Uncached normal | 65,536 B | 65,536 B | yes/yes |
+| Cached large full baseline | 16,777,216 B | 16,777,216 B, 256 chunks | yes/yes |
+| Cached large `AbortController.abort()` after first read | 65,358 B | 65,536 B | no/yes |
+| Uncached large `AbortController.abort()` after first read | 65,358 B | 65,536 B | no/yes |
+| Cached large signal abort after 512 KiB | 524,288 B | 524,288 B | no/yes |
+| Uncached large signal abort after 512 KiB | 524,288 B | 524,288 B | no/yes |
+| **Cached large `reader.cancel()` WITHOUT signal abort** | **65,358 B** | **13,565,952 B by 3.2-second observation**, and **16,777,216 B by end of run** | initially no/no; final yes/yes |
+| **Uncached large `reader.cancel()` WITHOUT signal abort** | **65,358 B** | **65,536 B** | no/yes |
+| Cached/uncached 1,024 B then stall | 1,024 B each | 1,024 B each | no/yes on laboratory watchdog ~4.5 s |
+
+**Key finding (confirmed for this exact lab, not universal across environments):** the cached `fetch` tee continued consuming a separate upstream/cache branch after the application called only `reader.cancel()` and returned its JSON reply. A Next Data Cache internal limit did **not** halt that upstream read: Next logged `items over 2MB can not be cached` on 16MiB full read **and** cached cancel-only, with materialized encoded item sizes 22,369,958 / 22,369,961 bytes. This is a cache **storage** rejection, not an upstream decoded-byte/memory quota. The `AbortController.abort()` cases, by contrast, stopped queued upstream source bytes and closed connections promptly in this synthetic test. Preserve both signals and guarantee aborted operations settle; never assert that cancellation alone is enough.
+
+**Measured memory:** 232 process memory samples over ~25.286 seconds; global peak RSS **140 MiB**, heap **35 MiB**, external **75 MiB**, ArrayBuffers **37 MiB**. Cached full 16MiB scenario window peak RSS ~131 MiB, external ~75 MiB; cached cancel-only window peak RSS ~140 MiB. These are whole-process samples and **not** attributable per fetch, not a limit under concurrency, not provider-specific, and not a proof of 2MiB memory bound. Fixture `emittedBytes` counts HTTP `res.write()` **queued** bytes, not separately measured socket bytes actually received/ACKed. Local fixture streams only up to 16MiB with 8ms intervals; a faster upstream, parallel load and client disconnect remain untested. Lab route returns diagnostic JSON with 200 status even for `phase: body` abort; NOT a Satellite success response.
+
+**Decision:** Close **A2 empirical comparison as OBSERVATIONS COLLECTED**, not R2D.2-A or production hardening. The hypothesized independent cache-tee fill is observed in this run, so `reader.cancel()`-only is prohibited as the sole stop mechanism in any future design. **Do not decide automatically to disable caching**; `next: { revalidate: 604800 }` has provider-call/cache-cost benefits. Before an owner-approved runtime cache strategy and numeric limits, independently test (A3) client disconnect in synthetic mini Next app, rapid producer / concurrent fetch memory and abort, and authenticated production Satellite route parity separately. A real hard memory envelope cannot be derived from A2 alone. All R2D.2 Satellite code edits, runtime tests, full ON/OFF release and actual rollout remain NOT RUN / NOT IMPLEMENTED; PR #279 Draft, production Satellite OFF.
+
+---
+
 ## 2026-10-09 — R2D.2-A1 OWNER OBSERVATIONS COLLECTED; A2 CACHE-TEE DIFFERENTIATION STAGED
 
 **Clean exact A1 source HEAD** `1d5a5a8cd8262422e123a087352343590646d260`; owner PowerShell git fetch/pull SHA gate and syntax checks PASS. Isolated Next 16.3.2 mini-app build/start succeeded, full seven-case local run completed with JSON verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS` and no experiment-level exception. **Result is diagnostic evidence, NOT a safety/production hardening PASS**. Report: local ignored `tooling/r2d2-cache-spike/reports/r2d2-spike-9be5c539cbf64555.json`; source summary supplied in chat, not uploaded as an independently inspected JSON artifact. A1 results:
