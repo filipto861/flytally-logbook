@@ -1,4 +1,5 @@
 // Isolated test-only Next project; not imported by the production Logbook app.
+import { appendFileSync } from "node:fs";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,12 @@ export async function GET(request) {
   const sample = incoming.searchParams.get("sample");
   const action = incoming.searchParams.get("action");
   const key = incoming.searchParams.get("key");
+  const disconnectProbe = incoming.searchParams.get("disconnectProbe") || "off";
   if (!["cached", "uncached"].includes(mode) ||
       !["normal", "large", "stall"].includes(sample) ||
       !["complete", "abort", "abort-late", "cancel-only"].includes(action) ||
+      !["off", "observe", "link"].includes(disconnectProbe) ||
+      (disconnectProbe !== "off" && (sample !== "large" || action !== "complete")) ||
       !/^[a-z0-9_-]{1,80}$/.test(key || "")) {
     return Response.json({ error: "invalid_probe_parameters" }, { status: 400 });
   }
@@ -21,6 +25,33 @@ export async function GET(request) {
   }
   const start = performance.now();
   const controller = new AbortController();
+  // Test-only event trace: downstream HTTP client cannot read route outcomes
+  // after disconnect. Record *only* experiment markers, no cookies or tokens.
+  const signalLog = process.env.FLYTALLY_R2D2_SPIKE_ROUTE_EVENTS;
+  if (disconnectProbe !== "off" &&
+      (process.env.FLYTALLY_R2D2_SPIKE !== "1" || !signalLog)) {
+    return Response.json({ error: "missing_isolated_signal_log" }, { status: 503 });
+  }
+  function trace(event, other = {}) {
+    if (disconnectProbe === "off") return;
+    appendFileSync(signalLog, JSON.stringify({
+      at: Date.now(), event, mode, disconnectProbe, key, ...other,
+    }) + "\\n");
+  }
+  let clientSignalEvents = 0;
+  const onClientAbort = () => {
+    clientSignalEvents++;
+    trace("incoming-request-signal-abort", { requestAborted: request.signal.aborted });
+    if (disconnectProbe === "link") {
+      controller.abort("incoming-request-aborted");
+      trace("linked-upstream-controller-abort");
+    }
+  };
+  if (disconnectProbe !== "off") {
+    trace("route-start", { requestAlreadyAborted: request.signal.aborted });
+    request.signal.addEventListener("abort", onClientAbort, { once: true });
+    if (request.signal.aborted) onClientAbort();
+  }
   // LAB-ONLY watchdog: NOT a proposed production timeout or size budget.
   const watchdog = setTimeout(() => controller.abort("lab-watchdog"), 4500);
   let bytes = 0;
@@ -76,5 +107,13 @@ export async function GET(request) {
       bytes, firstChunkMs, elapsedMs: Math.round(performance.now() - start) });
   } finally {
     clearTimeout(watchdog);
+    if (disconnectProbe !== "off") {
+      trace("route-finally", {
+        bytes, clientSignalEvents, requestSignalAborted: request.signal.aborted,
+        upstreamSignalAborted: controller.signal.aborted,
+        phase, elapsedMs: Math.round(performance.now() - start),
+      });
+      request.signal.removeEventListener("abort", onClientAbort);
+    }
   }
 }
