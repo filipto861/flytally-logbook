@@ -220,6 +220,7 @@ test("3.7.0 map sources select map-specific browser acceptance without losing br
     "map-panes-overview-desktop","map-panes-overview-mobile",
     "map-lifecycle-tracks-desktop","map-lifecycle-tracks-mobile",
     "map-lifecycle-player-desktop","map-lifecycle-player-mobile",
+    "map-lifecycle-import-desktop","map-lifecycle-import-mobile",
     "flight-gps-save-desktop","flight-gps-save-mobile",
   ])assert.ok(ids.includes(id),"Expected map/broad acceptance target "+id);
 });
@@ -229,6 +230,6 @@ test("3.7.0 map browser spec is explicitly registered in the authoritative regis
   assert.equal(result.status,0,result.stderr||result.stdout);
   assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
   const selected=payload.plan.browserEvidence.targets;
-  assert.equal(selected.length,6);
+  assert.equal(selected.length,8);
   assert.ok(selected.every((target:{spec:string})=>target.spec==="e2e/map-layers.spec.mjs"));
 });
