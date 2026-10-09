@@ -11,7 +11,7 @@ export async function GET(request) {
   const key = incoming.searchParams.get("key");
   const disconnectProbe = incoming.searchParams.get("disconnectProbe") || "off";
   if (!["cached", "uncached"].includes(mode) ||
-      !["normal", "large", "stall"].includes(sample) ||
+      !["normal", "large", "stall", "rapid"].includes(sample) ||
       !["complete", "abort", "abort-late", "cancel-only"].includes(action) ||
       !["off", "observe", "link"].includes(disconnectProbe) ||
       (disconnectProbe !== "off" && (sample !== "large" || action !== "complete")) ||
