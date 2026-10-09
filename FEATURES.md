@@ -147,6 +147,8 @@ Important boundary:
 - Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
 
 ### 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 BROWSER REGRESSION UNDER INVESTIGATION
+
+- **SSR follow-up on Draft PR #269 (untested):** maps are now wrapped behind client-only dynamic imports so Leaflet cannot evaluate in server-rendered route/replay paths; GPS save action unchanged pending trace/DB evidence. Latest feature head `592e3e8`; previous gate PASS results on `5b011c8` are historical, not current release evidence.
 - Select Standard or Satellite/orthophoto map background on the existing Route map, GPS tracks map, saved-flight GPS preview/replay and GPS import review, with consistent controls and no flight-evidence changes.
 - Maintain a single Leaflet map instance during background/overlay changes; preserve viewport, player cursor, route clicks, existing dark standard-map appearance and iPad movement lock.
 - Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage and attribution rights are verified. **3.7.0 explicitly excludes new openAIP/satellite controls on public shares and openAIP Story exports.**
