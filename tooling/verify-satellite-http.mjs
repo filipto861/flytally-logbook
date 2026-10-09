@@ -23,6 +23,9 @@ const PORT = 3107;
 // This is a local HTTP harness concession, NOT an HTTPS transport test.
 const ORIGIN = `http://localhost:${PORT}`;
 const TOKEN = "FlyTally-R2C-fixture-token-" + randomBytes(12).toString("hex");
+// Three isolated child-process configurations; no real supplier requests.
+const MODE = process.env.FLYTALLY_SATELLITE_HTTP_MODE || "enabled";
+assert.ok(["enabled", "disabled", "missing-token"].includes(MODE), "Unsupported Satellite HTTP fixture mode");
 const SHA = /^([0-9a-f]{40})$/;
 function command(exe, args, label, env = process.env) {
   const result = spawnSync(exe, args, { cwd: ROOT, env, encoding: "utf8", timeout: 90_000 });
@@ -42,7 +45,7 @@ function preflight() {
   assert.equal(decodeURIComponent(url.username), "flytally_sat_r1", "Required dedicated DB user");
   assert.ok(["postgres:", "postgresql:"].includes(url.protocol), "Database must use explicit PostgreSQL URL");
   assert.equal(command("git", ["branch", "--show-current"], "git branch"),
-    "feat/3.7.0-satellite-r2-http-integration", "Expected test branch");
+    "feat/3.7.0-satellite-r2d-upstream-disable", "Expected R2D.1 test branch");
   assert.equal(command("git", ["status", "--porcelain"], "git clean"), "", "Clean tree required");
   assert.match(command("git", ["rev-parse", "HEAD"], "git SHA"), SHA);
 
@@ -102,7 +105,10 @@ async function main() {
     child = spawn(process.execPath, ["--require", path.join(ROOT, "tooling", "satellite-http-upstream-fixture.cjs"),
       nextBin, "start", "-H", "localhost", "-p", String(PORT)], {
       cwd: ROOT, stdio: ["ignore", "pipe", "pipe"],
-      env: { ...dbEnv, NODE_ENV: "production", ARCGIS_ACCESS_TOKEN: TOKEN,
+      env: { ...dbEnv, NODE_ENV: "production",
+        ARCGIS_ACCESS_TOKEN: MODE === "missing-token" ? "" : TOKEN,
+        FLYTALLY_SATELLITE_UPSTREAM_DISABLED: MODE === "disabled" ? "true" : "false",
+        FLYTALLY_SATELLITE_HTTP_FIXTURE_MODE: MODE,
         FLYTALLY_SATELLITE_HTTP_FIXTURE: "1", FLYTALLY_SATELLITE_FIXTURE_LOG: logFile },
     });
     child.stderr.on("data", chunk => { stderrTail = (stderrTail + String(chunk)).slice(-2500); });
@@ -118,6 +124,8 @@ async function main() {
 
     const invalidStyle = await anonymous.get("/api/map-tile/3/1/2?style=garbage");
     assert.equal(invalidStyle.status(), 400, "Malformed style must be 400");
+    const duplicateStyle = await anonymous.get("/api/map-tile/3/1/2?style=map&style=satellite");
+    assert.equal(duplicateStyle.status(), 400, "Duplicate style must be 400");
     assert.equal(upstreamEvents(logFile).length, 0);
 
     browser = await chromium.launch({ headless: true });
@@ -168,19 +176,35 @@ async function main() {
       }
       return response;
     }
-    await expectedTile(1, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_LABEL_2C");
-    await expectedTile(2, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_FALLBACK_2C");
-    await expectedTile(3, 502);
-    await expectedTile(4, 200, "FLYTALLY_HTTP_BASE_2C");
-    await expectedTile(5, 502);
-    const events = upstreamEvents(logFile);
-    for (const x of ["1", "2", "3", "4", "5"]) {
-      assert.ok(events.some(event => event.kind === "base" && event.x === x), `Base fetch not observed for x=${x}`);
+    if (MODE === "enabled") {
+      await expectedTile(1, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_LABEL_2C");
+      await expectedTile(2, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_FALLBACK_2C");
+      await expectedTile(3, 502);
+      await expectedTile(4, 200, "FLYTALLY_HTTP_BASE_2C");
+      await expectedTile(5, 502);
+      const events = upstreamEvents(logFile);
+      for (const x of ["1", "2", "3", "4", "5"]) {
+        assert.ok(events.some(event => event.kind === "base" && event.x === x), `Base fetch not observed for x=${x}`);
+      }
+      assert.ok(events.some(event => event.kind === "fallback" && event.x === "2"));
+      assert.ok(events.some(event => event.kind === "fallback" && event.x === "4"));
+      assert.ok(!events.some(event => event.kind === "fallback" && event.x === "3"), "No fallback after failed base");
+    } else {
+      // Disabled and missing-token modes share the external non-image 503
+      // contract. Check both repeated requests (including an already-warmed
+      // tile URL from a preceding enabled-mode test run) and zero upstream.
+      for (let i = 0; i < 2; i++) {
+        const unavailable = await browserTile(1);
+        assert.equal(unavailable.status, 503, `Satellite ${MODE}: authenticated request must return 503`);
+        assert.equal(unavailable.headers["cache-control"], "no-store");
+        assert.equal(unavailable.headers["x-flytally-map-style"], "unavailable");
+        assert.ok(!String(unavailable.headers["content-type"] || "").startsWith("image/"));
+        assert.ok(!unavailable.body.includes("<svg") && !unavailable.body.includes(TOKEN),
+          "Unavailable Satellite must not provide imagery, HTML, or provider credentials");
+        assert.equal(upstreamEvents(logFile).length, 0, "Unavailable Satellite must bypass upstream and warm fetch cache");
+      }
     }
-    assert.ok(events.some(event => event.kind === "fallback" && event.x === "2"));
-    assert.ok(events.some(event => event.kind === "fallback" && event.x === "4"));
-    assert.ok(!events.some(event => event.kind === "fallback" && event.x === "3"), "No fallback after failed base");
-    const beforeRevocation = events.length;
+    const beforeRevocation = upstreamEvents(logFile).length;
     runBrowserSql("UPDATE auth_sessions SET revoked_at=NOW() WHERE user_id=9001 AND revoked_at IS NULL;");
     const afterRevocation = await browserTile(1);
     assert.equal(afterRevocation.status, 401, "Revoked login must fail before cached provider response");
@@ -190,8 +214,8 @@ async function main() {
     assert.equal(standard.headers()["x-flytally-map-style"], "map");
     assert.match(standard.headers()["cache-control"], /^public,/);
     assert.equal(standard.headers()["access-control-allow-origin"], "*");
-    console.log("R2C HTTP fixture: PASS — anonymous 401, authenticated base+labels/fallback/outages, revoked 401, public Standard 200");
-    console.log(`R2C upstream interceptions: ${upstreamEvents(logFile).length} (synthetic, no real provider calls)`);
+    console.log(`R2D HTTP fixture: PASS (mode=${MODE}) — anonymous 401, malformed/duplicate 400, session revocation 401, Standard 200, Satellite ${MODE === "enabled" ? "200/fallback/502" : "503 / zero upstream"}`);
+    console.log(`R2D upstream interceptions: ${upstreamEvents(logFile).length} (synthetic, no real provider calls)`);
   } catch (error) {
     console.error("R2C HTTP fixture: FAIL", error instanceof Error ? error.message : String(error));
     if (stderrTail) console.error("Server diagnostic (truncated):", stderrTail.replaceAll(TOKEN, "[redacted]"));
