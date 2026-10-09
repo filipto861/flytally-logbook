@@ -5,9 +5,11 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Phase 1 integration / post-docs-merge regression fix on feature PR #269; **exact corrected-candidate release NOT RUN**. Docs PR #268 merged; latest post-integration test failed 232/233 source-only due to stale v3.0 roadmap assertion; test-only correction is pending verification. Last complete local release PASS belongs to `5538e0c4`; owner approved decision A. Satellite/openAIP provider gates BLOCKED.
+**Current active workstream:** 3.7.0 Phase 1 standard-only map controller merged and Vercel production READY, but live smoke / Phase 1 closeout PENDING. Full product 3.7.0 not released; satellite/openAIP BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
+
+**9 October 2026 — CURRENT PRODUCTION WATCH:** PR #269 squash-MERGED to main at `cc7abd41858cb2b2ddd8e794889922c856885686` (verified feature HEAD `397c8270d0088cb45ab1487d8ccdf2a35464284c`, candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff`). Local verify:release:risk PASS: aggregate 1,447/1,447; build PASS; PostgreSQL 100/100; desktop/mobile Playwright 12/12 each; iteration source 233/233, domain 46/46 and typecheck PASS. Vercel production deployment `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY, assigned to verified `fly-tally.com` domain. Previous deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` remains READY rollback candidate. Live HTTP and signed-in user map/replay/public-share smoke NOT VERIFIED because direct network access to site was unavailable to available reviewer tools; inspected recent Vercel runtime errors showed none, but new deployment had no request logs. Production acceptance/Phase 1 closeout PENDING; product version still 3.6.0 and there is no full 3.7.0 release/tag. Owner-approved strict duplicate-style HTTP 400 remains in force. Esri satellite/openAIP rights, token, live-provider, cost and licensing gates remain BLOCKED.
 
 - `FEATURES.md` = what the product has / is intended to have.
 - `ROADMAP.md` = order, dependencies, decisions and status.
@@ -74,7 +76,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Docs PR #268 MERGED; feature PR #269 Draft, post-integration source-contract fix awaiting exact-head re-verify; last complete local PASS `5538e0c` is historical; Phase 2/3 provider gates BLOCKED |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 standard-only merged (PR #269), Vercel READY; live production smoke/closeout PENDING; full 3.7.0 not released; satellite/openAIP provider gates BLOCKED |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
