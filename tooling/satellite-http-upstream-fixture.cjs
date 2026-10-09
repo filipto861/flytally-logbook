@@ -7,8 +7,21 @@ const net = require("node:net");
 const tls = require("node:tls");
 
 const TOKEN = process.env.ARCGIS_ACCESS_TOKEN;
-if (!/^FlyTally-R2C-fixture-token-[a-f0-9]{24}$/.test(TOKEN || "")) {
-  throw new Error("Satellite HTTP fixture requires a generated, non-production provider token.");
+const MODE = process.env.FLYTALLY_SATELLITE_HTTP_FIXTURE_MODE || "enabled";
+const TILE_Z = 18;
+const TILE_X0 = Number(process.env.FLYTALLY_SATELLITE_HTTP_TILE_X0);
+const TILE_Y = Number(process.env.FLYTALLY_SATELLITE_HTTP_TILE_Y);
+// Accept only our generated valid coordinates; no fixture requests can be
+// redirected to arbitrary provider paths or real network destinations.
+if (!Number.isInteger(TILE_X0) || TILE_X0 < 1024 || TILE_X0 + 4 >= 2 ** TILE_Z ||
+    !Number.isInteger(TILE_Y) || TILE_Y < 1024 || TILE_Y >= 2 ** TILE_Z) {
+  throw new Error("Satellite HTTP fixture requires guarded generated tile coordinates.");
+}
+if (!["enabled", "disabled", "missing-token"].includes(MODE)) {
+  throw new Error("Satellite HTTP fixture requires an explicit supported mode.");
+}
+if (MODE === "missing-token" ? TOKEN !== "" : !/^FlyTally-R2C-fixture-token-[a-f0-9]{24}$/.test(TOKEN || "")) {
+  throw new Error("Satellite HTTP fixture requires controlled non-production provider credentials.");
 }
 if (process.env.FLYTALLY_SATELLITE_HTTP_FIXTURE !== "1" ||
     process.env.FLYTALLY_LOCAL_POSTGRES !== "1" ||
@@ -82,26 +95,31 @@ globalThis.fetch = async function (input, init) {
   const matches = url.pathname.match(/\/(\d+)\/(\d+)\/(\d+)$/);
   if (!matches) throw new Error("Satellite fixture tile coordinate format mismatch");
   const [z, y, x] = matches.slice(1);
-  if (z !== "3" || y !== "2" || !["1", "2", "3", "4", "5"].includes(x)) {
+  const scenario = Number(x) - TILE_X0 + 1;
+  if (z !== String(TILE_Z) || y !== String(TILE_Y) ||
+      !Number.isInteger(scenario) || scenario < 1 || scenario > 5) {
     throw new Error("Satellite fixture unexpected coordinates");
   }
-  if (kind === "base" && x === "3") {
-    record(kind, x, "503");
+  // Record stable logical case indices while changing the real tile URLs
+  // between runs, to prevent unkeyed fallback Data Cache reuse.
+  const caseId = String(scenario);
+  if (kind === "base" && scenario === 3) {
+    record(kind, caseId, "503");
     return new Response("Base unavailable", { status: 503 });
   }
-  if (kind === "base" && x === "5") {
-    record(kind, x, "network-error");
+  if (kind === "base" && scenario === 5) {
+    record(kind, caseId, "network-error");
     throw new Error("Simulated base imagery network outage");
   }
-  if (kind === "labels" && x !== "1") {
-    record(kind, x, "403");
+  if (kind === "labels" && scenario !== 1) {
+    record(kind, caseId, "403");
     return new Response("Labels unavailable", { status: 403 });
   }
-  if (kind === "fallback" && x === "4") {
-    record(kind, x, "503");
+  if (kind === "fallback" && scenario === 4) {
+    record(kind, caseId, "503");
     return new Response("Fallback unavailable", { status: 503 });
   }
-  record(kind, x, "200");
+  record(kind, caseId, "200");
   return new Response(kind === "base" ? baseMarker : kind === "labels" ? labelMarker : fallbackMarker,
     { status: 200, headers: { "content-type": kind === "base" ? "image/jpeg" : "image/png" } });
 };

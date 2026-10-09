@@ -310,7 +310,7 @@ test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real pro
   assert.match(runner, /assert\.match\(response\.headers\["content-type"\]/);
   assert.doesNotMatch(runner, /assert\.match\(response\.headers\(\)\["content-type"\]/);
   assert.doesNotMatch(runner, /const requester = context\.request|headers:\s*\{\s*Cookie:/);
-  assert.match(runner, /ARCGIS_ACCESS_TOKEN: TOKEN/);
+  assert.match(runner, /ARCGIS_ACCESS_TOKEN: MODE === "missing-token" \? "" : TOKEN/);
   assert.match(runner, /"git", \["status", "--porcelain"\]/);
   assert.match(runner, /runBrowserSql\("UPDATE auth_sessions SET revoked_at=NOW\(\)/);
   assert.match(fixture, /net\.Socket\.prototype\.connect = restrictConnect/);
@@ -319,4 +319,70 @@ test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real pro
   assert.match(fixture, /const TOKEN = process\.env\.ARCGIS_ACCESS_TOKEN/);
   assert.doesNotMatch(route, /FLYTALLY_SATELLITE_HTTP_FIXTURE|satellite-http-upstream-fixture/);
   assert.doesNotMatch(provider, /FLYTALLY_SATELLITE_HTTP_FIXTURE|satellite-http-upstream-fixture/);
+});
+
+test("3.7.0 R2D.1 exact server-only upstream disable preserves auth, cache, Story and Standard", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  const runner = source("tooling/verify-satellite-http.mjs");
+  const upstreamFixture = source("tooling/satellite-http-upstream-fixture.cjs");
+  const story = source("components/flight-story-card.tsx");
+  const mapControl = source("components/satellite-map-control.ts");
+
+  const parsed = route.indexOf("const style = parseMapTileStyle");
+  const session = route.indexOf("if (wantsSatellite && !(await getSession()))");
+  const tokenRead = route.indexOf("const arcgisToken =");
+  const tokenMissing = route.indexOf("if (wantsSatellite && !arcgisToken)");
+  const disabled = route.indexOf('if (wantsSatellite && process.env.FLYTALLY_SATELLITE_UPSTREAM_DISABLED === "true")');
+  const fetchSatellite = route.indexOf("await satelliteTile(");
+  const standard = route.indexOf("const upstream = await standardMapTile(");
+  assert.ok(parsed >= 0 && session > parsed && tokenRead > session &&
+    tokenMissing > tokenRead && disabled > tokenMissing &&
+    fetchSatellite > disabled && standard > fetchSatellite,
+    "Must reject invalid styles and unsigned sessions before token/disable/cache/provider; Standard remains separate");
+
+  const disabledResponse = route.slice(disabled, fetchSatellite);
+  assert.match(disabledResponse, /status: 503/);
+  assert.match(disabledResponse, /"Cache-Control": "no-store"/);
+  assert.match(disabledResponse, /"X-FlyTally-Map-Style": "unavailable"/);
+  assert.doesNotMatch(disabledResponse, /satelliteTile\(|await fetch\(|image\/svg\+xml|Access-Control-Allow-Origin/);
+  assert.doesNotMatch(route, /NEXT_PUBLIC_FLYTALLY_SATELLITE_UPSTREAM_DISABLED/);
+  assert.doesNotMatch(story + mapControl, /FLYTALLY_SATELLITE_UPSTREAM_DISABLED/);
+  assert.match(story, /if\(available\)setMapStyle\("satellite"\);else setMapStyle\("map"\)/);
+  assert.match(mapControl, /standardMap\(true\)/);
+
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_MODE/);
+  assert.match(runner, /"enabled", "disabled", "missing-token"/);
+  assert.match(runner, /FLYTALLY_SATELLITE_UPSTREAM_DISABLED: MODE === "disabled" \? "true" : "false"/);
+  assert.match(runner, /ARCGIS_ACCESS_TOKEN: MODE === "missing-token" \? "" : TOKEN/);
+  assert.match(runner, /assert\.equal\(unavailable\.status, 503/);
+  assert.match(runner, /Unavailable Satellite must bypass upstream and warm fetch cache/);
+  assert.match(runner, /Duplicate style must be 400/);
+  assert.match(runner, /Revoked login must fail before cached provider response/);
+  assert.match(upstreamFixture, /MODE === "missing-token"/);
+  assert.match(upstreamFixture, /Satellite fixture blocked remote socket/);
+});
+
+test("3.7.0 R2D.1 HTTP fixture isolates tokenless fallback Data Cache with run-scoped tile URLs", () => {
+  const runner = source("tooling/verify-satellite-http.mjs");
+  const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
+  const provider = source("lib/satellite-map-provider.ts");
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+
+  // Next's upstream fetch cache survives previous local Next child runs. The
+  // reference/fallback URL has no token, so fresh token alone is insufficient.
+  assert.match(provider, /REFERENCE_LABELS/);
+  assert.match(provider, /next: \{ revalidate: CACHE_SECONDS \}/);
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_RUN_ID/);
+  assert.match(runner, /createHash\("sha256"\)\.update\(RUN_ID\)/);
+  assert.match(runner, /const TILE_Z = 18/);
+  assert.match(runner, /const tilePath = scenario/);
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_TILE_X0: String\(TILE_X0\)/);
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_TILE_Y: String\(TILE_Y\)/);
+  assert.match(fixture, /Satellite HTTP fixture requires guarded generated tile coordinates/);
+  assert.match(fixture, /const scenario = Number\(x\) - TILE_X0 \+ 1/);
+  assert.match(fixture, /record\(kind, caseId,/);
+  assert.match(runner, /events\.some\(event => event\.kind === "fallback" && event\.x === "2"\)/);
+  assert.match(runner, /events\.some\(event => event\.kind === "fallback" && event\.x === "4"\)/);
+  assert.doesNotMatch(runner, /rmSync\([^;\n]*\.next|rmSync\([^;\n]*cache/);
+  assert.doesNotMatch(route + provider, /FLYTALLY_SATELLITE_HTTP_TILE_|FLYTALLY_SATELLITE_HTTP_RUN_ID/);
 });

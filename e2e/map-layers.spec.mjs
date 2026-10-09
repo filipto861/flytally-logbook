@@ -173,8 +173,23 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
     await expect(map.getByRole("button", { name: "Standard map" })).toHaveAttribute("aria-pressed", "true");
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
     await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+    // R2D.1: deployment-disabled Satellite sends a non-image 503; the
+    // existing Leaflet controller must restore Standard without remounting.
+    await page.route("**/api/map-tile/**", route =>
+      route.request().url().includes("style=satellite")
+        ? route.fulfill({ status: 503, headers: { "X-FlyTally-Map-Style": "unavailable", "Cache-Control": "no-store" },
+            body: "Satellite imagery unavailable" })
+        : route.fulfill({ status: 200, contentType: "image/svg+xml", body: TILE }));
+    await page.reload();
+    const disabledMap = await checkStandardPanes(page, ".track-map.responsive-map");
+    const disabledSatellite = disabledMap.getByRole("button", { name: "Satellite map" });
+    await disabledSatellite.click();
+    await expect(disabledMap.getByRole("status")).toContainText("Satellite unavailable");
+    await expect(disabledSatellite).toBeDisabled();
+    await expect(disabledMap.getByRole("button", { name: "Standard map" })).toHaveAttribute("aria-pressed", "true");
+    await expect(disabledMap.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
   }
-  await expect(map.locator(".leaflet-overlay-pane canvas").first()).toBeAttached();
+  await expect(page.locator(".track-map.responsive-map .leaflet-overlay-pane canvas").first()).toBeAttached();
 });
 
 test("flight replay retains map and playback state through theme changes", async ({ page }) => {
@@ -265,6 +280,24 @@ test("flight replay retains map and playback state through theme changes", async
     await story.getByRole("button", { name: /Share Story/ }).click();
     await expect(story.getByRole("alert")).toContainText("Story export unavailable");
     await expect(story.getByRole("button", { name: /Share Story/ })).toBeEnabled();
+
+    // R2D.1: a disabled Satellite 503 at Story's existing automatic probe
+    // preserves the Standard preview and a valid Standard PNG export.
+    await page.route("**/api/map-tile/**", route =>
+      route.request().url().includes("style=satellite")
+        ? route.fulfill({ status: 503, headers: { "X-FlyTally-Map-Style": "unavailable", "Cache-Control": "no-store" },
+            body: "Satellite imagery unavailable" })
+        : route.fulfill({ status: 200, contentType: "image/svg+xml",
+            headers: { "X-FlyTally-Map-Style": "map" }, body: TILE }));
+    await page.reload();
+    await expect(story.locator("image[data-map-tile]").first()).toHaveAttribute("href", /style=map/);
+    await expect(satelliteStory).toHaveCount(0);
+    const downloadDisabledStandard = page.waitForEvent("download");
+    await story.getByRole("button", { name: /Share Story/ }).click();
+    const disabledStandardPng = await downloadDisabledStandard;
+    const disabledStandardBytes = await readFile(await disabledStandardPng.path());
+    expect(disabledStandardBytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    await expect(story.getByRole("alert")).toHaveCount(0);
   } finally {
     runBrowserFlightFixtureCleanup(`
       DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913 AND token_hash='${tokenHash}';
