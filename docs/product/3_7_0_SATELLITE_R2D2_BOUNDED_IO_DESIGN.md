@@ -1,3 +1,13 @@
+## 2026-10-09 — A3.1 downstream client-disconnect lab staged (NOT RUN)
+
+**Why:** A2 confirmed a second Next dynamic cached fetch tee can continue a full synthetic 16MiB upstream after only the application `reader.cancel()`; the tested explicit `AbortController.abort()` stopped upstream, but **automatic propagation of downstream HTTP client disconnect** remains unknown.
+
+**Small test-only delta:** the existing manual `tooling/r2d2-cache-spike.mjs` now runs two additional isolated mini Next HTTP cases **after the A2 scenarios**: the client calls `fetch('/api/probe?mode=cached|uncached&sample=large&action=complete&key=unique')`, then intentionally aborts its own request after **300ms diagnostic timing**, while the mini Next route continues its existing 4.5s lab watchdog and attempts a full 16MiB synthetic upstream read. Capture whether the caller rejected on abort, and the test fixture's unique source event after a separate **5.5s observation window**. Memory windows include these requests; no source/provider token or DB. A fresh cache key is required for each, avoiding false warm hits. Both timing numbers are LAB-ONLY, not production budgets.
+
+**Interpretation:** if downstream disconnect does not stop upstream promptly, treat it as a risk requiring explicit server cleanup strategy; however, a 4.5s server watchdog can truncate the tail independently. This test does not establish whether the production Satellite route requests automatically abort (auth/client deployment may differ), and does not substitute for real-route synthetic parity, high-throughput / simultaneous memory-pressure tests, complete cache and bandwidth controls, or owner-approved numeric deadlines. Report verdict remains `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`; test source A3.1 syntactic/build/runtime evidence **NOT RUN**. R2D.2 runtime provider remains unchanged. No production launch, merge/deploy, Training or DB changes.
+
+---
+
 ## 2026-10-09 — R2D.2-A2 owner diagnostic evidence: cached reader-only cancellation DOES NOT stop cache sibling
 
 **Evidence:** owner uploaded full `r2d2-spike-25023cf103cf3fc2.json` and `memory-25023cf103cf3fc2.jsonl`. These files were independently parsed and cross-checked in this work cycle. Experiment source SHA `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`; Node `24.19.0`, Next `16.3.2`; local isolated mini Next `next build` / `next start`, fake loopback source only. Harness verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`, `error=null`. **12 test requests + 1 stderr tail entry, 11 observed upstream events, 232 memory records.** Not CI, not provider, not production Satellite route; no user authentication/DB used.
