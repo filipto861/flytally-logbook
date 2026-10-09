@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.1 server emergency stop: reviewed contract (PLANNED)
+
+Independent DeepSeek review of R2D.0 **APPROVE WITH CHANGES**, reconciled/frozen. Planned minimal server-only exact-true upstream stop for authenticated Satellite before provider/cache. Existing style 400, unsigned 401, no-token 503 and public Standard remain unchanged; stopped Satellite returns 503/no-store/unavailable without an image; existing map and Story fallback select Standard independently. This is deployment configuration, not instant/atomic across instances. **Runtime implementation/tests NOT RUN at review closeout**; see R2D operations design. No changes to previously verified R2C capability.
+
 ## 2026-10-09 — Satellite R2D operational controls (PLANNED; no implementation yet)
 
 Existing R2C Satellite/Standard support remains locally verified but unreleased. Owner reprioritized **technical** readiness ahead of a separate provider-licence discussion. New R2D design proposes a server-only upstream emergency disable, outbound response time/size protection, source-aware request amplification telemetry, and preserved Flight Story Satellite preview/PNG and Standard-only public replay. **None of these R2D controls are implemented or verified yet.** User-visible behavior, production default OFF and existing auth are frozen. Design/review: `docs/product/3_7_0_SATELLITE_R2D_OPERATIONS_DESIGN.md`.
