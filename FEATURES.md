@@ -149,10 +149,10 @@ Important boundary:
 ### 3.7.0 — Maps & Aviation Layers — ACTIVE / DESIGN, RUNTIME NOT STARTED
 - Select Standard or Satellite/orthophoto map background on the existing Route map, GPS tracks map, saved-flight GPS preview/replay and GPS import review, with consistent controls and no flight-evidence changes.
 - Maintain a single Leaflet map instance during background/overlay changes; preserve viewport, player cursor, route clicks, existing dark standard-map appearance and iPad movement lock.
-- Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage, data attribution and public-display rights are verified.
+- Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage and attribution rights are verified. **3.7.0 explicitly excludes new openAIP/satellite controls on public shares and openAIP Story exports.**
 - Preserve provider-specific color and attribution. On missing/failed imagery or aviation tiles, display explicit unavailable/partial state rather than falsely reporting full coverage or airspace activity.
 - Satellite backend and Story-card support already exist in source, but production feature expansion and openAIP are **not implemented/approved**. Story-card overlay export, operational airspace activation/NOTAM and safety alerts are outside 3.7.0.
-- Phase 0 source discovery is documented; independent design review and provider gates remain open. No DB/certification/backup change is presently expected.
+- Phase 0 source discovery and independent BLOCK review reconciliation are documented; revised Phase 1 design review and provider gates remain open. No DB/certification/backup change is presently expected. Reconciliation: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`.
 - Detailed design/review: `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`.
 
 ### 3.8.0 — Currency / monetary semantics — NEXT (superseded former 3.7.0 reservation)
