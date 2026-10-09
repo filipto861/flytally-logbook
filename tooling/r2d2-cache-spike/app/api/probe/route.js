@@ -36,7 +36,7 @@ export async function GET(request) {
     if (disconnectProbe === "off") return;
     appendFileSync(signalLog, JSON.stringify({
       at: Date.now(), event, mode, disconnectProbe, key, ...other,
-    }) + "\\n");
+    }) + "\n");
   }
   let clientSignalEvents = 0;
   const onClientAbort = () => {
