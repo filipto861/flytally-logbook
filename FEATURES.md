@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A3.1 synthetic client-disconnect diagnostic (TEST TOOLING ONLY)
+
+The manual isolation harness now supports cached/uncached **downstream HTTP client disconnect** observations against a local mini Next route while it fetches finite synthetic stream data. Diagnostics compare resulting source completion/close; they do not implement or establish production cancellation. No real provider traffic, DB, auth, Satellite runtime, Story, Training, merge or deploy. A3.1 syntax/build/test NOT RUN. Future bounded-provider feature remains blocked on measured cache policy and owner-reviewed budgets.
+
 ## 2026-10-09 — R2D.2-A2 cache-sibling laboratory finding (DIAGNOSTIC, NOT PRODUCT)
 
 On verified local diagnostic source `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`, synthetic Next 16.3.2 `reader.cancel()` without `AbortController.abort()` let the **cached** source finish emitting all 16MiB after the application consumed ~64KiB, while uncached reader-only cancel closed the source after 64KiB. A Next cache-item `>2MB` rejection was not an upstream ceiling. Signal-abort variants stopped local sources promptly. R2D.2-A2 empirical comparison collected, but no hard budget, memory guarantee or real-route/client-disconnect verification established. This is a future **bounded-provider-I/O requirement**, not functionality released to users. R2D.2-A3 client-disconnect/concurrency laboratory test proposed next. Production Satellite unchanged and OFF; no merge/deploy.
