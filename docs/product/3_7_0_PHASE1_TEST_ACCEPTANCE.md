@@ -1,10 +1,10 @@
 # 3.7.0 — Phase 1: Map controller test and acceptance contract
 
-**Status:** DRAFT FOR PRODUCT ACCEPTANCE / implementation NOT STARTED.  
+**Status:** PRODUCT ACCEPTED for Phase 1 implementation (9 October 2026); separate unmerged, **UNVERIFIED** runtime candidate in Draft PR #269. Neither test/CI PASS nor deployment is claimed.  
 **Independent re-review:** APPROVE WITH CHANGES for Phase 1 *technical design* (9 October 2026); conditions below must be fulfilled in implementation. Phase 2 satellite production and Phase 3 openAIP production remain separately BLOCKED.  
 **Source:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; docs-only PR #268.  
 **Parent contracts:** `3_7_0_MAPS_AVIATION_LAYERS.md` and `3_7_0_MAPS_REVIEW_RECONCILIATION.md`.  
-**Branching rule:** after docs are reviewed/accepted, implement on a fresh small `feat/3.7.0-...` branch from the approved canonical `main`, not by adding runtime to the Phase 0 docs PR.
+**Branching rule:** complied with: candidate lives in `feat/3.7.0-map-controller-phase1` on `main@162d9ba...`, Draft PR [#269](https://github.com/filipto861/flytally-logbook/pull/269). Runtime is **not** added to docs PR #268; merge only after docs reconciliation and exact-candidate verification.
 
 ## 1. Delivery boundary
 
@@ -64,7 +64,7 @@ Implement by reading the whole `URLSearchParams.getAll('style')` set: zero entri
 
 Add tests for these parser cases at the actual route boundary with mocked upstream fetch and assert no accidental OSM/Esri requests on invalid styles. Existing `v1314`–`v1317` contracts remain.
 
-## 5. Proposed browser-risk registration (NOT YET APPLIED)
+## 5. Proposed browser-risk registration (applied only in unverified Draft feature PR #269)
 
 **Current registry evidence:** `tooling/development-modules.json` has an object `browserAcceptance.targets` with entries `{spec,title,project}`. Existing `analytics` selects only generic shell targets, and `gps-tracks` selects GPS save/SERA/gap targets. Neither is direct map-layer behavioral acceptance. The current `pathTargets` entries do **not** cover map layer files.
 
@@ -78,6 +78,10 @@ Proposed new `e2e/map-layers.spec.mjs` (new tests and entries created **during P
 | `map-lifecycle-tracks-mobile` | `mobile-chromium` | same exact title |
 | `map-lifecycle-player-desktop` | `desktop-chromium` | `flight replay retains map and playback state through theme changes` |
 | `map-lifecycle-player-mobile` | `mobile-chromium` | same exact title |
+| `map-lifecycle-import-desktop` | `desktop-chromium` | `GPS import review retains its map pane across theme changes` |
+| `map-lifecycle-import-mobile` | `mobile-chromium` | same exact title |
+| `map-tile-style-desktop` | `desktop-chromium` | `map tile endpoint rejects unsupported and duplicate styles before upstream fetch` |
+| `map-tile-style-mobile` | `mobile-chromium` | same exact title |
 
 **Selection intent:** add exact approved target descriptors to `browserAcceptance.targets` and associate them through narrowly scoped `browserAcceptance.pathTargets` entries for `components/leaflet-mobile`, the new controller, `components/route-overview-map`, `components/tracks-map`, `components/flight-track-player`, `components/gps-import-review-player`, `app/(protected)/map/` and `app/api/map-tile/`. For the import review component, ensure an existing or new explicit import-review browser scenario covers movement/touch behavior as appropriate. Existing `analytics` and `gps-tracks` module-level targets and risk requirements remain **unchanged** and continue to run; do not replace them with map-only tests. Add the new cases to the browser fixture/selection baseline and registry schema-consistent deterministic target coverage, exactly as required by `tooling/browser-risk-selection.mjs` and the browser harness.
 
@@ -103,4 +107,4 @@ Before closing Phase 1, verify actual changed files using current repository `np
 
 Check source/behavior invariants; desktop/mobile browser target registration/actual case set; iPad visual proof; current dark-standard screenshots; no provider requests for Phase 1; and no regressions in GPS, public replay or Story export. `FEATURES.md`, `ROADMAP.md`, `CHANGELOG.md` updated within same milestone, with version/DB/deploy closeout accurately reported.
 
-**Now:** test IDs/spec/selection rules are **planned**, not registered or executed. Node tests, browser tests, build, DB, external provider checks and deploy are **NOT RUN**. Phase 1 implementation requires Filip's go-ahead and must not be mistaken for completed merely because this design document exists.
+**Current implementation candidate (Draft PR #269):** the 10 browser target IDs for five logical tests are registered **on the feature branch only**, along with standard-only controller, style parser, and Node source/unit tests; `main` remains unchanged. Registration was validated by GitHub source read-back and JavaScript syntax-only parse, **not** by running the actual browser-risk selector or Playwright. The baseline expected 108 executions is a **calculated expectation**, not 106 observed passing tests. Node, typecheck, full test suite, browser tests, build, PostgreSQL, provider-live, merge and deploy: **NOT RUN**; production version remains 3.6.0. Phase 1 DoD requires test execution, remediation of failures, independent code review and required PR/docs merge sequence.
