@@ -1,13 +1,19 @@
 # 3.7.0 — Phase 1: Map controller test and acceptance contract
 
-**Status:** Phase 1 standard-only technical implementation on `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **exact-candidate local release PASS**, 9 October 2026 (full details in latest evidence section below). PRs #268/#269 Draft/unmerged, CI/production deploy NOT RUN; physical Safari and real-provider tests NOT RUN; satellite/openAIP gates BLOCKED.
+**Status:** Phase 1 merged (`main@cc7abd41`) and Vercel production READY; **live functional production smoke/closeout PENDING**. Local exact-candidate release PASS; satellite/openAIP externally BLOCKED. Previous candidate checkpoints retained as historical.
 **Independent re-review:** APPROVE WITH CHANGES for Phase 1 *technical design* (9 October 2026); conditions below must be fulfilled in implementation. Phase 2 satellite production and Phase 3 openAIP production remain separately BLOCKED.  
 **Source:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; docs-only PR #268.  
 **Parent contracts:** `3_7_0_MAPS_AVIATION_LAYERS.md` and `3_7_0_MAPS_REVIEW_RECONCILIATION.md`.  
 **Branching rule:** complied with: candidate lives in `feat/3.7.0-map-controller-phase1` on `main@162d9ba...`, Draft PR [#269](https://github.com/filipto861/flytally-logbook/pull/269). Runtime is **not** added to docs PR #268; merge only after docs reconciliation and exact-candidate verification.
 
 
-### Post-merge exact-head gate attempt — 9 October 2026
+### CURRENT MERGE / DEPLOYMENT EVIDENCE (supersedes historical checkpoints)
+
+**9 October 2026 — CURRENT PRODUCTION WATCH:** PR #269 squash-MERGED to main at `cc7abd41858cb2b2ddd8e794889922c856885686` (verified feature HEAD `397c8270d0088cb45ab1487d8ccdf2a35464284c`, candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff`). Local verify:release:risk PASS: aggregate 1,447/1,447; build PASS; PostgreSQL 100/100; desktop/mobile Playwright 12/12 each; iteration source 233/233, domain 46/46 and typecheck PASS. Vercel production deployment `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY, assigned to verified `fly-tally.com` domain. Previous deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` remains READY rollback candidate. Live HTTP and signed-in user map/replay/public-share smoke NOT VERIFIED because direct network access to site was unavailable to available reviewer tools; inspected recent Vercel runtime errors showed none, but new deployment had no request logs. Production acceptance/Phase 1 closeout PENDING; product version still 3.6.0 and there is no full 3.7.0 release/tag. Owner-approved strict duplicate-style HTTP 400 remains in force. Esri satellite/openAIP rights, token, live-provider, cost and licensing gates remain BLOCKED.
+
+**Unverified mandatory production smoke:** public shell, login and authorized `/map` navigation; actual OSM map tile response/attribution; signed-in GPS flight replay/theme/scrub; consented existing public share/privacy; mobile/iPad touch/portrait/landscape; invalid/duplicate style HTTP 400 no-store and function logs after traffic. Do not mutate production flight records or probe blocked satellite/openAIP endpoints.
+
+### Historical post-merge exact-head gate attempt — 9 October 2026
 
 - On `82541845a6f79211d1b7dd4e79cb67a12a3988ec`, targeted v3.0 regression **4/4 PASS** and `verify:iterate` **PASS**: source **233/233**, domain **46/46**, typecheck PASS; candidate `b4666d0271de4fa728711769ebb43750a2a833d99c5ce2747661ae11859d21f1`.
 - `verify:release:risk` **FAIL at aggregate regression**: two historical `tests/versioning-governance.test.ts` cases asserted superseded mapping (Currency 3.7.0, onboarding 3.8.0). Corrected test expectations for Maps 3.7.0, Currency 3.8.0, onboarding 3.9.0; `docs/product/VERSIONING.md` stale "runtime not started" text also reconciled. No production runtime modifications.
