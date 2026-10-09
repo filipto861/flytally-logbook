@@ -12,13 +12,13 @@ test("3.7.0 map tile style accepts exactly one supported explicit value", () => 
 });
 
 test("3.7.0 map tile style fails closed on unknown or empty values", () => {
-  for (const value of ["style=unknown", "style=satelite", "style=", "style=%20", "style=MAP", "style%5B%5D=satellite", "style%5B0%5D=map"]) {
+  for (const value of ["style=unknown", "style=satelite", "style=", "style=%20", "style=MAP", "style%5B%5D=satellite", "style%5B0%5D=map", "style%5Bfoo%5D=satellite", "style%5B0%5D%5B1%5D=map", "Style=satellite"]) {
     assert.equal(parseMapTileStyle(new URLSearchParams(value)), null, value);
   }
 });
 
 test("3.7.0 map tile style fails closed on duplicates, including identical ones", () => {
-  for (const query of ["style=map&style=satellite", "style=map&style=map", "style=satellite&style=satellite"]) {
+  for (const query of ["style=map&style=satellite", "style=map&style=map", "style=satellite&style=satellite", "style=satellite&style%5Bfoo%5D=map", "style=map&style%5B0%5D%5B1%5D=satellite"]) {
     assert.equal(parseMapTileStyle(new URLSearchParams(query)), null, query);
   }
 });
