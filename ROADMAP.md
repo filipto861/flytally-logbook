@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Maps & Aviation Layers — Phase 1 Draft PR #269, feature head `b3917c7` (SSR isolation + evidence-led GPS browser wait); **current-head `verify:iterate` PASS (source 232/232, domain 46/46, typecheck PASS); release gates PENDING**. Previous exact-candidate `5b011c8`: source/domain/typecheck PASS, aggregate 1,443/1,443 PASS, build PASS, isolated PostgreSQL 100/100 PASS, desktop browser 10 PASS / 1 FAIL (pending GPS server POST), mobile NOT RUN, release FAIL; Next SSR errors observed. Post-failure SQL proves one certified v8/hash64 GPS flight persisted. Satellite Phase 2 / openAIP Phase 3 BLOCKED.
+**Current active workstream:** 3.7.0 Maps & Aviation Layers — Phase 1 standard-only feature Draft PR #269 at `b3917c7`, exact local risk release **PASS** (source/domain/typecheck, aggregate 1,444/1,444, build, PostgreSQL 100/100, browser 12 desktop + 12 mobile; candidate `e8685272…`); **separate iPad visual/pointer evidence, final independent code review, merge/production closeout still PENDING**. Docs Draft PR #268 open. Phase 2 Esri satellite and Phase 3 openAIP remain provider-gated BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -68,7 +68,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 1 technical re-review APPROVE WITH CHANGES; map-test contract drafted; no runtime, satellite/openAIP production gates remain blocked |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 standard-only controller implemented in Draft PR #269; exact local release gate PASS (1,444 Node / 100 PostgreSQL / 24 browser), iPad proof/review/merge still pending; Phase 2 satellite and Phase 3 openAIP blocked on provider evidence |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
@@ -1023,18 +1023,21 @@ Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
-# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 0 DISCOVERY DOCUMENTED
+# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 LOCAL RELEASE GATE PASS
 
 **Product decision — 9 October 2026:** Filip approved reprioritizing Maps & Aviation Layers as 3.7.0 immediately after the 3.6.0 production closeout. This supersedes the *release number/reservation* of the old 3.7.0 Currency workstream, **not** its contract, issue or requirements.
 
 **Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
 **Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
 **Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
-**Phase 1 proposed acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
+**Phase 1 implemented acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** Phase 1 remains DRAFT / NOT RELEASE-READY; separate SSR hardening candidate now awaits local verification. 
+**Current status:** Phase 1 standard-only Draft PR #269 is implemented and its **exact-head local release verification PASS**. It is **not yet merged, deployed or product-closed**: supplementary iPad portrait/landscape light/dark + pointer evidence, final code review and owner's merge decision remain OPEN. Historical failed browser attempt and trace investigation are preserved below and superseded by the final full PASS on `b3917c7`. 
 
 **Trace investigation (9 Oct 2026):** the user supplied the failed GPS Playwright `trace.zip`. The click on `Save & certify flight` completed, and an authenticated `POST /flights/new` began; the network archive records that request with `status=-1` and no response before Playwright's five-second confirmation expectation timed out. The screenshot shows `Saving draft…` and `Saving & certifying…` pending; no server-action error or certification result is evidenced by the trace. Thus **server action slow/incomplete is observed, but GPS persistence/certification failure is not proven**. Next: before any re-run/fixture reset, use a read-only SQL query for the exact known fixture (`user_id=9001`, `OK-E2E`, `2026-10-05`, `off_block=14:00`) to establish whether it reached draft/certified state. Keep the 5s failure as real acceptance FAIL; do not simply waive/skip it. Map SSR mitigation in head `3777fb0` remains NOT TESTED. Source/domain/typecheck PASS; exact-candidate aggregate 1,443/1,443 PASS, production build PASS, isolated PostgreSQL 100/100 PASS. First authoritative browser-risk attempt failed on GPS completion banner visibility (10 desktop pass, 1 fail); two SSR `window is not defined` errors also appeared during map routes. Browser-risk PARTIAL, release FAIL; mobile not executed. Preserve Playwright screenshots/trace for read-only triage, fix only evidenced root cause, retest on new exact candidate. Neither Draft PR merged; provider gates blocked.
+
+
+**Tenth user-local exact-candidate verification (9 October 2026):** feature head `b3917c7bed43b2ed204dee14afe9fd6d35394b4c`, candidate `e8685272ae5e753ab6c8a577799da203795fb1ffcac382c096f63c2350915e25`; guarded dedicated localhost PostgreSQL `127.0.0.1:55432/flytally_browser`. `npm.cmd run verify:release:risk -- --base origin/main` returned **`release_status=PASS`**, source-contract **PASS:reused** (232/232 from iteration), direct domain-unit **PASS:reused** (46/46), TypeScript **PASS:reused**, complete Node aggregate **1,444/1,444 PASS (0 fail, 0 skip)**, optimized Next.js 16.3.2 production build **PASS** (41 static paths generated), canonical PostgreSQL acceptance **100/100 PASS**, authoritative Playwright browser-risk **12/12 desktop PASS + 12/12 mobile PASS** on one worker (24/24 total; no retries/failures reported), `scale=N/A` per planner (10k/50k/100k cases nevertheless executed inside full PostgreSQL acceptance), required evidence `application-source-contract,browser-acceptance,domain-unit,postgres-acceptance`, `blocked_evidence=none`. Earlier GPS five-second assertion and Leaflet SSR `window is not defined` errors **did not recur in the supplied final release log**; this verifies the tested flows rather than asserting every server route is error-free. Non-blocking: ignored parent lockfile warning and `slow-server-task` diagnostics (~1–1.7s) during flight-detail reads. **Product Phase 1 standard-only implementation is locally release-gate verified, but separate iPad portrait/landscape light/dark visual and pointer-touch proof, independent final PR code review, owner merge approval and production smoke/deploy remain NOT RUN/OPEN.** Both PRs Draft/unmerged. Phase 2 satellite and Phase 3 openAIP remain BLOCKED by independent provider rights/API/cost/effectivity gates; no live provider features enabled and no DB schema/certification/backup change in this feature.
 
 ## Product objective
 
@@ -1055,7 +1058,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 ## Phases and acceptance gates
 
 1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE; independent BLOCK review reconciled; second independent review **APPROVE WITH CHANGES** Phase 1 technical contract. Browser test registration/acceptance design documented, pending product acceptance and implementation. External provider permission separate. No runtime.
-2. **Phase 1 — Shared map-layer controller: IMPLEMENTED DRAFT / PARTIALLY LOCAL VERIFIED.** Accepted test contract; Draft feature PR #269 adds panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), isolated dark standard filter, fail-closed map styles, theme-safe map lifecycle and mapped Node/Playwright tests. Full verification, code review, merge and responsive evidence PENDING; no satellite/openAIP enablement.
+2. **Phase 1 — Shared map-layer controller: IMPLEMENTED DRAFT / EXACT-HEAD LOCAL RELEASE GATE PASS.** Draft PR #269 introduces panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), isolated dark standard filter, strict styles, theme-safe map lifecycle and registered Node/Playwright cases. Exact candidate `b3917c7` has `release_status=PASS`; independent iPad visual/touch acceptance, final reviewer and merge/deploy PENDING; no satellite/openAIP enablement.
 3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
 4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
