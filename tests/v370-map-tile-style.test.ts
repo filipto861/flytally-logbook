@@ -12,7 +12,7 @@ test("3.7.0 map tile style accepts exactly one supported explicit value", () => 
 });
 
 test("3.7.0 map tile style fails closed on unknown or empty values", () => {
-  for (const value of ["style=unknown", "style=satelite", "style=", "style=%20", "style=MAP"]) {
+  for (const value of ["style=unknown", "style=satelite", "style=", "style=%20", "style=MAP", "style%5B%5D=satellite", "style%5B0%5D=map"]) {
     assert.equal(parseMapTileStyle(new URLSearchParams(value)), null, value);
   }
 });
