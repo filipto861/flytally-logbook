@@ -1,3 +1,9 @@
+## 2026-10-09 — R2D.2 M2a independent bounded fetch primitive and unit tests added (NOT VERIFIED / NO PROVIDER RUNTIME CHANGE)
+
+**Actual commits:** new `lib/satellite-bounded-fetch.ts` pure transport helper, `tests/v370-satellite-bounded-fetch.test.ts` for bounded/no-store/body/header/cancellation/sanitization synthetic cases, registry `tooling/development-modules.json` GPS ownership and browser-risk path entry, auditedTotal 389→390, regression guard update in `tests/v370-map-layers.test.ts`. The helper rejects missing numeric policy; **no production numeric values** are chosen. It does not yet verify true raster image bytes; M2b deliberately separate. `lib/satellite-map-provider.ts` and real `/api/map-tile` endpoint **unchanged** and still use current fetch cache, so Option B is approved but **not yet wired into product**. No provider calls, DB, auth, Standard, Story, Training or feature activation.
+
+**Tests/build:** GitHub source present; owner local Node24 targeted unit+map suite, typecheck, build, authenticated HTTP and full release **NOT RUN** on staged new SHA. No CI, merge or deploy. PR #279 stays Draft, Satellite prod OFF.
+
 ## 2026-10-09 — Satellite R2D.2 Option B approved by owner (DOCS-ONLY decision)
 
 Owner explicitly approved M0: replace **Satellite** provider's Next 7-day `revalidate` cache in a later guarded integration with controlled `cache:"no-store"` bounded streaming, accepting potential additional supplier traffic/cost but **not** inventing a numerical budget or claiming provider licensing. Optional separate managed validated cache deferred for future decision; public Standard cache stays unchanged. M2a scoped to isolated pure bounded transport and synthetic tests, no production Satellite call-site changes yet. No live provider/DB/Training/flag, merge or deploy. M2a syntax/type/unit/Next build checks NOT RUN on decision commit.
