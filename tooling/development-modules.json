@@ -626,7 +626,8 @@
         "components/public-flight-map",
         "lib/map-tile-style",
         "lib/satellite-map-provider",
-        "lib/satellite-bounded-fetch"
+        "lib/satellite-bounded-fetch",
+        "lib/satellite-raster-validation"
       ],
       "files": [],
       "risks": [
@@ -888,7 +889,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 390,
+    "auditedTotal": 391,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1041,7 +1042,8 @@
           "lib/map-tile-style",
           "app/api/map-tile/",
           "lib/satellite-map-provider",
-        "lib/satellite-bounded-fetch"
+        "lib/satellite-bounded-fetch",
+        "lib/satellite-raster-validation"
         ],
         "files": [],
         "targets": [
