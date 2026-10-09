@@ -1,6 +1,25 @@
+## 2026-10-09 — DeepSeek independent review reconciliation (R2D.0)
+
+**External read-only review:** `APPROVE WITH CHANGES`. Reconciled with actual `app/api/map-tile/[z]/[x]/[y]/route.ts`, `lib/satellite-map-provider.ts`, `components/satellite-map-control.ts`, `components/flight-story-card.tsx`, the synthetic Next HTTP harness and browser/source contract tests. **R2D.0 REVIEW COMPLETE** after recording this decision; implementation and tests remain separate.
+
+**Accepted and frozen for R2D.1:**
+1. Keep tile-coordinate validation and strict style parsing first. Invalid/duplicate style → existing HTTP 400 with `Cache-Control: no-store` and no provider calls. Standard (`style=map`) remains available and public.
+2. Satellite `getSession()` remains before reading provider secrets, checking the emergency gate, accessing upstream fetch/cache, or composing an SVG. Anonymous/revoked → existing 401, `private, no-store`; no observable config status to unsigned callers.
+3. If authenticated, retain existing missing-token 503, `no-store` precedence, then check the **server-only** `process.env.FLYTALLY_SATELLITE_UPSTREAM_DISABLED === "true"` before `satelliteTile()`. Exactly `"true"` disables; absent/`false`/other preserves previous behavior (no implicit new config repair). Disabled → **503**, `Cache-Control: no-store`, `X-FlyTally-Map-Style: unavailable`, generic non-image body and **zero** provider fetches even if Next's upstream tile cache is warm. Route is already `force-dynamic`; the guard must precede every Satellite upstream cache/fetch call.
+4. **No in-response style substitution.** Client receives error 503 and issues separate `style=map` fallback, using existing map control/Story behavior. The HTTP error response is not an image. No newly exposed config flags or tokens in headers/HTML/JS/logs; existing `X-FlyTally-Map-Style: unavailable` is already the machine-readable availability contract. We deliberately do NOT introduce a new `disabled=true` header that leaks internal configuration.
+5. This is a deployment-config emergency disable **not** an instantly refreshed, atomic kill switch. Mixed behavior across instances during rollout is possible until target deployment/config has converged. Keep production OFF/stacked Draft; no provider or billing changes.
+
+**Test acceptance (R2D.1):** independent source guard checks exact ordering and server-only flag, malformed and duplicate style 400, anonymous/revoked 401, missing-token existing 503, authenticated disabled 503/no-store/unavailable and no image/token disclosure, provider fetch count zero, unchanged Standard 200/public/CORS, and preserved Story/interactive fallback under a disabled HTTP tile. Extend the existing guarded Next fixture with **separate child-process disabled configuration** so no live provider calls are possible; run synthetic enabled and disabled scenarios, not by mutating live config. A previous enabled fixture run may populate Next's cache; the disable route must not access it. Exact-HEAD targeted/typecheck/iteration, HTTP fixture enabled+disabled, and full Satellite UI flag ON/OFF release including map/Story acceptance remain required. Native Safari and real production TLS are separate `NOT VERIFIED` gates.
+
+**Accepted for later R2D.2 / R2D.3, not code-authorized today:** per-upstream `AbortController`, cancel sibling requests on base failure if feasible, timeout tests with non-resolving fetches, raw streaming byte ceiling, content-type/signature and final SVG-size limits, exact reviewed numeric budgets, concurrency/backpressure measurement; no per-process fake global quota. All numeric limits, provider-account budget and multi-instance behavior remain explicitly UNDECIDED.
+
+**Scope disagreements deliberately resolved in favor of existing runtime:** Earlier R2D draft said the tile response should `return Standard with status`, but the real API and browser already use **a separate Standard request after Satellite HTTP error**; corrected above. DeepSeek suggested `private, no-store` for disabled 503; existing authenticated *unavailable* response contract uses `no-store` (non-publicly cacheable). Preserve that contract and avoid unrelated response-header churn. DeepSeek's generic request for a machine-readable error is satisfied by existing status 503 plus `X-FlyTally-Map-Style: unavailable` without exposing the internal disable setting.
+
+**Review disposition:** APPROVE WITH CHANGES → **ACCEPTED FOR R2D.1 SMALL BATCH**. No R2D pass/release implied by review alone. Licence research separately deferred by owner; production activation still requires explicit approval.
+
 # FlyTally 3.7.0 — Satellite R2D: operational hardening design (review only)
 
-**Status:** DRAFT / READ-ONLY DESIGN / NOT IMPLEMENTED / NOT VERIFIED.  
+**Status:** R2D.0 REVIEW RECONCILED / R2D.1 ACCEPTANCE FROZEN; runtime NOT IMPLEMENTED / NOT VERIFIED.  
 **Date:** 2026-10-09. **Repo:** `filipto861/flytally-logbook` only.  
 **Base:** R2C documentation closeout `8e0851012e271927157e7d5f3ae6a1aca76d6715` (Draft PR #276).  
 **Exact latest verified runtime SHA:** `66c3aec4d49bc576c67afd39720fe03d4e48b17c`, candidate `a5f5b1bef64d80aa78cfe6bfbeea69a6e2ad7c931c36b6664f0fddd16fd7dd25`.  
