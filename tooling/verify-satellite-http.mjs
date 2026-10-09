@@ -55,8 +55,14 @@ function preflight() {
   assert.equal(url.pathname, "/flytally_satellite_r1_test", "Required dedicated database name");
   assert.equal(decodeURIComponent(url.username), "flytally_sat_r1", "Required dedicated DB user");
   assert.ok(["postgres:", "postgresql:"].includes(url.protocol), "Database must use explicit PostgreSQL URL");
+  // Default remains strict R2D.1. Explicit opt-in permits the exact R2D.2
+  // evidence branch, with ALL original disposable DB/token/sandbox gates intact.
+  // Do not allow a generic branch override or wildcard.
+  const expectedBranch = process.env.FLYTALLY_SATELLITE_HTTP_A4 === "1"
+    ? "feat/3.7.0-satellite-r2d2-bounded-provider-io"
+    : "feat/3.7.0-satellite-r2d-upstream-disable";
   assert.equal(command("git", ["branch", "--show-current"], "git branch"),
-    "feat/3.7.0-satellite-r2d-upstream-disable", "Expected R2D.1 test branch");
+    expectedBranch, "Expected exact satellite HTTP acceptance branch");
   assert.equal(command("git", ["status", "--porcelain"], "git clean"), "", "Clean tree required");
   assert.match(command("git", ["rev-parse", "HEAD"], "git SHA"), SHA);
 
