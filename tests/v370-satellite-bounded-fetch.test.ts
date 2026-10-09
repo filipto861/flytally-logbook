@@ -86,9 +86,9 @@ test("R2D.2 M2a: refuses Next fetch cache hints and caller-supplied init AbortSi
 });
 
 test("R2D.2 M2a: copies finite data and passes through safe request headers with no-store", async () => {
-  let seenInit: RequestInit | undefined;
+  const observed = { init: undefined as RequestInit | undefined };
   const fake = (async (_url: RequestInfo | URL, init?: RequestInit) => {
-    seenInit = init;
+    observed.init = init;
     return source(new Uint8Array([1, 2, 3]), { "content-length": "3" });
   }) as typeof fetch;
   const result = await fetchSatelliteBounded(setup(fake, {
@@ -96,10 +96,10 @@ test("R2D.2 M2a: copies finite data and passes through safe request headers with
   }));
   assert.equal(result.contentType, JPEG);
   assert.deepEqual([...result.bytes], [1, 2, 3]);
-  assert.equal(seenInit?.cache, "no-store");
-  assert.ok(seenInit?.signal instanceof AbortSignal);
-  assert.equal(new Headers(seenInit?.headers).get("X-Diagnostic"), "fixture");
-  assert.equal("next" in (seenInit ?? {}), false);
+  assert.equal(observed.init?.cache, "no-store");
+  assert.ok(observed.init?.signal instanceof AbortSignal);
+  assert.equal(new Headers(observed.init?.headers).get("X-Diagnostic"), "fixture");
+  assert.equal("next" in (observed.init ?? {}), false);
 });
 
 test("R2D.2 M2a: missing Content-Length is allowed for bounded stream", async () => {
@@ -140,9 +140,9 @@ test("R2D.2 M2a: strict present Content-Length syntax and oversized declaration"
 
 test("R2D.2 M2a: observed body always has a byte limit, even when header lies", async () => {
   let emitted = 0;
-  let signal: AbortSignal | null = null;
+  const observed = { signal: null as AbortSignal | null };
   const fake = (async (_url: RequestInfo | URL, init?: RequestInit) => {
-    signal = init?.signal ?? null;
+    observed.signal = init?.signal ?? null;
     return source(new ReadableStream({
       pull(controller) {
         emitted++;
@@ -152,7 +152,7 @@ test("R2D.2 M2a: observed body always has a byte limit, even when header lies", 
     }), { "content-length": "4" });
   }) as typeof fetch;
   await expectFailure(setup(fake, { maxBytes: 10 }), "too-large");
-  assert.equal(signal?.aborted, true);
+  assert.equal(observed.signal?.aborted, true);
   assert.ok(emitted >= 2);
 });
 
@@ -178,10 +178,10 @@ test("R2D.2 M2a: caller already aborted prevents networking", async () => {
 
 test("R2D.2 M2a: caller abort during stalled body cancels active transport", async () => {
   const caller = new AbortController();
-  let seenSignal: AbortSignal | null = null;
+  const observed = { signal: null as AbortSignal | null };
   let cancelled = false;
   const fake = (async (_url: RequestInfo | URL, init?: RequestInit) => {
-    seenSignal = init?.signal ?? null;
+    observed.signal = init?.signal ?? null;
     return source(new ReadableStream({
       start(controller) {
         controller.enqueue(new Uint8Array([1]));
@@ -193,29 +193,29 @@ test("R2D.2 M2a: caller abort during stalled body cancels active transport", asy
   const promise = expectFailure(setup(fake, { signal: caller.signal }), "caller-aborted");
   setTimeout(() => caller.abort(), 15);
   await promise;
-  assert.equal(seenSignal?.aborted, true);
+  assert.equal(observed.signal?.aborted, true);
   await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(cancelled, true);
 });
 
 test("R2D.2 M2a: independent total deadline stops a stalled body", async () => {
-  let signal: AbortSignal | null = null;
+  const observed = { signal: null as AbortSignal | null };
   const fake = (async (_url: RequestInfo | URL, init?: RequestInit) => {
-    signal = init?.signal ?? null;
+    observed.signal = init?.signal ?? null;
     return source(new ReadableStream({ start() { /* never produces */ } }));
   }) as typeof fetch;
   await expectFailure(setup(fake, { timeoutMs: 20 }), "deadline");
-  assert.equal(signal?.aborted, true);
+  assert.equal(observed.signal?.aborted, true);
 });
 
 test("R2D.2 M2a: total deadline also stops a non-cooperative pending fetch", async () => {
-  let observed: AbortSignal | null = null;
+  const observed = { signal: null as AbortSignal | null };
   const fake = ((_url: RequestInfo | URL, init?: RequestInit) => {
-    observed = init?.signal ?? null;
+    observed.signal = init?.signal ?? null;
     return new Promise<Response>(() => { /* fake ignores AbortSignal */ });
   }) as typeof fetch;
   await expectFailure(setup(fake, { timeoutMs: 20 }), "deadline");
-  assert.equal(observed?.aborted, true);
+  assert.equal(observed.signal?.aborted, true);
 });
 
 test("R2D.2 M2a: sanitizes upstream thrown errors and rejects non-image payload", async () => {
