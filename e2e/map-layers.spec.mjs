@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { createHash } from "node:crypto";
 import { loginBrowserPilot } from "./browser-actions.mjs";
 import { resetIntelligentReviewFormScopeFixture, runBrowserSql } from "./browser-db.mjs";
 
@@ -136,6 +137,26 @@ test("flight replay retains map and playback state through theme changes", async
   await assertSamePaneAfterTheme(page, map);
   await expect(page.getByRole("button", { name: "Pause track" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Playback speed" })).toHaveValue("2");
+
+  // Exercise the actual public SSR entrypoint with a source-private, isolated
+  // synthetic share; route-only SSR smoke is insufficient to load Leaflet.
+  const token = "FlyTallyPhase1PublicReplay20261009";
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const absent = await page.request.get("/f/" + token);
+  expect(absent.status()).toBe(404); // also initializes the isolated share schema
+  runBrowserSql(`UPDATE flights SET certified_at=NOW() WHERE id=9913 AND user_id=9001;
+    DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913;
+    INSERT INTO flight_public_shares(user_id,flight_id,token_hash,show_registration,show_date,show_track)
+    VALUES (9001,9913,'${tokenHash}',FALSE,TRUE,TRUE);`);
+  try {
+    await page.goto("/f/" + token);
+    await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
+    await checkStandardPanes(page, ".player-responsive-map");
+    await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
+  } finally {
+    runBrowserSql(`DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913 AND token_hash='${tokenHash}';
+      UPDATE flights SET certified_at=NULL WHERE id=9913 AND user_id=9001;`);
+  }
 });
 
 test("GPS import review retains its map pane across theme changes", async ({ page }) => {
