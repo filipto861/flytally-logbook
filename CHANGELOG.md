@@ -10,6 +10,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **3.7.0 Satellite Phase 2.1 trial — FEATURE BRANCH DRAFT / NOT RELEASED (9 October 2026):** new opt-in Standard/Satellite Leaflet selector in four authenticated map surfaces, atomic shared basemap swap, fail-closed 502/tile-error return to Standard, dark filter isolation, public replay exclusion, scoped responsive controls, and extended Node/Playwright deterministic fixture assertions. Flag `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS` defaults OFF. Feature branch only; Node/typecheck/build/PostgreSQL/Playwright NOT RUN; no merge, DB/schema migration, production deployment, new Esri live requests or 3.7.0 version bump. Exact provider licensing, actual attribution, token/referrer and quota/export gates remain BLOCKED. Details in `docs/product/3_7_0_PHASE2_SATELLITE_IMPLEMENTATION.md`.
+
 - **Phase 1 standard-only production functional acceptance (9 October 2026; documentation closeout in Draft PR #270):** Owner confirmed browser Map/light-dark, existing GPS replay and playback continuity, public share/privacy, and mobile/iPad interaction work on `fly-tally.com`. This is **user-reported manual PASS**, not independent native Safari screenshots or browser traces. Production Map API HTTP 4/4 PASS (real OSM image and strict style 400); Vercel READY at `cc7abd41`; latest inspected aggregated runtime errors none. Prior local exact candidate full `release_status=PASS`. Remaining: merge docs PR #270 to complete documentary Phase 1 closure; product version 3.6.0 and full Maps 3.7.0 release unchanged; satellite/openAIP provider gates BLOCKED.
 
 
