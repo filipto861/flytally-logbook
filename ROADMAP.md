@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Maps Phase 1 standard-only implementation MERGED and owner-reported functional production smoke PASS; documentation closure pending PR #270 merge. Phase 2 satellite and Phase 3 openAIP remain externally BLOCKED; full 3.7.0 release not declared.
+**Current active workstream:** 3.7.0 Maps Phase 1 standard-only CLOSED (PR #270 squash-merged as `7d47010e`); Phase 2.0 satellite provider/legacy-consumer readiness in documentation review, with external gates BLOCKED. Phase 3 openAIP remains separately BLOCKED; no full 3.7.0 release or satellite activation.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -1035,16 +1035,17 @@ Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
-# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 LOCAL RELEASE GATE PASS
+# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 2.0 READINESS
 
 **Product decision — 9 October 2026:** Filip approved reprioritizing Maps & Aviation Layers as 3.7.0 immediately after the 3.6.0 production closeout. This supersedes the *release number/reservation* of the old 3.7.0 Currency workstream, **not** its contract, issue or requirements.
 
 **Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
+**Current Phase 2.0 readiness evidence / gates (docs-only):** `docs/product/3_7_0_PHASE2_SATELLITE_READINESS.md`  
 **Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
 **Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
 **Phase 1 implemented acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** intermediate `9a325ca` release gate **FAIL** at aggregate Node tests (stale public replay source expectation and parser `Style=satellite` failure); PostgreSQL/browser **NOT RUN**. Small corrective commits now in Draft PR #269 `1a93046`, current-head test evidence **NOT RUN**. Former `b3917c7` complete release PASS and supplementary iPad emulation 16/16 PASS are historical and not transferable; physical iPad Safari NOT RUN. Owner merge decision pending.
+**Current status (supersedes the historical 9 October verification snapshots below):** Phase 1 standard-only production functionality accepted and documentation PR #270 merged into `main@7d47010e`. Active production application remains `main@cc7abd41`, Vercel READY; package/footer `3.6.0`. Phase 2 satellite is **NOT ENABLED** on the new authenticated maps; Phase 2.0 read-only readiness found a production-scoped ArcGIS env key *name* and existing public satellite/Story consumer, but account rights, cost, live credentials and source attribution are **NOT VERIFIED**. No new runtime change or provider authorization is established. Phase 3 openAIP remains BLOCKED.
 
 **Trace investigation (9 Oct 2026):** the user supplied the failed GPS Playwright `trace.zip`. The click on `Save & certify flight` completed, and an authenticated `POST /flights/new` began; the network archive records that request with `status=-1` and no response before Playwright's five-second confirmation expectation timed out. The screenshot shows `Saving draft…` and `Saving & certifying…` pending; no server-action error or certification result is evidenced by the trace. Thus **server action slow/incomplete is observed, but GPS persistence/certification failure is not proven**. Next: before any re-run/fixture reset, use a read-only SQL query for the exact known fixture (`user_id=9001`, `OK-E2E`, `2026-10-05`, `off_block=14:00`) to establish whether it reached draft/certified state. Keep the 5s failure as real acceptance FAIL; do not simply waive/skip it. Map SSR mitigation in head `3777fb0` remains NOT TESTED. Source/domain/typecheck PASS; exact-candidate aggregate 1,443/1,443 PASS, production build PASS, isolated PostgreSQL 100/100 PASS. First authoritative browser-risk attempt failed on GPS completion banner visibility (10 desktop pass, 1 fail); two SSR `window is not defined` errors also appeared during map routes. Browser-risk PARTIAL, release FAIL; mobile not executed. Preserve Playwright screenshots/trace for read-only triage, fix only evidenced root cause, retest on new exact candidate. Neither Draft PR merged; provider gates blocked.
 
@@ -1070,8 +1071,8 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 ## Phases and acceptance gates
 
 1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE; independent BLOCK review reconciled; second independent review **APPROVE WITH CHANGES** Phase 1 technical contract. Browser test registration/acceptance design documented, pending product acceptance and implementation. External provider permission separate. No runtime.
-2. **Phase 1 — Shared map-layer controller: IMPLEMENTED DRAFT / REVIEW FINDINGS REMEDIATED / RETEST PENDING.** Draft PR #269 `9a325ca` includes standard-only panes, dark-filter/lifecycle hardening, strict style aliases and a dynamic public-share replay SSR boundary. Earlier `b3917c7` had risk `release_status=PASS` and supplementary iPad Chromium **16/16 PASS**; both are historical after remediation. Current-head verify:iterate, regression/build/PostgreSQL/browser-risk and public share route smoke **NOT RUN**. Independent reviewer APPROVE WITH CHANGES; owner merge/deploy decision, native iPad Safari if required and upstream-provider evidence separately OPEN.
-3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
+2. **Phase 1 — Shared map-layer controller: DONE / PRODUCTION / DOCUMENTED.** PR #269 deployed at `main@cc7abd41` and owner-reported browser smoke plus public Map API 4/4 PASS; PR #270 documents closeout and squash-merged as `7d47010e`. Local exact-candidate risk release PASS per Phase 1 acceptance. Native Safari/independent iPad device proof remains NOT RUN; no full 3.7.0 version bump.
+3. **Phase 2 — Satellite on authenticated map surfaces: 2.0 READINESS / PROVIDER GATES BLOCKED.** Read-only discovery and external gate matrix: `docs/product/3_7_0_PHASE2_SATELLITE_READINESS.md`. Reuse ArcGIS proxy only after validated provider entitlement/attribution/token/quota/export/legacy-Story compatibility and explicit approval; target flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
 4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
 
