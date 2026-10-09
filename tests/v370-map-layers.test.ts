@@ -185,6 +185,7 @@ test("3.7.0 R2 satellite endpoint requires a live session while Standard stays p
 test("3.7.0 R2B provider is explicitly GPS-owned and selects real browser map acceptance", () => {
   const registry = JSON.parse(source("tooling/development-modules.json"));
   const gps = registry.modules.find((item: { id: string }) => item.id === "gps-tracks");
+  assert.ok(gps?.prefixes.includes("lib/satellite-bounded-fetch"));
   assert.ok(gps?.prefixes.includes("lib/satellite-map-provider"),
     "Provider must be GPS-owned, never silently counted as unowned shared runtime");
   const targets = registry.browserAcceptance.pathTargets.find((item: { prefixes?: string[] }) =>
