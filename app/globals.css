@@ -1403,3 +1403,14 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
   .certified-void-actions .danger-button{order:-1}
   .certified-void-success{align-items:flex-start;flex-direction:column}
 }
+
+/* 3.7.0 Satellite trial — single explicit local/preview opt-in per map. */
+.flytally-map-style-control.leaflet-bar{display:grid;gap:5px;max-width:min(245px,calc(100vw - 70px));padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:0 3px 14px #0006}
+.flytally-map-style-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.flytally-map-style-actions button{min-height:44px;min-width:84px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--text);font:inherit;font-size:.76rem;font-weight:750;cursor:pointer}
+.flytally-map-style-actions button[aria-pressed="true"]{border-color:var(--accent);background:var(--panel);color:var(--accent)}
+.flytally-map-style-actions button:focus-visible{outline:3px solid var(--accent2);outline-offset:2px}
+.flytally-map-style-actions button:disabled{opacity:.55;cursor:not-allowed}
+.flytally-map-style-status{display:block;padding:2px 5px;color:var(--text);font-size:.7rem;line-height:1.35}
+.flytally-map-style-status[hidden]{display:none}
+@media(max-width:600px){.flytally-map-style-control.leaflet-bar{padding:4px}.flytally-map-style-actions button{min-width:78px;font-size:.7rem}}
