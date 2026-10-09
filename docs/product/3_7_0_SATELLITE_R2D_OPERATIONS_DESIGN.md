@@ -1,3 +1,11 @@
+## 2026-10-09 — R2D.1 HTTP enabled first run failure and cache-isolation follow-up
+
+**Owner test result:** Fresh ON full release on `fda1c14697358bbdeb0c30dcd0ac184e26b37433` PASS. Subsequent real Next HTTP `enabled` fixture processed logical tile 2 with expected fallback-label marker in SVG (content assertion passed), then stopped because the event recorder did not see a newly intercepted fallback request for that tile. **HTTP enabled FAIL, disabled/missing-token NOT RUN.** The fallback URL from `lib/satellite-map-provider.ts` carries no per-test access token and has `next: { revalidate: CACHE_SECONDS }` (7 days). Prior fixture invocations may have warmed Next Data Cache despite a fresh temporary log file. This is a supported likely root cause; requires successful isolated rerun to validate. Do not remove fallback event assertions or change provider caching to make the test pass.
+
+**Test-only remedy:** use a run-scoped 32-lowercase-hex `FLYTALLY_SATELLITE_HTTP_RUN_ID` generated once for the three-mode series; derive five valid z=18/x/y coordinates via SHA-256, pass to synthetic upstream guard, keep logical scenario identifiers for expected 1/2/3/4/5 fetch/failure behavior. New series gives fresh URL cache keys; passing the same run ID across enabled/disabled/missing-token means the emergency guard is checked against possibly warmed fallback URL without cache erasure. Session, malformed style, exact external HTTP response and provider count assertions stay strict; failure diagnostics only show event kind/logical scenario/outcome. The **disabled branch must not touch any upstream cache or fetch**, regardless of prior warm entries. No production runtime changes.
+
+**Status:** new fixture/test/docs commit requires fresh local syntax/target/iteration and three real HTTP mode reruns, then same-HEAD full Satellite ON/OFF release. Native Safari/live provider/CI/deployment NOT RUN; Draft and production Satellite OFF.
+
 ## 2026-10-09 — R2D.1 implementation status after independent review
 
 **R2D.0 review reconciled and acceptance FROZEN. R2D.1 implementation STAGED / ALL TEST EVIDENCE NOT RUN.** This entry supersedes earlier `Proposed (not frozen)` status for **R2D.1 only**; R2D.2 and R2D.3 remain proposals requiring separate decisions.
