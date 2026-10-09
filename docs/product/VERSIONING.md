@@ -98,10 +98,13 @@ PR titles should start with the numeric target version when practical.
 | 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
 | 3.5.5 | iPad sidebar collapse-control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
-| 3.7.0 | Currency / monetary semantics | ACTIVE |
-| 3.8.0 | Multi-aircraft heterogeneous onboarding proof | NEXT |
-| 3.9.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
+| 3.7.0 | Maps & Aviation Layers | ACTIVE; Phase 0 discovery documented, runtime not started |
+| 3.8.0 | Currency / monetary semantics · #136 | NEXT; former 3.7.0 reservation, scope preserved |
+| 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED; former 3.8.0 reservation |
+| 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED; former 3.9.0 reservation |
 | — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; remains unnumbered until scope/evidence are frozen; 3.5.2 is assigned to always-on GPS/SERA Night suggestions |
 | — | Professional Logbook Platform | RESEARCH; no release number until scope is frozen |
+
+The 9 October 2026 product decision supersedes only the unstarted 3.7.0 Currency **reservation** and shifts the planned numbers shown above; it does not supersede issue #136, currency authority/fail-closed rules or any multi-aircraft acceptance requirement. Historical version references in prior evidence are retained.
 
 Confirmed production, security or data-integrity defects may pre-empt this sequence.
