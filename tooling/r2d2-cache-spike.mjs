@@ -147,14 +147,17 @@ async function main() {
   const require = createRequire(import.meta.url);
   const nextBin = require.resolve("next/dist/bin/next");
   const memoryFile = path.join(REPORT_DIR, "memory-" + RUN + ".jsonl");
-  const baseEnv = { ...process.env, NEXT_TELEMETRY_DISABLED: "1",
+  // Minimal OS-only environment. Never forward arbitrary shell/app/provider secrets.
+  const osAllow = new Set(["PATH", "PATHEXT", "SYSTEMROOT", "COMSPEC", "WINDIR",
+    "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
+    "APPDATA", "LOCALAPPDATA", "LANG", "LC_ALL", "OS", "PROCESSOR_ARCHITECTURE"]);
+  const baseEnv = Object.fromEntries(Object.entries(process.env).filter(
+    ([key]) => osAllow.has(key.toUpperCase())));
+  Object.assign(baseEnv, { NEXT_TELEMETRY_DISABLED: "1",
     FLYTALLY_R2D2_SPIKE: "1",
     FLYTALLY_R2D2_SPIKE_MEMORY_LOG: memoryFile,
     FLYTALLY_R2D2_SPIKE_UPSTREAM: "http://127.0.0.1:" + upstreamPort + "/",
-    NODE_ENV: "production" };
-  // The test mini-app never needs caller's production credentials.
-  for (const name of ["DATABASE_URL", "ARCGIS_ACCESS_TOKEN", "SESSION_SECRET",
-    "NEON_DATABASE_URL", "NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS"]) delete baseEnv[name];
+    NODE_ENV: "production" });
   let child = null;
   const results = [];
   let problem = null;
