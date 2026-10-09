@@ -304,6 +304,10 @@ test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real pro
   assert.match(runner, /flytally_satellite_r1_test\|flytally_sat_r1\|55432/);
   assert.match(runner, /bootstrap-browser-smoke-db\.mjs/);
   assert.match(runner, /NODE_ENV: "production"/);
+  assert.match(runner, /const ORIGIN = \`http:\/\/localhost:\\$\\{PORT\\}\`/);
+  assert.match(runner, /sessions\\[0\\]\\.secure, true/);
+  assert.match(runner, /credentials: "same-origin"/);
+  assert.doesNotMatch(runner, /const requester = context\\.request|headers: \\{\\s*Cookie:/);
   assert.match(runner, /ARCGIS_ACCESS_TOKEN: TOKEN/);
   assert.match(runner, /"git", \["status", "--porcelain"\]/);
   assert.match(runner, /runBrowserSql\("UPDATE auth_sessions SET revoked_at=NOW\(\)/);
