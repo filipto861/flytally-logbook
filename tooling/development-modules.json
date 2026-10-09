@@ -624,7 +624,8 @@
         "components/satellite-map-control",
         "components/client-maps",
         "components/public-flight-map",
-        "lib/map-tile-style"
+        "lib/map-tile-style",
+        "lib/satellite-map-provider"
       ],
       "files": [],
       "risks": [
@@ -886,7 +887,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 388,
+    "auditedTotal": 389,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1037,7 +1038,8 @@
         "prefixes": [
           "components/tracks-map",
           "lib/map-tile-style",
-          "app/api/map-tile/"
+          "app/api/map-tile/",
+          "lib/satellite-map-provider"
         ],
         "files": [],
         "targets": [

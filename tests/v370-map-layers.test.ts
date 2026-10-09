@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { satelliteTile, CACHE_SECONDS, USER_AGENT } from "../lib/satellite-map-provider.ts";
 
 const source = (path: string) => fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
 
@@ -146,7 +147,7 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
   assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
-  assert.equal(registry.ownership.auditedTotal, 388);
+  assert.equal(registry.ownership.auditedTotal, 389);
 });
 
 test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
@@ -179,4 +180,116 @@ test("3.7.0 R2 satellite endpoint requires a live session while Standard stays p
   assert.doesNotMatch(satelliteResponse, /"Access-Control-Allow-Origin": "\*"/);
   assert.match(route, /const upstream = await standardMapTile\(/);
   assert.match(route, /"Access-Control-Allow-Origin": "\*"/);
+});
+
+test("3.7.0 R2B provider is explicitly GPS-owned and selects real browser map acceptance", () => {
+  const registry = JSON.parse(source("tooling/development-modules.json"));
+  const gps = registry.modules.find((item: { id: string }) => item.id === "gps-tracks");
+  assert.ok(gps?.prefixes.includes("lib/satellite-map-provider"),
+    "Provider must be GPS-owned, never silently counted as unowned shared runtime");
+  const targets = registry.browserAcceptance.pathTargets.find((item: { prefixes?: string[] }) =>
+    item.prefixes?.includes("lib/satellite-map-provider"));
+  assert.ok(targets, "Provider changes must trigger authoritative map browser acceptance");
+  assert.ok(targets.targets.includes("map-lifecycle-tracks-desktop"));
+  assert.ok(targets.targets.includes("map-lifecycle-tracks-mobile"));
+  assert.ok(targets.targets.includes("map-tile-style-desktop"));
+  assert.ok(targets.targets.includes("map-tile-style-mobile"));
+});
+
+test("3.7.0 R2B route delegates authenticated Satellite requests to the tested provider path", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  const provider = source("lib/satellite-map-provider.ts");
+  assert.match(route, /import \{ satelliteTile, isImage, CACHE_SECONDS, USER_AGENT \} from "@\/lib\/satellite-map-provider";/);
+  assert.match(route, /if \(wantsSatellite && !\(await getSession\(\)\)\)/);
+  assert.match(route, /const svg = await satelliteTile\(z, x, y, arcgisToken!, referer\)/);
+  assert.match(route, /const upstream = await standardMapTile\(z, x, y, referer\)/);
+  assert.doesNotMatch(provider, /process\.env|from "next\/server"|getSession\(/);
+});
+
+test("3.7.0 R2B Satellite combines imagery and labels using the real upstream URL shape", async () => {
+  const calls: Array<{url: string; init: RequestInit | undefined}> = [];
+  const mock = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    calls.push({ url, init });
+    if (url.includes("World_Imagery")) return new Response("image-bytes", {headers: {"content-type": "image/jpeg"}});
+    if (url.includes("/imagery/labels/")) return new Response("label-bytes", {headers: {"content-type": "image/png"}});
+    throw new Error("Unexpected upstream call: " + url);
+  }) as typeof fetch;
+  const svg = await satelliteTile(7, 64, 32, "fake+token/space", "https://fly-tally.com/", mock);
+  assert.ok(svg);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].url, /World_Imagery\/MapServer\/tile\/7\/32\/64\?token=/);
+  assert.match(calls[1].url, /\/imagery\/labels\/static\/tile\/7\/32\/64\?language=en&token=/);
+  for (const call of calls) {
+    assert.equal(new URL(call.url).searchParams.get("token"), "fake+token/space");
+    assert.equal((call.init?.headers as Record<string, string>).Referer, "https://fly-tally.com/");
+    assert.equal((call.init?.headers as Record<string, string>)["User-Agent"], USER_AGENT);
+    assert.equal((call.init as RequestInit & {next?: {revalidate: number}})?.next?.revalidate, CACHE_SECONDS);
+  }
+  assert.match(svg, /data:image\/jpeg;base64,/);
+  assert.match(svg, /data:image\/png;base64,/);
+  assert.equal((svg.match(/<image /g) ?? []).length, 2);
+  assert.doesNotMatch(svg, /fake\+token|fake%2Btoken/);
+});
+
+test("3.7.0 R2B rejected preferred labels fall back without exposing provider credentials", async () => {
+  const urls: string[] = [];
+  const mock = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    urls.push(url);
+    if (url.includes("World_Imagery")) return new Response("imagery", {headers: {"content-type": "image/jpeg"}});
+    if (url.includes("/imagery/labels/")) return new Response("Denied", {status: 403});
+    if (url.includes("World_Boundaries_and_Places")) return new Response("fallback", {headers: {"content-type": "image/png"}});
+    throw new Error("Unexpected upstream URL");
+  }) as typeof fetch;
+  const svg = await satelliteTile(2, 1, 2, "fake-secret", "https://fly-tally.com/", mock);
+  assert.ok(svg);
+  assert.equal(urls.length, 3);
+  assert.match(urls[2], /World_Boundaries_and_Places\/MapServer\/tile\/2\/2\/1$/);
+  assert.doesNotMatch(urls[2], /token=/);
+  assert.equal((svg.match(/<image /g) ?? []).length, 2);
+  assert.doesNotMatch(svg, /fake-secret/);
+});
+
+test("3.7.0 R2B labels network failure still produces imagery with fallback", async () => {
+  const urls: string[] = [];
+  const mock = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    urls.push(url);
+    if (url.includes("World_Imagery")) return new Response("imagery", {headers: {"content-type": "image/jpeg"}});
+    if (url.includes("/imagery/labels/")) throw new Error("simulated timeout");
+    if (url.includes("World_Boundaries_and_Places")) return new Response("labels", {headers: {"content-type": "image/png"}});
+    throw new Error("Unexpected upstream URL");
+  }) as typeof fetch;
+  const svg = await satelliteTile(3, 1, 2, "fake-token", "https://fly-tally.com/", mock);
+  assert.ok(svg);
+  assert.equal(urls.length, 3);
+  assert.equal((svg.match(/<image /g) ?? []).length, 2);
+});
+
+test("3.7.0 R2B base imagery failure fails closed and skips fallback labels", async () => {
+  const urls: string[] = [];
+  const mock = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    urls.push(url);
+    if (url.includes("World_Imagery")) throw new Error("simulated provider outage");
+    if (url.includes("/imagery/labels/")) return new Response("labels", {headers: {"content-type": "image/png"}});
+    throw new Error("Unexpected upstream URL");
+  }) as typeof fetch;
+  const svg = await satelliteTile(3, 1, 2, "fake-token", "https://fly-tally.com/", mock);
+  assert.equal(svg, null);
+  assert.equal(urls.length, 2);
+});
+
+test("3.7.0 R2B an image-only fallback remains usable without fake labels", async () => {
+  const mock = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("World_Imagery")) return new Response("imagery", {headers: {"content-type": "image/jpeg"}});
+    if (url.includes("/imagery/labels/")) return new Response("Unavailable", {status: 503});
+    if (url.includes("World_Boundaries_and_Places")) return new Response("Unavailable", {status: 503});
+    throw new Error("Unexpected upstream URL");
+  }) as typeof fetch;
+  const svg = await satelliteTile(3, 1, 2, "fake-token", "https://fly-tally.com/", mock);
+  assert.ok(svg);
+  assert.equal((svg.match(/<image /g) ?? []).length, 1);
 });
