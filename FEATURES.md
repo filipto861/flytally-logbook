@@ -1,3 +1,7 @@
+### 3.7.0 R2 Batch 1 — Story map export integrity (STAGED, NOT VERIFIED)
+
+Instagram Story retains Standard and Satellite map selection and PNG sharing. A selected map style may be exported only if all map tiles load successfully with matching style and image response; failed tiles may no longer silently disappear. Duplicate export and switching styles while preparing are disabled; failed export shows a user-friendly visible message. Existing probe/initial satellite behavior intentionally remains for backward compatibility pending R2 server access design. Source/E2E coverage added, NOT RUN. The four authenticated Leaflet map consumers and public replay are untouched.
+
 ## 3.7.0 R2 product requirement — Satellite end-to-end (2026-10-09)
 
 Required: Standard/Satellite selector on authenticated Routes, GPS Tracks, saved-flight GPS replay, GPS import review, and Flight Story preview/export. Preserve GPS playback/markers/pane/viewport and retain Standard fallback on tile failure. Story must support downloadable/shareable PNG with either basemap; no silent removal of existing satellite behavior. Public shared replay remains at its existing Standard-only scope unless separately approved. R2 server enforcement must not incorrectly block approved client flows. No production entitlement or deployment claim is implied. Status: R2 design in progress; runtime/tests NOT RUN.
