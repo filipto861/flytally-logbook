@@ -1,3 +1,7 @@
+## 2026-10-09 — Satellite R2D.2 technical focus confirmed; licence/account review deferred
+
+Owner requests to **skip further licensing questions during technical development**. Continue Option B bounded `no-store` Satellite pipeline, real image-integrity/decoded-resource checks and isolated reproducible tests. Historical licensing/attribution material remains unverified; not declared approved or removed. No user-visible feature or production flag change. M2c technical readiness remains open; M2a/M2b local PASS, M3 not connected.
+
 ## 2026-10-09 — M2c Esri official data sources identified; supplier license/budget still OPEN
 
 Read-only official Esri docs confirm existing World Imagery and Imagery Labels service URL shapes, required attribution and published ArcGIS Location Platform basemap-tiles price model (2M free then USD 0.15/1,000), not account-specific charges. Satellite map and Story already show provisional Esri/provider credits; exact actual source credits and SVG/PNG reuse rights remain unverified. No actual ArcGIS tile measurements, supplier bandwidth, hosting resource figures, full raster decoder proof or production numeric limits. M3 still blocked. No user-facing code changed.
