@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "name": "flytally-r2d2-cache-spike",
+  "version": "0.0.0",
+  "description": "Manual-only temporary Next.js cache/abort diagnostic. Not the FlyTally runtime.",
+  "scripts": {}
+}
