@@ -1,3 +1,7 @@
+## 2026-10-09 — Satellite R2D technical workstream opened (documentation-only; unreleased)
+
+Following R2C local closeout, created dedicated review-only Satellite R2D operations design describing current production code paths and required future emergency-disable, timeout/byte, synthetic request-pressure and multi-instance budget semantics. Updated ROADMAP and FEATURES for owner-approved technical-work reprioritization; external provider rights research is deferred rather than claimed completed. **No runtime code, tests, map behavior, DB schema, auth, deployment environment, real provider calls, merge or deploy changed.** R2D local tests/build/HTTP/Playwright **NOT RUN**; last tested runtime remains R2C `66c3aec4d49bc576c67afd39720fe03d4e48b17c`.
+
 ## 2026-10-09 — Satellite R2 Batch 2C local acceptance closeout (UNRELEASED)
 
 **Implemented in stacked Draft PR #276:** manual-only guarded `tooling/verify-satellite-http.mjs` and isolated `tooling/satellite-http-upstream-fixture.cjs`, source guard in `tests/v370-map-layers.test.ts`, corrections to fixture-local cookie transport (real browser `Secure`/`HttpOnly` session using localhost) and browser fetch response-header handling. These changes did **not** modify the production map route, authentication/session module, Satellite provider, database schema or deployment configuration. Prior test-only errors (HTTP 401 from transport mismatch, stale `headers()` assertion) are retained as historical findings below.
