@@ -1,3 +1,10 @@
+### 2026-10-09 — R1 final local verification (Satellite ON and OFF)
+
+- Exact **runtime/test HEAD** `7661d1dd30ba17948ef517f7ef193358380b67cd`, candidate `7292ab60ebbbaaa1c6e77caadf2f02a8257fcb6d649d41b437ae54c3ab140814`; Windows local owner-run `npm.cmd run verify:release:risk -- --base origin/main` with `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS=true`: **release_status=PASS**; source=PASS (reused), domain=PASS (reused), typecheck=PASS (reused), aggregate=PASS (reused), build=PASS (reused), postgres=PASS (reused), browser desktop Chromium **11/11 PASS**, mobile Chromium **11/11 PASS**, blocked_evidence=none.
+- Same exact HEAD/candidate, owner-run `npm.cmd run verify:release:risk -- --base origin/main --rerun` with `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS=false`: **release_status=PASS**, source/domain/typecheck/aggregate/build/postgres/browser **all freshly PASS**, PostgreSQL acceptance **100/100**, desktop Chromium **11/11** and mobile Chromium **11/11**. PostgreSQL 18.6, dedicated local fixture at `127.0.0.1:55432/flytally_satellite_r1_test`, role `flytally_sat_r1` identity verified before both runs. Initial ON browser failure due to missing local SESSION_SECRET was fixed in ephemeral environment; final ON and OFF acceptance both PASS without a runtime change.
+- ON/OFF share candidate ID because build-time flag is not encoded as distinct candidate identity: **retain separate evidence by flag value and run**; do not treat one build artifact as proving both. This documentation-only commit is **after** the verified HEAD; its exact new Git SHA has NOT been locally reverified. No CI, iPad native/Safari, real Esri network/provider authorization, production smoke, merge or deploy claimed.
+- **R1 implemented + locally verified (runtime HEAD above); documentation closeout recorded.** PR #272 remains DRAFT; production Satellite remains OFF. **R2** needs server-side provider/rights/cost/auth/rate-control design (including legacy public Story satellite probe), independent review and explicit production entitlement before activation. No changes authorized to `flytally-training`.
+
 # FlyTally Logbook Roadmap
 
 **Status:** Active  
@@ -5,7 +12,13 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Maps Phase 1 standard-only implementation MERGED and owner-reported functional production smoke PASS; documentation closure pending PR #270 merge. Phase 2 satellite and Phase 3 openAIP remain externally BLOCKED; full 3.7.0 release not declared.
+**Current active workstream:** 3.7.0 Maps Phase 1 production/documentary CLOSED after merged PR #270 (`7d47010e`). Phase 2.1 Satellite UI trial remains on a Draft feature branch with build-time flag default OFF. Owner-run 233/233 source, 46/46 domain, TypeScript and standalone Next.js build PASS on prior candidate; full release aggregate 1448/1450 FAIL on two stale/mismatched test assertions; targeted test-only fixes staged, corrected head retest pending. PostgreSQL/Playwright, merge and deployment NOT RUN. External Esri rights, real attribution, cost and token/referrer gates BLOCKED. openAIP separately BLOCKED; full 3.7.0 not released.
+
+### Phase 2.2 — Independent review remediation (9 October 2026)
+
+**Exact pre-R1 owner-run verification (9 October 2026):** PR #272 head `3315da278d95285b89d1f95be0a557a849cf6af8`, candidate `0ca40786a1eec48370e3c4f69b7a7f2ec4dc382da3a25febc60847dddcf0681a`, `npm.cmd run verify:release:risk -- --base origin/main` with Satellite flag ON: source 233/233 PASS, domain 46/46 PASS, typecheck PASS, full aggregate PASS, candidate build PASS, isolated PostgreSQL acceptance PASS, desktop Chromium 11/11 PASS, mobile Chromium 11/11 PASS, `release_status=PASS`, `blocked_evidence=none`. This is **local** evidence, not CI or provider validation. **Subsequent R1 test/documentation-only commits change the candidate; current R1 HEAD verification NOT RUN.** Satellite remains OFF in production; Esri provider/legal/token/referrer/attribution/cost gates BLOCKED; PR #272 DRAFT and unmerged.
+
+DeepSeek independent review: APPROVE WITH CHANGES; confirmed R1 gaps F4 (attribution-removal test) and F5 (comment-dependent assertion) addressed in draft feature-branch tests; F7 historical/current status reconciliation recorded here, FEATURES, CHANGELOG and Phase 2.1 contract. **Post-R1 tests, build, PG and browser NOT RUN.** Next: owner local exact-head flag-ON verification, separate flag-OFF regression, then R2 server tile proxy access/cost architecture review. Retain existing `FlightStoryCard` satellite probe behavior pending explicit compatibility decision; do not implicitly authorize Esri production activation.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -1035,11 +1048,12 @@ Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
-# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 LOCAL RELEASE GATE PASS
+# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 2.1 TRIAL DRAFT
 
 **Product decision — 9 October 2026:** Filip approved reprioritizing Maps & Aviation Layers as 3.7.0 immediately after the 3.6.0 production closeout. This supersedes the *release number/reservation* of the old 3.7.0 Currency workstream, **not** its contract, issue or requirements.
 
 **Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
+**Phase 2.1 implementation/trial contract:** `docs/product/3_7_0_PHASE2_SATELLITE_IMPLEMENTATION.md` (draft / feature flag OFF); source/provider readiness is in separate unmerged docs PR #271.  
 **Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
 **Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
 **Phase 1 implemented acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
@@ -1071,7 +1085,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE; independent BLOCK review reconciled; second independent review **APPROVE WITH CHANGES** Phase 1 technical contract. Browser test registration/acceptance design documented, pending product acceptance and implementation. External provider permission separate. No runtime.
 2. **Phase 1 — Shared map-layer controller: IMPLEMENTED DRAFT / REVIEW FINDINGS REMEDIATED / RETEST PENDING.** Draft PR #269 `9a325ca` includes standard-only panes, dark-filter/lifecycle hardening, strict style aliases and a dynamic public-share replay SSR boundary. Earlier `b3917c7` had risk `release_status=PASS` and supplementary iPad Chromium **16/16 PASS**; both are historical after remediation. Current-head verify:iterate, regression/build/PostgreSQL/browser-risk and public share route smoke **NOT RUN**. Independent reviewer APPROVE WITH CHANGES; owner merge/deploy decision, native iPad Safari if required and upstream-provider evidence separately OPEN.
-3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
+3. **Phase 2 — Satellite on authenticated map surfaces: 2.1 OPT-IN DRAFT / NOT RELEASED.** Shared Standard/Satellite selector, no auto-apply, fail-closed tile fallback and all four authenticated surfaces staged on `feat/3.7.0-satellite-selector-trial`; `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS` defaults OFF. Initial local verify:iterate on pre-fix candidate FAIL (source ownership inventory 388 vs 387). Follow-up `4cc87593` local iteration PASS (source 233/233, domain 46/46, typecheck PASS) and standalone Next.js build PASS. Full local risk-release then FAIL at aggregate regression (1448/1450; stale timezone runtime count 387 vs 388, Satellite fallback test asserted incorrect string placement). Both test-only issues corrected in subsequent feature commits; corrected head release retest PENDING. Isolated PostgreSQL fixture prepared/identity-probed on 127.0.0.1:55432; PostgreSQL acceptance and Playwright NOT RUN. External Esri provider entitlement, real attribution, token/referrer, quota/export/Story rights gates remain BLOCKED. Existing public replay and Story pipeline unchanged. Activation in production NOT AUTHORIZED.
 4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
 
