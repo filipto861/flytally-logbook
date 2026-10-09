@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A3.2 lab request-signal/AbortController comparison (STAGED / NOT RUN)
+
+Manual isolated mini Next test instrumentation now records whether an incoming `Request.signal` event occurs when its HTTP client disconnects, with `observe` and explicit `link` variants for cached/uncached upstream requests. JSONL signal trace is stored only under ignored local `tooling/r2d2-cache-spike/reports/`; `--signal-only` runs four new cases without re-running old experiments. Product provider and public/Story/Map/auth behaviors remain unchanged. No hard timeout, size limit, global quota, deploy or Satellite activation; A3.2 evidence NOT RUN.
+
 ## 2026-10-09 — R2D.2-A3.1 downstream disconnect lab observation (NOT a shipped feature)
 
 Local controlled mini Next `fetch` test on exact `911b95864303cfdf95a52be64082e3508ac2aa7e`: abort of its HTTP client at ~300ms left independently running server-side cached and uncached upstream fetches to finish writing full 16MiB. The route never linked `request.signal`; framework signal timing remains unproven. A3.1 is diagnostic evidence only, not an implementation of provider timeout/cancellation or a hard memory bound. Next A3.2 signal-link observation, separate concurrency/production-route parity, reviewed budgets required. No product runtime changes, no activation, merge or deploy.
