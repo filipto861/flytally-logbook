@@ -40,6 +40,16 @@ function preflight() {
     "Install the repository dependencies before running the spike");
   assert.ok(existsSync(path.join(PROJECT, "app", "api", "probe", "route.js")));
   assert.ok(existsSync(path.join(PROJECT, "preload.cjs")));
+  // A nested Next app without its own config can pick up the ancestor
+  // production next.config.ts and then fail to resolve ./lib/ imports.
+  // Explicitly require a self-contained, checked-in lab config.
+  const labConfigPath = path.join(PROJECT, "next.config.mjs");
+  assert.ok(existsSync(labConfigPath), "Isolated Next project must own its config");
+  const labConfig = readFileSync(labConfigPath, "utf8");
+  assert.match(labConfig, /turbopack:\s*\{\s*root:/,
+    "The laboratory must explicitly pin its compiler dependency root");
+  assert.doesNotMatch(labConfig, /commercial-build-guard|from\s+["']\.\.\/\.\.\/lib\//,
+    "Never inherit production application build controls via the lab configuration");
   return command("git", ["rev-parse", "HEAD"], "commit");
 }
 async function freePort() {
