@@ -33,7 +33,7 @@ const timer = setInterval(() => {
     const m = process.memoryUsage();
     fs.appendFileSync(logfile, JSON.stringify({ t: Date.now(), pid: process.pid,
       rss: m.rss, heapUsed: m.heapUsed, external: m.external,
-      arrayBuffers: m.arrayBuffers }) + "\\n");
+      arrayBuffers: m.arrayBuffers }) + "\n");
   } catch {}
 }, 100);
 timer.unref();
