@@ -7,8 +7,12 @@ const net = require("node:net");
 const tls = require("node:tls");
 
 const TOKEN = process.env.ARCGIS_ACCESS_TOKEN;
-if (!/^FlyTally-R2C-fixture-token-[a-f0-9]{24}$/.test(TOKEN || "")) {
-  throw new Error("Satellite HTTP fixture requires a generated, non-production provider token.");
+const MODE = process.env.FLYTALLY_SATELLITE_HTTP_FIXTURE_MODE || "enabled";
+if (!["enabled", "disabled", "missing-token"].includes(MODE)) {
+  throw new Error("Satellite HTTP fixture requires an explicit supported mode.");
+}
+if (MODE === "missing-token" ? TOKEN !== "" : !/^FlyTally-R2C-fixture-token-[a-f0-9]{24}$/.test(TOKEN || "")) {
+  throw new Error("Satellite HTTP fixture requires controlled non-production provider credentials.");
 }
 if (process.env.FLYTALLY_SATELLITE_HTTP_FIXTURE !== "1" ||
     process.env.FLYTALLY_LOCAL_POSTGRES !== "1" ||
