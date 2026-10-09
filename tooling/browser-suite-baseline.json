@@ -52,7 +52,8 @@
     "map panes preserve standard basemap ordering and route interactions",
     "GPS map theme changes preserve a live map instance and viewport",
     "flight replay retains map and playback state through theme changes",
-    "GPS import review retains its map pane across theme changes"
+    "GPS import review retains its map pane across theme changes",
+    "map tile endpoint rejects unsupported and duplicate styles before upstream fetch"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"
@@ -68,10 +69,10 @@
     "ciRetries": 1
   },
   "expectedFullGate": {
-    "passed": 104,
+    "passed": 106,
     "skipped": 2,
     "failed": 0,
-    "totalExecutions": 106
+    "totalExecutions": 108
   },
   "fixtureContract": {
     "browserDb": "e2e/browser-db.mjs",
