@@ -10,6 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **Post-docs-merge integration test repair (9 October 2026; NOT RELEASED):** docs PR #268 squash-merged to `main@5944f917`; feature PR #269 integrated it on `03257ee` with application/runtime trees unchanged. Local iteration `source=FAIL` 232/233 (one stale historical `v300-navigation-hierarchy` assertion still bound Currency to 3.7.0) and release `release_status=FAIL` stopped at same source gate; build, aggregate, PostgreSQL and browser **NOT RUN** on that candidate. Test-only correction `f0a0e0b` now asserts Maps 3.7.0 and Currency 3.8.0; new exact-head testing **PENDING**, not PASS. Previous `5538e0c` 1,447/1,447 + PostgreSQL 100/100 + desktop/mobile 12/12 each release PASS remains historical. Product strict-style decision A approved; no runtime/DB/deploy changes.
+
+
 - **Phase 1 compatibility decision finalized (9 October 2026; NOT MERGED/DEPLOYED):** product owner accepted **A — strict HTTP 400** on duplicate, malformed or unknown `style` parameters; omitted `style` continues to select standard map. Deliberate incompatibility with legacy duplicate first-value parsing is approved. No extra runtime commit required: `5538e0c` passed exact-candidate local release gate. Satellite/openAIP external production gates are unchanged and blocked.
 
 
