@@ -18,7 +18,10 @@ import { probePostgresConnection } from "./postgres-cli.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 3107;
-const ORIGIN = `http://127.0.0.1:${PORT}`;
+// Production issues Secure cookies. Chromium permits these over the special
+// localhost host, but not the explicit 127.0.0.1 origin on some clients.
+// This is a local HTTP harness concession, NOT an HTTPS transport test.
+const ORIGIN = `http://localhost:${PORT}`;
 const TOKEN = "FlyTally-R2C-fixture-token-" + randomBytes(12).toString("hex");
 const SHA = /^([0-9a-f]{40})$/;
 function command(exe, args, label, env = process.env) {
@@ -65,7 +68,7 @@ async function portAvailable() {
   const server = net.createServer();
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(PORT, "127.0.0.1", resolve);
+    server.listen(PORT, "localhost", resolve);
   });
   await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
 }
@@ -97,7 +100,7 @@ async function main() {
   let stderrTail = "";
   try {
     child = spawn(process.execPath, ["--require", path.join(ROOT, "tooling", "satellite-http-upstream-fixture.cjs"),
-      nextBin, "start", "-H", "127.0.0.1", "-p", String(PORT)], {
+      nextBin, "start", "-H", "localhost", "-p", String(PORT)], {
       cwd: ROOT, stdio: ["ignore", "pipe", "pipe"],
       env: { ...dbEnv, NODE_ENV: "production", ARCGIS_ACCESS_TOKEN: TOKEN,
         FLYTALLY_SATELLITE_HTTP_FIXTURE: "1", FLYTALLY_SATELLITE_FIXTURE_LOG: logFile },
@@ -125,15 +128,37 @@ async function main() {
     });
     const page = await context.newPage();
     await loginBrowserPilot(page, "/map");
-    const requester = context.request; // Shares signed-in browser cookies.
+    // Confirm the actual browser persisted the server-issued session, and
+    // do not copy, print, override or inject its opaque value into requests.
+    const browserCookies = await context.cookies(ORIGIN);
+    const sessions = browserCookies.filter(cookie => cookie.name === "logbook_session");
+    assert.equal(sessions.length, 1, "Production login must set exactly one browser session cookie");
+    assert.equal(sessions[0].httpOnly, true, "Session must remain HttpOnly");
+    assert.equal(sessions[0].secure, true, "Production session must remain Secure");
+    assert.equal(new URL(page.url()).origin, ORIGIN, "Login must end at isolated localhost origin");
+
+    // Use browser-native fetch, not Playwright's Node-side APIRequestContext:
+    // cookie policy and browser transport must match actual user behavior.
+    async function browserTile(x) {
+      return page.evaluate(async tileX => {
+        const response = await fetch(`/api/map-tile/3/${tileX}/2?style=satellite`, {
+          credentials: "same-origin", cache: "no-store",
+        });
+        return {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: await response.text(),
+        };
+      }, x);
+    }
 
     async function expectedTile(x, status, marker, labelsMarker = null) {
-      const response = await get(requester, x);
-      assert.equal(response.status(), status, `Satellite status at x=${x}`);
-      assert.equal(response.headers()["cache-control"], status === 200 ? "private, no-store" : "no-store",
+      const response = await browserTile(x);
+      assert.equal(response.status, status, `Satellite status at x=${x}; session cookie present: ${sessions.length === 1}`);
+      assert.equal(response.headers["cache-control"], status === 200 ? "private, no-store" : "no-store",
         "Authenticated success is private; unavailable tiles must never be cacheable");
-      assert.equal(response.headers()["x-flytally-map-style"], status === 200 ? "satellite" : "unavailable");
-      const body = await response.text();
+      assert.equal(response.headers["x-flytally-map-style"], status === 200 ? "satellite" : "unavailable");
+      const body = response.body;
       assert.ok(!body.includes(TOKEN), "Fake token must never be disclosed in response");
       if (status === 200) {
         assert.match(response.headers()["content-type"], /^image\/svg\+xml/);
@@ -157,8 +182,8 @@ async function main() {
     assert.ok(!events.some(event => event.kind === "fallback" && event.x === "3"), "No fallback after failed base");
     const beforeRevocation = events.length;
     runBrowserSql("UPDATE auth_sessions SET revoked_at=NOW() WHERE user_id=9001 AND revoked_at IS NULL;");
-    const afterRevocation = await get(requester, 1);
-    assert.equal(afterRevocation.status(), 401, "Revoked login must fail before cached provider response");
+    const afterRevocation = await browserTile(1);
+    assert.equal(afterRevocation.status, 401, "Revoked login must fail before cached provider response");
     assert.equal(upstreamEvents(logFile).length, beforeRevocation);
     const standard = await anonymous.get("/api/map-tile/3/1/2?style=map");
     assert.equal(standard.status(), 200, "Public Standard must remain available");
