@@ -1,3 +1,9 @@
+## 2026-10-09 — R2D.0 independent review reconciled / R2D.1 implementation next
+
+DeepSeek read-only independent verdict **APPROVE WITH CHANGES** reconciled against actual map endpoint, provider, Story, Leaflet control, fixture and test contracts in `docs/product/3_7_0_SATELLITE_R2D_OPERATIONS_DESIGN.md`. **R2D.0 design/review CLOSED, no runtime code/test claims.** R2D.1 contract frozen: invalid/duplicate style 400 → anonymous/revoked Satellite 401 → missing token 503 → authenticated server-only exact `FLYTALLY_SATELLITE_UPSTREAM_DISABLED=true` 503/no-store/unavailable with zero provider/cache fetch → existing enabled provider path. Public Standard map unaffected. No in-response Standard image on disabled Satellite; client already falls back via separate `style=map` request; Story preview/PNG auto-probe behavior preserved. Existing 503 `Cache-Control: no-store` retained, not a new `private` contract. Env kill switch is deployment-scoped and not instant across instances.
+
+**Next R2D.1** tiny isolated code patch + source guard + synthetic Next HTTP disabled and enabled tests; **tests NOT RUN until owner executes**. After PASS, R2D.2 numeric I/O policy design; independent license research deferred at owner request, not approved for activation. Production flag OFF, all stacked PRs Draft, no deploy.
+
 ## 2026-10-09 — Satellite R2D technical hardening prioritized (owner direction; review only)
 
 **Current milestone: R2D.0 DESIGN/REVIEW STAGED, NOT IMPLEMENTED.** Owner requested continuing Satellite implementation without opening a separate licence-research workstream now. This reprioritizes the *next work*, not a production permission or deployment decision. Previous R2C closeout remains authoritative: tested runtime `66c3aec4d49bc576c67afd39720fe03d4e48b17c`, HTTP fixture PASS, independent Satellite ON/OFF local release PASS; closeout docs SHA `8e0851012e271927157e7d5f3ae6a1aca76d6715`.
