@@ -126,6 +126,8 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
 });
 
 test("flight replay retains map and playback state through theme changes", async ({ page }) => {
+  // Public-share SSR follow-up adds two server reads and an isolated DB fixture.
+  test.setTimeout(60_000);
   test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
   seedIsolatedMapFixture();
   await openMap(page, "/flights/9913?tab=gps");
@@ -142,7 +144,7 @@ test("flight replay retains map and playback state through theme changes", async
   // synthetic share; route-only SSR smoke is insufficient to load Leaflet.
   const token = "FlyTallyPhase1PublicReplay20261009";
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const absent = await page.request.get("/f/" + token);
+  const absent = await page.request.get("/f/FlyTallyPhase1SchemaProbe20261009");
   expect(absent.status()).toBe(404); // also initializes the isolated share schema
   runBrowserSql(`UPDATE flights SET certified_at=NOW() WHERE id=9913 AND user_id=9001;
     DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913;
