@@ -13,6 +13,10 @@ It answers **what the product has, what is intentionally constrained, and what i
 - No new satellite/openAIP user toggle, layer activation or public export rights are delivered. Satellite/openAIP remain externally blocked; old iPad emulation belongs to an earlier SHA.
 - Status remains unmerged Draft feature, not a production capability until release closeout.
 
+## Phase 1 API compatibility — owner decision A (9 October 2026)
+
+**Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
+
 ## Core logbook — IMPLEMENTED
 
 - Multi-user private electronic pilot logbook.
@@ -153,7 +157,7 @@ Important boundary:
 - Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
 - Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
 
-### 3.7.0 — Maps & Aviation Layers — PHASE 1 STANDARD-ONLY DRAFT / REVIEW FIXES RETEST PENDING
+### 3.7.0 — Maps & Aviation Layers — PHASE 1 STANDARD-ONLY LOCAL RELEASE PASS / UNMERGED
 
 - **11th local verification / regression patch (9 Oct 2026):** user fast-forwarded exact feature head `9a325ca`, guarded dedicated PostgreSQL at 127.0.0.1:55432 and ran `verify:iterate` **PASS** (source 233/233, domain 46/46, TypeScript PASS, `candidate_id=473c1318a0797ea474751f4207a96a39667687cc729035002c7652fb92ea3f64`, no evidence blockers). `verify:release:risk` returned **`release_status=FAIL`, `aggregate=FAIL`** because two Node source/unit tests failed: (1) historical public-share viewer test asserted a direct `FlightTrackPlayer` string in public page, incompatible with the deliberate SSR-safe `PublicFlightMap` boundary; (2) case-variant `Style=satellite` was not rejected by case-sensitive malformed-style key matcher (returned standard `map` instead of `null`). This is not PostgreSQL/browser failure: those gates were **NOT RUN** after aggregate FAIL. PR #269 now on unverified feature head `1a930465ea3d465cb20d6eac17712d9511888436`: update public-share source contract to assert the dynamic `PublicFlightMap -> FlightTrackPlayer` delegation and `ssr:false`, reject case-variant `style*` keys in parser, and include uppercase/mixed alias cases in unit + HTTP e2e. **New-head tests/build/PostgreSQL/browser NOT RUN**; prior 24-browser/100-PG and iPad 16/16 PASS only on `b3917c7` are historical. Both PRs remain Draft, no merge/deploy. Owner compatibility decision for legacy duplicate style still open.
 
