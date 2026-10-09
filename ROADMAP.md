@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Phase 1 `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **LOCAL RELEASE PASS** (aggregate 1,447/1,447; PG 100/100; browser desktop/mobile 12/12 each; build PASS), but PRs #268/#269 Draft/unmerged; release/production NOT DONE. Owner APPROVED strict duplicate-style HTTP 400 (decision A, 9 Oct); satellite/openAIP provider gates BLOCKED.
+**Current active workstream:** 3.7.0 Phase 1 integration / post-docs-merge regression fix on feature PR #269; **exact corrected-candidate release NOT RUN**. Docs PR #268 merged; latest post-integration test failed 232/233 source-only due to stale v3.0 roadmap assertion; test-only correction is pending verification. Last complete local release PASS belongs to `5538e0c4`; owner approved decision A. Satellite/openAIP provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -42,6 +42,8 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 
 **Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
 
+**Latest Phase 1 integration status (9 October 2026):** documentation PR #268 was squash-merged into `main` as `5944f917797b6fbc55d61947a1e29554f7865eb4`; feature PR #269 incorporated that `main` via non-rebased merge commit `03257eefd7395f6063df2631de1dc2e02d67edab`. The first post-integration local iteration and release attempt both **FAILED only at source-contract 232/233** because the historical `v300-navigation-hierarchy` test still expected Currency at version 3.7.0. Candidate `675da4414d9cc63b1dd0555c40507a565f6757bd3689a96c1d284ccca0c30578` was FAIL; aggregate/build/PostgreSQL/browser did **NOT RUN**. Test-only correction `f0a0e0b762d0f9859a7317958c267d739283cd6a` asserts 3.7.0 Maps and 3.8.0 Currency without changing runtime or roadmap decisions. Exact post-correction verification remains **NOT RUN** until owner executes it on the final branch HEAD. Prior local release PASS on `5538e0c4...` is historical and cannot be claimed for the new candidate. PR #269 stays Draft/unmerged, no production deployment or DB migration; satellite and openAIP provider gates remain BLOCKED. Owner decision A (strict duplicate-style HTTP 400) remains APPROVED.
+
 ## Current production baseline
 
 | Area | State |
@@ -72,7 +74,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 local risk release PASS on `5538e0c`; documentation review, Draft PR merges and production closure pending; Phase 2/3 external provider gates BLOCKED |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Docs PR #268 MERGED; feature PR #269 Draft, post-integration source-contract fix awaiting exact-head re-verify; last complete local PASS `5538e0c` is historical; Phase 2/3 provider gates BLOCKED |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
