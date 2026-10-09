@@ -61,3 +61,14 @@ test("initial aircraft rate requires an explicit valid effective date",()=>{
   assert.match(initialRateDateError(2500, "")??"",/effective date/i);
   assert.match(initialRateDateError(2500, "08.10.2026")??"",/effective date/i);
 });
+
+
+test("P1.5 historical rate selection depends only on stored date strings",()=>{
+  const rates=[
+    {valid_from:"2025-12-31",price_per_hour:2100},
+    {valid_from:"2026-01-01",price_per_hour:2400},
+  ];
+  assert.equal(effectiveRateForDate(rates,"2025-12-31")?.price_per_hour,2100);
+  assert.equal(effectiveRateForDate(rates,"2026-01-01")?.price_per_hour,2400);
+  assert.equal(effectiveRateForDate(rates,"2026-01-02")?.valid_from,"2026-01-01");
+});

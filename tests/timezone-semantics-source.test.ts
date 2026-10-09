@@ -84,3 +84,59 @@ test("P1.4 rejects a rate-bearing aircraft save before persistence when the effe
   assert.match(persist,/if\(initialPrice!==null&&initialPrice>0\)queries\.push\(sql`INSERT INTO rates/);
   assert.doesNotMatch(persist,/initialPrice!==null&&initialPrice>0&&validIsoDate\(validFrom\)/);
 });
+
+
+test("P1.5 active GPS timestamp consumers stay on UTC authority",()=>{
+  const kml=read("lib/kml.ts");
+  const actions=read("app/(protected)/flights/actions.ts");
+  const review=read("lib/data/flight-track-review.ts");
+  const form=read("components/kml-import-form.tsx");
+
+  assert.match(kml,/export \{ utcParts as localParts \} from "\.\/track-time";/);
+  assert.match(actions,/import \{[^}]*\blocalParts\b[^}]*\} from "@\/lib\/kml";/);
+  assert.doesNotMatch(actions,/localParts[^\n]*from "@\/lib\/track-processing"/);
+  assert.match(review,/import \{[^}]*\blocalParts\b[^}]*\} from "@\/lib\/kml";/);
+  assert.doesNotMatch(review,/localParts[^\n]*from "@\/lib\/track-processing"/);
+  assert.match(form,/import \{ trackTimeBasis,utcParts,type TrackTimeBasis \} from "@\/lib\/track-time";/);
+  assert.doesNotMatch(form,/\blocalParts\b/);
+});
+
+test("P1.5 backup and exact restore preserve calendar-date fields without timezone conversion",()=>{
+  const backup=read("lib/account-backup.ts");
+  const restore=read("lib/account-restore-v6.ts");
+  const portable=read("lib/portable-backup.ts");
+
+  assert.match(backup,/SELECT \* FROM flights WHERE user_id=/);
+  assert.match(backup,/SELECT \* FROM rates WHERE user_id=/);
+  assert.match(backup,/SELECT \* FROM user_settings WHERE user_id=/);
+
+  assert.match(restore,/INSERT INTO user_settings SELECT \(json_populate_record\(NULL::user_settings,item\)\)\.\*/);
+  assert.match(restore,/INSERT INTO rates SELECT \(json_populate_record\(NULL::rates,item\)\)\.\*/);
+  assert.match(restore,/INSERT INTO flights SELECT \(json_populate_record\(NULL::flights,item\)\)\.\*/);
+  const stageFlight=restore.slice(restore.indexOf("function stageFlight"),restore.indexOf("function stageFstd"));
+  assert.doesNotMatch(stageFlight,/\bdate\b|valid_from|new Date|Date\.parse/);
+
+  assert.match(portable,/flightRestoreKey\(row:BackupRow\).*String\(row\.date\?\?""\)\.slice\(0,10\)/);
+  assert.doesNotMatch(portable,/flightRestoreKey[^{]*\{[^}]*new Date\(row\.date/s);
+});
+
+test("P1.5 export print and rate selection keep persisted calendar dates date-only",()=>{
+  const exportRoute=read("app/api/export/route.ts");
+  const printPage=read("app/(protected)/print/page.tsx");
+  const rateHistory=read("lib/rate-history.ts");
+
+  assert.match(exportRoute,/SELECT f\.date,f\.evidence/);
+  assert.match(exportRoute,/date::text>=\$\{from\}::text/);
+  assert.match(exportRoute,/date::text<=\$\{to\}::text/);
+  assert.doesNotMatch(exportRoute,/new Date\([^\n]*(?:row\.)?date|Date\.parse\([^\n]*(?:row\.)?date/i);
+
+  assert.match(printPage,/SELECT f\.date,f\.evidence/);
+  assert.match(printPage,/f\.date::text>=\$\{from\}::text/);
+  assert.match(printPage,/const date=\(value:unknown\)=>\{const match=text\(value\)\.match/);
+  assert.doesNotMatch(printPage,/new Date\([^\n]*(?:row\.)?date|Date\.parse\([^\n]*(?:row\.)?date/i);
+
+  const effective=rateHistory.slice(rateHistory.indexOf("export function effectiveRateForDate"),rateHistory.indexOf("export function shouldResolveStoredPrice"));
+  assert.match(effective,/rate\.valid_from<=date/);
+  assert.match(effective,/localeCompare/);
+  assert.doesNotMatch(effective,/new Date|Date\.parse|toISOString/);
+});

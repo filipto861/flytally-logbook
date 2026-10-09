@@ -66,7 +66,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
-| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Active after 3.5.5 production closeout |
+| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Phase 1 verified; PR #265 merge / production closeout pending |
 | 10 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Next after 3.6.0 |
 | 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
@@ -645,7 +645,7 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 
 ---
 
-# 3.6.0 — Saved-date / timezone semantics — ACTIVE
+# 3.6.0 — Saved-date / timezone semantics — ACTIVE / RELEASE CLOSEOUT
 
 Issue: #144  
 Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
@@ -654,9 +654,9 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: Phase 1 — saved-date / timezone semantics — ACTIVE (discovery/design freeze before runtime code).**
+**Current step: 3.6.0 merge / production closeout. Phase 1 is DONE / VERIFIED on PR #265 exact candidate `56e3b05620ee4c35693994e1e60276387a41fe97`.**
 
-Current milestone: **Phase 1 — saved-date / timezone semantics — ACTIVE (discovery/design)**. Phase 0A–0F are DONE / VERIFIED and integrated into canonical `main` via PR #255.
+Current milestone: **Phase 1 — saved-date / timezone semantics — DONE / VERIFIED**. Phase 0A–0F are DONE / VERIFIED and integrated into canonical `main` via PR #255; PR #265 remains the release-closeout branch until merge and production verification.
 
 Phase 0D closeout:
 - independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
@@ -842,7 +842,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0F is complete and PR #255 is merged. Phase 1 discovery/design is now the next roadmap step.
+Phase 0F is complete and PR #255 is merged. Phase 1 is now DONE / VERIFIED; the next step is PR #265 merge followed by 3.6.0 production closeout.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
@@ -873,7 +873,7 @@ Closeout:
 - FEATURES was reviewed and remains unchanged; no product capability, runtime, schema, certification, backup or timezone-semantics change occurred in 0F;
 - Phase 0 acceptance is satisfied and integrated into canonical `main` via PR #255 (`2238d0e1a645a4f9b584b291ecc12fbf8a2ee230`).
 
-## Phase 1 — Saved-date / timezone semantics — ACTIVE (P1.5 GPS / BACKUP INVARIANCE + CLOSEOUT)
+## Phase 1 — Saved-date / timezone semantics — DONE / VERIFIED
 
 Detailed contract: `docs/product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md`  
 Issue: #144  
@@ -989,16 +989,35 @@ Delivered behavior:
 - explicit effective dates and historical `rates.valid_from` values remain authoritative and date-only;
 - database workspace ownership was corrected from stale `data-recovery` classification to `aircraft-airports` without weakening evidence: aircraft-airports now retains browser acceptance and requires PostgreSQL acceptance for persistence risk.
 
-### P1.5 — GPS / backup invariance + exact-candidate closeout — ACTIVE
+### P1.5 — GPS / backup invariance + exact-candidate closeout — DONE / VERIFIED
 
-Next scope:
-- prove the active GPS/FCL.050 timestamp path remains UTC and fail-closed;
-- decide dormant legacy Prague `localParts` retirement only from actual dependency evidence;
-- prove backup/restore/export/print preserve `flights.date` and `rates.valid_from` without timezone reinterpretation;
-- prove rate selection remains date-only;
-- perform a production **read-only** timezone-value census using the same runtime validation semantics before declaring the fail-closed rollout safe;
-- if production census access is unavailable or finds invalid persisted values, release remains blocked until explicitly resolved;
-- run exact risk-scoped verification and reconcile ROADMAP / FEATURES / CHANGELOG / DEVELOPMENT.
+Evidence candidate:
+- active server GPS consumers continue to import `localParts` only through `@/lib/kml`, whose explicit export maps it to UTC `utcParts`;
+- client GPS review imports `utcParts` directly from `lib/track-time`; explicit offsets normalize to UTC and timezone-less timestamps remain unavailable;
+- date-boundary tests now cover +14:00 / -11:00 source offsets without user-timezone participation;
+- the dormant Prague `localParts` helper in `lib/track-processing.ts` is **retained, not promoted**: no active audited authoritative path uses it, but removal is deferred because exhaustive repo-wide retirement proof was not established in this milestone;
+- account backup exports raw flights, rates and settings rows; exact restore inserts date-only rows with PostgreSQL `json_populate_record` and does not run `flights.date` / `rates.valid_from` through JavaScript Date conversion;
+- independent final review found no timezone-semantic defect but flagged that source inspection alone was weaker than PostgreSQL-backed proof for restore; accepted and strengthened with a dedicated PostgreSQL integration assertion showing `json_populate_record` preserves date-only values identically under Pacific/Auckland and America/Los_Angeles session time zones while production restore continues to use that primitive for flights/rates;
+- portable-backup evidence now proves a saved timezone plus `flight.date` and `rate.valid_from` retain their literal calendar strings;
+- CSV/XLS/print keep flight dates date-only; the export route UTC date used for the **filename stamp** is not flight-date authority;
+- historical rate selection remains lexical/date-only and is covered at a calendar-year boundary;
+- adjacent licence/recency/print-status "today" behavior remains issue #258 and is not changed here.
+
+Production read-only census — **PASS, point-in-time 8 October 2026**:
+- 5 users total; 5/5 have `user_settings`;
+- missing settings: 0; NULL timezone: 0; blank timezone: 0;
+- configured timezone values: `Europe/Prague` ×5;
+- invalid under the same Node 24 `Intl.DateTimeFormat` + raw-offset rejection semantics as `normalizeSaveableTimeZone`: **0**;
+- census used aggregate/grouped SELECT-only queries against the production database; no user identity data was emitted and no mutation was executed;
+- the temporary non-persistent execution sandbox was stopped after the census.
+
+No runtime semantic change, DB migration, historical backfill or backup-format bump is introduced by this P1.5 evidence candidate.
+
+Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f988` on head `56e3b05620ee4c35693994e1e60276387a41fe97` is VERIFIED: targeted P1.5 evidence **38/38 PASS**, TypeScript **PASS**, planner selected `fullTests=true` + PostgreSQL acceptance with no blockers, `verify:iterate` **PASS**, aggregate regression **1433/1433 PASS**, and full PostgreSQL acceptance **100/100 PASS** including the cross-session-timezone date-only restore test. Build, scale and browser were correctly N/A; required `postgres-acceptance` was satisfied; blocked evidence none.
+
+FEATURES and DEVELOPMENT were reviewed in the same closeout cycle. FEATURES is updated to the implemented/verified Phase 1 capability; DEVELOPMENT requires no process change. No runtime semantic change, DB migration, historical backfill, certification rewrite or portable-backup format bump is introduced by P1.5.
+
+Phase 1 acceptance is satisfied. 3.6.0 remains ACTIVE only for PR #265 merge and production closeout.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
