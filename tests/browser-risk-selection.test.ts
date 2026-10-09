@@ -234,3 +234,13 @@ test("3.7.0 map browser spec is explicitly registered in the authoritative regis
   assert.equal(selected.length,10);
   assert.ok(selected.every((target:{spec:string})=>target.spec==="e2e/map-layers.spec.mjs"));
 });
+
+
+test("3.7.0 public shared-flight Leaflet boundary selects player browser targets",()=>{
+  const {result,payload}=plan(["components/public-flight-map.tsx"]);
+  assert.equal(result.status,0);
+  const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
+  assert.ok(ids.includes("map-lifecycle-player-desktop"));
+  assert.ok(ids.includes("map-lifecycle-player-mobile"));
+  assert.deepEqual(payload.plan.blockedEvidence,[]);
+});
