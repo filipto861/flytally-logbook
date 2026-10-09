@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269: final feature head `5b011c8` locally verified **`npm test` 1,443/1,443 PASS** (0 failed, 0 skipped; 9 Oct 2026). Previous typecheck/build PASS was for earlier head `fb0471c`; exact-current-candidate `verify:iterate`, typecheck, build, PostgreSQL, Playwright and merge remain PENDING. Phase 2/3 provider gates BLOCKED.
+**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269, feature head `5b011c8`: local `npm test` **1,443/1,443 PASS** and `verify:iterate -- --base origin/main` **PASS** on Node 24.19.0: source 232/232, domain 46/46, typecheck PASS, blocked_evidence none, candidate `afab37e13e2568a966c0821dc48f842427b1416dd5ccec35bc6be964f328a35a`. `release_status=NOT EVALUATED`: current build, PostgreSQL acceptance, browser-risk and final risk release still PENDING. Phase 2/3 provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
