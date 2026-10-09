@@ -310,7 +310,7 @@ test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real pro
   assert.match(runner, /assert\.match\(response\.headers\["content-type"\]/);
   assert.doesNotMatch(runner, /assert\.match\(response\.headers\(\)\["content-type"\]/);
   assert.doesNotMatch(runner, /const requester = context\.request|headers:\s*\{\s*Cookie:/);
-  assert.match(runner, /ARCGIS_ACCESS_TOKEN: TOKEN/);
+  assert.match(runner, /ARCGIS_ACCESS_TOKEN: MODE === "missing-token" \? "" : TOKEN/);
   assert.match(runner, /"git", \["status", "--porcelain"\]/);
   assert.match(runner, /runBrowserSql\("UPDATE auth_sessions SET revoked_at=NOW\(\)/);
   assert.match(fixture, /net\.Socket\.prototype\.connect = restrictConnect/);
