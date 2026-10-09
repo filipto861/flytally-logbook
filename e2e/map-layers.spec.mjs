@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { loginBrowserPilot } from "./browser-actions.mjs";
 import { resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
 
@@ -178,7 +179,7 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
 
 test("flight replay retains map and playback state through theme changes", async ({ page }) => {
   // Public-share SSR follow-up adds two server reads and an isolated DB fixture.
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
   seedIsolatedMapFixture();
   await openMap(page, "/flights/9913?tab=gps");
@@ -210,6 +211,60 @@ test("flight replay retains map and playback state through theme changes", async
     const publicMap = await checkStandardPanes(page, ".player-responsive-map");
     await expect(publicMap.getByRole("button", { name: "Satellite map" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
+
+    // R2 Story acceptance shares the same disposable certified flight, not a
+    // second test/fixture. No real provider request is possible in this route.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
+      Object.defineProperty(navigator, "canShare", { configurable: true, value: undefined });
+    });
+    await page.route("**/api/map-tile/**", route => {
+      const style = new URL(route.request().url()).searchParams.get("style") ?? "map";
+      return route.fulfill({
+        status: 200,
+        contentType: "image/svg+xml",
+        headers: { "X-FlyTally-Map-Style": style },
+        body: TILE,
+      });
+    });
+    await page.goto("/flights/9913/share");
+    const story = page.locator(".story-card-tool");
+    const satelliteStory = story.getByRole("button", { name: "Satellite" });
+    const standardStory = story.getByRole("button", { name: "Standard" });
+    await expect(satelliteStory).toBeVisible();
+    await expect(satelliteStory).toHaveAttribute("aria-pressed", "true");
+    await standardStory.click();
+    await expect(story.locator("image[data-map-tile]").first()).toHaveAttribute("href", /style=map/);
+    const downloadStandard = page.waitForEvent("download");
+    await story.getByRole("button", { name: /Share Story/ }).click();
+    const standardPng = await downloadStandard;
+    expect(standardPng.suggestedFilename()).toMatch(/\.png$/);
+    const standardBytes = await readFile(await standardPng.path());
+    expect(standardBytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(standardBytes.length).toBeGreaterThan(1000);
+    await expect(story.getByRole("alert")).toHaveCount(0);
+
+    await satelliteStory.click();
+    await expect(story.locator("image[data-map-tile]").first()).toHaveAttribute("href", /style=satellite/);
+    const downloadSatellite = page.waitForEvent("download");
+    await story.getByRole("button", { name: /Share Story/ }).click();
+    const satellitePng = await downloadSatellite;
+    expect(satellitePng.suggestedFilename()).toMatch(/\.png$/);
+    const satelliteBytes = await readFile(await satellitePng.path());
+    expect(satelliteBytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(satelliteBytes.length).toBeGreaterThan(1000);
+    expect(satelliteBytes.equals(standardBytes)).toBe(false);
+    await expect(story.getByRole("alert")).toHaveCount(0);
+
+    // A failed tile may not be silently stripped from a supposedly valid PNG.
+    await page.route("**/api/map-tile/**", route =>
+      route.request().url().includes("style=satellite")
+        ? route.fulfill({ status: 502, body: "Unavailable" })
+        : route.fulfill({ status: 200, contentType: "image/svg+xml",
+            headers: { "X-FlyTally-Map-Style": "map" }, body: TILE }));
+    await story.getByRole("button", { name: /Share Story/ }).click();
+    await expect(story.getByRole("alert")).toContainText("Story export unavailable");
+    await expect(story.getByRole("button", { name: /Share Story/ })).toBeEnabled();
   } finally {
     runBrowserFlightFixtureCleanup(`
       DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913 AND token_hash='${tokenHash}';
