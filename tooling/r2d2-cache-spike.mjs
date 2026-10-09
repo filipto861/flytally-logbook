@@ -336,7 +336,7 @@ async function main() {
           completed: e.finished, closed: e.close !== null,
         }));
         const signalEvents = existsSync(signalLog)
-          ? readFileSync(signalLog, "utf8").trim().split("\\n")
+          ? readFileSync(signalLog, "utf8").trim().split("\n")
               .filter(Boolean).map(line => JSON.parse(line))
           : [];
         result.serverSignalEvents = signalEvents
