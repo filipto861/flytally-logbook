@@ -147,7 +147,7 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
   assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
-  assert.equal(registry.ownership.auditedTotal, 388);
+  assert.equal(registry.ownership.auditedTotal, 389);
 });
 
 test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
@@ -180,6 +180,20 @@ test("3.7.0 R2 satellite endpoint requires a live session while Standard stays p
   assert.doesNotMatch(satelliteResponse, /"Access-Control-Allow-Origin": "\*"/);
   assert.match(route, /const upstream = await standardMapTile\(/);
   assert.match(route, /"Access-Control-Allow-Origin": "\*"/);
+});
+
+test("3.7.0 R2B provider is explicitly GPS-owned and selects real browser map acceptance", () => {
+  const registry = JSON.parse(source("tooling/development-modules.json"));
+  const gps = registry.modules.find((item: { id: string }) => item.id === "gps-tracks");
+  assert.ok(gps?.prefixes.includes("lib/satellite-map-provider"),
+    "Provider must be GPS-owned, never silently counted as unowned shared runtime");
+  const targets = registry.browserAcceptance.pathTargets.find((item: { prefixes?: string[] }) =>
+    item.prefixes?.includes("lib/satellite-map-provider"));
+  assert.ok(targets, "Provider changes must trigger authoritative map browser acceptance");
+  assert.ok(targets.targets.includes("map-lifecycle-tracks-desktop"));
+  assert.ok(targets.targets.includes("map-lifecycle-tracks-mobile"));
+  assert.ok(targets.targets.includes("map-tile-style-desktop"));
+  assert.ok(targets.targets.includes("map-tile-style-mobile"));
 });
 
 test("3.7.0 R2B route delegates authenticated Satellite requests to the tested provider path", () => {
