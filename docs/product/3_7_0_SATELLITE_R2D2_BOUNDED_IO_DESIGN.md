@@ -1,3 +1,20 @@
+## 2026-10-09 — R2D.2-A3.1 downstream disconnect OWNER EVIDENCE; signal-link question next
+
+**Owner files inspected:** `r2d2-spike-229c80a765da2414.json` and `memory-229c80a765da2414.jsonl`, exact source HEAD `911b95864303cfdf95a52be64082e3508ac2aa7e`, Node `24.19.0`, Next `16.3.2`; build/start of isolated mini Next app completed; report `error: null`, verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`. Full JSON+340 memory records independently parsed and cross-checked. Experiment includes **14 diagnostic requests + one server-stderr report entry**, **13 distinct upstream fixture events**.
+
+**A3.1 key result:** mini Next route `GET /api/probe` uses its own `AbortController` for server-side upstream fetch; it is **not linked** to `request.signal`. The test caller aborted its HTTP `fetch` at 300ms:
+- `mode=cached`: `caller-aborted` at **313 ms**, yet fake source queued a full **16,777,216 B / 256 chunks**, `completed=true`, `closed=true` within 5.5-second observation.
+- `mode=uncached`: `caller-aborted` at **307 ms**, and likewise fake source queued a full **16,777,216 B / 256 chunks**, `completed=true`, `closed=true`.
+- In these two cases, independent server-side source completion was **not automatically stopped** by caller cancellation. It does **not** prove an upstream abort would fail, that `request.signal` is or is not emitted, or that Next universally fails to propagate disconnects: the lab route never wired its request signal to its fetch controller.
+- Standard cached `reader.cancel()` without controller abort reproduced A2 (full 16MiB eventual source write), whereas its uncached counterpart emitted only 65,536B. Explicit `controller.abort()` cases stopped the synthetic upstream after ~64KiB or 512KiB, and 1KiB stalled-body cases stopped on the **laboratory-only** 4.5s watchdog. Nothing here prescribes a production timeout.
+- Final mini Next stderr includes `items over 2MB can not be cached` for cached 16MiB complete/cancel-only/**client disconnect**. Cache size rejection occurs **after** materializing its large body; it is not an upstream or memory cap.
+
+**Process memory** in 340 100ms interval samples (single child): peak RSS **140 MiB**, JS heap **35 MiB**, external **77 MiB**, ArrayBuffers **38 MiB** (rounded); cached disconnect window peak RSS **115 MiB**, external **77 MiB**; uncached disconnect RSS **122 MiB**, external **49 MiB**. These are whole-process, order-dependent sample peaks and cannot be attributed to the individual response. Synthetic `emittedBytes` is source HTTP `res.write()` queued data, not wire-level acknowledged bytes.
+
+**A3.1 status:** empirical **OBSERVATIONS COLLECTED**, not `R2D.2-A complete` and not R2D.2 memory-hardening PASS. The server must not depend on client disconnect to cancel an independent upstream; robust total deadline and explicit cancellation are still required. The next narrow **A3.2** lab should instrument whether `request.signal` fires at all on downstream disconnect and compare a **route explicitly linking** the upstream AbortController to that signal vs observer-only. This requires a real Next child event trace: downstream client cannot see server post-disconnect response. Additional fast-source, simultaneous requests, cache-validated-response parity and exact authenticated Satellite endpoint remain separate, not implicitly complete. Production provider caching `revalidate=604800` and all app code stay unchanged; production Satellite OFF, Draft #279 only.
+
+---
+
 ## 2026-10-09 — A3.1 downstream client-disconnect lab staged (NOT RUN)
 
 **Why:** A2 confirmed a second Next dynamic cached fetch tee can continue a full synthetic 16MiB upstream after only the application `reader.cancel()`; the tested explicit `AbortController.abort()` stopped upstream, but **automatic propagation of downstream HTTP client disconnect** remains unknown.
