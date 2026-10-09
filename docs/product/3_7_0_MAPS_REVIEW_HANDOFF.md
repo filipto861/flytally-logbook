@@ -5,6 +5,8 @@
 **Authoritative proposal:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`.  
 **Status:** draft; Filip is final product decision-maker. Reviewers are independent, not authority.
 
+**Review outcome (9 October 2026):** Independent reviewer returned **BLOCK**. This original review request is preserved for provenance. Findings have since been checked against the repo, corrected/classified, and recorded at `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`; the revised Phase 1 contract and external approval are still pending. No runtime code was implemented.
+
 ## Context
 
 3.6.0 is product production-closed. The user reprioritized maps and openAIP as 3.7.0 (previous reservation for monetary semantics #136 moved to 3.8.0; multi-aircraft phases moved to 3.9.0 and 3.10.0, intentions preserved). No runtime change authorized now. Existing Next.js 16 / React 19 / Leaflet ^1.9.4 app already serves OSM proxy tiles and ArcGIS World Imagery satellite tiles from the same backend; Leaflet maps only select the standard style, while the separate social Story card uses the satellite style.
