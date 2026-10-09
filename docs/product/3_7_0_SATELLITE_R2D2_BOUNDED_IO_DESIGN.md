@@ -1,3 +1,11 @@
+## 2026-10-09 — Owner scope decision: defer license/account discussions; continue TECHNICAL M2c/M3 preparation
+
+Owner said **"neres ty licence pls"** (do not investigate licences for now). Project interpretation: focus subsequent work on engineering—safe streaming, body/deadline constraints, true image structural/decoding distinction, concurrency control, capped SVG/Base64 output, feature flag correctness, repeatable synthetic authenticated HTTP. **Do not repeat Esri product-account/licence/pricing questions** as gating clarification for technical coding and tests; existing historical licensing discovery is preserved below for provenance only. Licensing, derivative rights, service-specific attribution and contract application remain **UNVERIFIED / DEFERRED**, **not approved**, and do not confer production legal/commercial certification. No supplier or production calls as a result of this decision.
+
+**Technical acceptance blockers retained:** no invented max tile bytes, wall-clock deadlines, pixel/decompressed-size ceilings, process memory or concurrency budgets. M2a and M2b are local source-verified, not live provider integration; M2b only inspects compressed-file structure (not decode success). Build a synthetic configurable resource-policy seam first with fail-closed absent production policy, validate both base and optional labels/fallback abort and resource cleanup, confirm real hosting constraints and representative MIME/tile characteristics when available under a separate explicit plan. Standard public cache must remain unaffected. M3 cannot be called production-safe simply because Option B is approved; work on test scaffolding and architecture may continue without waiting for licence answers. Satellite prod OFF; Draft #279, no merge/deploy, no DB/Training changes.
+
+---
+
 ## 2026-10-09 — R2D.2 M2c public Esri source discovery (READ-ONLY, PARTIAL; NO LIVE PROVIDER)
 
 **Public authoritative documents consulted**, no token requests or supplier tile downloads:
