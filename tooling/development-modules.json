@@ -898,7 +898,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 2,
+    "selectionVersion": 3,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
@@ -1049,7 +1049,9 @@
         "files": [],
         "targets": [
           "map-lifecycle-player-desktop",
-          "map-lifecycle-player-mobile"
+          "map-lifecycle-player-mobile",
+          "map-lifecycle-import-desktop",
+          "map-lifecycle-import-mobile"
         ]
       }
     ],
@@ -1330,6 +1332,16 @@
       "map-lifecycle-player-mobile": {
         "spec": "e2e/map-layers.spec.mjs",
         "title": "flight replay retains map and playback state through theme changes",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-import-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS import review retains its map pane across theme changes",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-import-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS import review retains its map pane across theme changes",
         "project": "mobile-chromium"
       }
     }
