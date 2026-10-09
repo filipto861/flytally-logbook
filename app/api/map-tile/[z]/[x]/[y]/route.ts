@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
 import { parseMapTileStyle } from "@/lib/map-tile-style";
 import { getSession } from "@/lib/auth/session";
+import { satelliteTile, isImage, CACHE_SECONDS, USER_AGENT } from "@/lib/satellite-map-provider";
 
 // Satellite tiles must be authorized per request, not served from a public route cache.
 // This does not change public access to the existing Standard basemap.
 export const dynamic = "force-dynamic";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
-const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
-const ARCGIS_IMAGERY_LABELS_HOST = "https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/imagery/labels/static/tile";
-const ARCGIS_REFERENCE_HOST = "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile";
-const CACHE_SECONDS = 60 * 60 * 24 * 7;
-const USER_AGENT = "FlyTally/1.0 (https://fly-tally.com; map service)";
-
-function isImage(response: Response) {
-  return response.ok && (response.headers.get("content-type") || "").startsWith("image/");
-}
-
 function publicReferer(request: Request) {
   const raw = request.headers.get("referer");
   if (!raw) return "https://fly-tally.com/";
@@ -25,43 +16,6 @@ function publicReferer(request: Request) {
     if (parsed.protocol === "https:" && (parsed.hostname === "fly-tally.com" || parsed.hostname.endsWith(".fly-tally.com") || parsed.hostname.endsWith(".vercel.app"))) return parsed.href;
   } catch {}
   return "https://fly-tally.com/";
-}
-
-async function imageDataUrl(response: Response) {
-  const contentType = response.headers.get("content-type") || "image/png";
-  const bytes = Buffer.from(await response.arrayBuffer()).toString("base64");
-  return `data:${contentType};base64,${bytes}`;
-}
-
-async function satelliteTile(z: number, x: number, y: number, token: string, referer: string) {
-  const common = { next: { revalidate: CACHE_SECONDS } } as const;
-  const encodedToken = encodeURIComponent(token);
-  const basePromise = fetch(
-    `${ARCGIS_WORLD_IMAGERY_HOST}/${z}/${y}/${x}?token=${encodedToken}`,
-    { headers: { Referer: referer, "User-Agent": USER_AGENT }, ...common },
-  );
-  const labelsPromise = fetch(
-    `${ARCGIS_IMAGERY_LABELS_HOST}/${z}/${y}/${x}?language=en&token=${encodedToken}`,
-    { headers: { Referer: referer, "User-Agent": USER_AGENT }, ...common },
-  );
-
-  const [base, preferredLabels] = await Promise.all([basePromise, labelsPromise]);
-  if (!isImage(base)) return null;
-
-  let labels = preferredLabels;
-  if (!isImage(labels)) {
-    labels = await fetch(`${ARCGIS_REFERENCE_HOST}/${z}/${y}/${x}`, {
-      headers: { Referer: referer, "User-Agent": USER_AGENT },
-      ...common,
-    });
-  }
-
-  const baseHref = await imageDataUrl(base);
-  const labelsHref = isImage(labels) ? await imageDataUrl(labels) : null;
-  const overlay = labelsHref
-    ? `<image href="${labelsHref}" x="0" y="0" width="256" height="256" preserveAspectRatio="none"/>`
-    : "";
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><image href="${baseHref}" x="0" y="0" width="256" height="256" preserveAspectRatio="none"/>${overlay}</svg>`;
 }
 
 async function standardMapTile(z: number, x: number, y: number, referer: string) {
