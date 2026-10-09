@@ -1,3 +1,13 @@
+## 2026-10-09 — R2D.1 implementation status after independent review
+
+**R2D.0 review reconciled and acceptance FROZEN. R2D.1 implementation STAGED / ALL TEST EVIDENCE NOT RUN.** This entry supersedes earlier `Proposed (not frozen)` status for **R2D.1 only**; R2D.2 and R2D.3 remain proposals requiring separate decisions.
+
+Minimal runtime change: authenticated `style=satellite` reads `FLYTALLY_SATELLITE_UPSTREAM_DISABLED` on the server, exact `"true"` only, after style/session/missing-token gates and before calling `satelliteTile()` (which may consult Next upstream Data Cache). Return non-image 503 `Cache-Control: no-store` and `X-FlyTally-Map-Style: unavailable`, no internal flag/token leaked. All other values/absent preserve previous runtime behavior. `style=map` unaffected. Existing Flight Story auto-probe and PNG pipeline, map control, and public replay **not changed**; 503 leads to client-requested Standard via established fallback.
+
+Manual real Next HTTP harness on **R2D.1 branch only** supports `FLYTALLY_SATELLITE_HTTP_MODE` (`enabled`, `disabled`, `missing-token`, default enabled), passed to an isolated child server and synthetic upstream fixture. Each run uses guarded disposable PostgreSQL, a locally generated fake token or explicit missing token, and blocks non-local upstream sockets; disabled mode checks repeated same tile 503/no-store/zero interceptions. To investigate warmed upstream Data Cache without claiming false evidence, run **enabled then disabled** without rebuilding between the two; warm-cache presence is not guaranteed simply by a previous run, but provider/cache access is source-guarded before the call. Unit source guard and Playwright map+Story 503 fallback scenarios staged.
+
+**Required before R2D.1 local closeout:** clean branch/HEAD, syntax/typecheck, targeted source, iterate, fresh production build with Satellite ON, three isolated HTTP modes enabled/disabled/missing-token, then fresh independent full ON and OFF release with isolated PostgreSQL and desktop/mobile Chromium; separately native Safari remains NOT VERIFIED. Not an instantly effective global switch; rollout must account for per-instance environment propagation. No approval to merge/deploy; provider-license discussion deferred by owner, not treated as cleared.
+
 ## 2026-10-09 — DeepSeek independent review reconciliation (R2D.0)
 
 **External read-only review:** `APPROVE WITH CHANGES`. Reconciled with actual `app/api/map-tile/[z]/[x]/[y]/route.ts`, `lib/satellite-map-provider.ts`, `components/satellite-map-control.ts`, `components/flight-story-card.tsx`, the synthetic Next HTTP harness and browser/source contract tests. **R2D.0 REVIEW COMPLETE** after recording this decision; implementation and tests remain separate.
