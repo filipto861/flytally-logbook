@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Filip Točík  
-**Last updated:** 8 October 2026  
+**Last updated:** 9 October 2026  
 **Current production product version:** `3.5.5`  
 **Current active release:** `3.6.0`
 
@@ -66,7 +66,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
-| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Phase 1 verified; PR #265 merge / production closeout pending |
+| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Phase 1 merged via PR #265; 3.6.0 package/deploy production closeout pending |
 | 10 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Next after 3.6.0 |
 | 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
 | 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
@@ -654,9 +654,9 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: 3.6.0 merge / production closeout. Phase 1 is DONE / VERIFIED on PR #265 exact candidate `56e3b05620ee4c35693994e1e60276387a41fe97`.**
+**Current step: 3.6.0 release-candidate metadata / production closeout. Phase 1 is DONE / VERIFIED and PR #265 is merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`.**
 
-Current milestone: **Phase 1 — saved-date / timezone semantics — DONE / VERIFIED**. Phase 0A–0F are DONE / VERIFIED and integrated into canonical `main` via PR #255; PR #265 remains the release-closeout branch until merge and production verification.
+Current milestone: **3.6.0 release closeout — ACTIVE**. Phase 1 is DONE / VERIFIED and integrated into canonical `main` through PR #265; package/footer candidate now advances to `3.6.0` before production deployment acceptance.
 
 Phase 0D closeout:
 - independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
@@ -842,7 +842,7 @@ Phase 0A — gate safety / reproducibility — ✅ DONE / VERIFIED:
 - DEVELOPMENT/Vercel policy drift reconciliation;
 - exact-candidate evidence: targeted governance **32/32 PASS**, PostgreSQL core **86/86 PASS**, PostgreSQL full **99/99 PASS**, TypeScript **PASS**, production build **PASS (41/41 static pages)**, full browser **96 PASS / 2 intentional skips / 0 failed**, plus final stale v1.44 assertion rerun **5/5 PASS** after the preceding full suite proved the remaining 1,316 tests.
 
-Phase 0F is complete and PR #255 is merged. Phase 1 is now DONE / VERIFIED; the next step is PR #265 merge followed by 3.6.0 production closeout.
+Phase 0F is complete and PR #255 is merged. Phase 1 is DONE / VERIFIED and PR #265 is merged. The remaining 3.6.0 step is release-candidate metadata, production deployment, smoke/error review, then final documentation closeout.
 
 Mandatory Phase 0 scope:
 - make explicitly invoked PostgreSQL gates fail closed instead of allowing a skipped integration suite to look like acceptance;
@@ -1017,7 +1017,7 @@ Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f98
 
 FEATURES and DEVELOPMENT were reviewed in the same closeout cycle. FEATURES is updated to the implemented/verified Phase 1 capability; DEVELOPMENT requires no process change. No runtime semantic change, DB migration, historical backfill, certification rewrite or portable-backup format bump is introduced by P1.5.
 
-Phase 1 acceptance is satisfied. 3.6.0 remains ACTIVE only for PR #265 merge and production closeout.
+Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`. Its merge deployment was correctly skipped by Vercel because the final PR changed only tests/documentation. 3.6.0 remains ACTIVE for the explicit package/footer `3.6.0` release candidate, production deployment and final production-closeout documentation.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
