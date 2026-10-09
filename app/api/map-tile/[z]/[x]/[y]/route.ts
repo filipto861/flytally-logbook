@@ -57,6 +57,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     });
   }
 
+  // Explicit, server-only deployment emergency stop. Runs after the live
+  // session and missing-token checks, but before any provider or Data Cache
+  // access. The client must request Standard separately on this 503.
+  if (wantsSatellite && process.env.FLYTALLY_SATELLITE_UPSTREAM_DISABLED === "true") {
+    return new NextResponse("Satellite imagery unavailable", {
+      status: 503,
+      headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" },
+    });
+  }
+
   if (wantsSatellite) {
     const svg = await satelliteTile(z, x, y, arcgisToken!, referer);
     if (!svg) return new NextResponse("Map tile unavailable", { status: 502, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" } });
