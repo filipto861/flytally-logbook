@@ -241,6 +241,51 @@ async function main() {
         completed: event.finished, closed: event.close !== null,
       }));
     }
+    // A3: cancel the *downstream HTTP caller* while the test-only Next route
+    // is reading its own upstream fetch. Unlike reader-only cancel, this tests
+    // whether disconnect propagates automatically through the HTTP boundary.
+    // No runtime code or production route is involved.
+    for (const mode of ["cached", "uncached"]) {
+      const eventStart = events.length;
+      const start = Date.now();
+      const ctrl = new AbortController();
+      const query = new URLSearchParams({
+        mode, sample: "large", action: "complete",
+        key: RUN + "-client-disconnect-" + mode,
+      });
+      const cancel = setTimeout(() => ctrl.abort("synthetic-downstream-disconnect"), 300);
+      const result = {
+        mode, sample: "large", action: "client-disconnect",
+        startedEpochMs: start, downstreamAbortAfterMs: 300,
+      };
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:" + appPort + "/api/probe?" + query,
+          { signal: ctrl.signal });
+        result.unexpectedResponseStatus = response.status;
+        result.outcome = "completed-before-disconnect-inconclusive";
+        await response.body?.cancel().catch(() => {});
+      } catch (err) {
+        result.outcome = ctrl.signal.aborted
+          ? "caller-aborted" : "unexpected-client-error-inconclusive";
+        result.clientErrorName = err?.name || "unknown";
+      } finally {
+        clearTimeout(cancel);
+      }
+      result.endedEpochMs = Date.now();
+      result.elapsedMs = result.endedEpochMs - start;
+      // Always allow the lab's own 4.5-second total watchdog to settle.
+      // This is a laboratory-only window, NOT a production timeout policy.
+      result.observationWaitMs = 5500;
+      await sleep(result.observationWaitMs);
+      result.postObserveUntilEpochMs = Date.now();
+      result.newUpstreamEvents = events.slice(eventStart).map(event => ({
+        sample: event.sample, queuedBytes: event.emitted,
+        chunksQueued: event.chunks, completed: event.finished,
+        closed: event.close !== null,
+      }));
+      results.push(result);
+    }
     if (stderr) results.push({ serverStderrObserved: true, tail: stderr.slice(-600) });
   } catch (e) {
     problem = String(e?.message || e).slice(-1500);
