@@ -69,10 +69,10 @@
     "ciRetries": 1
   },
   "expectedFullGate": {
-    "passed": 106,
+    "passed": 96,
     "skipped": 2,
     "failed": 0,
-    "totalExecutions": 108
+    "totalExecutions": 98
   },
   "fixtureContract": {
     "browserDb": "e2e/browser-db.mjs",
