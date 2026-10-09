@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const source = (path: string) => fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
 
@@ -51,6 +53,9 @@ test("3.7.0 Leaflet consumers are loaded behind browser-only boundaries", () => 
   const page = source("app/(protected)/map/page.tsx");
   const mapBoundary = source("components/client-maps.tsx");
   const replayBoundary = source("components/lazy-flight-track-review.tsx");
+  const publicBoundary = source("components/public-flight-map.tsx");
+  const publicPage = source("app/f/[token]/page.tsx");
+  const importReview = source("components/kml-import-form.tsx");
   assert.match(page, /from "@\/components\/client-maps"/);
   assert.doesNotMatch(page, /from "@\/components\/(?:route-overview-map|tracks-map)"/);
   assert.match(mapBoundary, /^"use client";/);
@@ -61,4 +66,29 @@ test("3.7.0 Leaflet consumers are loaded behind browser-only boundaries", () => 
   assert.match(replayBoundary, /import\("@\/components\/flight-track-player"\)/);
   assert.match(replayBoundary, /ssr:\s*false/);
   assert.doesNotMatch(replayBoundary, /^import \{ FlightTrackPlayer \} from/m);
+  assert.match(publicPage, /from "@\/components\/public-flight-map"/);
+  assert.doesNotMatch(publicPage, /from "@\/components\/flight-track-player"/);
+  assert.match(publicBoundary, /^"use client";/);
+  assert.match(publicBoundary, /import\("@\/components\/flight-track-player"\)/);
+  assert.match(publicBoundary, /ssr:\s*false/);
+  assert.match(importReview, /import\("@\/components\/gps-import-review-player"\)/);
+  assert.match(importReview, /ssr:\s*false/);
+});
+
+// Source-level guard covering every current and future server route entrypoint.
+// Client-only Leaflet wrappers are validated explicitly above.
+test("3.7.0 app pages and layouts never import Leaflet runtime directly", () => {
+  const appRoot = fileURLToPath(new URL("../app/", import.meta.url));
+  const direct = /\bfrom\s*["'](?:@\/components\/(?:route-overview-map|tracks-map|flight-track-player|gps-import-review-player|leaflet-mobile|map-layer-controller)|leaflet)["']/;
+  const violations: string[] = [];
+  function walk(folder: string): void {
+    for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+      const file = join(folder, entry.name);
+      if (entry.isDirectory()) { walk(file); continue; }
+      if (!/(?:page|layout)\.tsx$/.test(entry.name)) continue;
+      if (direct.test(fs.readFileSync(file, "utf8"))) violations.push(file.slice(appRoot.length));
+    }
+  }
+  walk(appRoot);
+  assert.deepEqual(violations, [], "Server entrypoints must import client-only map wrappers, not Leaflet runtime modules");
 });
