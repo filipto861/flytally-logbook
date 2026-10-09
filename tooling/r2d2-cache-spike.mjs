@@ -186,13 +186,23 @@ async function main() {
       ["cached", "normal", "complete", "cache-warm"],
       ["cached", "normal", "complete", "cache-warm"], // same URL: compare upstream events
       ["uncached", "normal", "complete", "no-cache-normal"],
+      // Full-size baseline proves the producer can actually send all 16 MiB.
+      ["cached", "large", "complete", "cache-large-complete"],
+      // Compare signal abort after first chunk versus after a measured 512 KiB.
       ["cached", "large", "abort", "cache-large-abort"],
       ["uncached", "large", "abort", "no-cache-large-abort"],
+      ["cached", "large", "abort-late", "cache-large-abort-late"],
+      ["uncached", "large", "abort-late", "no-cache-large-abort-late"],
+      // Reader-only cancellation deliberately leaves the upstream fetch signal
+      // alive; a Next cache tee may continue consuming after the app responds.
+      ["cached", "large", "cancel-only", "cache-large-cancel-only"],
+      ["uncached", "large", "cancel-only", "no-cache-large-cancel-only"],
       ["cached", "stall", "complete", "cache-stall"],
       ["uncached", "stall", "complete", "no-cache-stall"],
     ];
     for (const [mode, sample, action, key] of requests) {
       const query = new URLSearchParams({ mode, sample, action, key: RUN + "-" + key });
+      const eventStart = events.length;
       const start = Date.now();
       try {
         const response = await fetch(
@@ -206,8 +216,18 @@ async function main() {
           startedEpochMs: start, endedEpochMs: Date.now(), elapsedMs: Date.now() - start,
           reason: e?.name === "TimeoutError" ? "lab-request-timeout" : "request-failed" });
       }
-      // Give any detached Next cache fill time to become observable.
-      await sleep(500);
+      // A reader-only cancel may leave a background framework cache tee active.
+      // Wait long enough for the 16 MiB synthetic producer to finish if it
+      // remains consumed. All waits are lab-only, not application policies.
+      const observationWaitMs = action === "cancel-only" ? 3200 : 500;
+      await sleep(observationWaitMs);
+      const result = results.at(-1);
+      result.postObserveUntilEpochMs = Date.now();
+      result.observationWaitMs = observationWaitMs;
+      result.newUpstreamEvents = events.slice(eventStart).map(event => ({
+        sample: event.sample, queuedBytes: event.emitted, chunksQueued: event.chunks,
+        completed: event.finished, closed: event.close !== null,
+      }));
     }
     if (stderr) results.push({ serverStderrObserved: true, tail: stderr.slice(-600) });
   } catch (e) {
