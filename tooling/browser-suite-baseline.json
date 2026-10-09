@@ -51,7 +51,8 @@
     "connection access update disables duplicate submit and persists",
     "map panes preserve standard basemap ordering and route interactions",
     "GPS map theme changes preserve a live map instance and viewport",
-    "flight replay retains map and playback state through theme changes"
+    "flight replay retains map and playback state through theme changes",
+    "GPS import review retains its map pane across theme changes"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"
@@ -67,10 +68,10 @@
     "ciRetries": 1
   },
   "expectedFullGate": {
-    "passed": 102,
+    "passed": 104,
     "skipped": 2,
     "failed": 0,
-    "totalExecutions": 104
+    "totalExecutions": 106
   },
   "fixtureContract": {
     "browserDb": "e2e/browser-db.mjs",
