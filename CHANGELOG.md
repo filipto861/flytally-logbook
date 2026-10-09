@@ -10,6 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **Phase 1 standard-only production functional acceptance (9 October 2026; documentation closeout in Draft PR #270):** Owner confirmed browser Map/light-dark, existing GPS replay and playback continuity, public share/privacy, and mobile/iPad interaction work on `fly-tally.com`. This is **user-reported manual PASS**, not independent native Safari screenshots or browser traces. Production Map API HTTP 4/4 PASS (real OSM image and strict style 400); Vercel READY at `cc7abd41`; latest inspected aggregated runtime errors none. Prior local exact candidate full `release_status=PASS`. Remaining: merge docs PR #270 to complete documentary Phase 1 closure; product version 3.6.0 and full Maps 3.7.0 release unchanged; satellite/openAIP provider gates BLOCKED.
+
+
 - **Production public Map API smoke PASS 4/4 (9 Oct, GET-only):** `fly-tally.com` returned Standard OSM tile HTTP 200 `image/png`; unknown style and two forms of duplicated `style` returned HTTP 400 JSON `unsupported_style`, `no-store`. User PowerShell reported `PUBLIC MAP API SMOKE PASS`. **Live signed-in map/GPS playback, public share/privacy and native iPad/mobile browser smoke remain NOT VERIFIED**. Production acceptance stays OPEN, no full 3.7.0 release.
 
 
