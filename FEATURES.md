@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2 M2a independent bounded transport LOCAL TESTED, NOT PRODUCT-CONNECTED
+
+Owner-run on exact `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`: 14 M2a helper tests plus 23 map/Satellite source regressions **37/37 PASS**, TypeScript `tsc --noEmit` PASS. Source-only helper retains forced `no-store`, externally supplied numeric ceilings, total abort/deadline, streaming checks; still no real provider integration and no true PNG/JPEG structural verification. Next M2b. No production flag, map, Standard, Story, provider, DB or deploy change.
+
 ## 2026-10-09 — R2D.2 M2a bounded transport utility staged; NOT connected to user-facing Satellite yet
 
 New isolated `fetchSatelliteBounded` helper has caller-required finite positive byte/time limits, no-store fetch, deadline/abort linkage, streamed byte accounting, JPEG/PNG MIME allowlist, strict identity/declared-length checks and sanitized failure codes. Separate tests and GPS risk ownership registered. This **does not** validate actual raster structure, cap process-wide concurrency, deploy a budget, remove provider cache, or change real `/api/map-tile`. Tests NOT RUN. Approved future direction remains Option B for Satellite only; Option C cache deferred, public Standard unchanged and Satellite production OFF.
