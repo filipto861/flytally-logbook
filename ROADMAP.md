@@ -3,8 +3,8 @@
 **Status:** Active  
 **Owner:** Filip Točík  
 **Last updated:** 9 October 2026  
-**Current production product version:** `3.5.5`  
-**Current active release:** `3.6.0`
+**Current production product version:** `3.6.0`  
+**Current active release:** `3.7.0`
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -52,7 +52,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | Backup / restore / protected history | ✅ Production |
 | Statistics / professional presentation | ✅ Production |
 | Production DB schema | **v20** — independent from product version |
-| Product release version | **3.5.5** |
+| Product release version | **3.6.0** |
 
 ## Canonical release sequence
 
@@ -66,9 +66,9 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 6 | **3.5.3** | Flight detail navigation UX | ✅ | Merged and production deployed on 7 October 2026; immediate iPad visual follow-up is isolated in 3.5.4 |
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
-| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | 🚧 | Phase 1 merged via PR #265; 3.6.0 package/deploy production closeout pending |
-| 10 | **3.7.0** | Currency / monetary semantics · #136 | ➡️ | Next after 3.6.0 |
-| 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Prove no-code onboarding across supported categories |
+| 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
+| 10 | **3.7.0** | Currency / monetary semantics · #136 | 🚧 | Active after 3.6.0 production closeout |
+| 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ➡️ | Next after 3.7.0 |
 | 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
@@ -645,7 +645,7 @@ Production iPad review after 3.5.4 confirmed the flight-detail navigation and sa
 
 ---
 
-# 3.6.0 — Saved-date / timezone semantics — ACTIVE / RELEASE CLOSEOUT
+# 3.6.0 — Saved-date / timezone semantics — DONE / PRODUCTION
 
 Issue: #144  
 Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
@@ -654,9 +654,9 @@ Phase 0 contract: `docs/product/3_6_0_PHASE0_ENGINEERING_QUALITY.md`
 
 Timezone runtime implementation is paused until the repository's verification path is audited and hardened.
 
-**Current step: 3.6.0 release-candidate metadata / production closeout. Phase 1 is DONE / VERIFIED and PR #265 is merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`.**
+**Production closeout complete:** Phase 1 is DONE / VERIFIED; PR #265 merged as `d96aed69b9fee41550820a1d05666420bce4e9fb`; release PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; production deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY and serves `fly-tally.com`.
 
-Current milestone: **3.6.0 release closeout — ACTIVE**. Phase 1 is DONE / VERIFIED and integrated into canonical `main` through PR #265; package/footer candidate now advances to `3.6.0` before production deployment acceptance.
+3.6.0 is **DONE / PRODUCTION**. The deployed package/footer version is `3.6.0`; root and login production smoke returned HTTP 200 and the immediate checked runtime-error window was clean. No DB migration, historical backfill, certification rewrite or portable-backup format bump was required.
 
 Phase 0D closeout:
 - independent review verdict **ACCEPT WITH CHANGES** was reconciled into the registry/evidence design;
@@ -1017,13 +1017,15 @@ Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f98
 
 FEATURES and DEVELOPMENT were reviewed in the same closeout cycle. FEATURES is updated to the implemented/verified Phase 1 capability; DEVELOPMENT requires no process change. No runtime semantic change, DB migration, historical backfill, certification rewrite or portable-backup format bump is introduced by P1.5.
 
-Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`. Its merge deployment was correctly skipped by Vercel because the final PR changed only tests/documentation. 3.6.0 remains ACTIVE for the explicit package/footer `3.6.0` release candidate, production deployment and final production-closeout documentation.
+Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`; its development-only merge deployment was correctly skipped. Release PR #266 then advanced package/footer metadata to `3.6.0`, passed exact-candidate release verification, and merged as `168bd029540474d6e806bf3e261fa855824b7c2a`. Vercel production deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on that exact SHA, carries `fly-tally.com`, root/login smoke returned HTTP 200, and the immediate checked runtime-error window was clean.
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
-# 3.7.0 — Currency / monetary semantics — PLANNED
+# 3.7.0 — Currency / monetary semantics — ACTIVE
 
 Issue: #136
+
+**Current step:** reconstruct the existing monetary data model and consumers, freeze currency authority/legacy semantics, then obtain an independent design review before runtime implementation.
 
 Before code:
 - define whether account currency is display/default denomination or record authority;

@@ -137,13 +137,21 @@ Important boundary:
 - Preserve sidebar collapse state, notification behavior and phone/mobile navigation.
 - Detailed contract: `docs/product/3_5_5_IPAD_SIDEBAR_TOGGLE.md`.
 
-### 3.6.0 — Saved-date / timezone semantics — IMPLEMENTED / VERIFIED (PRODUCTION CLOSEOUT PENDING)
+### 3.6.0 — Saved-date / timezone semantics — IMPLEMENTED / PRODUCTION VERIFIED
 - New saveable calendar-date defaults derive from the configured named account timezone through a strict server-authoritative resolver; missing, blank or invalid timezone state fails closed instead of guessing Prague, UTC, browser-local or server-local dates.
 - Manual New Flight, Aircraft Manager initial/rate-history effective dates and Quick Add use that strict calendar authority. Explicit/stored flight and rate dates remain date-only and are never reinterpreted after save or later timezone changes.
 - Settings validates saveable timezones at the server write boundary; runtime-recognized named zones including `UTC` are accepted and raw numeric offsets are rejected.
 - GPS/FCL.050 timestamp evidence remains UTC. Explicit-offset track timestamps normalize to UTC; timezone-less timestamps remain unavailable/ambiguous rather than guessed.
 - Backup/restore, CSV/XLS/print and historical rate selection preserve date-only semantics. PostgreSQL exact-restore invariance is verified across materially different session timezones.
 - Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
+- Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
+
+### 3.7.0 — Currency / monetary semantics — ACTIVE
+- Define whether account currency is only a display/default denomination or authoritative for newly persisted monetary records.
+- Inventory existing record-level currency fields and legacy monetary values before changing behavior.
+- Preserve explicit stored denominations; missing currency evidence must not be guessed or silently converted.
+- Define export/backup and historical-display consequences before implementation.
+- No automatic FX conversion without a separately approved, source-backed conversion rule.
 
 ### 3.5.2 — Always-on GPS/SERA Night suggestions — IMPLEMENTED / PRODUCTION VERIFIED
 - Remove the account-level **Night definition** preference from Settings.

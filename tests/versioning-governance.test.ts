@@ -24,8 +24,9 @@ test("current roadmap uses canonical numeric release targets and numeric phases"
   assert.match(roadmap,/\| 6 \| \*\*3\.5\.3\*\* \| Flight detail navigation UX \| ✅ \|/);
   assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
   assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| ✅ \|/);
-  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| 🚧 \|/);
-  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| ➡️ \|/);
+  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ✅ \|/);
+  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| 🚧 \|/);
+  assert.match(roadmap,/\| 11 \| \*\*3\.8\.0\*\* \| Multi-aircraft heterogeneous onboarding proof \| ➡️ \|/);
   assert.match(roadmap,/## Single implementation phase — DONE/);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
@@ -51,18 +52,18 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.6.0 release candidate metadata stays aligned with the 3.5.5 production baseline",()=>{
+test("3.6.0 production metadata and 3.7.0 active roadmap stay aligned",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
   assert.equal(pkg.version,"3.6.0");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
-  assert.match(read("ROADMAP.md"),/# 3\.5\.5 — iPad sidebar collapse-control alignment — DONE \/ PRODUCTION/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.5\.5 \| iPad sidebar collapse-control alignment \| DONE \/ PRODUCTION \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.5\.5\*\*/);
-  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.5\.5`/);
-  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.6\.0`/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.6\.0 \| Saved-date \/ timezone semantics \| ACTIVE \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.7\.0 \| Currency \/ monetary semantics \| NEXT \|/);
+  assert.match(read("ROADMAP.md"),/# 3\.6\.0 — Saved-date \/ timezone semantics — DONE \/ PRODUCTION/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.6\.0 \| Saved-date \/ timezone semantics \| DONE \/ PRODUCTION \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.6\.0\*\*/);
+  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.6\.0`/);
+  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.7\.0`/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.7\.0 \| Currency \/ monetary semantics \| ACTIVE \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.8\.0 \| Multi-aircraft heterogeneous onboarding proof \| NEXT \|/);
 });
