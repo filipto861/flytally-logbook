@@ -1,11 +1,15 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 complete. Phase 1 standard-only PR #269 merged at `main@cc7abd41`, Vercel production READY; live smoke/closeout PENDING. Full product release 3.7.0, satellite and openAIP not enabled/approved.
+**Status:** Phase 0 complete; Phase 1 standard-only merged/deployed at `main@cc7abd41`, owner-reported functional production smoke + Map API HTTP 4/4 PASS. Phase 1 functional acceptance recorded; documentation PR #270 merge pending. Full 3.7.0 release, satellite and openAIP remain NOT APPROVED / BLOCKED.
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
 **Repository scope:** `flytally-logbook` only. No change to `flytally-training`.  
 **Authority:** product design proposal, not an aviation chart or approval.
+
+## Latest Phase 1 functional acceptance (9 October 2026)
+
+**9 October 2026 — Phase 1 standard-only production functional acceptance (owner-reported manual smoke):** On deployed `main@cc7abd41858cb2b2ddd8e794889922c856885686` / Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` (READY, `fly-tally.com` assigned), the owner confirmed the requested browser checks work: authenticated Map navigation/route and airport presentation plus light/dark theme; existing GPS flight replay including playback/theme/position behavior; existing public share view/privacy; and mobile/iPad map interaction/lock behavior. This is **owner-reported manual functional smoke PASS**, not an assistant-executed browser automation, screenshot/trace artifact, or independent proof of native Safari and both iPad orientations. Separately, user-run production HTTP Map API smoke **4/4 PASS** (real OSM image HTTP 200; invalid/duplicate styles HTTP 400 JSON `unsupported_style` with `no-store`). Exact pre-merge candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff` had local `release_status=PASS`: Node 1,447/1,447, PG 100/100, Next build PASS, Playwright desktop/mobile Chromium 12/12 each. Vercel recent aggregated runtime errors: none in the inspected window; request-log-level coverage not established. **Phase 1 standard-only function accepted by owner; documentary closure remains pending integration of docs PR #270.** This is **not** a full `3.7.0` release, version bump, Git tag, satellite/openAIP enablement, provider-rights approval, or native Safari test PASS. `3.6.0` remains product version. Prior READY rollback target: `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs`.
 
 ## Current production watch (9 October 2026)
 
