@@ -1,3 +1,7 @@
+## 2026-10-09 — A4 owner test-reset permission recorded (DOCS ONLY)
+
+Owner explicitly approved the destructive rebuild of `public` in exact local disposable `flytally_satellite_r1_test|flytally_sat_r1|55432`, originally checked by read-only SQL. Guarded synthetic HTTP three-mode run and exact-SHA Next production build still **NOT RUN**. Only the design, ROADMAP, FEATURES and CHANGELOG permission/preflight notes changed; no DB touched by GitHub edits, no production route/provider/auth/Story/Training/flag/merge/deploy change.
+
 ## 2026-10-09 — R2D.2-A4 guarded database preflight owner evidence recorded (DOCS ONLY)
 
 Read-only `DATABASE_URL` host/port/user/database URL check and live `psql` identity query completed locally at exact `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`, returning `flytally_satellite_r1_test|flytally_sat_r1|55432` and `A4 READ-ONLY DATABASE PREFLIGHT PASS`. No DB modifications. **No owner permission to run destructive `DROP SCHEMA public CASCADE` fixture yet; A4 HTTP modes/build NOT RUN**. This change records evidence in required docs only; previous 23/23 local targeted test belongs to earlier SHA. No provider, route, auth, DB schema, Training, merge/deploy or feature activation.
