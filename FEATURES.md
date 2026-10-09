@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A1 isolated diagnostic configuration fix (TEST TOOLING ONLY)
+
+First owner-run `SPIKE_INCOMPLETE`: mini Next build inherited parent production `next.config.ts`, 0 requests and 0 memory samples. Staged an explicit mini `next.config.mjs` and preflight isolation assertion so the synthetic experiment can build without resolving the Logbook application's relative commercial-build-guard import. **Real production build guard untouched.** This is not a delivered Satellite runtime feature or confirmed cache safety. Corrected A1 diagnostic **NOT RUN**; production Satellite OFF, Draft unmerged.
+
 ## 2026-10-09 — R2D.2-A1 local synthetic cache/abort experiment (TEST-ONLY, NOT RUN)
 
 Added an isolated manual diagnostic harness `tooling/r2d2-cache-spike.mjs` / `tooling/r2d2-cache-spike/` to compare Next 16.3.2 cached vs uncached streaming, early client-reader abort and stalled bodies using loopback-only source; logs child memory and queued upstream bytes (not actual network receipt). **This is test infrastructure, not shipped Satellite protection.** Independent DeepSeek review `APPROVE WITH CHANGES` reconciled; numeric I/O caps/timeout/MIME/contracts await evidence and owner freeze. Current Satellite provider remains unchanged, as do existing Story/map, auth, Standard, production OFF. No real-provider, DB or deployment changes. Harness syntax/build/observations NOT RUN.
