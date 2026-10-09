@@ -129,6 +129,18 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await map.getByRole("button", { name: "Standard map" }).click();
     await expect(satelliteButton).toHaveAttribute("aria-pressed", "false");
     await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+    await expect(map.locator(".leaflet-control-attribution")).not.toContainText("Esri");
+    await expect(map.locator(".leaflet-control-attribution")).not.toContainText("TomTom");
+    // Repeated user-initiated swaps must not retain attribution from a removed layer.
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await satelliteButton.click();
+      await expect(map.locator(".leaflet-control-attribution")).toContainText("Esri");
+      await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+      await map.getByRole("button", { name: "Standard map" }).click();
+      await expect(map.locator(".leaflet-control-attribution")).not.toContainText("Esri");
+      await expect(map.locator(".leaflet-control-attribution")).not.toContainText("TomTom");
+      await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+    }
     await expect(map.locator(".leaflet-flytallyBasemap-pane")).toHaveCSS("filter", /invert/);
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
   }
