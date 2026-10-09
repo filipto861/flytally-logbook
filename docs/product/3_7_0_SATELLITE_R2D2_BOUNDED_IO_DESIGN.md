@@ -1,3 +1,31 @@
+## 2026-10-09 — R2D.2-A3.3 owner-run rapid/concurrent diagnostic: empirical evidence complete, memory policy STILL OPEN
+
+**Artifact provenance:** Uploaded `r2d2-spike-ebf5727962d3741a.json` and `memory-ebf5727962d3741a.jsonl` inspected together via JSON parser. Report `sha=c2fb2dc6ee69f62c482dc6271b828980fc8360bb`, `branch=feat/3.7.0-satellite-r2d2-bounded-provider-io`, Node **24.19.0**, Next **16.3.2**, `mode=A3.3_PRESSURE_ONLY`, `error=null`, verdict **`SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`**. Recorded **four complete 16,777,216-byte responses**, two concurrent in the cached batch followed by two concurrent in uncached batch, four fixture upstream events and **61** child-process memory samples (sequential batches; 20ms requested sampler, actual sampled interval median ~31ms, range 20–115ms). Source emitted bytes are **queued source writer bytes, NOT network ACK/ingress receipts**. No ArcGIS, no real map tile, no authentication, no production DB, no provider access.
+
+| Observed metric | Cached pair (2×16MiB) | Uncached pair (2×16MiB) |
+| --- | ---: | ---: |
+| HTTP JSON completion | 2/2, status 200, application `bytes=16,777,216` each | 2/2, status 200, same bytes |
+| Batch client observed | 148ms | 67ms |
+| Lab fixture source queue completion | 40ms, 105ms | 22ms, 23ms |
+| Peak **whole-process** RSS in batch+800ms window | **267.27 MiB** | **226.14 MiB** |
+| Peak **whole-process** JavaScript heap | **50.85 MiB** | **31.41 MiB** |
+| Peak **whole-process** external memory | **178.91 MiB** | **178.91 MiB** |
+| Peak **whole-process** ArrayBuffers | **148.09 MiB** | **112.08 MiB** |
+| Number of memory samples by window | 30 | 29 |
+
+**Confounders:** Both batches run in one Next child and in fixed cached→uncached order. The uncached window began with external memory already ~89.5MiB and a prior cached request's memory/GC effects; its 178.91MiB window maximum can include prior objects. Sampled global peaks are **not** per-request allocations nor upper bounds, and cannot establish an accurate `cache overhead = 267−226 MiB`. Sampling can miss sub-20ms peaks and the laboratory used 16MiB payloads not representative measured supplier tiles. No high fan-out, serverless memory limit, true provider latency or production platform experiment.
+
+**Critical evidence:** The mini Next server logged rejection for both cached responses: `Failed to set Next.js data cache ... items over 2MB can not be cached (22369952 bytes)` **after the fixture completed 16MiB transfers and application fully read them**. Its ~22.37MB cached entry representation is distinct from on-wire payload bytes. Therefore a Next cache storage-item cap **does not guarantee** bounded upstream ingestion, independent cache tee buffering or application process memory. Previous A3.2 proved that a downstream disconnect can stop server upstream **only when linked** via `request.signal` to the server-owned `AbortController`; a whole-operation server deadline and body byte count remain necessary even without client disconnect.
+
+**Status:** A3.3 experimental baseline **OBSERVATIONS COLLECTED**. R2D.2-A **not** certified as a complete memory-safety proof; no bounded provider runtime code was written. Key architecture **decision gate** before B/C:
+1. **Keep current `next.revalidate=604800`** on provider fetch: cache hits save supplier traffic, but validation-before-cache and hard memory safety are **not proved**; this cannot be asserted compliant with a hard-memory guarantee.
+2. **Controlled uncached bounded upstream fetch** plus strict I/O limits/deadlines/signature validation: simpler to reason about server app body budget; loses existing Next Data Cache hits and **can increase supplier requests/billing**. A controlled separate validated cache may follow with its own size/admission and lifecycle policies.
+3. **Bounded validated cache architecture** instead of Next fetch Data Cache: can preserve cache economics after validation, but requires separate cache provider, keying/token privacy, storage/concurrency lifecycle, licensing terms, observability, cross-instance correctness and further tests. **Broader scope and user approval required.**
+
+**Next evidence before owner freezes policy:** R2D.2-A4 **actual authenticated Satellite HTTP route parity** with a fake local upstream, explicit production gate ordering, base-required/fallback-label semantics, request-signal behavior and uncached-vs-cache behavior; validate how much current synthetic mini app transfers to real route. This is read-only discovery/design pending a separate small test batch; do not silently alter production provider, cache, client fallback, authorization or Flight Story probe. Read-only independent DeepSeek review is warranted for choosing cache strategy; second AI does not override source evidence. Numeric byte/time/concurrency budgets remain **NOT FROZEN** until supplier data/hosting constraints measured. No provider runtime changes, no merge/deploy/DB, production Satellite OFF and stacked PR #279 Draft.
+
+---
+
 ## 2026-10-09 — R2D.2-A3.3 finite rapid/concurrent cache-pressure lab STAGED / NOT RUN
 
 **Ordered next evidence gate after A3.2:** manual `node tooling/r2d2-cache-spike.mjs --pressure-only` runs the same isolated Next 16.3.2 mini project in production build/start mode, with a **fake loopback binary source** and no provider credentials, auth, flight data, external network access or database. The fixture's new `sample=rapid` emits **at most 16 MiB** in **64KiB chunks**, respecting Node `res.write()` backpressure by waiting for `drain` instead of blindly filling process memory. It sends **two distinct new URLs concurrently** in each sequential batch: cached `next.revalidate=604800` and then uncached `cache:"no-store"` (four finite 16MiB responses overall). Explicit laboratory client watchdog 8 seconds; child memory sample interval 20ms in pressure-only mode. Local source events capture completion/close/queued chunks, run-scoped JSON+JSONL persists under ignored reports. Acceptance requires four HTTP 200 diagnostic responses each reporting a fully read 16MiB body, two fixture requests per batch with complete 16MiB emission; if not, script produces `SPIKE_INCOMPLETE` rather than a safety PASS.
