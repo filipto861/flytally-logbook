@@ -883,7 +883,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 383,
+    "auditedTotal": 385,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -898,7 +898,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 4,
+    "selectionVersion": 2,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
