@@ -132,15 +132,27 @@ async function waitForApp(origin, child) {
   }
   throw new Error("Isolated Next app never became ready");
 }
-function memorySummary(file) {
+function memorySummary(file, requests = []) {
   if (!existsSync(file)) return { samples: 0, sampling: "not recorded" };
   const lines = readFileSync(file, "utf8").trim().split("\n").filter(Boolean);
   const rows = lines.flatMap(line => { try { return [JSON.parse(line)]; } catch { return []; } });
   if (!rows.length) return { samples: 0, sampling: "not recorded" };
+  const peak = (items, field) => items.length
+    ? Math.round(Math.max(...items.map(row => row[field] || 0)) / 1048576) : null;
   const summary = { samples: rows.length, processes: [...new Set(rows.map(r => r.pid))],
-    peakRssMiB: Math.round(Math.max(...rows.map(r => r.rss)) / 1048576),
-    peakHeapMiB: Math.round(Math.max(...rows.map(r => r.heapUsed)) / 1048576),
-    peakExternalMiB: Math.round(Math.max(...rows.map(r => r.external || 0)) / 1048576) };
+    peakRssMiB: peak(rows, "rss"),
+    peakHeapMiB: peak(rows, "heapUsed"),
+    peakExternalMiB: peak(rows, "external"),
+    peakArrayBuffersMiB: peak(rows, "arrayBuffers"),
+    // Observed whole-process peaks within windows; NOT per-request allocations
+    // and NOT a substitute for heap profiling / downstream received bytes.
+    windows: requests.filter(r => r.startedEpochMs && r.postObserveUntilEpochMs).map(r => {
+      const points = rows.filter(m => m.t >= r.startedEpochMs && m.t <= r.postObserveUntilEpochMs);
+      return { mode: r.mode, sample: r.sample, action: r.action,
+        samples: points.length, peakRssMiB: peak(points, "rss"),
+        peakHeapMiB: peak(points, "heapUsed"),
+        peakExternalMiB: peak(points, "external") };
+    }) };
   return summary;
 }
 async function main() {
@@ -250,7 +262,7 @@ async function main() {
       closed: e.close !== null })),
     // emittedBytes reports writes QUEUED by the local fixture, not wire-ACKed socket bytes.
     upstreamMetricLimit: "queued fixture bytes, NOT acknowledged wire bytes",
-    memory: memorySummary(memoryFile),
+    memory: memorySummary(memoryFile, results),
     requests: results,
     error: problem,
     verdict: problem ? "SPIKE_INCOMPLETE" : "SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS",
