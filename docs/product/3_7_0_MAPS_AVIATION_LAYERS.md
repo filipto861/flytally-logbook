@@ -1,11 +1,15 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 complete; Phase 1 standard-only merged/deployed at `main@cc7abd41`, owner-reported functional production smoke + Map API HTTP 4/4 PASS. Phase 1 functional acceptance recorded; documentation PR #270 merge pending. Full 3.7.0 release, satellite and openAIP remain NOT APPROVED / BLOCKED.
+**Status:** Phase 0 and Phase 1 standard-only DONE; production application `main@cc7abd41` accepted and Phase 1 documentation PR #270 squash-merged as `main@7d47010e`. Phase 2.0 satellite provider/legacy-consumer readiness recorded separately; Phase 2 activation and Phase 3 openAIP remain externally BLOCKED. Full 3.7.0 release NOT APPROVED.
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
 **Repository scope:** `flytally-logbook` only. No change to `flytally-training`.  
 **Authority:** product design proposal, not an aviation chart or approval.
+
+## Current Phase 2.0 follow-up (9 October 2026)
+
+The live Phase 1 status supersedes earlier in-progress snapshots retained below. [Phase 2.0 Satellite Readiness](3_7_0_PHASE2_SATELLITE_READINESS.md) documents the current source/legacy Story and Esri provider evidence, confirms only the existence of a production-targeted token variable **name** (not token authorization), and blocks any new satellite UI activation pending the explicit Go/No-Go gates. No application/runtime/DB changes occur in the readiness milestone.
 
 ## Latest Phase 1 functional acceptance (9 October 2026)
 
