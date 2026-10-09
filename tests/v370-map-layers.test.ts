@@ -92,3 +92,14 @@ test("3.7.0 app pages and layouts never import Leaflet runtime directly", () => 
   walk(appRoot);
   assert.deepEqual(violations, [], "Server entrypoints must import client-only map wrappers, not Leaflet runtime modules");
 });
+
+test("3.7.0 public replay fixture restores disposable certified state safely", () => {
+  const spec = source("e2e/map-layers.spec.mjs");
+  assert.match(spec, /function seedIsolatedMapFixture[\s\S]*?runBrowserFlightFixtureCleanup\(/);
+  assert.match(spec, /try \{[\s\S]*?runBrowserFlightFixtureCleanup\([\s\S]*?UPDATE flights SET certified_at=NOW\(\)/);
+  assert.match(spec, /finally \{[\s\S]*?runBrowserFlightFixtureCleanup\([\s\S]*?DELETE FROM flights WHERE user_id=9001 AND id=9913/);
+  assert.doesNotMatch(spec, /UPDATE flights SET certified_at=NULL/);
+  const helper = source("e2e/browser-db.mjs");
+  assert.match(helper, /runBrowserFlightFixtureCleanup\(statement\)/);
+  assert.match(helper, /BEGIN;[\s\S]*?ALTER TABLE flights DISABLE TRIGGER USER;[\s\S]*?ALTER TABLE flights ENABLE TRIGGER USER;[\s\S]*?COMMIT;/);
+});
