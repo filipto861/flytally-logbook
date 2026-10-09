@@ -1,3 +1,13 @@
+## 2026-10-09 — A4 owner approved destructive reset of EXACT isolated test database (execution still NOT RUN)
+
+Owner explicitly approved resetting schema `public` in **only** the previously verified local PostgreSQL database `127.0.0.1:55432 / flytally_satellite_r1_test / flytally_sat_r1` after the earlier read-only identity PASS on SHA `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`. Scope of consent is this dedicated synthetic acceptance fixture only; it **does not** authorize changes to another/production database, broad cleanup, feature launch, merge or deployment. The existing `tooling/bootstrap-browser-smoke-db.mjs` uses `DROP SCHEMA public CASCADE`; data under that schema will be destroyed. Each test child must recheck the exact live DB identity before bootstrap, use only fake supplier credentials and loopback sockets, and fail closed on any mismatch.
+
+**Execution plan:** pull exact clean current HEAD, validate URI host/port/name/user and actual `psql` identity again (read-only), verify presence of required local 64-character session secret (never print), build exact code locally via `npm.cmd run build` (do not bypass commercial build guard), and only after build success run `tooling/verify-satellite-http.mjs` in order `enabled` → `disabled` → `missing-token` with `FLYTALLY_SATELLITE_HTTP_A4=1` and one fresh 32-hex run ID common to all three modes; guard/reset/revoke happens separately in each run. Do not delete cache or `.next` manually; test fixture already isolates tokenless Data Cache with fresh tile coordinates. **All A4 real HTTP/build execution remains NOT RUN as of this doc update.**
+
+A4 validates existing authenticated route behavior only, not the proposed source-bounded fetch, validated PNG/JPEG signatures or hard per-process memory budget. Production Satellite remains OFF; PR #279 Draft; no deploy/merge.
+
+---
+
 ## 2026-10-09 — A4 owner READ-ONLY local PostgreSQL identity PASS; destructive bootstrap NOT AUTHORIZED
 
 Owner provided PowerShell console on exact clean source SHA `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`, branch `feat/3.7.0-satellite-r2d2-bounded-provider-io`: guarded `git pull --ff-only` succeeded; `DATABASE_URL` URI preflight matched host `127.0.0.1`, port `55432`, path `/flytally_satellite_r1_test`, username `flytally_sat_r1`; read-only `psql -X -w -At -v ON_ERROR_STOP=1 -c 'SELECT current_database(), current_user, inet_server_port();'` returned exactly `flytally_satellite_r1_test|flytally_sat_r1|55432`. Owner console printed `A4 READ-ONLY DATABASE PREFLIGHT PASS`, `No database modifications performed.` This confirms endpoint identity and connectivity **at that run**, not permission to drop the database schema.
