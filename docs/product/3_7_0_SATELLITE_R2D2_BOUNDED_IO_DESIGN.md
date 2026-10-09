@@ -1,3 +1,22 @@
+## 2026-10-09 — R2D.2-A3.2 complete as synthetic evidence: inbound request.signal and explicit upstream abort
+
+**Source provenance:** owner-uploaded `r2d2-spike-3416097c7143be81.json`, `request-signals-3416097c7143be81.jsonl`, `memory-3416097c7143be81.jsonl`, all read and cross-checked with each other. Exact local **source SHA** `808819637f354f855b287e46252f29ecadcdad7f`; Node **24.19.0**, Next **16.3.2**, run `A3.2_SIGNAL_ONLY`, experimental verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS` / `error=null`. 4 actual diagnostic requests, 4 synthetic upstream events, 14 server-side signal events (4 start, 4 `incoming-request-signal-abort`, 2 linked controller abort, 4 finally), 215 JSONL process-memory rows. These laboratory results are **not a pass of production Satellite runtime**.
+
+| Experiment | Incoming `request.signal` | Test source queued | Handler finished |
+| --- | --- | ---: | --- |
+| cached / observe | fired at approximately 302ms; upstream controller **not** aborted | **16,777,216 B** / 256 chunks, completed | ~3993ms, fully read 16MiB |
+| uncached / observe | fired at approximately 313ms; upstream controller **not** aborted | **16,777,216 B** / 256 chunks, completed | ~4019ms, fully read 16MiB |
+| cached / link | fired at approximately 307ms; server aborted own controller ~2ms later | **1,245,184 B** / 19 chunks, incomplete and closed | ~308ms, read **1,179,648 B** |
+| uncached / link | fired at approximately 311ms; server controller aborted same millisecond | **1,310,720 B** / 20 chunks, incomplete and closed | ~309ms, read **1,245,184 B** |
+
+**Strong conclusion, limited to this controlled local environment:** Next 16.3.2 emitted an incoming `Request.signal` abort event on synthetic downstream disconnect in both cached and uncached variants; **explicitly linking** it to a server-owned `AbortController.abort()` stopped the separate upstream connection quickly. Just **observing** the signal did not stop work. Upstream bytes already queued/in-flight before cancellation are nonzero; linking alone is **not** a hard memory envelope, and a standalone server total deadline remains mandatory even without a client abort. Do not assert Next automatically links all requests, or extrapolate this behavior to production hosting without targeted runtime evidence.
+
+**Memory/limits:** 215 whole-process samples, peak RSS **138 MiB**, heap **33 MiB**, external **74 MiB**, ArrayBuffers **38 MiB** (rounded; raw peaks 138.055 / 33.078 / 74.342 / 37.714 MiB). Cached observe peak RSS 129 MiB and cached link 99 MiB in successive test windows, but order/GC/cache effects prevent causal or per-request attribution. These are **not** production budgets. Fixture counts source `res.write()` *queued* bytes, not network ACKs or recipient-observed bytes. Next emitted the pre-existing `items over 2MB can not be cached` error for cached 16MiB observer mode; a cache-storage rejection does not cap upstream body materialization.
+
+**Closure:** A3.2 request-signal observation & explicit-link **OBSERVATIONS COLLECTED / laboratory done**. Broader R2D.2-A cache-memory gate remains **open**. **Next A3.3:** synthetic *fast-producer* / small concurrent cached+uncached fetch experiment, measure upstream completion/early abort, child RSS/external/ArrayBuffers at regular samples and background cached tee behavior. Limit test-only response size and requests, fail closed on missing observability. Then authenticated real Logbook Satellite route parity with fake upstream and strict auth/feature/disable gates; then cache strategy and measured, owner-approved I/O budgets before production code. No production route/provider, auth, public Standard, Flight Story, PostgreSQL, Training, merge/deploy or feature activation. PR #279 Draft, Satellite OFF.
+
+---
+
 ## 2026-10-09 — A3.2 request.signal observation and explicit-link lab STAGED / NOT RUN
 
 **Why A3.2:** A3.1 conclusively showed that its **unlinked** server fetch completed 16MiB upstream after HTTP client cancellation in cached and uncached modes. It did **not** observe `request.signal` on the Next handler, and cannot determine whether explicit wiring could stop that work. A bounded wall-clock deadline remains required regardless of client signal behavior.
