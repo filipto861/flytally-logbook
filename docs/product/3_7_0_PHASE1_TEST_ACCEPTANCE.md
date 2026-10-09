@@ -1,11 +1,17 @@
 # 3.7.0 — Phase 1: Map controller test and acceptance contract
 
-**Status:** Phase 1 merged (`main@cc7abd41`) and Vercel production READY; **live functional production smoke/closeout PENDING**. Local exact-candidate release PASS; satellite/openAIP externally BLOCKED. Previous candidate checkpoints retained as historical.
+**Status:** Phase 1 standard-only merged at `main@cc7abd41`, Vercel production READY; public Map API HTTP 4/4 PASS and owner-reported manual browser Map/GPS replay/public share/mobile smoke PASS. **Functional Phase 1 accepted by owner; final documentation closeout pending PR #270 integration.** Full product `3.7.0` not released, satellite/openAIP BLOCKED, native Safari and explicit screenshots/UA NOT VERIFIED. Historical evidence retained.
 **Independent re-review:** APPROVE WITH CHANGES for Phase 1 *technical design* (9 October 2026); conditions below must be fulfilled in implementation. Phase 2 satellite production and Phase 3 openAIP production remain separately BLOCKED.  
 **Source:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; docs-only PR #268.  
 **Parent contracts:** `3_7_0_MAPS_AVIATION_LAYERS.md` and `3_7_0_MAPS_REVIEW_RECONCILIATION.md`.  
 **Branching rule:** complied with: candidate lives in `feat/3.7.0-map-controller-phase1` on `main@162d9ba...`, Draft PR [#269](https://github.com/filipto861/flytally-logbook/pull/269). Runtime is **not** added to docs PR #268; merge only after docs reconciliation and exact-candidate verification.
 
+
+### Phase 1 functional production acceptance (latest evidence, 9 October 2026)
+
+**9 October 2026 — Phase 1 standard-only production functional acceptance (owner-reported manual smoke):** On deployed `main@cc7abd41858cb2b2ddd8e794889922c856885686` / Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` (READY, `fly-tally.com` assigned), the owner confirmed the requested browser checks work: authenticated Map navigation/route and airport presentation plus light/dark theme; existing GPS flight replay including playback/theme/position behavior; existing public share view/privacy; and mobile/iPad map interaction/lock behavior. This is **owner-reported manual functional smoke PASS**, not an assistant-executed browser automation, screenshot/trace artifact, or independent proof of native Safari and both iPad orientations. Separately, user-run production HTTP Map API smoke **4/4 PASS** (real OSM image HTTP 200; invalid/duplicate styles HTTP 400 JSON `unsupported_style` with `no-store`). Exact pre-merge candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff` had local `release_status=PASS`: Node 1,447/1,447, PG 100/100, Next build PASS, Playwright desktop/mobile Chromium 12/12 each. Vercel recent aggregated runtime errors: none in the inspected window; request-log-level coverage not established. **Phase 1 standard-only function accepted by owner; documentary closure remains pending integration of docs PR #270.** This is **not** a full `3.7.0` release, version bump, Git tag, satellite/openAIP enablement, provider-rights approval, or native Safari test PASS. `3.6.0` remains product version. Prior READY rollback target: `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs`.
+
+**Disposition:** owner-accepted **standard-only Phase 1**, pending documentation PR #270 integration. No unsupported claim of third-party data authorization, operational EFB data authority, native Safari validation or full 3.7.0 release. Former PENDING smoke lines below are dated historical snapshots.
 
 ### Production HTTP Map API smoke — 9 October 2026
 
