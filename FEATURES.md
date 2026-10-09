@@ -1,6 +1,6 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **7 October 2026**
+Last reconciled: **9 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
@@ -146,12 +146,30 @@ Important boundary:
 - Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
 - Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
 
-### 3.7.0 — Currency / monetary semantics — ACTIVE
+### 3.7.0 — Maps & Aviation Layers — ACTIVE / DESIGN, RUNTIME NOT STARTED
+- Select Standard or Satellite/orthophoto map background on the existing Route map, GPS tracks map, saved-flight GPS preview/replay and GPS import review, with consistent controls and no flight-evidence changes.
+- Maintain a single Leaflet map instance during background/overlay changes; preserve viewport, player cursor, route clicks, existing dark standard-map appearance and iPad movement lock.
+- Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage, data attribution and public-display rights are verified.
+- Preserve provider-specific color and attribution. On missing/failed imagery or aviation tiles, display explicit unavailable/partial state rather than falsely reporting full coverage or airspace activity.
+- Satellite backend and Story-card support already exist in source, but production feature expansion and openAIP are **not implemented/approved**. Story-card overlay export, operational airspace activation/NOTAM and safety alerts are outside 3.7.0.
+- Phase 0 source discovery is documented; independent design review and provider gates remain open. No DB/certification/backup change is presently expected.
+- Detailed design/review: `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`.
+
+### 3.8.0 — Currency / monetary semantics — NEXT (superseded former 3.7.0 reservation)
+- Issue #136 and original requirements are preserved; only implementation order/release number changed on 9 October 2026.
 - Define whether account currency is only a display/default denomination or authoritative for newly persisted monetary records.
 - Inventory existing record-level currency fields and legacy monetary values before changing behavior.
 - Preserve explicit stored denominations; missing currency evidence must not be guessed or silently converted.
 - Define export/backup and historical-display consequences before implementation.
 - No automatic FX conversion without a separately approved, source-backed conversion rule.
+
+### 3.9.0 — Multi-aircraft heterogeneous onboarding proof — PLANNED (formerly 3.8.0)
+- Validate canonical onboarding/flight-selection paths across Aeroplane, Helicopter, Sailplane/TMG, Balloon, ULL and Other, without new make/model-specific shortcuts.
+- Cover catalogue/manual fallback, Add/Edit, Quick Add, lifecycle, applicability and desktop/iPad/mobile light/dark evidence.
+
+### 3.10.0 — Multi-aircraft sharing / recovery / scale closeout — PLANNED (formerly 3.9.0)
+- Preserve recipient-owned shared aircraft copies with canonical validation, protected-flight backup/restore invariants, safe deletion/deactivation with historical flights, and measured multi-profile UX/scale behavior.
+- Require relevant regression, PostgreSQL, browser and build closeout rather than presuming safety from prior onboarding proof.
 
 ### 3.5.2 — Always-on GPS/SERA Night suggestions — IMPLEMENTED / PRODUCTION VERIFIED
 - Remove the account-level **Night definition** preference from Settings.
