@@ -1,6 +1,6 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 read-only source discovery COMPLETE; independent review **BLOCK** received and RECONCILED as a draft; technical Phase 1 contract clarified but not independently re-approved; satellite/openAIP external gates BLOCKED; runtime NOT STARTED.  
+**Status:** Phase 0 read-only discovery COMPLETE; first independent review BLOCK reconciled, second independent re-review **APPROVE WITH CHANGES for Phase 1 technical direction**; Phase 1 acceptance/registration contract drafted but not implemented or independently accepted by product owner; satellite/openAIP production gates BLOCKED; runtime NOT STARTED.  
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
@@ -48,7 +48,7 @@ All findings below are source inspection, **not** live provider, deployment, use
 
 **Not verified:** production `ARCGIS_ACCESS_TOKEN` existence/permissions; real OSM/Esri or openAIP tile responses; licensing correspondence; current openAIP API specs/rate limits; Vercel billing/provider usage; browser/device rendering or accessibility; provider DPA/transfer assessment; deployment health for any new map function. Never report these as PASS.
 
-## 3. Draft technical contract — pending independent review
+## 3. Draft technical contract — conditionally approved Phase 1 direction, implementation pending
 
 ### 3.1 Layer state and lifecycle
 
@@ -85,9 +85,11 @@ Keep the legacy standard dark treatment by applying the existing CSS filter **on
 
 ### 3.3 Provider/backend boundary
 
-Retain current `/api/map-tile/[z]/[x]/[y]?style=map|satellite` for existing uses and support **omitted** `style` as legacy standard. Require an explicit allowlist for present `style`: `map` or `satellite` only; unknown/typo/duplicate values must return a controlled 400 `unsupported_style` response with `no-store`, never silent standard tile success. Extend satellite selection through the same server endpoint; do not create another vendor-dependent browser URL. Do not expose ArcGIS access token to client, error, log or static HTML. OpenAIP must use a **separate** allowlisted aviation endpoint, not a new map `style` value.
+Retain current `/api/map-tile/[z]/[x]/[y]?style=map|satellite` for existing uses and support **omitted** `style` as legacy standard. Read all `URLSearchParams.getAll('style')` entries: absent => legacy `map`; exactly one value equal to `map` or `satellite` => accepted; **explicit empty**, unknown/typo or **any duplicates** (even identical values) => HTTP 400 controlled JSON `unsupported_style`, `Cache-Control: no-store`, **no upstream fetch**. No silent standard tile success. Extend satellite selection through the same server endpoint; do not create another vendor-dependent browser URL. Do not expose ArcGIS access token to client, error, log or static HTML. OpenAIP must use a **separate** allowlisted aviation endpoint, not a new map `style` value.
 
-For future openAIP: prefer an explicitly named server-side **allowlisted per-layer tile endpoint** rather than arbitrary upstream URLs; accept strictly validated `layer/z/x/y`, supported zoom and provider configuration; fetch only approved upstream host/path, with credentials server-side; validate expected image types and size, propagate controlled 401/403/429/5xx/unavailable state, provider-compliant cache directives, sensible throttling/usage safeguards and no raw upstream error responses to users. No user/private GPS coordinates, account identifiers or tokens are passed to openAIP; tile coordinates necessarily express viewed geographic area. **Public openAIP access is explicitly excluded in 3.7.0**, including guessed direct proxy URLs; the server must enforce authentication for its aviation endpoint. Any public use requires separate provider rights and a future explicit product decision.
+For future openAIP: prefer an explicitly named server-side **allowlisted per-layer tile endpoint** rather than arbitrary upstream URLs; accept strictly validated `layer/z/x/y`, supported zoom and provider configuration; fetch only approved upstream host/path, with credentials server-side; validate expected image types and size, propagate controlled 401/403/429/5xx/unavailable state, provider-compliant cache directives, sensible throttling/usage safeguards and no raw upstream error responses to users. No user/private GPS coordinates, account identifiers or tokens are passed to openAIP; tile coordinates necessarily express viewed geographic area. **Public openAIP access is explicitly excluded in 3.7.0**, including guessed direct proxy URLs. Any future aviation endpoint **must enforce authenticated session server-side before reading cache or fetching upstream**, return HTTP **401** without session and **403** if authenticated but not authorized (subject to existing safe auth middleware response contract), with `no-store` on denial. Never rely on a hidden UI toggle as access control. Any public use requires separate provider rights and a future explicit product decision.
+
+Future aviation proxy must use strict allowlisted host/layer/zoom/z/x/y, bounded response bytes and permitted image content types (limits derived from the verified provider contract), credential-free cache keys including provider revision/layer/zoom/x/y and rendering arguments, and must not cache error responses or bypass auth via a CDN. Respect upstream cache limits and 429/backoff; no uncontrolled prefetch. Current `next.config.ts` has `img-src 'self' data: blob: https:` and `connect-src 'self'`; same-origin proxy needs no CSP expansion, and narrowing existing image CSP is outside scope without a consumer audit.
 
 Do not assume a probe that returns one valid tile establishes global coverage or status for an entire rendered viewport. A display's state should distinguish requested, loading, available, partial and unavailable coverage, as far as reliably measurable, without fake success; satellite fallback must be visible as fallback, not mislabeled satellite. Fail closed on malformed or unauthorized responses; do not fall back to an unrelated aviation provider or fabricated geometry.
 
@@ -110,15 +112,15 @@ Do not assume a probe that returns one valid tile establishes global coverage or
 | OpenAIP partial tile failures | Partial/unavailable context signaled rather than falsely complete aviation layer |
 | Switch while GPS playback running | No playback reset, no GPS mutation, map center/zoom preserved |
 | Dark and light/theme switch | No filtered satellite/openAIP symbology; standard dark styling retained |
-| Public share/story export | No new data/rights leak; openAIP not exported; public sharing subject to explicit rights approval |
-| Invalid layer/z/x/y or untrusted host | Reject before fetch; no SSRF; no external dynamic host selection |
+| Public share/story export | 3.7.0 public replay remains Standard only; existing Story behavior unchanged. No new satellite/openAIP controls on public pages, **zero openAIP requests**, no openAIP Story/print/social export. Any future expansion separately licensed and approved |
+| Invalid layer/z/x/y or untrusted host | Reject before upstream fetch; strict host/path/zoom allowlist, controlled response, no SSRF, bounded raster type/size |
 | Keyboard/iPad mobile interactions | Controls reachable, no accidental pan, map movement lock preserved |
 
 ## 4. Phased delivery / dependency chain
 
-**Phase 0 — Read-only discovery & design: COMPLETE for source inventory; review BLOCK received and reconciled in documentation.** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md` records accepted findings, corrections, outstanding rights and the exact pane contract. Final independent sign-off of the revised Phase 1 proposal is PENDING; provider approvals remain separately BLOCKED. No runtime or production sign-off.
+**Phase 0 — Read-only discovery & design: COMPLETE for source inventory; first BLOCK review reconciled and second independent re-review APPROVE WITH CHANGES for Phase 1 technical direction.** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md` preserves both review outcomes. The detailed Phase 1 test/registration contract is now proposed in `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`; implementation and actual test registration remain PENDING product approval. Provider approvals remain separately BLOCKED. No runtime or production sign-off.
 
-**Phase 1 — Shared Leaflet layer abstraction:** review and accept exact pane/lifecycle/test contract first; standard-only behavior, map ownership, style parser allowlist (legacy omitted style preserved), preservation of current map/touch/dark/proxy behavior; real browser map lifecycle and view-state characterization tests, no duplicate *live* map instance. Phase 1 tests are implementation acceptance, not a demand to test nonexistent new code before Phase 1. No satellite/vendor activation until visual acceptance.
+**Phase 1 — Shared Leaflet layer abstraction:** review/accept `3_7_0_PHASE1_TEST_ACCEPTANCE.md` then register executable map-specific Playwright cases during the Phase 1 implementation batch; standard-only behavior, map ownership, style parser allowlist (legacy omitted style preserved), preservation of current map/touch/dark/proxy behavior; real browser pane/instance/view-state characterization tests, no duplicate *live* map instance. Phase 1 tests are implementation acceptance, not a demand to test nonexistent new code before Phase 1. No satellite/vendor activation until visual acceptance.
 
 **Phase 2 — Satellite on authenticated existing maps:** route overview, GPS tracks, saved flight replay, GPS import review. **Public flight share remains standard-only** in 3.7.0; new public satellite behavior and Story export integration are deferred until separate explicit licence and product approval. Reuse existing backend with explicit Esri + data-provider attribution, verified token/entitlement/cost/quotas, distinct satellite availability and non-misleading fallback. Story SVG pipeline remains separate and stable. Shipping satellite alone while openAIP is externally blocked requires an explicit release-scope/claims decision; do not claim the openAIP feature is delivered.
 
@@ -130,7 +132,7 @@ No phase is DONE until tests and, where applicable, production evidence satisfy 
 
 ## 5. Targeted tests and verification
 
-During Phase 1, add/register dedicated map browser-acceptance targets before claiming it complete; characterize that existing `gps-tracks` and `analytics` registration currently selects broader browser/PostgreSQL work and may block if target evidence is missing. Keep the **existing** Node `node:test` + `@playwright/test` stack; no mandatory new Jest/Vitest/React Testing Library. Do not edit verification ownership solely to bypass hard gates.
+During Phase 1, implement and register the specific map browser-acceptance targets in `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md` before claiming it complete; characterize that existing `gps-tracks` and `analytics` registration currently selects broader browser/PostgreSQL work and may block if target evidence is missing. Keep the **existing** Node `node:test` + `@playwright/test` stack; no mandatory new Jest/Vitest/React Testing Library. Do not edit verification ownership solely to bypass hard gates.
 
 Retain current `v1314`–`v1317` map visual/source contracts, updating exact assertions **with proof**, and add behavioral tests for named pane DOM assignment, dark CSS isolation, one live instance per mounted container, theme and base switches without reset, stale layer cleanup, attribution and UI overlaps, exact z-index and click hitboxes, HTTP 400 unknown/duplicate `style`, 401/403/429/5xx provider failures, and retained playback. Use controlled tile fixtures, not paid/live APIs, in repeatable test gates. Negative test public share and Story export: zero openAIP calls. A provider-unavailable deterministic test must not require a live API token.
 
@@ -148,8 +150,8 @@ Evidence baseline for Phase 0: **source inspection only; tests/typecheck/build/P
 
 **Frozen by product request:** map satellite toggle in flight map preview and optional openAIP overlay; `3.7.0` as new active release; no runtime implementation during Phase 0; prior currency and multi-aircraft feature intents preserved/resequenced.
 
-**Recommended, awaiting independent review:** Leaflet reuse; no DB changes; default standard, airspace OFF; shared controller with provider-specific panes; server-owned openAIP key/proxy; initial airspace raster only; optional independently shipable satellite phase.
+**Conditionally approved by independent re-review for Phase 1 direction only:** Leaflet reuse; no DB changes; default standard, airspace OFF; shared controller and specific panes; strict style parsing; Node/Playwright map tests. **Still requires product acceptance and implementation evidence.** Future server-owned openAIP key/proxy, airspace raster and independent satellite release remain external-gate-dependent.
 
 **Not approved / not evidenced:** provider licensing, operational suitability, public use, per-feature airspace details, cost model, current rate/zoom contract, runtime success, database/regulatory approval.
 
-Review handoff: `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`. Independent BLOCK review reconciliation and definitive disposition table: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`. No tests, deployment, API fetch or licensing approval has been represented as passed.
+Review handoff: `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`. First BLOCK and subsequent APPROVE WITH CHANGES review outcomes: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`. Proposed map-browser registration and deterministic acceptance: `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`. No tests, deployment, API fetch or licensing approval has been represented as passed.
