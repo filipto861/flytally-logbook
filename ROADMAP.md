@@ -1,3 +1,11 @@
+## 2026-10-09 — R2D.1 HTTP enabled fallback cache-isolation fix STAGED (rerun required)
+
+Owner-run exact-code `fda1c14697358bbdeb0c30dcd0ac184e26b37433` fresh Satellite ON release **PASS** (source 233/233; domain 46/46; TypeScript PASS; full aggregate/build PASS; PostgreSQL 100/100; desktop/mobile 11/11 each; candidate `36fa9bfff0b82afc803386531ab50ceadfb2f3242b059d9a70154d89304b48b1`). First post-build R2D three-mode HTTP series **FAIL in enabled**: body already contained correct fallback marker for logical tile 2, but no fresh `fallback/x=2` interception was recorded. **disabled and missing-token NOT RUN.** Most likely retained Next seven-day upstream Data Cache for tokenless reference-label URL (main/preferred URLs include per-run random synthetic token); this is a fixture isolation problem, not established production regression. Failure retained as evidence.
+
+**Test-only correction (current later HEAD, NOT VERIFIED):** `tooling/verify-satellite-http.mjs` now derives a valid zoom-18 unique 5-tile coordinate sequence from a fresh 32-hex `FLYTALLY_SATELLITE_HTTP_RUN_ID`, and passes it to the isolated provider fixture. Run the same fresh run ID for enabled → disabled → missing-token so disabled tests can follow warmed URLs; each provider intercept is still logged against logical scenario 1–5. Both fallback event assertions remain strict. Safe logs print event kind/logical-case/outcome, never provider secret/cookie. No `.next` cache deletion or production route/provider/Story change. New source regression test added.
+
+**Current new HEAD verification:** syntax, target, iterate, HTTP 3 modes, both full release gates NOT RUN. Do NOT transfer prior ON PASS to this later documentation/test-tool HEAD. Next owner step: run guarded clean-HEAD syntax/target/iterate; reuse previous ON build (no runtime modifications) for three HTTP modes with one newly generated RUN_ID; after HTTP PASS rerun exact-head ON/OFF full release. Keep Draft/unmerged, production Satellite OFF.
+
 ## 2026-10-09 — Satellite R2D.1 server-only upstream disable IMPLEMENTED / VERIFICATION PENDING
 
 **Branch:** `feat/3.7.0-satellite-r2d-upstream-disable`, stacked on reviewed R2D.0 Draft #277. DeepSeek `APPROVE WITH CHANGES` review reconciled first; design and acceptance frozen in `docs/product/3_7_0_SATELLITE_R2D_OPERATIONS_DESIGN.md`.
