@@ -2,12 +2,12 @@
 
 import { useEffect,useState } from "react";
 import dynamic from "next/dynamic";
+import type { FlightTrackReview } from "@/lib/data/flight-track-review";
 
 const FlightTrackPlayer = dynamic(
   () => import("@/components/flight-track-player").then(module => module.FlightTrackPlayer),
   { ssr: false, loading: () => <div className="track-map-loading" role="status">Loading GPS replay…</div> },
 );
-import type { FlightTrackReview } from "@/lib/data/flight-track-review";
 
 type CurrentValues={offBlock:string;takeoff:string;landing:string;onBlock:string;landings:number};
 const cache=new Map<number,FlightTrackReview>();
