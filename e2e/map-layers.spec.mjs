@@ -106,6 +106,12 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
   const map = await checkStandardPanes(page, ".route-overview-map", true);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
+  // Real hit-target interaction: noninteractive aviation pane must not swallow route clicks.
+  const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
+  await routeHit.hover();
+  await expect(map.locator(".leaflet-tooltip")).toBeVisible();
+  await routeHit.click();
+  await expect(page).toHaveURL(/\/flights\?routePair=/);
 });
 
 test("GPS map theme changes preserve a live map instance and viewport", async ({ page }) => {
