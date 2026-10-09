@@ -4,7 +4,8 @@
 **Owner:** Filip Točík  
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
-**Current active release:** `3.7.0`
+**Current active release:** `3.7.0`  
+**Current active workstream:** Maps & Aviation Layers — Phase 0 source discovery complete; design / external provider approval pending; runtime not started.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -67,9 +68,10 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Currency / monetary semantics · #136 | 🚧 | Active after 3.6.0 production closeout |
-| 11 | **3.8.0** | Multi-aircraft heterogeneous onboarding proof | ➡️ | Next after 3.7.0 |
-| 12 | **3.9.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Close cross-workflow and scale evidence |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 0 read-only discovery complete; contract/review and external provider rights pending; no runtime |
+| 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
+| 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
+| 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
 | — | — | GPS T&G time-normalized / evidence-limited follow-up | 🔬 | Confirmed ±10-point qualification defect; add-event logic needs broader real-track evidence before a release number is assigned |
 | — | — | Professional Logbook Platform | 🔬 | No release number until scope is frozen |
 
@@ -1021,11 +1023,48 @@ Phase 1 acceptance is satisfied. PR #265 merged to `main` as `d96aed69b9fee41550
 
 GPS/FCL.050 UTC evidence must not be converted into local-time evidence by convenience.
 
-# 3.7.0 — Currency / monetary semantics — ACTIVE
+# 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 0 DISCOVERY DOCUMENTED
 
-Issue: #136
+**Product decision — 9 October 2026:** Filip approved reprioritizing Maps & Aviation Layers as 3.7.0 immediately after the 3.6.0 production closeout. This supersedes the *release number/reservation* of the old 3.7.0 Currency workstream, **not** its contract, issue or requirements.
 
-**Current step:** reconstruct the existing monetary data model and consumers, freeze currency authority/legacy semantics, then obtain an independent design review before runtime implementation.
+**Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
+**Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
+**Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
+**Current status:** Source discovery COMPLETE (read-only); design review PENDING; provider rights, credentials, live contract and production coverage UNVERIFIED; runtime NOT STARTED.
+
+## Product objective
+
+- Add user-selectable `Standard / Satellite` base-map controls to relevant Leaflet flight map surfaces, including the saved flight GPS review/replay, while retaining map center, zoom, overlays, interactions and playback.
+- Add optional source-backed openAIP aviation layers; first candidate is raster airspace context. Airports, navaids and reporting points require separate applicability and density review.
+- One consistent, minimal, iPad-friendly Map Layers UX; default existing Standard basemap and airspace overlay OFF; no silent global or persisted preference.
+- Keep map context strictly non-authoritative and independent from logged flight evidence, recency, SERA, GPS calculation, certification and training.
+
+## Phase 0 discovery — completed source inventory / external gates open
+
+- Existing stack is Next.js 16/React 19/Leaflet 1.9.4. Current `/map` supports route overview and GPS tracks; saved flight detail loads the track player lazily; GPS import has a review player; public shared flights can expose the same replay component.
+- Satellite transport already exists in the backend `/api/map-tile/[z]/[x]/[y]?style=satellite` (Esri World Imagery with labels, requiring `ARCGIS_ACCESS_TOKEN`). The Story SVG generator already has a separate satellite option. Standard Leaflet helper uses `style=map` only.
+- Current dark treatment filters the entire Leaflet `tilePane`; satellite/openAIP must not inherit this filter. Existing route/airport panes have z-indices 450/470 and must remain interactive above aviation tiles.
+- `tests/v1314`–`v1317` contain legacy basemap/dark source contracts. `gps-tracks` and `analytics` development modules own affected paths; do not bypass selected browser/PostgreSQL requirements.
+- openAIP Core/Tiles API Swagger entrypoints are discoverable, but direct live schema, rate limits and licensing for this application are **not** independently verified. CC BY-NC 4.0 information and conflicting secondary interpretation of commercial application embedding require authoritative resolution, especially for public sharing.
+- OSM tile policy and Esri/data provider attribution, image rights, token entitlement and usage costs must be checked before production activation. No live production token/config/network smoke was run.
+
+## Phases and acceptance gates
+
+1. **Phase 0 — Reconstruct / Discover / Design / Review.** COMPLETE for read-only repository/public-document inventory and draft contract; independent technical review and external provider legal/contract approval remain pending. No runtime.
+2. **Phase 1 — Shared map-layer controller.** Characterize existing Leaflet lifecycle; isolate standard basemap pane, preserve touch lock, interactions, dark appearance, zoom and playback; source + behavioral/map browser evidence.
+3. **Phase 2 — Satellite on approved map surfaces.** Reuse existing ArcGIS proxy; provider entitlement/attribution/fallback must be verified; flight GPS detail, route overview, GPS tracks, import review and public replay only if rights permit. Story-card pipeline stays intact.
+4. **Phase 3 — openAIP airspace overlay (external gate).** Live official API contract, credentials, rate/cost/cache limits, written/qualified rights clearance, controlled proxy, precise available/unavailable state, attribution, airspace source-age caveat; no NOTAM or activation claim.
+5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
+
+**Blocking before live openAIP:** authoritative permission covering FlyTally's intended use, live current API verification, provider/security controls, attribution, privacy and explicit public-export decisions. **Blocking before satellite production:** licensed ArcGIS token/usage, attribution, and live failure behavior. Until gates clear, unavailable features fail closed; satellite can be independently releasable without claiming openAIP delivery only after a separate product/release decision.
+
+**Technical invariants:** no expected DB schema migration, certification payload rewrite, backup-format change, GPS calculation changes or Training changes. The actual scope must be re-evaluated if implementation evidence contradicts this assumption. No production readiness claimed from documentation.
+
+# 3.8.0 — Currency / monetary semantics — NEXT (formerly 3.7.0)
+
+**Superseded planning record:** On 9 October 2026, only the original `3.7.0` release reservation and ACTIVE scheduling for Currency / monetary semantics were superseded by Maps & Aviation Layers. Issue **#136**, original discovery plan and all safety/data-integrity decisions remain intact.
+
+**Current next step after 3.7.0:** reconstruct the existing monetary data model and consumers, freeze currency authority/legacy semantics, then obtain an independent design review before runtime implementation.
 
 Before code:
 - define whether account currency is display/default denomination or record authority;
@@ -1034,7 +1073,7 @@ Before code:
 - define export/backup consequences;
 - no automatic FX conversion without an explicit future rule.
 
-# 3.8.0 — Multi-aircraft heterogeneous onboarding proof — PLANNED
+# 3.9.0 — Multi-aircraft heterogeneous onboarding proof — PLANNED (formerly 3.8.0)
 
 Representative Aeroplane, Helicopter, Sailplane/TMG, Balloon, ULL and Other profiles must pass the same canonical workflow without make/model-specific runtime branches.
 
@@ -1047,7 +1086,7 @@ Proof includes:
 - applicability guidance;
 - desktop/iPad/mobile light/dark acceptance.
 
-# 3.9.0 — Multi-aircraft sharing / recovery / scale closeout — PLANNED
+# 3.10.0 — Multi-aircraft sharing / recovery / scale closeout — PLANNED (formerly 3.9.0)
 
 Scope:
 - aircraft sharing preserves recipient ownership + canonical validation;
