@@ -1,3 +1,7 @@
+## 3.7.0 R2 product requirement — Satellite end-to-end (2026-10-09)
+
+Required: Standard/Satellite selector on authenticated Routes, GPS Tracks, saved-flight GPS replay, GPS import review, and Flight Story preview/export. Preserve GPS playback/markers/pane/viewport and retain Standard fallback on tile failure. Story must support downloadable/shareable PNG with either basemap; no silent removal of existing satellite behavior. Public shared replay remains at its existing Standard-only scope unless separately approved. R2 server enforcement must not incorrectly block approved client flows. No production entitlement or deployment claim is implied. Status: R2 design in progress; runtime/tests NOT RUN.
+
 ### 2026-10-09 — R1 final local verification (Satellite ON and OFF)
 
 - Exact **runtime/test HEAD** `7661d1dd30ba17948ef517f7ef193358380b67cd`, candidate `7292ab60ebbbaaa1c6e77caadf2f02a8257fcb6d649d41b437ae54c3ab140814`; Windows local owner-run `npm.cmd run verify:release:risk -- --base origin/main` with `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS=true`: **release_status=PASS**; source=PASS (reused), domain=PASS (reused), typecheck=PASS (reused), aggregate=PASS (reused), build=PASS (reused), postgres=PASS (reused), browser desktop Chromium **11/11 PASS**, mobile Chromium **11/11 PASS**, blocked_evidence=none.
