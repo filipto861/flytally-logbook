@@ -19,7 +19,24 @@ function scales(points:PixelPoint[]){const alts=points.map(p=>p.alt).filter(Numb
 function chartPath(points:PixelPoint[],key:"alt"|"speed",max:number){const valid=points.map((p,i)=>({v:key==="alt"?p.alt:p.speed,x:CHART.x+i/Math.max(points.length-1,1)*CHART.w})).filter((p):p is {v:number;x:number}=>Number.isFinite(p.v));return valid.length<2?"":valid.map((p,i)=>`${i?"L":"M"} ${p.x} ${CHART.y+CHART.h-p.v/max*CHART.h}`).join(" ")}
 const altitudeTick=(v:number)=>v>=1000?`${Number((v/1000).toFixed(v%1000?1:0))}k`:String(Math.round(v));
 async function blobToDataUrl(blob:Blob){return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob)})}
-async function embedMapTiles(svg:SVGSVGElement){const clone=svg.cloneNode(true) as SVGSVGElement;const images=Array.from(clone.querySelectorAll("image[data-map-tile]"));await Promise.all(images.map(async image=>{const href=image.getAttribute("href");if(!href)return;try{const response=await fetch(new URL(href,window.location.origin).toString(),{cache:"force-cache"});if(!response.ok)throw new Error(`Map tile ${response.status}`);image.setAttribute("href",await blobToDataUrl(await response.blob()))}catch{image.remove()}}));return new XMLSerializer().serializeToString(clone)}
+async function embedMapTiles(svg: SVGSVGElement) {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  const images = Array.from(clone.querySelectorAll("image[data-map-tile]"));
+  await Promise.all(images.map(async image => {
+    const href = image.getAttribute("href");
+    if (!href) throw new Error("Story tile URL missing");
+    const url = new URL(href, window.location.origin);
+    const style = url.searchParams.get("style");
+    const response = await fetch(url.toString(), { cache: "force-cache" });
+    if (!response.ok || !style || response.headers.get("X-FlyTally-Map-Style") !== style) {
+      throw new Error("Story map tile unavailable");
+    }
+    const blob = await response.blob();
+    if (!blob.type.startsWith("image/")) throw new Error("Story map response is not an image");
+    image.setAttribute("href", await blobToDataUrl(blob));
+  }));
+  return new XMLSerializer().serializeToString(clone);
+}
 
 export function FlightStoryCard(props:Props){const svgRef=useRef<SVGSVGElement>(null),[busy,setBusy]=useState(false),[mapStyle,setMapStyle]=useState<MapStyle>("map"),[satelliteAvailable,setSatelliteAvailable]=useState(false),layout=mapLayout(props.points),route=layout.route.map(p=>`${p.x},${p.y}`).join(" "),scale=scales(layout.route),altPath=chartPath(layout.route,"alt",scale.altMax),speedPath=chartPath(layout.route,"speed",scale.speedMax),avgKt=props.blockMinutes&&props.distanceKm?Math.round((props.distanceKm/1.852)/(props.blockMinutes/60)):0,start=layout.route[0],end=layout.route.at(-1);
 useEffect(()=>{let cancelled=false;const tile=layout.tiles[0];if(!tile){setSatelliteAvailable(false);return}fetch(`/api/map-tile/${tile.z}/${tile.x}/${tile.y}?style=satellite&probe=1`,{cache:"no-store"}).then(r=>{if(cancelled)return;const available=r.ok&&r.headers.get("X-FlyTally-Map-Style")==="satellite";setSatelliteAvailable(available);if(available)setMapStyle("satellite");else setMapStyle("map")}).catch(()=>{if(!cancelled){setSatelliteAvailable(false);setMapStyle("map")}});return()=>{cancelled=true}},[layout.zoom]);
