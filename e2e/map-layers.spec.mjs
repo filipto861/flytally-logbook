@@ -152,3 +152,18 @@ test("GPS import review retains its map pane across theme changes", async ({ pag
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
 });
+
+test("map tile endpoint rejects unsupported and duplicate styles before upstream fetch", async ({ request }) => {
+  for (const query of [
+    "style=unknown",
+    "style=satelite",
+    "style=",
+    "style=map&style=satellite",
+    "style=map&style=map",
+  ]) {
+    const response = await request.get("/api/map-tile/0/0/0?" + query);
+    expect(response.status(), query).toBe(400);
+    expect(response.headers()["cache-control"]).toBe("no-store");
+    expect(await response.json()).toEqual({ error: "unsupported_style" });
+  }
+});
