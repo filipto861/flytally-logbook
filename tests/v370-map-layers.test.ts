@@ -148,3 +148,17 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
     "new map control must select registered map browser acceptance");
   assert.equal(registry.ownership.auditedTotal, 388);
 });
+
+test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
+  const story = source("components/flight-story-card.tsx");
+  assert.match(story, /await Promise\.all\(images\.map\(async image =>/);
+  assert.match(story, /response\.headers\.get\("X-FlyTally-Map-Style"\) !== style/);
+  assert.match(story, /if \(!blob\.type\.startsWith\("image\/"\)\)/);
+  assert.doesNotMatch(story, /image\.remove\(\)/);
+  assert.match(story, /setExportError\("Story export unavailable/);
+  assert.match(story, /role="alert"/);
+  assert.match(story, /disabled=\{busy\} aria-pressed=\{mapStyle==="satellite"\}/);
+  assert.match(story, /disabled=\{busy\} aria-pressed=\{mapStyle==="map"\}/);
+  assert.match(story, /if \(svgUrl\) URL\.revokeObjectURL\(svgUrl\)/);
+  assert.match(story, /<FlightStoryCard|export function FlightStoryCard/);
+});
