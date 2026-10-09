@@ -18,7 +18,9 @@ test("3.7.0 map controller freezes the pane contract and standard-only layer", (
 
 test("3.7.0 standard dark filtering is isolated from default and aviation panes", () => {
   const controller = source("components/map-layer-controller.ts");
-  assert.match(controller, /state\.basePane\.style\.filter = theme === "dark"/);
+  assert.match(controller, /state\.style === "map" && state\.theme === "dark"/);
+  assert.match(controller, /state\.basePane\.style\.filter/);
+  assert.match(controller, /state\.style = style/);
   assert.match(controller, /state\.aviationPane\.style\.filter = "none"/);
   assert.match(controller, /tiles\.style\.filter = "none"/);
   assert.doesNotMatch(controller, /tilePane\.style\.filter/);
@@ -102,4 +104,36 @@ test("3.7.0 public replay fixture restores disposable certified state safely", (
   const helper = source("e2e/browser-db.mjs");
   assert.match(helper, /runBrowserFlightFixtureCleanup\(statement\)/);
   assert.match(helper, /BEGIN;[\s\S]*?ALTER TABLE flights DISABLE TRIGGER USER;[\s\S]*?ALTER TABLE flights ENABLE TRIGGER USER;[\s\S]*?COMMIT;/);
+});
+
+
+test("3.7.0 Satellite trial is explicit opt-in and retains Standard by default", () => {
+  const control = source("components/satellite-map-control.ts");
+  const controller = source("components/map-layer-controller.ts");
+  assert.match(control, /NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS === "true"/);
+  assert.match(control, /if \(!SATELLITE_MAPS_TRIAL_ENABLED \|\| !enabled\) return \(\) => \{\};/);
+  assert.match(controller, /return attachBasemap\(map, "map", url, attribution\)/);
+  assert.match(controller, /return attachBasemap\(map, "satellite", url, attribution, onLoad, onError\)/);
+  assert.match(control, /unavailable = true; \/\/ Prevent retry storms/);
+  assert.match(control, /standardMap\(true\)/);
+  assert.match(control, /status\("Satellite unavailable/);
+  assert.doesNotMatch(control, /localStorage|sessionStorage/);
+  assert.doesNotMatch(control, /openaip/i);
+});
+
+test("3.7.0 trial is limited to four authenticated surfaces, not public replay", () => {
+  const overview = source("components/route-overview-map.tsx");
+  const tracks = source("components/tracks-map.tsx");
+  const saved = source("components/flight-track-player.tsx");
+  const imported = source("components/gps-import-review-player.tsx");
+  for (const file of [overview, tracks, imported]) {
+    assert.match(file, /installSatelliteMapControl\(map,true\)/);
+    assert.match(file, /cleanupSatellite\(\)/);
+  }
+  assert.match(saved, /installSatelliteMapControl\(map,!publicView\)/);
+  assert.match(saved, /\[samples,tracks,publicView\]/);
+  const publicMap = source("components/public-flight-map.tsx");
+  assert.match(publicMap, /publicView/);
+  assert.doesNotMatch(publicMap, /installSatelliteMapControl/);
+  assert.doesNotMatch(source("components/flight-story-card.tsx"), /installSatelliteMapControl/);
 });
