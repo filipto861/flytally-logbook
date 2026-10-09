@@ -1,3 +1,23 @@
+## 2026-10-09 — R2D.2-A1 OWNER OBSERVATIONS COLLECTED; A2 CACHE-TEE DIFFERENTIATION STAGED
+
+**Clean exact A1 source HEAD** `1d5a5a8cd8262422e123a087352343590646d260`; owner PowerShell git fetch/pull SHA gate and syntax checks PASS. Isolated Next 16.3.2 mini-app build/start succeeded, full seven-case local run completed with JSON verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS` and no experiment-level exception. **Result is diagnostic evidence, NOT a safety/production hardening PASS**. Report: local ignored `tooling/r2d2-cache-spike/reports/r2d2-spike-9be5c539cbf64555.json`; source summary supplied in chat, not uploaded as an independently inspected JSON artifact. A1 results:
+
+| Scenario | App result | Locally observed synthetic upstream |
+| --- | --- | --- |
+| cached normal first | 200 JSON; 65,536 app bytes; 54 ms total client observation | one 65,536 B successful fixture transmission queued |
+| cached normal repeat | 200 JSON; 65,536 app bytes; 19 ms | **no new** upstream fetch event for identical URL (consistent with warm cache) |
+| uncached normal | 200 JSON; 65,536 app bytes; 48 ms | one 65,536 B successful fixture transmission queued |
+| cached/uncached 16 MiB large, abort after first reader chunk | each 200 JSON diagnostic, 65,358 app bytes | each source only **queued 65,536 B**, closed before finishing; cannot infer impact of full 16 MiB |
+| cached/uncached 1 KiB then stall | each diagnostic JSON, body read aborted after ~4,500 ms lab watchdog | each queued 1,024 B; source connection closed; this is NOT a product timeout |
+
+One isolated Node process memory sample series (120 x 100-ms rows): aggregate peak RSS **92 MiB**, heap **33 MiB**, external **5 MiB**; peaks not attributable to a specific fetch, concurrency or cache branch. Source `emittedBytes` represents bytes queued by the fixture's HTTP writer, NOT acknowledged network/wire-received bytes. Browser/client-disconnect, 16 MiB fully consumed, background cache continuation following *reader-only* cancel, memory upper bound, exact cache internal hit instrumentation and production Satellite route parity remain **NOT VERIFIED**. Do not choose limits from these results.
+
+**A2 test-only changes STAGED / NOT RUN on new HEAD:** preserve all A1 cases and add (i) 16 MiB cached full-consumption baseline to prove streaming fixture can actually complete; (ii) cached/uncached abort after application has consumed at least **512 KiB**, not just first chunk; (iii) cached/uncached **reader-only cancel without aborting the fetch signal**, followed by a controlled 3.2-second observation of whether the upstream cache tee continues consuming after application returned. New per-scenario upstream-event snapshots and process-memory window peaks are observation aids; values are diagnostic only and not upper bounds. Cached cancel-only potentially exercises memory pressure; local fixture caps streamed data at 16 MiB and denies non-loopback network in the lab Next child. Never transplant reader-only cancel into production as a recommended safe-abort policy.
+
+**Gate:** run new exact-HEAD Node syntax checks, isolated lab script, inspect per-scenario source queued bytes/completion and per-window memory; be alert to incomplete fixture baseline, non-settling streams and Next internal cache failure. Even if A2 observations complete, a separate A3 client-disconnect/route-parity experiment and hosting constraints are needed before production timeout, byte limits or cache policy are frozen. No runtime/auth/Story/Standard/DB/Training changes or merge/deploy. Production Satellite OFF.
+
+---
+
 ## 2026-10-09 — R2D.2-A1 FIRST OWNER-RUN FAILED IN ISOLATED MINI NEXT BUILD; ISOLATION FIX STAGED
 
 **Owner evidence on clean exact R2D.2 commit `c02ed61b147a157d10a443620ddac1964eb1fac2`:** branch fetch/switch and 3 syntax checks succeeded; `node tooling/r2d2-cache-spike.mjs` reported `SPIKE_INCOMPLETE` with **zero HTTP requests, zero upstream events, zero memory samples**. The mini Next 16.3.2 Turbopack build failed while loading **ancestor application** `next.config.ts` into `tooling/r2d2-cache-spike/next.config.compiled.js`; the parent's relative `./lib/commercial-build-guard.ts` could not resolve inside the mini test directory. This was a **test harness config-isolation defect**, not any evidence about provider/cache/abort behavior. Preserve this failure in history; no runtime, PostgreSQL, Playwright, Satellite ON/OFF or external calls were tested by A1.
