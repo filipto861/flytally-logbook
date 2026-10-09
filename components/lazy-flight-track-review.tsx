@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect,useState } from "react";
-import { FlightTrackPlayer } from "@/components/flight-track-player";
+import dynamic from "next/dynamic";
+
+const FlightTrackPlayer = dynamic(
+  () => import("@/components/flight-track-player").then(module => module.FlightTrackPlayer),
+  { ssr: false, loading: () => <div className="track-map-loading" role="status">Loading GPS replay…</div> },
+);
 import type { FlightTrackReview } from "@/lib/data/flight-track-review";
 
 type CurrentValues={offBlock:string;takeoff:string;landing:string;onBlock:string;landings:number};
