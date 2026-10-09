@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269. Earlier head `5b011c8`: source/domain/typecheck PASS, aggregate 1,443/1,443 PASS, build PASS, isolated PostgreSQL 100/100 PASS, browser-risk 10 desktop PASS / 1 FAIL with pending GPS save, plus Leaflet SSR errors. New feature head `592e3e8` adds **untested** client-only Leaflet boundaries; GPS save root cause awaiting trace/DB evidence. Current release FAIL/not ready; mobile browser NOT RUN. Provider-gated Phase 2 satellite and Phase 3 openAIP remain BLOCKED.
+**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269. Earlier head `5b011c8`: source/domain/typecheck PASS, aggregate 1,443/1,443 PASS, build PASS, isolated PostgreSQL 100/100 PASS, browser-risk 10 desktop PASS / 1 FAIL with pending GPS save, plus Leaflet SSR errors. New feature head `3777fb0` adds **untested** client-only Leaflet boundaries and registers `client-maps.tsx` in risk ownership (`auditedTotal=386`); GPS save root cause awaiting trace/DB evidence. Current release FAIL/not ready; mobile browser NOT RUN. Provider-gated Phase 2 satellite and Phase 3 openAIP remain BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
