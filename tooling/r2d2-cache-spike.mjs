@@ -19,10 +19,11 @@ const LOCKED_NEXT = "16.3.2";
 const BRANCH = "feat/3.7.0-satellite-r2d2-bounded-provider-io";
 const RUN = randomBytes(8).toString("hex");
 const LAB_TIMEOUT_MS = 4500; // LAB-ONLY watchdog; NOT production timeout policy
-// Run only the newest signal cases to avoid rerunning historical A1/A2 work.
+// Manual-only mode selection; historical evidence stays bound to original SHAs.
 const SIGNAL_ONLY = process.argv.length === 3 && process.argv[2] === "--signal-only";
-if (!(process.argv.length === 2 || SIGNAL_ONLY)) {
-  throw new Error("Usage: node tooling/r2d2-cache-spike.mjs [--signal-only]");
+const PRESSURE_ONLY = process.argv.length === 3 && process.argv[2] === "--pressure-only";
+if (!(process.argv.length === 2 || SIGNAL_ONLY || PRESSURE_ONLY)) {
+  throw new Error("Usage: node tooling/r2d2-cache-spike.mjs [--signal-only|--pressure-only]");
 }
 function command(exe, args, label) {
   const run = spawnSync(exe, args, { cwd: ROOT, encoding: "utf8", timeout: 15_000 });
@@ -94,19 +95,42 @@ function fixtureServer(events) {
     const sample = url.searchParams.get("sample");
     const key = url.searchParams.get("key");
     if (req.method !== "GET" || url.pathname !== "/bytes" ||
-        !["normal", "large", "stall"].includes(sample) ||
+        !["normal", "large", "stall", "rapid"].includes(sample) ||
         !/^[a-z0-9_-]{1,80}$/.test(key || "")) {
       res.writeHead(400).end(); return;
     }
     const event = { sample, key, emitted: 0, chunks: 0, started: Date.now(),
       close: null, finished: false };
     events.push(event);
-    // Synthetic binary only. LAB test sizes (64 KiB, 16 MiB) are NOT product limits.
-    const goal = sample === "normal" ? 64 * 1024 : sample === "large" ? 16 * 1024 * 1024 : 1024;
+    // Lab-only finite byte budgets: normal=64KiB, stall=1KiB,
+    // large/rapid=16MiB. These are NOT production limits.
+    const goal = sample === "normal" ? 64 * 1024
+      : sample === "stall" ? 1024 : 16 * 1024 * 1024;
     const chunk = Buffer.alloc(sample === "stall" ? 1024 : 64 * 1024, 0x41);
     res.writeHead(200, { "content-type": "application/octet-stream" });
-    res.on("close", () => { event.close = Date.now(); clearInterval(timer); });
-    const timer = setInterval(() => {
+    let timer = null;
+    res.on("close", () => { event.close = Date.now(); if (timer) clearInterval(timer); });
+    if (sample === "rapid") {
+      // Run only on the loopback fixture. Respect Node stream backpressure:
+      // wait for 'drain' when write returns false; never make infinite data.
+      const pump = () => {
+        if (res.destroyed) return;
+        if (event.emitted >= goal) {
+          event.finished = true;
+          res.end();
+          return;
+        }
+        const size = Math.min(chunk.length, goal - event.emitted);
+        const accepted = res.write(chunk.subarray(0, size));
+        event.emitted += size;
+        event.chunks += 1;
+        if (!accepted) res.once("drain", pump);
+        else setImmediate(pump);
+      };
+      setImmediate(pump);
+      return;
+    }
+    timer = setInterval(() => {
       if (res.destroyed) { clearInterval(timer); return; }
       if (res.writableNeedDrain) return;
       if (event.emitted < goal) {
@@ -114,14 +138,14 @@ function fixtureServer(events) {
         const accepted = res.write(chunk.subarray(0, size));
         event.emitted += size;
         event.chunks += 1;
-        if (!accepted) return; // avoid aggressive producer oversubscription
+        if (!accepted) return;
       }
       if (event.emitted >= goal && sample !== "stall") {
         event.finished = true;
         clearInterval(timer);
         res.end();
       }
-      // "stall" deliberately remains open after 1 KiB until consumer abort/child shutdown.
+      // "stall" deliberately remains open after 1 KiB until consumer abort.
     }, 8);
     timer.unref?.();
   });
@@ -184,6 +208,7 @@ async function main() {
   Object.assign(baseEnv, { NEXT_TELEMETRY_DISABLED: "1",
     FLYTALLY_R2D2_SPIKE: "1",
     FLYTALLY_R2D2_SPIKE_MEMORY_LOG: memoryFile,
+    FLYTALLY_R2D2_SPIKE_MEMORY_SAMPLE_MS: PRESSURE_ONLY ? "20" : "100",
     FLYTALLY_R2D2_SPIKE_ROUTE_EVENTS: signalLog,
     FLYTALLY_R2D2_SPIKE_UPSTREAM: "http://127.0.0.1:" + upstreamPort + "/",
     NODE_ENV: "production" });
@@ -201,7 +226,7 @@ async function main() {
     child.stdout.on("data", () => {});
     child.stderr.on("data", x => { stderr = (stderr + String(x)).slice(-2000); });
     await waitForApp("http://127.0.0.1:" + appPort + "/", child);
-    const requests = SIGNAL_ONLY ? [] : [
+    const requests = (SIGNAL_ONLY || PRESSURE_ONLY) ? [] : [
       ["cached", "normal", "complete", "cache-warm"],
       ["cached", "normal", "complete", "cache-warm"], // same URL: compare upstream events
       ["uncached", "normal", "complete", "no-cache-normal"],
@@ -252,7 +277,7 @@ async function main() {
     // is reading its own upstream fetch. Unlike reader-only cancel, this tests
     // whether disconnect propagates automatically through the HTTP boundary.
     // No runtime code or production route is involved.
-    if (!SIGNAL_ONLY) for (const mode of ["cached", "uncached"]) {
+    if (!SIGNAL_ONLY && !PRESSURE_ONLY) for (const mode of ["cached", "uncached"]) {
       const eventStart = events.length;
       const start = Date.now();
       const ctrl = new AbortController();
@@ -297,7 +322,7 @@ async function main() {
     // incoming Request.signal to its own server-side AbortController.
     // The signal's timing is not observable by a disconnected HTTP client;
     // the isolated child writes sanitized records to a run-scoped JSONL.
-    for (const disconnectProbe of ["observe", "link"]) {
+    if (!PRESSURE_ONLY) for (const disconnectProbe of ["observe", "link"]) {
       for (const mode of ["cached", "uncached"]) {
         const key = RUN + "-signal-" + disconnectProbe + "-" + mode;
         const eventStart = events.length;
@@ -355,6 +380,47 @@ async function main() {
         }
       }
     }
+    if (PRESSURE_ONLY) {
+      // Two finite 16MiB sources per batch, at most two in-flight responses.
+      // Distinct keys prevent a cache hit and isolate each cache-miss body.
+      // Pressure is deliberate, small, capped, and only inside local lab.
+      for (const mode of ["cached", "uncached"]) {
+        const eventStart = events.length;
+        const startedEpochMs = Date.now();
+        const requests = Array.from({ length: 2 }, (_, index) => {
+          const query = new URLSearchParams({
+            mode, sample: "rapid", action: "complete",
+            key: RUN + "-rapid-" + mode + "-" + index,
+          });
+          return fetch("http://127.0.0.1:" + appPort + "/api/probe?" + query,
+            { signal: AbortSignal.timeout(8000) })
+            .then(async response => ({ status: response.status, body: await response.json() }))
+            .catch(err => ({ error: err?.name || "unknown" }));
+        });
+        const outcomes = await Promise.all(requests);
+        const endedEpochMs = Date.now();
+        await sleep(800); // allow cache clone fill and memory sampling
+        const source = events.slice(eventStart);
+        const result = {
+          mode, action: "pressure-pair", sample: "rapid",
+          startedEpochMs, endedEpochMs, postObserveUntilEpochMs: Date.now(),
+          elapsedMs: endedEpochMs - startedEpochMs, batchCount: 2,
+          results: outcomes, newUpstreamEvents: source.map(e => ({
+            sample: e.sample, queuedBytes: e.emitted, chunksQueued: e.chunks,
+            completed: e.finished, closed: e.close !== null,
+            elapsedMs: e.close === null ? null : e.close - e.started,
+          })),
+        };
+        results.push(result);
+        if (outcomes.length !== 2 ||
+            outcomes.some(o => o.status !== 200 || o.body?.bytes !== 16 * 1024 * 1024 ||
+              o.body?.phase !== "completed") ||
+            source.length !== 2 ||
+            source.some(e => !e.finished || e.emitted !== 16 * 1024 * 1024)) {
+          throw new Error("A3.3 pressure baseline failed; inspect results and reject conclusions");
+        }
+      }
+    }
     if (stderr) results.push({ serverStderrObserved: true, tail: stderr.slice(-600) });
   } catch (e) {
     problem = String(e?.message || e).slice(-1500);
@@ -369,7 +435,7 @@ async function main() {
   const report = {
     kind: "R2D2_A_SYNTHETIC_DIAGNOSTIC_NOT_RELEASE_TEST",
     sha, branch: BRANCH, node: process.versions.node, next: LOCKED_NEXT,
-    run: RUN, mode: SIGNAL_ONLY ? "A3.2_SIGNAL_ONLY" : "FULL_PLUS_A3.2",
+    run: RUN, mode: PRESSURE_ONLY ? "A3.3_PRESSURE_ONLY" : SIGNAL_ONLY ? "A3.2_SIGNAL_ONLY" : "FULL_PLUS_A3.2",
     labValuesAreNotProductionBudgets: true,
     provenance: "next build + next start, isolated tooling mini app and local binary HTTP fixture",
     upstreamEvents: events.map(e => ({ sample: e.sample, key: e.key.slice(17),
