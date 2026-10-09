@@ -237,7 +237,10 @@ async function main() {
     console.log(`R2D upstream interceptions: ${upstreamEvents(logFile).length} (synthetic, no real provider calls)`);
     console.log(`R2D tile fixture series: z=${TILE_Z}, x-start=${TILE_X0}, y=${TILE_Y} (fresh URLs; no upstream cache purge)`);
   } catch (error) {
-    console.error("R2C HTTP fixture: FAIL", error instanceof Error ? error.message : String(error));
+    console.error(`R2D HTTP fixture (mode=${MODE}): FAIL`, error instanceof Error ? error.message : String(error));
+    // Only logical case id, request kind and HTTP outcome: never log token,
+    // session cookie, GPS/flight details or actual coordinate payload.
+    console.error("R2D synthetic upstream event summary:", JSON.stringify(upstreamEvents(logFile)));
     if (stderrTail) console.error("Server diagnostic (truncated):", stderrTail.replaceAll(TOKEN, "[redacted]"));
     process.exitCode = 1;
   } finally {
