@@ -205,3 +205,30 @@ test("candidate identity changes when an untracked worktree file changes",async(
     fs.rmSync(temp,{recursive:true,force:true});
   }
 });
+
+test("3.7.0 map sources select map-specific browser acceptance without losing broad GPS gates",()=>{
+  const {result,payload}=plan([
+    "components/map-layer-controller.ts",
+    "components/route-overview-map.tsx",
+    "components/flight-track-player.tsx",
+    "app/api/map-tile/[z]/[x]/[y]/route.ts",
+  ]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  const ids=payload.plan.browserEvidence.targets.map((target:{id:string})=>target.id);
+  for(const id of [
+    "map-panes-overview-desktop","map-panes-overview-mobile",
+    "map-lifecycle-tracks-desktop","map-lifecycle-tracks-mobile",
+    "map-lifecycle-player-desktop","map-lifecycle-player-mobile",
+    "flight-gps-save-desktop","flight-gps-save-mobile",
+  ])assert.ok(ids.includes(id),"Expected map/broad acceptance target "+id);
+});
+
+test("3.7.0 map browser spec is explicitly registered in the authoritative registry",()=>{
+  const {result,payload}=plan(["e2e/map-layers.spec.mjs"]);
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.deepEqual(payload.plan.browserEvidence.blockers,[]);
+  const selected=payload.plan.browserEvidence.targets;
+  assert.equal(selected.length,6);
+  assert.ok(selected.every((target:{spec:string})=>target.spec==="e2e/map-layers.spec.mjs"));
+});
