@@ -37,7 +37,7 @@ function preflight() {
   assert.equal(url.port, "55432", "Required dedicated database port");
   assert.equal(url.pathname, "/flytally_satellite_r1_test", "Required dedicated database name");
   assert.equal(decodeURIComponent(url.username), "flytally_sat_r1", "Required dedicated DB user");
-  assert.equal(url.protocol, "postgresql:", "Database must use explicit postgresql URL");
+  assert.ok(["postgres:", "postgresql:"].includes(url.protocol), "Database must use explicit PostgreSQL URL");
   assert.equal(command("git", ["branch", "--show-current"], "git branch"),
     "feat/3.7.0-satellite-r2-http-integration", "Expected test branch");
   assert.equal(command("git", ["status", "--porcelain"], "git clean"), "", "Clean tree required");
