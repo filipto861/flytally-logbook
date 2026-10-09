@@ -5,6 +5,10 @@
 **Input:** independent technical review delivered as an attached text, 12 findings C1/C2, B1–B4, O1–O3, D1–D3; reviewer overall verdict **BLOCK**.  
 **Status:** reconciliation documented; **no runtime change or release approval**. No reviewer or operator has approved external rights.
 
+## Follow-up product compatibility decision (9 October 2026)
+
+**Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
+
 ## Decision
 
 **Accept the production block; reject interpreting it as a global block of all work.** The current release remains `3.7.0 Maps & Aviation Layers`. Architectural Phase 1 may start **only after** the revised pane/state/lifecycle/test contract is reviewed and accepted; implementing and passing its characterization tests is part of Phase 1 DoD, not a prerequisite paradoxically requiring tests of code not yet written. Satellite Phase 2 and openAIP Phase 3 must **not** be activated in production without their independent provider gates.
