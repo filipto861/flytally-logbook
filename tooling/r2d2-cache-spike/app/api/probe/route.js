@@ -16,7 +16,7 @@ export async function GET(request) {
   }
   const origin = new URL(process.env.FLYTALLY_R2D2_SPIKE_UPSTREAM || "");
   if (origin.protocol !== "http:" || origin.hostname !== "127.0.0.1" ||
-      !/^\\d+$/.test(origin.port) || origin.pathname !== "/" || origin.search || origin.hash) {
+      !/^[0-9]+$/.test(origin.port) || origin.pathname !== "/" || origin.search || origin.hash) {
     return Response.json({ error: "unsafe_fixture_origin" }, { status: 503 });
   }
   const start = performance.now();
