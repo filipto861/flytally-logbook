@@ -51,10 +51,10 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.5.5 production metadata and 3.6.0 active roadmap stay aligned",()=>{
+test("3.6.0 release candidate metadata stays aligned with the 3.5.5 production baseline",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
-  assert.equal(pkg.version,"3.5.5");
+  assert.equal(pkg.version,"3.6.0");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
   assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
