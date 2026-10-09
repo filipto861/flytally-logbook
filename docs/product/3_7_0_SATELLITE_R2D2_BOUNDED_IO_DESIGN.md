@@ -1,3 +1,17 @@
+## 2026-10-09 — A3.2 request.signal observation and explicit-link lab STAGED / NOT RUN
+
+**Why A3.2:** A3.1 conclusively showed that its **unlinked** server fetch completed 16MiB upstream after HTTP client cancellation in cached and uncached modes. It did **not** observe `request.signal` on the Next handler, and cannot determine whether explicit wiring could stop that work. A bounded wall-clock deadline remains required regardless of client signal behavior.
+
+**Test-only experiment:** in isolated `tooling/r2d2-cache-spike/app/api/probe/route.js`, optional `disconnectProbe=observe|link` listens to `request.signal`. The `observe` route records the abort event without changing its controller; `link` additionally calls `controller.abort("incoming-request-aborted")` on that event. Both write stripped, run-scoped server-side `route-start`, `incoming-request-signal-abort`, `linked-upstream-controller-abort` and `route-finally` JSONL under ignored local report directory. Trace contains only lab mode, unique synthetic key, timestamps, route-phase, byte counts and signal states; no cookies, live credentials, flights or GPS. The runner checks expected route-start/finally trace presence before calling the experiment complete.
+
+**Fast owner rerun:** `node tooling/r2d2-cache-spike.mjs --signal-only`, on the exact clean checked-out A3.2 branch HEAD. It separately builds/starts test Next 16.3.2 and executes cached/uncached × observer/linked cases using independent unique URLs, aborts local HTTP caller after laboratory 300ms, and gives fake 16MiB source 5.5s for completion or watchdog close. Old A1/A2/A3.1 cases are intentionally not repeated in this mode; their evidence stays scoped to historical SHA. The complete manual script remains supported with no argument. 300ms, 4.5s body watchdog and 5.5s observation are **LAB ONLY**, never product budgets.
+
+**Interpreting the test:** if `incoming-request-signal-abort` is observed and `link` aborts upstream while `observe` continues, the request signal can drive that cancellation in this mini Next environment. If no incoming abort event is observed, no claim about its existence or reliability may be made; explicit server deadline remains essential, and production Satellite route parity still needs separate testing. Connection counts are source-queued bytes, not wire-ACKed. No actual production route, cache semantics, permission, tokens, databases, session or UI are modified.
+
+**A3.2 source changed only in isolated test tooling; corrected HEAD syntax/build/runtime probes, memory validation and release are currently NOT RUN.** No hard provider limits or release approval; Draft #279, production Satellite OFF.
+
+---
+
 ## 2026-10-09 — R2D.2-A3.1 downstream disconnect OWNER EVIDENCE; signal-link question next
 
 **Owner files inspected:** `r2d2-spike-229c80a765da2414.json` and `memory-229c80a765da2414.jsonl`, exact source HEAD `911b95864303cfdf95a52be64082e3508ac2aa7e`, Node `24.19.0`, Next `16.3.2`; build/start of isolated mini Next app completed; report `error: null`, verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`. Full JSON+340 memory records independently parsed and cross-checked. Experiment includes **14 diagnostic requests + one server-stderr report entry**, **13 distinct upstream fixture events**.
