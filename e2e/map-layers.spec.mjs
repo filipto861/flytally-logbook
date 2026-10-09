@@ -317,4 +317,10 @@ test("map tile endpoint rejects unsupported and duplicate styles before upstream
     expect(response.headers()["cache-control"]).toBe("no-store");
     expect(await response.json()).toEqual({ error: "unsupported_style" });
   }
+  // Same browser APIRequest fixture has no signed-in session. The Satellite
+  // route must deny before reading provider token or making any upstream call.
+  const anonymousSatellite = await request.get("/api/map-tile/0/0/0?style=satellite");
+  expect(anonymousSatellite.status()).toBe(401);
+  expect(anonymousSatellite.headers()["cache-control"]).toBe("private, no-store");
+  expect(anonymousSatellite.headers()["x-flytally-map-style"]).toBe("unavailable");
 });
