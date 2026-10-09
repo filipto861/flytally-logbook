@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 0 discovery + BLOCK review reconciliation documented; revised Phase 1 design approval pending; satellite/openAIP external rights remain gated; runtime not started.
+**Current active workstream:** Maps & Aviation Layers — Phase 0 reconciled; Phase 1 technical design independently APPROVE WITH CHANGES; detailed test-plan product acceptance / actual registration pending; Phase 2/3 production external gates BLOCKED; runtime not started.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -68,7 +68,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 0 source discovery and independent BLOCK review reconciled; Phase 1 design approval and external rights pending; no runtime |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 1 technical re-review APPROVE WITH CHANGES; map-test contract drafted; no runtime, satellite/openAIP production gates remain blocked |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
@@ -1029,9 +1029,10 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 **Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
 **Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
-**BLOCK-review reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
+**Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
+**Phase 1 proposed acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** Source discovery COMPLETE (read-only); independent reviewer returned BLOCK; findings reconciled with actual code and technical/public scope updated. Revised Phase 1 design has **not yet been independently re-approved**; satellite and openAIP external gates unresolved; runtime NOT STARTED.
+**Current status:** Source discovery COMPLETE (read-only); initial BLOCK and reconciled findings preserved; subsequent independent re-review **APPROVE WITH CHANGES for Phase 1 technical direction**. Detailed Phase 1 browser/pane/lifecycle test contract drafted for product acceptance; executable registration and runtime tests **NOT STARTED**. Satellite (Esri token/attribution/rights) and openAIP (license/current Tiles spec/auth) production gates remain unresolved.
 
 ## Product objective
 
@@ -1051,8 +1052,8 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 ## Phases and acceptance gates
 
-1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE. Independent review returned **BLOCK** and was reconciled in documentation; revised Phase 1 contract needs final review/acceptance; external provider permission remains separate. No runtime.
-2. **Phase 1 — Shared map-layer controller.** Only after revised design acceptance: exact panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), dark-filter isolation, explicit map style allowlist, safe instance lifecycle, touch lock/playback preservation, source + behavioral/browser evidence.
+1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE; independent BLOCK review reconciled; second independent review **APPROVE WITH CHANGES** Phase 1 technical contract. Browser test registration/acceptance design documented, pending product acceptance and implementation. External provider permission separate. No runtime.
+2. **Phase 1 — Shared map-layer controller.** After acceptance of `3_7_0_PHASE1_TEST_ACCEPTANCE.md`, implement actual registration and verify exact panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), dark-filter isolation, strict missing/unknown/duplicate/empty map styles, safe map lifecycle, touch lock/playback preservation and map-specific browser evidence. No satellite/openAIP enablement.
 3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
 4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
