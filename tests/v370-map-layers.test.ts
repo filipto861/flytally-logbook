@@ -162,3 +162,21 @@ test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", 
   assert.match(story, /if \(svgUrl\) URL\.revokeObjectURL\(svgUrl\)/);
   assert.match(story, /<FlightStoryCard|export function FlightStoryCard/);
 });
+
+test("3.7.0 R2 satellite endpoint requires a live session while Standard stays public", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(route, /import \{ getSession \} from "@\/lib\/auth\/session";/);
+  assert.match(route, /export const dynamic = "force-dynamic"/);
+  const parsed = route.indexOf("const style = parseMapTileStyle");
+  const session = route.indexOf("if (wantsSatellite && !(await getSession()))");
+  const token = route.indexOf("const arcgisToken =");
+  const upstream = route.indexOf("await satelliteTile(");
+  assert.ok(parsed >= 0 && session > parsed && token > session && upstream > token,
+    "Strict style parsing and session validation must precede any satellite token or upstream request");
+  assert.match(route, /status: 401,\s*headers: \{ "Cache-Control": "private, no-store", "X-FlyTally-Map-Style": "unavailable" \}/);
+  const satelliteResponse = route.slice(route.indexOf("if (wantsSatellite) {"), route.indexOf("const upstream = await standardMapTile"));
+  assert.match(satelliteResponse, /"Cache-Control": "private, no-store"/);
+  assert.doesNotMatch(satelliteResponse, /"Access-Control-Allow-Origin": "\*"/);
+  assert.match(route, /const upstream = await standardMapTile\(/);
+  assert.match(route, /"Access-Control-Allow-Origin": "\*"/);
+});
