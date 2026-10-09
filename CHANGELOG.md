@@ -10,6 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **Phase 1 Maps standard-only MERGED / Vercel READY (9 Oct 2026; full 3.7.0 NOT RELEASED):** PR #269 squash merge `cc7abd41858cb2b2ddd8e794889922c856885686` from locally verified candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff`. Release gate PASS: Node 1,447/1,447, build, PG 100/100, Chromium desktop/mobile 12/12 each. Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY on `fly-tally.com`; no full browser/live OSM/public-share production smoke confirmed yet. No new DB migration or certification changes; no 3.7.0 version bump or tag; old READY `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` available for rollback. Satellite/openAIP external gates still BLOCKED; Phase 1 closeout PENDING.
+
+
 - **Final pre-merge governance alignment after 9 Oct aggregate failure (NOT RELEASED):** On integrated feature head `82541845a6f79211d1b7dd4e79cb67a12a3988ec` targeted historical regression **4/4 PASS**, iteration **PASS** (source **233/233**, domain **46/46**, TypeScript PASS), candidate `b4666d0271de4fa728711769ebb43750a2a833d99c5ce2747661ae11859d21f1`; risk release **FAIL** at aggregate Node because two stale versioning-governance tests still expected pre-reprioritization Currency 3.7.0 / Onboarding 3.8.0. Aggregate/build/PostgreSQL/browser release PASS **not established** on that candidate. Test-only correction now validates Maps 3.7.0, Currency 3.8.0, onboarding 3.9.0 across ROADMAP and VERSIONING; VERSIONING status updated from obsolete "runtime not started" to implemented Draft/PENDING. Exact new-head release gate **NOT RUN**. Production code, DB schema and certification unchanged; PR #269 remains Draft/unmerged.
 
 
