@@ -621,6 +621,7 @@
         "lib/data/tracks",
         "lib/data/flight-track-review",
         "components/map-layer-controller",
+        "components/client-maps",
         "lib/map-tile-style"
       ],
       "files": [],
@@ -883,7 +884,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 385,
+    "auditedTotal": 386,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1017,6 +1018,7 @@
         "prefixes": [
           "components/leaflet-mobile",
           "components/map-layer-controller",
+          "components/client-maps",
           "app/(protected)/map/",
           "components/route-overview-map"
         ],
