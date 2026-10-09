@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 0 source discovery complete; design / external provider approval pending; runtime not started.
+**Current active workstream:** Maps & Aviation Layers — Phase 0 discovery + BLOCK review reconciliation documented; revised Phase 1 design approval pending; satellite/openAIP external rights remain gated; runtime not started.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -68,7 +68,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 0 read-only discovery complete; contract/review and external provider rights pending; no runtime |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | ACTIVE: Phase 0 source discovery and independent BLOCK review reconciled; Phase 1 design approval and external rights pending; no runtime |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
@@ -1029,8 +1029,9 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 **Canonical contract:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`  
 **Independent review handoff:** `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`  
+**BLOCK-review reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** Source discovery COMPLETE (read-only); design review PENDING; provider rights, credentials, live contract and production coverage UNVERIFIED; runtime NOT STARTED.
+**Current status:** Source discovery COMPLETE (read-only); independent reviewer returned BLOCK; findings reconciled with actual code and technical/public scope updated. Revised Phase 1 design has **not yet been independently re-approved**; satellite and openAIP external gates unresolved; runtime NOT STARTED.
 
 ## Product objective
 
@@ -1041,7 +1042,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 ## Phase 0 discovery — completed source inventory / external gates open
 
-- Existing stack is Next.js 16/React 19/Leaflet 1.9.4. Current `/map` supports route overview and GPS tracks; saved flight detail loads the track player lazily; GPS import has a review player; public shared flights can expose the same replay component.
+- Existing stack is Next.js 16/React 19/Leaflet 1.9.4. Current `/map` supports route overview and GPS tracks; saved flight detail loads the track player lazily; GPS import has a review player; public shared flights can expose the same replay component. **3.7.0 does not add openAIP or new satellite toggles on public shares/Story export** pending separate rights and product approval.
 - Satellite transport already exists in the backend `/api/map-tile/[z]/[x]/[y]?style=satellite` (Esri World Imagery with labels, requiring `ARCGIS_ACCESS_TOKEN`). The Story SVG generator already has a separate satellite option. Standard Leaflet helper uses `style=map` only.
 - Current dark treatment filters the entire Leaflet `tilePane`; satellite/openAIP must not inherit this filter. Existing route/airport panes have z-indices 450/470 and must remain interactive above aviation tiles.
 - `tests/v1314`–`v1317` contain legacy basemap/dark source contracts. `gps-tracks` and `analytics` development modules own affected paths; do not bypass selected browser/PostgreSQL requirements.
@@ -1050,10 +1051,10 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 
 ## Phases and acceptance gates
 
-1. **Phase 0 — Reconstruct / Discover / Design / Review.** COMPLETE for read-only repository/public-document inventory and draft contract; independent technical review and external provider legal/contract approval remain pending. No runtime.
-2. **Phase 1 — Shared map-layer controller.** Characterize existing Leaflet lifecycle; isolate standard basemap pane, preserve touch lock, interactions, dark appearance, zoom and playback; source + behavioral/map browser evidence.
-3. **Phase 2 — Satellite on approved map surfaces.** Reuse existing ArcGIS proxy; provider entitlement/attribution/fallback must be verified; flight GPS detail, route overview, GPS tracks, import review and public replay only if rights permit. Story-card pipeline stays intact.
-4. **Phase 3 — openAIP airspace overlay (external gate).** Live official API contract, credentials, rate/cost/cache limits, written/qualified rights clearance, controlled proxy, precise available/unavailable state, attribution, airspace source-age caveat; no NOTAM or activation claim.
+1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE. Independent review returned **BLOCK** and was reconciled in documentation; revised Phase 1 contract needs final review/acceptance; external provider permission remains separate. No runtime.
+2. **Phase 1 — Shared map-layer controller.** Only after revised design acceptance: exact panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), dark-filter isolation, explicit map style allowlist, safe instance lifecycle, touch lock/playback preservation, source + behavioral/browser evidence.
+3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
+4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
 
 **Blocking before live openAIP:** authoritative permission covering FlyTally's intended use, live current API verification, provider/security controls, attribution, privacy and explicit public-export decisions. **Blocking before satellite production:** licensed ArcGIS token/usage, attribution, and live failure behavior. Until gates clear, unavailable features fail closed; satellite can be independently releasable without claiming openAIP delivery only after a separate product/release decision.
