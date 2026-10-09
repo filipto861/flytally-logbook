@@ -157,6 +157,7 @@ test("map tile endpoint rejects unsupported and duplicate styles before upstream
   for (const query of [
     "style=unknown",
     "style=satelite",
+    "style%5B%5D=satellite",
     "style=",
     "style=map&style=satellite",
     "style=map&style=map",
