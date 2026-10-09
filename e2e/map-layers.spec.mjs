@@ -75,6 +75,9 @@ async function checkStandardPanes(page, selector, routeOverview = false) {
     await expect(map.locator(".leaflet-routeLines-pane .route-click-target").first()).toBeAttached();
     await expect(map.locator(".leaflet-airportMarkers-pane path").first()).toBeAttached();
   }
+  // A single Leaflet tile layer may own multiple tile/zoom containers.
+  await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+  await expect(map.locator(".leaflet-tile-pane > .leaflet-layer")).toHaveCount(0);
   await expect(map.locator(".leaflet-flytallyBasemap-pane img.leaflet-tile").first()).toBeAttached();
   await expect(map.locator(".leaflet-flytallyAviation-pane img")).toHaveCount(0);
   await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
