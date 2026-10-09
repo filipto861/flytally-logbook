@@ -44,11 +44,22 @@ test("Phase 0C browser modules are syntactically parseable before Playwright dis
   }
 });
 
-test("Phase 0C preserves the exact 48 logical authenticated browser tests",()=>{
+test("Phase 0C retains the original 48 browser contracts and registers five additional 3.7.0 map scenarios",()=>{
+  const originalCount=48;
+  const addedMapTests=[
+    "map panes preserve standard basemap ordering and route interactions",
+    "GPS map theme changes preserve a live map instance and viewport",
+    "flight replay retains map and playback state through theme changes",
+    "GPS import review retains its map pane across theme changes",
+    "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
+  ];
   const actual=logicalBrowserTests();
-  assert.equal(actual.length,48);
+  assert.equal(actual.length,originalCount+addedMapTests.length);
   assert.equal(new Set(actual).size,actual.length,"browser test names must remain unique and grep-able");
   assert.deepEqual([...actual].sort(),[...baseline.acceptanceLogicalTests].sort());
+  assert.equal(baseline.acceptanceLogicalTests.length,originalCount+addedMapTests.length);
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount),addedMapTests,
+    "Phase 1 additions must not replace or reorder the original 48 logical tests");
 });
 
 test("Phase 0C keeps the serialized two-project Playwright contract",()=>{
