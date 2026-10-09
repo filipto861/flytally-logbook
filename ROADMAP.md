@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Maps Phase 1 Draft PR #269 `1a93046`: external review APPROVE WITH CHANGES and previous iPad Chromium 16/16 PASS (`b3917c7`). Intermediate `9a325ca` iteration 233 source / 46 domain / TS PASS, but release aggregate **FAIL** on two source-contract regressions; targeted corrections committed to `1a93046`, **all current-head release gates NOT RUN**. Docs PR #268 Draft; merge/deploy blocked pending complete new-candidate verification. Satellite/openAIP provider gates BLOCKED.
+**Current active workstream:** 3.7.0 Phase 1 `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **LOCAL RELEASE PASS** (aggregate 1,447/1,447; PG 100/100; browser desktop/mobile 12/12 each; build PASS), but PRs #268/#269 Draft/unmerged; release/production NOT DONE. Owner duplicate-style compatibility decision pending; satellite/openAIP provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -68,7 +68,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Independent reviewer APPROVE WITH CHANGES; iPad Chromium 16/16 PASS on earlier SHA; reviewer corrections committed at `9a325ca`, new-head acceptance NOT RUN, PRs Draft; satellite/openAIP provider gates blocked |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 local risk release PASS on `5538e0c`; documentation, owner compatibility decision, Draft PR merges and production closure pending; Phase 2/3 external provider gates BLOCKED |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
