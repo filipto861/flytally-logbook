@@ -6,6 +6,13 @@ This is the canonical capability inventory for `flytally-logbook`.
 
 It answers **what the product has, what is intentionally constrained, and what is planned**. It does not define implementation order; that belongs in `ROADMAP.md`. Completed changes belong in `CHANGELOG.md`.
 
+## Maps Phase 1 — VERIFIED ON UNMERGED FEATURE BRANCH, NOT YET PRODUCTION
+
+- Shared standard-only Leaflet basemap controller, named pane ordering, dark-filter isolation and theme-change lifecycle stabilization are implemented in PR #269 on `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`.
+- Deterministic source, domain, Next build, isolated PostgreSQL and desktop/mobile browser acceptance passed locally for `3334933268257a8e231ac7e172b1ffed38fa043d31b36699afe977d595ba7856` on 9 October 2026 (details in `CHANGELOG.md` and `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`).
+- No new satellite/openAIP user toggle, layer activation or public export rights are delivered. Satellite/openAIP remain externally blocked; old iPad emulation belongs to an earlier SHA.
+- Status remains unmerged Draft feature, not a production capability until release closeout.
+
 ## Core logbook — IMPLEMENTED
 
 - Multi-user private electronic pilot logbook.
