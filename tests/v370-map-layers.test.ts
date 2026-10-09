@@ -362,6 +362,24 @@ test("3.7.0 R2D.1 exact server-only upstream disable preserves auth, cache, Stor
   assert.match(upstreamFixture, /Satellite fixture blocked remote socket/);
 });
 
+test("3.7.0 R2D.2 A4 authenticated HTTP parity requires explicit exact-branch opt-in and isolated DB", () => {
+  const runner = source("tooling/verify-satellite-http.mjs");
+  const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(runner, /process\.env\.FLYTALLY_SATELLITE_HTTP_A4 === "1"/);
+  assert.match(runner, /feat\/3\.7\.0-satellite-r2d2-bounded-provider-io/);
+  assert.match(runner, /feat\/3\.7\.0-satellite-r2d-upstream-disable/);
+  assert.match(runner, /expectedBranch, "Expected exact satellite HTTP acceptance branch"/);
+  assert.match(runner, /FLYTALLY_LOCAL_POSTGRES.*"1"/);
+  assert.match(runner, /FLYTALLY_AUTH_BROWSER.*"1"/);
+  assert.match(runner, /flytally_satellite_r1_test\|flytally_sat_r1\|55432/);
+  assert.match(runner, /bootstrap-browser-smoke-db\.mjs/);
+  assert.match(runner, /MODE === "missing-token"/);
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_RUN_ID/);
+  assert.match(fixture, /Satellite fixture blocked remote socket/);
+  assert.doesNotMatch(route, /FLYTALLY_SATELLITE_HTTP_A4/);
+});
+
 test("3.7.0 R2D.1 HTTP fixture isolates tokenless fallback Data Cache with run-scoped tile URLs", () => {
   const runner = source("tooling/verify-satellite-http.mjs");
   const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
