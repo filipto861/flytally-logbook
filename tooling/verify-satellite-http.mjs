@@ -124,8 +124,10 @@ async function main() {
 
     const invalidStyle = await anonymous.get("/api/map-tile/3/1/2?style=garbage");
     assert.equal(invalidStyle.status(), 400, "Malformed style must be 400");
+    assert.equal(invalidStyle.headers()["cache-control"], "no-store");
     const duplicateStyle = await anonymous.get("/api/map-tile/3/1/2?style=map&style=satellite");
     assert.equal(duplicateStyle.status(), 400, "Duplicate style must be 400");
+    assert.equal(duplicateStyle.headers()["cache-control"], "no-store");
     assert.equal(upstreamEvents(logFile).length, 0);
 
     browser = await chromium.launch({ headless: true });
@@ -144,6 +146,9 @@ async function main() {
     assert.equal(sessions[0].httpOnly, true, "Session must remain HttpOnly");
     assert.equal(sessions[0].secure, true, "Production session must remain Secure");
     assert.equal(new URL(page.url()).origin, ORIGIN, "Login must end at isolated localhost origin");
+    const renderedHtml = await page.content();
+    assert.ok(!renderedHtml.includes("FLYTALLY_SATELLITE_UPSTREAM_DISABLED") && !renderedHtml.includes(TOKEN),
+      "Server-only switch and synthetic provider credentials must not appear in page HTML");
 
     // Use browser-native fetch, not Playwright's Node-side APIRequestContext:
     // cookie policy and browser transport must match actual user behavior.
@@ -199,7 +204,8 @@ async function main() {
         assert.equal(unavailable.headers["cache-control"], "no-store");
         assert.equal(unavailable.headers["x-flytally-map-style"], "unavailable");
         assert.ok(!String(unavailable.headers["content-type"] || "").startsWith("image/"));
-        assert.ok(!unavailable.body.includes("<svg") && !unavailable.body.includes(TOKEN),
+        assert.ok(!unavailable.body.includes("<svg") && !unavailable.body.includes(TOKEN) &&
+          !unavailable.body.includes("FLYTALLY_SATELLITE_UPSTREAM_DISABLED"),
           "Unavailable Satellite must not provide imagery, HTML, or provider credentials");
         assert.equal(upstreamEvents(logFile).length, 0, "Unavailable Satellite must bypass upstream and warm fetch cache");
       }
