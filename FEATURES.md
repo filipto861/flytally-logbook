@@ -1,3 +1,7 @@
+## 2026-10-09 — M2c Esri official data sources identified; supplier license/budget still OPEN
+
+Read-only official Esri docs confirm existing World Imagery and Imagery Labels service URL shapes, required attribution and published ArcGIS Location Platform basemap-tiles price model (2M free then USD 0.15/1,000), not account-specific charges. Satellite map and Story already show provisional Esri/provider credits; exact actual source credits and SVG/PNG reuse rights remain unverified. No actual ArcGIS tile measurements, supplier bandwidth, hosting resource figures, full raster decoder proof or production numeric limits. M3 still blocked. No user-facing code changed.
+
 ## 2026-10-09 — Satellite R2D.2 M2b structural validator owner LOCAL PASS (not live feature)
 
 Owner verified exact `93f370ed357345349829d17495b079e17742f38e`: 47/47 targeted M2a+M2b+map tests PASS and TypeScript `tsc --noEmit` PASS; corrected 1×1 JPEG accepts, malformed DQT rejected. Helper and structural validator remain independent of production Satellite/Standard routes, cannot claim full image pixel decode or production numeric resource budgets. Next is M2c ArcGIS/hosting supplier evidence and decoder/resource contract, then M3 provider integration. Satellite OFF, unmerged Draft.
