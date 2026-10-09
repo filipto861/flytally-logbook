@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 1 candidate Draft PR #269. Earlier commit `fb0471c`: Windows local typecheck/build PASS, npm test 1,437/1,443 PASS with 6 regressions, verify:plan no blockers. All six test contracts patched after that run; latest candidate requires fresh verification. Playwright/PostgreSQL/merge pending; Phase 2/3 provider gates BLOCKED.
+**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269. Local `fb0471c` typecheck/build PASS, npm 1,437/1,443 PASS with 6 failures; after initial fixes, local `fc68861` `npm test` **1,442/1,443 PASS, 1 FAIL** (timezone census still 383 vs new 385). Final census test correction committed as `5b011c8`, not rerun yet. Playwright/PostgreSQL/merge pending; Phase 2/3 provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
