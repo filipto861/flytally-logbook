@@ -622,6 +622,7 @@
         "lib/data/flight-track-review",
         "components/map-layer-controller",
         "components/client-maps",
+        "components/public-flight-map",
         "lib/map-tile-style"
       ],
       "files": [],
@@ -884,7 +885,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 386,
+    "auditedTotal": 387,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1047,6 +1048,7 @@
       {
         "prefixes": [
           "components/flight-track-player",
+          "components/public-flight-map",
           "components/lazy-flight-track",
           "components/gps-import-review-player"
         ],
