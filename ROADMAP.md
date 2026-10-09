@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** 3.7.0 Phase 1 `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **LOCAL RELEASE PASS** (aggregate 1,447/1,447; PG 100/100; browser desktop/mobile 12/12 each; build PASS), but PRs #268/#269 Draft/unmerged; release/production NOT DONE. Owner duplicate-style compatibility decision pending; satellite/openAIP provider gates BLOCKED.
+**Current active workstream:** 3.7.0 Phase 1 `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **LOCAL RELEASE PASS** (aggregate 1,447/1,447; PG 100/100; browser desktop/mobile 12/12 each; build PASS), but PRs #268/#269 Draft/unmerged; release/production NOT DONE. Owner APPROVED strict duplicate-style HTTP 400 (decision A, 9 Oct); satellite/openAIP provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -38,6 +38,10 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 - 🔬 **RESEARCH** — not implementation-ready.
 - ⚠️ **BLOCKED / EXTERNAL** — depends on evidence or a decision outside the repo.
 
+## Phase 1 frozen product decision — 9 October 2026
+
+**Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
+
 ## Current production baseline
 
 | Area | State |
@@ -68,7 +72,7 @@ From 4 October 2026 forward, active product planning uses numeric `MAJOR.MINOR.P
 | 7 | **3.5.4** | iPad flight-detail visual hotfix | ✅ | Merged and production deployed on 7 October 2026; production iPad visual acceptance confirmed the two 3.5.4 defects are resolved |
 | 8 | **3.5.5** | iPad sidebar collapse-control alignment | ✅ | Corrective edge-handle placement deployed and accepted on production iPad on 7 October 2026 |
 | 9 | **3.6.0** | Saved-date / timezone semantics · #144 | ✅ | Production deployed and closed on 9 October 2026; package/footer 3.6.0 |
-| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 local risk release PASS on `5538e0c`; documentation, owner compatibility decision, Draft PR merges and production closure pending; Phase 2/3 external provider gates BLOCKED |
+| 10 | **3.7.0** | Maps & Aviation Layers | 🚧 | Phase 1 local risk release PASS on `5538e0c`; documentation review, Draft PR merges and production closure pending; Phase 2/3 external provider gates BLOCKED |
 | 11 | **3.8.0** | Currency / monetary semantics · #136 | ➡️ | Former 3.7.0 reservation; all currency/evidence/FX constraints preserved |
 | 12 | **3.9.0** | Multi-aircraft heterogeneous onboarding proof | ⏳ | Former 3.8.0 reservation; scope unchanged |
 | 13 | **3.10.0** | Multi-aircraft sharing / recovery / scale closeout | ⏳ | Former 3.9.0 reservation; scope unchanged |
