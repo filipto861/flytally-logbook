@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A4 authenticated HTTP baseline: 23/23 static local PASS only
+
+Owner confirmed on exact SHA `f148f6b3f7f85bc8eef21f59124dab5cccfa5bfe` that isolated HTTP verification harness syntax and targeted 3.7.0 map/Satellite source suite **23/23 PASS, 0 failed**; includes A4 guarded exact branch option. No authenticated browser/prod-build/test-DB or real HTTP assertions have been run at this SHA. Disposable DB reset permission/identity remains an explicit gate. Product feature implementation unchanged and not production activated.
+
 ## 2026-10-09 — R2D.2-A4 real Satellite HTTP baseline harness (TEST-ONLY, NOT VERIFIED)
 
 Guarded local authenticated `/api/map-tile` integration fixture can now opt into R2D.2 **only** via `FLYTALLY_SATELLITE_HTTP_A4=1` on its exact named branch, reusing required dedicated local Postgres fixture, clean tree, Node build, fake provider token and remote socket denial, with enabled/disabled/missing-token assertions. Added static source guard; no application map-provider or route behavior changed. Local database bootstrap is destructive to the specified **test database**, not approved for another DB. Fixture image bytes remain old marker-text test content and are not an image validation benchmark. **A4 NOT RUN.** Satellite remains OFF in production, no deploy.
