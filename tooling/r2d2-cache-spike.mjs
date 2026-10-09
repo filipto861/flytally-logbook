@@ -89,8 +89,7 @@ function fixtureServer(events) {
     // Synthetic binary only. LAB test sizes (64 KiB, 16 MiB) are NOT product limits.
     const goal = sample === "normal" ? 64 * 1024 : sample === "large" ? 16 * 1024 * 1024 : 1024;
     const chunk = Buffer.alloc(sample === "stall" ? 1024 : 64 * 1024, 0x41);
-    res.writeHead(200, { "content-type": "application/octet-stream",
-      "cache-control": "no-cache" });
+    res.writeHead(200, { "content-type": "application/octet-stream" });
     res.on("close", () => { event.close = Date.now(); clearInterval(timer); });
     const timer = setInterval(() => {
       if (res.destroyed) { clearInterval(timer); return; }
@@ -188,10 +187,10 @@ async function main() {
           { signal: AbortSignal.timeout(LAB_TIMEOUT_MS + 3500) });
         const body = await response.json();
         results.push({ mode, sample, action, key: key === "cache-warm" ? "repeated" : "unique",
-          status: response.status, elapsedMs: Date.now() - start, body });
+          status: response.status, startedEpochMs: start, endedEpochMs: Date.now(), elapsedMs: Date.now() - start, body });
       } catch (e) {
         results.push({ mode, sample, action, outcome: "harness-request-failed",
-          elapsedMs: Date.now() - start,
+          startedEpochMs: start, endedEpochMs: Date.now(), elapsedMs: Date.now() - start,
           reason: e?.name === "TimeoutError" ? "lab-request-timeout" : "request-failed" });
       }
       // Give any detached Next cache fill time to become observable.
