@@ -130,7 +130,8 @@ async function main() {
     async function expectedTile(x, status, marker, labelsMarker = null) {
       const response = await get(requester, x);
       assert.equal(response.status(), status, `Satellite status at x=${x}`);
-      assert.equal(response.headers()["cache-control"], "private, no-store");
+      assert.equal(response.headers()["cache-control"], status === 200 ? "private, no-store" : "no-store",
+        "Authenticated success is private; unavailable tiles must never be cacheable");
       assert.equal(response.headers()["x-flytally-map-style"], status === 200 ? "satellite" : "unavailable");
       const body = await response.text();
       assert.ok(!body.includes(TOKEN), "Fake token must never be disclosed in response");
