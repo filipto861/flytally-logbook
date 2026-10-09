@@ -1,6 +1,6 @@
 # FlyTally 3.6.0 — Phase 1 saved-date / timezone semantics
 
-Status: **DONE / VERIFIED — PR #265 MERGE / PRODUCTION CLOSEOUT PENDING**  
+Status: **DONE / VERIFIED — MERGED · 3.6.0 PRODUCTION CLOSEOUT PENDING**  
 Issue: **#144**  
 Base: `main@eafc347fe00e781f966cc328da67ec24e52c8287`
 
@@ -478,7 +478,7 @@ Evidence-only repository changes add focused GPS/date-boundary, portable-backup,
 
 Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f988` on exact head `56e3b05620ee4c35693994e1e60276387a41fe97` is VERIFIED. Targeted P1.5 tests passed **38/38**; TypeScript passed; the planner selected aggregate full-tests and PostgreSQL acceptance with no blocked evidence; `verify:iterate` passed; final `verify:release:risk` passed aggregate regression **1433/1433** and PostgreSQL **100/100**, including the dedicated `json_populate_record` date-only invariance test under Pacific/Auckland and America/Los_Angeles session time zones. Build, scale and browser were correctly N/A. Required `postgres-acceptance` is satisfied and blocked evidence is none.
 
-Phase 1 acceptance is satisfied on that exact candidate. FEATURES was reconciled to the delivered capability and DEVELOPMENT was reviewed with no change required. PR #265 merge and production closeout remain outside this exact-candidate verification step.
+Phase 1 acceptance is satisfied on that exact candidate. FEATURES was reconciled to the delivered capability and DEVELOPMENT was reviewed with no change required. Final documentation-only candidate `89514f05c9d1372b41c9d201e8935bd77e1cfdb78c01860714e8127e541be0ee` also returned `release_status=PASS` with all runtime/heavy gates correctly N/A. PR #265 squash-merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`. The remaining release-level work is the explicit `3.6.0` package/footer candidate, production deployment acceptance, smoke/error review and final production-closeout documentation.
 
 ## Do not
 
