@@ -1,10 +1,21 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **7 October 2026**
+Last reconciled: **9 October 2026**
 
 This is the canonical capability inventory for `flytally-logbook`.
 
 It answers **what the product has, what is intentionally constrained, and what is planned**. It does not define implementation order; that belongs in `ROADMAP.md`. Completed changes belong in `CHANGELOG.md`.
+
+## Maps Phase 1 — VERIFIED ON UNMERGED FEATURE BRANCH, NOT YET PRODUCTION
+
+- Shared standard-only Leaflet basemap controller, named pane ordering, dark-filter isolation and theme-change lifecycle stabilization are implemented in PR #269 on `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`.
+- Deterministic source, domain, Next build, isolated PostgreSQL and desktop/mobile browser acceptance passed locally for `3334933268257a8e231ac7e172b1ffed38fa043d31b36699afe977d595ba7856` on 9 October 2026 (details in `CHANGELOG.md` and `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`).
+- No new satellite/openAIP user toggle, layer activation or public export rights are delivered. Satellite/openAIP remain externally blocked; old iPad emulation belongs to an earlier SHA.
+- Status remains unmerged Draft feature, not a production capability until release closeout.
+
+## Phase 1 API compatibility — owner decision A (9 October 2026)
+
+**Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
 
 ## Core logbook — IMPLEMENTED
 
@@ -146,12 +157,34 @@ Important boundary:
 - Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
 - Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
 
-### 3.7.0 — Currency / monetary semantics — ACTIVE
+### 3.7.0 — Maps & Aviation Layers — PHASE 1 STANDARD-ONLY LOCAL RELEASE PASS / UNMERGED
+
+- **11th local verification / regression patch (9 Oct 2026):** user fast-forwarded exact feature head `9a325ca`, guarded dedicated PostgreSQL at 127.0.0.1:55432 and ran `verify:iterate` **PASS** (source 233/233, domain 46/46, TypeScript PASS, `candidate_id=473c1318a0797ea474751f4207a96a39667687cc729035002c7652fb92ea3f64`, no evidence blockers). `verify:release:risk` returned **`release_status=FAIL`, `aggregate=FAIL`** because two Node source/unit tests failed: (1) historical public-share viewer test asserted a direct `FlightTrackPlayer` string in public page, incompatible with the deliberate SSR-safe `PublicFlightMap` boundary; (2) case-variant `Style=satellite` was not rejected by case-sensitive malformed-style key matcher (returned standard `map` instead of `null`). This is not PostgreSQL/browser failure: those gates were **NOT RUN** after aggregate FAIL. PR #269 now on unverified feature head `1a930465ea3d465cb20d6eac17712d9511888436`: update public-share source contract to assert the dynamic `PublicFlightMap -> FlightTrackPlayer` delegation and `ssr:false`, reject case-variant `style*` keys in parser, and include uppercase/mixed alias cases in unit + HTTP e2e. **New-head tests/build/PostgreSQL/browser NOT RUN**; prior 24-browser/100-PG and iPad 16/16 PASS only on `b3917c7` are historical. Both PRs remain Draft, no merge/deploy. Owner compatibility decision for legacy duplicate style still open.
+
+- **Phase 1 capability (unmerged PR #269, new HEAD `9a325ca`, NOT TESTED):** reusable Leaflet standard-basemap map-layer controller; explicit `flytallyBasemap` and future-disabled `flytallyAviation` panes; dark filter scoped to the standard basemap; safe map/theme lifecycle, route/GPS replay and import-review compatibility; strict backwards-compatible standard tile-style validation; browser-only Leaflet loading avoids SSR `window` evaluation. No new user-visible satellite or aviation layer selection is enabled in Phase 1.
+- **Evidence:** on 9 October 2026 exact candidate `e8685272ae5e753ab6c8a577799da203795fb1ffcac382c096f63c2350915e25`, user-local `verify:iterate` PASS (source 232/232, domain 46/46, TypeScript), then `verify:release:risk` **PASS** (aggregate 1,444/1,444; Next production build PASS; isolated PostgreSQL 100/100; 12 desktop + 12 mobile Playwright PASS; no blocked evidence). Final run showed no recurrence of the prior GPS save assertion failure or Leaflet SSR `window is not defined` errors. Historical failing runs and trace/SQL triage are preserved in `CHANGELOG.md` and the Phase 1 acceptance contract.
+- **Independent review and iPad evidence (9 Oct 2026):** external read-only PR review returned **APPROVE WITH CHANGES**. Supplementary Chromium iPad touch-emulation report and 16 screenshots at 820×1180 / 1180×820 (light/dark, four map surfaces) all **16/16 PASS on previous head `b3917c7`**; locked touch movement prevented and unlocked pan worked. Actual iPad Safari is **NOT RUN**; real upstream imagery is not exercised (deterministic SVG tiles). Review identified malformed `style[...]` aliases and direct Leaflet import on public `/f/[token]` as blockers: both repaired on new head `9a325ca` with unit/e2e/source contract tests. New exact-head iteration/release/build/PostgreSQL/browser-risk **NOT RUN**. Suspected loading-string mojibake was from patch encoding: actual GitHub source has valid UTF-8 ellipses. Legacy satellite duplicate-style compatibility acceptance remains owner-dependent; no provider capability is enabled.
+- **Not shipped:** both docs PR #268 and feature PR #269 remain Draft and unmerged. Supplementary iPad emulation and independent review occurred **on the prior source candidate**; current-head retest and owner merge decision remain OPEN. Physical iPad Safari and CI/production smoke/deploy NOT RUN. No database migration, historical certification payload rewrite, backup format or GPS inference change in this Phase 1.
+- **Future Phase 2 — satellite:** authenticated Standard/Satellite layer switch on supported map workspaces only after verified ArcGIS/Esri rights, token/attribution/quota/cost/fallback and iPad validation; **BLOCKED** pending external/provider evidence.
+- **Future Phase 3 — openAIP:** optional aviation/airspace context overlay only after authoritative API/schema, licensing, applicable rights, credentials/cache/rate/error policy, authentication and attribution; **BLOCKED** pending external/provider evidence.
+- **Exclusions:** no new public-share/Story satellite or openAIP controls, no NOTAM/airspace activation claim, no authority-approved EFB representation or silent global map preference.
+- **Contracts:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`, and `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`.
+
+### 3.8.0 — Currency / monetary semantics — NEXT (superseded former 3.7.0 reservation)
+- Issue #136 and original requirements are preserved; only implementation order/release number changed on 9 October 2026.
 - Define whether account currency is only a display/default denomination or authoritative for newly persisted monetary records.
 - Inventory existing record-level currency fields and legacy monetary values before changing behavior.
 - Preserve explicit stored denominations; missing currency evidence must not be guessed or silently converted.
 - Define export/backup and historical-display consequences before implementation.
 - No automatic FX conversion without a separately approved, source-backed conversion rule.
+
+### 3.9.0 — Multi-aircraft heterogeneous onboarding proof — PLANNED (formerly 3.8.0)
+- Validate canonical onboarding/flight-selection paths across Aeroplane, Helicopter, Sailplane/TMG, Balloon, ULL and Other, without new make/model-specific shortcuts.
+- Cover catalogue/manual fallback, Add/Edit, Quick Add, lifecycle, applicability and desktop/iPad/mobile light/dark evidence.
+
+### 3.10.0 — Multi-aircraft sharing / recovery / scale closeout — PLANNED (formerly 3.9.0)
+- Preserve recipient-owned shared aircraft copies with canonical validation, protected-flight backup/restore invariants, safe deletion/deactivation with historical flights, and measured multi-profile UX/scale behavior.
+- Require relevant regression, PostgreSQL, browser and build closeout rather than presuming safety from prior onboarding proof.
 
 ### 3.5.2 — Always-on GPS/SERA Night suggestions — IMPLEMENTED / PRODUCTION VERIFIED
 - Remove the account-level **Night definition** preference from Settings.
