@@ -10,7 +10,7 @@ export async function GET(request) {
   const key = incoming.searchParams.get("key");
   if (!["cached", "uncached"].includes(mode) ||
       !["normal", "large", "stall"].includes(sample) ||
-      !["complete", "abort"].includes(action) ||
+      !["complete", "abort", "abort-late", "cancel-only"].includes(action) ||
       !/^[a-z0-9_-]{1,80}$/.test(key || "")) {
     return Response.json({ error: "invalid_probe_parameters" }, { status: 400 });
   }
@@ -43,10 +43,15 @@ export async function GET(request) {
         if (done) break;
         if (firstChunkMs === null) firstChunkMs = Math.round(performance.now() - start);
         bytes += value.byteLength;
-        if (action === "abort") {
-          controller.abort("probe-reader-abort");
-          // Do not await cancellation: a cache-tee sibling may be uncooperative.
-          void reader.cancel("probe-reader-abort").catch(() => {});
+        const stop = action === "abort" || action === "cancel-only" ||
+          (action === "abort-late" && bytes >= 512 * 1024);
+        if (stop) {
+          // Only "cancel-only" intentionally leaves fetch signal alive to
+          // measure whether Next's cache sibling keeps reading the upstream.
+          if (action !== "cancel-only") controller.abort("probe-reader-abort");
+          // Never await cancel of an uncooperative cache tee; observe separately.
+          void reader.cancel("probe-reader-stop").catch(() => {});
+          phase = action === "cancel-only" ? "reader-cancelled-no-abort" : "reader-aborted";
           break;
         }
         // LAB-ONLY guard. Abort, never concatenate or return bulk fixture data.
@@ -60,7 +65,8 @@ export async function GET(request) {
         reader.releaseLock();
       }
     }
-    return Response.json({ mode, sample, action, phase: "completed", bytes,
+    return Response.json({ mode, sample, action, phase: phase === "body" ? "completed" : phase,
+      signalAborted: controller.signal.aborted, bytes,
       firstChunkMs, elapsedMs: Math.round(performance.now() - start) });
   } catch (error) {
     controller.abort("probe-error");
