@@ -1,6 +1,6 @@
 # FlyTally 3.6.0 — Phase 1 saved-date / timezone semantics
 
-Status: **DONE / VERIFIED — MERGED · 3.6.0 PRODUCTION CLOSEOUT PENDING**  
+Status: **DONE / VERIFIED / PRODUCTION**  
 Issue: **#144**  
 Base: `main@eafc347fe00e781f966cc328da67ec24e52c8287`
 
@@ -478,7 +478,9 @@ Evidence-only repository changes add focused GPS/date-boundary, portable-backup,
 
 Exact candidate `bd04725222af573ca986239dc168383a39e6c9da3809f8c8edd69dc51f78f988` on exact head `56e3b05620ee4c35693994e1e60276387a41fe97` is VERIFIED. Targeted P1.5 tests passed **38/38**; TypeScript passed; the planner selected aggregate full-tests and PostgreSQL acceptance with no blocked evidence; `verify:iterate` passed; final `verify:release:risk` passed aggregate regression **1433/1433** and PostgreSQL **100/100**, including the dedicated `json_populate_record` date-only invariance test under Pacific/Auckland and America/Los_Angeles session time zones. Build, scale and browser were correctly N/A. Required `postgres-acceptance` is satisfied and blocked evidence is none.
 
-Phase 1 acceptance is satisfied on that exact candidate. FEATURES was reconciled to the delivered capability and DEVELOPMENT was reviewed with no change required. Final documentation-only candidate `89514f05c9d1372b41c9d201e8935bd77e1cfdb78c01860714e8127e541be0ee` also returned `release_status=PASS` with all runtime/heavy gates correctly N/A. PR #265 squash-merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`. The remaining release-level work is the explicit `3.6.0` package/footer candidate, production deployment acceptance, smoke/error review and final production-closeout documentation.
+Phase 1 acceptance is satisfied on that exact candidate. FEATURES was reconciled to the delivered capability and DEVELOPMENT was reviewed with no change required. Final documentation-only candidate `89514f05c9d1372b41c9d201e8935bd77e1cfdb78c01860714e8127e541be0ee` also returned `release_status=PASS` with all runtime/heavy gates correctly N/A. PR #265 squash-merged to `main` as `d96aed69b9fee41550820a1d05666420bce4e9fb`.
+
+Production closeout then used release candidate PR #266: exact candidate `028ab691e12df14ebe79c2ce43ed284fcea21d25c7ac08f5c16ce43c9850e221` on head `32c3fa0dd1a5decd5dda7f0c0e67518f4e2da438` passed source-contract, TypeScript, aggregate **1433/1433** and production build **41/41**; PostgreSQL, scale and browser were correctly N/A and blocked evidence was none. PR #266 squash-merged as `168bd029540474d6e806bf3e261fa855824b7c2a`. Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on that exact SHA, serves `fly-tally.com`, root and `/login` smoke returned HTTP 200 from the deployed build, and the immediate checked runtime-error window was clean. Product package/footer is therefore `3.6.0` in production. No DB migration, historical backfill, certification rewrite or portable-backup format bump was required.
 
 ## Do not
 
