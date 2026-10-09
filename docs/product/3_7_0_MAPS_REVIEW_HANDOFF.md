@@ -5,7 +5,7 @@
 **Authoritative proposal:** `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`.  
 **Status:** draft; Filip is final product decision-maker. Reviewers are independent, not authority.
 
-**Review outcome (9 October 2026):** Independent reviewer returned **BLOCK**. This original review request is preserved for provenance. Findings have since been checked against the repo, corrected/classified, and recorded at `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`; the revised Phase 1 contract and external approval are still pending. No runtime code was implemented.
+**First review outcome (9 October 2026):** Independent reviewer returned **BLOCK**; retained for provenance. **Second independent re-review (9 October 2026):** **APPROVE WITH CHANGES** for Phase 1 technical direction, still **BLOCKED** for satellite/openAIP production. Both verdicts and finding-level disposition are recorded at `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`. Phase 1 proposed test registration and acceptance are at `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md` and are not implemented. No runtime code was changed.
 
 ## Context
 
