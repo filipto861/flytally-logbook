@@ -48,7 +48,10 @@
     "appearance mutation disables duplicate submit and persists",
     "connection acceptance disables duplicate submit and persists",
     "account settings transaction disables duplicate submit and persists both records",
-    "connection access update disables duplicate submit and persists"
+    "connection access update disables duplicate submit and persists",
+    "map panes preserve standard basemap ordering and route interactions",
+    "GPS map theme changes preserve a live map instance and viewport",
+    "flight replay retains map and playback state through theme changes"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"
@@ -64,10 +67,10 @@
     "ciRetries": 1
   },
   "expectedFullGate": {
-    "passed": 96,
+    "passed": 102,
     "skipped": 2,
     "failed": 0,
-    "totalExecutions": 98
+    "totalExecutions": 104
   },
   "fixtureContract": {
     "browserDb": "e2e/browser-db.mjs",
