@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 0 reconciled; Phase 1 technical design independently APPROVE WITH CHANGES; detailed test-plan product acceptance / actual registration pending; Phase 2/3 production external gates BLOCKED; runtime not started.
+**Current active workstream:** Maps & Aviation Layers — Phase 1 product-accepted; unverified standard-only feature candidate in Draft PR #269; all actual verification and merge still pending. Satellite/openAIP production provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -1032,7 +1032,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 **Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
 **Phase 1 proposed acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** Source discovery COMPLETE (read-only); initial BLOCK and reconciled findings preserved; subsequent independent re-review **APPROVE WITH CHANGES for Phase 1 technical direction**. Detailed Phase 1 browser/pane/lifecycle test contract drafted for product acceptance; executable registration and runtime tests **NOT STARTED**. Satellite (Esri token/attribution/rights) and openAIP (license/current Tiles spec/auth) production gates remain unresolved.
+**Current status:** Source discovery COMPLETE; both independent verdicts preserved. Filip accepted Phase 1 and its test contract on 9 October 2026. Separate Draft [PR #269](https://github.com/filipto861/flytally-logbook/pull/269), based on canonical `main@162d9ba...`, contains **unverified implementation** and browser registration; no tests/CI or runtime release claimed. Docs-only PR #268 remains Draft. Satellite (Esri token/attribution/rights) and openAIP (license/current Tiles spec/auth) production gates remain unresolved.
 
 ## Product objective
 
@@ -1053,7 +1053,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 ## Phases and acceptance gates
 
 1. **Phase 0 — Reconstruct / Discover / Design / Review.** Read-only inventory COMPLETE; independent BLOCK review reconciled; second independent review **APPROVE WITH CHANGES** Phase 1 technical contract. Browser test registration/acceptance design documented, pending product acceptance and implementation. External provider permission separate. No runtime.
-2. **Phase 1 — Shared map-layer controller.** After acceptance of `3_7_0_PHASE1_TEST_ACCEPTANCE.md`, implement actual registration and verify exact panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), dark-filter isolation, strict missing/unknown/duplicate/empty map styles, safe map lifecycle, touch lock/playback preservation and map-specific browser evidence. No satellite/openAIP enablement.
+2. **Phase 1 — Shared map-layer controller: IMPLEMENTATION CANDIDATE / NOT VERIFIED.** Accepted test contract; Draft feature PR #269 adds panes (`flytallyBasemap` 210, `flytallyAviation` 300, existing `routeLines` 450, `airportMarkers` 470), isolated dark standard filter, fail-closed map styles, theme-safe map lifecycle and mapped Node/Playwright tests. Full verification, code review, merge and responsive evidence PENDING; no satellite/openAIP enablement.
 3. **Phase 2 — Satellite on authenticated map surfaces.** Reuse ArcGIS proxy; provider entitlement/attribution/token/quota/fallback must be verified; flight GPS detail, route overview, GPS tracks and import review. Existing public replay and Story-card pipeline stay unchanged.
 4. **Phase 3 — openAIP airspace overlay (BLOCKED on external approval).** Live official Tiles API schema, credentials, rate/cost/cache limits, written/qualified rights clearance, authenticated fixed-host proxy, precise available/unavailable state, attribution, airspace source-age caveat; never in public share or Story; no NOTAM or activation claim.
 5. **Phase 4 — Acceptance / production closeout.** Exact-candidate risk-selected tests + map browser acceptance including iPad light/dark; provider smoke/cost/error observation, correct package/footer 3.7.0 only at release; verify ROADMAP/FEATURES/CHANGELOG.
