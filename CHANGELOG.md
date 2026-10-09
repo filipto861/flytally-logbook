@@ -10,6 +10,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **3.7.0 Phase 2.0 satellite readiness (documentation only, 9 October 2026):** recorded read-only actual-source and production-environment-key *metadata* census, the existing public satellite tile route and legacy Story automatic satellite probe/export dependency, authoritative Esri attribution/pricing references, and provider-rights/cost/security/acceptance Go/No-Go gates in `docs/product/3_7_0_PHASE2_SATELLITE_READINESS.md`. Phase 1 documentary closure is merged in PR #270 (`7d47010e`). No satellite UI activation, new provider requests, runtime/DB/schema change, test run, 3.7.0 version bump, merge of this proposed readiness work, or production deployment is asserted by this entry. Satellite/openAIP remain blocked.
+
 - **Phase 1 standard-only production functional acceptance (9 October 2026; documentation closeout in Draft PR #270):** Owner confirmed browser Map/light-dark, existing GPS replay and playback continuity, public share/privacy, and mobile/iPad interaction work on `fly-tally.com`. This is **user-reported manual PASS**, not independent native Safari screenshots or browser traces. Production Map API HTTP 4/4 PASS (real OSM image and strict style 400); Vercel READY at `cc7abd41`; latest inspected aggregated runtime errors none. Prior local exact candidate full `release_status=PASS`. Remaining: merge docs PR #270 to complete documentary Phase 1 closure; product version 3.6.0 and full Maps 3.7.0 release unchanged; satellite/openAIP provider gates BLOCKED.
 
 
