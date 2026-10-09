@@ -170,6 +170,9 @@ test("map tile endpoint rejects unsupported and duplicate styles before upstream
     "style=",
     "style=map&style=satellite",
     "style=map&style=map",
+    "style%5Bfoo%5D=satellite",
+    "style%5B0%5D%5B1%5D=map",
+    "style=satellite&style%5Bfoo%5D=map",
   ]) {
     const response = await request.get("/api/map-tile/0/0/0?" + query);
     expect(response.status(), query).toBe(400);
