@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { loginBrowserPilot } from "./browser-actions.mjs";
 import { resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
 
@@ -238,6 +239,9 @@ test("flight replay retains map and playback state through theme changes", async
     await story.getByRole("button", { name: /Share Story/ }).click();
     const standardPng = await downloadStandard;
     expect(standardPng.suggestedFilename()).toMatch(/\.png$/);
+    const standardBytes = await readFile(await standardPng.path());
+    expect(standardBytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(standardBytes.length).toBeGreaterThan(1000);
     await expect(story.getByRole("alert")).toHaveCount(0);
 
     await satelliteStory.click();
@@ -246,6 +250,10 @@ test("flight replay retains map and playback state through theme changes", async
     await story.getByRole("button", { name: /Share Story/ }).click();
     const satellitePng = await downloadSatellite;
     expect(satellitePng.suggestedFilename()).toMatch(/\.png$/);
+    const satelliteBytes = await readFile(await satellitePng.path());
+    expect(satelliteBytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(satelliteBytes.length).toBeGreaterThan(1000);
+    expect(satelliteBytes.equals(standardBytes)).toBe(false);
     await expect(story.getByRole("alert")).toHaveCount(0);
 
     // A failed tile may not be silently stripped from a supposedly valid PNG.
