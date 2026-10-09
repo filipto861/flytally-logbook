@@ -1,3 +1,7 @@
+## 2026-10-09 — A4 real-route test precondition DB identity passed (NOT PRODUCT)
+
+Owner read-only URL plus live PostgreSQL identity guard confirmed `flytally_satellite_r1_test|flytally_sat_r1|55432` on `127.0.0.1` for A4 fixture on exact `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`. No data changed. Destructive reset approval still **NOT GIVEN**; authenticated HTTP baseline NOT RUN. Product satellite provider/route and production flag untouched.
+
 ## 2026-10-09 — R2D.2-A4 authenticated HTTP baseline: 23/23 static local PASS only
 
 Owner confirmed on exact SHA `f148f6b3f7f85bc8eef21f59124dab5cccfa5bfe` that isolated HTTP verification harness syntax and targeted 3.7.0 map/Satellite source suite **23/23 PASS, 0 failed**; includes A4 guarded exact branch option. No authenticated browser/prod-build/test-DB or real HTTP assertions have been run at this SHA. Disposable DB reset permission/identity remains an explicit gate. Product feature implementation unchanged and not production activated.
