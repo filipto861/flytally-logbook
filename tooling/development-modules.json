@@ -619,7 +619,9 @@
         "lib/civil-twilight",
         "lib/night-definition",
         "lib/data/tracks",
-        "lib/data/flight-track-review"
+        "lib/data/flight-track-review",
+        "components/map-layer-controller",
+        "lib/map-tile-style"
       ],
       "files": [],
       "risks": [
@@ -896,7 +898,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 1,
+    "selectionVersion": 2,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
@@ -1009,6 +1011,45 @@
           "aircraft-quick-add-mobile",
           "aircraft-profile-authority-desktop",
           "aircraft-profile-authority-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/leaflet-mobile",
+          "components/map-layer-controller",
+          "app/(protected)/map/",
+          "components/route-overview-map"
+        ],
+        "files": [],
+        "targets": [
+          "map-panes-overview-desktop",
+          "map-panes-overview-mobile",
+          "map-lifecycle-tracks-desktop",
+          "map-lifecycle-tracks-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/tracks-map",
+          "lib/map-tile-style",
+          "app/api/map-tile/"
+        ],
+        "files": [],
+        "targets": [
+          "map-lifecycle-tracks-desktop",
+          "map-lifecycle-tracks-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/flight-track-player",
+          "components/lazy-flight-track",
+          "components/gps-import-review-player"
+        ],
+        "files": [],
+        "targets": [
+          "map-lifecycle-player-desktop",
+          "map-lifecycle-player-mobile"
         ]
       }
     ],
@@ -1260,6 +1301,36 @@
         "spec": "e2e/responsive-presentation.spec.mjs",
         "title": "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
         "project": "desktop-chromium"
+      },
+      "map-panes-overview-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map panes preserve standard basemap ordering and route interactions",
+        "project": "desktop-chromium"
+      },
+      "map-panes-overview-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map panes preserve standard basemap ordering and route interactions",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-tracks-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS map theme changes preserve a live map instance and viewport",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-tracks-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS map theme changes preserve a live map instance and viewport",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-player-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "flight replay retains map and playback state through theme changes",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-player-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "flight replay retains map and playback state through theme changes",
+        "project": "mobile-chromium"
       }
     }
   }
