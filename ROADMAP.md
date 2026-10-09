@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 1 Draft PR #269. Earlier head `5b011c8`: source/domain/typecheck PASS, aggregate 1,443/1,443 PASS, build PASS, isolated PostgreSQL 100/100 PASS, browser-risk 10 desktop PASS / 1 FAIL with pending GPS save, plus Leaflet SSR errors. New feature head `3777fb0` adds **untested** client-only Leaflet boundaries and registers `client-maps.tsx` in risk ownership (`auditedTotal=386`); GPS save root cause awaiting trace/DB evidence. Current release FAIL/not ready; mobile browser NOT RUN. Provider-gated Phase 2 satellite and Phase 3 openAIP remain BLOCKED.
+**Current active workstream:** 3.7.0 Maps & Aviation Layers — Phase 1 Draft PR #269, feature head `b3917c7` (SSR isolation + evidence-led GPS browser wait); **current-head verification NOT RUN**. Previous exact-candidate `5b011c8`: source/domain/typecheck PASS, aggregate 1,443/1,443 PASS, build PASS, isolated PostgreSQL 100/100 PASS, desktop browser 10 PASS / 1 FAIL (pending GPS server POST), mobile NOT RUN, release FAIL; Next SSR errors observed. Post-failure SQL proves one certified v8/hash64 GPS flight persisted. Satellite Phase 2 / openAIP Phase 3 BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -1132,3 +1132,6 @@ Pre-standardization milestone history, including the prior E/F/B/SP/M labels and
 `docs/history/ROADMAP_PRE_NUMERIC_2026-10-04.md`
 
 Historical docs remain evidence/context only. If they conflict with this ROADMAP on current priority, this ROADMAP controls.
+
+
+**Eighth work cycle (9 October 2026 — saved GPS result confirmed; browser test repair NOT VERIFIED):** user executed a read-only SQL identity-guarded query against isolated `flytally_browser` at `127.0.0.1:55432` after the failing Playwright run: **one matching flight; certified=1, drafts=0, certification_version=8, certification_hash length=64, GPS tracks=1** for `user_id=9001`, `OK-E2E`, `2026-10-05`, off-block `14:00`. This proves persisted certified+GPS state at query time; due possible later fixture changes, not a complete timestamped action-latency measurement. The prior 5-second UI assertion failed while the trace showed a pending POST, rather than demonstrating a rejected certification. Feature PR #269 now at `b3917c7bed43b2ed204dee14afe9fd6d35394b4c`: **test-only** GPS e2e adjustment waits for real flight-detail redirect with explicit 20-second limit, keeps banner, `CERTIFIED R1`, hash/version `8|64` and GPS-track `1` assertions; one-case 60-second test budget covers setup and navigation. No production GPS/certification/DB code was changed. Map SSR client boundaries and this test change are **NOT YET TESTED** on the new head; all former PASS evidence belongs to `5b011c8`. Risk release remains FAIL / not ready until exact-head verifier and browser checks pass.
