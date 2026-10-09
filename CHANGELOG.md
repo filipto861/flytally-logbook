@@ -1,3 +1,9 @@
+## 2026-10-09 — M2b isolated PNG/JPEG structural raster validation + synthetic unit tests staged (NOT VERIFIED)
+
+**Actually added** `lib/satellite-raster-validation.ts` (PNG chunk CRC/IHDR/IDAT/IEND plus JPEG SOI/SOF/SOS/EOI and segment-framing validation, MIME matching, dimension reporting, sanitized error); `tests/v370-satellite-raster-validation.test.ts` with offline 1×1 Pillow-encoded PNG/JPEG and malformed structure cases; GPS/browser-risk registration `tooling/development-modules.json` and existing `tests/v370-map-layers.test.ts` runtime ownership 390→391. New checker is **not imported into production**; old Satellite provider continues existing Next Data Cache as before until M3. Checker doesn't decompress PNG or JPEG pixels, thus cannot guarantee full decoded integrity; that limitation is explicitly retained for source/governance review.
+
+**Verification:** previous M2a local 37/37+typecheck PASS only at `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`; **new M2b code/tests NOT RUN** in owner Node24, TypeScript, build, HTTP, browser, CI or prod. No live ArcGIS/DB/secret changes, no Training, release ON/OFF, merge or deploy. Satellite prod OFF, Draft #279.
+
 ## 2026-10-09 — M2a owner local 37/37 tests + typecheck PASS recorded (DOCS-ONLY)
 
 Owner submitted PowerShell transcript with exact source commit `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`, clean branch, Node24 guard, local `npm.cmd run test:target -- tests/v370-satellite-bounded-fetch.test.ts tests/v370-map-layers.test.ts` **37 tests / 37 PASS / 0 FAIL / 0 SKIP**, and `npm.cmd run typecheck` PASS. This closes standalone M2a's targeted test/typecheck verification, **NOT whole-project build, CI, browser, authenticated Satellite integration, production deployment or hard resource-bound guarantee**. In this follow-up only documentation reconciled; no runtime files/DB/Training/Standard/Story changes. M2b structural raster validations next, production Satellite OFF, Draft #279.
