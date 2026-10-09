@@ -10,6 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Documentation / planning only (not a product release)
+- At Filip's 9 October 2026 product reprioritization, drafted the **3.7.0 Maps & Aviation Layers** read-only Phase 0 inventory, technical contract and independent review handoff. Shifted the unimplemented Currency / monetary semantics workstream (#136) to 3.8.0, heterogeneous aircraft onboarding to 3.9.0 and aircraft sharing/recovery/scale to 3.10.0 while preserving their requirements and historical reservations. Updated ROADMAP, FEATURES, VERSIONING and the documentation index. **No runtime code, DB schema, certification/backup format, application package version or deployment changed; API/provider rights and design review remain pending.**
+
 ## 3.6.0 — 9 October 2026
 
 ### Saved-date / timezone semantics
