@@ -35,5 +35,5 @@ const timer = setInterval(() => {
       rss: m.rss, heapUsed: m.heapUsed, external: m.external,
       arrayBuffers: m.arrayBuffers }) + "\n");
   } catch {}
-}, 100);
+}, process.env.FLYTALLY_R2D2_SPIKE_MEMORY_SAMPLE_MS === "20" ? 20 : 100);
 timer.unref();
