@@ -19,6 +19,11 @@ const LOCKED_NEXT = "16.3.2";
 const BRANCH = "feat/3.7.0-satellite-r2d2-bounded-provider-io";
 const RUN = randomBytes(8).toString("hex");
 const LAB_TIMEOUT_MS = 4500; // LAB-ONLY watchdog; NOT production timeout policy
+// Run only the newest signal cases to avoid rerunning historical A1/A2 work.
+const SIGNAL_ONLY = process.argv.length === 3 && process.argv[2] === "--signal-only";
+if (!(process.argv.length === 2 || SIGNAL_ONLY)) {
+  throw new Error("Usage: node tooling/r2d2-cache-spike.mjs [--signal-only]");
+}
 function command(exe, args, label) {
   const run = spawnSync(exe, args, { cwd: ROOT, encoding: "utf8", timeout: 15_000 });
   if (run.error || run.status !== 0) {
@@ -169,6 +174,7 @@ async function main() {
   const require = createRequire(import.meta.url);
   const nextBin = require.resolve("next/dist/bin/next");
   const memoryFile = path.join(REPORT_DIR, "memory-" + RUN + ".jsonl");
+  const signalLog = path.join(REPORT_DIR, "request-signals-" + RUN + ".jsonl");
   // Minimal OS-only environment. Never forward arbitrary shell/app/provider secrets.
   const osAllow = new Set(["PATH", "PATHEXT", "SYSTEMROOT", "COMSPEC", "WINDIR",
     "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
@@ -178,6 +184,7 @@ async function main() {
   Object.assign(baseEnv, { NEXT_TELEMETRY_DISABLED: "1",
     FLYTALLY_R2D2_SPIKE: "1",
     FLYTALLY_R2D2_SPIKE_MEMORY_LOG: memoryFile,
+    FLYTALLY_R2D2_SPIKE_ROUTE_EVENTS: signalLog,
     FLYTALLY_R2D2_SPIKE_UPSTREAM: "http://127.0.0.1:" + upstreamPort + "/",
     NODE_ENV: "production" });
   let child = null;
@@ -194,7 +201,7 @@ async function main() {
     child.stdout.on("data", () => {});
     child.stderr.on("data", x => { stderr = (stderr + String(x)).slice(-2000); });
     await waitForApp("http://127.0.0.1:" + appPort + "/", child);
-    const requests = [
+    const requests = SIGNAL_ONLY ? [] : [
       ["cached", "normal", "complete", "cache-warm"],
       ["cached", "normal", "complete", "cache-warm"], // same URL: compare upstream events
       ["uncached", "normal", "complete", "no-cache-normal"],
@@ -245,7 +252,7 @@ async function main() {
     // is reading its own upstream fetch. Unlike reader-only cancel, this tests
     // whether disconnect propagates automatically through the HTTP boundary.
     // No runtime code or production route is involved.
-    for (const mode of ["cached", "uncached"]) {
+    if (!SIGNAL_ONLY) for (const mode of ["cached", "uncached"]) {
       const eventStart = events.length;
       const start = Date.now();
       const ctrl = new AbortController();
@@ -286,6 +293,68 @@ async function main() {
       }));
       results.push(result);
     }
+    // A3.2: compare observer-only to a route that explicitly links the
+    // incoming Request.signal to its own server-side AbortController.
+    // The signal's timing is not observable by a disconnected HTTP client;
+    // the isolated child writes sanitized records to a run-scoped JSONL.
+    for (const disconnectProbe of ["observe", "link"]) {
+      for (const mode of ["cached", "uncached"]) {
+        const key = RUN + "-signal-" + disconnectProbe + "-" + mode;
+        const eventStart = events.length;
+        const start = Date.now();
+        const ctrl = new AbortController();
+        const query = new URLSearchParams({
+          mode, sample: "large", action: "complete", disconnectProbe, key,
+        });
+        const stopTimer = setTimeout(() =>
+          ctrl.abort("synthetic-client-disconnect"), 300);
+        const result = {
+          mode, sample: "large", action: "client-disconnect-signal",
+          disconnectProbe, startedEpochMs: start, downstreamAbortAfterMs: 300,
+        };
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:" + appPort + "/api/probe?" + query,
+            { signal: ctrl.signal });
+          result.unexpectedResponseStatus = response.status;
+          result.outcome = "completed-before-disconnect-inconclusive";
+          await response.body?.cancel().catch(() => {});
+        } catch (err) {
+          result.outcome = ctrl.signal.aborted
+            ? "caller-aborted" : "unexpected-client-error-inconclusive";
+          result.clientErrorName = err?.name || "unknown";
+        } finally {
+          clearTimeout(stopTimer);
+        }
+        result.endedEpochMs = Date.now();
+        result.elapsedMs = result.endedEpochMs - start;
+        result.observationWaitMs = 5500; // laboratory, NOT product limits
+        await sleep(result.observationWaitMs);
+        result.postObserveUntilEpochMs = Date.now();
+        result.newUpstreamEvents = events.slice(eventStart).map(e => ({
+          sample: e.sample, queuedBytes: e.emitted, chunksQueued: e.chunks,
+          completed: e.finished, closed: e.close !== null,
+        }));
+        const signalEvents = existsSync(signalLog)
+          ? readFileSync(signalLog, "utf8").trim().split("\\n")
+              .filter(Boolean).map(line => JSON.parse(line))
+          : [];
+        result.serverSignalEvents = signalEvents
+          .filter(event => event.key === key)
+          .map(({ at, event, requestAlreadyAborted, requestAborted,
+                  clientSignalEvents, requestSignalAborted,
+                  upstreamSignalAborted, bytes, phase, elapsedMs }) => ({
+            at, event, requestAlreadyAborted, requestAborted,
+            clientSignalEvents, requestSignalAborted,
+            upstreamSignalAborted, bytes, phase, elapsedMs,
+          }));
+        results.push(result);
+        if (!result.serverSignalEvents.some(e => e.event === "route-start") ||
+            !result.serverSignalEvents.some(e => e.event === "route-finally")) {
+          throw new Error("A3.2 missing server-side route signal trace");
+        }
+      }
+    }
     if (stderr) results.push({ serverStderrObserved: true, tail: stderr.slice(-600) });
   } catch (e) {
     problem = String(e?.message || e).slice(-1500);
@@ -300,7 +369,8 @@ async function main() {
   const report = {
     kind: "R2D2_A_SYNTHETIC_DIAGNOSTIC_NOT_RELEASE_TEST",
     sha, branch: BRANCH, node: process.versions.node, next: LOCKED_NEXT,
-    run: RUN, labValuesAreNotProductionBudgets: true,
+    run: RUN, mode: SIGNAL_ONLY ? "A3.2_SIGNAL_ONLY" : "FULL_PLUS_A3.2",
+    labValuesAreNotProductionBudgets: true,
     provenance: "next build + next start, isolated tooling mini app and local binary HTTP fixture",
     upstreamEvents: events.map(e => ({ sample: e.sample, key: e.key.slice(17),
       emittedBytes: e.emitted, chunksQueued: e.chunks, completed: e.finished,
