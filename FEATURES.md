@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2 cache diagnostic A1 observed / A2 staged (NOT RELEASED)
+
+Standalone Node 24/Next 16.3.2 mini-app cache probe A1 executed successfully on SHA `1d5a5a8cd8262422e123a087352343590646d260` (diagnostic only): cached repeated-key request avoided a fresh locally observed fetch; early signal abort and body-stall watchdog terminated local streams. No full 16 MiB test or hard memory ceiling yet. Test-only A2 adds full stream baseline, late signal abort and reader-only cancel comparisons with per-case synthetic upstream and whole-process memory snapshots. **A2 NOT RUN**. Neither A1 nor A2 constitutes production bounded provider I/O implementation, approved cache quota, or release. Satellite provider/Flight Story/Auth/Standard/DB/Training unchanged; production OFF.
+
 ## 2026-10-09 — R2D.2-A1 isolated diagnostic configuration fix (TEST TOOLING ONLY)
 
 First owner-run `SPIKE_INCOMPLETE`: mini Next build inherited parent production `next.config.ts`, 0 requests and 0 memory samples. Staged an explicit mini `next.config.mjs` and preflight isolation assertion so the synthetic experiment can build without resolving the Logbook application's relative commercial-build-guard import. **Real production build guard untouched.** This is not a delivered Satellite runtime feature or confirmed cache safety. Corrected A1 diagnostic **NOT RUN**; production Satellite OFF, Draft unmerged.
