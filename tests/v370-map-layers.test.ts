@@ -307,6 +307,8 @@ test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real pro
   assert.match(runner, /const ORIGIN = \x60http:\/\/localhost:\$\{PORT\}\x60/);
   assert.match(runner, /sessions\[0\]\.secure, true/);
   assert.match(runner, /credentials: "same-origin"/);
+  assert.match(runner, /assert\.match\(response\.headers\["content-type"\]/);
+  assert.doesNotMatch(runner, /assert\.match\(response\.headers\(\)\["content-type"\]/);
   assert.doesNotMatch(runner, /const requester = context\.request|headers:\s*\{\s*Cookie:/);
   assert.match(runner, /ARCGIS_ACCESS_TOKEN: TOKEN/);
   assert.match(runner, /"git", \["status", "--porcelain"\]/);
