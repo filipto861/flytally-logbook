@@ -116,7 +116,7 @@ test("3.7.0 Satellite trial is explicit opt-in and retains Standard by default",
   assert.match(controller, /return attachBasemap\(map, "satellite", url, attribution, onLoad, onError\)/);
   assert.match(control, /unavailable = true; \/\/ Prevent retry storms/);
   assert.match(control, /standardMap\(true\)/);
-  assert.match(control, /status\("Satellite unavailable/);
+  assert.match(control, /status\(fallback \? "Satellite unavailable — showing Standard" : ""\)/);
   assert.doesNotMatch(control, /localStorage|sessionStorage/);
   assert.doesNotMatch(control, /openaip/i);
 });
