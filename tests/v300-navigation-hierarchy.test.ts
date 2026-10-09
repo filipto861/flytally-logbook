@@ -56,8 +56,8 @@ test("v3.0 historical UX evidence is archived while numeric roadmap owns current
   assert.match(roadmap,/\| 6 \| \*\*3\.5\.3\*\* \| Flight detail navigation UX \| ✅ \|/);
   assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
   assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| ✅ \|/);
-  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| 🚧 \|/);
-  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| ➡️ \|/);
+  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ✅ \|/);
+  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Currency \/ monetary semantics · #136 \| 🚧 \|/);
   assert.match(roadmap,/# 3\.4\.1 — GPS Night-time reliability — DONE/);
   assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
   assert.match(roadmap,/docs\/history\/ROADMAP_PRE_NUMERIC_2026-10-04\.md/);
