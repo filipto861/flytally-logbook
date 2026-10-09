@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2 M2b standalone raster structural checker staged; NOT RELEASED
+
+New parser `inspectSatelliteRaster` checks matching PNG/JPEG MIME, mandatory structural markers and full length/CRC/segment framing on a previously bounded response, returning dimensions without interpreting pixel data. Dedicated encoded tiny PNG/JPEG fixture tests and invalid/truncated/mismatch tests staged, GPS owned. Does **not** decode image pixels, establish production supplier formats, set byte/decompression/pixel limits or modify actual Satellite/Standard API behavior. New M2b test/typecheck NOT RUN; next requires local evidence. Satellite production OFF, Draft PR.
+
 ## 2026-10-09 — R2D.2 M2a independent bounded transport LOCAL TESTED, NOT PRODUCT-CONNECTED
 
 Owner-run on exact `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`: 14 M2a helper tests plus 23 map/Satellite source regressions **37/37 PASS**, TypeScript `tsc --noEmit` PASS. Source-only helper retains forced `no-store`, externally supplied numeric ceilings, total abort/deadline, streaming checks; still no real provider integration and no true PNG/JPEG structural verification. Next M2b. No production flag, map, Standard, Story, provider, DB or deploy change.
