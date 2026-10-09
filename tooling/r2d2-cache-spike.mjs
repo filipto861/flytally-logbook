@@ -19,7 +19,6 @@ const LOCKED_NEXT = "16.3.2";
 const BRANCH = "feat/3.7.0-satellite-r2d2-bounded-provider-io";
 const RUN = randomBytes(8).toString("hex");
 const LAB_TIMEOUT_MS = 4500; // LAB-ONLY watchdog; NOT production timeout policy
-const SAMPLE_MAX_MS = 45_000; // prevent accidental unattended experiment
 function command(exe, args, label) {
   const run = spawnSync(exe, args, { cwd: ROOT, encoding: "utf8", timeout: 15_000 });
   if (run.error || run.status !== 0) {
@@ -95,6 +94,7 @@ function fixtureServer(events) {
     res.on("close", () => { event.close = Date.now(); clearInterval(timer); });
     const timer = setInterval(() => {
       if (res.destroyed) { clearInterval(timer); return; }
+      if (res.writableNeedDrain) return;
       if (event.emitted < goal) {
         const size = Math.min(chunk.length, goal - event.emitted);
         const accepted = res.write(chunk.subarray(0, size));
@@ -205,6 +205,7 @@ async function main() {
       child.kill();
       await sleep(300);
     }
+    upstream.closeAllConnections?.(); // close any deliberately stalled lab stream
     await new Promise(resolve => upstream.close(resolve));
   }
   const report = {
