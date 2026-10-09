@@ -293,3 +293,24 @@ test("3.7.0 R2B an image-only fallback remains usable without fake labels", asyn
   assert.ok(svg);
   assert.equal((svg.match(/<image /g) ?? []).length, 1);
 });
+
+test("3.7.0 R2C manual HTTP harness cannot bypass isolated auth or call real provider", () => {
+  const runner = source("tooling/verify-satellite-http.mjs");
+  const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  const provider = source("lib/satellite-map-provider.ts");
+  assert.match(runner, /FLYTALLY_LOCAL_POSTGRES.*"1"/);
+  assert.match(runner, /FLYTALLY_AUTH_BROWSER.*"1"/);
+  assert.match(runner, /flytally_satellite_r1_test\|flytally_sat_r1\|55432/);
+  assert.match(runner, /bootstrap-browser-smoke-db\.mjs/);
+  assert.match(runner, /NODE_ENV: "production"/);
+  assert.match(runner, /ARCGIS_ACCESS_TOKEN: TOKEN/);
+  assert.match(runner, /"git", \["status", "--porcelain"\]/);
+  assert.match(runner, /runBrowserSql\("UPDATE auth_sessions SET revoked_at=NOW\(\)/);
+  assert.match(fixture, /net\.Socket\.prototype\.connect = restrictConnect/);
+  assert.match(fixture, /Satellite fixture blocked unknown upstream host\/path/);
+  assert.match(fixture, /Satellite fixture provider token contract mismatch/);
+  assert.match(fixture, /const TOKEN = process\.env\.ARCGIS_ACCESS_TOKEN/);
+  assert.doesNotMatch(route, /FLYTALLY_SATELLITE_HTTP_FIXTURE|satellite-http-upstream-fixture/);
+  assert.doesNotMatch(provider, /FLYTALLY_SATELLITE_HTTP_FIXTURE|satellite-http-upstream-fixture/);
+});
