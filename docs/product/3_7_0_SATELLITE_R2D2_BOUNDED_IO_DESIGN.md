@@ -1,3 +1,13 @@
+## 2026-10-09 — R2D.2-A1 FIRST OWNER-RUN FAILED IN ISOLATED MINI NEXT BUILD; ISOLATION FIX STAGED
+
+**Owner evidence on clean exact R2D.2 commit `c02ed61b147a157d10a443620ddac1964eb1fac2`:** branch fetch/switch and 3 syntax checks succeeded; `node tooling/r2d2-cache-spike.mjs` reported `SPIKE_INCOMPLETE` with **zero HTTP requests, zero upstream events, zero memory samples**. The mini Next 16.3.2 Turbopack build failed while loading **ancestor application** `next.config.ts` into `tooling/r2d2-cache-spike/next.config.compiled.js`; the parent's relative `./lib/commercial-build-guard.ts` could not resolve inside the mini test directory. This was a **test harness config-isolation defect**, not any evidence about provider/cache/abort behavior. Preserve this failure in history; no runtime, PostgreSQL, Playwright, Satellite ON/OFF or external calls were tested by A1.
+
+**Minimal test-only correction now staged:** introduce a separate `tooling/r2d2-cache-spike/next.config.mjs` to prevent ancestor config inheritance, with explicit `turbopack.root` resolving shared root dependencies. Add a fail-closed preflight asserting this isolated config exists and has no production commercial guard import. Ignore only the generated mini-app `next.config.compiled.js` artifact from the failed ancestor TS config resolution. Root `next.config.ts` and its commercial production safety check stay **UNCHANGED** and remain mandatory for real FlyTally builds. This is an isolated diagnostic project; it is not a replacement production build. Tests of the corrected HEAD, mini build and streamed observations are all **NOT RUN** as of this commit. Keep PR Draft; production Satellite OFF.
+
+**Next owner step:** clean exact branch HEAD, run `node --check` for harness/preload/probe/mini config, then `node tooling/r2d2-cache-spike.mjs`. Report only raw observations, never a safety PASS or approved production budgets. If the isolated build still fails, inspect its diagnostic stack before changing Next or production config.
+
+---
+
 ## 2026-10-09 — Independent DeepSeek review reconciliation + R2D.2-A synthetic diagnostic staged
 
 **Review received:** `APPROVE WITH CHANGES`. This entry records verified facts, accepted recommendations and corrections **before** any Satellite runtime implementation. **R2D.2 remains BLOCKED for runtime coding pending exact-Next experiment + reviewed budgets/cache policy.**
