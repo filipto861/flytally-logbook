@@ -146,13 +146,13 @@ Important boundary:
 - Phase 1 required no DB migration, historical backfill, certification rewrite or portable-backup format bump.
 - Production closeout: PR #266 merged as `168bd029540474d6e806bf3e261fa855824b7c2a`; Vercel deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` reached READY on the exact SHA and serves `fly-tally.com`; root/login smoke returned HTTP 200 and the immediate checked runtime-error window was clean.
 
-### 3.7.0 — Maps & Aviation Layers — ACTIVE / DESIGN, RUNTIME NOT STARTED
+### 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 UNVERIFIED CANDIDATE
 - Select Standard or Satellite/orthophoto map background on the existing Route map, GPS tracks map, saved-flight GPS preview/replay and GPS import review, with consistent controls and no flight-evidence changes.
 - Maintain a single Leaflet map instance during background/overlay changes; preserve viewport, player cursor, route clicks, existing dark standard-map appearance and iPad movement lock.
 - Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage and attribution rights are verified. **3.7.0 explicitly excludes new openAIP/satellite controls on public shares and openAIP Story exports.**
 - Preserve provider-specific color and attribution. On missing/failed imagery or aviation tiles, display explicit unavailable/partial state rather than falsely reporting full coverage or airspace activity.
 - Satellite backend and Story-card support already exist in source, but production feature expansion and openAIP are **not implemented/approved**. Story-card overlay export, operational airspace activation/NOTAM and safety alerts are outside 3.7.0.
-- Phase 0 source discovery and both independent reviews are documented: first BLOCK, second **APPROVE WITH CHANGES** for Phase 1 design only. Actual map test registration, implementation, runtime verification and provider gates remain open; no DB/certification/backup change is presently expected. Reconciliation: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`.
+- Phase 0 discovery and both independent reviews remain documented: first BLOCK, second **APPROVE WITH CHANGES** for Phase 1 design. Filip approved Phase 1 implementation. Separate Draft PR #269 contains standard-only controller, strict tile-style parser, theme-lifecycle changes and registered Node/Playwright tests **as an unverified candidate**. No runtime test/build/CI, merge or production delivery evidence yet. Provider gates remain open; no DB/certification/backup change presently expected. Reconciliation: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`.
 - Detailed design/review and proposed test acceptance: `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`, `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`.
 
 ### 3.8.0 — Currency / monetary semantics — NEXT (superseded former 3.7.0 reservation)
