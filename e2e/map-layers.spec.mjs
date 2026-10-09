@@ -128,3 +128,27 @@ test("flight replay retains map and playback state through theme changes", async
   await expect(page.getByRole("button", { name: "Pause track" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Playback speed" })).toHaveValue("2");
 });
+
+test("GPS import review retains its map pane across theme changes", async ({ page }) => {
+  test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
+  await page.route("**/api/map-tile/**", async route => {
+    await route.fulfill({ status: 200, contentType: "image/svg+xml", body: TILE });
+  });
+  await loginBrowserPilot(page, "/flights/new");
+  await page.getByRole("button", { name: "Import GPS track" }).click();
+  const form = page.locator("form.kml-wizard");
+  const kml = '<kml xmlns:gx="http://www.google.com/kml/ext/2.2"><gx:Track>' +
+    '<when>2026-10-05T14:00:00Z</when><when>2026-10-05T14:01:00Z</when><when>2026-10-05T14:02:00Z</when><when>2026-10-05T14:03:00Z</when>' +
+    '<gx:coord>14.10 50.10 300</gx:coord><gx:coord>14.13 50.12 450</gx:coord><gx:coord>14.18 50.16 800</gx:coord><gx:coord>14.24 50.20 500</gx:coord></gx:Track></kml>';
+  await form.locator('input[name="kml"]').setInputFiles({
+    name: "phase1-import-review.kml",
+    mimeType: "application/vnd.google-earth.kml+xml",
+    buffer: Buffer.from(kml),
+  });
+  const details = form.locator("details.gps-track-review");
+  await expect(details).toBeAttached();
+  if (!(await details.evaluate(node => node.open))) await details.locator("summary").click();
+  const map = await checkStandardPanes(page, ".import-review-map");
+  await setTheme(page, "light");
+  await assertSamePaneAfterTheme(page, map);
+});
