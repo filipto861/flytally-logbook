@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2 M2b test failure corrected in fixture only; not product connected
+
+First M2b owner run exact `5c7efca94c9dfd50bed71b58eaa0d547aa288626`: **45/46 PASS; 1 fail** in positive JPEG fixture and `typecheck NOT RUN`. Source artifact was malformed (DQT segment misalignment); an independently decoded Pillow 1×1 JPEG with pinned SHA256 and negative regression replaces it in tests; validator and provider runtime unchanged. Correction awaits fresh owner Node24 target/test and typecheck. M2b NOT CLOSED, Satellite OFF/unmerged.
+
 ## 2026-10-09 — R2D.2 M2b standalone raster structural checker staged; NOT RELEASED
 
 New parser `inspectSatelliteRaster` checks matching PNG/JPEG MIME, mandatory structural markers and full length/CRC/segment framing on a previously bounded response, returning dimensions without interpreting pixel data. Dedicated encoded tiny PNG/JPEG fixture tests and invalid/truncated/mismatch tests staged, GPS owned. Does **not** decode image pixels, establish production supplier formats, set byte/decompression/pixel limits or modify actual Satellite/Standard API behavior. New M2b test/typecheck NOT RUN; next requires local evidence. Satellite production OFF, Draft PR.
