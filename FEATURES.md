@@ -1,3 +1,7 @@
+## 2026-10-09 — A4 isolated test database reset permitted (no product change)
+
+Owner consented to test-only `public` schema recreation in specifically verified local `127.0.0.1:55432/flytally_satellite_r1_test` as `flytally_sat_r1`. This is permission for guarded A4 verification, not evidence of test execution, runtime implementation or release. No other database authorized; production Satellite OFF.
+
 ## 2026-10-09 — A4 real-route test precondition DB identity passed (NOT PRODUCT)
 
 Owner read-only URL plus live PostgreSQL identity guard confirmed `flytally_satellite_r1_test|flytally_sat_r1|55432` on `127.0.0.1` for A4 fixture on exact `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`. No data changed. Destructive reset approval still **NOT GIVEN**; authenticated HTTP baseline NOT RUN. Product satellite provider/route and production flag untouched.
