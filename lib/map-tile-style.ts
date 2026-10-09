@@ -5,8 +5,9 @@ export type MapTileStyle = "map" | "satellite";
  * A present query field is never silently defaulted or de-duplicated.
  */
 export function parseMapTileStyle(params: URLSearchParams): MapTileStyle | null {
-  // Treat form-array spellings as malformed styles, not as an omitted legacy style.
-  if (Array.from(params.keys()).some(key => /^style\[(?:\d*)\]$/.test(key))) return null;
+  // Reject any alternative style-key spelling, including nested/non-numeric brackets.
+  // Unknown unrelated query keys are ignored for backward compatibility.
+  if (Array.from(params.keys()).some(key => key !== "style" && key.startsWith("style"))) return null;
   const styles = params.getAll("style");
   if (styles.length === 0) return "map";
   if (styles.length !== 1) return null;
