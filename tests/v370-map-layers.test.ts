@@ -46,3 +46,19 @@ test("3.7.0 existing map consumers remain on the shared standard basemap", () =>
     assert.doesNotMatch(content, /api\.tiles\.openaip/, file);
   }
 });
+
+test("3.7.0 Leaflet consumers are loaded behind browser-only boundaries", () => {
+  const page = source("app/(protected)/map/page.tsx");
+  const mapBoundary = source("components/client-maps.tsx");
+  const replayBoundary = source("components/lazy-flight-track-review.tsx");
+  assert.match(page, /from "@\/components\/client-maps"/);
+  assert.doesNotMatch(page, /from "@\/components\/(?:route-overview-map|tracks-map)"/);
+  assert.match(mapBoundary, /^"use client";/);
+  assert.match(mapBoundary, /import\("@\/components\/route-overview-map"\)/);
+  assert.match(mapBoundary, /import\("@\/components\/tracks-map"\)/);
+  assert.equal((mapBoundary.match(/ssr:\s*false/g) ?? []).length, 2);
+  assert.doesNotMatch(mapBoundary, /^import L from "leaflet"/m);
+  assert.match(replayBoundary, /import\("@\/components\/flight-track-player"\)/);
+  assert.match(replayBoundary, /ssr:\s*false/);
+  assert.doesNotMatch(replayBoundary, /^import \{ FlightTrackPlayer \} from/m);
+});
