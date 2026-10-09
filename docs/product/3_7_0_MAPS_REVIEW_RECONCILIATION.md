@@ -69,3 +69,36 @@ The reviewer identified two **forward-looking hazards**, not evidenced current f
 | Browser coverage + exact candidate planner | Implementation | **NOT RUN** |
 
 Do not automatically mark Phase 0 externally closed merely because the review was reconciled. Contract reconciliation is a **documentary design milestone**; provider and implementation approvals are distinct.
+
+---
+
+## Second independent re-review — 9 October 2026 (subsequent review, retained independently)
+
+**Verdict received: APPROVE WITH CHANGES for Phase 1 technical contract.** Phase 2 satellite **production** and Phase 3 openAIP **production** remain BLOCKED by their respective external gates. This re-review does not approve runtime, a provider licence or a release, and does not retroactively change the earlier BLOCK verdict. The earlier finding dispositions above remain the historical record.
+
+**Accepted conditions and scope corrections:**
+
+| Re-review item | Reconciled obligation | When it must be proved |
+| --- | --- | --- |
+| C1 | No global `tilePane` dark filter; effective computed filter only on Standard/dark `flytallyBasemap`; deterministic controlled image or computed-style regression | Phase 1 for standard isolation; Phase 2 for actual satellite pixels |
+| C2 | Strict `URLSearchParams.getAll('style')`: missing => legacy Standard; exactly one `map`/`satellite` => known style; explicit empty, typo, unknown, any duplicate => 400 `unsupported_style`, no upstream fetch | Phase 1 route tests |
+| B1 | Exact per-map panes + effective z-index, noninteractive aviation; default panes unchanged; route/airport panes only where the route overview creates them | Phase 1 Playwright/browser DOM |
+| B2 | One live map and preserved map pane identity/view/playback through theme or layer updates; `.leaflet-container` count alone is insufficient; Strict Mode teardown/re-mount permitted | Phase 1 Playwright/browser; source characterization |
+| S1 | Exact Esri and each applicable underlying data supplier attribution text/link, including labels fallback, desktop/iPad portrait+landscape/mobile legibility | Phase 2 production gate |
+| S2 | Actual ArcGIS token plan/entitlement, quotas, allowed cache period, volume/cost and controlled 403/429 behavior documented | Phase 2 production gate |
+| O1 | Binding openAIP usage rights/licence and attribution, cache, public image/export interpretation, not inferred from CC headline | Phase 3 production gate |
+| O2 | Current provider Tiles API schema/revision, auth/zoom/layers/429/headers/content-type/cache/errors | Phase 3 integration gate |
+| O3 | New openAIP endpoint server-authenticated: 401 without session / 403 authenticated without rights; public guessed URL negative tests, no shared-flight/Story requests | Phase 3 security gate |
+| Deferred | Error matrix public restrictions, CSP audit, provider+layer+z/x/y+revision cache identity, noncached errors, bounded validated raster size/type and provider zoom | Design now, implement in gated phase |
+
+**Technical correction to re-review evidence:** the reviewer calls C1/C2 "confirmed defect in existing runtime." Actual baseline shows a broad dark filter and permissive style parser **already exist**, but satellite is not selected by the current shared Leaflet helper and malformed styles are not a documented UI path. The potential future incorrect result is confirmed by source logic, **not** a demonstrated production incident. Their required fixes are accepted without claiming a production outage.
+
+**Test registration clarified:** the reviewer requires Phase 1 test registration and assertions to be accepted before Phase 1 is called ready. Actual registration is **not performed** in this docs-only PR. The explicit proposed map browser targets, exact titles/projects, fixture strategy, lifecycle oracle and risk-plan ownership are specified in `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`. Existing `node:test` and `@playwright/test` are the only planned frameworks. We will register executable cases and demonstrate them PASS in Phase 1 implementation; documentation does not satisfy that implementation DoD.
+
+**CSP factual correction:** current `next.config.ts` includes `img-src 'self' data: blob: https:` and `connect-src 'self'`. New proxied aviation requests should remain same-origin and must not broaden `connect-src`. Narrowing the existing `img-src` to `'self'` without a separate compatibility audit is **not** part of Phase 1.
+
+**Phase 1 disposition:** **TECHNICAL DIRECTION CONDITIONALLY APPROVED BY INDEPENDENT REVIEWER; ACCEPTANCE CONTRACT PREPARED; IMPLEMENTATION NOT AUTHORIZED BY THIS DOCUMENT, NOT STARTED.** The next action is to accept the Phase 1 test plan and start a minimal independent implementation branch after Filip's approval. No need to wait for openAIP provider licence to do **standard-only Phase 1**.
+
+**Phase 2/3 disposition:** external rights and provider schema/entitlement gates unchanged, **BLOCKED**; do not add enabled tiles, UI availability claims or public overlays.
+
+**State evidence:** source/doc-only reconciliation, no tests/build/DB/Playwright/provider-live checks/deploy; all **NOT RUN**, DB migration **N/A** in this scope.
