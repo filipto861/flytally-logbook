@@ -6,6 +6,10 @@ import { browserSqlScalar,runBrowserFlightFixtureCleanup,resetGpsNormalizedImpor
 const authenticatedBrowser=process.env.FLYTALLY_AUTH_BROWSER==="1";
 
 test("3.4.0 single GPS Save & certify seals the imported persisted row",async({page})=>{
+  // A cold local server action may outlive the global 5s assertion timeout.
+  // Budget the authenticated GPS import transaction without relaxing the
+  // subsequent UI certification, immutable-hash or track persistence assertions.
+  test.setTimeout(60_000);
   test.skip(!authenticatedBrowser,"Authenticated 3.4.0 GPS completion coverage requires the isolated browser database.");
   runBrowserFlightFixtureCleanup(`
     DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id IN (SELECT id FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00');
@@ -37,6 +41,9 @@ test("3.4.0 single GPS Save & certify seals the imported persisted row",async({p
   await expect(gpsForm.getByRole("button",{name:"Save & certify flight"})).toBeEnabled();
   await gpsForm.getByRole("button",{name:"Save & certify flight"}).click();
 
+  // Wait for the actual server-action redirect instead of assuming completion
+  // within 5s; a missing redirect or failed certification still fails closed.
+  await expect(page).toHaveURL(/\/flights\/\d+(?:\?.*)?$/,{timeout:20_000});
   await expect(page.getByText("Flight saved and certified.")).toBeVisible();
   await expect(page.locator(".flight-lock-badge")).toContainText("CERTIFIED R1");
   expect(browserSqlScalar("SELECT CASE WHEN certified_at IS NOT NULL THEN certification_version::text||'|'||length(certification_hash)::text ELSE 'DRAFT' END FROM flights WHERE user_id=9001 AND registration='OK-E2E' AND date='2026-10-05' AND off_block='14:00' ORDER BY id DESC LIMIT 1")).toBe("8|64");

@@ -10,6 +10,7 @@ function gap(a:{lat:number;lon:number},b:{lat:number;lon:number}){const p=Math.P
 
 export function TracksMap({ tracks, height = 650, detail = false }: { tracks: MapTrack[]; height?: number; detail?: boolean }) {
   const target = useRef<HTMLDivElement>(null),theme=useResolvedTheme(),palette=mapThemePalette(theme);
+  const pathsRef=useRef<Array<{path:L.Path;kind:"route"|"routeAlt"|"start"|"end";markerFill?:boolean}>>([]);
   useEffect(() => {
     if (!target.current || tracks.length === 0) return;
     const map = L.map(target.current, { preferCanvas: true, zoomControl: true, attributionControl: true });
@@ -20,9 +21,12 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
       latlngs.forEach((point) => bounds.extend(point));
       const color = track.evidence === "EASA" ? palette.route : palette.routeAlt;
       const line = L.polyline(latlngs, { color, weight: detail ? 3 : 2, opacity: detail ? .95 : .68, renderer }).addTo(map);
+      pathsRef.current.push({path:line,kind:track.evidence==="EASA"?"route":"routeAlt"});
       const depGap=track.departurePoint?gap(track.departurePoint,track.points[0]):0,arrGap=track.arrivalPoint?gap(track.points.at(-1)!,track.arrivalPoint):0;
-      if(track.departurePoint&&depGap>.35){const connector=[L.latLng(track.departurePoint.lat,track.departurePoint.lon),latlngs[0]];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer}).addTo(map)}
-      if(track.arrivalPoint&&arrGap>.35){const connector=[latlngs.at(-1)!,L.latLng(track.arrivalPoint.lat,track.arrivalPoint.lon)];connector.forEach(p=>bounds.extend(p));L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer}).addTo(map)}
+      if(track.departurePoint&&depGap>.35){const connector=[L.latLng(track.departurePoint.lat,track.departurePoint.lon),latlngs[0]];connector.forEach(p=>bounds.extend(p));const connectorLine=L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer}).addTo(map);
+        pathsRef.current.push({path:connectorLine,kind:track.evidence==="EASA"?"route":"routeAlt"})}
+      if(track.arrivalPoint&&arrGap>.35){const connector=[latlngs.at(-1)!,L.latLng(track.arrivalPoint.lat,track.arrivalPoint.lon)];connector.forEach(p=>bounds.extend(p));const connectorLine=L.polyline(connector,{color,weight:2,opacity:.85,dashArray:"7 7",renderer}).addTo(map);
+        pathsRef.current.push({path:connectorLine,kind:track.evidence==="EASA"?"route":"routeAlt"})}
       if (!detail) {
         const node = document.createElement("div");
         const title = document.createElement("strong"); title.textContent = `${track.registration || "Flight"} · ${track.date}`;
@@ -31,14 +35,21 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
         node.append(title, route, link); line.bindPopup(node);
       }
       if (detail || index === 0) {
-        L.circleMarker(latlngs[0], { radius: 4, color: palette.start, fillColor:palette.markerFill, fillOpacity: 1 }).addTo(map);
-        L.circleMarker(latlngs.at(-1)!, { radius: 4, color: palette.end, fillColor:palette.markerFill, fillOpacity: 1 }).addTo(map);
+        const startMarker=L.circleMarker(latlngs[0], { radius: 4, color: palette.start, fillColor:palette.markerFill, fillOpacity: 1 }).addTo(map);
+        pathsRef.current.push({path:startMarker,kind:"start",markerFill:true});
+        const endMarker=L.circleMarker(latlngs.at(-1)!, { radius: 4, color: palette.end, fillColor:palette.markerFill, fillOpacity: 1 }).addTo(map);
+        pathsRef.current.push({path:endMarker,kind:"end",markerFill:true});
       }
     });
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: detail ? 13 : 10 });
     else map.setView([49.8, 15.5], 7);
     const cleanupResponsive=installResponsiveMap(map,target.current);
-    return () => { cleanupResponsive();map.remove(); };
-  }, [tracks, detail, theme]);
+    return () => { cleanupResponsive();map.remove();pathsRef.current=[]; };
+  }, [tracks, detail]);
+  useEffect(()=>{
+    pathsRef.current.forEach(({path,kind,markerFill})=>{
+      path.setStyle({color:palette[kind],...(markerFill?{fillColor:palette.markerFill}:{})});
+    });
+  },[theme,palette.route,palette.routeAlt,palette.start,palette.end,palette.markerFill]);
   return <div ref={target} className={`track-map responsive-map${detail?" detail-responsive-map":""}`} style={{"--map-height":`${height}px`} as CSSProperties} aria-label="GPS tracks map" />;
 }

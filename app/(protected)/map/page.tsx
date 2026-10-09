@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { TracksMap } from "@/components/tracks-map";
-import { RouteOverviewMap } from "@/components/route-overview-map";
+import { RouteOverviewMap, TracksMap } from "@/components/client-maps";
 import { requireUser } from "@/lib/auth/require-user";
 import { getMapFilterOptions,getOverviewTracks,getRouteOverview } from "@/lib/data/tracks";
 

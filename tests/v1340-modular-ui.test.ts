@@ -48,12 +48,15 @@ test("appearance contract is System/Dark/Light and is wired through settings, pr
 });
 
 test("dashboard renders registered widget boundaries and maps follow the resolved theme",()=>{
-  const dashboard=read("app/(protected)/dashboard/page.tsx"),map=read("components/leaflet-mobile.ts");
+  const dashboard=read("app/(protected)/dashboard/page.tsx"),map=read("components/leaflet-mobile.ts"),layers=read("components/map-layer-controller.ts");
   assert.match(dashboard,/dashboardLayoutFromPreferences/);
   assert.match(dashboard,/data-dashboard-widget/);
   assert.match(map,/MutationObserver/);
   assert.match(map,/dataset[.]theme/);
-  assert.match(map,/DARK_TILE_FILTER/);
+  assert.match(map,/applyStandardMapTheme/);
+  assert.match(layers,/STANDARD_DARK_FILTER/);
+  assert.match(layers,/basePane\.style\.filter/);
+  assert.doesNotMatch(layers,/tilePane\.style\.filter/);
 });
 
 test("light appearance overrides legacy dark workspace surfaces across the application",()=>{

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseMapTileStyle } from "@/lib/map-tile-style";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
 const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
@@ -74,7 +75,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     return new NextResponse("Invalid tile", { status: 400 });
   }
 
-  const wantsSatellite = new URL(request.url).searchParams.get("style") === "satellite";
+  const style = parseMapTileStyle(new URL(request.url).searchParams);
+  if (style === null) {
+    return NextResponse.json({ error: "unsupported_style" }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  }
+  const wantsSatellite = style === "satellite";
   const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN?.trim();
   const referer = publicReferer(request);
   if (wantsSatellite && !arcgisToken) {

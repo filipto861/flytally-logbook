@@ -48,7 +48,12 @@
     "appearance mutation disables duplicate submit and persists",
     "connection acceptance disables duplicate submit and persists",
     "account settings transaction disables duplicate submit and persists both records",
-    "connection access update disables duplicate submit and persists"
+    "connection access update disables duplicate submit and persists",
+    "map panes preserve standard basemap ordering and route interactions",
+    "GPS map theme changes preserve a live map instance and viewport",
+    "flight replay retains map and playback state through theme changes",
+    "GPS import review retains its map pane across theme changes",
+    "map tile endpoint rejects unsupported and duplicate styles before upstream fetch"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"

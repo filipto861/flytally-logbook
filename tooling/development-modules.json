@@ -619,7 +619,11 @@
         "lib/civil-twilight",
         "lib/night-definition",
         "lib/data/tracks",
-        "lib/data/flight-track-review"
+        "lib/data/flight-track-review",
+        "components/map-layer-controller",
+        "components/client-maps",
+        "components/public-flight-map",
+        "lib/map-tile-style"
       ],
       "files": [],
       "risks": [
@@ -881,7 +885,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 383,
+    "auditedTotal": 387,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -896,7 +900,7 @@
     "explicitNotApplicableSkipReasons": [
       "UI audit capture runs only for the dedicated audit branch or explicit local opt-in."
     ],
-    "selectionVersion": 1,
+    "selectionVersion": 2,
     "moduleTargets": {
       "flight-records": [
         "flight-manual-save-desktop",
@@ -1009,6 +1013,51 @@
           "aircraft-quick-add-mobile",
           "aircraft-profile-authority-desktop",
           "aircraft-profile-authority-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/leaflet-mobile",
+          "components/map-layer-controller",
+          "components/client-maps",
+          "app/(protected)/map/",
+          "components/route-overview-map"
+        ],
+        "files": [],
+        "targets": [
+          "map-panes-overview-desktop",
+          "map-panes-overview-mobile",
+          "map-lifecycle-tracks-desktop",
+          "map-lifecycle-tracks-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/tracks-map",
+          "lib/map-tile-style",
+          "app/api/map-tile/"
+        ],
+        "files": [],
+        "targets": [
+          "map-lifecycle-tracks-desktop",
+          "map-lifecycle-tracks-mobile",
+          "map-tile-style-desktop",
+          "map-tile-style-mobile"
+        ]
+      },
+      {
+        "prefixes": [
+          "components/flight-track-player",
+          "components/public-flight-map",
+          "components/lazy-flight-track",
+          "components/gps-import-review-player"
+        ],
+        "files": [],
+        "targets": [
+          "map-lifecycle-player-desktop",
+          "map-lifecycle-player-mobile",
+          "map-lifecycle-import-desktop",
+          "map-lifecycle-import-mobile"
         ]
       }
     ],
@@ -1260,6 +1309,56 @@
         "spec": "e2e/responsive-presentation.spec.mjs",
         "title": "3.4.0 responsive entry shell stays usable across desktop iPad mobile light and dark",
         "project": "desktop-chromium"
+      },
+      "map-panes-overview-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map panes preserve standard basemap ordering and route interactions",
+        "project": "desktop-chromium"
+      },
+      "map-panes-overview-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map panes preserve standard basemap ordering and route interactions",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-tracks-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS map theme changes preserve a live map instance and viewport",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-tracks-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS map theme changes preserve a live map instance and viewport",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-player-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "flight replay retains map and playback state through theme changes",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-player-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "flight replay retains map and playback state through theme changes",
+        "project": "mobile-chromium"
+      },
+      "map-lifecycle-import-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS import review retains its map pane across theme changes",
+        "project": "desktop-chromium"
+      },
+      "map-lifecycle-import-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "GPS import review retains its map pane across theme changes",
+        "project": "mobile-chromium"
+      },
+      "map-tile-style-desktop": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
+        "project": "desktop-chromium"
+      },
+      "map-tile-style-mobile": {
+        "spec": "e2e/map-layers.spec.mjs",
+        "title": "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
+        "project": "mobile-chromium"
       }
     }
   }

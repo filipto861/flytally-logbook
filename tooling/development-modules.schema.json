@@ -303,7 +303,7 @@
           }
         },
         "selectionVersion": {
-          "const": 1
+          "const": 2
         },
         "moduleTargets": {
           "type": "object",

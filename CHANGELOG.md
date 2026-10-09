@@ -10,6 +10,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **Final pre-merge governance alignment after 9 Oct aggregate failure (NOT RELEASED):** On integrated feature head `82541845a6f79211d1b7dd4e79cb67a12a3988ec` targeted historical regression **4/4 PASS**, iteration **PASS** (source **233/233**, domain **46/46**, TypeScript PASS), candidate `b4666d0271de4fa728711769ebb43750a2a833d99c5ce2747661ae11859d21f1`; risk release **FAIL** at aggregate Node because two stale versioning-governance tests still expected pre-reprioritization Currency 3.7.0 / Onboarding 3.8.0. Aggregate/build/PostgreSQL/browser release PASS **not established** on that candidate. Test-only correction now validates Maps 3.7.0, Currency 3.8.0, onboarding 3.9.0 across ROADMAP and VERSIONING; VERSIONING status updated from obsolete "runtime not started" to implemented Draft/PENDING. Exact new-head release gate **NOT RUN**. Production code, DB schema and certification unchanged; PR #269 remains Draft/unmerged.
+
+
+- **Post-docs-merge integration test repair (9 October 2026; NOT RELEASED):** docs PR #268 squash-merged to `main@5944f917`; feature PR #269 integrated it on `03257ee` with application/runtime trees unchanged. Local iteration `source=FAIL` 232/233 (one stale historical `v300-navigation-hierarchy` assertion still bound Currency to 3.7.0) and release `release_status=FAIL` stopped at same source gate; build, aggregate, PostgreSQL and browser **NOT RUN** on that candidate. Test-only correction `f0a0e0b` now asserts Maps 3.7.0 and Currency 3.8.0; new exact-head testing **PENDING**, not PASS. Previous `5538e0c` 1,447/1,447 + PostgreSQL 100/100 + desktop/mobile 12/12 each release PASS remains historical. Product strict-style decision A approved; no runtime/DB/deploy changes.
+
+
 - **Phase 1 compatibility decision finalized (9 October 2026; NOT MERGED/DEPLOYED):** product owner accepted **A — strict HTTP 400** on duplicate, malformed or unknown `style` parameters; omitted `style` continues to select standard map. Deliberate incompatibility with legacy duplicate first-value parsing is approved. No extra runtime commit required: `5538e0c` passed exact-candidate local release gate. Satellite/openAIP external production gates are unchanged and blocked.
 
 

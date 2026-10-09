@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {getPublicFlight} from "@/lib/flight-sharing";
-import {FlightTrackPlayer} from "@/components/flight-track-player";
+import {PublicFlightMap} from "@/components/public-flight-map";
 import {LegalFooter} from "@/components/legal-footer";
 import {PublicThemeToggle} from "@/components/public-theme-toggle";
 
@@ -39,7 +39,7 @@ export default async function PublicFlightPage({params}:{params:Promise<{token:s
 
     {hasReplay?<section className="public-flight-replay">
       <div className="public-flight-section-heading"><div><p className="eyebrow">INTERACTIVE ROUTE</p><h2>Replay the flight</h2><p>Explore the shared GPS route, move through the flight manually or press play to follow the aircraft along the track.</p></div></div>
-      <FlightTrackPlayer tracks={flight.tracks} publicView/>
+      <PublicFlightMap tracks={flight.tracks} publicView/>
     </section>:<section className="public-flight-no-track">
       <p className="eyebrow">ROUTE</p><h2>GPS track not shared</h2><p>The pilot shared the flight summary without the recorded GPS route.</p>
     </section>}

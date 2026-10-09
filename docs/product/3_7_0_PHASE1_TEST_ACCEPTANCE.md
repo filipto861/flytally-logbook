@@ -7,6 +7,16 @@
 **Branching rule:** complied with: candidate lives in `feat/3.7.0-map-controller-phase1` on `main@162d9ba...`, Draft PR [#269](https://github.com/filipto861/flytally-logbook/pull/269). Runtime is **not** added to docs PR #268; merge only after docs reconciliation and exact-candidate verification.
 
 
+### Post-merge exact-head gate attempt — 9 October 2026
+
+- On `82541845a6f79211d1b7dd4e79cb67a12a3988ec`, targeted v3.0 regression **4/4 PASS** and `verify:iterate` **PASS**: source **233/233**, domain **46/46**, typecheck PASS; candidate `b4666d0271de4fa728711769ebb43750a2a833d99c5ce2747661ae11859d21f1`.
+- `verify:release:risk` **FAIL at aggregate regression**: two historical `tests/versioning-governance.test.ts` cases asserted superseded mapping (Currency 3.7.0, onboarding 3.8.0). Corrected test expectations for Maps 3.7.0, Currency 3.8.0, onboarding 3.9.0; `docs/product/VERSIONING.md` stale "runtime not started" text also reconciled. No production runtime modifications.
+- Aggregate full PASS, build, PostgreSQL and browser **NOT RUN / NOT VERIFIED** on failing candidate. Corrected HEAD targeted verification and full release **PENDING**; prior verified `5538e0c` release PASS is historical only. PR #269 Draft; no merge, deployment, migration or production smoke.
+
+### Post-documentation merge / source-contract regression — 9 October 2026
+
+**Latest Phase 1 integration status (9 October 2026):** documentation PR #268 was squash-merged into `main` as `5944f917797b6fbc55d61947a1e29554f7865eb4`; feature PR #269 incorporated that `main` via non-rebased merge commit `03257eefd7395f6063df2631de1dc2e02d67edab`. The first post-integration local iteration and release attempt both **FAILED only at source-contract 232/233** because the historical `v300-navigation-hierarchy` test still expected Currency at version 3.7.0. Candidate `675da4414d9cc63b1dd0555c40507a565f6757bd3689a96c1d284ccca0c30578` was FAIL; aggregate/build/PostgreSQL/browser did **NOT RUN**. Test-only correction `f0a0e0b762d0f9859a7317958c267d739283cd6a` asserts 3.7.0 Maps and 3.8.0 Currency without changing runtime or roadmap decisions. Exact post-correction verification remains **NOT RUN** until owner executes it on the final branch HEAD. Prior local release PASS on `5538e0c4...` is historical and cannot be claimed for the new candidate. PR #269 stays Draft/unmerged, no production deployment or DB migration; satellite and openAIP provider gates remain BLOCKED. Owner decision A (strict duplicate-style HTTP 400) remains APPROVED.
+
 ### Product decision closed — 9 October 2026
 
 **Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
