@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { loginBrowserPilot } from "./browser-actions.mjs";
-import { resetIntelligentReviewFormScopeFixture, runBrowserSql } from "./browser-db.mjs";
+import { resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
 
 const authenticatedBrowser = process.env.FLYTALLY_AUTH_BROWSER === "1";
 const TILE = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#abc6d4"/><path d="M0 128H256" stroke="#456c85"/></svg>';
@@ -14,7 +14,13 @@ const coordinates = JSON.stringify([
 
 function seedIsolatedMapFixture() {
   // Isolated localhost browser DB only; the helper rejects production hosts.
-  runBrowserSql("DELETE FROM flight_tracks WHERE id=9972 AND user_id=9001;");
+  // Recover from interrupted runs that left this synthetic flight certified.
+  // The existing fixture helper scopes trigger bypass to one transaction.
+  runBrowserFlightFixtureCleanup(`
+    DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913;
+    DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id=9913;
+    DELETE FROM flights WHERE user_id=9001 AND id=9913;
+  `);
   resetIntelligentReviewFormScopeFixture();
   runBrowserSql(`INSERT INTO flight_tracks(id,user_id,flight_id,file_name,point_count,distance_km,coordinates_json,overview_coordinates_json)
     VALUES (9972,9001,9913,'phase1-map.kml',4,18,'${coordinates}','${coordinates}');`);
@@ -146,18 +152,24 @@ test("flight replay retains map and playback state through theme changes", async
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const absent = await page.request.get("/f/FlyTallyPhase1SchemaProbe20261009");
   expect(absent.status()).toBe(404); // also initializes the isolated share schema
-  runBrowserSql(`UPDATE flights SET certified_at=NOW() WHERE id=9913 AND user_id=9001;
-    DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913;
-    INSERT INTO flight_public_shares(user_id,flight_id,token_hash,show_registration,show_date,show_track)
-    VALUES (9001,9913,'${tokenHash}',FALSE,TRUE,TRUE);`);
   try {
+    // Public-only state belongs to this disposable fixture, never production.
+    runBrowserFlightFixtureCleanup(`
+      UPDATE flights SET certified_at=NOW() WHERE id=9913 AND user_id=9001;
+      DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913;
+      INSERT INTO flight_public_shares(user_id,flight_id,token_hash,show_registration,show_date,show_track)
+      VALUES (9001,9913,'${tokenHash}',FALSE,TRUE,TRUE);
+    `);
     await page.goto("/f/" + token);
     await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
     await checkStandardPanes(page, ".player-responsive-map");
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
   } finally {
-    runBrowserSql(`DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913 AND token_hash='${tokenHash}';
-      UPDATE flights SET certified_at=NULL WHERE id=9913 AND user_id=9001;`);
+    runBrowserFlightFixtureCleanup(`
+      DELETE FROM flight_public_shares WHERE user_id=9001 AND flight_id=9913 AND token_hash='${tokenHash}';
+      DELETE FROM flight_tracks WHERE user_id=9001 AND flight_id=9913;
+      DELETE FROM flights WHERE user_id=9001 AND id=9913;
+    `);
   }
 });
 
