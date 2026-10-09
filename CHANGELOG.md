@@ -10,6 +10,9 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+- **Production public Map API smoke PASS 4/4 (9 Oct, GET-only):** `fly-tally.com` returned Standard OSM tile HTTP 200 `image/png`; unknown style and two forms of duplicated `style` returned HTTP 400 JSON `unsupported_style`, `no-store`. User PowerShell reported `PUBLIC MAP API SMOKE PASS`. **Live signed-in map/GPS playback, public share/privacy and native iPad/mobile browser smoke remain NOT VERIFIED**. Production acceptance stays OPEN, no full 3.7.0 release.
+
+
 - **Phase 1 Maps standard-only MERGED / Vercel READY (9 Oct 2026; full 3.7.0 NOT RELEASED):** PR #269 squash merge `cc7abd41858cb2b2ddd8e794889922c856885686` from locally verified candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff`. Release gate PASS: Node 1,447/1,447, build, PG 100/100, Chromium desktop/mobile 12/12 each. Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY on `fly-tally.com`; no full browser/live OSM/public-share production smoke confirmed yet. No new DB migration or certification changes; no 3.7.0 version bump or tag; old READY `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` available for rollback. Satellite/openAIP external gates still BLOCKED; Phase 1 closeout PENDING.
 
 
