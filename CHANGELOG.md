@@ -1,3 +1,11 @@
+## Unreleased — 3.7.0 R2 Batch 1 — Story export integrity (2026-10-09)
+
+- Retained Instagram Story Standard/Satellite selection and PNG download/share workflow; unified the normal-map button label as Standard.
+- Story PNG export now requires every requested basemap tile to load with the requested style and valid image data; an unavailable tile aborts the export instead of silently producing a partly blank PNG.
+- Added accessible export failure feedback and disabled style changes while a PNG is being prepared; intermediate SVG object URLs are revoked.
+- Extended source regression and existing registered desktop/mobile browser acceptance to exercise Standard/Satellite PNG download and tile-failure alert against synthetic tiles and isolated test DB.
+- **Verification: NOT RUN on R2 branch.** No API/auth/DB/certification/backup changes. No merge/deploy, no production Satellite activation.
+
 ### 2026-10-09 — R1 final local verification (Satellite ON and OFF)
 
 - Exact **runtime/test HEAD** `7661d1dd30ba17948ef517f7ef193358380b67cd`, candidate `7292ab60ebbbaaa1c6e77caadf2f02a8257fcb6d649d41b437ae54c3ab140814`; Windows local owner-run `npm.cmd run verify:release:risk -- --base origin/main` with `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS=true`: **release_status=PASS**; source=PASS (reused), domain=PASS (reused), typecheck=PASS (reused), aggregate=PASS (reused), build=PASS (reused), postgres=PASS (reused), browser desktop Chromium **11/11 PASS**, mobile Chromium **11/11 PASS**, blocked_evidence=none.
