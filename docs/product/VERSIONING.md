@@ -98,7 +98,7 @@ PR titles should start with the numeric target version when practical.
 | 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
 | 3.5.5 | iPad sidebar collapse-control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
-| 3.7.0 | Maps & Aviation Layers | ACTIVE; Phase 0 discovery documented, runtime not started |
+| 3.7.0 | Maps & Aviation Layers | ACTIVE; Phase 1 standard-only implementation in Draft PR #269, previously locally verified on 5538e0c, post-docs-merge exact candidate retest pending; satellite/openAIP externally blocked |
 | 3.8.0 | Currency / monetary semantics · #136 | NEXT; former 3.7.0 reservation, scope preserved |
 | 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED; former 3.8.0 reservation |
 | 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED; former 3.9.0 reservation |
