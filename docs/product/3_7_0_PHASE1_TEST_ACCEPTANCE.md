@@ -1,11 +1,15 @@
 # 3.7.0 — Phase 1: Map controller test and acceptance contract
 
-**Status:** Phase 1 standard-only design accepted, external reviewer **APPROVE WITH CHANGES** and iPad Chromium emulation 16/16 PASS on earlier `b3917c7`. Intermediate `9a325ca` had iteration PASS (source 233/233, domain 46/46, TS PASS) but full release `FAIL` on two Node regressions, PG/browser NOT RUN. PR #269 current HEAD `1a93046` contains targeted regression fixes and is **NOT VERIFIED**. PRs #268/#269 remain Draft and unmerged; no CI/production deploy, no physical Safari evidence.
+**Status:** Phase 1 standard-only technical implementation on `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`: **exact-candidate local release PASS**, 9 October 2026 (full details in latest evidence section below). PRs #268/#269 Draft/unmerged, CI/production deploy NOT RUN; physical Safari and real-provider tests NOT RUN; satellite/openAIP gates BLOCKED.
 **Independent re-review:** APPROVE WITH CHANGES for Phase 1 *technical design* (9 October 2026); conditions below must be fulfilled in implementation. Phase 2 satellite production and Phase 3 openAIP production remain separately BLOCKED.  
 **Source:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; docs-only PR #268.  
 **Parent contracts:** `3_7_0_MAPS_AVIATION_LAYERS.md` and `3_7_0_MAPS_REVIEW_RECONCILIATION.md`.  
 **Branching rule:** complied with: candidate lives in `feat/3.7.0-map-controller-phase1` on `main@162d9ba...`, Draft PR [#269](https://github.com/filipto861/flytally-logbook/pull/269). Runtime is **not** added to docs PR #268; merge only after docs reconciliation and exact-candidate verification.
 
+
+### 9 October 2026 — Latest exact-head local acceptance
+
+**9 October 2026 — latest verified Phase 1 state (supersedes historical in-progress statuses below):** `feat/3.7.0-map-controller-phase1@5538e0c4eec8b4a70fc5568facc55f4dc7324606`, candidate `3334933268257a8e231ac7e172b1ffed38fa043d31b36699afe977d595ba7856`. Clean Windows checkout: targeted Node **16/16 PASS**, iteration source **233/233 PASS**, domain **46/46 PASS**, typecheck **PASS**; full local `verify:release:risk` **release_status=PASS**: aggregate **1,447/1,447 PASS**, production Next.js build **PASS**, isolated PostgreSQL acceptance **100/100 PASS** (includes 10k/50k/100k scenarios), authoritative Playwright **12/12 desktop + 12/12 mobile PASS**, `scale=N/A` by planner, `blocked_evidence=none`. The synthetic public-replay fixture correction is test-only and leaves production flight immutability intact. Earlier failures are historical evidence on superseded SHAs. This is **local** evidence, not CI or production verification. PR #268 (docs) and #269 (feature) remain Draft, unmerged; deployment/production smoke **NOT RUN**. Earlier iPad Chromium 16/16 emulation evidence belongs to `b3917c7`, not current HEAD; native iPad Safari and real provider tiles **NOT RUN**. Owner decision on stricter duplicate `style` query behavior remains **PENDING**. Satellite Esri and openAIP release/rights gates remain **BLOCKED** independently.
 
 ### 9 October 2026 — Independent review reconciliation / iPad visual evidence
 
@@ -23,7 +27,7 @@
 
 **Scope frozen:** standard-only current map. No user-facing satellite/openAIP toggle, credentials, external rights grant, DB/schema/certification/backup edit, GPS evidence changes or production deploy.
 
-**Remaining mandatory gate before Phase 1 merge:** on amended `9a325ca` user-local `verify:iterate -- --base origin/main` followed by `verify:release:risk -- --base origin/main` with positively identified dedicated disposable PostgreSQL. Must prove newly amended parser, SSR public share replay fixture and all browser risk cases actually PASS; regenerate exact-candidate evidence. Owner to decide whether legacy duplicate-style rejection is an acceptable strict-API compatibility change. iPad visual proof may remain a supplementary emulated baseline given the feature changes do not change authenticated map layout; real Safari must not be claimed.
+**Current verification update:** the exact-head Node, iteration, build, PostgreSQL and desktop/mobile browser-risk gates formerly required here are **PASS** on `5538e0c` (see latest evidence above). Remaining before merge: owner accepts/rejects strict duplicate-style 400 behavior, final documentation review, Draft PR merge order and current candidate/base reconciliation. Earlier iPad evidence is supplementary on a prior SHA, not native-Safari verification.
 
 ## 1. Delivery boundary
 
