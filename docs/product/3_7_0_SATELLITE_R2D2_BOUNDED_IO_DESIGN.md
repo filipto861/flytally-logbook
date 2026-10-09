@@ -1,3 +1,13 @@
+## 2026-10-09 — M2a OWNER LOCAL 37/37 PASS + TypeScript PASS; scope complete, not production hardening
+
+**Evidence:** owner Windows PowerShell on **exact** source `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3` and exact `feat/3.7.0-satellite-r2d2-bounded-provider-io`: branch and clean SHA preflight succeeded, guarded Node24 check succeeded, `npm.cmd run test:target -- tests/v370-satellite-bounded-fetch.test.ts tests/v370-map-layers.test.ts` returned 37/37 tests PASS (14 bounded transport, 23 Satellite/map regression), 0 failures, 0 skips (~205ms); `npm.cmd run typecheck` `tsc --noEmit` returned success; console `R2D.2 M2a LOCAL TESTS AND TYPECHECK PASS`. **LOCAL, not CI**. Full-suite, production build, authenticated HTTP, Playwright, PostgreSQL and full release flags **NOT RUN on this SHA**.
+
+**M2a definition-of-done reached for isolated transport primitive and narrow local gates only**. No `satellite-map-provider.ts` import, no production opt-out of Next Data Cache, no real source supplier, no approved numeric policies, no true raster byte validation. Keep status distinct: helper TARGETED PASS, M3 provider integration NOT STARTED, R2D.2 release NOT READY.
+
+**M2b proposed safety floor:** Accept only bounded M2a result typed as `image/png` / `image/jpeg`, validate matched magic AND file structure, detect truncated/empty/trailing/malformed content. PNG CRC/chunk/IHDR/IEND and JPEG marker/segment/SOS/EOI integrity are **structural**, and not sufficient proof of decode compatibility, pixel decompression integrity, anti-decompression-bomb robustness or real ArcGIS applicability. Do not label structural validation 'fully decodable' without image-decoder evidence. Keep fixture sizes as synthetic unit values, not supplier budgets. Public Standard `isImage` remains untouched. M3 needs separate measured supplier/hosting budgets and owner acceptance.
+
+---
+
 ## 2026-10-09 — M2a isolated bounded upstream transport STAGED; local Node24 evidence NOT RUN
 
 **Completed source changes in this batch:** added standalone `lib/satellite-bounded-fetch.ts` exporting `fetchSatelliteBounded(options)`, `SatelliteBoundedFetchError` and typed transport result. Added dedicated synthetic `tests/v370-satellite-bounded-fetch.test.ts`. Registered the new library path under **gps-tracks** and browser-risk path selection in `tooling/development-modules.json`; runtime ownership count incremented 389 → 390 and the corresponding source guard updated. **There is no import of the helper by `lib/satellite-map-provider.ts` or `app/api/map-tile/[z]/[x]/[y]/route.ts` yet**; existing provider still uses Next seven-day fetch cache and is unchanged until M3 after budget/signature gates.
