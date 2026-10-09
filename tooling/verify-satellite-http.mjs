@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, existsSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
@@ -26,6 +26,17 @@ const TOKEN = "FlyTally-R2C-fixture-token-" + randomBytes(12).toString("hex");
 // Three isolated child-process configurations; no real supplier requests.
 const MODE = process.env.FLYTALLY_SATELLITE_HTTP_MODE || "enabled";
 assert.ok(["enabled", "disabled", "missing-token"].includes(MODE), "Unsupported Satellite HTTP fixture mode");
+// The fallback imagery URL has no token, so Next's seven-day upstream Data Cache
+// can survive separate fixture invocations. Use fresh *valid* map coordinates
+// for each test series, shared across its enabled/disabled/no-token child runs.
+// The caller may set one random 32-hex RUN_ID for the whole three-mode series.
+const RUN_ID = process.env.FLYTALLY_SATELLITE_HTTP_RUN_ID || randomBytes(16).toString("hex");
+assert.match(RUN_ID, /^[a-f0-9]{32}$/, "Fixture run ID must be 32 lowercase hex characters");
+const runHash = createHash("sha256").update(RUN_ID).digest();
+const TILE_Z = 18;
+const TILE_X0 = 1024 + runHash.readUInt32BE(0) % (2 ** TILE_Z - 1030);
+const TILE_Y = 1024 + runHash.readUInt32BE(4) % (2 ** TILE_Z - 1030);
+const tilePath = scenario => `/api/map-tile/${TILE_Z}/${TILE_X0 + scenario - 1}/${TILE_Y}`;
 const SHA = /^([0-9a-f]{40})$/;
 function command(exe, args, label, env = process.env) {
   const result = spawnSync(exe, args, { cwd: ROOT, env, encoding: "utf8", timeout: 90_000 });
@@ -109,6 +120,8 @@ async function main() {
         ARCGIS_ACCESS_TOKEN: MODE === "missing-token" ? "" : TOKEN,
         FLYTALLY_SATELLITE_UPSTREAM_DISABLED: MODE === "disabled" ? "true" : "false",
         FLYTALLY_SATELLITE_HTTP_FIXTURE_MODE: MODE,
+        FLYTALLY_SATELLITE_HTTP_TILE_X0: String(TILE_X0),
+        FLYTALLY_SATELLITE_HTTP_TILE_Y: String(TILE_Y),
         FLYTALLY_SATELLITE_HTTP_FIXTURE: "1", FLYTALLY_SATELLITE_FIXTURE_LOG: logFile },
     });
     child.stderr.on("data", chunk => { stderrTail = (stderrTail + String(chunk)).slice(-2500); });
@@ -116,16 +129,16 @@ async function main() {
     child.stdout.resume();
     await waitForServer(child);
     anonymous = await playwrightRequest.newContext({ baseURL: ORIGIN });
-    const get = (requester, tile) => requester.get(`/api/map-tile/3/${tile}/2?style=satellite`);
+    const get = (requester, tile) => requester.get(`${tilePath(tile)}?style=satellite`);
     const anonymousResponse = await get(anonymous, 1);
     assert.equal(anonymousResponse.status(), 401, "Unauthenticated Satellite must be 401");
     assert.equal(anonymousResponse.headers()["cache-control"], "private, no-store");
     assert.equal(upstreamEvents(logFile).length, 0, "No provider request before session gate");
 
-    const invalidStyle = await anonymous.get("/api/map-tile/3/1/2?style=garbage");
+    const invalidStyle = await anonymous.get(`${tilePath(1)}?style=garbage`);
     assert.equal(invalidStyle.status(), 400, "Malformed style must be 400");
     assert.equal(invalidStyle.headers()["cache-control"], "no-store");
-    const duplicateStyle = await anonymous.get("/api/map-tile/3/1/2?style=map&style=satellite");
+    const duplicateStyle = await anonymous.get(`${tilePath(1)}?style=map&style=satellite`);
     assert.equal(duplicateStyle.status(), 400, "Duplicate style must be 400");
     assert.equal(duplicateStyle.headers()["cache-control"], "no-store");
     assert.equal(upstreamEvents(logFile).length, 0);
@@ -153,8 +166,8 @@ async function main() {
     // Use browser-native fetch, not Playwright's Node-side APIRequestContext:
     // cookie policy and browser transport must match actual user behavior.
     async function browserTile(x) {
-      return page.evaluate(async tileX => {
-        const response = await fetch(`/api/map-tile/3/${tileX}/2?style=satellite`, {
+      return page.evaluate(async ({ scenario, x0, y, z }) => {
+        const response = await fetch(`/api/map-tile/${z}/${x0 + scenario - 1}/${y}?style=satellite`, {
           credentials: "same-origin", cache: "no-store",
         });
         return {
@@ -162,7 +175,7 @@ async function main() {
           headers: Object.fromEntries(response.headers.entries()),
           body: await response.text(),
         };
-      }, x);
+      }, { scenario: x, x0: TILE_X0, y: TILE_Y, z: TILE_Z });
     }
 
     async function expectedTile(x, status, marker, labelsMarker = null) {
@@ -215,13 +228,14 @@ async function main() {
     const afterRevocation = await browserTile(1);
     assert.equal(afterRevocation.status, 401, "Revoked login must fail before cached provider response");
     assert.equal(upstreamEvents(logFile).length, beforeRevocation);
-    const standard = await anonymous.get("/api/map-tile/3/1/2?style=map");
+    const standard = await anonymous.get(`${tilePath(1)}?style=map`);
     assert.equal(standard.status(), 200, "Public Standard must remain available");
     assert.equal(standard.headers()["x-flytally-map-style"], "map");
     assert.match(standard.headers()["cache-control"], /^public,/);
     assert.equal(standard.headers()["access-control-allow-origin"], "*");
     console.log(`R2D HTTP fixture: PASS (mode=${MODE}) — anonymous 401, malformed/duplicate 400, session revocation 401, Standard 200, Satellite ${MODE === "enabled" ? "200/fallback/502" : "503 / zero upstream"}`);
     console.log(`R2D upstream interceptions: ${upstreamEvents(logFile).length} (synthetic, no real provider calls)`);
+    console.log(`R2D tile fixture series: z=${TILE_Z}, x-start=${TILE_X0}, y=${TILE_Y} (fresh URLs; no upstream cache purge)`);
   } catch (error) {
     console.error("R2C HTTP fixture: FAIL", error instanceof Error ? error.message : String(error));
     if (stderrTail) console.error("Server diagnostic (truncated):", stderrTail.replaceAll(TOKEN, "[redacted]"));
