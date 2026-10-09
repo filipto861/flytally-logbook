@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A3.1 downstream disconnect lab observation (NOT a shipped feature)
+
+Local controlled mini Next `fetch` test on exact `911b95864303cfdf95a52be64082e3508ac2aa7e`: abort of its HTTP client at ~300ms left independently running server-side cached and uncached upstream fetches to finish writing full 16MiB. The route never linked `request.signal`; framework signal timing remains unproven. A3.1 is diagnostic evidence only, not an implementation of provider timeout/cancellation or a hard memory bound. Next A3.2 signal-link observation, separate concurrency/production-route parity, reviewed budgets required. No product runtime changes, no activation, merge or deploy.
+
 ## 2026-10-09 — R2D.2-A3.1 synthetic client-disconnect diagnostic (TEST TOOLING ONLY)
 
 The manual isolation harness now supports cached/uncached **downstream HTTP client disconnect** observations against a local mini Next route while it fetches finite synthetic stream data. Diagnostics compare resulting source completion/close; they do not implement or establish production cancellation. No real provider traffic, DB, auth, Satellite runtime, Story, Training, merge or deploy. A3.1 syntax/build/test NOT RUN. Future bounded-provider feature remains blocked on measured cache policy and owner-reviewed budgets.
