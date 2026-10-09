@@ -1,11 +1,17 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 complete; Phase 1 standard-only implementation in unmerged Draft feature PR #269, **local full release PASS** on `5538e0c` (9 October 2026). Production release NOT DONE; owner strict-style compatibility decision A APPROVED; merge/production closeout pending. Satellite/openAIP production provider gates BLOCKED.
+**Status:** Phase 0 complete. Phase 1 standard-only PR #269 merged at `main@cc7abd41`, Vercel production READY; live smoke/closeout PENDING. Full product release 3.7.0, satellite and openAIP not enabled/approved.
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
 **Repository scope:** `flytally-logbook` only. No change to `flytally-training`.  
 **Authority:** product design proposal, not an aviation chart or approval.
+
+## Current production watch (9 October 2026)
+
+**9 October 2026 — CURRENT PRODUCTION WATCH:** PR #269 squash-MERGED to main at `cc7abd41858cb2b2ddd8e794889922c856885686` (verified feature HEAD `397c8270d0088cb45ab1487d8ccdf2a35464284c`, candidate `ef19b98cc30759a5b1f2b5f6b72ce8780be6890e293dd528bb6d04a794ce29ff`). Local verify:release:risk PASS: aggregate 1,447/1,447; build PASS; PostgreSQL 100/100; desktop/mobile Playwright 12/12 each; iteration source 233/233, domain 46/46 and typecheck PASS. Vercel production deployment `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY, assigned to verified `fly-tally.com` domain. Previous deployment `dpl_HgaxCeBAajnbArtFSNAVDfHn5NRs` remains READY rollback candidate. Live HTTP and signed-in user map/replay/public-share smoke NOT VERIFIED because direct network access to site was unavailable to available reviewer tools; inspected recent Vercel runtime errors showed none, but new deployment had no request logs. Production acceptance/Phase 1 closeout PENDING; product version still 3.6.0 and there is no full 3.7.0 release/tag. Owner-approved strict duplicate-style HTTP 400 remains in force. Esri satellite/openAIP rights, token, live-provider, cost and licensing gates remain BLOCKED.
+
+Other dated checkpoints below are historical design and implementation evidence.
 
 ## Product decision: strict map style API (9 October 2026)
 
