@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2-A3.2 confirmed lab behavior, still NOT DELIVERED
+
+Next 16.3.2 isolated request cancellation diagnostic verified by owner files at exact `808819637f354f855b287e46252f29ecadcdad7f`: incoming `request.signal` fired with a disconnected client in both cached and uncached modes; explicit signal-to-server-AbortController linkage stopped the synthetic upstream quickly, unlike passive observation. Limits: whole-process memory and queued fixture writes only; not a proven global limit or production route behavior. Future bounded Satellite I/O still pending A3.3 fast/concurrent analysis, authenticated route parity, cache policy and approved budgets. Satellite stays OFF, Draft/unmerged; no user-facing app changes.
+
 ## 2026-10-09 — R2D.2-A3.2 lab request-signal/AbortController comparison (STAGED / NOT RUN)
 
 Manual isolated mini Next test instrumentation now records whether an incoming `Request.signal` event occurs when its HTTP client disconnects, with `observe` and explicit `link` variants for cached/uncached upstream requests. JSONL signal trace is stored only under ignored local `tooling/r2d2-cache-spike/reports/`; `--signal-only` runs four new cases without re-running old experiments. Product provider and public/Story/Map/auth behaviors remain unchanged. No hard timeout, size limit, global quota, deploy or Satellite activation; A3.2 evidence NOT RUN.
