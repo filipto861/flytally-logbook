@@ -161,7 +161,7 @@ async function main() {
       const body = response.body;
       assert.ok(!body.includes(TOKEN), "Fake token must never be disclosed in response");
       if (status === 200) {
-        assert.match(response.headers()["content-type"], /^image\/svg\+xml/);
+        assert.match(response.headers["content-type"], /^image\/svg\+xml/);
         assert.ok(body.includes(Buffer.from(marker).toString("base64")), `Base imagery missing at x=${x}`);
         if (labelsMarker) assert.ok(body.includes(Buffer.from(labelsMarker).toString("base64")), "Labels missing");
         else assert.equal((body.match(/<image /g) || []).length, 1, "Imagery-only must not fabricate labels");
