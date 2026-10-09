@@ -1,15 +1,14 @@
 import L from "leaflet";
+import { applyStandardMapTheme, attachStandardBasemap, releaseMapLayers } from "@/components/map-layer-controller";
 
 const CARTO_HOST="basemaps.cartocdn.com";
 const FLYTALLY_MAP_TILES="/api/map-tile/{z}/{x}/{y}?style=map";
-const DARK_TILE_FILTER="invert(.78) hue-rotate(180deg) saturate(.12) brightness(.92) contrast(1.08)";
 const MAP_ATTRIBUTION='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 function resolvedTheme(){const root=document.documentElement.dataset.theme;if(root==="light"||root==="dark")return root;const shell=document.querySelector<HTMLElement>(".app-grid[data-appearance]")?.dataset.appearance;if(shell==="light"||shell==="dark")return shell;return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}
-function applyTileTheme(map:L.Map){const tilePane=map.getPane("tilePane");if(tilePane)tilePane.style.filter=resolvedTheme()==="light"?"none":DARK_TILE_FILTER;}
-function flyTallyBasemap(){return L.tileLayer(FLYTALLY_MAP_TILES,{maxZoom:18,attribution:MAP_ATTRIBUTION});}
-export function addFlyTallyBasemap(map:L.Map){const layer=flyTallyBasemap().addTo(map);applyTileTheme(map);return layer;}
-function replaceLegacyCartoBasemap(map:L.Map){let replace=false;map.eachLayer(layer=>{if(!(layer instanceof L.TileLayer))return;const url=String((layer as L.TileLayer&{_url?:string})._url??"");if(url.includes(CARTO_HOST)){map.removeLayer(layer);replace=true}});if(replace)flyTallyBasemap().addTo(map);applyTileTheme(map);}
+function applyTileTheme(map:L.Map){applyStandardMapTheme(map,resolvedTheme());}
+export function addFlyTallyBasemap(map:L.Map){const layer=attachStandardBasemap(map,FLYTALLY_MAP_TILES,MAP_ATTRIBUTION);applyTileTheme(map);return layer;}
+function replaceLegacyCartoBasemap(map:L.Map){let replace=false;map.eachLayer(layer=>{if(!(layer instanceof L.TileLayer))return;const url=String((layer as L.TileLayer&{_url?:string})._url??"");if(url.includes(CARTO_HOST)){map.removeLayer(layer);replace=true}});if(replace)addFlyTallyBasemap(map);applyTileTheme(map);}
 
 export function installResponsiveMap(map:L.Map,target:HTMLElement){
   replaceLegacyCartoBasemap(map);
@@ -25,5 +24,5 @@ export function installResponsiveMap(map:L.Map,target:HTMLElement){
     button.addEventListener("click",event=>{event.preventDefault();const enabled=button.getAttribute("aria-pressed")==="true";if(enabled){map.dragging.disable();map.touchZoom.disable();button.textContent="Enable map movement";button.setAttribute("aria-pressed","false")}else{map.dragging.enable();map.touchZoom.enable();button.textContent="Lock map movement";button.setAttribute("aria-pressed","true")}});
     control=new L.Control({position:"topright"});control.onAdd=()=>button;control.addTo(map);
   }
-  return()=>{window.clearTimeout(timer);observer.disconnect();themeObserver.disconnect();media.removeEventListener("change",themeListener);if(control)control.remove()};
+  return()=>{window.clearTimeout(timer);observer.disconnect();themeObserver.disconnect();media.removeEventListener("change",themeListener);if(control)control.remove();releaseMapLayers(map)};
 }
