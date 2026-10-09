@@ -148,7 +148,7 @@ Important boundary:
 
 ### 3.7.0 — Maps & Aviation Layers — ACTIVE / PHASE 1 BROWSER REGRESSION UNDER INVESTIGATION
 
-- **SSR follow-up on Draft PR #269 (untested):** maps are now wrapped behind client-only dynamic imports so Leaflet cannot evaluate in server-rendered route/replay paths; GPS save action unchanged pending trace/DB evidence. Latest feature head `592e3e8`; previous gate PASS results on `5b011c8` are historical, not current release evidence.
+- **SSR follow-up on Draft PR #269 (untested):** maps are now wrapped behind client-only dynamic imports so Leaflet cannot evaluate in server-rendered route/replay paths; GPS save action unchanged pending trace/DB evidence. Latest feature head `3777fb0`; registry owns the client-maps boundary and audited runtime count 386. Previous gate PASS results on `5b011c8` are historical, not current release evidence.
 - Select Standard or Satellite/orthophoto map background on the existing Route map, GPS tracks map, saved-flight GPS preview/replay and GPS import review, with consistent controls and no flight-evidence changes.
 - Maintain a single Leaflet map instance during background/overlay changes; preserve viewport, player cursor, route clicks, existing dark standard-map appearance and iPad movement lock.
 - Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage and attribution rights are verified. **3.7.0 explicitly excludes new openAIP/satellite controls on public shares and openAIP Story exports.**
