@@ -152,8 +152,8 @@ Important boundary:
 - Introduce a separately selectable openAIP aviation **context** overlay (airspaces first), only after official API, legal/provider, usage and attribution rights are verified. **3.7.0 explicitly excludes new openAIP/satellite controls on public shares and openAIP Story exports.**
 - Preserve provider-specific color and attribution. On missing/failed imagery or aviation tiles, display explicit unavailable/partial state rather than falsely reporting full coverage or airspace activity.
 - Satellite backend and Story-card support already exist in source, but production feature expansion and openAIP are **not implemented/approved**. Story-card overlay export, operational airspace activation/NOTAM and safety alerts are outside 3.7.0.
-- Phase 0 source discovery and independent BLOCK review reconciliation are documented; revised Phase 1 design review and provider gates remain open. No DB/certification/backup change is presently expected. Reconciliation: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`.
-- Detailed design/review: `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`.
+- Phase 0 source discovery and both independent reviews are documented: first BLOCK, second **APPROVE WITH CHANGES** for Phase 1 design only. Actual map test registration, implementation, runtime verification and provider gates remain open; no DB/certification/backup change is presently expected. Reconciliation: `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`.
+- Detailed design/review and proposed test acceptance: `docs/product/3_7_0_MAPS_AVIATION_LAYERS.md`, `docs/product/3_7_0_MAPS_REVIEW_HANDOFF.md`, `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`.
 
 ### 3.8.0 — Currency / monetary semantics — NEXT (superseded former 3.7.0 reservation)
 - Issue #136 and original requirements are preserved; only implementation order/release number changed on 9 October 2026.
