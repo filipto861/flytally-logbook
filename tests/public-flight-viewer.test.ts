@@ -8,7 +8,11 @@ const read=(file:string)=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("public share route renders an interactive flight viewer instead of the social Story card",()=>{
   const page=read("app/f/[token]/page.tsx");
-  assert.match(page,/FlightTrackPlayer/);
+  const boundary=read("components/public-flight-map.tsx");
+  assert.match(page,/PublicFlightMap/);
+  assert.doesNotMatch(page,/from\s+["\x27]@\/components\/flight-track-player["\x27]/);
+  assert.match(boundary,/import\("@\/components\/flight-track-player"\)/);
+  assert.match(boundary,/ssr:\s*false/);
   assert.match(page,/publicView/);
   assert.match(page,/Replay the flight/);
   assert.doesNotMatch(page,/FlightStoryCard/);
