@@ -1,3 +1,7 @@
+## 2026-10-09 — Satellite R2D.2 M2b structural validator owner LOCAL PASS (not live feature)
+
+Owner verified exact `93f370ed357345349829d17495b079e17742f38e`: 47/47 targeted M2a+M2b+map tests PASS and TypeScript `tsc --noEmit` PASS; corrected 1×1 JPEG accepts, malformed DQT rejected. Helper and structural validator remain independent of production Satellite/Standard routes, cannot claim full image pixel decode or production numeric resource budgets. Next is M2c ArcGIS/hosting supplier evidence and decoder/resource contract, then M3 provider integration. Satellite OFF, unmerged Draft.
+
 ## 2026-10-09 — R2D.2 M2b test failure corrected in fixture only; not product connected
 
 First M2b owner run exact `5c7efca94c9dfd50bed71b58eaa0d547aa288626`: **45/46 PASS; 1 fail** in positive JPEG fixture and `typecheck NOT RUN`. Source artifact was malformed (DQT segment misalignment); an independently decoded Pillow 1×1 JPEG with pinned SHA256 and negative regression replaces it in tests; validator and provider runtime unchanged. Correction awaits fresh owner Node24 target/test and typecheck. M2b NOT CLOSED, Satellite OFF/unmerged.
