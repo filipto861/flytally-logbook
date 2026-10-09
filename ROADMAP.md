@@ -5,7 +5,7 @@
 **Last updated:** 9 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — Phase 1 implementation candidate in Draft PR #269; isolated exact-source tile parser tests 4/4 PASS (local Node22); full candidate/Playwright/build verification and merge PENDING. Satellite/openAIP production gates BLOCKED.
+**Current active workstream:** Maps & Aviation Layers — Phase 1 candidate Draft PR #269. Earlier commit `fb0471c`: Windows local typecheck/build PASS, npm test 1,437/1,443 PASS with 6 regressions, verify:plan no blockers. All six test contracts patched after that run; latest candidate requires fresh verification. Playwright/PostgreSQL/merge pending; Phase 2/3 provider gates BLOCKED.
 
 This is the canonical forward plan for `flytally-logbook`.
 
@@ -1032,7 +1032,7 @@ GPS/FCL.050 UTC evidence must not be converted into local-time evidence by conve
 **Both independent reviews + reconciliation:** `docs/product/3_7_0_MAPS_REVIEW_RECONCILIATION.md`  
 **Phase 1 proposed acceptance / browser test registration:** `docs/product/3_7_0_PHASE1_TEST_ACCEPTANCE.md`  
 **Phase 0 source baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`  
-**Current status:** Source discovery COMPLETE; both independent verdicts preserved. Filip accepted Phase 1 and its test contract on 9 October 2026. Separate Draft [PR #269](https://github.com/filipto861/flytally-logbook/pull/269), based on canonical `main@162d9ba...`, contains **unverified full application implementation** and browser registration. Only isolated byte-identical tile-style parser tests were run locally (4/4 PASS on Node22); full app tests, Node24, CI, build, browser and runtime release NOT RUN. Docs-only PR #268 remains Draft. Satellite (Esri token/attribution/rights) and openAIP (license/current Tiles spec/auth) production gates remain unresolved.
+**Current status:** Source discovery COMPLETE; both independent verdicts preserved. Filip accepted Phase 1 and its test contract on 9 October 2026. Separate Draft [PR #269](https://github.com/filipto861/flytally-logbook/pull/269), based on canonical `main@162d9ba...`, contains **unverified full application implementation** and browser registration. Isolated byte-identical tile-style parser tests: 4/4 PASS on Node22. Later user-local evidence on earlier candidate `fb0471c`: typecheck/build PASS, full `npm test` 1,437 PASS / 6 FAIL, `verify:plan` no blockers. All six failures have candidate fixes but were **not rerun after patch**. Playwright/PostgreSQL/CI/deploy remain NOT RUN. Docs-only PR #268 remains Draft. Satellite (Esri token/attribution/rights) and openAIP (license/current Tiles spec/auth) production gates remain unresolved.
 
 ## Product objective
 
