@@ -114,7 +114,7 @@ test("3.7.0 Satellite trial is explicit opt-in and retains Standard by default",
   assert.match(control, /if \(!SATELLITE_MAPS_TRIAL_ENABLED \|\| !enabled\) return \(\) => \{\};/);
   assert.match(controller, /return attachBasemap\(map, "map", url, attribution\)/);
   assert.match(controller, /return attachBasemap\(map, "satellite", url, attribution, onLoad, onError\)/);
-  assert.match(control, /unavailable = true; \/\/ Prevent retry storms/);
+  // Failure rollback and unavailable UI state are exercised in Playwright, not inferred from comments.
   assert.match(control, /standardMap\(true\)/);
   assert.match(control, /status\(fallback \? "Satellite unavailable — showing Standard" : ""\)/);
   assert.doesNotMatch(control, /localStorage|sessionStorage/);
