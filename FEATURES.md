@@ -1,3 +1,7 @@
+## 2026-10-09 — Satellite A4 authenticated HTTP baseline LOCAL PASS (not released)
+
+Real `/api/map-tile` on local production-mode Next16.3.2/isolated browser session and fake provider PASS at source `0577f9488e89709f748be790a71805207e5d11ae`: enabled Satellite 200 and error/fallback paths, denied unauthenticated/revoked 401 and malformed style 400, disabled and missing-token Satellite 503 with zero Satellite upstream, public Standard 200. Disabled total fixture event count 1 is a Standard tile, not satellite; missing-token 0. Approved dedicated test-DB bootstrap executed, `npm.cmd run build` including TypeScript PASS. **Feature implemented as experimental code but production still OFF/unmerged Draft**; bounded memory, true image validation, timeout and cache policy NOT delivered. DeepSeek cache architecture review and product-owner decision next; no production activation.
+
 ## 2026-10-09 — A4 isolated test database reset permitted (no product change)
 
 Owner consented to test-only `public` schema recreation in specifically verified local `127.0.0.1:55432/flytally_satellite_r1_test` as `flytally_sat_r1`. This is permission for guarded A4 verification, not evidence of test execution, runtime implementation or release. No other database authorized; production Satellite OFF.
