@@ -1,3 +1,7 @@
+## 2026-10-09 — R2D.2 M2a bounded transport utility staged; NOT connected to user-facing Satellite yet
+
+New isolated `fetchSatelliteBounded` helper has caller-required finite positive byte/time limits, no-store fetch, deadline/abort linkage, streamed byte accounting, JPEG/PNG MIME allowlist, strict identity/declared-length checks and sanitized failure codes. Separate tests and GPS risk ownership registered. This **does not** validate actual raster structure, cap process-wide concurrency, deploy a budget, remove provider cache, or change real `/api/map-tile`. Tests NOT RUN. Approved future direction remains Option B for Satellite only; Option C cache deferred, public Standard unchanged and Satellite production OFF.
+
 ## 2026-10-09 — R2D.2 owner-approved Option B (design decision, not yet user-facing)
 
 Owner selects controlled **uncached** bounded Satellite provider requests with explicit timeout, byte accounting, validation, cancellation and global work protections, accepting potential unknown increase in supplier requests/cost vs seven-day Next upstream cache. Public Standard cache and authentication remain frozen. Separate bounded validated cache is deferred, not implemented. Immediate standalone M2a transport/test milestone is NOT connected to map runtime; source-derived numeric production budgets and Esri terms remain unverified. Satellite prod OFF, PR #279 Draft, no merge/deploy.
