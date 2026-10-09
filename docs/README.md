@@ -13,6 +13,7 @@ This directory contains supporting documentation for the Logbook repository.
 - `ux-audit.md` — current design/UI audit findings and closeout history.
 - `product/3_7_0_MAPS_AVIATION_LAYERS.md` — active 3.7.0 Maps & Aviation Layers Phase 0 source discovery and draft technical contract (no runtime).
 - `product/3_7_0_MAPS_REVIEW_HANDOFF.md` — independent architecture/provider-rights review instructions and open blockers.
+- `product/3_7_0_MAPS_REVIEW_RECONCILIATION.md` — disposition of independent BLOCK review, exact pane/lifecycle/style-contract corrections, and external provider gates.
 - `product/3_6_0_PHASE0_ENGINEERING_QUALITY.md` — completed 3.6.0 engineering quality, test-architecture and development-workflow gate.
 - `product/3_6_0_PHASE1_TIMEZONE_SEMANTICS.md` — completed 3.6.0 saved-date/timezone semantics and production evidence.
 - `product/V3_0_UX_CONSOLIDATION.md` — detailed UX/product consolidation record.
