@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C review corrections staged
+
+Absolute inherited pair deadline, typed bounded-error reason handling, controlled admission rejection, and defensive fallback input handling staged with regression tests. Isolated only, local retest pending. Live provider and production resource limits unchanged; Satellite OFF.
+
 ## 2026-10-10 — Satellite M3-C independent integration review handoff prepared
 
 Added read-only reviewer handoff document for M3-C bounded transport integration. No functional change; reviewer feedback pending. Satellite OFF.
