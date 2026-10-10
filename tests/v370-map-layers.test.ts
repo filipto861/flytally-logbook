@@ -103,3 +103,25 @@ test("3.7.0 public replay fixture restores disposable certified state safely", (
   assert.match(helper, /runBrowserFlightFixtureCleanup\(statement\)/);
   assert.match(helper, /BEGIN;[\s\S]*?ALTER TABLE flights DISABLE TRIGGER USER;[\s\S]*?ALTER TABLE flights ENABLE TRIGGER USER;[\s\S]*?COMMIT;/);
 });
+
+test("3.7.0 security containment requires Satellite session before token/upstream; Standard stays public", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(route, /import \{ getSession \} from "@\/lib\/auth\/session";/);
+  assert.match(route, /export const dynamic = "force-dynamic";/);
+  const parsed = route.indexOf("const style = parseMapTileStyle");
+  const session = route.indexOf("if (wantsSatellite && !(await getSession()))");
+  const token = route.indexOf("const arcgisToken =");
+  const provider = route.indexOf("const basePromise = fetch(");
+  assert.ok(parsed >= 0 && session > parsed && token > session && provider > token,
+    "Strict style validation and live session check must happen before token/provider access");
+  assert.match(route, /status: 401,[\s\S]*?"Cache-Control": "private, no-store"/);
+  const satelliteStart = route.indexOf("if (wantsSatellite) {\n    const svg");
+  const standardStart = route.indexOf("const upstream = await standardMapTile(");
+  assert.ok(satelliteStart >= 0 && standardStart > satelliteStart);
+  const satellite = route.slice(satelliteStart, standardStart);
+  assert.match(satellite, /"Cache-Control": "private, no-store"/);
+  assert.doesNotMatch(satellite, /"Access-Control-Allow-Origin": "\*"/);
+  const standard = route.slice(standardStart);
+  assert.match(standard, /"Cache-Control": "public, max-age=86400/);
+  assert.match(standard, /"Access-Control-Allow-Origin": "\*"/);
+});
