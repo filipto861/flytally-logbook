@@ -55,13 +55,15 @@ net.Socket.prototype.connect = restrictConnect(net.Socket.prototype.connect);
 tls.connect = restrictConnect(tls.connect);
 
 const originalFetch = globalThis.fetch;
+const raster = require("./satellite-valid-raster-fixtures.cjs");
 const base = "ibasemaps-api.arcgis.com";
 const preferred = "static-map-tiles-api.arcgis.com";
 const fallback = "services.arcgisonline.com";
 const osm = "tile.openstreetmap.org";
-const baseMarker = Buffer.from("FLYTALLY_HTTP_BASE_2C");
-const labelMarker = Buffer.from("FLYTALLY_HTTP_LABEL_2C");
-const fallbackMarker = Buffer.from("FLYTALLY_HTTP_FALLBACK_2C");
+// Real structurally valid synthetic image bytes; no production pixel budget.
+const baseMarker = raster.jpeg();
+const labelMarker = raster.png();
+const fallbackMarker = raster.png();
 const record = (kind, x, outcome) => appendFileSync(process.env.FLYTALLY_SATELLITE_FIXTURE_LOG,
   JSON.stringify({ kind, x, outcome }) + "\n");
 
@@ -75,7 +77,7 @@ globalThis.fetch = async function (input, init) {
 
   if (url.hostname === osm && /^\/\d+\/\d+\/\d+\.png$/.test(url.pathname)) {
     record("standard", "-", "200");
-    return new Response(baseMarker, { status: 200, headers: { "content-type": "image/png" } });
+    return new Response(labelMarker, { status: 200, headers: { "content-type": "image/png" } });
   }
 
   let kind;

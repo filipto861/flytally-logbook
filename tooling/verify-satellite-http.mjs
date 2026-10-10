@@ -55,8 +55,14 @@ function preflight() {
   assert.equal(url.pathname, "/flytally_satellite_r1_test", "Required dedicated database name");
   assert.equal(decodeURIComponent(url.username), "flytally_sat_r1", "Required dedicated DB user");
   assert.ok(["postgres:", "postgresql:"].includes(url.protocol), "Database must use explicit PostgreSQL URL");
+  // Default remains strict R2D.1. Explicit opt-in permits the exact R2D.2
+  // evidence branch, with ALL original disposable DB/token/sandbox gates intact.
+  // Do not allow a generic branch override or wildcard.
+  const expectedBranch = process.env.FLYTALLY_SATELLITE_HTTP_A4 === "1"
+    ? "feat/3.7.0-satellite-r2d2-bounded-provider-io"
+    : "feat/3.7.0-satellite-r2d-upstream-disable";
   assert.equal(command("git", ["branch", "--show-current"], "git branch"),
-    "feat/3.7.0-satellite-r2d-upstream-disable", "Expected R2D.1 test branch");
+    expectedBranch, "Expected exact satellite HTTP acceptance branch");
   assert.equal(command("git", ["status", "--porcelain"], "git clean"), "", "Clean tree required");
   assert.match(command("git", ["rev-parse", "HEAD"], "git SHA"), SHA);
 
@@ -178,6 +184,7 @@ async function main() {
       }, { scenario: x, x0: TILE_X0, y: TILE_Y, z: TILE_Z });
     }
 
+    const validImages = (await import("./satellite-valid-raster-fixtures.cjs")).default;
     async function expectedTile(x, status, marker, labelsMarker = null) {
       const response = await browserTile(x);
       assert.equal(response.status, status, `Satellite status at x=${x}; session cookie present: ${sessions.length === 1}`);
@@ -188,17 +195,17 @@ async function main() {
       assert.ok(!body.includes(TOKEN), "Fake token must never be disclosed in response");
       if (status === 200) {
         assert.match(response.headers["content-type"], /^image\/svg\+xml/);
-        assert.ok(body.includes(Buffer.from(marker).toString("base64")), `Base imagery missing at x=${x}`);
-        if (labelsMarker) assert.ok(body.includes(Buffer.from(labelsMarker).toString("base64")), "Labels missing");
+        assert.ok(body.includes(marker.toString("base64")), `Base imagery missing at x=${x}`);
+        if (labelsMarker) assert.ok(body.includes(labelsMarker.toString("base64")), "Labels missing");
         else assert.equal((body.match(/<image /g) || []).length, 1, "Imagery-only must not fabricate labels");
       }
       return response;
     }
     if (MODE === "enabled") {
-      await expectedTile(1, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_LABEL_2C");
-      await expectedTile(2, 200, "FLYTALLY_HTTP_BASE_2C", "FLYTALLY_HTTP_FALLBACK_2C");
+      await expectedTile(1, 200, validImages.jpeg(), validImages.png());
+      await expectedTile(2, 200, validImages.jpeg(), validImages.png());
       await expectedTile(3, 502);
-      await expectedTile(4, 200, "FLYTALLY_HTTP_BASE_2C");
+      await expectedTile(4, 200, validImages.jpeg());
       await expectedTile(5, 502);
       const events = upstreamEvents(logFile);
       for (const x of ["1", "2", "3", "4", "5"]) {

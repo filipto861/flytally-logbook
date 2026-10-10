@@ -1,0 +1,6 @@
+.next/
+next-env.d.ts
+*.tsbuildinfo
+reports/
+# Build artifact from an earlier accidental ancestor next.config.ts load.
+next.config.compiled.js

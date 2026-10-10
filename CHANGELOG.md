@@ -1,3 +1,317 @@
+## 2026-10-10 — M3-D live-metadata evidence collector STAGED / OWNER LOCAL VERIFICATION PENDING
+
+Exact Esri primary docs rechecked (Imagery Labels static 512px PNG, per-style metadata including tileInfo, ArcGIS Location Platform privilege `premium:user:staticbasemaptiles`, explicit Esri/data attribution, account-dependent terms). **No supplier endpoints requested.** Added `tooling/collect-satellite-provider-metadata.mjs`: opt-in **three metadata-only GETs**, exact host/path allowlist (base World Imagery, static imagery labels, public reference fallback), Bearer only for required endpoints; requires both explicit `FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED=YES` and existing `ARCGIS_ACCESS_TOKEN`, positive caller-supplied max-response-bytes and timeout, absolute output directory outside repo. Fetches serially, rejects redirects, never requests tiles, discards unallowlisted provider fields, does not persist token/URL, outputs only sanitized tileInfo/CRS/copyright + manifest; fail closed for missing policy/status/MIME/budget/provider error. Added `tests/v370-satellite-metadata-collector-guard.test.ts` covering no-approval/no-token/invalid args and mock-injected success with **zero real network**, three expected hosts and redacted output. This is tool/test staging only, not approval to run token-based calls. **Owner tests/typecheck/build NOT RUN on this new source.** Actual supplier metadata/compatibility, browser-real-tile decode, iPad Safari, memory caps, multi-instance budget and attribution/contract still MISSING. Existing live provider/route/Standard/auth/DB/Training/flags unchanged. Satellite OFF, no merge/deploy. Explicit product-owner approval needed for future three metadata GETs and lab-only limits before use.
+
+## 2026-10-10 — M3-D Esri provider grid readiness OWNER LOCAL VERIFIED (30/30 + TS + build)
+
+Owner clean exact SHA `5206516c5fa500db7a2c2964cefc87efda63007e`: five targeted test files **30/30 PASS**, zero failures/skips, `npm.cmd run typecheck` PASS, fresh Next.js 16.3.2 `npm.cmd run build` PASS (41/41 static pages). Isolated `lib/satellite-provider-tiling.ts` and offline JSON CLI reject incompatible tile footprint, origin, LOD and CRS evidence and do NOT claim supplier metadata provenance. No actual ArcGIS service metadata/live imagery tested. Full suite, CI, real supplier HTTP, Safari/iPad and deploy NOT RUN. Production provider/Standard/auth/DB untouched. Next *meaningful evidence gate*: obtain and reconcile verified metadata/terms for exact Esri services, explicitly approve any controlled token-using requests, then resolve overlay D1 and runtime resource policy D2–D4. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D Esri Provider Evidence & Grid Readiness STAGED / LOCAL VERIFICATION PENDING
+
+Researched **exact live upstream services** vs official Esri primary documentation: World Imagery MapServer, Imagery Labels Static Basemap Tiles, reference labels MapServer. Static labels documented 512x512 PNG and different zoom/pixel-resolution equivalence; existing FlyTally uses same z/y/x and resizes into 256px SVG. **Potential tile-grid/overlay contract gap, not proven misalignment**: separate Esri example shows layering both services in a map client. Added `lib/satellite-provider-tiling.ts` (offline fail-closed geographic tileInfo footprint comparison, no source provenance claim), `tooling/check-satellite-tiling.mjs` (offline JSON CLI), synthetic comparator + CLI tests, and expanded `docs/satellite-provider-resource-evidence-matrix.md` plus `docs/satellite-provider-integration-readiness-2026-10-10.md` (Esri source URLs, privilege, licensing/attribution, D1-D4 owner decisions, acceptance). No supplier/tile/metadata requests or production numeric policies. Tests, TypeScript and build **NOT RUN on new source**; owner local verification required. No live provider/route, Standard, auth, DB, Training, Story, feature-flag, merge or deploy change; Satellite OFF. Next source-backed metadata + scoped owner approval for any token-based supplier observation, then design review before production wiring.
+
+## 2026-10-10 — M3-D offline Chromium decode OWNER LOCAL VERIFIED
+
+Owner clean exact source `62c2079dd9cac25104057e792d540a13eefe12c5`: `npm.cmd run typecheck` PASS; `npm.cmd run build` PASS (Next.js 16.3.2, 41/41 static pages); `node --experimental-strip-types tooling/verify-satellite-browser-decode.mjs` PASS using Playwright headless Chromium offline synthetic fixtures (PNG 1x1, JPEG 1x1, SVG natural size 256x256). This is browser image-load/decode smoke only, NOT pixel fidelity, real provider tile compatibility, Safari/iPad, RSS bound, HTTP production-path test, provider license/contract, or approval of production limits. Full suite/CI/production NOT RUN. No runtime provider/route changes; Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D browser decoder + provider evidence bundle STAGED / OWNER VERIFICATION PENDING
+
+Added isolated opt-in offline Playwright Chromium synthetic PNG/JPEG and embedded SVG image decode smoke at `tooling/verify-satellite-browser-decode.mjs` (blocks non-data URL network access, no production credentials/route/database change). Added `docs/satellite-provider-resource-evidence-matrix.md` with evidence-vs-gap matrix for actual ArcGIS MIME/dimensions/encoding, full decoder, Safari/iPad, Node RSS/concurrency, no-store costs and supplier license. Current synthetic 1x1 fixtures are **not** authoritative provider tiles. Browser test, typecheck, build, full suite NOT RUN for this new commit until owner verifies. No source-backed production policy values, real supplier fetch, provider wiring, Standard/Story/auth/DB changes, merge/deploy; Satellite OFF.
+
+## 2026-10-10 — M3-D synthetic resource lab OWNER LOCAL VERIFIED (31/31 + TypeScript + build)
+
+Owner exact clean source `de8284b91024ef79feb1e710084e41758ba64931`: four targeted suites **31/31 PASS**, zero failed/skipped, `npm.cmd run typecheck` PASS, fresh Next.js 16.3.2 `npm.cmd run build` PASS. Node24 laboratory `node --experimental-strip-types tooling/measure-satellite-lab.mjs 100` completed: synthetic 1x1 JPEG+PNG input 228 B/pair; SVG 602 B/pair; 100 iterations 2.5231 ms (not benchmark guarantee); baseline RSS 59,682,816 B; max sampled RSS 60,948,480 B; end RSS 57,393,152 B. Whole-process sampled snapshots only: no pixel decode, live supplier, network, other workers/concurrency, transient peak proof, or production threshold. Node `MODULE_TYPELESS_PACKAGE_JSON` warning nonfatal; no module config changes warranted. Closes isolated lab instrumentation verification only; provider contract/decode/resource policy remain blocked. Full suite, browser/CI/prod NOT RUN. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D resource lab instrumentation STAGED / VERIFICATION PENDING
+
+Added tooling-only `tooling/measure-satellite-lab.mjs` and two `tests/v370-satellite-resource-lab.test.ts` tests. Isolated Node24 probe performs synthetic 1x1 PNG/JPEG structural inspection + Base64/SVG composition (no fetch/provider calls), reports process.memoryUsage RSS/heapUsed/external/arrayBuffers baseline/observed sampled peak/end with process duration, explicitly warns that synchronous sampling misses transient peaks and results are **not production limits or a browser pixel decode proof**. Synthetic envelope is input-derived and not a deployment policy. Tests for JSON evidence format and invalid iteration fail-closed. **Owner test/typecheck/build/measurement NOT RUN on this new source yet**; provider contract, real 256-size format evidence, decode assurance, Next/multi-instance RSS and provider costs still blocked. No live provider, auth, route, Standard, Story, DB, flags, deploy or merge. Satellite OFF.
+
+## 2026-10-10 — M3-D Transport Hardening OWNER LOCAL VERIFIED (44/44 + TypeScript + build)
+
+Owner clean exact source `186e1cc46c7247d01e6266c2949ae4c4886f8159`, Node `v24.19.0`: five targeted Satellite suites **44/44 PASS** (0 fail/skipped), `npm.cmd run typecheck` **PASS**, fresh `npm.cmd run build` **PASS** (Next.js 16.3.2; 41/41 static pages). The test TypeScript union-header mismatch on preceding source `8fc50ecd` was corrected in `186e1cc4`; no production runtime change in that correction. Isolated teardown best-effort and expected required-pair policy fail-closed verified; cancellation **does not prove supplier termination** and quarantined capacity remains conservative. Full suite, broader browser/HTTP rerun, CI and deployment NOT RUN on this source. No live provider/route/Standard/auth/DB/Story/production policy changes. Satellite OFF; no merge or deploy. This closes only isolated M3-D Transport Hardening scope; remaining provider/resource evidence is BLOCKED.
+
+## 2026-10-10 — M3-D Transport Hardening batch STAGED / OWNER RETEST REQUIRED
+
+Based on independent DeepSeek read-only review: source-only isolated hardening of `lib/satellite-bounded-fetch.ts` (best-effort cancellation of unconsumed response bodies on rejected status/MIME/encoding/content-length, late response cancellation after abort race; cleanup rejection swallowed without masking primary errors), `lib/satellite-required-pair.ts` (typed expected pair policy failure), and `lib/satellite-tile-transport.ts` (invalid pair policy -> controlled unavailable). Focused synthetic regression cases added in `tests/v370-satellite-bounded-fetch.test.ts` and `tests/v370-satellite-tile-transport.test.ts`. Cancellation is **not proof of supplier termination**; existing unproven/quarantine contract remains. No production provider wiring, resource ceilings, Standard/auth/route/cache/DB/Story/flag changes. **Tests, TypeScript, build, HTTP/Playwright/CI NOT RUN on this new batch** pending owner clean-SHA local verification. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D2b guarded local HTTP acceptance 3/3 PASS (owner evidence)
+
+Owner reported clean source `fa7eaa5ef173ff4441d3a1995e33e6273781a76d` on exact R2D.2 branch; isolated PostgreSQL identity `flytally_satellite_r1_test|flytally_sat_r1|55432` confirmed and disposable schema reset explicitly approved. Fresh `npm.cmd run build` PASS (Next.js 16.3.2 / embedded TypeScript PASS). Guarded `node tooling/verify-satellite-http.mjs` against synthetic local fixture with a common fresh tile-series RUN_ID: **enabled PASS** (anonymous 401; malformed/duplicate 400; revoked session 401; Standard 200; Satellite 200/fallback/502; 13 intercepted synthetic upstream calls); **disabled PASS** (Satellite 503, zero upstream); **missing-token PASS** (Satellite 503, zero upstream). This is **local HTTP-route fixture acceptance only**, not real ArcGIS requests, browser decode validation, live bounded provider wiring, peak memory/RSS evidence, production numeric resource policy, full suite, CI, production smoke or deploy. These latter items remain NOT RUN / unresolved. Satellite production OFF; no merge/deploy.
+
+## 2026-10-10 — M3-D2b owner local verification recorded (DOCS ONLY)
+
+Owner clean `fa7eaa5ef173ff4441d3a1995e33e6273781a76d` reported 48/48 targeted PASS and TypeScript PASS for PNG/JPEG fixture migration. No actual HTTP run, full suite, build, Playwright, CI or deploy; no live provider changes. Satellite OFF.
+
+## 2026-10-10 — M3-D2b local verification / HTTP fixture update STAGED
+
+Owner clean `cdb63df68740204ba413fb1d894a76f9279b77f6`: 48/48 targeted PASS and TypeScript PASS. Migrated isolated `tooling/satellite-http-upstream-fixture.cjs` and `tooling/verify-satellite-http.mjs` from textual marker payloads to actual synthetic PNG/JPEG bytes and exact Base64 assertions. Guarded HTTP, full suite/build/Playwright/CI NOT RUN on new source. No live provider/route/cache/DB/Standard/Story changes or production ceilings; Satellite OFF.
+
+## 2026-10-10 — M3-D2a verification and M3-D2b raster fixtures staged
+
+Owner clean `6d0993b3`: 52/52 targeted PASS and TypeScript PASS. Created `tooling/satellite-valid-raster-fixtures.cjs` and `tests/v370-satellite-valid-fixtures.test.ts` (two synthetic tests). Existing HTTP fixture remains unchanged pending compatibility review. No runtime/provider/route/Standard/Story/DB changes; new source tests/build/HTTP/Playwright/CI NOT RUN, Satellite OFF.
+
+## 2026-10-10 — M3-D2a SVG buffer copy optimization staged (NOT VERIFIED)
+
+Updated `lib/satellite-svg-envelope.ts` to construct a zero-copy view of raster Uint8Array before Base64 conversion; added two focused `tests/v370-satellite-svg-envelope.test.ts` regressions for nonzero byteOffset and exact size checks. No user-visible/production provider/route/Standard/Story changes or new resource limits; typecheck/test/build/browser/HTTP/CI NOT RUN on new source. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D Batch 1 owner test evidence (DOCS ONLY)
+
+Clean source `006ea28f92de86b414f230b610caff493c8041f4`: 98/98 targeted tests PASS, TypeScript PASS. No runtime changes in this evidence record; no full suite/build/HTTP/Playwright/CI, activation, merge or deploy. Satellite OFF.
+
+## 2026-10-10 — M3-D Batch 1 shared admission staging (NOT VERIFIED)
+
+Added `lib/satellite-shared-admission.ts`, six tests in `tests/v370-satellite-shared-admission.test.ts`, GPS-risk registration and auditedTotal 399→400 map expectation. Explicit policy required, same-policy reinit preserves ledger/quarantine; invalid/mutated policy rejected. No new production numerical limits, environment variables, provider/route/cache/DB/Standard/Story changes. Node24 targeted tests/typecheck, full suite/build/HTTP/Playwright/CI NOT RUN; Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-C review correction local verification (DOCS ONLY)
+
+Owner clean `7e4033f13993f7a44213f4fd915317428e84f9e5`: 92/92 targeted tests and `tsc --noEmit` PASS. Records previously staged isolated deadline/error/admission fixes, no new runtime changes. Full suite/build/HTTP/Playwright/CI NOT RUN; no deployment, Satellite OFF.
+
+## 2026-10-10 — M3-C fractional deadline clock fix staged (RETEST PENDING)
+
+Owner source `0ba93f40` returned 87/90 targeted (three `invalid-clock` failures), TypeScript PASS. Changed `satellite-tile-transport.ts` and `satellite-label-fallback.ts` to accept finite fractional monotonic timestamps while flooring bounded fallback timer duration. Added two clock regression tests. No provider/route/cache/DB/Standard/Story/runtime activation; tests/typecheck NOT RUN on corrected source.
+
+## 2026-10-10 — M3-C review correction batch staged (NOT VERIFIED)
+
+Updated `lib/satellite-required-pair.ts`, `lib/satellite-tile-transport.ts`, `lib/satellite-fetch-lifecycle.ts`, `lib/satellite-label-fallback.ts`; added three focused regressions in existing test files. Enforce absolute deadline after admission, typed error reason, admission-failure `unavailable`, null guard and monotonic clock default. No live provider/route/cache/DB/Standard/Story or deployment changes; targeted Node24 tests and typecheck NOT RUN on new SHA.
+
+## 2026-10-10 — Documented M3-C independent review handoff (DOCS ONLY)
+
+Created `docs/r2d2-m3c-integration-independent-review.md` for external read-only architecture/security/cancellation review of existing tested isolated modules before provider wiring. No review outcome received; no runtime, DB, merge or deploy changes. Tests NOT RUN on documentation commit.
+
+## 2026-10-10 — M3-C Batch 5 owner verification documented
+
+Owner clean exact `dd9b88d30335389290d851db33d3850fcd4af0ec` ran 87/87 targeted tests PASS and `tsc --noEmit` PASS. Documentation-only evidence; no live provider, route, DB, merge or deployment changes. Full suite/build/HTTP/Playwright/CI NOT RUN.
+
+## 2026-10-10 — M3-C5 cross-phase coordination staged (NOT VERIFIED)
+
+Added `lib/satellite-tile-transport.ts`, four tests in `tests/v370-satellite-tile-transport.test.ts`, registered GPS-risk source, auditedTotal 398→399, map assertion synchronized. Single inherited deadline coordinates base/preferred + fallback. No supplier policy defaults, prod provider/route/DB/Standard/Story changes; tests/typecheck/build/browser/HTTP/CI NOT RUN on new SHA. No merge/deploy.
+
+## 2026-10-10 — M3-C4 owner verification recorded (docs only)
+
+On exact clean `3f0e29a0ba5880887ecf56befcb0deb4822d2fee` owner reported targeted 83/83 PASS, typecheck PASS. No runtime or provider change in this documentation update. Full suite/build/HTTP/browser/CI/prod NOT RUN; Satellite OFF.
+
+## 2026-10-10 — M3-C4 bounded fallback helper + tests staged (NOT VERIFIED)
+
+Added `lib/satellite-label-fallback.ts` and `tests/v370-satellite-label-fallback.test.ts` (6 scenarios), GPS registry ownership 397→398 and map count update. Includes inherited absolute deadline, failure allowlist, valid-PNG structural inspection, admission/quarantine; no live provider/route/cache/Standard/Story/DB changes. Owner Node24 tests/typecheck, build/HTTP/Playwright/CI NOT RUN; no activation, merge or deploy.
+
+## 2026-10-10 — M3-C3 TypeScript return-shape fix (RETEST PENDING)
+
+Owner tested SHA `81518cf1`: 77/77 target PASS, typecheck FAIL with TS2339 in `satellite-required-pair.ts` error branch. Added explicit `result: undefined` to catch return for consistent inferred shape. No provider/route/Standard/Story/cache/DB changes, deploy or activation; typecheck on corrected SHA NOT RUN.
+
+## 2026-10-10 — M3-C Batch 3 isolated required-base cancellation staged (NOT TESTED)
+
+Added `lib/satellite-required-pair.ts`, five tests in `tests/v370-satellite-required-pair.test.ts`, GPS source ownership registry and audited count 396→397. Implements synthetic shared deadline, preabort, base failure sibling abort signal and retained uncertain capacity. No provider/route/Standard/Story/cache/DB changes, no numeric production budgets, merge or deployment. Node24 targeted suite and typecheck NOT RUN for new SHA.
+
+## 2026-10-10 — M3-C Batch 2 owner verification evidence (DOCS ONLY)
+
+Clean source SHA `8dd125b073f3387532b921051d491d473b0c1d90` passed owner Node24 targeted 72/72 (six suites) and TypeScript. No code changes for this evidence-only commit; full suite/build/HTTP/Playwright/CI NOT RUN; provider not integrated; Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-C Batch 2 isolated admitted-pair orchestration STAGED / NOT RUN
+
+Added `lib/satellite-admitted-pair.ts` and six synthetic tests `tests/v370-satellite-admitted-pair.test.ts`; GPS-risk runtime registry `auditedTotal` 395→396 and map source assertion updated. The helper releases proven no-start/local completed body operations and quarantines uncertain upstream failures; it is **not connected to the provider**, does not cancel sibling on base failure, and does not prove remote settlement. No prod policy values, provider/route/cache/DB/auth/Standard/Story modifications; Node24 tests/typecheck, full suite, build, HTTP, Playwright and CI NOT RUN. No merge/deploy.
+
+## 2026-10-10 — M3-C Batch 1 owner local verification recorded (DOCS ONLY)
+
+Owner clean exact SHA `cd506648462278594b600a1e27657694845f3014`: 52/52 targeted tests PASS, typecheck PASS; confirms standalone atomic pair reservation and rollback. No product runtime, provider, route, DB, merge or deploy change; next orchestration pending. Full suite/build/HTTP/browser/CI NOT RUN.
+
+## 2026-10-10 — M3-C Batch 1 synthetic parallel admission added (UNVERIFIED)
+
+Actually added `lib/satellite-parallel-admission.ts`, `tests/v370-satellite-parallel-admission.test.ts` (6 tests), updated GPS-risk source registry count 394→395 and corresponding map assertion. No production provider connection, route/cache/Standard/Story changes, no budget guesses. Owner targeted tests/typecheck, full suite/build/HTTP/Playwright/CI all NOT RUN. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-B Batch 2 owner local verification (DOCS ONLY)
+
+Recorded clean SHA `a4ea494f9f1a5d3f194c7aa2a8d2b6d4ae6684e3` with 60/60 targeted tests PASS, typecheck PASS. No source changes in this reconciliation; provider resource integration, full suite/build/HTTP/browser/CI/deploy NOT RUN. Next M3-C.
+
+## 2026-10-10 — M3-B2 provider labels abort propagation bugfix (RETEST PENDING)
+
+On owner SHA `66f8b294` 59/60 targeted tests PASS, one signal-propagation failure; typecheck PASS. Fixed missing optional `signal` arguments on preferred imagery labels and reference fallback labels in `lib/satellite-map-provider.ts`, commit `8fbf598c`. No tests modified; new SHA not verified; no merge/deploy.
+
+## 2026-10-10 — M3-B2 test-contract and abort-race correction (RETEST PENDING)
+
+Owner clean `94b97e2c`: 58 PASS / 2 FAIL in 60 targeted tests; typecheck PASS. Updated old R2B route source guard for `request.signal` and adjusted new synthetic parallel abort test to wait for both fetch invocations before cancelling. Tests-only commit `763bfce`; no runtime modification, merge/deploy or release. New commit tests NOT RUN.
+
+## 2026-10-10 — M3-B Batch 2 signal propagation added (NOT TESTED)
+
+Modified `lib/satellite-map-provider.ts` and authenticated Satellite call in `app/api/map-tile/[z]/[x]/[y]/route.ts` to forward optional abort signal without changing Standard path, auth ordering or existing cache. Added three tests in `tests/v370-map-layers.test.ts`. This is cancellation signalling only; it neither guarantees prompt termination on uncooperative providers nor enforces resource limits. Target tests/typecheck/build/HTTP/Playwright/CI NOT RUN on new code; Satellite prod OFF, no merge/deploy.
+
+## 2026-10-10 — M3-B Batch 1 owner local verification recorded (DOCS ONLY)
+
+Exact clean `3790f05d5d208bccb720ec564d34e9513d42edb3`: 57/57 targeted tests PASS, Node24.19.0, typecheck PASS. No runtime implementation in this update, build/HTTP/CI/Playwright NOT RUN; next M3-B Batch 2 pending.
+
+## 2026-10-10 — Fix M3-B lifecycle Node24 ESM import (RETEST PENDING)
+
+Owner run on `02d8acc1` reported 51 PASS / 1 failed test file (Node24 ERR_MODULE_NOT_FOUND for extensionless `satellite-bounded-fetch` import), typecheck PASS. Updated `lib/satellite-fetch-lifecycle.ts` to use `./satellite-bounded-fetch.ts` at `5e1cbf2`. No test claim on corrected commit; no provider/auth/Standard/Story/DB/deploy change.
+
+## 2026-10-10 — M3-B batch 1 observational settlement classification (STAGED, NOT TESTED)
+
+Added `lib/satellite-fetch-lifecycle.ts` (start observation and conservative not-started/unproven outcomes around existing bounded fetch) and six synthetic regression tests in `tests/v370-satellite-fetch-lifecycle.test.ts`. No numerical production policy, no provider/route/cache/Standard/Story/DB/Training changes. No local Node24 verification, build, CI or deploy performed. Next gate: targeted + typecheck evidence and independent lifecycle contract review before provider wiring.
+
+## 2026-10-10 — M3-A DeepSeek review reconciled (DOCS ONLY)
+
+Reviewed DeepSeek APPROVE WITH CHANGES findings and tightened M3-A lifecycle contract: explicit wrapper/local/remote settlement semantics, atomic parallel reservations, signal propagation, fallback restrictions, decoder/hosting release gates. No code/tests/build/HTTP/CI or deploy performed.
+
+## 2026-10-10 — M3-A proposed provider lifecycle review contract (DOCS ONLY)
+
+Created `docs/r2d2-m3a-provider-lifecycle-review.md` covering independently reviewable operation states, cancellation/admission/lease quarantine, parallel labels fallback, auth/Standard invariants, valid raster fixture migration and planned failure-injection tests. M3 integration and DeepSeek review NOT RUN; no runtime/route/tests/deploy/DB changes. Owner 69/69 local proof belongs to exact earlier source SHA `7baefdf7d6ec75878b566853052238698774abb4` only.
+
+## 2026-10-10 — M2c-C 69/69 local PASS and M3 integration read-only review gate (DOCS ONLY)
+
+Owner submitted full PowerShell evidence on exact clean source `7baefdf7d6ec75878b566853052238698774abb4`: 69 focused tests / 69 PASS / 0 fail/skip; `npm.cmd run typecheck` PASS; local Node24. Closes only M2c-C standalone lease-quarantine local test/typecheck gate. Audited real provider/route and fixture code: provider remains on Next `revalidate` and unconstrained `arrayBuffer()`; route lacks caller `request.signal` propagation; base and preferred labels run concurrently; HTTP/source mocks use invalid marker-text bodies masked by image MIME. Prepared source-grounded M3 integration contracts and release test upgrade/decoder/hosting evidence gaps in design and ROADMAP, proposing independent read-only DeepSeek architecture review first. **No runtime/library/tests/route/provider/flag/DB/Training changes this work cycle**; docs only and PR status, prod Satellite OFF, Draft #279, no CI/build/HTTP/merge/deploy.
+
+## 2026-10-10 — R2D.2 M2c-C lease quarantine and 4 extra synthetic tests added (NOT VERIFIED)
+
+**Actually changed** `lib/satellite-admission-gate.ts`: lease `quarantine()` irreversibly retains process-local active/byte reservation if upstream termination is uncertain; `release()` stays idempotent and refuses to refund quarantined lease; added `quarantinedCount()`. Updated `tests/v370-satellite-admission-gate.test.ts` with 4 cases: quarantine/late release, duplicate state calls, separate instances, `fetchSatelliteBounded` independent deadline versus non-cooperative simulated pending upstream. Existing GPS ownership registry and auditedTotal 393 unchanged. Governance design, ROADMAP, FEATURES and CHANGELOG reconciled; previous owner clean `9c5be031474ae40d2badfbc9cddce38c297e93a1` M2a+M2b+M2c-A+M2c-B/map 65/65 + typecheck local PASS retained at that exact SHA.
+
+**Current new code tests, `tsc`, full suite, Next build, CI, Playwright, authenticated HTTP, DB and production smoke NOT RUN**; total 69 focused tests expected for owner's next run. Quarantine can exhaust process-local capacity while non-cooperative upstream continues; not a complete resource, decode or deployment guarantee. No production provider/route/Standard/Story/auth/Training/cache/feature flag changes, no real provider requests, no merge/deploy. Satellite prod OFF, Draft PR #279.
+
+## 2026-10-10 — M2c-B owner Node24 65/65 + typecheck PASS recorded; M2c-C design (DOCS ONLY so far)
+
+Owner clean exact `9c5be031474ae40d2badfbc9cddce38c297e93a1`: combined five focused test files **65 tests / 65 PASS / 0 fail/skip**, and `npm.cmd run typecheck` PASS. Closes standalone M2c-B local scope, not provider integration, end-to-end, build, CI or release. New technical issue retained: wrapper deadline racing a noncooperative upstream can return before actual termination; incorrect early lease release would defeat admitted-capacity accounting. M2c-C reserved as fail-closed quarantine/irreversible lease retention design and new synthetic tests, with no numeric defaults. Current commit docs-only decision/status update; product runtime/Standard/Story/auth/DB/Training unchanged. Satellite flag OFF, Draft PR #279, no merge/deploy.
+
+## 2026-10-10 — R2D.2 M2c-B isolated admission/reservation primitive staged (tests NOT RUN)
+
+**Implemented:** `lib/satellite-admission-gate.ts` fail-closed per-instance concurrency and encoded-capacity admission requiring explicit positive caller policy and reservation, no default bytes/count/timeout, no queue or provider connection. Added 10 synthetic unit cases `tests/v370-satellite-admission-gate.test.ts`; registered GPS/browser-risk ownership in `tooling/development-modules.json` and updated map-source `auditedTotal` 392→393. M2c-A targeted 55/55 + typecheck owner LOCAL PASS evidence bound to `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233` recorded, not transferred to new code.
+
+**New SHA verification:** GitHub staged only; owner Node24 targeted suite/typecheck, full suite, Next build, Playwright, authenticated HTTP, DB, CI and production smoke **NOT RUN**. Ledger lifetime under noncooperative aborted upstream, real decoder, global fleet/work memory and source-backed numerical ceilings remain open. Current Satellite provider/cache/route/Standard/Story/auth/Training unmodified. No provider/DB calls, deploy, merge, activation. PR #279 Draft, Satellite OFF.
+
+## 2026-10-10 — R2D.2 M2c-A owner Node24 55/55 targeted tests + TypeScript PASS recorded (DOCS ONLY)
+
+Owner verified exact clean `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233`: `npm.cmd run test:target -- tests/v370-satellite-bounded-fetch.test.ts tests/v370-satellite-raster-validation.test.ts tests/v370-satellite-svg-envelope.test.ts tests/v370-map-layers.test.ts` **55/55 PASS**, 0 fail/skip, and `npm.cmd run typecheck` PASS. This closes **standalone M2c-A local source verification only**. Next M2c-B synthetic concurrent work admission; decoded pixel integrity, true memory/concurrency cap, source-backed production budgets and M3/M4 remain OPEN. Commit records owner evidence in required docs; previous source SHA PASS does not automatically prove later commits. No production provider/route/Standard/Story/DB/Training changes, no activation/merge/deploy.
+
+## 2026-10-10 — Satellite R2D.2 M2c-A isolated output envelope/tests added (NOT NODE24 VERIFIED)
+
+**Actually changed** `lib/satellite-svg-envelope.ts` and `tests/v370-satellite-svg-envelope.test.ts` (explicit no-default encoded-byte/pixel/nominal RGBA/SVG policy guards, BigInt overflow-safe Base64 expansion and markup size before producing legacy-compatible composed SVG), GPS ownership/browser-risk entries in `tooling/development-modules.json`, tracked runtime auditedTotal 391→392 with map-layers regression update. README/governance design, ROADMAP, FEATURES and CHANGELOG changed in same cycle; existing provider/route/Standard/Story/auth remain unchanged. **No M3 integration or removal of Next 7-day Satellite cache yet.** No production budgets invented; license questions deferred per owner.
+
+**Verification evidence:** isolated Node22 prototype, surrogate raster type: 8/8 synthetic unit tests PASS (preflight only, **NOT actual owner Node24 repo tests**). Owner Node24 targeted M2a/M2b/M2c/map tests, typecheck, Next build, CI, Playwright, A4 authenticated HTTP and release ON/OFF **NOT RUN** on this commit. No DB/ArcGIS/Training, merge, deploy, feature activation. Draft PR #279, prod Satellite OFF.
+
+## 2026-10-09 — R2D.2 owner reprioritizes license discussions out of technical critical path (DOCS ONLY)
+
+Recorded explicit owner instruction not to pursue Esri licence/pricing/account questions at this stage. Updated ROADMAP, design and FEATURES to make engineering review, synthetic testing and preparation for bounded Satellite `no-store` independent of that deferred discussion. Previous Esri docs/history retained without claims of rights/approval. Existing M2a and M2b local PASS retained at their exact source commits; no new runtime/provider/test file changed here, no numeric production limits set, no real ArcGIS/DB/Training changes, no merge/deploy, production Satellite OFF and Draft PR #279.
+
+## 2026-10-09 — M2c public Esri documentation reconciled with actual provider/attribution code (DOCS ONLY)
+
+Confirmed public Esri docs match current World Imagery and Imagery Labels URL shapes, published ArcGIS Location Platform basemap tile price (2M free then USD 0.15/1,000 tiles conditional on product/billing), and source attribution requirement. Existing `components/satellite-map-control.ts` and `components/flight-story-card.tsx` already contain provisional Esri attribution strings; no UI change. Specific provider/caching and derivative SVG/PNG rights, actual account charges, tile MIME/size/latency observations, hosting constraints and numerical budgets all remain NOT VERIFIED. Recorded public source URLs in design; source/fallback live endpoints never called. No production provider/route/parser/test/DB/Training changes, no merge/deploy, Satellite production OFF; PR Draft. M2b earlier local 47/47+typecheck PASS exact SHA preserved, current docs-only SHA NOT RETESTED.
+
+## 2026-10-09 — M2b fixed-JPEG owner test 47/47 PASS + typecheck; milestone narrow closure (DOCS ONLY)
+
+Owner PowerShell evidence on exact clean source `93f370ed357345349829d17495b079e17742f38e` confirms `npm.cmd run test:target -- tests/v370-satellite-bounded-fetch.test.ts tests/v370-satellite-raster-validation.test.ts tests/v370-map-layers.test.ts`: **47 total, 47 PASS, 0 FAIL/SKIP** (14 bounded-fetch, 10 PNG/JPEG structural, 23 map regressions); `npm.cmd run typecheck` PASS. Earlier `45/46 FAIL` on malformed JPEG sample remains historical evidence. This satisfies standalone M2b targeted local test/typecheck milestone, not release readiness, CI, authenticated HTTP or actual ArcGIS acceptance.
+
+**This work cycle:** record completion/provenance + next M2c evidence gate in required docs, no runtime/provider/test code changed, no new commits of code. Real Satellite provider still uses old Next fetch Data Cache and unbounded `arrayBuffer()` until explicit M3 code/test deployment milestones. Full image decodability, pixel/expansion cap, Esri application formats/costs/licensing, process concurrency, final SVG, real hosting/CI/Playwright/full release not verified. Database untouched; Satellite production OFF, PR #279 Draft, no merge/deploy.
+
+## 2026-10-09 — R2D.2 M2b JPEG fixture failure investigated and test-only fix staged
+
+**Evidence of failure:** owner ran exact `5c7efca94c9dfd50bed71b58eaa0d547aa288626`, 46 local tests: 45 PASS, **1 FAIL** at real-baseline JPEG acceptance; typecheck not reached (test shell threw). Malformed embedded JPEG fixture had segment framing error at offset 158 (expected JPEG marker `FF`); no evidence that parser rejected a valid file. **Actual code fix in this cycle:** only `tests/v370-satellite-raster-validation.test.ts` updated to a freshly Pillow-encoded/decoded 159-byte 1×1 grayscale JPEG, SHA256/length assertion and negative quantization segment corruption case. No parser weakening and no `lib/` change, production provider, auth/Standard/Story, DB, Training or configuration change. Investigation independently walked new JPEG markers successfully. **Corrected test suite, TypeScript, Next build/CI/browsers/HTTP NOT RUN on final fix commit**; M2b remains pending local re-verification. Production Satellite OFF; Draft #279; no merge/deploy.
+
+## 2026-10-09 — M2b isolated PNG/JPEG structural raster validation + synthetic unit tests staged (NOT VERIFIED)
+
+**Actually added** `lib/satellite-raster-validation.ts` (PNG chunk CRC/IHDR/IDAT/IEND plus JPEG SOI/SOF/SOS/EOI and segment-framing validation, MIME matching, dimension reporting, sanitized error); `tests/v370-satellite-raster-validation.test.ts` with offline 1×1 Pillow-encoded PNG/JPEG and malformed structure cases; GPS/browser-risk registration `tooling/development-modules.json` and existing `tests/v370-map-layers.test.ts` runtime ownership 390→391. New checker is **not imported into production**; old Satellite provider continues existing Next Data Cache as before until M3. Checker doesn't decompress PNG or JPEG pixels, thus cannot guarantee full decoded integrity; that limitation is explicitly retained for source/governance review.
+
+**Verification:** previous M2a local 37/37+typecheck PASS only at `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`; **new M2b code/tests NOT RUN** in owner Node24, TypeScript, build, HTTP, browser, CI or prod. No live ArcGIS/DB/secret changes, no Training, release ON/OFF, merge or deploy. Satellite prod OFF, Draft #279.
+
+## 2026-10-09 — M2a owner local 37/37 tests + typecheck PASS recorded (DOCS-ONLY)
+
+Owner submitted PowerShell transcript with exact source commit `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`, clean branch, Node24 guard, local `npm.cmd run test:target -- tests/v370-satellite-bounded-fetch.test.ts tests/v370-map-layers.test.ts` **37 tests / 37 PASS / 0 FAIL / 0 SKIP**, and `npm.cmd run typecheck` PASS. This closes standalone M2a's targeted test/typecheck verification, **NOT whole-project build, CI, browser, authenticated Satellite integration, production deployment or hard resource-bound guarantee**. In this follow-up only documentation reconciled; no runtime files/DB/Training/Standard/Story changes. M2b structural raster validations next, production Satellite OFF, Draft #279.
+
+## 2026-10-09 — R2D.2 M2a independent bounded fetch primitive and unit tests added (NOT VERIFIED / NO PROVIDER RUNTIME CHANGE)
+
+**Actual commits:** new `lib/satellite-bounded-fetch.ts` pure transport helper, `tests/v370-satellite-bounded-fetch.test.ts` for bounded/no-store/body/header/cancellation/sanitization synthetic cases, registry `tooling/development-modules.json` GPS ownership and browser-risk path entry, auditedTotal 389→390, regression guard update in `tests/v370-map-layers.test.ts`. The helper rejects missing numeric policy; **no production numeric values** are chosen. It does not yet verify true raster image bytes; M2b deliberately separate. `lib/satellite-map-provider.ts` and real `/api/map-tile` endpoint **unchanged** and still use current fetch cache, so Option B is approved but **not yet wired into product**. No provider calls, DB, auth, Standard, Story, Training or feature activation.
+
+**Tests/build:** GitHub source present; owner local Node24 targeted unit+map suite, typecheck, build, authenticated HTTP and full release **NOT RUN** on staged new SHA. No CI, merge or deploy. PR #279 stays Draft, Satellite prod OFF.
+
+## 2026-10-09 — Satellite R2D.2 Option B approved by owner (DOCS-ONLY decision)
+
+Owner explicitly approved M0: replace **Satellite** provider's Next 7-day `revalidate` cache in a later guarded integration with controlled `cache:"no-store"` bounded streaming, accepting potential additional supplier traffic/cost but **not** inventing a numerical budget or claiming provider licensing. Optional separate managed validated cache deferred for future decision; public Standard cache stays unchanged. M2a scoped to isolated pure bounded transport and synthetic tests, no production Satellite call-site changes yet. No live provider/DB/Training/flag, merge or deploy. M2a syntax/type/unit/Next build checks NOT RUN on decision commit.
+
+## 2026-10-09 — R2D.2 independent architecture review reconciliation (DOCS ONLY; M0 NOT DECIDED)
+
+Owner supplied DeepSeek READ-ONLY review `APPROVE WITH CHANGES`; claims independently checked against `lib/satellite-map-provider.ts`, real `/api/map-tile` contract, and previously verified local A1–A4 evidence. Documented three cache options: current Next 7-day cache (cannot substantiate hard pre-admission body/memory cap), `no-store` bounded stream (review-recommended, costs/traffic not quantified), separate managed validated bounded cache (greater scope and licensing requirements). Corrected subtle inaccuracies: current code doesn't trust `Content-Length`, it simply calls unbounded `arrayBuffer()`; missing Content-Length needn't be invalid; compression means wire and decoded byte lengths may differ; magic-byte checks alone don't prove full image decode; per-response size alone doesn't cap total process memory; shared `isImage` affects public Standard. All numeric I/O budgets, Esri caching rights, hosting parallelism and owner cache choice remain OPEN.
+
+**Actual Git changes:** design, ROADMAP, FEATURES and CHANGELOG review decision records only. No `lib/`, `app/`, auth, provider, Standard, Story, tests, DB, Training, feature flags, release/deployment. Original A4 Next build + 3-mode real-route authenticated LOCAL PASS stays scoped to earlier exact code SHA `0577f9488e89709f748be790a71805207e5d11ae`. PR #279 Draft, production Satellite OFF; tests of this docs-only commit NOT RUN.
+
+## 2026-10-09 — A4 owner local production-build + real authenticated Satellite HTTP 3-mode PASS (DOCS CLOSEOUT)
+
+**Owner-run verified against exact code SHA** `0577f9488e89709f748be790a71805207e5d11ae`, branch `feat/3.7.0-satellite-r2d2-bounded-provider-io`: strict git and PostgreSQL identity preflights PASS; consented disposable local test schema reset performed by existing fixture; Next16.3.2 production build compiled, TypeScript PASS and 41/41 static pages; real authenticated `/api/map-tile` fixture in `enabled`, `disabled`, `missing-token` all PASS. Enabled 13 synthetic upstream events and expected 401/400/Satellite 200+fallback+502/revocation401/Standard200; disabled 1 **Standard** upstream event but **zero Satellite**, Satellite503; missing-token 0 total upstream/Satellite503; both preserve Standard 200. Local evidence **NOT** CI, actual ArcGIS supplier traffic, native Safari, production smoke or bounded-I/O safety proof. Prior A4 source targeted tests 23/23 PASS belong to older exact SHA `f148f6b3f7f85bc8eef21f59124dab5cccfa5bfe`.
+
+**Changes in this work cycle:** only documentation status closure in design, ROADMAP, FEATURES and CHANGELOG. Product runtime and provider not modified. Original Next upstream cache memory/2MB admission uncertainty remains; independent reviewer and owner cache selection required. No new image validators, timeout budgets, provider license approval, database migration, branch merge, deploy or production feature ON. Current PR #279 Draft; production Satellite OFF.
+
+## 2026-10-09 — A4 owner test-reset permission recorded (DOCS ONLY)
+
+Owner explicitly approved the destructive rebuild of `public` in exact local disposable `flytally_satellite_r1_test|flytally_sat_r1|55432`, originally checked by read-only SQL. Guarded synthetic HTTP three-mode run and exact-SHA Next production build still **NOT RUN**. Only the design, ROADMAP, FEATURES and CHANGELOG permission/preflight notes changed; no DB touched by GitHub edits, no production route/provider/auth/Story/Training/flag/merge/deploy change.
+
+## 2026-10-09 — R2D.2-A4 guarded database preflight owner evidence recorded (DOCS ONLY)
+
+Read-only `DATABASE_URL` host/port/user/database URL check and live `psql` identity query completed locally at exact `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`, returning `flytally_satellite_r1_test|flytally_sat_r1|55432` and `A4 READ-ONLY DATABASE PREFLIGHT PASS`. No DB modifications. **No owner permission to run destructive `DROP SCHEMA public CASCADE` fixture yet; A4 HTTP modes/build NOT RUN**. This change records evidence in required docs only; previous 23/23 local targeted test belongs to earlier SHA. No provider, route, auth, DB schema, Training, merge/deploy or feature activation.
+
+## 2026-10-09 — R2D.2-A4 owner-run static verification results recorded (DOCS ONLY)
+
+Owner supplied PowerShell console for exact source `f148f6b3f7f85bc8eef21f59124dab5cccfa5bfe`: `git pull --ff-only` succeeded; `node --check tooling/verify-satellite-http.mjs` returned success; `npm.cmd run test:target -- tests/v370-map-layers.test.ts` **23/23 PASS, 0 FAIL**, 152.9835ms. Mark **LOCAL STATIC PASS**, not CI or HTTP integration. **No A4 HTTP, local disposable PostgreSQL bootstrap, current-SHA production build, browser or release test has run**. Existing bootstrap uses `DROP SCHEMA public CASCADE` and requires confirmed dedicated local `flytally_satellite_r1_test|flytally_sat_r1|55432` identity before any call. This docs-only update records evidence; production provider, endpoint, auth, flight data, database, maps/Story, Training and feature flag remain untouched; no merge/deploy. PR #279 Draft, Satellite prod OFF.
+
+## 2026-10-09 — R2D.2-A4 authenticated production-route HTTP baseline opt-in staged (TEST-ONLY / NOT RUN)
+
+**Actually changed:** `tooling/verify-satellite-http.mjs` now accepts exact R2D.2 evidence branch only with explicit `FLYTALLY_SATELLITE_HTTP_A4=1`; otherwise it preserves strict original R2D.1 branch equality. It still verifies exact `flytally_satellite_r1_test|flytally_sat_r1|55432` dedicated DB, mandatory test flags, 64-character local session secret, git clean, local `.next/BUILD_ID`, fake provider token and no real provider sockets; later calls disposable DB bootstrap (potentially destructive), browser login/session and 3 fixture modes. New source regression case in `tests/v370-map-layers.test.ts` asserts branch opt-in and isolation. **No provider/route/code generated by runtime, no DB schema, no client map/Story/Training/permissions/product flag changes.**
+
+**New-head verification:** JavaScript syntax, targeted source test, real Next build, authenticated HTTP fixture all 3 modes, PostgreSQL reset/test, browser/CI/full release **NOT RUN**. Previous A3.3 pressure measurements attach solely to SHA `c2fb2dc6ee69f62c482dc6271b828980fc8360bb` and prove no production safety. A4 expected to establish route baseline only; do not claim hard memory or valid-image contract. No merge or deploy, PR #279 Draft, prod Satellite OFF.
+
+## 2026-10-09 — R2D.2-A3.3 owner-run laboratory evidence analyzed (DOCS ONLY, NOT RUNTIME HARDENING)
+
+**Verified input artifacts** `r2d2-spike-ebf5727962d3741a.json` + `memory-ebf5727962d3741a.jsonl` independently parsed/cross-checked; source SHA `c2fb2dc6ee69f62c482dc6271b828980fc8360bb`, Node 24.19.0, Next 16.3.2, manual `A3.3_PRESSURE_ONLY`, `error=null`, diagnostic `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`. Two simultaneous cached 16MiB streams (148ms observed) and two simultaneous uncached 16MiB streams (67ms) all returned exact 16,777,216 application bytes and completed synthetic local upstream. Whole-process sampled peak cached RSS 267.27MiB/heap 50.85MiB/external 178.91MiB/ArrayBuffers 148.09MiB; sequential uncached RSS 226.14MiB/heap 31.41MiB/external 178.91MiB/ArrayBuffers 112.08MiB; 61 samples, median ~31ms. Fixed sequential order and GC/cache carry-over invalidate causal per-request memory delta claims. Both cached entries rejected only later as `items over 2MB can not be cached (22369952 bytes)`; storage cap is not upstream/heap ceiling. Local source `emittedBytes` measures queued writer bytes, not ACKs.
+
+**Changed in this cycle:** only R2D.2 design/ROADMAP/FEATURES/CHANGELOG evidence and next-step decision matrix; all producer/probe code unchanged from the tested commit. **Not run** on this new docs-only HEAD: local `verify:iterate`, typecheck, full suite, build, authenticated Satellite HTTP, PostgreSQL, Playwright, CI, production smoke. A4 actual authenticated route synthetic parity and subsequent owner reviewed cache strategy/number budgets remain open. No production provider/auth/Story/Standard/DB/Training edits, no merge/deploy, production Satellite OFF and stacked PR #279 Draft.
+
+## 2026-10-09 — R2D.2-A3.3 synthetic fast/concurrent laboratory added (TEST-ONLY / NOT RUN)
+
+**Actually implemented:** bounded `sample=rapid` local fake source with backpressure-aware `drain` writer (16MiB max response), mini Next route allowlist for test sample, optional 20ms test-child memory sampling and manual `node tooling/r2d2-cache-spike.mjs --pressure-only`. This mode runs two simultaneous fresh cached Next `revalidate=604800` requests and two simultaneous uncached requests, measuring finite upstream events, application byte counts, completion, memory windows and fixture times. The test script fails closed if it cannot verify complete expected responses. Experimental two concurrent requests, 16MiB bodies and 8s watchdog are **LAB values, not production limits**. **A3.3 Node syntax, Next build, runtime and performance outcomes NOT RUN on new HEAD**; A3.2 evidence remains scoped to exact previous source SHA. Only `tooling/r2d2-cache-spike.mjs`, its mini test route and preload plus docs changed. No production Satellite provider/route, auth, Story, Standard, flight data, DB schema, Training, merge, deploy or feature flag changes; Draft #279, Satellite OFF.
+
+## 2026-10-09 — R2D.2-A3.2 owner-run signal-link observations received (DOCS-ONLY)
+
+**Verified laboratory evidence:** independently parsed three owner-uploaded A3.2 report files `r2d2-spike-3416097c7143be81.json`, `request-signals-3416097c7143be81.jsonl`, `memory-3416097c7143be81.jsonl`; source SHA `808819637f354f855b287e46252f29ecadcdad7f`, Node 24.19 / Next16.3.2, 4 synthetic tests, 14 signal events, 215 memory samples, harness `error=null`/observational verdict. Incoming request signal fired around 300ms on all four disconnected clients. Passive observer cached+uncached upstream each finished 16MiB; explicit signal-to-controller link cut cached at 1,245,184 B queued / 1,179,648 B server read and uncached at 1,310,720 B queued / 1,245,184 B server read; source streams incomplete and closed. Whole-process peak RSS138MiB, heap33MiB, external74MiB, ArrayBuffers38MiB: not production/request budgets. Synthetic queued producer bytes are not ACKed received bytes. Next >2MB cache rejection is not a memory bound.
+
+**Actually changed in this work cycle:** docs-only evidence/reconciliation (design, ROADMAP, FEATURES, CHANGELOG). A3.2 diagnostic complete as observations, not R2D.2 runtime hardening. Next A3.3 fast+concurrent synthetic spike and production-route parity remain unexecuted. No production provider, auth, Story, Standard, DB, flight data, Training, merge/deploy or flag activation; PR #279 Draft, Satellite OFF.
+
+## 2026-10-09 — R2D.2-A3.2 isolated request.signal instrumentation added (NO PRODUCT RUNTIME CHANGE; NOT VERIFIED)
+
+**Actually changed:** optional `disconnectProbe=observe|link` support and JSONL server event logging in `tooling/r2d2-cache-spike/app/api/probe/route.js`; when in `link` mode only, an observed `request.signal.abort` event aborts the mini route's upstream controller. `tooling/r2d2-cache-spike.mjs` can now run `--signal-only` for four independent cached/uncached observer/linked downstream disconnect tests, strict presence checks for server-side start/finally trace and run-scoped local-only reporting. All observable sources remain local fake binary HTTP; no production map route, satellite provider, Story, public Standard, auth, DB, flight data, Training or Vercel configuration change. Lab timings are **not** production policy. **A3.2 test-only code syntax, build, observed signal behavior and exact-HEAD verification all NOT RUN** pending owner; previous A3.1 report belongs to exact `911b95864303cfdf95a52be64082e3508ac2aa7e`. PR #279 Draft, prod OFF, no merge/deploy.
+
+## 2026-10-09 — R2D.2-A3.1 synthetic downstream-disconnect diagnostic owner-run evidence (DOCS ONLY)
+
+**Actually verified as lab observation, NOT production safety:** Owner supplied entire `r2d2-spike-229c80a765da2414.json` + 340-sample `memory-229c80a765da2414.jsonl`, source HEAD `911b95864303cfdf95a52be64082e3508ac2aa7e`, Node24.19/Next16.3.2; 14 cases, 13 source events, `error=null`, observational verdict. Cached HTTP caller aborted after 313ms; uncached after 307ms; both local upstream sources **continued to full 16,777,216 B**. The test route had **not** linked incoming request.signal to its independent server upstream controller; no proof of automatic signal propagation, framework defect or failure of explicit abort. 2MB Next cache-item rejection did not prevent cache miss body read. Child process peak RSS140MiB, heap35MiB, external77MiB, ArrayBuffers38MiB, not memory ceilings or per-fetch attribution; source numbers are queued writes, not confirmed wire receipts. Historical A2 remains bound to its prior exact HEAD.
+
+**No runtime/test file changes in this evidence closeout alone.** Next narrow A3.2 test-only request-signal instrument/link experiment proposed; high-throughput/concurrency and authenticated production route parity NOT RUN. R2D.2 still NOT IMPLEMENTED. No app provider, flight data, auth, DB, Story, Training, Vercel, feature flag, merge or deploy changes; Satellite OFF, PR #279 Draft.
+
+## 2026-10-09 — R2D.2-A3.1 test-only client-disconnect probes added (NOT RUN)
+
+**Actually changed:** `tooling/r2d2-cache-spike.mjs` adds cached and uncached isolated mini Next HTTP tests in which the downstream client aborts its request after a lab-only 300ms, while the route attempts to read finite 16MiB synthetic upstream; observes local fixture source and memory for 5.5s, without changing production `app/api/map-tile` or provider. Experimental timings are not product limits. **No A3.1 local syntax/build/runtime/release PASS**; previous uploaded A2 measurement remains bound only to exact `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`. Additional fast-upstream/concurrent memory-pressure and authenticated production-route parity remain separately NOT RUN. No DB, auth, Story/Map UX, Training, migration, merge or deploy; prod Satellite OFF and PR #279 Draft.
+
+## 2026-10-09 — R2D.2-A2 synthetic cache-tee diagnosis VERIFIED as observation (NOT SATELLITE RELEASE)
+
+**Owner-run evidence received and cross-checked:** full `r2d2-spike-25023cf103cf3fc2.json` and `memory-25023cf103cf3fc2.jsonl` from exact `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`; Node 24.19.0, Next 16.3.2; mini app build/start and 12 diagnostic requests completed; verdict `SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`, no harness error. Cached normal replay had no second upstream event; 16MiB cached full baseline succeeded. Cached reader-only cancel after reading 65,358 B **kept independent cache tee consuming**, source queued 13,565,952 B by 3.2s and 16,777,216 B by end; uncached reader-only cancelled after 65,536 B. Both signal-abort shapes, cached/uncached, stopped early at one ~64KiB chunk or 512KiB. Next printed two local cache-item errors exceeding 2MB, without preventing 16MiB reads. Global 232-sample process peaks: RSS 140MiB, heap 35MiB, external 75MiB, ArrayBuffers 37MiB, not per-request memory. These are **queued fixture source bytes**, not wire-acknowledged, so no hard upper bound or universal production claim.
+
+**This entry is documentation only:** no production code/tests changed during result review, and no R2D.2 hardening implemented. A3 client-disconnect/concurrency/fast-source lab remains proposed, NOT RUN. R2D.2 new docs HEAD has no local iteration PASS; prior A2 results remain bound only to A2 SHA. Existing source/runtime/auth/Story/Standard/DB/Training untouched, production Satellite OFF and PR #279 Draft. No merge/deploy, live ArcGIS, native Safari or CI verification.
+
+## 2026-10-09 — R2D.2-A1 owner diagnostic completed; cache continuation A2 test tooling added
+
+**A1 actual owner-run evidence** on clean `1d5a5a8cd8262422e123a087352343590646d260`: syntax PASS; isolated Next 16.3.2 mini build/start and all seven lab cases returned observations (`SPIKE_OBSERVATIONS_ONLY_NO_SAFETY_PASS`), no reported harness failure. Cached normal repeat 65,536 app bytes with zero new fixture fetches; two large immediate-abort cases each only 65,358 app bytes / 65,536 fixture queued bytes, not complete 16 MiB; stalled 1 KiB cases aborted by lab watchdog ~4.5 s. Global process peak RSS 92 MiB, heap 33 MiB, external 5 MiB, 120 samples; **not** an enforceable runtime guarantee. Local JSON `r2d2-spike-9be5c539cbf64555.json` reported by owner, unuploaded, remains ignored.
+
+**Actually changed after A1:** test-only `tooling/r2d2-cache-spike/app/api/probe/route.js` and `tooling/r2d2-cache-spike.mjs` now provide full 16 MiB synthetic streaming baseline, signal abort after >=512 KiB, controlled reader-only cancel without abort for cached vs uncached, 3.2 s detached-fill observation, per-request source event counts and process-memory windows. These are bounded lab data and intentionally distinguish reader cancellation from network abort. Updated R2D design, ROADMAP, FEATURES, CHANGELOG. **New HEAD A2 syntax/build/probe NOT RUN; do not carry forward A1 observations as new-head evidence.** No changes to production Satellite provider/route, auth, map/Story, Standard, flight data, DB, Training, deploy or production flags. Draft/unmerged.
+
+## 2026-10-09 — R2D.2-A1 first owner-run build failure; isolated config fix staged
+
+**Evidence:** local first diagnostic on clean `c02ed61b147a157d10a443620ddac1964eb1fac2` completed three Node syntax checks but failed inside `next build` of nested diagnostic Next app: parent `next.config.ts` was compiled into the lab directory and its `./lib/commercial-build-guard.ts` relative import was unavailable there. Report: `SPIKE_INCOMPLETE`, requests 0, upstream interceptions 0, memory samples 0. No cache/memory conclusion; do not claim spike PASS.
+
+**Actually changed:** created isolated `tooling/r2d2-cache-spike/next.config.mjs` with explicit dependency root; added runner preflight verifying lab config isolation, and ignored lab-only generated `next.config.compiled.js` artifact. Production `next.config.ts`, commercial guard, provider, Satellite UI/Story, auth, DB, flight data, Training and deploy unchanged. New-HEAD tests/build/probe **NOT RUN**. Historical failed attempt retained. PR #279 remains Draft, production Satellite OFF.
+
+## 2026-10-09 — R2D.2 DeepSeek review reconciliation + synthetic A1 probe staged (UNVERIFIED TEST TOOLING)
+
+**Actually changed:** reviewed `APPROVE WITH CHANGES` against pinned Next 16.3.2 `patch-fetch.ts`/`clone-response.ts`; documented separate asynchronous cache-tee buffering versus synchronous prerender; corrected review's invented client disable header, mistaken pre-validated Data Cache assumption and proposed unnecessary DB for database-free spike. Added a manually invoked, isolated mini Next diagnostic app in `tooling/r2d2-cache-spike/`, Node harness `tooling/r2d2-cache-spike.mjs`, local-only upstream fixture, remote-socket guard, memory JSONL sampling and ignored local reports. It compares one repeated cached URL, uncached fetch, finite large response abort and stalled body for cached/uncached. **Laboratory sizes/watchdogs are never production limits.** Source-emitted bytes are not wire-received bytes; results do not imply hard safety.
+
+**Unverified:** tool Node syntax, mini Next build, observed cache hit/miss, memory, socket/abort results, full R2D.2-A gate, integration/regression/typecheck/build/PostgreSQL/Playwright/CI all NOT RUN on this HEAD. R2D.2 Satellite app/runtime/tests are unchanged; no provider, auth, public Standard, Story, flight model, DB schema, Training, merge, deploy or production flag modifications. Do not mark R2D.2-A COMPLETE before owner observations, A2 client-disconnect and review. Historical R2D.1 local test claims bound to earlier exact SHAs only; production Satellite OFF.
+
+## 2026-10-09 — R2D.2 bounded Satellite provider I/O design opened (DOCS ONLY; NOT RELEASED)
+
+**Actually changed in R2D.2:** created new stacked design/review branch from R2D.1 docs-head `8d8e45b83e9a6fea8806e49d2af3f4468f9f5087`; added evidence-based risk inventory, cache/abort compatibility spike, option trade-offs, failure contracts, fixture remediation plan, small-batch roadmap and read-only independent reviewer handoff in `docs/product/3_7_0_SATELLITE_R2D2_BOUNDED_IO_DESIGN.md`; synchronized ROADMAP/FEATURES/CHANGELOG. **No application/runtime/test source, provider cache mode, DB schema, auth, Story, GPS, Training, deployment config, merge, deploy or Satellite feature flag changed.** R2D.2 new-HEAD tests/build/HTTP/PG/Playwright: **NOT RUN (design only)**. Independent review pending; all timeout/byte/MIME/concurrency values remain undecided.
+
+**Previous milestone evidence:** owner-run R2D.1 lightweight documentation iteration PASS at exact HEAD `8d8e45b83e9a6fea8806e49d2af3f4468f9f5087`, candidate `80123d60c54abcbcc9fc1b7f70afb8ffc3a6e73c6393a79a0fed8c5bbfce73e5` (source 233/233, domain 46/46, TypeScript PASS, blockers none, release NOT EVALUATED). Existing R2D.1 full local ON/OFF PASS belongs only to older tested runtime SHA `895d8caeb392a77b202f53efa2fc36a19a689443`. Historical OFF ECONNRESET remains unresolved; no provider activation permission implied.
+
 ## 2026-10-09 — R2D.1 verified engineering closeout on Draft #278 (NOT RELEASED)
 
 **Actually changed:** one production server-only exact-true `FLYTALLY_SATELLITE_UPSTREAM_DISABLED` short-circuit in Satellite route after style/auth/missing-token checks and before provider/cache fetch, returning non-image 503/no-store/unavailable without touching Standard; synthetic Next authenticated HTTP harness supports enabled/disabled/missing-token with run-scoped unique valid tile URLs, strict observed fallback counters, 0 upstream for disabled/no token; source and registered desktop/mobile browser regression for Map and Flight Story Standard fallback/PNG. No app UI or Story code, provider composition, DB schema/migration, authentication, Training, or runtime performance budget changed.

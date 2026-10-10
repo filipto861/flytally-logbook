@@ -147,7 +147,7 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
   assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
-  assert.equal(registry.ownership.auditedTotal, 389);
+  assert.equal(registry.ownership.auditedTotal, 400);
 });
 
 test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
@@ -185,6 +185,10 @@ test("3.7.0 R2 satellite endpoint requires a live session while Standard stays p
 test("3.7.0 R2B provider is explicitly GPS-owned and selects real browser map acceptance", () => {
   const registry = JSON.parse(source("tooling/development-modules.json"));
   const gps = registry.modules.find((item: { id: string }) => item.id === "gps-tracks");
+  assert.ok(gps?.prefixes.includes("lib/satellite-bounded-fetch"));
+  assert.ok(gps?.prefixes.includes("lib/satellite-raster-validation"));
+  assert.ok(gps?.prefixes.includes("lib/satellite-svg-envelope"));
+  assert.ok(gps?.prefixes.includes("lib/satellite-admission-gate"));
   assert.ok(gps?.prefixes.includes("lib/satellite-map-provider"),
     "Provider must be GPS-owned, never silently counted as unowned shared runtime");
   const targets = registry.browserAcceptance.pathTargets.find((item: { prefixes?: string[] }) =>
@@ -201,7 +205,7 @@ test("3.7.0 R2B route delegates authenticated Satellite requests to the tested p
   const provider = source("lib/satellite-map-provider.ts");
   assert.match(route, /import \{ satelliteTile, isImage, CACHE_SECONDS, USER_AGENT \} from "@\/lib\/satellite-map-provider";/);
   assert.match(route, /if \(wantsSatellite && !\(await getSession\(\)\)\)/);
-  assert.match(route, /const svg = await satelliteTile\(z, x, y, arcgisToken!, referer\)/);
+  assert.match(route, /const svg = await satelliteTile\(z, x, y, arcgisToken!, referer, fetch, request\.signal\)/);
   assert.match(route, /const upstream = await standardMapTile\(z, x, y, referer\)/);
   assert.doesNotMatch(provider, /process\.env|from "next\/server"|getSession\(/);
 });
@@ -362,6 +366,24 @@ test("3.7.0 R2D.1 exact server-only upstream disable preserves auth, cache, Stor
   assert.match(upstreamFixture, /Satellite fixture blocked remote socket/);
 });
 
+test("3.7.0 R2D.2 A4 authenticated HTTP parity requires explicit exact-branch opt-in and isolated DB", () => {
+  const runner = source("tooling/verify-satellite-http.mjs");
+  const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(runner, /process\.env\.FLYTALLY_SATELLITE_HTTP_A4 === "1"/);
+  assert.match(runner, /feat\/3\.7\.0-satellite-r2d2-bounded-provider-io/);
+  assert.match(runner, /feat\/3\.7\.0-satellite-r2d-upstream-disable/);
+  assert.match(runner, /expectedBranch, "Expected exact satellite HTTP acceptance branch"/);
+  assert.match(runner, /FLYTALLY_LOCAL_POSTGRES.*"1"/);
+  assert.match(runner, /FLYTALLY_AUTH_BROWSER.*"1"/);
+  assert.match(runner, /flytally_satellite_r1_test\|flytally_sat_r1\|55432/);
+  assert.match(runner, /bootstrap-browser-smoke-db\.mjs/);
+  assert.match(runner, /MODE === "missing-token"/);
+  assert.match(runner, /FLYTALLY_SATELLITE_HTTP_RUN_ID/);
+  assert.match(fixture, /Satellite fixture blocked remote socket/);
+  assert.doesNotMatch(route, /FLYTALLY_SATELLITE_HTTP_A4/);
+});
+
 test("3.7.0 R2D.1 HTTP fixture isolates tokenless fallback Data Cache with run-scoped tile URLs", () => {
   const runner = source("tooling/verify-satellite-http.mjs");
   const fixture = source("tooling/satellite-http-upstream-fixture.cjs");
@@ -385,4 +407,40 @@ test("3.7.0 R2D.1 HTTP fixture isolates tokenless fallback Data Cache with run-s
   assert.match(runner, /events\.some\(event => event\.kind === "fallback" && event\.x === "4"\)/);
   assert.doesNotMatch(runner, /rmSync\([^;\n]*\.next|rmSync\([^;\n]*cache/);
   assert.doesNotMatch(route + provider, /FLYTALLY_SATELLITE_HTTP_TILE_|FLYTALLY_SATELLITE_HTTP_RUN_ID/);
+});
+
+test("M3-B2: authenticated Satellite route forwards caller signal; Standard remains untouched", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(route, /await satelliteTile\(z, x, y, arcgisToken!, referer, fetch, request\.signal\)/);
+  assert.match(route, /const upstream = await standardMapTile\(z, x, y, referer\)/);
+});
+
+test("M3-B2: pre-aborted Satellite provider starts no supplier requests", async () => {
+  const caller = new AbortController();
+  caller.abort();
+  let calls = 0;
+  const fake = (async () => { calls++; throw new Error("unexpected supplier call"); }) as typeof fetch;
+  assert.equal(await satelliteTile(3, 4, 5, "test-token", "https://fly-tally.com/", fake, caller.signal), null);
+  assert.equal(calls, 0);
+});
+
+test("M3-B2: abort after parallel fetch start is forwarded and prevents fallback", async () => {
+  const caller = new AbortController();
+  const signals: AbortSignal[] = [];
+  let calls = 0;
+  const fake = ((_url: RequestInfo | URL, init?: RequestInit) => {
+    calls++;
+    if (init?.signal) signals.push(init.signal);
+    return new Promise<Response>(resolve => {
+      caller.signal.addEventListener("abort", () => resolve(new Response("unavailable", { status: 503 })), { once: true });
+      // Schedule cancellation only once BOTH parallel supplier calls have
+      // actually begun; do not race synchronous invocation with abort.
+      if (calls === 2) queueMicrotask(() => caller.abort());
+    });
+  }) as typeof fetch;
+  const pending = satelliteTile(3, 4, 5, "test-token", "https://fly-tally.com/", fake, caller.signal);
+  assert.equal(await pending, null);
+  assert.equal(calls, 2);
+  assert.equal(signals.length, 2);
+  assert.ok(signals.every(signal => signal === caller.signal && signal.aborted));
 });

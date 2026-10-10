@@ -17,11 +17,13 @@ async function imageDataUrl(response: Response) {
   return `data:${contentType};base64,${bytes}`;
 }
 
-async function fetchProviderTile(url: string, referer: string, fetchTile: typeof fetch): Promise<Response | null> {
+async function fetchProviderTile(url: string, referer: string, fetchTile: typeof fetch, signal?: AbortSignal): Promise<Response | null> {
+  if (signal?.aborted) return null;
   try {
     return await fetchTile(url, {
       headers: { Referer: referer, "User-Agent": USER_AGENT },
       next: { revalidate: CACHE_SECONDS },
+      signal,
     });
   } catch {
     // A network failure must not become an unhandled 500. World imagery is
@@ -38,23 +40,28 @@ async function fetchProviderTile(url: string, referer: string, fetchTile: typeof
 export async function satelliteTile(
   z: number, x: number, y: number, token: string, referer: string,
   fetchTile: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<string | null> {
+  if (signal?.aborted) return null;
   const encodedToken = encodeURIComponent(token);
   const [base, preferredLabels] = await Promise.all([
-    fetchProviderTile(`${WORLD_IMAGERY}/${z}/${y}/${x}?token=${encodedToken}`, referer, fetchTile),
-    fetchProviderTile(`${IMAGERY_LABELS}/${z}/${y}/${x}?language=en&token=${encodedToken}`, referer, fetchTile),
+    fetchProviderTile(`${WORLD_IMAGERY}/${z}/${y}/${x}?token=${encodedToken}`, referer, fetchTile, signal),
+    fetchProviderTile(`${IMAGERY_LABELS}/${z}/${y}/${x}?language=en&token=${encodedToken}`, referer, fetchTile, signal),
   ]);
-  if (!isImage(base)) return null;
+  if (signal?.aborted || !isImage(base)) return null;
 
   let labels = preferredLabels;
+  if (signal?.aborted) return null;
   if (!isImage(labels)) {
-    labels = await fetchProviderTile(`${REFERENCE_LABELS}/${z}/${y}/${x}`, referer, fetchTile);
+    labels = await fetchProviderTile(`${REFERENCE_LABELS}/${z}/${y}/${x}`, referer, fetchTile, signal);
   }
 
+  if (signal?.aborted) return null;
   const baseHref = await imageDataUrl(base);
   const labelsHref = isImage(labels) ? await imageDataUrl(labels) : null;
   const overlay = labelsHref
     ? `<image href="${labelsHref}" x="0" y="0" width="256" height="256" preserveAspectRatio="none"/>`
     : "";
+  if (signal?.aborted) return null;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><image href="${baseHref}" x="0" y="0" width="256" height="256" preserveAspectRatio="none"/>${overlay}</svg>`;
 }

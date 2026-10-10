@@ -1,3 +1,283 @@
+## 2026-10-10 — M3-D live-metadata evidence collector STAGED / OWNER LOCAL VERIFICATION PENDING
+
+Exact Esri primary docs rechecked (Imagery Labels static 512px PNG, per-style metadata including tileInfo, ArcGIS Location Platform privilege `premium:user:staticbasemaptiles`, explicit Esri/data attribution, account-dependent terms). **No supplier endpoints requested.** Added `tooling/collect-satellite-provider-metadata.mjs`: opt-in **three metadata-only GETs**, exact host/path allowlist (base World Imagery, static imagery labels, public reference fallback), Bearer only for required endpoints; requires both explicit `FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED=YES` and existing `ARCGIS_ACCESS_TOKEN`, positive caller-supplied max-response-bytes and timeout, absolute output directory outside repo. Fetches serially, rejects redirects, never requests tiles, discards unallowlisted provider fields, does not persist token/URL, outputs only sanitized tileInfo/CRS/copyright + manifest; fail closed for missing policy/status/MIME/budget/provider error. Added `tests/v370-satellite-metadata-collector-guard.test.ts` covering no-approval/no-token/invalid args and mock-injected success with **zero real network**, three expected hosts and redacted output. This is tool/test staging only, not approval to run token-based calls. **Owner tests/typecheck/build NOT RUN on this new source.** Actual supplier metadata/compatibility, browser-real-tile decode, iPad Safari, memory caps, multi-instance budget and attribution/contract still MISSING. Existing live provider/route/Standard/auth/DB/Training/flags unchanged. Satellite OFF, no merge/deploy. Explicit product-owner approval needed for future three metadata GETs and lab-only limits before use.
+
+## 2026-10-10 — M3-D Esri provider grid readiness OWNER LOCAL VERIFIED (30/30 + TS + build)
+
+Owner clean exact SHA `5206516c5fa500db7a2c2964cefc87efda63007e`: five targeted test files **30/30 PASS**, zero failures/skips, `npm.cmd run typecheck` PASS, fresh Next.js 16.3.2 `npm.cmd run build` PASS (41/41 static pages). Isolated `lib/satellite-provider-tiling.ts` and offline JSON CLI reject incompatible tile footprint, origin, LOD and CRS evidence and do NOT claim supplier metadata provenance. No actual ArcGIS service metadata/live imagery tested. Full suite, CI, real supplier HTTP, Safari/iPad and deploy NOT RUN. Production provider/Standard/auth/DB untouched. Next *meaningful evidence gate*: obtain and reconcile verified metadata/terms for exact Esri services, explicitly approve any controlled token-using requests, then resolve overlay D1 and runtime resource policy D2–D4. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D Esri Provider Evidence & Grid Readiness STAGED / LOCAL VERIFICATION PENDING
+
+Researched **exact live upstream services** vs official Esri primary documentation: World Imagery MapServer, Imagery Labels Static Basemap Tiles, reference labels MapServer. Static labels documented 512x512 PNG and different zoom/pixel-resolution equivalence; existing FlyTally uses same z/y/x and resizes into 256px SVG. **Potential tile-grid/overlay contract gap, not proven misalignment**: separate Esri example shows layering both services in a map client. Added `lib/satellite-provider-tiling.ts` (offline fail-closed geographic tileInfo footprint comparison, no source provenance claim), `tooling/check-satellite-tiling.mjs` (offline JSON CLI), synthetic comparator + CLI tests, and expanded `docs/satellite-provider-resource-evidence-matrix.md` plus `docs/satellite-provider-integration-readiness-2026-10-10.md` (Esri source URLs, privilege, licensing/attribution, D1-D4 owner decisions, acceptance). No supplier/tile/metadata requests or production numeric policies. Tests, TypeScript and build **NOT RUN on new source**; owner local verification required. No live provider/route, Standard, auth, DB, Training, Story, feature-flag, merge or deploy change; Satellite OFF. Next source-backed metadata + scoped owner approval for any token-based supplier observation, then design review before production wiring.
+
+## 2026-10-10 — M3-D offline Chromium decode OWNER LOCAL VERIFIED
+
+Owner clean exact source `62c2079dd9cac25104057e792d540a13eefe12c5`: `npm.cmd run typecheck` PASS; `npm.cmd run build` PASS (Next.js 16.3.2, 41/41 static pages); `node --experimental-strip-types tooling/verify-satellite-browser-decode.mjs` PASS using Playwright headless Chromium offline synthetic fixtures (PNG 1x1, JPEG 1x1, SVG natural size 256x256). This is browser image-load/decode smoke only, NOT pixel fidelity, real provider tile compatibility, Safari/iPad, RSS bound, HTTP production-path test, provider license/contract, or approval of production limits. Full suite/CI/production NOT RUN. No runtime provider/route changes; Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D browser decoder + provider evidence bundle STAGED / OWNER VERIFICATION PENDING
+
+Added isolated opt-in offline Playwright Chromium synthetic PNG/JPEG and embedded SVG image decode smoke at `tooling/verify-satellite-browser-decode.mjs` (blocks non-data URL network access, no production credentials/route/database change). Added `docs/satellite-provider-resource-evidence-matrix.md` with evidence-vs-gap matrix for actual ArcGIS MIME/dimensions/encoding, full decoder, Safari/iPad, Node RSS/concurrency, no-store costs and supplier license. Current synthetic 1x1 fixtures are **not** authoritative provider tiles. Browser test, typecheck, build, full suite NOT RUN for this new commit until owner verifies. No source-backed production policy values, real supplier fetch, provider wiring, Standard/Story/auth/DB changes, merge/deploy; Satellite OFF.
+
+## 2026-10-10 — M3-D synthetic resource lab OWNER LOCAL VERIFIED (31/31 + TypeScript + build)
+
+Owner exact clean source `de8284b91024ef79feb1e710084e41758ba64931`: four targeted suites **31/31 PASS**, zero failed/skipped, `npm.cmd run typecheck` PASS, fresh Next.js 16.3.2 `npm.cmd run build` PASS. Node24 laboratory `node --experimental-strip-types tooling/measure-satellite-lab.mjs 100` completed: synthetic 1x1 JPEG+PNG input 228 B/pair; SVG 602 B/pair; 100 iterations 2.5231 ms (not benchmark guarantee); baseline RSS 59,682,816 B; max sampled RSS 60,948,480 B; end RSS 57,393,152 B. Whole-process sampled snapshots only: no pixel decode, live supplier, network, other workers/concurrency, transient peak proof, or production threshold. Node `MODULE_TYPELESS_PACKAGE_JSON` warning nonfatal; no module config changes warranted. Closes isolated lab instrumentation verification only; provider contract/decode/resource policy remain blocked. Full suite, browser/CI/prod NOT RUN. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D resource lab instrumentation STAGED / VERIFICATION PENDING
+
+Added tooling-only `tooling/measure-satellite-lab.mjs` and two `tests/v370-satellite-resource-lab.test.ts` tests. Isolated Node24 probe performs synthetic 1x1 PNG/JPEG structural inspection + Base64/SVG composition (no fetch/provider calls), reports process.memoryUsage RSS/heapUsed/external/arrayBuffers baseline/observed sampled peak/end with process duration, explicitly warns that synchronous sampling misses transient peaks and results are **not production limits or a browser pixel decode proof**. Synthetic envelope is input-derived and not a deployment policy. Tests for JSON evidence format and invalid iteration fail-closed. **Owner test/typecheck/build/measurement NOT RUN on this new source yet**; provider contract, real 256-size format evidence, decode assurance, Next/multi-instance RSS and provider costs still blocked. No live provider, auth, route, Standard, Story, DB, flags, deploy or merge. Satellite OFF.
+
+## 2026-10-10 — M3-D Transport Hardening OWNER LOCAL VERIFIED (44/44 + TypeScript + build)
+
+Owner clean exact source `186e1cc46c7247d01e6266c2949ae4c4886f8159`, Node `v24.19.0`: five targeted Satellite suites **44/44 PASS** (0 fail/skipped), `npm.cmd run typecheck` **PASS**, fresh `npm.cmd run build` **PASS** (Next.js 16.3.2; 41/41 static pages). The test TypeScript union-header mismatch on preceding source `8fc50ecd` was corrected in `186e1cc4`; no production runtime change in that correction. Isolated teardown best-effort and expected required-pair policy fail-closed verified; cancellation **does not prove supplier termination** and quarantined capacity remains conservative. Full suite, broader browser/HTTP rerun, CI and deployment NOT RUN on this source. No live provider/route/Standard/auth/DB/Story/production policy changes. Satellite OFF; no merge or deploy. This closes only isolated M3-D Transport Hardening scope; remaining provider/resource evidence is BLOCKED.
+
+## 2026-10-10 — M3-D Transport Hardening batch STAGED / OWNER RETEST REQUIRED
+
+Based on independent DeepSeek read-only review: source-only isolated hardening of `lib/satellite-bounded-fetch.ts` (best-effort cancellation of unconsumed response bodies on rejected status/MIME/encoding/content-length, late response cancellation after abort race; cleanup rejection swallowed without masking primary errors), `lib/satellite-required-pair.ts` (typed expected pair policy failure), and `lib/satellite-tile-transport.ts` (invalid pair policy -> controlled unavailable). Focused synthetic regression cases added in `tests/v370-satellite-bounded-fetch.test.ts` and `tests/v370-satellite-tile-transport.test.ts`. Cancellation is **not proof of supplier termination**; existing unproven/quarantine contract remains. No production provider wiring, resource ceilings, Standard/auth/route/cache/DB/Story/flag changes. **Tests, TypeScript, build, HTTP/Playwright/CI NOT RUN on this new batch** pending owner clean-SHA local verification. Satellite OFF, no merge/deploy.
+
+## 2026-10-10 — M3-D2b guarded local HTTP acceptance 3/3 PASS (owner evidence)
+
+Owner reported clean source `fa7eaa5ef173ff4441d3a1995e33e6273781a76d` on exact R2D.2 branch; isolated PostgreSQL identity `flytally_satellite_r1_test|flytally_sat_r1|55432` confirmed and disposable schema reset explicitly approved. Fresh `npm.cmd run build` PASS (Next.js 16.3.2 / embedded TypeScript PASS). Guarded `node tooling/verify-satellite-http.mjs` against synthetic local fixture with a common fresh tile-series RUN_ID: **enabled PASS** (anonymous 401; malformed/duplicate 400; revoked session 401; Standard 200; Satellite 200/fallback/502; 13 intercepted synthetic upstream calls); **disabled PASS** (Satellite 503, zero upstream); **missing-token PASS** (Satellite 503, zero upstream). This is **local HTTP-route fixture acceptance only**, not real ArcGIS requests, browser decode validation, live bounded provider wiring, peak memory/RSS evidence, production numeric resource policy, full suite, CI, production smoke or deploy. These latter items remain NOT RUN / unresolved. Satellite production OFF; no merge/deploy.
+
+## 2026-10-10 — M3-D2b valid HTTP fixtures LOCAL VERIFIED
+
+Owner exact clean `fa7eaa5e` 48/48 targeted test PASS and typecheck PASS. Valid image payload fixtures are ready for guarded isolated HTTP acceptance; that acceptance remains NOT RUN. Satellite OFF.
+
+## 2026-10-10 — M3-D2b verified and isolated HTTP raster fixture staged
+
+Owner clean `cdb63df6` 48/48 targeted tests and typecheck PASS. Isolated Satellite HTTP fixture now supplies valid synthetic PNG/JPEG and verifier expects their Base64; guarded local HTTP acceptance not yet run. Live provider untouched, Satellite OFF.
+
+## 2026-10-10 — M3-D2a verified, M3-D2b standalone valid fixture staged
+
+Owner source `6d0993b3` 52/52 targeted + typecheck PASS. Added separate valid PNG/JPEG synthetic bytes and structural/SVG tests for upcoming HTTP fixture migration; no provider wiring, deployment limits or decoder assurance. New tests pending local verification.
+
+## 2026-10-10 — M3-D2a raster Base64 copy avoidance staged
+
+SVG composer now uses an exact-range Buffer view for encoded raster inputs; new tests cover subarray offset and SVG limit. Does not establish decoder/JS string/global RSS budgets. Not provider-wired. Verification pending; Satellite OFF.
+
+## 2026-10-10 — M3-D Batch 1 LOCAL VERIFIED
+
+Owner exact `006ea28f` 98/98 targeted PASS and TypeScript PASS; shared-isolate admission gate contract verified with synthetic values. Still unconfigured and not wired to live Satellite, no deployment-wide limit or raster decoder guarantee.
+
+## 2026-10-10 — M3-D Batch 1 shared admission owner staged
+
+Standalone process/isolate module-level gate owner with explicit fail-closed initialization, immutable policy snapshot, six synthetic regression cases. Production configuration/values and provider wiring unresolved; no runtime activation, Satellite OFF.
+
+## 2026-10-10 — M3-C review correction LOCAL VERIFIED
+
+Owner clean exact `7e4033f1` 92/92 targeted tests PASS + TypeScript PASS. The isolated source modules are locally verified; production Satellite provider integration, shared gate, source-backed resource limits and decoder envelope are unresolved. Satellite OFF.
+
+## 2026-10-10 — Monotonic fractional clock compatibility correction staged
+
+Owner review correction failed 3/90 tests due to fractional `performance.now()` rejected as integer; typecheck PASS. Clock acceptance fixed in isolated tile and fallback modules; two regression tests added. Retest pending; Satellite OFF.
+
+## 2026-10-10 — M3-C review corrections staged
+
+Absolute inherited pair deadline, typed bounded-error reason handling, controlled admission rejection, and defensive fallback input handling staged with regression tests. Isolated only, local retest pending. Live provider and production resource limits unchanged; Satellite OFF.
+
+## 2026-10-10 — Satellite M3-C independent integration review handoff prepared
+
+Added read-only reviewer handoff document for M3-C bounded transport integration. No functional change; reviewer feedback pending. Satellite OFF.
+
+## 2026-10-10 — M3-C Batch 5 owner LOCAL VERIFIED
+
+Clean source SHA `dd9b88d3`: 87/87 targeted PASS + TypeScript PASS for standalone tile transport coordinator. Not wired into live provider; independent review and source-backed production resource policy pending, Satellite OFF.
+
+## 2026-10-10 — M3-C5 isolated tile deadline coordinator staged
+
+Added standalone cross-phase absolute-deadline coordinator and four synthetic regression tests; no live provider integration or production resource values. Owner verification pending, Satellite OFF.
+
+## 2026-10-10 — M3-C Batch 4 locally verified
+
+Owner exact `3f0e29a0`: 83/83 targeted PASS and TypeScript PASS for isolated fallback module. Not connected to live Satellite; raster structural validation is not full decoder validation; no release.
+
+## 2026-10-10 — M3-C4 isolated labels fallback staged, not product-wired
+
+Added source-structural base/labels validation and admitted reference labels fallback subject to inherited tile deadline and fail-closed reason policy. Six synthetic tests staged. Still not production approved or connected; no defaults; Satellite OFF.
+
+## 2026-10-10 — M3-C3 verification: target PASS, typecheck correction pending
+
+Owner SHA `81518cf1` 77/77 target PASS but TS2339 in optional result shape. Source fix staged at `a6fceff`; owner retest required. No live provider wiring or release.
+
+## 2026-10-10 — M3-C Batch 3 required imagery cancellation helper staged
+
+Standalone shared-deadline pair helper now requests cancellation of labels on base failure, uses conservative quarantine and isolated synthetic tests. Still not wired into production provider; fallback/decoder/resource policy pending. Not locally verified on new SHA; Satellite OFF.
+
+## 2026-10-10 — M3-C Batch 2 isolated transport owner LOCAL VERIFIED
+
+Owner exact `8dd125b0` 72/72 targeted tests PASS plus typecheck PASS for standalone pair admission, bounded wrapper and quarantine. Not wired into provider, not a global memory or upstream cancellation guarantee. Satellite OFF.
+
+## 2026-10-10 — M3-C Batch 2 admitted bounded-pair helper staged (not product-wired)
+
+Added isolated pair fetch orchestrator using atomic leases, bounded transport observation and fail-closed quarantine, plus six synthetic cases. No numerical production defaults, provider/route/Standard/Story runtime changes, or release. Owner verification pending; Satellite OFF.
+
+## 2026-10-10 — M3-C isolated pair admission locally verified
+
+Owner exact `cd506648`: 52/52 targeted PASS plus typecheck PASS. Helper remains disconnected from provider; no released behavior or production budget claim, Satellite OFF.
+
+## 2026-10-10 — M3-C Batch 1 pair reservation primitive staged, NOT product-connected
+
+Process-local synchronous atomic pair admission helper for Satellite base and preferred labels, with six synthetic tests; no production defaults or live provider use. Existing Standard/Story/auth unaffected. Owner verification pending; Satellite OFF.
+
+## 2026-10-10 — M3-B signal plumbing owner locally verified
+
+Owner exact `a4ea494f`: 60/60 targeted PASS and typecheck PASS for Satellite request signal in base/preferred/fallback branches. Not proof of bounded upstream termination or production resource safety; Satellite OFF.
+
+## 2026-10-10 — M3-B2 labels signal propagation fix staged
+
+Owner SHA `66f8b294` 59/60 targeted, typecheck PASS; discovered real missing `AbortSignal` on preferred/fallback label calls. Fixed both in provider at `8fbf598c`. Retest required; Standard/Story untouched.
+
+## 2026-10-10 — M3-B2 first Node24 run failed; two test-only corrections staged
+
+Owner 58/60 target FAIL, typecheck PASS on `94b97e2c`; corrected stale source assertion and abort scheduling test without runtime change. New SHA verification pending; Satellite still OFF.
+
+## 2026-10-10 — M3-B2 Satellite AbortSignal wiring staged, verification pending
+
+Satellite route now passes `request.signal` to legacy Satellite provider through an optional trailing argument; preabort and fallback suppression guards added. Does not integrate bounded transport, admission or decoder and cannot stop non-cooperative providers. Standard/Story remain unchanged; not a released feature.
+
+## 2026-10-10 — M3-B Batch 1 local verification
+
+Standalone Satellite lifecycle adapter Node24 owner verified at `3790f05d`: 57/57 target PASS and typecheck PASS. Provider still not connected; no Satellite activation or release implications.
+
+## 2026-10-10 — M3-B Node24 import correction awaiting owner retest
+
+Standalone lifecycle module test loading failed from extensionless import at owner SHA `02d8acc1`; minimal `.ts` extension correction staged on `5e1cbf2`. TypeScript on prior SHA PASS; new test outcome pending. Satellite runtime unchanged.
+
+## 2026-10-10 — M3-B observational lifecycle adapter staged (not connected)
+
+New standalone local supplier-start observation / conservative termination-unknown classification and six synthetic tests. Does not change production Satellite, Standard, Story, auth or runtime. No claim of upstream termination; owner verification pending.
+
+## 2026-10-10 — M3-A independent review incorporated; implementation pending
+
+M3 lifecycle requirements updated after APPROVE WITH CHANGES review; local completion cannot prove remote operation termination, quarantine remains fail-closed. Provider not yet wired, no visible feature changes; prod Satellite OFF.
+
+## 2026-10-10 — M3-A Satellite provider lifecycle specification drafted; NOT IMPLEMENTED
+
+Added `docs/r2d2-m3a-provider-lifecycle-review.md` specifying planned shared admission accounting, settlement-versus-wrapper timeout, uncertain-operation quarantine, required base and optional labels fallback, valid raster fixtures and decoder-policy review. Read-only independent review pending; no user-facing feature, runtime or release change. Production Satellite OFF.
+
+## 2026-10-10 — R2D.2 M2c-C owner LOCAL PASS; M3 integration review before provider changes
+
+Owner Node24 on exact `7baefdf7d6ec75878b566853052238698774abb4`: targeted M2a/M2b/M2c-A/M2c-B/C/map **69/69 PASS**, TypeScript PASS. Standalone quarantine guard retains unsafe unknown in-flight reservations but not wired into Satellite provider. Actual Satellite provider still Next 7-day cached and `arrayBuffer()`, route does not forward request abort, browser fixture supplies MIME-labeled marker strings. M3 read-only independent contract review now next before runtime coding; new user-facing behavior NOT IMPLEMENTED, prod Satellite OFF.
+
+## 2026-10-10 — Satellite M2c-C fail-closed uncertainty quarantine STAGED, not product-wired
+
+Existing process-local admission gate can now mark an operation of unknown completion `quarantine()` and retain capacity even if `release()` is later invoked; expose quarantined count without secrets. Four synthetic cases staged, includes uncooperative supplier simulation. Prior M2c-B owner 65/65 targeted + typecheck local PASS on earlier SHA, current quarantine code **NOT RUN**. No automatic recovery/claim of upstream termination, global concurrency or RSS guarantee. No Satellite provider/route modification, production Satellite OFF.
+
+## 2026-10-10 — Satellite R2D.2 admission ledger LOCAL VERIFIED; uncertain transport quarantine design next
+
+Owner at exact `9c5be031474ae40d2badfbc9cddce38c297e93a1`: 65/65 combined M2a/M2b/M2c-A/M2c-B/map tests PASS and TypeScript `tsc --noEmit` PASS. Admission ledger remains standalone; real Satellite provider still uses seven-day Next Data Cache and old unbounded body read. Next M2c-C fail-closed lease quarantine for transport operations whose cancellation cannot be verified; no assumed global resource bounds, no user-visible change, Satellite production OFF.
+
+## 2026-10-10 — R2D.2 M2c-B process-local admission helper staged, production NOT CONNECTED
+
+Added standalone no-default per-instance `createSatelliteAdmissionGate` with count and aggregate reserved input byte admission, BigInt accounting and idempotent release; 10 synthetic unit cases plus GPS-risk ownership. This is deliberately only per process, with no queue, no actual memory allocation and no proof of upstream cancellation or cross-instance limits. M2c-A owner 55/55+typecheck LOCAL PASS on older SHA; M2c-B Node24 tests NOT RUN. Product Satellite provider/route, public Standard, Story, auth and prod OFF unchanged.
+
+## 2026-10-10 — R2D.2 M2c-A standalone SVG cap OWNER LOCAL PASS, not product-wired
+
+Owner exact `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233` Node24: target M2a+M2b+M2c-A+map **55/55 PASS** and `tsc --noEmit` PASS. This verifies injected SVG/encoded-size/pixel/nominal RGBA policy checks for selected imagery, not process-wide memory, concurrent provider read or real image decode. Next per-process reservation design and source-backed technical runtime limits; production endpoint/cache untouched, flag OFF, PR Draft.
+
+## 2026-10-10 — R2D.2 M2c-A aggregate SVG envelope staged (not connected)
+
+New standalone `composeSatelliteSvgBounded` enforces caller-specified finite positive combined encoded, pixel, nominal RGBA and final SVG/Base64 limits on selected base + optional labels before output allocation, with overflow-safe accounting and original SVG output shape. Test-only 8-case suite staged and GPS ownership registered; **Node24 repo verification not yet performed**. Current Satellite provider/route, Standard map, Story and production flags unchanged. This is neither a full decoder nor a hard process/parallel memory bound; technical evidence/limits and M3 later.
+
+## 2026-10-09 — Satellite R2D.2 technical focus confirmed; licence/account review deferred
+
+Owner requests to **skip further licensing questions during technical development**. Continue Option B bounded `no-store` Satellite pipeline, real image-integrity/decoded-resource checks and isolated reproducible tests. Historical licensing/attribution material remains unverified; not declared approved or removed. No user-visible feature or production flag change. M2c technical readiness remains open; M2a/M2b local PASS, M3 not connected.
+
+## 2026-10-09 — M2c Esri official data sources identified; supplier license/budget still OPEN
+
+Read-only official Esri docs confirm existing World Imagery and Imagery Labels service URL shapes, required attribution and published ArcGIS Location Platform basemap-tiles price model (2M free then USD 0.15/1,000), not account-specific charges. Satellite map and Story already show provisional Esri/provider credits; exact actual source credits and SVG/PNG reuse rights remain unverified. No actual ArcGIS tile measurements, supplier bandwidth, hosting resource figures, full raster decoder proof or production numeric limits. M3 still blocked. No user-facing code changed.
+
+## 2026-10-09 — Satellite R2D.2 M2b structural validator owner LOCAL PASS (not live feature)
+
+Owner verified exact `93f370ed357345349829d17495b079e17742f38e`: 47/47 targeted M2a+M2b+map tests PASS and TypeScript `tsc --noEmit` PASS; corrected 1×1 JPEG accepts, malformed DQT rejected. Helper and structural validator remain independent of production Satellite/Standard routes, cannot claim full image pixel decode or production numeric resource budgets. Next is M2c ArcGIS/hosting supplier evidence and decoder/resource contract, then M3 provider integration. Satellite OFF, unmerged Draft.
+
+## 2026-10-09 — R2D.2 M2b test failure corrected in fixture only; not product connected
+
+First M2b owner run exact `5c7efca94c9dfd50bed71b58eaa0d547aa288626`: **45/46 PASS; 1 fail** in positive JPEG fixture and `typecheck NOT RUN`. Source artifact was malformed (DQT segment misalignment); an independently decoded Pillow 1×1 JPEG with pinned SHA256 and negative regression replaces it in tests; validator and provider runtime unchanged. Correction awaits fresh owner Node24 target/test and typecheck. M2b NOT CLOSED, Satellite OFF/unmerged.
+
+## 2026-10-09 — R2D.2 M2b standalone raster structural checker staged; NOT RELEASED
+
+New parser `inspectSatelliteRaster` checks matching PNG/JPEG MIME, mandatory structural markers and full length/CRC/segment framing on a previously bounded response, returning dimensions without interpreting pixel data. Dedicated encoded tiny PNG/JPEG fixture tests and invalid/truncated/mismatch tests staged, GPS owned. Does **not** decode image pixels, establish production supplier formats, set byte/decompression/pixel limits or modify actual Satellite/Standard API behavior. New M2b test/typecheck NOT RUN; next requires local evidence. Satellite production OFF, Draft PR.
+
+## 2026-10-09 — R2D.2 M2a independent bounded transport LOCAL TESTED, NOT PRODUCT-CONNECTED
+
+Owner-run on exact `e6dcd147ab52b684cdcef2f63f15516c88fd1ed3`: 14 M2a helper tests plus 23 map/Satellite source regressions **37/37 PASS**, TypeScript `tsc --noEmit` PASS. Source-only helper retains forced `no-store`, externally supplied numeric ceilings, total abort/deadline, streaming checks; still no real provider integration and no true PNG/JPEG structural verification. Next M2b. No production flag, map, Standard, Story, provider, DB or deploy change.
+
+## 2026-10-09 — R2D.2 M2a bounded transport utility staged; NOT connected to user-facing Satellite yet
+
+New isolated `fetchSatelliteBounded` helper has caller-required finite positive byte/time limits, no-store fetch, deadline/abort linkage, streamed byte accounting, JPEG/PNG MIME allowlist, strict identity/declared-length checks and sanitized failure codes. Separate tests and GPS risk ownership registered. This **does not** validate actual raster structure, cap process-wide concurrency, deploy a budget, remove provider cache, or change real `/api/map-tile`. Tests NOT RUN. Approved future direction remains Option B for Satellite only; Option C cache deferred, public Standard unchanged and Satellite production OFF.
+
+## 2026-10-09 — R2D.2 owner-approved Option B (design decision, not yet user-facing)
+
+Owner selects controlled **uncached** bounded Satellite provider requests with explicit timeout, byte accounting, validation, cancellation and global work protections, accepting potential unknown increase in supplier requests/cost vs seven-day Next upstream cache. Public Standard cache and authentication remain frozen. Separate bounded validated cache is deferred, not implemented. Immediate standalone M2a transport/test milestone is NOT connected to map runtime; source-derived numeric production budgets and Esri terms remain unverified. Satellite prod OFF, PR #279 Draft, no merge/deploy.
+
+## 2026-10-09 — R2D.2 architecture REVIEWED (cache decision pending; bounded provider NOT shipped)
+
+Independent DeepSeek review `APPROVE WITH CHANGES` reconciled with current Satellite provider: Next seven-day fetch cache can continue upstream reading after application reader cancellation and its storage cap is not a memory admission bound; current provider buffers full unbounded body and checks only Content-Type prefix. Recommended controlled uncached bounded fetch (Option B) with explicit independent deadline, per-stream byte counting, raster validation, cancel/cleanup, final SVG and concurrency constraints; optional separate validated cache (Option C) after owner approval and licensing/ops evidence. No owner cache policy decision made yet; existing cache unchanged. Authenticated A4 real-route synthetic HTTP local baseline PASS, production memory hardening not implemented; Satellite remains OFF, PR Draft.
+
+## 2026-10-09 — Satellite A4 authenticated HTTP baseline LOCAL PASS (not released)
+
+Real `/api/map-tile` on local production-mode Next16.3.2/isolated browser session and fake provider PASS at source `0577f9488e89709f748be790a71805207e5d11ae`: enabled Satellite 200 and error/fallback paths, denied unauthenticated/revoked 401 and malformed style 400, disabled and missing-token Satellite 503 with zero Satellite upstream, public Standard 200. Disabled total fixture event count 1 is a Standard tile, not satellite; missing-token 0. Approved dedicated test-DB bootstrap executed, `npm.cmd run build` including TypeScript PASS. **Feature implemented as experimental code but production still OFF/unmerged Draft**; bounded memory, true image validation, timeout and cache policy NOT delivered. DeepSeek cache architecture review and product-owner decision next; no production activation.
+
+## 2026-10-09 — A4 isolated test database reset permitted (no product change)
+
+Owner consented to test-only `public` schema recreation in specifically verified local `127.0.0.1:55432/flytally_satellite_r1_test` as `flytally_sat_r1`. This is permission for guarded A4 verification, not evidence of test execution, runtime implementation or release. No other database authorized; production Satellite OFF.
+
+## 2026-10-09 — A4 real-route test precondition DB identity passed (NOT PRODUCT)
+
+Owner read-only URL plus live PostgreSQL identity guard confirmed `flytally_satellite_r1_test|flytally_sat_r1|55432` on `127.0.0.1` for A4 fixture on exact `4940bdd04523bd9e4aae6df45cf6c56a4b713cb7`. No data changed. Destructive reset approval still **NOT GIVEN**; authenticated HTTP baseline NOT RUN. Product satellite provider/route and production flag untouched.
+
+## 2026-10-09 — R2D.2-A4 authenticated HTTP baseline: 23/23 static local PASS only
+
+Owner confirmed on exact SHA `f148f6b3f7f85bc8eef21f59124dab5cccfa5bfe` that isolated HTTP verification harness syntax and targeted 3.7.0 map/Satellite source suite **23/23 PASS, 0 failed**; includes A4 guarded exact branch option. No authenticated browser/prod-build/test-DB or real HTTP assertions have been run at this SHA. Disposable DB reset permission/identity remains an explicit gate. Product feature implementation unchanged and not production activated.
+
+## 2026-10-09 — R2D.2-A4 real Satellite HTTP baseline harness (TEST-ONLY, NOT VERIFIED)
+
+Guarded local authenticated `/api/map-tile` integration fixture can now opt into R2D.2 **only** via `FLYTALLY_SATELLITE_HTTP_A4=1` on its exact named branch, reusing required dedicated local Postgres fixture, clean tree, Node build, fake provider token and remote socket denial, with enabled/disabled/missing-token assertions. Added static source guard; no application map-provider or route behavior changed. Local database bootstrap is destructive to the specified **test database**, not approved for another DB. Fixture image bytes remain old marker-text test content and are not an image validation benchmark. **A4 NOT RUN.** Satellite remains OFF in production, no deploy.
+
+## 2026-10-09 — R2D.2-A3.3 memory diagnostic (lab observed; Satellite feature NOT RELEASED)
+
+On exact locally run R2D.2 source `c2fb2dc6ee69f62c482dc6271b828980fc8360bb`, fast finite 2×16MiB cached and 2×16MiB uncached synthetic test batches completed all application reads while reporting whole-Next-child RSS peak 267MiB in cached window and 226MiB in sequential uncached window (not comparable per-fetch overhead). Both cached 16MiB fetch cache entries subsequently rejected by Next's 2MB storage cap, without protecting upstream memory/byte ingestion. A3.3 laboratory evidence collected, NOT a hard limit, independent real-provider or production Satellite route verification. Future feature still requires source-backed budget, robust request-signal/whole-body abort, byte/MIME validation and reviewed cache strategy. Proposed next A4 authenticated synthetic production-route parity. No public Standard/Story/Auth/DB/Training/production flag changes; Satellite remains OFF, Draft #279.
+
+## 2026-10-09 — R2D.2-A3.3 finite rapid / concurrent test harness (STAGED, NOT PRODUCT)
+
+Test-only miniature Next.js laboratory gained `--pressure-only` using two simultaneous 16MiB local sources under cache and then no-store, backpressure-aware rapid streaming and 20ms child memory samples, guarded by explicit test completeness checks. Four requests total, no real provider, DB/auth/flight data or remote sockets. A3.3 syntax/build/measurements NOT RUN. This does not ship a Satellite memory limit, validated provider cache, rate limit or new map behavior. Prod Satellite OFF; no merge/deploy.
+
+## 2026-10-09 — R2D.2-A3.2 confirmed lab behavior, still NOT DELIVERED
+
+Next 16.3.2 isolated request cancellation diagnostic verified by owner files at exact `808819637f354f855b287e46252f29ecadcdad7f`: incoming `request.signal` fired with a disconnected client in both cached and uncached modes; explicit signal-to-server-AbortController linkage stopped the synthetic upstream quickly, unlike passive observation. Limits: whole-process memory and queued fixture writes only; not a proven global limit or production route behavior. Future bounded Satellite I/O still pending A3.3 fast/concurrent analysis, authenticated route parity, cache policy and approved budgets. Satellite stays OFF, Draft/unmerged; no user-facing app changes.
+
+## 2026-10-09 — R2D.2-A3.2 lab request-signal/AbortController comparison (STAGED / NOT RUN)
+
+Manual isolated mini Next test instrumentation now records whether an incoming `Request.signal` event occurs when its HTTP client disconnects, with `observe` and explicit `link` variants for cached/uncached upstream requests. JSONL signal trace is stored only under ignored local `tooling/r2d2-cache-spike/reports/`; `--signal-only` runs four new cases without re-running old experiments. Product provider and public/Story/Map/auth behaviors remain unchanged. No hard timeout, size limit, global quota, deploy or Satellite activation; A3.2 evidence NOT RUN.
+
+## 2026-10-09 — R2D.2-A3.1 downstream disconnect lab observation (NOT a shipped feature)
+
+Local controlled mini Next `fetch` test on exact `911b95864303cfdf95a52be64082e3508ac2aa7e`: abort of its HTTP client at ~300ms left independently running server-side cached and uncached upstream fetches to finish writing full 16MiB. The route never linked `request.signal`; framework signal timing remains unproven. A3.1 is diagnostic evidence only, not an implementation of provider timeout/cancellation or a hard memory bound. Next A3.2 signal-link observation, separate concurrency/production-route parity, reviewed budgets required. No product runtime changes, no activation, merge or deploy.
+
+## 2026-10-09 — R2D.2-A3.1 synthetic client-disconnect diagnostic (TEST TOOLING ONLY)
+
+The manual isolation harness now supports cached/uncached **downstream HTTP client disconnect** observations against a local mini Next route while it fetches finite synthetic stream data. Diagnostics compare resulting source completion/close; they do not implement or establish production cancellation. No real provider traffic, DB, auth, Satellite runtime, Story, Training, merge or deploy. A3.1 syntax/build/test NOT RUN. Future bounded-provider feature remains blocked on measured cache policy and owner-reviewed budgets.
+
+## 2026-10-09 — R2D.2-A2 cache-sibling laboratory finding (DIAGNOSTIC, NOT PRODUCT)
+
+On verified local diagnostic source `34e216d792b83c1bb5435c7e8effcb5d40ae49e0`, synthetic Next 16.3.2 `reader.cancel()` without `AbortController.abort()` let the **cached** source finish emitting all 16MiB after the application consumed ~64KiB, while uncached reader-only cancel closed the source after 64KiB. A Next cache-item `>2MB` rejection was not an upstream ceiling. Signal-abort variants stopped local sources promptly. R2D.2-A2 empirical comparison collected, but no hard budget, memory guarantee or real-route/client-disconnect verification established. This is a future **bounded-provider-I/O requirement**, not functionality released to users. R2D.2-A3 client-disconnect/concurrency laboratory test proposed next. Production Satellite unchanged and OFF; no merge/deploy.
+
+## 2026-10-09 — R2D.2 cache diagnostic A1 observed / A2 staged (NOT RELEASED)
+
+Standalone Node 24/Next 16.3.2 mini-app cache probe A1 executed successfully on SHA `1d5a5a8cd8262422e123a087352343590646d260` (diagnostic only): cached repeated-key request avoided a fresh locally observed fetch; early signal abort and body-stall watchdog terminated local streams. No full 16 MiB test or hard memory ceiling yet. Test-only A2 adds full stream baseline, late signal abort and reader-only cancel comparisons with per-case synthetic upstream and whole-process memory snapshots. **A2 NOT RUN**. Neither A1 nor A2 constitutes production bounded provider I/O implementation, approved cache quota, or release. Satellite provider/Flight Story/Auth/Standard/DB/Training unchanged; production OFF.
+
+## 2026-10-09 — R2D.2-A1 isolated diagnostic configuration fix (TEST TOOLING ONLY)
+
+First owner-run `SPIKE_INCOMPLETE`: mini Next build inherited parent production `next.config.ts`, 0 requests and 0 memory samples. Staged an explicit mini `next.config.mjs` and preflight isolation assertion so the synthetic experiment can build without resolving the Logbook application's relative commercial-build-guard import. **Real production build guard untouched.** This is not a delivered Satellite runtime feature or confirmed cache safety. Corrected A1 diagnostic **NOT RUN**; production Satellite OFF, Draft unmerged.
+
+## 2026-10-09 — R2D.2-A1 local synthetic cache/abort experiment (TEST-ONLY, NOT RUN)
+
+Added an isolated manual diagnostic harness `tooling/r2d2-cache-spike.mjs` / `tooling/r2d2-cache-spike/` to compare Next 16.3.2 cached vs uncached streaming, early client-reader abort and stalled bodies using loopback-only source; logs child memory and queued upstream bytes (not actual network receipt). **This is test infrastructure, not shipped Satellite protection.** Independent DeepSeek review `APPROVE WITH CHANGES` reconciled; numeric I/O caps/timeout/MIME/contracts await evidence and owner freeze. Current Satellite provider remains unchanged, as do existing Story/map, auth, Standard, production OFF. No real-provider, DB or deployment changes. Harness syntax/build/observations NOT RUN.
+
+## 2026-10-09 — Satellite R2D.2 bounded provider I/O (DESIGNED / NOT IMPLEMENTED)
+
+**Future feature / planned contract:** per-upstream total deadline including body, streaming decoded-byte ceiling, source-justified raster format/signature checks, bounded final SVG, base-failure sibling cancellation and preserved optional preferred/reference labels fallback. Exact numeric limits, allowed MIME list and Next Data Cache behavior are **pending evidence, owner decision and independent review**. There is no implemented provider-size or timeout enforcement in this branch; existing R2D.1 locally verified emergency disable is unchanged. Design and reviewer handoff: `docs/product/3_7_0_SATELLITE_R2D2_BOUNDED_IO_DESIGN.md`. R2D.1 documentation iteration now owner-run local PASS on base HEAD `8d8e45b8...` (233 source, 46 domain, TypeScript); not a new release. No production Satellite activation, merge, deploy, live provider use or DB migration.
+
 ## 2026-10-09 — Satellite R2D.1 emergency upstream disable (IMPLEMENTED; LOCALLY VERIFIED; UNRELEASED)
 
 `/api/map-tile` server-only `FLYTALLY_SATELLITE_UPSTREAM_DISABLED === "true"` responds for authenticated Satellite requests with non-image `503`, `Cache-Control: no-store`, `X-FlyTally-Map-Style: unavailable` before any satellite upstream/cache calls; missing/other values preserve enabled behavior, while session/strict-style and public Standard contracts remain unchanged. Existing protected map switch, Flight Story first-tile probe, Standard preview and PNG, and public shared replay remain available. Local exact-code SHA `895d8caeb392a77b202f53efa2fc36a19a689443`: standalone real Next HTTP enabled/disabled/missing-token PASS (13/0/0 synthetic provider calls); full Satellite ON and separate OFF local release PASS (source 233/233, domain 46/46, aggregate/typecheck/build, isolated PG 100/100, Chromium desktop+mobile 11/11 in each successful run). Prior OFF `ECONNRESET` failure remains in test history, root cause unknown; unmodified rerun PASS. **This is implemented verified draft functionality, not shipped production functionality**. Draft PR #278 unmerged; Satellite production flag OFF. Physical Safari, live upstream, CI and deployment NOT VERIFIED. R2D.2/3 future, not implemented.
