@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D Windows loopback stream diagnostic STAGED
+
+Added isolated `tooling/diagnose-satellite-windows-stream.mjs`: four credential-free child-process scenarios (drain, cancel, abort after cancel, abort after drain) against ephemeral 127.0.0.1 HTTP server. Parent reports sanitized exit code, native assertion presence and timeout only. No ArcGIS network or production provider integration. Not yet run on owner's Windows Node24; reproducing or not reproducing the upstream assertion does not alone determine its root cause. No merge/deploy; Satellite OFF.
+
 ## 2026-10-10 — M3-D2 strict metadata validation STAGED / LOCAL VERIFICATION PENDING
 
 M3-D2 strict metadata validation STAGED: finite tile origin, positive integer dimensions, coherent Web Mercator aliases, unique nonnegative LOD levels, positive finite resolution and max 64 LODs; synthetic invalid-evidence cases added. Owner tests/typecheck/build NOT RUN on this source. Local real HTTP stream teardown reproduction and Node Windows assertion root cause remain OPEN. No live ArcGIS requests authorized. Satellite OFF; no merge/deploy.
