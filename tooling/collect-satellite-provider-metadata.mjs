@@ -78,7 +78,8 @@ async function collect(source) {
     body = response.body;
     if (!response.ok) return { outcome: "unavailable", reason: "http-status", status: response.status };
     const ct = response.headers.get("content-type")?.split(";")[0]?.trim()?.toLowerCase();
-    if (ct !== "application/json") return { outcome: "unavailable", reason: "content-type", status: response.status, observedContentType: ct && /^[a-z0-9!#if (ct !== "application/json") return { outcome: "unavailable", reason: "content-type" };^_.+-]+\/[a-z0-9!#if (ct !== "application/json") return { outcome: "unavailable", reason: "content-type" };^_.+-]+$/.test(ct) ? ct : "invalid-or-missing" };
+    const safeCt = ct && /^[a-z0-9._+-]+\/[a-z0-9._+-]+$/.test(ct) ? ct : "invalid-or-missing";
+    if (ct !== "application/json") return { outcome: "unavailable", reason: "content-type", status: response.status, observedContentType: safeCt };
     if (!body) return { outcome: "unavailable", reason: "empty-body" };
     const declared = response.headers.get("content-length");
     if (declared !== null && (!/^(0|[1-9][0-9]*)$/.test(declared) ||
