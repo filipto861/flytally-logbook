@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C fractional deadline clock fix staged (RETEST PENDING)
+
+Owner source `0ba93f40` returned 87/90 targeted (three `invalid-clock` failures), TypeScript PASS. Changed `satellite-tile-transport.ts` and `satellite-label-fallback.ts` to accept finite fractional monotonic timestamps while flooring bounded fallback timer duration. Added two clock regression tests. No provider/route/cache/DB/Standard/Story/runtime activation; tests/typecheck NOT RUN on corrected source.
+
 ## 2026-10-10 — M3-C review correction batch staged (NOT VERIFIED)
 
 Updated `lib/satellite-required-pair.ts`, `lib/satellite-tile-transport.ts`, `lib/satellite-fetch-lifecycle.ts`, `lib/satellite-label-fallback.ts`; added three focused regressions in existing test files. Enforce absolute deadline after admission, typed error reason, admission-failure `unavailable`, null guard and monotonic clock default. No live provider/route/cache/DB/Standard/Story or deployment changes; targeted Node24 tests and typecheck NOT RUN on new SHA.
