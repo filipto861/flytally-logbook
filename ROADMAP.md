@@ -68,6 +68,10 @@ The 9 October owner decision moved the **unstarted** Currency work to 3.8.0; it 
 - **Archived engineering drafts:** Older Satellite R1/R2 stacked [PRs #271–#279](https://github.com/filipto861/flytally-logbook/pulls?q=is%3Apr+is%3Aopen+3.7.0) and #281 are not current production instructions; classify their unique unmerged decisions before closure. [Read-only disposition and reviewer handoff](docs/maintenance/2026-10-10-open-pr-triage.md) confirms independent unmerged Story PNG, Satellite emergency-off and resource/transport work. Never blindly merge their stacked ancestry.
 - **Repository cleanup evidence:** [10 October audit](docs/maintenance/2026-10-10-repository-audit.md); any dated counts there are a snapshot, not a live branch/PR count.
 
+### M2A repository-source audit — proposed remediation, not yet authorized runtime work
+
+[Exact-SHA read-only review](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) independently confirms two potential follow-ups absent from current main: Story export does not fail closed on failed map tiles (#273), and there is no server-only Satellite emergency upstream stop (#278). Also confirms #279 resource/admission code is not integrated and #281's tile-geometry interpretation requires exact provider evidence. **Owner decision pending** on a small Story-fail-closed fix and separate operational kill-switch milestone; do not fold old stacked branches into main or pre-empt final 3.7.0 acceptance silently. No fresh tests or deploy have been performed for this review.
+
 ## 6. Documentation ownership and release DoD
 
 - `ROADMAP.md` = current decisions, order, dependencies, milestones and acceptance.

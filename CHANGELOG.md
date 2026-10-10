@@ -8,6 +8,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 10 October 2026 — M2A source audit of unmerged Satellite R1/R2 drafts (docs only)
+
+- Inspected actual current main and PR-head code for #273, #278, #279 and #281; [documented exact-SHA findings](docs/maintenance/2026-10-10-r2-m2a-source-audit.md). Story export partial-tile failure and absent Satellite emergency disable are **verified source differences, not diagnosed production incidents**. Provider resource modules remain isolated, and Esri 512px/256px geometry does not prove actual provider grid alignment. No runtime integration, test execution, DB, provider request, GitHub branch deletion or deployment in this analysis-only batch. Candidate follow-ups await owner decision and fresh verification.
+
 ## 10 October 2026 — Documentation governance and PR cleanup (docs-only)
 
 - [PR #298](https://github.com/filipto861/flytally-logbook/pull/298) reconciled current A2D–A2F production status; [PR #300](https://github.com/filipto861/flytally-logbook/pull/300) recorded dated repository hygiene inventory; [PR #301](https://github.com/filipto861/flytally-logbook/pull/301) replaced contradictory current ROADMAP/FEATURES timelines with short source-aware canonical docs and preserved complete verbatim historical snapshots. Git/blob-link checks performed against exact PR head; no typecheck/Node/PostgreSQL/browser/CI/deploy executed as part of these docs-only changes.

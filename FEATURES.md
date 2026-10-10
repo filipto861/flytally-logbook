@@ -45,7 +45,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 - Pilot Connections, shared flight invitations/review and participant-specific evidence.
 - Instructor verification/signatures, Action Center for unresolved tasks and notifications as history/updates.
 - Revocable public flight views with restricted public data transfer objects.
-- Social/Instagram Story flight cards with privacy constraints; third-party Satellite imagery/export permission remains an external condition.
+- Social/Instagram Story flight cards with privacy constraints; third-party Satellite imagery/export permission remains an external condition. **Known current limitation (M2A source review):** the existing Story exporter can omit failed map tiles without rejecting the entire export; [#273's fail-closed implementation](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) is unmerged and requires a separately verified current-main port. Do not describe strict export completeness as an implemented guarantee.
 
 ## 6. Backup, recovery and evidence protection — IMPLEMENTED
 
