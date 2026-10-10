@@ -1,3 +1,7 @@
+## 2026-10-10 — Satellite M2c-C fail-closed uncertainty quarantine STAGED, not product-wired
+
+Existing process-local admission gate can now mark an operation of unknown completion `quarantine()` and retain capacity even if `release()` is later invoked; expose quarantined count without secrets. Four synthetic cases staged, includes uncooperative supplier simulation. Prior M2c-B owner 65/65 targeted + typecheck local PASS on earlier SHA, current quarantine code **NOT RUN**. No automatic recovery/claim of upstream termination, global concurrency or RSS guarantee. No Satellite provider/route modification, production Satellite OFF.
+
 ## 2026-10-10 — Satellite R2D.2 admission ledger LOCAL VERIFIED; uncertain transport quarantine design next
 
 Owner at exact `9c5be031474ae40d2badfbc9cddce38c297e93a1`: 65/65 combined M2a/M2b/M2c-A/M2c-B/map tests PASS and TypeScript `tsc --noEmit` PASS. Admission ledger remains standalone; real Satellite provider still uses seven-day Next Data Cache and old unbounded body read. Next M2c-C fail-closed lease quarantine for transport operations whose cancellation cannot be verified; no assumed global resource bounds, no user-visible change, Satellite production OFF.
