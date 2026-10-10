@@ -51,3 +51,39 @@ test("M3-C5: no upstream work for preaborted caller or invalid budget", async ()
   await assert.rejects(fetchSatelliteTileTransport(opts(fake, fake, fake, { totalDeadlineMs: 0 })), /invalid-policy/);
   assert.equal(calls, 0);
 });
+
+test("M3-C review: admission time consumes the original tile budget before upstream starts", async () => {
+  let tick = 0;
+  let supplierCalls = 0;
+  const g = gate();
+  const controlledGate = {
+    acquire: (bytes: number) => {
+      tick = 60;
+      return g.acquire(bytes);
+    },
+    snapshot: () => g.snapshot(),
+    quarantinedCount: () => g.quarantinedCount(),
+  };
+  const fake = fetcher(() => { supplierCalls++; return image(); });
+  const outcome = await fetchSatelliteTileTransport(opts(fake, fake, fake, {
+    gate: controlledGate, now: () => tick,
+  }));
+  assert.equal(outcome.outcome, "unavailable");
+  assert.equal(supplierCalls, 0);
+  assert.equal(g.snapshot().activeOperations, 0);
+});
+
+test("M3-C review: admission saturation is controlled unavailable with no supplier calls", async () => {
+  let calls = 0;
+  const g = gate();
+  const first = g.acquire(950);
+  const fake = fetcher(() => { calls++; return image(); });
+  try {
+    const outcome = await fetchSatelliteTileTransport(opts(fake, fake, fake, { gate: g }));
+    assert.equal(outcome.outcome, "unavailable");
+    assert.equal(calls, 0);
+    assert.deepEqual(g.snapshot(), { activeOperations: 1, reservedEncodedBytes: 950 });
+  } finally {
+    first.release();
+  }
+});
