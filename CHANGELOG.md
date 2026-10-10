@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C review correction local verification (DOCS ONLY)
+
+Owner clean `7e4033f13993f7a44213f4fd915317428e84f9e5`: 92/92 targeted tests and `tsc --noEmit` PASS. Records previously staged isolated deadline/error/admission fixes, no new runtime changes. Full suite/build/HTTP/Playwright/CI NOT RUN; no deployment, Satellite OFF.
+
 ## 2026-10-10 — M3-C fractional deadline clock fix staged (RETEST PENDING)
 
 Owner source `0ba93f40` returned 87/90 targeted (three `invalid-clock` failures), TypeScript PASS. Changed `satellite-tile-transport.ts` and `satellite-label-fallback.ts` to accept finite fractional monotonic timestamps while flooring bounded fallback timer duration. Added two clock regression tests. No provider/route/cache/DB/Standard/Story/runtime activation; tests/typecheck NOT RUN on corrected source.
