@@ -65,3 +65,18 @@ node --experimental-strip-types tooling/check-satellite-tiling.mjs .\\local-base
 ```
 
 **Do not commit token-bearing metadata exports or save live credentials in the repository.** Comparison cannot establish provider origin of local files. It intentionally never fetches real tiles or metadata.
+
+
+## 2026-10-10 — Official documentation verified; controlled metadata collector STAGED
+
+Direct provider endpoints have **not** been called. Current primary-source evidence:
+
+- [Esri Imagery Labels tile GET](https://developers.arcgis.com/rest/static-basemap-tiles/arcgis-imagery-labels-tile-get/): PNG **512×512**, optional `language=en`, Web Mercator static tile scheme with zoom equivalence differing from legacy imagery tiles; requires ArcGIS Location Platform credentials with `premium:user:staticbasemaptiles`.
+- [Esri Imagery Labels metadata GET](https://developers.arcgis.com/rest/static-basemap-tiles/arcgis-imagery-labels-meta-data-get/): metadata response includes `tileInfo` and `copyrightText`, Bearer authentication supported.
+- [Esri Map Service REST reference](https://developers.arcgis.com/rest/services-reference/enterprise/map-service/): MapServer metadata exposes tileInfo rows/cols/origin/spatialReference/lods.
+- [Esri Static Basemap Tiles pricing/terms](https://developers.arcgis.com/rest/static-basemap-tiles/): Esri lists metadata calls as $0 in the published ArcGIS Location Platform category; **this is not an account-specific billing guarantee**, and imagery/label tile cost and contract approval remain separate. The service is documented as not supported for ArcGIS Online/Enterprise accounts.
+- [Esri Static Basemap attribution](https://developers.arcgis.com/documentation/mapping-and-location-services/mapping/basemaps/introduction-static-basemap-tiles-service/): applications must show Esri and underlying provider attribution.
+
+New opt-in `tooling/collect-satellite-provider-metadata.mjs` requests **only** the three preselected metadata endpoints (base, preferred, fallback) sequentially, using an owner-approved ephemeral Bearer token from the environment for base/preferred, no bearer on public fallback; rejects redirects, uses caller-supplied metadata response size and timeout ceilings, and writes only sanitized `tileInfo`, CRS and limited copyright fields **outside the repo**. It never fetches imagery. Hard gate: `FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED=YES` **and** a present `ARCGIS_ACCESS_TOKEN`, absolute external output directory and explicit byte/time limits. No provider request was authorized or executed in this batch. These guard values are collector-only, never production policy. User approval is required before live use. Token must not be pasted into chat or committed.
+
+**Critical:** Collector output authenticity still requires provenance review; compatibility CLI is arithmetic-only. Never infer successful coverage from a missing `tileInfo` or compare mixed/unknown service versions. Do not wire provider until real evidence and product decisions D1-D4.
