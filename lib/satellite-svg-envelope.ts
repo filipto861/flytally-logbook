@@ -5,7 +5,7 @@
  * Does not itself prove decode integrity or a whole-process memory bound.
  * NOT wired into the existing production provider.
  */
-import type { SatelliteRasterStructure } from "./satellite-raster-validation.ts";
+import type { SatelliteRasterStructure } from "./satellite-raster-validation";
 
 export type SatelliteSvgEnvelopeReason =
   | "invalid-policy"
