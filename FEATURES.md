@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 2 isolated transport owner LOCAL VERIFIED
+
+Owner exact `8dd125b0` 72/72 targeted tests PASS plus typecheck PASS for standalone pair admission, bounded wrapper and quarantine. Not wired into provider, not a global memory or upstream cancellation guarantee. Satellite OFF.
+
 ## 2026-10-10 — M3-C Batch 2 admitted bounded-pair helper staged (not product-wired)
 
 Added isolated pair fetch orchestrator using atomic leases, bounded transport observation and fail-closed quarantine, plus six synthetic cases. No numerical production defaults, provider/route/Standard/Story runtime changes, or release. Owner verification pending; Satellite OFF.
