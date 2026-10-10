@@ -21,7 +21,7 @@ type FixtureOptions = {
   enabled?: boolean;
   verified?: boolean;
   key?: string;
-  mode?: "png" | "wrong-type" | "invalid-bytes" | "oversize" | "rate-limit" | "unavailable" | "throw";
+  mode?: "png" | "wrong-type" | "invalid-bytes" | "oversize" | "rate-limit" | "unavailable" | "throw" | "oversize-stream";
 };
 
 function fixture({
@@ -50,6 +50,7 @@ function fixture({
     if (mode === "invalid-bytes") return new Response(new Uint8Array([0, 1, 2, 3]), {
       headers: { "Content-Type": "image/png" },
     });
+    if (mode === "oversize-stream") return new Response(new Uint8Array(1048577), { headers: { "Content-Type": "image/png" } });
     if (mode === "oversize") return new Response(PNG, {
       headers: { "Content-Type": "image/png", "Content-Length": "1048577" },
     });
@@ -142,7 +143,7 @@ test("A2B1 authenticated enabled route returns private PNG via pinned host and h
 });
 
 test("A2B1 refuses wrong MIME, invalid image bytes, oversized response, upstream errors", async () => {
-  for (const mode of ["wrong-type", "invalid-bytes", "oversize", "unavailable", "throw"] as const) {
+  for (const mode of ["wrong-type", "invalid-bytes", "oversize", "oversize-stream", "unavailable", "throw"] as const) {
     const f = fixture({ session: true, enabled: true, verified: true, mode });
     const r = await f.get();
     assert.equal(r.status, 502, mode);
