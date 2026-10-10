@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2b HTTP-fixture migration owner LOCAL VERIFIED 48/48 + TypeScript
+
+Owner clean exact `fa7eaa5ef173ff4441d3a1995e33e6273781a76d`: four targeted test files **48/48 PASS**, 0 failed/skipped; `npm.cmd run typecheck` PASS. Valid PNG/JPEG fixture migration is unit/source locally verified, **not yet HTTP acceptance verified**. The guarded HTTP harness needs exact-branch opt-in, isolated local PostgreSQL/auth browser and explicit fixture settings; run only after checking its prerequisites. Full suite, Next build, HTTP, browser Playwright, CI, deployment NOT RUN for this source. Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-D2b owner LOCAL PASS 48/48; HTTP fixture raster migration STAGED / NOT VERIFIED
 
 Owner clean exact `cdb63df68740204ba413fb1d894a76f9279b77f6`: 48/48 targeted tests PASS and `tsc --noEmit` PASS. The synthetic PNG/JPEG fixture module is locally verified. Updated **isolated tooling only**: `tooling/satellite-http-upstream-fixture.cjs` now returns actual synthetic valid JPEG base tiles and PNG preferred/fallback/Standard tiles (rather than marker text labeled as images), and `tooling/verify-satellite-http.mjs` checks exact corresponding Base64 payloads while preserving five scenario statuses and auth/cache assertions. The new HTTP acceptance path must be run in guarded isolated local DB/Next context; **HTTP, full suite/build/Playwright/CI NOT RUN**, no claim of real browser decode or production policy. M3-D still blocked on source-backed resource/decode envelope and provider wiring. Satellite OFF, no merge/deploy.
