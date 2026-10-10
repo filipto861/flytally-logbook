@@ -121,6 +121,20 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
   const map = await checkStandardPanes(page, ".route-overview-map", true);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
+  const settings = map.getByRole("button", { name: "Map settings" });
+  await expect(settings).toHaveCount(satelliteTrial || airspacesTrial ? 1 : 0);
+  if (satelliteTrial || airspacesTrial) {
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await settings.click();
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    await expect(map.getByRole("region", { name: "Map settings" })).toBeVisible();
+    await settings.press("Escape");
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await settings.click();
+    await page.getByRole("heading", { name: "Airports and routes" }).click();
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await settings.click();
+  }
   const satelliteButton = map.getByRole("button", { name: "Satellite map" });
   await expect(satelliteButton).toHaveCount(satelliteTrial ? 1 : 0);
   if (satelliteTrial) {
@@ -193,6 +207,7 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
   const map = await checkStandardPanes(page, ".track-map.responsive-map");
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
+  if (satelliteTrial || airspacesTrial) await map.getByRole("button", { name: "Map settings" }).click();
   if (satelliteTrial) {
     // Fail closed on provider failure, without retrying or reinitializing the map.
     await page.route("**/api/map-tile/**", route =>
@@ -230,6 +245,7 @@ test("flight replay retains map and playback state through theme changes", async
   await seedIsolatedMapFixture(page.request);
   await openMap(page, "/flights/9913?tab=gps");
   const map = await checkStandardPanes(page, ".player-responsive-map");
+  if (satelliteTrial || airspacesTrial) await map.getByRole("button", { name: "Map settings" }).click();
   await expect(map.getByRole("button", { name: "Aviation overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await page.getByRole("combobox", { name: "Playback speed" }).selectOption("2");
@@ -256,6 +272,7 @@ test("flight replay retains map and playback state through theme changes", async
     await page.goto("/f/" + token);
     await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
     const publicMap = await checkStandardPanes(page, ".player-responsive-map");
+    await expect(publicMap.getByRole("button", { name: "Map settings" })).toHaveCount(0);
     await expect(publicMap.getByRole("button", { name: "Satellite map" })).toHaveCount(0);
     await expect(publicMap.getByRole("button", { name: "Aviation overlay" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
@@ -288,6 +305,7 @@ test("GPS import review retains its map pane across theme changes", async ({ pag
   await expect(details).toBeAttached();
   if (!(await details.evaluate(node => node.open))) await details.locator("summary").click();
   const map = await checkStandardPanes(page, ".import-review-map");
+  if (satelliteTrial || airspacesTrial) await map.getByRole("button", { name: "Map settings" }).click();
   await expect(map.getByRole("button", { name: "Aviation overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
