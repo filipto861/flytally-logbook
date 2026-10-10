@@ -10,6 +10,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.7.0 Satellite S1 — architecture analysis and independent-review handoff (10 October 2026; unmerged docs)
+
+- Recorded a **source-backed conditional architecture preference** in `docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md`: retain Leaflet; prefer independently tiling-correct Esri imagery/label layers through a session-authorized proxy; **do not accept the existing same-z/y/x 256px SVG composition as verified**. Official Esri documents label service 512px with a distinct LOD equivalence, but actual FlyTally source tileInfo has not been captured.
+- S1 source/terms/metadata and Esri account token/referrer/cost/Story export rights remain **DEFER/BLOCKED**; independently review with DeepSeek before source-gated S2 implementation. Past synthetic PR #272–#279 local PASS is not transferable to a future runtime integration.
+- S1 is **documentation/read-only research only**; no live provider request, credentials/flag/environment changes, runtime/DB/certification/schema changes, merge/deploy or release. New-document Node/build/Playwright/Postgres/CI **NOT RUN**.
+
+
 ### Documentation governance — 10 October 2026 (docs-only branch; not yet merged)
 
 - Reconciled `ROADMAP.md` and `FEATURES.md` against actual GitHub states: Standard Maps PR #269 **MERGED**, documentation PR #270 **MERGED**; Phase 1 owner-accepted. Production remains **3.6.0**; full 3.7.0, Satellite and openAIP are **not shipped**.
