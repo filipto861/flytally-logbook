@@ -23,8 +23,11 @@ function positive(value: unknown): value is number {
 }
 function mercator(value: unknown): boolean {
   if (!record(value)) return false;
-  return value.wkid === 3857 || value.wkid === 102100 ||
-    value.latestWkid === 3857;
+  const known = (code: unknown) => code === 3857 || code === 102100;
+  // Reject a contradictory advertised WKID even if another alias looks valid.
+  return (known(value.wkid) || known(value.latestWkid)) &&
+    (value.wkid === undefined || known(value.wkid)) &&
+    (value.latestWkid === undefined || known(value.latestWkid));
 }
 function parse(value: unknown): Grid | null | "unsupported-spatial-reference" {
   if (!record(value) || !record(value.tileInfo)) return null;
