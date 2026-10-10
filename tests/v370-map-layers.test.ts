@@ -408,3 +408,37 @@ test("3.7.0 R2D.1 HTTP fixture isolates tokenless fallback Data Cache with run-s
   assert.doesNotMatch(runner, /rmSync\([^;\n]*\.next|rmSync\([^;\n]*cache/);
   assert.doesNotMatch(route + provider, /FLYTALLY_SATELLITE_HTTP_TILE_|FLYTALLY_SATELLITE_HTTP_RUN_ID/);
 });
+
+test("M3-B2: authenticated Satellite route forwards caller signal; Standard remains untouched", () => {
+  const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
+  assert.match(route, /await satelliteTile\(z, x, y, arcgisToken!, referer, fetch, request\.signal\)/);
+  assert.match(route, /const upstream = await standardMapTile\(z, x, y, referer\)/);
+});
+
+test("M3-B2: pre-aborted Satellite provider starts no supplier requests", async () => {
+  const caller = new AbortController();
+  caller.abort();
+  let calls = 0;
+  const fake = (async () => { calls++; throw new Error("unexpected supplier call"); }) as typeof fetch;
+  assert.equal(await satelliteTile(3, 4, 5, "test-token", "https://fly-tally.com/", fake, caller.signal), null);
+  assert.equal(calls, 0);
+});
+
+test("M3-B2: abort after parallel fetch start is forwarded and prevents fallback", async () => {
+  const caller = new AbortController();
+  const signals: AbortSignal[] = [];
+  let calls = 0;
+  const fake = ((_url: RequestInfo | URL, init?: RequestInit) => {
+    calls++;
+    if (init?.signal) signals.push(init.signal);
+    return new Promise<Response>(resolve => {
+      caller.signal.addEventListener("abort", () => resolve(new Response("unavailable", { status: 503 })), { once: true });
+    });
+  }) as typeof fetch;
+  const pending = satelliteTile(3, 4, 5, "test-token", "https://fly-tally.com/", fake, caller.signal);
+  caller.abort();
+  assert.equal(await pending, null);
+  assert.equal(calls, 2);
+  assert.equal(signals.length, 2);
+  assert.ok(signals.every(signal => signal === caller.signal && signal.aborted));
+});
