@@ -210,3 +210,48 @@ process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
     rmSync(temp, {recursive: true, force: true});
   }
 });
+
+test("M3-D2 validation: malformed CRS, origin, LOD and duplicates fail closed", () => {
+  const temp = mkdtempSync(join(tmpdir(), "flytally-satellite-validation-"));
+  try {
+    const mock = join(temp, "mock-invalid-metadata.mjs");
+    writeFileSync(mock, `
+const variant = process.env.SATELLITE_TEST_VARIANT;
+let calls = 0;
+globalThis.fetch = async () => {
+  calls++;
+  const tileInfo = {
+    rows: 256, cols: 256,
+    origin: { x: 0, y: 0, spatialReference: {wkid: 102100, latestWkid: 3857}},
+    spatialReference: {wkid: 102100, latestWkid: 3857},
+    lods: [{level: 0, resolution: 156543.033928}]
+  };
+  if (variant === "origin") tileInfo.origin.x = null;
+  if (variant === "crs") tileInfo.spatialReference.wkid = 4326;
+  if (variant === "duplicate") tileInfo.lods.push({...tileInfo.lods[0]});
+  if (variant === "lod") tileInfo.lods[0].resolution = 0;
+  if (variant === "rows") tileInfo.rows = 0;
+  const response = new Response(JSON.stringify({tileInfo}), {
+    status: 200, headers: {"content-type": "text/plain"}
+  });
+  return response;
+};
+process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
+`);
+    for (const variant of ["origin", "crs", "duplicate", "lod", "rows"]) {
+      const output = join(temp, variant);
+      const r = spawnSync(process.execPath, ["--import", pathToFileURL(mock).href,
+        script, output, "5000", "2000", "base-only"], {
+        env: { ...process.env, SATELLITE_TEST_VARIANT: variant,
+          ARCGIS_ACCESS_TOKEN: "synthetic-unit-test-token",
+          FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED: "YES" },
+        encoding: "utf8", timeout: 15000,
+      });
+      assert.equal(r.status, 2, variant + ": " + r.stderr);
+      assert.equal(JSON.parse(r.stdout).reason, "invalid-tile-info");
+      assert.doesNotMatch(r.stdout + r.stderr, /synthetic-unit-test-token/);
+    }
+  } finally {
+    rmSync(temp, {recursive: true, force: true});
+  }
+});
