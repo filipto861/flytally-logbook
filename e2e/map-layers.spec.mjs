@@ -198,12 +198,29 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
       await map.getByRole("button", { name: "Standard map" }).click();
       await expect(airspaces).toHaveAttribute("aria-pressed", "true");
     }
-    // Zoom to the existing basemap max (18); raster is upscaled from z14.
+    // Verify *completed* map zoom changes, not just click dispatches.
+    // Leaflet can drop zoom-in clicks while a zoom transition is active.
+    // The Standard tile URL is an observable zoom signal without a test-only
+    // map global or a fixed sleep. Standard tiles are mocked in this fixture.
     const zoomIn = map.locator(".leaflet-control-zoom-in");
-    for (let step = 0; step < 20; step++) {
-      if (await zoomIn.evaluate(el => el.classList.contains("leaflet-disabled"))) break;
+    const basemapTileZoom = async () => map.locator(".leaflet-flytallyBasemap-pane img.leaflet-tile").evaluateAll(tiles => {
+      const zooms = tiles
+        .map(tile => /^\/api\/map-tile\/(\d+)\//.exec(new URL(tile.getAttribute("src") || "", document.baseURI).pathname)?.[1])
+        .filter(Boolean)
+        .map(Number);
+      return zooms.length ? Math.max(...zooms) : -1;
+    });
+    const startZoom = await basemapTileZoom();
+    expect(startZoom).toBeGreaterThanOrEqual(0);
+    expect(startZoom).toBeLessThan(18);
+    for (let expectedZoom = startZoom + 1; expectedZoom <= 18; expectedZoom++) {
       await zoomIn.click();
+      await expect.poll(basemapTileZoom, { message: "Basemap advanced to zoom " + expectedZoom })
+        .toBeGreaterThanOrEqual(expectedZoom);
+      // Wait for Leaflet's own zoom transition to finish before the next click.
+      await expect(map.locator(".leaflet-map-pane")).not.toHaveClass(/leaflet-zoom-anim/);
     }
+    await expect.poll(basemapTileZoom).toBe(18);
     await expect(zoomIn).toHaveClass(/leaflet-disabled/);
     await expect(airspaces).toHaveAttribute("aria-pressed", "true");
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
@@ -230,6 +247,13 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await settings.click();
     await expect(settings).toHaveAttribute("aria-expanded", "false");
     await expect(map.getByRole("region", { name: "Map settings" })).toBeHidden();
+  }
+  // At z18 the original route may be outside the visible viewport.
+  // Restore the fixture's normal fitBounds view for its existing hit-target
+  // acceptance, rather than asserting that an off-screen route is clickable.
+  if (airspacesTrial) {
+    await page.reload();
+    await checkStandardPanes(page, ".route-overview-map", true);
   }
   // Once dismissed, the control must not intercept route hover or clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
