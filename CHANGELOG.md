@@ -28,6 +28,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Vercel production `dpl_Fk7ReBtutVRS3XUvABaaDFyZvgod` **READY**, `fly-tally.com` alias points there. Production env inventory verified **no openAIP/Airspaces flag or key configured**, so **provider disabled and Airspaces control not exposed**; Satellite remains separately configured. Real live A2B2 provider/coverage/source age/licensing/credit/quota and authenticated physical iPad/Safari acceptance **NOT VERIFIED**. Product `3.6.0` metadata remains; no full `3.7.0` release yet.
 - **Historical A2A/A2B1/A2B2 draft-stage notes below are preserved as dated evidence, not the current status.** Next gate is lawful/current provider contract and bounded live response verification plus explicit owner activation decision; no Production enable until resolved.
 
+## 3.7.0 openAIP A2C — owner-hidden-key raster endpoint result (10 October 2026; docs only)
+
+- Owner ran exactly **two** authenticated fixed raster GETs for z=9/x=276/y=173 using a key entered into hidden PowerShell prompt, without sharing/storing the key. Legacy `/api/data/airspaces/9/276/173.png`: **404 application/json**; current `/api/data/openaip/9/276/173.png`: **200 image/png**, **13,425 bytes**, valid PNG signature, at least one alpha-positive pixel. Both used the same host, XYZ and `x-openaip-api-key` header. No source imagery entered GitHub.
+- Confirms old single-category raster is not usable at sampled point, current **combined** raster is reachable with key; full content categories and transparent coverage, tile range, recency, operational activation, origin terms and quotas not established. Deployed `airspaces` proxy remains unchanged and all production flags/credential UNSET/OFF.
+- **Blocked on FlyTally product decision**: either rename/use combined imagery as an explicit Aviation overlay with client/server path change and OFF/ON full re-verification, or retain strict `Airspaces` and design a separately verifiable/filtered vector data interface. No UI/provider/DB or Training code changes in this documentation-only checkpoint.
+
 ## 3.7.0 openAIP A2C — provider API diagnostic planned (10 October 2026; no runtime changes)
 
 - Product owner confirmed possession of an openAIP API key (secret never shared with this workflow) and chose to handle any licensing questions independently; this is a scope decision, not external license approval or authority to falsely describe source validity. Production provider stays OFF.
