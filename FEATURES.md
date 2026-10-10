@@ -1,3 +1,7 @@
+## 2026-10-10 — R2D.2 M2c-A aggregate SVG envelope staged (not connected)
+
+New standalone `composeSatelliteSvgBounded` enforces caller-specified finite positive combined encoded, pixel, nominal RGBA and final SVG/Base64 limits on selected base + optional labels before output allocation, with overflow-safe accounting and original SVG output shape. Test-only 8-case suite staged and GPS ownership registered; **Node24 repo verification not yet performed**. Current Satellite provider/route, Standard map, Story and production flags unchanged. This is neither a full decoder nor a hard process/parallel memory bound; technical evidence/limits and M3 later.
+
 ## 2026-10-09 — Satellite R2D.2 technical focus confirmed; licence/account review deferred
 
 Owner requests to **skip further licensing questions during technical development**. Continue Option B bounded `no-store` Satellite pipeline, real image-integrity/decoded-resource checks and isolated reproducible tests. Historical licensing/attribution material remains unverified; not declared approved or removed. No user-visible feature or production flag change. M2c technical readiness remains open; M2a/M2b local PASS, M3 not connected.
