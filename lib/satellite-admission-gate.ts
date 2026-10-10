@@ -35,12 +35,17 @@ export type SatelliteAdmissionSnapshot = Readonly<{
 }>;
 
 export type SatelliteAdmissionLease = Readonly<{
+  /** Normal completion ONLY after actual upstream work has settled. */
   release(): void;
+  /** Irreversible: retain capacity when actual termination cannot be proved. */
+  quarantine(): void;
 }>;
 
 export type SatelliteAdmissionGate = Readonly<{
   acquire(reserveEncodedBytes: number): SatelliteAdmissionLease;
   snapshot(): SatelliteAdmissionSnapshot;
+  /** Process-local count of permanently retained uncertain operations. */
+  quarantinedCount(): number;
 }>;
 
 function fail(reason: SatelliteAdmissionReason): never {
@@ -55,9 +60,10 @@ function positiveSafeInteger(value: number): boolean {
  * Per-created-instance, synchronous, non-queuing admission.
  *
  * Reserve the caller's full *configured per-fetch byte ceiling* before
- * launching upstream work. A lease must be released in a finally block
- * only after transport work has actually ceased, not merely after a
- * timeout Promise.race resolves while a non-cooperative fetch keeps running.
+ * launching upstream work. A lease must be released only after transport work has actually ceased.
+ * If cancellation/settlement is uncertain, quarantine the lease BEFORE a
+ * finally release. Quarantine permanently retains capacity for this gate
+ * until its process lifetime ends; no timer-based recovery is permitted.
  *
  * This ledger does not allocate the reserved bytes. All values must be
  * validated against an independently source-backed production policy
@@ -73,6 +79,7 @@ export function createSatelliteAdmissionGate(
   const maxBytes = BigInt(policy.maxReservedEncodedBytes);
   let active = 0;
   let reserved = 0n;
+  let quarantined = 0;
 
   return {
     acquire(reserveEncodedBytes: number): SatelliteAdmissionLease {
@@ -83,13 +90,21 @@ export function createSatelliteAdmissionGate(
       if (reserved + amount > maxBytes) fail("capacity-exhausted");
       active++;
       reserved += amount;
-      let released = false;
+      let state: "active" | "released" | "quarantined" = "active";
       return {
         release(): void {
-          if (released) return;
-          released = true;
+          // Never reclaim a quarantined reservation. Upstream work might
+          // still be running even after a timeout Promise.race has returned.
+          if (state !== "active") return;
+          state = "released";
           active--;
           reserved -= amount;
+        },
+        quarantine(): void {
+          if (state !== "active") return;
+          state = "quarantined";
+          quarantined++;
+          // Deliberately do not decrement active or reserved. No timed reset.
         },
       };
     },
@@ -100,6 +115,9 @@ export function createSatelliteAdmissionGate(
         // The aggregate never exceeds the validated safe-integer policy.
         reservedEncodedBytes: Number(reserved),
       };
+    },
+    quarantinedCount(): number {
+      return quarantined;
     },
   };
 }
