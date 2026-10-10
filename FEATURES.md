@@ -14,7 +14,7 @@ This is the canonical capability inventory for `flytally-logbook`. It records wh
 
 **Owner priority 10 October 2026:** Finish Satellite source-backed decision/integration/acceptance **before** resuming openAIP implementation. Both are still targeted for full release 3.7.0; scope changes require an explicit owner decision. Next release 3.8.0 is Currency / monetary semantics. See `ROADMAP.md` for milestones and `CHANGELOG.md` for dated legacy evidence.
 
-**Satellite S1 architecture status — ANALYSIS ONLY (10 October):** [read-only Esri/source decision dossier](docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md) conditionally prefers retaining Leaflet and independent imagery/labels layers via authenticated server proxy; the legacy same-z/y/x 256px SVG is not verified for geographic-footprint equivalence. External Esri rights, current tileInfo, referrer/key, credits, Story export/cost and independent review remain OPEN. **No new Satellite capability shipped or tested by this S1 document.**
+**Satellite S1 architecture status — ANALYSIS ONLY (10 October, corrected):** [source-based S1 decision dossier](docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md) retains Leaflet but **does not choose** between hardening the existing SVG compositor and adding separate imagery/labels layers. 512px vs 256px pixel size and one-level pixel-resolution offset do **not** prove different geographic tile footprints; actual three-service tileInfo, rights, referrer/key, credits, Story exports, costs and independent review remain OPEN. **No new Satellite capability shipped or runtime-tested by S1.**
 
 ## Phase 1 API compatibility — IMPLEMENTED
 
