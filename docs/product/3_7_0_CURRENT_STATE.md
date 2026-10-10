@@ -1,3 +1,5 @@
+**S1/A1 update 2026-10-10:** [Provider gate decision](3_7_0_S1_A1_PROVIDER_GATES.md): S1 Satellite DEFER pending source-backed scheme/terms; A1 openAIP BLOCKED pending applicable usage authorization and current Tiles API schema. This does not change feature/runtime state.
+
 # 3.7.0 — Current state and next decisions
 
 **Updated:** 2026-10-10 · **Canonical handoff:** [3.7.0 NEW CHAT HANDOFF](../handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md) · **Scope:** `flytally-logbook` only
