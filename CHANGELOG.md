@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 3.7.0 A2D — combined openAIP Aviation overlay (feature branch, 10 October 2026)
+
+- Owner product decision: choose **Aviation overlay** (combined openAIP raster) instead of the previously intended airspaces-only overlay, after hidden-key owner-local z=9/x=276/y=173 probe returned **404 JSON** for legacy `airspaces` and **200 PNG / 13,425 bytes / nonempty alpha** for `openaip`. No API key was shared/stored in this development session.
+- **Staged code change:** fixed-host, server-held-key authenticated `/api/airspace-tile` proxy now selects upstream `/api/data/openaip/{z}/{x}/{y}.png`; keep strict canonical tile validation, session-before-secret, exact-true enable/provider assertions, 5s timeout, bounded PNG, private no-store, 429/no-retry and error fallback. Route path, header and flag names remain as legacy internal compatibility identifiers — **do not** rename customer-visible Aviation back to Airspaces. Separate `components/airspace-map-control.ts` changes button/ARIA/status/attribution to **Aviation**, still OFF by default, opt-in on four private maps and never on public replay/Story.
+- Synthetic unit and authoritative browser tests updated to assert the combined remote URL and label, 503 unavailable handling, public exclusion and Satellite independence. Historical A2B1/A2B2 ON/OFF results apply ONLY to prior exact commits; **new A2D candidate tests, TypeScript, build, browser, PostgreSQL and deployment NOT RUN**. No schema migration, Training changes, Production flags, live app-level provider request or 3.7.0 release.
+
 ## Production security maintenance — 10 October 2026
 
 - **Satellite endpoint session-auth containment deployed:** [PR #282](https://github.com/filipto861/flytally-logbook/pull/282) **MERGED** to main as `00305fb6a37bdbca99cf1a262b7dcb39a74a269a`; Vercel **READY** production deployment `dpl_JAdh7zGNZmXVQwDLoZ5yeLJvnvsn`, and `fly-tally.com` alias confirms that deployment. Product package/version display stays **3.6.0**; this emergency security patch was **not tagged 3.6.1** and is not full 3.7.0.
