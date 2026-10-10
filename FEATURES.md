@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C4 isolated labels fallback staged, not product-wired
+
+Added source-structural base/labels validation and admitted reference labels fallback subject to inherited tile deadline and fail-closed reason policy. Six synthetic tests staged. Still not production approved or connected; no defaults; Satellite OFF.
+
 ## 2026-10-10 — M3-C3 verification: target PASS, typecheck correction pending
 
 Owner SHA `81518cf1` 77/77 target PASS but TS2339 in optional result shape. Source fix staged at `a6fceff`; owner retest required. No live provider wiring or release.
