@@ -222,10 +222,16 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     }
     await expect.poll(basemapTileZoom).toBe(18);
     await expect(zoomIn).toHaveClass(/leaflet-disabled/);
-    await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+    // Zoom clicks are outside the popover, so its intended outside-pointer
+    // dismissal hides the menu. Test the layer and attribution independently
+    // while the controls are hidden, then reopen to inspect selected state.
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
     await expect(map.locator(".leaflet-control-attribution")).toContainText("openAIP");
     expect(Math.max(...aviationRequestZooms)).toBeLessThanOrEqual(14);
+    await settings.click();
+    await expect(settings).toHaveAttribute("aria-expanded", "true");
+    await expect(airspaces).toHaveAttribute("aria-pressed", "true");
     // Selecting again at high zoom must also work without new z15+ requests.
     await airspaces.click();
     await expect(airspaces).toHaveAttribute("aria-pressed", "false");
