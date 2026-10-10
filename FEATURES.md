@@ -1,3 +1,7 @@
+## 2026-10-10 — R2D.2 M2c-A standalone SVG cap OWNER LOCAL PASS, not product-wired
+
+Owner exact `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233` Node24: target M2a+M2b+M2c-A+map **55/55 PASS** and `tsc --noEmit` PASS. This verifies injected SVG/encoded-size/pixel/nominal RGBA policy checks for selected imagery, not process-wide memory, concurrent provider read or real image decode. Next per-process reservation design and source-backed technical runtime limits; production endpoint/cache untouched, flag OFF, PR Draft.
+
 ## 2026-10-10 — R2D.2 M2c-A aggregate SVG envelope staged (not connected)
 
 New standalone `composeSatelliteSvgBounded` enforces caller-specified finite positive combined encoded, pixel, nominal RGBA and final SVG/Base64 limits on selected base + optional labels before output allocation, with overflow-safe accounting and original SVG output shape. Test-only 8-case suite staged and GPS ownership registered; **Node24 repo verification not yet performed**. Current Satellite provider/route, Standard map, Story and production flags unchanged. This is neither a full decoder nor a hard process/parallel memory bound; technical evidence/limits and M3 later.
