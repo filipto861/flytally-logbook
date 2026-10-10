@@ -812,3 +812,5 @@ Satellite M3-D metadata collector: isolated MIME/status diagnostic and awaited c
 Satellite metadata collector base-only scoped diagnostic staged; supports narrowly validated text/plain JSON. Not runtime-wired or verified on live supplier. Satellite OFF.
 
 Satellite metadata evidence collector strict tileInfo validation staged, not yet locally verified or production enabled.
+
+M3-D tooling: isolated loopback HTTP teardown diagnostic STAGED, not runtime wiring or product functionality.
