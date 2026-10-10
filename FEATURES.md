@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-A Satellite provider lifecycle specification drafted; NOT IMPLEMENTED
+
+Added `docs/r2d2-m3a-provider-lifecycle-review.md` specifying planned shared admission accounting, settlement-versus-wrapper timeout, uncertain-operation quarantine, required base and optional labels fallback, valid raster fixtures and decoder-policy review. Read-only independent review pending; no user-facing feature, runtime or release change. Production Satellite OFF.
+
 ## 2026-10-10 — R2D.2 M2c-C owner LOCAL PASS; M3 integration review before provider changes
 
 Owner Node24 on exact `7baefdf7d6ec75878b566853052238698774abb4`: targeted M2a/M2b/M2c-A/M2c-B/C/map **69/69 PASS**, TypeScript PASS. Standalone quarantine guard retains unsafe unknown in-flight reservations but not wired into Satellite provider. Actual Satellite provider still Next 7-day cached and `arrayBuffer()`, route does not forward request abort, browser fixture supplies MIME-labeled marker strings. M3 read-only independent contract review now next before runtime coding; new user-facing behavior NOT IMPLEMENTED, prod Satellite OFF.
