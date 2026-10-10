@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C isolated pair admission locally verified
+
+Owner exact `cd506648`: 52/52 targeted PASS plus typecheck PASS. Helper remains disconnected from provider; no released behavior or production budget claim, Satellite OFF.
+
 ## 2026-10-10 — M3-C Batch 1 pair reservation primitive staged, NOT product-connected
 
 Process-local synchronous atomic pair admission helper for Satellite base and preferred labels, with six synthetic tests; no production defaults or live provider use. Existing Standard/Story/auth unaffected. Owner verification pending; Satellite OFF.
