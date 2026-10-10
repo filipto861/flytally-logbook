@@ -7,7 +7,7 @@
  * supplier termination, PNG/JPEG pixel decode, or deployment-wide limits.
  */
 import { SatelliteAdmissionError } from "./satellite-admission-gate.ts";
-import { fetchSatelliteRequiredPair } from "./satellite-required-pair.ts";
+import { fetchSatelliteRequiredPair, SatelliteRequiredPairPolicyError } from "./satellite-required-pair.ts";
 import { selectSatelliteLabelsWithFallback, type SatelliteFallbackDecision } from "./satellite-label-fallback.ts";
 import type { SatelliteAdmissionGate } from "./satellite-admission-gate.ts";
 import type { SatelliteBoundedFetchOptions } from "./satellite-bounded-fetch.ts";
@@ -46,7 +46,7 @@ export async function fetchSatelliteTileTransport(
       gate, base, preferred, totalDeadlineMs, signal, deadlineAt, clock,
     );
   } catch (error) {
-    if (error instanceof SatelliteAdmissionError) return { outcome: "unavailable" };
+    if (error instanceof SatelliteAdmissionError || error instanceof SatelliteRequiredPairPolicyError) return { outcome: "unavailable" };
     throw error;
   }
   return selectSatelliteLabelsWithFallback(
