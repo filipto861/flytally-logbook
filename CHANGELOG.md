@@ -1,3 +1,7 @@
+## 2026-10-10 — S1/A1 public source review and contact preparation
+
+Added official openAIP contact evidence and documented draft-only (not sent) provider licensing/API inquiry; recorded Esri's supported World Imagery + 512px static labels layered example while keeping FlyTally Leaflet compatibility unverified. Updated S1/A1 decision record. Docs only, tests N/A; supplier GETs, merge, deploy NOT RUN.
+
 ## 2026-10-10 — S1/A1 supplier decision record (docs only)
 
 Recorded exact Satellite provider geometry and authorization blockers, openAIP official documentation entrypoint and unverified direct schema, concrete provider questions and next PR review in `docs/product/3_7_0_S1_A1_PROVIDER_GATES.md`. S1 DEFER; A1 BLOCKED. No provider calls with credentials, runtime code, DB changes, tests, merge or deploy in this docs-only batch.
