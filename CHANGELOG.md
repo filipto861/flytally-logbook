@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 provider labels abort propagation bugfix (RETEST PENDING)
+
+On owner SHA `66f8b294` 59/60 targeted tests PASS, one signal-propagation failure; typecheck PASS. Fixed missing optional `signal` arguments on preferred imagery labels and reference fallback labels in `lib/satellite-map-provider.ts`, commit `8fbf598c`. No tests modified; new SHA not verified; no merge/deploy.
+
 ## 2026-10-10 — M3-B2 test-contract and abort-race correction (RETEST PENDING)
 
 Owner clean `94b97e2c`: 58 PASS / 2 FAIL in 60 targeted tests; typecheck PASS. Updated old R2B route source guard for `request.signal` and adjusted new synthetic parallel abort test to wait for both fetch invocations before cancelling. Tests-only commit `763bfce`; no runtime modification, merge/deploy or release. New commit tests NOT RUN.
