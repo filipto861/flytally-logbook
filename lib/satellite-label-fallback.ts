@@ -35,9 +35,10 @@ export async function selectSatelliteLabelsWithFallback(
   fallback: SatelliteBoundedFetchOptions,
   deadlineAtMs: number,
   signal?: AbortSignal,
-  now: () => number = Date.now,
+  now: () => number = () => performance.now(),
 ): Promise<SatelliteFallbackDecision> {
-  const base = inspect(pair?.baseRaster);
+  if (!pair) return { outcome: "unavailable" };
+  const base = inspect(pair.baseRaster);
   if (!base || pair.base.outcome !== "success") return { outcome: "unavailable" };
   if (signal?.aborted) return { outcome: "unavailable" };
   const preferred = inspect(pair.preferredRaster);
