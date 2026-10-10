@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { loginBrowserPilot } from "./browser-actions.mjs";
-import { resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
+import { browserSqlScalar, resetIntelligentReviewFormScopeFixture, runBrowserFlightFixtureCleanup, runBrowserSql } from "./browser-db.mjs";
 
 const authenticatedBrowser = process.env.FLYTALLY_AUTH_BROWSER === "1";
 const TILE = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#abc6d4"/><path d="M0 128H256" stroke="#456c85"/></svg>';
@@ -12,7 +12,12 @@ const coordinates = JSON.stringify([
   { lat: 50.21, lon: 14.24, alt: 300, time: "2026-09-18T10:20:00Z" },
 ]);
 
-function seedIsolatedMapFixture() {
+async function seedIsolatedMapFixture(request) {
+  // The isolated bootstrap does not create the lazily initialized share table.
+  // Exercise the real public route before fixture cleanup so the runtime creates it.
+  const shareSchemaProbe = await request.get("/f/FlyTallyPhase1SchemaProbe20261009");
+  expect(shareSchemaProbe.status()).toBe(404);
+  expect(browserSqlScalar("SELECT to_regclass('public.flight_public_shares') IS NOT NULL")).toBe("t");
   // Isolated localhost browser DB only; the helper rejects production hosts.
   // Recover from interrupted runs that left this synthetic flight certified.
   // The existing fixture helper scopes trigger bypass to one transaction.
@@ -108,7 +113,7 @@ async function assertSamePaneAfterTheme(page, map) {
 
 test("map panes preserve standard basemap ordering and route interactions", async ({ page }) => {
   test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
-  seedIsolatedMapFixture();
+  await seedIsolatedMapFixture(page.request);
   await openMap(page, "/map");
   const map = await checkStandardPanes(page, ".route-overview-map", true);
   await setTheme(page, "light");
@@ -123,7 +128,7 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
 
 test("GPS map theme changes preserve a live map instance and viewport", async ({ page }) => {
   test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
-  seedIsolatedMapFixture();
+  await seedIsolatedMapFixture(page.request);
   await openMap(page, "/map?mode=tracks");
   const map = await checkStandardPanes(page, ".track-map.responsive-map");
   await setTheme(page, "light");
@@ -135,7 +140,7 @@ test("flight replay retains map and playback state through theme changes", async
   // Public-share SSR follow-up adds two server reads and an isolated DB fixture.
   test.setTimeout(60_000);
   test.skip(!authenticatedBrowser, "Map acceptance requires the isolated authenticated browser DB.");
-  seedIsolatedMapFixture();
+  await seedIsolatedMapFixture(page.request);
   await openMap(page, "/flights/9913?tab=gps");
   const map = await checkStandardPanes(page, ".player-responsive-map");
   await setTheme(page, "light");

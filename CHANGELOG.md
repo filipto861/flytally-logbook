@@ -10,6 +10,25 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Satellite security containment — local acceptance and Playwright fixture correction (10 October 2026; Draft PR #282)
+
+- At exact PR head `be52aee27945f4833950e2d7c0ab73f82fe2bb63`, owner-local targeted Node **13/13 PASS**, full Node **1,453/1,453 PASS**, typecheck/source/domain **PASS**, production Next 16.3.2 build **PASS**; live local unauthenticated Satellite **401 private/no-store** and malformed duplicate style **400 no-store**, with no wildcard Satellite CORS. **Not CI or production evidence.**
+- First risk-scoped browser gate at that SHA: dedicated localhost PostgreSQL fixture precheck/bootstrap **PASS**, desktop Playwright **4/5 PASS, 1 fixture setup FAIL**, mobile **NOT RUN**. Missing `flight_public_shares` arose because the map test fixture deleted from a runtime-lazy table before its first public-share route use. No test proved a Satellite map regression.
+- Test-only `e2e/map-layers.spec.mjs` correction initializes the lazy public-share schema via synthetic local public-route probe and asserts table existence before fixture deletion. No runtime/DB migration/provider changes. **Re-verification of the new PR HEAD is pending**; no release gate PASS, merge, production deploy, provider license or CDN confirmation.
+
+### Satellite authorization test compatibility — 10 October 2026 (unmerged Draft)
+
+- Owner-local Node 24.19.0 first targeted run **12/13 PASS** (all five isolated API handler behavior tests PASS, one source assertion failed because it searched a literal LF line break on Windows), `npm run typecheck` PASS, `npm run build` PASS (Next.js 16.3.2, 41/41 pages). The exact local commit SHA was **not supplied**; branch was at remote HEAD before the fix according to the supplied commands.
+- Follow-up change only to `tests/v370-map-layers.test.ts`: replace brittle `indexOf("if (wantsSatellite) {\\n    const svg")` with line-ending-independent `lastIndexOf("if (wantsSatellite) {")`. Runtime handler unchanged; **new-head test rerun NOT RUN**, full Node suite/PG/real Next HTTP/browser/CI/deploy NOT RUN.
+
+
+### Security remediation candidate — Satellite endpoint session check (10 October 2026; unmerged)
+
+- **Draft code only:** Add `getSession()` authorization before Satellite token/upstream access in `/api/map-tile/[z]/[x]/[y]`, `401` for unauthenticated `style=satellite`, `private, no-store` on permitted responses and remove Satellite wildcard CORS; preserve public Standard style including legacy omitted style. Next.js 16 default GET request-time handling is retained; an initial proposed `force-dynamic` export was removed because it would also override the existing Standard upstream cache. This caching assumption must still be checked in a real Next HTTP test.
+- Add targeted source-contract regression asserting order of style parsing → session authorization → token/upstream and distinct private Satellite vs public Standard response policies. Added isolated `tests/v370-map-tile-auth-behavior.test.ts` exercising the actual compiled GET handler with mock session/provider (anonymous 401/no fetch, signed-in SVG/private, missing token 503, strict style 400, public Standard). Added [security acceptance + CDN rollout runbook](docs/product/3_7_0_SATELLITE_AUTH_SECURITY_ACCEPTANCE.md). **Both are staged, test runner NOT RUN.** Existing authenticated Story continues using the same endpoint; actual behavioral preservation requires local browser/HTTP verification.
+- This patch does **not** fix existing CDN caches automatically, set server-side global upstream disable, validate Esri licence/tiling, impose proven resource limits or enable Satellite maps. **Node/build/DB/Playwright/CI/production smoke NOT RUN** for this new exact branch; merge/deploy/version decision PENDING.
+
+
 ### Documentation governance — 10 October 2026 (docs-only branch; not yet merged)
 
 - Reconciled `ROADMAP.md` and `FEATURES.md` against actual GitHub states: Standard Maps PR #269 **MERGED**, documentation PR #270 **MERGED**; Phase 1 owner-accepted. Production remains **3.6.0**; full 3.7.0, Satellite and openAIP are **not shipped**.
