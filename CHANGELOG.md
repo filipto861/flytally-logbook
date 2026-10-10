@@ -10,6 +10,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.7.0 Satellite S1.1 — independent DeepSeek review reconciled (10 October 2026; docs Draft, not shipped)
+
+- Owner-supplied read-only reviewer confirmed the 512px/256px geographic-span correction with provider-specific metadata caveat; **A hardened SVG vs B independent Leaflet layers remains DEFER**, not a geometry GO. Earlier sample Web Mercator values do not establish actual service tileInfo.
+- Reviewer identified **HIGH severity source-level public Satellite endpoint risk**: main route may fetch ArcGIS without session verification and returns public-cacheable/CORS-enabled satellite SVG; client flag OFF does not server-authorize requests. Actual successful production traffic, invoices and CDN objects **NOT VERIFIED**. Plan standalone security pre-emption with auth `401`, private/no-store, no upstream for anonymous requests, Standard/Story preservation and CDN cache assessment; no hotfix runtime change performed in this docs PR.
+- S1.1 review **COMPLETE**; next S1.2 operator-only Esri licence/account/tileInfo/referrer/Story rights, with no unapproved live supplier call. Docs-only change; Node/build/browser/DB/CI/deploy **NOT RUN** for this review update.
+
+
 ### 3.7.0 Satellite S1 — correction after independent source cross-check (10 October 2026; unmerged docs)
 
 - Corrected an **unsupported initial preference for two separate Leaflet layers**. Esri's published static-label resolution at L12 (512 × 19.109257 m/px) and a published illustrative traditional MapServer L12 (256 × 38.218514 m/px) produce approximately the **same 9784m geographic tile span** when origins/CRS/coordinates agree. A one-level visual pixel-resolution difference does **not** prove a same-z/y/x footprint mismatch, nor prove actual FlyTally provider alignment.
