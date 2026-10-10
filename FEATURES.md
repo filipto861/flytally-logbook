@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 labels signal propagation fix staged
+
+Owner SHA `66f8b294` 59/60 targeted, typecheck PASS; discovered real missing `AbortSignal` on preferred/fallback label calls. Fixed both in provider at `8fbf598c`. Retest required; Standard/Story untouched.
+
 ## 2026-10-10 — M3-B2 first Node24 run failed; two test-only corrections staged
 
 Owner 58/60 target FAIL, typecheck PASS on `94b97e2c`; corrected stale source assertion and abort scheduling test without runtime change. New SHA verification pending; Satellite still OFF.
