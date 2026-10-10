@@ -1,3 +1,7 @@
+## 2026-10-10 — Fix M3-B lifecycle Node24 ESM import (RETEST PENDING)
+
+Owner run on `02d8acc1` reported 51 PASS / 1 failed test file (Node24 ERR_MODULE_NOT_FOUND for extensionless `satellite-bounded-fetch` import), typecheck PASS. Updated `lib/satellite-fetch-lifecycle.ts` to use `./satellite-bounded-fetch.ts` at `5e1cbf2`. No test claim on corrected commit; no provider/auth/Standard/Story/DB/deploy change.
+
 ## 2026-10-10 — M3-B batch 1 observational settlement classification (STAGED, NOT TESTED)
 
 Added `lib/satellite-fetch-lifecycle.ts` (start observation and conservative not-started/unproven outcomes around existing bounded fetch) and six synthetic regression tests in `tests/v370-satellite-fetch-lifecycle.test.ts`. No numerical production policy, no provider/route/cache/Standard/Story/DB/Training changes. No local Node24 verification, build, CI or deploy performed. Next gate: targeted + typecheck evidence and independent lifecycle contract review before provider wiring.
