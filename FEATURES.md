@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2a raster Base64 copy avoidance staged
+
+SVG composer now uses an exact-range Buffer view for encoded raster inputs; new tests cover subarray offset and SVG limit. Does not establish decoder/JS string/global RSS budgets. Not provider-wired. Verification pending; Satellite OFF.
+
 ## 2026-10-10 — M3-D Batch 1 LOCAL VERIFIED
 
 Owner exact `006ea28f` 98/98 targeted PASS and TypeScript PASS; shared-isolate admission gate contract verified with synthetic values. Still unconfigured and not wired to live Satellite, no deployment-wide limit or raster decoder guarantee.
