@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B Batch 2 owner local verification (DOCS ONLY)
+
+Recorded clean SHA `a4ea494f9f1a5d3f194c7aa2a8d2b6d4ae6684e3` with 60/60 targeted tests PASS, typecheck PASS. No source changes in this reconciliation; provider resource integration, full suite/build/HTTP/browser/CI/deploy NOT RUN. Next M3-C.
+
 ## 2026-10-10 — M3-B2 provider labels abort propagation bugfix (RETEST PENDING)
 
 On owner SHA `66f8b294` 59/60 targeted tests PASS, one signal-propagation failure; typecheck PASS. Fixed missing optional `signal` arguments on preferred imagery labels and reference fallback labels in `lib/satellite-map-provider.ts`, commit `8fbf598c`. No tests modified; new SHA not verified; no merge/deploy.
