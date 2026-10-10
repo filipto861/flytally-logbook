@@ -230,3 +230,44 @@ test("R2D.2 M2a: sanitizes upstream thrown errors and rejects non-image payload"
   assert.equal(result.contentType, JPEG);
   assert.equal(new TextDecoder().decode(result.bytes), "not actually a JPEG");
 });
+
+test("M3-D hardening: rejected status and headers cancel an unread response body", async () => {
+  for (const scenario of [
+    { status: 503, headers: {}, reason: "status" },
+    { status: 200, headers: { "content-type": "text/html" }, reason: "content-type" },
+    { status: 200, headers: { "content-encoding": "gzip" }, reason: "content-encoding" },
+    { status: 200, headers: { "content-length": "13" }, reason: "too-large" },
+    { status: 200, headers: { "content-length": "bad" }, reason: "content-length" },
+  ] as const) {
+    let cancelled = false;
+    const response = source(new ReadableStream({
+      start() { /* Unread stream */ },
+      cancel() { cancelled = true; },
+    }), scenario.headers, scenario.status);
+    await expectFailure(setup((async () => response) as typeof fetch), scenario.reason);
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.equal(cancelled, true, scenario.reason);
+  }
+});
+
+test("M3-D hardening: late response after timeout is cancelled without delaying caller", async () => {
+  let release!: (response: Response) => void;
+  const pending = new Promise<Response>(resolve => { release = resolve; });
+  const fake = (() => pending) as typeof fetch;
+  await expectFailure(setup(fake, { timeoutMs: 15 }), "deadline");
+  let cancelled = false;
+  release(source(new ReadableStream({
+    start() { /* Late response body */ },
+    cancel() { cancelled = true; },
+  })));
+  await new Promise<void>(resolve => setImmediate(resolve));
+  assert.equal(cancelled, true);
+});
+
+test("M3-D hardening: rejected body cleanup errors do not replace the original failure", async () => {
+  const fake = (async () => source(new ReadableStream({
+    start() {},
+    cancel() { throw Error("cleanup should be swallowed"); },
+  }), { "content-type": "application/json" })) as typeof fetch;
+  await expectFailure(setup(fake), "content-type");
+});
