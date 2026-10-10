@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 Satellite AbortSignal wiring staged, verification pending
+
+Satellite route now passes `request.signal` to legacy Satellite provider through an optional trailing argument; preabort and fallback suppression guards added. Does not integrate bounded transport, admission or decoder and cannot stop non-cooperative providers. Standard/Story remain unchanged; not a released feature.
+
 ## 2026-10-10 — M3-B Batch 1 local verification
 
 Standalone Satellite lifecycle adapter Node24 owner verified at `3790f05d`: 57/57 target PASS and typecheck PASS. Provider still not connected; no Satellite activation or release implications.
