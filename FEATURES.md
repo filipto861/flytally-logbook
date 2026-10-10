@@ -1,22 +1,22 @@
 # FlyTally Logbook feature list
 
-Last reconciled: **9 October 2026**
+Last reconciled: **10 October 2026**
 
-This is the canonical capability inventory for `flytally-logbook`.
+This is the canonical capability inventory for `flytally-logbook`. It records what is **implemented**, intentionally constrained and planned. Execution order belongs in `ROADMAP.md`, and historical changes/evidence in `CHANGELOG.md` and `docs/history/`.
 
-It answers **what the product has, what is intentionally constrained, and what is planned**. It does not define implementation order; that belongs in `ROADMAP.md`. Completed changes belong in `CHANGELOG.md`.
+## Maps & Aviation Layers — 3.7.0 (PARTIAL IMPLEMENTATION; FULL RELEASE PENDING)
 
-## Maps Phase 1 — DEPLOYED / OWNER-REPORTED PRODUCTION SMOKE PASS; DOCS CLOSEOUT PENDING
+**Standard maps — IMPLEMENTED / PHASE 1 ACCEPTED:** Shared Standard Leaflet controller, pane hierarchy, dark/lifecycle stability, public replay SSR isolation and strict map-style API parsing are merged in [PR #269](https://github.com/filipto861/flytally-logbook/pull/269), production-deployed at `cc7abd41`. Documentation closeout [PR #270](https://github.com/filipto861/flytally-logbook/pull/270) is **MERGED**, not pending. Local exact-candidate Node 1,447/1,447, PostgreSQL 100/100, build and Chromium desktop/mobile 12/12 each passed. Owner-reported production Map/GPS/share/mobile smoke and public Map API 4/4 PASS; native physical iPad Safari remains NOT VERIFIED.
 
-- Standard-only Leaflet basemap layer controller, pane hierarchy, theme/lifecycle stability, public replay SSR isolation and strict `style` validation are merged in PR #269 and deployed READY from `main@cc7abd41`.
-- Exact feature candidate had local Node 1,447/1,447 PASS, build PASS, PostgreSQL 100/100, and Playwright desktop/mobile 12/12 each. Owner separately reports manual browser smoke PASS for Map, flight GPS replay, public share/privacy, theme and mobile/iPad controls; real Map API smoke 4/4 PASS. Native Safari and exact device/viewport screenshots not independently proven; docs PR #270 integration pending.
-- No new satellite/openAIP UI, licensed tiles, or aviation overlay. External provider gates remain blocked and product version 3.6.0 remains current.
+**Satellite — DRAFT / NOT PRODUCTION ENABLED:** The optional Standard/Satellite selector and server-auth/fallback/Story work exist in separate stacked draft branches/PRs, with isolated synthetic local acceptance on specified SHAs. They are **not merged to main or approved for live provider use**. Production map selector flag is OFF. Real Esri grid compatibility, entitlement, correct credits, token/usage costs, export/Story rights and production resource controls remain gates. Standard is always the default; public shared replay remains Standard-only. Existing Story satellite pipeline is a pre-existing consumer, not evidence of provider redistribution permission.
 
-**Historical verification reconciliation (superseded):** **Latest Phase 1 integration status (9 October 2026):** documentation PR #268 was squash-merged into `main` as `5944f917797b6fbc55d61947a1e29554f7865eb4`; feature PR #269 incorporated that `main` via non-rebased merge commit `03257eefd7395f6063df2631de1dc2e02d67edab`. The first post-integration local iteration and release attempt both **FAILED only at source-contract 232/233** because the historical `v300-navigation-hierarchy` test still expected Currency at version 3.7.0. Candidate `675da4414d9cc63b1dd0555c40507a565f6757bd3689a96c1d284ccca0c30578` was FAIL; aggregate/build/PostgreSQL/browser did **NOT RUN**. Test-only correction `f0a0e0b762d0f9859a7317958c267d739283cd6a` asserts 3.7.0 Maps and 3.8.0 Currency without changing runtime or roadmap decisions. Exact post-correction verification remains **NOT RUN** until owner executes it on the final branch HEAD. Prior local release PASS on `5538e0c4...` is historical and cannot be claimed for the new candidate. PR #269 stays Draft/unmerged, no production deployment or DB migration; satellite and openAIP provider gates remain BLOCKED. Owner decision A (strict duplicate-style HTTP 400) remains APPROVED.
+**openAIP airspaces — PLANNED / EXTERNALLY BLOCKED:** First deliverable is a private, opt-in raster airspace reference overlay. An isolated offline A2A parser/capability gate is staged only; no published overlay, provider access or approved rights/API. Production source/currentness and operational activation claims are explicitly excluded.
 
-## Phase 1 API compatibility — owner decision A (9 October 2026)
+**Owner priority 10 October 2026:** Finish Satellite source-backed decision/integration/acceptance **before** resuming openAIP implementation. Both are still targeted for full release 3.7.0; scope changes require an explicit owner decision. Next release 3.8.0 is Currency / monetary semantics. See `ROADMAP.md` for milestones and `CHANGELOG.md` for dated legacy evidence.
 
-**Product decision A — APPROVED by owner, 9 October 2026:** preserve strict query parsing for `/api/map-tile/[z]/[x]/[y]`: absent `style` = legacy `map`; exactly one `style=map` or `style=satellite` is accepted; any duplicate `style` (including identical values), empty/unknown/alias/case-variant style parameter = HTTP 400 `unsupported_style` with `Cache-Control: no-store` and no upstream fetch. This deliberately changes the earlier first-value duplicate behavior. Owner accepts this compatibility trade-off. Implementation and local Node/Playwright release evidence PASS on feature HEAD `5538e0c4eec8b4a70fc5568facc55f4dc7324606`; not a merge/deploy authorization. Satellite/openAIP licensing and production gates remain separately BLOCKED.
+## Phase 1 API compatibility — IMPLEMENTED
+
+Absent `style` means Standard; exactly one `style=map` or `style=satellite` is allowed; any duplicated, malformed, unknown, empty or case-variant `style` returns HTTP 400 `unsupported_style`, `no-store` before upstream. This is the approved compatibility break shipped as part of Standard Phase 1; it does **not** grant Satellite provider entitlement.
 
 ## Core logbook — IMPLEMENTED
 

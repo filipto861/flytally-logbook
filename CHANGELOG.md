@@ -10,6 +10,16 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Documentation governance — 10 October 2026 (docs-only branch; not yet merged)
+
+- Reconciled `ROADMAP.md` and `FEATURES.md` against actual GitHub states: Standard Maps PR #269 **MERGED**, documentation PR #270 **MERGED**; Phase 1 owner-accepted. Production remains **3.6.0**; full 3.7.0, Satellite and openAIP are **not shipped**.
+- Promoted the owner's **Satellite FIRST** decision to the canonical forward plan: source-backed Satellite provider decision and integration/acceptance before continuing openAIP. Both capabilities remain 3.7.0 targets unless the owner changes release scope. Esri rights/grid/cost and openAIP rights/current API stay blocked.
+- Shortened current ROADMAP from 1,159 lines to a concise active execution plan; the full previous text is copied verbatim to `docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md`. The archive preserves old verification, frozen decisions and outdated time-of-writing statuses; these must not be read as current.
+- This is documentation only. No runtime, data model, GPS/certification, provider traffic, DB schema, production env, flag, release version or deployment changed. **Local full tests/build/Playwright/DB/CI/production smoke NOT RUN** for this docs branch; targeted source/document invariants will be inspected prior to PR review. No merge yet.
+
+**Historical evidence below:** claims that PR #269 or #270 were once Draft/pending, or Phase 1 smoke was pending, refer to earlier dated checkpoints and are **superseded**, not current status. Retained unchanged to protect the audit trail.
+
+
 - **Phase 1 standard-only production functional acceptance (9 October 2026; documentation closeout in Draft PR #270):** Owner confirmed browser Map/light-dark, existing GPS replay and playback continuity, public share/privacy, and mobile/iPad interaction work on `fly-tally.com`. This is **user-reported manual PASS**, not independent native Safari screenshots or browser traces. Production Map API HTTP 4/4 PASS (real OSM image and strict style 400); Vercel READY at `cc7abd41`; latest inspected aggregated runtime errors none. Prior local exact candidate full `release_status=PASS`. Remaining: merge docs PR #270 to complete documentary Phase 1 closure; product version 3.6.0 and full Maps 3.7.0 release unchanged; satellite/openAIP provider gates BLOCKED.
 
 
