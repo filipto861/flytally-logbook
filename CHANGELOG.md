@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 test-contract and abort-race correction (RETEST PENDING)
+
+Owner clean `94b97e2c`: 58 PASS / 2 FAIL in 60 targeted tests; typecheck PASS. Updated old R2B route source guard for `request.signal` and adjusted new synthetic parallel abort test to wait for both fetch invocations before cancelling. Tests-only commit `763bfce`; no runtime modification, merge/deploy or release. New commit tests NOT RUN.
+
 ## 2026-10-10 — M3-B Batch 2 signal propagation added (NOT TESTED)
 
 Modified `lib/satellite-map-provider.ts` and authenticated Satellite call in `app/api/map-tile/[z]/[x]/[y]/route.ts` to forward optional abort signal without changing Standard path, auth ordering or existing cache. Added three tests in `tests/v370-map-layers.test.ts`. This is cancellation signalling only; it neither guarantees prompt termination on uncooperative providers nor enforces resource limits. Target tests/typecheck/build/HTTP/Playwright/CI NOT RUN on new code; Satellite prod OFF, no merge/deploy.
