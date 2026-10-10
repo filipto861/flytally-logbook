@@ -632,7 +632,8 @@
         "lib/satellite-admission-gate",
         "lib/satellite-fetch-lifecycle",
         "lib/satellite-parallel-admission",
-        "lib/satellite-admitted-pair"
+        "lib/satellite-admitted-pair",
+        "lib/satellite-required-pair"
       ],
       "files": [],
       "risks": [
@@ -894,7 +895,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 396,
+    "auditedTotal": 397,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1053,7 +1054,8 @@
         "lib/satellite-admission-gate",
         "lib/satellite-fetch-lifecycle",
         "lib/satellite-parallel-admission",
-        "lib/satellite-admitted-pair"
+        "lib/satellite-admitted-pair",
+        "lib/satellite-required-pair"
         ],
         "files": [],
         "targets": [
