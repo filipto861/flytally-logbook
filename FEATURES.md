@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2a verified, M3-D2b standalone valid fixture staged
+
+Owner source `6d0993b3` 52/52 targeted + typecheck PASS. Added separate valid PNG/JPEG synthetic bytes and structural/SVG tests for upcoming HTTP fixture migration; no provider wiring, deployment limits or decoder assurance. New tests pending local verification.
+
 ## 2026-10-10 — M3-D2a raster Base64 copy avoidance staged
 
 SVG composer now uses an exact-range Buffer view for encoded raster inputs; new tests cover subarray offset and SVG limit. Does not establish decoder/JS string/global RSS budgets. Not provider-wired. Verification pending; Satellite OFF.
