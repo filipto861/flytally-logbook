@@ -17,6 +17,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.7.0 Satellite map selector — bounded UI port (draft, 10 October 2026)
+
+- Port the previously locally exercised PR #272 map-local Standard/Satellite selector to the **security-patched current `main`**, not the older stacked satellite branches. Scope: four authenticated Leaflet surfaces (route overview, GPS tracks, saved track playback, GPS import review); existing Share Story flow and publicly shared flight replay unchanged (Standard-only).
+- Keep explicit selection, Standard default, no saved preference/no automatic Satellite load, same map/track/viewport identity, dark filtering on Standard only, Satellite attribution and failure fallback with disabled retry. Existing `getSession()`/private/no-store/strict-style tile endpoint is **not modified**. Build-time exact-true flag `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS` remains OFF unless explicitly enabled in an inspected deployment.
+- Copy ported R1 controller, small UI control, CSS, scoped client integration, source guards and synthetic Playwright interactions; register new controller as owned GPS/browser risk. **Status: implementation committed to separate feature branch; CURRENT-HEAD TARGETED/FULL/BUILD/BROWSER/PRODUCTION NOT RUN.** No DB migration, supplier GET, feature flag flip, training repo or deploy in this batch. Provider external-use entitlement remains unverified rather than claimed.
+
 ### Satellite security containment — local acceptance and Playwright fixture correction (10 October 2026; Draft PR #282)
 
 - At exact PR head `be52aee27945f4833950e2d7c0ab73f82fe2bb63`, owner-local targeted Node **13/13 PASS**, full Node **1,453/1,453 PASS**, typecheck/source/domain **PASS**, production Next 16.3.2 build **PASS**; live local unauthenticated Satellite **401 private/no-store** and malformed duplicate style **400 no-store**, with no wildcard Satellite CORS. **Not CI or production evidence.**
