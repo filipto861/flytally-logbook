@@ -151,7 +151,7 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await expect(map.locator(".leaflet-flytallyBasemap-pane")).toHaveCSS("filter", /invert/);
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
   }
-  const airspaces = map.getByRole("button", { name: "Airspaces overlay" });
+  const airspaces = map.getByRole("button", { name: "Aviation overlay" });
   await expect(airspaces).toHaveCount(airspacesTrial ? 1 : 0);
   if (airspacesTrial) {
     let requests = 0;
@@ -207,16 +207,16 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
     await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
   }
-  const airspaces = map.getByRole("button", { name: "Airspaces overlay" });
+  const airspaces = map.getByRole("button", { name: "Aviation overlay" });
   await expect(airspaces).toHaveCount(airspacesTrial ? 1 : 0);
   if (airspacesTrial) {
     // Internal 503 is the expected fail-closed result without verified provider gates.
     await page.route("**/api/airspace-tile/**", route =>
-      route.fulfill({ status: 503, body: "Airspaces unavailable" }));
+      route.fulfill({ status: 503, body: "Aviation overlay unavailable" }));
     await airspaces.click();
     await expect(airspaces).toHaveAttribute("aria-pressed", "false");
     await expect(airspaces).toBeDisabled();
-    await expect(map.getByRole("status").filter({ hasText: "Airspaces unavailable" })).toBeVisible();
+    await expect(map.getByRole("status").filter({ hasText: "Aviation unavailable" })).toBeVisible();
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile")).toHaveCount(0);
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
   }
@@ -230,7 +230,7 @@ test("flight replay retains map and playback state through theme changes", async
   await seedIsolatedMapFixture(page.request);
   await openMap(page, "/flights/9913?tab=gps");
   const map = await checkStandardPanes(page, ".player-responsive-map");
-  await expect(map.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
+  await expect(map.getByRole("button", { name: "Aviation overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await page.getByRole("combobox", { name: "Playback speed" }).selectOption("2");
   await page.getByRole("button", { name: "Play track" }).click();
@@ -257,7 +257,7 @@ test("flight replay retains map and playback state through theme changes", async
     await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
     const publicMap = await checkStandardPanes(page, ".player-responsive-map");
     await expect(publicMap.getByRole("button", { name: "Satellite map" })).toHaveCount(0);
-    await expect(publicMap.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(0);
+    await expect(publicMap.getByRole("button", { name: "Aviation overlay" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
   } finally {
     runBrowserFlightFixtureCleanup(`
@@ -288,7 +288,7 @@ test("GPS import review retains its map pane across theme changes", async ({ pag
   await expect(details).toBeAttached();
   if (!(await details.evaluate(node => node.open))) await details.locator("summary").click();
   const map = await checkStandardPanes(page, ".import-review-map");
-  await expect(map.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
+  await expect(map.getByRole("button", { name: "Aviation overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
 });
