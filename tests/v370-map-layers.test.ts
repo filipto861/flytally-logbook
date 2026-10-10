@@ -205,7 +205,7 @@ test("3.7.0 R2B route delegates authenticated Satellite requests to the tested p
   const provider = source("lib/satellite-map-provider.ts");
   assert.match(route, /import \{ satelliteTile, isImage, CACHE_SECONDS, USER_AGENT \} from "@\/lib\/satellite-map-provider";/);
   assert.match(route, /if \(wantsSatellite && !\(await getSession\(\)\)\)/);
-  assert.match(route, /const svg = await satelliteTile\(z, x, y, arcgisToken!, referer\)/);
+  assert.match(route, /const svg = await satelliteTile\(z, x, y, arcgisToken!, referer, fetch, request\.signal\)/);
   assert.match(route, /const upstream = await standardMapTile\(z, x, y, referer\)/);
   assert.doesNotMatch(provider, /process\.env|from "next\/server"|getSession\(/);
 });
@@ -433,10 +433,12 @@ test("M3-B2: abort after parallel fetch start is forwarded and prevents fallback
     if (init?.signal) signals.push(init.signal);
     return new Promise<Response>(resolve => {
       caller.signal.addEventListener("abort", () => resolve(new Response("unavailable", { status: 503 })), { once: true });
+      // Schedule cancellation only once BOTH parallel supplier calls have
+      // actually begun; do not race synchronous invocation with abort.
+      if (calls === 2) queueMicrotask(() => caller.abort());
     });
   }) as typeof fetch;
   const pending = satelliteTile(3, 4, 5, "test-token", "https://fly-tally.com/", fake, caller.signal);
-  caller.abort();
   assert.equal(await pending, null);
   assert.equal(calls, 2);
   assert.equal(signals.length, 2);
