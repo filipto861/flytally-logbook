@@ -1,6 +1,6 @@
 # 3.7.0 — Maps & Aviation Layers
 
-**Status:** Phase 0 complete; Phase 1 standard-only merged/deployed at `main@cc7abd41`, owner-reported functional production smoke + Map API HTTP 4/4 PASS. Phase 1 functional acceptance recorded; documentation PR #270 merge pending. Full 3.7.0 release, satellite and openAIP remain NOT APPROVED / BLOCKED.
+**Current status (reconciled 10 October 2026):** Phase 1 Standard Maps is merged, production-deployed and owner-accepted; feature PR #269 **MERGED**, documentation PR #270 **MERGED** (`main@7d47010e`). Full 3.7.0 remains unreleased; Satellite FIRST engineering is in unmerged drafts and production flag OFF; openAIP implementation paused and external rights/API blocked. The dated Phase 1 passages below preserve earlier snapshots, including obsolete 'PR #270 pending' wording, and are not current-state claims.
 **Date:** 9 October 2026  
 **Baseline:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; product production baseline 3.6.0.  
 **Owner:** Filip Točík  
