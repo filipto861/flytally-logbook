@@ -45,7 +45,8 @@ export async function selectSatelliteLabelsWithFallback(
   if (preferred && pair.preferred.outcome === "success") {
     return { outcome: "preferred", base, labels: preferred };
   }
-  if (!Number.isSafeInteger(deadlineAtMs) || typeof now !== "function" ||
+  if (!Number.isFinite(deadlineAtMs) || deadlineAtMs < 0 ||
+      deadlineAtMs > Number.MAX_SAFE_INTEGER || typeof now !== "function" ||
       !fallback || !Number.isSafeInteger(fallback.timeoutMs) || fallback.timeoutMs <= 0 ||
       fallback.signal || !Number.isSafeInteger(fallback.maxBytes) || fallback.maxBytes <= 0) {
     return { outcome: "base-only", base };
@@ -57,7 +58,7 @@ export async function selectSatelliteLabelsWithFallback(
     FALLBACK_REASONS.has(pair.preferred.reason));
   if (!permitted) return { outcome: "base-only", base };
   const remaining = deadlineAtMs - now();
-  if (!Number.isSafeInteger(remaining) || remaining <= 0) return { outcome: "base-only", base };
+  if (!Number.isFinite(remaining) || remaining < 1) return { outcome: "base-only", base };
   if (signal?.aborted) return { outcome: "unavailable" };
 
   let lease;
@@ -66,7 +67,7 @@ export async function selectSatelliteLabelsWithFallback(
   try {
     const outcome = await observeSatelliteBoundedFetch({
       ...fallback,
-      timeoutMs: Math.min(fallback.timeoutMs, remaining),
+      timeoutMs: Math.min(fallback.timeoutMs, Math.floor(remaining)),
       signal,
     });
     if (outcome.lifecycle.outcome === "failure" && outcome.lifecycle.settlement === "unproven") {
