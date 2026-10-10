@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 1 owner local verification recorded (DOCS ONLY)
+
+Owner clean exact SHA `cd506648462278594b600a1e27657694845f3014`: 52/52 targeted tests PASS, typecheck PASS; confirms standalone atomic pair reservation and rollback. No product runtime, provider, route, DB, merge or deploy change; next orchestration pending. Full suite/build/HTTP/browser/CI NOT RUN.
+
 ## 2026-10-10 — M3-C Batch 1 synthetic parallel admission added (UNVERIFIED)
 
 Actually added `lib/satellite-parallel-admission.ts`, `tests/v370-satellite-parallel-admission.test.ts` (6 tests), updated GPS-risk source registry count 394→395 and corresponding map assertion. No production provider connection, route/cache/Standard/Story changes, no budget guesses. Owner targeted tests/typecheck, full suite/build/HTTP/Playwright/CI all NOT RUN. Satellite OFF, no merge/deploy.
