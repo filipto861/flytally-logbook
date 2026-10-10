@@ -1,6 +1,6 @@
 # FlyTally 3.7.0 — openAIP A2B1 Private Tile Proxy
 
-**Status:** Draft branch, tests not yet run; no provider access enabled, no UI overlay.
+**Status:** Draft branch; initial owner-local candidate failed TypeScript/build on `71646cd2` and narrow fix committed afterward; current updated HEAD not tested. No provider access enabled, no UI overlay.
 
 ## Evidence boundaries
 - A2A PR #287 was squashed to current `main` as `c631f3862ff5bbf61c5f1ee72ca0ec6bbf03e0fc`; owner-local release verified A2A on pre-merge SHA `2b7d60f8`. This A2B1 commit is a NEW candidate and has no automatic inherited PASS.
@@ -17,6 +17,13 @@
 - Mocked route behavior covers invalid coordinates, anonymous 401, both independent flags, missing key, correct upstream host/header, response MIME/signature/size, provider 429, network failures and absence of retries.
 - Registry owns new route under `gps-tracks` and exact browser-risk target selection; audited source count 389→390, synchronized source assertions.
 - **No** UI, Leaflet overlay, openAIP client-side SDK, image display, DB/schema, flight evidence changes, commercial claims, Training changes, Vercel env changes or production rollout in this PR.
+
+## Owner-local verification checkpoint — 10 October 2026
+
+- Exact clean detached commit `71646cd2c9265a74337317ac8c715890489775da`, base `c631f3862ff5bbf61c5f1ee72ca0ec6bbf03e0fc`, candidate `c83892ba594ca4733f742c4aa26ae47dd52a6e42520fba490ee32435c364b4b4`.
+- Targeted tests **31/31 PASS** (including 7 synthetic A2B1 cases). `verify:iterate --rerun`: source **233/233 PASS**, direct domain **31/31 PASS**, **typecheck FAIL**, `iteration_status=FAIL`, `release_status=NOT EVALUATED`. Independent `npm run build` also **FAIL**, same TypeScript error; Playwright and aggregate release were **NOT RUN**. `verify:plan`: `postgres=false`, `browser=true`, `blocked_evidence=none`, selected **5 desktop + 5 mobile browser targets**.
+- Root cause: returning `Uint8Array.buffer` as `ArrayBufferLike` to `NextResponse` was not a valid TypeScript `BodyInit` because `SharedArrayBuffer` is part of the union (`TS2345` at old line 116). Small focused code fix copies already size-bounded PNG to `new ArrayBuffer(bytes.byteLength)` before the response; no change to authentication, flags, upstream or PNG validation.
+- **The fix and these docs advance HEAD.** No PASS carries over automatically. Rerun targeted tests, typecheck, iteration, build, plan on the new exact commit and only then risk release with a new verified empty disposable localhost database. Do not invoke the destructive bootstrap on a prior populated test DB.
 
 ## Verification and next milestone
 1. Exact clean detached feature SHA and `npm run test:target -- tests/v370-openaip-airspace-tile-auth-behavior.test.ts tests/v370-openaip-airspace-contract.test.ts tests/timezone-semantics-source.test.ts tests/v370-map-layers.test.ts`.
