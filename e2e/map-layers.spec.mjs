@@ -193,7 +193,16 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile")).toHaveCount(0);
     await expect(map.locator(".leaflet-control-attribution")).not.toContainText("openAIP");
   }
-  // Real hit-target interaction: noninteractive aviation pane must not swallow route clicks.
+  // Finish choosing map layers before testing route hit targets. An open
+  // popover intentionally occupies part of the map on narrow viewports; it
+  // cannot be expected to allow hover through its own visible controls.
+  // Keep multi-setting selection possible until the user explicitly closes it.
+  if (satelliteTrial || airspacesTrial) {
+    await settings.click();
+    await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await expect(map.getByRole("region", { name: "Map settings" })).toBeHidden();
+  }
+  // Once dismissed, the control must not intercept route hover or clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
   await routeHit.hover();
   await expect(map.locator(".leaflet-tooltip")).toBeVisible();
