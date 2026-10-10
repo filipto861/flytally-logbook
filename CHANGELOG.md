@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D Batch 1 owner test evidence (DOCS ONLY)
+
+Clean source `006ea28f92de86b414f230b610caff493c8041f4`: 98/98 targeted tests PASS, TypeScript PASS. No runtime changes in this evidence record; no full suite/build/HTTP/Playwright/CI, activation, merge or deploy. Satellite OFF.
+
 ## 2026-10-10 — M3-D Batch 1 shared admission staging (NOT VERIFIED)
 
 Added `lib/satellite-shared-admission.ts`, six tests in `tests/v370-satellite-shared-admission.test.ts`, GPS-risk registration and auditedTotal 399→400 map expectation. Explicit policy required, same-policy reinit preserves ledger/quarantine; invalid/mutated policy rejected. No new production numerical limits, environment variables, provider/route/cache/DB/Standard/Story changes. Node24 targeted tests/typecheck, full suite/build/HTTP/Playwright/CI NOT RUN; Satellite OFF, no merge/deploy.
