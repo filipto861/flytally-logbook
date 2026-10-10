@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B batch 1 observational settlement classification (STAGED, NOT TESTED)
+
+Added `lib/satellite-fetch-lifecycle.ts` (start observation and conservative not-started/unproven outcomes around existing bounded fetch) and six synthetic regression tests in `tests/v370-satellite-fetch-lifecycle.test.ts`. No numerical production policy, no provider/route/cache/Standard/Story/DB/Training changes. No local Node24 verification, build, CI or deploy performed. Next gate: targeted + typecheck evidence and independent lifecycle contract review before provider wiring.
+
 ## 2026-10-10 — M3-A DeepSeek review reconciled (DOCS ONLY)
 
 Reviewed DeepSeek APPROVE WITH CHANGES findings and tightened M3-A lifecycle contract: explicit wrapper/local/remote settlement semantics, atomic parallel reservations, signal propagation, fallback restrictions, decoder/hosting release gates. No code/tests/build/HTTP/CI or deploy performed.
