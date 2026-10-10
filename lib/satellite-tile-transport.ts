@@ -6,6 +6,7 @@
  * IMPORTANT: This is a deadline/coordination contract, not a proof of
  * supplier termination, PNG/JPEG pixel decode, or deployment-wide limits.
  */
+import { SatelliteAdmissionError } from "./satellite-admission-gate.ts";
 import { fetchSatelliteRequiredPair } from "./satellite-required-pair.ts";
 import { selectSatelliteLabelsWithFallback, type SatelliteFallbackDecision } from "./satellite-label-fallback.ts";
 import type { SatelliteAdmissionGate } from "./satellite-admission-gate.ts";
@@ -25,7 +26,7 @@ export async function fetchSatelliteTileTransport(
   options: SatelliteTileTransportOptions,
 ): Promise<SatelliteFallbackDecision> {
   const { gate, base, preferred, fallback, totalDeadlineMs, signal } = options ?? {};
-  const clock = options?.now ?? Date.now;
+  const clock = options?.now ?? (() => performance.now());
   if (!gate || typeof gate.acquire !== "function" || typeof clock !== "function" ||
       !Number.isSafeInteger(totalDeadlineMs) || totalDeadlineMs <= 0 ||
       totalDeadlineMs > 2_147_483_647) {
@@ -38,9 +39,15 @@ export async function fetchSatelliteTileTransport(
   }
   if (signal?.aborted) return { outcome: "unavailable" };
   // Absolute deadline is computed once, BEFORE the first supplier starts.
-  const pair = await fetchSatelliteRequiredPair(
-    gate, base, preferred, totalDeadlineMs, signal,
-  );
+  let pair;
+  try {
+    pair = await fetchSatelliteRequiredPair(
+      gate, base, preferred, totalDeadlineMs, signal, deadlineAt, clock,
+    );
+  } catch (error) {
+    if (error instanceof SatelliteAdmissionError) return { outcome: "unavailable" };
+    throw error;
+  }
   return selectSatelliteLabelsWithFallback(
     gate, pair, fallback, deadlineAt, signal, clock,
   );
