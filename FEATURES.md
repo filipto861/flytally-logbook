@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D Batch 1 LOCAL VERIFIED
+
+Owner exact `006ea28f` 98/98 targeted PASS and TypeScript PASS; shared-isolate admission gate contract verified with synthetic values. Still unconfigured and not wired to live Satellite, no deployment-wide limit or raster decoder guarantee.
+
 ## 2026-10-10 — M3-D Batch 1 shared admission owner staged
 
 Standalone process/isolate module-level gate owner with explicit fail-closed initialization, immutable policy snapshot, six synthetic regression cases. Production configuration/values and provider wiring unresolved; no runtime activation, Satellite OFF.
