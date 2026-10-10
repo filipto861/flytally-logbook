@@ -1413,4 +1413,6 @@ input,select,textarea{border-color:#243d58;background:#071522}input:hover,select
 .flytally-map-style-actions button:disabled{opacity:.55;cursor:not-allowed}
 .flytally-map-style-status{display:block;padding:2px 5px;color:var(--text);font-size:.7rem;line-height:1.35}
 .flytally-map-style-status[hidden]{display:none}
+.flytally-airspace-control .flytally-map-style-actions{grid-template-columns:1fr}
+.flytally-airspace-control .flytally-map-style-actions button{min-width:94px}
 @media(max-width:600px){.flytally-map-style-control.leaflet-bar{padding:4px}.flytally-map-style-actions button{min-width:78px;font-size:.7rem}}
