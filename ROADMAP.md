@@ -5,7 +5,7 @@
 **Last reconciled:** 10 October 2026  
 **Current production product version:** `3.6.0`  
 **Current active release:** `3.7.0`  
-**Current active workstream:** Maps & Aviation Layers — **Satellite FIRST**, then openAIP airspaces; full 3.7.0 unreleased.
+**Current active workstream:** Maps & Aviation Layers — Satellite production deployed; openAIP A2A/A2B1 merged; A2B2 private OFF-by-default Airspaces UI in progress. Full 3.7.0 unreleased.
 
 This is the canonical **forward execution plan** for `flytally-logbook`. Older milestone narratives, failed attempts, test logs and superseded PR states were preserved verbatim in [the pre-reconciliation roadmap snapshot](docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md). Dated evidence there is **historical**, never an instruction to override this page.
 
@@ -43,7 +43,7 @@ Milestone scope: authenticated route overview, GPS tracks, saved flight GPS repl
 | 3.7.0 Phase 1 — Standard Maps | **DONE.** Feature PR [#269](https://github.com/filipto861/flytally-logbook/pull/269) and docs PR [#270](https://github.com/filipto861/flytally-logbook/pull/270) **MERGED**; Phase 1 accepted by owner | Do not reopen or describe #270 as pending |
 | Phase 1 verification | Deployed at `cc7abd41` / Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY; owner-reported live browser functional smoke PASS; public Map API **4/4 PASS**; prior exact-candidate local Node **1,447/1,447**, PostgreSQL **100/100**, build and desktop/mobile Chromium **12/12** each PASS | Native physical iPad/Safari and full provider acceptance **NOT VERIFIED**; do not inflate acceptance |
 | Historical Satellite R1/R2 stack | **Draft/unmerged** engineering in [PR #272](https://github.com/filipto861/flytally-logbook/pull/272) through [#279](https://github.com/filipto861/flytally-logbook/pull/279), with some exact-SHA **local synthetic** ON/OFF, auth/HTTP and browser PASS | **FIRST priority: S1 provider architecture/evidence decision**, then S2 controlled integration and real acceptance; production UI flag **OFF** |
-| 3.7.0 Phase 3 — openAIP | **ACTIVE A2A PORT** on current secured main after Satellite; old isolated spike is historical; no live provider/map UI | Exact-head A2A tests first, then A2B authenticated proxy/private overlay; provider access/schema remains unresolved |
+| 3.7.0 Phase 3 — openAIP | **ACTIVE A2B2 UI DRAFT**; A2A (#287) and A2B1 (#288) merged, owner-local release PASS. Four private map surfaces planned for isolated OFF-default tile overlay. | Test exact A2B2 SHA with synthetic provider ON/OFF and risk release before merge; current provider access/schema/rights remain unverified and live production ON is not approved. |
 | Next scheduled release | `3.8.0` Currency / monetary semantics | Do not begin runtime until 3.7.0 closure or explicit reprioritization |
 
 **Source-of-truth boundary:** this table reflects inspected `main`, live GitHub PR states, and the owner's 10 October Satellite-first decision recorded in [the current-state handoff on an unmerged branch](https://github.com/filipto861/flytally-logbook/blob/feat/3.7.0-openaip-airspaces-a2a-offline-control/docs/product/3_7_0_CURRENT_STATE.md). The handoff is supporting evidence, **not merged runtime**. Offline supplier experiments and isolated tests are not real ArcGIS/openAIP acceptance.
