@@ -15,7 +15,7 @@ const MAX_AIRSPACE_REQUEST_ZOOM = 14; // FlyTally request budget, NOT openAIP so
 const AIRSPACE_ATTRIBUTION =
   'Aviation reference &copy; <a href="https://www.openaip.net/" target="_blank" rel="noopener noreferrer">openAIP</a> · Coverage/status unverified';
 
-export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => void {
+export function installAirspaceMapControl(map: L.Map, enabled: boolean, host?: HTMLElement): () => void {
   if (!AIRSPACES_MAPS_TRIAL_ENABLED || !enabled) return () => {};
 
   let disposed = false;
@@ -24,8 +24,15 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
   let unavailable = false;
 
   const root = document.createElement("div");
-  root.className = "flytally-map-style-control flytally-airspace-control leaflet-bar";
-  root.setAttribute("aria-label", "Aviation reference layer");
+  root.className = host ? "flytally-map-setting-section flytally-airspace-control" : "flytally-map-style-control flytally-airspace-control leaflet-bar";
+  root.setAttribute("aria-label", "Overlays");
+  root.setAttribute("role", "group");
+  if (host) {
+    const heading = document.createElement("h3");
+    heading.className = "flytally-map-settings-section-title";
+    heading.textContent = "Overlays";
+    root.append(heading);
+  }
   const buttons = document.createElement("div");
   buttons.className = "flytally-map-style-actions";
   const toggle = document.createElement("button");
@@ -125,15 +132,20 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
   toggle.addEventListener("click", onClick);
   map.on("zoomend", onZoomEnd);
   render();
-  const control = new L.Control({ position: "topright" });
-  control.onAdd = () => root;
-  control.addTo(map);
+  let control: L.Control | null = null;
+  if (host) host.append(root);
+  else {
+    control = new L.Control({ position: "topright" });
+    control.onAdd = () => root;
+    control.addTo(map);
+  }
 
   return () => {
     disposed = true;
     map.off("zoomend", onZoomEnd);
     detachLayer();
     toggle.removeEventListener("click", onClick);
-    control.remove();
+    control?.remove();
+    root.remove();
   };
 }

@@ -698,3 +698,34 @@ button[data-loading="true"]::after{
     z-index:1450;
   }
 }
+
+
+/* 3.7.0 A2E: one private Leaflet map-settings popover, scoped to avoid the
+   public viewer and the existing legacy standalone layer controls. */
+.leaflet-container .flytally-map-settings-control{position:relative;margin:0;color:var(--text);font-family:inherit}
+.leaflet-container .flytally-map-settings-trigger{display:flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:9px 13px;border:1px solid var(--line-strong);border-radius:11px;background:var(--surface);color:var(--text);box-shadow:var(--shadow-soft);font-size:.78rem;font-weight:800;white-space:nowrap;cursor:pointer;transition:background .16s,border-color .16s}
+.leaflet-container .flytally-map-settings-trigger:hover,.leaflet-container .flytally-map-settings-trigger[aria-expanded="true"]{background:var(--surface-hover);border-color:var(--accent)}
+.leaflet-container .flytally-map-settings-trigger:focus-visible,.leaflet-container .flytally-map-settings-panel button:focus-visible{outline:3px solid var(--focus-color);outline-offset:2px}
+.leaflet-container .flytally-map-settings-chevron{margin-left:3px;font-size:1rem;line-height:1;transition:transform .16s}
+.leaflet-container .flytally-map-settings-trigger[aria-expanded="true"] .flytally-map-settings-chevron{transform:rotate(180deg)}
+.leaflet-container .flytally-map-settings-panel{position:absolute;top:calc(100% + 9px);right:0;z-index:900;width:min(296px,calc(100vw - 68px));max-height:min(460px,calc(100dvh - 130px));overflow-y:auto;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);box-shadow:var(--shadow-raised)}
+.leaflet-container .flytally-map-settings-panel[hidden]{display:none}
+.leaflet-container .flytally-map-settings-heading{font-size:.9rem;font-weight:850;line-height:1.35;margin-bottom:14px;color:var(--text)}
+.leaflet-container .flytally-map-setting-section + .flytally-map-setting-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.leaflet-container .flytally-map-settings-section-title{margin:0 0 9px;font-size:.69rem;line-height:1.4;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions button{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:44px;padding:10px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface-raised);color:var(--text);font-size:.78rem;font-weight:750;line-height:1.25;cursor:pointer;transition:background .16s,border-color .16s}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions button:hover:not(:disabled){background:var(--surface-hover);border-color:var(--line-strong)}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions button[aria-pressed="true"]::before{content:"✓";font-weight:900;color:var(--accent-strong)}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-actions button:disabled{opacity:.55;cursor:not-allowed}
+.leaflet-container .flytally-map-settings-panel .flytally-airspace-control{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.leaflet-container .flytally-map-settings-panel .flytally-airspace-control .flytally-map-style-actions{grid-template-columns:1fr}
+.leaflet-container .flytally-map-settings-panel .flytally-airspace-control .flytally-map-style-actions button{justify-content:space-between;padding-inline:13px}
+.leaflet-container .flytally-map-settings-panel .flytally-airspace-control .flytally-map-style-actions button[aria-pressed="true"]::before{order:2}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-status{margin:8px 0 0;padding:0;font-size:.7rem;line-height:1.5;color:var(--muted)}
+.leaflet-container .flytally-map-settings-panel .flytally-map-style-status[hidden]{display:none}
+.leaflet-container .flytally-map-settings-note{margin:12px 0 0;padding:10px 11px;border:1px solid var(--line-soft);border-radius:9px;background:var(--surface-muted);color:var(--muted);font-size:.69rem;line-height:1.5}
+.leaflet-container .flytally-map-settings-static{margin:0;font-size:.79rem;color:var(--text-soft)}
+@media(max-width:600px){.leaflet-container .flytally-map-settings-trigger{padding-inline:11px}.leaflet-container .flytally-map-settings-panel{padding:13px;max-height:min(420px,calc(100dvh - 110px))}}
+@media(prefers-reduced-motion:reduce){.leaflet-container .flytally-map-settings-trigger,.leaflet-container .flytally-map-settings-chevron,.leaflet-container .flytally-map-settings-panel button{transition:none}}
