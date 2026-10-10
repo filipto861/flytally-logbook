@@ -1,3 +1,5 @@
+**S1/A1 provider gate decision (2026-10-10):** [bounded evidence and decision record](docs/product/3_7_0_S1_A1_PROVIDER_GATES.md). Satellite S1 DEFER pending provider grid/account terms; openAIP A1 BLOCKED pending current Tiles API/usage authorization. No new supplier request or implementation. Next: evidence/rights and exact PR review; not more generic Node diagnostics.
+
 # FlyTally Logbook — current navigation (2026-10-10)
 
 **Current product priority:** 3.7.0 delivers **Satellite + openAIP airspaces**, not the already deployed Standard map. **START HERE:** [3.7.0 current state](docs/product/3_7_0_CURRENT_STATE.md) · [next-chat handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). These give current milestone, evidence, active blockers and next S1/A1 steps. Existing dated entries below are historical evidence and may describe superseded STAGED states. Keep `main` authoritative and verify its actual head before changes. This navigation block is in a docs branch, NOT yet merged to main.
