@@ -1,3 +1,7 @@
+## 2026-10-10 — Documentation navigation / new-chat handoff (docs-only)
+
+Created [current 3.7.0 product status](docs/product/3_7_0_CURRENT_STATE.md) and [new-chat reconstruction handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). Linked canonical governance files to them and explicitly separated deployed Standard, unmerged Satellite trial, isolated provider diagnostics and blocked openAIP. No code, database, provider requests, merge, deployment or real-world verification performed by this documentation change; owner review/merge pending.
+
 ## 2026-10-10 — 3.7.0 product priority clarified (docs only)
 
 Owner confirmed Satellite + openAIP airspace as release objective. Updated roadmap with finite S1/S2 and A1/A2 + release decision, STOP rule for speculative diagnostics and factual Phase 1 Standard production note. No implementation, supplier calls, DB changes, merge or deploy performed.
