@@ -50,3 +50,12 @@ test("M3-B: malformed MIME after supplier invocation remains unproven", async ()
   const result = await observeSatelliteBoundedFetch(options(fetcher));
   assert.deepEqual(result.lifecycle, { outcome: "failure", started: true, settlement: "unproven", reason: "content-type" });
 });
+
+test("M3-C review: arbitrary supplier reason is not trusted", async () => {
+  const fetcher = (() => { throw { reason: "deadline", secret: "supplier-token" }; }) as typeof fetch;
+  const outcome = await observeSatelliteBoundedFetch(options(fetcher));
+  assert.deepEqual(outcome.lifecycle, {
+    outcome: "failure", started: true, settlement: "unproven", reason: "upstream",
+  });
+  assert.doesNotMatch(JSON.stringify(outcome), /supplier-token/);
+});
