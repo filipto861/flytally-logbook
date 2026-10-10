@@ -125,7 +125,7 @@ test("A2B1 missing server key 503, never fetches", async () => {
   assert.equal(f.calls.length, 0);
 });
 
-test("A2B1 authenticated enabled route returns private PNG via pinned host and header key", async () => {
+test("A2D authenticated Aviation overlay uses only the combined openAIP PNG path", async () => {
   const f = fixture({ session: true, enabled: true, verified: true });
   const r = await f.get();
   assert.equal(r.status, 200);
@@ -134,7 +134,8 @@ test("A2B1 authenticated enabled route returns private PNG via pinned host and h
   assert.equal(r.headers.get("access-control-allow-origin"), null);
   assert.equal(r.headers.get("x-flytally-airspaces"), "reference-only");
   assert.equal(f.calls.length, 1);
-  assert.equal(f.calls[0].url, "https://api.tiles.openaip.net/api/data/airspaces/8/125/171.png");
+  assert.equal(f.calls[0].url, "https://api.tiles.openaip.net/api/data/openaip/8/125/171.png");
+  assert.doesNotMatch(f.calls[0].url, /\/api\/data\/airspaces\//);
   assert.equal(new Headers(f.calls[0].init?.headers).get("x-openaip-api-key"), "SYNTHETIC_PRIVATE_KEY");
   assert.equal(f.calls[0].init?.cache, "no-store");
   assert.equal(f.calls[0].init?.redirect, "error");
