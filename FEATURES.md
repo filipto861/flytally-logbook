@@ -1,3 +1,7 @@
+## 2026-10-10 — Satellite M3-C independent integration review handoff prepared
+
+Added read-only reviewer handoff document for M3-C bounded transport integration. No functional change; reviewer feedback pending. Satellite OFF.
+
 ## 2026-10-10 — M3-C Batch 5 owner LOCAL VERIFIED
 
 Clean source SHA `dd9b88d3`: 87/87 targeted PASS + TypeScript PASS for standalone tile transport coordinator. Not wired into live provider; independent review and source-backed production resource policy pending, Satellite OFF.
