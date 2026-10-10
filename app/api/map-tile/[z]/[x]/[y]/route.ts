@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { parseMapTileStyle } from "@/lib/map-tile-style";
 import { getSession } from "@/lib/auth/session";
 
-// Every Satellite request must pass the live server-side session check.
-// The existing public Standard basemap remains available to public flight shares.
-export const dynamic = "force-dynamic";
+// Every Satellite request must pass a live server-side session check.
+// Next 16 GET Route Handlers are not response-cached by default; do not force
+// 'force-dynamic' on this shared route because that also disables the public
+// Standard upstream fetch cache. Satellite responses remain private/no-store.
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
 const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
