@@ -147,7 +147,7 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
   assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
-  assert.equal(registry.ownership.auditedTotal, 393);
+  assert.equal(registry.ownership.auditedTotal, 394);
 });
 
 test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
