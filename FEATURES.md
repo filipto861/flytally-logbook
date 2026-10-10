@@ -1,3 +1,5 @@
+**3.7.0 provider gate status:** Satellite selector implemented in draft but not enabled; openAIP airspace overlay not implemented/released. See [S1/A1 provider decision](docs/product/3_7_0_S1_A1_PROVIDER_GATES.md). These are pending external rights/technical contracts, not delivered features.
+
 # FlyTally Logbook — feature index (2026-10-10)
 
 **3.7.0 owner-approved target:** usable Satellite basemap switch and optional openAIP airspace overlay on authenticated maps. Existing Standard map is deployed Phase 1, not a new deliverable. [Live scope/status](docs/product/3_7_0_CURRENT_STATE.md) · [new-chat handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). Feature exists in an unmerged trial branch ≠ feature available in production. Provider permissions remain blocking. Historical features and evidence retained below.
