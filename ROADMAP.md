@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 3 owner LOCAL PASS; fallback next
+
+Owner clean exact `02f8b24742966033406e1468b83e381c140269b5`: 77/77 targeted tests PASS, TypeScript `tsc --noEmit` PASS. Closes isolated M3-C Batch 3 local gate only; live provider, fallback, decoder/hosting, fleet resource constraints and production release remain OPEN. Build/full suite/HTTP/Playwright/CI NOT RUN; Satellite OFF.
+
 ## 2026-10-10 — M3-C Batch 3 owner 77/77 target PASS, TypeScript FAIL; type shape fix staged
 
 Owner clean source SHA `81518cf1ad4436e145e29ea2a3275f22e4863dc8`: seven target suites **77/77 PASS**; `npm.cmd run typecheck` **FAIL** with TS2339 on `baseOutcome.result` and `preferredOutcome.result` in `lib/satellite-required-pair.ts`. Error branch returned `{lifecycle}` instead of uniform `{lifecycle, result?}` shape. Corrected error return to include `result: undefined` (source fix `a6fceff6841ac9448262b6b5010ba62e54a6a6df`); no cancellation behavior changed. Owner full target rerun + typecheck on latest SHA pending; M3-C3 NOT CLOSED. Full suite/build/HTTP/browser/CI NOT RUN; Satellite OFF, no merge/deploy.
