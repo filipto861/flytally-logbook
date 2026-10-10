@@ -61,7 +61,7 @@ export async function fetchSatelliteRequiredPair(
       return outcome;
     } catch {
       lease.quarantine();
-      return { lifecycle: closed };
+      return { lifecycle: closed, result: undefined };
     }
   };
 
