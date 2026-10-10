@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseMapTileStyle } from "@/lib/map-tile-style";
+import { getSession } from "@/lib/auth/session";
+
+// Every Satellite request must pass the live server-side session check.
+// The existing public Standard basemap remains available to public flight shares.
+export const dynamic = "force-dynamic";
 
 const OSM_TILE_HOST = "https://tile.openstreetmap.org";
 const ARCGIS_WORLD_IMAGERY_HOST = "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile";
@@ -80,6 +85,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     return NextResponse.json({ error: "unsupported_style" }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
   const wantsSatellite = style === "satellite";
+  // Client flags, referrer checks and ArcGIS credentials do NOT authorize a user.
+  // Authorize before reading credentials, fetching provider data, or using the
+  // existing Next Data Cache. This also covers the legacy authenticated Story.
+  if (wantsSatellite && !(await getSession())) {
+    return new NextResponse("Satellite sign-in required", {
+      status: 401,
+      headers: { "Cache-Control": "private, no-store", "X-FlyTally-Map-Style": "unavailable" },
+    });
+  }
   const arcgisToken = process.env.ARCGIS_ACCESS_TOKEN?.trim();
   const referer = publicReferer(request);
   if (wantsSatellite && !arcgisToken) {
@@ -94,8 +108,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
     if (!svg) return new NextResponse("Map tile unavailable", { status: 502, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" } });
     return new NextResponse(svg, { headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
-      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "private, no-store",
       "X-FlyTally-Map-Style": "satellite",
     }});
   }
