@@ -10,6 +10,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Satellite security containment — local acceptance and Playwright fixture correction (10 October 2026; Draft PR #282)
+
+- At exact PR head `be52aee27945f4833950e2d7c0ab73f82fe2bb63`, owner-local targeted Node **13/13 PASS**, full Node **1,453/1,453 PASS**, typecheck/source/domain **PASS**, production Next 16.3.2 build **PASS**; live local unauthenticated Satellite **401 private/no-store** and malformed duplicate style **400 no-store**, with no wildcard Satellite CORS. **Not CI or production evidence.**
+- First risk-scoped browser gate at that SHA: dedicated localhost PostgreSQL fixture precheck/bootstrap **PASS**, desktop Playwright **4/5 PASS, 1 fixture setup FAIL**, mobile **NOT RUN**. Missing `flight_public_shares` arose because the map test fixture deleted from a runtime-lazy table before its first public-share route use. No test proved a Satellite map regression.
+- Test-only `e2e/map-layers.spec.mjs` correction initializes the lazy public-share schema via synthetic local public-route probe and asserts table existence before fixture deletion. No runtime/DB migration/provider changes. **Re-verification of the new PR HEAD is pending**; no release gate PASS, merge, production deploy, provider license or CDN confirmation.
+
 ### Satellite authorization test compatibility — 10 October 2026 (unmerged Draft)
 
 - Owner-local Node 24.19.0 first targeted run **12/13 PASS** (all five isolated API handler behavior tests PASS, one source assertion failed because it searched a literal LF line break on Windows), `npm run typecheck` PASS, `npm run build` PASS (Next.js 16.3.2, 41/41 pages). The exact local commit SHA was **not supplied**; branch was at remote HEAD before the fix according to the supplied commands.
