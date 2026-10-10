@@ -111,7 +111,7 @@ test("3.7.0 security containment requires Satellite session before token/upstrea
   const parsed = route.indexOf("const style = parseMapTileStyle");
   const session = route.indexOf("if (wantsSatellite && !(await getSession()))");
   const token = route.indexOf("const arcgisToken =");
-  const provider = route.indexOf("const basePromise = fetch(");
+  const provider = route.indexOf("const svg = await satelliteTile(");
   assert.ok(parsed >= 0 && session > parsed && token > session && provider > token,
     "Strict style validation and live session check must happen before token/provider access");
   assert.match(route, /status: 401,[\s\S]*?"Cache-Control": "private, no-store"/);
