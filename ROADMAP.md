@@ -65,7 +65,7 @@ The 9 October owner decision moved the **unstarted** Currency work to 3.8.0; it 
 ## 5. Other open integrity and governance work
 
 - **Production aircraft defaults:** [PR #299](https://github.com/filipto861/flytally-logbook/pull/299) describes an already executed one-time database-only aircraft-profile SE/SP backfill. It reported an anomalous King Air/C90 ULL classification, which must remain excluded from automatic correction pending aircraft/profile evidence and owner review. Documentation reconstruction is not an independent database verification.
-- **Archived engineering drafts:** Older Satellite R1/R2 stacked [PRs #271–#279](https://github.com/filipto861/flytally-logbook/pulls?q=is%3Apr+is%3Aopen+3.7.0) and #281 are not current production instructions; classify their unique unmerged decisions before closure. Never blindly merge their stacked ancestry.
+- **Archived engineering drafts:** Older Satellite R1/R2 stacked [PRs #271–#279](https://github.com/filipto861/flytally-logbook/pulls?q=is%3Apr+is%3Aopen+3.7.0) and #281 are not current production instructions; classify their unique unmerged decisions before closure. [Read-only disposition and reviewer handoff](docs/maintenance/2026-10-10-open-pr-triage.md) confirms independent unmerged Story PNG, Satellite emergency-off and resource/transport work. Never blindly merge their stacked ancestry.
 - **Repository cleanup evidence:** [10 October audit](docs/maintenance/2026-10-10-repository-audit.md); any dated counts there are a snapshot, not a live branch/PR count.
 
 ## 6. Documentation ownership and release DoD
