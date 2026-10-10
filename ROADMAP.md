@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B batch 1 lifecycle observation STAGED / NOT VERIFIED
+
+Created standalone `lib/satellite-fetch-lifecycle.ts` and six synthetic `tests/v370-satellite-fetch-lifecycle.test.ts` cases. Adapter observes supplier invocation before executing injected fetcher; validation/preabort with zero calls => `not-started`, any post-invocation bounded-fetch failure => conservatively `unproven`, successful bounded body completion => local-only `body-read-completed` (never proof of remote termination). Integration/lease release remains forbidden on unknown states. This is a staging step, not the finalized transport-settlement interface; adapter catches and sanitizes failures. **Owner Node24 target tests, typecheck, full tests, build, HTTP, Playwright and CI NOT RUN on new commits.** Next: verify isolated batch then review whether transport primitive should expose stronger evidence; route signal/admission/provider integration NOT STARTED. No policy defaults, prod Satellite OFF, no deployment.
+
 ## 2026-10-10 — M3-A independent review reconciled (DESIGN ONLY)
 
 DeepSeek APPROVE WITH CHANGES accepted subject to explicit local-vs-remote termination distinction. Updated `docs/r2d2-m3a-provider-lifecycle-review.md` with refined fail-closed settlement/atomic admission/fallback and M3-B/C/D gates. Review does not authorize runtime activation; production budgets/decoder unresolved. No coding/test/merge/deploy.
