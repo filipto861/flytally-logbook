@@ -1,3 +1,7 @@
+## 2026-10-10 — openAIP A2A offline boundary STAGED
+
+Added `lib/openaip-airspace-contract.ts`, four targeted offline tests and `docs/product/3_7_0_A2A_AIRSPACE_BOUNDARY.md`. Provider API/rights remain unverified; no HTTP proxy, UI, DB, deployment or supplier calls. Owner tests/typecheck/build NOT RUN on new head.
+
 ## 2026-10-10 — S1/A1 public source review and contact preparation
 
 Added official openAIP contact evidence and documented draft-only (not sent) provider licensing/API inquiry; recorded Esri's supported World Imagery + 512px static labels layered example while keeping FlyTally Leaflet compatibility unverified. Updated S1/A1 decision record. Docs only, tests N/A; supplier GETs, merge, deploy NOT RUN.
