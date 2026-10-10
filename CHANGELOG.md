@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-A DeepSeek review reconciled (DOCS ONLY)
+
+Reviewed DeepSeek APPROVE WITH CHANGES findings and tightened M3-A lifecycle contract: explicit wrapper/local/remote settlement semantics, atomic parallel reservations, signal propagation, fallback restrictions, decoder/hosting release gates. No code/tests/build/HTTP/CI or deploy performed.
+
 ## 2026-10-10 — M3-A proposed provider lifecycle review contract (DOCS ONLY)
 
 Created `docs/r2d2-m3a-provider-lifecycle-review.md` covering independently reviewable operation states, cancellation/admission/lease quarantine, parallel labels fallback, auth/Standard invariants, valid raster fixture migration and planned failure-injection tests. M3 integration and DeepSeek review NOT RUN; no runtime/route/tests/deploy/DB changes. Owner 69/69 local proof belongs to exact earlier source SHA `7baefdf7d6ec75878b566853052238698774abb4` only.
