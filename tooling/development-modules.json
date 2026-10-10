@@ -623,6 +623,7 @@
         "lib/data/flight-track-review",
         "components/map-layer-controller",
         "components/satellite-map-control",
+        "components/airspace-map-control",
         "components/client-maps",
         "components/public-flight-map",
         "lib/map-tile-style",
@@ -648,7 +649,8 @@
           "tests/track-processing.test.ts",
           "tests/track-time.test.ts",
           "tests/v370-openaip-airspace-contract.test.ts",
-          "tests/v370-openaip-airspace-tile-auth-behavior.test.ts"
+          "tests/v370-openaip-airspace-tile-auth-behavior.test.ts",
+          "tests/v370-airspaces-map-ui.test.ts"
         ]
       }
     },
@@ -890,7 +892,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 390,
+    "auditedTotal": 391,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1026,6 +1028,7 @@
           "components/map-layer-controller",
           "app/api/airspace-tile/",
           "components/satellite-map-control",
+          "components/airspace-map-control",
           "components/client-maps",
           "app/(protected)/map/",
           "components/route-overview-map"
