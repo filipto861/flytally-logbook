@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2b valid HTTP fixtures LOCAL VERIFIED
+
+Owner exact clean `fa7eaa5e` 48/48 targeted test PASS and typecheck PASS. Valid image payload fixtures are ready for guarded isolated HTTP acceptance; that acceptance remains NOT RUN. Satellite OFF.
+
 ## 2026-10-10 — M3-D2b verified and isolated HTTP raster fixture staged
 
 Owner clean `cdb63df6` 48/48 targeted tests and typecheck PASS. Isolated Satellite HTTP fixture now supplies valid synthetic PNG/JPEG and verifier expects their Base64; guarded local HTTP acceptance not yet run. Live provider untouched, Satellite OFF.
