@@ -814,3 +814,5 @@ Satellite metadata collector base-only scoped diagnostic staged; supports narrow
 Satellite metadata evidence collector strict tileInfo validation staged, not yet locally verified or production enabled.
 
 M3-D tooling: isolated loopback HTTP teardown diagnostic STAGED, not runtime wiring or product functionality.
+
+Satellite diagnostics: M3-D4 transport review documented as offline engineering evidence only; no production feature enabled.
