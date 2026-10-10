@@ -113,7 +113,11 @@ export async function GET(
         !PNG_SIGNATURE.every((value, index) => bytes[index] === value)) {
       return unavailable(502);
     }
-    return new NextResponse(bytes.buffer, {
+    // TypedArray.buffer is ArrayBufferLike (potentially SharedArrayBuffer).
+    // Copy the already size-bounded PNG into an actual ArrayBuffer for BodyInit.
+    const body = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(body).set(bytes);
+    return new NextResponse(body, {
       status: 200,
       headers: {
         ...PRIVATE_HEADERS,
