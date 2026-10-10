@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D base-only collector STAGED / OWNER VERIFICATION PENDING
+
+New isolated branch adds explicit base-only one-request mode, text/plain JSON parsing behind a tileInfo shape gate, and two mocked offline tests for successful one-service capture and invalid JSON. The second authorized ArcGIS base metadata-only GET gave HTTP 200 text/plain and repeated Windows Node24 UV_HANDLE_CLOSING assertion; no metadata captured. Node native crash root cause NOT VERIFIED, and no further live GET authorized. Tests/build/typecheck on this new branch NOT RUN; Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-D metadata diagnostics STAGED / OWNER LOCAL VERIFICATION PENDING
 
 One approved live World Imagery metadata request rejected unexpected Content-Type; preferred/fallback NOT REQUESTED; no outputs. Observed Windows Node24 async handle assertion after refusal, root cause unproven. New isolated branch adds allowlisted status/MIME diagnostics and awaited stream cleanup, synthetic non-JSON regression test. This does not establish provider format or fix the native assertion until verified on owner Windows Node24. No new supplier requests authorized, no production change, Satellite OFF, no merge/deploy.
