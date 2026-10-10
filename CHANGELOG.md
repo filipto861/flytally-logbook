@@ -10,6 +10,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Satellite authorization test compatibility — 10 October 2026 (unmerged Draft)
+
+- Owner-local Node 24.19.0 first targeted run **12/13 PASS** (all five isolated API handler behavior tests PASS, one source assertion failed because it searched a literal LF line break on Windows), `npm run typecheck` PASS, `npm run build` PASS (Next.js 16.3.2, 41/41 pages). The exact local commit SHA was **not supplied**; branch was at remote HEAD before the fix according to the supplied commands.
+- Follow-up change only to `tests/v370-map-layers.test.ts`: replace brittle `indexOf("if (wantsSatellite) {\\n    const svg")` with line-ending-independent `lastIndexOf("if (wantsSatellite) {")`. Runtime handler unchanged; **new-head test rerun NOT RUN**, full Node suite/PG/real Next HTTP/browser/CI/deploy NOT RUN.
+
+
 ### Security remediation candidate — Satellite endpoint session check (10 October 2026; unmerged)
 
 - **Draft code only:** Add `getSession()` authorization before Satellite token/upstream access in `/api/map-tile/[z]/[x]/[y]`, `401` for unauthenticated `style=satellite`, `private, no-store` on permitted responses and remove Satellite wildcard CORS; preserve public Standard style including legacy omitted style. Next.js 16 default GET request-time handling is retained; an initial proposed `force-dynamic` export was removed because it would also override the existing Standard upstream cache. This caching assumption must still be checked in a real Next HTTP test.
