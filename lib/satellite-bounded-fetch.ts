@@ -120,18 +120,29 @@ export async function fetchSatelliteBounded(
   options.signal?.addEventListener("abort", onCallerAbort, { once: true });
   const timer = setTimeout(() => stop("deadline"), options.timeoutMs);
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let receivedBody: ReadableStream<Uint8Array> | null = null;
   let success = false;
+  // Best-effort only. Cancellation does not establish remote settlement.
+  const cancelBody = (body: ReadableStream<Uint8Array> | null): void => {
+    if (!body) return;
+    try { void body.cancel("satellite-bounded-fetch-cleanup").catch(() => {}); }
+    catch { /* A failed cleanup must never override the original failure. */ }
+  };
 
   try {
     if (options.signal?.aborted) stop("caller-aborted");
-    const response = await Promise.race([
-      options.fetcher(options.url, {
-        ...(options.init ?? {}),
-        cache: "no-store",
-        signal: controller.signal,
-      }),
-      abortGate,
-    ]);
+    // Attach a continuation to the original supplier promise, not merely
+    // Promise.race: a non-cooperative fetcher can resolve after our deadline.
+    const pending = Promise.resolve().then(() => options.fetcher(options.url, {
+      ...(options.init ?? {}),
+      cache: "no-store",
+      signal: controller.signal,
+    })).then(response => {
+      if (abortedBy !== null) cancelBody(response?.body ?? null);
+      return response;
+    });
+    const response = await Promise.race([pending, abortGate]);
+    receivedBody = response?.body ?? null;
     if (abortedBy) return fail(abortedBy);
     if (!response.ok || !response.body) return fail("status");
 
@@ -143,6 +154,7 @@ export async function fetchSatelliteBounded(
     }
     const declaredLength = contentLength(response, options.maxBytes);
     reader = response.body.getReader();
+    receivedBody = null; // Ownership passed to reader; never double-cancel.
 
     const chunks: Uint8Array[] = [];
     let total = 0;
@@ -179,6 +191,7 @@ export async function fetchSatelliteBounded(
     clearTimeout(timer);
     options.signal?.removeEventListener("abort", onCallerAbort);
     if (!success && !controller.signal.aborted) controller.abort();
+    if (!success && !reader) cancelBody(receivedBody);
     if (reader) {
       if (!success) {
         // Cancellation may itself wait indefinitely for a remote body/tee;
