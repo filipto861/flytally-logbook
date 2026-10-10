@@ -68,7 +68,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ z: s
   }
 
   if (wantsSatellite) {
-    const svg = await satelliteTile(z, x, y, arcgisToken!, referer);
+    const svg = await satelliteTile(z, x, y, arcgisToken!, referer, fetch, request.signal);
     if (!svg) return new NextResponse("Map tile unavailable", { status: 502, headers: { "Cache-Control": "no-store", "X-FlyTally-Map-Style": "unavailable" } });
     return new NextResponse(svg, { headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
