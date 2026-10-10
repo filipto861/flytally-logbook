@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B Node24 import correction awaiting owner retest
+
+Standalone lifecycle module test loading failed from extensionless import at owner SHA `02d8acc1`; minimal `.ts` extension correction staged on `5e1cbf2`. TypeScript on prior SHA PASS; new test outcome pending. Satellite runtime unchanged.
+
 ## 2026-10-10 — M3-B observational lifecycle adapter staged (not connected)
 
 New standalone local supplier-start observation / conservative termination-unknown classification and six synthetic tests. Does not change production Satellite, Standard, Story, auth or runtime. No claim of upstream termination; owner verification pending.
