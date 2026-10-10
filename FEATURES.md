@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 4 locally verified
+
+Owner exact `3f0e29a0`: 83/83 targeted PASS and TypeScript PASS for isolated fallback module. Not connected to live Satellite; raster structural validation is not full decoder validation; no release.
+
 ## 2026-10-10 — M3-C4 isolated labels fallback staged, not product-wired
 
 Added source-structural base/labels validation and admitted reference labels fallback subject to inherited tile deadline and fail-closed reason policy. Six synthetic tests staged. Still not production approved or connected; no defaults; Satellite OFF.
