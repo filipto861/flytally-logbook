@@ -115,7 +115,9 @@ test("3.7.0 security containment requires Satellite session before token/upstrea
   assert.ok(parsed >= 0 && session > parsed && token > session && provider > token,
     "Strict style validation and live session check must happen before token/provider access");
   assert.match(route, /status: 401,[\s\S]*?"Cache-Control": "private, no-store"/);
-  const satelliteStart = route.indexOf("if (wantsSatellite) {\n    const svg");
+  // Source text may use LF on GitHub or CRLF on Windows checkouts.
+  // Match the semantic block, not a literal newline plus indentation.
+  const satelliteStart = route.lastIndexOf("if (wantsSatellite) {");
   const standardStart = route.indexOf("const upstream = await standardMapTile(");
   assert.ok(satelliteStart >= 0 && standardStart > satelliteStart);
   const satellite = route.slice(satelliteStart, standardStart);
