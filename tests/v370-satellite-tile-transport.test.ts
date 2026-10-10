@@ -87,3 +87,26 @@ test("M3-C review: admission saturation is controlled unavailable with no suppli
     first.release();
   }
 });
+
+test("M3-C review: fractional monotonic clock permits preferred and fallback without extending budget", async () => {
+  const imageFetcher = fetcher(image);
+  const preferred = await fetchSatelliteTileTransport(opts(imageFetcher, imageFetcher, imageFetcher, {
+    now: () => 12.375,
+  }));
+  assert.equal(preferred.outcome, "preferred");
+  let fallbackCalls = 0;
+  const failedLabels = fetcher(() => new Response("unavailable", { status: 503 }));
+  const fallback = await fetchSatelliteTileTransport(opts(imageFetcher, failedLabels,
+    fetcher(() => { fallbackCalls++; return image(); }), { now: () => 17.625 }));
+  assert.equal(fallback.outcome, "fallback");
+  assert.equal(fallbackCalls, 1);
+});
+
+test("M3-C review: invalid monotonic clock cannot start upstream", async () => {
+  let calls = 0;
+  const fake = fetcher(() => { calls++; return image(); });
+  for (const clock of [() => Number.NaN, () => Number.POSITIVE_INFINITY, () => -1]) {
+    await assert.rejects(fetchSatelliteTileTransport(opts(fake, fake, fake, { now: clock })), /invalid-clock/);
+  }
+  assert.equal(calls, 0);
+});
