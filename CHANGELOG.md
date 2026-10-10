@@ -1,3 +1,7 @@
+## 2026-10-10 — S1/A1 supplier decision record (docs only)
+
+Recorded exact Satellite provider geometry and authorization blockers, openAIP official documentation entrypoint and unverified direct schema, concrete provider questions and next PR review in `docs/product/3_7_0_S1_A1_PROVIDER_GATES.md`. S1 DEFER; A1 BLOCKED. No provider calls with credentials, runtime code, DB changes, tests, merge or deploy in this docs-only batch.
+
 ## 2026-10-10 — Documentation navigation / new-chat handoff (docs-only)
 
 Created [current 3.7.0 product status](docs/product/3_7_0_CURRENT_STATE.md) and [new-chat reconstruction handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). Linked canonical governance files to them and explicitly separated deployed Standard, unmerged Satellite trial, isolated provider diagnostics and blocked openAIP. No code, database, provider requests, merge, deployment or real-world verification performed by this documentation change; owner review/merge pending.
