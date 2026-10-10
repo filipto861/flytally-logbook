@@ -182,6 +182,8 @@ test("A2E shared Map settings contains both independent gated controllers withou
   assert.match(composite, /!SATELLITE_MAPS_TRIAL_ENABLED && !AIRSPACES_MAPS_TRIAL_ENABLED/);
   assert.match(composite, /installSatelliteMapControl\(map, enabled, panel\)/);
   assert.match(composite, /installAirspaceMapControl\(map, enabled, panel\)/);
+  assert.doesNotMatch(composite, /flytally-map-settings-heading|flytally-map-settings-note/);
+  assert.doesNotMatch(aviation, /flytally-map-settings-section-title/);
   assert.match(composite, /trigger\.setAttribute\("aria-expanded", "false"\)/);
   assert.match(composite, /trigger\.setAttribute\("aria-controls", panel\.id\)/);
   assert.match(composite, /panel\.setAttribute\("role", "region"\)/);
@@ -196,6 +198,7 @@ test("A2E shared Map settings contains both independent gated controllers withou
   assert.match(composite, /standardMap\(true\)/);
   assert.match(aviation, /unavailable = true; \/\/ Avoid retry storms/);
   assert.match(css, /\.flytally-map-settings-panel\[hidden\]\{display:none\}/);
+  assert.doesNotMatch(css, /\.flytally-map-settings-note|\.flytally-map-settings-heading/);
   assert.match(css, /\.flytally-map-settings-panel button:focus-visible/);
   assert.match(css, /@media\(max-width:600px\)/);
   assert.doesNotMatch(composite, /localStorage|sessionStorage|OPENAIP_API_KEY/);

@@ -170,9 +170,14 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
   await expect(airspaces).toHaveCount(airspacesTrial ? 1 : 0);
   if (airspacesTrial) {
     let requests = 0;
+    const aviationRequestZooms = [];
     // Synthetic provider response: do not contact external openAIP in browser tests.
     await page.route("**/api/airspace-tile/**", async route => {
       requests++;
+      const tilePath = new URL(route.request().url()).pathname;
+      const tileZoom = /^\/api\/airspace-tile\/([0-9]+)\/[0-9]+\/[0-9]+$/.exec(tilePath);
+      expect(tileZoom, "aviation XYZ path").not.toBeNull();
+      aviationRequestZooms.push(Number(tileZoom[1]));
       await route.fulfill({ status: 200, contentType: "image/png", body: AIRSPACE_PNG });
     });
     await airspaces.click();
@@ -180,7 +185,12 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await expect.poll(() => requests).toBeGreaterThan(0);
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
     await expect(map.locator(".leaflet-control-attribution")).toContainText("openAIP");
-    await expect(map.getByRole("status")).toContainText("coverage and current status unverified");
+    // Attribution remains even though the menu no longer repeats the warning.
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("Coverage/status unverified");
+    await expect(airspaces).toHaveText("Aviation overlay");
+    await expect(map.locator(".flytally-map-settings-panel")).not.toContainText("reference only");
+    await expect(map.locator(".flytally-map-settings-panel")).not.toContainText("Overlays");
+    await expect(map.locator(".flytally-map-settings-panel")).not.toContainText("Base map");
     if (satelliteTrial) {
       await map.getByRole("button", { name: "Satellite map" }).click();
       await expect(airspaces).toHaveAttribute("aria-pressed", "true");
@@ -188,6 +198,25 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
       await map.getByRole("button", { name: "Standard map" }).click();
       await expect(airspaces).toHaveAttribute("aria-pressed", "true");
     }
+    // Zoom to the existing basemap max (18); raster is upscaled from z14.
+    const zoomIn = map.locator(".leaflet-control-zoom-in");
+    for (let step = 0; step < 20; step++) {
+      if (await zoomIn.evaluate(el => el.classList.contains("leaflet-disabled"))) break;
+      await zoomIn.click();
+    }
+    await expect(zoomIn).toHaveClass(/leaflet-disabled/);
+    await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+    await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("openAIP");
+    expect(Math.max(...aviationRequestZooms)).toBeLessThanOrEqual(14);
+    // Selecting again at high zoom must also work without new z15+ requests.
+    await airspaces.click();
+    await expect(airspaces).toHaveAttribute("aria-pressed", "false");
+    await airspaces.click();
+    await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+    await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
+    expect(aviationRequestZooms.length).toBeGreaterThan(0);
+    expect(Math.max(...aviationRequestZooms)).toBeLessThanOrEqual(14);
     await airspaces.click();
     await expect(airspaces).toHaveAttribute("aria-pressed", "false");
     await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile")).toHaveCount(0);

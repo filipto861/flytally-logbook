@@ -37,12 +37,6 @@ export function installSatelliteMapControl(map: L.Map, enabled: boolean, host?: 
   root.className = host ? "flytally-map-setting-section" : "flytally-map-style-control leaflet-bar";
   root.setAttribute("aria-label", "Base map");
   root.setAttribute("role", "group");
-  if (host) {
-    const heading = document.createElement("h3");
-    heading.className = "flytally-map-settings-section-title";
-    heading.textContent = "Base map";
-    root.append(heading);
-  }
   const buttons = document.createElement("div");
   buttons.className = "flytally-map-style-actions";
   const standard = document.createElement("button");
@@ -192,25 +186,15 @@ export function installMapSettingsControl(map: L.Map, enabled: boolean): () => v
   panel.setAttribute("aria-label", "Map settings");
   panel.hidden = true;
   trigger.setAttribute("aria-controls", panel.id);
-  const title = document.createElement("div");
-  title.className = "flytally-map-settings-heading";
-  title.textContent = "Map settings";
-  panel.append(title);
 
   const cleanupSatellite = installSatelliteMapControl(map, enabled, panel);
   if (!SATELLITE_MAPS_TRIAL_ENABLED) {
     const standardOnly = document.createElement("p");
     standardOnly.className = "flytally-map-settings-static";
-    standardOnly.textContent = "Base map · Standard";
+    standardOnly.textContent = "Standard";
     panel.append(standardOnly);
   }
   const cleanupAirspaces = installAirspaceMapControl(map, enabled, panel);
-  if (AIRSPACES_MAPS_TRIAL_ENABLED) {
-    const note = document.createElement("p");
-    note.className = "flytally-map-settings-note";
-    note.textContent = "Aviation is reference only. Coverage and current status are unverified.";
-    panel.append(note);
-  }
 
   root.append(trigger, panel);
   L.DomEvent.disableClickPropagation(root);
