@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C review correction LOCAL VERIFIED
+
+Owner clean exact `7e4033f1` 92/92 targeted tests PASS + TypeScript PASS. The isolated source modules are locally verified; production Satellite provider integration, shared gate, source-backed resource limits and decoder envelope are unresolved. Satellite OFF.
+
 ## 2026-10-10 — Monotonic fractional clock compatibility correction staged
 
 Owner review correction failed 3/90 tests due to fractional `performance.now()` rejected as integer; typecheck PASS. Clock acceptance fixed in isolated tile and fallback modules; two regression tests added. Retest pending; Satellite OFF.
