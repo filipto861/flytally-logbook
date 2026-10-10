@@ -1,6 +1,6 @@
 # 3.7.0 — Phase 1: Map controller test and acceptance contract
 
-**Status:** Phase 1 standard-only merged at `main@cc7abd41`, Vercel production READY; public Map API HTTP 4/4 PASS and owner-reported manual browser Map/GPS replay/public share/mobile smoke PASS. **Functional Phase 1 accepted by owner; final documentation closeout pending PR #270 integration.** Full product `3.7.0` not released, satellite/openAIP BLOCKED, native Safari and explicit screenshots/UA NOT VERIFIED. Historical evidence retained.
+**Current status (reconciled 10 October 2026):** Standard-only Phase 1 **DONE/PRODUCTION**; feature PR #269 and documentation PR #270 both **MERGED** (`main@7d47010e`). Owner-reported production browser smoke and public Map API 4/4 PASS; full `3.7.0` **NOT RELEASED**, Satellite production OFF, openAIP blocked, native physical iPad Safari and independent screenshots still NOT VERIFIED. Subsequent dated checkpoints (including former PR #270 pending claims) are historical evidence only.
 **Independent re-review:** APPROVE WITH CHANGES for Phase 1 *technical design* (9 October 2026); conditions below must be fulfilled in implementation. Phase 2 satellite production and Phase 3 openAIP production remain separately BLOCKED.  
 **Source:** `main@162d9ba88c7302dc45e564d8b59a5c3cdf060709`; docs-only PR #268.  
 **Parent contracts:** `3_7_0_MAPS_AVIATION_LAYERS.md` and `3_7_0_MAPS_REVIEW_RECONCILIATION.md`.  
