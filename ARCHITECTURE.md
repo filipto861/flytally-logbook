@@ -1,6 +1,6 @@
-# FlyTally architecture — current v2.7 generation
+# FlyTally Logbook — architecture (current Next.js generation)
 
-This document describes the active Next.js application and the architectural rules that should guide new work. Historical release-specific design documents remain useful as regression context, but they are not the current system map.
+This document describes the active Next.js application and architectural rules that should guide new work. The previous title's `v2.7 generation` was ambiguous and is **not** the current canonical product version; current shipped product/release status belongs in `ROADMAP.md` and `package.json`. Historical release-specific design documents remain useful as regression context, but they are not the current system map.
 
 ## Production stack
 
