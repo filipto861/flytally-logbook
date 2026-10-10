@@ -1,3 +1,7 @@
+## 2026-10-10 — R2D.2 M2c-B process-local admission helper staged, production NOT CONNECTED
+
+Added standalone no-default per-instance `createSatelliteAdmissionGate` with count and aggregate reserved input byte admission, BigInt accounting and idempotent release; 10 synthetic unit cases plus GPS-risk ownership. This is deliberately only per process, with no queue, no actual memory allocation and no proof of upstream cancellation or cross-instance limits. M2c-A owner 55/55+typecheck LOCAL PASS on older SHA; M2c-B Node24 tests NOT RUN. Product Satellite provider/route, public Standard, Story, auth and prod OFF unchanged.
+
 ## 2026-10-10 — R2D.2 M2c-A standalone SVG cap OWNER LOCAL PASS, not product-wired
 
 Owner exact `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233` Node24: target M2a+M2b+M2c-A+map **55/55 PASS** and `tsc --noEmit` PASS. This verifies injected SVG/encoded-size/pixel/nominal RGBA policy checks for selected imagery, not process-wide memory, concurrent provider read or real image decode. Next per-process reservation design and source-backed technical runtime limits; production endpoint/cache untouched, flag OFF, PR Draft.
