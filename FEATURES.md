@@ -1,3 +1,9 @@
+# FlyTally Logbook — feature index (2026-10-10)
+
+**3.7.0 owner-approved target:** usable Satellite basemap switch and optional openAIP airspace overlay on authenticated maps. Existing Standard map is deployed Phase 1, not a new deliverable. [Live scope/status](docs/product/3_7_0_CURRENT_STATE.md) · [new-chat handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). Feature exists in an unmerged trial branch ≠ feature available in production. Provider permissions remain blocking. Historical features and evidence retained below.
+
+---
+
 ## 2026-10-10 — Confirmed 3.7.0 user-visible delivery scope
 
 New capabilities to ship: Satellite basemap selection for authenticated maps/GPS replay; optional openAIP airspace reference overlay for authenticated maps. Existing Standard map is not a new deliverable. Both external-provider rights and safety gates remain blocking; no public share or Story expansion. Development reprioritized; no runtime change from this documentation update.
