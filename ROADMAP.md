@@ -1,3 +1,9 @@
+# FlyTally Logbook — current navigation (2026-10-10)
+
+**Current product priority:** 3.7.0 delivers **Satellite + openAIP airspaces**, not the already deployed Standard map. **START HERE:** [3.7.0 current state](docs/product/3_7_0_CURRENT_STATE.md) · [next-chat handoff](docs/handoffs/3_7_0_MAPS_HANDOFF_2026-10-10.md). These give current milestone, evidence, active blockers and next S1/A1 steps. Existing dated entries below are historical evidence and may describe superseded STAGED states. Keep `main` authoritative and verify its actual head before changes. This navigation block is in a docs branch, NOT yet merged to main.
+
+---
+
 ## 2026-10-10 — PRODUCT REPRIORITIZATION: DELIVER SATELLITE + openAIP (OWNER APPROVED)
 
 **Decision:** 3.7.0 delivery target is the two new user-visible capabilities: authenticated Satellite basemap selector and optional authenticated openAIP airspace overlay. Existing Standard map is ALREADY functional and Phase 1 standard-only was merged/deployed on `main@cc7abd41858cb2b2ddd8e794889922c856885686`, per canonical product contract; do not propose re-releasing it as feature value. Reconcile older historical release-gate prose below rather than treating it as latest authority.
