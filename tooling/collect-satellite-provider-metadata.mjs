@@ -11,7 +11,9 @@ const sources = Object.freeze([
   { id: "fallback", url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer?f=json", auth: false },
 ]);
 
-const [argDir, argMaxBytes, argTimeout, extra] = process.argv.slice(2);
+const [argDir, argMaxBytes, argTimeout, mode, extra] = process.argv.slice(2);
+const baseOnly = mode === "base-only";
+const serviceScope = baseOnly ? sources.slice(0, 1) : sources;
 const whole = (v) => typeof v === "string" && /^(0|[1-9][0-9]*)$/.test(v) &&
   Number.isSafeInteger(Number(v)) && Number(v) > 0 && Number(v) <= 2147483647;
 const root = resolve(process.cwd());
@@ -20,7 +22,7 @@ const relativeToRepo = out ? relative(root, out) : "";
 if (process.env.FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED !== "YES" ||
     !process.env.ARCGIS_ACCESS_TOKEN?.trim() ||
     !argDir || !isAbsolute(argDir) ||
-    !whole(argMaxBytes) || !whole(argTimeout) || extra !== undefined ||
+    !whole(argMaxBytes) || !whole(argTimeout) || (mode !== undefined && !baseOnly) || extra !== undefined ||
     !out || (!relativeToRepo.startsWith("..") && !isAbsolute(relativeToRepo))) {
   process.stderr.write("Unavailable: explicit live authorization, external absolute output directory and caller byte/time ceilings required. No supplier request sent.\n");
   process.exit(2);
@@ -79,7 +81,7 @@ async function collect(source) {
     if (!response.ok) return { outcome: "unavailable", reason: "http-status", status: response.status };
     const ct = response.headers.get("content-type")?.split(";")[0]?.trim()?.toLowerCase();
     const safeCt = ct && /^[a-z0-9._+-]+\/[a-z0-9._+-]+$/.test(ct) ? ct : "invalid-or-missing";
-    if (ct !== "application/json") return { outcome: "unavailable", reason: "content-type", status: response.status, observedContentType: safeCt };
+    if (ct !== "application/json" && ct !== "text/plain") return { outcome: "unavailable", reason: "content-type", status: response.status, observedContentType: safeCt };
     if (!body) return { outcome: "unavailable", reason: "empty-body" };
     const declared = response.headers.get("content-length");
     if (declared !== null && (!/^(0|[1-9][0-9]*)$/.test(declared) ||
@@ -103,8 +105,13 @@ async function collect(source) {
       return { outcome: "unavailable", reason: "content-length" };
     }
     const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    if (!value || typeof value !== "object" || value.error) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || value.error) {
       return { outcome: "unavailable", reason: "provider-error" };
+    }
+    if (!value.tileInfo || !Number.isInteger(value.tileInfo.rows) || !Number.isInteger(value.tileInfo.cols) ||
+        value.tileInfo.rows <= 0 || value.tileInfo.cols <= 0 || !Array.isArray(value.tileInfo.lods) ||
+        value.tileInfo.lods.length === 0 || !value.tileInfo.origin || !value.tileInfo.spatialReference) {
+      return { outcome: "unavailable", reason: "invalid-tile-info" };
     }
     finished = true;
     return {
@@ -136,7 +143,7 @@ async function collect(source) {
 // Fail closed as a bundle: never partially commit output if any of the three
 // upstream metadata services cannot be captured under caller-supplied budgets.
 const results = [];
-for (const source of sources) {
+for (const source of serviceScope) {
   const result = await collect(source);
   if (result.outcome !== "captured") {
     process.stdout.write(JSON.stringify({
@@ -162,15 +169,16 @@ writeFileSync(join(out, "manifest.json"),
     captured: results.map(({ service, observedBytes, responseContentType, capturedAtUtc }) =>
       ({ service, observedBytes, responseContentType, capturedAtUtc })),
     requests: results.length,
+    scope: baseOnly ? "base-only" : "all-three",
     actualProviderMetadata: true,
     geographicCompatibility: "NOT_EVALUATED",
     productionApproval: false,
-    constraints: "Three explicit GET metadata requests, no tiles; sensitive token not written",
+    constraints: "Explicit scoped metadata GET requests, no tiles; sensitive token not written",
   }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
 process.stdout.write(JSON.stringify({
   schema: "flytally-satellite-provider-metadata-v1",
   outcome: "captured",
-  requests: results.length, noTileRequests: true,
+  requests: results.length, scope: baseOnly ? "base-only" : "all-three", noTileRequests: true,
   productionApproval: false,
   review: "Provider metadata captured; check provenance, validity and compare grids separately",
 }, null, 2) + "\n");
