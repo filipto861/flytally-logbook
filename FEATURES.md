@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C3 verification: target PASS, typecheck correction pending
+
+Owner SHA `81518cf1` 77/77 target PASS but TS2339 in optional result shape. Source fix staged at `a6fceff`; owner retest required. No live provider wiring or release.
+
 ## 2026-10-10 — M3-C Batch 3 required imagery cancellation helper staged
 
 Standalone shared-deadline pair helper now requests cancellation of labels on base failure, uses conservative quarantine and isolated synthetic tests. Still not wired into production provider; fallback/decoder/resource policy pending. Not locally verified on new SHA; Satellite OFF.
