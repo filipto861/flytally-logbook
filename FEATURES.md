@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 first Node24 run failed; two test-only corrections staged
+
+Owner 58/60 target FAIL, typecheck PASS on `94b97e2c`; corrected stale source assertion and abort scheduling test without runtime change. New SHA verification pending; Satellite still OFF.
+
 ## 2026-10-10 — M3-B2 Satellite AbortSignal wiring staged, verification pending
 
 Satellite route now passes `request.signal` to legacy Satellite provider through an optional trailing argument; preabort and fallback suppression guards added. Does not integrate bounded transport, admission or decoder and cannot stop non-cooperative providers. Standard/Story remain unchanged; not a released feature.
