@@ -2,7 +2,7 @@
  * M3-B observational adapter. Standalone; not connected to the live provider.
  * This deliberately does NOT claim upstream network termination.
  */
-import { fetchSatelliteBounded, type SatelliteBoundedFetchOptions, type SatelliteTransportResult } from "./satellite-bounded-fetch";
+import { fetchSatelliteBounded, type SatelliteBoundedFetchOptions, type SatelliteTransportResult } from "./satellite-bounded-fetch.ts";
 
 export type SatelliteLocalLifecycle =
   | { outcome: "success"; started: true; evidence: "body-read-completed" }
