@@ -1,6 +1,6 @@
 # R2D.2 — M3-A Satellite provider lifecycle: proposed review contract
 
-Status: **DRAFT / INDEPENDENT REVIEW REQUESTED / NOT IMPLEMENTED** (2026-10-10).
+Status: **REVIEWED — APPROVE WITH CHANGES / RECONCILED DESIGN / NOT IMPLEMENTED** (2026-10-10).
 Repository: `filipto861/flytally-logbook`; owner verified standalone base SHA `7baefdf7d6ec75878b566853052238698774abb4` on Node 24: five targeted suites **69/69 local PASS** and TypeScript PASS. This evidence does **not** certify integrated provider behavior on this or later docs commits.
 
 ## Frozen scope
@@ -54,3 +54,29 @@ For each upstream call, distinguish `not-started`, `in-flight`, `settled-success
 - Independent review: NOT RUN.
 - Supplier/hosting measurements; real decode policy; explicit production ceilings: UNRESOLVED.
 - M3 provider integration, valid-fixture HTTP, build/full tests, browser and production release: NOT RUN.
+
+## DeepSeek independent review reconciliation — 2026-10-10
+
+**Verdict: APPROVE WITH CHANGES.** Independent read-only review identified critical cancellation settlement, route signal propagation, admission of parallel work, and production decoder/RSS gaps; fallback sequencing high. Accepted as design feedback, **not proof that suggested implementation can guarantee remote termination**.
+
+### Revised settlement terminology
+- **Wrapper settled**: `fetchSatelliteBounded` returned or rejected. No transport-settlement proof follows from this alone.
+- **Local transport settled**: observable promise/reader lifecycle ended, with no outstanding application-owned read/cancel operation. A terminal fetch/read event does **not** prove supplier/server-side physical work cessation or zero Node/undici resource retention.
+- **Remote operation terminated**: generally unobservable, must not be claimed from JavaScript promises or `AbortSignal`.
+- A `settlement: proven|unproven` discriminator, if introduced, MUST be evidence-derived, narrowly defined to an auditable local resource lifecycle, and never simply set in a generic `catch`/`finally`. If no reliable local proof is achievable, mark unproven and **quarantine before any generic cleanup/release**. No timed reclamation, including on late supplier promise settlement, without separately reviewed evidence/policy.
+- Importantly, distinguish **no operation started** (safe to release reservation) from abort racing invocation, headers, body reading, and asynchronous cleanup (uncertain until demonstrated). Require a truthful `started`/lifecycle contract.
+
+### Required M3-B/C/D design freeze gates
+1. M3-B: characterize actual cancellation/settlement by failure-injection against the current `fetchSatelliteBounded` boundary; select explicit evidence carrier/state transitions; wire `request.signal` through route/provider for integration but guard against live activation. Prefer transport helper refactor independently testable before route changes. Do **not** claim network termination from fetcher-promise resolution alone.
+2. M3-C: one process/isolate-scoped admission gate, initialized only with validated, measured/configured values (no new defaults). Reserve base + preferred ceilings **atomically before either starts**; avoid partially started requests on failed second admission. Pending base must prevent fallback launch; fallback needs fresh admission only after base structural validity, acceptable preferred failure, live tile deadline/capacity, and no overlapping unaccounted work. Compose/peak temporary allocations need separate documented budget. Serverless isolates and restarts make this a local guard only.
+3. M3-D: integrate real bounded-stream MIME/structure/SVG envelope with valid PNG/JPEG fixtures; document whether pixel decoding is mandatory and what audited resource controls apply. A valid structural signature is not proof of successful raster decode. Preserve private Satellite no-store, public Standard, auth/style ordering, rollback and Story.
+4. Classify preferred failure reasons in an explicit allowlist for fallback (not every `!isImage`); unproven failed preferred work retains quarantine even if optional. Failure of base aborts and accounts for preferred, with no fallback. A timed-out whole request must stop initiating new work and settle/quarantine all leases.
+5. Verify status/header response matrix 400/401/502/503, `X-FlyTally-Map-Style`, and no secret leakage. Missing production policy: zero upstream, fail closed. Full provider/HTTP/browser + performance/hosting proof and release approval remain separate milestones.
+
+### Minimum synthetic proof cases
+- Abort before actual operation start vs abort racing invocation, during headers, after reader creation, during read, and on disconnect; quarantine unproven; late completion never silently re-admits.
+- Required base fails with preferred permanently pending even after abort: bounded response and retained quarantine. Preferred fails with base pending: no fallback until base validated.
+- Atomic base+preferred admission across overlapping HTTP calls; over-capacity means zero new upstream calls; quarantine resists generic `finally` release; no claims across independent server instances.
+- Valid source-produced 1x1 PNG/JPEG mock; malformed/truncated/oversized/encoding/header failures; labels fallback allowlist vs hard timeout; base-only and double-image results; preserved Standard and auth.
+
+**Remaining unknowns:** proof-backed runtime numeric resource policy, real supplier envelopes and hosting topology, actual pixel decoder decision, remote termination observability, full-suite/build/HTTP/Playwright/CI. M3 review reconciliation docs-only; implementation NOT STARTED. Satellite production OFF, Draft PR #279.
