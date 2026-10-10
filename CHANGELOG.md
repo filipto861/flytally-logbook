@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D4 read-only transport review
+
+Documented observed Node24 Windows libuv assertion, loopback negative-control limitations, immediate `process.exit(2)` teardown hypothesis (not established cause), proposed offline tests and independent reviewer handoff in `docs/satellite-m3d4-transport-review-2026-10-10.md`. No production code changes; tests on this docs-only branch NOT RUN. No ArcGIS calls, merge or deploy. Satellite OFF.
+
 ## 2026-10-10 — M3-D Windows loopback stream diagnostic STAGED
 
 Added isolated `tooling/diagnose-satellite-windows-stream.mjs`: four credential-free child-process scenarios (drain, cancel, abort after cancel, abort after drain) against ephemeral 127.0.0.1 HTTP server. Parent reports sanitized exit code, native assertion presence and timeout only. No ArcGIS network or production provider integration. Not yet run on owner's Windows Node24; reproducing or not reproducing the upstream assertion does not alone determine its root cause. No merge/deploy; Satellite OFF.
