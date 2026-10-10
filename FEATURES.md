@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B observational lifecycle adapter staged (not connected)
+
+New standalone local supplier-start observation / conservative termination-unknown classification and six synthetic tests. Does not change production Satellite, Standard, Story, auth or runtime. No claim of upstream termination; owner verification pending.
+
 ## 2026-10-10 — M3-A independent review incorporated; implementation pending
 
 M3 lifecycle requirements updated after APPROVE WITH CHANGES review; local completion cannot prove remote operation termination, quarantine remains fail-closed. Provider not yet wired, no visible feature changes; prod Satellite OFF.
