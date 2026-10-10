@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C3 TypeScript return-shape fix (RETEST PENDING)
+
+Owner tested SHA `81518cf1`: 77/77 target PASS, typecheck FAIL with TS2339 in `satellite-required-pair.ts` error branch. Added explicit `result: undefined` to catch return for consistent inferred shape. No provider/route/Standard/Story/cache/DB changes, deploy or activation; typecheck on corrected SHA NOT RUN.
+
 ## 2026-10-10 — M3-C Batch 3 isolated required-base cancellation staged (NOT TESTED)
 
 Added `lib/satellite-required-pair.ts`, five tests in `tests/v370-satellite-required-pair.test.ts`, GPS source ownership registry and audited count 396→397. Implements synthetic shared deadline, preabort, base failure sibling abort signal and retained uncertain capacity. No provider/route/Standard/Story/cache/DB changes, no numeric production budgets, merge or deployment. Node24 targeted suite and typecheck NOT RUN for new SHA.
