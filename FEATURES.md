@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 2 admitted bounded-pair helper staged (not product-wired)
+
+Added isolated pair fetch orchestrator using atomic leases, bounded transport observation and fail-closed quarantine, plus six synthetic cases. No numerical production defaults, provider/route/Standard/Story runtime changes, or release. Owner verification pending; Satellite OFF.
+
 ## 2026-10-10 — M3-C isolated pair admission locally verified
 
 Owner exact `cd506648`: 52/52 targeted PASS plus typecheck PASS. Helper remains disconnected from provider; no released behavior or production budget claim, Satellite OFF.
