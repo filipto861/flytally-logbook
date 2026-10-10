@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D Batch 1 shared admission staging (NOT VERIFIED)
+
+Added `lib/satellite-shared-admission.ts`, six tests in `tests/v370-satellite-shared-admission.test.ts`, GPS-risk registration and auditedTotal 399→400 map expectation. Explicit policy required, same-policy reinit preserves ledger/quarantine; invalid/mutated policy rejected. No new production numerical limits, environment variables, provider/route/cache/DB/Standard/Story changes. Node24 targeted tests/typecheck, full suite/build/HTTP/Playwright/CI NOT RUN; Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-C review correction local verification (DOCS ONLY)
 
 Owner clean `7e4033f13993f7a44213f4fd915317428e84f9e5`: 92/92 targeted tests and `tsc --noEmit` PASS. Records previously staged isolated deadline/error/admission fixes, no new runtime changes. Full suite/build/HTTP/Playwright/CI NOT RUN; no deployment, Satellite OFF.
