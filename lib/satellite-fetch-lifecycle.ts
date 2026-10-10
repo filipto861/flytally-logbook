@@ -2,7 +2,7 @@
  * M3-B observational adapter. Standalone; not connected to the live provider.
  * This deliberately does NOT claim upstream network termination.
  */
-import { fetchSatelliteBounded, type SatelliteBoundedFetchOptions, type SatelliteTransportResult } from "./satellite-bounded-fetch.ts";
+import { SatelliteBoundedFetchError, fetchSatelliteBounded, type SatelliteBoundedFetchOptions, type SatelliteTransportResult } from "./satellite-bounded-fetch.ts";
 
 export type SatelliteLocalLifecycle =
   | { outcome: "success"; started: true; evidence: "body-read-completed" }
@@ -33,8 +33,7 @@ export async function observeSatelliteBoundedFetch(
   } catch (error) {
     // Error text is not propagated to caller or logged; preserve only an
     // explicitly enumerable, safe reason from the bounded primitive.
-    const reason = error && typeof error === "object" && "reason" in error &&
-      typeof error.reason === "string" ? error.reason : "upstream";
+    const reason = error instanceof SatelliteBoundedFetchError ? error.reason : "upstream";
     return { lifecycle: started
       ? { outcome: "failure", started: true, settlement: "unproven", reason }
       : { outcome: "failure", started: false, settlement: "not-started", reason } };
