@@ -105,3 +105,40 @@ process.on("exit", () => { if (calls !== 3) process.exitCode = 10; });
     rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test("M3-D evidence: non-JSON supplier MIME reports bounded diagnostic and stops after one request", () => {
+  const temp = mkdtempSync(join(tmpdir(), "flytally-satellite-mime-"));
+  try {
+    const output = join(temp, "captured");
+    const mock = join(temp, "mock-mime.mjs");
+    writeFileSync(mock, `
+let calls = 0;
+globalThis.fetch = async () => {
+  calls++;
+  return new Response("<html>not-json</html>", {
+    status: 200,
+    headers: {"content-type": "text/html; charset=utf-8"}
+  });
+};
+process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
+`);
+    const result = spawnSync(process.execPath, [
+      "--import", pathToFileURL(mock).href, script, output, "5000", "2000",
+    ], {
+      env: { ...process.env,
+        ARCGIS_ACCESS_TOKEN: "synthetic-unit-test-token",
+        FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED: "YES" },
+      encoding: "utf8", timeout: 15000,
+    });
+    assert.equal(result.status, 2, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.service, "base");
+    assert.equal(report.reason, "content-type");
+    assert.equal(report.status, 200);
+    assert.equal(report.observedContentType, "text/html");
+    assert.equal(report.attemptedMetadataRequests, 1);
+    assert.doesNotMatch(result.stdout + result.stderr, /synthetic-unit-test-token|not-json/);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
