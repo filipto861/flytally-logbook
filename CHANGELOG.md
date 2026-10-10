@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2b guarded local HTTP acceptance 3/3 PASS (owner evidence)
+
+Owner reported clean source `fa7eaa5ef173ff4441d3a1995e33e6273781a76d` on exact R2D.2 branch; isolated PostgreSQL identity `flytally_satellite_r1_test|flytally_sat_r1|55432` confirmed and disposable schema reset explicitly approved. Fresh `npm.cmd run build` PASS (Next.js 16.3.2 / embedded TypeScript PASS). Guarded `node tooling/verify-satellite-http.mjs` against synthetic local fixture with a common fresh tile-series RUN_ID: **enabled PASS** (anonymous 401; malformed/duplicate 400; revoked session 401; Standard 200; Satellite 200/fallback/502; 13 intercepted synthetic upstream calls); **disabled PASS** (Satellite 503, zero upstream); **missing-token PASS** (Satellite 503, zero upstream). This is **local HTTP-route fixture acceptance only**, not real ArcGIS requests, browser decode validation, live bounded provider wiring, peak memory/RSS evidence, production numeric resource policy, full suite, CI, production smoke or deploy. These latter items remain NOT RUN / unresolved. Satellite production OFF; no merge/deploy.
+
 ## 2026-10-10 — M3-D2b owner local verification recorded (DOCS ONLY)
 
 Owner clean `fa7eaa5ef173ff4441d3a1995e33e6273781a76d` reported 48/48 targeted PASS and TypeScript PASS for PNG/JPEG fixture migration. No actual HTTP run, full suite, build, Playwright, CI or deploy; no live provider changes. Satellite OFF.
