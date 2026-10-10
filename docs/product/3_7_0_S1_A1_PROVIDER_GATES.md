@@ -40,3 +40,12 @@ Owner priority: ship both Satellite and openAIP. This is a bounded decision reco
 No new application runtime changes, API calls with credentials, tests, migrations or deploy in this S1/A1 record. Current provider coverage = missing. Stop repeating generic Node debug cycles until a provider-gate-specific test justifies it. Decision every batch GO / NO-GO / DEFER.
 
 **Primary Esri references:** https://developers.arcgis.com/rest/static-basemap-tiles/ ; https://developers.arcgis.com/rest/static-basemap-tiles/arcgis-imagery-labels-meta-data-get/ ; https://developers.arcgis.com/documentation/mapping-and-location-services/mapping/basemaps/introduction-static-basemap-tiles-service/
+
+## 2026-10-10 — additional primary-source research / provider contact prepared
+
+**openAIP:** Official GitHub organization `https://github.com/openAIP` publicly lists `contact@openaip.net`; prepared a concise owner-to-provider inquiry asking about commercial SaaS airspace tiles, authenticated backend proxy access, caching, attribution, rate/cost, current Tiles API docs, and no public/export inclusion. **DRAFT ONLY — NOT SENT.** API Swagger index explicitly lists Core, IAM, Tiles schemas at `https://github.com/openAIP/openaip-api-documentation/blob/master/index.html`; retrieving specific live Tiles schema and applicable usage rights still unresolved. Contact/profile source https://github.com/openAIP ; documentation https://github.com/openAIP/openaip-api-documentation .
+
+**Esri:** Official example explicitly combines World Imagery 256-style map tile source with `arcgis/imagery/labels` static basemap 512px raster source, `tileSize:512`, in a MapLibre layered configuration: https://developers.arcgis.com/maplibre-gl-js/maps/raster-tile-basemaps/display-multiple-basemap-layers/ . This is **evidence that Esri supports layered display**; it is NOT proof the current FlyTally Leaflet server-side same-z/y/x SVG combination is aligned, nor licensing/cost/production readiness. Preserve Leaflet pending comparison; no rewrite or provider change authorized.
+
+**S1/A1 decision:** S1 remains DEFER on provider-specific contract/evidence and implementation choice; A1 remains BLOCKED pending owner-sent provider inquiry and authoritative reply. No credentialed API call, no merge/deploy.
+
