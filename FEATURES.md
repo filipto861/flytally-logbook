@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D Batch 1 shared admission owner staged
+
+Standalone process/isolate module-level gate owner with explicit fail-closed initialization, immutable policy snapshot, six synthetic regression cases. Production configuration/values and provider wiring unresolved; no runtime activation, Satellite OFF.
+
 ## 2026-10-10 — M3-C review correction LOCAL VERIFIED
 
 Owner clean exact `7e4033f1` 92/92 targeted tests PASS + TypeScript PASS. The isolated source modules are locally verified; production Satellite provider integration, shared gate, source-backed resource limits and decoder envelope are unresolved. Satellite OFF.
