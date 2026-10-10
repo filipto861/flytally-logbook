@@ -142,3 +142,71 @@ process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
     rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test("M3-D evidence: base-only text/plain structured JSON captures exactly one GET", () => {
+  const temp = mkdtempSync(join(tmpdir(), "flytally-satellite-base-"));
+  try {
+    const output = join(temp, "captured");
+    const mock = join(temp, "mock-base.mjs");
+    writeFileSync(mock, `
+let calls = 0;
+globalThis.fetch = async (url, init) => {
+  calls++;
+  if (new URL(url).hostname !== "ibasemaps-api.arcgis.com" ||
+      init.method !== "GET" || init.headers.Authorization !== "Bearer synthetic-unit-test-token")
+    throw Error("wrong request");
+  const payload = {tileInfo: {
+    rows: 256, cols: 256,
+    origin: {x: 0, y: 0, spatialReference: {wkid: 3857}},
+    spatialReference: {wkid: 3857},
+    lods: [{level: 0, resolution: 1}]
+  }};
+  return new Response(JSON.stringify(payload), {status: 200, headers: {"content-type": "text/plain"}});
+};
+process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
+`);
+    const r = spawnSync(process.execPath, ["--import", pathToFileURL(mock).href,
+      script, output, "5000", "2000", "base-only"], {
+      env: { ...process.env, ARCGIS_ACCESS_TOKEN: "synthetic-unit-test-token",
+        FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED: "YES" },
+      encoding: "utf8", timeout: 15000,
+    });
+    assert.equal(r.status, 0, r.stderr);
+    const report = JSON.parse(r.stdout);
+    assert.equal(report.requests, 1);
+    assert.equal(report.scope, "base-only");
+    assert.equal(JSON.parse(readFileSync(join(output, "base.json"), "utf8")).tileInfo.cols, 256);
+    assert.equal(JSON.parse(readFileSync(join(output, "manifest.json"), "utf8")).requests, 1);
+    assert.doesNotMatch(r.stdout + r.stderr, /synthetic-unit-test-token/);
+  } finally {
+    rmSync(temp, {recursive: true, force: true});
+  }
+});
+
+test("M3-D evidence: base-only text/plain invalid JSON rejects without writing metadata", () => {
+  const temp = mkdtempSync(join(tmpdir(), "flytally-satellite-invalid-"));
+  try {
+    const output = join(temp, "captured");
+    const mock = join(temp, "mock-invalid.mjs");
+    writeFileSync(mock, `
+let calls = 0;
+globalThis.fetch = async () => {
+  calls++;
+  return new Response("not json", {status: 200, headers: {"content-type": "text/plain"}});
+};
+process.on("exit", () => { if (calls !== 1) process.exitCode = 10; });
+`);
+    const r = spawnSync(process.execPath, ["--import", pathToFileURL(mock).href,
+      script, output, "5000", "2000", "base-only"], {
+      env: { ...process.env, ARCGIS_ACCESS_TOKEN: "synthetic-unit-test-token",
+        FLYTALLY_SATELLITE_METADATA_LIVE_APPROVED: "YES" },
+      encoding: "utf8", timeout: 15000,
+    });
+    assert.equal(r.status, 2, r.stderr);
+    assert.equal(JSON.parse(r.stdout).outcome, "unavailable");
+    assert.match(r.stdout, /transport-or-json/);
+    assert.doesNotMatch(r.stdout + r.stderr, /synthetic-unit-test-token|not json/);
+  } finally {
+    rmSync(temp, {recursive: true, force: true});
+  }
+});
