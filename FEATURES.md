@@ -1,3 +1,7 @@
+## 2026-10-10 — R2D.2 M2c-C owner LOCAL PASS; M3 integration review before provider changes
+
+Owner Node24 on exact `7baefdf7d6ec75878b566853052238698774abb4`: targeted M2a/M2b/M2c-A/M2c-B/C/map **69/69 PASS**, TypeScript PASS. Standalone quarantine guard retains unsafe unknown in-flight reservations but not wired into Satellite provider. Actual Satellite provider still Next 7-day cached and `arrayBuffer()`, route does not forward request abort, browser fixture supplies MIME-labeled marker strings. M3 read-only independent contract review now next before runtime coding; new user-facing behavior NOT IMPLEMENTED, prod Satellite OFF.
+
 ## 2026-10-10 — Satellite M2c-C fail-closed uncertainty quarantine STAGED, not product-wired
 
 Existing process-local admission gate can now mark an operation of unknown completion `quarantine()` and retain capacity even if `release()` is later invoked; expose quarantined count without secrets. Four synthetic cases staged, includes uncooperative supplier simulation. Prior M2c-B owner 65/65 targeted + typecheck local PASS on earlier SHA, current quarantine code **NOT RUN**. No automatic recovery/claim of upstream termination, global concurrency or RSS guarantee. No Satellite provider/route modification, production Satellite OFF.
