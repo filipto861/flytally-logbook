@@ -107,7 +107,7 @@ test("3.7.0 public replay fixture restores disposable certified state safely", (
 test("3.7.0 security containment requires Satellite session before token/upstream; Standard stays public", () => {
   const route = source("app/api/map-tile/[z]/[x]/[y]/route.ts");
   assert.match(route, /import \{ getSession \} from "@\/lib\/auth\/session";/);
-  assert.match(route, /export const dynamic = "force-dynamic";/);
+  assert.doesNotMatch(route, /export const dynamic = "force-dynamic";/, "Do not disable shared Standard upstream caching");
   const parsed = route.indexOf("const style = parseMapTileStyle");
   const session = route.indexOf("if (wantsSatellite && !(await getSession()))");
   const token = route.indexOf("const arcgisToken =");
