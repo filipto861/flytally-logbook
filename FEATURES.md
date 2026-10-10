@@ -808,3 +808,5 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 
 
 Satellite M3-D metadata collector: isolated MIME/status diagnostic and awaited cleanup hardening staged, tests/Windows runtime verification pending; not a production feature or verified ArcGIS grid.
+
+Satellite metadata collector base-only scoped diagnostic staged; supports narrowly validated text/plain JSON. Not runtime-wired or verified on live supplier. Satellite OFF.
