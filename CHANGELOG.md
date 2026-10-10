@@ -10,6 +10,26 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.7.0 Satellite S1.1 — independent DeepSeek review reconciled (10 October 2026; docs Draft, not shipped)
+
+- Owner-supplied read-only reviewer confirmed the 512px/256px geographic-span correction with provider-specific metadata caveat; **A hardened SVG vs B independent Leaflet layers remains DEFER**, not a geometry GO. Earlier sample Web Mercator values do not establish actual service tileInfo.
+- Reviewer identified **HIGH severity source-level public Satellite endpoint risk**: main route may fetch ArcGIS without session verification and returns public-cacheable/CORS-enabled satellite SVG; client flag OFF does not server-authorize requests. Actual successful production traffic, invoices and CDN objects **NOT VERIFIED**. Plan standalone security pre-emption with auth `401`, private/no-store, no upstream for anonymous requests, Standard/Story preservation and CDN cache assessment; no hotfix runtime change performed in this docs PR.
+- S1.1 review **COMPLETE**; next S1.2 operator-only Esri licence/account/tileInfo/referrer/Story rights, with no unapproved live supplier call. Docs-only change; Node/build/browser/DB/CI/deploy **NOT RUN** for this review update.
+
+
+### 3.7.0 Satellite S1 — correction after independent source cross-check (10 October 2026; unmerged docs)
+
+- Corrected an **unsupported initial preference for two separate Leaflet layers**. Esri's published static-label resolution at L12 (512 × 19.109257 m/px) and a published illustrative traditional MapServer L12 (256 × 38.218514 m/px) produce approximately the **same 9784m geographic tile span** when origins/CRS/coordinates agree. A one-level visual pixel-resolution difference does **not** prove a same-z/y/x footprint mismatch, nor prove actual FlyTally provider alignment.
+- Current position: keep Leaflet; **A: hardened existing SVG compositor** and **B: separate source-specific layers** both remain DEFER until exact upstream metadata, vendor terms, credentials, cost and Story requirements are established. S1 review handoff now explicitly challenges tile-mapping assumptions. The earlier conditional B preference below is superseded as a **time-stamped draft**, not deleted.
+- Docs-only reconciliation. Node/build/PG/browser/CI/live Esri/production checks **NOT RUN** for this correction; no provider or credential requests, code changes, merge or deploy.
+
+### 3.7.0 Satellite S1 — architecture analysis and independent-review handoff (10 October 2026; unmerged docs)
+
+- Recorded a **source-backed conditional architecture preference** in `docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md`: retain Leaflet; prefer independently tiling-correct Esri imagery/label layers through a session-authorized proxy; **do not accept the existing same-z/y/x 256px SVG composition as verified**. Official Esri documents label service 512px with a distinct LOD equivalence, but actual FlyTally source tileInfo has not been captured.
+- S1 source/terms/metadata and Esri account token/referrer/cost/Story export rights remain **DEFER/BLOCKED**; independently review with DeepSeek before source-gated S2 implementation. Past synthetic PR #272–#279 local PASS is not transferable to a future runtime integration.
+- S1 is **documentation/read-only research only**; no live provider request, credentials/flag/environment changes, runtime/DB/certification/schema changes, merge/deploy or release. New-document Node/build/Playwright/Postgres/CI **NOT RUN**.
+
+
 ### Documentation governance — 10 October 2026 (docs-only branch; not yet merged)
 
 - Reconciled `ROADMAP.md` and `FEATURES.md` against actual GitHub states: Standard Maps PR #269 **MERGED**, documentation PR #270 **MERGED**; Phase 1 owner-accepted. Production remains **3.6.0**; full 3.7.0, Satellite and openAIP are **not shipped**.
