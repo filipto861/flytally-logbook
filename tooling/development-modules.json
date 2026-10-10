@@ -624,7 +624,8 @@
         "components/satellite-map-control",
         "components/client-maps",
         "components/public-flight-map",
-        "lib/map-tile-style"
+        "lib/map-tile-style",
+        "lib/openaip-airspace-contract"
       ],
       "files": [],
       "risks": [
@@ -886,7 +887,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 388,
+    "auditedTotal": 389,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
