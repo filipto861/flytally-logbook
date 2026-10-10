@@ -10,7 +10,7 @@ const control = source("components/airspace-map-control.ts");
 
 test("A2B2 airspaces control is private, opt-in and build OFF by default", () => {
   assert.match(control, /NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS === "true"/);
-  assert.match(control, /toggle\.textContent = "Aviation";/);
+  assert.match(control, /toggle\.textContent = "Aviation overlay";/);
   assert.match(control, /"Aviation overlay"/);
   assert.doesNotMatch(control, /toggle\.textContent = "Airspaces"/);
   assert.match(control, /if \(!AIRSPACES_MAPS_TRIAL_ENABLED \|\| !enabled\) return \(\) => \{\};/);
@@ -30,14 +30,20 @@ test("A2B2 airspaces layer is independent of basemap and noninteractive in the a
 
 test("A2B2 explicit zoom budget, fail-closed tile error and attribution contract", () => {
   assert.match(control, /MAX_AIRSPACE_REQUEST_ZOOM = 14/);
-  assert.match(control, /if \(map\.getZoom\(\) > MAX_AIRSPACE_REQUEST_ZOOM\)/);
-  assert.match(control, /maxZoom: MAX_AIRSPACE_REQUEST_ZOOM/);
+  assert.match(control, /MAX_AIRSPACE_DISPLAY_ZOOM = 18/);
+  assert.match(control, /maxZoom: MAX_AIRSPACE_DISPLAY_ZOOM/);
+  assert.match(control, /maxNativeZoom: MAX_AIRSPACE_REQUEST_ZOOM/);
+  assert.doesNotMatch(control, /map\.on\("zoomend"/);
+  assert.doesNotMatch(control, /map\.getZoom\(\) > MAX_AIRSPACE_REQUEST_ZOOM/);
+  const proxy = source("app/api/airspace-tile/[z]/[x]/[y]/route.ts");
+  assert.match(proxy, /const MAX_REQUEST_ZOOM = 14/);
+  assert.match(proxy, /tile\.z > MAX_REQUEST_ZOOM/);
   assert.match(control, /layer\.on\("tileerror", tileError\)/);
   assert.match(control, /unavailable = true; \/\/ Avoid retry storms/);
   assert.match(control, /status\("Aviation unavailable/);
   assert.match(control, /Coverage\/status unverified/);
-  assert.match(control, /coverage and current status unverified/);
-  assert.match(control, /map\.off\("zoomend", onZoomEnd\)/);
+  assert.doesNotMatch(control, /status\("Aviation reference only/);
+  assert.doesNotMatch(control, /map\.off\("zoomend"/);
 });
 
 test("A2B2 four authenticated maps install and dispose, public replay is excluded", () => {
