@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 3.7.0 A2E — Map settings UX (feature branch; NOT MERGED, 10 October 2026)
+
+- **Staged implementation only:** combined the separately mounted Satellite and Aviation Leaflet controls into one per-map **Map settings** popover on four protected map surfaces. Standard/Satellite and Aviation remain independent; existing source-backed errors, public exclusion, attribution and reference-only status are preserved. Added responsive scoped Light/Dark CSS, accessible expanded state/Escape/outside dismiss/focus return and updated source/browser regression tests. No DB, authentication, provider URL/key, Training, public Story, persistent user settings or release-version change.
+- **Verification:** source regression and Playwright specs updated but targeted/full Node, TypeScript, production build, desktop/mobile/iPad Playwright and release risk gate **NOT RUN** yet. No merge or deployment. Historical A2D deployment/production ON state is tracked separately by docs PR #294; this entry does not claim a new rollout.
+
+
 ## 3.7.0 A2D — combined openAIP Aviation overlay (feature branch, 10 October 2026)
 
 - Owner product decision: choose **Aviation overlay** (combined openAIP raster) instead of the previously intended airspaces-only overlay, after hidden-key owner-local z=9/x=276/y=173 probe returned **404 JSON** for legacy `airspaces` and **200 PNG / 13,425 bytes / nonempty alpha** for `openaip`. No API key was shared/stored in this development session.

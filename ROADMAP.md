@@ -4,7 +4,10 @@
 **Owner:** Filip Točík  
 **Last reconciled:** 10 October 2026  
 **Current production product version:** `3.6.0`  
-**Current active release:** `3.7.0`  
+**Current active release:** `3.7.0`
+
+**A2E Map settings UX — IMPLEMENTED ON FEATURE BRANCH / NOT YET VERIFIED (10 October 2026):** Owner approved one expandable **Map settings** control, replacing the separate Standard/Satellite and Aviation bars. Implemented on `feat/3.7.0-a2e-unified-map-settings` with a single accessible Leaflet popover, Base map choices, Aviation overlay, explicit non-authoritative note, Escape/outside-click dismissal, 44px touch controls and responsive Light/Dark styles. Reuses the already guarded Satellite and Aviation controllers and pane contracts; Standard remains default, Aviation click-only, no persistence, public share excluded, no migrations, no change to openAIP API keys/provider flags or Training. Source-level and browser regression coverage updated but **tests/typecheck/build/Playwright NOT RUN** on this branch. **Next:** owner-local exact-candidate verification with both Aviation ON/OFF, Standard/Satellite failure/rollback, mobile + iPad visual acceptance; then review/merge/deployment separately. Prior A2D Production ON was owner-confirmed; docs-only PR #294 tracks its independent closeout and is not a dependency for A2E code.
+  
 **Current active workstream:** Maps & Aviation Layers — Satellite is production-deployed; A2A/A2B1/A2B2 are merged with openAIP disabled. A2D changes the private feature to the **combined Aviation** raster; exact runtime head `b10d81b7` passed separate owner-local ON/OFF synthetic release gates. [PR #293](https://github.com/filipto861/flytally-logbook/pull/293) remains **Draft/unmerged**, and these results do not extend automatically to this documentation-only follow-up commit. Provider-in-app smoke, rights/quotas, physical iPad and Production enablement remain separate gates; full 3.7.0 is unreleased.
 
 This is the canonical **forward execution plan** for `flytally-logbook`. Older milestone narratives, failed attempts, test logs and superseded PR states were preserved verbatim in [the pre-reconciliation roadmap snapshot](docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md). Dated evidence there is **historical**, never an instruction to override this page.
