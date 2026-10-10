@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 2 isolated admitted-pair orchestration STAGED / NOT RUN
+
+Added `lib/satellite-admitted-pair.ts` and six synthetic tests `tests/v370-satellite-admitted-pair.test.ts`; GPS-risk runtime registry `auditedTotal` 395→396 and map source assertion updated. The helper releases proven no-start/local completed body operations and quarantines uncertain upstream failures; it is **not connected to the provider**, does not cancel sibling on base failure, and does not prove remote settlement. No prod policy values, provider/route/cache/DB/auth/Standard/Story modifications; Node24 tests/typecheck, full suite, build, HTTP, Playwright and CI NOT RUN. No merge/deploy.
+
 ## 2026-10-10 — M3-C Batch 1 owner local verification recorded (DOCS ONLY)
 
 Owner clean exact SHA `cd506648462278594b600a1e27657694845f3014`: 52/52 targeted tests PASS, typecheck PASS; confirms standalone atomic pair reservation and rollback. No product runtime, provider, route, DB, merge or deploy change; next orchestration pending. Full suite/build/HTTP/browser/CI NOT RUN.
