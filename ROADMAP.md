@@ -132,6 +132,10 @@ Initial source inventory, pane/fallback contract and independent review complete
 
 PR #269 merged as `cc7abd41`; PR #270 documentation closure merged as `7d47010e86`. Owner manual signed-in Map/GPS replay/public-share/mobile browser smoke PASS; production public Map API 4/4 PASS; original local release candidate Node 1,447/1,447, PG 100/100, build, Chromium desktop/mobile 12/12 each PASS. Native Safari/iPad device evidence remains unverified. **Do not report 3.7.0 as shipped.**
 
+## Security pre-emption — Satellite tile endpoint auth (DRAFT / UNVERIFIED)
+
+**10 October 2026:** Source audit plus DeepSeek S1.1 review identified that production `main` Satellite map-tile route had no per-request `getSession()` gate and returned publicly cacheable SVG with wildcard CORS. This is a **confirmed source-code exposure**, not proof that Esri requests succeed or that costs were incurred. An isolated `fix/3.7.0-satellite-endpoint-auth-containment` Draft patch is being prepared to require live session 401, send `private, no-store` on success and preserve legacy public Standard and authenticated Story. **NOT MERGED/DEPLOYED; tests NOT RUN.** Before any merge/deploy: exact-candidate automated + authenticated Next HTTP tests, risk-plan build/browser/PG as selected, public CDN cache/old-object review, owner version/rollout/rollback decision. UI Satellite remains OFF; this fix does not clear provider licensing, geometry, resource budgets or 3.7.0 release gates. Details also in Draft [S1 reviewer reconciliation](docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md) (unmerged PR #281).
+
 ## Phase 2 — Satellite — ACTIVE / SOURCE-GATED
 
 **Owner priority: Satellite FIRST (10 October 2026).** Existing stacked Draft branches/PRs contain a local-only selector and engineering/testing for Story PNG, authenticated tiles, fallback, emergency upstream disable and bounded-provider helper experiments. Some earlier exact runtime SHAs passed local ON/OFF release gates with synthetic upstreams. None proves actual Esri tile-grid compatibility, entitlement, cost, live supplier response, production authorization or physical Safari.
