@@ -8,6 +8,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+
+## Production aircraft default backfill — 10 October 2026 (DATA ONLY; no app release)
+
+- Owner-requested one-time update on Neon Logbook Shadow / production primary (not Training). Preflight verified 25 aircraft profiles across 5 users, 24 eligible profiles, 0 identity mismatches and 0 conflicting existing defaults.
+- A transactional, exact-ID/model/ICAO/class/evidence-guarded UPDATE filled 21 empty default_engine_type = SE cells and 22 empty default_operation_type = SP cells, affecting 23 aircraft profiles (one eligible profile already had both). Existing non-null user selections were preserved; no flight records updated. Data-only cleanup marker: 2026-10-10_aircraft_defaults_sp_se_v1 in flytally_data_cleanups.
+- Production post-read verified 22 SE, 24 SP, 0 ME/MP. The two unpowered L23 Blaník gliders were assigned SP but deliberately kept engine classification unset. King Air / C90 profile ID 19 has conflicting ULL class/evidence and was excluded entirely for owner review; no invented/forced classification. Thus three engine defaults and one operation default remain unset.
+- Scope and verification: DB transaction PASS; post-write read-only DB census PASS. No DB schema migration, product runtime change, test/build/CI/Playwright execution, code merge or deployment. ROADMAP.md and FEATURES.md reviewed: no change needed for this historical one-time data correction.
+
 ## A2F — compact Map settings and Aviation high-zoom retention (feature branch, NOT MERGED — 10 October 2026)
 
 - User-reported: duplicate menu headings/disclaimers; Aviation deselects and disappears when zoom increases beyond 14. Fixed in feature branch by removing intentional `zoomend` detachment, keeping overlay selected and using Leaflet `maxNativeZoom:14` with display `maxZoom:18`. Existing server request cap z<=14, upstream auth/key/transport checks, runtime error/no-retry behavior and openAIP map attribution remain unchanged; no claim of source coverage or higher-resolution data.
