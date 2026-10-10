@@ -1,3 +1,9 @@
+## 2026-10-10 — Satellite R2D.2 M2c-A isolated output envelope/tests added (NOT NODE24 VERIFIED)
+
+**Actually changed** `lib/satellite-svg-envelope.ts` and `tests/v370-satellite-svg-envelope.test.ts` (explicit no-default encoded-byte/pixel/nominal RGBA/SVG policy guards, BigInt overflow-safe Base64 expansion and markup size before producing legacy-compatible composed SVG), GPS ownership/browser-risk entries in `tooling/development-modules.json`, tracked runtime auditedTotal 391→392 with map-layers regression update. README/governance design, ROADMAP, FEATURES and CHANGELOG changed in same cycle; existing provider/route/Standard/Story/auth remain unchanged. **No M3 integration or removal of Next 7-day Satellite cache yet.** No production budgets invented; license questions deferred per owner.
+
+**Verification evidence:** isolated Node22 prototype, surrogate raster type: 8/8 synthetic unit tests PASS (preflight only, **NOT actual owner Node24 repo tests**). Owner Node24 targeted M2a/M2b/M2c/map tests, typecheck, Next build, CI, Playwright, A4 authenticated HTTP and release ON/OFF **NOT RUN** on this commit. No DB/ArcGIS/Training, merge, deploy, feature activation. Draft PR #279, prod Satellite OFF.
+
 ## 2026-10-09 — R2D.2 owner reprioritizes license discussions out of technical critical path (DOCS ONLY)
 
 Recorded explicit owner instruction not to pursue Esri licence/pricing/account questions at this stage. Updated ROADMAP, design and FEATURES to make engineering review, synthetic testing and preparation for bounded Satellite `no-store` independent of that deferred discussion. Previous Esri docs/history retained without claims of rights/approval. Existing M2a and M2b local PASS retained at their exact source commits; no new runtime/provider/test file changed here, no numeric production limits set, no real ArcGIS/DB/Training changes, no merge/deploy, production Satellite OFF and Draft PR #279.
