@@ -1,3 +1,5 @@
+**Owner sequencing (2026-10-10):** Satellite delivery is FIRST; openAIP Airspaces remains planned in 3.7.0 but implementation PAUSED after A2A while Satellite is completed. Standard existing production stays unchanged.
+
 **openAIP A2A:** preparatory strict XYZ + capability gate staged and NOT locally verified yet. No user-visible overlay, provider calls or production feature; see `docs/product/3_7_0_A2A_AIRSPACE_BOUNDARY.md`.
 
 **Provider status:** OpenAIP inquiry is draft/not sent; Satellite has an official Esri two-layer reference but current FlyTally composition still unverified. These are planning facts, not shipped features.
