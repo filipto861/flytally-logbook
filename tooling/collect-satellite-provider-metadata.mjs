@@ -117,7 +117,6 @@ async function collect(source) {
   } catch {
     return { outcome: "unavailable", reason: "transport-or-json" };
   } finally {
-    clearTimeout(timer);
     // Do not fire-and-forget body cancellation: on Windows Node 24 this can race
     // process teardown. The entire cleanup is still bounded by the fetch signal.
     if (!finished) {
@@ -128,6 +127,7 @@ async function collect(source) {
       }
     }
     controller.abort();
+    clearTimeout(timer);
     try { reader?.releaseLock(); } catch {}
   }
 }
