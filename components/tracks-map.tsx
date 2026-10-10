@@ -5,6 +5,7 @@ import L from "leaflet";
 import type { MapTrack } from "@/lib/data/tracks";
 import { addFlyTallyBasemap,installResponsiveMap } from "@/components/leaflet-mobile";
 import { installSatelliteMapControl } from "@/components/satellite-map-control";
+import { installAirspaceMapControl } from "@/components/airspace-map-control";
 import { mapThemePalette,useResolvedTheme } from "@/components/theme-runtime";
 
 function gap(a:{lat:number;lon:number},b:{lat:number;lon:number}){const p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p,q=Math.sin(dLat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)**2;return 12742.0176*Math.asin(Math.sqrt(q))}
@@ -45,8 +46,8 @@ export function TracksMap({ tracks, height = 650, detail = false }: { tracks: Ma
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: detail ? 13 : 10 });
     else map.setView([49.8, 15.5], 7);
     const cleanupResponsive=installResponsiveMap(map,target.current);
-    const cleanupSatellite=installSatelliteMapControl(map,true);
-    return () => { cleanupSatellite();cleanupResponsive();map.remove();pathsRef.current=[]; };
+    const cleanupSatellite=installSatelliteMapControl(map,true);const cleanupAirspaces=installAirspaceMapControl(map,true);
+    return () => { cleanupAirspaces();cleanupSatellite();cleanupResponsive();map.remove();pathsRef.current=[]; };
   }, [tracks, detail]);
   useEffect(()=>{
     pathsRef.current.forEach(({path,kind,markerFill})=>{
