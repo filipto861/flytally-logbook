@@ -1659,3 +1659,5 @@ M3-D metadata diagnostic fix staged on isolated branch; synthetic MIME test, own
 M3-D next isolated batch STAGED: base-only metadata scope + text/plain JSON with tileInfo shape gate, offline tests pending owner verification; real provider retry NOT APPROVED, native Windows assertion UNRESOLVED.
 
 M3-D2 strict metadata validation STAGED: finite tile origin, positive integer dimensions, coherent Web Mercator aliases, unique nonnegative LOD levels, positive finite resolution and max 64 LODs; synthetic invalid-evidence cases added. Owner tests/typecheck/build NOT RUN on this source. Local real HTTP stream teardown reproduction and Node Windows assertion root cause remain OPEN. No live ArcGIS requests authorized. Satellite OFF; no merge/deploy.
+
+M3-D Windows stream investigation: offline 127.0.0.1 child-process diagnostic staged, covering drain/cancel/abort ordering. Node native assertion root cause not yet established; owner Windows execution pending. No live provider traffic authorized, Satellite OFF.
