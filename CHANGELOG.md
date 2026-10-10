@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## A2F — compact Map settings and Aviation high-zoom retention (feature branch, NOT MERGED — 10 October 2026)
+
+- User-reported: duplicate menu headings/disclaimers; Aviation deselects and disappears when zoom increases beyond 14. Fixed in feature branch by removing intentional `zoomend` detachment, keeping overlay selected and using Leaflet `maxNativeZoom:14` with display `maxZoom:18`. Existing server request cap z<=14, upstream auth/key/transport checks, runtime error/no-retry behavior and openAIP map attribution remain unchanged; no claim of source coverage or higher-resolution data.
+- The panel now displays only Standard, Satellite, Aviation overlay; legacy group/region accessibility labels, keyboard/outside click, visual selected state and genuine loading/error statuses retained. Browser regression now checks full zoom, persistence and all requested z values <=14; source contracts updated. **Tests/typecheck/build/Playwright/risk release NOT RUN on this commit**, no DB/Training/deploy/config change; old #295 evidence cannot be transferred to a new SHA.
+
+
 ## 3.7.0 A2E — Map settings UX (feature branch; NOT MERGED, 10 October 2026)
 
 - **Staged implementation only:** combined the separately mounted Satellite and Aviation Leaflet controls into one per-map **Map settings** popover on four protected map surfaces. Standard/Satellite and Aviation remain independent; existing source-backed errors, public exclusion, attribution and reference-only status are preserved. Added responsive scoped Light/Dark CSS, accessible expanded state/Escape/outside dismiss/focus return and updated source/browser regression tests. No DB, authentication, provider URL/key, Training, public Story, persistent user settings or release-version change.
