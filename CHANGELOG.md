@@ -1,3 +1,7 @@
+## 2026-10-10 — 3.7.0 product priority clarified (docs only)
+
+Owner confirmed Satellite + openAIP airspace as release objective. Updated roadmap with finite S1/S2 and A1/A2 + release decision, STOP rule for speculative diagnostics and factual Phase 1 Standard production note. No implementation, supplier calls, DB changes, merge or deploy performed.
+
 ## 2026-10-10 — M3-D5 loopback exit-path diagnostics STAGED
 
 Added `tooling/diagnose-satellite-exit-path.mjs`, an offline 127.0.0.1 diagnostic comparing immediate exit and exitCode after MIME rejection, chunked responses and truncated content. Runs in isolated child processes with bounded watchdog and no token or Esri requests. Owner Windows verification NOT RUN; result cannot establish native Node assertion root cause alone. Satellite OFF, merge/deploy NOT RUN.
