@@ -183,6 +183,9 @@ test("A2E shared Map settings contains both independent gated controllers withou
   assert.match(composite, /installSatelliteMapControl\(map, enabled, panel\)/);
   assert.match(composite, /installAirspaceMapControl\(map, enabled, panel\)/);
   assert.match(composite, /trigger\.setAttribute\("aria-expanded", "false"\)/);
+  assert.match(composite, /trigger\.setAttribute\("aria-controls", panel\.id\)/);
+  assert.match(composite, /panel\.setAttribute\("role", "region"\)/);
+  assert.doesNotMatch(composite, /aria-haspopup/);
   assert.match(composite, /panel\.hidden = !value/);
   assert.match(composite, /event\.key !== "Escape"/);
   assert.match(composite, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);

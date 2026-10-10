@@ -130,6 +130,7 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await expect(map.getByRole("region", { name: "Map settings" })).toBeVisible();
     await settings.press("Escape");
     await expect(settings).toHaveAttribute("aria-expanded", "false");
+    await expect(settings).toBeFocused();
     await settings.click();
     await page.getByRole("heading", { name: "Airports and routes" }).click();
     await expect(settings).toHaveAttribute("aria-expanded", "false");

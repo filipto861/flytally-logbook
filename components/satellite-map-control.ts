@@ -160,7 +160,6 @@ export function installMapSettingsControl(map: L.Map, enabled: boolean): () => v
   trigger.type = "button";
   trigger.className = "flytally-map-settings-trigger";
   trigger.setAttribute("aria-label", "Map settings");
-  trigger.setAttribute("aria-haspopup", "true");
   trigger.setAttribute("aria-expanded", "false");
 
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
