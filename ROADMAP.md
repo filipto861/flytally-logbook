@@ -1663,3 +1663,5 @@ M3-D2 strict metadata validation STAGED: finite tile origin, positive integer di
 M3-D Windows stream investigation: offline 127.0.0.1 child-process diagnostic staged, covering drain/cancel/abort ordering. Node native assertion root cause not yet established; owner Windows execution pending. No live provider traffic authorized, Satellite OFF.
 
 M3-D4 read-only transport review captured at `docs/satellite-m3d4-transport-review-2026-10-10.md`. Proposed next: isolated collector-exact loopback error-exit reproduction, independently reviewed; NOT IMPLEMENTED, no provider re-query authorized. Satellite OFF.
+
+M3-D5 STAGED: local-only diagnostic for MIME refusal, delayed chunked responses, truncated bodies and immediate vs orderly process exit. Run on owner Windows Node24; not yet verified. Real provider evidence and native crash root cause remain blocked. No external calls authorized.
