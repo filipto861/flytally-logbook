@@ -57,3 +57,11 @@ test("M3-D provider grid: numerical differences are not swallowed by guessed tol
   assert.deepEqual(compare(base(), grid(512, [4.00000001, 2, 1]), [0]),
     { outcome: "unavailable", reason: "different-tile-footprint" });
 });
+
+test("M3-D provider grid: contradictory WKID aliases cannot masquerade as Web Mercator", () => {
+  const other = labels();
+  other.tileInfo.spatialReference.wkid = 4326;
+  // latestWkid still says 3857: contradictory evidence must fail closed.
+  assert.deepEqual(compare(base(), other, [0]),
+    { outcome: "unavailable", reason: "unsupported-spatial-reference" });
+});
