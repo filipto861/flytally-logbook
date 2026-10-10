@@ -106,9 +106,13 @@ export function composeSatelliteSvgBounded(
   if (rgbaProjection > BigInt(policy.maxTotalRgbaBytes)) fail("rgba-projection");
   if (projectedSvg > BigInt(policy.maxSvgBytes)) fail("svg-bytes");
 
-  const markup = images.map(image =>
-    `<image href="data:${image.contentType};base64,${Buffer.from(image.bytes).toString("base64")}${IMAGE_CLOSE}`,
-  ).join("");
+  // Use a zero-copy Buffer view of the validated byte range. The previous
+  // Buffer.from(Uint8Array) form duplicated every encoded input. Base64
+  // strings, markup and final SVG still allocate and are NOT RSS-bounded.
+  const markup = images.map(image => {
+    const view = Buffer.from(image.bytes.buffer, image.bytes.byteOffset, image.bytes.byteLength);
+    return `<image href="data:${image.contentType};base64,${view.toString("base64")}${IMAGE_CLOSE}`;
+  }).join("");
   const svg = `${SVG_OPEN}${markup}${SVG_CLOSE}`;
   // Guard future markup changes from silently violating the projection.
   if (BigInt(Buffer.byteLength(svg, "utf8")) !== projectedSvg) fail("svg-bytes");
