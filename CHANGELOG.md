@@ -12,7 +12,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ### Security remediation candidate — Satellite endpoint session check (10 October 2026; unmerged)
 
-- **Draft code only:** Add `getSession()` authorization before Satellite token/upstream access in `/api/map-tile/[z]/[x]/[y]`, `401` for unauthenticated `style=satellite`, `private, no-store` on permitted responses and remove Satellite wildcard CORS; preserve public Standard style including legacy omitted style. Dynamic route disables Next static rendering.
+- **Draft code only:** Add `getSession()` authorization before Satellite token/upstream access in `/api/map-tile/[z]/[x]/[y]`, `401` for unauthenticated `style=satellite`, `private, no-store` on permitted responses and remove Satellite wildcard CORS; preserve public Standard style including legacy omitted style. Next.js 16 default GET request-time handling is retained; an initial proposed `force-dynamic` export was removed because it would also override the existing Standard upstream cache. This caching assumption must still be checked in a real Next HTTP test.
 - Add targeted source-contract regression asserting order of style parsing → session authorization → token/upstream and distinct private Satellite vs public Standard response policies. Existing authenticated Story continues using the same endpoint; actual behavioral preservation requires local browser/HTTP verification.
 - This patch does **not** fix existing CDN caches automatically, set server-side global upstream disable, validate Esri licence/tiling, impose proven resource limits or enable Satellite maps. **Node/build/DB/Playwright/CI/production smoke NOT RUN** for this new exact branch; merge/deploy/version decision PENDING.
 
