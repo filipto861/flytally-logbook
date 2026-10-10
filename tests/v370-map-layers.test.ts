@@ -147,7 +147,7 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
   assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
-  assert.equal(registry.ownership.auditedTotal, 392);
+  assert.equal(registry.ownership.auditedTotal, 393);
 });
 
 test("3.7.0 R2 Story PNG export rejects missing map tiles and exposes failure", () => {
@@ -188,6 +188,7 @@ test("3.7.0 R2B provider is explicitly GPS-owned and selects real browser map ac
   assert.ok(gps?.prefixes.includes("lib/satellite-bounded-fetch"));
   assert.ok(gps?.prefixes.includes("lib/satellite-raster-validation"));
   assert.ok(gps?.prefixes.includes("lib/satellite-svg-envelope"));
+  assert.ok(gps?.prefixes.includes("lib/satellite-admission-gate"));
   assert.ok(gps?.prefixes.includes("lib/satellite-map-provider"),
     "Provider must be GPS-owned, never silently counted as unowned shared runtime");
   const targets = registry.browserAcceptance.pathTargets.find((item: { prefixes?: string[] }) =>
