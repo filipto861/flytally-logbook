@@ -150,15 +150,15 @@ test("3.7.0 trial is limited to four authenticated surfaces, not public replay",
   const saved = source("components/flight-track-player.tsx");
   const imported = source("components/gps-import-review-player.tsx");
   for (const file of [overview, tracks, imported]) {
-    assert.match(file, /installSatelliteMapControl\(map,true\)/);
-    assert.match(file, /cleanupSatellite\(\)/);
+    assert.match(file, /installMapSettingsControl\(map,true\)/);
+    assert.match(file, /cleanupMapSettings\(\)/);
   }
-  assert.match(saved, /installSatelliteMapControl\(map,!publicView\)/);
+  assert.match(saved, /installMapSettingsControl\(map,!publicView\)/);
   assert.match(saved, /\[samples,tracks,publicView\]/);
   const publicMap = source("components/public-flight-map.tsx");
   assert.match(publicMap, /publicView/);
-  assert.doesNotMatch(publicMap, /installSatelliteMapControl/);
-  assert.doesNotMatch(source("components/flight-story-card.tsx"), /installSatelliteMapControl/);
+  assert.doesNotMatch(publicMap, /installMapSettingsControl/);
+  assert.doesNotMatch(source("components/flight-story-card.tsx"), /installMapSettingsControl/);
 });
 
 test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
@@ -170,4 +170,33 @@ test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
     entry.prefixes?.includes("components/satellite-map-control")),
     "new map control must select registered map browser acceptance");
   assert.equal(registry.ownership.auditedTotal, 391);
+});
+
+
+test("A2E shared Map settings contains both independent gated controllers without changing aviation authority", () => {
+  const composite = source("components/satellite-map-control.ts");
+  const aviation = source("components/airspace-map-control.ts");
+  const css = source("app/ui-system.css");
+
+  assert.match(composite, /export function installMapSettingsControl\(map: L\.Map, enabled: boolean\)/);
+  assert.match(composite, /!SATELLITE_MAPS_TRIAL_ENABLED && !AIRSPACES_MAPS_TRIAL_ENABLED/);
+  assert.match(composite, /installSatelliteMapControl\(map, enabled, panel\)/);
+  assert.match(composite, /installAirspaceMapControl\(map, enabled, panel\)/);
+  assert.match(composite, /trigger\.setAttribute\("aria-expanded", "false"\)/);
+  assert.match(composite, /trigger\.setAttribute\("aria-controls", panel\.id\)/);
+  assert.match(composite, /panel\.setAttribute\("role", "region"\)/);
+  assert.doesNotMatch(composite, /aria-haspopup/);
+  assert.match(composite, /panel\.hidden = !value/);
+  assert.match(composite, /event\.key !== "Escape"/);
+  assert.match(composite, /document\.addEventListener\("pointerdown", onPointerDown, true\)/);
+  assert.match(composite, /document\.removeEventListener\("pointerdown", onPointerDown, true\)/);
+  assert.match(composite, /cleanupAirspaces\(\);[\s\S]*cleanupSatellite\(\);[\s\S]*control\.remove\(\);/);
+  assert.match(composite, /host\?\.append|host\.append\(root\)/);
+  assert.match(aviation, /host\.append\(root\)/);
+  assert.match(composite, /standardMap\(true\)/);
+  assert.match(aviation, /unavailable = true; \/\/ Avoid retry storms/);
+  assert.match(css, /\.flytally-map-settings-panel\[hidden\]\{display:none\}/);
+  assert.match(css, /\.flytally-map-settings-panel button:focus-visible/);
+  assert.match(css, /@media\(max-width:600px\)/);
+  assert.doesNotMatch(composite, /localStorage|sessionStorage|OPENAIP_API_KEY/);
 });

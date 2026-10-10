@@ -49,12 +49,13 @@ test("A2B2 four authenticated maps install and dispose, public replay is exclude
   ];
   for (const path of maps) {
     const file = source(path);
-    assert.match(file, /installAirspaceMapControl\(map,/);
-    assert.match(file, /cleanupAirspaces\(\)/);
-    assert.match(file, /cleanupSatellite\(\)/);
+    assert.match(file, /installMapSettingsControl\(map,/);
+    assert.match(file, /cleanupMapSettings\(\)/);
+    assert.doesNotMatch(file, /installAirspaceMapControl|installSatelliteMapControl/);
   }
-  assert.match(source("components/flight-track-player.tsx"), /installAirspaceMapControl\(map,!publicView\)/);
-  assert.doesNotMatch(source("components/public-flight-map.tsx"), /installAirspaceMapControl/);
+  assert.match(source("components/flight-track-player.tsx"), /installMapSettingsControl\(map,!publicView\)/);
+  assert.match(source("components/satellite-map-control.ts"), /installAirspaceMapControl\(map, enabled, panel\)/);
+  assert.doesNotMatch(source("components/public-flight-map.tsx"), /installMapSettingsControl/);
 });
 
 test("A2D Aviation browser tests use synthetic PNG, unavailable status and public exclusion", () => {
