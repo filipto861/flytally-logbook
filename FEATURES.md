@@ -1,3 +1,5 @@
+**Provider status:** OpenAIP inquiry is draft/not sent; Satellite has an official Esri two-layer reference but current FlyTally composition still unverified. These are planning facts, not shipped features.
+
 **3.7.0 provider gate status:** Satellite selector implemented in draft but not enabled; openAIP airspace overlay not implemented/released. See [S1/A1 provider decision](docs/product/3_7_0_S1_A1_PROVIDER_GATES.md). These are pending external rights/technical contracts, not delivered features.
 
 # FlyTally Logbook — feature index (2026-10-10)
