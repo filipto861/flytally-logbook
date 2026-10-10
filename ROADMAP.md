@@ -9,11 +9,14 @@
 
 This is the canonical **forward execution plan** for `flytally-logbook`. Older milestone narratives, failed attempts, test logs and superseded PR states were preserved verbatim in [the pre-reconciliation roadmap snapshot](docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md). Dated evidence there is **historical**, never an instruction to override this page.
 
+**Emergency security deployment complete:** 10 Oct 2026 PR #282 merged and production alias points to READY build. Does not constitute full 3.7.0 or externally approved Satellite integration; older pre-merge audit notes below are historical.
+
 ## Current state — 10 October 2026
 
 | Area | Verified state | Gate / next action |
 | --- | --- | --- |
 | Production | Product `3.6.0`; database schema **v20** as recorded at 3.6.0 closeout | No 3.7.0 version bump/tag or full production release |
+| Security containment (separate from 3.7.0) | **DEPLOYED 10 Oct 2026**: [PR #282](https://github.com/filipto861/flytally-logbook/pull/282) squash-merged as `00305fb6`; Vercel `dpl_JAdh7zGNZmXVQwDLoZ5yeLJvnvsn` **READY**, `fly-tally.com` alias verified | Product metadata stays `3.6.0`; no DB migration. Live anonymous API 401/400 response and CDN/browser stale-cache acceptance still **PENDING**. Esri licensing, authenticated Story provider traffic, Safari remain unresolved. |
 | 3.7.0 Phase 1 — Standard Maps | **DONE.** Feature PR [#269](https://github.com/filipto861/flytally-logbook/pull/269) and docs PR [#270](https://github.com/filipto861/flytally-logbook/pull/270) **MERGED**; Phase 1 accepted by owner | Do not reopen or describe #270 as pending |
 | Phase 1 verification | Deployed at `cc7abd41` / Vercel `dpl_51zwnZYfFADxeDEyZheTYg9siXD8` READY; owner-reported live browser functional smoke PASS; public Map API **4/4 PASS**; prior exact-candidate local Node **1,447/1,447**, PostgreSQL **100/100**, build and desktop/mobile Chromium **12/12** each PASS | Native physical iPad/Safari and full provider acceptance **NOT VERIFIED**; do not inflate acceptance |
 | 3.7.0 Phase 2 — Satellite | **Draft/unmerged** engineering in [PR #272](https://github.com/filipto861/flytally-logbook/pull/272) through [#279](https://github.com/filipto861/flytally-logbook/pull/279), with some exact-SHA **local synthetic** ON/OFF, auth/HTTP and browser PASS | **FIRST priority: S1 provider architecture/evidence decision**, then S2 controlled integration and real acceptance; production UI flag **OFF** |
