@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 1 synthetic parallel admission added (UNVERIFIED)
+
+Actually added `lib/satellite-parallel-admission.ts`, `tests/v370-satellite-parallel-admission.test.ts` (6 tests), updated GPS-risk source registry count 394→395 and corresponding map assertion. No production provider connection, route/cache/Standard/Story changes, no budget guesses. Owner targeted tests/typecheck, full suite/build/HTTP/Playwright/CI all NOT RUN. Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-B Batch 2 owner local verification (DOCS ONLY)
 
 Recorded clean SHA `a4ea494f9f1a5d3f194c7aa2a8d2b6d4ae6684e3` with 60/60 targeted tests PASS, typecheck PASS. No source changes in this reconciliation; provider resource integration, full suite/build/HTTP/browser/CI/deploy NOT RUN. Next M3-C.
