@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B Batch 2 signal propagation added (NOT TESTED)
+
+Modified `lib/satellite-map-provider.ts` and authenticated Satellite call in `app/api/map-tile/[z]/[x]/[y]/route.ts` to forward optional abort signal without changing Standard path, auth ordering or existing cache. Added three tests in `tests/v370-map-layers.test.ts`. This is cancellation signalling only; it neither guarantees prompt termination on uncooperative providers nor enforces resource limits. Target tests/typecheck/build/HTTP/Playwright/CI NOT RUN on new code; Satellite prod OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-B Batch 1 owner local verification recorded (DOCS ONLY)
 
 Exact clean `3790f05d5d208bccb720ec564d34e9513d42edb3`: 57/57 targeted tests PASS, Node24.19.0, typecheck PASS. No runtime implementation in this update, build/HTTP/CI/Playwright NOT RUN; next M3-B Batch 2 pending.
