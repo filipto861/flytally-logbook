@@ -633,7 +633,8 @@
         "lib/satellite-fetch-lifecycle",
         "lib/satellite-parallel-admission",
         "lib/satellite-admitted-pair",
-        "lib/satellite-required-pair"
+        "lib/satellite-required-pair",
+        "lib/satellite-label-fallback"
       ],
       "files": [],
       "risks": [
@@ -895,7 +896,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 397,
+    "auditedTotal": 398,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1055,7 +1056,8 @@
         "lib/satellite-fetch-lifecycle",
         "lib/satellite-parallel-admission",
         "lib/satellite-admitted-pair",
-        "lib/satellite-required-pair"
+        "lib/satellite-required-pair",
+        "lib/satellite-label-fallback"
         ],
         "files": [],
         "targets": [
