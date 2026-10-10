@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 4 isolated labels fallback STAGED / NOT VERIFIED
+
+Owner clean `02f8b24742966033406e1468b83e381c140269b5` M3-C3 77/77 targeted + `tsc --noEmit` PASS. New standalone `lib/satellite-label-fallback.ts` chooses structurally valid base/preferred or bounded/admitted reference fallback under caller-supplied **inherited absolute** tile deadline, fallback reason allowlist, caller abort, and M3-B uncertainty quarantine. Added six synthetic cases with real minimal structurally valid PNG fixture; GPS-risk ownership auditedTotal 398. No fallback when base invalid, after deadline, on aborted caller, or failed admission. Quarantine retains failed transport reservation. **Important scope:** not wired into live provider, raster structural validation is not pixel decoding, no supplier-backed production limits, no shared global gate, no final end-to-end orchestration proof. Node24 new code tests/typecheck NOT RUN, full suite/build/HTTP/browser/CI NOT RUN. Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-C Batch 3 owner LOCAL PASS; fallback next
 
 Owner clean exact `02f8b24742966033406e1468b83e381c140269b5`: 77/77 targeted tests PASS, TypeScript `tsc --noEmit` PASS. Closes isolated M3-C Batch 3 local gate only; live provider, fallback, decoder/hosting, fleet resource constraints and production release remain OPEN. Build/full suite/HTTP/Playwright/CI NOT RUN; Satellite OFF.
