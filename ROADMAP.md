@@ -100,27 +100,21 @@ Since 4 October 2026, new release targets use `MAJOR.MINOR.PATCH` and `Phase 1 /
 
 Detailed previous acceptance, source decisions, code/test/production timelines and superseded failures for `3.4.0` through `3.6.0` are in the [verbatim historical roadmap snapshot](docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md) and `CHANGELOG.md`. These headings are retained as stable reference anchors, **not active milestones**.
 
-### 3.5.1
-# 3.5.1 — GPS Touch-and-Go false-positive containment — DONE / PRODUCTION
+#### 3.5.1 — GPS Touch-and-Go false-positive containment — DONE / PRODUCTION
 
-### 3.4.1
-# 3.4.1 — GPS Night-time reliability — DONE
-## Single implementation phase — DONE
+#### 3.4.1 — GPS Night-time reliability — DONE
+##### Single implementation phase — DONE
 
-### 3.4.0
-# 3.4.0 — Flight Entry Simplification — DONE
+#### 3.4.0 — Flight Entry Simplification — DONE
 
-### 3.5.0
-# 3.5.0 — Multi-aircraft integrity + certified-flight voiding — DONE / PRODUCTION
+#### 3.5.0 — Multi-aircraft integrity + certified-flight voiding — DONE / PRODUCTION
 
-### 3.5.2–3.5.5
-# 3.5.2 — Always-on GPS/SERA Night suggestions — DONE / PRODUCTION
-# 3.5.3 — Flight detail navigation UX — DONE / PRODUCTION
-# 3.5.4 — iPad flight-detail visual hotfix — DONE / PRODUCTION
-# 3.5.5 — iPad sidebar collapse-control alignment — DONE / PRODUCTION
+#### 3.5.2 — Always-on GPS/SERA Night suggestions — DONE / PRODUCTION
+#### 3.5.3 — Flight detail navigation UX — DONE / PRODUCTION
+#### 3.5.4 — iPad flight-detail visual hotfix — DONE / PRODUCTION
+#### 3.5.5 — iPad sidebar collapse-control alignment — DONE / PRODUCTION
 
-### 3.6.0
-# 3.6.0 — Saved-date / timezone semantics — DONE / PRODUCTION
+#### 3.6.0 — Saved-date / timezone semantics — DONE / PRODUCTION
 
 ---
 
