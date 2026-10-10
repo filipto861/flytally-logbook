@@ -10,6 +10,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### 3.7.0 Satellite S1 — correction after independent source cross-check (10 October 2026; unmerged docs)
+
+- Corrected an **unsupported initial preference for two separate Leaflet layers**. Esri's published static-label resolution at L12 (512 × 19.109257 m/px) and a published illustrative traditional MapServer L12 (256 × 38.218514 m/px) produce approximately the **same 9784m geographic tile span** when origins/CRS/coordinates agree. A one-level visual pixel-resolution difference does **not** prove a same-z/y/x footprint mismatch, nor prove actual FlyTally provider alignment.
+- Current position: keep Leaflet; **A: hardened existing SVG compositor** and **B: separate source-specific layers** both remain DEFER until exact upstream metadata, vendor terms, credentials, cost and Story requirements are established. S1 review handoff now explicitly challenges tile-mapping assumptions. The earlier conditional B preference below is superseded as a **time-stamped draft**, not deleted.
+- Docs-only reconciliation. Node/build/PG/browser/CI/live Esri/production checks **NOT RUN** for this correction; no provider or credential requests, code changes, merge or deploy.
+
 ### 3.7.0 Satellite S1 — architecture analysis and independent-review handoff (10 October 2026; unmerged docs)
 
 - Recorded a **source-backed conditional architecture preference** in `docs/product/3_7_0_S1_SATELLITE_ARCHITECTURE_DECISION.md`: retain Leaflet; prefer independently tiling-correct Esri imagery/label layers through a session-authorized proxy; **do not accept the existing same-z/y/x 256px SVG composition as verified**. Official Esri documents label service 512px with a distinct LOD equivalence, but actual FlyTally source tileInfo has not been captured.
