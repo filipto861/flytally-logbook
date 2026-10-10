@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C4 bounded fallback helper + tests staged (NOT VERIFIED)
+
+Added `lib/satellite-label-fallback.ts` and `tests/v370-satellite-label-fallback.test.ts` (6 scenarios), GPS registry ownership 397→398 and map count update. Includes inherited absolute deadline, failure allowlist, valid-PNG structural inspection, admission/quarantine; no live provider/route/cache/Standard/Story/DB changes. Owner Node24 tests/typecheck, build/HTTP/Playwright/CI NOT RUN; no activation, merge or deploy.
+
 ## 2026-10-10 — M3-C3 TypeScript return-shape fix (RETEST PENDING)
 
 Owner tested SHA `81518cf1`: 77/77 target PASS, typecheck FAIL with TS2339 in `satellite-required-pair.ts` error branch. Added explicit `result: undefined` to catch return for consistent inferred shape. No provider/route/Standard/Story/cache/DB changes, deploy or activation; typecheck on corrected SHA NOT RUN.
