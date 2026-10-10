@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 5 single-deadline transport coordinator STAGED / NOT VERIFIED
+
+After owner clean `3f0e29a0ba5880887ecf56befcb0deb4822d2fee` 83/83 targeted PASS and TypeScript PASS, added isolated `lib/satellite-tile-transport.ts` orchestrating existing required pair + label fallback under **one absolute deadline established before first upstream**. Four synthetic tests: preferred selection, fallback under remaining time, zero fallback after budget expires, invalid policy/preabort zero upstream. GPS risk ownership 399. **No live provider/route/cache/Standard/Story changes; no policy numeric defaults**. Deadline bounds wrapper, not supplier physical completion; fallback structural PNG check is not pixel decoding. Requires owner Node24 test+typecheck, and independent architecture review before production wiring. Full suite/build/HTTP/Playwright/CI NOT RUN; Satellite OFF; no merge/deploy.
+
 ## 2026-10-10 — M3-C Batch 4 owner LOCAL VERIFIED 83/83 + typecheck
 
 Owner clean exact SHA `3f0e29a0ba5880887ecf56befcb0deb4822d2fee`: targeted eight test files **83/83 PASS**, zero fail/skip; `npm.cmd run typecheck` PASS. Isolated fallback selection, admission and uncertainty quarantine verified synthetically; **not** a live provider or decoder guarantee. Next M3-C integration must reconcile a single inherited deadline across required pair+fallback and verified producer lifecycle and production resource policy before live wiring. Full suite, Next build, HTTP, Playwright, CI and production NOT RUN. Satellite OFF, no merge/deploy.
