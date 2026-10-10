@@ -110,3 +110,14 @@ test("M3-C review: invalid monotonic clock cannot start upstream", async () => {
   }
   assert.equal(calls, 0);
 });
+
+test("M3-D hardening: invalid required-pair policy returns unavailable before supplier work", async () => {
+  let calls = 0;
+  const fake = fetcher(() => { calls++; return image(); });
+  const options = opts(fake, fake, fake);
+  const invalid = { ...options, base: { ...options.base, signal: new AbortController().signal } };
+  const result = await fetchSatelliteTileTransport(invalid);
+  assert.equal(result.outcome, "unavailable");
+  assert.equal(calls, 0);
+  assert.deepEqual(options.gate.snapshot(), { activeOperations: 0, reservedEncodedBytes: 0 });
+});
