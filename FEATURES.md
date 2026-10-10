@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 1 pair reservation primitive staged, NOT product-connected
+
+Process-local synchronous atomic pair admission helper for Satellite base and preferred labels, with six synthetic tests; no production defaults or live provider use. Existing Standard/Story/auth unaffected. Owner verification pending; Satellite OFF.
+
 ## 2026-10-10 — M3-B signal plumbing owner locally verified
 
 Owner exact `a4ea494f`: 60/60 targeted PASS and typecheck PASS for Satellite request signal in base/preferred/fallback branches. Not proof of bounded upstream termination or production resource safety; Satellite OFF.
