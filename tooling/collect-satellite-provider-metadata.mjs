@@ -31,31 +31,48 @@ const token = process.env.ARCGIS_ACCESS_TOKEN.trim();
 const maxBytes = Number(argMaxBytes);
 const timeoutMs = Number(argTimeout);
 
+function record(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
+function finite(v) { return typeof v === "number" && Number.isFinite(v); }
+function mercator(v) {
+  if (!record(v)) return false;
+  const valid = n => n === 3857 || n === 102100;
+  return (valid(v.wkid) || valid(v.latestWkid)) &&
+    (v.wkid === undefined || valid(v.wkid)) &&
+    (v.latestWkid === undefined || valid(v.latestWkid));
+}
+function validateTileInfo(value) {
+  if (!record(value) || !record(value.tileInfo) || value.error) return false;
+  const tile = value.tileInfo;
+  if (!Number.isSafeInteger(tile.rows) || tile.rows <= 0 ||
+      !Number.isSafeInteger(tile.cols) || tile.cols <= 0 ||
+      !record(tile.origin) || !finite(tile.origin.x) || !finite(tile.origin.y) ||
+      !mercator(tile.spatialReference) || !mercator(tile.origin.spatialReference) ||
+      !Array.isArray(tile.lods) || !tile.lods.length || tile.lods.length > 64) return false;
+  if (value.spatialReference !== undefined && !mercator(value.spatialReference)) return false;
+  const seen = new Set();
+  for (const lod of tile.lods) {
+    if (!record(lod) || !Number.isSafeInteger(lod.level) || lod.level < 0 ||
+        !finite(lod.resolution) || lod.resolution <= 0 ||
+        seen.has(lod.level)) return false;
+    seen.add(lod.level);
+  }
+  return true;
+}
 function safeMetadata(value) {
-  // This is evidence capture, NOT schema validation or source-contract acceptance.
-  const obj = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  const tile = obj.tileInfo && typeof obj.tileInfo === "object" ? obj.tileInfo : {};
-  const origin = tile.origin && typeof tile.origin === "object" ? tile.origin : {};
-  const selectSpatial = (spatial) => ({
-    wkid: typeof spatial?.wkid === "number" ? spatial.wkid : null,
-    latestWkid: typeof spatial?.latestWkid === "number" ? spatial.latestWkid : null,
+  const tile = value.tileInfo;
+  const selectSpatial = spatial => ({
+    wkid: spatial?.wkid ?? null,
+    latestWkid: spatial?.latestWkid ?? null,
   });
   return {
-    spatialReference: selectSpatial(obj.spatialReference),
-    copyrightText: typeof obj.copyrightText === "string" ? obj.copyrightText.slice(0, 2000) : null,
+    spatialReference: value.spatialReference ? selectSpatial(value.spatialReference) : null,
+    copyrightText: typeof value.copyrightText === "string" ? value.copyrightText.slice(0, 2000) : null,
     tileInfo: {
-      rows: typeof tile.rows === "number" ? tile.rows : null,
-      cols: typeof tile.cols === "number" ? tile.cols : null,
-      origin: {
-        x: typeof origin.x === "number" ? origin.x : null,
-        y: typeof origin.y === "number" ? origin.y : null,
-        spatialReference: selectSpatial(origin.spatialReference),
-      },
+      rows: tile.rows, cols: tile.cols,
+      origin: { x: tile.origin.x, y: tile.origin.y,
+        spatialReference: selectSpatial(tile.origin.spatialReference) },
       spatialReference: selectSpatial(tile.spatialReference),
-      lods: Array.isArray(tile.lods) ? tile.lods.slice(0, 64).map(lod => ({
-        level: typeof lod?.level === "number" ? lod.level : null,
-        resolution: typeof lod?.resolution === "number" ? lod.resolution : null,
-      })) : [],
+      lods: tile.lods.map(lod => ({level: lod.level, resolution: lod.resolution})),
     },
   };
 }
@@ -108,11 +125,7 @@ async function collect(source) {
     if (!value || typeof value !== "object" || Array.isArray(value) || value.error) {
       return { outcome: "unavailable", reason: "provider-error" };
     }
-    if (!value.tileInfo || !Number.isInteger(value.tileInfo.rows) || !Number.isInteger(value.tileInfo.cols) ||
-        value.tileInfo.rows <= 0 || value.tileInfo.cols <= 0 || !Array.isArray(value.tileInfo.lods) ||
-        value.tileInfo.lods.length === 0 || !value.tileInfo.origin || !value.tileInfo.spatialReference) {
-      return { outcome: "unavailable", reason: "invalid-tile-info" };
-    }
+    if (!validateTileInfo(value)) return { outcome: "unavailable", reason: "invalid-tile-info" };
     finished = true;
     return {
       outcome: "captured",
