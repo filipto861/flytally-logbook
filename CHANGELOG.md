@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D5 loopback exit-path diagnostics STAGED
+
+Added `tooling/diagnose-satellite-exit-path.mjs`, an offline 127.0.0.1 diagnostic comparing immediate exit and exitCode after MIME rejection, chunked responses and truncated content. Runs in isolated child processes with bounded watchdog and no token or Esri requests. Owner Windows verification NOT RUN; result cannot establish native Node assertion root cause alone. Satellite OFF, merge/deploy NOT RUN.
+
 ## 2026-10-10 — M3-D4 read-only transport review
 
 Documented observed Node24 Windows libuv assertion, loopback negative-control limitations, immediate `process.exit(2)` teardown hypothesis (not established cause), proposed offline tests and independent reviewer handoff in `docs/satellite-m3d4-transport-review-2026-10-10.md`. No production code changes; tests on this docs-only branch NOT RUN. No ArcGIS calls, merge or deploy. Satellite OFF.
