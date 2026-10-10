@@ -608,6 +608,7 @@
       "prefixes": [
         "app/api/flights/",
         "app/api/map-tile/",
+        "app/api/airspace-tile/",
         "components/gps-",
         "components/track",
         "components/tracks-",
@@ -646,7 +647,8 @@
         "domain-unit": [
           "tests/track-processing.test.ts",
           "tests/track-time.test.ts",
-          "tests/v370-openaip-airspace-contract.test.ts"
+          "tests/v370-openaip-airspace-contract.test.ts",
+          "tests/v370-openaip-airspace-tile-auth-behavior.test.ts"
         ]
       }
     },
@@ -888,7 +890,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 389,
+    "auditedTotal": 390,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1022,6 +1024,7 @@
         "prefixes": [
           "components/leaflet-mobile",
           "components/map-layer-controller",
+          "app/api/airspace-tile/",
           "components/satellite-map-control",
           "components/client-maps",
           "app/(protected)/map/",
