@@ -46,14 +46,14 @@ export async function satelliteTile(
   const encodedToken = encodeURIComponent(token);
   const [base, preferredLabels] = await Promise.all([
     fetchProviderTile(`${WORLD_IMAGERY}/${z}/${y}/${x}?token=${encodedToken}`, referer, fetchTile, signal),
-    fetchProviderTile(`${IMAGERY_LABELS}/${z}/${y}/${x}?language=en&token=${encodedToken}`, referer, fetchTile),
+    fetchProviderTile(`${IMAGERY_LABELS}/${z}/${y}/${x}?language=en&token=${encodedToken}`, referer, fetchTile, signal),
   ]);
   if (signal?.aborted || !isImage(base)) return null;
 
   let labels = preferredLabels;
   if (signal?.aborted) return null;
   if (!isImage(labels)) {
-    labels = await fetchProviderTile(`${REFERENCE_LABELS}/${z}/${y}/${x}`, referer, fetchTile);
+    labels = await fetchProviderTile(`${REFERENCE_LABELS}/${z}/${y}/${x}`, referer, fetchTile, signal);
   }
 
   if (signal?.aborted) return null;
