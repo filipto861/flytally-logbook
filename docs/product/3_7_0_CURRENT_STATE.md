@@ -1,3 +1,5 @@
+**CURRENT OWNER PRIORITY (2026-10-10): SATELLITE FIRST.** Finish Satellite source-backed integration and verification before resuming openAIP; A2A branch remains staged/paused. Do not interpret simultaneous S1/A1 roadmap text as instruction to start more openAIP implementation now.
+
 **Implementation checkpoint A2A:** isolated offline openAIP XYZ parser and explicit availability gate STAGED on `feat/3.7.0-openaip-airspaces-a2a-offline-control`; tests not yet run, no overlay or upstream access. [Detailed batch](3_7_0_A2A_AIRSPACE_BOUNDARY.md).
 
 **S1/A1 update 2026-10-10:** [Provider gate decision](3_7_0_S1_A1_PROVIDER_GATES.md): S1 Satellite DEFER pending source-backed scheme/terms; A1 openAIP BLOCKED pending applicable usage authorization and current Tiles API schema. This does not change feature/runtime state.
