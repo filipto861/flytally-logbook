@@ -631,7 +631,8 @@
         "lib/satellite-svg-envelope",
         "lib/satellite-admission-gate",
         "lib/satellite-fetch-lifecycle",
-        "lib/satellite-parallel-admission"
+        "lib/satellite-parallel-admission",
+        "lib/satellite-admitted-pair"
       ],
       "files": [],
       "risks": [
@@ -893,7 +894,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 395,
+    "auditedTotal": 396,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1051,7 +1052,8 @@
         "lib/satellite-svg-envelope",
         "lib/satellite-admission-gate",
         "lib/satellite-fetch-lifecycle",
-        "lib/satellite-parallel-admission"
+        "lib/satellite-parallel-admission",
+        "lib/satellite-admitted-pair"
         ],
         "files": [],
         "targets": [
