@@ -1,3 +1,7 @@
+## 2026-10-10 — M2c-B owner Node24 65/65 + typecheck PASS recorded; M2c-C design (DOCS ONLY so far)
+
+Owner clean exact `9c5be031474ae40d2badfbc9cddce38c297e93a1`: combined five focused test files **65 tests / 65 PASS / 0 fail/skip**, and `npm.cmd run typecheck` PASS. Closes standalone M2c-B local scope, not provider integration, end-to-end, build, CI or release. New technical issue retained: wrapper deadline racing a noncooperative upstream can return before actual termination; incorrect early lease release would defeat admitted-capacity accounting. M2c-C reserved as fail-closed quarantine/irreversible lease retention design and new synthetic tests, with no numeric defaults. Current commit docs-only decision/status update; product runtime/Standard/Story/auth/DB/Training unchanged. Satellite flag OFF, Draft PR #279, no merge/deploy.
+
 ## 2026-10-10 — R2D.2 M2c-B isolated admission/reservation primitive staged (tests NOT RUN)
 
 **Implemented:** `lib/satellite-admission-gate.ts` fail-closed per-instance concurrency and encoded-capacity admission requiring explicit positive caller policy and reservation, no default bytes/count/timeout, no queue or provider connection. Added 10 synthetic unit cases `tests/v370-satellite-admission-gate.test.ts`; registered GPS/browser-risk ownership in `tooling/development-modules.json` and updated map-source `auditedTotal` 392→393. M2c-A targeted 55/55 + typecheck owner LOCAL PASS evidence bound to `e5d1bb0434c40f939bd9a5e9890fa5ff8f977233` recorded, not transferred to new code.
