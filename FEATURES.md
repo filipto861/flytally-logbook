@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-A independent review incorporated; implementation pending
+
+M3 lifecycle requirements updated after APPROVE WITH CHANGES review; local completion cannot prove remote operation termination, quarantine remains fail-closed. Provider not yet wired, no visible feature changes; prod Satellite OFF.
+
 ## 2026-10-10 — M3-A Satellite provider lifecycle specification drafted; NOT IMPLEMENTED
 
 Added `docs/r2d2-m3a-provider-lifecycle-review.md` specifying planned shared admission accounting, settlement-versus-wrapper timeout, uncertain-operation quarantine, required base and optional labels fallback, valid raster fixtures and decoder-policy review. Read-only independent review pending; no user-facing feature, runtime or release change. Production Satellite OFF.
