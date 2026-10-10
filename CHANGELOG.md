@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2a SVG buffer copy optimization staged (NOT VERIFIED)
+
+Updated `lib/satellite-svg-envelope.ts` to construct a zero-copy view of raster Uint8Array before Base64 conversion; added two focused `tests/v370-satellite-svg-envelope.test.ts` regressions for nonzero byteOffset and exact size checks. No user-visible/production provider/route/Standard/Story changes or new resource limits; typecheck/test/build/browser/HTTP/CI NOT RUN on new source. Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-D Batch 1 owner test evidence (DOCS ONLY)
 
 Clean source `006ea28f92de86b414f230b610caff493c8041f4`: 98/98 targeted tests PASS, TypeScript PASS. No runtime changes in this evidence record; no full suite/build/HTTP/Playwright/CI, activation, merge or deploy. Satellite OFF.
