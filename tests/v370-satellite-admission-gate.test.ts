@@ -6,6 +6,7 @@ import {
   type SatelliteAdmissionPolicy,
   type SatelliteAdmissionReason,
 } from "../lib/satellite-admission-gate.ts";
+import { fetchSatelliteBounded, SatelliteBoundedFetchError } from "../lib/satellite-bounded-fetch.ts";
 
 // All values are synthetic LAB examples, NOT provider/hosting resource budgets.
 const LAB_POLICY: SatelliteAdmissionPolicy = {
@@ -153,4 +154,80 @@ test("R2D.2 M2c-B: separate instances are isolated, NOT fleet-global", () => {
     two.release();
     one.release();
   }
+});
+
+test("R2D.2 M2c-C: quarantine retains capacity despite later finally release", () => {
+  const gate = createSatelliteAdmissionGate({
+    maxConcurrentOperations: 1, maxReservedEncodedBytes: 5,
+  });
+  const lease = gate.acquire(5);
+  lease.quarantine();
+  lease.release(); // A careless finally must not re-admit after quarantine.
+  assert.equal(gate.quarantinedCount(), 1);
+  assert.deepEqual(gate.snapshot(), { activeOperations: 1, reservedEncodedBytes: 5 });
+  fails(() => gate.acquire(1), "concurrency-exhausted");
+});
+
+test("R2D.2 M2c-C: repeated quarantine does not double count; released lease cannot be quarantined", () => {
+  const gate = createSatelliteAdmissionGate(LAB_POLICY);
+  const first = gate.acquire(2);
+  first.quarantine();
+  first.quarantine();
+  first.release();
+  assert.equal(gate.quarantinedCount(), 1);
+  const second = gate.acquire(2);
+  second.release();
+  second.quarantine(); // Released capacity is not re-held retroactively.
+  assert.equal(gate.quarantinedCount(), 1);
+  assert.deepEqual(gate.snapshot(), { activeOperations: 1, reservedEncodedBytes: 2 });
+});
+
+test("R2D.2 M2c-C: quarantine is process-local and cannot block separate instances", () => {
+  const policy = { maxConcurrentOperations: 1, maxReservedEncodedBytes: 1 };
+  const first = createSatelliteAdmissionGate(policy);
+  const second = createSatelliteAdmissionGate(policy);
+  const abandoned = first.acquire(1);
+  abandoned.quarantine();
+  abandoned.release();
+  const working = second.acquire(1);
+  try {
+    fails(() => first.acquire(1), "concurrency-exhausted");
+    assert.equal(first.quarantinedCount(), 1);
+    assert.equal(second.quarantinedCount(), 0);
+    assert.equal(second.snapshot().activeOperations, 1);
+  } finally {
+    working.release();
+  }
+  assert.equal(second.snapshot().activeOperations, 0);
+});
+
+test("R2D.2 M2c-C: non-cooperative M2a timeout cannot refund its lease", async () => {
+  const gate = createSatelliteAdmissionGate({
+    maxConcurrentOperations: 1, maxReservedEncodedBytes: 1,
+  });
+  const lease = gate.acquire(1);
+  const fetcher = ((_url: RequestInfo | URL, _init?: RequestInit) =>
+    new Promise<Response>(() => { /* deliberately ignores abort forever */ })) as typeof fetch;
+  try {
+    await assert.rejects(
+      fetchSatelliteBounded({
+        url: "https://synthetic.invalid/no-network",
+        fetcher,
+        maxBytes: 1, // Synthetic fixture only, NOT a production policy.
+        timeoutMs: 20,
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof SatelliteBoundedFetchError);
+        assert.equal(error.reason, "deadline");
+        return true;
+      },
+    );
+    // Upstream did NOT settle; terminal wrapper deadline isn't cleanup proof.
+    lease.quarantine();
+  } finally {
+    lease.release();
+  }
+  assert.equal(gate.quarantinedCount(), 1);
+  assert.deepEqual(gate.snapshot(), { activeOperations: 1, reservedEncodedBytes: 1 });
+  fails(() => gate.acquire(1), "concurrency-exhausted");
 });
