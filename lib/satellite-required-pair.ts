@@ -26,10 +26,13 @@ export async function fetchSatelliteRequiredPair(
   preferred: SatelliteBoundedFetchOptions,
   tileDeadlineMs: number,
   callerSignal?: AbortSignal,
+  deadlineAtMs?: number,
+  now: () => number = () => performance.now(),
 ): Promise<SatelliteRequiredPairOutcome> {
   if (!validDeadline(tileDeadlineMs) || !base || !preferred ||
       !validDeadline(base.timeoutMs) || !validDeadline(preferred.timeoutMs) ||
-      base.signal || preferred.signal) {
+      base.signal || preferred.signal ||
+      (deadlineAtMs !== undefined && (!Number.isFinite(deadlineAtMs) || typeof now !== "function"))) {
     throw new Error("Satellite required pair: invalid-policy");
   }
   if (callerSignal?.aborted) {
@@ -38,12 +41,20 @@ export async function fetchSatelliteRequiredPair(
     return { base: stopped, preferred: stopped };
   }
   const [baseLease, preferredLease] = admitSatellitePair(gate, base.maxBytes, preferred.maxBytes);
+  const remaining = deadlineAtMs === undefined ? tileDeadlineMs :
+    Math.min(tileDeadlineMs, Math.floor(deadlineAtMs - now()));
+  if (!Number.isSafeInteger(remaining) || remaining <= 0) {
+    baseLease.release();
+    preferredLease.release();
+    const expired = { outcome: "failure", started: false, settlement: "not-started", reason: "deadline" } as const;
+    return { base: expired, preferred: expired };
+  }
   const controller = new AbortController();
   const externalAbort = () => controller.abort();
   callerSignal?.addEventListener("abort", externalAbort, { once: true });
   if (callerSignal?.aborted) controller.abort();
   // Do not extend total work by restarting per-operation deadlines.
-  const timer = setTimeout(() => controller.abort(), tileDeadlineMs);
+  const timer = setTimeout(() => controller.abort(), remaining);
   const closed = { outcome: "failure", started: true, settlement: "unproven", reason: "upstream" } as const;
 
   const run = async (options: SatelliteBoundedFetchOptions, lease: SatelliteAdmissionLease) => {
