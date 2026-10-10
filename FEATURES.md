@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C5 isolated tile deadline coordinator staged
+
+Added standalone cross-phase absolute-deadline coordinator and four synthetic regression tests; no live provider integration or production resource values. Owner verification pending, Satellite OFF.
+
 ## 2026-10-10 — M3-C Batch 4 locally verified
 
 Owner exact `3f0e29a0`: 83/83 targeted PASS and TypeScript PASS for isolated fallback module. Not connected to live Satellite; raster structural validation is not full decoder validation; no release.
