@@ -114,3 +114,20 @@ test("R2D.2 M2c: BigInt protects huge valid dimensions from overflow", () => {
   };
   failure(() => composeSatelliteSvgBounded(oversized, null, LAB_POLICY), "pixel-count");
 });
+
+test("M3-D2: Base64 encodes only the raster view, not backing-buffer prefix or suffix", () => {
+  const backing = Uint8Array.from([99, 1, 2, 3, 88]);
+  const window = backing.subarray(1, 4);
+  const result = composeSatelliteSvgBounded({ ...base, bytes: window }, null, LAB_POLICY);
+  assert.equal(result.encodedBytes, 3);
+  assert.match(result.svg, /data:image\/jpeg;base64,AQID"/);
+  assert.equal(result.svgBytes, Buffer.byteLength(result.svg, "utf8"));
+  assert.deepEqual([...backing], [99, 1, 2, 3, 88]);
+});
+
+test("M3-D2: projected SVG limit is checked before Base64 output on offset views", () => {
+  const window = Uint8Array.from([99, 1, 2, 3, 88]).subarray(1, 4);
+  const size = composeSatelliteSvgBounded({ ...base, bytes: window }, null, LAB_POLICY).svgBytes;
+  failure(() => composeSatelliteSvgBounded({ ...base, bytes: window }, null,
+    { ...LAB_POLICY, maxSvgBytes: size - 1 }), "svg-bytes");
+});
