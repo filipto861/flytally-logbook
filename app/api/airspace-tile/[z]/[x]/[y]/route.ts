@@ -28,6 +28,36 @@ function unavailable(status = 503) {
   });
 }
 
+/** Read a bounded response body even when upstream omits Content-Length. */
+async function readBoundedPng(response: Response): Promise<Uint8Array | null> {
+  if (!response.body) return null;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_IMAGE_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ z: string; x: string; y: string }> },
@@ -78,16 +108,12 @@ export async function GET(
       return unavailable(502);
     }
 
-    const data = await response.arrayBuffer();
-    const bytes = new Uint8Array(data);
-    if (
-      bytes.byteLength < PNG_SIGNATURE.length ||
-      bytes.byteLength > MAX_IMAGE_BYTES ||
-      !PNG_SIGNATURE.every((value, index) => bytes[index] === value)
-    ) {
+    const bytes = await readBoundedPng(response);
+    if (!bytes || bytes.byteLength < PNG_SIGNATURE.length ||
+        !PNG_SIGNATURE.every((value, index) => bytes[index] === value)) {
       return unavailable(502);
     }
-    return new NextResponse(data, {
+    return new NextResponse(bytes.buffer, {
       status: 200,
       headers: {
         ...PRIVATE_HEADERS,
