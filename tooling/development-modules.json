@@ -629,7 +629,8 @@
         "lib/satellite-bounded-fetch",
         "lib/satellite-raster-validation",
         "lib/satellite-svg-envelope",
-        "lib/satellite-admission-gate"
+        "lib/satellite-admission-gate",
+        "lib/satellite-fetch-lifecycle"
       ],
       "files": [],
       "risks": [
@@ -891,7 +892,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 393,
+    "auditedTotal": 394,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1047,7 +1048,8 @@
         "lib/satellite-bounded-fetch",
         "lib/satellite-raster-validation",
         "lib/satellite-svg-envelope",
-        "lib/satellite-admission-gate"
+        "lib/satellite-admission-gate",
+        "lib/satellite-fetch-lifecycle"
         ],
         "files": [],
         "targets": [
