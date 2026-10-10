@@ -5,6 +5,7 @@ import L from "leaflet";
 import type { MapAirport,RouteLine } from "@/lib/data/tracks";
 import { addFlyTallyBasemap,installResponsiveMap } from "@/components/leaflet-mobile";
 import { installSatelliteMapControl } from "@/components/satellite-map-control";
+import { installAirspaceMapControl } from "@/components/airspace-map-control";
 import { mapThemePalette,useResolvedTheme } from "@/components/theme-runtime";
 import { routePairHref } from "@/lib/route-filter";
 
@@ -27,8 +28,8 @@ export function RouteOverviewMap({routes,airports,height=650}:{routes:RouteLine[
     airports.forEach(airport=>{const point=L.latLng(airport.lat,airport.lon);bounds.extend(point);const marker=L.circleMarker(point,{pane:"airportMarkers",renderer:airportRenderer,radius:Math.min(13,5.5+Math.sqrt(airport.flights)),color:palette.airport,weight:2.5,fillColor:palette.markerFill,fillOpacity:.98,bubblingMouseEvents:false}).addTo(map);const url=`/flights?airport=${encodeURIComponent(airport.ident)}`;airportsRef.current.push(marker);marker.bindTooltip(`${airport.ident}${airport.name?` · ${airport.name}`:""} · ${airport.flights} movements`,{direction:"top"});marker.on("mouseover",()=>marker.setStyle({weight:4,fillOpacity:1}));marker.on("mouseout",()=>marker.setStyle({weight:2.5,fillOpacity:.98}));marker.on("click",event=>{L.DomEvent.stopPropagation(event.originalEvent);window.location.assign(url)})});
     if(bounds.isValid())map.fitBounds(bounds,{padding:[30,30],maxZoom:8});else map.setView([49.8,15.5],7);
     const cleanupResponsive=installResponsiveMap(map,target.current);
-    const cleanupSatellite=installSatelliteMapControl(map,true);
-    return()=>{cleanupSatellite();cleanupResponsive();map.remove();linesRef.current=[];airportsRef.current=[]};
+    const cleanupSatellite=installSatelliteMapControl(map,true);const cleanupAirspaces=installAirspaceMapControl(map,true);
+    return()=>{cleanupAirspaces();cleanupSatellite();cleanupResponsive();map.remove();linesRef.current=[];airportsRef.current=[]};
   },[routes,airports]);
   useEffect(()=>{
     linesRef.current.forEach(({line,hit,weight,opacity})=>{
