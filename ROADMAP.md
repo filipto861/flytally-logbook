@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-A independent review reconciled (DESIGN ONLY)
+
+DeepSeek APPROVE WITH CHANGES accepted subject to explicit local-vs-remote termination distinction. Updated `docs/r2d2-m3a-provider-lifecycle-review.md` with refined fail-closed settlement/atomic admission/fallback and M3-B/C/D gates. Review does not authorize runtime activation; production budgets/decoder unresolved. No coding/test/merge/deploy.
+
 ## 2026-10-10 — M3-A lifecycle review contract drafted (INDEPENDENT REVIEW PENDING)
 
 Added `docs/r2d2-m3a-provider-lifecycle-review.md` on branch, source-grounded cancellation/lease/admission/labels/fallback/decoder contract and failure-injection acceptance for independent DeepSeek READ-ONLY review. This is a proposed contract, **not approved implementation**. M3-B/C/D, hosting/source numeric ceilings, real decode policy and browser/HTTP gates remain OPEN. No runtime changes; Satellite prod OFF, Draft PR #279. Previous 69/69 owner verification remains bound to `7baefdf7d6ec75878b566853052238698774abb4`, not this new documentation commit.
