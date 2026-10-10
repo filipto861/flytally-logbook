@@ -34,7 +34,8 @@ export async function fetchSatelliteTileTransport(
   }
   const startedAt = clock();
   const deadlineAt = startedAt + totalDeadlineMs;
-  if (!Number.isSafeInteger(startedAt) || !Number.isSafeInteger(deadlineAt)) {
+  if (!Number.isFinite(startedAt) || startedAt < 0 ||
+      !Number.isFinite(deadlineAt) || deadlineAt > Number.MAX_SAFE_INTEGER) {
     throw new Error("Satellite tile transport: invalid-clock");
   }
   if (signal?.aborted) return { outcome: "unavailable" };
