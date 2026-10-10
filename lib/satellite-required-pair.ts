@@ -8,6 +8,13 @@ import { observeSatelliteBoundedFetch, type SatelliteLocalLifecycle } from "./sa
 import type { SatelliteAdmissionGate, SatelliteAdmissionLease } from "./satellite-admission-gate.ts";
 import type { SatelliteBoundedFetchOptions, SatelliteTransportResult } from "./satellite-bounded-fetch.ts";
 
+export class SatelliteRequiredPairPolicyError extends Error {
+  constructor() {
+    super("Satellite required pair: invalid-policy");
+    this.name = "SatelliteRequiredPairPolicyError";
+  }
+}
+
 export type SatelliteRequiredPairOutcome = Readonly<{
   base: SatelliteLocalLifecycle;
   preferred: SatelliteLocalLifecycle;
@@ -33,7 +40,7 @@ export async function fetchSatelliteRequiredPair(
       !validDeadline(base.timeoutMs) || !validDeadline(preferred.timeoutMs) ||
       base.signal || preferred.signal ||
       (deadlineAtMs !== undefined && (!Number.isFinite(deadlineAtMs) || typeof now !== "function"))) {
-    throw new Error("Satellite required pair: invalid-policy");
+    throw new SatelliteRequiredPairPolicyError();
   }
   if (callerSignal?.aborted) {
     // Caller has already left; do not even acquire capacity.
