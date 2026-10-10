@@ -1,6 +1,6 @@
 # 3.7.0 Phase 2 / S1 — Satellite architecture decision gate
 
-**Status:** S1 read-only source/repository analysis complete; **PRODUCTION GO = NO / DEFER** pending external evidence and independent review.  
+**Status (reconciled 10 October 2026):** S1.1 independent DeepSeek read-only architecture review **COMPLETE / reconciled**; selection A vs B **DEFER**; **PRODUCTION GO = NO** pending provider/licence/account/geometry/resource evidence. Source review does not constitute product/licence approval.  
 **Date:** 10 October 2026  
 **Base:** `main@ee4f7c2f1939f54e6f2c064453c2969fef636224`  
 **Scope:** `flytally-logbook` only; Satellite first, openAIP paused.  
@@ -70,7 +70,7 @@ This is a **documented source/analysis correction**, not a supplier observation 
 | S1-G3 — Account credentials/referrers | Confirm FlyTally account subscription, active key's privileges for **all three** services, actual accepted Referer and expiry; written scoped rotation/rollback plan if editing restrictions | **PARTIAL / BLOCKED** |
 | S1-G4 — Attribution | Correct Esri + region/service-specific providers, interactive layers and Story PNG, accessibility and credit visibility | **BLOCKED** |
 | S1-G5 — Billing/operational safety | Account-specific cost/usage, quota/alert or hard-stop policy, session/abuse controls, upstream caching rights, bounded response/per-instance vs multi-instance limits supported by deployment evidence | **BLOCKED** |
-| S1-G6 — Product/engineering design | Independent DeepSeek read-only review reconciled against repo + sources; smallest safe migration of PR #272–#279; cover existing Story and public Standard | **PENDING** |
+| S1-G6 — Product/engineering design | Independent DeepSeek read-only review reconciled against repo + sources; preserve existing Story and public Standard; integration path still source-dependent | **INDEPENDENT REVIEW DONE; S2 DESIGN PENDING G1–G5** |
 | S2-G7 — Exact-candidate implementation | Per-layer positioning tests, fail closed/no false satellite, ON/OFF auth/HTTP/Story, Next build, selected isolated PostgreSQL and desktop/mobile/iPad portrait/landscape/night; no changes in certified flights | **NOT RUN** |
 | S3-G8 — Provider/production | Separately owner-approved, bounded live provider evidence; physical browser where required, usage/error watch, production smoke, rollback; explicit release authorization | **NOT AUTHORIZED** |
 
@@ -78,9 +78,9 @@ This is a **documented source/analysis correction**, not a supplier observation 
 
 ## 6. Smallest next executable actions (no network to Esri)
 
-**S1.1 — independent architecture review (NEXT):** send this **corrected** document plus exact PR #272–#279/SHA references to DeepSeek for read-only critique. Ask reviewer to **independently recompute tile coverage** (512 × static LOD resolution vs 256 × traditional LOD resolution, origin/CRS/row/column) and explicitly challenge the former assumption that the 'one zoom level' statement proves geographic misalignment. Compare A (hardened current SVG) with B (separate Leaflet layers) including token-safe auth/cache, Story PNG, latency and operational resource risk. No default winner; reviewers are not authority.
+**S1.1 — independent architecture review DONE (10 October):** User-supplied DeepSeek read-only review accepted the tile-span arithmetic, independently recommended **DEFER A vs B**, assessed smaller blast radius of A, identified the public unauthenticated satellite code path as an urgent independent issue, and agreed that exact three-service tileInfo, rights, costs and Story export authority remain missing. Review was documentation and source-based, **not a provider live test, code patch or legal authorization**. See detailed reconciliation below.
 
-**S1.2 — provider account evidence (operator only):** on the ArcGIS Location Platform portal, inspect subscription/usage/permissions/renewal, service credit docs, actual allowed referrer and supplier terms **without showing secret values**. Do not change credential/referrer/production env. If rights/terms are unclear, prepare a narrow written Esri inquiry. Only after explicit new owner authorization define any controlled metadata/service requests with fixed endpoints, count, timeout/bytes, no tile imaging or secret logs. Previous supplier GET authorization does not roll over.
+**S1.2 — NEXT: provider account evidence (operator only):** on the ArcGIS Location Platform portal, inspect subscription/usage/permissions/renewal, service credit docs, actual allowed referrer and supplier terms **without showing secret values**. Do not change credential/referrer/production env. If rights/terms are unclear, prepare a narrow written Esri inquiry. Only after explicit new owner authorization define any controlled metadata/service requests with fixed endpoints, count, timeout/bytes, no tile imaging or secret logs. Previous supplier GET authorization does not roll over.
 
 **S1.3 — revised GO/NO-GO/DEFER:** after review and source closure, freeze the implementation contract; only then start smallest runtime S2 branch. Avoid further generic Node transport experimentation or openAIP work in parallel.
 
@@ -95,6 +95,38 @@ Decision candidate: KEEP Next.js + Leaflet. Do NOT preselect A (existing same-z/
 Independently derive geography and client tiling offsets; compare A vs B on correctness, smallest blast radius, Story preservation, authenticated route/cache/cost, safe resources, attribution, provider licensing, and smallest implementation batches. Identify any unwarranted assumptions in this dossier.
 Return concrete evidence-linked ACCEPT / CHANGE / REJECT findings; distinguish verified source vs hypothesis; DO NOT modify repo, credentials, supplier accounts, production or generate invented policies.
 ```
+
+## 6A. Independent DeepSeek review — reconciliation (10 October 2026)
+
+**Evidence:** Independent read-only reviewer report supplied by owner, covering PR #281, repo contract and public Esri tiling documentation. No claim of live ArcGIS account access, latest service tileInfo, full local test suite or actual runtime HTTP response.
+
+| Finding | Reviewer verdict | Reconciliation / decision |
+| --- | --- | --- |
+| 512px Static Labels vs 256px World Imagery implies geographic offset | **ACCEPT correction** | Do **not** derive a z±1 adjustment merely from pixel density. Matching arithmetic is **conditional**, not provider-specific geometry PASS |
+| A (harden existing SVG) vs B (separate Leaflet layers) | **DEFER** | **Accepted**; preserve Leaflet. A has lower blast radius / fixed-grid Story reuse, but no right to claim correct geometry or provider terms; architecture winner **not frozen** |
+| `main` public `style=satellite` route | **HIGH: CHANGE** | **Accepted as source-code security/usage exposure**: no session verification, public Satellite cache/CORS and upstream path not gated by UI flag. Actual deployed successful Esri tile fetching, token entitlement, cost charges and existing CDN objects **NOT VERIFIED** |
+| Static/tileInfo evidence is source-specific | **HIGH/MEDIUM: CHANGE** | **Accepted**; the illustrative 256px L12 value is NOT endpoint evidence. Need verified CRS, origin, rows/cols, level/resolutions and per-cell footprint for imagery, labels and fallback |
+| Story PNG is not solved by Leaflet layering | **ACCEPT** | Export is independent fixed 256px compositor. Preserve existing consumer, but provider export rights and fail-closed capture require separate evidence/tests |
+| Suggested S2 batches auth → bounded fetch → geometry → Story → attribution | **ACCEPT WITH SEQUENCING CHANGE** | Immediate containment of already-exposed endpoint is **security pre-emption**, not licensing-dependent activation. Source-gated architecture/runtime expansion still waits for S1-G1–G5 |
+
+**Reviewer limitations and explicit corrections:** The phrase “misalignment assumption disproven” refers only to the **necessity of misalignment based solely on pixel dimensions**; actual alignment has not been proven. The report suggests obtaining `tileInfo` via an “ArcGIS portal”: availability through the portal UI is **not established**. An authoritative Esri service metadata response or supplier confirmation may be needed under a separately owner-approved bounded access plan. Static supplier attribution from `copyrightText` might not cover all region/source obligations; provenance and required credits need product-specific validation.
+
+### Security pre-emption — risk independent of A/B or S1 provider GO
+
+**Confirmed code fact in `main@ee4f7c2f`:** `GET /api/map-tile/[z]/[x]/[y]?style=satellite` can enter the token/upstream fetch path **without `getSession()`** and send publicly cacheable SVG with wildcard CORS; `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS` is **a UI exposure flag, not route authorization**. `components/flight-story-card.tsx` is an existing authenticated satellite probe/export consumer. Missing/invalid production ArcGIS key can yield 503 or upstream failure; no successful production exploitation/charge is established.
+
+**Priority:** Create a **separate small, security-only** patch based on existing PR #274 work, without assuming provider licence, enabling the Satellite selector, changing geometric composition, removing Story or touching Standard. This is justified by the frozen roadmap rule allowing confirmed security defects to pre-empt convenience work.
+
+**Minimum fail-closed contract for mitigation:**
+- Preserve strict malformed/duplicate style 400 and public `style=map` / absent style compatibility.
+- For `style=satellite`, validate live session **before** reading credentials or accessing upstream/Next Data Cache; unauthenticated users receive controlled **401**, `private, no-store`, no provider fetch. If there is separate role entitlement, missing entitlement must be **403**, not a generic session guess.
+- Authenticated Satellite must return **private, no-store** and must not emit wildcard CORS. Existing Story authenticated consumer must continue to work under the same session.
+- Preserve effective server emergency disable/stop before provider and cache; client/UI OFF alone does not eliminate authenticated backend requests. If operator decides to suspend *all* Satellite provider traffic, use a separately reviewed server-side stop rather than silently breaking legacy Story.
+- **Existing public CDN objects/cache:** changing runtime response headers does not necessarily invalidate an already cached public response. Deployment plan must evaluate targeted CDN purge/route cache behavior and backward compatibility, not assume code change instantly revokes old objects.
+- Tests: anonymous 401/no upstream/no public cache; session-positive synthetic fixture; expired session; malformed style 400; Standard public 200/legacy behavior; Story no regression; upstream failures; flag OFF; no token leak; check old CDN response behavior after deployment.
+- No merge or production deploy until exact-branch local tests, build, browser and applicable release gates run and owner authorizes the target. Source mitigation can be prepared while S1 provider gates remain DEFER.
+
+**S1.2 NEXT (operator-only):** read-only account privileges, `premium:user:staticbasemaptiles`, allowed referrers, licence/Story redistribution and billing; verify three exact source tileInfo through authoritative approved metadata. Do **not** expose tokens or modify referrers/credentials, and do **not** repeat old Windows supplier metadata GET attempts without new bounded approval.
 
 ## 7. Verification and change boundary for this document
 
