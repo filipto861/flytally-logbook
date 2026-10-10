@@ -1655,3 +1655,5 @@ Historical docs remain evidence/context only. If they conflict with this ROADMAP
 
 
 M3-D metadata diagnostic fix staged on isolated branch; synthetic MIME test, owner local verification pending. One authorized supplier metadata GET attempted and failed content-type; no retry approved, other two untouched. Satellite OFF; no merge/deploy.
+
+M3-D next isolated batch STAGED: base-only metadata scope + text/plain JSON with tileInfo shape gate, offline tests pending owner verification; real provider retry NOT APPROVED, native Windows assertion UNRESOLVED.
