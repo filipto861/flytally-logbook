@@ -1,7 +1,7 @@
 import L from "leaflet";
 
 /**
- * Private reference-only airspace presentation. Intentionally independent
+ * Private reference-only combined aviation presentation. Intentionally independent
  * of Standard/Satellite basemap ownership and all flight/certification data.
  *
  * Build flag OFF by default. A2B1 server-side auth/provider/key gates remain
@@ -13,7 +13,7 @@ export const AIRSPACES_MAPS_TRIAL_ENABLED =
 const AIRSPACE_TILES = "/api/airspace-tile/{z}/{x}/{y}";
 const MAX_AIRSPACE_REQUEST_ZOOM = 14; // FlyTally request budget, NOT openAIP source coverage.
 const AIRSPACE_ATTRIBUTION =
-  'Airspace reference &copy; <a href="https://www.openaip.net/" target="_blank" rel="noopener noreferrer">openAIP</a> · Coverage/status unverified';
+  'Aviation reference &copy; <a href="https://www.openaip.net/" target="_blank" rel="noopener noreferrer">openAIP</a> · Coverage/status unverified';
 
 export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => void {
   if (!AIRSPACES_MAPS_TRIAL_ENABLED || !enabled) return () => {};
@@ -25,13 +25,13 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
 
   const root = document.createElement("div");
   root.className = "flytally-map-style-control flytally-airspace-control leaflet-bar";
-  root.setAttribute("aria-label", "Airspace reference layer");
+  root.setAttribute("aria-label", "Aviation reference layer");
   const buttons = document.createElement("div");
   buttons.className = "flytally-map-style-actions";
   const toggle = document.createElement("button");
   toggle.type = "button";
-  toggle.textContent = "Airspaces";
-  toggle.setAttribute("aria-label", "Airspaces overlay");
+  toggle.textContent = "Aviation";
+  toggle.setAttribute("aria-label", "Aviation overlay");
   toggle.setAttribute("aria-pressed", "false");
   const message = document.createElement("small");
   message.className = "flytally-map-style-status";
@@ -64,13 +64,13 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
     unavailable = true; // Avoid retry storms until map remount.
     selected = false;
     detachLayer();
-    status("Airspaces unavailable — reference layer hidden");
+    status("Aviation unavailable — reference layer hidden");
     render();
   }
   function tileLoad() {
     if (disposed || !selected || !active) return;
     // A successful raster fetch does NOT attest to full coverage or currency.
-    status("Reference only · coverage and current status unverified");
+    status("Aviation reference only · coverage and current status unverified");
   }
   function removeAirspaces() {
     selected = false;
@@ -81,11 +81,11 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
   function addAirspaces() {
     if (disposed || unavailable || selected) return;
     if (map.getZoom() > MAX_AIRSPACE_REQUEST_ZOOM) {
-      status("Airspaces not shown above zoom 14 (FlyTally limit)");
+      status("Aviation not shown above zoom 14 (FlyTally limit)");
       return;
     }
     selected = true;
-    status("Loading airspace reference…");
+    status("Loading aviation reference…");
     render();
     try {
       const layer = L.tileLayer(AIRSPACE_TILES, {
@@ -102,7 +102,7 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
       unavailable = true;
       selected = false;
       detachLayer();
-      status("Airspaces unavailable — reference layer hidden");
+      status("Aviation unavailable — reference layer hidden");
       render();
     }
   }
@@ -115,7 +115,7 @@ export function installAirspaceMapControl(map: L.Map, enabled: boolean): () => v
     if (selected && map.getZoom() > MAX_AIRSPACE_REQUEST_ZOOM) {
       selected = false;
       detachLayer();
-      status("Airspaces hidden above zoom 14 (FlyTally limit)");
+      status("Aviation hidden above zoom 14 (FlyTally limit)");
       render();
     } else if (!selected && !unavailable && map.getZoom() <= MAX_AIRSPACE_REQUEST_ZOOM) {
       status("");
