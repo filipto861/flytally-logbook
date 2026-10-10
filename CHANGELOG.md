@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 10 October 2026 — Documentation governance and PR cleanup (docs-only)
+
+- [PR #298](https://github.com/filipto861/flytally-logbook/pull/298) reconciled current A2D–A2F production status; [PR #300](https://github.com/filipto861/flytally-logbook/pull/300) recorded dated repository hygiene inventory; [PR #301](https://github.com/filipto861/flytally-logbook/pull/301) replaced contradictory current ROADMAP/FEATURES timelines with short source-aware canonical docs and preserved complete verbatim historical snapshots. Git/blob-link checks performed against exact PR head; no typecheck/Node/PostgreSQL/browser/CI/deploy executed as part of these docs-only changes.
+- Documentation-only PRs #294, #296, and #299 were closed **without merging** as superseded, with preservation comments and unchanged historical Git refs. #299's owner-reported DB-only entry is incorporated below; no new Neon query or data operation was performed. The unique old Satellite R1/R2 stack remains open for [read-only code disposition](docs/maintenance/2026-10-10-open-pr-triage.md), not bulk merger or deletion.
+
 ## 2026-10-10 — Production aircraft default backfill (data only; no code release)
 
 - Owner-requested one-time update on Neon Logbook Shadow / production primary (not Training). Preflight verified 25 aircraft profiles across 5 users, 24 eligible profiles, 0 identity mismatches and 0 conflicting existing defaults.
