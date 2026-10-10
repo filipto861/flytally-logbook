@@ -1,3 +1,7 @@
+## 2026-10-10 — Satellite R2D.2 admission ledger LOCAL VERIFIED; uncertain transport quarantine design next
+
+Owner at exact `9c5be031474ae40d2badfbc9cddce38c297e93a1`: 65/65 combined M2a/M2b/M2c-A/M2c-B/map tests PASS and TypeScript `tsc --noEmit` PASS. Admission ledger remains standalone; real Satellite provider still uses seven-day Next Data Cache and old unbounded body read. Next M2c-C fail-closed lease quarantine for transport operations whose cancellation cannot be verified; no assumed global resource bounds, no user-visible change, Satellite production OFF.
+
 ## 2026-10-10 — R2D.2 M2c-B process-local admission helper staged, production NOT CONNECTED
 
 Added standalone no-default per-instance `createSatelliteAdmissionGate` with count and aggregate reserved input byte admission, BigInt accounting and idempotent release; 10 synthetic unit cases plus GPS-risk ownership. This is deliberately only per process, with no queue, no actual memory allocation and no proof of upstream cancellation or cross-instance limits. M2c-A owner 55/55+typecheck LOCAL PASS on older SHA; M2c-B Node24 tests NOT RUN. Product Satellite provider/route, public Standard, Story, auth and prod OFF unchanged.
