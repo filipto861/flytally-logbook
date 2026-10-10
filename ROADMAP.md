@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C independent integration review HANDOFF PREPARED / REVIEW PENDING
+
+Created `docs/r2d2-m3c-integration-independent-review.md`: source-file review scope, frozen invariants, nine critical race/policy/decoder/HTTP questions and required BLOCK/APPROVE WITH CHANGES/APPROVE verdict. **No independent reviewer feedback received yet.** Prior owner local 87/87 + TypeScript PASS belongs to exact source `dd9b88d3`; this docs-only work did not rerun tests. No runtime changes, no production policy, no merge/deploy; Satellite OFF. Next: hand this document to DeepSeek, reconcile findings and only then implement minimal provider-integration correction batches.
+
 ## 2026-10-10 — M3-C Batch 5 owner LOCAL VERIFIED 87/87 + TypeScript
 
 Owner clean exact source `dd9b88d30335389290d851db33d3850fcd4af0ec`: nine targeted test files **87/87 PASS**, zero failures/skips; `npm.cmd run typecheck` (`tsc --noEmit`) **PASS**. Standalone M3-C Batches 1–5 locally verified; live provider remains legacy, not connected to admitted bounded transport. Before connection: independent integration review of deadline, abort, settlement/quarantine, policy sourcing, decoder and HTTP fixtures. Full suite/Next build/HTTP/Playwright/CI/production NOT RUN. Satellite OFF; no merge/deploy.
