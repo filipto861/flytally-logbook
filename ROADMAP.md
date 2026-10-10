@@ -1661,3 +1661,5 @@ M3-D next isolated batch STAGED: base-only metadata scope + text/plain JSON with
 M3-D2 strict metadata validation STAGED: finite tile origin, positive integer dimensions, coherent Web Mercator aliases, unique nonnegative LOD levels, positive finite resolution and max 64 LODs; synthetic invalid-evidence cases added. Owner tests/typecheck/build NOT RUN on this source. Local real HTTP stream teardown reproduction and Node Windows assertion root cause remain OPEN. No live ArcGIS requests authorized. Satellite OFF; no merge/deploy.
 
 M3-D Windows stream investigation: offline 127.0.0.1 child-process diagnostic staged, covering drain/cancel/abort ordering. Node native assertion root cause not yet established; owner Windows execution pending. No live provider traffic authorized, Satellite OFF.
+
+M3-D4 read-only transport review captured at `docs/satellite-m3d4-transport-review-2026-10-10.md`. Proposed next: isolated collector-exact loopback error-exit reproduction, independently reviewed; NOT IMPLEMENTED, no provider re-query authorized. Satellite OFF.
