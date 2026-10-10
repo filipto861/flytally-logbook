@@ -57,12 +57,12 @@ test("A2B2 four authenticated maps install and dispose, public replay is exclude
   assert.doesNotMatch(source("components/public-flight-map.tsx"), /installAirspaceMapControl/);
 });
 
-test("A2B2 browser tests use synthetic PNG, verify disabled mode, provider errors and public exclusion", () => {
+test("A2D Aviation browser tests use synthetic PNG, unavailable status and public exclusion", () => {
   const spec = source("e2e/map-layers.spec.mjs");
   assert.match(spec, /NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS === "true"/);
   assert.match(spec, /AIRSPACE_PNG = Buffer\.from/);
   assert.match(spec, /route\.fulfill\(\{ status: 200, contentType: "image\/png", body: AIRSPACE_PNG \}\)/);
-  assert.match(spec, /status: 503, body: "Airspaces unavailable"/);
+  assert.match(spec, /status: 503, body: "Aviation overlay unavailable"/);
   assert.match(spec, /Aviation overlay/);
   assert.doesNotMatch(spec, /Airspaces overlay/);
   assert.match(spec, /publicMap\.getByRole\("button", \{ name: "Aviation overlay" \}\)\)\.toHaveCount\(0\)/);
