@@ -3,13 +3,16 @@ import { getSession } from "@/lib/auth/session";
 import { airspaceCapability, parseAirspaceTile } from "@/lib/openaip-airspace-contract";
 
 /**
- * A2B1 PRIVATE tile transport. This route is not a source of current, active
- * or approved airspace information. Production use is OFF until separate
- * access/provider verification; never expose the openAIP key to the browser.
+ * A2D PRIVATE tile transport for the COMBINED openAIP Aviation overlay.
+ * The /api/airspace-tile internal path and X-Flytally-Airspaces response
+ * header remain as backward-compatible names; no airspaces-only promise.
+ * This layer does NOT provide active airspace, NOTAM or approved chart data.
+ * Production remains OFF until explicit deployment enablement.
  *
- * Upstream PNG path: openAIP's published airspaces Tile API example (2022).
- * Auth header: openAIP vendor's Aug 2024 auth migration announcement.
- * The live API schema/zoom/quotas have NOT been verified on this deployment.
+ * Upstream PNG: owner-hidden-key live probe z9/x276/y173 returned 200 PNG
+ * for /api/data/openaip (legacy /airspaces returned 404). This proves only
+ * the sampled tile, not complete geographic/zoom coverage or data recency.
+ * API key stays server-only; Aug 2024 x-openaip-api-key header retained.
  */
 const OPENAIP_TILES_HOST = "https://api.tiles.openaip.net";
 const MAX_REQUEST_ZOOM = 14; // Deliberate FlyTally budget guard, NOT a provider capability claim.
@@ -22,7 +25,7 @@ const PRIVATE_HEADERS = {
 } as const;
 
 function unavailable(status = 503) {
-  return new NextResponse("Airspaces unavailable", {
+  return new NextResponse("Aviation overlay unavailable", {
     status,
     headers: { ...PRIVATE_HEADERS, "X-Flytally-Airspaces": "unavailable" },
   });
@@ -64,7 +67,7 @@ export async function GET(
 ) {
   const tile = parseAirspaceTile(await params);
   if (!tile || tile.z > MAX_REQUEST_ZOOM) {
-    return new NextResponse("Invalid airspace tile", {
+    return new NextResponse("Invalid aviation tile", {
       status: 400,
       headers: PRIVATE_HEADERS,
     });
@@ -87,7 +90,7 @@ export async function GET(
   if (!apiKey) return unavailable();
 
   const upstreamUrl =
-    `${OPENAIP_TILES_HOST}/api/data/airspaces/${tile.z}/${tile.x}/${tile.y}.png`;
+    `${OPENAIP_TILES_HOST}/api/data/openaip/${tile.z}/${tile.x}/${tile.y}.png`;
 
   try {
     const response = await fetch(upstreamUrl, {
