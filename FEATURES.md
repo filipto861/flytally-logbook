@@ -1,3 +1,7 @@
+## 2026-10-10 — Monotonic fractional clock compatibility correction staged
+
+Owner review correction failed 3/90 tests due to fractional `performance.now()` rejected as integer; typecheck PASS. Clock acceptance fixed in isolated tile and fallback modules; two regression tests added. Retest pending; Satellite OFF.
+
 ## 2026-10-10 — M3-C review corrections staged
 
 Absolute inherited pair deadline, typed bounded-error reason handling, controlled admission rejection, and defensive fallback input handling staged with regression tests. Isolated only, local retest pending. Live provider and production resource limits unchanged; Satellite OFF.
