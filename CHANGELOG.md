@@ -1,3 +1,7 @@
+## 2026-10-10 — Owner priority: finish Satellite first
+
+Recorded explicit product decision to complete Satellite before resuming openAIP Airspaces. Offline A2A work preserved, no runtime changes, no merge or deployment.
+
 ## 2026-10-10 — openAIP A2A offline boundary STAGED
 
 Added `lib/openaip-airspace-contract.ts`, four targeted offline tests and `docs/product/3_7_0_A2A_AIRSPACE_BOUNDARY.md`. Provider API/rights remain unverified; no HTTP proxy, UI, DB, deployment or supplier calls. Owner tests/typecheck/build NOT RUN on new head.
