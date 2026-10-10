@@ -22,6 +22,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Owner confirmed Vercel Production env `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS=true` before merge; live Vercel project lists key targeted at Production. New deployment `dpl_483QVp2729JzS16w8g1VJz7MBcCJ` **READY**, production alias `fly-tally.com` updated accordingly. Real malformed duplicate-style API **400 no-store** observed on this deployment. Anonymous Satellite app-level **401** on the new deployment, signed-in real-UI tile success/failure and physical Safari **NOT YET VERIFIED**; upstream provider consent/cost and stale cached tiles remain unverified.
 
 ## Unreleased
+## 3.7.0 openAIP A2A offline port — feature branch only (10 October 2026)
+
+- After Satellite production deployment, start a small openAIP-only branch from the current `main` and bring forward precisely two isolated files from the old paused A2A branch: `lib/openaip-airspace-contract.ts` and `tests/v370-openaip-airspace-contract.test.ts`. Canonical XYZ parsing, unsupported/unsafe input rejection, and the explicit requested/authenticated/deploymentEnabled/providerContractVerified gate remain unchanged; no provider/runtime/UI requests.
+- Register the new pure source contract in the GPS/map development registry with direct domain-unit tests; increase audited runtime source count `388` → `389` and synchronize its two regression assertions. Document unavailable/disabled behavior and next authenticated proxy milestone. **Owner-targeted/CI/build/Playwright/PG: NOT RUN on this new branch until verified.** No migration, vendor traffic, production flag or deployment.
+
+
 
 ### 3.7.0 Satellite map selector — pre-merge development history (10 October 2026)
 
