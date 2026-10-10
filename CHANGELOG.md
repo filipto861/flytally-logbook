@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2a verification and M3-D2b raster fixtures staged
+
+Owner clean `6d0993b3`: 52/52 targeted PASS and TypeScript PASS. Created `tooling/satellite-valid-raster-fixtures.cjs` and `tests/v370-satellite-valid-fixtures.test.ts` (two synthetic tests). Existing HTTP fixture remains unchanged pending compatibility review. No runtime/provider/route/Standard/Story/DB changes; new source tests/build/HTTP/Playwright/CI NOT RUN, Satellite OFF.
+
 ## 2026-10-10 — M3-D2a SVG buffer copy optimization staged (NOT VERIFIED)
 
 Updated `lib/satellite-svg-envelope.ts` to construct a zero-copy view of raster Uint8Array before Base64 conversion; added two focused `tests/v370-satellite-svg-envelope.test.ts` regressions for nonzero byteOffset and exact size checks. No user-visible/production provider/route/Standard/Story changes or new resource limits; typecheck/test/build/browser/HTTP/CI NOT RUN on new source. Satellite OFF, no merge/deploy.
