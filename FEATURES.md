@@ -805,3 +805,6 @@ These are not implementation commitments until promoted in `ROADMAP.md`.
 - No unsupported offline editing.
 - No authority/legal/trademark/provider approval inferred from code, tests or internal status.
 
+
+
+Satellite M3-D metadata collector: isolated MIME/status diagnostic and awaited cleanup hardening staged, tests/Windows runtime verification pending; not a production feature or verified ArcGIS grid.
