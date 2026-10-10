@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-A proposed provider lifecycle review contract (DOCS ONLY)
+
+Created `docs/r2d2-m3a-provider-lifecycle-review.md` covering independently reviewable operation states, cancellation/admission/lease quarantine, parallel labels fallback, auth/Standard invariants, valid raster fixture migration and planned failure-injection tests. M3 integration and DeepSeek review NOT RUN; no runtime/route/tests/deploy/DB changes. Owner 69/69 local proof belongs to exact earlier source SHA `7baefdf7d6ec75878b566853052238698774abb4` only.
+
 ## 2026-10-10 — M2c-C 69/69 local PASS and M3 integration read-only review gate (DOCS ONLY)
 
 Owner submitted full PowerShell evidence on exact clean source `7baefdf7d6ec75878b566853052238698774abb4`: 69 focused tests / 69 PASS / 0 fail/skip; `npm.cmd run typecheck` PASS; local Node24. Closes only M2c-C standalone lease-quarantine local test/typecheck gate. Audited real provider/route and fixture code: provider remains on Next `revalidate` and unconstrained `arrayBuffer()`; route lacks caller `request.signal` propagation; base and preferred labels run concurrently; HTTP/source mocks use invalid marker-text bodies masked by image MIME. Prepared source-grounded M3 integration contracts and release test upgrade/decoder/hosting evidence gaps in design and ROADMAP, proposing independent read-only DeepSeek architecture review first. **No runtime/library/tests/route/provider/flag/DB/Training changes this work cycle**; docs only and PR status, prod Satellite OFF, Draft #279, no CI/build/HTTP/merge/deploy.
