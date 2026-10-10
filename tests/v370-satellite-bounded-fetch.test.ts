@@ -232,13 +232,14 @@ test("R2D.2 M2a: sanitizes upstream thrown errors and rejects non-image payload"
 });
 
 test("M3-D hardening: rejected status and headers cancel an unread response body", async () => {
-  for (const scenario of [
+  const scenarios: Array<{ status: number; headers: Record<string, string>; reason: SatelliteBoundedFailure }> = [
     { status: 503, headers: {}, reason: "status" },
     { status: 200, headers: { "content-type": "text/html" }, reason: "content-type" },
     { status: 200, headers: { "content-encoding": "gzip" }, reason: "content-encoding" },
     { status: 200, headers: { "content-length": "13" }, reason: "too-large" },
     { status: 200, headers: { "content-length": "bad" }, reason: "content-length" },
-  ] as const) {
+  ];
+  for (const scenario of scenarios) {
     let cancelled = false;
     const response = source(new ReadableStream({
       start() { /* Unread stream */ },
