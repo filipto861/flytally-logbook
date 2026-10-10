@@ -10,6 +10,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## Unreleased
 
+### Security remediation candidate — Satellite endpoint session check (10 October 2026; unmerged)
+
+- **Draft code only:** Add `getSession()` authorization before Satellite token/upstream access in `/api/map-tile/[z]/[x]/[y]`, `401` for unauthenticated `style=satellite`, `private, no-store` on permitted responses and remove Satellite wildcard CORS; preserve public Standard style including legacy omitted style. Dynamic route disables Next static rendering.
+- Add targeted source-contract regression asserting order of style parsing → session authorization → token/upstream and distinct private Satellite vs public Standard response policies. Existing authenticated Story continues using the same endpoint; actual behavioral preservation requires local browser/HTTP verification.
+- This patch does **not** fix existing CDN caches automatically, set server-side global upstream disable, validate Esri licence/tiling, impose proven resource limits or enable Satellite maps. **Node/build/DB/Playwright/CI/production smoke NOT RUN** for this new exact branch; merge/deploy/version decision PENDING.
+
+
 ### Documentation governance — 10 October 2026 (docs-only branch; not yet merged)
 
 - Reconciled `ROADMAP.md` and `FEATURES.md` against actual GitHub states: Standard Maps PR #269 **MERGED**, documentation PR #270 **MERGED**; Phase 1 owner-accepted. Production remains **3.6.0**; full 3.7.0, Satellite and openAIP are **not shipped**.
