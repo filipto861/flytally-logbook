@@ -28,7 +28,8 @@ export async function fetchSatelliteRequiredPair(
   callerSignal?: AbortSignal,
 ): Promise<SatelliteRequiredPairOutcome> {
   if (!validDeadline(tileDeadlineMs) || !base || !preferred ||
-      !validDeadline(base.timeoutMs) || !validDeadline(preferred.timeoutMs)) {
+      !validDeadline(base.timeoutMs) || !validDeadline(preferred.timeoutMs) ||
+      base.signal || preferred.signal) {
     throw new Error("Satellite required pair: invalid-policy");
   }
   if (callerSignal?.aborted) {
@@ -40,6 +41,7 @@ export async function fetchSatelliteRequiredPair(
   const controller = new AbortController();
   const externalAbort = () => controller.abort();
   callerSignal?.addEventListener("abort", externalAbort, { once: true });
+  if (callerSignal?.aborted) controller.abort();
   // Do not extend total work by restarting per-operation deadlines.
   const timer = setTimeout(() => controller.abort(), tileDeadlineMs);
   const closed = { outcome: "failure", started: true, settlement: "unproven", reason: "upstream" } as const;
@@ -48,8 +50,7 @@ export async function fetchSatelliteRequiredPair(
     try {
       const outcome = await observeSatelliteBoundedFetch({
         ...options,
-        // Preserve a pre-existing per-operation signal without losing it:
-        // caller must supply a single shared signal or no signal.
+        // Individual signals are rejected above rather than silently ignored.
         signal: controller.signal,
       });
       if (outcome.lifecycle.outcome === "failure" && outcome.lifecycle.settlement === "unproven") {
