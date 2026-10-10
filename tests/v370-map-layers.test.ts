@@ -18,7 +18,9 @@ test("3.7.0 map controller freezes the pane contract and standard-only layer", (
 
 test("3.7.0 standard dark filtering is isolated from default and aviation panes", () => {
   const controller = source("components/map-layer-controller.ts");
-  assert.match(controller, /state\.basePane\.style\.filter = theme === "dark"/);
+  assert.match(controller, /state\.style === "map" && state\.theme === "dark"/);
+  assert.match(controller, /state\.basePane\.style\.filter/);
+  assert.match(controller, /state\.style = style/);
   assert.match(controller, /state\.aviationPane\.style\.filter = "none"/);
   assert.match(controller, /tiles\.style\.filter = "none"/);
   assert.doesNotMatch(controller, /tilePane\.style\.filter/);
@@ -126,4 +128,46 @@ test("3.7.0 security containment requires Satellite session before token/upstrea
   const standard = route.slice(standardStart);
   assert.match(standard, /"Cache-Control": "public, max-age=86400/);
   assert.match(standard, /"Access-Control-Allow-Origin": "\*"/);
+});
+
+test("3.7.0 Satellite trial is explicit opt-in and retains Standard by default", () => {
+  const control = source("components/satellite-map-control.ts");
+  const controller = source("components/map-layer-controller.ts");
+  assert.match(control, /NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS === "true"/);
+  assert.match(control, /if \(!SATELLITE_MAPS_TRIAL_ENABLED \|\| !enabled\) return \(\) => \{\};/);
+  assert.match(controller, /return attachBasemap\(map, "map", url, attribution\)/);
+  assert.match(controller, /return attachBasemap\(map, "satellite", url, attribution, onLoad, onError\)/);
+  // Failure rollback and unavailable UI state are exercised in Playwright, not inferred from comments.
+  assert.match(control, /standardMap\(true\)/);
+  assert.match(control, /status\(fallback \? "Satellite unavailable — showing Standard" : ""\)/);
+  assert.doesNotMatch(control, /localStorage|sessionStorage/);
+  assert.doesNotMatch(control, /openaip/i);
+});
+
+test("3.7.0 trial is limited to four authenticated surfaces, not public replay", () => {
+  const overview = source("components/route-overview-map.tsx");
+  const tracks = source("components/tracks-map.tsx");
+  const saved = source("components/flight-track-player.tsx");
+  const imported = source("components/gps-import-review-player.tsx");
+  for (const file of [overview, tracks, imported]) {
+    assert.match(file, /installSatelliteMapControl\(map,true\)/);
+    assert.match(file, /cleanupSatellite\(\)/);
+  }
+  assert.match(saved, /installSatelliteMapControl\(map,!publicView\)/);
+  assert.match(saved, /\[samples,tracks,publicView\]/);
+  const publicMap = source("components/public-flight-map.tsx");
+  assert.match(publicMap, /publicView/);
+  assert.doesNotMatch(publicMap, /installSatelliteMapControl/);
+  assert.doesNotMatch(source("components/flight-story-card.tsx"), /installSatelliteMapControl/);
+});
+
+test("3.7.0 new satellite controller is registered as GPS browser risk", () => {
+  const registry = JSON.parse(source("tooling/development-modules.json"));
+  const gps = registry.modules.find((entry: { id: string }) => entry.id === "gps-tracks");
+  assert.ok(gps, "GPS domain registry entry must exist");
+  assert.ok(gps.prefixes.includes("components/satellite-map-control"));
+  assert.ok(registry.browserAcceptance.pathTargets.some((entry: { prefixes?: string[] }) =>
+    entry.prefixes?.includes("components/satellite-map-control")),
+    "new map control must select registered map browser acceptance");
+  assert.equal(registry.ownership.auditedTotal, 388);
 });

@@ -11,6 +11,14 @@ This is the canonical **forward execution plan** for `flytally-logbook`. Older m
 
 **Emergency security deployment complete:** 10 Oct 2026 PR #282 merged and production alias points to READY build. Does not constitute full 3.7.0 or externally approved Satellite integration; older pre-merge audit notes below are historical.
 
+### Active 3.7.0 Satellite UI integration — owner reprioritized 10 October 2026
+
+**New approved implementation direction:** Reuse existing authenticated Share Story's Satellite tile endpoint and the isolated, previously tested R1 `Standard / Satellite` Leaflet control from draft PR #272; port its small, well-bounded client changes onto **current security-patched main** rather than merge the stale R1/R2 stacked history. This is a new integration branch, not proof of provider entitlement. Do not stall client engineering on new license research; retain external-provider/account entitlement as an explicitly deferred release risk, not an approved fact.
+
+Milestone scope: authenticated route overview, GPS tracks, saved flight GPS replay and GPS import review only, **Standard default**, explicit per-map selection, no silent persisted preference, fallback to Standard on tile failure, no map recreation or GPS/flight data mutation, public flight sharing remains **Standard-only**, Share Story flow unchanged. Keep `getSession()` security gate, private Satellite caching, public Standard caching and strict 400 style parser from deployed PR #282 unchanged. Guard rollout via existing exact-true `NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS` (default OFF) pending current-SHA ON/OFF verification. No DB/schema changes; keep Training separate.
+
+**Execution:** client UI and source/browser tests staged → **owner-local targeted 16/16 PASS**, iteration source 233/233 + domain 46/46 + typecheck PASS, Next production build PASS on `368434b6` → **first Satellite ON risk-release FAILED in aggregate at 1455/1456** due exclusively to stale hardcoded `auditedTotal=387` in timezone source test while newly owned Satellite module makes registry 388; **test-only assertion patched on new PR head, NOT YET RETESTED** → owner ON+OFF risk-release with isolated DB and synthetic map tiles → production enable only after valid exact-SHA evidence and explicit safe rollout/rollback checks. No arbitrary performance limits or live provider request claims. Any R2D/operational hardening proceeds as a separate, verified milestone, not a prerequisite to this first small UI port unless a concrete blocker is demonstrated.
+
 ## Current state — 10 October 2026
 
 | Area | Verified state | Gate / next action |
