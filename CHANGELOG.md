@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C review correction batch staged (NOT VERIFIED)
+
+Updated `lib/satellite-required-pair.ts`, `lib/satellite-tile-transport.ts`, `lib/satellite-fetch-lifecycle.ts`, `lib/satellite-label-fallback.ts`; added three focused regressions in existing test files. Enforce absolute deadline after admission, typed error reason, admission-failure `unavailable`, null guard and monotonic clock default. No live provider/route/cache/DB/Standard/Story or deployment changes; targeted Node24 tests and typecheck NOT RUN on new SHA.
+
 ## 2026-10-10 — Documented M3-C independent review handoff (DOCS ONLY)
 
 Created `docs/r2d2-m3c-integration-independent-review.md` for external read-only architecture/security/cancellation review of existing tested isolated modules before provider wiring. No review outcome received; no runtime, DB, merge or deploy changes. Tests NOT RUN on documentation commit.
