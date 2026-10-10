@@ -33,7 +33,7 @@ test("development registry owns the strict timezone boundary",()=>{
   assert.ok(platform);
   assert.ok(platform.prefixes.includes("lib/calendar-date"));
   assert.ok(platform.prefixes.includes("lib/data/user-calendar"));
-  assert.equal(registry.ownership.auditedTotal,390);
+  assert.equal(registry.ownership.auditedTotal,391);
 });
 
 test("P1.4 aircraft and rate defaults use strict server calendar authority",()=>{
