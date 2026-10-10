@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B2 owner second run 59/60; missing labels signal FIX STAGED
+
+Owner clean SHA `66f8b29413e9a66c6eca37b97fe53d283ccc6654`: targeted 60 tests, 59 PASS / 1 FAIL; typecheck PASS. Root cause read directly in provider: base imagery fetch forwarded `signal`, while preferred and fallback labels omitted it. Existing abort test correctly demanded signal on both parallel calls. Fixed both call sites in `lib/satellite-map-provider.ts` (`8fbf598cac56f55adde3c7d6297119957317be4f`); tests unchanged. Verification at new SHA NOT RUN. No promise of bounded noncooperative upstream termination, no admission integration, Satellite prod OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-B2 initial owner 58/60 FAIL; focused test correction staged
 
 Owner clean exact `94b97e2c944844c1932ab2be03599f65276d9f9c`, Node24: 60 targeted tests, **58 PASS / 2 FAIL**; typecheck PASS. Failure 1: historical R2B source assertion expected obsolete route call without newly forwarded `request.signal`. Failure 2: test immediately aborted after starting `satelliteTile`, before second parallel supplier invocation; expected both to have started. Updated **tests only** on `763bfce4668e59bf71ef49ae42baa61e45530ed1`: route guard now expects actual signal call, parallel test aborts from a microtask registered after both fetcher invocations. New SHA target tests/typecheck **NOT RUN**. Provider/route remain unchanged by correction; Satellite prod OFF; no merge/deploy. M3-B2 not closed until owner PASS.
