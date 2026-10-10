@@ -31,6 +31,14 @@
 - **Verification identity boundary:** this documentation-only reconciliation commit changes PR HEAD and candidate ID. The successful ON/OFF evidence belongs **only** to `b10d81b7`; it must not be reported as a full PASS for a later SHA. Replan/verify the final docs-only candidate before merge. No source runtime changes were authorized as part of this reconciliation.
 - **Remaining outside this evidence:** actual authenticated app-to-openAIP live proxy in a controlled nonproduction environment, provider rights/quotas/coverage/currentness, native physical iPad/Safari, CI, merge, Vercel Production deploy/configuration and explicit owner enablement decision. No 3.7.0 release or provider approval follows from these tests.
 
+## Production owner-approved activation — 10 October 2026
+
+1. The A2D protected server route was deployed with Production-only provider gates explicitly set to `true` and owner-created server-only Sensitive `OPENAIP_API_KEY`; client flag remained OFF. Staged Vercel Production `dpl_61kC1iBsrsCC7QmKG544qfwnFgB5` was READY and aliased to `fly-tally.com`.
+2. In their authenticated browser the owner opened `https://fly-tally.com/api/airspace-tile/9/276/173` and supplied a screenshot of the combined aviation PNG rendered in the browser. This is direct through-app **single-XYZ** evidence, not verification of more regions, zooms, data vintage or app UI.
+3. On explicit user direction to make Aviation ON, configured Production-only `NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS=true` and forced a **new** production Next build for unchanged merged main SHA `ea0889d9e673f51aff84fc013c11e4088f93f92a`. Vercel deployment `dpl_Hz3G6uETJa5ybUxyhNgcGfAqyPJN` returned **READY** with `fly-tally.com` assigned. Therefore Aviation is **configured ON** for the four authenticated map consumers, while public shared replay remains excluded by source contract. No API key exposed in repository/browser bundle/chat; no database or Training change.
+4. **Open acceptance:** owner visual click of Aviation in protected route overview, GPS tracks, private replay and import review; switching Standard/Satellite; desktop/mobile/iPad/Safari; sampled additional coordinates and zoom; provider quota/coverage/source recency; fail-closed monitoring. Feature availability is not NOTAM/active-airspace authority nor an approved chart. Full v3.7.0 remains a separate milestone.
+
+
 ## A2D closeout — merge and Production OFF (10 October 2026)
 
 - PR [#293](https://github.com/filipto861/flytally-logbook/pull/293) squash-merged to `main` at `ea0889d9e673f51aff84fc013c11e4088f93f92a`. The exact final feature SHA before squash was `bc3f6d112704a223a4dbc321c102c07878519275`, candidate `a470536bcc69ebbc38074c7aed52fd02b119c32cfd9db6274938f60acf1b1bef`.

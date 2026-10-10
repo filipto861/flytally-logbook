@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 3.7.0 A2D — Aviation enabled in Production (10 October 2026)
+
+- **Owner-authorized staged rollout, no new source commit:** After merged A2D runtime at `ea0889d9e673f51aff84fc013c11e4088f93f92a`, configured server-only `FLYTALLY_OPENAIP_AIRSPACES_ENABLED=true` and `FLYTALLY_OPENAIP_PROVIDER_VERIFIED=true` on Production alongside owner-created Sensitive `OPENAIP_API_KEY`; a gated client-OFF rebuild `dpl_61kC1iBsrsCC7QmKG544qfwnFgB5` reached READY. Owner then navigated in an authenticated browser to `https://fly-tally.com/api/airspace-tile/9/276/173` and shared a screenshot showing a real combined aviation PNG through the protected app proxy. This is **one verified tile only**; not proof of provider coverage, currency, operational applicability, or all browser layouts.
+- **Public client activation:** configured Production-only `NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS=true`, forced fresh Production build `dpl_Hz3G6uETJa5ybUxyhNgcGfAqyPJN` for unchanged `main` SHA `ea0889d9e673f51aff84fc013c11e4088f93f92a`; Vercel **READY**, `fly-tally.com` production alias assigned, no reported build/alias error. Aviation button enabled by the compile-time flag; user has not yet reported actual in-map click-through on all four surfaces. All map content remains reference-only, non-authoritative and server-fail-closed.
+- **Still open:** visual/private route smoke, Standard/Satellite/Aviation switching, more tile coordinates and zoom, native iPad/Safari, provider quota/currentness checks and 3.7.0 full release gate. Pre-activation OFF status recorded in historical 3.7.0 closeout section below; no DB migration or Training change.
+
 ## 3.7.0 A2D — merge and Production OFF closeout (10 October 2026)
 
 - [PR #293](https://github.com/filipto861/flytally-logbook/pull/293) **squash-MERGED** into `main` as `ea0889d9e673f51aff84fc013c11e4088f93f92a`. Combined openAIP PNG Aviation overlay replaces the deprecated airspaces-only remote raster behind the existing authenticated private server-side compatibility route; all customer-facing layer labels are Aviation. No DB/schema migration, FlyTally Training or public sharing changes, no new secrets/production environment edits and no product 3.7.0 release.
