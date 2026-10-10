@@ -634,7 +634,8 @@
         "lib/satellite-parallel-admission",
         "lib/satellite-admitted-pair",
         "lib/satellite-required-pair",
-        "lib/satellite-label-fallback"
+        "lib/satellite-label-fallback",
+        "lib/satellite-tile-transport"
       ],
       "files": [],
       "risks": [
@@ -896,7 +897,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 398,
+    "auditedTotal": 399,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
@@ -1057,7 +1058,8 @@
         "lib/satellite-parallel-admission",
         "lib/satellite-admitted-pair",
         "lib/satellite-required-pair",
-        "lib/satellite-label-fallback"
+        "lib/satellite-label-fallback",
+        "lib/satellite-tile-transport"
         ],
         "files": [],
         "targets": [
