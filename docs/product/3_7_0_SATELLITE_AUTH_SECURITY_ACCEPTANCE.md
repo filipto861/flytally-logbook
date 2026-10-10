@@ -19,6 +19,11 @@ Canonical `main` does not verify an authenticated session before entering the Ar
 7. Auth/session throws must never turn into an upstream request. DB-outage HTTP status and client behavior need explicit local acceptance, not optimistic assumptions.
 8. A separate server-side emergency upstream-disable plan remains needed if **all** authenticated Esri traffic must stop for licensing/cost reasons; the current patch only blocks anonymous traffic. No inherited supplier GET approval.
 
+### Owner-local checkpoint and LF/CRLF portability correction — 10 October 2026
+
+First owner-run on Windows PowerShell with `node v24.19.0`: targeted `npm run test:target -- tests/v370-map-tile-auth-behavior.test.ts tests/v370-map-layers.test.ts` **12/13 PASS**, including all five isolated route behavior cases. One source-contract test failed at a brittle literal `\\n` anchor when reading a route with Windows CRLF line endings. Typecheck `tsc --noEmit` **PASS**, Next 16.3.2 build `PASS` (41/41 generated static pages). These are owner-supplied local outputs, **not CI**, and no `git rev-parse HEAD` was included for the run. The test-only correction in `53598df` now searches for `if (wantsSatellite) {` independent of newlines. Re-execution on revised SHA **NOT RUN**. No claim of real Next HTTP, Postgres, Playwright or production gate PASS.
+
+
 ## Local exact-candidate verification (owner workstation, Node 24)
 
 Run only from a **clean checkout of the actual PR head**; never assume this draft's commit remains unchanged. The existing project workflow is authoritative for choosing risk gates.
