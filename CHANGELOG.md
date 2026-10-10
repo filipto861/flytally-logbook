@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-D2 strict metadata validation STAGED / LOCAL VERIFICATION PENDING
+
+M3-D2 strict metadata validation STAGED: finite tile origin, positive integer dimensions, coherent Web Mercator aliases, unique nonnegative LOD levels, positive finite resolution and max 64 LODs; synthetic invalid-evidence cases added. Owner tests/typecheck/build NOT RUN on this source. Local real HTTP stream teardown reproduction and Node Windows assertion root cause remain OPEN. No live ArcGIS requests authorized. Satellite OFF; no merge/deploy.
+
 ## 2026-10-10 — M3-D base-only collector STAGED / OWNER VERIFICATION PENDING
 
 New isolated branch adds explicit base-only one-request mode, text/plain JSON parsing behind a tileInfo shape gate, and two mocked offline tests for successful one-service capture and invalid JSON. The second authorized ArcGIS base metadata-only GET gave HTTP 200 text/plain and repeated Windows Node24 UV_HANDLE_CLOSING assertion; no metadata captured. Node native crash root cause NOT VERIFIED, and no further live GET authorized. Tests/build/typecheck on this new branch NOT RUN; Satellite OFF, no merge/deploy.
