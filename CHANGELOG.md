@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-C Batch 3 isolated required-base cancellation staged (NOT TESTED)
+
+Added `lib/satellite-required-pair.ts`, five tests in `tests/v370-satellite-required-pair.test.ts`, GPS source ownership registry and audited count 396→397. Implements synthetic shared deadline, preabort, base failure sibling abort signal and retained uncertain capacity. No provider/route/Standard/Story/cache/DB changes, no numeric production budgets, merge or deployment. Node24 targeted suite and typecheck NOT RUN for new SHA.
+
 ## 2026-10-10 — M3-C Batch 2 owner verification evidence (DOCS ONLY)
 
 Clean source SHA `8dd125b073f3387532b921051d491d473b0c1d90` passed owner Node24 targeted 72/72 (six suites) and TypeScript. No code changes for this evidence-only commit; full suite/build/HTTP/Playwright/CI NOT RUN; provider not integrated; Satellite OFF, no merge/deploy.
