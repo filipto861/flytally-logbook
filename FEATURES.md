@@ -816,3 +816,5 @@ Satellite metadata evidence collector strict tileInfo validation staged, not yet
 M3-D tooling: isolated loopback HTTP teardown diagnostic STAGED, not runtime wiring or product functionality.
 
 Satellite diagnostics: M3-D4 transport review documented as offline engineering evidence only; no production feature enabled.
+
+Satellite M3-D5: offline HTTP exit-path diagnostic tooling staged for Windows verification; not runtime functionality.
