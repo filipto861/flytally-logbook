@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B Batch 1 owner LOCAL VERIFIED 57/57 + typecheck
+
+Owner clean exact `3790f05d5d208bccb720ec564d34e9513d42edb3`, Node 24.19.0, 57/57 targeted tests PASS (23 map + 14 admission + 14 bounded fetch + 6 lifecycle), zero failures/skips; `npm.cmd run typecheck` PASS. Confirms isolated conservative `not-started`/`unproven` observational adapter, NOT actual upstream cessation, HTTP integration, runtime or memory-safety proof. Next M3-B Batch 2: improve lifecycle evidence and cancellation signal propagation using small verified increments. Build, full suite, Playwright, CI and production NOT RUN; Satellite OFF.
+
 ## 2026-10-10 — M3-B batch 1 first owner run FAIL (import resolution); minimal fix staged
 
 Owner clean exact `02d8acc1c6c8850e514d6852faa2bbec50c6c66f`, Node 24.19.0: targeted test invocation 51 PASS / 1 test-file FAIL before new lifecycle tests could load, due to extensionless runtime import in `lib/satellite-fetch-lifecycle.ts`; `npm.cmd run typecheck` PASS. Corrected only import to explicit `.ts` on `5e1cbf2b35bb2e9547667cfc42c93db2faac815a`. **New SHA verification NOT RUN**; rerun targeted tests + typecheck. No runtime provider/route changes, no merge/deploy; Satellite OFF.
