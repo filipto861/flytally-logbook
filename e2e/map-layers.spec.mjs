@@ -5,6 +5,8 @@ import { browserSqlScalar, resetIntelligentReviewFormScopeFixture, runBrowserFli
 
 const authenticatedBrowser = process.env.FLYTALLY_AUTH_BROWSER === "1";
 const satelliteTrial = process.env.NEXT_PUBLIC_FLYTALLY_SATELLITE_MAPS === "true";
+const airspacesTrial = process.env.NEXT_PUBLIC_FLYTALLY_AIRSPACES_MAPS === "true";
+const AIRSPACE_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+kPr0AAAAASUVORK5CYII=", "base64");
 const TILE = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#abc6d4"/><path d="M0 128H256" stroke="#456c85"/></svg>';
 const coordinates = JSON.stringify([
   { lat: 50.10, lon: 14.10, alt: 300, time: "2026-09-18T10:05:00Z" },
@@ -149,6 +151,33 @@ test("map panes preserve standard basemap ordering and route interactions", asyn
     await expect(map.locator(".leaflet-flytallyBasemap-pane")).toHaveCSS("filter", /invert/);
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
   }
+  const airspaces = map.getByRole("button", { name: "Airspaces overlay" });
+  await expect(airspaces).toHaveCount(airspacesTrial ? 1 : 0);
+  if (airspacesTrial) {
+    let requests = 0;
+    // Synthetic provider response: do not contact external openAIP in browser tests.
+    await page.route("**/api/airspace-tile/**", async route => {
+      requests++;
+      await route.fulfill({ status: 200, contentType: "image/png", body: AIRSPACE_PNG });
+    });
+    await airspaces.click();
+    await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => requests).toBeGreaterThan(0);
+    await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile").first()).toBeAttached();
+    await expect(map.locator(".leaflet-control-attribution")).toContainText("openAIP");
+    await expect(map.getByRole("status")).toContainText("coverage and current status unverified");
+    if (satelliteTrial) {
+      await map.getByRole("button", { name: "Satellite map" }).click();
+      await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+      await expect(map.locator(".leaflet-control-attribution")).toContainText("openAIP");
+      await map.getByRole("button", { name: "Standard map" }).click();
+      await expect(airspaces).toHaveAttribute("aria-pressed", "true");
+    }
+    await airspaces.click();
+    await expect(airspaces).toHaveAttribute("aria-pressed", "false");
+    await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile")).toHaveCount(0);
+    await expect(map.locator(".leaflet-control-attribution")).not.toContainText("openAIP");
+  }
   // Real hit-target interaction: noninteractive aviation pane must not swallow route clicks.
   const routeHit=map.locator(".leaflet-routeLines-pane .route-click-target").first();
   await routeHit.hover();
@@ -178,6 +207,19 @@ test("GPS map theme changes preserve a live map instance and viewport", async ({
     await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
     await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
   }
+  const airspaces = map.getByRole("button", { name: "Airspaces overlay" });
+  await expect(airspaces).toHaveCount(airspacesTrial ? 1 : 0);
+  if (airspacesTrial) {
+    // Internal 503 is the expected fail-closed result without verified provider gates.
+    await page.route("**/api/airspace-tile/**", route =>
+      route.fulfill({ status: 503, body: "Airspaces unavailable" }));
+    await airspaces.click();
+    await expect(airspaces).toHaveAttribute("aria-pressed", "false");
+    await expect(airspaces).toBeDisabled();
+    await expect(map.getByRole("status").filter({ hasText: "Airspaces unavailable" })).toBeVisible();
+    await expect(map.locator(".leaflet-flytallyAviation-pane img.leaflet-tile")).toHaveCount(0);
+    await expect(map.locator(".leaflet-flytallyBasemap-pane > .leaflet-layer")).toHaveCount(1);
+  }
   await expect(map.locator(".leaflet-overlay-pane canvas").first()).toBeAttached();
 });
 
@@ -188,6 +230,7 @@ test("flight replay retains map and playback state through theme changes", async
   await seedIsolatedMapFixture(page.request);
   await openMap(page, "/flights/9913?tab=gps");
   const map = await checkStandardPanes(page, ".player-responsive-map");
+  await expect(map.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await page.getByRole("combobox", { name: "Playback speed" }).selectOption("2");
   await page.getByRole("button", { name: "Play track" }).click();
@@ -214,6 +257,7 @@ test("flight replay retains map and playback state through theme changes", async
     await expect(page.getByRole("heading", { name: "Replay the flight" })).toBeVisible();
     const publicMap = await checkStandardPanes(page, ".player-responsive-map");
     await expect(publicMap.getByRole("button", { name: "Satellite map" })).toHaveCount(0);
+    await expect(publicMap.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Play track" })).toBeVisible();
   } finally {
     runBrowserFlightFixtureCleanup(`
@@ -244,6 +288,7 @@ test("GPS import review retains its map pane across theme changes", async ({ pag
   await expect(details).toBeAttached();
   if (!(await details.evaluate(node => node.open))) await details.locator("summary").click();
   const map = await checkStandardPanes(page, ".import-review-map");
+  await expect(map.getByRole("button", { name: "Airspaces overlay" })).toHaveCount(airspacesTrial ? 1 : 0);
   await setTheme(page, "light");
   await assertSamePaneAfterTheme(page, map);
 });
