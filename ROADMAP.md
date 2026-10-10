@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B Batch 2 owner LOCAL PASS, M3-C NEXT
+
+Owner clean exact `a4ea494f9f1a5d3f194c7aa2a8d2b6d4ae6684e3`: 60/60 targeted Node24 tests PASS, zero fail/skip; `npm.cmd run typecheck` PASS. Confirms Satellite `request.signal` plumbing through base/preferred/fallback and regression preservation within tested scope. M3-B Batches 1+2 locally verified only; noncooperative upstream still may outlive wrapper/Promise.all; unbounded legacy provider read/cache and resource admission are NOT solved. M3-C next: bounded concurrency/admission orchestration and quarantine after architectural gate. Full tests/Next build/HTTP/Playwright/CI/prod NOT RUN; Satellite OFF, no merge/deploy.
+
 ## 2026-10-10 — M3-B2 owner second run 59/60; missing labels signal FIX STAGED
 
 Owner clean SHA `66f8b29413e9a66c6eca37b97fe53d283ccc6654`: targeted 60 tests, 59 PASS / 1 FAIL; typecheck PASS. Root cause read directly in provider: base imagery fetch forwarded `signal`, while preferred and fallback labels omitted it. Existing abort test correctly demanded signal on both parallel calls. Fixed both call sites in `lib/satellite-map-provider.ts` (`8fbf598cac56f55adde3c7d6297119957317be4f`); tests unchanged. Verification at new SHA NOT RUN. No promise of bounded noncooperative upstream termination, no admission integration, Satellite prod OFF, no merge/deploy.
