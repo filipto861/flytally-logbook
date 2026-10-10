@@ -1,3 +1,7 @@
+## 2026-10-10 — M3-B signal plumbing owner locally verified
+
+Owner exact `a4ea494f`: 60/60 targeted PASS and typecheck PASS for Satellite request signal in base/preferred/fallback branches. Not proof of bounded upstream termination or production resource safety; Satellite OFF.
+
 ## 2026-10-10 — M3-B2 labels signal propagation fix staged
 
 Owner SHA `66f8b294` 59/60 targeted, typecheck PASS; discovered real missing `AbortSignal` on preferred/fallback label calls. Fixed both in provider at `8fbf598c`. Retest required; Standard/Story untouched.
