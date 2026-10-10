@@ -15,6 +15,8 @@ For development continuity, use these documents in this order:
 5. **`DEVELOPMENT.md`** — branch, verification, CI and deployment workflow.
 6. **`docs/README.md`** — index of active supporting documentation and historical evidence.
 
+Current 3.7.0 implementation is partially production-deployed while the canonical product version is still `3.6.0`; consult `ROADMAP.md` for the remaining gates. The 10 October [repository/documentation audit](docs/maintenance/2026-10-10-repository-audit.md) is a dated cleanup snapshot, not the current release-status authority. Earlier verbatim [roadmap](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [features](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) are retained for historical provenance.
+
 Do not infer current development state from an old version-specific Markdown file. Historical milestone documents are stored under `docs/history/`.
 
 ## Runtime architecture
