@@ -1,5 +1,7 @@
 # FlyTally Logbook — open PR and branch disposition (read-only review)
 
+> **Historical snapshot — superseded 11 October 2026.** The owner chose to abandon the R1/R2 experiments. All 10 PRs #271–#279 and #281 were subsequently **closed without merge**, with dated comments. There are no longer 10 open Satellite draft PRs. Their Git branches and source history remain intact; no selective code-port work was authorized. Treat the "RETAIN" and "proposed next" recommendations below as prior audit advice, not the current roadmap. Consult `../../ROADMAP.md` and `../../CHANGELOG.md` for the superseding decision.
+
 **Prepared:** 10 October 2026  
 **Base:** `main@4e90cca2dbb7672a4598052a9b2ec12659d9f70a`, after canonical docs cleanup PR #301.  
 **Scope:** `flytally-logbook` only. No merge, deletion, closure, deployment or runtime/db change is authorized by this document.
