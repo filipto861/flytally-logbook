@@ -6,7 +6,7 @@ The production source of truth lives in `app/`, `components/` and `lib/`. Regres
 
 ## Start here
 
-This README is a stable navigation entrypoint, not the authority for current release status. Always establish the current GitHub `main` SHA before starting a new development session.
+This README is a stable navigation entrypoint, not the authority for current release status. Always establish the current GitHub `main` SHA before starting a new development session. AI contributors should first read the short [AGENTS entrypoint](AGENTS.md), then consult only the relevant source documents below.
 
 1. **[ROADMAP](ROADMAP.md)** — current release status, work order, owner decisions and next step.
 2. **[DEVELOPMENT](DEVELOPMENT.md)** — active branch, risk-based verification and release workflow.

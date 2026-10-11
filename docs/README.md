@@ -4,6 +4,9 @@
 
 ## Canonical current sources
 
+- [AI contributor entrypoint](../AGENTS.md) — stable repo-bound guardrails and navigation only; never duplicates current release state.
+- [AI handoff + independent review template](AI_HANDOFF_TEMPLATE.md) — SHA-bound minimal context for new sessions, DeepSeek read-only review and evidence ledger.
+
 1. [ROADMAP](../ROADMAP.md) — current status, release order, frozen decisions, acceptance gates and next step.
 2. [FEATURE LIST](../FEATURES.md) — implemented/planned capability inventory and intentionally unavailable behavior.
 3. [CHANGELOG](../CHANGELOG.md) — actual merged changes, dated production/data actions and historical verification evidence.
@@ -17,7 +20,7 @@
 
 - [11 October documentation inventory and AI workflow proposal](maintenance/2026-10-11-documentation-ai-workflow-audit.md) — 123-file inventory, link-scan limits and source-of-truth drift; reviewed with DeepSeek and owner-approved as a phased, non-destructive docs/AI governance workstream.
 - [DeepSeek independent-review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — reviewer input contract and explicit no-implementation scope; independent reply received.
-- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 implementation initiated in a separate PR.
+- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 status ownership merged in PR #313, DOC-2 history preservation merged in PR #314; DOC-3 onboarding/handoff is in review.
 
 - [Active development execution contract](../DEVELOPMENT.md) and [verbatim 0B/0E/0F test infrastructure history](history/DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md) — historical registry/test counts and “not active yet” notices are dated, not current instructions.
 
