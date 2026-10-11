@@ -1,6 +1,6 @@
 # FlyTally Logbook 3.7.0 — final production acceptance execution
 
-**Opened:** 11 October 2026. **Scope:** `flytally-logbook` only. **Owner decision:** proceed with closeout evidence, **not** automatic version bump, provider approval, new code or flag changes. **Baseline source:** `main@f3585ef6cee5f2f0868fce6efef0ebdcd06a77e3` (documentation-only commits after runtime release). **Product package version:** `3.6.0` until explicit release decision. **Status: OWNER FUNCTIONAL ACCEPTANCE COMPLETE / NUMERIC RELEASE AND PROVIDER-RIGHTS GATES SEPARATE.**
+**Opened:** 11 October 2026. **Scope:** `flytally-logbook` only. **Owner decision sequence:** initial evidence-only acceptance, then explicit final 3.7.0 closeout instruction after all owner-reported live UX tests; numeric version candidate staged separately. No provider approval, new map logic or flag changes. **Baseline source:** `main@f3585ef6cee5f2f0868fce6efef0ebdcd06a77e3` (documentation-only commits after runtime release). **Production product version at evidence checkpoint:** `3.6.0`; candidate package metadata is now staged at `3.7.0`, with build/deployment/alias still to verify. **Status: OWNER FUNCTIONAL ACCEPTANCE COMPLETE / NUMERIC 3.7.0 CANDIDATE PREPARED / VERCEL RELEASE AND PROVIDER RIGHTS NOT VERIFIED.**
 
 ## Owner production observation — 11 October 2026
 
