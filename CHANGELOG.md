@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Independent documentation audit follow-up (docs only)
+
+- Reconciled the independent Claude documentation review against the GitHub source: corrected the misleading pending-review phrasing in ROADMAP, marked the DOC workstream completed in the docs index, and linked the existing 3.5.0 certified-flight voiding archive/backup-v13 contract from ARCHITECTURE and the docs index. Historical implementation states remain dated evidence, not active release status.
+- Clarified independent read-only reviewer wording in AGENTS and the AI handoff template to cover DeepSeek or Claude without changing review triggers, owner authority or the one-review-per-frozen-design limit. No changes to FEATURES capabilities, version 3.7.0, planned 3.8.0 Currency, application logic, tooling, flags, DB, Training or production.
+- **Evidence:** exact-main read-only GitHub source and linked-document reconciliation. The independent Claude audit reported an isolated Node 22 checker run (0 findings) and fixture tests (6/6 PASS) on the preceding main; those are **not** new Node-24 or exact-candidate test results. Full local checker rerun, Node suite, TypeScript/build, PostgreSQL, Playwright, CI and production smoke: **NOT RUN / N/A** for this documentation-only patch.
+
 ## 11 October 2026 — DOC-5 governance closeout (documentation only)
 
 - Completed source-backed reconciliation after DOC-1–4 merged PRs #313–#316 and retained DeepSeek review #312. [DOC-5 closeout](docs/maintenance/2026-10-11-doc5-ai-governance-closeout.md) confirms single-owner status documentation, verbatim Phase 0 history, minimal AGENTS/handoff, and opt-in report-only consistency checker. Actual package+lock versions 3.7.0; next product release 3.8.0 Currency. No third-party provider approval inferred.

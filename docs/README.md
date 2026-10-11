@@ -5,7 +5,7 @@
 ## Canonical current sources
 
 - [AI contributor entrypoint](../AGENTS.md) — stable repo-bound guardrails and navigation only; never duplicates current release state.
-- [AI handoff + independent review template](AI_HANDOFF_TEMPLATE.md) — SHA-bound minimal context for new sessions, DeepSeek read-only review and evidence ledger.
+- [AI handoff + independent review template](AI_HANDOFF_TEMPLATE.md) — SHA-bound minimal context for new sessions, independent read-only AI review and evidence ledger.
 
 1. [ROADMAP](../ROADMAP.md) — current status, release order, frozen decisions, acceptance gates and next step.
 2. [FEATURE LIST](../FEATURES.md) — implemented/planned capability inventory and intentionally unavailable behavior.
@@ -16,11 +16,11 @@
 
 **Precedence:** actual code/runtime evidence → ROADMAP → FEATURES → CHANGELOG → architecture/development → active detailed contracts → dated acceptance → history. If these conflict, reconcile before implementation. A merged build is not an accepted full release.
 
-## Active documentation / AI-development governance review
+## Completed documentation / AI-development governance review (11 October 2026)
 
 - [11 October documentation inventory and AI workflow proposal](maintenance/2026-10-11-documentation-ai-workflow-audit.md) — 123-file inventory, link-scan limits and source-of-truth drift; reviewed with DeepSeek and owner-approved as a phased, non-destructive docs/AI governance workstream.
 - [DeepSeek independent-review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — reviewer input contract and explicit no-implementation scope; independent reply received.
-- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 status ownership merged in PR #313, DOC-2 history preservation merged in PR #314, DOC-3 stable AGENTS + handoff merged in PR #315; DOC-4 report-only checks merged in PR #316; [DOC-5 final workflow/documentation reconciliation](maintenance/2026-10-11-doc5-ai-governance-closeout.md) records accepted scope and verification limits.
+- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 status ownership merged in PR #313, DOC-2 history preservation merged in PR #314, DOC-3 stable AGENTS + handoff merged in PR #315; DOC-4 report-only checks merged in PR #316; [DOC-5 final workflow/documentation reconciliation](maintenance/2026-10-11-doc5-ai-governance-closeout.md) records accepted scope and verification limits (merged PR #317). No outstanding DOC review gate remains.
 
 - [Active development execution contract](../DEVELOPMENT.md) and [verbatim 0B/0E/0F test infrastructure history](history/DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md) — historical registry/test counts and “not active yet” notices are dated, not current instructions.
 
@@ -46,6 +46,7 @@
 - [Multi-aircraft canonical scale](product/MULTI_AIRCRAFT_SCALE_CONTRACT.md) — profile/flight applicability and future scale validation.
 - [GPS touch-and-go reliability](product/GPS_TOUCH_AND_GO_RELIABILITY.md) — supported fixes and separately evidenced research follow-up.
 - [Safety Pilot / PIC shared flight](product/SAFETY_PILOT_PIC_WORKFLOW.md) and [General PIC invitation](product/GENERAL_PIC_INVITATION.md) — explicit role/participant evidence.
+- [Certified-flight voiding (3.5.0)](product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md) — dated source/verification contract for protected archive, active-flight exclusion, participant provenance and backup v13; use current code/tests and [ARCHITECTURE](../ARCHITECTURE.md) for active invariants, not historical draft status.
 - [Compliance records](compliance/) — regulatory/claims engineering boundaries, source snapshots and evidence matrices; **not** external approval.
 - [Certification-readiness](certification-readiness/) — retained earlier verification specifications and evidence; **not** proof of current authority certification.
 
