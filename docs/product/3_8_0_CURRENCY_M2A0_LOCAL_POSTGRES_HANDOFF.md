@@ -1,6 +1,25 @@
 # FlyTally Logbook 3.8.0 — M2-A-0 localhost PostgreSQL verification handoff
 
-**Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
+**Date:** 11 October 2026. **Latest verified state:** M2-A-0 focused local acceptance **PASS** on exact owner checkout `6cc069960abf3a1162954be18039db5271282a71`, using Node 24 and isolated native PostgreSQL 16: TypeScript PASS, static tests 6/6 PASS, PostgreSQL integration tests 6/6 PASS. **Full PostgreSQL suite, signed portable v13 restore end-to-end, complete v20 schema validation, CI/build and production target verification remain NOT RUN/NOT VERIFIED.** Do not merge, register v21, mutate remote Neon or deploy. Earlier failed runs described below are historical.
+
+## M2-A-0 focused PostgreSQL acceptance — LOCAL PASS (11 October 2026)
+
+**Exact user-reported evidence from Windows PowerShell:** native runner `tooling/run-currency-m2a0-local.ps1` on branch `feat/3.8.0-currency-m2a0-sql-draft`, commit `6cc069960abf3a1162954be18039db5271282a71`, Node.js **v24.19.0** (from earlier owner output; the current runner separately enforced v24), isolated PostgreSQL 16 bound to `127.0.0.1:58540`, disposable DB `flytally_currency_test`. `git pull --ff-only` succeeded; script preserved 14 unrelated untracked files and verified **exact** expected=observed `flytally_currency_test|flytally|127.0.0.1|58540`. No password or remote DB connection was used.
+
+- `npm run typecheck`: **PASS**.
+- `npm run test:target -- tests/currency-v21-schema-draft.test.ts`: **6/6 PASS, 0 fail, 0 skip**; includes strict unregistered-v21 check, nullable additive shape, exact tuple guards, protected history unchanged, PowerShell safety, local PostgreSQL isolation.
+- `npm run test:target -- tests/integration/postgres-currency-v21-schema.test.ts`: **6/6 PASS, 0 fail, 0 skip** in **2,062.7576 ms**; (1) draft SQL applied twice and preserved historic prices and certified evidence; (2) JPY/EUR/KWD known tuple and invalid `NULL` / `NaN` / `Infinity` checks; (3) legacy two-decimal expenses and explicit ISO encoding; (4) representative pre-3.8.0 JSON row restore without invented currency; (5) v20 certified flight correction guard; (6) same-transaction full-row archived certified void.
+- Runner explicitly printed **`LOCAL test gates PASS on candidate 6cc069960abf3a1162954be18039db5271282a71. Not a production migration.`**; `pg_ctl` clean shutdown PASS. The fixture was a **minimal schema with real extracted v20 flight-protection trigger**, not an end-to-end real production schema or signed portable backup test. This is **owner-executed local evidence**, not CI.
+
+**M2-A-0 state:** first focused SQL/trigger acceptance is **verified local**, but the broader milestone's remaining verification gates prevent closing M2/registration or merging PR #322. Supersedes the historical NOT RUN snapshots below, which are retained as troubleshooting history.
+
+**Next approved local gate:** on the **same exact clean candidate** run the existing native runner with `-Full`; it creates another temporary local cluster, executes targeted tests, then the repository's full `npm run test:postgres:full` suite (no Docker, no remote DB):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1 -Full
+```
+
+Retain and share the full terminal output and candidate SHA. This additional gate **does not automatically prove** signed v13 backup integration with new currency columns or old-runtime rollback after new currency writes. Next after full PASS: add targeted full-v20/schema restore compatibility coverage, ensure direct SIX source verification and audited rollback plan, then decide whether to promote a separately gated v21 migration. No automatic v21 registration or production deploy now.
 
 ## CIDR suffix identity mismatch resolved in source (11 October 2026)
 
