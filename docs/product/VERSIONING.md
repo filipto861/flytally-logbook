@@ -68,11 +68,11 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-3.6.0 completed production rollout on 9 October 2026. The 3.7.0 package version may be staged in a candidate branch ahead of its release; do not claim deployment until Vercel alias and actual footer are verified. Last independently confirmed production baseline at candidate creation:
-- production database schema is **v20**;
-- flight certification payload remains **v8**;
-- portable backup/export format is **v13**;
-- production product package/runtime is **3.6.0**.
+3.6.0 completed production rollout on 9 October 2026. **3.7.0 completed numeric production rollout on 11 October 2026:** PR #309 merged at `39ee01b74f25bbd647d5e79f58d4b184034f61a0`, Vercel `dpl_Az24Z1mL7BxGN16zHpiiGDGXGPui` **READY** with Next.js build/TypeScript and 41/41 static pages; the `fly-tally.com` alias points at that deployment. App footer derives the version from the deployed `package.json` (`3.7.0`), but no independent post-release browser screenshot was captured. Historical pre-release candidate state remains in the dated CHANGELOG/acceptance notes. Last documented technical counters (no DB/schema change in this release):
+- production database schema **v20** (prior evidence; independent live DB query NOT RUN);
+- flight certification payload **v8** (unchanged by this release);
+- portable backup/export format **v13** (unchanged by this release);
+- deployed product package version **3.7.0**.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -98,7 +98,7 @@ PR titles should start with the numeric target version when practical.
 | 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
 | 3.5.5 | iPad sidebar collapse-control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
-| 3.7.0 | Maps & Aviation Layers | OWNER UX ACCEPTED 11 OCT; package `3.7.0` RELEASE CANDIDATE. A2F runtime already deployed on prior 3.6.0; new production build/alias/footer NOT YET VERIFIED. Provider entitlements/redistribution/coverage remain unverified, not approved |
+| 3.7.0 | Maps & Aviation Layers | **DONE / PRODUCTION 11 OCT 2026** — owner functional acceptance; release commit `39ee01b7` Vercel READY and aliased; third-party rights/coverage remain separately unverified and not approved |
 | 3.8.0 | Currency / monetary semantics · #136 | NEXT; former 3.7.0 reservation, scope preserved |
 | 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED; former 3.8.0 reservation |
 | 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED; former 3.9.0 reservation |
