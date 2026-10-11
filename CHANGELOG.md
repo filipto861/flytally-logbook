@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Currency 3.8.0 M0 read-only discovery (docs only)
+
+- Started the next roadmap milestone on a dedicated documentation branch: [3.8.0 currency source inventory and design/verification roadmap](docs/product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md), anchored to `main@4ca2847795435549f36d44f253eb7c105eea6d25` and issue #136. Recorded actual price/expense/settings/data/share/backup assumptions and four owner decisions pending before implementation.
+- ROADMAP/FEATURES now label 3.8.0 ACTIVE **only for M0 discovery**, with runtime implementation NOT STARTED. No user currency semantics, numeric costs, database schema, backup format, tests, deployment, or Training code were changed. Tests/build/PostgreSQL/browser/CI/smoke NOT RUN for this documentation-only milestone.
+
 ## 11 October 2026 — Independent documentation audit follow-up (docs only)
 
 - Reconciled the independent Claude documentation review against the GitHub source: corrected the misleading pending-review phrasing in ROADMAP, marked the DOC workstream completed in the docs index, and linked the existing 3.5.0 certified-flight voiding archive/backup-v13 contract from ARCHITECTURE and the docs index. Historical implementation states remain dated evidence, not active release status.
