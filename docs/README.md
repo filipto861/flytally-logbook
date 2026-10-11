@@ -16,7 +16,8 @@
 ## Active documentation / AI-development governance review
 
 - [11 October documentation inventory and AI workflow proposal](maintenance/2026-10-11-documentation-ai-workflow-audit.md) — 123-file inventory, link-scan limits, source-of-truth drift, proposed phases; **proposal awaiting independent review**, not new canonical runtime guidance.
-- [DeepSeek read-only review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — bounded independent critique, acceptance questions and explicit do-not-implement instruction; review result pending.
+- [DeepSeek independent-review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — reviewer input contract and explicit no-implementation scope; independent reply received.
+- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual GitHub PR #312 diff verified, reviewer claims classified as accepted, historically scoped or awaiting owner decision; implementation not started.
 
 ## 3.7.0 completed release / retained technical acceptance
 
