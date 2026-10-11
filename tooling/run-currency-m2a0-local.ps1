@@ -15,6 +15,7 @@ $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $temporaryRoot = $null
 $dataDir = $null
 $started = $false
+$startupAttempted = $false
 $mayDeleteTemporaryRoot = $false
 
 function Assert-Exit([string]$step) {
@@ -69,6 +70,7 @@ try {
   # Trust is limited to an ephemeral PostgreSQL server bound to loopback only.
   & $initdb -D $dataDir -U flytally -A trust --encoding=UTF8 --no-instructions
   Assert-Exit "Disposable initdb"
+  $startupAttempted = $true
   & $pgctl -D $dataDir -l $logPath -o "-h 127.0.0.1 -p $port" -w -t 30 start
   Assert-Exit "Disposable postgres startup"
   $started = $true
@@ -113,7 +115,11 @@ try {
       Write-Warning "Temporary PostgreSQL stop failed. Preserving data at $temporaryRoot for manual inspection."
     }
   } elseif ($temporaryRoot) {
-    $mayDeleteTemporaryRoot = $true
+    if ($startupAttempted -and (Test-Path (Join-Path $dataDir "postmaster.pid"))) {
+      Write-Warning "PostgreSQL startup status unknown. Preserving $temporaryRoot for inspection."
+    } else {
+      $mayDeleteTemporaryRoot = $true
+    }
   }
   if ($mayDeleteTemporaryRoot -and $temporaryRoot -and (Test-Path $temporaryRoot)) {
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
