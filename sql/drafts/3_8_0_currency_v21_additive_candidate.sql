@@ -115,9 +115,12 @@ BEGIN
     WHERE conrelid = 'flight_expenses'::regclass AND conname = 'expenses_amount_encoding_v21_check'
   ) THEN
     ALTER TABLE flight_expenses ADD CONSTRAINT expenses_amount_encoding_v21_check CHECK (
-      (amount_encoding IS NULL AND amount_minor_units IS NULL)
-      OR (amount_encoding = 'legacy_two_decimal' AND amount_minor_units = 2)
-      OR (amount_encoding = 'iso_minor_units' AND amount_minor_units IS NOT NULL AND amount_minor_units BETWEEN 0 AND 9)
+      COALESCE(
+        (amount_encoding IS NULL AND amount_minor_units IS NULL)
+        OR (amount_encoding = 'legacy_two_decimal' AND amount_minor_units = 2)
+        OR (amount_encoding = 'iso_minor_units' AND amount_minor_units IS NOT NULL AND amount_minor_units BETWEEN 0 AND 9),
+        FALSE
+      )
     );
   END IF;
 END;
