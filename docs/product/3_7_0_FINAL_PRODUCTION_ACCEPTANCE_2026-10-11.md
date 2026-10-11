@@ -2,6 +2,12 @@
 
 **Opened:** 11 October 2026. **Scope:** `flytally-logbook` only. **Owner decision:** proceed with closeout evidence, **not** automatic version bump, provider approval, new code or flag changes. **Baseline source:** `main@f3585ef6cee5f2f0868fce6efef0ebdcd06a77e3` (documentation-only commits after runtime release). **Product package version:** `3.6.0` until explicit release decision. **Status: ACCEPTANCE IN PROGRESS / FULL 3.7.0 NOT RELEASED.**
 
+## Owner production observation — 11 October 2026
+
+**Owner-reported PASS (scope: basic live map display):** The owner confirmed directly in conversation that the map is working live in production. This is user-observed functional evidence, **not** independently captured browser evidence, provider response logging or confirmation of every layer and route. The detailed acceptance cases PROD-01–PROD-09 remain **NOT RUN / not fully confirmed** until their specific steps are reported. In particular, do **not** infer Satellite + Aviation switch success, Aviation z18 persistence, theme, GPS replay or physical Safari iPad from this general statement.
+
+**Owner priority decision:** Do **not** spend the current product work cycle on additional Esri attribution investigations or cosmetic fixes solely for them. Preserve recorded external-rights uncertainty as **UNVERIFIED**, not approved or erased; it is a separate release-scope decision if legally required. Focus next on concrete in-app behavior and device acceptance.
+
 ## 1. Independently checked production baseline
 
 | Check | Evidence at 11 October checkpoint | Outcome |
