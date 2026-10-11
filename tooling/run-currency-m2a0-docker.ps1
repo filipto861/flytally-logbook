@@ -64,7 +64,7 @@ try {
     "npm run test:target -- tests/integration/postgres-currency-v21-schema.test.ts"
   )
   if ($Full) { $steps += "npm run test:postgres:full" }
-  $shellScript = $steps -join [Environment]::NewLine
+  $shellScript = $steps -join "; "
   Write-Host "Running Node 24 and PostgreSQL tests in disposable containers."
   & docker run --rm --network "container:$container" --mount "type=bind,source=$repoPath,target=/source,readonly" -w /work -e "DATABASE_URL=$databaseUrl" -e "FLYTALLY_POSTGRES_INTEGRATION=1" -e "NODE_ENV=test" node:24-bookworm bash -ec $shellScript
   Assert-LastExit "M2-A-0 local test gate"
