@@ -2,7 +2,7 @@
 
 **Current inventory reviewed:** 11 October 2026  
 **Shipped product version:** `3.6.0`  
-**Active workstream:** `3.7.0 — Maps & Aviation Layers` (some functionality merged/deployed, full release pending).
+**3.7.0:** owner-reported production functional acceptance complete; numeric `3.7.0` release candidate staged, deployment verification pending. Third-party provider rights unverified.
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
 
@@ -30,7 +30,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 - **Standard map:** accepted Phase 1 map-layer controller and lifecycle on authenticated map surfaces; existing public sharing stays Standard-only.
 - **Satellite:** explicit optional Standard/Satellite map selection on four authenticated Leaflet map surfaces, merged as [PR #285](https://github.com/filipto861/flytally-logbook/pull/285). Standard remains the default. Separate session-protected tile API hardening merged as [PR #282](https://github.com/filipto861/flytally-logbook/pull/282). No silent persisted selection.
 - **Aviation:** combined openAIP aviation raster on four authenticated maps, implemented by [PR #293](https://github.com/filipto861/flytally-logbook/pull/293); unified compact Map settings by [PR #295](https://github.com/filipto861/flytally-logbook/pull/295); optional Aviation overlay retained at display zoom 15–18 (native z14 raster overscale) by [PR #297](https://github.com/filipto861/flytally-logbook/pull/297). Server z<=14 bound persists, with authenticated/flagged key handling and reference-only attribution.
-- **Release boundary:** The A2D/A2E/A2F runtime is merged and Production READY at exact runtime SHA `09001505`, but **3.7.0 is NOT released as a complete accepted product version**. Real signed-in map/provider/high-zoom coverage, physical iPad Safari and independent provider entitlement/currentness remain to be accepted.
+- **Release boundary:** A2D/A2E/A2F runtime was merged and Production READY at exact runtime SHA `09001505`; the owner subsequently accepted user-facing map/replay/high-zoom/iPad functionality on 11 October after live tests on 10 October. A new numeric `3.7.0` candidate is staged, **not yet verified deployed**. Provider rights, quotas, attribution/export and data coverage/currentness are **unverified** and cannot be inferred from that functional acceptance.
 - **Strict tile API:** exactly one `style=map` or `style=satellite`, missing style = legacy map; malformed/duplicate/empty/unknown/case-variant rejected HTTP 400 `unsupported_style` before upstream.
 - **Explicitly not provided:** certified navigation/EFB charts, live NOTAM/activated airspace status, proof of geographic coverage or approved provider redistribution. A user-visible map layer is not operational authority.
 
@@ -66,7 +66,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 
 | Workstream | State | Gate |
 | --- | --- | --- |
-| `3.7.0` integrated map/aviation release acceptance | ACTIVE / OPEN | In-map real provider smoke, light/dark, physical iPad Safari, provider rights/coverage/quotas and explicit release decision |
+| `3.7.0` integrated map/aviation release acceptance | OWNER UX ACCEPTED / VERSION CUT PENDING | Confirm release-candidate build and production alias/footer; separate unresolved external provider rights, coverage and quota evidence |
 | `3.8.0` Currency / monetary semantics · #136 | NEXT | Audit persisted denominations, define account currency authority, backup/export effects; no invented historical currency or automatic FX |
 | `3.9.0` heterogeneous multi-aircraft onboarding proof | PLANNED | Aeroplane/Helicopter/Sailplane-TMG/Balloon/ULL/Other Add/Edit/Quick Add, applicability and responsive tests |
 | `3.10.0` multi-aircraft sharing/recovery/scale closeout | PLANNED | Canonical independent participant data, safe recovery/scale proof |
