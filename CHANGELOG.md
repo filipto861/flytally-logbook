@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Documentation + AI workflow audit opened (analysis only)
+
+- At current `main@19bd8419`, inventoried 123 Markdown files (~1.9 MB), classified current sources, dated histories and incomplete compliance evidence; scanned common inline relative Markdown links (71 occurrences, nine unresolved **only in relocated verbatim history snapshots**, one URL-encoded pathname requiring decoding). External and anchor links and complete semantic correctness **NOT VERIFIED**. No history deleted or rewritten.
+- Created [documentation/AI workflow audit](docs/maintenance/2026-10-11-documentation-ai-workflow-audit.md) and [read-only DeepSeek consultation brief](docs/maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md), with minimal proposed taxonomy, AI handoff, risk-based verification, non-destructive archival and staged roadmap. **Independent DeepSeek review now received and reconciled against actual PR #312/main:** verdict APPROVE WITH CHANGES; current release-status duplication, DEVELOPMENT current/history mixing and VERSIONING table duplication confirmed, but milestone-era v2/368-of-381/“not active yet” claims are time-scoped history rather than contradictory current registry status. [Reconciliation](docs/maintenance/2026-10-11-deepseek-review-reconciliation.md) documents exact evidence, proposed architecture and owner decisions. **Architecture/implementation still pending owner approval.** `FEATURES.md` reviewed; no product capability changed.
+- GitHub read-only documentation/source checks only. Node, TypeScript, Next build, Playwright, PostgreSQL, CI, production smoke: **NOT RUN / N/A** for this docs-only assessment. No runtime, DB, Training, provider config, deploy or release changes.
+
 ## 11 October 2026 — Documentation entrypoint + version assertion correction
 
 - Corrected root `README.md` from the obsolete 3.6.0/partial-3.7.0 status to the verified 3.7.0 production baseline and 3.8.0 next release. Updated the documentation index's historical PR triage description to reflect the subsequently deleted Satellite branch refs and retained archival tag roots; the dated triage snapshot remains untouched.
