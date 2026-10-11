@@ -1,6 +1,26 @@
 # FlyTally Logbook 3.8.0 — M2-A-0 localhost PostgreSQL verification handoff
 
-**Date:** 11 October 2026. **Latest verified state:** M2-A-0 focused local acceptance **PASS** on exact owner checkout `6cc069960abf3a1162954be18039db5271282a71`, using Node 24 and isolated native PostgreSQL 16: TypeScript PASS, static tests 6/6 PASS, PostgreSQL integration tests 6/6 PASS. **Full PostgreSQL suite, signed portable v13 restore end-to-end, complete v20 schema validation, CI/build and production target verification remain NOT RUN/NOT VERIFIED.** Do not merge, register v21, mutate remote Neon or deploy. Earlier failed runs described below are historical.
+**Date:** 11 October 2026. **Latest verified state:** owner-local **`-Full` PASS** for exact unmerged candidate `6cc069960abf3a1162954be18039db5271282a71` on Node 24 + temporary Windows PostgreSQL 16: TypeScript PASS, static 6/6 PASS, focused PG 6/6 PASS, existing full PG suite **106/106 PASS (34 files)**. Complete live v20-schema migration rehearsal, currency-aware signed portable v13 restore and rollback, browser/build/CI, official SIX source authority and production DB target verification remain **NOT RUN/NOT VERIFIED**. Do not merge, register v21, mutate Neon or deploy. The prior focused PASS and earlier failures described below are historical snapshots.
+
+## M2-A-0 existing FULL PostgreSQL regression suite — LOCAL PASS (11 October 2026)
+
+**Execution evidence (owner-provided complete PowerShell output):** ran `powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1 -Full` from `feat/3.8.0-currency-m2a0-sql-draft` at exact commit **`6cc069960abf3a1162954be18039db5271282a71`**. Native PostgreSQL **16**, temporary loopback-only server `127.0.0.1:59660`, identity verified **expected=observed** `flytally_currency_test|flytally|127.0.0.1|59660`. Fourteen unrelated untracked local files were preserved. Server shut down cleanly on completion. **No production/Neon database access**.
+
+| Gate | Exact observed result |
+| --- | --- |
+| Node | Node 24 enforced by runner; earlier same-candidate owner output reports `v24.19.0` |
+| `npm run typecheck` | **PASS**, `tsc --noEmit` exit 0 |
+| `tests/currency-v21-schema-draft.test.ts` | **6/6 PASS**, 0 fail, 0 skip |
+| `tests/integration/postgres-currency-v21-schema.test.ts` | **6/6 PASS**, 0 fail, 0 skip |
+| `npm run test:postgres:full` | **106/106 PASS**, 0 fail, 0 skip; **34 PostgreSQL test files**, duration **21,418.783 ms** |
+| Final runner summary | **`LOCAL test gates PASS on candidate 6cc069960abf3a1162954be18039db5271282a71. Not a production migration.`** |
+| Cleanup | Temporary PostgreSQL stopped successfully; no failure reported |
+
+The **106 full-suite tests include the six currency PG tests again**. Thus the log reports 6 + 6 + 106 **executions**, **not 118 distinct test scenarios**. Full-suite coverage observed includes certified correction/void and audit chain, v13 archive/restore and protected tombstones, profile sharing, role/participant linkage, cost/expenses and deletion, old migrations 15–19, time-zone population, production SQL ownership, signed backup evidence checks, and scale/performance probes for **10k/50k/100k fixture sizes**.
+
+**Evidence boundaries:** the existing v13 backup/restore and certified-flight tests passed, but they do **not** establish *currency-v21 extended record* migration against an **authentic full v20 schema** or round-trip a **real signed v13 backup with the newly added monetary columns**. The six new currency PG cases still run against a reduced local fixture with extracted v20 trigger. Full existing suite PASS is strong **backward-compatibility regression evidence**, not authorization to register v21 or write currencies in production. The SQL draft remains isolated/unregistered; all currency PRs remain Draft.
+
+**Next controlled M2 scope (design/review before code):** reconstruct exact deployed v20 schema and actual backup/restore/read/write contracts from current repository; design a read-only-to-existing-data, local-only **full-v20 → unregistered v21 SQL** rehearsal and currency-v21 signed backup/restore compatibility matrix; include authenticated protection, unknown legacy states, idempotency, preservation of records, rollback to a metadata-aware compatible reader, and strict migration-target verification. Require independent review of the integration and rollback design before executing/merging. **Do not touch Neon, production or auto-migration registration.**
 
 ## M2-A-0 focused PostgreSQL acceptance — LOCAL PASS (11 October 2026)
 
