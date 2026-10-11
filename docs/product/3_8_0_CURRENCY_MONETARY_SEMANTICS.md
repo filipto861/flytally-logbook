@@ -46,6 +46,8 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 
 **Implication:** A live account preference of CZK for all five accounts does **not** prove denomination at the time of the 311 saved flights or 33 rate events. Price decimals currently use floating-point storage, so rounding and a prospective minor-unit/NUMERIC contract require explicit analysis. M0 did **not** perform a data migration, backfill, restore, write query, materialized snapshot, test-fixture mutation, or change to application configuration.
 
+**Independent review handoff:** [read-only 3.8.0 reviewer brief](3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md) for DeepSeek/Claude; findings and owner decisions not yet received.
+
 ## M0 unknowns (no guessing)
 
 1. **Production census partially observed, NOT FINAL:** connected Logbook Shadow branch aggregate is recorded above; verify deployed Vercel database binding before asserting production authority. Break down historical amounts by creation era and path only with privacy-safe aggregate queries; do not copy PII or raw user monetary records into handoffs.
