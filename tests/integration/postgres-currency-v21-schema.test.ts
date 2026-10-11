@@ -159,7 +159,7 @@ test("pre-3.8.0 JSON records restore without inferring currency or amount scale"
   run(`INSERT INTO rates SELECT (json_populate_record(NULL::rates,
     '{"id":2,"user_id":1,"registration":"OK-OLD","valid_from":"2020-01-01","price_per_hour":999.25}'::json)).*`);
   run(`INSERT INTO flights SELECT (json_populate_record(NULL::flights,
-    '{"id":120,"user_id":1,"date":"2020-01-01","price_per_hour":850.5,"billing_basis":"BLOCK"}'::json)).*`);
+    '{"id":120,"user_id":1,"date":"2020-01-01","price_per_hour":850.5,"billing_basis":"BLOCK","certification_hash":"","certification_version":8,"record_revision":1,"correction_reason":""}'::json)).*`);
   run(`INSERT INTO flight_expenses SELECT (json_populate_record(NULL::flight_expenses,
     '{"id":4,"user_id":1,"flight_id":120,"category":"LANDING","label":"","amount_minor":1000,"currency":"JPY"}'::json)).*`);
   assert.equal(run("SELECT COALESCE(currency_code,'unknown') FROM rates WHERE id=2"),"unknown");
