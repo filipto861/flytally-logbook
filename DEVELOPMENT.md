@@ -224,6 +224,8 @@ A new development chat should reconstruct state from actual repository state fir
 
 Documentation-only changes still use a branch and PR, but runtime/database verification is `N/A` unless the documentation change also modifies executable/configuration files.
 
+**Optional documentation health report (report-only, not a release gate):** run `node docs/scripts/check-documentation.mjs` after document edits and `node --test docs/scripts/check-documentation.test.mjs` when changing that helper. It uses only local files, checks package/lock versions and ordinary active-doc relative paths, excludes dated historical source documents and prints warnings without blocking PRs. [Exact scope and limitations](docs/scripts/README.md). The tool is intentionally kept under `docs/` as a manual docs-only utility; do not move runtime code there to evade risk classification. Human source review is still required for semantic correctness, regulatory claims, deployment identity and historical effectivity.
+
 
 
 ## Product versioning
