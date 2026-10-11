@@ -1,4 +1,16 @@
-# FlyTally Logbook — branch pruning preflight (NO DELETIONS EXECUTED)
+# FlyTally Logbook — branch pruning preflight and verified execution
+
+> **EXECUTION UPDATE — 11 October 2026, after the preflight below.** The owner ran `flytally-logbook-branch-cleanup-2026-10-11-fixed.ps1` in dry-run mode and then with `-Apply`. The terminal output showed all **three archive tag pushes** and **ten deletions** of the exactly listed batch A branch refs, followed by `COMPLETE`. PowerShell surfaced Git's normal stderr progress as `NativeCommandError`, but GitHub's actual state independently confirms success: **34 branches (44 before), 15 tags (12 before), 0 open PRs**. All ten batch A branch names were absent from the returned complete branch list. The archival refs resolve to:
+
+> - `archive/2026-10-11-satellite-r2-final` → `096b86d8800ac763f2d74bbcba5cb54f978b0984`
+> - `archive/2026-10-11-satellite-readiness` → `b08905b5a0e10276fcab1f48dcfac121e8d5428d`
+> - `archive/2026-10-11-satellite-s1-review` → `25fe505dedaaa521b20b5f3579cf9dcb4dc66451`
+
+> The post-action GitHub read found `main@1b73058cff6116a14cfd4d97d36bcd117cb19208`. Original 12 tag refs preserved. **Only batch A executed.** Optional six ancestor-of-main branches from batch B and the deliberately retained pre-F3 anchor were **not** deleted. No runtime/DB/config changes, tests or deployment. The remainder of this document is the original **pre-execution** record, whose `not executed` statements apply to that earlier stage only.
+
+---
+
+
 
 **Date:** 11 October 2026. **Repository:** `filipto861/flytally-logbook`. **Source of truth:** `main@b1763ee6d928cd6e1920e3f739ce371439c969a2` before this docs-only preflight. **Status: PREPARED / OWNER-LOCAL EXECUTION PENDING.**
 
