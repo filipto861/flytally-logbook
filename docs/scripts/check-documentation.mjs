@@ -14,7 +14,7 @@ function listActiveMarkdown(root) {
       const relative = normalize(path.relative(root, absolute));
       if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
-        if (!EXCLUDED.some(prefix => `${relative}/` .startsWith(prefix))) visit(absolute);
+        if (!EXCLUDED.some(prefix => `${relative}/`.startsWith(prefix))) visit(absolute);
       } else if (entry.isFile() && entry.name.endsWith('.md')) result.push(absolute);
     }
   }
