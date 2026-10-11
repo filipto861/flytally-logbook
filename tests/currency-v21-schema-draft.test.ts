@@ -61,6 +61,8 @@ test("Windows PowerShell 5.1 runner is ASCII-safe and targets only disposable Do
     "Windows PowerShell 5.1 interprets UTF-8 without BOM as local ANSI; non-ASCII can terminate quoted strings");
   const script=windowsRunner.toString("ascii");
   assert.match(script,/param\(\[switch\]\$Full\)/);
+  assert.match(script,/\$shellScript = \$steps -join "; "/);
+  assert.doesNotMatch(script,/\[Environment\]::NewLine/);
   assert.match(script,/--network "container:\$container"/);
   assert.match(script,/--mount "type=bind,source=\$repoPath,target=\/source,readonly"/);
   assert.match(script,/docker rm -f \$container/);
