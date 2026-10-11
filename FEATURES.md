@@ -1,8 +1,6 @@
 # FlyTally Logbook — FEATURE LIST
 
-**Current inventory reviewed:** 11 October 2026  
-**Shipped product version:** `3.7.0` — Vercel READY, aliased to `fly-tally.com` at release SHA `39ee01b7`  
-**3.7.0:** DONE / PRODUCTION. Owner-reported functional acceptance 11 October 2026 (tests performed 10 October); numeric version deployment and alias independently verified. Provider entitlement/redistribution, coverage/currentness remain unverified; no commercial/aviation approval inferred.
+**Capability inventory reviewed:** 11 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
 
