@@ -20,7 +20,7 @@
 
 - [11 October documentation inventory and AI workflow proposal](maintenance/2026-10-11-documentation-ai-workflow-audit.md) — 123-file inventory, link-scan limits and source-of-truth drift; reviewed with DeepSeek and owner-approved as a phased, non-destructive docs/AI governance workstream.
 - [DeepSeek independent-review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — reviewer input contract and explicit no-implementation scope; independent reply received.
-- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 status ownership merged in PR #313, DOC-2 history preservation merged in PR #314; DOC-3 onboarding/handoff is in review.
+- [DeepSeek review reconciliation](maintenance/2026-10-11-deepseek-review-reconciliation.md) — actual PR #312 diff checked and review findings reconciled; owner subsequently approved minimum document ownership, pointer-only AGENTS, history preservation and report-only checker. DOC-1 status ownership merged in PR #313, DOC-2 history preservation merged in PR #314, DOC-3 stable AGENTS + handoff merged in PR #315; DOC-4 report-only checks under review.
 
 - [Active development execution contract](../DEVELOPMENT.md) and [verbatim 0B/0E/0F test infrastructure history](history/DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md) — historical registry/test counts and “not active yet” notices are dated, not current instructions.
 
