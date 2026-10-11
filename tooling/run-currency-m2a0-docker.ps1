@@ -17,7 +17,7 @@ function Assert-LastExit([string]$label) {
   if ($LASTEXITCODE -ne 0) { throw "$label failed (exit code $LASTEXITCODE)." }
 }
 
-Write-Host "FlyTally 3.8.0 Currency — isolated PostgreSQL acceptance" -ForegroundColor Cyan
+Write-Host "FlyTally 3.8.0 Currency - isolated PostgreSQL acceptance" -ForegroundColor Cyan
 Push-Location $repoPath
 try {
   if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git for Windows is required." }
