@@ -46,9 +46,9 @@ BEGIN
         currency_code IS NULL AND currency_minor_units IS NULL
         AND price_per_hour_decimal IS NULL AND dry_price_per_hour_decimal IS NULL
       ) OR (
-        currency_code ~ '^[A-Z]{3}$'
-        AND currency_minor_units BETWEEN 0 AND 9
-        AND price_per_hour_decimal > 0
+        currency_code IS NOT NULL AND currency_code ~ '^[A-Z]{3}$'
+        AND currency_minor_units IS NOT NULL AND currency_minor_units BETWEEN 0 AND 9
+        AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal > 0
         AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
         AND (
           dry_price_per_hour_decimal IS NULL OR (
@@ -74,9 +74,9 @@ BEGIN
         AND default_price_currency_minor_units IS NULL
         AND default_price_per_hour_decimal IS NULL
       ) OR (
-        default_price_currency_code ~ '^[A-Z]{3}$'
-        AND default_price_currency_minor_units BETWEEN 0 AND 9
-        AND default_price_per_hour_decimal >= 0
+        default_price_currency_code IS NOT NULL AND default_price_currency_code ~ '^[A-Z]{3}$'
+        AND default_price_currency_minor_units IS NOT NULL AND default_price_currency_minor_units BETWEEN 0 AND 9
+        AND default_price_per_hour_decimal IS NOT NULL AND default_price_per_hour_decimal >= 0
         AND default_price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
       )
     );
@@ -95,9 +95,9 @@ BEGIN
         price_currency_code IS NULL AND price_currency_minor_units IS NULL
         AND price_per_hour_decimal IS NULL
       ) OR (
-        price_currency_code ~ '^[A-Z]{3}$'
-        AND price_currency_minor_units BETWEEN 0 AND 9
-        AND price_per_hour_decimal >= 0
+        price_currency_code IS NOT NULL AND price_currency_code ~ '^[A-Z]{3}$'
+        AND price_currency_minor_units IS NOT NULL AND price_currency_minor_units BETWEEN 0 AND 9
+        AND price_per_hour_decimal IS NOT NULL AND price_per_hour_decimal >= 0
         AND price_per_hour_decimal::text NOT IN ('NaN','Infinity','-Infinity')
       )
     );
@@ -117,7 +117,7 @@ BEGIN
     ALTER TABLE flight_expenses ADD CONSTRAINT expenses_amount_encoding_v21_check CHECK (
       (amount_encoding IS NULL AND amount_minor_units IS NULL)
       OR (amount_encoding = 'legacy_two_decimal' AND amount_minor_units = 2)
-      OR (amount_encoding = 'iso_minor_units' AND amount_minor_units BETWEEN 0 AND 9)
+      OR (amount_encoding = 'iso_minor_units' AND amount_minor_units IS NOT NULL AND amount_minor_units BETWEEN 0 AND 9)
     );
   END IF;
 END;
