@@ -1,5 +1,10 @@
 # FlyTally Logbook — branch pruning preflight and verified execution
 
+> **BATCH B EXECUTION UPDATE — 11 October 2026, after the earlier batch A closeout.** Owner ran the separate `flytally-logbook-merged-branch-cleanup-2026-10-11.ps1` dry-run, then `-Apply`. The terminal output reported all six exact branch refs **DELETED** and `COMPLETE`. Each SHA was unchanged from the pinned inventory below; independent GitHub comparisons immediately before pruning found **ahead=0** against `main@77ade8d88c3ad82b1aa9b29ce540c112e2155a87`. These six were: `codex/v335-batch8-routes-headers-legal`, `docs/flight-entry-f1-closeout`, `feat/flight-entry-f33-aircraft-authority`, `feat/flight-entry-f34-aircraft-context-ux`, `fix/story-map-toggle`, `test/flight-entry-f35-closeout`. A fresh **post-execution GitHub read** confirmed all six absent, **28 remaining remote branches, 0 open PRs and unchanged 15 tags** (including 3 archive tags at their original exact SHA). The deliberate pre-F3 integration anchor and all other 27 branch refs (including `main`) remained. No further deletion is part of this closeout. Earlier batch A count `34` and `only batch A executed` statements below describe the **previous checkpoint**, not current state. Runtime, DB, flags, release and deploy unaffected; no tests run for Git ref pruning.
+
+---
+
+
 > **EXECUTION UPDATE — 11 October 2026, after the preflight below.** The owner ran `flytally-logbook-branch-cleanup-2026-10-11-fixed.ps1` in dry-run mode and then with `-Apply`. The terminal output showed all **three archive tag pushes** and **ten deletions** of the exactly listed batch A branch refs, followed by `COMPLETE`. PowerShell surfaced Git's normal stderr progress as `NativeCommandError`, but GitHub's actual state independently confirms success: **34 branches (44 before), 15 tags (12 before), 0 open PRs**. All ten batch A branch names were absent from the returned complete branch list. The archival refs resolve to:
 
 > - `archive/2026-10-11-satellite-r2-final` → `096b86d8800ac763f2d74bbcba5cb54f978b0984`
