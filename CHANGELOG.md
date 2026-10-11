@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — DOC-5 governance closeout (documentation only)
+
+- Completed source-backed reconciliation after DOC-1–4 merged PRs #313–#316 and retained DeepSeek review #312. [DOC-5 closeout](docs/maintenance/2026-10-11-doc5-ai-governance-closeout.md) confirms single-owner status documentation, verbatim Phase 0 history, minimal AGENTS/handoff, and opt-in report-only consistency checker. Actual package+lock versions 3.7.0; next product release 3.8.0 Currency. No third-party provider approval inferred.
+- GitHub/source check performed; new local Node/TypeScript/build/Playwright/DB/CI/production smoke **NOT RUN / N/A** for this docs-only closeout. No runtime, flag, DB, Training or production deploy change.
+
 ## 11 October 2026 — DOC-4 report-only documentation consistency tool
 
 - Added optional, local-only [documentation report checker](docs/scripts/README.md) under `docs/scripts/`, plus an independent Node built-in fixture test. It checks `package.json` against lock root versions and ordinary relative links from current Markdown documents. Dated historical snapshots, maintenance audits and certification-readiness history are excluded as **sources**; external URLs, anchors and semantic/regulatory claims are intentionally not asserted.
