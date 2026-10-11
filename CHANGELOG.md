@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — DOC-3 stable AI entrypoint and evidence handoff
+
+- Added short root [AGENTS](AGENTS.md) with repo boundary, authoritative document navigation, fail-closed evidence expectations and one independent DeepSeek read-only review trigger, **without duplicating volatile product release status**.
+- Added [AI handoff and reviewer template](docs/AI_HANDOFF_TEMPLATE.md): exact repo/main/candidate SHA, last/current/next, owner frozen decisions, DO/DO NOT, relevant source paths, PASS/FAIL/NOT RUN/N/A/PARTIAL gate ledger, DB/deploy context and bounded reviewer questions. Reviewer findings must be reconciled once against actual repo before implementation.
+- Updated README, docs index and ROADMAP pointers. No runtime, flight schema, auth, deployment, Training or test-tool changes; local Node/build/Playwright/DB/CI **NOT RUN / N/A** for navigation-only scope.
+
 ## 11 October 2026 — DOC-2 active development workflow / verbatim Phase 0 history
 
 - Extracted the original 19,350-character `DEVELOPMENT.md` module-registry / Phase 0B/0E/0F narrative **verbatim** to [historical verification development](docs/history/DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md), preserving its time-scoped evidence and chronology exactly. Active DEVELOPMENT retains the same unchanged remainder of the risk/DB/browser/deployment/documentation workflow, plus a compact registry and npm-command pointer; historical statements no longer masquerade as current instructions.
