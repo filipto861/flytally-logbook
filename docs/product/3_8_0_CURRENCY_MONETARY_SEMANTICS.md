@@ -29,9 +29,26 @@ A monetary value must carry a known, persisted denomination before being display
 
 Other money-bearing contexts must be re-checked with a full code search or locally checked-out repository before M1 signoff. Connected GitHub code search returned no indexed matches; this inventory was verified by reading the named live files directly and by tracking changed paths of relevant merged PRs. It is **not** an exhaustive repository-wide grep.
 
+## M0 supplemental database observation — READ ONLY (11 October 2026)
+
+The connected Neon project named **Logbook Shadow**, on its primary/default branch named **production**, was inspected using table-schema metadata and `SELECT`-only aggregate queries. **The environment-to-Vercel production database binding was not independently verified**; therefore these are branch observations, not final production census authority. No account IDs, individual record amounts or user identities are copied here.
+
+| Aggregate / schema fact | Observed on connected branch |
+| --- | ---: |
+| `flights` rows; rows with positive `price_per_hour` | 311; 311 |
+| `rates` rows; positive price or dry price | 33; 33 |
+| `aircraft` rows; positive `default_price_per_hour` | 25; 20 |
+| `flight_expenses` rows / distinct expense currencies | 0 / 0 |
+| `user_settings` rows; missing or malformed `currency` | 5; 0 |
+| Selected current settings currency, aggregated | 5 accounts with CZK |
+
+Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per_hour`, `rates.price_per_hour` and `rates.dry_price_per_hour` are nullable `double precision` **without currency columns**. Expense amounts use `BIGINT amount_minor` and `TEXT currency NOT NULL` with a 3-letter-code CHECK. Settings currency is nullable `TEXT` defaulting to `CZK`.
+
+**Implication:** A live account preference of CZK for all five accounts does **not** prove denomination at the time of the 311 saved flights or 33 rate events. Price decimals currently use floating-point storage, so rounding and a prospective minor-unit/NUMERIC contract require explicit analysis. M0 did **not** perform a data migration, backfill, restore, write query, materialized snapshot, test-fixture mutation, or change to application configuration.
+
 ## M0 unknowns (no guessing)
 
-1. **Production census NOT RUN:** number of accounts/aircraft/rates/flight snapshots with positive amounts but no denomination, by era and creation path. Do not copy PII or raw user monetary records into handoffs.
+1. **Production census partially observed, NOT FINAL:** connected Logbook Shadow branch aggregate is recorded above; verify deployed Vercel database binding before asserting production authority. Break down historical amounts by creation era and path only with privacy-safe aggregate queries; do not copy PII or raw user monetary records into handoffs.
 2. **Source evidence for historical CZK:** existing UI labels CZK but code labels alone do not justify an unqualified production-wide historical backfill. Require documented provenance, owner policy and a reversible/auditable strategy.
 3. **Column and backup compatibility:** exact DDL, dependent SQL projections, trigger/certification snapshots, historical archived payloads, legacy restore, aircraft import, unique rate identities and migration sequence must be enumerated before choosing fields or a backup version bump.
 4. **Currency precision/validation:** minor unit rules differ across currencies; current expense implementation assumes 2 decimals and accepts any 3 letters. Do not claim ISO 4217 completeness without explicit validated contract.
@@ -72,4 +89,5 @@ Other money-bearing contexts must be re-checked with a full code search or local
 
 - **11 Oct 2026:** GitHub connector read `main@4ca2847795435549f36d44f253eb7c105eea6d25`, ROADMAP, FEATURES, ARCHITECTURE, AGENTS, CHANGELOG, issue #136 and the listed runtime/tests. Relevant existing tests: `tests/flight-expenses.test.ts`, `tests/billing-rate-history.test.ts`, `tests/portable-backup.test.ts`.
 - **M0 document write:** source/design documentation only. **TypeScript, Node/unit, build, PostgreSQL, Playwright, CI, production smoke: NOT RUN / N/A to this documentation-only change.** No runtime, DB migration, backup format, production or external provider changes.
-- **Next:** independently challenge D1–D4 and coverage, reconcile owner decision, then begin M2 in a separate small code branch.
+- **11 Oct 2026 supplementary Neon read-only gate:** inspected primary `production` branch of connected Logbook Shadow project, ran aggregate SELECT and confirmed monetary column types/nullability. No mutation; independent Vercel DB target binding remains NOT VERIFIED.
+- **Next:** verify deployment-to-database identity, independently challenge D1–D4 and coverage, reconcile owner decisions, then begin M2 in a separate small code branch.
