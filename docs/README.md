@@ -42,6 +42,7 @@
 - [History](history/README.md) — old scopes, audits, snapshots and retained regulatory evidence. Verbatim pre-cleanup [ROADMAP](history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [FEATURE LIST](history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) preserve the prior full narratives.
 - [Maintenance audit](maintenance/2026-10-10-repository-audit.md) — dated GitHub branch/PR inventory and cleanup safety gates; counts are a snapshot.
 - [Historical PR triage](maintenance/2026-10-10-open-pr-triage.md) — 10 October read-only snapshot of legacy R1/R2 drafts, **all closed without merge on 11 October**; source branches retained.
-- [M2A code audit](maintenance/2026-10-10-r2-m2a-source-audit.md) — exact-SHA source comparison for #273 Story PNG, #278 Satellite kill switch, #279 bounded provider research and #281 Esri tiling; no runtime changes.
+- [M2A code audit](maintenance/2026-10-10-r2-m2a-source-audit.md) — dated source comparison for now-abandoned R1/R2 experiments; not an active port roadmap.
+- [Branch pruning preflight](maintenance/2026-10-11-branch-prune-preflight.md) — SHA-pinned legacy branch inventory, three archival tag anchors, optional fully-merged branches and owner-local deletion protocol (**not executed**).
 
 **Rules for archiving:** classify active contracts, completed milestone evidence, superseded proposals and retained compliance records separately. No history deletion, silent code-path rename or blanket merge of old stacked branches. Check backlinks and GitHub PR references before moving documents.
