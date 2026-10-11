@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Final 3.7.0 production/provider acceptance opened (docs/read-only)
+
+- Verified Vercel `fly-tally.com` alias still targets A2F `READY` deployment `dpl_8thpSpB1aGPEBtbjkPnU61qL771t` at exact runtime SHA `090015053e33fb4b391a304e0a9e57f4145223a4`; current main documentation SHA is later and does not equal a new production runtime. Vercel runtime error clusters / error-fatal logs showed **none in the queried 24-hour window**, not a feature-use PASS.
+- Read current strict server-side Satellite and Aviation routes; attempted read-only unauthenticated public route fetches but received **no usable HTTP evidence in this environment**. No authenticated production requests, provider-credential fetches, provider traffic, production flag changes or cache purges were performed.
+- Opened [3.7.0 final acceptance record](docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) with owner-executable production Desktop/GPS/replay/import/iPad Safari matrix and explicit Esri, openAIP and OSM license/cache/quota review. Public official Esri attribution requirements and OSMF tile policy checked; openAIP live schema/site not retrievable (HTTP 402 here), so openAIP rights remain **BLOCKED**. Account-specific Esri rights, provider permissions, Story export, source coverage and data freshness **NOT APPROVED/UNVERIFIED**.
+- No code/test additions, schema/DB, product version, deployment or Training change. Local typecheck/tests/Next build/Playwright/DB/CI **NOT RUN** for this documentation-only milestone. `FEATURES.md` remains unchanged; 3.7.0 release still **OPEN**.
+
 ## 11 October 2026 — Six fully-merged legacy branches removed (Git refs only)
 
 - Owner ran the separately prepared PowerShell script `flytally-logbook-merged-branch-cleanup-2026-10-11.ps1` in dry-run mode and then with `-Apply`. The terminal output reports successful exact-SHA checks followed by successful removal of: `codex/v335-batch8-routes-headers-legal` (`8e09aa14`), `docs/flight-entry-f1-closeout` (`5c2af689`), `feat/flight-entry-f33-aircraft-authority` (`8031f3d0`), `feat/flight-entry-f34-aircraft-context-ux` (`844ce1c4`), `fix/story-map-toggle` (`af15f8e5`) and `test/flight-entry-f35-closeout` (`512e2eb3`). Each was independently compared to then-current `main@77ade8d88c3ad82b1aa9b29ce540c112e2155a87` with `ahead=0`; these branch heads are already ancestors of main and required no new archival tags.
