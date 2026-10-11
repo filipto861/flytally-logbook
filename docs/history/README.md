@@ -20,6 +20,10 @@ Current authority order for development planning is:
 
 The archived `ROADMAP_LEGACY_2026-09-26.md` is a verbatim snapshot of the previous roadmap before consolidation.
 
+## 11 October 2026 active DEVELOPMENT history extraction
+
+- [Phase 0B/0E/0F verification history](DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md) — verbatim, line-preserved historical material extracted from root DEVELOPMENT; includes dated intermediate tool versions and test evidence. **Not the current command reference**; use [active DEVELOPMENT](../../DEVELOPMENT.md) and the code/tooling.
+
 ## 10 October 2026 canonical-document cleanup snapshots
 
 - `ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md` — complete verbatim prior ROADMAP (with its dated contradictory status narratives) retained before replacing it with a shorter forward plan.
