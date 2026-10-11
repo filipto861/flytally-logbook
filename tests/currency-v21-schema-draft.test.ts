@@ -85,6 +85,11 @@ test("native Windows PostgreSQL runner isolates its cluster and protects against
   assert.match(script,/& \$initdb -D \$dataDir -U flytally -A trust/);
   assert.match(script,/& \$pgctl -D \$dataDir -l \$logPath -o "-h 127\.0\.0\.1 -p \$port"/);
   assert.match(script,/flytally_currency_test\|flytally\|127\.0\.0\.1/);
+  assert.match(script,/SELECT current_database\(\), current_user, inet_server_addr\(\)::text, inet_server_port\(\)/);
+  assert.match(script,/Database identity expected:/);
+  assert.match(script,/Database identity observed:/);
+  assert.match(script,/\$identityRows\.Count -ne 1 -or \$identityRows\[0\] -cne \$expectedIdentity/);
+  assert.match(script,/Test database identity mismatch\. PostgreSQL tests NOT RUN/);
   assert.match(script,/& \$pgctl|& \(Join-Path \$env:ProgramFiles "PostgreSQL\\16\\bin\\pg_ctl.exe"\)/);
   assert.match(script,/Remove-Item -LiteralPath \$temporaryRoot -Recurse -Force/);
   assert.doesNotMatch(script,/\b(docker|neon\.tech|vercel\.app)\b/i);
