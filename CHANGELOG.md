@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — 3.7.0 numeric release candidate (not yet deployed)
+
+- Staged package version `3.7.0` in `package.json`, root `package-lock.json` and lockfile workspace root; app footer derives its version directly from package metadata. This is **release candidate metadata** while actual `fly-tally.com` production still serves the last verified 3.6.0 deployment `09001505`. Version-specific `tests/versioning-governance.test.ts` updated to follow the current canonical ROADMAP instead of stale historical section literals.
+- Owner-reported UX acceptance completed for Maps, Satellite, combined openAIP Aviation, high-zoom, GPS replay/track/import/share and iPad Safari. No new map logic, provider credentials, database migrations or feature flags. Previous exact-A2F source/Node/Chromium tests remain valid only for that exact code SHA. Candidate-specific tests/build **NOT RUN yet**; do **not** infer deployment, tag, CI or numeric release publication.
+- Third-party Esri/openAIP and applicable supplier rights, attribution/export terms, coverage/currentness and quota/cost checks remain separately **UNVERIFIED/BLOCKED**, not granted by user visual acceptance. The application is not an approved aviation EFB/chart. Complete the release only after exact production rollout and operational smoke; preserve exceptions and separate compliance follow-up.
+
 ## 11 October 2026 — Owner signs off 3.7.0 functional acceptance (no version cut yet)
 
 - Owner explicitly reports that all 3.7.0 user-facing functionality was tested on 10 October 2026 and requests final closeout. The 9 PROD-01–09 cases in [current acceptance record](docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) have **owner-reported functional acceptance**, with explicit conversation confirmations for Standard/Satellite switching, Aviation visible at display z18, GPS replay/scrub, iPad Safari and GPS Tracks. This is not independently captured trace or proof of every failure-injection assertion.

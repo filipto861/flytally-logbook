@@ -2,13 +2,15 @@
 
 **Current planning state:** 11 October 2026  
 **Canonical repository:** `filipto861/flytally-logbook`; `main` is the source of truth.  
-**Product version (package / shipped UI):** `3.6.0`  
-**Current release workstream:** `3.7.0 — Maps & Aviation Layers` (partially deployed; full release **NOT CLOSED**)  
+**Release candidate package version:** `3.7.0`; **last independently verified production footer:** `3.6.0` until a new deployment/alias smoke  
+**Current release workstream:** `3.7.0 — Maps & Aviation Layers` (**owner UX accepted; version-cut candidate staged; production cut NOT YET VERIFIED**)  
 **Last runtime-changing merge:** [PR #297](https://github.com/filipto861/flytally-logbook/pull/297), `090015053e33fb4b391a304e0a9e57f4145223a4`. Subsequent documentation commits do not by themselves demonstrate a new runtime release.
 
 > **Reading rule:** This file describes the forward plan and verified current state, not the full dated development diary. The [verbatim pre-cleanup ROADMAP](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md), [earlier pre-reconciliation snapshot](docs/history/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION.md), milestone acceptance documents, GitHub PRs and CHANGELOG preserve decisions, failures and earlier verification identities. A historical `Draft`, `FAIL`, `OFF`, `NOT RUN` or unmerged status must never be applied to a later merged candidate without checking its date/SHA.
 
 ## 1. Verified release state
+
+**Release candidate at 11 October 2026:** In response to the owner’s explicit closeout request, package and lock version are staged at `3.7.0` on a separate release branch, not claimed deployed. The 9-case owner-reported UX acceptance is in [final acceptance](docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md). Prior source/Chromium gates at A2F exact code SHA remain historical evidence. Post-merge Vercel build, runtime alias SHA, deployed footer and smoke must be verified before marking `3.7.0 DONE / PRODUCTION`. Esri/openAIP rights and usage constraints remain **UNVERIFIED/BLOCKED** in a separately retained external-provider risk; acceptance is not approval of contractual/commercial permissions. No automatic provider flags, data migration or certified-chart claim.
 
 | Scope | Current evidence | Remaining gate |
 | --- | --- | --- |
@@ -57,7 +59,7 @@
 | 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
 | 3.5.5 | iPad sidebar control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
-| **3.7.0** | Maps & Aviation Layers | **ACTIVE; A2F code deployed, full release OPEN** |
+| **3.7.0** | Maps & Aviation Layers | **RELEASE CANDIDATE; owner functional acceptance complete, production version cut awaiting independent verification** |
 | **3.8.0** | Currency / monetary semantics · #136 | NEXT; preserve legacy denominations, no invented FX |
 | 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
