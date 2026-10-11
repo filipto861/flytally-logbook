@@ -13,6 +13,11 @@
 
 **Precedence:** actual code/runtime evidence → ROADMAP → FEATURES → CHANGELOG → architecture/development → active detailed contracts → dated acceptance → history. If these conflict, reconcile before implementation. A merged build is not an accepted full release.
 
+## Active documentation / AI-development governance review
+
+- [11 October documentation inventory and AI workflow proposal](maintenance/2026-10-11-documentation-ai-workflow-audit.md) — 123-file inventory, link-scan limits, source-of-truth drift, proposed phases; **proposal awaiting independent review**, not new canonical runtime guidance.
+- [DeepSeek read-only review brief](maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md) — bounded independent critique, acceptance questions and explicit do-not-implement instruction; review result pending.
+
 ## 3.7.0 completed release / retained technical acceptance
 
 - [3.7.0 production/owner-acceptance closeout](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — release `39ee01b7`, Vercel READY and alias assigned, owner-reported functional signoff, explicitly unverified external rights; version release is NOT provider/commercial clearance.
