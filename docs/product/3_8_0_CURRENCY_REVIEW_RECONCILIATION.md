@@ -1,11 +1,11 @@
 # 3.8.0 Currency — independent DeepSeek review reconciliation (11 October 2026)
 
-**Status:** REVIEW RECONCILED AGAINST SELECTED LIVE SOURCE; **D4 OWNER APPROVED (full active ISO 4217 monetary-currency coverage)**; **D1–D3 AND M1 TECHNICAL CONTRACT STILL PENDING**.  
+**Status:** REVIEW RECONCILED AGAINST SELECTED LIVE SOURCE; **OWNER APPROVED D1–D4 (11 October 2026)**; **TECHNICAL CONTRACT / DB MIGRATION STILL PENDING**. [Current frozen decision record](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md) supersedes the historic pending recommendation table below.  
 **Repository:** `filipto861/flytally-logbook`, `main@4ca2847795435549f36d44f253eb7c105eea6d25`.  
 **Candidate:** [Draft PR #319](https://github.com/filipto861/flytally-logbook/pull/319), branch `docs/v380-currency-m0-discovery`.  
 **Inputs:** Owner-supplied DeepSeek "Independent Read-Only Review — FlyTally Logbook 3.8.0 Currency Semantics", verdict **APPROVE WITH CHANGES**; [M0 inventory](3_8_0_CURRENCY_MONETARY_SEMANTICS.md); source and schema reads, not tests. **Source wins over reviewer inference**.
 
-This record freezes only the explicitly approved **D4 coverage policy**, not the amount-storage schema, rounding implementation, other product decisions, historical-currency attestation, production migration or claimed test PASS.
+This historical review initially froze D4 only; **a later explicit owner confirmation froze D1–D3 as well**, as recorded in the [11 October owner decision record](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md). Approval is of product policy, not amount-storage schema, rounding algorithm, attestation implementation, production migration or test evidence.
 
 ## Finding-by-finding reconciliation
 
@@ -46,7 +46,9 @@ This record freezes only the explicitly approved **D4 coverage policy**, not the
 
 **Explicit exclusions:** no crypto/private non-ISO units, no funds/metals/test codes automatically placed in the monetary input picker, no automatic exchange-rate service, no retroactive conversion. Future requests for additional denominations require separate product scope.
 
-## Recommended decisions for owner — D1–D3 PENDING; D4 APPROVED
+## Historical reviewer recommendation matrix — SUPERSEDED by owner D1–D4 approval
+
+The rows below preserve the **pre-confirmation review proposal**. Their PENDING / recommended labels reflect the original review stage, not current owner status. All four product decisions were subsequently frozen by the owner on 11 October 2026; consult the [canonical decision record](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md) and [M2 design draft](3_8_0_CURRENCY_M2_SCHEMA_DESIGN.md) for current implementation gates.
 
 | Decision | Recommended default | Trade-off / approval needed |
 | --- | --- | --- |
@@ -65,4 +67,4 @@ This record freezes only the explicitly approved **D4 coverage policy**, not the
 - Additive schema and local-only PostgreSQL tests (database test runner forbids remote target); exact candidate release plan with required domain-unit, source-contract, PostgreSQL, browser and build evidence; production binding/preflight before any release migration.
 - **Evidence at reconciliation:** independent DeepSeek review received; selected source files and current Neon branch schema/aggregates read; branch/main identity checked. **Typecheck, tests, build, PostgreSQL acceptance, Playwright, CI, production deploy/smoke: NOT RUN.** No code/schema/data change.
 
-**M1 cannot be marked DONE until D1–D3 and the high-risk technical choices are frozen by owner, the source census/inventory is completed and acceptance criteria/tests are authored. D4 full-currency coverage is already owner-approved (11 Oct 2026); this alone does not freeze the schema or complete M1. Do not merge/release M2–M5 based solely on this review.**
+**D1–D4 product choices are OWNER APPROVED (11 Oct 2026). M1 still cannot be marked DONE until high-risk technical storage/rounding/attestation/restore choices, verified SIX registry, full source census, and acceptance tests are reconciled and evidenced.** No schema migration authorization or M2 implementation follows merely from product approval. Do not merge/release M2–M5 based solely on this review.**
