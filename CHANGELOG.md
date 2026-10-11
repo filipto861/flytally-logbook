@@ -8,6 +8,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Retire legacy Satellite R1/R2 pull requests (GitHub metadata only)
+
+- Following explicit owner decision that the previous R1/R2 paths were abandoned experiments, **closed without merging** all ten remaining drafts: #271, #272, #273, #274, #275, #276, #277, #278, #279 and #281. Each has a dated disposition comment. GitHub confirmed **0 open PRs** after closure; main remained at `d70d15713a262d56cb383a8a9ced56025061c5af` and the repository listed 44 branches at the closeout checkpoint. No branch, tag, original commits, PR discussions or releases deleted. Source differences identified on 10 October remain historical evidence, **not an approved code-port roadmap**. No runtime, database, version, feature flag, provider key, tests, build or deployment changed by this GitHub cleanup. 3.7.0 remains an unfinished release.
+
 ## 10 October 2026 — M2A source audit of unmerged Satellite R1/R2 drafts (docs only)
 
 - Inspected actual current main and PR-head code for #273, #278, #279 and #281; [documented exact-SHA findings](docs/maintenance/2026-10-10-r2-m2a-source-audit.md). Story export partial-tile failure and absent Satellite emergency disable are **verified source differences, not diagnosed production incidents**. Provider resource modules remain isolated, and Esri 512px/256px geometry does not prove actual provider grid alignment. No runtime integration, test execution, DB, provider request, GitHub branch deletion or deployment in this analysis-only batch. Candidate follow-ups await owner decision and fresh verification.

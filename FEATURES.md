@@ -1,6 +1,6 @@
 # FlyTally Logbook — FEATURE LIST
 
-**Current inventory reviewed:** 10 October 2026  
+**Current inventory reviewed:** 11 October 2026  
 **Shipped product version:** `3.6.0`  
 **Active workstream:** `3.7.0 — Maps & Aviation Layers` (some functionality merged/deployed, full release pending).
 
@@ -45,7 +45,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 - Pilot Connections, shared flight invitations/review and participant-specific evidence.
 - Instructor verification/signatures, Action Center for unresolved tasks and notifications as history/updates.
 - Revocable public flight views with restricted public data transfer objects.
-- Social/Instagram Story flight cards with privacy constraints; third-party Satellite imagery/export permission remains an external condition. **Known current limitation (M2A source review):** the existing Story exporter can omit failed map tiles without rejecting the entire export; [#273's fail-closed implementation](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) is unmerged and requires a separately verified current-main port. Do not describe strict export completeness as an implemented guarantee.
+- Social/Instagram Story flight cards with privacy constraints; third-party Satellite imagery/export permission remains an external condition. **Known current limitation (historical M2A source review):** the Story exporter can omit failed map tiles instead of rejecting export; do not claim a guaranteed-complete tile export. Owner retired the [legacy R2 branch](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) rather than approving a port. Any newly prioritized fix must start from current main, with separate evidence and owner approval.
 
 ## 6. Backup, recovery and evidence protection — IMPLEMENTED
 
