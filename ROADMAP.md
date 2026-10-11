@@ -57,6 +57,8 @@
 | 3.5.5 | iPad sidebar control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
 | **3.7.0** | Maps & Aviation Layers | **DONE / PRODUCTION** (owner UX accepted; Esri/openAIP rights separately unverified) |
+**M2-A-0 owner-local checkpoint (11 Oct):** Git checkout and Node24 TypeScript/static tests already PASS; PostgreSQL test initially blocked by password authentication. New native-PG runner first stopped BEFORE cluster creation because three unrelated untracked files exist. Runner has been narrowed to reject tracked changes or untracked TypeScript (which could affect typecheck), while preserving unrelated files. [Local acceptance handoff](docs/product/3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md). **Awaiting user rerun; no PG migration evidence.**
+
 | **3.8.0** | Currency / monetary semantics · #136 | ACTIVE / D1–D4 approved; PRs #320/#321 + M2-A-0 draft #322 with Docker/PG tests authored (NOT RUN); DeepSeek review reconciled; Node24/PG/SIX/runtime gates pending; no FX |
 | 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
