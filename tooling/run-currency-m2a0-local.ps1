@@ -45,7 +45,7 @@ try {
   Assert-Exit "Git untracked-file inventory"
   # tsconfig includes **/*.ts and **/*.tsx; an untracked TypeScript file
   # could affect typecheck and invalidate exact-commit verification evidence.
-  $untrackedTypescript = @($untrackedFiles | Where-Object { $_ -match '(?i)\\.(?:ts|tsx)$' })
+  $untrackedTypescript = @($untrackedFiles | Where-Object { $_ -match '(?i)\.(?:ts|tsx)$' })
   if ($untrackedTypescript.Count -gt 0) {
     throw "Untracked TypeScript files may affect the exact-candidate typecheck. Use a separate clean worktree for testing."
   }
