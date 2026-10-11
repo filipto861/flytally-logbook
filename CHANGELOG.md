@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — M2-A-0 PostgreSQL CIDR identity formatting correction (DRAFT / NOT SHIPPED)
+
+- Owner-local exact candidate `14769749b78446b4992310dcbe6014bd0428e389` initialized, started and shut down disposable PostgreSQL 16 on `127.0.0.1:52166`. The identity response exposed `flytally_currency_test|flytally|127.0.0.1/32|52166` while the preflight expected `...|127.0.0.1|52166`; all other identity elements matched. The only proven mismatch is PostgreSQL `inet::text` CIDR suffix formatting. The fail-closed gate did not permit migration/test SQL; six PG acceptance cases **NOT RUN**.
+- In unmerged draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322), replaced `inet_server_addr()::text` with `host(inet_server_addr())` (mask-free host representation) and updated the regression assertion. Exact DB name, role, host and dynamically allocated port still required. **6/6 authored source assertions PASS in mocked V8**; actual Node24/PowerShell/PG integration after correction **NOT RUN**, awaiting owner rerun. No main/runtime/migration registry/Neon/Vercel changes.
+
 ## 11 October 2026 — M2-A-0 native PostgreSQL identity diagnostic (DRAFT / NOT SHIPPED)
 
 - Owner-local `git pull --ff-only` PASS to currency draft commit `498577d9d206a6d896316bd7b93fde77c1ac95bc`; safe Git preflight preserved 14 unrelated untracked files. Disposable native Windows PostgreSQL 16 instance successfully initialized and started on `127.0.0.1:54836`, and shutdown completed. Locale/fulltext warning did not stop startup. The identity `psql` command exited normally but strict string match failed. **Six PG integration tests NOT RUN; root cause UNKNOWN** because prior runner did not print the returned identity.
