@@ -36,13 +36,13 @@
 
 ## M2-A-0 narrow implementation choice
 
-- The only code artifact in scope is **unregistered offline** [SQL draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322): 12 nullable money metadata fields across `rates`, `aircraft`, `flights`, `flight_expenses`; four explicitly named shape/encoding `CHECK` constraints. It does not modify `lib/migration-plan.ts`, `lib/db-optimization.ts`, default settings, live flight/rate writers, backup/restore or protected history. No remote SQL.
+- The isolated code artifacts in scope are [unregistered offline SQL draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322): 12 nullable money metadata fields across `rates`, `aircraft`, `flights`, `flight_expenses`; four explicitly named shape/encoding `CHECK` constraints; six new focused PostgreSQL integration cases under `tests/integration/` and a [Docker/Node24 Windows runner](3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md). The new tests are authored but **NOT EXECUTED**. It does not modify `lib/migration-plan.ts`, `lib/db-optimization.ts`, default settings, live flight/rate writers, backup/restore or protected history. No remote SQL.
 - Technical points **not frozen by merely drafting SQL:** new numeric precision/range, sole source-of-truth semantics, optional source-rate id on flight snapshot, exact billing round rule, wet/dry mixed currency beyond same-record contract, typed read-model state derivation, D2 attestation table and v13 backup compatibility after new currency writes.
 - **PostgreSQL three-valued-logic trap:** a `CHECK` evaluating to NULL passes. The draft was corrected to require explicit `IS NOT NULL` for all required fields of a known-price tuple and `COALESCE(...,FALSE)` for expense encoding; true source-level PG rejection still needs local PG tests.
 
 ## Next step (must not skip)
 
-1. Review/diff draft PR #322 SQL and run its static `.test.ts` cases; review against `main` migration trigger and actual DB schema, not the original architecture brief alone.
+1. Review/diff draft PR #322 SQL and run its four static and six isolated PostgreSQL `.test.ts` cases using the [one-command Windows Docker harness](3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md); the harness tests a source-derived v20 trigger fixture, not the entire real v20 schema. Review against `main`, not the original architecture brief alone.
 2. Start isolated local PostgreSQL v20 fixture and run repeated draft SQL, check invalid partial tuple and `NaN`, certified flight correction and void (including archives), v13 signed portable restore + old expense, and old schema runtime compatibility. Record exact SHA, test evidence, no remote target.
 3. If and only if local evidence passes, resolve remaining technical-contract questions, direct SIX source and production binding **before** registering v21 in the automatic migrations. Retain two-step deployment with feature-gated new writers.
 4. Document and reconcile tests/acceptance, ROADMAP/FEATURES/CHANGELOG and release gate in the same cycle. Draft PRs #319, #320, #321 and #322 remain unmerged.
