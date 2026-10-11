@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — AI governance approved; DOC-1 current-document ownership
+
+- Owner approved the independently reviewed documentation/AI development redesign, prioritizing speed, accuracy and low duplication. Frozen document responsibilities: ROADMAP owns current status/plans, FEATURES capability inventory, VERSIONING numbering rules, CHANGELOG full historical record; planned stable AGENTS entrypoint, SHA-bound handoff and initially report-only checks. Training remains separate.
+- Current README now points to authoritative documents rather than duplicating deployed version/next release; FEATURES drops top-level duplicate deployment metadata but preserves actual mapping capabilities and external provider limitations; VERSIONING stops repeating the current full release sequence (retains dated 9 October renumbering decision and technical-version checkpoint). Actual release evidence remains in CHANGELOG and acceptance. No runtime, DB/schema, public map, flags or source asset changes.
+- DOC-1 verified by GitHub diff plus relative link and text-contract checks; Node/Playwright/production/DB gates **NOT RUN / N/A** for documentation-only scope. Subsequent DOC-2/3/4 work is not claimed completed here.
+
 ## 11 October 2026 — Documentation + AI workflow audit opened (analysis only)
 
 - At current `main@19bd8419`, inventoried 123 Markdown files (~1.9 MB), classified current sources, dated histories and incomplete compliance evidence; scanned common inline relative Markdown links (71 occurrences, nine unresolved **only in relocated verbatim history snapshots**, one URL-encoded pathname requiring decoding). External and anchor links and complete semantic correctness **NOT VERIFIED**. No history deleted or rewritten.

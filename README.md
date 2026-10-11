@@ -6,18 +6,16 @@ The production source of truth lives in `app/`, `components/` and `lib/`. Regres
 
 ## Start here
 
-For development continuity, use these documents in this order:
+This README is a stable navigation entrypoint, not the authority for current release status. Always establish the current GitHub `main` SHA before starting a new development session.
 
-1. **`ROADMAP.md`** — current phase, next work, dependencies and frozen planning decisions.
-2. **`FEATURES.md`** — canonical product capability inventory.
-3. **`CHANGELOG.md`** — what actually changed.
-4. **`ARCHITECTURE.md`** — runtime and domain architecture.
-5. **`DEVELOPMENT.md`** — branch, verification, CI and deployment workflow.
-6. **`docs/README.md`** — index of active supporting documentation and historical evidence.
+1. **[ROADMAP](ROADMAP.md)** — current release status, work order, owner decisions and next step.
+2. **[DEVELOPMENT](DEVELOPMENT.md)** — active branch, risk-based verification and release workflow.
+3. **[FEATURE LIST](FEATURES.md)** — capabilities, limitations and intentional exclusions.
+4. **[ARCHITECTURE](ARCHITECTURE.md)** — runtime, data ownership, security and regulatory contracts.
+5. **[CHANGELOG](CHANGELOG.md)** — append-only shipped/history evidence; read relevant sections, not the whole file by default.
+6. **[Documentation index](docs/README.md)** — current supporting contracts, review records and dated history.
 
-FlyTally Logbook `3.7.0` (Maps & Aviation Layers) is shipped in production; the [ROADMAP](ROADMAP.md) tracks current development priorities, evidence limits and deferred provider-rights decisions. The next planned release is `3.8.0` (Currency / monetary semantics). The 10 October [repository/documentation audit](docs/maintenance/2026-10-10-repository-audit.md) is a dated cleanup snapshot, not the current release-status authority. Earlier verbatim [roadmap](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [features](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) are retained for historical provenance.
-
-Do not infer current development state from an old version-specific Markdown file. Historical milestone documents are stored under `docs/history/`.
+Historic [repository audit](docs/maintenance/2026-10-10-repository-audit.md), [roadmap snapshot](docs/history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [feature snapshot](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) remain dated evidence, not current instructions. For the current product version and next release, use the ROADMAP and independently verified deployment evidence.
 
 ## Runtime architecture
 
