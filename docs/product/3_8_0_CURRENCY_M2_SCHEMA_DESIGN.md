@@ -67,7 +67,7 @@ D2 authorizes an **auditably attributable** manual correction, not an immediate 
 ### Required evidence, before any M2 migration execution
 
 1. **Full local repo inventory:** all money-bearing paths, schema/DB migration triggers, certifications, backup/legacy import, trash, rate/share + expense/UI + report output; compare current effective source and frozen ROADMAP.
-2. **Independent review:** DeepSeek/Claude read-only schema contract critique (e.g., precision, shared-rate, historical expense encoding, immutability, restore and rollbacks) before costly DB changes; reviewer opinion not authority.
+2. **Independent review:** [DeepSeek/Claude read-only M2 schema review brief](3_8_0_CURRENCY_M2_INDEPENDENT_REVIEW_BRIEF.md) prepared for source-backed critique (precision, shared-rate, historical expense encoding, immutability, restore and rollbacks) **before** costly DB changes; reviewer opinion not authority. **Review response NOT YET RECEIVED**.
 3. **Primary SIX source:** actual original List One XML bytes/revision and fund classification independently checked; Node24 exact branch tests for registry + money core. Candidate third-party mirror is flagged `verifiedDirectlyWithSIX:false`.
 4. **Local isolated PostgreSQL:** exercise migration twice for idempotence, constraints, 108-like certified/void preservation fixture, rollback/compatibility and v13 restore; record SHA, PG version and exact test commands. **DO NOT** point destructive tests to remote/production Neon.
 5. **Production binding:** verify Vercel production environment resolves to intended Neon project/database/branch without leaking credentials; capture private infrastructure evidence. `branch_id=br-dark-math-b1snjzub` being named production is **not proof** of binding.
@@ -77,4 +77,4 @@ D2 authorizes an **auditably attributable** manual correction, not an immediate 
 
 **DONE in this work cycle:** product D1–D3 owner confirmation; read-only GitHub current main/draft PR check; source/migration path review; Neon **read-only** schema/aggregate census (20 schema versions, 311/108/110/57/1 counts noted above); documented proposed columns/gates and source limitations.
 
-**NOT RUN:** M2 SQL or migration creation/registration, isolated PostgreSQL test, project Node24 full tests/typecheck/build, Vercel production DB identity test, original SIX official XML verification, merge, rollout or deploy. `main` remains 3.7.0, schema v20; draft code PRs #320/#321 remain unmerged. **M2-A design is not approved as implementation contract.**
+**NOT RUN:** M2 SQL or migration creation/registration, independent M2 reviewer response, isolated PostgreSQL test, project Node24 full tests/typecheck/build, Vercel production DB identity test, original SIX official XML verification, merge, rollout or deploy. `main` remains 3.7.0, schema v20; draft code PRs #320/#321 remain unmerged. **M2-A design is not approved as implementation contract.**
