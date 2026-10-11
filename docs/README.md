@@ -15,6 +15,7 @@
 
 ## Active 3.7.0 support and acceptance records
 
+- [Final 3.7.0 production/provider acceptance — opened 11 October](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — current production deployment SHA verification, owner-run Map/GPS/Safari checks and unresolved Esri/openAIP/OSM usage evidence; **not** a release approval.
 - [Maps and Aviation Layers design/source contract](product/3_7_0_MAPS_AVIATION_LAYERS.md) — **historical phase-0/phase-1 architecture with some stale in-document status**; current release status is in ROADMAP.
 - [Independent review reconciliation](product/3_7_0_MAPS_REVIEW_RECONCILIATION.md) — historical review conditions and provider gates.
 - [Standard Maps Phase 1 acceptance](product/3_7_0_PHASE1_TEST_ACCEPTANCE.md) — completed/merged standard-only acceptance evidence; prior candidate and test failures retained.
