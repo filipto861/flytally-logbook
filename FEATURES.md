@@ -4,6 +4,8 @@
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
 
+<!-- Currency 3.8.0 M2-A-0 checkpoint 11 Oct: isolated PG16 boot and shutdown achieved. Database-identity mismatch traced to inet_server_addr()::text CIDR /32 formatting; candidate runner corrected to host(inet_server_addr()), without weakening exact identity check. Actual PG currency tests NOT RUN, deployment not authorized. Details in docs/product/3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md. -->
+
 ## 1. Core flight records — IMPLEMENTED
 
 - Private multi-user electronic pilot logbook with a shared canonical flight model and consistent validation boundaries for Add/Edit and applicable GPS review workflows.
