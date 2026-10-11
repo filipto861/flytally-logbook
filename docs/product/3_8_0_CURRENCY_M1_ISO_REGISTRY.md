@@ -41,6 +41,6 @@
 
 ## Scope / closeout ledger
 
-- Code PR #321: `feat/3.8.0-currency-registry-m1` (based on #320), **9 final added files and 11 commits ahead / 0 behind core branch as last checked**, **DRAFT/OPEN**; code runtime not wired. Offline origin verifier and four additional TS-domain tests plus strict `.d.mts` imports were added after initial five files. #319 is separate docs-only draft PR, containing roadmap and this evidence.
+- Code PR #321: `feat/3.8.0-currency-registry-m1` (based on #320), **9 final added files and 12 commits ahead / 0 behind core branch as last checked**, **DRAFT/OPEN**; code runtime not wired. Offline origin verifier and four additional TS-domain tests plus strict `.d.mts` imports were added after initial five files. #319 is separate docs-only draft PR, containing roadmap and this evidence.
 - Code/test **authored**, snapshot source and JSON classification **READ-BACK/IN-MEMORY CHECK PASS**. Actual full test execution **NOT RUN**. No schema/data, backup, migration, version, flag, deployment or `flytally-training` changes.
 - Next safe task: primary SIX XML provenance check and Node24 tests + classify Diff; then D1–D3 and final money contract, before any migration or producer integration.
