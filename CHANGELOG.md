@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — M2-A-0 native PostgreSQL identity diagnostic (DRAFT / NOT SHIPPED)
+
+- Owner-local `git pull --ff-only` PASS to currency draft commit `498577d9d206a6d896316bd7b93fde77c1ac95bc`; safe Git preflight preserved 14 unrelated untracked files. Disposable native Windows PostgreSQL 16 instance successfully initialized and started on `127.0.0.1:54836`, and shutdown completed. Locale/fulltext warning did not stop startup. The identity `psql` command exited normally but strict string match failed. **Six PG integration tests NOT RUN; root cause UNKNOWN** because prior runner did not print the returned identity.
+- In draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322), changed `tooling/run-currency-m2a0-local.ps1` to request explicit `psql -At -F "|"` fields, print non-secret **expected vs observed** identity and require exactly one fully matching row before doing any test SQL. Static source regression guard extended; **6/6 authored assertion bodies PASS through mocked V8**, not actual PowerShell/Node24/PG. Owner rerun needed. No main/runtime/Neon migration or production change.
+
 ## 11 October 2026 — M2-A-0 local Git preflight correction (DRAFT / NOT SHIPPED)
 
 - Owner-local `git pull --ff-only` PASS. The native Windows PostgreSQL runner refused to start because three **untracked owner files/folder** were present, despite `git diff --stat` returning no tracked modifications. It stopped **before any test DB setup**. No cleanup, stash or destructive Git action was requested.
