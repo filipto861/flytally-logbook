@@ -2,6 +2,21 @@
 
 **Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
 
+## CIDR suffix identity mismatch resolved in source (11 October 2026)
+
+Owner-local native PostgreSQL 16 run at candidate `14769749b78446b4992310dcbe6014bd0428e389` passed initialization, startup and shutdown on temporary local port **52166**. The new diagnostic isolated the mismatch: expected `flytally_currency_test|flytally|127.0.0.1|52166`, observed `flytally_currency_test|flytally|127.0.0.1/32|52166`. The name, role and port all match; PostgreSQL renders `inet_server_addr()::text` with its /32 network mask. There is **no evidence of a wrong database or credentials** in this run, but the strict test correctly prevented all SQL acceptance from proceeding. **Six PostgreSQL cases NOT RUN**.
+
+Code draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322) now uses `host(inet_server_addr())`, which returns the host address without the mask, instead of `inet_server_addr()::text`. The existing `psql -w` identity preflight, exact database/role/address/dynamic-port equality, expected/observed diagnostics, isolated temporary PostgreSQL, tracked-file guard, and safe cleanup remain unchanged. Source regression assertion now explicitly verifies `host(inet_server_addr())` and rejects `::text`. **Six authored static assertion bodies PASS under mocked V8 evaluation, NOT native PowerShell/Node/PostgreSQL execution.**
+
+Owner next step on the same feature branch (no Docker, no password, no remote DB):
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1
+```
+
+If the identity check passes, the script will automatically proceed to real Node24 typecheck, static tests and six PostgreSQL integration tests in the temporary database; send the complete output before any merge or migration registration.
+
 ## Native PostgreSQL startup passed, identity mismatch diagnosed (11 October 2026)
 
 Owner-local test at exact branch commit `498577d9d206a6d896316bd7b93fde77c1ac95bc` passed the Git working-tree preflight while preserving **14 unrelated untracked files**, successfully initialized a **new PostgreSQL 16 instance on 127.0.0.1:54836** in a unique temporary data directory, started the server and later stopped it normally. The reported Czech locale/fulltext message was a nonfatal initialization warning. The preflight `psql` query exited successfully, but the equality check returned **`Test database identity mismatch. PostgreSQL tests NOT RUN.`** No observation of the actual returned identity was logged; **root cause cannot yet be determined**, so do not claim that the DB identity is correct or weaken the gate.
