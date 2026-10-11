@@ -10,8 +10,8 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## 11 October 2026 — Currency 3.8.0 M0 read-only discovery (docs only)
 
-- Started the next roadmap milestone on a dedicated documentation branch: [3.8.0 currency source inventory and design/verification roadmap](docs/product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md), anchored to `main@4ca2847795435549f36d44f253eb7c105eea6d25` and issue #136. Recorded actual price/expense/settings/data/share/backup assumptions and four owner decisions pending before implementation.
-- ROADMAP/FEATURES now label 3.8.0 ACTIVE **only for M0 discovery**, with runtime implementation NOT STARTED. No user currency semantics, numeric costs, database schema, backup format, tests, deployment, or Training code were changed. Tests/build/PostgreSQL/browser/CI/smoke NOT RUN for this documentation-only milestone.
+- On draft PR #319 only, prepared [3.8.0 currency source inventory](docs/product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) against `main@4ca2847795435549f36d44f253eb7c105eea6d25` and issue #136; received the independent DeepSeek APPROVE WITH CHANGES review and recorded [source-backed reconciliation](docs/product/3_8_0_CURRENCY_REVIEW_RECONCILIATION.md). Corrected the rate uniqueness assumption, certified-flight mutation risk, legacy backup compatibility, and CHF/PLN scope; owner D1–D4 remain pending. These are branch documentation changes, not shipped runtime features.
+- ROADMAP/FEATURES label 3.8.0 ACTIVE **for discovery/review only**, with M1 choices not frozen and runtime implementation NOT STARTED. No user currency semantics, numeric costs, database schema, backup format, tests, deployment, or Training code were changed. Tests/build/PostgreSQL/browser/CI/smoke NOT RUN for this documentation-only milestone.
 
 ## 11 October 2026 — Independent documentation audit follow-up (docs only)
 
