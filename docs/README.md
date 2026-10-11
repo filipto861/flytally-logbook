@@ -42,7 +42,7 @@
 
 ## 3.8.0 active discovery
 
-- [3.8.0 Currency / monetary semantics](product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) — **M0 source inventory and design gates**, not an approved runtime or historical-currency conversion contract. Issue #136; decisions and independent review required before implementation.
+- [3.8.0 Currency / monetary semantics](product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) — source inventory and phased M0–M6 plan, not an approved runtime or historical conversion contract. [Independent DeepSeek review reconciliation](product/3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) (APPROVE WITH CHANGES; owner D1–D4 still pending) and [review brief](product/3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md); issue #136.
 
 ## Active cross-cutting contracts
 
