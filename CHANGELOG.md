@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — DOC-4 report-only documentation consistency tool
+
+- Added optional, local-only [documentation report checker](docs/scripts/README.md) under `docs/scripts/`, plus an independent Node built-in fixture test. It checks `package.json` against lock root versions and ordinary relative links from current Markdown documents. Dated historical snapshots, maintenance audits and certification-readiness history are excluded as **sources**; external URLs, anchors and semantic/regulatory claims are intentionally not asserted.
+- **Owner-frozen non-blocking behavior:** issues print `WARN` and exit 0, never silently modifying source; an invalid root/invocation exits 2. No CI/build/deploy or merge enforcement wired up. `tooling/development-modules.json` and runtime source unchanged; explicit `docs/` classification avoids adding a development-infrastructure release gate for this manual documentation helper.
+- **Evidence:** exact source blob SHA values for the GitHub copies match six Node fixture tests executed locally in an isolated container (**6/6 PASS**, including intentional failures/mismatch/encoded-route cases). This is **local isolated tool verification only**, not a full repository Node test/build/Playwright/DB/CI acceptance or current-production request. Applicability and limitations are documented.
+
 ## 11 October 2026 — DOC-3 stable AI entrypoint and evidence handoff
 
 - Added short root [AGENTS](AGENTS.md) with repo boundary, authoritative document navigation, fail-closed evidence expectations and one independent DeepSeek read-only review trigger, **without duplicating volatile product release status**.
