@@ -1,6 +1,6 @@
 # FlyTally Logbook 3.8.0 — Currency / monetary semantics
 
-**Status:** ACTIVE / M0 source discovery and M1 decision preparation; independent reviewer findings **RECONCILED against selected source**; **D4 all-active-ISO-monetary-currencies OWNER APPROVED**; full runtime design NOT APPROVED.  
+**Status:** ACTIVE / M0 source discovery and M1 preparation; DeepSeek review **RECONCILED** and owner D4 full monetary ISO coverage APPROVED. [M1 Batch 1 isolated exact arithmetic implementation](3_8_0_CURRENCY_M1_CORE_IMPLEMENTATION.md) in draft PR #320 is **UNMERGED/NOT IN RUNTIME**; full design NOT APPROVED.  
 **Baseline:** `filipto861/flytally-logbook` `main@4ca2847795435549f36d44f253eb7c105eea6d25` (11 October 2026).  
 **Issue:** [#136](https://github.com/filipto861/flytally-logbook/issues/136).  
 **Product baseline:** 3.7.0 DONE/PRODUCTION. **Repo boundary:** Logbook only; no Training changes.
@@ -92,4 +92,4 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 - **11 Oct 2026:** GitHub connector read `main@4ca2847795435549f36d44f253eb7c105eea6d25`, ROADMAP, FEATURES, ARCHITECTURE, AGENTS, CHANGELOG, issue #136 and the listed runtime/tests. Relevant existing tests: `tests/flight-expenses.test.ts`, `tests/billing-rate-history.test.ts`, `tests/portable-backup.test.ts`.
 - **M0 document write:** source/design documentation only. **TypeScript, Node/unit, build, PostgreSQL, Playwright, CI, production smoke: NOT RUN / N/A to this documentation-only change.** No runtime, DB migration, backup format, production or external provider changes.
 - **11 Oct 2026 supplementary Neon read-only gate:** inspected primary `production` branch of connected Logbook Shadow project, ran aggregate SELECT and confirmed monetary column types/nullability. No mutation; independent Vercel DB target binding remains NOT VERIFIED.
-- **Next:** D1–D3 decisions, full local source coverage, version-pinned official ISO 4217 monetary currency registry (including exponents and classification), and remaining frozen technical contract, then M2 on a separate small code branch. D4 owner-approved; independent review already reconciled. Do not repeat it without material new evidence.
+- **Next:** complete [M1 Batch 1 core review](3_8_0_CURRENCY_M1_CORE_IMPLEMENTATION.md) for [draft PR #320](https://github.com/filipto861/flytally-logbook/pull/320), then D1–D3 decisions, full local source coverage, version-pinned official ISO 4217 monetary currency registry (including exponents and classification), remaining frozen technical contract, and M2 in its own small code branch. D4 owner-approved; independent review already reconciled. Do not repeat it without material new evidence.
