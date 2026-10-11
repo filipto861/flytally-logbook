@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Documentation entrypoint + version assertion correction
+
+- Corrected root `README.md` from the obsolete 3.6.0/partial-3.7.0 status to the verified 3.7.0 production baseline and 3.8.0 next release. Updated the documentation index's historical PR triage description to reflect the subsequently deleted Satellite branch refs and retained archival tag roots; the dated triage snapshot remains untouched.
+- Fixed an extra escape in the footer source assertion in `tests/versioning-governance.test.ts`: the old regex did not match the actual `components/app-shell.tsx` source. Independently checked the corrected regex against current main source; **static expression check PASS**. Full targeted Node test/CI/build/browser/DB: **NOT RUN** for this narrow docs/test-only fix, and no production app logic or deployment change.
+
 ## 3.7.0 — 2026-10-11 · Maps & Aviation Layers — PRODUCTION
 
 - **Released:** Owner approved functional closure, citing completed 10 October production UX testing; all nine PROD-01–09 scenarios recorded as **owner-reported UX acceptance**, not independent per-step/browser automation. Explicitly confirmed live Standard ↔ Satellite switching, combined Aviation display through z18 (native source capped at z14), GPS flight replay/scrub without reset, GPS Tracks and iPad Safari. Relevant code phases A2D/A2E/A2F had already been deployed, last map-logic merge [PR #297](https://github.com/filipto861/flytally-logbook/pull/297) (`09001505`).

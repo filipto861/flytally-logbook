@@ -42,7 +42,7 @@
 - `product/FLIGHT_ENTRY_*`, `product/UI_UX_SIMPLICITY_*` and `product/V3_0_UX_CONSOLIDATION.md` — workflow and UX milestone history; use the canonical model in FEATURES/ARCHITECTURE for current behavior.
 - [History](history/README.md) — old scopes, audits, snapshots and retained regulatory evidence. Verbatim pre-cleanup [ROADMAP](history/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) and [FEATURE LIST](history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) preserve the prior full narratives.
 - [Maintenance audit](maintenance/2026-10-10-repository-audit.md) — dated GitHub branch/PR inventory and cleanup safety gates; counts are a snapshot.
-- [Historical PR triage](maintenance/2026-10-10-open-pr-triage.md) — 10 October read-only snapshot of legacy R1/R2 drafts, **all closed without merge on 11 October**; source branches retained.
+- [Historical PR triage](maintenance/2026-10-10-open-pr-triage.md) — 10 October read-only snapshot of legacy R1/R2 drafts, **all closed without merge on 11 October**; the ten obsolete branch refs were subsequently deleted with their independent history roots retained through three archive tags (see branch pruning closeout).
 - [M2A code audit](maintenance/2026-10-10-r2-m2a-source-audit.md) — dated source comparison for now-abandoned R1/R2 experiments; not an active port roadmap.
 - [Branch pruning closeout](maintenance/2026-10-11-branch-prune-preflight.md) — SHA-pinned preflight and two owner-executed, GitHub-verified cleanup batches: 10 abandoned Satellite branches plus 6 fully-merged legacy branches removed; 3 archive tags and the pre-F3 anchor retained.
 
