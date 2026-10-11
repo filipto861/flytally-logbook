@@ -2,6 +2,23 @@
 
 **Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
 
+## Owner-local PostgreSQL authentication recovery (11 October 2026)
+
+**Evidence received:** Node `v24.19.0`, TypeScript `PASS` and authored static tests `5/5 PASS` on the owner's Windows checkout. `pg_isready` confirmed that some PostgreSQL server answered on `127.0.0.1:55432`, but `psql -w` to `flytally_test` failed `fe_sendauth: no password supplied`. The owner then manually ran the six integration tests despite failed identity verification: all six test cases plus the cleanup hook failed from `password authentication failed for user "flytally"`. **No candidate DDL was executed; real PostgreSQL acceptance remains NOT RUN**, not a v21 business-logic failure. Multiple local PG clusters and historical authentication modes existed; never assume `55432` or the username imply working credentials.
+
+**Recovery (recommended, without Docker or access to old cluster):** On [PR #322](https://github.com/filipto861/flytally-logbook/pull/322), added `tooling/run-currency-m2a0-local.ps1`, a **Windows PowerShell 5.1-safe ASCII-only** native PostgreSQL 16 runner. It uses the already-installed PostgreSQL 16 bin path under `Program Files`, existing Node 24/npm and Git; it chooses a free loopback port independently of 55432, initializes a random per-run PostgreSQL cluster under `$env:TEMP`, binds ONLY `127.0.0.1`, creates dedicated `flytally_currency_test` with local-only temporary trust authentication, verifies actual DB name + role + address + port, runs `npm run typecheck`, six authored static tests and six isolated PostgreSQL tests. It then stops its own process and removes only its freshly created temp directory. If startup/stop status is uncertain it preserves files rather than deleting a potentially active data directory. It restores old shell process environment after execution. **Do not use remote PostgreSQL, change `pg_hba.conf` on existing cluster, disclose credentials or manually execute v21 SQL.** Local trust is acceptable only for this short-lived localhost-bound isolated fixture, never for shared/remote/production.
+
+**User commands (same clean feature branch):**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1
+```
+
+Optional after targeted PASS: run the same script with `-Full` to include existing PostgreSQL integration suite. **Never run the six integration tests again directly against `55432` without a passed DB identity/auth preflight.**
+
+**Fail-closed regression:** The integration test now runs `psql -w` (no interactive password prompts), validates a PostgreSQL preflight before `CREATE SCHEMA`, and only attempts `DROP SCHEMA` if creation succeeded. A sixth static guard test checks the native Windows runner and fail-closed preflight. **6/6 authored static assertion bodies PASS** under a GitHub-source V8/mock filesystem check (NOT actual Node or native PG). **Actual native runner/PG tests NOT RUN** until the owner supplies new terminal output.
+
 ## Windows PowerShell 5.1 parser recovery (11 October 2026)
 
 The first owner-local invocation stopped **before running any Docker command** with PowerShell parser error `TerminatorExpectedAtEndOfString` at line 71. Root cause was one UTF-8 **em dash** in the runner's banner, decoded by Windows PowerShell 5.1 as ANSI because the script had no UTF-8 BOM; the misdecoded byte sequence introduced a typographic quote. **Fixed in PR #322** by making the entire `.ps1` **ASCII-only**.
