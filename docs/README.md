@@ -40,6 +40,10 @@
 
 **Product release:** `3.7.0` is **DONE / PRODUCTION** as of 11 October (version, Vercel READY, target alias and owner UX acceptance). Direct post-release browser/HTTP smoke was unavailable here, and third-party map-provider rights/coverage/quotas remain separately unverified; do not infer external permissions from product version or functional acceptance.
 
+## 3.8.0 active discovery
+
+- [3.8.0 Currency / monetary semantics](product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) — **M0 source inventory and design gates**, not an approved runtime or historical-currency conversion contract. Issue #136; decisions and independent review required before implementation.
+
 ## Active cross-cutting contracts
 
 - [Design language](design-language.md) and [UI/UX audit](ux-audit.md) — visual/design audit and historical closeout.
