@@ -65,7 +65,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 | Workstream | State | Gate |
 | --- | --- | --- |
 | Esri/openAIP third-party rights/coverage/usage evidence after 3.7.0 | UNVERIFIED / DEFERRED | Commercial/use rights, relevant attribution and redistribution/export restrictions, currency/coverage, quota/cost and evidence before broader use; not approved by the 3.7.0 release |
-| `3.8.0` Currency / monetary semantics · #136 | NEXT | Audit persisted denominations, define account currency authority, backup/export effects; no invented historical currency or automatic FX |
+| `3.8.0` Currency / monetary semantics · #136 | ACTIVE / M0 discovery | [Source inventory and decision gates](docs/product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md); runtime NOT STARTED; no inferred historical denomination or automatic FX |
 | `3.9.0` heterogeneous multi-aircraft onboarding proof | PLANNED | Aeroplane/Helicopter/Sailplane-TMG/Balloon/ULL/Other Add/Edit/Quick Add, applicability and responsive tests |
 | `3.10.0` multi-aircraft sharing/recovery/scale closeout | PLANNED | Canonical independent participant data, safe recovery/scale proof |
 | GPS T&G time-normalized evidence-limited follow-up | RESEARCH | Real-track samples/source evidence |
