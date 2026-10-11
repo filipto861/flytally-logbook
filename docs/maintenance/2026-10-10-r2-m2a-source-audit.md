@@ -1,5 +1,7 @@
 # FlyTally Logbook — M2A independent source audit of Satellite R1/R2 drafts
 
+> **Historical findings, NOT an active task list (11 October 2026).** After this review, the owner explicitly abandoned the older R1/R2 development paths. PRs #271–#279 and #281 are **closed without merge**; branches/source and this audit are retained. Recommendations below to port Story fixes, Satellite kill switches or resource research were **not approved**, and must not be interpreted as scheduled milestones. A future current-main issue would require its own evidence, decision and tests.
+
 **Date:** 10 October 2026  
 **Audit type:** read-only GitHub source/PR/branch comparison + read-only official Esri documentation.  
 **Canonical baseline:** `main@a6bed4c687306c887deb85270d601d3323c188d3` (docs PR #302).  
