@@ -1,6 +1,6 @@
 # FlyTally Logbook 3.8.0 — Currency / monetary semantics
 
-**Status:** ACTIVE / M0 read-only source discovery; **NOT an approved runtime design**.  
+**Status:** ACTIVE / M0 source discovery and M1 decision preparation; independent reviewer findings **RECONCILED against selected source**, **runtime design NOT APPROVED**.  
 **Baseline:** `filipto861/flytally-logbook` `main@4ca2847795435549f36d44f253eb7c105eea6d25` (11 October 2026).  
 **Issue:** [#136](https://github.com/filipto861/flytally-logbook/issues/136).  
 **Product baseline:** 3.7.0 DONE/PRODUCTION. **Repo boundary:** Logbook only; no Training changes.
@@ -46,20 +46,20 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 
 **Implication:** A live account preference of CZK for all five accounts does **not** prove denomination at the time of the 311 saved flights or 33 rate events. Price decimals currently use floating-point storage, so rounding and a prospective minor-unit/NUMERIC contract require explicit analysis. M0 did **not** perform a data migration, backfill, restore, write query, materialized snapshot, test-fixture mutation, or change to application configuration.
 
-**Independent review handoff:** [read-only 3.8.0 reviewer brief](3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md) for DeepSeek/Claude; findings and owner decisions not yet received.
+**Independent review:** [read-only review brief](3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md) sent; DeepSeek returned **APPROVE WITH CHANGES**. [Source-backed reconciliation and owner decision matrix](3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) completed. D1–D4 remain pending owner signoff; this is NOT an approved migration or runtime design.
 
 ## M0 unknowns (no guessing)
 
 1. **Production census partially observed, NOT FINAL:** connected Logbook Shadow branch aggregate is recorded above; verify deployed Vercel database binding before asserting production authority. Break down historical amounts by creation era and path only with privacy-safe aggregate queries; do not copy PII or raw user monetary records into handoffs.
 2. **Source evidence for historical CZK:** existing UI labels CZK but code labels alone do not justify an unqualified production-wide historical backfill. Require documented provenance, owner policy and a reversible/auditable strategy.
-3. **Column and backup compatibility:** exact DDL, dependent SQL projections, trigger/certification snapshots, historical archived payloads, legacy restore, aircraft import, unique rate identities and migration sequence must be enumerated before choosing fields or a backup version bump.
+3. **Column and backup compatibility:** DeepSeek's hypothesized lack of dated-rate uniqueness was corrected: connected Neon has `UNIQUE (user_id, registration, valid_from)`, with 0 NULL-date rows in its read-only census; NULL-date duplicates remain a possible legacy edge under standard UNIQUE semantics. Exact DDL, dependent SQL projections, certified/voided archives, legacy restore, aircraft import, and migration sequence still require full local audit before choosing a backup version bump.
 4. **Currency precision/validation:** minor unit rules differ across currencies; current expense implementation assumes 2 decimals and accepts any 3 letters. Do not claim ISO 4217 completeness without explicit validated contract.
 5. **Visual/client workflow:** changes need targeted desktop/iPad portrait/landscape/mobile + light/dark acceptance, including Settings, Aircraft rates, New/Edit/GPS, locked flight expense editor, list, Dashboard and Statistics.
 6. **Operational census and backup dry run:** not performed; production/remote databases must not be targeted by destructive test commands.
 
 ## Candidate product contract — requires owner decision and independent review
 
-**Recommended direction, NOT YET FROZEN:** Settings currency is a *default for new* monetary entries, not a conversion control. Each newly entered aircraft rate, default rate and derived flight snapshot persists a valid denomination; per-expense currency remains independently editable. Existing known currencies are immutable evidence. A legacy price with no verifiable denomination remains `UNKNOWN`/`Needs configuration` until an authorized, auditable classification; changing account currency never backfills it. Aggregates are grouped by known currency, with unknown-denomination amounts shown separately as unresolved; no cross-currency sum, comparison, highest-cost ranking or silent FX.
+**Recommended direction, NOT YET FROZEN:** See the [independent review reconciliation](3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) for material corrections: certified rows cannot simply be UPDATEd, historical floating-point conversion is not automatically lossless, backup forward-compatibility is not promised, and currently suggested expense currencies include CHF/PLN. Settings currency is a *default for new* monetary entries, not a conversion control. Each newly entered aircraft rate, default rate and derived flight snapshot persists a valid denomination; per-expense currency remains independently editable. Existing known currencies are immutable evidence. A legacy price with no verifiable denomination remains `UNKNOWN`/`Needs configuration` until an authorized, auditable classification; changing account currency never backfills it. Aggregates are grouped by known currency, with unknown-denomination amounts shown separately as unresolved; no cross-currency sum, comparison, highest-cost ranking or silent FX.
 
 **Open owner decisions:**
 - D1: confirm account preference = new-entry default, and whether per-rate currency may override it (recommended: yes).
@@ -92,4 +92,4 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 - **11 Oct 2026:** GitHub connector read `main@4ca2847795435549f36d44f253eb7c105eea6d25`, ROADMAP, FEATURES, ARCHITECTURE, AGENTS, CHANGELOG, issue #136 and the listed runtime/tests. Relevant existing tests: `tests/flight-expenses.test.ts`, `tests/billing-rate-history.test.ts`, `tests/portable-backup.test.ts`.
 - **M0 document write:** source/design documentation only. **TypeScript, Node/unit, build, PostgreSQL, Playwright, CI, production smoke: NOT RUN / N/A to this documentation-only change.** No runtime, DB migration, backup format, production or external provider changes.
 - **11 Oct 2026 supplementary Neon read-only gate:** inspected primary `production` branch of connected Logbook Shadow project, ran aggregate SELECT and confirmed monetary column types/nullability. No mutation; independent Vercel DB target binding remains NOT VERIFIED.
-- **Next:** verify deployment-to-database identity, independently challenge D1–D4 and coverage, reconcile owner decisions, then begin M2 in a separate small code branch.
+- **Next:** owner decisions D1–D4, full local source coverage and the remaining frozen technical contract, then M2 on a separate small code branch. One independent DeepSeek review has already been reconciled; do not repeat the same review without material new evidence.
