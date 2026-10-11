@@ -8,6 +8,7 @@ import {after,before,test} from "node:test";
 // Focused integration test on a disposable schema with the *actual v20 trigger*.
 // NOT a full v20 database migration/portable signed-backup end-to-end test.
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1";
+let schemaCreated=false;
 const databaseUrl=process.env.DATABASE_URL||"";
 const schema="ft_currency_"+randomUUID().replaceAll("-","");
 const quoted='"'+schema+'"';
@@ -16,7 +17,7 @@ const draft=readFileSync(resolve(root,"sql/drafts/3_8_0_currency_v21_additive_ca
 const dbSource=readFileSync(resolve(root,"lib/db-optimization.ts"),"utf8");
 
 function execSql(statement:string,withSchema=true){
-  return spawnSync("psql",["-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{
+  return spawnSync("psql",["-w","-d",databaseUrl,"-X","-v","ON_ERROR_STOP=1","-qAt"],{
     input:(withSchema?"SET search_path TO "+quoted+";\n":"")+statement,
     encoding:"utf8",env:{...process.env,PGCONNECT_TIMEOUT:"5"},maxBuffer:4*1024*1024,
   });
@@ -50,9 +51,14 @@ before(()=>{
   const url=new URL(databaseUrl);
   assert.ok(["127.0.0.1","localhost","::1","[::1]"].includes(url.hostname),
     "This test must never target a remote database");
+  const probe=execSql("SELECT current_database() || '|' || current_user || '|' || inet_server_port()",false);
+  if(probe.error)throw new Error("Local PostgreSQL preflight failed (psql unavailable); currency tests NOT RUN.");
+  if(probe.status!==0)throw new Error("Local PostgreSQL preflight failed (authentication/connection); currency tests NOT RUN. Verify a disposable localhost test DB and noninteractive credentials before rerunning.");
+  assert.ok(String(probe.stdout).includes("|"),"Unexpected local PostgreSQL identity response");
   const created=execSql("CREATE SCHEMA "+quoted,false);
   if(created.error)throw created.error;
   if(created.status!==0)throw new Error(String(created.stderr||created.stdout));
+  schemaCreated=true;
   run(`
     CREATE TABLE users(id BIGINT PRIMARY KEY);
     CREATE TABLE flights(
@@ -108,7 +114,7 @@ before(()=>{
   run("CREATE TRIGGER trg_logbook_protect_locked_flight BEFORE UPDATE OR DELETE ON flights FOR EACH ROW EXECUTE FUNCTION logbook_protect_locked_flight()");
 });
 after(()=>{
-  if(!enabled)return;
+  if(!enabled||!schemaCreated)return;
   const result=execSql("DROP SCHEMA IF EXISTS "+quoted+" CASCADE",false);
   if(result.error)throw result.error;
   assert.equal(result.status,0,String(result.stderr||result.stdout));
