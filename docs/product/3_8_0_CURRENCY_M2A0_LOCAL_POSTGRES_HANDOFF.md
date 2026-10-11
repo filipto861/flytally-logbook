@@ -2,6 +2,19 @@
 
 **Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
 
+## Unrelated untracked files — local test guard reconciliation (11 October 2026)
+
+Owner-local `git pull --ff-only` succeeded, but native runner then stopped **before creating any PostgreSQL cluster** because `git status --porcelain --untracked-files=normal` found only three unrelated entries: `flytally-logbook-branch-cleanup-2026-10-11-fixed.ps1`, `flytally-logbook-merged-branch-cleanup-2026-10-11.ps1`, and `tooling/r2d2-cache-spike/`. `git diff --stat` was empty. They are **untracked owner files, not authorized for deletion, stashing or inclusion in the PR**.
+
+Patch on draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322): native runner now fails on any tracked-file change (`git status --porcelain --untracked-files=no`), **preserves** unrelated untracked files, but fails if any untracked `.ts/.tsx` would affect `tsconfig.json`'s broad `**/*.ts` and `**/*.tsx` include. This preserves exact-candidate typecheck evidence while allowing unrelated PowerShell/JS cache-spike artifacts. Static guard test updated. **6/6 authored test assertion bodies PASS in mocked V8**, native PowerShell and PostgreSQL gates **NOT RUN**. Unknown contents of `tooling/r2d2-cache-spike/` must not be guessed; if it contains TypeScript files, the guard will stop and an isolated clean worktree is required. No existing files were modified/deleted by this test attempt.
+
+**Owner next commands (same repository and branch):**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1
+```
+
 ## Owner-local PostgreSQL authentication recovery (11 October 2026)
 
 **Evidence received:** Node `v24.19.0`, TypeScript `PASS` and authored static tests `5/5 PASS` on the owner's Windows checkout. `pg_isready` confirmed that some PostgreSQL server answered on `127.0.0.1:55432`, but `psql -w` to `flytally_test` failed `fe_sendauth: no password supplied`. The owner then manually ran the six integration tests despite failed identity verification: all six test cases plus the cleanup hook failed from `password authentication failed for user "flytally"`. **No candidate DDL was executed; real PostgreSQL acceptance remains NOT RUN**, not a v21 business-logic failure. Multiple local PG clusters and historical authentication modes existed; never assume `55432` or the username imply working credentials.
