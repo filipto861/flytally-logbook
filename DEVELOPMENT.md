@@ -28,7 +28,7 @@ FlyTally uses a candidate-first development workflow. The objective is to keep n
 
 ## Module scope registry (current contract)
 
-The authoritative **development-only** registry is `tooling/development-modules.json` (schema/version **3** at this documentation checkpoint). It owns module/path classification, targeted source/domain groups, risk metadata, and selected PostgreSQL/browser/scale evidence. Changes to classification require reviewed registry+test updates, not a docs-only assumption. Unknown runtime files are classified conservatively.
+The authoritative **development-only** registry is `tooling/development-modules.json` (schema/version **3** at this documentation checkpoint). It owns module/path classification, targeted source/domain groups, risk metadata, and selected PostgreSQL/browser/scale evidence. Changes to classification require reviewed registry+test updates, not a docs-only assumption. **Unknown application runtime files fail conservative**: they do not automatically invent PostgreSQL/browser dependencies without an explicit risk/path contract.
 
 Use the commands defined in `package.json` and `tooling/`:
 
