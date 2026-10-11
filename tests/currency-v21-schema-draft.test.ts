@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 
 const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
 const migrationPlan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
+const windowsRunner=readFileSync(new URL("../tooling/run-currency-m2a0-docker.ps1",import.meta.url));
 
 // Static checks only. These tests do NOT execute SQL or substitute for PostgreSQL acceptance.
 const statements=draft.split("\n").filter(line=>!line.trim().startsWith("--")).join("\n");
@@ -53,4 +54,15 @@ test("standalone DDL only: current legacy money columns and certification eviden
   assert.doesNotMatch(statements,/\b(CREATE OR REPLACE FUNCTION|CREATE TRIGGER|DROP TRIGGER)\b/i);
   assert.doesNotMatch(statements,/\b(?:price_per_hour|dry_price_per_hour|default_price_per_hour)\s+TYPE\b/i);
   assert.match(draft,/no user-derived defaults/i);
+});
+
+test("Windows PowerShell 5.1 runner is ASCII-safe and targets only disposable Docker",()=>{
+  assert.equal([...windowsRunner].every(byte=>byte<128),true,
+    "Windows PowerShell 5.1 interprets UTF-8 without BOM as local ANSI; non-ASCII can terminate quoted strings");
+  const script=windowsRunner.toString("ascii");
+  assert.match(script,/param\(\[switch\]\$Full\)/);
+  assert.match(script,/--network "container:\$container"/);
+  assert.match(script,/--mount "type=bind,source=\$repoPath,target=\/source,readonly"/);
+  assert.match(script,/docker rm -f \$container/);
+  assert.doesNotMatch(script,/\bdocker\s+run[^\n]*\s-p\s+\d/);
 });
