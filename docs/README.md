@@ -4,6 +4,9 @@
 
 ## Canonical current sources
 
+- [AI contributor entrypoint](../AGENTS.md) — stable repo-bound guardrails and navigation only; never duplicates current release state.
+- [AI handoff + independent review template](AI_HANDOFF_TEMPLATE.md) — SHA-bound minimal context for new sessions, DeepSeek read-only review and evidence ledger.
+
 1. [ROADMAP](../ROADMAP.md) — current status, release order, frozen decisions, acceptance gates and next step.
 2. [FEATURE LIST](../FEATURES.md) — implemented/planned capability inventory and intentionally unavailable behavior.
 3. [CHANGELOG](../CHANGELOG.md) — actual merged changes, dated production/data actions and historical verification evidence.
