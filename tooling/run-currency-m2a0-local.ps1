@@ -98,7 +98,7 @@ try {
   $env:FLYTALLY_POSTGRES_INTEGRATION = "1"
   # Format each database field explicitly to avoid platform-dependent scalar
   # concatenation and preserve actionable, non-secret diagnostics on mismatch.
-  $identityOutput = @(& $psql -X -w -v ON_ERROR_STOP=1 -At -F "|" -d $env:DATABASE_URL -c "SELECT current_database(), current_user, inet_server_addr()::text, inet_server_port()")
+  $identityOutput = @(& $psql -X -w -v ON_ERROR_STOP=1 -At -F "|" -d $env:DATABASE_URL -c "SELECT current_database(), current_user, host(inet_server_addr()), inet_server_port()")
   Assert-Exit "Disposable local database identity"
   $identityRows = @($identityOutput | ForEach-Object { [string]$_ } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
   $expectedIdentity = "flytally_currency_test|flytally|127.0.0.1|$port"
