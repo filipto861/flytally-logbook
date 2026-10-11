@@ -1,6 +1,6 @@
 # FlyTally Logbook — documentation index
 
-**Reviewed:** 10 October 2026. **Scope:** `flytally-logbook` only. `flytally-training` has separate code and governance.
+**Reviewed:** 11 October 2026. **Scope:** `flytally-logbook` only. `flytally-training` has separate code and governance.
 
 ## Canonical current sources
 
@@ -13,9 +13,9 @@
 
 **Precedence:** actual code/runtime evidence → ROADMAP → FEATURES → CHANGELOG → architecture/development → active detailed contracts → dated acceptance → history. If these conflict, reconcile before implementation. A merged build is not an accepted full release.
 
-## Active 3.7.0 support and acceptance records
+## 3.7.0 completed release / retained technical acceptance
 
-- [Final 3.7.0 production/provider acceptance — opened 11 October](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — current production deployment SHA verification, owner-run Map/GPS/Safari checks and unresolved Esri/openAIP/OSM usage evidence; **not** a release approval.
+- [3.7.0 production/owner-acceptance closeout](product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) — release `39ee01b7`, Vercel READY and alias assigned, owner-reported functional signoff, explicitly unverified external rights; version release is NOT provider/commercial clearance.
 - [Maps and Aviation Layers design/source contract](product/3_7_0_MAPS_AVIATION_LAYERS.md) — **historical phase-0/phase-1 architecture with some stale in-document status**; current release status is in ROADMAP.
 - [Independent review reconciliation](product/3_7_0_MAPS_REVIEW_RECONCILIATION.md) — historical review conditions and provider gates.
 - [Standard Maps Phase 1 acceptance](product/3_7_0_PHASE1_TEST_ACCEPTANCE.md) — completed/merged standard-only acceptance evidence; prior candidate and test failures retained.
@@ -25,7 +25,7 @@
 - [A2F zoom/menu acceptance](product/3_7_0_A2F_MAP_OVERLAY_ZOOM_POLISH_ACCEPTANCE.md) — merged z14 native/z18 display behavior, test and production evidence.
 - [Maps review handoff](product/3_7_0_MAPS_REVIEW_HANDOFF.md) — **dated reviewer questions**, not an instruction to repeat already settled design decisions.
 
-**Known open release gates:** signed-in production map/proxy/high-zoom and theme checks, native Safari iPad orientations, documented provider permissions/coverage/freshness/quotas and explicit final 3.7.0 release decision. The current `3.6.0` product version remains unchanged.
+**Product release:** `3.7.0` is **DONE / PRODUCTION** as of 11 October (version, Vercel READY, target alias and owner UX acceptance). Direct post-release browser/HTTP smoke was unavailable here, and third-party map-provider rights/coverage/quotas remain separately unverified; do not infer external permissions from product version or functional acceptance.
 
 ## Active cross-cutting contracts
 
