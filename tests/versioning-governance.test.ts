@@ -47,7 +47,7 @@ test("3.7.0 release candidate metadata aligns without inventing production deplo
   assert.equal(pkg.version,"3.7.0");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
-  assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\\.version/);
+  assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
   assert.match(read("ROADMAP.md"),/\| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \|/);
   assert.match(read("docs/product/VERSIONING.md"),/future release branches may carry the target `package\.json` version while still unreleased/);
   assert.match(read("docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md"),/OWNER-REPORTED UX ACCEPTANCE/);
