@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — M2-A-0 local Git preflight correction (DRAFT / NOT SHIPPED)
+
+- Owner-local `git pull --ff-only` PASS. The native Windows PostgreSQL runner refused to start because three **untracked owner files/folder** were present, despite `git diff --stat` returning no tracked modifications. It stopped **before any test DB setup**. No cleanup, stash or destructive Git action was requested.
+- On unmerged draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322), refined Git preflight: reject any modified/staged/deleted tracked source; permit unrelated untracked files while rejecting untracked `.ts/.tsx` that would influence the repo-wide TypeScript check. Existing owner's branch-cleanup PowerShell scripts and `tooling/r2d2-cache-spike/` remain untouched. Updated source guard; 6/6 authored assertions PASS in mocked V8 only. Real native PostgreSQL test **NOT RUN**, await user `git pull --ff-only` and rerun.
+
 ## 11 October 2026 — M2-A-0 local PostgreSQL authentication recovery (DRAFT / NOT SHIPPED)
 
 - Owner-local Node `v24.19.0`, TypeScript **PASS**, and previous static currency tests **5/5 PASS**. `pg_isready` found PostgreSQL listening at `127.0.0.1:55432` but `psql -w` to `flytally_test` returned `fe_sendauth: no password supplied`. Despite the failed preflight, the six DB test cases were separately invoked and **all cases plus cleanup hook failed solely on password authentication**; no DDL, migration or currency logic was exercised. PostgreSQL acceptance remains **NOT RUN**, not six migration regressions.
