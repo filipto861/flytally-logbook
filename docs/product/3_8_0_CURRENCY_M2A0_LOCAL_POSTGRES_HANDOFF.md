@@ -2,12 +2,29 @@
 
 **Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
 
+## Windows PowerShell 5.1 parser recovery (11 October 2026)
+
+The first owner-local invocation stopped **before running any Docker command** with PowerShell parser error `TerminatorExpectedAtEndOfString` at line 71. Root cause was one UTF-8 **em dash** in the runner's banner, decoded by Windows PowerShell 5.1 as ANSI because the script had no UTF-8 BOM; the misdecoded byte sequence introduced a typographic quote. **Fixed in PR #322** by making the entire `.ps1` **ASCII-only**.
+
+Independent audit caught a second potential Windows↔Linux issue: joining Bash commands using `[Environment]::NewLine` under Windows creates `CRLF`, which Bash treats as significant `\r` characters. The runner now joins the commands with `"; "` to remain portable.
+
+A **fifth source guard test** in `tests/currency-v21-schema-draft.test.ts` now rejects non-ASCII runner contents, CRLF bash script joining, and unsafe Docker invocation changes. **5/5 authored static-test assertion bodies PASS** in an in-memory V8 harness reading the exact GitHub source (mocked file reads). This is **not** a Node24 `node --test` run, a PowerShell parser test, a Docker run or a PostgreSQL test.
+
+**Next owner commands, from the same clean repository checkout:**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-docker.ps1
+```
+
+Report the full output. The original parser failure did not execute migrations, test fixtures or any database DDL.
+
 ## Exact source and dependencies
 
 - Repository: `filipto861/flytally-logbook`; baseline `main@4ca2847795435549f36d44f253eb7c105eea6d25`, schema version **20**, production app **3.7.0**.
 - Candidate code branch: `feat/3.8.0-currency-m2a0-sql-draft`, draft PR **#322**; documentation/draft reconciliation on [PR #319](https://github.com/filipto861/flytally-logbook/pull/319).
 - `sql/drafts/3_8_0_currency_v21_additive_candidate.sql`: 12 nullable fields across `rates`, `aircraft`, `flights`, `flight_expenses` and CHECK constraints; **never registered** in `lib/db-optimization.ts` or `lib/migration-plan.ts`. Any UPDATEs in integration tests target only a disposable local fixture.
-- `tests/currency-v21-schema-draft.test.ts`: four static source-contract tests; belongs to canonical `npm test` glob.
+- `tests/currency-v21-schema-draft.test.ts`: five static source-contract tests; belongs to canonical `npm test` glob.
 - **NEW** `tests/integration/postgres-currency-v21-schema.test.ts`: six real PostgreSQL integration tests of standalone SQL and authentic, extracted **v20 `logbook_protect_locked_flight()` trigger body** on a **minimal schema fixture**, not a reconstructed full production database.
 - **NEW** `tooling/run-currency-m2a0-docker.ps1`: Windows PowerShell one-command runner, private PostgreSQL 16 Alpine and Node 24 Bookworm containers, read-only mount of repository source and ephemeral Linux workdir, random ephemeral DB password, no host-published Postgres port. Requires Docker Desktop and Git for Windows only (plus network to pull Docker images, apt and npm packages). Optional `-Full` runs all existing PostgreSQL integration suites.
 
