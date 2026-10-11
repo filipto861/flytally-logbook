@@ -68,11 +68,7 @@ These are not product versions and remain independent:
 - backup/export format version;
 - API/protocol versions where applicable.
 
-3.6.0 completed production rollout on 9 October 2026. **3.7.0 completed numeric production rollout on 11 October 2026:** PR #309 merged at `39ee01b74f25bbd647d5e79f58d4b184034f61a0`, Vercel `dpl_Az24Z1mL7BxGN16zHpiiGDGXGPui` **READY** with Next.js build/TypeScript and 41/41 static pages; the `fly-tally.com` alias points at that deployment. App footer derives the version from the deployed `package.json` (`3.7.0`), but no independent post-release browser screenshot was captured. Historical pre-release candidate state remains in the dated CHANGELOG/acceptance notes. Last documented technical counters (no DB/schema change in this release):
-- production database schema **v20** (prior evidence; independent live DB query NOT RUN);
-- flight certification payload **v8** (unchanged by this release);
-- portable backup/export format **v13** (unchanged by this release);
-- deployed product package version **3.7.0**.
+Technical counter snapshots are dated release evidence, not current product-version authority. In the documented 11 October 2026 release checkpoint the last reported counters were PostgreSQL schema **v20** (not independently re-queried), certification payload **v8**, and backup/export format **v13**; the then-released package was **3.7.0**. Preserve the full deploy SHA, provider exceptions and historical verification details in [CHANGELOG](../../CHANGELOG.md) and the [3.7.0 release acceptance](3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md). For **current shipped status** consult [ROADMAP](../../ROADMAP.md) and verify the live deployment; do not infer schema or certification versions from package metadata.
 
 A product release may change none, one or several technical counters. No technical version is inferred from the product version.
 
@@ -85,26 +81,10 @@ For significant work, prefer:
 
 PR titles should start with the numeric target version when practical.
 
-## 7. Forward release sequence
+## 7. Release order and dated renumbering decision
 
-| Target | Scope | Status |
-| --- | --- | :---: |
-| 3.4.0 | Flight Entry Simplification | DONE / PRODUCTION |
-| 3.4.1 | GPS Night-time reliability | DONE / PRODUCTION |
-| 3.5.0 | Certified flight voiding + remaining multi-aircraft integrity audit | DONE / PRODUCTION |
-| 3.5.1 | GPS T&G false-positive containment | DONE / PRODUCTION |
-| 3.5.2 | Always-on GPS/SERA Night suggestions | DONE / PRODUCTION |
-| 3.5.3 | Flight detail navigation UX | DONE / PRODUCTION |
-| 3.5.4 | iPad flight-detail visual hotfix | DONE / PRODUCTION |
-| 3.5.5 | iPad sidebar collapse-control alignment | DONE / PRODUCTION |
-| 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
-| 3.7.0 | Maps & Aviation Layers | **DONE / PRODUCTION 11 OCT 2026** — owner functional acceptance; release commit `39ee01b7` Vercel READY and aliased; third-party rights/coverage remain separately unverified and not approved |
-| 3.8.0 | Currency / monetary semantics · #136 | NEXT; former 3.7.0 reservation, scope preserved |
-| 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED; former 3.8.0 reservation |
-| 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED; former 3.9.0 reservation |
-| — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH; remains unnumbered until scope/evidence are frozen; 3.5.2 is assigned to always-on GPS/SERA Night suggestions |
-| — | Professional Logbook Platform | RESEARCH; no release number until scope is frozen |
+The **current** release order, owner priorities and completion state are maintained only in [ROADMAP](../../ROADMAP.md). Dated shipped milestones remain in [CHANGELOG](../../CHANGELOG.md) and [release acceptance records](../README.md); this policy intentionally does not duplicate the forward status table.
 
-The 9 October 2026 product decision supersedes only the unstarted 3.7.0 Currency **reservation** and shifts the planned numbers shown above; it does not supersede issue #136, currency authority/fail-closed rules or any multi-aircraft acceptance requirement. Historical version references in prior evidence are retained.
+**Historical decision (9 October 2026, retained verbatim in meaning):** The owner moved the unstarted Currency reservation from 3.7.0 to 3.8.0 and shifted future multi-aircraft reservations accordingly. Issue #136, currency evidence/fail-closed rules and multi-aircraft acceptance requirements remain binding. Prior version references in dated evidence must not be rewritten. The 3.7.0 Maps milestone subsequently shipped on 11 October 2026; this dated fact does not determine what release is current in future.
 
 Confirmed production, security or data-integrity defects may pre-empt this sequence.
