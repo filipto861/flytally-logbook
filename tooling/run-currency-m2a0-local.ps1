@@ -34,9 +34,24 @@ try {
   $currentBranch = (& git branch --show-current).Trim()
   Assert-Exit "Git branch read"
   if ($currentBranch -ne $expectedBranch) { throw "Wrong branch: $currentBranch. Expected $expectedBranch." }
-  $dirty = & git status --porcelain --untracked-files=normal
-  Assert-Exit "Git status"
-  if ($dirty) { throw "Working tree not clean. Stop before creating any test cluster." }
+  # Exact candidate: tracked content MUST be clean. Do not delete, stash or
+  # reclassify the owner's unrelated untracked files.
+  $dirtyTracked = & git status --porcelain --untracked-files=no
+  Assert-Exit "Git tracked-file status"
+  if ($dirtyTracked) {
+    throw "Tracked files have uncommitted changes. Stop before creating a test cluster."
+  }
+  $untrackedFiles = @(& git ls-files --others --exclude-standard)
+  Assert-Exit "Git untracked-file inventory"
+  # tsconfig includes **/*.ts and **/*.tsx; an untracked TypeScript file
+  # could affect typecheck and invalidate exact-commit verification evidence.
+  $untrackedTypescript = @($untrackedFiles | Where-Object { $_ -match '(?i)\\.(?:ts|tsx)$' })
+  if ($untrackedTypescript.Count -gt 0) {
+    throw "Untracked TypeScript files may affect the exact-candidate typecheck. Use a separate clean worktree for testing."
+  }
+  if ($untrackedFiles.Count -gt 0) {
+    Write-Host "Ignoring $($untrackedFiles.Count) unrelated untracked file(s); none will be deleted or modified."
+  }
   $commit = (& git rev-parse HEAD).Trim()
   Assert-Exit "Git commit identity"
   if (-not ((& node --version) -match '^v24\.')) { throw "Node 24.x required." }
