@@ -5,6 +5,8 @@ import {readFileSync} from "node:fs";
 const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
 const migrationPlan=readFileSync(new URL("../lib/migration-plan.ts",import.meta.url),"utf8");
 const windowsRunner=readFileSync(new URL("../tooling/run-currency-m2a0-docker.ps1",import.meta.url));
+const nativeWindowsRunner=readFileSync(new URL("../tooling/run-currency-m2a0-local.ps1",import.meta.url));
+const postgresTestSource=readFileSync(new URL("./integration/postgres-currency-v21-schema.test.ts",import.meta.url),"utf8");
 
 // Static checks only. These tests do NOT execute SQL or substitute for PostgreSQL acceptance.
 const statements=draft.split("\n").filter(line=>!line.trim().startsWith("--")).join("\n");
@@ -67,4 +69,21 @@ test("Windows PowerShell 5.1 runner is ASCII-safe and targets only disposable Do
   assert.match(script,/--mount "type=bind,source=\$repoPath,target=\/source,readonly"/);
   assert.match(script,/docker rm -f \$container/);
   assert.doesNotMatch(script,/\bdocker\s+run[^\n]*\s-p\s+\d/);
+});
+
+test("native Windows PostgreSQL runner isolates its cluster and protects against auth failure",()=>{
+  assert.equal([...nativeWindowsRunner].every(byte=>byte<128),true,"PowerShell 5.1 scripts must use ASCII");
+  const script=nativeWindowsRunner.toString("ascii");
+  assert.match(script,/\$expectedBranch = "feat\/3\.8\.0-currency-m2a0-sql-draft"/);
+  assert.match(script,/\$dirty = & git status --porcelain/);
+  assert.match(script,/\$portSocket = \[System\.Net\.Sockets\.TcpListener\]::new/);
+  assert.match(script,/\$temporaryRoot = Join-Path \$env:TEMP/);
+  assert.match(script,/& \$initdb -D \$dataDir -U flytally -A trust/);
+  assert.match(script,/& \$pgctl -D \$dataDir -l \$logPath -o "-h 127\.0\.0\.1 -p \$port"/);
+  assert.match(script,/flytally_currency_test\|flytally\|127\.0\.0\.1/);
+  assert.match(script,/& \$pgctl|& \(Join-Path \$env:ProgramFiles "PostgreSQL\\16\\bin\\pg_ctl.exe"\)/);
+  assert.match(script,/Remove-Item -LiteralPath \$temporaryRoot -Recurse -Force/);
+  assert.doesNotMatch(script,/\b(docker|neon\.tech|vercel\.app)\b/i);
+  assert.match(postgresTestSource,/spawnSync\("psql",\["-w","-d",databaseUrl/);
+  assert.match(postgresTestSource,/if\(!enabled\|\|!schemaCreated\)return/);
 });
