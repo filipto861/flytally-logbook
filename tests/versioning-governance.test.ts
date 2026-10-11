@@ -11,24 +11,12 @@ test("product version source remains numeric MAJOR.MINOR.PATCH",()=>{
   assert.match(pkg.version,/^\d+\.\d+\.\d+$/);
 });
 
-test("current roadmap uses canonical numeric release targets and numeric phases",()=>{
+test("canonical roadmap preserves accepted maps release and following roadmap targets",()=>{
   const roadmap=read("ROADMAP.md");
-  assert.match(roadmap,/## Canonical release sequence/);
-  assert.match(roadmap,/# 3\.4\.1 — GPS Night-time reliability — DONE/);
-  assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
-  assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
-  assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| ✅ \|/);
-  assert.match(roadmap,/\| 4 \| \*\*3\.5\.1\*\* \| GPS T&G false-positive containment \| ✅ \|/);
-  assert.match(roadmap,/\| 5 \| \*\*3\.5\.2\*\* \| Always-on GPS\/SERA Night suggestions \| ✅ \|/);
-  assert.match(roadmap,/\| 6 \| \*\*3\.5\.3\*\* \| Flight detail navigation UX \| ✅ \|/);
-  assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
-  assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| ✅ \|/);
-  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ✅ \|/);
-  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \| 🚧 \|/);
-  assert.match(roadmap,/\| 11 \| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \| ➡️ \|/);
-  assert.match(roadmap,/\| 12 \| \*\*3\.9\.0\*\* \| Multi-aircraft heterogeneous onboarding proof \| ⏳ \|/);
-  assert.match(roadmap,/## Single implementation phase — DONE/);
+  assert.match(roadmap,/\| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \|/);
+  assert.match(roadmap,/\| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \|/);
+  assert.match(roadmap,/\| 3\.9\.0 \| Multi-aircraft heterogeneous onboarding proof \|/);
+  assert.match(roadmap,/Owner functional acceptance decision|Owner decision — functional acceptance COMPLETE/i);
   assert.doesNotMatch(roadmap,/## E3 — Flight entry simplification — ACTIVE/);
 });
 
@@ -53,19 +41,14 @@ test("3.4.0 design preserves explicit single-flight certification and draft-only
 });
 
 
-test("3.6.0 production metadata and 3.7.0 active roadmap stay aligned",()=>{
+test("3.7.0 release candidate metadata aligns without inventing production deployment",()=>{
   const pkg=JSON.parse(read("package.json")) as {version:string};
   const lock=JSON.parse(read("package-lock.json")) as {version:string;packages:Record<string,{version?:string}>};
-  assert.equal(pkg.version,"3.6.0");
+  assert.equal(pkg.version,"3.7.0");
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[""].version,pkg.version);
-  assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\.version/);
-  assert.match(read("ROADMAP.md"),/# 3\.6\.0 — Saved-date \/ timezone semantics — DONE \/ PRODUCTION/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.6\.0 \| Saved-date \/ timezone semantics \| DONE \/ PRODUCTION \|/);
-  assert.match(read("docs/product/VERSIONING.md"),/production product package\/runtime is \*\*3\.6\.0\*\*/);
-  assert.match(read("ROADMAP.md"),/\*\*Current production product version:\*\* `3\.6\.0`/);
-  assert.match(read("ROADMAP.md"),/\*\*Current active release:\*\* `3\.7\.0`/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.7\.0 \| Maps & Aviation Layers \| ACTIVE\b/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.8\.0 \| Currency \/ monetary semantics · #136 \| NEXT\b/);
-  assert.match(read("docs/product/VERSIONING.md"),/\| 3\.9\.0 \| Multi-aircraft heterogeneous onboarding proof \| PLANNED\b/);
+  assert.match(read("components/app-shell.tsx"),/const appVersion=packageMetadata\\.version/);
+  assert.match(read("ROADMAP.md"),/\| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \|/);
+  assert.match(read("docs/product/VERSIONING.md"),/future release branches may carry the target `package\.json` version while still unreleased/);
+  assert.match(read("docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md"),/OWNER-REPORTED UX ACCEPTANCE/);
 });
