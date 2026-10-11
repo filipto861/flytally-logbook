@@ -96,12 +96,19 @@ try {
   $env:PGPASSWORD = ""
   $env:DATABASE_URL = "postgresql://flytally@127.0.0.1:$port/flytally_currency_test"
   $env:FLYTALLY_POSTGRES_INTEGRATION = "1"
-  $identity = & $psql -X -w -v ON_ERROR_STOP=1 -At -d $env:DATABASE_URL -c "SELECT current_database() || '|' || current_user || '|' || inet_server_addr() || '|' || inet_server_port()"
+  # Format each database field explicitly to avoid platform-dependent scalar
+  # concatenation and preserve actionable, non-secret diagnostics on mismatch.
+  $identityOutput = @(& $psql -X -w -v ON_ERROR_STOP=1 -At -F "|" -d $env:DATABASE_URL -c "SELECT current_database(), current_user, inet_server_addr()::text, inet_server_port()")
   Assert-Exit "Disposable local database identity"
-  if ($identity.Trim() -ne "flytally_currency_test|flytally|127.0.0.1|$port") {
-    throw "Test database identity mismatch. PostgreSQL tests NOT RUN."
+  $identityRows = @($identityOutput | ForEach-Object { [string]$_ } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+  $expectedIdentity = "flytally_currency_test|flytally|127.0.0.1|$port"
+  $observedIdentity = $identityRows -join "; "
+  Write-Host "Database identity expected: [$expectedIdentity]"
+  Write-Host "Database identity observed: [$observedIdentity]"
+  if ($identityRows.Count -ne 1 -or $identityRows[0] -cne $expectedIdentity) {
+    throw "Test database identity mismatch. PostgreSQL tests NOT RUN. No existing database was changed."
   }
-  Write-Host "Verified disposable DB identity: $identity"
+  Write-Host "Verified disposable DB identity."
 
   npm run typecheck
   Assert-Exit "TypeScript"
