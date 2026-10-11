@@ -10,7 +10,7 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 
 ## 11 October 2026 — Owner confirms basic production map functionality (acceptance evidence only)
 
-- Owner confirmed live map rendering, **Standard ↔ Satellite switching** and **Aviation overlay visibility at maximum zoom 18** in production. Logged owner-observed partial PASS for PROD-01/02/03 in the active 3.7.0 acceptance record; remaining detailed assertions, GPS replay, themes and physical iPad Safari **NOT YET CONFIRMED**. Owner instructed to defer further Esri attribution work for now; unresolved provider permissions remain separately recorded as unverified and are not represented as approved. No application code, credentials, flags, version, database or production deployment changed.
+- Owner confirmed live map rendering, **Standard ↔ Satellite switching** and **Aviation overlay visibility at maximum zoom 18** in production. Logged owner-observed partial PASS for PROD-01/02/03 in the active 3.7.0 acceptance record; owner subsequently confirmed playback and timeline scrubbing in GPS Flight Replay plus Standard ↔ Satellite switching without observed reset or map freeze (**partial PROD-05 PASS**). Remaining fine-grained assertions, separate GPS tracks/import, public share, themes and physical iPad Safari **NOT YET CONFIRMED**. Owner instructed to defer further Esri attribution work for now; unresolved provider permissions remain separately recorded as unverified and are not represented as approved. No application code, credentials, flags, version, database or production deployment changed.
 
 ## 11 October 2026 — Final 3.7.0 production/provider acceptance opened (docs/read-only)
 
