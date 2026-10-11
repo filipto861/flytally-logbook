@@ -2,6 +2,21 @@
 
 **Date:** 11 October 2026. **State:** Automated test harness **AUTHORED** on [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322), actual Docker/Node24/PostgreSQL execution **NOT RUN** at the time of this handoff. **Do not merge, register v21, mutate remote Neon or deploy.**
 
+## Native PostgreSQL startup passed, identity mismatch diagnosed (11 October 2026)
+
+Owner-local test at exact branch commit `498577d9d206a6d896316bd7b93fde77c1ac95bc` passed the Git working-tree preflight while preserving **14 unrelated untracked files**, successfully initialized a **new PostgreSQL 16 instance on 127.0.0.1:54836** in a unique temporary data directory, started the server and later stopped it normally. The reported Czech locale/fulltext message was a nonfatal initialization warning. The preflight `psql` query exited successfully, but the equality check returned **`Test database identity mismatch. PostgreSQL tests NOT RUN.`** No observation of the actual returned identity was logged; **root cause cannot yet be determined**, so do not claim that the DB identity is correct or weaken the gate.
+
+On draft [PR #322](https://github.com/filipto861/flytally-logbook/pull/322), changed the identity check to request four columns via `psql -At -F "|"`, capture one non-empty output row and print **expected and observed identity strings** without including any password/secret. Acceptance still requires exactly one row and an exact case-sensitive match for `flytally_currency_test|flytally|127.0.0.1|<random-port>`. A static source regression test asserts the fail-closed check remains. **6/6 static authored assertion bodies PASS in a mocked V8 source-evaluation**; the Windows runner, TypeScript and actual PG acceptance have **NOT BEEN RE-RUN** after this change.
+
+**Owner next commands on existing branch:**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-m2a0-local.ps1
+```
+
+If identity still mismatches, the printed observed/expected pair will allow a targeted fix. Do not bypass the guard, modify the old cluster at port 55432 or run against Neon.
+
 ## Unrelated untracked files — local test guard reconciliation (11 October 2026)
 
 Owner-local `git pull --ff-only` succeeded, but native runner then stopped **before creating any PostgreSQL cluster** because `git status --porcelain --untracked-files=normal` found only three unrelated entries: `flytally-logbook-branch-cleanup-2026-10-11-fixed.ps1`, `flytally-logbook-merged-branch-cleanup-2026-10-11.ps1`, and `tooling/r2d2-cache-spike/`. `git diff --stat` was empty. They are **untracked owner files, not authorized for deletion, stashing or inclusion in the PR**.
