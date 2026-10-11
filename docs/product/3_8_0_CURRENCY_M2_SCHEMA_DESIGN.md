@@ -4,6 +4,16 @@
 **Owner product decisions D1–D4: FROZEN** in [11 October currency decision record](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md). **Technical database shape and rollout still provisional.**  
 **Code baseline:** `filipto861/flytally-logbook main@4ca2847795435549f36d44f253eb7c105eea6d25` (shipped package 3.7.0).
 
+## 11 October 2026 independent review disposition (supersedes provisional details below)
+
+The owner-supplied DeepSeek review returned **APPROVE WITH CHANGES**. The review findings were reconciled against actual code in [M2 DeepSeek reconciliation](3_8_0_CURRENCY_M2_DEEPSEEK_RECONCILIATION_2026-10-11.md), and the **isolated, unregistered candidate SQL** is in [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322).
+
+**Adjusted technical direction for M2-A-0 (still NOT approved for production):** `amount_encoding` explicitly marks future expense rows (old `NULL/NULL` means legacy two-decimal parser encoding, **not** a saved ISO exponent), paired amount/currency/scale constraints fail closed on SQL `NULL`, and one currency applies to the current combined wet/dry rate row. A redundant persisted `money_state` column is **not** added without proof that the tagged read model cannot distinguish `known`, `unknown_currency`, `not_tracked` and `unavailable` from the record and attestation evidence.
+
+The standalone SQL draft uses unconstrained `NUMERIC` as a **candidate only**, not a finalized numeric/rate precision or rounded charge rule. New exact writers remain disabled. An unchanged old runtime cannot provide warnings about metadata it doesn't understand: **before first exact writes**, deploy and verify a metadata-aware backwards-compatible reader and define a rollback barrier (roll forward, or rollback to that compatible reader; never silently rollback to a denomination-blind writer). No live schema registration/execution, app-route import or remote DB writes.
+
+The eight DeepSeek test areas remain relevant but require actual local PostgreSQL evidence. The drafted SQL has only passed in-memory source static predicates; full `node --test`, TypeScript, Node24, PostgreSQL, signed backup restore, v20 certified correction/void and Vercel→Neon identity are **NOT RUN / NOT VERIFIED**.
+
 ## 1. Verified current DB/code facts
 
 - Current main `lib/migration-plan.ts` declares **`DATABASE_SCHEMA_VERSION=20`** and 20 known migrations. `lib/db-optimization.ts` `ensureDatabaseOptimizations()` **executes pending migrations during runtime initialization** via `sql.transaction`, so registering `v21` before deployment authorization can change the target DB unexpectedly; do not do it in a read-only design phase.
