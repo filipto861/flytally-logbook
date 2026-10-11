@@ -1,6 +1,6 @@
 # FlyTally Logbook 3.8.0 — Currency / monetary semantics
 
-**Status:** ACTIVE / M0 source discovery and M1 decision preparation; independent reviewer findings **RECONCILED against selected source**, **runtime design NOT APPROVED**.  
+**Status:** ACTIVE / M0 source discovery and M1 decision preparation; independent reviewer findings **RECONCILED against selected source**; **D4 all-active-ISO-monetary-currencies OWNER APPROVED**; full runtime design NOT APPROVED.  
 **Baseline:** `filipto861/flytally-logbook` `main@4ca2847795435549f36d44f253eb7c105eea6d25` (11 October 2026).  
 **Issue:** [#136](https://github.com/filipto861/flytally-logbook/issues/136).  
 **Product baseline:** 3.7.0 DONE/PRODUCTION. **Repo boundary:** Logbook only; no Training changes.
@@ -46,14 +46,14 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 
 **Implication:** A live account preference of CZK for all five accounts does **not** prove denomination at the time of the 311 saved flights or 33 rate events. Price decimals currently use floating-point storage, so rounding and a prospective minor-unit/NUMERIC contract require explicit analysis. M0 did **not** perform a data migration, backfill, restore, write query, materialized snapshot, test-fixture mutation, or change to application configuration.
 
-**Independent review:** [read-only review brief](3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md) sent; DeepSeek returned **APPROVE WITH CHANGES**. [Source-backed reconciliation and owner decision matrix](3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) completed. D1–D4 remain pending owner signoff; this is NOT an approved migration or runtime design.
+**Independent review:** [read-only review brief](3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md) sent; DeepSeek returned **APPROVE WITH CHANGES**. [Source-backed reconciliation and owner decision matrix](3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) completed. **Owner froze D4 on 11 Oct 2026: all active monetary ISO 4217 currencies with their authoritative minor-unit exponents.** D1–D3 and technical schema/rounding choices remain pending; this is NOT an approved migration or runtime design.
 
 ## M0 unknowns (no guessing)
 
 1. **Production census partially observed, NOT FINAL:** connected Logbook Shadow branch aggregate is recorded above; verify deployed Vercel database binding before asserting production authority. Break down historical amounts by creation era and path only with privacy-safe aggregate queries; do not copy PII or raw user monetary records into handoffs.
 2. **Source evidence for historical CZK:** existing UI labels CZK but code labels alone do not justify an unqualified production-wide historical backfill. Require documented provenance, owner policy and a reversible/auditable strategy.
 3. **Column and backup compatibility:** DeepSeek's hypothesized lack of dated-rate uniqueness was corrected: connected Neon has `UNIQUE (user_id, registration, valid_from)`, with 0 NULL-date rows in its read-only census; NULL-date duplicates remain a possible legacy edge under standard UNIQUE semantics. Exact DDL, dependent SQL projections, certified/voided archives, legacy restore, aircraft import, and migration sequence still require full local audit before choosing a backup version bump.
-4. **Currency precision/validation:** minor unit rules differ across currencies; current expense implementation assumes 2 decimals and accepts any 3 letters. Do not claim ISO 4217 completeness without explicit validated contract.
+4. **Currency precision/validation — D4 owner-approved coverage:** all active **monetary** ISO 4217 currencies (not every ISO 4217 fund, test, metal or non-currency code), including all published applicable minor-unit exponents; current expense implementation assumes 2 decimals and accepts any 3 letters. Before writing code, ingest and verify SIX List One + amendments and reviewed monetary classification/precision; preserve historical codes and their scale without using mutable present-day reference data. Detailed contract: [reconciliation D4](3_8_0_CURRENCY_REVIEW_RECONCILIATION.md#owner-decision-d4--approved-11-october-2026).
 5. **Visual/client workflow:** changes need targeted desktop/iPad portrait/landscape/mobile + light/dark acceptance, including Settings, Aircraft rates, New/Edit/GPS, locked flight expense editor, list, Dashboard and Statistics.
 6. **Operational census and backup dry run:** not performed; production/remote databases must not be targeted by destructive test commands.
 
@@ -65,14 +65,14 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 - D1: confirm account preference = new-entry default, and whether per-rate currency may override it (recommended: yes).
 - D2: how to classify pre-3.8.0 price rows: verified individual source, explicit per-account legacy attestation, or unresolved-only. No automatic CZK mass backfill without evidence.
 - D3: whether mixed-currency `Highest cost` sort is disabled, restricted to selected currency or omitted until an explicit conversion feature (recommended: disable for mixed/unresolved selection).
-- D4: precision and supported currency-code set; explicitly handle zero-decimal/three-decimal ISO codes or constrain allowed currencies with a clear UI policy.
+- **D4 — OWNER APPROVED 11 Oct 2026:** support **every current ISO 4217 monetary currency** with its source-backed minor-unit exponent (JPY 0, EUR 2, KWD 3 and other eligible scales), not a six-code list. Use pinned SIX reference and compact searchable picker; exclude non-monetary special/fund/test entries from ordinary currency input. Full registry, schema/rounding and versioning verification still needed; no FX.
 
 ## Milestones / dependencies / acceptance
 
 | Milestone | Deliverable | Verification / completion gate |
 | --- | --- | --- |
 | **M0 — Read-only discovery (ACTIVE)** | Source inventory; identify owner decisions, current code assumptions, backup/schema consumers and production census plan; do not mutate data. | Document is source-backed; inventory completeness and unknowns clear; **no runtime claim**. |
-| **M1 — Frozen contract** | Explicit authority matrix for account, default rate, rate timeline, flight snapshot, expense, derived total, archive, share, export/restore; exact mutation semantics; migration design. Independent read-only DeepSeek/Claude review reconciled with code before implementation. | Owner signs off D1–D4; compatibility and fallback contract agreed; roadmap updated. |
+| **M1 — Frozen contract** | Explicit authority matrix for account, default rate, rate timeline, flight snapshot, expense, derived total, archive, share, export/restore; ISO currency source/scale governance; exact mutation semantics; migration design. Independent DeepSeek review reconciled with code. | D4 DONE (coverage). D1–D3 owner choices + exact precision/compatibility/migration contract remain; tests and registry ingestion acceptance specified. |
 | **M2 — Schema/additive compatibility** | Reviewed nullable denomination columns as needed; safe idempotent sequential migration; retained legacy unknown values; non-destructive read-only preflight and isolated local PostgreSQL acceptance. | No historical numeric changes; legacy data readable; migration/rollback and remote target protection proven. |
 | **M3 — Write and snapshot paths** | Account validation, aircraft/rates, Manual/Edit/GPS and aircraft share imports use explicit persisted denominations; protected flights unchanged unless correction flow allows it. | Direct domain, auth and local PostgreSQL tests for missing/invalid/known money; no saved-rate silent reassignment. |
 | **M4 — Read models / UX** | All monetary surfaces derive display from stored denomination, not present-day Settings; grouped totals and explicit unknown states; remove false cross-currency sums/sort. | Unit + SQL + targeted browser/responsive evidence; no N+1/performance regressions. |
@@ -92,4 +92,4 @@ Schema introspection shows `flights.price_per_hour`, `aircraft.default_price_per
 - **11 Oct 2026:** GitHub connector read `main@4ca2847795435549f36d44f253eb7c105eea6d25`, ROADMAP, FEATURES, ARCHITECTURE, AGENTS, CHANGELOG, issue #136 and the listed runtime/tests. Relevant existing tests: `tests/flight-expenses.test.ts`, `tests/billing-rate-history.test.ts`, `tests/portable-backup.test.ts`.
 - **M0 document write:** source/design documentation only. **TypeScript, Node/unit, build, PostgreSQL, Playwright, CI, production smoke: NOT RUN / N/A to this documentation-only change.** No runtime, DB migration, backup format, production or external provider changes.
 - **11 Oct 2026 supplementary Neon read-only gate:** inspected primary `production` branch of connected Logbook Shadow project, ran aggregate SELECT and confirmed monetary column types/nullability. No mutation; independent Vercel DB target binding remains NOT VERIFIED.
-- **Next:** owner decisions D1–D4, full local source coverage and the remaining frozen technical contract, then M2 on a separate small code branch. One independent DeepSeek review has already been reconciled; do not repeat the same review without material new evidence.
+- **Next:** D1–D3 decisions, full local source coverage, version-pinned official ISO 4217 monetary currency registry (including exponents and classification), and remaining frozen technical contract, then M2 on a separate small code branch. D4 owner-approved; independent review already reconciled. Do not repeat it without material new evidence.
