@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — DOC-2 active development workflow / verbatim Phase 0 history
+
+- Extracted the original 19,350-character `DEVELOPMENT.md` module-registry / Phase 0B/0E/0F narrative **verbatim** to [historical verification development](docs/history/DEVELOPMENT_PHASE0_VERIFICATION_HISTORY.md), preserving its time-scoped evidence and chronology exactly. Active DEVELOPMENT retains the same unchanged remainder of the risk/DB/browser/deployment/documentation workflow, plus a compact registry and npm-command pointer; historical statements no longer masquerade as current instructions.
+- GitHub read-only exact string checks confirm the archived segment matches the old text byte-for-byte and the remaining active suffix is preserved unchanged. All 8 referenced npm commands were present in package.json; the 17 `DEVELOPMENT.md` source-regression regex assertions from `tests/development-pipeline.test.ts` were individually evaluated against the updated document: **17/17 static matches PASS**. This is **not** a real Node test suite PASS; Node, build, Playwright, DB, CI **NOT RUN / N/A** for docs-only scope. No runtime, Training, Vercel or registry change.
+
 ## 11 October 2026 — AI governance approved; DOC-1 current-document ownership
 
 - Owner approved the independently reviewed documentation/AI development redesign, prioritizing speed, accuracy and low duplication. Frozen document responsibilities: ROADMAP owns current status/plans, FEATURES capability inventory, VERSIONING numbering rules, CHANGELOG full historical record; planned stable AGENTS entrypoint, SHA-bound handoff and initially report-only checks. Training remains separate.
