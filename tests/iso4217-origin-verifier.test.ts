@@ -5,13 +5,14 @@ import {mkdtempSync,writeFileSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {spawnSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
 import {
   compareIso4217Snapshots,gitBlobSha1,xmlPublication,sha256,
   EXPECTED_PUBLICATION,PINNED_GIT_BLOB_SHA1,
 } from "../tooling/verify-iso4217-origin.mjs";
 
 const pin=readFileSync(new URL("../data/iso4217/list-one-2026-09-17.xml",import.meta.url));
-const script=new URL("../tooling/verify-iso4217-origin.mjs",import.meta.url);
+const script=fileURLToPath(new URL("../tooling/verify-iso4217-origin.mjs",import.meta.url));
 
 test("pinned registry source has verified Git blob but is NOT official-origin authenticated",()=>{
   assert.equal(xmlPublication(pin),EXPECTED_PUBLICATION);
@@ -36,10 +37,10 @@ test("CLI enforces explicit local source argument and rejects unmatching bytes w
     const candidate=join(dir,"candidate.xml");
     const source=pin.toString("utf8");
     writeFileSync(candidate,Buffer.from(source.replace("<Ccy>AFN</Ccy>","<Ccy>ZZZ</Ccy>")));
-    const missing=spawnSync(process.execPath,[script.pathname],{encoding:"utf8"});
+    const missing=spawnSync(process.execPath,[script],{encoding:"utf8"});
     assert.equal(missing.status,2);
     assert.match(missing.stderr,/Usage/);
-    const mismatch=spawnSync(process.execPath,[script.pathname,"--official",candidate],{encoding:"utf8"});
+    const mismatch=spawnSync(process.execPath,[script,"--official",candidate],{encoding:"utf8"});
     assert.equal(mismatch.status,2);
     const parsed=JSON.parse(mismatch.stdout);
     assert.equal(parsed.status,"different-content");
@@ -53,7 +54,7 @@ test("byte-identical local copy does NOT assert provenance or production approva
   try{
     const candidate=join(dir,"supplied.xml");
     writeFileSync(candidate,pin);
-    const result=spawnSync(process.execPath,[script.pathname,"--official",candidate],{encoding:"utf8"});
+    const result=spawnSync(process.execPath,[script,"--official",candidate],{encoding:"utf8"});
     assert.equal(result.status,0,result.stderr);
     const parsed=JSON.parse(result.stdout);
     assert.equal(parsed.status,"byte-identical");
