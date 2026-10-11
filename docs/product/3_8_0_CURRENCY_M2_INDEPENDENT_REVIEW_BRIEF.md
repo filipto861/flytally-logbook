@@ -1,6 +1,8 @@
 # Independent read-only architecture review — FlyTally Logbook 3.8.0 M2 monetary schema
 
-**Reviewer:** DeepSeek (or Claude), independent read-only review. **Do not implement, edit Git/DB, approve production, or reinterpret owner D1–D4.**
+**Reviewer:** DeepSeek (or Claude), independent read-only review.
+
+**Follow-up (11 Oct 2026):** Owner supplied the DeepSeek response **APPROVE WITH CHANGES**. The original questions below remain as the preserved review request; see the [source-checked reconciliation](3_8_0_CURRENCY_M2_DEEPSEEK_RECONCILIATION_2026-10-11.md) and [unregistered SQL draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322). This is not migration approval. **Do not implement, edit Git/DB, approve production, or reinterpret owner D1–D4.**
 
 ## Current actual state
 
