@@ -1,6 +1,6 @@
 # FlyTally Logbook — ROADMAP
 
-**Current planning state:** 10 October 2026  
+**Current planning state:** 11 October 2026  
 **Canonical repository:** `filipto861/flytally-logbook`; `main` is the source of truth.  
 **Product version (package / shipped UI):** `3.6.0`  
 **Current release workstream:** `3.7.0 — Maps & Aviation Layers` (partially deployed; full release **NOT CLOSED**)  
@@ -65,12 +65,12 @@ The 9 October owner decision moved the **unstarted** Currency work to 3.8.0; it 
 ## 5. Other open integrity and governance work
 
 - **Production aircraft defaults:** [PR #299](https://github.com/filipto861/flytally-logbook/pull/299) describes an already executed one-time database-only aircraft-profile SE/SP backfill. It reported an anomalous King Air/C90 ULL classification, which must remain excluded from automatic correction pending aircraft/profile evidence and owner review. Documentation reconstruction is not an independent database verification.
-- **Archived engineering drafts:** Older Satellite R1/R2 stacked [PRs #271–#279](https://github.com/filipto861/flytally-logbook/pulls?q=is%3Apr+is%3Aopen+3.7.0) and #281 are not current production instructions; classify their unique unmerged decisions before closure. [Read-only disposition and reviewer handoff](docs/maintenance/2026-10-10-open-pr-triage.md) confirms independent unmerged Story PNG, Satellite emergency-off and resource/transport work. Never blindly merge their stacked ancestry.
+- **Retired engineering drafts — owner decision 11 October 2026:** Satellite R1/R2 [PRs #271–#279](https://github.com/filipto861/flytally-logbook/pulls?q=is%3Apr+is%3Aclosed+is%3Aunmerged) and #281 were **closed without merge** as abandoned/superseded. No selective port is scheduled as a consequence of those old branches; prior [triage](docs/maintenance/2026-10-10-open-pr-triage.md) and [M2A source audit](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) remain historical evidence, not active implementation instructions. All ten PR threads/commits and their branches were retained. Current main remains the only development baseline.
 - **Repository cleanup evidence:** [10 October audit](docs/maintenance/2026-10-10-repository-audit.md); any dated counts there are a snapshot, not a live branch/PR count.
 
-### M2A repository-source audit — proposed remediation, not yet authorized runtime work
+### Historical M2A source audit — no R1/R2 revival planned
 
-[Exact-SHA read-only review](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) independently confirms two potential follow-ups absent from current main: Story export does not fail closed on failed map tiles (#273), and there is no server-only Satellite emergency upstream stop (#278). Also confirms #279 resource/admission code is not integrated and #281's tile-geometry interpretation requires exact provider evidence. **Owner decision pending** on a small Story-fail-closed fix and separate operational kill-switch milestone; do not fold old stacked branches into main or pre-empt final 3.7.0 acceptance silently. No fresh tests or deploy have been performed for this review.
+The [10 October exact-SHA source review](docs/maintenance/2026-10-10-r2-m2a-source-audit.md) identified technical differences in old PRs (#273 Story tile failure handling; #278 server-only emergency stop; #279 non-integrated resource controls; #281 provider geometry review). **Owner declined revival of these dead-end development paths on 11 October 2026.** These are **not current scheduled milestones, approval to port code, or proof of a production incident**. If a genuine problem is observed in the active app, characterize it against current main and reprioritize it separately. Continue the actual 3.7.0 provider/iPad/integrated acceptance gates; nothing here approves its full release.
 
 ## 6. Documentation ownership and release DoD
 
