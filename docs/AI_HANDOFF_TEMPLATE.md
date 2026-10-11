@@ -1,15 +1,15 @@
 # FlyTally — AI handoff and independent review protocol
 
-**Purpose:** Transfer only the **current actionable state** across ChatGPT sessions and from ChatGPT to an independent DeepSeek reviewer. The canonical repo still takes precedence. This is a reusable template, not an active handoff.
+**Purpose:** Transfer only the **current actionable state** across ChatGPT sessions and from ChatGPT to an independent AI reviewer (DeepSeek or Claude). The canonical repo still takes precedence. This is a reusable template, not an active handoff.
 
 ## 1. Collaboration workflow
 
 - **Owner:** prioritizes, approves product behavior, significant scope/risks and release decisions.
 - **ChatGPT (lead):** reconstructs actual repo, does discovery and source review, proposes a small design/roadmap, implements accepted slices, runs/verifies permitted gates, updates canonical docs and produces closing evidence.
-- **DeepSeek (independent reviewer):** receives **read-only** SHA-bound design/diff and bounded questions when appropriate; returns finding severity, source, alternative, risks and approval conditions. No automatic authority to deploy, merge or alter data.
+- **Independent reviewer (DeepSeek or Claude):** receives **read-only** SHA-bound design/diff and bounded questions when appropriate; returns finding severity, source, alternative, risks and approval conditions. No automatic authority to deploy, merge or alter data.
 - **Review triggers:** architecture/data model, auth/security, aviation/regulatory/recency logic, certification/backup/restore, schema/migrations, migration/legacy retirement, irreversible operations, complex performance/interpolation, major UI refactor, release governance, disputed evidence.
 - **No repeated model loop:** one independent review per frozen proposal. Lead reconciles each finding into **ACCEPT / REJECT with verified evidence / DEFER for owner**. Ask again only with material new evidence.
-- **Routine changes:** no DeepSeek review by default; use the existing scoped development/test contract. Split significant work into small commits/PRs and verify required gates only.
+- **Routine changes:** no independent AI review by default; use the existing scoped development/test contract. Split significant work into small commits/PRs and verify required gates only.
 
 ## 2. Copy/paste template
 

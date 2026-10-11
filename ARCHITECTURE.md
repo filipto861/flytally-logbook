@@ -65,6 +65,8 @@ Important separations include:
 
 A historical signature or verification must never appear valid for a later corrected revision unless the underlying protected evidence contract explicitly allows it.
 
+Certified-flight voiding is separate from ordinary Trash or a certified correction: an authorized, reasoned atomic operation archives protected evidence and removes the source flight from active operational/recency views. Voided evidence remains auditable and must never be silently resurrected on restore; independently owned participant copies retain their own records and provenance. The [3.5.0 certified-flight voiding contract](docs/product/3_5_0_CERTIFIED_FLIGHT_VOIDING.md) preserves the **dated** schema-v20 archive/backup-v13 decisions and verification history. Its earlier draft/intermediate status is historical; current code, tests and release evidence remain authoritative.
+
 ## Regulatory and data-integrity source of truth
 
 The executable implementation and regression/acceptance tests are authoritative for runtime behavior. Documentation must describe those contracts; it must not invent a parallel regulatory engine.

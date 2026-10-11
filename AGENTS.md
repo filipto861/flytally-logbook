@@ -15,6 +15,6 @@ This is a **stable navigation contract**, not a second product roadmap or a subs
 - Make small, scoped changes. Follow [candidate-bound risk verification](DEVELOPMENT.md): tests are selected by actual touched surface; mandatory evidence may never be skipped or declared PASS without execution. Protect DB targets and never claim production approval from build alone.
 - Review ROADMAP, FEATURES and CHANGELOG at meaningful milestone closeout. Preserve dated records and decisions; do not silently rewrite history.
 - Source authority: executable code/schema/tests and actual deployment evidence > ROADMAP current decisions > FEATURES capabilities > CHANGELOG dated actions > active contracts > dated history. Final product decisions belong to the owner.
-- A broad/new or high-risk design warrants an **independent, read-only DeepSeek review** after discovery/design and before implementation; small routine fixes do not. See [AI handoff & review protocol](docs/AI_HANDOFF_TEMPLATE.md). Review once per frozen design unless materially new evidence arises.
+- A broad/new or high-risk design warrants an **independent, read-only AI review (DeepSeek or Claude)** after discovery/design and before implementation; small routine fixes do not. See [AI handoff & review protocol](docs/AI_HANDOFF_TEMPLATE.md). Review once per frozen design unless materially new evidence arises.
 
 Do not store credentials, private user flight records or unsupported regulatory claims in AI handoffs. No implicit approval for deploys, migrations, feature flag changes or irreversible actions.
