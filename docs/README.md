@@ -42,7 +42,7 @@
 
 ## 3.8.0 active discovery
 
-- [3.8.0 Currency / monetary semantics](product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) — source inventory and M0–M6 plan; [reconciled review + owner D4 approval](product/3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) for all active monetary ISO codes. [M1 Batch 1 isolated implementation and exact local evidence](product/3_8_0_CURRENCY_M1_CORE_IMPLEMENTATION.md) on draft PR #320 (not merged); D1–D3, registry, runtime, schema pending. [Original reviewer brief](product/3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md); issue #136. No FX or retroactive denomination assignment.
+- [3.8.0 Currency / monetary semantics](product/3_8_0_CURRENCY_MONETARY_SEMANTICS.md) — source inventory and M0–M6 plan; [reconciled review + owner D4 approval](product/3_8_0_CURRENCY_REVIEW_RECONCILIATION.md) for all active monetary ISO codes. [M1 Batch 1 isolated arithmetic and exact local evidence](product/3_8_0_CURRENCY_M1_CORE_IMPLEMENTATION.md) in draft PR #320 and [M1 Batch 2 candidate ISO 4217 registry / SIX primary-source gate](product/3_8_0_CURRENCY_M1_ISO_REGISTRY.md) in nested draft PR #321 (neither merged); D1–D3, direct SIX verification, runtime, schema pending. [Original reviewer brief](product/3_8_0_CURRENCY_INDEPENDENT_REVIEW_BRIEF.md); issue #136. No FX or retroactive denomination assignment.
 
 ## Active cross-cutting contracts
 
