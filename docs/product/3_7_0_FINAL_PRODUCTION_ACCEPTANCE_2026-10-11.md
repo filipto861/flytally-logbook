@@ -1,0 +1,57 @@
+# FlyTally Logbook 3.7.0 — final production acceptance execution
+
+**Opened:** 11 October 2026. **Scope:** `flytally-logbook` only. **Owner decision:** proceed with closeout evidence, **not** automatic version bump, provider approval, new code or flag changes. **Baseline source:** `main@f3585ef6cee5f2f0868fce6efef0ebdcd06a77e3` (documentation-only commits after runtime release). **Product package version:** `3.6.0` until explicit release decision. **Status: ACCEPTANCE IN PROGRESS / FULL 3.7.0 NOT RELEASED.**
+
+## 1. Independently checked production baseline
+
+| Check | Evidence at 11 October checkpoint | Outcome |
+| --- | --- | --- |
+| Vercel target | Project `logbook`, team `filipito`, deployment `dpl_8thpSpB1aGPEBtbjkPnU61qL771t` `READY`; actual `fly-tally.com` alias points there | **PASS — deployment metadata only** |
+| Runtime source | Deployment GitHub SHA `090015053e33fb4b391a304e0a9e57f4145223a4` (merged PR #297) | **PASS — exact runtime identity** |
+| Runtime errors | Vercel aggregated error clusters and production error/fatal logs, 24 hours preceding read (~11 Oct 07:53 UTC): no matching errors/log entries | **OBSERVED 0**; NOT proof of map interaction or request volume |
+| Satellite source boundary | `app/api/map-tile/[z]/[x]/[y]/route.ts` in current main: style strictness, live session before token/cache/provider, signed-out 401/private/no-store, signed-in success private/no-store | **SOURCE CHECK ONLY**, not fresh authenticated production HTTP acceptance |
+| Aviation source boundary | `app/api/airspace-tile/[z]/[x]/[y]/route.ts`: explicit server gates, session, key, 5 s timeout, 1 MiB response limit, PNG magic, native z<=14, no-store, fail-closed | **SOURCE CHECK ONLY**; visible z15–18 is client overscaling, not new provider coverage |
+| Real production external HTTP | This environment's public-domain web fetches did not give usable status/body for `/api/map-tile` or `/api/airspace-tile` | **NOT VERIFIED THIS ROUND**; prior dated owner-run 401/400 and OSM 200 smoke retained in earlier documents |
+| Signed-in maps / physical iPad | No authenticated browsing account/session or physical iPad automation available in this execution | **NOT RUN / OWNER OBSERVATION REQUIRED** |
+| Local tests / CI / DB | No runtime edit in this documentation step | **NOT RUN / N/A**; earlier exact-SHA A2F local ON+OFF pass preserved, not rebranded as a new test |
+
+The project Vercel `latestDeployment` metadata may show newer **CANCELED** documentation-only builds. A more recent `main` Git SHA is not proof that production changed: use actual `fly-tally.com` alias and the deployment's exact commit.
+
+## 2. Owner-executable production acceptance matrix
+
+**Preparation:** sign in at `https://fly-tally.com` as a regular user. Record date/time (CEST), browser/version, display mode, deployment ID above (if verified), screen/device and whether feature choices are visible. Use pre-existing test flights; **do not edit/certify/delete user flight data**. Do not share sensitive flight IDs, tokens, provider credentials or identifiable screenshot content publicly. Mark each case `PASS / FAIL / NOT RUN / BLOCKED` and attach a screenshot or a description when useful.
+
+| ID | Surface / action | Expected outcome | Current |
+| --- | --- | --- | --- |
+| PROD-01 | Desktop `/map` Route Overview, Standard map light then dark | Actual loaded map; visible OSM attribution, route click and airport markers still work; dark filter touches Standard tiles, not controls | **NOT RUN** |
+| PROD-02 | Desktop `/map`, open `Map settings`, choose Satellite then Standard | Choices explicit; no auto-persistence; Satellite resolves only when available; correct attribution, no broken tiles; Standard recovers | **NOT RUN** |
+| PROD-03 | Desktop `/map`, explicitly enable Aviation; pan, zoom from ~14 to 18, choose OFF then ON at high zoom | Aviation visible when available, reference-only attribution remains legible, map/route clicks usable; no asserted new z15+ native data; no unexplained auto-disable | **NOT RUN** |
+| PROD-04 | `/map?mode=tracks` GPS Tracks mode; change theme and optional layers | Track shape, colors, position and viewport preserved; unavailable provider fails closed without request storm | **NOT RUN** |
+| PROD-05 | Existing saved flight GPS replay, UI route `/flights/<existing-flight-id>?tab=gps` | Scrub/playback marker and controls remain responsive through theme/layer changes; does not mutate recorded flight | **NOT RUN** |
+| PROD-06 | GPS import review using the application's existing import workflow (no invented direct URL) | Preview with expected track, map/settings behavior; cancel without importing when only testing | **NOT RUN** |
+| PROD-07 | Public shared-flight view with existing safe test share | Standard-only, no authenticated Satellite/Aviation controls, no private data leakage; no change to share settings | **NOT RUN** |
+| PROD-08 | Physical **iPad Safari portrait**: route map, layer menu and high zoom; **iPad Safari landscape**: repeat | Controls fit viewport/touch target, popover dismiss/focus works, attribution visible, gestures/click targets remain usable | **NOT RUN** |
+| PROD-09 | Browser light/dark and error state checks with normal end-user interaction | Clear loading/unavailable feedback; no raw errors; no false operational approval claim | **NOT RUN** |
+
+**Stop rules:** no synthetic claim of pass; distinguish failure of network/provider (e.g. 401/403/429/5xx), empty coverage and a UX issue. If provider-related, collect **status only**, route (without tokens), timestamp and sanitized screenshot; avoid repeated probing that creates upstream cost. Do not perform unapproved upstream calls, force flags, cache purges or credential changes.
+
+## 3. External provider and rights gates (SOURCE-AWARE, NOT APPROVED)
+
+| Provider | Verified source or code | Gaps before unconditional 3.7.0 GO |
+| --- | --- | --- |
+| **Esri / ArcGIS** | Current main combines `ibasemaps-api.arcgis.com/.../World_Imagery/MapServer/tile`, separate `static-map-tiles-api.arcgis.com/.../imagery/labels` and possible `services.arcgisonline.com/.../World_Boundaries_and_Places` fallback; source fetches with a server-only token and `next.revalidate=7 days`, renders a 256px SVG composite. Official Esri states attribution must include Esri **and actual data providers**, including for non-Esri clients. Sources: https://developers.arcgis.com/rest/basemap-styles/service-data/ ; https://developers.arcgis.com/maplibre-gl-js/maps/raster-tile-basemaps/display-multiple-basemap-layers/ ; https://www.esri.com/en-us/legal/terms/web-site-service | **BLOCKED:** exact FlyTally token/account tier and World Imagery/labels/fallback entitlements, cache/reuse/7-day TTL, real viewport-dependent required attribution and display, third-party supplier restrictions, bills/quotas, Story PNG/export and provider implementation rights. Existing fixed attribution string in `components/flight-story-card.tsx` is NOT sufficient evidence of correct World Imagery credits. Do not assume new Esri static service terms automatically cover this three-endpoint combination. |
+| **openAIP** | Current source calls the combined PNG raster `https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png` server-side, protected, using `x-openaip-api-key`, default non-operational/reference-only disclaimer. Public documentation at https://docs.openaip.net/ points to live Tiles schema `https://api.tiles.openaip.net/api/system/specs/v1/schema.json`. This review's unauthenticated requests to official openAIP site/API returned **HTTP 402** in the remote fetch tool, so current official terms/schema were not obtained. | **BLOCKED:** binding license for commercial embedded display, user plan and permission, exact tiles API revision/zoom/rate/TTL, attribution and derivative/Story/public sharing, freshness/coverage and owner/operator evidence. Third-party reports of CC BY-NC wording or a commercial carve-out are NOT authoritative provider permission. |
+| **OSM Standard raster** | `tile.openstreetmap.org` proxy in same map API with FlyTally identifying User-Agent, Referer forwarding and 7-day Next fetch revalidation; map displays OSM attribution. Official usage policy: https://operations.osmfoundation.org/policies/tiles/ | **REVIEW** effective live referer/UA, cache/conditional behavior, no bulk/pre-fetching, attribution/readability and plan for scaling. Community raster tiles are best-effort and not covered by any production SLA; the policy is not general tile-hosting entitlement. |
+
+**Provider-evidence checklist:** link/dated official terms or written permission; account/product entitlement **without exposing token**; intended free/paid use; serving and caching TTL; third-party data credits; high zoom behavior and source data-age/coverage; requests per viewport/cost limits; redistribution and downloadable Story permission; exact integration/version/endpoint effectivity. If any critical right is missing, `BLOCKED` for that provider scope and use `GO-DEFER` or `NO-GO` based on owner choice; never call it approved.
+
+## 4. Release decision — pending
+
+Current outcome: **TECHNICAL IMPLEMENTATION DEPLOYED / RELEASE ACCEPTANCE OPEN / PROVIDER RIGHTS BLOCKED**. Next actions:
+
+1. Owner supplies `PROD-01` through `PROD-09` outcomes, especially desktop + native Safari. Do not label synthetic Chromium/previous deployment tests as these outcomes.
+2. Operator reviews Esri and openAIP account privileges/terms/usage in dashboards, **without copying any key or private invoices into shared text**; capture only nonsecret proof and entitlement scope. Obtain written clarification from provider if necessary.
+3. Independently review any actual rights ambiguity before full release; do not resurrect R1/R2 abandoned branches merely because they held experimental code.
+4. Reconcile results and choose scope explicitly: `GO`, `NO-GO`, or `GO-DEFER` with exclusions. Only owner-authorized release then merits `3.7.0` bump, versioned release artifacts, subsequent production deploy and smoke.
+
+No approval to deploy, change env, purge cache, alter data or enable unavailable layers is implied by this documentation.
