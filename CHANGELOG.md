@@ -8,6 +8,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Owner confirms basic production map functionality (acceptance evidence only)
+
+- Owner confirmed the live map works in production. Logged **owner-observed basic map PASS** in the active 3.7.0 acceptance record; detailed Satellite/Aviation/zoom, GPS replay, theme and physical iPad Safari checks **NOT YET CONFIRMED**. Owner instructed to defer further Esri attribution work for now; unresolved provider permissions remain separately recorded as unverified and are not represented as approved. No application code, credentials, flags, version, database or production deployment changed.
+
 ## 11 October 2026 — Final 3.7.0 production/provider acceptance opened (docs/read-only)
 
 - Verified Vercel `fly-tally.com` alias still targets A2F `READY` deployment `dpl_8thpSpB1aGPEBtbjkPnU61qL771t` at exact runtime SHA `090015053e33fb4b391a304e0a9e57f4145223a4`; current main documentation SHA is later and does not equal a new production runtime. Vercel runtime error clusters / error-fatal logs showed **none in the queried 24-hour window**, not a feature-use PASS.
