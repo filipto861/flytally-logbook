@@ -8,6 +8,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 11 October 2026 — Branch pruning preflight (documentation only; NO deletion)
+
+- Compared actual main with all 10 closed/unmerged R1/R2 source branches and seven older `ahead=0` branches. Established that #272–#279 are one ancestor chain ending at #279, with separate unique documentation commits at #271 and #281; recommended three archival tags before any branch deletion. Prepared [exact-SHA pruning plan](docs/maintenance/2026-10-11-branch-prune-preflight.md) and a separate owner-run, dry-run-first PowerShell script. **No tags created, remote branch deleted, repository code changed, build/test/DB/deploy executed.** GitHub connection does not expose a branch-delete operation, so owner-local execution and subsequent actual-state reconciliation are still required. Product version, ongoing 3.7.0 acceptance gates and historical owner decisions unchanged.
+
 ## 11 October 2026 — Retire legacy Satellite R1/R2 pull requests (GitHub metadata only)
 
 - Following explicit owner decision that the previous R1/R2 paths were abandoned experiments, **closed without merging** all ten remaining drafts: #271, #272, #273, #274, #275, #276, #277, #278, #279 and #281. Each has a dated disposition comment. GitHub confirmed **0 open PRs** after closure; main remained at `d70d15713a262d56cb383a8a9ced56025061c5af` and the repository listed 44 branches at the closeout checkpoint. No branch, tag, original commits, PR discussions or releases deleted. Source differences identified on 10 October remain historical evidence, **not an approved code-port roadmap**. No runtime, database, version, feature flag, provider key, tests, build or deployment changed by this GitHub cleanup. 3.7.0 remains an unfinished release.
