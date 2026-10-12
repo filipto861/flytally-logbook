@@ -70,6 +70,13 @@
 
 **Recommended sequence:** approve revised design → A1-T targeted local-only implementation/tests → A1-C → A1-F → A1-G. Parallel A1-F schema inventory can proceed read-only. **None of A1-T/C/F/G is executed as of this review reconciliation.** All actual executions MUST be tracked separately as local / CI / DB / deploy; `ROADMAP`, `FEATURES`, `CHANGELOG` updated same cycle.
 
+## Current governance-document write evidence (12 October 2026)
+
+- **Updated in docs-only PR #319:** this source reconciliation, prior M2-A-1 discovery, original independent-review brief status, M2 schema design pointer, ROADMAP, FEATURE LIST and `docs/README.md`.
+- **Canonical `CHANGELOG.md`: NEEDS UPDATE.** Reconciliation entry was prepared and **twice attempted** through the GitHub file-update action, but the tool reported that the operation was **blocked by safety controls**; no commit was made for this entry. Existing 12 October discovery entry remains. Do not claim documentation DoD complete until reconciliation entry is added through an authorized workflow and verified by read-back. No alternate call was used to evade the block.
+- **Tests:** source inspection only during this review cycle; Node, PostgreSQL, full suite, build, browser and work-PC environment **NOT RUN / NOT VERIFIED** here. Historical M2-A-0 106/106 PASS is exact-SHA evidence from the earlier workstation, not a new run.
+- **Git/DB:** draft docs branch only, `main` remains source of truth, all four currency PRs remain Draft; v21 has not been registered, no DB or production operations in this review cycle.
+
 ## Independent review verdict vs product gate
 
 DeepSeek overall: **APPROVE WITH CHANGES**. ChatGPT lead reconciliation: **ACCEPT with corrections** as a basis for staged **engineering design**. **Not** an approval of DeepSeek's proposed exact implementation or a green light for v21 registration/enablement. Source-backed blockers (trash metadata loss, restore collision, schema/v13 gaps) remain open. Reviewer false positives (v20 rowwise trigger, missing paired CHECKs, mandatory v14, wholesale row and original-ID restore) must **not** be imported as new mandatory tasks. No unresolved owner product choice is silently frozen.
