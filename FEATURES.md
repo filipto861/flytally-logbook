@@ -1,6 +1,6 @@
 # FlyTally Logbook — FEATURE LIST
 
-**Capability inventory reviewed:** 11 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
+**Capability inventory reviewed:** 12 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
 
@@ -65,7 +65,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 | Workstream | State | Gate |
 | --- | --- | --- |
 | Esri/openAIP third-party rights/coverage/usage evidence after 3.7.0 | UNVERIFIED / DEFERRED | Commercial/use rights, relevant attribution and redistribution/export restrictions, currency/coverage, quota/cost and evidence before broader use; not approved by the 3.7.0 release |
-| `3.8.0` Currency / monetary semantics · #136 | NEXT | Audit persisted denominations, define account currency authority, backup/export effects; no invented historical currency or automatic FX |
+| `3.8.0` Currency / monetary semantics · #136 | ACTIVE / DRAFT-ONLY (not shipped) | D1–D4 product decisions frozen; pure monetary snapshot validators in unmerged [A1-T1 PR #323](https://github.com/filipto861/flytally-logbook/pull/323) and separate A1-T2a **read-only database catalog shape detector** (12 candidate columns, PostgreSQL types, v20 / v21_shape / partial_v21 / unknown). Neither draft is active runtime. Exact restore, official SIX origin evidence, signed backup collisions and rollback/certification/PG/Neon rollout gates remain open; no currency guessing, FX or automatic database migration |
 | `3.9.0` heterogeneous multi-aircraft onboarding proof | PLANNED | Aeroplane/Helicopter/Sailplane-TMG/Balloon/ULL/Other Add/Edit/Quick Add, applicability and responsive tests |
 | `3.10.0` multi-aircraft sharing/recovery/scale closeout | PLANNED | Canonical independent participant data, safe recovery/scale proof |
 | GPS T&G time-normalized evidence-limited follow-up | RESEARCH | Real-track samples/source evidence |
