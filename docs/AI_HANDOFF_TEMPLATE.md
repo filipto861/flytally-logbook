@@ -19,7 +19,10 @@ Fill in what is *actually known*; write `UNKNOWN`, `NOT RUN` or `N/A` where appr
 
 ### Repository and identity
 
-- Repository URL: https://github.com/filipto861/flytally-logbook (do not touch `flytally-training`)\n- Canonical source URL at verified SHA: https://github.com/filipto861/flytally-logbook/tree/<EXACT_VERIFIED_SHA>\n- Draft PR/branch source URL: <DIRECT_GITHUB_LINK_TO_CURRENT_PR_OR_BRANCH>\n- Relevant reviewer brief or source file URL: <DIRECT_GITHUB_LINK_TO_REVIEW_DOCUMENT>
+- Repository URL: https://github.com/filipto861/flytally-logbook (do not touch `flytally-training`)
+- Canonical source URL at verified SHA: https://github.com/filipto861/flytally-logbook/tree/<EXACT_VERIFIED_SHA>
+- Draft PR/branch source URL: <DIRECT_GITHUB_LINK_TO_CURRENT_PR_OR_BRANCH>
+- Relevant reviewer brief or source file URL: <DIRECT_GITHUB_LINK_TO_REVIEW_DOCUMENT>
 - Date and baseline `main` SHA:
 - Work branch, candidate exact SHA, PR link:
 - Current product version **as observed**, package source, and deployment SHA/alias evidence (if relevant):
