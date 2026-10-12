@@ -9,6 +9,8 @@ This is the **capability register**, not a dated test log. Implementation and pr
 <!-- Latest M2-A-0 evidence, 11 Oct: owner-local candidate 6cc06996 typecheck PASS, static tests 6/6 PASS, six executed PostgreSQL tests 6/6 PASS in isolated PG16 fixture. Full suite, authentic signed v13 restore with new columns, rollback and deploy NOT RUN; candidate unmerged. Prior comments below are historical. -->
 <!-- Currency 3.8.0 M2-A-0 checkpoint 11 Oct: isolated PG16 boot and shutdown achieved. Database-identity mismatch traced to inet_server_addr()::text CIDR /32 formatting; candidate runner corrected to host(inet_server_addr()), without weakening exact identity check. Actual PG currency tests NOT RUN, deployment not authorized. Details in docs/product/3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md. -->
 
+<!-- Currency M2-A-1 source discovery (12 Oct): drafted full-v20 schema, portable signed v13 backup, existing-ID conflicts, trash metadata retention and rollback test matrix, plus independent reviewer brief. Existing v21 proposed tuple fields are NOT production capabilities. Evidence docs: docs/product/3_8_0_CURRENCY_M2A1_SCHEMA_BACKUP_DISCOVERY.md and 3_8_0_CURRENCY_M2A1_INDEPENDENT_REVIEW_BRIEF.md; implementation/review/DB/deploy NOT RUN. -->
+
 ## 1. Core flight records — IMPLEMENTED
 
 - Private multi-user electronic pilot logbook with a shared canonical flight model and consistent validation boundaries for Add/Edit and applicable GPS review workflows.
