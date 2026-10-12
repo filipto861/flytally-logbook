@@ -11,13 +11,18 @@
 - **No repeated model loop:** one independent review per frozen proposal. Lead reconciles each finding into **ACCEPT / REJECT with verified evidence / DEFER for owner**. Ask again only with material new evidence.
 - **Routine changes:** no independent AI review by default; use the existing scoped development/test contract. Split significant work into small commits/PRs and verify required gates only.
 
+**Mandatory reviewer-access rule:** Every handoff to DeepSeek/Claude must include the **clickable full repository URL** (not just `owner/repo`), the precise canonical SHA/ref, a link to the relevant draft PR/branch, and direct links to the exact review brief/source documents. If access is denied, reviewers must report that and request read-only access or excerpts rather than guessing repository contents. Do not assume the reviewer can access a private repository merely because a URL was shared.
+
 ## 2. Copy/paste template
 
 Fill in what is *actually known*; write `UNKNOWN`, `NOT RUN` or `N/A` where appropriate. Never fill a field from guesswork.
 
 ### Repository and identity
 
-- Repository: `filipto861/flytally-logbook` (do not touch `flytally-training`)
+- Repository URL: https://github.com/filipto861/flytally-logbook (do not touch `flytally-training`)
+- Canonical source URL at verified SHA: https://github.com/filipto861/flytally-logbook/tree/<EXACT_VERIFIED_SHA>
+- Draft PR/branch source URL: <DIRECT_GITHUB_LINK_TO_CURRENT_PR_OR_BRANCH>
+- Relevant reviewer brief or source file URL: <DIRECT_GITHUB_LINK_TO_REVIEW_DOCUMENT>
 - Date and baseline `main` SHA:
 - Work branch, candidate exact SHA, PR link:
 - Current product version **as observed**, package source, and deployment SHA/alias evidence (if relevant):
