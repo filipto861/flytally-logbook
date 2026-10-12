@@ -33,8 +33,8 @@ const requested=flagPg||flagDisposable;
 
 function execPsql(connection:string,statement:string,searchPath?:string) {
   const cleanEnv={...process.env,PGCONNECT_TIMEOUT:"5"};
-  for (const key of ["PGHOST","PGPORT","PGDATABASE","PGUSER","PGPASSWORD","PGSERVICE","PGOPTIONS","PGPASSFILE","PGSSLMODE"])
-    delete cleanEnv[key];
+  // A PostgreSQL environment variable such as PGHOSTADDR can override URI host.
+  for (const key of Object.keys(cleanEnv)) if(key.startsWith("PG") && key!=="PGCONNECT_TIMEOUT") delete cleanEnv[key];
   return spawnSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",connection],{
     input:searchPath?`SET search_path TO "${searchPath}";\n${statement}`:statement,
     encoding:"utf8",env:cleanEnv,maxBuffer:8*1024*1024,timeout:20000,
