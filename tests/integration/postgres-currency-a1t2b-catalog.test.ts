@@ -12,12 +12,21 @@ import {validateDisposablePgTarget,verifyDisposablePg16Identity} from "../../too
  * Never uses a remote database. Only disposable DB + dedicated random schema.
  */
 const fixture=new URL("../fixtures/currency-v21-a1t2b-from-322.sql",import.meta.url);
-const sqlCandidate=readFileSync(fixture,"utf8");
+// Windows Git checkout may convert committed LF to CRLF; canonicalize ONLY line endings.
+// The Git blob hash still guards every SQL byte after canonical normalization.
+const sqlCandidate=readFileSync(fixture,"utf8").replace(/\r\n/g,"\n");
 const candidateBlobSha="74b482b265cf3085a99ccbf2837614f382b04ed5";
 function gitBlobSha(content:string):string {
   const bytes=Buffer.from(content,"utf8");
   return createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
 }
+
+test("Git SQL fingerprint is invariant to Windows CRLF checkout, but rejects content changes",()=>{
+  assert.equal(gitBlobSha(sqlCandidate),candidateBlobSha);
+  const simulatedWindowsCheckout=sqlCandidate.replace(/\n/g,"\r\n");
+  assert.equal(gitBlobSha(simulatedWindowsCheckout.replace(/\r\n/g,"\n")),candidateBlobSha);
+  assert.notEqual(gitBlobSha(sqlCandidate.replace("ALTER TABLE flights","ALTER TABLE flightz")),candidateBlobSha);
+});
 
 test("fixture is EXACT unregistered SQL candidate from draft #322",()=>{
   assert.equal(gitBlobSha(sqlCandidate),candidateBlobSha,"SQL source drift; do not execute a changed candidate");
