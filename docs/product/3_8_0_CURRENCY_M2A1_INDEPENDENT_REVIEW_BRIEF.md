@@ -2,6 +2,8 @@
 
 **Prepared:** 12 October 2026. **Request:** INDEPENDENT, READ-ONLY review of full-schema / portable-backup / trash-recovery compatibility **before** costly implementation. **Do not modify code, SQL, branches, data, PRs or deployment.**
 
+**REVIEW RECEIVED — 12 October 2026:** DeepSeek read-only advisory returned **APPROVE WITH CHANGES**; it explicitly based findings on the supplied brief/discovery rather than independently inspecting the GitHub repository or DB catalog. **Source-based corrections and implementation order:** [R01–R17 detailed reconciliation](3_8_0_CURRENCY_M2A1_DEEPSEEK_RECONCILIATION_2026-10-12.md). This original handoff is preserved as sent; do not interpret its later questions as still unanswered, and do not directly implement reviewer false positives.
+
 ## Repository access — start here
 
 - **FlyTally Logbook GitHub repository:** https://github.com/filipto861/flytally-logbook
