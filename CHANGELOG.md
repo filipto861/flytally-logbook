@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 12 October 2026 — Currency 3.8.0 A1-T1 isolated monetary validators (DRAFT / NOT SHIPPED)
+
+- With owner authorization, created isolated `feat/3.8.0-a1-t1-monetary-validators` from `main@4ca2847795435549f36d44f253eb7c105eea6d25`. Added only `lib/currency-monetary-tuple.ts` and `tests/currency-monetary-tuple.test.ts` for pure fail-closed flight/expense snapshot classification, exact decimal-string preservation, legacy unknown denomination, encoding and amount bounds, source-ID/ownership matching and monetary-only allowlist projections. Draft functions are not called by production runtime. `lib/flight-trash.ts`, database clients, migrations, schema, currency writers and Training remain unchanged.
+- **Local evidence tied to exact GitHub blob identity:** the two fetched GitHub blobs `7999abe56d3c09a5cd60c929c1eccf043c09080e` / `76ded95c330c433dd82c0aba3d711f7db5dbfe90` match the source bytes of the independently local-tested files. Node **22.16.0** targeted `node --test --experimental-strip-types` **16/16 PASS**, isolated global TypeScript **5.8.3** strict compile **PASS**. This is **not** Node 24, repository-wide `npm run typecheck`, complete suite, CI, PG or production runtime proof. Those are **NOT RUN**.
+- **Unresolved gates:** v21 `NUMERIC` read must remain text lossless, protected-history DB check is a future required dependency, mirrored SIX currency registry is not official-source-verified; A1-T2/A1-T3 transaction atomicity/Neon, A1-C signed backup collision, A1-F full v20/v13 and A1-G write enablement are not approved. No merge, deployment, database writes, schema v21 registration, historic backfill or automatic FX.
+
 ## 11 October 2026 — Independent documentation audit follow-up (docs only)
 
 - Reconciled the independent Claude documentation review against the GitHub source: corrected the misleading pending-review phrasing in ROADMAP, marked the DOC workstream completed in the docs index, and linked the existing 3.5.0 certified-flight voiding archive/backup-v13 contract from ARCHITECTURE and the docs index. Historical implementation states remain dated evidence, not active release status.
