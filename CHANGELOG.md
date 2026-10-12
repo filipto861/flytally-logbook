@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 12 October 2026 — Currency A1-T2a read-only schema inspector (ISOLATED DRAFT / NOT SHIPPED)
+
+- Owner-authorized continuation from [A1-T1 Draft PR #323](https://github.com/filipto861/flytally-logbook/pull/323) into **separate independent draft** `feat/3.8.0-a1-t2a-currency-schema-capability` based on `main@4ca2847795435549f36d44f253eb7c105eea6d25`. Added pure `lib/currency-schema-capability.ts` (injected read-only `information_schema` catalog query, four base-table checks, exact names/`udt_name` types for 12 columns) and `tests/currency-schema-capability.test.ts`. Classifies v20/v21_shape/partial_v21/unknown; **v21_shape is only a catalog shape observation**, not constraints/source/migration/deployment approval. No runtime imports or DB writes.
+- **Exact committed blob evidence:** `f8049a503370dceafa4428351a6f779ef98ec560` (inspector), `2dba569121d8c42c8c886bd1563218a069e374f4` (tests) match locally executed files. Node **22.16.0** targeted `node --test --experimental-strip-types`: **8/8 PASS**; isolated TypeScript **5.8.3** strict **PASS**. **NOT RUN:** project Node24, full-repo typecheck, full suite, disposable PG16 SQL execution, Neon HTTP, build, browser, CI, live DB or production smoke.
+- **Remaining gates:** actual PG16 catalog query against disposable v20 and unregistered candidate v21 SQL, constraints/fidelity/full v20 inventory, A1-T2b transaction design/PG proof, A1-T3 runtime, A1-C signed-backup conflict, A1-F source-complete schema/v13 tests, A1-G official SIX/rollout. `main`, `flytally-training`, migration registry v20, schema, Vercel and production untouched by this draft. No merge, deploy, FX, currency backfill or new writer enabled.
+
 ## 11 October 2026 — Independent documentation audit follow-up (docs only)
 
 - Reconciled the independent Claude documentation review against the GitHub source: corrected the misleading pending-review phrasing in ROADMAP, marked the DOC workstream completed in the docs index, and linked the existing 3.5.0 certified-flight voiding archive/backup-v13 contract from ARCHITECTURE and the docs index. Historical implementation states remain dated evidence, not active release status.
