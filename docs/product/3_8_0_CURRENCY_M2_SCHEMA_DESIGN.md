@@ -4,6 +4,8 @@
 **Owner product decisions D1–D4: FROZEN** in [11 October currency decision record](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md). **Technical database shape and rollout still provisional.**  
 **Code baseline:** `filipto861/flytally-logbook main@4ca2847795435549f36d44f253eb7c105eea6d25` (shipped package 3.7.0).
 
+**12 October M2-A-1 second independent review:** DeepSeek **APPROVE WITH CHANGES** on signed backup/trash compatibility; [source-verified reconciliation](3_8_0_CURRENCY_M2A1_DEEPSEEK_RECONCILIATION_2026-10-12.md) accepted true data-loss/restore-conflict risks but rejected trigger re-enumeration, missing-paired-CHECK assertion and mandatory v14 format claim. Exact-write rollout remains blocked; v21 unregistered and no production schema action authorized. Earlier dated statements about `NOT RUN` testing below are historical; focused/full PG 6/6 and 106/106 later PASS are recorded in [M2-A-0 handoff](3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md).
+
 ## 11 October 2026 independent review disposition (supersedes provisional details below)
 
 The owner-supplied DeepSeek review returned **APPROVE WITH CHANGES**. The review findings were reconciled against actual code in [M2 DeepSeek reconciliation](3_8_0_CURRENCY_M2_DEEPSEEK_RECONCILIATION_2026-10-11.md), and the **isolated, unregistered candidate SQL** is in [draft PR #322](https://github.com/filipto861/flytally-logbook/pull/322).
