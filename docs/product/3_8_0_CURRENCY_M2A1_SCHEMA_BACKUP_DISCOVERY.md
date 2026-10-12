@@ -9,6 +9,12 @@
 **Draft source / documentation branch:** https://github.com/filipto861/flytally-logbook/tree/docs/v380-currency-m0-discovery  
 **Reviewer handoff:** https://github.com/filipto861/flytally-logbook/blob/docs/v380-currency-m0-discovery/docs/product/3_8_0_CURRENCY_M2A1_INDEPENDENT_REVIEW_BRIEF.md
 
+## Independent DeepSeek review received — reconciled 12 October 2026
+
+**Verdict received:** APPROVE WITH CHANGES (read-only; reviewer relied on provided brief/discovery and did not independently inspect DB catalog). **Source-verified disposition:** [DeepSeek R01–R17 reconciliation](3_8_0_CURRENCY_M2A1_DEEPSEEK_RECONCILIATION_2026-10-12.md). **Actual source wins over reviewer assumptions.** Accepted blockers: future v21 exact-data loss on trash restore, contradictory money tuples silently skipped in account restore, unproven real-v20 schema / signed old/new v13 roundtrip. **Rejected/corrected reviewer prescriptions:** cert trigger already uses full-row `to_jsonb`, draft has paired CHECKs, portable v13 is not forced to v14, absent `json_populate_record(NULL::table,...)` fields are NULL not PostgreSQL COLUMN DEFAULT values, full-JSON restore or forced original-ID reuse would break current restore identity semantics, S1–S10 were already enumerated.
+
+**Design correction:** preserve current new-flight-ID/reparenting behavior in trash restore, add a **strict explicit monetary tuple projection** for proposed v21 fields and fail-closed source validation; no all-column blind SQL import. Treat legacy expense `currency` as an explicitly recorded NOT NULL field under v159, not identical to flight-price UNKNOWN; missing/corrupt expense currency must not be converted to CZK by guess. All certified/void invariants remain. Require concurrent-double-restore + signed-field-tamper negative tests and source/DB/toolchain evidence identity. Detailed next batches in reconciliation; no implementation or production changes yet.
+
 ## 1. Reconstructed schema authority and applicability
 
 | Component | Verified source | Consequence |
