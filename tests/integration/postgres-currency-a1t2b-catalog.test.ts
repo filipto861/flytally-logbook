@@ -32,7 +32,7 @@ const flagDisposable=process.env.FLYTALLY_A1T2B_DISPOSABLE==="1";
 const requested=flagPg||flagDisposable;
 
 function execPsql(connection:string,statement:string,searchPath?:string) {
-  const cleanEnv={...process.env,PGCONNECT_TIMEOUT:"5"};
+  const cleanEnv: NodeJS.ProcessEnv = {...process.env,PGCONNECT_TIMEOUT:"5"};
   // A PostgreSQL environment variable such as PGHOSTADDR can override URI host.
   for (const key of Object.keys(cleanEnv)) if(key.startsWith("PG") && key!=="PGCONNECT_TIMEOUT") delete cleanEnv[key];
   return spawnSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",connection],{
