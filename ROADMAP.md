@@ -1,6 +1,6 @@
 # FlyTally Logbook — ROADMAP
 
-**Current planning state:** 11 October 2026  
+**Current planning state:** 12 October 2026  
 **Canonical repository:** `filipto861/flytally-logbook`; `main` is the source of truth.  
 **Shipped product version:** `3.7.0`; deployment/build/alias verified at `39ee01b7` (footer derives from package; direct browser screenshot NOT RUN)  
 **Most recent completed product release:** `3.7.0 — Maps & Aviation Layers` (**DONE / PRODUCTION — owner functional acceptance; provider-rights verification separately outstanding**)  
@@ -23,11 +23,13 @@
 
 **Real-provider evidence boundary:** The A2D closeout [#294](https://github.com/filipto861/flytally-logbook/pull/294) reports one owner-observed authenticated same-origin openAIP PNG tile and Production flag activation; it does not prove broad geography, freshness, license terms or the full in-map workflow. A2D/A2E/A2F current reconciliation is in merged [#298](https://github.com/filipto861/flytally-logbook/pull/298).
 
+**Currency 3.8.0 M2-A-1 / A1-T2a schema capability — ISOLATED DRAFT, 12 October 2026:** Independent branch `feat/3.8.0-a1-t2a-currency-schema-capability` (base `main@4ca28477`), separate from A1-T1 Draft [PR #323](https://github.com/filipto861/flytally-logbook/pull/323). Added standalone `lib/currency-schema-capability.ts` plus 8 targeted `node:test` cases: read-only `information_schema` introspection and strict v20 / v21_shape / partial_v21 / unknown classification of all **12 unregistered draft columns** across rates, aircraft, flights, flight_expenses; verifies PostgreSQL `udt_name` types. **Shape is not migration approval or evidence of CHECKs, ISO source validation or readiness to write.** Exact local Node 22.16.0 tests **8/8 PASS**, isolated TypeScript 5.8.3 strict **PASS**, matching GitHub blobs. **Node24/full project typecheck, PG16, Neon, build/browser/CI NOT RUN**; no live DB connection, runtime integration, schema/migration registration, merge or deploy. **Next:** test on disposable PG16 plus actual Neon HTTP compatibility evidence before A1-T2b atomic SQL prototype / A1-T3; maintain A1-C/A1-F/A1-G gates and D1–D4. Avoid conflating this separate branch with the unmerged #319 currency docs.
+
 ## 2. Post-release order
 
 **Documentation / AI-development governance — DONE (11 October 2026):** [123-file source inventory](docs/maintenance/2026-10-11-documentation-ai-workflow-audit.md), [independent DeepSeek review brief](docs/maintenance/2026-10-11-deepseek-ai-workflow-review-brief.md), [completed DeepSeek/source reconciliation](docs/maintenance/2026-10-11-deepseek-review-reconciliation.md) and [DOC-5 final closeout](docs/maintenance/2026-10-11-doc5-ai-governance-closeout.md) preserve the audit trail. **DOC-0–5 completed in merged PRs #312–#317; no documentation review remains a prerequisite for 3.8.0 discovery.** Follow-up independent review identified minor navigation/wording corrections, not a new product gate. No runtime, DB or Training changes. Frozen decisions: ROADMAP owns current release and next priority; FEATURES owns capabilities; VERSIONING owns numbering; CHANGELOG is append-only; development history stays verbatim; AGENTS remains pointer-only; documentation checker remains optional/report-only. Product release 3.7.0 remains closed, and 3.8.0 Currency (#136) is the next product milestone.
 
-1. **3.8.0 Currency / monetary semantics (#136) — NEXT:** read actual `main`, define and review source-backed account/flight currency and migration/backup/export boundaries before implementation. No automatic exchange rates or silent historical conversion.
+1. **3.8.0 Currency / monetary semantics (#136) — ACTIVE / DRAFT ONLY:** Owner-approved D1–D4; A1-T1 validators in #323 and separate A1-T2a read-only schema inspection in Draft. No live monetary runtime, schema migration, FX or silent legacy conversion. Continue disposable PG16 and Neon SQL compatibility proof, then A1-T3/A1-C/A1-F/A1-G.
 2. **External map-provider evidence — separate unresolved compliance work:** Esri/openAIP permissions, third-party attribution/export/Story rights, source currency/coverage, quotas and billing remain **UNVERIFIED**; not silently approved by 3.7.0 functional acceptance or the release label. Owner elected to defer Esri attribution work in this cycle. Do not expand provider usage or assert approved aviation chart status without applicable evidence.
 3. **Operational production watch:** Vercel build and alias identity are verified. The owner had tested the unchanged map logic on 10 October; direct post-release browser/HTTP smoke and actual displayed footer screenshot remain **NOT RUN** from this environment, and any new issue should be triaged against the deployed SHA rather than assumed absent. No extra deployment or DB action implied.
 4. **Historical milestones:** earlier 3.7.0 acceptance plan and superseded decisions remain preserved in [final acceptance](docs/product/3_7_0_FINAL_PRODUCTION_ACCEPTANCE_2026-10-11.md) and dated A2D/A2E/A2F reports; no abandoned Satellite R1/R2 revival.
@@ -57,7 +59,7 @@
 | 3.5.5 | iPad sidebar control alignment | DONE / PRODUCTION |
 | 3.6.0 | Saved-date / timezone semantics | DONE / PRODUCTION |
 | **3.7.0** | Maps & Aviation Layers | **DONE / PRODUCTION** (owner UX accepted; Esri/openAIP rights separately unverified) |
-| **3.8.0** | Currency / monetary semantics · #136 | NEXT; preserve legacy denominations, no invented FX |
+| **3.8.0** | Currency / monetary semantics · #136 | ACTIVE / DRAFT ONLY; A1-T1 and A1-T2a isolated, no production enablement |
 | 3.9.0 | Multi-aircraft heterogeneous onboarding proof | PLANNED |
 | 3.10.0 | Multi-aircraft sharing / recovery / scale closeout | PLANNED |
 | — | GPS T&G time-normalized / evidence-limited follow-up | RESEARCH |
