@@ -11,6 +11,8 @@ This is the **capability register**, not a dated test log. Implementation and pr
 
 <!-- Currency M2-A-1 source discovery (12 Oct): drafted full-v20 schema, portable signed v13 backup, existing-ID conflicts, trash metadata retention and rollback test matrix, plus independent reviewer brief. Existing v21 proposed tuple fields are NOT production capabilities. Evidence docs: docs/product/3_8_0_CURRENCY_M2A1_SCHEMA_BACKUP_DISCOVERY.md and 3_8_0_CURRENCY_M2A1_INDEPENDENT_REVIEW_BRIEF.md; implementation/review/DB/deploy NOT RUN. -->
 
+<!-- 12 Oct 2026 3.8.0 M2-A-1 review received (DeepSeek APPROVE WITH CHANGES), source-reconciled R01-R17 in docs/product/3_8_0_CURRENCY_M2A1_DEEPSEEK_RECONCILIATION_2026-10-12.md. Real blockers: future exact money loss via trash restore and uncompared money metadata in account restore. Reviewer false positives rejected: whole-row v20 trigger already sees new columns; four CHECKs exist; portable v14 not mandatory; current trash restore remaps IDs. All are PLANNED, no 3.8.0 currency feature shipped or runtime tests on new work PC. -->
+
 ## 1. Core flight records — IMPLEMENTED
 
 - Private multi-user electronic pilot logbook with a shared canonical flight model and consistent validation boundaries for Add/Edit and applicable GPS review workflows.
