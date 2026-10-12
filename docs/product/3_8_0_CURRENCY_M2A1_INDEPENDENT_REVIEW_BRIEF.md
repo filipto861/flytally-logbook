@@ -2,6 +2,17 @@
 
 **Prepared:** 12 October 2026. **Request:** INDEPENDENT, READ-ONLY review of full-schema / portable-backup / trash-recovery compatibility **before** costly implementation. **Do not modify code, SQL, branches, data, PRs or deployment.**
 
+## Repository access — start here
+
+- **FlyTally Logbook GitHub repository:** https://github.com/filipto861/flytally-logbook
+- **Canonical main:** https://github.com/filipto861/flytally-logbook/tree/main
+- **Exact verified baseline:** https://github.com/filipto861/flytally-logbook/tree/4ca2847795435549f36d44f253eb7c105eea6d25
+- **Current M2-A-1 discovery:** https://github.com/filipto861/flytally-logbook/blob/docs/v380-currency-m0-discovery/docs/product/3_8_0_CURRENCY_M2A1_SCHEMA_BACKUP_DISCOVERY.md
+- **M2-A-1 DeepSeek review brief:** https://github.com/filipto861/flytally-logbook/blob/docs/v380-currency-m0-discovery/docs/product/3_8_0_CURRENCY_M2A1_INDEPENDENT_REVIEW_BRIEF.md
+- **Unmerged v21 SQL candidate:** https://github.com/filipto861/flytally-logbook/blob/feat/3.8.0-currency-m2a0-sql-draft/sql/drafts/3_8_0_currency_v21_additive_candidate.sql
+
+**Reviewer instructions:** Open the linked repository and verify actual source from the indicated **main SHA** and separate draft branches; do not confuse unmerged proposals with shipped runtime. If access is denied (private repository or missing authorization), state **REPOSITORY ACCESS UNAVAILABLE** and request read-only access or source excerpts. Do not assume that a GitHub URL alone grants access or claim to have inspected inaccessible files.
+
 ## Project context
 
 Canonical repository: `filipto861/flytally-logbook`; **do not touch** `flytally-training`. Production app 3.7.0. Main baseline inspected: `4ca2847795435549f36d44f253eb7c105eea6d25`; `DATABASE_SCHEMA_VERSION=20`. Currency 3.8.0 design docs [draft PR #319](https://github.com/filipto861/flytally-logbook/pull/319), BigInt exact math [draft #320](https://github.com/filipto861/flytally-logbook/pull/320), SIX XML registry candidate [draft #321](https://github.com/filipto861/flytally-logbook/pull/321), unregistered additive SQL and local tests [draft #322](https://github.com/filipto861/flytally-logbook/pull/322).
