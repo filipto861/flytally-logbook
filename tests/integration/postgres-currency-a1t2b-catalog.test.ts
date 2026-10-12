@@ -16,7 +16,7 @@ const sqlCandidate=readFileSync(fixture,"utf8");
 const candidateBlobSha="74b482b265cf3085a99ccbf2837614f382b04ed5";
 function gitBlobSha(content:string):string {
   const bytes=Buffer.from(content,"utf8");
-  return createHash("sha1").update(`blob ${bytes.length}\\0`).update(bytes).digest("hex");
+  return createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
 }
 
 test("fixture is EXACT unregistered SQL candidate from draft #322",()=>{
@@ -36,7 +36,7 @@ function execPsql(connection:string,statement:string,searchPath?:string) {
   for (const key of ["PGHOST","PGPORT","PGDATABASE","PGUSER","PGPASSWORD","PGSERVICE","PGOPTIONS","PGPASSFILE","PGSSLMODE"])
     delete cleanEnv[key];
   return spawnSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",connection],{
-    input:searchPath?`SET search_path TO "${searchPath}";\\n${statement}`:statement,
+    input:searchPath?`SET search_path TO "${searchPath}";\n${statement}`:statement,
     encoding:"utf8",env:cleanEnv,maxBuffer:8*1024*1024,timeout:20000,
   });
 }
