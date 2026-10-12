@@ -4,6 +4,11 @@
 **Repository:** `filipto861/flytally-logbook` only. **Runtime baseline:** `main@4ca2847795435549f36d44f253eb7c105eea6d25`, `DATABASE_SCHEMA_VERSION=20`; all v21 changes remain unregistered in [draft #322](https://github.com/filipto861/flytally-logbook/pull/322). **Frozen product decisions:** [D1–D4](3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md).  
 **Latest owner test evidence:** exact #322 commit `6cc069960abf3a1162954be18039db5271282a71`, native Windows PG16: typecheck PASS, static 6/6 PASS, currency PG 6/6 PASS and full PG 106/106 PASS across 34 files. The full suite includes the six currency tests. This is **local**, not CI or migration permission. See [M2-A-0 handoff](3_8_0_CURRENCY_M2A0_LOCAL_POSTGRES_HANDOFF.md).
 
+**Canonical source repository:** https://github.com/filipto861/flytally-logbook  
+**Verified runtime baseline:** https://github.com/filipto861/flytally-logbook/tree/4ca2847795435549f36d44f253eb7c105eea6d25  
+**Draft source / documentation branch:** https://github.com/filipto861/flytally-logbook/tree/docs/v380-currency-m0-discovery  
+**Reviewer handoff:** https://github.com/filipto861/flytally-logbook/blob/docs/v380-currency-m0-discovery/docs/product/3_8_0_CURRENCY_M2A1_INDEPENDENT_REVIEW_BRIEF.md
+
 ## 1. Reconstructed schema authority and applicability
 
 | Component | Verified source | Consequence |
