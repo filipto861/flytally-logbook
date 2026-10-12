@@ -1,0 +1,75 @@
+# Currency 3.8.0 — A1-T2b disposable PostgreSQL 16 catalog rehearsal
+
+**12 October 2026 · DRAFT ONLY · NOT a runtime restore implementation**
+
+## Identity and dependencies
+
+- Repository: `filipto861/flytally-logbook`.
+- Base branch: `feat/3.8.0-a1-t2a-currency-schema-capability` ([Draft PR #324](https://github.com/filipto861/flytally-logbook/pull/324)), exact base HEAD `ee51e41b202e2626458de001d4fe57578c507cdc`.
+- A1-T2b branch: `feat/3.8.0-a1-t2b-disposable-pg16-catalog`, **nested review against A1-T2a**, not merged into `main`.
+- Unregistered SQL fixture is an exact copy of [draft #322](https://github.com/filipto861/flytally-logbook/pull/322), source Git blob `74b482b265cf3085a99ccbf2837614f382b04ed5`. Test computes and checks that blob SHA **before DDL**.
+- Runtime `lib/flight-trash.ts`, `lib/db.ts`, migration version `20`, currency writers, signed backup, Neon and Training are **not touched**.
+
+## What this batch can and cannot prove
+
+- New pure guard in `tooling/currency-a1t2b-local-target.ts`: only a URL for user `flytally`, database `flytally_currency_test`, literal host `127.0.0.1`, nonstandard explicit port, no password/query/fragment; actual backend DB, user, address, port and PostgreSQL **16** also checked **before any DDL**. Libpq `PG*` overrides are cleared before starting `psql`.
+- New integration test `tests/integration/postgres-currency-a1t2b-catalog.test.ts`: creates an isolated random **reduced v20 fixture schema**, classifies `v20`, executes the pinned unregistered v21 DDL **twice** in that schema, verifies `v21_shape` and four constraints, then checks missing column and wrong type produce `partial_v21`. Drops only the random schema in `finally`.
+- Passing this test proves **schema-catalog introspection and additive candidate behavior on a reduced fixture only**. It does **not** prove complete v20 equivalence, certified-flight correctness, trash restore atomicity, concurrent two-session restore, signed v13 roundtrips, Neon HTTP behavior, or writer safety. It does not register v21.
+- Existing `inspectCurrencySchema()` returns `v21_shape`, **not** `v21 approved` and not an authorization to write.
+
+## Execute on owner's Windows workstation
+
+Prerequisites: Git, Node **24.x**, PostgreSQL **16** binaries at `%ProgramFiles%\PostgreSQL\16\bin`, clean tracked files, no untracked TypeScript, and the exact A1-T2b branch checked out.
+
+```powershell
+git fetch origin
+git switch feat/3.8.0-a1-t2b-disposable-pg16-catalog
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-a1t2b-local.ps1
+```
+
+The runner creates a new temporary native PG16 cluster and `flytally_currency_test` on a dynamically allocated loopback port, sets both `FLYTALLY_POSTGRES_INTEGRATION=1` and `FLYTALLY_A1T2B_DISPOSABLE=1`, runs exact-HEAD `npm run typecheck`, guard unit tests and the focused PostgreSQL integration test, then stops and deletes its own cluster if shutdown succeeds. Existing local PostgreSQL instances, user's untracked files, Neon and Vercel are not modified.
+
+**Fail closed:** wrong branch, dirty tracked files, untracked TypeScript, Node not 24, missing PG16, wrong server identity, fixture Git SHA drift, query failure or test failure must prevent a PASS. The runner preserves a possibly still-running temporary cluster after failed shutdown instead of deleting its files.
+
+## Evidence status (recorded at authorship)
+
+| Gate | Status |
+| --- | --- |
+| Guard targeted test on Node 22.16.0 | **8/8 PASS** (local sandbox) |
+| Isolated strict TypeScript for guard, TS 5.8.3 | **PASS** (local sandbox) |
+| Integration test TypeScript syntax check, Node 22 | **PASS** (local sandbox) |
+| Exact fixture match | **Verified GitHub blob**; same as draft #322 |
+| Full-repository Node 24 typecheck | **NOT RUN** |
+| Windows PowerShell/native temporary PostgreSQL 16 runner | **NOT RUN** |
+| Actual PG16 catalog/DDL assertions | **NOT RUN** |
+| CI, Neon HTTP, full signed v13 and full v20 equivalence | **NOT RUN** |
+| Migration registration, merge, production deploy | **NOT PERFORMED** |
+
+## First owner-local run and minimal correction (12 October 2026)
+
+- Owner Windows candidate `b4cc6ef48935d039b2cb55db7882ce6362ccc142`: disposable PG16 instance `127.0.0.1:59953` **START PASS / identity PASS / shutdown PASS**. Locale fulltext fallback `simple` was nonblocking.
+- Full-project Node24 `npm run typecheck`: **FAIL TS7053** in `tests/integration/postgres-currency-a1t2b-catalog.test.ts` at `delete cleanEnv[key]`; inference was too narrow. SQL integration did **not** run; no partial test DDL claim.
+- Minimal correction committed to this PR as `74bd12c9772b82d1e363a009e26762152ec92cee`: annotate `cleanEnv: NodeJS.ProcessEnv`, keeping exact environment sanitization. Node22 isolated TypeScript type sample **PASS**, existing safety unit suite **8/8 PASS**; these are **not** owner Node24 full typecheck or PG16 acceptance of corrected commit.
+- Rerun required on the latest draft head; collect exact commit, typecheck results and PG16 assertions. Do not advance to restore SQL until real PG16 evidence is PASS.
+
+### Preview deployment diagnostic (separate from PostgreSQL gate)
+
+Vercel Preview deployment for GitHub commit `26e4dcc2872c82b209fdadee85d5728ccf44a682` reported `ERROR`, `errorCode: git_info_fail` (deployment `dpl_BS7cmKuKcHm2u79ve8BZxmRuf8xc`). Vercel build-event query returned no events. This is **not evidence of an application compile/test failure or success**. No production target was deployed. Investigate Git metadata/integration independently if the preview remains blocked; owner-local Node24 PG16 runner remains the next functional gate.
+
+### Second owner-local run: exact Windows CRLF false-positive proven (12 October 2026)
+
+- Candidate `4cdfd6ecbf448656eb46c9a7fb492db8e537147d` on Windows with native isolated PG16 `127.0.0.1:59126`: database preflight identity **PASS**, full project Node24 `npm run typecheck` **PASS**, safety guard target tests **8/8 PASS**, server shutdown **PASS**. Both SQL-focused test cases **FAIL at fixture Git-blob fingerprint**, before any candidate DDL or schema modifications. Thus no PostgreSQL migration/constraint behavior has been tested yet.
+- **Exact cause independently reproduced:** fixture canonical GitHub blob SHA `74b482b265cf3085a99ccbf2837614f382b04ed5` uses 131 LF line endings; replacing with Windows CRLF yields checkout Git-blob SHA **`055c5ecbc688be25961ecaa9f693deffce3ddced`**, the exact value shown in the owner's failed test output. No SQL content drift; refusal to proceed was correct under the original byte-hash contract.
+- Minimal fix committed as **`2475f578d672b58ed875bb6337c908b97b3adfdf`**: `readFileSync(fixture, "utf8").replace(/\\r\\n/g,"\\n")` (actual source uses regex control escapes, not literal double slashes) normalizes checkout CRLF to canonical LF before SHA-1 and SQL use; additional test asserts equivalence under CRLF conversion and mismatch after changing a real SQL token. **Original expected canonical Git blob stays pinned; no bypass or update of the expected digest.**
+- After updating branch, rerun the native disposable runner. The corrected exact-head Node24/full-PG16 evidence is **NOT RUN**. Do not close A1-T2b or start A1-T2c SQL implementation until actual v20→v21 catalog and four-CHECK tests complete.
+
+## A1-T2b third owner-local run — ACCEPTED (12 October 2026)
+
+**Source of result:** exact user-provided PowerShell output, **Git SHA `2d4699deb4e31630f5b719cef9cdf6b61258bdc3`**, native Windows/Node 24 and disposable PostgreSQL16 at `127.0.0.1:50275`. Result: exact DB identity **PASS**, project `tsc --noEmit` **PASS**, identity-guard Node tests **8/8 PASS**, actual SQL PG tests **3/3 PASS** (fingerprint/CRLF, pinned fixture, reduced v20 → twice-applied v21 + 12 columns/4 CHECKs and partial/type-invalid negatives), **0 fail / 0 skip**, safe `pg_ctl` server stop **PASS**. The locale fulltext fallback to `simple` was not a failing condition. Runner explicitly printed `LOCAL catalog test gates PASS on candidate 2d4699... Not a production migration.`
+
+**Milestone disposition:** scoped reduced-fixture A1-T2b locally COMPLETE; earlier two failed attempts remain preserved as debugging provenance, not latest status. This does *not* execute or validate atomically restoring real `deleted_flights`, Neon HTTP transactions, complete v20 equivalence, signed v13 roundtrips, certified history, production schema, merge, migration registration or deployment. **A1-T2c** can begin with SQL-contract reconstruction and isolated prototype design; A1-T3 runtime remains blocked pending real two-session concurrency/rollback and Neon HTTP compatibility.
+
+## Next gate
+
+After a successful owner-local A1-T2b run, review exact branch/commit and test output. Then proceed to **A1-T2c atomic trash-restore SQL prototype**, retaining all earlier B1–B5 guards: numeric IDs, locked source snapshots, exact amounts, no loss of monetary evidence, protection/correction checks, preexisting duplicate semantics, child record completeness/ownership, independent-session concurrency and full rollback. A1-T3 runtime integration remains blocked until these validations and a separate Neon HTTP transaction compatibility assessment pass. A1-C, A1-F and A1-G remain separate open milestones.
