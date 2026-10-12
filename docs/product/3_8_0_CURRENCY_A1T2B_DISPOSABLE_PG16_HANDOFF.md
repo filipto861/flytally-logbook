@@ -46,6 +46,13 @@ The runner creates a new temporary native PG16 cluster and `flytally_currency_te
 | CI, Neon HTTP, full signed v13 and full v20 equivalence | **NOT RUN** |
 | Migration registration, merge, production deploy | **NOT PERFORMED** |
 
+## First owner-local run and minimal correction (12 October 2026)
+
+- Owner Windows candidate `b4cc6ef48935d039b2cb55db7882ce6362ccc142`: disposable PG16 instance `127.0.0.1:59953` **START PASS / identity PASS / shutdown PASS**. Locale fulltext fallback `simple` was nonblocking.
+- Full-project Node24 `npm run typecheck`: **FAIL TS7053** in `tests/integration/postgres-currency-a1t2b-catalog.test.ts` at `delete cleanEnv[key]`; inference was too narrow. SQL integration did **not** run; no partial test DDL claim.
+- Minimal correction committed to this PR as `74bd12c9772b82d1e363a009e26762152ec92cee`: annotate `cleanEnv: NodeJS.ProcessEnv`, keeping exact environment sanitization. Node22 isolated TypeScript type sample **PASS**, existing safety unit suite **8/8 PASS**; these are **not** owner Node24 full typecheck or PG16 acceptance of corrected commit.
+- Rerun required on the latest draft head; collect exact commit, typecheck results and PG16 assertions. Do not advance to restore SQL until real PG16 evidence is PASS.
+
 ## Next gate
 
 After a successful owner-local A1-T2b run, review exact branch/commit and test output. Then proceed to **A1-T2c atomic trash-restore SQL prototype**, retaining all earlier B1–B5 guards: numeric IDs, locked source snapshots, exact amounts, no loss of monetary evidence, protection/correction checks, preexisting duplicate semantics, child record completeness/ownership, independent-session concurrency and full rollback. A1-T3 runtime integration remains blocked until these validations and a separate Neon HTTP transaction compatibility assessment pass. A1-C, A1-F and A1-G remain separate open milestones.
