@@ -100,3 +100,7 @@ This document is a **ChatGPT follow-up against real GitHub repository contents**
 - Catalog trigger assertions tightened to exact source-backed v20 trigger names: `trg_logbook_protect_source_provenance`, `trg_logbook_protect_locked_flight`, `trg_logbook_prevent_voided_flight_id_reuse`, `trg_logbook_protect_voided_certified_flights`.
 - **NOT RUN** here; native full-v20 disposable fixture/bootstrap is still missing. This runner is a preliminary gate, not a D3b concurrency acceptance, and existing browser bootstrap is NOT sufficient to call it an applied-v20 fixture.
 - Remaining: actual migration fidelity, deterministic 2-session source SQL concurrency tests, linked-child/cross-user preservation matrix. No runtime change, no migration, no merge/deploy.
+
+### D3b-0 continuation
+
+Catalog test now also requires a v20 migration registry row and enabled protective triggers. Native PG16 runs are NOT RUN. Registry presence alone does not prove actual full migration fidelity. No runtime, schema, or production change.
