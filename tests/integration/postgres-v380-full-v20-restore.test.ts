@@ -8,7 +8,10 @@ import {before,test} from "node:test";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const restoreSource=readFileSync(path.join(root,"lib/flight-trash.ts"),"utf8");
-const found=restoreSource.match(/const rows=await sql\x60([\s\S]*?)\x60 as Array<\{restored_flight_id:number\|string\}>/);
+const start=restoreSource.indexOf("export async function restoreDeletedFlightRecord");
+assert.ok(start>=0,"Restore function not found");
+const restoreBlock=restoreSource.slice(start);
+const found=restoreBlock.match(/const rows=await sql\x60([\s\S]*?)\x60 as Array<\{restored_flight_id:number\|string\}>/);
 assert.ok(found,"Exact SQL restore template missing");
 const tagged=found[1];
 const asked=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"||process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
@@ -61,6 +64,9 @@ before(()=>{
   });
   if(full.error)throw full.error;
   assert.equal(full.status,0,"Full-v20 schema bootstrap failed: "+String(full.stderr).slice(0,450));
+  // The browser fixture includes all 61 flight columns but predates v14 trash expenses.
+  // Add the source-backed v20 archive column only inside this newly verified disposable DB.
+  sql("ALTER TABLE deleted_flights ADD COLUMN expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb");
   assert.equal(sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='flights'"),"61");
 });
 test("actual runtime SQL is source-backed and locks archived rows",{skip:false},()=>{
