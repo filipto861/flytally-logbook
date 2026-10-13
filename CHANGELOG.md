@@ -8,6 +8,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 native PG16 targeted Trash/participation tests (OWNER-LOCAL PASS / NOT SHIPPED)
+
+- Owner Windows / Node 24 ran `tooling/run-v380-d3b-targeted-local.ps1` at **exact commit `dd0823af65866bd21de87240f304cb5ef4cf0b9e`**. Disposable native PostgreSQL 16 at `127.0.0.1:54833`; expected and observed identity `flytally_currency_test|flytally|127.0.0.1|54833` **MATCHED**; temporary server stopped cleanly.
+- **TypeScript `tsc --noEmit` PASS**, D3b source characterization **3/3 PASS**, native PostgreSQL actual-`moveFlightToTrash`-SQL tests **5/5 PASS**, overall targeted tests **8/8 PASS, 0 failures, 0 skips**.
+- Actual five-statement Trash SQL with real v20 protection SQL on a **bounded synthetic pre-v20 schema**: unlinked draft archived/deleted; linked draft `flight_connected_crew` and `flight_verifications` deleted by FK CASCADE without corresponding normal Trash child snapshot; immutable participant provenance rejected recipient draft DELETE and rolled back archive; certified source ordinary Trash did not archive/delete; **two-session archive → other-session certification → final conditional DELETE** reproduced a committed archive entry alongside a still-active certified flight.
+- These are **confirmed targeted PostgreSQL behaviors**, not yet proof of the *entire applied production v20 schema* or the *actual certification application's* orchestration/locking. The source SQL currently reports `results[1]` (INSERT), not final DELETE row count; a guard/locking fix remains a release gate. Canonical reachability of linked draft states, third-party evidence semantics and production incidence are not established.
+- **Remaining D3b-0 gates:** exact full applied-v20 migration/catalog and constraints, actual entrypoint end-to-end acceptance, participant acceptance and provenance source-reference races, fail-closed option A+ owner decision, updated verification on any future code SHA. **No runtime code change, schema migration, merge or deploy.**
+
 ## 13 October 2026 — D3b-0 second owner-local test, source assertion corrected (DRAFT / RE-TEST REQUIRED)
 
 - Owner Windows/Node24 reran `tooling/run-v380-d3b-targeted-local.ps1` on exact commit `d6f421a027d36218f764bb7352bc62ebbe520ff8`. New disposable PG16 cluster at `127.0.0.1:57846`; observed/expected identity matched, server stopped cleanly. **Typecheck PASS**. Source characterization **2 PASS / 1 FAIL**; native PostgreSQL integration **NOT RUN** because the runner stopped at the failed source gate.
