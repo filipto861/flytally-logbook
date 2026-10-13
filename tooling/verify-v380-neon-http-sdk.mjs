@@ -16,7 +16,7 @@ assert.equal(required("FLYTALLY_NEON_SDK_DISPOSABLE_ONLY"),"isolated-branch-only
 assert.match(branchId,/^br-[a-z0-9-]{8,}$/);
 assert.match(nonce,/^[a-f0-9]{8}-[a-f0-9-]{27,}$/);
 let parsed;
-try{parsed=new URL(url)}catch{throw new Error("Invalid Neon test URI")}
+try{parsed=new URL(url)}catch{throw new Error("Invalid Neon test URI. Copy a single plain postgresql:// URI from the temporary branch Connect screen, not a psql command or label.")}
 assert.ok(["postgres:","postgresql:"].includes(parsed.protocol));
 assert.equal(parsed.hostname,host);
 assert.match(host,/^[a-z0-9.-]+\.neon\.tech$/);
