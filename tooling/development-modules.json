@@ -864,6 +864,8 @@
         "lib/intelligent-logbook-client-types.ts",
         "lib/intelligent-logbook-service.ts",
         "lib/intelligent-logbook.ts",
+        "lib/iso4217-currency-data.ts",
+        "lib/iso4217-currency-registry.ts",
         "lib/monetary-amount.ts",
         "lib/pilot-workspace.ts",
         "lib/route-filter.ts",
@@ -893,7 +895,7 @@
       ".tsx",
       ".css"
     ],
-    "auditedTotal": 392,
+    "auditedTotal": 394,
     "baselineStableOwned": 121,
     "minimumStableCoverage": 0.9
   },
