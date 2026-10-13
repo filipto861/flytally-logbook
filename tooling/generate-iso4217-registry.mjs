@@ -110,6 +110,6 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
   const parsed=parseListOneXml(xml);
   const generated=renderRegistry(parsed);
   if(flags[0]==="--write")writeFileSync(output,generated,"utf8");
-  else if(readFileSync(output,"utf8")!==generated)fail("generated registry is stale — review source and regenerate");
+  else if(readFileSync(output,"utf8").replace(/\r\n/g,"\n")!==generated)fail("generated registry is stale — review source and regenerate");
   console.log("ISO4217 "+flags[0]+" PASS: published="+parsed.publishedAt+" activeMonetary="+parsed.monetary.length+" fundExcluded="+parsed.excludedFunds.length+" noScaleExcluded="+parsed.excludedWithoutMinorUnits.length);
 }
