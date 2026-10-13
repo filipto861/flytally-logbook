@@ -48,6 +48,8 @@ CREATE TABLE users(
   id BIGINT PRIMARY KEY,
   email TEXT NOT NULL,
   display_name TEXT NOT NULL,
+  slug TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role TEXT NOT NULL DEFAULT 'user',
   active INTEGER NOT NULL DEFAULT 1,
   email_verified_at TIMESTAMPTZ,
@@ -72,6 +74,7 @@ CREATE TABLE user_settings(
 );
 
 CREATE TABLE airports(
+  id BIGSERIAL PRIMARY KEY,
   ident TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
   latitude_deg DOUBLE PRECISION,
@@ -185,6 +188,21 @@ CREATE TABLE flight_audit_log (
   new_data JSONB,
   changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Pre-applied v2 backup table required by canonical signed safety backup
+-- before a destructive GPS track change. This remains test-only DDL.
+CREATE TABLE account_backups (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  kind TEXT NOT NULL CHECK(kind IN ('automatic','manual','pre_restore')),
+  version INTEGER NOT NULL,
+  exported_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  payload_base64 TEXT NOT NULL,
+  payload_sha256 TEXT NOT NULL,
+  raw_bytes BIGINT NOT NULL,
+  compressed_bytes BIGINT NOT NULL,
+  counts JSONB NOT NULL DEFAULT '{}'::jsonb
+);
 CREATE TABLE deleted_flights (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
@@ -192,11 +210,47 @@ CREATE TABLE deleted_flights (
   delete_token TEXT NOT NULL UNIQUE,
   flight_data JSONB NOT NULL,
   tracks_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb,
   deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   purge_after TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '90 days'),
   restored_at TIMESTAMPTZ,
   restored_flight_id BIGINT
 );
+-- The browser fixture pre-applies schema v1..v19. Keep the two FSTD
+-- tables expected by v13 full-account pre-track-delete signed backups;
+-- these definitions mirror the original optimizer migration shape.
+CREATE TABLE fstd_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  session_date DATE NOT NULL,
+  device_type TEXT NOT NULL,
+  qualification_number TEXT NOT NULL DEFAULT '',
+  instruction TEXT NOT NULL DEFAULT '',
+  total_minutes INTEGER NOT NULL CHECK(total_minutes>=0 AND total_minutes<=1440),
+  remarks TEXT NOT NULL DEFAULT '',
+  certified_at TIMESTAMPTZ,
+  certified_by_user_id BIGINT,
+  certification_hash TEXT NOT NULL DEFAULT '',
+  certification_version INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE fstd_certified_revisions (
+  id BIGSERIAL PRIMARY KEY,
+  fstd_session_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+  snapshot_data JSONB NOT NULL,
+  certification_hash TEXT NOT NULL,
+  certification_version INTEGER NOT NULL DEFAULT 1,
+  certified_at TIMESTAMPTZ NOT NULL,
+  certified_by_user_id BIGINT,
+  superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  superseded_by_user_id BIGINT NOT NULL,
+  correction_reason TEXT NOT NULL,
+  UNIQUE(user_id,fstd_session_id,revision_number)
+);
+
 CREATE TABLE flight_certified_revisions (
   id BIGSERIAL PRIMARY KEY,
   flight_id BIGINT NOT NULL,
@@ -212,6 +266,91 @@ CREATE TABLE flight_certified_revisions (
   correction_reason TEXT NOT NULL,
   UNIQUE(user_id,flight_id,revision_number)
 );
+
+-- Browser-only v20 archive/provenance schema mirrored from tooling/v350-v20-migrate.sql.
+CREATE TABLE voided_certified_flights (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      original_flight_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      certification_hash TEXT NOT NULL CHECK(NULLIF(TRIM(certification_hash),'') IS NOT NULL),
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      certified_by_user_id BIGINT,
+      flight_snapshot JSONB NOT NULL,
+      flight_snapshot_sha256 TEXT NOT NULL CHECK(flight_snapshot_sha256 ~ '^[a-f0-9]{64}$'),
+      archive_version INTEGER NOT NULL DEFAULT 1 CHECK(archive_version>=1),
+      voided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      voided_by_user_id BIGINT NOT NULL,
+      void_reason TEXT NOT NULL CHECK(char_length(TRIM(void_reason)) BETWEEN 8 AND 1000),
+      operation_token UUID NOT NULL UNIQUE,
+      created_txid BIGINT NOT NULL DEFAULT txid_current(),
+      UNIQUE(user_id,original_flight_id),
+      UNIQUE(user_id,original_flight_id,record_revision,certification_hash)
+    );
+CREATE TABLE voided_flight_certified_revisions (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_revision_id BIGINT NOT NULL,
+      revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+      certification_hash TEXT NOT NULL,
+      certification_version INTEGER NOT NULL CHECK(certification_version>=1),
+      certified_at TIMESTAMPTZ NOT NULL,
+      superseded_at TIMESTAMPTZ,
+      correction_reason TEXT NOT NULL DEFAULT '',
+      snapshot_data JSONB NOT NULL,
+      snapshot_sha256 TEXT NOT NULL CHECK(snapshot_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,revision_number),
+      UNIQUE(voided_flight_id,source_revision_id)
+    );
+CREATE TABLE voided_flight_verifications (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      source_verification_id BIGINT NOT NULL,
+      record_revision INTEGER NOT NULL CHECK(record_revision>=1),
+      verification_role TEXT NOT NULL,
+      status TEXT NOT NULL,
+      signer_user_id BIGINT,
+      flight_hash TEXT NOT NULL,
+      payload_hash TEXT NOT NULL DEFAULT '',
+      server_signature TEXT NOT NULL DEFAULT '',
+      signed_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      credential_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,source_verification_id)
+    );
+CREATE TABLE voided_flight_archive_items (
+      id BIGSERIAL PRIMARY KEY,
+      voided_flight_id BIGINT NOT NULL REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      item_kind TEXT NOT NULL CHECK(item_kind IN ('INSTRUCTOR_APPROVAL','PARTICIPATION','CONNECTED_CREW','PUBLIC_SHARE','EXPENSE','TRACK','SOURCE_PROVENANCE')),
+      source_key TEXT NOT NULL,
+      source_data JSONB NOT NULL,
+      source_sha256 TEXT NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+      archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(voided_flight_id,item_kind,source_key)
+    );
+CREATE TABLE flight_source_provenance (
+      id BIGSERIAL PRIMARY KEY,
+      participant_flight_id BIGINT NOT NULL,
+      participant_user_id BIGINT NOT NULL,
+      source_flight_id BIGINT NOT NULL,
+      source_user_id BIGINT NOT NULL,
+      source_revision INTEGER NOT NULL CHECK(source_revision>=1),
+      source_hash TEXT NOT NULL,
+      participant_role TEXT NOT NULL,
+      pic_commander_basis TEXT,
+      accepted_at TIMESTAMPTZ,
+      source_voided_flight_id BIGINT REFERENCES voided_certified_flights(id) ON DELETE RESTRICT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT flight_source_provenance_participant_owner_fk
+        FOREIGN KEY(participant_flight_id,participant_user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE,
+      UNIQUE(participant_flight_id,participant_user_id)
+    );
 
 CREATE TABLE flight_expenses(
   id BIGSERIAL PRIMARY KEY,
@@ -296,6 +435,13 @@ CREATE TABLE rates(
   registration TEXT NOT NULL,
   valid_from TEXT,
   price_per_hour NUMERIC NOT NULL DEFAULT 0
+);
+-- Historic legacy points are still queried by ordinary Trash/track deletion;
+-- portable backup v13 merely omits their export, not the database table.
+CREATE TABLE track_points(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  track_id BIGINT NOT NULL
 );
 CREATE TABLE flight_tracks(
   id BIGSERIAL PRIMARY KEY,

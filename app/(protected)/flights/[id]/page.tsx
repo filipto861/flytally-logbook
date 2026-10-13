@@ -1,5 +1,4 @@
-import { notFound,redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { notFound } from "next/navigation";
 import { FlightForm } from "@/components/flight-form";
 import { requireUser } from "@/lib/auth/require-user";
 import { getAircraftOptions } from "@/lib/data/aircraft";
@@ -32,8 +31,8 @@ import { formatDateOnly } from "@/lib/display-format";
 import { getConnectedPicLink } from "@/lib/flight-connected-crew";
 import { isLegacyGpsImportTask } from "@/lib/legacy-flight-task";
 
-type Context={q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string;saved?:string;certify?:string;certified?:string};
-const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value&&!["tab","saved","certify","certified"].includes(key))query.set(key,value);return query.toString()};
+type Context={q?:string;category?:string;evidence?:string;role?:string;registration?:string;aircraftClass?:string;airport?:string;route?:string;routePair?:string;gps?:string;year?:string;sort?:string;from?:string;to?:string;tab?:string;saved?:string;certify?:string;certified?:string;trash?:string};
+const contextQuery=(context:Context)=>{const query=new URLSearchParams();for(const [key,value] of Object.entries(context))if(value&&!["tab","saved","certify","certified","trash"].includes(key))query.set(key,value);return query.toString()};
 const storedObject=(value:unknown)=>{if(value&&typeof value==="object"&&!Array.isArray(value))return value as Record<string,unknown>;try{const parsed=JSON.parse(String(value||"{}"));return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed as Record<string,unknown>:{} }catch{return{}}};
 
 export default async function FlightDetailPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<Context>}){
@@ -62,26 +61,6 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   if(!flight)notFound();
   const raw=flight as unknown as Record<string,unknown>,pilotName=String(raw.pilot_name??"");
   const expenses=expenseRows as FlightExpenseRecord[],update=updateFlight.bind(null,id),remove=deleteFlight.bind(null,id),saveExpenses=saveFlightExpenses.bind(null,id);
-  async function removeParticipant(){
-    "use server";
-    const {userId:ownerId}=await requireUser();await ensureDatabaseOptimizations();
-    const owned=await sql`SELECT own.id FROM flights own WHERE own.id=${id} AND own.user_id=${ownerId} AND own.certified_at IS NULL AND (
-      EXISTS(SELECT 1 FROM flight_participations p LEFT JOIN flights source ON source.id=p.source_flight_id AND source.user_id=p.source_user_id WHERE p.participant_user_id=${ownerId} AND (p.participant_flight_id=own.id OR (p.participant_flight_id IS NULL AND source.id IS NOT NULL AND source.date::text=own.date::text AND UPPER(TRIM(source.registration))=UPPER(TRIM(own.registration)) AND COALESCE(source.off_block,'')=COALESCE(own.off_block,'') AND UPPER(TRIM(COALESCE(source.departure,'')))=UPPER(TRIM(COALESCE(own.departure,''))) AND UPPER(TRIM(COALESCE(source.arrival,'')))=UPPER(TRIM(COALESCE(own.arrival,''))))))
-      OR EXISTS(SELECT 1 FROM instructor_flight_approvals a JOIN flights source ON source.id=a.flight_id AND source.user_id=a.student_user_id WHERE a.instructor_user_id=${ownerId} AND a.status='approved' AND source.date::text=own.date::text AND UPPER(TRIM(source.registration))=UPPER(TRIM(own.registration)) AND COALESCE(source.off_block,'')=COALESCE(own.off_block,'') AND UPPER(TRIM(COALESCE(source.departure,'')))=UPPER(TRIM(COALESCE(own.departure,''))) AND UPPER(TRIM(COALESCE(source.arrival,'')))=UPPER(TRIM(COALESCE(own.arrival,''))))
-    ) AND NOT EXISTS(SELECT 1 FROM flight_participations outbound WHERE outbound.source_flight_id=own.id AND outbound.source_user_id=own.user_id AND outbound.status IN ('pending','accepted')) LIMIT 1` as Array<{id:number|string}>;
-    if(!owned[0])return;
-    const result=await sql.transaction([
-      sql`UPDATE flights SET locked_at=NULL,locked_by_user_id=NULL WHERE id=${id} AND user_id=${ownerId} AND certified_at IS NULL`,
-      sql`UPDATE flight_participations SET participant_flight_id=NULL WHERE participant_user_id=${ownerId} AND participant_flight_id=${id}`,
-      sql`DELETE FROM track_points WHERE user_id=${ownerId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${ownerId} AND flight_id=${id})`,
-      sql`DELETE FROM flight_tracks WHERE user_id=${ownerId} AND flight_id=${id}`,
-      sql`DELETE FROM flight_verifications WHERE flight_id=${id} AND flight_user_id=${ownerId}`,
-      sql`DELETE FROM flight_certified_revisions WHERE flight_id=${id} AND user_id=${ownerId}`,
-      sql`DELETE FROM flights WHERE id=${id} AND user_id=${ownerId} AND certified_at IS NULL RETURNING id`,
-    ]);
-    if(!(result[6] as Array<{id:number|string}>)[0])return;
-    revalidatePath("/dashboard");revalidatePath("/flights");revalidatePath("/map");revalidatePath("/data");revalidatePath("/export");redirect("/flights");
-  }
   const certified=Boolean(flight.certified_at),recordRevision=Math.max(1,Number(flight.record_revision||1)),correctionReason=String(flight.correction_reason??"").trim(),correctionDraft=!certified&&recordRevision>1&&Boolean(correctionReason),certify=certifyFlight.bind(null,id),correct=startCertifiedCorrection.bind(null,id),voidCertified=voidCertifiedFlight.bind(null,id);
   const legacyGpsImportTask=isLegacyGpsImportTask(flight.task);
   const hasCertifiedHistory=certified||recordRevision>1||Boolean(correctionReason),participantOwned=Boolean(participantOwnRows[0]);
@@ -91,7 +70,7 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const completionMessage=completion==="certification-blocked"?(certificationBlockers[0]?.message||"Resolve the certification issue below, then certify the saved draft."):"";
   const badge=certified?<span className="flight-lock-badge">CERTIFIED R{recordRevision}</span>:correctionDraft?<span className="flight-lock-badge">CORRECTION R{recordRevision}</span>:locked?<span className="flight-lock-badge">LOCKED</span>:null;
   const workflow={certified,correctionDraft,locked,blockers:certificationBlockers.length,recordRevision,shareHref:`/flights/${id}/share`};
-  const canDelete=participantOwned&&!certified||!locked&&!hasCertifiedHistory,hasMoreActions=hasCertifiedHistory||canDelete;
+  const canDelete=!participantOwned&&!locked&&!hasCertifiedHistory,hasMoreActions=hasCertifiedHistory||canDelete;
   const displayDate=formatDateOnly(flight.date);
   const role=String(flight.role??"").trim().toUpperCase(),approval=approvalRows[0],verification=verificationRows[0],verificationCredentials=storedObject(verification?.credential_snapshot),inPersonSigned=Boolean(verification)&&String(verificationCredentials.source??"")==="In-person handwritten signature",flyTallySigned=Boolean(verification)&&!inPersonSigned,verificationName=inPersonSigned?String(verificationCredentials.identity??"Instructor"):String(verification?.signer_name??approval?.instructor_name??"Instructor"),trainingRole=["DUAL","SPIC","PICUS"].includes(role),requestApproval=requestInstructorApproval.bind(null,id),cancelApproval=cancelInstructorApproval.bind(null,id);
   const verificationState=verification?inPersonSigned?"in-person":"flytally":"",approvalRequestLabel=instructors.length===1?`Request approval from ${String(instructors[0].display_name)}`:"Request approval";
@@ -122,7 +101,9 @@ export default async function FlightDetailPage({params,searchParams}:{params:Pro
   const logbookRaw=verification?{...raw,approval_id:verification.id,instructor_approval_name:verificationName}:raw;
   const logbook=!locked?<section className="panel logbook-edit-panel"><header><div><p className="eyebrow">LOGBOOK DATA</p><h2>Edit flight record</h2><p className="muted">Changes are saved only when you press Save flight at the end of the form.</p></div></header><FlightForm key={`${flight.id}:${flight.registration}:${flight.departure}:${flight.arrival}:${recordRevision}`} action={update} aircraft={aircraft} initial={flight} instructors={instructorOptions} picConnections={picConnections} connectedPic={connectedPicInitial} expenses={expenses}/></section>:<ReadonlyLogbookEntry row={logbookRaw} pilotName={pilotName} certified={certified} easa={easa}/>;
   return <>
-    <header className="page-header flight-detail-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation flight-detail-navigation"><Link className="secondary-button flight-detail-back" href={`/flights${suffix}`}>← Back to flights</Link><nav className="flight-detail-step-group" aria-label="Flight navigation">{navigation.previousId?<Link className="secondary-button flight-detail-step" href={`/flights/${navigation.previousId}${suffix}`}>← Previous flight</Link>:<button type="button" className="secondary-button flight-detail-step" disabled>← Previous flight</button>}{navigation.nextId?<Link className="secondary-button flight-detail-step" href={`/flights/${navigation.nextId}${suffix}`}>Next flight →</Link>:<button type="button" className="secondary-button flight-detail-step" disabled>Next flight →</button>}</nav>{hasMoreActions?<details className="flight-detail-more"><summary className="secondary-button">More</summary><div className="flight-detail-more-menu">{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit history</Link>:null}{certified?<VoidCertifiedFlightButton action={voidCertified}/>:participantOwned?<DeleteFlightButton action={removeParticipant} label="Remove from my logbook" confirmLabel="Remove my entry"/>:!locked&&!hasCertifiedHistory?<DeleteFlightButton action={remove}/>:null}</div></details>:null}</div></header>
+    <header className="page-header flight-detail-header"><div><p className="eyebrow">FLIGHT {navigation.position}/{navigation.total}</p><h1>{flight.registration} · {displayDate} {badge}</h1><p className="muted">{flight.departure} → {flight.arrival} · {flight.role} · {flight.evidence}</p></div><div className="detail-navigation flight-detail-navigation"><Link className="secondary-button flight-detail-back" href={`/flights${suffix}`}>← Back to flights</Link><nav className="flight-detail-step-group" aria-label="Flight navigation">{navigation.previousId?<Link className="secondary-button flight-detail-step" href={`/flights/${navigation.previousId}${suffix}`}>← Previous flight</Link>:<button type="button" className="secondary-button flight-detail-step" disabled>← Previous flight</button>}{navigation.nextId?<Link className="secondary-button flight-detail-step" href={`/flights/${navigation.nextId}${suffix}`}>Next flight →</Link>:<button type="button" className="secondary-button flight-detail-step" disabled>Next flight →</button>}</nav>{hasMoreActions?<details className="flight-detail-more"><summary className="secondary-button">More</summary><div className="flight-detail-more-menu">{hasCertifiedHistory?<Link className="secondary-link" href={`/flights/${id}/audit`}>Audit history</Link>:null}{certified?<VoidCertifiedFlightButton action={voidCertified}/>:canDelete?<DeleteFlightButton action={remove}/>:null}</div></details>:null}</div></header>
+    {participantOwned&&!certified?<p className="muted" role="status">This draft was added from another pilot’s flight. Its linked participation and provenance evidence must be preserved; removal through ordinary Trash is unavailable.</p>:null}
+    {context.trash==="blocked"?<p className="form-error" role="alert">This flight was not moved to Trash. It may be locked, certified, revised or linked to another pilot, approval, verification or shared evidence. Resolve the relevant record through its dedicated workflow; no flight data was removed.</p>:context.trash==="error"?<p className="form-error" role="alert">The flight could not be moved to Trash. No deletion was confirmed. Please try again or contact support.</p>:null}
     <FlightDetailWorkspace overview={overview} gps={gps} logbook={logbook} gpsCount={trackSummaries.length} initialTab={context.tab==="logbook"?"logbook":context.tab==="gps"?"gps":"overview"} workflow={workflow} completion={completion} completionMessage={completionMessage}/>
   </>;
 }

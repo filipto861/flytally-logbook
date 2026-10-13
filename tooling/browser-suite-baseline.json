@@ -53,7 +53,9 @@
     "GPS map theme changes preserve a live map instance and viewport",
     "flight replay retains map and playback state through theme changes",
     "GPS import review retains its map pane across theme changes",
-    "map tile endpoint rejects unsupported and duplicate styles before upstream fetch"
+    "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
+    "D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",
+    "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion"
   ],
   "excludedSpecs": [
     "ui-audit-capture.spec.mjs"
