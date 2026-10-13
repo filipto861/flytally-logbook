@@ -29,6 +29,8 @@ test("PostgreSQL subprocess calls keep connection strings behind explicit -d for
       path.relative(root,file)+" has an unreviewed psql subprocess argument form");
     for(const match of invocations){
       const args=match[1];
+      // A standalone psql version probe does not select or open a database.
+      if(/^\s*["']--version["']\s*$/.test(args))continue;
       assert.match(args,/(?:^|,)\s*["']-d["']\s*,\s*[A-Za-z_$][\w$]*(?:\(\))?\s*(?:,|$)/,
         path.relative(root,file)+" must select a database through explicit -d");
       assert.doesNotMatch(args,/(?:^|,)\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\)|url)\s*,/,
