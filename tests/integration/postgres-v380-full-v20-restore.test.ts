@@ -69,3 +69,47 @@ test("actual runtime SQL is source-backed and locks archived rows",{skip:false},
   assert.match(tagged,/restored_tracks AS/);
   assert.match(tagged,/restored_expenses AS/);
 });
+
+function archived(date:string,opts?:{blankIdentity?:boolean;amount?:number}){
+  const fee=opts?.amount??1255;
+  assert.ok(Number.isSafeInteger(fee)&&fee>0&&fee<=1000000000);
+  const oldId=Number(sql("INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_variant,aircraft_class,departure,arrival,off_block,starts,price_per_hour,billing_basis) VALUES(9001,"+
+    quote(date)+",'EASA','OK-E2E','B23','Historic Maker','Historic Model','Legacy Option','SEP','LKLT','LKPR','09:00',1,75.125,'BLOCK') RETURNING id"));
+  if(opts?.blankIdentity)sql("UPDATE flights SET aircraft_make='',aircraft_model='',aircraft_variant='' WHERE id="+oldId);
+  sql("INSERT INTO flight_tracks(user_id,flight_id,file_name,point_count,distance_km,coordinates_json,overview_coordinates_json,overview_version) VALUES(9001,"+oldId+",'historic.gpx',2,12.5,'[[1,2]]','[[1,2]]',1)");
+  sql("INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency) VALUES(9001,"+oldId+",'LANDING','Historic fee',"+fee+",'CZK')");
+  const trash=Number(sql("INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data) SELECT f.user_id,f.id,"+quote(randomUUID())+
+    ",to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.flight_id=f.id),'[]'::jsonb),"+
+    "COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM flight_expenses e WHERE e.flight_id=f.id),'[]'::jsonb) FROM flights f WHERE f.id="+oldId+" RETURNING id"));
+  sql("DELETE FROM flight_tracks WHERE flight_id="+oldId);
+  sql("DELETE FROM flights WHERE id="+oldId);
+  return {trash,oldId};
+}
+function noWrite(trash:number){
+  assert.equal(sql("SELECT restored_at IS NULL FROM deleted_flights WHERE id="+trash),"t");
+  assert.equal(sql("SELECT count(*) FROM deleted_flights d JOIN flights f ON f.id=d.restored_flight_id WHERE d.id="+trash),"0");
+}
+test("real v20 flight, track and expense roundtrip preserves historical fields",{skip:!asked},()=>{
+  const {trash,oldId}=archived("2026-10-20");
+  const id=Number(sql(command(trash)));
+  assert.ok(Number.isSafeInteger(id)&&id>0&&id!==oldId);
+  assert.equal(sql("SELECT restored_flight_id FROM deleted_flights WHERE id="+trash),String(id));
+  assert.equal(sql("SELECT aircraft_make||'|'||aircraft_model||'|'||aircraft_variant FROM flights WHERE id="+id),"Historic Maker|Historic Model|Legacy Option");
+  assert.equal(sql("SELECT (to_jsonb(f)-'id')=(d.flight_data-'id') FROM flights f JOIN deleted_flights d ON d.restored_flight_id=f.id WHERE d.id="+trash),"t");
+  assert.equal(sql("SELECT count(*) FROM flight_tracks WHERE flight_id="+id),"1");
+  assert.equal(sql("SELECT count(*) FROM flight_expenses WHERE flight_id="+id),"1");
+  assert.equal(sql("SELECT currency||':'||amount_minor FROM flight_expenses WHERE flight_id="+id),"CZK:1255");
+  assert.equal(sql("SELECT (to_jsonb(t)-'id'-'flight_id')=(j.value-'id'-'flight_id') FROM flight_tracks t JOIN deleted_flights d ON d.restored_flight_id=t.flight_id CROSS JOIN LATERAL jsonb_array_elements(d.tracks_data) j WHERE d.id="+trash),"t");
+  assert.equal(sql("SELECT (to_jsonb(e)-'id'-'flight_id')=(j.value-'id'-'flight_id') FROM flight_expenses e JOIN deleted_flights d ON d.restored_flight_id=e.flight_id CROSS JOIN LATERAL jsonb_array_elements(d.expenses_data) j WHERE d.id="+trash),"t");
+});
+test("blank historical aircraft identity cannot be silently overwritten by current profile",{skip:!asked},()=>{
+  const {trash}=archived("2026-10-21",{blankIdentity:true});
+  assert.equal(sql(command(trash)),"");
+  noWrite(trash);
+});
+test("missing recorded currency fails closed, never infers CZK",{skip:!asked},()=>{
+  const {trash}=archived("2026-10-22");
+  sql("UPDATE deleted_flights SET expenses_data=(SELECT jsonb_agg(e.value-'currency') FROM jsonb_array_elements(expenses_data) e) WHERE id="+trash);
+  assert.equal(sql(command(trash)),"");
+  noWrite(trash);
+});
