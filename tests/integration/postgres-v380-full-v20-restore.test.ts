@@ -12,7 +12,7 @@ const start=restoreSource.indexOf("export async function restoreDeletedFlightRec
 assert.ok(start>=0,"Restore function not found");
 const restoreBlock=restoreSource.slice(start);
 const lockFound=restoreBlock.match(/const tx=await sql\.transaction\(\[\s*sql\x60([\s\S]*?)\x60,\s*sql\x60WITH candidate AS MATERIALIZED/);
-const found=restoreBlock.match(/sql\x60(WITH candidate AS MATERIALIZED[\s\S]*?)\x60\]\);const rows=tx\[1\] as Array<\{restored_flight_id:number\|string\}>/);
+const found=restoreBlock.match(/sql\x60(WITH candidate AS MATERIALIZED[\s\S]*?)\x60\],\{isolationLevel:'ReadCommitted'\}\);const rows=tx\[1\] as Array<\{restored_flight_id:number\|string\}>/);
 assert.ok(lockFound,"Transaction-scoped natural-identity lock is missing");
 assert.ok(found,"Exact SQL restore query in transaction is missing");
 const advisory=lockFound[1],tagged=found[1];
