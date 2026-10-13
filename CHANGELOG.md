@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — A1-T2c D1 disposable PG16 atomic restore prototype (DRAFT / UNTESTED)
+
+- With owner authorization, created nested draft `test/3.8.0-a1-t2c-d1-atomic-restore-pg16` from review-only PR #326. Added **test-only** `tests/fixtures/a1t2c-reduced-atomic-restore-prototype.sql` with a single-statement PL/pgSQL atomic restore experiment (real archive row lock, independent restoring-caller natural-key advisory serialization, fail-closed source checks, new IDs, reduced explicit child/monetary projections, unconditional transaction errors). Added `tests/integration/postgres-currency-a1t2c-atomic-restore.test.ts`, a disposable native PG16 PowerShell runner and [local handoff](docs/product/3_8_0_CURRENCY_A1T2C_D1_DISPOSABLE_SQL_HANDOFF.md).
+- **Execution evidence for this D1 SHA: NOT RUN** — local PostgreSQL 16 integration, Windows runner, exact-head Node24 full typecheck, concurrent sessions, full Node suite/CI, Neon HTTP, signed v13, full-v20 schema, build/browser. Existing A1-T2b owner-local 8/8+3/3 PASS belongs to a **different earlier SHA** and is not D1 evidence. The D1 SQL prototype works on a reduced fixture after draft v21 DDL, not full production table projection; no tested production currency restore, no merge, migration registration, runtime edit, Neon writes or deployment.
+
 ## 13 October 2026 — A1-T2c independent review source reconciliation (DOCS ONLY)
 
 - Received independent read-only A1-T2c review; reviewer explicitly **could not access exact repository files**. Checked the claims against actual `main@4ca2847795435549f36d44f253eb7c105eea6d25` sources (`lib/flight-trash.ts`, `db-optimization.ts`, `v159-schema.ts`, `db.ts`, `local-postgres.ts`) and existing 16-case design contract. Authored [source-backed issue-by-issue reconciliation](docs/product/3_8_0_CURRENCY_A1T2C_INDEPENDENT_REVIEW_RECONCILIATION_2026-10-13.md) and amended the [atomic restore contract](docs/product/3_8_0_CURRENCY_A1T2C_ATOMIC_TRASH_CONTRACT.md) with normative evidence rules.
