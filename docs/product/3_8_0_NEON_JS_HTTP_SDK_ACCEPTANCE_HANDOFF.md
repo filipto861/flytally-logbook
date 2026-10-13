@@ -18,6 +18,28 @@
 4. Same-trash independent concurrent SDK requests: exactly one restore. `price_decimal::text` remains byte-precise across NUMERIC write/read.
 5. No real `lib/flight-trash.ts` tagged SQL/full-v20 schema here; **the PG16 full-source tests are separate evidence**. Ordinary Create/Edit writers are outside this test's cooperative lock coverage.
 
+## Final owner-local SDK test + verified full cleanup (13 October 2026)
+
+**Acceptance: PASS (synthetic-only).** Owner Windows/Node24 executed `tooling/run-v380-neon-sdk-local.ps1` on branch `test/3.8.0-neon-sdk-http-acceptance`, code SHA last confirmed before this documentation update `890b8609d1715538a20b28c25f51ef54f6c89808`. Owner supplied complete safe output:
+
+```text
+Local URI format and pinned Neon host verified. Credentials are not printed.
+PASS SDK disposable branch, host, nonce, pristine fixture
+PASS HTTP SDK transaction commit
+PASS HTTP SDK late monetary CHECK rollback
+PASS HTTP SDK concurrent different-trash same-key serialization
+PASS HTTP SDK same-trash collision + exact NUMERIC
+PASS: real Neon SDK HTTP acceptance (scratch only). Delete temp branch separately.
+```
+
+The script used the project's installed `@neondatabase/serverless` HTTP driver and static parameterized query arrays with explicit READ COMMITTED. Test branch was the second isolated child `br-solitary-flower-b1t8okd4`, `ft-380-sdk-http-retry-20261013-tmp`, in Neon project **Logbook Shadow**, database `neondb`. Only scratch schema `ft380_sdk_acceptance` and synthetic data involved; no real logbook data or production branch SQL.
+
+**Cleanup: PASS, independently verified.** Immediately after the user reported PASS, read target metadata and confirmed exact expected ID, name, parent `br-dark-math-b1snjzub`, `primary=false`, `default=false`, `ready`. Executed `delete_branch` for that ID. A fresh `list_branches` showed **four pre-existing branches only**: `production` (`br-dark-math-b1snjzub`), `sp2-safety-pilot-pic-acceptance`, `pre-v20-2026-10-07`, `general-pic-invitation-acceptance`. Confirmed the second temporary branch **absent**. The earlier first temporary branch `br-patient-waterfall-b10m3abc` had separately been deleted and confirmed absent. **No FlyTally 3.8.0 test child branches are left running.**
+
+**Evidence limits:** This certifies the synthetic SDK HTTP transaction contract (commit, rollback, lock and precision) but **not** actual full-v20 `lib/flight-trash.ts` execution through Next.js, protected/void/shared/participant evidence, ordinary Add/Edit writer conflicts, schema v21 or release acceptance. Local PG16 full-source 7+5+7 PASS at `0bb5b4965f7234991ac4530a358eb8de48951a9d` is separate. No production merge, migration or deploy took place.
+
+### Historical setup, preflight failure, and replacement (now completed)
+
 ## Retry after malformed clipboard — old branch cleaned, new isolated target ready (13 October 2026)
 
 **First owner attempt** on previous temporary branch `br-patient-waterfall-b10m3abc`: local Node24 failed at `new URL(url)` with `Invalid Neon test URI` **BEFORE creating the SDK client or issuing ANY remote SQL**. No SDK HTTP transaction, rollback or concurrency test ran. Shell `Set-Clipboard -Value ''` raised `ArgumentNullException` on Windows PowerShell 5.1; the environment variables were cleaned by `finally`. Root cause of invalid clipboard contents is **unconfirmed**; do not assume credentials were wrong.
