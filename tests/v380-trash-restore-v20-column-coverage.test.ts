@@ -37,3 +37,23 @@ test("protection fields remain excluded from direct historic recertification",()
   assert.match(restore,/locked_at,locked_by_user_id/);
   assert.match(restore,/NULL,NULL,COALESCE\(flight_data->>'operation_type'/);
 });
+
+test("future v21 monetary snapshots cannot silently enter the legacy v20 writer",()=>{
+  assert.match(restore,/NOT \(flight_data \?\| ARRAY\['price_currency_code','price_currency_minor_units','price_per_hour_decimal'\]\)/);
+  assert.match(restore,/e\.value \?\| ARRAY\['amount_encoding','amount_minor_units'\]/);
+  assert.match(restore,/needsNewRestore=await sql/);
+  assert.match(restore,/requires the newer monetary restore process/);
+});
+test("legacy expense records cannot be silently omitted or assigned a guessed currency",()=>{
+  assert.ok(!restore.includes("UPPER(COALESCE(e->>'currency','CZK'))"));
+  assert.ok(!restore.includes("WHERE COALESCE(NULLIF(e->>'amount_minor','')::bigint,0)>0"));
+  assert.match(restore,/COALESCE\(e\.value->>'currency',''\) !~ '\^\[A-Z\]\{3\}\$'/);
+  assert.match(restore,/Archived flight data needs review before it can be restored/);
+});
+test("restore refuses mismatched owner/protected source snapshots and child parents",()=>{
+  assert.match(restore,/flight_data->>'id'=original_flight_id::text/);
+  assert.match(restore,/flight_data->>'user_id'=user_id::text/);
+  assert.match(restore,/flight_certified_revisions r/);
+  assert.match(restore,/t\.value->>'flight_id' IS DISTINCT FROM original_flight_id::text/);
+  assert.match(restore,/e\.value->>'flight_id' IS DISTINCT FROM original_flight_id::text/);
+});
