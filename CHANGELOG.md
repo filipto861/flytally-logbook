@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1g local acceptance PASS (PR #333 Draft, not shipped)
+
+- Owner-tested SHA `a027afa316d86349ce70d8138b77b524a092ac68`: unit/source **1484/1484 PASS**, Next.js production build and TypeScript **PASS**, authenticated desktop/mobile Playwright **4/4 PASS** with disposable PostgreSQL16 identity `flytally_currency_test|flytally|127.0.0.1|58610`; cluster stopped normally.
+- Selected GPS track deletion produced mandatory `pre_restore` backup and preserved the other track/legacy points; ordinary Trash archived remaining GPS and expenses. Pending participation blocked Trash without evidence loss.
+- Interim `178affe4` browser 2/4 failure traced to localhost-only `WITH ... DELETE` capture logic; corrected adapter and source regression test in final candidate. Older 0/4 results below remain historical.
+- Scope is local app/PG16 only. Real Neon HTTP adapter, historical production DB schema parity and remaining D3b writer paths **NOT VERIFIED**. No merge, schema migration, production DB operation or deploy.
+
 ## 13 October 2026 — D3b-1g first authenticated browser failure reproduced; narrow test-fixture and browser-registry corrections staged (NOT RETESTED)
 
 - Owner at SHA `37f60bef92c7f9a49635fcdeca48087bc3ef119f`: full `npm.cmd test` **1482/1483 PASS, 1 FAIL** from static Phase 0C fixed count 53 vs actual 55; Next 16.3.2 optimized build **PASS** (TypeScript, static 41/41). Isolated PostgreSQL16 database `flytally_currency_test|flytally|127.0.0.1|58031` verified, cleanly shut down. Actual authenticated desktop/mobile browser scenarios **0/4 PASS**: GPS deletion blocked at mandatory `createStoredBackup()` because synthetic `airports` omitted `id` referenced by account backup; pending-participation refusal reached `trash=blocked` but test used ambiguous `getByRole('alert')` also matching Next route announcer. No production DB operation.
