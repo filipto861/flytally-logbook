@@ -628,3 +628,22 @@ test("D3b-1f: expense replacement is serialized in both Trash-first and writer-f
     }finally{await stopGpsSessions(a,b)}
   }
 });
+
+
+test("D3b-1f: locked or foreign-owner track deletion is inert; locked financial metadata stays editable",{skip:!enabled},()=>{
+  const flightId=insertFlight(9001),trackId=seedTrack(flightId,"locked-owner");
+  seedExpense(flightId,"before",120);
+  run("UPDATE flights SET locked_at=NOW() WHERE id="+flightId+";");
+  run("BEGIN;\n"+trackDeleteSql(flightId,trackId).join(";\n")+";\nCOMMIT;");
+  run("BEGIN;\n"+trackDeleteSql(flightId,trackId,9002).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flight_tracks","id="+trackId),1,"Locked track survives");
+  assert.equal(count("track_points","track_id="+trackId),2,"Locked legacy points survive");
+  const foreign=expensesSaveSql(flightId,[expense("foreign",300)],9002);
+  run("BEGIN;\n"+foreign.join(";\n")+";\nCOMMIT;");
+  assert.equal(run("SELECT label FROM flight_expenses WHERE flight_id="+flightId+";"),"before",
+    "Wrong owner cannot replace expenses");
+  const owner=expensesSaveSql(flightId,[expense("locked-financial",250)]);
+  run("BEGIN;\n"+owner.join(";\n")+";\nCOMMIT;");
+  assert.equal(run("SELECT label FROM flight_expenses WHERE flight_id="+flightId+";"),"locked-financial",
+    "Financial metadata remains editable when flight lock is set");
+});
