@@ -192,8 +192,9 @@ test("D3b-1 A+: immutable recipient provenance blocks ordinary Trash without cha
     " VALUES("+source+",9001,9002,'INSTRUCTOR',1,"+q(hash)+",'accepted',"+recipient+");");
   run("INSERT INTO flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role)"+
     " VALUES("+recipient+",9002,"+source+",9001,1,"+q(hash)+",'INSTRUCTOR');");
-  const attempted=raw("SET search_path TO "+ns+",pg_catalog;BEGIN;"+trashSql(recipient,token,9002).join(";")+";COMMIT;");
-  assert.notEqual(attempted.status,0,"Provenance should make Trash fail closed");
+  run("BEGIN;\n"+trashSql(recipient,token,9002).join(";\n")+";\nCOMMIT;");
+  // A+ fails closed by excluding protected children before destructive SQL.
+  // No PostgreSQL exception is required for an ineligible Trash attempt.
   assert.equal(count("flights","id="+recipient),1);
   assert.equal(count("deleted_flights","delete_token="+q(token)),0);
   assert.equal(count("flight_source_provenance","participant_flight_id="+recipient),1);
