@@ -24,6 +24,12 @@ Legacy expense restoration additionally silently mapped missing currency to `CZK
 - **Potential compatibility impact:** older trash snapshots pre-v17 without the three identity keys are now rejected; this is an intentional fail-closed candidate choice requiring actual archive inventory and owner approval before deploy.
 - No full 3.8.0 production readiness until A1-T1 + T2a/T2b + T2c D1 full-field integration, official SIX registry evidence, A1-C/A1-F signed backup and A1-G rollout gates are satisfied.
 
+## Owner-local first test / TS typing correction (13 October 2026)
+
+- Exact commit `220b3e9cb1271e663a139856df9cef3c0e93ff22` run by owner on Windows: targeted source coverage **7/7 PASS**, no failures or skips. `npm run typecheck`: **FAIL TS2345** at `tests/v380-trash-restore-v20-column-coverage.test.ts:24` because `const excluded = [...] as const` narrowed `includes()` to a literal union while `columns` entries are `string`.
+- Minimal correction at `36f6c1e4efda2e58c367ed93bae6059b78442518`: change to `const excluded: readonly string[] = [...]`. Runtime restore code, SQL projection and assertions unchanged. Equivalent isolated TS5.8.3 strict expression check **PASS**.
+- **Next required result:** project Node24 `npm run typecheck` and targeted 7 Node tests on latest branch HEAD. These were **NOT RUN** on the corrected commit. This success is insufficient for merge; full-v20 PG16 trigger, void/shared evidence, independent-session transaction and Neon HTTP still blocked.
+
 ## Owner-local first verification (no DB writes)
 
 On the new branch, first run:
