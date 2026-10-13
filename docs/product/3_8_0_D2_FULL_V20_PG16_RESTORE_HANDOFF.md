@@ -39,6 +39,16 @@ Separate from owner-local native PG16 D2, a scratch **Neon PG18.6** child branch
 
 The real HTTP JavaScript driver transaction and application restore mapping remain separate unverified gates; no temporary Neon branch currently exists for further execution.
 
+## Next P0 candidate — distinct-trash natural-key serialization (UNTESTED; 13 October 2026)
+
+- **Previous accepted evidence remains exact `7676563ec6bf288b57b4a99ef792033cad434f4e`, 7/7 source + 3/3 guards + 6/6 real PG16; subsequent documentation-only notes do not validate this new code.**
+- Current nested Draft changes `restoreDeletedFlightRecord` from a **single SQL statement** into one `sql.transaction([lock,restore],{isolationLevel:'ReadCommitted'})` with two distinct SQL statements. First statement takes `pg_advisory_xact_lock(hashtextextended(jsonb_build_array(...),0))` on six existing normalized identity dimensions: `user_id`, date, trimmed uppercase registration, off-block (empty if NULL), trimmed uppercase departure and arrival. Second is the **same existing CTE restore** with locked archived row; as a separate statement under **READ COMMITTED**, its duplicate check should receive a fresh snapshot after any competing cooperating restore commits.
+- This is a **cooperative Restore/Restore lock**, NOT a global uniqueness constraint. **Normal Create/Edit do not acquire this lock**, so their competing writes remain a separately unresolved integrity/owner decision. The existing nonunique natural-key index remains unchanged. The lock uses a 64-bit stable hash; collision can cause additional serialization but not credential exposure.
+- Updated actual-source PG16 integration to extract BOTH SQL templates and run `BEGIN; SET TRANSACTION ISOLATION LEVEL READ COMMITTED; advisory-lock; original-restore; COMMIT;`. It adds independent-session T2c natural-key collision (two distinct trash IDs, identical identity, exactly one restored flight and marker) and retains six existing rollback/trigger/content tests. New guard tests explicitly check the two-statement array transaction, identity key dimensions and no new unique index. **Expected suites on new exact SHA: D2 source 7 tests, guard 5 tests, full-v20 PG16 7 tests.**
+- Source/regex readback currently confirms all key dimensions and SQL extraction shape. **New commit's project Node24 typecheck, all target tests, native PG16 concurrency/rollback, and actual `@neondatabase/serverless` HTTP transaction tests are NOT RUN.** An isolated Neon scratch PG18 connector transaction PASS from the earlier cleaned-up branch is **not** proof for this SDK code.
+- Official `@neondatabase/serverless` [transaction API](https://github.com/neondatabase/serverless/blob/main/CONFIG.md) supports static array-of-queries, `isolationLevel: 'ReadCommitted'`; current local adapter supports the array transaction as well. **Actual integrated HTTP behavior still requires explicit test.**
+- **Required next**: owner reruns `tooling/run-v380-d2-full-v20-local.ps1` at current exact HEAD and shares full output; if all 19 tests and typecheck PASS, perform independent SQL review and SDK nonproduction acceptance before merger. No migration, deploy, production writes, or `flytally-training` changes.
+
 ## Owner-local D2 full-v20 acceptance — 13 October 2026
 
 **Exact tested commit:** `7676563ec6bf288b57b4a99ef792033cad434f4e` from Draft PR #329.
