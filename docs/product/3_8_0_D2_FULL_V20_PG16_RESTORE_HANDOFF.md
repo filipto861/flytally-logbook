@@ -1,0 +1,40 @@
+# FlyTally 3.8.0 — D2 full-v20 restore / PG16 acceptance handoff
+
+**13 October 2026 · isolated Draft / NOT DEPLOYABLE / database test NOT RUN**
+
+## Scope and source
+
+- Base: `fix/3.8.0-trash-restore-v20-fidelity-clean` Draft PR #328, exact original head `e24c982fda95a1219c7e5fd4a66a47afe16707da`. Implementation is in separate nested branch `test/3.8.0-d2-full-v20-pg16-runtime`.
+- Existing source: `lib/flight-trash.ts` legacy v20 CTE restore, source in flight archive JSONB. **Runtime changes in this branch**: same-archive `FOR UPDATE OF deleted_flights`; reject source with all make/model/variant blank **if** current aircraft profile or aircraft type would cause the existing `logbook_snapshot_aircraft_identity` trigger to populate different historical identity. The guard appears in eligibility and invalid-archive fallback. No global natural-key uniqueness or currency default.
+- New `tests/integration/postgres-v380-full-v20-restore.test.ts` dynamically extracts **the actual tagged SQL inside `restoreDeletedFlightRecord`**, not the earlier D1 reduced-function prototype. Runs against `tooling/bootstrap-browser-smoke-db.mjs` full-v20 61-column flights fixture, then adds the source-backed v14 `deleted_flights.expenses_data` column missing from browser bootstrap. Full restore test is restricted to verified disposable native PG16 target only.
+- Scenarios: exact historic 61-column flight record compare (minus fresh ID); historic aircraft identity; track+expense content roundtrip with new IDs; missing expense currency fail-closed; blank identity trigger risk zero-write; forced late expense CHECK rollback; two **independent psql sessions** restoring the same trash ID. Additional source/guard tests and existing D2 seven column/fail-closed tests are included in runner.
+- `tooling/run-v380-d2-full-v20-local.ps1` is derived from the previously proven A1-T2c D1 temporary cluster runner. Requires exact branch/clean tracked worktree, Windows Node24, PostgreSQL16; creates new random local-only cluster/database; checks database identity, runs TypeScript and targeted tests, then stops and cleans its own instance if safe.
+
+## Critical safety boundaries
+
+**The browser bootstrap intentionally reinitializes its target schema.** The new integration test validates the exact temporary URL, database/user/address/port and actual PostgreSQL16 backend identity **before invoking it**. Never run the bootstrap manually against a normal development or production database.
+
+This is actual SQL text + PostgreSQL behavior, not a full invocation of Next.js authenticated restore action or of `@neondatabase/serverless` HTTP. The same-trash row lock is a narrow improvement; **two distinct trash IDs sharing a natural key and unrelated Create/Edit writers are NOT made globally race-safe**. No assumption of Neon transaction support, source permissions or approved v21 migration.
+
+Blank historical identity in snapshots from older configurations may now fail closed and require user review; this is preferable to silently assigning present-day aircraft identity but still needs an archive inventory and compatibility decision before merge.
+
+The existing old CTE code still has no full post-insert child-content assertion; tests can detect specific drift but do not prove every possible source row is safely restored. No code from the disposable D1 PostgreSQL function was deployed.
+
+## Local commands (no remote database)
+
+```powershell
+git fetch origin
+git switch test/3.8.0-d2-full-v20-pg16-runtime
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d2-full-v20-local.ps1
+```
+
+The runner invokes `npm run typecheck` and three `npm run test:target -- ...` suites (D2 v20 static, lock/trigger contract, actual full-v20 PostgreSQL integration). If any fail, capture **first failed assertion, exact git SHA, SQL diagnostics and final cluster shutdown**. Do not report SQL PASS until user-local output confirms it.
+
+## Test and release status
+
+- PR #328 initial D2 corrected SHA `e24c982fda95a1219c7e5fd4a66a47afe16707da`: **owner-local Node24 typecheck PASS and seven source regression tests PASS**; no PG tests.
+- Current nested branch: exact SQL source extraction/fixture/guard reviewed **statically**; Node24/typecheck/new targeted tests/**actual PostgreSQL 16 NOT RUN**.
+- Separate reduced A1-T2c D1 owner-local `962913c9`: 8/8 safety + 11/11 PG16 PASS; **does not validate this real full-v20 runtime SQL**.
+- Pending before any merge/rollout: full-v20 PG16 owner results; certified/void/shared participant evidence and cross-natural-key races; **authorized isolated nonproduction Neon HTTP** transaction proof; official ISO registry; v21 migration prerequisite; signed-v13 backups (A1-C/A1-F); A1-G rollout, build/browser/CI/production smoke.
+- **NOT PERFORMED:** main merge, migration v21 registration, production/Neon writes, deploy, FX/backfill or `flytally-training` changes.
