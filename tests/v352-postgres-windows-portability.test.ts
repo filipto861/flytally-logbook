@@ -17,23 +17,26 @@ const psqlSources=[
 ];
 
 test("PostgreSQL subprocess calls keep connection strings behind explicit -d for Windows portability",()=>{
-  let explicitDatabaseSelections=0;
+  let checkedCalls=0;
   for(const file of psqlSources){
     const source=fs.readFileSync(file,"utf8");
-    assert.doesNotMatch(
-      source,
-      /spawnSync\("psql",\s*\[\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\))\s*,/,
-      `${path.relative(root,file)} passes the connection string as the first positional psql argument`,
-    );
-    explicitDatabaseSelections+=(source.match(/spawnSync\("psql",\s*\[\s*"-d",\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\))/g)??[]).length;
+    const calls=[...source.matchAll(/\b(?:spawnSync|spawn)\(\s*["']psql["']\s*,/g)];
+    // Inspect every literal psql argv array: -d is valid anywhere in argv,
+    // including after -X/-w/-qAt flags in isolated native PG16 tests.
+    // A dynamic argv expression must be reviewed rather than silently skipped.
+    const invocations=[...source.matchAll(/\b(?:spawnSync|spawn)\(\s*["']psql["']\s*,\s*\[([\s\S]*?)\]\s*,\s*\{/g)];
+    assert.equal(invocations.length,calls.length,
+      path.relative(root,file)+" has an unreviewed psql subprocess argument form");
+    for(const match of invocations){
+      const args=match[1];
+      assert.match(args,/(?:^|,)\s*["']-d["']\s*,\s*[A-Za-z_$][\w$]*(?:\(\))?\s*(?:,|$)/,
+        path.relative(root,file)+" must select a database through explicit -d");
+      assert.doesNotMatch(args,/(?:^|,)\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\)|url)\s*,/,
+        path.relative(root,file)+" must not pass database URL as a positional argument");
+      assert.doesNotMatch(args,/(?:^|,)\s*["']-c["']\s*,\s*(?:statement|sql)\s*(?:,|$)/,
+        path.relative(root,file)+" must pass SQL through stdin, not -c command-line text");
+      checkedCalls++;
+    }
   }
-  assert.ok(explicitDatabaseSelections>=psqlSources.length,"Expected every PostgreSQL harness source to use explicit -d selection");
-  for(const file of psqlSources){
-    const source=fs.readFileSync(file,"utf8");
-    assert.doesNotMatch(
-      source,
-      /spawnSync\("psql",[\s\S]*?"-c",\s*(?:statement|sql)\s*\]/,
-      `${path.relative(root,file)} passes SQL through the Windows command line instead of UTF-8 stdin`,
-    );
-  }
+  assert.ok(checkedCalls>0,"At least one real PostgreSQL subprocess must be checked");
 });
