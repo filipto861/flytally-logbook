@@ -2,6 +2,20 @@
 
 **13 October 2026 — NESTED DRAFT / NOT RUN / NOT SHIPPED**
 
+## Owner-local D3a completion — verified 13 October 2026
+
+**Exact tested source commit:** `59a9801816f57375b6468c74274eb0ee1baf6f81`; owner Windows Node24, freshly initialized native PostgreSQL 16 temporary database `127.0.0.1:65383`.
+
+Owner test output:
+- `tooling/run-v380-d3a-create-restore-local.ps1`: database identity `flytally_currency_test|flytally|127.0.0.1|65383` expected/observed **MATCH**, temporary server stopped successfully.
+- Project `npm run typecheck`: **PASS**.
+- `tests/v380-trash-restore-v20-column-coverage.test.ts`: **7/7 PASS**, 0 fail/skip.
+- `tests/integration/v380-restore-lock-and-trigger-contract.test.ts`: **6/6 PASS**, 0 fail/skip.
+- `tests/integration/postgres-v380-full-v20-restore.test.ts`: **8/8 PASS**, 0 fail/skip. The new case tested parallel independent native PG16 sessions running a **Create-like canonical fingerprint lock / conditional INSERT** against the **actual source-extracted Restore SQL**: exactly one matching flight.
+- Local runner: `LOCAL D3a Create/Restore fingerprint gates PASS on candidate 59a9801816f57375b6468c74274eb0ee1baf6f81. Not a production migration.`
+
+**Disposition:** D3a Create-like/Restore advisory fingerprint parity and scope-specific serialization are **locally accepted** at this commit. Previous "NOT RUN" captions below are historical and superseded. No confirmation of authenticated Next.js Create action, Update/Edit and GPS/Quick Add alternatives, full protected evidence, or production readiness. Later documentation-only commits require no retest of source, but any runtime/test change does. No merge, deployment, v21 migration registration or remote DB write.
+
 ## Verified repository reconstruction
 
 - Canonical repository `filipto861/flytally-logbook`, `main@4ca2847795435549f36d44f253eb7c105eea6d25` ships 3.7.0; v3.8.0 still multiple unmerged Draft PRs.
