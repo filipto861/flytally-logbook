@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 actual Trash SQL PostgreSQL race tests authored (DRAFT / NOT RUN / NOT SHIPPED)
+
+- Added `tests/integration/postgres-v380-d3b-real-trash-races.test.ts`: extracts the five original SQL statements from `moveFlightToTrash()`, applies the v20 migration SQL blocks from `lib/db-optimization.ts` in an isolated schema and asserts draft deletion, linked evidence CASCADE, provenance-trigger rollback, certified protection, and a deterministic two-session certification-after-archive race.
+- Added `tooling/run-v380-d3b-targeted-local.ps1`, reusing the isolated Windows native PG16 cluster lifecycle with exact branch/identity checks, typecheck and targeted source + runtime tests. This is a **bounded synthetic pre-v20 fixture with actual v20 functions/triggers**, NOT proof of full v19→v20 migration fidelity.
+- Earlier D3b catalog/zero-row source tests and their gating runner remain staged; **ALL new D3b tests NOT RUN**, no assertion of reproduced production data loss, no D3b-1 behavior change, DB migration, main merge or deploy.
+
 ## 13 October 2026 — Independent DeepSeek D3b review reconciled with live repository sources (READ-ONLY / NOT SHIPPED)
 
 - Received owner-forwarded DeepSeek review. Reviewer explicitly lacked repository access; treated severity assertions as hypotheses and checked actual `lib/flight-trash.ts`, `lib/db-optimization.ts` v12/13/15/20, `lib/flight-sharing.ts`, `lib/flight-voiding.ts`, `app/(protected)/flights/actions.ts` and shared participation actions.
