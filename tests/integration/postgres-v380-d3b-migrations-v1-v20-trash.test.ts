@@ -293,3 +293,81 @@ test("D3b-1 A+: parent row lock serializes a competing certification writer",{sk
     }
   }
 });
+
+
+test("CHARACTERIZATION ONLY D3b-1e: a track INSERT without parent FK can outlive Trash snapshot and DELETE",{skip:!enabled,timeout:25000},async()=>{
+  // PASS demonstrates an UNSAFE race in a bounded fixture, NOT a safety-acceptance
+  // test, production-schema claim, or authorization to alter historical data.
+  const action=readFileSync(new URL("app/(protected)/flights/actions.ts",root),"utf8");
+  const start=action.indexOf("export async function attachKmlTrack(");
+  const end=action.indexOf("export async function deleteTrack(",start);
+  assert.ok(start>=0 && end>start,"Track writer source boundary not found");
+  const writer=action.slice(start,end),tick=String.fromCharCode(96);
+  assert.ok(writer.includes("await sql"+tick+"SELECT id,locked_at FROM flights"),"Track writer has an unlocked parent read");
+  const insertAt=writer.indexOf("queries.push(sql"+tick+"INSERT INTO flight_tracks(");
+  const updateAt=writer.indexOf("queries.push(sql"+tick+"UPDATE flights SET ");
+  assert.ok(insertAt>=0 && updateAt>insertAt,"Actual track INSERT must precede parent UPDATE");
+  assert.match(writer,/await sql\.transaction\(queries\)/);
+  const trackFk=num("SELECT count(*) FROM pg_constraint WHERE conrelid='flight_tracks'::regclass AND contype='f' AND confrelid='flights'::regclass;");
+  assert.equal(trackFk,0,"Fixture acquired parent FK; re-review this characterization");
+
+  const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token);
+  const launch=()=>{
+    const child=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],
+      {env:safeEnv(),stdio:["pipe","pipe","pipe"]});
+    let stdout="",stderr="";
+    child.stdout.setEncoding("utf8").on("data",(x:string)=>{stdout+=x;});
+    child.stderr.setEncoding("utf8").on("data",(x:string)=>{stderr+=x;});
+    const stopped=new Promise<number|null>((resolve,reject)=>{child.on("error",reject);child.on("close",resolve);});
+    return {child,stopped,output:()=>stdout,error:()=>stderr};
+  };
+  const a=launch(),b=launch();
+  async function waitFor(marker:string,read:()=>string){
+    for(let n=0;n<100;n++){
+      if(read().includes(marker))return;
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    throw new Error("Race session marker absent: "+marker);
+  }
+  try{
+    a.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      steps[0]+";\n"+steps[1]+";\nSELECT 'D3B1E_ARCHIVE_A';\n");
+    await waitFor("D3B1E_ARCHIVE_A",a.output);
+
+    // Mirrors the source child-first ordering of attachKmlTrack. Without a
+    // parent FK, B INSERT is not blocked by A holding parent FOR UPDATE.
+    b.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "INSERT INTO flight_tracks(user_id,flight_id,file_name) VALUES(9001,"+id+",'race-no-fk') RETURNING id;\n"+
+      "SELECT 'D3B1E_PID:'||pg_backend_pid();\n"+
+      "UPDATE flights SET departure='LKAA' WHERE id="+id+" AND user_id=9001;\n"+
+      "SELECT 'D3B1E_UPDATE_FINISHED_B';\nCOMMIT;\n");
+    await waitFor("D3B1E_PID:",b.output);
+    const pid=Number(b.output().match(/D3B1E_PID:([0-9]+)/)?.[1]);
+    assert.ok(Number.isSafeInteger(pid)&&pid>0,"Writer B backend PID missing");
+    let waiting=false;
+    for(let n=0;n<100;n++){
+      if(num("SELECT count(*) FROM pg_stat_activity WHERE pid="+pid+" AND wait_event_type='Lock';")>0){
+        waiting=true;break;
+      }
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    assert.ok(waiting,"Writer B did not wait on Trash parent lock at UPDATE");
+
+    a.child.stdin.end(steps.slice(2).join(";\n")+";\nCOMMIT;\n");
+    assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+    assert.equal(await b.stopped,0,"Track writer B failed: "+b.error());
+    assert.ok(b.output().includes("D3B1E_UPDATE_FINISHED_B"));
+    assert.equal(count("flights","id="+id),0);
+    assert.equal(count("deleted_flights","delete_token="+q(token)),1);
+    assert.equal(num("SELECT jsonb_array_length(tracks_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),0,
+      "Uncommitted track omitted from archive");
+    assert.equal(count("flight_tracks","flight_id="+id+" AND user_id=9001"),1,
+      "The unsafe no-FK fixture must retain the orphan track");
+    assert.equal(num("SELECT count(*) FROM flight_tracks t JOIN flights f ON f.id=t.flight_id WHERE t.flight_id="+id+";"),0,
+      "Orphan track must not have a live parent");
+  }finally{
+    for(const p of [a,b]){
+      if(p.child.exitCode===null){p.child.kill();await p.stopped;}
+    }
+  }
+});
