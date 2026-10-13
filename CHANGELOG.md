@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency M1 exact-money core rebased onto current main (PR #336 Draft)
+
+- Reused exact source blobs from isolated draft #320: `lib/monetary-amount.ts` (`300587c9`) and `tests/monetary-amount.test.ts` (`36171bf1`). Pure, unconnected exact decimal parsing/bigint minor-unit operations and denomination/precision-preserving sums; half-up billing is only an isolated candidate, not a new live business rule.
+- Copied the 11 Oct [owner-approved D1–D4 contract](docs/product/3_8_0_CURRENCY_OWNER_DECISIONS_2026-10-11.md) unchanged from documentation draft #319, avoiding any newly inferred decisions.
+- Prior exact-blob local Node22 targeted 4/4 and isolated TypeScript 5.8 strict check PASS (documented in #319 M1 implementation handoff); new current-main candidate has not yet been tested end-to-end with Node24. Tests, build, PG, browser, CI, production smoke: NOT RUN on #336 HEAD.
+- PR #336 remains Draft, not merged/deployed. No existing application consumer, data write, schema v21 registration, database migration, historical currency inference, FX or Training changes. Separate former #319/#320 source drafts remain open for provenance pending reconciliation.
+
 ## 13 October 2026 — D2/D3a/D3b main integration and Vercel production READY
 
 - [PR #334](https://github.com/filipto861/flytally-logbook/pull/334) merged as `0b5a313c032d1e8e27a7be3c4a0b0b0fc8ab5d4c`, including earlier #333 ordinary Trash A+ guard; no Currency v21 migration or FX behavior.
