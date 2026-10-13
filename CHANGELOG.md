@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 owner-local native PG16 A+ targeted acceptance 21/21 PASS (DRAFT / NOT SHIPPED)
+
+- Owner executed `tooling/run-v380-d3b1-atomic-trash-local.ps1` at exact candidate `83c7aa61bcba1d92c5e2df9b86c790cab4c867e0` on Windows/Node24. TypeScript `tsc --noEmit` **PASS**, D3b-1 A+ source **4/4 PASS**, native PG16 five-statement Trash/rollback **6/6 PASS**, actual sequential optimizer migration SQL v1→v20 with A+ evidence and real two-session certification row-lock test **11/11 PASS**, overall **21/21 PASS, zero failures, zero skips**. Disposable PG16 endpoint at `127.0.0.1:65028`, verified expected/observed DB identity `flytally_currency_test|flytally|127.0.0.1|65028`; server stopped cleanly.
+- Proven within this scoped schema: clean uncertified draft archives/deletes; linked crew, verification, pending participation, instructor approval, revoked share and source provenance with no source FK block Trash and persist; certified flight excluded; forced post-archive conditional zero-row DELETE raises rollback; competing certification writer waits on parent `FOR UPDATE` before deletion. The test fixture is not an exhaustive historic production clone or an authenticated application/Neon SDK test.
+- **Scope of PASS**: the exact `83c7aa61` D3b-1 code candidate only. Full regression, build, browser, iPad/mobile/night UX, source-reference writer races, actual Neon SDK and production-scheme/data parity **NOT RUN**. PR #333 remains Draft; no main merge, v21/schema migration or production deploy. Historical preflight failures preserved below.
+
 ## 13 October 2026 — D3b-1 owner-local source PASS; PostgreSQL test loader CRLF failure corrected (DRAFT / NEW TESTS NOT RUN)
 
 - Owner ran `tooling/run-v380-d3b1-atomic-trash-local.ps1` at exact commit `94b4414be134421f073191aebcfef21f8b3a5ea0` (Windows, Node24). **TypeScript PASS, D3b-1 source characterization 4/4 PASS**. Disposable native PostgreSQL16 cluster at `127.0.0.1:62241` passed expected/actual DB identity `flytally_currency_test|flytally|127.0.0.1|62241` and shut down cleanly.
