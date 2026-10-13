@@ -44,7 +44,7 @@ function interpolate(s:string,trashId:number):string{
 }
 function command(trashId:number){return interpolate(tagged,trashId)}
 function txCommand(trashId:number){
-  return "BEGIN;\n"+interpolate(advisory,trashId)+";\n"+command(trashId)+";\nCOMMIT;";
+  return "BEGIN;\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"+interpolate(advisory,trashId)+";\n"+command(trashId)+";\nCOMMIT;";
 }
 function restore(trashId:number){return sql(txCommand(trashId))}
 const quote=(v:string)=>"'"+v.replaceAll("'","''")+"'";
