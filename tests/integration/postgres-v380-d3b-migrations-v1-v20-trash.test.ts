@@ -503,14 +503,14 @@ function childWriterSql(name:string,next:string,variables:Record<string,string>)
   }));
 }
 function trackDeleteSql(flightId:number,trackId:number,userId=9001){
-  const steps=childWriterSql("deleteTrack","saveFlightExpenses",{
+  const steps=childWriterSql("deleteTrack","applyGpsTimes",{
     userId:String(userId),flightId:String(flightId),trackId:String(trackId)
   });
   assert.ok(steps[1].includes("track_id="+trackId+" AND EXISTS"),"Selected track id must be the only point delete target");
   return steps;
 }
 function expensesSaveSql(flightId:number,items:Array<Record<string,string|number>>,userId=9001){
-  return childWriterSql("saveFlightExpenses","applyGpsTimes",{
+  return childWriterSql("saveFlightExpenses","deleteFlight",{
     userId:String(userId),id:String(flightId),expenseJson:q(JSON.stringify(items))
   });
 }
