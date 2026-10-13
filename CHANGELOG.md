@@ -8,6 +8,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 owner-local source PASS; PostgreSQL test loader CRLF failure corrected (DRAFT / NEW TESTS NOT RUN)
+
+- Owner ran `tooling/run-v380-d3b1-atomic-trash-local.ps1` at exact commit `94b4414be134421f073191aebcfef21f8b3a5ea0` (Windows, Node24). **TypeScript PASS, D3b-1 source characterization 4/4 PASS**. Disposable native PostgreSQL16 cluster at `127.0.0.1:62241` passed expected/actual DB identity `flytally_currency_test|flytally|127.0.0.1|62241` and shut down cleanly.
+- The targeted integration test failed **before any database cases executed**: source-extraction assertion `Cannot locate exact Trash SQL transaction`. The old extractor searched for a literal LF (`\n`) sequence at the end of `sql.transaction([...])`, while the owner's Windows checkout uses CRLF (`\r\n`). **Targeted and v1→v20 PG16 cases NOT RUN** at this SHA. This is a fixture-source parser failure, not evidence that the A+ transaction failed.
+- Corrected **both** A+ PG16 test extractors to scope to `moveFlightToTrash()` and locate the five original SQL templates using a whitespace-tolerant expression, supporting LF and CRLF without bypassing source-contract checks. Static extraction against GitHub source shows 5 SQL statements with either newline convention; new code **NOT RUN**.
+- Two pre-existing provenance negative tests were still expecting PostgreSQL trigger exceptions. A+ should reject the archive eligibility *without* a database exception, so these tests now assert successful transaction execution plus unchanged flight, provenance, and Trash state. New assertions **NOT RUN**.
+- No runtime product changes in this correction, no migrations, no `main` merge, no production/Neon or deploy actions. Await next owner-local native PG16 run.
+
 ## 13 October 2026 — D3b-1 first owner-local runner blocked by duplicate share export (DRAFT / RE-TEST REQUIRED)
 
 - Owner ran `tooling/run-v380-d3b1-atomic-trash-local.ps1` on exact commit `ca5f893b4b697a3157fa0a270a38fbb565a27b26`. **Typecheck FAIL (TS2323/TS2393)**: two exported `ensureFlightSharingSchema()` definitions in `lib/flight-sharing.ts` (lines 12 and 22). Preflight correctly stopped before source/PG16 cases; **D3b-1 PostgreSQL NOT RUN**.
