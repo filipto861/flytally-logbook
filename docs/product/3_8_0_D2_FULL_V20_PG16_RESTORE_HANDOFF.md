@@ -31,6 +31,22 @@ powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d2-full-v20-local.ps
 
 The runner invokes `npm run typecheck` and three `npm run test:target -- ...` suites (D2 v20 static, lock/trigger contract, actual full-v20 PostgreSQL integration). If any fail, capture **first failed assertion, exact git SHA, SQL diagnostics and final cluster shutdown**. Do not report SQL PASS until user-local output confirms it.
 
+## Owner-local D2 full-v20 acceptance — 13 October 2026
+
+**Exact tested commit:** `7676563ec6bf288b57b4a99ef792033cad434f4e` from Draft PR #329.
+
+Owner Windows / Node 24 / native PostgreSQL 16:
+- Ran `tooling/run-v380-d2-full-v20-local.ps1`. Created new temporary server on `127.0.0.1:64675`; expected/actual `flytally_currency_test|flytally|127.0.0.1|64675` identity matched **PASS**; safely stopped server on completion.
+- Full project `npm run typecheck` **PASS**.
+- `tests/v380-trash-restore-v20-column-coverage.test.ts`: **7/7 PASS**, 0 fail/skip.
+- `tests/integration/v380-restore-lock-and-trigger-contract.test.ts`: **3/3 PASS**, 0 fail/skip.
+- `tests/integration/postgres-v380-full-v20-restore.test.ts`: **6/6 PASS**, 0 fail/skip. Scenarios: actual tagged source SQL, exact historical aircraft identity and track/expense data, rejection of blank historical identity vulnerable to current-profile trigger, missing currency zero-write, intentional late expense CHECK failure and full rollback, and two independent PostgreSQL sessions concurrently restoring the SAME archived flight.
+- Runner explicitly reported `LOCAL full-v20 integration gates PASS on candidate 7676563ec6bf288b57b4a99ef792033cad434f4e. Not a production migration.`
+
+**Disposition:** D2 full-v20 test fixture and scoped same-trash source SQL are **locally accepted**, superseding the historical authored NOT RUN note below, at this exact code SHA. Not a proof of all possible production source-history/certification combinations, simultaneous restoration of DIFFERENT trash IDs with the same normalized identity, global concurrent Add/Edit writes, Neon HTTP static transaction behavior, signed backup recovery, or future v21 monetary tuple restoration.
+
+**Next gated work:** focus on cross-trash/global race and source-compatibility evidence, authorize a disposable nonproduction Neon HTTP transaction target, then reconcile PR #328/#329 with unmerged currency source/migration/backup dependencies. Do not merge, register v21 or deploy based only on local D2 PASS.
+
 ## Test and release status
 
 - PR #328 initial D2 corrected SHA `e24c982fda95a1219c7e5fd4a66a47afe16707da`: **owner-local Node24 typecheck PASS and seven source regression tests PASS**; no PG tests.
