@@ -325,7 +325,7 @@ test("v3.3 design batch 6 marks native-required controls only in mixed forms",()
     "app/(protected)/database/page.tsx":["Code"],
     "app/(protected)/fstd/page.tsx":["Date","Device type","Qualification number","Total session time","FSTD instruction / exercise","Instruction"],
     "app/(protected)/profile/page.tsx":["Name"],
-    "components/aircraft-manager.tsx":["Registration","Balloon class","Hot-air group","New rate CZK/h","Valid from"],
+    "components/aircraft-manager.tsx":["Registration","Balloon class","Hot-air group","Hourly rate (legacy amount)","Valid from"],
     "components/aircraft-qualifications-section.tsx":["Completed on","Connected signer"],
     "components/aircraft-share-panel.tsx":["Pilot"],
     "components/auth-invite-creator.tsx":["Tester email"],
