@@ -87,3 +87,9 @@ This document is a **ChatGPT follow-up against real GitHub repository contents**
 - **NOT RUN:** this environment cannot execute the isolated native PostgreSQL instance. The catalog gate does **not** prove behavior or races; dedicated concurrent writer/Trash reproduction and fixture application fidelity remain open. Running this test without its flag SKIPS it; skip must never count as acceptance.
 - Explicit blocker: existing browser-bootstrap-based D3a test fixture cannot be presumed equivalent to full applied v20 schema. Before D3b acceptance, source-backed, reproducible v20 fixture construction and exact catalog trigger identity must be demonstrated; then implement and run evidence-preserving race tests.
 - No runtime/DB/migration/deploy change. Owner linked-draft policy remains pending evidence.
+
+### D3b-0 SQL counterexample added (13 Oct 2026)
+
+- Added `tests/integration/v380-d3b-zero-delete-counterexample.test.ts`: isolated, rollback-only PostgreSQL test deliberately makes the final conditional DELETE affect zero rows after a successful archive INSERT. This demonstrates *why transaction commit alone is insufficient to guarantee INSERT/DELETE row-count coupling*. It does NOT reproduce the exact production `moveFlightToTrash` source code nor prove that a specific concurrent interleaving is reachable.
+- The counterexample has **NOT RUN**. It requires explicit `FLYTALLY_D3B_FULL_V20_DISPOSABLE=1`, disposable localhost PostgreSQL16 identity and supporting fixture rows; missing/invalid schema must fail, and result cannot be promoted to complete D3b acceptance without the separate real-v20 catalog gate and full migration fixture.
+- Next: independently verify the fixture actually represents applied v20, then implement deterministically synchronized two-session *actual Trash SQL* races and independently linked-child rollback assertions. No product behavior changes until owner decision.
