@@ -20,12 +20,12 @@ export async function moveFlightToTrash(userId:number,flightId:number):Promise<b
 
   const token=randomUUID();
   const results=await sql.transaction([
-    // Serialize against flight-row edits and certification before snapshot.
+    // Always lock an existing owned row *before* testing eligibility; another
+    // writer must not change a previously ineligible row into an eligible one
+    // between a conditional lock miss and the archive snapshot.
     // FK child inserts referencing this parent also wait on the FOR UPDATE.
     sql`SELECT f.id FROM flights f
       WHERE f.id=${flightId} AND f.user_id=${userId}
-        AND f.certified_at IS NULL AND f.locked_at IS NULL
-        AND COALESCE(f.record_revision,1)=1
       FOR UPDATE`,
 
     sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data)
