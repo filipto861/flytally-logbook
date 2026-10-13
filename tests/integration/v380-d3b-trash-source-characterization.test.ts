@@ -1,50 +1,52 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { test } from "node:test";
+import {readFileSync} from "node:fs";
+import {test} from "node:test";
 
-// D3b-0 source characterization only. These tests document CURRENT behavior;
-// they are not a safety acceptance test or substitute for native full-v20 PG16.
-const source = readFileSync(new URL("../../lib/flight-trash.ts", import.meta.url), "utf8");
-const start = source.indexOf("export async function moveFlightToTrash");
-const end = source.indexOf("export async function restoreDeletedFlightRecord", start);
-assert.ok(start >= 0 && end > start, "Trash source boundaries must be reviewed");
-const trash = source.slice(start, end);
+// D3b-1 A+ source assertions supersede the D3b-0 characterization checks.
+// The original 15/15 D3b-0 PASS remains tied to its historical commit.
+const source=readFileSync(new URL("../../lib/flight-trash.ts",import.meta.url),"utf8");
+const begin=source.indexOf("export async function moveFlightToTrash");
+const end=source.indexOf("export async function restoreDeletedFlightRecord",begin);
+assert.ok(begin>=0&&end>begin,"Review Trash source boundaries");
+const trash=source.slice(begin,end);
+const transaction=trash.slice(trash.indexOf("sql.transaction(["),trash.lastIndexOf("]);"));
 
-test("D3b baseline: archived payload covers flight, tracks and expenses only", () => {
-  assert.match(trash, /to_jsonb\(f\)/);
-  assert.match(trash, /jsonb_agg\(to_jsonb\(t\)/);
-  assert.match(trash, /jsonb_agg\(to_jsonb\(e\)/);
-  // A WHERE predicate may legitimately consult flight_participations for
-  // access control. Only the SELECT projection is archived in deleted_flights.
-  const insertStart = trash.indexOf("INSERT INTO deleted_flights(");
-  const projectionStart = trash.indexOf(" SELECT f.user_id", insertStart);
-  const outerWhere = trash.indexOf(" FROM flights f WHERE", projectionStart);
-  assert.ok(insertStart >= 0 && projectionStart > insertStart && outerWhere > projectionStart,
-    "Review Trash INSERT projection boundaries after SQL changes");
-  const archiveProjection = trash.slice(insertStart, outerWhere);
-  assert.match(archiveProjection,
-    /deleted_flights\(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data\)/);
-  for (const table of ["flight_participations", "flight_connected_crew", "flight_verifications", "flight_source_provenance"]) {
-    assert.doesNotMatch(archiveProjection, new RegExp(table),
-      table + " must not be mistaken for archived child evidence");
+test("D3b-1 A+: draft snapshot is limited to canonical flight, tracks and expenses",()=>{
+  assert.match(trash,/INSERT INTO deleted_flights\(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data\)/);
+  assert.match(trash,/to_jsonb\(f\)/);
+  assert.match(trash,/jsonb_agg\(to_jsonb\(t\)/);
+  assert.match(trash,/jsonb_agg\(to_jsonb\(e\)/);
+  assert.match(trash,/ensureFlightSharingSchema\(\)/);
+});
+
+test("D3b-1 A+: lock the owned parent before archival without clearing lock state",()=>{
+  const beforeArchive=transaction.slice(0,transaction.indexOf("INSERT INTO deleted_flights"));
+  assert.match(beforeArchive,/SELECT f\.id FROM flights f[\s\S]*FOR UPDATE/);
+  assert.match(beforeArchive,/f\.certified_at IS NULL/);
+  assert.match(beforeArchive,/f\.locked_at IS NULL/);
+  assert.match(beforeArchive,/COALESCE\(f\.record_revision,1\)=1/);
+  assert.doesNotMatch(trash,/SET locked_at=NULL/);
+});
+
+test("D3b-1 A+: independently meaningful evidence is refused both before archive and before DELETE",()=>{
+  const insert=transaction.slice(transaction.indexOf("INSERT INTO deleted_flights"),transaction.indexOf("RETURNING id"));
+  const remove=transaction.slice(transaction.indexOf("WITH deleted AS"),transaction.indexOf("RETURNING f.id"));
+  for(const relation of [
+    "flight_participations","flight_connected_crew","flight_verifications",
+    "instructor_flight_approvals","flight_source_provenance","flight_public_shares",
+    "flight_certified_revisions","voided_certified_flights"
+  ]){
+    assert.match(insert,new RegExp("NOT EXISTS \\(SELECT 1 FROM "+relation+"\\b"),relation+" INSERT guard");
+    assert.match(remove,new RegExp("NOT EXISTS \\(SELECT 1 FROM "+relation+"\\b"),relation+" DELETE guard");
   }
-  assert.match(trash.slice(outerWhere), /EXISTS\(SELECT 1 FROM flight_participations p/,
-    "Participation occurs as a condition, not as archived payload");
+  assert.match(insert,/p\.participant_flight_id=f\.id/);
+  assert.match(insert,/p\.source_flight_id=f\.id/);
 });
 
-test("D3b baseline: success currently relies on archive INSERT, not final DELETE", () => {
-  assert.match(trash, /DELETE FROM flights WHERE id=\$\{flightId\}/);
-  assert.match(trash, /return Boolean\(\(results\[1\]/);
-  assert.doesNotMatch(trash, /return Boolean\(\(results\[4\]/);
+test("D3b-1 A+: last statement confirms actual DELETE and aborts archive-without-delete",()=>{
+  assert.match(trash,/WITH deleted AS\s*\(\s*DELETE FROM flights/);
+  assert.match(trash,/SELECT COUNT\(\*\)::integer FROM deleted/);
+  assert.match(trash,/1 \/ CASE[\s\S]*THEN \(SELECT COUNT\(\*\)::integer FROM deleted\)/);
+  assert.match(trash,/return Number\(deleted\?\.deleted_count\)===1/);
+  assert.doesNotMatch(trash,/return Boolean\(\(results\[1\]/);
 });
-
-test("D3b baseline: ordinary draft lacks an unconditional parent row lock before snapshot", () => {
-  const beforeArchive = trash.slice(0, trash.indexOf("INSERT INTO deleted_flights"));
-  assert.match(beforeArchive, /UPDATE flights f SET locked_at=NULL/);
-  assert.match(beforeArchive, /EXISTS\(SELECT 1 FROM flight_participations p/);
-  assert.doesNotMatch(beforeArchive, /FOR UPDATE/);
-  assert.doesNotMatch(beforeArchive, /SELECT .*FOR UPDATE/s);
-});
-
-// This source characterization does not establish native PG16 results.
-// A failing baseline assertion is not proof of an observed production data loss.
