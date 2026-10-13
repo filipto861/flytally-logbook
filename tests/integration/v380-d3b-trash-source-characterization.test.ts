@@ -22,9 +22,14 @@ test("D3b-1 A+: draft snapshot is limited to canonical flight, tracks and expens
 test("D3b-1 A+: lock the owned parent before archival without clearing lock state",()=>{
   const beforeArchive=transaction.slice(0,transaction.indexOf("INSERT INTO deleted_flights"));
   assert.match(beforeArchive,/SELECT f\.id FROM flights f[\s\S]*FOR UPDATE/);
-  assert.match(beforeArchive,/f\.certified_at IS NULL/);
-  assert.match(beforeArchive,/f\.locked_at IS NULL/);
-  assert.match(beforeArchive,/COALESCE\(f\.record_revision,1\)=1/);
+  assert.match(beforeArchive,/f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\}/);
+  // Eligibility belongs AFTER the unconditional owned-row lock, so a
+  // concurrent unlock cannot convert a skipped lock into an unprotected archive.
+  assert.doesNotMatch(beforeArchive,/f\.certified_at IS NULL|f\.locked_at IS NULL/);
+  const archive=transaction.slice(transaction.indexOf("INSERT INTO deleted_flights"));
+  assert.match(archive,/f\.certified_at IS NULL/);
+  assert.match(archive,/f\.locked_at IS NULL/);
+  assert.match(archive,/COALESCE\(f\.record_revision,1\)=1/);
   assert.doesNotMatch(trash,/SET locked_at=NULL/);
 });
 
