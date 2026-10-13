@@ -5,6 +5,8 @@ import test from "node:test";
 const runner=readFileSync(new URL("../tooling/run-v380-d3b1-browser-local.ps1",import.meta.url),"utf8");
 const fixture=readFileSync(new URL("../tooling/bootstrap-browser-smoke-db.mjs",import.meta.url),"utf8");
 const spec=readFileSync(new URL("../e2e/trash-integrity.spec.mjs",import.meta.url),"utf8");
+const baseline=JSON.parse(readFileSync(new URL("../tooling/browser-suite-baseline.json",import.meta.url),"utf8"));
+const registry=JSON.parse(readFileSync(new URL("../tooling/development-modules.json",import.meta.url),"utf8"));
 
 test("D3b-1 browser runner exclusively creates its own disposable localhost database before destructive bootstrap",()=>{
   assert.match(runner,/\$expectedBranch = "fix\/3\.8\.0-d3b1-atomic-fail-closed-trash"/);
@@ -51,4 +53,20 @@ test("D3b-1 browser spec asserts authenticated preserved evidence for both accep
   assert.match(spec,/backupsBefore\+1/);
   assert.match(spec,/p\.form-error\[role=alert\]/);
   assert.match(spec,/SELECT COUNT\(\*\) FROM flight_participations/);
+  assert.equal(baseline.acceptanceLogicalTests.length,55);
+  const expected=[
+    ["flight-trash-track-desktop","desktop-chromium",baseline.acceptanceLogicalTests[53]],
+    ["flight-trash-track-mobile","mobile-chromium",baseline.acceptanceLogicalTests[53]],
+    ["flight-trash-protected-desktop","desktop-chromium",baseline.acceptanceLogicalTests[54]],
+    ["flight-trash-protected-mobile","mobile-chromium",baseline.acceptanceLogicalTests[54]],
+  ];
+  for(const [id,project,title] of expected){
+    const target=registry.browserAcceptance.targets[id];
+    assert.equal(target?.spec,"e2e/trash-integrity.spec.mjs");
+    assert.equal(target?.project,project);
+    assert.equal(target?.title,title);
+    assert.ok(registry.browserAcceptance.harnessTargets.includes(id));
+    assert.ok(registry.browserAcceptance.moduleTargets["flight-records"].includes(id));
+    assert.ok(registry.browserAcceptance.moduleTargets["gps-tracks"].includes(id));
+  }
 });
