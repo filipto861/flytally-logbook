@@ -14,11 +14,11 @@ const columns=baseline[1].split("\n").map(x=>x.trim()).filter(x=>/^[a-z][a-z0-9_
 const insert=restore.match(/restored_flight AS \(INSERT INTO flights\(([^)]+)\) SELECT /);
 assert.ok(insert,"Expected canonical restore INSERT declaration");
 const selected=insert[1].split(",").map(x=>x.trim());
-const excluded=[
+const excluded: readonly string[]=[
   "id","certified_at","certified_by_user_id","certification_hash",
   "certification_version","record_revision","correction_reason",
   "correction_opened_at","correction_opened_by_user_id",
-] as const;
+];
 test("complete full-v20 column coverage, explicit exclusions only",()=>{
   assert.equal(columns.length,61,"Canonical flight schema changed: reevaluate restore contract");
   assert.deepEqual(columns.filter(x=>!selected.includes(x)&&!excluded.includes(x)),[]);
