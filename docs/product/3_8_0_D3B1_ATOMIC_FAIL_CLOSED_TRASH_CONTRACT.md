@@ -67,3 +67,19 @@ DeepSeek already independently reviewed A+ concept without repo access. Before i
 
 **Frozen by owner:** A+ not B/C; no cascading independent evidence and no automatic prefill/cleanup; no certified Void routed through normal Trash; no broad migration or data overwrite.  
 **Not yet approved:** a particular SQL implementation, breaking API/UI behavior, merge, production migration or deployment.
+
+## 7. Initial D3b-1a/1b implementation candidate (13 Oct 2026 — NOT TESTED)
+
+On this nested implementation branch the following files have been staged as candidate code (not acceptance evidence): `lib/flight-trash.ts`, `lib/flight-sharing.ts`, `app/(protected)/flights/actions.ts`, `app/(protected)/flights/[id]/page.tsx`, existing D3b source/native PostgreSQL test suites updated for new A+ expected behavior, and `tooling/run-v380-d3b1-atomic-trash-local.ps1`.
+
+Implementation uses an early `SELECT ... FOR UPDATE` locking the owned row only when it is uncertified, unlocked and revision-1. The archive and final DELETE each evaluate the eight protected child domains above. The last statement is a data-modifying `WITH deleted AS(DELETE ... RETURNING f.id)` with a *dynamic* SQL division-by-zero assertion only if the archive exists but `COUNT(deleted)=0`. A thrown SQL error makes the whole `sql.transaction` roll back. This replaces the previous incorrect success result from `results[1]` (archive-only) with `deleted_count===1` plus archive marker.
+
+**Review items before acceptance:**
+- Confirm native PostgreSQL's data-modifying CTE and dynamic assertion are executed and reliably abort the complete transaction when deliberately forcing a zero-row DELETE.
+- Confirm current `@neondatabase/serverless` transaction behavior and error propagation against an approved disposable target; local `psql` behavior is not SDK proof.
+- Validate parent lock and child writers, especially source provenance without FK. The new two-session PG16 test proves competing certification waits for the parent lock; it cannot prove every writer cooperates.
+- Verify lazy canonical share schema initialization doesn't alter unrelated share workflows and all historical share/provenance statuses remain blocked.
+- Validate page/action redirect message and disabled/deleting state on desktop/iPad/mobile and night mode.
+- Preserve protected certified Void, Restore D2/D3a, legacy feature flag OFF behavior and every unrelated flight ownership rule.
+
+**Tests:** New D3b-1 runtime code **NOT RUN** (typecheck, source, PG16, full test suite, build, browser, app SDK), despite historical D3b-0 15/15 PASS on a different SHA. No schema/production migration, remote DB, merge or deploy. Do not label milestone DONE until verified and reviewed.
