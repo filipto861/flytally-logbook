@@ -1,6 +1,6 @@
 # FlyTally Logbook — ROADMAP
 
-**Current planning state:** 11 October 2026  
+**Current planning state:** 13 October 2026  
 **Canonical repository:** `filipto861/flytally-logbook`; `main` is the source of truth.  
 **Shipped product version:** `3.7.0`; deployment/build/alias verified at `39ee01b7` (footer derives from package; direct browser screenshot NOT RUN)  
 **Most recent completed product release:** `3.7.0 — Maps & Aviation Layers` (**DONE / PRODUCTION — owner functional acceptance; provider-rights verification separately outstanding**)  
@@ -22,6 +22,8 @@
 **Evidence taxonomy:** Prior exact-PR-head locally executed verification for A2F had Aviation client ON and OFF **each PASS** (per mode source 233/233, domain 36/36, Node 1473/1473, TypeScript/Next build, Chromium desktop/mobile 8/8 each; no retries/skips). PostgreSQL full/scale gates were N/A according to that planner and browser fixtures used separate local PostgreSQL environments. This is **owner-local evidence for the tested feature SHA**, not CI, not a new test of current documentation commits, not Safari and not a live provider smoke. Earlier failing test-sequence runs remain in [A2F acceptance](docs/product/3_7_0_A2F_MAP_OVERLAY_ZOOM_POLISH_ACCEPTANCE.md).
 
 **Real-provider evidence boundary:** The A2D closeout [#294](https://github.com/filipto861/flytally-logbook/pull/294) reports one owner-observed authenticated same-origin openAIP PNG tile and Production flag activation; it does not prove broad geography, freshness, license terms or the full in-map workflow. A2D/A2E/A2F current reconciliation is in merged [#298](https://github.com/filipto861/flytally-logbook/pull/298).
+
+**3.8.0 Restore D2 v20 fidelity — INDEPENDENT DRAFT, NOT DEPLOYED (13 Oct 2026):** Owner-directed production path work staged in branch `fix/3.8.0-trash-restore-v20-fidelity` based on `main@4ca28477`. Audited actual 61-column `tooling/bootstrap-browser-smoke-db.mjs` v20 `flights` fixture vs existing restore (49 columns); inserted archive-backed `aircraft_make/model/variant` so all 52 non-protected flight columns are explicitly covered, excluding nine ID/certification/revision fields. Added candidate guard refusing future v21 monetary keys, invalid/mismatched archive owner/children/protection, nonarray JSON and invalid/unsupported expense evidence; removed silently guessed CZK, filtered expenses and track/expense fallback metadata. [D2 handoff](docs/product/3_8_0_TRASH_RESTORE_V20_FIDELITY_D2_HANDOFF.md) and seven static checks authored. **GitHub source audit PASS only; Node24 typecheck, focused tests, actual PG16, triggers, Neon HTTP, full migration/CI NOT RUN.** This is **not** an approved production restore implementation or complete 3.8.0 release; **merge blocked** on v20 trigger/blank historical identity behavior, complete child/void/shared and same-trash/concurrent writer atomicity and Neon HTTP transaction gate. Prior A1-T2c reduced PG16 D1 test 8/8 + 11/11 PASS at `962913c9` remains separately scoped. No `main` change, schema v21 registration, Neon/production DB write, deploy, or training change.
 
 ## 2. Post-release order
 
