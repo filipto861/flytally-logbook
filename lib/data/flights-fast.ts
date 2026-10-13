@@ -28,7 +28,7 @@ export async function getFlightsPageFast(userId:number,filters:FastFlightFilters
     WHEN UPPER(COALESCE(f.aircraft_class,''))='HELICOPTER' THEN 'HELICOPTER'
     WHEN UPPER(COALESCE(f.aircraft_class,''))='BALLOON' THEN 'BALLOON'
     WHEN UPPER(COALESCE(f.aircraft_class,'')) IN ('SEP','TMG','MEP','SET') THEN 'AEROPLANE'
-    ELSE 'OTHER' END resolved_category,f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,f.role,f.starts,f.task,f.billing_basis,f.price_per_hour,f.locked_at,f.certified_at,f.record_revision,f.correction_reason,f.pic_minutes,
+    ELSE 'OTHER' END resolved_category,f.departure,f.arrival,f.off_block,f.takeoff,f.landing,f.on_block,f.role,f.starts,f.task,f.billing_basis,f.price_per_hour,f.price_currency_code,f.price_currency_minor_units,f.price_per_hour_decimal::text price_per_hour_decimal,f.locked_at,f.certified_at,f.record_revision,f.correction_reason,f.pic_minutes,
    CASE WHEN f.off_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.on_block~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.on_block,':',1)::int*60+split_part(f.on_block,':',2)::int)-(split_part(f.off_block,':',1)::int*60+split_part(f.off_block,':',2)::int)+1440,1440) ELSE 0 END::int block_minutes,
    CASE WHEN f.takeoff~'^([01][0-9]|2[0-3]):[0-5][0-9]$' AND f.landing~'^([01][0-9]|2[0-3]):[0-5][0-9]$' THEN MOD((split_part(f.landing,':',1)::int*60+split_part(f.landing,':',2)::int)-(split_part(f.takeoff,':',1)::int*60+split_part(f.takeoff,':',2)::int)+1440,1440) ELSE 0 END::int air_minutes,
    COALESCE(t.track_count,0)::int track_count,COALESCE(t.gps_km,0) gps_km,COALESCE(o.pending_shared,0)::int pending_shared,COALESCE(o.accepted_shared,0)::int accepted_shared,COALESCE(rc.received_shared,0)::int received_shared,
