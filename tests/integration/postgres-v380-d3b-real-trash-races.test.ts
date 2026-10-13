@@ -5,6 +5,7 @@ import {spawn,spawnSync} from "node:child_process";
 import {after,before,test} from "node:test";
 
 const enabled=process.env.FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE==="1";
+let verifiedDisposableTarget=false;
 const url=process.env.DATABASE_URL??"";
 const schema="ft_d3b_"+randomUUID().replaceAll("-","");
 const ns='"'+schema+'"';
@@ -76,6 +77,7 @@ before(()=>{
   const probe=raw("SELECT current_database()||'|'||current_user||'|'||host(inet_server_addr())||'|'||current_setting('server_version_num')");
   assert.equal(probe.status,0,"PG16 identity query unavailable");
   assert.match(String(probe.stdout).trim(),/^flytally_currency_test\|flytally\|127\.0\.0\.1\|16[0-9]{4}$/);
+  verifiedDisposableTarget=true;
   // Only a random isolated schema; never mutate public or existing tests.
   const setup=raw(`
 CREATE SCHEMA ${ns};
@@ -137,7 +139,7 @@ CREATE TABLE flight_verifications(
   for(const block of migration20())sql(block);
 });
 after(()=>{
-  if(!enabled)return;
+  if(!enabled || !verifiedDisposableTarget)return;
   const result=raw("DROP SCHEMA IF EXISTS "+ns+" CASCADE;");
   assert.equal(result.status,0,"D3b temporary schema cleanup failed");
 });
