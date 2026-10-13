@@ -1,9 +1,9 @@
 # D3b-0 TARGETED fixture (actual v20 SQL triggers on a synthetic v19 base), NOT full-v20 applied migration.
 # This script never connects to an existing service, Neon or production.
-# FlyTally D2 full-v20 restore integration acceptance: native PostgreSQL 16, disposable local test cluster.
+# FlyTally D3b targeted native PostgreSQL 16 characterization on a disposable local cluster.
 # Windows PowerShell 5.1 safe (ASCII). Requires Git, Node 24, PostgreSQL 16 binaries.
 # Does NOT touch the pre-existing server on port 55432 or Neon/Vercel.
-# Run: powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d3a-create-restore-local.ps1
+# Run: powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d3b-targeted-local.ps1
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
