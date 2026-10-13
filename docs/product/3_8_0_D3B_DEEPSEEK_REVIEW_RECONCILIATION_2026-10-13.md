@@ -127,3 +127,21 @@ The PowerShell runner initializes a unique disposable loopback PG16 cluster/DB, 
 **Gate status:** code committed; Node24 typecheck **NOT RUN**, source tests **NOT RUN**, targeted native PG16 **NOT RUN**, full applied v20 fixture equivalence **NOT RUN**, deterministic participant-acceptance and no-source-FK writer race **NOT RUN**. Do not upgrade hypotheses to confirmed runtime bugs yet. No production/runtime DB write, merge or deploy.
 
 **Next decision gate:** obtain owner-local test stdout and exact commit SHA; reconcile results against full-v20 catalog and actual migration, then seek owner approval for A+ fail-closed linked-draft rules before implementing D3b-1.
+
+## Verified owner-local D3b-0 targeted PostgreSQL result — 13 October 2026 (supersedes previous NOT RUN status only for this exact candidate)
+
+**Evidence owner submitted from Windows PowerShell:** branch `analysis/3.8.0-d3b-protected-trash-evidence`, **source SHA `dd0823af65866bd21de87240f304cb5ef4cf0b9e`**, runner `tooling/run-v380-d3b-targeted-local.ps1`, Node 24, native PostgreSQL16 at `127.0.0.1:54833`, identity expected/observed `flytally_currency_test|flytally|127.0.0.1|54833` MATCH. Native server stopped cleanly.
+
+- `npm run typecheck`: **PASS**
+- `v380-d3b-trash-source-characterization.test.ts`: **3 PASS, 0 FAIL, 0 SKIP**
+- `postgres-v380-d3b-real-trash-races.test.ts`: **5 PASS, 0 FAIL, 0 SKIP**
+- Combined targeted source/native tests: **8/8 PASS, 0 FAIL, 0 SKIP**.
+- **Case 1:** unchanged actual five-statement Trash SQL archives and deletes a standalone uncertified draft.
+- **Case 2:** linked uncertified draft deletion removes crew and verification children through configured `ON DELETE CASCADE`, without including them in Trash snapshot. This is a reproduced integrity hazard for the synthetic linked-draft state; canonical reachability and full-v20 behavior remain to be tested.
+- **Case 3:** when participant flight has immutable v20 source provenance, the trigger rejects its deletion; the attempted preceding archive is rolled back, provenance and active flight persist.
+- **Case 4:** certified draft source is not archived or deleted by ordinary Trash guards.
+- **Case 5:** two PostgreSQL sessions are synchronized: A archives the original draft; B certifies it; A then executes the original final conditional DELETE (zero rows) and commits. Database contains both active certified flight and committed archive record. Source function's success calculation checks archive INSERT `results[1]` instead of deleted rows. **This is an actual SQL-concurrency counterexample in the targeted fixture**, not yet evidence that Next.js certification endpoint can reach exactly this interleaving under all deployed schema/application locks.
+
+**Evidence boundary:** the test's pre-v20 FK tables are a deliberately reduced contract; it executes genuine v20 SQL functions/triggers extracted from `lib/db-optimization.ts`. It is **not** a complete v1–v20 applied migration fixture. Catalog parity, same-transaction application `@neondatabase/serverless` transaction behavior, canonical sharing/certification eligibility, actual PostgreSQL void + participant acceptance races and production/Neon incidence remain **NOT RUN / UNKNOWN**. Historical earlier `NOT RUN` entries refer to their earlier commits and remain preserved.
+
+**Updated release posture:** D3b-0 scoped targeted PG16 proof obtained, **D3b-0 FULL acceptance still open**. Next read-only/draft milestone is actual full-v20 catalog/fixture and independent participant/provenance writer evidence; only then finalize A+ linked-draft lifecycle choice with owner and start minimal D3b-1 fix. Product code, migration, main, deployment and production DB untouched.
