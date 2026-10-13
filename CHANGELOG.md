@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency consolidated implementation batch (Draft PR #338)
+
+- Implemented source-backed all-monetary ISO currency dropdown in Settings, enforced validated code in both account-setting mutations, and displayed explicit invalid configuration errors; no account preference silently converts stored amounts.
+- Removed unsafe global highest-cost sorting and hardcoded CZK claims on legacy-rate flight/aircraft/stats/dashboard/share UI; older cost-sort URLs fall back to newest. Legacy aircraft cost is no longer added to CZK expense totals.
+- Added source-contract tests for the ISO selector/server checks and unknown-denomination financial presentation; corrected historic rate-label test and expense test expectation.
+- Does not yet persist new currency-bearing rates/flight snapshots or ISO minor-unit expenses. No registered v21 migration, production DB changes, deploy or merge; current exact HEAD tests/typecheck/build/browser NOT RUN. Owner approved fewer integration batches, not relaxing historical, certificate or backup safety.
+
 ## 13 October 2026 — Currency M2-A-1 source compatibility audit
 
 - Recorded owner-local PostgreSQL 16 and static M2 test results, each 6/6 PASS at `8a9e03e0`; TypeScript PASS. No full PG regression or signed v13 end-to-end verified.
