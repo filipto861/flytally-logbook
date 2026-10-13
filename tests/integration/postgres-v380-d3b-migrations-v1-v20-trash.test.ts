@@ -295,9 +295,10 @@ test("D3b-1 A+: parent row lock serializes a competing certification writer",{sk
 });
 
 
-test("CHARACTERIZATION ONLY D3b-1e: a track INSERT without parent FK can outlive Trash snapshot and DELETE",{skip:!enabled,timeout:25000},async()=>{
-  // PASS demonstrates an UNSAFE race in a bounded fixture, NOT a safety-acceptance
-  // test, production-schema claim, or authorization to alter historical data.
+test("NEGATIVE CONTROL D3b-1e (pre-fix): no-lock GPS INSERT can orphan child during Trash",{skip:!enabled,timeout:25000},async()=>{
+  // Negative control deliberately recreates PRE-FIX child-first behaviour.
+  // PASS demonstrates why the new writer lock is needed; it is NOT proof that
+  // the CURRENT writer remains unsafe, or a production-schema claim.
   const action=readFileSync(new URL("app/(protected)/flights/actions.ts",root),"utf8");
   const start=action.indexOf("export async function attachKmlTrack(");
   const end=action.indexOf("export async function deleteTrack(",start);
@@ -306,7 +307,9 @@ test("CHARACTERIZATION ONLY D3b-1e: a track INSERT without parent FK can outlive
   assert.ok(writer.includes("await sql"+tick+"SELECT id,locked_at FROM flights"),"Track writer has an unlocked parent read");
   const insertAt=writer.indexOf("queries.push(sql"+tick+"INSERT INTO flight_tracks(");
   const updateAt=writer.indexOf("queries.push(sql"+tick+"UPDATE flights SET ");
-  assert.ok(insertAt>=0 && updateAt>insertAt,"Actual track INSERT must precede parent UPDATE");
+  assert.ok(insertAt>=0 && updateAt>insertAt,"Track INSERT remains before final parent UPDATE");
+  assert.ok(writer.includes("queries=[sql"+tick+"SELECT f.id FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.locked_at IS NULL FOR UPDATE"),"Current writer must lock parent BEFORE this child-first negative-control sequence");
+  assert.match(writer,/FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL RETURNING id/);
   assert.match(writer,/await sql\.transaction\(queries\)/);
   const trackFk=num("SELECT count(*) FROM pg_constraint WHERE conrelid='flight_tracks'::regclass AND contype='f' AND confrelid='flights'::regclass;");
   assert.equal(trackFk,0,"Fixture acquired parent FK; re-review this characterization");
