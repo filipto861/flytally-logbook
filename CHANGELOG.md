@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 owner-local TypeScript and full source/unit regression PASS (DRAFT / NOT SHIPPED)
+
+- Owner on Windows/Node24 ran `git pull --ff-only` to exact code candidate `ca59d29b54555df9bf545be17ccd71f5998c6a33`, followed by `npm run typecheck` **PASS** and targeted `npm run test:target` on `v1311-participant-ownership-lapl`, `v1312-hotfix`, `v300-navigation-hierarchy`, `v352-postgres-windows-portability`: **13/13 PASS, 0 FAIL/SKIP**. The participant-owned bypass regression, updated canonical roadmap expectation and Windows `psql -d` argument safety test all pass.
+- Same owner-local candidate's `npm test`: **1,480/1,480 PASS, 0 FAIL, 0 SKIP**, reported duration **28,252.4964 ms**. This is the complete `tests/*.test.ts` source/unit command, **not** the separate PostgreSQL integration, build or browser suite. The earlier 1,476/1,480 FAIL and 12/13 FAIL entries below remain historical evidence at their prior SHAs.
+- **Remaining gates:** rerun isolated native PG16 D3b-1 A+ acceptance after removal of legacy inline participant deletion, `npm run build`, authenticated Next.js/Neon transaction and child-writer races (track/expenses/Edit/no-source-FK provenance), browser responsive/light/dark and independent review. Earlier PG16 **21/21 PASS** was on older source SHA `83c7aa61bcba1d92c5e2df9b86c790cab4c867e0` only. Draft PR #333 still unmerged; no schema migration/production database/deployment change.
+
 ## 13 October 2026 — D3b-1 owner-local corrected 12/13 targeted PASS; Windows -d parser false positive fixed (DRAFT / RETEST REQUIRED)
 
 - Owner retested code SHA `2ad57b22f140cde1ed5fa813a1da0d57cff376a9` after `git pull --ff-only`: `npm run typecheck` **PASS**; `npm run test:target -- tests/v1311-participant-ownership-lapl.test.ts tests/v1312-hotfix.test.ts tests/v300-navigation-hierarchy.test.ts tests/v352-postgres-windows-portability.test.ts` **13 total / 12 PASS / 1 FAIL / 0 SKIP**. All participant-owned A+ protection checks and canonical roadmap checks PASS. Windows portability test failed on a false positive: `["-d",databaseUrl,"-X",...]` was incorrectly interpreted as a positional database URL.
