@@ -20,6 +20,7 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
     "SELECT json_build_object(",
     "'db',current_database(),'usr',current_user,'host',host(inet_server_addr()),",
     "'port',inet_server_port(),'version',current_setting('server_version_num'),",
+    "'migration',(SELECT count(*) FROM flytally_schema_migrations WHERE version=20),",
     "'fks',(SELECT coalesce(json_agg(json_build_object('tab',c.conrelid::regclass::text,",
     "'def',pg_get_constraintdef(c.oid))),'[]'::json) FROM pg_constraint c",
     "WHERE c.contype='f' AND c.conrelid IN",
@@ -44,6 +45,7 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
   assert.equal(c.host,"127.0.0.1");
   assert.equal(c.port,Number(u.port));
   assert.match(c.version,/^16[0-9]{4}$/);
+  assert.equal(Number(c.migration),1,"Migration v20 must be registered");
   const fk=(tab:string,columns:string,action:string)=>{
     assert.ok(c.fks.some((x:{tab:string;def:string})=>x.tab===tab &&
       x.def.includes(columns) && x.def.includes(action)),
