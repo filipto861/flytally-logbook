@@ -78,3 +78,39 @@ test("D3b-1e: GPS attach/replace serializes with Trash before all child writes a
   assert.match(writer,/if\(!locked\|\|!uploaded\|\|!updated\)return\{error:/);
   assert.doesNotMatch(writer,/INSERT INTO flight_tracks[\s\S]*VALUES\(\$\{userId\},\$\{flightId\}/);
 });
+
+
+test("D3b-1f: deleteTrack removes only selected track points and locks parent before child deletion",()=>{
+  const actions=readFileSync(new URL("../../app/(protected)/flights/actions.ts",import.meta.url),"utf8");
+  const from=actions.indexOf("export async function deleteTrack(");
+  const to=actions.indexOf("export async function ",from+15);
+  assert.ok(from>=0 && to>from,"deleteTrack action boundary changed");
+  const writer=actions.slice(from,to);
+  const lock=writer.indexOf("sql.transaction([sql`SELECT f.id FROM flights f");
+  const points=writer.indexOf("sql`DELETE FROM track_points");
+  const track=writer.indexOf("sql`DELETE FROM flight_tracks");
+  assert.ok(lock>=0 && points>lock && track>points,"Parent lock must precede both deletes");
+  assert.match(writer,/SELECT f\.id FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL FOR UPDATE/);
+  assert.match(writer,/DELETE FROM track_points WHERE user_id=\$\{userId\} AND track_id=\$\{trackId\} AND EXISTS\(SELECT 1 FROM flight_tracks t WHERE t\.id=\$\{trackId\} AND t\.flight_id=\$\{flightId\} AND t\.user_id=\$\{userId\}\)/);
+  assert.doesNotMatch(writer,/DELETE FROM track_points[\s\S]*track_id IN\(SELECT id FROM flight_tracks/);
+  assert.match(writer,/DELETE FROM flight_tracks WHERE id=\$\{trackId\} AND flight_id=\$\{flightId\} AND user_id=\$\{userId\} AND EXISTS\([\s\S]*RETURNING id/);
+  assert.match(writer,/if\(!deleted\[0\]\?\.\[0\]\|\|!deleted\[2\]\?\.\[0\]\)return/);
+  assert.match(writer,/await createStoredBackup\(userId,"pre_restore"\)/);
+});
+
+test("D3b-1f: expense replacement locks owned parent and cannot mutate children after Trash",()=>{
+  const actions=readFileSync(new URL("../../app/(protected)/flights/actions.ts",import.meta.url),"utf8");
+  const from=actions.indexOf("export async function saveFlightExpenses(");
+  const to=actions.indexOf("export async function ",from+15);
+  assert.ok(from>=0&&to>from,"Expense writer action boundary changed");
+  const writer=actions.slice(from,to);
+  const lock=writer.indexOf("sql.transaction([sql`SELECT f.id FROM flights f");
+  const del=writer.indexOf("sql`DELETE FROM flight_expenses");
+  const insert=writer.indexOf("sql`INSERT INTO flight_expenses");
+  assert.ok(lock>=0 && del>lock && insert>del,"Expense parent lock must run first");
+  assert.match(writer,/SELECT f\.id FROM flights f WHERE f\.id=\$\{id\} AND f\.user_id=\$\{userId\} FOR UPDATE/);
+  assert.match(writer,/DELETE FROM flight_expenses WHERE flight_id=\$\{id\} AND user_id=\$\{userId\} AND EXISTS\(SELECT 1 FROM flights f WHERE f\.id=\$\{id\} AND f\.user_id=\$\{userId\}\)/);
+  assert.match(writer,/INSERT INTO flight_expenses[\s\S]*SELECT \$\{userId\},f\.id,e\.category,[\s\S]*FROM flights f CROSS JOIN jsonb_to_recordset\(\$\{expenseJson\}::jsonb\)[\s\S]*WHERE f\.id=\$\{id\} AND f\.user_id=\$\{userId\}/);
+  assert.match(writer,/if\(!result\[0\]\?\.\[0\]\)return\{error:/);
+  assert.doesNotMatch(writer,/sql`SELECT f\.id FROM flights f WHERE f\.id=\$\{id\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL FOR UPDATE/);
+});
