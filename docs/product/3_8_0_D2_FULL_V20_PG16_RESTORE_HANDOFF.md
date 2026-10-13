@@ -31,6 +31,14 @@ powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d2-full-v20-local.ps
 
 The runner invokes `npm run typecheck` and three `npm run test:target -- ...` suites (D2 v20 static, lock/trigger contract, actual full-v20 PostgreSQL integration). If any fail, capture **first failed assertion, exact git SHA, SQL diagnostics and final cluster shutdown**. Do not report SQL PASS until user-local output confirms it.
 
+## Authorized disposable Neon transaction and cleanup evidence (13 October 2026)
+
+Separate from owner-local native PG16 D2, a scratch **Neon PG18.6** child branch `ft-380-atomic-acceptance-20261013-temp` was explicitly created under `Logbook Shadow`, then tested with synthetic scratch rows only. Neon connector transactional commit, rollback on late CHECK, and two parallel connector calls competing for one archive row **PASS**. **This was NOT an application `@neondatabase/serverless` JavaScript HTTP `sql.transaction([...])` test and did not execute real restore SQL.**
+
+**CLEANUP VERIFIED:** exact nonprimary/nondefault temporary branch `br-sparkling-leaf-b1giaanc` was deleted; subsequent branch listing confirmed it absent with all original four branches untouched. Full SQL scope and observations: [Neon temporary branch acceptance / cleanup](3_8_0_NEON_TEMP_BRANCH_TRANSACTION_CLEANUP_2026-10-13.md). No production writes, registered migration, merge or deploy.
+
+The real HTTP JavaScript driver transaction and application restore mapping remain separate unverified gates; no temporary Neon branch currently exists for further execution.
+
 ## Owner-local D2 full-v20 acceptance — 13 October 2026
 
 **Exact tested commit:** `7676563ec6bf288b57b4a99ef792033cad434f4e` from Draft PR #329.
