@@ -22,6 +22,10 @@ test("D3b-1 browser runner exclusively creates its own disposable localhost data
   assert.match(runner,/Restore-Env "DATABASE_URL" \$oldDatabaseUrl/);
   assert.match(runner,/Restore-Env "FLYTALLY_AUTH_BROWSER" \$oldAuthBrowser/);
   assert.match(runner,/Restore-Env "FLYTALLY_LOCAL_POSTGRES" \$oldLocalPostgres/);
+  assert.match(runner,/\$env:SESSION_SECRET = \(\[guid\]::NewGuid\(\)\.ToString\("N"\)/);
+  assert.match(runner,/\$env:SIGNING_SECRET = \(\[guid\]::NewGuid\(\)\.ToString\("N"\)/);
+  assert.match(runner,/Restore-Env "SESSION_SECRET" \$oldSessionSecret/);
+  assert.match(runner,/Restore-Env "SIGNING_SECRET" \$oldSigningSecret/);
   assert.doesNotMatch(runner,/\bRemove-Item\b[^\n]*\$env:USERPROFILE/);
 });
 
