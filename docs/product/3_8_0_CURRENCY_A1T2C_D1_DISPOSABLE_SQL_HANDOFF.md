@@ -32,6 +32,22 @@ powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-a1t2c-local.ps1
 
 The script refuses the wrong branch or a dirty tracked working tree and will not touch remote endpoints. Provide **the complete output, exact candidate SHA, first failure if any, and final stop/cleanup state** before any D1 acceptance claim.
 
+## Exact owner-local acceptance result (13 October 2026)
+
+- **Tested commit**: `962913c9899a1a02a8f9ea3324a617deb8530e49` (Draft PR #327). Owner ran the unchanged PowerShell runner on Windows with Node 24 and a newly initialized native PG16 cluster at `127.0.0.1:60719`.
+- **Database identity**: expected/observed `flytally_currency_test|flytally|127.0.0.1|60719`, **PASS**; safely shut down PG16 after tests.
+- **Full project `npm run typecheck`**: **PASS**. Disposable-target guard **8/8 PASS**, 0 fail, 0 skip. Focused actual PostgreSQL restore tests **11/11 PASS**, 0 fail, 0 skip.
+- Positive tests verified archived CZK without guess/default, legacy price with unresolved denomination, EUR/JPY/KWD exact values and empty children. Negative tests verified fail-closed invalid archived currency/ownership/tuple/protected records, natural duplicates/expired records, and forced late expense-CHECK **transaction rollback**. Two *independent PG sessions* validated same-trash one-winner and two cooperating different-trash/same-natural-key serialized outcomes.
+- Runner output stated `LOCAL catalog test gates PASS on candidate 962913c9899a1a02a8f9ea3324a617deb8530e49. Not a production migration.`
+
+**Disposition:** D1 **local reduced-schema acceptance PASS**, with historical earlier `NOT RUN` at authorship retained below for provenance. Full v20 flight/track content mapping, real certified/void/shared history, ordinary Add/Edit writer race, transaction compatibility over nonproduction Neon HTTP, schema v21 registration, A1-T3 application wiring, CI/build/browser/production tests **NOT RUN**. No remote database was accessed by the runner.
+
+### Focused next gates (do not reopen settled D1 work)
+
+1. Source-backed **full v20 / v21 field fidelity** including actual track metadata and runtime source protections. Existing D1 function's reduced INSERT column list must **not** be substituted into `lib/flight-trash.ts`.
+2. Independently test actual static `@neondatabase/serverless` HTTP `sql.transaction([...])` behavior using an **authorized, isolated nonproduction Neon target**. Do not assume a PL/pgSQL test function can be deployed without migration.
+3. Only after these gates, plan the smallest A1-T3 guarded runtime integration, plus signed v13 A1-C/A1-F and release A1-G. No automatic merge/deploy or currency backfill.
+
 ## Acceptance and next step
 
 - Need real PG16 PASS for TypeScript, guard tests, target SQL tests, preserved content/rollback and two-session concurrency, plus confirmation no skipped scenarios. Any failed test blocks D1 closeout; diagnose from output, change only narrowly and rerun.
