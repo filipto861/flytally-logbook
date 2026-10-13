@@ -11,9 +11,11 @@ const restoreSource=readFileSync(path.join(root,"lib/flight-trash.ts"),"utf8");
 const start=restoreSource.indexOf("export async function restoreDeletedFlightRecord");
 assert.ok(start>=0,"Restore function not found");
 const restoreBlock=restoreSource.slice(start);
-const found=restoreBlock.match(/const rows=await sql\x60([\s\S]*?)\x60 as Array<\{restored_flight_id:number\|string\}>/);
-assert.ok(found,"Exact SQL restore template missing");
-const tagged=found[1];
+const lockFound=restoreBlock.match(/const tx=await sql\.transaction\(\[\s*sql\x60([\s\S]*?)\x60,\s*sql\x60WITH candidate AS MATERIALIZED/);
+const found=restoreBlock.match(/sql\x60(WITH candidate AS MATERIALIZED[\s\S]*?)\x60\]\);const rows=tx\[1\] as Array<\{restored_flight_id:number\|string\}>/);
+assert.ok(lockFound,"Transaction-scoped natural-identity lock is missing");
+assert.ok(found,"Exact SQL restore query in transaction is missing");
+const advisory=lockFound[1],tagged=found[1];
 const asked=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"||process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
 const enabled=process.env.FLYTALLY_POSTGRES_INTEGRATION==="1"&&process.env.FLYTALLY_D2_FULL_V20_DISPOSABLE==="1";
 const url=process.env.DATABASE_URL||"";
@@ -33,13 +35,18 @@ function sql(q:string):string{
   if(r.status!==0)throw new Error("Disposable SQL operation failed: "+String(r.stderr).slice(0,450));
   return String(r.stdout).trim();
 }
-function command(trashId:number):string{
+function interpolate(s:string,trashId:number):string{
   assert.ok(Number.isSafeInteger(trashId)&&trashId>0);
   const a="$"+"{userId}",b="$"+"{trashId}";
-  const q=tagged.replaceAll(a,"9001").replaceAll(b,String(trashId));
+  const q=s.replaceAll(a,"9001").replaceAll(b,String(trashId));
   assert.doesNotMatch(q,/\$\{/,"New parameter requires explicit test mapping");
   return q;
 }
+function command(trashId:number){return interpolate(tagged,trashId)}
+function txCommand(trashId:number){
+  return "BEGIN;\n"+interpolate(advisory,trashId)+";\n"+command(trashId)+";\nCOMMIT;";
+}
+function restore(trashId:number){return sql(txCommand(trashId))}
 const quote=(v:string)=>"'"+v.replaceAll("'","''")+"'";
 before(()=>{
   if(!asked)return;
@@ -70,6 +77,7 @@ before(()=>{
   assert.equal(sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='flights'"),"61");
 });
 test("actual runtime SQL is source-backed and locks archived rows",{skip:false},()=>{
+  assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(jsonb_build_array/);
   assert.match(tagged,/^WITH candidate AS MATERIALIZED/);
   assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
   assert.match(tagged,/restored_tracks AS/);
@@ -97,7 +105,7 @@ function noWrite(trash:number){
 }
 test("real v20 flight, track and expense roundtrip preserves historical fields",{skip:!asked},()=>{
   const {trash,oldId}=archived("2026-10-20");
-  const id=Number(sql(command(trash)));
+  const id=Number(restore(trash));
   assert.ok(Number.isSafeInteger(id)&&id>0&&id!==oldId);
   assert.equal(sql("SELECT restored_flight_id FROM deleted_flights WHERE id="+trash),String(id));
   assert.equal(sql("SELECT aircraft_make||'|'||aircraft_model||'|'||aircraft_variant FROM flights WHERE id="+id),"Historic Maker|Historic Model|Legacy Option");
@@ -110,13 +118,13 @@ test("real v20 flight, track and expense roundtrip preserves historical fields",
 });
 test("blank historical aircraft identity cannot be silently overwritten by current profile",{skip:!asked},()=>{
   const {trash}=archived("2026-10-21",{blankIdentity:true});
-  assert.equal(sql(command(trash)),"");
+  assert.equal(restore(trash),"");
   noWrite(trash);
 });
 test("missing recorded currency fails closed, never infers CZK",{skip:!asked},()=>{
   const {trash}=archived("2026-10-22");
   sql("UPDATE deleted_flights SET expenses_data=(SELECT jsonb_agg(e.value-'currency') FROM jsonb_array_elements(expenses_data) e) WHERE id="+trash);
-  assert.equal(sql(command(trash)),"");
+  assert.equal(restore(trash),"");
   noWrite(trash);
 });
 
@@ -124,7 +132,7 @@ test("late database expense CHECK failure leaves no partial restored flight or t
   const {trash}=archived("2026-10-23",{amount:7777});
   sql("ALTER TABLE flight_expenses ADD CONSTRAINT disposable_reject_amount CHECK(amount_minor<>7777)");
   try{
-    const result=invoke(command(trash));
+    const result=invoke(txCommand(trash));
     assert.notEqual(result.status,0,"Expected rejected expense");
     assert.match(String(result.stderr),/violates check constraint/);
     noWrite(trash);
@@ -134,7 +142,7 @@ test("late database expense CHECK failure leaves no partial restored flight or t
 });
 test("two separate PostgreSQL sessions restoring one trash item produce one flight",{skip:!asked},async()=>{
   const {trash}=archived("2026-10-24");
-  const q=command(trash);
+  const q=txCommand(trash);
   const session=()=>new Promise<string>((resolve,reject)=>{
     const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],{env:safeEnv()});
     let output="",stderr="";
@@ -147,4 +155,22 @@ test("two separate PostgreSQL sessions restoring one trash item produce one flig
   const output=await Promise.all([session(),session()]);
   assert.equal(output.filter(x=>x!=="").length,1);
   assert.equal(sql("SELECT count(*) FROM deleted_flights d JOIN flights f ON f.id=d.restored_flight_id WHERE d.id="+trash),"1");
+});
+
+test("two distinct trash IDs with the SAME natural flight identity restore only once",{skip:!asked},async()=>{
+  const first=archived("2026-10-25"),second=archived("2026-10-25");
+  assert.notEqual(first.trash,second.trash);
+  const session=(trashId:number)=>new Promise<string>((resolve,reject)=>{
+    const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],{env:safeEnv()});
+    let output="",stderr="";
+    p.stdout.setEncoding("utf8").on("data",(chunk:string)=>{output+=chunk});
+    p.stderr.setEncoding("utf8").on("data",(chunk:string)=>{stderr+=chunk});
+    p.on("error",reject);
+    p.on("close",code=>code===0?resolve(output.trim()):reject(new Error(stderr.slice(0,500))));
+    p.stdin.end(txCommand(trashId)+"\n");
+  });
+  const results=await Promise.all([session(first.trash),session(second.trash)]);
+  assert.equal(results.filter(x=>x!=="").length,1,"Two cooperating restores duplicated one natural identity");
+  assert.equal(sql("SELECT count(*) FROM flights WHERE user_id=9001 AND date='2026-10-25' AND registration='OK-E2E'"),"1");
+  assert.equal(sql("SELECT count(*) FROM deleted_flights WHERE id IN ("+first.trash+","+second.trash+") AND restored_at IS NOT NULL"),"1");
 });
