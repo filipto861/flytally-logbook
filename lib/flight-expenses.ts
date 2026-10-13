@@ -32,9 +32,9 @@ export function parseFlightExpenses(form:FormData):{data?:FlightExpenseInput[];e
 
 export function expenseTotals(expenses:ReadonlyArray<Pick<FlightExpenseRecord,"amount_minor"|"currency">>,aircraftCost=0){
   const totals=new Map<string,number>();
-  if(Number.isFinite(aircraftCost)&&aircraftCost>0)totals.set("CZK",Math.round(aircraftCost)*100);
+  // Legacy aircraft rate denomination is unverified; never add it to a currency total.
   for(const row of expenses){const currency=String(row.currency||"").trim().toUpperCase(),minor=Math.max(0,Number(row.amount_minor)||0);if(!/^[A-Z]{3}$/.test(currency)||!minor)continue;totals.set(currency,(totals.get(currency)||0)+minor)}
   return [...totals.entries()].sort(([left],[right])=>left==="CZK"?-1:right==="CZK"?1:left.localeCompare(right)).map(([currency,amountMinor])=>({currency,amountMinor}));
 }
 export function formatExpenseMinor(amountMinor:number,currency:string){const major=amountMinor/100;return `${major.toLocaleString("en-GB",{minimumFractionDigits:Number.isInteger(major)?0:2,maximumFractionDigits:2})} ${currency}`}
-export function costTotalsLabel(expenses:ReadonlyArray<Pick<FlightExpenseRecord,"amount_minor"|"currency">>,aircraftCost=0){const totals=expenseTotals(expenses,aircraftCost);return totals.length?totals.map(item=>formatExpenseMinor(item.amountMinor,item.currency)).join(" · "):"—"}
+export function costTotalsLabel(expenses:ReadonlyArray<Pick<FlightExpenseRecord,"amount_minor"|"currency">>,aircraftCost=0){const totals=expenseTotals(expenses,aircraftCost),known=totals.map(item=>formatExpenseMinor(item.amountMinor,item.currency));if(Number.isFinite(aircraftCost)&&aircraftCost>0)known.push("Aircraft rate currency unknown");return known.length?known.join(" · "):"—"}
