@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 A+ owner decision frozen and new branch prepared (DESIGN ONLY / NOT SHIPPED)
+
+- Owner explicitly **approved Option A+**, conservative fail-closed ordinary Trash, after exact D3b-0 owner-local v1→v20 PG16 15/15 PASS at `7f87eb76caa2b90b2a2fdb64ed97a29a8e2b2ac1`. Dedicated nested D3b-1 implementation branch from D3b-0 Draft #332.
+- Added [D3b-1 approved transaction and evidence contract](docs/product/3_8_0_D3B1_ATOMIC_FAIL_CLOSED_TRASH_CONTRACT.md), including lazy share-table provision, participant source+recipient evidence, provenance source no-FK, archive/final-DELETE atomic invariant, lock ordering and a source-backed acceptance matrix.
+- **At this design milestone** no runtime code, schema migration, unit/native PostgreSQL execution, merging or production deployment; owner approval of semantics is not a test PASS.
+
 ## 13 October 2026 — D3b-0 sequential v1→v20 native PostgreSQL integration OWNER-LOCAL PASS (DRAFT / NOT SHIPPED)
 
 - Owner Windows / Node24 executed `tooling/run-v380-d3b-migration-chain-local.ps1` at **exact source SHA `7f87eb76caa2b90b2a2fdb64ed97a29a8e2b2ac1`**. Dedicated native PostgreSQL 16 server `127.0.0.1:65332` reported exact expected database/user/host/port identity `flytally_currency_test|flytally|127.0.0.1|65332` and shut down successfully after tests.
