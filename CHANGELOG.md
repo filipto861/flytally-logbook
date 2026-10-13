@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1e disposable no-FK track/Trash race characterization authored (NOT RUN)
+
+- In the actual v1→v20 native PG16 isolated migration-chain fixture, added one source-tied **analysis-only** two-session test modeling current `attachKmlTrack()` order: unlocked parent check; transaction INSERT into `flight_tracks`, then parent UPDATE. Scenario holds Trash parent FOR UPDATE after snapshot, starts track INSERT against a fixture with no parent FK, observes the writer waiting at parent UPDATE, finishes Trash DELETE, then checks for archival omission and orphan child. New `pg_constraint` assertion fails closed if the fixture gains a parent FK. **No new test execution/PASS claimed.** This is a minimal modeled writer interaction, not the complete authenticated server action or production schema.
+- Test title is explicitly `CHARACTERIZATION ONLY`. If the scenario passes, it is evidence of the **unsafe** no-FK fixture behavior, not a passing release safety gate. Updated the disposable runner's final output to warn accordingly. Previous original D3b-1 native **21/21 PASS**, full unit **1480/1480 PASS**, and Next build PASS remain associated only with previously tested code SHAs; new test/runner commit still **NOT RUN**.
+- No changes to `lib/flight-trash.ts`, `attachKmlTrack()`, database schema, migrations, production, Vercel or `main`. PR #333 Draft pending owner-local characterization, smallest evidence-based mitigation and repeat acceptance.
+
 ## 13 October 2026 — D3b-1 external read-only review received and reconciled against source (ANALYSIS ONLY)
 
 - Received DeepSeek F1–F8 advisory review. The reviewer stated it had read the brief only, **not** the repository or source/schema/test executions; therefore no new defect is claimed proven by the review itself.
