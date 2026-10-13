@@ -374,3 +374,112 @@ test("NEGATIVE CONTROL D3b-1e (pre-fix): no-lock GPS INSERT can orphan child dur
     }
   }
 });
+
+
+function gpsParentGuardSql(id:number){
+  // Extract the FIRST transaction query verbatim from the runtime writer.
+  const text=readFileSync(new URL("app/(protected)/flights/actions.ts",root),"utf8");
+  const a=text.indexOf("export async function attachKmlTrack(");
+  const b=text.indexOf("export async function deleteTrack(",a);
+  assert.ok(a>=0&&b>a,"GPS writer source missing");
+  const writer=text.slice(a,b),tick=String.fromCharCode(96),prefix="queries=[sql"+tick;
+  const start=writer.indexOf(prefix),end=writer.indexOf(tick+"];if(replace)",start);
+  assert.ok(start>=0&&end>start,"GPS parent-first transaction boundary changed");
+  const sql=writer.slice(start+prefix.length,end);
+  assert.match(sql,/SELECT f\.id FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL FOR UPDATE/);
+  assert.match(writer,/INSERT INTO flight_tracks[\s\S]*FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL RETURNING id/);
+  return sql.replaceAll("$"+"{flightId}",String(id)).replaceAll("$"+"{userId}","9001");
+}
+function guardedGpsInsert(id:number,filename:string){
+  // Foundational isolated fixture intentionally has fewer track columns than
+  // the real upload. This reproduces exact source-backed parent gating/order,
+  // NOT the entire Next.js form/Neon SDK upload workflow.
+  return "INSERT INTO flight_tracks(user_id,flight_id,file_name) SELECT 9001,f.id,"+q(filename)+
+    " FROM flights f WHERE f.id="+id+" AND f.user_id=9001 AND f.locked_at IS NULL RETURNING id";
+}
+function gpsRaceSession(){
+  const child=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],
+    {env:safeEnv(),stdio:["pipe","pipe","pipe"]});
+  let stdout="",stderr="";
+  child.stdout.setEncoding("utf8").on("data",(x:string)=>{stdout+=x;});
+  child.stderr.setEncoding("utf8").on("data",(x:string)=>{stderr+=x;});
+  const stopped=new Promise<number|null>((resolve,reject)=>{child.on("error",reject);child.on("close",resolve);});
+  return {child,stopped,output:()=>stdout,error:()=>stderr};
+}
+async function gpsWaitFor(marker:string,read:()=>string){
+  for(let n=0;n<100;n++){
+    if(read().includes(marker))return;
+    await new Promise(resolve=>setTimeout(resolve,50));
+  }
+  throw new Error("D3b-1e concurrent session marker missing: "+marker);
+}
+async function gpsWaitForLock(pid:number){
+  assert.ok(Number.isSafeInteger(pid)&&pid>0,"D3b-1e backend PID missing");
+  for(let n=0;n<100;n++){
+    if(num("SELECT count(*) FROM pg_stat_activity WHERE pid="+pid+" AND wait_event_type='Lock';")>0)return;
+    await new Promise(resolve=>setTimeout(resolve,50));
+  }
+  throw new Error("D3b-1e expected row-lock wait was not observed");
+}
+async function stopGpsSessions(...sessions:ReturnType<typeof gpsRaceSession>[]){
+  for(const p of sessions){
+    if(p.child.exitCode===null){p.child.kill();await p.stopped;}
+  }
+}
+
+test("D3b-1e SAFE writer: Trash-first parent lock prevents no-FK GPS orphan",{skip:!enabled,timeout:25000},async()=>{
+  const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token),guard=gpsParentGuardSql(id);
+  assert.equal(num("SELECT count(*) FROM pg_constraint WHERE conrelid='flight_tracks'::regclass AND contype='f' AND confrelid='flights'::regclass;"),0);
+  const a=gpsRaceSession(),b=gpsRaceSession();
+  try{
+    a.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      steps[0]+";\n"+steps[1]+";\nSELECT 'D3B1E_ARCHIVED_A';\n");
+    await gpsWaitFor("D3B1E_ARCHIVED_A",a.output);
+
+    b.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "SELECT 'D3B1E_WRITER_PID:'||pg_backend_pid();\n"+
+      guard+";\n"+
+      guardedGpsInsert(id,"guarded-after-trash")+";\n"+
+      "UPDATE flights SET departure='LKAA' WHERE id="+id+" AND user_id=9001 AND locked_at IS NULL RETURNING id;\n"+
+      "SELECT 'D3B1E_WRITER_DONE';\nCOMMIT;\n");
+    await gpsWaitFor("D3B1E_WRITER_PID:",b.output);
+    await gpsWaitForLock(Number(b.output().match(/D3B1E_WRITER_PID:([0-9]+)/)?.[1]));
+
+    a.child.stdin.end(steps.slice(2).join(";\n")+";\nCOMMIT;\n");
+    assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+    assert.equal(await b.stopped,0,"Guarded GPS writer B failed: "+b.error());
+    assert.ok(b.output().includes("D3B1E_WRITER_DONE"));
+    assert.equal(count("flights","id="+id),0);
+    assert.equal(count("deleted_flights","delete_token="+q(token)),1);
+    assert.equal(num("SELECT jsonb_array_length(tracks_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),0);
+    assert.equal(count("flight_tracks","flight_id="+id+" AND user_id=9001"),0,
+      "Parent-first writer must not create an orphan after Trash");
+  }finally{await stopGpsSessions(a,b)}
+});
+
+test("D3b-1e SAFE writer: GPS-first parent lock makes Trash archive the whole track",{skip:!enabled,timeout:25000},async()=>{
+  const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token),guard=gpsParentGuardSql(id);
+  const a=gpsRaceSession(),b=gpsRaceSession();
+  try{
+    b.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      guard+";\n"+guardedGpsInsert(id,"guarded-before-trash")+";\n"+
+      "UPDATE flights SET departure='LKAA' WHERE id="+id+" AND user_id=9001 AND locked_at IS NULL RETURNING id;\n"+
+      "SELECT 'D3B1E_WRITER_READY_B';\n");
+    await gpsWaitFor("D3B1E_WRITER_READY_B",b.output);
+
+    a.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "SELECT 'D3B1E_TRASH_PID:'||pg_backend_pid();\n"+
+      steps.join(";\n")+";\nCOMMIT;\n");
+    await gpsWaitFor("D3B1E_TRASH_PID:",a.output);
+    await gpsWaitForLock(Number(a.output().match(/D3B1E_TRASH_PID:([0-9]+)/)?.[1]));
+    b.child.stdin.end("COMMIT;\n");
+    assert.equal(await b.stopped,0,"GPS B failed: "+b.error());
+    assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+    assert.equal(count("flights","id="+id),0);
+    assert.equal(count("deleted_flights","delete_token="+q(token)),1);
+    assert.equal(num("SELECT jsonb_array_length(tracks_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),1,
+      "Completed GPS track must be in the Trash snapshot");
+    assert.equal(count("flight_tracks","flight_id="+id+" AND user_id=9001"),0,
+      "Archived track must not remain live/orphaned");
+  }finally{await stopGpsSessions(a,b)}
+});
