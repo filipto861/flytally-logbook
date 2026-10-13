@@ -41,6 +41,15 @@ test("D3b-1 browser fixture retains the deleted-flights expense snapshot and leg
   assert.match(fixture,/CREATE TABLE fstd_sessions\s*\(/);
   assert.match(fixture,/CREATE TABLE fstd_certified_revisions\s*\(/);
   assert.match(fixture,/CREATE TABLE account_backups\s*\(/);
+  // The pre-delete portable v13 export reads these structures even when empty.
+  assert.match(fixture,/CREATE TABLE users\([\s\S]*slug TEXT NOT NULL[\s\S]*created_at TIMESTAMPTZ/);
+  for(const table of [
+    "voided_certified_flights",
+    "voided_flight_certified_revisions",
+    "voided_flight_verifications",
+    "voided_flight_archive_items",
+    "flight_source_provenance",
+  ])assert.ok(fixture.includes("CREATE TABLE "+table+" ("),"missing v13 export table: "+table);
 });
 
 test("D3b-1 browser spec asserts authenticated preserved evidence for both accepted and refused Trash",()=>{
