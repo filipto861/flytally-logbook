@@ -23,7 +23,7 @@ test("restore does not replace archived values with current aircraft identity",(
 
 test("same archived identity lock and actual restore run as one two-statement transaction",()=>{
   assert.match(source,/const tx=await sql\.transaction\(\[/);
-  assert.match(source,/pg_advisory_xact_lock\(hashtextextended\(jsonb_build_array\(/);
+  assert.match(source,/pg_advisory_xact_lock\(hashtextextended\(concat_ws\('\|',/);
   assert.match(source,/sql\x60WITH candidate AS MATERIALIZED/);
   assert.match(source,/\x60\],\{isolationLevel:'ReadCommitted'\}\);const rows=tx\[1\] as Array/);
   const restore=source.slice(source.indexOf("export async function restoreDeletedFlightRecord"));
@@ -35,4 +35,31 @@ test("same archived identity lock and actual restore run as one two-statement tr
 test("cooperating lock is not misrepresented as global Add/Edit or index protection",()=>{
   assert.doesNotMatch(source,/CREATE UNIQUE INDEX.*flights/i);
   assert.match(source,/WHERE NOT EXISTS\(SELECT 1 FROM flights f/);
+});
+
+
+test("Create and Restore use the identical normalized six-field text fingerprint",()=>{
+  const actions=readFileSync(new URL("../../app/(protected)/flights/actions.ts",import.meta.url),"utf8");
+  const dedup=readFileSync(new URL("../../lib/flight-dedup.ts",import.meta.url),"utf8");
+  assert.match(dedup,/return \[userId,clean\(flight.date\),clean\(flight.registration\),clean\(flight.offBlock\),clean\(flight.departure\),clean\(flight.arrival\)\]\.join\("\|"\)/);
+  assert.match(actions,/fingerprint=flightFingerprint\(userId,\{date:f.date,registration:f.registration,offBlock:f.offBlock,departure,arrival\}\)/);
+  assert.match(actions,/pg_advisory_xact_lock\(hashtextextended\(\$\{fingerprint\},0\)\)/);
+  const restore=source.slice(source.indexOf("export async function restoreDeletedFlightRecord"));
+  const lock=restore.slice(restore.indexOf("pg_advisory_xact_lock"),restore.indexOf("sql\x60WITH candidate AS MATERIALIZED"));
+  assert.match(lock,/hashtextextended\(concat_ws\('\|',/);
+  const pieces=[
+    "user_id::text",
+    "UPPER(TRIM(COALESCE(flight_data->>'date','')))",
+    "UPPER(TRIM(COALESCE(flight_data->>'registration','')))",
+    "UPPER(TRIM(COALESCE(flight_data->>'off_block','')))",
+    "UPPER(TRIM(COALESCE(flight_data->>'departure','')))",
+    "UPPER(TRIM(COALESCE(flight_data->>'arrival','')))",
+  ];
+  let prev=0;
+  for(const term of pieces){
+    const at=lock.indexOf(term,prev);
+    assert.ok(at>prev,"Create/Restore fingerprint term missing or out of order: "+term);
+    prev=at+term.length;
+  }
+  assert.doesNotMatch(lock,/jsonb_build_array/);
 });
