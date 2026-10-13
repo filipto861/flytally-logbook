@@ -207,3 +207,57 @@ test("D3b-1 A+: forced zero-row conditional DELETE rolls back the earlier archiv
   assert.equal(count("flights","id="+id+" AND locked_at IS NULL"),1);
   assert.equal(count("deleted_flights","delete_token="+q(token)),0);
 });
+
+test("D3b-1 A+: parent row lock serializes a competing certification writer",{skip:!enabled,timeout:25000},async()=>{
+  const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token);
+  const xmin=run("SELECT xmin::text FROM flights WHERE id="+id+";");
+  const launch=()=>{
+    const child=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],
+      {env:safeEnv(),stdio:["pipe","pipe","pipe"]});
+    let stdout="",stderr="";
+    child.stdout.setEncoding("utf8").on("data",(x:string)=>{stdout+=x;});
+    child.stderr.setEncoding("utf8").on("data",(x:string)=>{stderr+=x;});
+    const stopped=new Promise<number|null>((resolve,reject)=>{child.on("error",reject);child.on("close",resolve);});
+    return {child,stopped,output:()=>stdout,error:()=>stderr};
+  };
+  const a=launch(),b=launch();
+  async function waitFor(marker:string,read:()=>string){
+    for(let n=0;n<90;n++){
+      if(read().includes(marker))return;
+      await new Promise(resolve=>setTimeout(resolve,60));
+    }
+    throw new Error("Concurrent session marker not observed: "+marker);
+  }
+  try{
+    a.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      steps[0]+";\n"+steps[1]+";\nSELECT 'D3B1_ARCHIVED_A';\n");
+    await waitFor("D3B1_ARCHIVED_A",a.output);
+    // Writer B uses a stale-row xmin gate, as canonical certification does.
+    b.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "SELECT 'D3B1_PID:'||pg_backend_pid();\n"+
+      "UPDATE flights SET certified_at=NOW(),locked_at=NOW(),certification_hash="+q("c".repeat(64))+
+      " WHERE id="+id+" AND certified_at IS NULL AND locked_at IS NULL AND xmin::text="+q(xmin)+" RETURNING id;\n"+
+      "SELECT 'D3B1_CERTIFY_FINISHED_B';\nCOMMIT;\n");
+    await waitFor("D3B1_PID:",b.output);
+    const pid=Number(b.output().match(/D3B1_PID:([0-9]+)/)?.[1]);
+    assert.ok(Number.isSafeInteger(pid)&&pid>0,"Backend PID missing");
+    let waited=false;
+    for(let n=0;n<90;n++){
+      if(num("SELECT count(*) FROM pg_stat_activity WHERE pid="+pid+" AND wait_event_type='Lock';")>0){
+        waited=true;break;
+      }
+      await new Promise(resolve=>setTimeout(resolve,60));
+    }
+    assert.ok(waited,"Competing certification writer did not wait for the Trash parent lock");
+    a.child.stdin.end(steps.slice(2).join(";\n")+";\nCOMMIT;\n");
+    assert.equal(await a.stopped,0,"Trash session A failed: "+a.error());
+    assert.equal(await b.stopped,0,"Certification session B failed: "+b.error());
+    assert.ok(b.output().includes("D3B1_CERTIFY_FINISHED_B"));
+    assert.equal(count("flights","id="+id),0);
+    assert.equal(count("deleted_flights","delete_token="+q(token)),1);
+  }finally{
+    for(const p of [a,b]){
+      if(p.child.exitCode===null){p.child.kill();await p.stopped;}
+    }
+  }
+});
