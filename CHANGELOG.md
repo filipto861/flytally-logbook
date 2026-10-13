@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Restore D2 first owner-local tests and type-only TS2345 fix (DRAFT / NOT SHIPPED)
+
+- Owner Windows tested exact [PR #328](https://github.com/filipto861/flytally-logbook/pull/328) original commit `220b3e9cb1271e663a139856df9cef3c0e93ff22`: targeted source/column coverage Node tests **7/7 PASS**, 0 failed or skipped; full `npm run typecheck` **FAIL TS2345** at `tests/v380-trash-restore-v20-column-coverage.test.ts:24`. The regression test declared `excluded` with `as const`, causing TypeScript `readonly literal tuple.includes()` to reject a generic `string` argument from `columns.filter`. Runtime SQL was not the demonstrated failure.
+- Committed minimal **test-only** type widening to `const excluded: readonly string[] = [...]` at `36f6c1e4efda2e58c367ed93bae6059b78442518`; production restore SQL and testing logic unchanged. Isolated TypeScript 5.8.3 `--strict --noEmit` expression check **PASS**. **Full repo Node24 typecheck and targeted Node tests on corrected branch NOT RUN**; full-v20 PG16 trigger tests, Neon HTTP, CI/build/browser/prod remain NOT RUN. No merge, migration or deployment.
+
 ## 13 October 2026 — Currency 3.8.0 restore D2 full-v20 fidelity hardening (ISOLATED DRAFT / NOT SHIPPED)
 
 - From canonical `main@4ca2847795435549f36d44f253eb7c105eea6d25`, created independent `fix/3.8.0-trash-restore-v20-fidelity` for production-path **candidate only**. Source audit confirmed 61 columns in full-v20 `flights` smoke fixture, 49 columns in existing `lib/flight-trash.ts` restore, including three omitted historical `aircraft_make`, `aircraft_model`, `aircraft_variant`. Candidate explicitly restores those three, making 52 ordinary fields explicit while keeping nine identity/certification/revision fields excluded.
