@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Neon SDK invalid URI preflight, first cleanup and guarded retry (DRAFT / NOT SHIPPED)
+
+- Owner Node24 ran first SDK acceptance script locally, but it aborted at `Invalid Neon test URI` from `new URL()` **before any remote SQL**. Cause of invalid clipboard text not established. `Set-Clipboard -Value ''` separately threw on Windows PowerShell 5.1 during cleanup; environment variable cleanup in `finally` was executed. **Actual JavaScript Neon SDK transaction, rollback, concurrency all NOT RUN**.
+- Verified exact first disposable Neon child `ft-380-sdk-http-acceptance-20261013-tmp` (`br-patient-waterfall-b10m3abc`) nonprimary/nondefault, **deleted**, and checked via fresh branch listing: child **absent**, original four branches including default `production` intact.
+- Added `tooling/run-v380-neon-sdk-local.ps1` to reject non-plain/mismatched URI from clipboard without printing secrets or issuing remote SQL and to blank clipboard with `Set-Clipboard -Value ' '` rather than the PS5.1-invalid empty string. Updated Node error to safely explain plain URI requirement.
+- For one retry, created separate ephemeral **nonprimary/nondefault** `ft-380-sdk-http-retry-20261013-tmp` (`br-solitary-flower-b1t8okd4`) with only scratch schema/guard and 5 synthetic rows, no restored/expense entries. **Second temporary branch CURRENTLY LIVE and MUST BE DELETED after next user run PASS OR FAIL**, plus independent absence/original branches check. [Full handoff](docs/product/3_8_0_NEON_JS_HTTP_SDK_ACCEPTANCE_HANDOFF.md). No credentials exposed/committed, no real app data or prod branch writes, merge, migration, or deploy.
+
 ## 13 October 2026 — SDK acceptance scratch branch created, deletion pending (TEST-ONLY)
 
 - Created additional temporary **nonprimary/nondefault** Neon Shadow child `ft-380-sdk-http-acceptance-20261013-tmp` (`br-patient-waterfall-b10m3abc`) under default parent `br-dark-math-b1snjzub`. Only scratch `ft380_sdk_acceptance` objects and a branch/host/nonce guard were written to the child, with 5 synthetic archives and no flows/restored rows. [Exact branch and cleanup handoff](docs/product/3_8_0_NEON_JS_HTTP_SDK_ACCEPTANCE_HANDOFF.md). No real account, flight, currency or production branch writes.
