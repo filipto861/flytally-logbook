@@ -3,7 +3,7 @@
 **Decision:** OWNER APPROVED 13 October 2026.  
 **Scope:** `flytally-logbook` ordinary Move to Trash, not certified Void or `flytally-training`.  
 **Branch:** `fix/3.8.0-d3b1-atomic-fail-closed-trash`, based on D3b-0 Draft PR #332 at `38a8df4c9556638887d6ff2cc4fed35e9c787a1d`.  
-**Status:** DESIGN/FREEZE — IMPLEMENTATION AND NEW TESTS NOT RUN, NOT SHIPPED.
+**Status (updated 13 October):** OWNER APPROVED / IMPLEMENTATION CANDIDATE IN DRAFT PR #333 / **ALL D3b-1 TESTS NOT RUN** / NOT SHIPPED. The earlier sections preserve the design freeze, while section 7 records the authored candidate.
 
 ## 1. Owner-frozen A+ decision
 
@@ -66,7 +66,7 @@ The parent `FOR UPDATE` lock serializes canonical flight-row UPDATE/certify and 
 DeepSeek already independently reviewed A+ concept without repo access. Before implementing an irreversible lifecycle change, send a read-only reviewer the actual query design, matrix above, no-source-FK/optional-shares assumptions, and ask to identify missing writers, lock-order deadlocks, transaction invariant pitfalls and backward-compatibility regressions. Reviewer advice is not authority; reconcile with live source and actual PG16 tests.
 
 **Frozen by owner:** A+ not B/C; no cascading independent evidence and no automatic prefill/cleanup; no certified Void routed through normal Trash; no broad migration or data overwrite.  
-**Not yet approved:** a particular SQL implementation, breaking API/UI behavior, merge, production migration or deployment.
+**Still subject to verification/review:** the particular SQL implementation and UI/error behavior. **Not approved:** merge, production migration or deployment.
 
 ## 7. Initial D3b-1a/1b implementation candidate (13 Oct 2026 — NOT TESTED)
 
