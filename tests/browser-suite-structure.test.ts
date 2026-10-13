@@ -44,7 +44,7 @@ test("Phase 0C browser modules are syntactically parseable before Playwright dis
   }
 });
 
-test("Phase 0C retains the original 48 browser contracts and registers five additional 3.7.0 map scenarios",()=>{
+test("Phase 0C preserves the original 48 browser contracts, five 3.7.0 map scenarios, and two D3b Trash cases",()=>{
   const originalCount=48;
   const addedMapTests=[
     "map panes preserve standard basemap ordering and route interactions",
@@ -53,13 +53,20 @@ test("Phase 0C retains the original 48 browser contracts and registers five addi
     "GPS import review retains its map pane across theme changes",
     "map tile endpoint rejects unsupported and duplicate styles before upstream fetch",
   ];
+  const addedTrashTests=[
+    "D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",
+    "D3b-1 browser: pending collaboration refuses ordinary Trash with no archive or evidence deletion",
+  ];
   const actual=logicalBrowserTests();
-  assert.equal(actual.length,originalCount+addedMapTests.length);
+  const expectedCount=originalCount+addedMapTests.length+addedTrashTests.length;
+  assert.equal(actual.length,expectedCount);
   assert.equal(new Set(actual).size,actual.length,"browser test names must remain unique and grep-able");
   assert.deepEqual([...actual].sort(),[...baseline.acceptanceLogicalTests].sort());
-  assert.equal(baseline.acceptanceLogicalTests.length,originalCount+addedMapTests.length);
-  assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount),addedMapTests,
+  assert.equal(baseline.acceptanceLogicalTests.length,expectedCount);
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount,originalCount+addedMapTests.length),addedMapTests,
     "Phase 1 additions must not replace or reorder the original 48 logical tests");
+  assert.deepEqual(baseline.acceptanceLogicalTests.slice(originalCount+addedMapTests.length),addedTrashTests,
+    "D3b-1g must register both ordinary Trash safety scenarios without altering prior contracts");
 });
 
 test("Phase 0C keeps the serialized two-project Playwright contract",()=>{
