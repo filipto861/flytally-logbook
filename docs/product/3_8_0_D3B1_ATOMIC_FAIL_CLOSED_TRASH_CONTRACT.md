@@ -3,7 +3,7 @@
 **Decision:** OWNER APPROVED 13 October 2026.  
 **Scope:** `flytally-logbook` ordinary Move to Trash, not certified Void or `flytally-training`.  
 **Branch:** `fix/3.8.0-d3b1-atomic-fail-closed-trash`, based on D3b-0 Draft PR #332 at `38a8df4c9556638887d6ff2cc4fed35e9c787a1d`.  
-**Status (updated 13 October):** OWNER APPROVED / IMPLEMENTATION CANDIDATE IN DRAFT PR #333 / **ALL D3b-1 TESTS NOT RUN** / NOT SHIPPED. The earlier sections preserve the design freeze, while section 7 records the authored candidate.
+**Current status (13 October 2026):** OWNER APPROVED / Draft PR #333 / owner-local TypeScript and full source/unit tests **1,480/1,480 PASS** at exact SHA `ca59d29b`; prior native PG16 **21/21 PASS** at older SHA `83c7aa61`; **fresh PG16, build, authenticated app/SDK, browser and writer-race gates OPEN** / NOT SHIPPED. Earlier sections preserve their historical checkpoints. The earlier sections preserve the design freeze, while section 7 records the authored candidate.
 
 ## 1. Owner-frozen A+ decision
 
@@ -109,3 +109,9 @@ The owner ran `npm test` on source SHA `707e1a5f66f27f9a5eb9484bda151649ff061eef
 The unreviewed destructive action and UI confirmation were removed on Draft PR #333. For a non-certified `participantOwned` draft, the detail page now discloses that sharing/provenance evidence prevents ordinary Trash. Direct ordinary-delete requests continue to encounter A+ evidence guards. This is a **safety-first change in old participant-removal UX**, not implementation of a separate audited record-withdrawal process. If owner needs such removal later, freeze that product policy, evidence-retention semantics, authorization and audit/backup behaviour as a new separate milestone before implementing it.
 
 **Still OPEN:** auth-action/real SDK writer race, historical schema/data fixture parity, no-FK source provenance, track/expense/Edit races, detailed UI light/dark/responsive acceptance, and regression typecheck/full test/build. **Do not mark D3b-1 DONE or PR ready.** New changes beyond tested SHA `83c7aa61` require fresh owner-local test evidence.
+
+## 11. Owner-local complete source/unit regression gate (13 October 2026 — PASS / NOT RELEASED)
+
+On exact code SHA `ca59d29b54555df9bf545be17ccd71f5998c6a33`, owner Windows/Node24 executed: `npm run typecheck` **PASS**, targeted legacy participant-owned/canonical roadmap/Windows portability test files **13/13 PASS, no failure/skip**, and full `npm test` **1,480/1,480 PASS, no failure/skip** (`tests/*.test.ts` only; 28,252.4964 ms). This verifies the revised static expectations including absence of the previous unaudited `removeParticipant()` deletion endpoint, but does not exercise its former runtime path against PostgreSQL or verify a new cross-user flow.
+
+**Remaining strict acceptance on the changed runtime:** fresh isolated native PG16 A+ runner for this or later candidate, `npm run build`, authenticated application/Neon SDK transaction behavior and source/provenance/track/expense/Edit writer races, responsive/mobile/iPad/light/night UI checks and independent reviewer reconciliation. Earlier native PostgreSQL 21/21 PASS belongs to tested `83c7aa61` and does not transfer to the current SHA. **Do not merge/release PR #333; no migrations/deploy have been performed.**
