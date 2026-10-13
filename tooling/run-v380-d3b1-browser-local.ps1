@@ -17,6 +17,8 @@ $oldD3bMigrationsPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_MIGR
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $oldAuthBrowser = [Environment]::GetEnvironmentVariable("FLYTALLY_AUTH_BROWSER", "Process")
 $oldLocalPostgres = [Environment]::GetEnvironmentVariable("FLYTALLY_LOCAL_POSTGRES", "Process")
+$oldSessionSecret = [Environment]::GetEnvironmentVariable("SESSION_SECRET", "Process")
+$oldSigningSecret = [Environment]::GetEnvironmentVariable("SIGNING_SECRET", "Process")
 $temporaryRoot = $null
 $dataDir = $null
 $started = $false
@@ -67,6 +69,10 @@ try {
   $webProbe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), 3000)
   try { $webProbe.Start() } catch { throw "Local port 3000 is already occupied. Browser test NOT RUN; stop the other server first." } finally { $webProbe.Stop() }
   if ($env:CI) { throw "CI env must be unset for this local browser gate: retries must stay zero." }
+  # Auth and backups must be signed with isolated per-run test-only secrets.
+  # Process environment overrides .env.local; restore it in finally.
+  $env:SESSION_SECRET = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))
+  $env:SIGNING_SECRET = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))
   npm.cmd run build
   Assert-Exit "Exact candidate Next.js build"
 
@@ -138,6 +144,8 @@ try {
   Restore-Env "PGPASSWORD" $oldPgPassword
   Restore-Env "FLYTALLY_AUTH_BROWSER" $oldAuthBrowser
   Restore-Env "FLYTALLY_LOCAL_POSTGRES" $oldLocalPostgres
+  Restore-Env "SESSION_SECRET" $oldSessionSecret
+  Restore-Env "SIGNING_SECRET" $oldSigningSecret
   $env:Path = $oldPath
 
   if ($started) {
