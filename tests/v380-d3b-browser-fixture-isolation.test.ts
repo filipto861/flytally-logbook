@@ -35,6 +35,10 @@ test("D3b-1 browser fixture retains the deleted-flights expense snapshot and leg
   assert.match(fixture,/CREATE TABLE deleted_flights \([\s\S]*expenses_data JSONB NOT NULL DEFAULT '\[\]'::jsonb/);
   assert.match(fixture,/CREATE TABLE flight_expenses\(/);
   assert.match(fixture,/CREATE TABLE flight_tracks\(/);
+  assert.match(fixture,/CREATE TABLE airports\(\s*id BIGSERIAL PRIMARY KEY,/);
+  assert.match(fixture,/CREATE TABLE fstd_sessions\(/);
+  assert.match(fixture,/CREATE TABLE fstd_certified_revisions\(/);
+  assert.match(fixture,/CREATE TABLE account_backups\s*\(/);
 });
 
 test("D3b-1 browser spec asserts authenticated preserved evidence for both accepted and refused Trash",()=>{
@@ -44,5 +48,7 @@ test("D3b-1 browser spec asserts authenticated preserved evidence for both accep
   assert.match(spec,/pending collaboration refuses ordinary Trash/);
   assert.match(spec,/jsonb_array_length\(tracks_data\)/);
   assert.match(spec,/jsonb_array_length\(expenses_data\)/);
+  assert.match(spec,/backupsBefore\+1/);
+  assert.match(spec,/p\.form-error\[role=alert\]/);
   assert.match(spec,/SELECT COUNT\(\*\) FROM flight_participations/);
 });
