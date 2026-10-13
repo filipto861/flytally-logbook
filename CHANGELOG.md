@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 current-candidate owner-local native PG16 + production build PASS (DRAFT / NOT RELEASED)
+
+- Second Windows PC on exact branch HEAD `8cf6cb8a5a186cb1e9be21be7607fca7e13731ea`, Node v24.19.0, PostgreSQL 16 binaries installed. `tooling/run-v380-d3b1-atomic-trash-local.ps1`: TypeScript **PASS**, source contracts **4/4 PASS**, original five-statement SQL against disposable native PG16 **6/6 PASS**, original sequential runtime optimizer migration SQL v1→v20 and lifecycle/races **11/11 PASS**. Total **21/21 PASS; 0 FAIL; 0 SKIP**. Isolated temporary DB identity expected and observed `flytally_currency_test|flytally|127.0.0.1|51374` match; server cleanly stopped. Runner reported 14 unrelated untracked files, none modified or removed.
+- Same exact HEAD `npm.cmd run build`: Next.js **16.3.2 (Turbopack)** compiled in 3.2s; TypeScript phase completed in 8.6s; 41/41 static pages generated; production bundle optimization completed. **Build PASS locally, not deploy/runtime smoke**.
+- Previously owner-verified `npm run typecheck` PASS, targeted participant/roadmap/Windows safety 13/13 PASS, entire `npm test` **1480/1480 PASS** at `ca59d29b54555df9bf545be17ccd71f5998c6a33`; only subsequent documentation updates separate that code SHA from `8cf6cb8a5a186cb1e9be21be7607fca7e13731ea`. Documentation updates do not assert an additional full-suite run at HEAD.
+- **Release and safety limitations remain OPEN:** not a full actual historic production database clone; no authenticated Next.js server-action / real Neon SDK transaction proof, no track/expenses/Edit/GPS/no-source-FK provenance concurrency closure, no full browser responsive/iPad/mobile/light/night review, independent second-AI reconciliation or approval to merge. Draft #333 still unmerged, no DB migrations/production write or deployment.
+
 ## 13 October 2026 — D3b-1 owner-local TypeScript and full source/unit regression PASS (DRAFT / NOT SHIPPED)
 
 - Owner on Windows/Node24 ran `git pull --ff-only` to exact code candidate `ca59d29b54555df9bf545be17ccd71f5998c6a33`, followed by `npm run typecheck` **PASS** and targeted `npm run test:target` on `v1311-participant-ownership-lapl`, `v1312-hotfix`, `v300-navigation-hierarchy`, `v352-postgres-windows-portability`: **13/13 PASS, 0 FAIL/SKIP**. The participant-owned bypass regression, updated canonical roadmap expectation and Windows `psql -d` argument safety test all pass.
