@@ -83,3 +83,9 @@ Implementation uses an early **unconditional owned-row `SELECT ... FOR UPDATE`**
 - Preserve protected certified Void, Restore D2/D3a, legacy feature flag OFF behavior and every unrelated flight ownership rule.
 
 **Tests:** New D3b-1 runtime code **NOT RUN** (typecheck, source, PG16, full test suite, build, browser, app SDK), despite historical D3b-0 15/15 PASS on a different SHA. No schema/production migration, remote DB, merge or deploy. Do not label milestone DONE until verified and reviewed.
+
+## 8. Owner-local A+ scoped PostgreSQL acceptance (13 Oct 2026 — PASS, broader gates OPEN)
+
+Exact **tested source SHA `83c7aa61bcba1d92c5e2df9b86c790cab4c867e0`**, Windows/Node24, `tooling/run-v380-d3b1-atomic-trash-local.ps1`: `npm run typecheck` **PASS**, source characterization **4/4 PASS**, native PostgreSQL targeted cases **6/6 PASS**, native PostgreSQL with actual sequential optimizer migration SQL v1→v20 **11/11 PASS**; **21/21 PASS, zero fail/skip**. New disposable PG16 host `127.0.0.1:65028`; identity expected and observed `flytally_currency_test|flytally|127.0.0.1|65028` MATCH, server cleanly stopped.
+
+New acceptance covers clean draft, linked crew and verification, pending participation, locked/certified state guards, legacy instructor approval and revoked public shares, source provenance with no FK, provenance recipient, zero-row DELETE forced full rollback and real two-session parent row locking against competing certification. These are **scoped tests against minimal foundational schema + actual optimizer migrations**, not all independent historical feature migrations, authenticated Next.js server actions, Neon SDK semantics, arbitrary child writers, full tests/build/browser or production data. Do not infer comprehensive integrity solely from 21/21. **D3b-1 not released/merged.** Earlier `NOT RUN` notes apply to older candidate commits and remain historical.
