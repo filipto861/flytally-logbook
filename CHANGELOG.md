@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 first owner-local run blocked by TypeScript; corrected (DRAFT / RE-TEST REQUIRED)
+
+- Owner-local native PG16 targeted runner at exact `372ca1674738d6f51b964038314172aac2df9b40`: disposable cluster `127.0.0.1:54251`, expected/observed DB identity `flytally_currency_test|flytally|127.0.0.1|54251` matched. Initialization and cleanup completed.
+- **Typecheck FAILED (3× TS7053)** in three newly authored D3b test files because an inferred environment object was indexed by a dynamic `string`. All PostgreSQL test cases **NOT RUN** at that SHA. This was a failed gate, not a PostgreSQL failure.
+- Fixed the three declarations to `NodeJS.ProcessEnv` on the D3b Draft branch. **Corrected branch has NOT been retested**; no claim of TypeScript PASS, SQL race PASS, full-v20 fixture fidelity or deployment. No runtime/product/DB change.
+
 ## 13 October 2026 — D3b-0 actual Trash SQL PostgreSQL race tests authored (DRAFT / NOT RUN / NOT SHIPPED)
 
 - Added `tests/integration/postgres-v380-d3b-real-trash-races.test.ts`: extracts the five original SQL statements from `moveFlightToTrash()`, applies the v20 migration SQL blocks from `lib/db-optimization.ts` in an isolated schema and asserts draft deletion, linked evidence CASCADE, provenance-trigger rollback, certified protection, and a deterministic two-session certification-after-archive race.
