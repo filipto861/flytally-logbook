@@ -1,4 +1,4 @@
-# FlyTally A1-T2c D1 catalog acceptance: native PostgreSQL 16, disposable local test cluster.
+# FlyTally A1-T2c D1 atomic restore acceptance: native PostgreSQL 16, disposable local test cluster.
 # Windows PowerShell 5.1 safe (ASCII). Requires Git, Node 24, PostgreSQL 16 binaries.
 # Does NOT touch the pre-existing server on port 55432 or Neon/Vercel.
 # Run: powershell -ExecutionPolicy Bypass -File .\tooling\run-currency-a1t2c-local.ps1
@@ -10,7 +10,7 @@ $expectedBranch = "test/3.8.0-a1-t2c-d1-atomic-restore-pg16"
 $oldPath = $env:Path
 $oldDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
 $oldPgIntegration = [Environment]::GetEnvironmentVariable("FLYTALLY_POSTGRES_INTEGRATION", "Process")
-$oldA1T2b = [Environment]::GetEnvironmentVariable("FLYTALLY_A1T2C_DISPOSABLE", "Process")
+$oldA1T2c = [Environment]::GetEnvironmentVariable("FLYTALLY_A1T2C_DISPOSABLE", "Process")
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $temporaryRoot = $null
 $dataDir = $null
@@ -25,7 +25,7 @@ function Restore-Env([string]$name, [string]$value) {
   [Environment]::SetEnvironmentVariable($name, $value, "Process")
 }
 
-Write-Host "FlyTally A1-T2c D1 native PostgreSQL 16 catalog test" -ForegroundColor Cyan
+Write-Host "FlyTally A1-T2c D1 native PostgreSQL 16 atomic restore test" -ForegroundColor Cyan
 Push-Location $repoPath
 try {
   if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git is not on PATH." }
@@ -114,15 +114,15 @@ try {
 
   npm run typecheck
   Assert-Exit "TypeScript"
-  npm run test:target -- tests/currency-a1t2c-local-target.test.ts
+  npm run test:target -- tests/currency-a1t2b-local-target.test.ts
   Assert-Exit "A1-T2c D1 identity guard tests"
   npm run test:target -- tests/integration/postgres-currency-a1t2c-atomic-restore.test.ts
-  Assert-Exit "A1-T2c D1 disposable PostgreSQL catalog tests"
+  Assert-Exit "A1-T2c D1 disposable PostgreSQL atomic restore tests"
   Write-Host "LOCAL catalog test gates PASS on candidate $commit. Not a production migration." -ForegroundColor Green
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
-  Restore-Env "FLYTALLY_A1T2C_DISPOSABLE" $oldA1T2b
+  Restore-Env "FLYTALLY_A1T2C_DISPOSABLE" $oldA1T2c
   Restore-Env "PGPASSWORD" $oldPgPassword
   $env:Path = $oldPath
 
