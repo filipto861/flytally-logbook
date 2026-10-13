@@ -22,7 +22,7 @@ test("pinned XML snapshot is reproducible and explicitly marked unverified at SI
   assert.equal(parsed.distinctCodes,178);
   assert.equal(parsed.monetary.length,155);
   assert.equal(parsed.entriesWithoutCodes,3);
-  assert.equal(renderRegistry(parsed),generated,"Generated metadata/currency rows have drifted from the pinned source");
+  assert.equal(renderRegistry(parsed),generated.replace(/\r\n/g,"\n"),"Generated metadata/currency rows have drifted from the pinned source");
   assert.equal(ISO4217_CURRENCY_SOURCE.verifiedDirectlyWithSIX,false,"Third-party source mirror is not the original SIX download");
 });
 
