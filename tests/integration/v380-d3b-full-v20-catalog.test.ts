@@ -58,7 +58,8 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
     assert.ok(c.triggers.some((x:{tab:string;name:string})=>x.tab===tab && pattern.test(x.name)),
       "Missing lifecycle trigger on "+tab);
   };
-  trigger("flight_source_provenance",/immut|protect/i);
-  trigger("flights",/void|protect/i);
-  trigger("voided_certified_flights",/immut|protect/i);
+  trigger("flight_source_provenance",/^trg_logbook_protect_source_provenance$/);
+  trigger("flights",/^trg_logbook_protect_locked_flight$/);
+  trigger("flights",/^trg_logbook_prevent_voided_flight_id_reuse$/);
+  trigger("voided_certified_flights",/^trg_logbook_protect_voided_certified_flights$/);
 });
