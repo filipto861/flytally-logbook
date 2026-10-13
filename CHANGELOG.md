@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 second owner-local test, source assertion corrected (DRAFT / RE-TEST REQUIRED)
+
+- Owner Windows/Node24 reran `tooling/run-v380-d3b-targeted-local.ps1` on exact commit `d6f421a027d36218f764bb7352bc62ebbe520ff8`. New disposable PG16 cluster at `127.0.0.1:57846`; observed/expected identity matched, server stopped cleanly. **Typecheck PASS**. Source characterization **2 PASS / 1 FAIL**; native PostgreSQL integration **NOT RUN** because the runner stopped at the failed source gate.
+- The failed assertion incorrectly searched the entire Trash INSERT statement for `flight_participations`, including the authorization `WHERE` clause. The source contains a participation existence predicate, but the snapshot projection still archives flight/tracks/expenses only. Corrected test to inspect the archive `SELECT` projection and separately assert the participation predicate. Source-side static comparison against current SQL matches; **new source suite still NOT RUN**.
+- Moved TypeScript and source tests before ephemeral PG16 cluster startup in `tooling/run-v380-d3b-targeted-local.ps1` to avoid unnecessary database initialization for preflight failures. No Trash runtime logic, schema migration, main merge, production or remote DB action. Owner-local revalidation remains required.
+
 ## 13 October 2026 — D3b-0 first owner-local run blocked by TypeScript; corrected (DRAFT / RE-TEST REQUIRED)
 
 - Owner-local native PG16 targeted runner at exact `372ca1674738d6f51b964038314172aac2df9b40`: disposable cluster `127.0.0.1:54251`, expected/observed DB identity `flytally_currency_test|flytally|127.0.0.1|54251` matched. Initialization and cleanup completed.
