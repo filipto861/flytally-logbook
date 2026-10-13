@@ -145,3 +145,26 @@ The PowerShell runner initializes a unique disposable loopback PG16 cluster/DB, 
 **Evidence boundary:** the test's pre-v20 FK tables are a deliberately reduced contract; it executes genuine v20 SQL functions/triggers extracted from `lib/db-optimization.ts`. It is **not** a complete v1–v20 applied migration fixture. Catalog parity, same-transaction application `@neondatabase/serverless` transaction behavior, canonical sharing/certification eligibility, actual PostgreSQL void + participant acceptance races and production/Neon incidence remain **NOT RUN / UNKNOWN**. Historical earlier `NOT RUN` entries refer to their earlier commits and remain preserved.
 
 **Updated release posture:** D3b-0 scoped targeted PG16 proof obtained, **D3b-0 FULL acceptance still open**. Next read-only/draft milestone is actual full-v20 catalog/fixture and independent participant/provenance writer evidence; only then finalize A+ linked-draft lifecycle choice with owner and start minimal D3b-1 fix. Product code, migration, main, deployment and production DB untouched.
+
+## D3b-0 v1→v20 migration-chain verification candidate (13 October 2026 — NOT RUN)
+
+**New on Draft #332:**
+- `tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts`
+- `tooling/run-v380-d3b-migration-chain-local.ps1`
+
+The new fixture no longer substitutes arbitrary handcrafted v12/v13/v15 foreign-key definitions and then applies only v20. Instead it constructs **a deliberately minimal pre-optimization foundational schema** on a random local PostgreSQL16 schema and executes **the actual runtime SQL for all versions 1 through 20**, extracted verbatim from `lib/db-optimization.ts`; transactions include the original migration advisory key and exact version/name registry entries. Source contracts reject missing/moved statements, newly interpolated SQL and explicit `public` references.
+
+The targeted migration-chain test validates the effective composite FK actions and enabled protection triggers, then runs actual `moveFlightToTrash()` SQL. Cases: (1) catalog/version registry, (2) plain draft archival, (3) connected crew + verification CASCADE, (4) certified ordinary Trash gate, (5) legacy pending source invitation CASCADE, (6) immutable accepted recipient provenance rollback across accounts, (7) two independent PG sessions with archive → certification → zero-row final DELETE.
+
+**Run from a clean local checkout of `analysis/3.8.0-d3b-protected-trash-evidence`:**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d3b-migration-chain-local.ps1
+```
+
+The runner checks branch/clean tracked files/Node24, typechecks and runs source tests, then creates its **own** disposable loopback PG16 server, verifies its DB user/host/port/database identity, runs the previously established targeted PG suite and then this sequential-migration suite. It restores process environment and stops only the created cluster. Separate opt-in `FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE=1` is set only within the controlled runner.
+
+**Limit:** executing real optimizer migration SQL v1–v20 on minimal prerequisite tables is not the same as replaying every historical database schema origin, independent feature migration, dataset/currency population, or production configuration. The separate full applied-v20 catalog parity and authenticated browser/Neon SDK writer tests remain release gates. This still constitutes materially stronger FK/trigger evidence than the earlier D3b synthetic pre-v20 fixture if execution succeeds.
+
+**Execution evidence:** Node24 typecheck on the new candidate **NOT RUN**; newly authored PG16 migration-chain cases **NOT RUN**; earlier owner-local targeted **8/8 PASS** at `dd0823af65866bd21de87240f304cb5ef4cf0b9e` remains valid only for that source commit. No runtime fix, production migration, main merge or deployment.
