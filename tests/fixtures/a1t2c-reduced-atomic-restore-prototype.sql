@@ -38,7 +38,11 @@ BEGIN
   END IF;
   -- Reject certified/corrected and externally evidenced revision histories.
   IF (f->>'certified_at') IS NOT NULL
+     OR (f->>'certified_by_user_id') IS NOT NULL
      OR (f->>'locked_at') IS NOT NULL
+     OR (f->>'locked_by_user_id') IS NOT NULL
+     OR (f->>'correction_opened_at') IS NOT NULL
+     OR COALESCE(f->>'correction_reason','') <> ''
      OR COALESCE(f->>'certification_hash','') <> ''
      OR COALESCE(f->>'record_revision','1') <> '1'
      OR EXISTS (SELECT 1 FROM flight_certified_revisions r
