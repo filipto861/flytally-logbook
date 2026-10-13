@@ -11,10 +11,12 @@ const schema="ft_d3b_"+randomUUID().replaceAll("-","");
 const ns='"'+schema+'"';
 const root=new URL("../../",import.meta.url);
 const source=readFileSync(new URL("lib/flight-trash.ts",root),"utf8");
-const first=source.indexOf("const results=await sql.transaction([");
-const last=source.indexOf("]);\n  const deleted=",first);
-assert.ok(first>=0 && last>first,"Cannot locate exact Trash SQL transaction");
-const queries=[...source.slice(first,last).matchAll(/sql`([^`]+)`/g)].map(m=>m[1]);
+const moveStart=source.indexOf("export async function moveFlightToTrash(");
+const restoreStart=source.indexOf("export async function restoreDeletedFlightRecord(",moveStart);
+assert.ok(moveStart>=0 && restoreStart>moveStart,"Cannot locate the actual Trash method");
+const transaction=source.slice(moveStart,restoreStart).match(/const results=await sql\.transaction\(\[([\s\S]*?)\]\);\s*const deleted=/);
+assert.ok(transaction,"Cannot locate the actual A+ Trash transaction");
+const queries=[...transaction[1].matchAll(/sql`([^\`]+)`/g)].map(m=>m[1]);
 assert.equal(queries.length,5,"Trash transaction SQL changed: review this test");
 
 function target(){
