@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 owner-local corrected 12/13 targeted PASS; Windows -d parser false positive fixed (DRAFT / RETEST REQUIRED)
+
+- Owner retested code SHA `2ad57b22f140cde1ed5fa813a1da0d57cff376a9` after `git pull --ff-only`: `npm run typecheck` **PASS**; `npm run test:target -- tests/v1311-participant-ownership-lapl.test.ts tests/v1312-hotfix.test.ts tests/v300-navigation-hierarchy.test.ts tests/v352-postgres-windows-portability.test.ts` **13 total / 12 PASS / 1 FAIL / 0 SKIP**. All participant-owned A+ protection checks and canonical roadmap checks PASS. Windows portability test failed on a false positive: `["-d",databaseUrl,"-X",...]` was incorrectly interpreted as a positional database URL.
+- Only `tests/v352-postgres-windows-portability.test.ts` changed: check **exactly one explicit `-d` option and its paired value**, remove that option-value pair from the token string, and **only then** reject an extra positional `databaseUrl`, `localDatabaseUrl()`, or `url`. Keep the exact `psql --version` non-connection exemption, unparsed-call fail-closed check, and SQL `-c` command-line rejection. Static sanity cases distinguish proper leading/non-leading `-d` from positional URLs, duplicate `-d`, and SQL `-c`.
+- **New corrected SHA has NOT BEEN TESTED**, including TypeScript, full `npm test`, native PG16, build, browser and SDK. Historical D3b-1 21/21 scoped PG16 PASS remains bound to `83c7aa61`; full aggregate `npm test` at `707e1a5f` was **1,476/1,480 PASS**. PR #333 remains Draft; no merge, migration or deploy.
+
 ## 13 October 2026 — D3b-1 full-unit 4-FAIL triage and protected participant deletion bypass closure (DRAFT / RE-TEST REQUIRED)
 
 - Owner ran `npm test` on Windows/Node24 at exact SHA `707e1a5f66f27f9a5eb9484bda151649ff061eef`: **1,480 tests, 1,476 PASS, 4 FAIL, 0 SKIP**. Full-unit test gate **FAIL**; errors in `v1311-participant-ownership-lapl`, `v1312-hotfix`, `v300-navigation-hierarchy`, and `v352-postgres-windows-portability`. No PostgreSQL/build/browser tests were run in this exact full-unit command.
