@@ -35,7 +35,7 @@ Other tables must be reviewed before a complete closure claim. `flight_audit_log
 ## 3. Transaction invariants (design, not executed SQL)
 
 1. Validate integer user/flight IDs. Ensure the exact existing optimizer + expense/track + share schemas (no v21 migration).
-2. Begin one `sql.transaction`, acquire `SELECT ... FOR UPDATE` on the owned parent row **before snapshot**. Reject non-draft, certified, locked or revised rows without clearing lock fields.
+2. Begin one `sql.transaction`, acquire **unconditional `SELECT ... FOR UPDATE` on any existing owned parent row** before evaluating eligibility or snapshot. Only after the lock is held reject non-draft, certified, locked or revised rows without clearing lock fields. This prevents a concurrent unlock turning a missed conditional lock into an unprotected archive.
 3. Re-evaluate all dependent evidence in-transaction and archive only eligible rows. No automatic mutation of the evidence tables.
 4. Delete track points and tracks **only if this transaction created an archive marker**. Preserve expense behavior as established by existing normal Trash/Restore.
 5. Final conditional `DELETE flights ... RETURNING id` must re-evaluate protected state and dependent evidence. One or zero rows is unambiguous, never heuristically coerced.
@@ -72,7 +72,7 @@ DeepSeek already independently reviewed A+ concept without repo access. Before i
 
 On this nested implementation branch the following files have been staged as candidate code (not acceptance evidence): `lib/flight-trash.ts`, `lib/flight-sharing.ts`, `app/(protected)/flights/actions.ts`, `app/(protected)/flights/[id]/page.tsx`, existing D3b source/native PostgreSQL test suites updated for new A+ expected behavior, and `tooling/run-v380-d3b1-atomic-trash-local.ps1`.
 
-Implementation uses an early `SELECT ... FOR UPDATE` locking the owned row only when it is uncertified, unlocked and revision-1. The archive and final DELETE each evaluate the eight protected child domains above. The last statement is a data-modifying `WITH deleted AS(DELETE ... RETURNING f.id)` with a *dynamic* SQL division-by-zero assertion only if the archive exists but `COUNT(deleted)=0`. A thrown SQL error makes the whole `sql.transaction` roll back. This replaces the previous incorrect success result from `results[1]` (archive-only) with `deleted_count===1` plus archive marker.
+Implementation uses an early **unconditional owned-row `SELECT ... FOR UPDATE`**, including initially locked/certified rows, then applies uncertified/unlocked/revision-1 eligibility strictly in the archive and final DELETE statements. The archive and final DELETE each evaluate the eight protected child domains above. The last statement is a data-modifying `WITH deleted AS(DELETE ... RETURNING f.id)` with a *dynamic* SQL division-by-zero assertion only if the archive exists but `COUNT(deleted)=0`. A thrown SQL error makes the whole `sql.transaction` roll back. This replaces the previous incorrect success result from `results[1]` (archive-only) with `deleted_count===1` plus archive marker.
 
 **Review items before acceptance:**
 - Confirm native PostgreSQL's data-modifying CTE and dynamic assertion are executed and reliably abort the complete transaction when deliberately forcing a zero-row DELETE.
