@@ -11,10 +11,12 @@ const schema="ft_d3b_"+randomUUID().replaceAll("-","");
 const ns='"'+schema+'"';
 const root=new URL("../../",import.meta.url);
 const source=readFileSync(new URL("lib/flight-trash.ts",root),"utf8");
-const first=source.indexOf("const token=randomUUID(),results=await sql.transaction([");
-const last=source.indexOf("]);return Boolean",first);
-assert.ok(first>=0 && last>first,"Cannot locate exact Trash SQL transaction");
-const queries=[...source.slice(first,last).matchAll(/sql`([^`]+)`/g)].map(m=>m[1]);
+const moveStart=source.indexOf("export async function moveFlightToTrash(");
+const restoreStart=source.indexOf("export async function restoreDeletedFlightRecord(",moveStart);
+assert.ok(moveStart>=0 && restoreStart>moveStart,"Cannot locate the actual Trash method");
+const transaction=source.slice(moveStart,restoreStart).match(/const results=await sql\.transaction\(\[([\s\S]*?)\]\);\s*const deleted=/);
+assert.ok(transaction,"Cannot locate the actual A+ Trash transaction");
+const queries=[...transaction[1].matchAll(/sql`([^\`]+)`/g)].map(m=>m[1]);
 assert.equal(queries.length,5,"Trash transaction SQL changed: review this test");
 
 function target(){
@@ -133,6 +135,8 @@ CREATE TABLE flight_verifications(
  id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE,
  flight_user_id BIGINT NOT NULL,status TEXT NOT NULL DEFAULT 'pending'
 );
+CREATE TABLE instructor_flight_approvals(id BIGSERIAL PRIMARY KEY,flight_id BIGINT NOT NULL REFERENCES flights(id) ON DELETE CASCADE);
+CREATE TABLE flight_public_shares(id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,flight_id BIGINT NOT NULL,token_hash TEXT NOT NULL UNIQUE,CONSTRAINT flight_public_shares_owner_fk FOREIGN KEY(flight_id,user_id) REFERENCES flights(id,user_id) ON DELETE CASCADE);
 `);
   if(setup.error)throw setup.error;
   assert.equal(setup.status,0,"D3b schema setup failed: "+String(setup.stderr));
@@ -151,19 +155,19 @@ test("actual Trash SQL: unlinked draft archives and deletes", {skip:!enabled},()
   assert.equal(count("deleted_flights","delete_token="+quote(token)),1);
 });
 
-test("actual Trash SQL: linked draft loses connected-crew and verification via CASCADE", {skip:!enabled},()=>{
+test("D3b-1 A+: linked draft blocks deletion and preserves crew and verification", {skip:!enabled},()=>{
   const id=flight(),token=randomUUID();
   sql("INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id) VALUES ("+id+",9001,9002)");
   sql("INSERT INTO flight_verifications(flight_id,flight_user_id) VALUES ("+id+",9001)");
   sql("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
-  assert.equal(count("flights","id="+id),0);
-  assert.equal(count("deleted_flights","delete_token="+quote(token)),1);
-  assert.equal(count("flight_connected_crew","source_flight_id="+id),0);
-  assert.equal(count("flight_verifications","flight_id="+id),0);
-  // This characterizes CURRENT behavior and is a blocker for A+ acceptance.
+  assert.equal(count("flights","id="+id),1);
+  assert.equal(count("deleted_flights","delete_token="+quote(token)),0);
+  assert.equal(count("flight_connected_crew","source_flight_id="+id),1);
+  assert.equal(count("flight_verifications","flight_id="+id),1);
+  // No independent evidence may disappear via CASCADE.
 });
 
-test("actual Trash SQL: immutable participant provenance rejects DELETE and rolls back archive", {skip:!enabled},()=>{
+test("D3b-1 A+: participant provenance blocks Trash without mutation or exception", {skip:!enabled},()=>{
   const sourceId=flight(9001,true);
   const participantId=flight(9001,false);
   sql("INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status,participant_flight_id) VALUES ("+
@@ -171,8 +175,9 @@ test("actual Trash SQL: immutable participant provenance rejects DELETE and roll
   sql("INSERT INTO flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role) VALUES ("+
      participantId+",9001,"+sourceId+",9001,1,"+quote("a".repeat(64))+",'PIC')");
   const token=randomUUID();
-  const result=raw("SET search_path TO "+ns+";BEGIN;"+trashSql(participantId,token).join(";")+";COMMIT;");
-  assert.notEqual(result.status,0,"Immutable provenance must reject draft DELETE");
+  sql("BEGIN;\n"+trashSql(participantId,token).join(";\n")+";\nCOMMIT;");
+  // A+ rejects the operation before any FK cascade reaches the provenance trigger.
+  // A refusal without an exception must preserve both rows and the archive state.
   assert.equal(count("flights","id="+participantId),1);
   assert.equal(count("deleted_flights","delete_token="+quote(token)),0);
   assert.equal(count("flight_source_provenance","participant_flight_id="+participantId),1);
@@ -185,33 +190,20 @@ test("actual Trash SQL: certified source is not archived or deleted", {skip:!ena
   assert.equal(count("deleted_flights","delete_token="+quote(token)),0);
 });
 
-test("two sessions: certification after snapshot, before final DELETE leaves archive and active flight", {skip:!enabled,timeout:20000},async()=>{
-  const id=flight(),token=randomUUID(),queriesForFlight=trashSql(id,token);
-  const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],
-    {env:env(),stdio:["pipe","pipe","pipe"]});
-  let stdout="",stderr="";
-  p.stdout.setEncoding("utf8").on("data",(part:string)=>{stdout+=part});
-  p.stderr.setEncoding("utf8").on("data",(part:string)=>{stderr+=part});
-  const stopped=new Promise<number|null>((resolve,reject)=>{
-    p.on("error",reject);p.on("close",resolve);
-  });
-  try{
-    p.stdin.write("SET search_path TO "+ns+";BEGIN;\n"+
-      queriesForFlight[0]+";\n"+queriesForFlight[1]+";\nSELECT 'D3B_ARCHIVE_READY';\n");
-    await new Promise<void>((resolve,reject)=>{
-      const timer=setTimeout(()=>reject(new Error("Archive readiness timed out: "+stderr)),6000);
-      const check=()=>{if(stdout.includes("D3B_ARCHIVE_READY")){clearTimeout(timer);p.stdout.off("data",check);resolve()}};
-      p.stdout.on("data",check);check();
-    });
-    const certification=sql("UPDATE flights SET certified_at=NOW(),certification_hash="+quote("b".repeat(64))+
-      " WHERE id="+id+" RETURNING id");
-    assert.equal(certification,String(id));
-    p.stdin.end(queriesForFlight.slice(2).join(";\n")+";\nCOMMIT;\n");
-    assert.equal(await stopped,0,"Transaction A failed: "+stderr);
-    assert.equal(count("flights","id="+id),1);
-    assert.equal(count("deleted_flights","delete_token="+quote(token)),1);
-    assert.ok(stdout.includes("D3B_ARCHIVE_READY"));
-  }finally{
-    if(p.exitCode===null){p.kill();await stopped;}
-  }
+test("D3b-1 A+: forced zero-row final DELETE rolls back archive and track changes",{skip:!enabled},()=>{
+  const id=flight(),token=randomUUID(),steps=trashSql(id,token);
+  const result=raw("SET search_path TO "+ns+";BEGIN;"+
+    steps[0]+";"+steps[1]+";"+
+    "UPDATE flights SET locked_at=NOW() WHERE id="+id+";"+
+    steps.slice(2).join(";")+";COMMIT;");
+  assert.notEqual(result.status,0,"Archive without final DELETE must abort");
+  assert.match(String(result.stderr),/division by zero/i);
+  assert.equal(count("flights","id="+id+" AND locked_at IS NULL"),1);
+  assert.equal(count("deleted_flights","delete_token="+quote(token)),0);
+});
+
+test("D3b-1 A+: absent or already-certified flight cannot create a Trash archive",{skip:!enabled},()=>{
+  const missingToken=randomUUID();
+  sql("BEGIN;\n"+trashSql(99999999,missingToken).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("deleted_flights","delete_token="+quote(missingToken)),0);
 });

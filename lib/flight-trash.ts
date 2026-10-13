@@ -6,9 +6,85 @@ import { ensureV159Schema } from "@/lib/v159-schema";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
 import { ensureV166Schema } from "@/lib/v166-schema";
+import { ensureFlightSharingSchema } from "@/lib/flight-sharing";
 export type DeletedFlight={id:number;originalFlightId:number;date:string;registration:string;departure:string;arrival:string;deletedAt:string;purgeAfter:string;trackCount:number};
 export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>{await ensureDatabaseOptimizations();await sql`DELETE FROM deleted_flights WHERE user_id=${userId} AND purge_after<=NOW()`;const rows=await sql`SELECT id,original_flight_id,flight_data->>'date' date,COALESCE(flight_data->>'registration','') registration,COALESCE(flight_data->>'departure','') departure,COALESCE(flight_data->>'arrival','') arrival,deleted_at,purge_after,jsonb_array_length(tracks_data)::int track_count FROM deleted_flights WHERE user_id=${userId} AND restored_at IS NULL AND purge_after>NOW() ORDER BY deleted_at DESC,id DESC LIMIT 100` as Array<Record<string,unknown>>;return rows.map(row=>({id:Number(row.id),originalFlightId:Number(row.original_flight_id),date:String(row.date||""),registration:String(row.registration||""),departure:String(row.departure||""),arrival:String(row.arrival||""),deletedAt:String(row.deleted_at||""),purgeAfter:String(row.purge_after||""),trackCount:Number(row.track_count||0)}))}
-export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);const token=randomUUID(),results=await sql.transaction([sql`UPDATE flights f SET locked_at=NULL,locked_by_user_id=NULL WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id) RETURNING f.id`,sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data) SELECT f.user_id,f.id,${token},to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb),COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM flight_expenses e WHERE e.user_id=f.user_id AND e.flight_id=f.id),'[]'::jsonb) FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1 AND (f.locked_at IS NULL OR EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id)) AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=f.user_id AND r.flight_id=f.id) RETURNING id`,sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,sql`DELETE FROM flights WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND COALESCE(record_revision,1)=1 AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=${userId} AND r.flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`]);return Boolean((results[1] as Array<{id:number|string}>)[0])}
+// A+ frozen: an ordinary Trash operation is only for an unlinked, unprotected
+// draft. Preserve independent participant/approval/provenance/verification evidence.
+// Both the archive snapshot and the final DELETE must succeed atomically.
+export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{
+  if(!Number.isSafeInteger(userId)||userId<=0||!Number.isSafeInteger(flightId)||flightId<=0)return false;
+  await ensureDatabaseOptimizations();
+  await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);
+  await ensureFlightSharingSchema();
+
+  const token=randomUUID();
+  const results=await sql.transaction([
+    // Always lock an existing owned row *before* testing eligibility; another
+    // writer must not change a previously ineligible row into an eligible one
+    // between a conditional lock miss and the archive snapshot.
+    // FK child inserts referencing this parent also wait on the FOR UPDATE.
+    sql`SELECT f.id FROM flights f
+      WHERE f.id=${flightId} AND f.user_id=${userId}
+      FOR UPDATE`,
+
+    sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data)
+      SELECT f.user_id,f.id,${token},to_jsonb(f),
+        COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb),
+        COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM flight_expenses e WHERE e.user_id=f.user_id AND e.flight_id=f.id),'[]'::jsonb)
+      FROM flights f
+      WHERE f.id=${flightId} AND f.user_id=${userId}
+        AND f.certified_at IS NULL AND f.locked_at IS NULL
+        AND COALESCE(f.record_revision,1)=1
+      AND NOT EXISTS (SELECT 1 FROM flight_participations p WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_connected_crew c WHERE c.source_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM instructor_flight_approvals a WHERE a.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_source_provenance p WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_public_shares s WHERE s.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_certified_revisions r WHERE r.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM voided_certified_flights v WHERE v.user_id=f.user_id AND v.original_flight_id=f.id)
+      RETURNING id`,
+
+    sql`DELETE FROM track_points
+      WHERE user_id=${userId}
+        AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId})
+        AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
+
+    sql`DELETE FROM flight_tracks
+      WHERE user_id=${userId} AND flight_id=${flightId}
+        AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,
+
+    // The count is a runtime subquery, not a constant expression. If the
+    // archive was inserted but DELETE affected 0 rows, division by zero
+    // aborts this SQL statement and rolls back the WHOLE transaction.
+    sql`WITH deleted AS (
+      DELETE FROM flights f
+      WHERE f.id=${flightId} AND f.user_id=${userId}
+        AND f.certified_at IS NULL AND f.locked_at IS NULL
+        AND COALESCE(f.record_revision,1)=1
+        AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})
+      AND NOT EXISTS (SELECT 1 FROM flight_participations p WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_connected_crew c WHERE c.source_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_verifications v WHERE v.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM instructor_flight_approvals a WHERE a.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_source_provenance p WHERE p.source_flight_id=f.id OR p.participant_flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_public_shares s WHERE s.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM flight_certified_revisions r WHERE r.flight_id=f.id)
+      AND NOT EXISTS (SELECT 1 FROM voided_certified_flights v WHERE v.user_id=f.user_id AND v.original_flight_id=f.id)
+      RETURNING f.id
+    )
+    SELECT (SELECT COUNT(*)::integer FROM deleted) AS deleted_count,
+      1 / CASE
+        WHEN EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})
+        THEN (SELECT COUNT(*)::integer FROM deleted)
+        ELSE 1
+      END AS archive_delete_consistency`,
+  ]);
+  const deleted=(results[4] as Array<{deleted_count:number|string}>)[0];
+  return Number(deleted?.deleted_count)===1 && Boolean((results[1] as Array<{id:number|string}>)[0]);
+}
+
 export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);const tx=await sql.transaction([
   sql`SELECT pg_advisory_xact_lock(hashtextextended(concat_ws('|',
     user_id::text,

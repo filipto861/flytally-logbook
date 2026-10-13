@@ -35,7 +35,13 @@ function render(strings:TemplateStringsArray,values:unknown[]){
   return statement.trim().replace(/;\s*$/,"");
 }
 
-const rowProducing=(statement:string)=>/^(?:SELECT|WITH)\b/i.test(statement)||/\bRETURNING\b/i.test(statement);
+// A WITH clause is not itself row-producing: its top-level command can be
+// DELETE/UPDATE/INSERT without RETURNING (for example backup pruning).
+function rowProducing(statement:string){
+  const commandIndex=topLevelCommandIndex(statement);
+  const command=commandIndex>=0?statement.slice(commandIndex):statement;
+  return /^SELECT\b/i.test(command)||/\bRETURNING\b/i.test(command);
+}
 
 function spawn(statement:string){
   const result=spawnSync("psql",["-d",localDatabaseUrl(),"-X","-qAt","-v","ON_ERROR_STOP=1"],{input:statement,

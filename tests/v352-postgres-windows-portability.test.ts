@@ -17,23 +17,43 @@ const psqlSources=[
 ];
 
 test("PostgreSQL subprocess calls keep connection strings behind explicit -d for Windows portability",()=>{
-  let explicitDatabaseSelections=0;
+  let checkedCalls=0;
   for(const file of psqlSources){
     const source=fs.readFileSync(file,"utf8");
-    assert.doesNotMatch(
-      source,
-      /spawnSync\("psql",\s*\[\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\))\s*,/,
-      `${path.relative(root,file)} passes the connection string as the first positional psql argument`,
-    );
-    explicitDatabaseSelections+=(source.match(/spawnSync\("psql",\s*\[\s*"-d",\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\))/g)??[]).length;
+    const calls=[...source.matchAll(/\b(?:spawnSync|spawn)\(\s*["']psql["']\s*,/g)];
+    // Inspect every literal psql argv array: -d is valid anywhere in argv,
+    // including after -X/-w/-qAt flags in isolated native PG16 tests.
+    // A dynamic argv expression must be reviewed rather than silently skipped.
+    const invocations=[...source.matchAll(/\b(?:spawnSync|spawn)\(\s*["']psql["']\s*,\s*\[([\s\S]*?)\]\s*,\s*\{/g)];
+    assert.equal(invocations.length,calls.length,
+      path.relative(root,file)+" has an unreviewed psql subprocess argument form");
+    for(const match of invocations){
+      const args=match[1];
+      // A standalone psql version probe does not select or open a database.
+      if(/^\s*["']--version["']\s*$/.test(args))continue;
+      const selections=[...args.matchAll(/(?:^|,)\s*["']-d["']\s*,\s*([A-Za-z_$][\w$]*(?:\(\))?)\s*(?=,|$)/g)];
+      assert.equal(selections.length,1,
+        path.relative(root,file)+" must select exactly one database through explicit -d");
+      // The value immediately after -d is an option argument, not a
+      // positional connection URL. Remove only that exact option-value pair
+      // before checking for a second, unsafe positional database argument.
+      const selection=selections[0];
+      const otherArgs=args.slice(0,selection.index)+args.slice(selection.index+selection[0].length);
+      assert.doesNotMatch(otherArgs,/(?:^|,)\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\)|url)\s*(?=,|$)/,
+        path.relative(root,file)+" must not pass database URL as a positional argument");
+      assert.doesNotMatch(args,/(?:^|,)\s*["']-c["']\s*,\s*(?:statement|sql)\s*(?:,|$)/,
+        path.relative(root,file)+" must pass SQL through stdin, not -c command-line text");
+      checkedCalls++;
+    }
   }
-  assert.ok(explicitDatabaseSelections>=psqlSources.length,"Expected every PostgreSQL harness source to use explicit -d selection");
-  for(const file of psqlSources){
-    const source=fs.readFileSync(file,"utf8");
-    assert.doesNotMatch(
-      source,
-      /spawnSync\("psql",[\s\S]*?"-c",\s*(?:statement|sql)\s*\]/,
-      `${path.relative(root,file)} passes SQL through the Windows command line instead of UTF-8 stdin`,
-    );
-  }
+  assert.ok(checkedCalls>0,"At least one real PostgreSQL subprocess must be checked");
+});
+
+test("local PostgreSQL classifies WITH DELETE backup pruning as non-row-producing",()=>{
+  const source=fs.readFileSync(path.join(root,"lib","local-postgres.ts"),"utf8");
+  assert.match(source,/function rowProducing\(statement:string\)/);
+  assert.match(source,/const commandIndex=topLevelCommandIndex\(statement\)/);
+  assert.match(source,/const command=commandIndex>=0\?statement\.slice\(commandIndex\):statement/);
+  assert.match(source,/return \/\^SELECT\\b\/i\.test\(command\)\|\|\/\\bRETURNING\\b\/i\.test\(command\)/);
+  assert.doesNotMatch(source,/\^\(\?:SELECT\|WITH\)/);
 });
