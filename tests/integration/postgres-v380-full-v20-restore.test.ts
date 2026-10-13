@@ -77,7 +77,7 @@ before(()=>{
   assert.equal(sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='flights'"),"61");
 });
 test("actual runtime SQL is source-backed and locks archived rows",{skip:false},()=>{
-  assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(jsonb_build_array/);
+  assert.match(advisory,/pg_advisory_xact_lock\(hashtextextended\(concat_ws/);
   assert.match(tagged,/^WITH candidate AS MATERIALIZED/);
   assert.match(tagged,/LIMIT 1 FOR UPDATE OF deleted_flights/);
   assert.match(tagged,/restored_tracks AS/);
@@ -173,4 +173,30 @@ test("two distinct trash IDs with the SAME natural flight identity restore only 
   assert.equal(results.filter(x=>x!=="").length,1,"Two cooperating restores duplicated one natural identity");
   assert.equal(sql("SELECT count(*) FROM flights WHERE user_id=9001 AND date='2026-10-25' AND registration='OK-E2E'"),"1");
   assert.equal(sql("SELECT count(*) FROM deleted_flights WHERE id IN ("+first.trash+","+second.trash+") AND restored_at IS NOT NULL"),"1");
+});
+
+
+test("Create and Restore of one natural identity use the same advisory lock and insert once",{skip:!asked},async()=>{
+  const flight=archived("2026-10-26");
+  const fingerprint="9001|2026-10-26|OK-E2E|09:00|LKLT|LKPR";
+  // Model the canonical Create Flight flightFingerprint + two-query transaction
+  // using native PG16 to exercise contention with the actual Restore SQL.
+  const create="BEGIN;\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"+
+    "SELECT pg_advisory_xact_lock(hashtextextended("+quote(fingerprint)+",0));\n"+
+    "INSERT INTO flights(user_id,date,evidence,registration,aircraft_type,aircraft_make,aircraft_model,aircraft_variant,aircraft_class,departure,arrival,off_block,starts,price_per_hour,billing_basis) "+
+    "SELECT 9001,'2026-10-26','EASA','OK-E2E','B23','Historic Maker','Historic Model','Legacy Option','SEP','LKLT','LKPR','09:00',1,75.125,'BLOCK' "+
+    "WHERE NOT EXISTS(SELECT 1 FROM flights WHERE user_id=9001 AND date::text='2026-10-26' AND UPPER(TRIM(registration))='OK-E2E' AND COALESCE(off_block,'')='09:00' AND UPPER(TRIM(COALESCE(departure,'')))='LKLT' AND UPPER(TRIM(COALESCE(arrival,'')))='LKPR') RETURNING id;\nCOMMIT;";
+  const launch=(statement:string)=>new Promise<string>((resolve,reject)=>{
+    const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],{env:safeEnv()});
+    let output="",stderr="";
+    p.stdout.setEncoding("utf8").on("data",(x:string)=>{output+=x});
+    p.stderr.setEncoding("utf8").on("data",(x:string)=>{stderr+=x});
+    p.on("error",reject);
+    p.on("close",code=>code===0?resolve(output.trim()):reject(new Error(stderr.slice(0,500))));
+    p.stdin.end(statement+"\n");
+  });
+  const values=await Promise.all([launch(create),launch(txCommand(flight.trash))]);
+  assert.equal(values.filter(x=>x!=="").length,1,"Create+Restore must not insert two copies");
+  assert.equal(sql("SELECT COUNT(*) FROM flights WHERE user_id=9001 AND date='2026-10-26' AND registration='OK-E2E'"),"1");
+  assert.equal(sql("SELECT COUNT(*) FROM deleted_flights WHERE id="+flight.trash+" AND restored_at IS NOT NULL"),values[1]===""?"0":"1");
 });
