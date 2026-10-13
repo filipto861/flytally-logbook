@@ -47,22 +47,19 @@ test("v3.0 historical UX evidence is archived while numeric roadmap owns current
   const legacy=read("docs/history/ROADMAP_PRE_NUMERIC_2026-10-04.md");
   const audit=read("docs/product/V3_0_UX_CONSOLIDATION.md");
 
-  assert.match(roadmap,/## Canonical release sequence/);
-  assert.match(roadmap,/\| 1 \| \*\*3\.4\.0\*\* \| Flight Entry Simplification \| ✅ \|/);
-  assert.match(roadmap,/\| 2 \| \*\*3\.4\.1\*\* \| GPS Night-time reliability \| ✅ \|/);
-  assert.match(roadmap,/\| 3 \| \*\*3\.5\.0\*\* \| Certified flight voiding \+ multi-aircraft integrity audit \| ✅ \|/);
-  assert.match(roadmap,/\| 4 \| \*\*3\.5\.1\*\* \| GPS T&G false-positive containment \| ✅ \|/);
-  assert.match(roadmap,/\| 5 \| \*\*3\.5\.2\*\* \| Always-on GPS\/SERA Night suggestions \| ✅ \|/);
-  assert.match(roadmap,/\| 6 \| \*\*3\.5\.3\*\* \| Flight detail navigation UX \| ✅ \|/);
-  assert.match(roadmap,/\| 7 \| \*\*3\.5\.4\*\* \| iPad flight-detail visual hotfix \| ✅ \|/);
-  assert.match(roadmap,/\| 8 \| \*\*3\.5\.5\*\* \| iPad sidebar collapse-control alignment \| ✅ \|/);
-  assert.match(roadmap,/\| 9 \| \*\*3\.6\.0\*\* \| Saved-date \/ timezone semantics · #144 \| ✅ \|/);
-  // 3.7.0 was explicitly reprioritized to Maps; the Currency contract survives at 3.8.0.
-  assert.match(roadmap,/\| 10 \| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \| 🚧 \|/);
-  assert.match(roadmap,/\| 11 \| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \| ➡️ \|/);
-  assert.match(roadmap,/# 3\.4\.1 — GPS Night-time reliability — DONE/);
-  assert.match(roadmap,/# 3\.4\.0 — Flight Entry Simplification — DONE/);
-  assert.match(roadmap,/docs\/history\/ROADMAP_PRE_NUMERIC_2026-10-04\.md/);
+  // 10 Oct 2026 canonical cleanup replaced the obsolete enumerated release
+  // sequence with a verified release snapshot and forward release table.
+  // Keep historical UX milestones in the archived roadmap, not current priorities.
+  assert.match(roadmap,/## 1\. Verified release state/);
+  assert.match(roadmap,/## 2\. Post-release order/);
+  assert.match(roadmap,/## 4\. Forward release sequence/);
+  assert.match(roadmap,/\| 3\.4\.0 \| Flight Entry Simplification \| DONE \/ PRODUCTION \|/);
+  assert.match(roadmap,/\| 3\.4\.1 \| GPS Night-time reliability \| DONE \/ PRODUCTION \|/);
+  assert.match(roadmap,/\| \*\*3\.7\.0\*\* \| Maps & Aviation Layers \| \*\*DONE \/ PRODUCTION\*\*/);
+  assert.match(roadmap,/\| \*\*3\.8\.0\*\* \| Currency \/ monetary semantics · #136 \| NEXT/);
+  assert.match(roadmap,/docs\/history\/ROADMAP_BEFORE_2026-10-10_CANONICAL_CLEANUP\.md/);
+  assert.match(roadmap,/docs\/history\/ROADMAP_FULL_SNAPSHOT_BEFORE_2026-10-10_RECONCILIATION\.md/);
+  assert.match(roadmap,/Esri\/openAIP rights separately unverified/);
 
   assert.match(legacy,/\| UX & design consistency \| ✅ \|/);
   assert.match(legacy,/\| GPS touch-and-go detection reliability \| ✅ \|/);
