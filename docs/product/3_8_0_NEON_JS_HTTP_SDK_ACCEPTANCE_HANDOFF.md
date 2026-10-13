@@ -18,6 +18,17 @@
 4. Same-trash independent concurrent SDK requests: exactly one restore. `price_decimal::text` remains byte-precise across NUMERIC write/read.
 5. No real `lib/flight-trash.ts` tagged SQL/full-v20 schema here; **the PG16 full-source tests are separate evidence**. Ordinary Create/Edit writers are outside this test's cooperative lock coverage.
 
+## Temporary Neon branch established (13 October 2026; SDK NOT RUN)
+
+Owner had previously authorized creation and mandatory deletion of temporary branches for isolated FlyTally tests. Temporary child branch **`ft-380-sdk-http-acceptance-20261013-tmp`**, ID **`br-patient-waterfall-b10m3abc`**, parent **`br-dark-math-b1snjzub`** in **Logbook Shadow** project `muddy-dust-14049657`, database `neondb`, was created and independently verified `primary=false`, `default=false`, `current_state=ready`. Existing original branches untouched.
+
+- **Pinned pooler endpoint hostname:** `ep-damp-tooth-b1ktlyz1-pooler.c-5.eu-central-1.aws.neon.tech` — hostname only, NOT a connection secret.
+- **Scratch guard nonce:** `37d2df0f-b556-48a7-9418-26115e7a22bb` (not a credential).
+- Only scratch schema `ft380_sdk_acceptance` created in the child, with `guard`, `trash`, `flows`, `restored_flights` and five synthetic test rows IDs 101,102,201,202,301.
+- Connector post-setup SQL check showed `guard_rows=1`, `trash_rows=5`, `flow_rows=0`, `restored_rows=0`. **No SDK test has yet executed.**
+- **Live temporary resource requiring deletion:** `br-patient-waterfall-b10m3abc`. After owner Node24 run **PASS OR FAIL**, verify exact nonprimary name/parent/id, delete precisely this branch, then independently list branches to prove absent and original four remain. Do not leave the temporary resource indefinitely.
+- Owner local should copy the **pooled** connection URI matching the pinned hostname via Neon Dashboard branch connection details; never paste the URI/password into chat, GitHub or a committed file. Any direct/nonmatching host will fail closed.
+
 ## Owner local execution (only after temporary branch setup)
 
 From the dedicated project branch with installed dependencies and Node24, set variables **in the current PowerShell process only**. Get the actual URI from Neon's **temporary branch connection details** and do not paste it in messages; the values `HOST`, `BRANCH_ID`, `NONCE` are separately displayed without password:
