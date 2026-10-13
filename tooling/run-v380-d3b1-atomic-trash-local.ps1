@@ -128,8 +128,9 @@ try {
   Assert-Exit "D3b native PostgreSQL16 targeted Trash SQL / race tests"
   npm run test:target -- tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts
   Assert-Exit "D3b native PostgreSQL16 sequential migrations v1-v20 + Trash safety tests"
-  Write-Host "D3b-1e CHARACTERIZATION: the additional no-FK track race test is EXPECTED to reproduce an UNSAFE orphan if it passes. PASS means vulnerability demonstrated in the bounded fixture, NOT safety acceptance." -ForegroundColor Yellow
-  Write-Host "LOCAL D3b-1 A+ original safety cases and v1-v20 migration SQL evaluated on $commit; full historic prod/app SDK and track-race safety remain OPEN. Not production." -ForegroundColor Green
+  Write-Host "D3b-1e NEGATIVE CONTROL: the PRE-FIX no-FK child-first race must reproduce its orphan. Its PASS is historical vulnerability characterization, NOT release safety." -ForegroundColor Yellow
+  Write-Host "D3b-1e GPS SAFETY REGRESSION: the two new parent-first writer tests MUST PASS for Trash-first and GPS-first ordering. These are bounded native SQL models, not authenticated Next/Neon SDK proof." -ForegroundColor Cyan
+  Write-Host "LOCAL D3b-1 A+ source, original safety, new writer-race regressions and v1-v20 optimizer migration SQL evaluated on $commit; full historic prod/app SDK and other child-writer races remain OPEN. Not production." -ForegroundColor Green
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
