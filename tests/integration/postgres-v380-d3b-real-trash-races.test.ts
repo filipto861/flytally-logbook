@@ -175,8 +175,9 @@ test("actual Trash SQL: immutable participant provenance rejects DELETE and roll
   sql("INSERT INTO flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role) VALUES ("+
      participantId+",9001,"+sourceId+",9001,1,"+quote("a".repeat(64))+",'PIC')");
   const token=randomUUID();
-  const result=raw("SET search_path TO "+ns+";BEGIN;"+trashSql(participantId,token).join(";")+";COMMIT;");
-  assert.notEqual(result.status,0,"Immutable provenance must reject draft DELETE");
+  sql("BEGIN;\n"+trashSql(participantId,token).join(";\n")+";\nCOMMIT;");
+  // A+ rejects the operation before any FK cascade reaches the provenance trigger.
+  // A refusal without an exception must preserve both rows and the archive state.
   assert.equal(count("flights","id="+participantId),1);
   assert.equal(count("deleted_flights","delete_token="+quote(token)),0);
   assert.equal(count("flight_source_provenance","participant_flight_id="+participantId),1);
