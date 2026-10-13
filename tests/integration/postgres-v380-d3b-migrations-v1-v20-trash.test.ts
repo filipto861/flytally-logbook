@@ -29,8 +29,8 @@ for(let v=1;v<=20;v++){
     "Dynamic or public-schema SQL not safe for isolated fixture at v"+v);
   migrations.set(v,statements);
 }
-const a=trashSource.indexOf("const token=randomUUID(),results=await sql.transaction([");
-const b=trashSource.indexOf("]);return Boolean",a);
+const a=trashSource.indexOf("const results=await sql.transaction([");
+const b=trashSource.indexOf("]);\n  const deleted=",a);
 assert.ok(a>=0&&b>a,"Actual Trash SQL boundary mismatch");
 const trash=[...trashSource.slice(a,b).matchAll(template)].map(x=>x[1]);
 assert.equal(trash.length,5,"Expected five original Trash SQL statements");
@@ -115,6 +115,13 @@ before(()=>{
     assert.equal(applied.status,0,"Actual migration v"+v+" failed: "+String(applied.stderr).slice(0,700));
   }
   assert.equal(num("SELECT count(*) FROM flytally_schema_migrations"),20);
+  // Share-table feature is provisioned lazily, independently of optimizer v20.
+  // Use the canonical source DDL instead of inventing a test-only declaration.
+  const sharing=readFileSync(new URL("lib/flight-sharing.ts",root),"utf8");
+  const canonicalShares=sharing.match(/sql`(CREATE TABLE IF NOT EXISTS flight_public_shares[^`]+)`/);
+  assert.ok(canonicalShares,"Canonical flight sharing table DDL changed");
+  run(canonicalShares[1]+";");
+
 });
 after(()=>{
   if(!enabled||!targetVerified||!created)return;
