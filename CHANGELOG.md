@@ -8,6 +8,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D2/D3a/D3b main integration and Vercel production READY
+
+- [PR #334](https://github.com/filipto861/flytally-logbook/pull/334) merged as `0b5a313c032d1e8e27a7be3c4a0b0b0fc8ab5d4c`, including earlier #333 ordinary Trash A+ guard; no Currency v21 migration or FX behavior.
+- Vercel production deployment `dpl_ELnrucicsLkVC1Ga1A3EeLANTHef` reports READY and assigns `fly-tally.com`; queried 30-minute runtime error view returned none. Direct HTTP/authenticated production smoke: NOT RUN because DNS/network access from this environment was unavailable.
+- Read-only production Neon schema preflight: applied versions v1–v20, required D3b tables and selected integrity triggers. No DB mutation or migration.
+- Owner-local 1484/1484 unit, Next build and 4/4 authenticated browser PASS were obtained at earlier code SHA `a027afa3`; only documentation changed afterward. The integration merge SHA has no separately executed local regression suite.
+- D3b-1 integration is MERGED/DEPLOYED; overall 3.8.0 and Currency #136 remain OPEN. Prior Draft descriptions below remain historical evidence.
+
 ## 13 October 2026 — D3b-1g local acceptance PASS (PR #333 Draft, not shipped)
 
 - Owner-tested SHA `a027afa316d86349ce70d8138b77b524a092ac68`: unit/source **1484/1484 PASS**, Next.js production build and TypeScript **PASS**, authenticated desktop/mobile Playwright **4/4 PASS** with disposable PostgreSQL16 identity `flytally_currency_test|flytally|127.0.0.1|58610`; cluster stopped normally.
