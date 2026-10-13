@@ -59,6 +59,13 @@ try {
   if (-not ((& node --version) -match '^v24\.')) { throw "Node 24.x required." }
   Write-Host "Candidate: $commit"
 
+  # Fast, DB-independent gates first. Avoid creating and starting an isolated
+  # cluster for an already broken TypeScript/source contract.
+  npm run typecheck
+  Assert-Exit "TypeScript"
+  npm run test:target -- tests/integration/v380-d3b-trash-source-characterization.test.ts
+  Assert-Exit "D3b source characterization tests"
+
   $pgBin = Join-Path $env:ProgramFiles "PostgreSQL\16\bin"
   foreach ($program in @("initdb.exe","pg_ctl.exe","createdb.exe","psql.exe")) {
     if (-not (Test-Path (Join-Path $pgBin $program))) {
@@ -114,10 +121,6 @@ try {
   }
   Write-Host "Verified disposable DB identity."
 
-  npm run typecheck
-  Assert-Exit "TypeScript"
-  npm run test:target -- tests/integration/v380-d3b-trash-source-characterization.test.ts
-  Assert-Exit "D3b source characterization tests"
   npm run test:target -- tests/integration/postgres-v380-d3b-real-trash-races.test.ts
   Assert-Exit "D3b native PostgreSQL16 targeted Trash SQL / race tests"
   Write-Host "LOCAL D3b TARGETED native PG16 tests PASS on candidate $commit; full-v20 migration fidelity remains NOT RUN. Not production." -ForegroundColor Green
