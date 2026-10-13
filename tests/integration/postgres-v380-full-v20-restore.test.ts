@@ -113,3 +113,32 @@ test("missing recorded currency fails closed, never infers CZK",{skip:!asked},()
   assert.equal(sql(command(trash)),"");
   noWrite(trash);
 });
+
+test("late database expense CHECK failure leaves no partial restored flight or track",{skip:!asked},()=>{
+  const {trash}=archived("2026-10-23",{amount:7777});
+  sql("ALTER TABLE flight_expenses ADD CONSTRAINT disposable_reject_amount CHECK(amount_minor<>7777)");
+  try{
+    const result=invoke(command(trash));
+    assert.notEqual(result.status,0,"Expected rejected expense");
+    assert.match(String(result.stderr),/violates check constraint/);
+    noWrite(trash);
+  }finally{
+    sql("ALTER TABLE flight_expenses DROP CONSTRAINT disposable_reject_amount");
+  }
+});
+test("two separate PostgreSQL sessions restoring one trash item produce one flight",{skip:!asked},async()=>{
+  const {trash}=archived("2026-10-24");
+  const q=command(trash);
+  const session=()=>new Promise<string>((resolve,reject)=>{
+    const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],{env:safeEnv()});
+    let output="",stderr="";
+    p.stdout.setEncoding("utf8").on("data",(chunk:string)=>{output+=chunk});
+    p.stderr.setEncoding("utf8").on("data",(chunk:string)=>{stderr+=chunk});
+    p.on("error",reject);
+    p.on("close",code=>code===0?resolve(output.trim()):reject(new Error(stderr.slice(0,500))));
+    p.stdin.end(q+";");
+  });
+  const output=await Promise.all([session(),session()]);
+  assert.equal(output.filter(x=>x!=="").length,1);
+  assert.equal(sql("SELECT count(*) FROM deleted_flights d JOIN flights f ON f.id=d.restored_flight_id WHERE d.id="+trash),"1");
+});
