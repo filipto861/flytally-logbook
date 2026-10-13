@@ -30,7 +30,7 @@ function target(){
   assert.ok(Number(u.port)>1024 && ![5432,55432].includes(Number(u.port)));
 }
 function env(){
-  const e={...process.env,PGCONNECT_TIMEOUT:"5"};
+  const e:NodeJS.ProcessEnv={...process.env,PGCONNECT_TIMEOUT:"5"};
   for(const k of Object.keys(e))if(k.startsWith("PG") && k!=="PGCONNECT_TIMEOUT")delete e[k];
   return e;
 }
