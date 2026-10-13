@@ -57,3 +57,16 @@ test("restore refuses mismatched owner/protected source snapshots and child pare
   assert.match(restore,/t\.value->>'flight_id' IS DISTINCT FROM original_flight_id::text/);
   assert.match(restore,/e\.value->>'flight_id' IS DISTINCT FROM original_flight_id::text/);
 });
+
+test("track and expense restore no longer invent absent archival metadata",()=>{
+  const forbidden=[
+    "restored-track","COALESCE(s.track->>'coordinates_json','[]')",
+    "COALESCE(s.track->>'overview_coordinates_json','[]')",
+    "COALESCE(e->>'category','OTHER')",
+    "COALESCE(e->>'label','')",
+    "COALESCE(NULLIF(e->>'created_at','')::timestamptz,NOW())",
+  ];
+  for(const value of forbidden)assert.ok(!restore.includes(value),"Unexpected legacy default: "+value);
+  assert.ok(restore.includes("(e->>'amount_minor')::bigint,e->>'currency'"));
+  assert.ok(restore.includes("(s.track->>'point_count')::int"));
+});
