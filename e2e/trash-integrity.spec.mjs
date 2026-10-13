@@ -83,7 +83,7 @@ test("D3b-1 browser: pending collaboration refuses ordinary Trash with no archiv
   await page.getByRole("button",{name:"Move to trash"}).click();
   await page.getByRole("button",{name:"Confirm deletion"}).click();
   await expect(page).toHaveURL(new RegExp(`/flights/${flightId}\\?trash=blocked`),{timeout:20000});
-  await expect(page.getByRole("alert")).toContainText("not moved to Trash");
+  await expect(page.locator("p.form-error[role=alert]")).toContainText("not moved to Trash");
   expect(scalar(`SELECT COUNT(*) FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("1");
   expect(scalar(`SELECT COUNT(*) FROM deleted_flights WHERE original_flight_id=${flightId} AND user_id=9001`)).toBe("0");
   expect(scalar(`SELECT COUNT(*) FROM flight_participations WHERE source_flight_id=${flightId} AND source_user_id=9001 AND status='pending'`)).toBe("1");
