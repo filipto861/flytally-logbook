@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — SDK acceptance scratch branch created, deletion pending (TEST-ONLY)
+
+- Created additional temporary **nonprimary/nondefault** Neon Shadow child `ft-380-sdk-http-acceptance-20261013-tmp` (`br-patient-waterfall-b10m3abc`) under default parent `br-dark-math-b1snjzub`. Only scratch `ft380_sdk_acceptance` objects and a branch/host/nonce guard were written to the child, with 5 synthetic archives and no flows/restored rows. [Exact branch and cleanup handoff](docs/product/3_8_0_NEON_JS_HTTP_SDK_ACCEPTANCE_HANDOFF.md). No real account, flight, currency or production branch writes.
+- **IMPORTANT: temporary resource currently EXISTS and MUST BE DELETED after local owner SDK test PASS OR FAIL**, with fresh verification of all original branches. The JS SDK test **NOT RUN**; no connection credential stored in repository or provided in chat. No main merge, v21 schema, deploy, or Training change.
+
 ## 13 October 2026 — Guarded real Neon HTTP SDK acceptance harness (DRAFT / NOT RUN)
 
 - Authored isolated `tooling/verify-v380-neon-http-sdk.mjs`, importing installed app `@neondatabase/serverless`, using array-of-two `sql.query` requests and `sql.transaction([...],{isolationLevel:'ReadCommitted'})`. Enforces explicit URI, branch-id, exact endpoint hostname, independently seeded random guard nonce, pristine scratch tables, flags and no fallback to app `DATABASE_URL`; no remote write until read-only preflight passes.
