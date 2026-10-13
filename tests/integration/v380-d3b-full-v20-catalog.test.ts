@@ -33,7 +33,7 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
     "'voided_certified_flights'::regclass))",
     ")::text",
   ].join(" ");
-  const env = {...process.env, PGCONNECT_TIMEOUT:"5"};
+  const env:NodeJS.ProcessEnv = {...process.env, PGCONNECT_TIMEOUT:"5"};
   for(const k of Object.keys(env)) if(k.startsWith("PG") && k!=="PGCONNECT_TIMEOUT") delete env[k];
   const r = spawnSync("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url,"-c",query],
     {encoding:"utf8",timeout:15000,env});
