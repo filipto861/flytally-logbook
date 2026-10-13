@@ -14,9 +14,22 @@ test("D3b baseline: archived payload covers flight, tracks and expenses only", (
   assert.match(trash, /to_jsonb\(f\)/);
   assert.match(trash, /jsonb_agg\(to_jsonb\(t\)/);
   assert.match(trash, /jsonb_agg\(to_jsonb\(e\)/);
+  // A WHERE predicate may legitimately consult flight_participations for
+  // access control. Only the SELECT projection is archived in deleted_flights.
+  const insertStart = trash.indexOf("INSERT INTO deleted_flights(");
+  const projectionStart = trash.indexOf(" SELECT f.user_id", insertStart);
+  const outerWhere = trash.indexOf(" FROM flights f WHERE", projectionStart);
+  assert.ok(insertStart >= 0 && projectionStart > insertStart && outerWhere > projectionStart,
+    "Review Trash INSERT projection boundaries after SQL changes");
+  const archiveProjection = trash.slice(insertStart, outerWhere);
+  assert.match(archiveProjection,
+    /deleted_flights\(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data\)/);
   for (const table of ["flight_participations", "flight_connected_crew", "flight_verifications", "flight_source_provenance"]) {
-    assert.doesNotMatch(trash.slice(trash.indexOf("INSERT INTO deleted_flights"), trash.indexOf("RETURNING id", trash.indexOf("INSERT INTO deleted_flights"))), new RegExp(table));
+    assert.doesNotMatch(archiveProjection, new RegExp(table),
+      table + " must not be mistaken for archived child evidence");
   }
+  assert.match(trash.slice(outerWhere), /EXISTS\(SELECT 1 FROM flight_participations p/,
+    "Participation occurs as a condition, not as archived payload");
 });
 
 test("D3b baseline: success currently relies on archive INSERT, not final DELETE", () => {
@@ -33,5 +46,5 @@ test("D3b baseline: ordinary draft lacks an unconditional parent row lock before
   assert.doesNotMatch(beforeArchive, /SELECT .*FOR UPDATE/s);
 });
 
-// Native PG16 FK/trigger catalogue and two-session races remain NOT RUN.
-// Do not change these assertions to imply that data loss was reproduced.
+// This source characterization does not establish native PG16 results.
+// A failing baseline assertion is not proof of an observed production data loss.
