@@ -48,3 +48,12 @@ test("PostgreSQL subprocess calls keep connection strings behind explicit -d for
   }
   assert.ok(checkedCalls>0,"At least one real PostgreSQL subprocess must be checked");
 });
+
+test("local PostgreSQL classifies WITH DELETE backup pruning as non-row-producing",()=>{
+  const source=fs.readFileSync(path.join(root,"lib","local-postgres.ts"),"utf8");
+  assert.match(source,/function rowProducing\(statement:string\)/);
+  assert.match(source,/const commandIndex=topLevelCommandIndex\(statement\)/);
+  assert.match(source,/const command=commandIndex>=0\?statement\.slice\(commandIndex\):statement/);
+  assert.match(source,/return \/\^SELECT\\b\/i\.test\(command\)\|\|\/\\bRETURNING\\b\/i\.test\(command\)/);
+  assert.doesNotMatch(source,/\^\(\?:SELECT\|WITH\)/);
+});
