@@ -72,6 +72,7 @@ CREATE TABLE user_settings(
 );
 
 CREATE TABLE airports(
+  id BIGSERIAL PRIMARY KEY,
   ident TEXT NOT NULL,
   name TEXT NOT NULL DEFAULT '',
   latitude_deg DOUBLE PRECISION,
@@ -198,6 +199,41 @@ CREATE TABLE deleted_flights (
   restored_at TIMESTAMPTZ,
   restored_flight_id BIGINT
 );
+-- The browser fixture pre-applies schema v1..v19. Keep the two FSTD
+-- tables expected by v13 full-account pre-track-delete signed backups;
+-- these definitions mirror the original optimizer migration shape.
+CREATE TABLE fstd_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  session_date DATE NOT NULL,
+  device_type TEXT NOT NULL,
+  qualification_number TEXT NOT NULL DEFAULT '',
+  instruction TEXT NOT NULL DEFAULT '',
+  total_minutes INTEGER NOT NULL CHECK(total_minutes>=0 AND total_minutes<=1440),
+  remarks TEXT NOT NULL DEFAULT '',
+  certified_at TIMESTAMPTZ,
+  certified_by_user_id BIGINT,
+  certification_hash TEXT NOT NULL DEFAULT '',
+  certification_version INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE fstd_certified_revisions (
+  id BIGSERIAL PRIMARY KEY,
+  fstd_session_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  revision_number INTEGER NOT NULL CHECK(revision_number>=1),
+  snapshot_data JSONB NOT NULL,
+  certification_hash TEXT NOT NULL,
+  certification_version INTEGER NOT NULL DEFAULT 1,
+  certified_at TIMESTAMPTZ NOT NULL,
+  certified_by_user_id BIGINT,
+  superseded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  superseded_by_user_id BIGINT NOT NULL,
+  correction_reason TEXT NOT NULL,
+  UNIQUE(user_id,fstd_session_id,revision_number)
+);
+
 CREATE TABLE flight_certified_revisions (
   id BIGSERIAL PRIMARY KEY,
   flight_id BIGINT NOT NULL,
