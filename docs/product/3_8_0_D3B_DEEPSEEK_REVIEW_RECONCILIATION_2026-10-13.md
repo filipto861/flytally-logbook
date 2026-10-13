@@ -104,3 +104,26 @@ This document is a **ChatGPT follow-up against real GitHub repository contents**
 ### D3b-0 continuation
 
 Catalog test now also requires a v20 migration registry row and enabled protective triggers. Native PG16 runs are NOT RUN. Registry presence alone does not prove actual full migration fidelity. No runtime, schema, or production change.
+
+## D3b-0 targeted SQL runtime characterization handoff (13 Oct 2026)
+
+**Authored, NOT RUN:** `tests/integration/postgres-v380-d3b-real-trash-races.test.ts`. This file reads the five tagged SQL statements in `moveFlightToTrash()` directly, rejecting unexpected parameter/query changes. It provisions its own random PostgreSQL schema, reconstructs only the bounded pre-v20 tables needed for this test, and executes the actual `if(version===20)return[` SQL blocks from `lib/db-optimization.ts`. Its v12/v13/v15 baseline FK contracts are hand-built; it **does NOT prove full applied-v20 migration fidelity**.
+
+Expected current-state characterization (not yet actual results):
+1. Ordinary draft: five original SQL statements commit archive + delete.
+2. Draft with connected PIC and flight verification: existing `CASCADE` FKs remove independent child rows while ordinary archive does not snapshot them. This is an intentional characterization of a candidate safety gap, not an accepted product behavior.
+3. Participant-owned draft with immutable v20 provenance: final deletion raises, and PostgreSQL rolls back all earlier archive/track mutations.
+4. Certified source: ordinary Trash guards prohibit archive/deletion.
+5. **Two real database sessions:** session A begins and commits the archive INSERT; session B certifies the still-present draft while A is paused; A resumes the original track/deletion SQL. If no source row lock exists, the last conditional DELETE can affect zero rows while the archive survives. This is the actual SQL race hypothesis; evidence exists only after local execution.
+
+**Windows/Node24 owner-local command, from a clean checkout of this exact D3b branch:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-d3b-targeted-local.ps1
+```
+
+The PowerShell runner initializes a unique disposable loopback PG16 cluster/DB, validates identity, invokes typecheck, source characterization and targeted native SQL tests, then stops and deletes only its own temporary cluster. Test uses separate flag `FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE=1`, distinct from the stricter `FLYTALLY_D3B_FULL_V20_DISPOSABLE` catalog gate. It must not connect to Neon, existing PostgreSQL or production.
+
+**Gate status:** code committed; Node24 typecheck **NOT RUN**, source tests **NOT RUN**, targeted native PG16 **NOT RUN**, full applied v20 fixture equivalence **NOT RUN**, deterministic participant-acceptance and no-source-FK writer race **NOT RUN**. Do not upgrade hypotheses to confirmed runtime bugs yet. No production/runtime DB write, merge or deploy.
+
+**Next decision gate:** obtain owner-local test stdout and exact commit SHA; reconcile results against full-v20 catalog and actual migration, then seek owner approval for A+ fail-closed linked-draft rules before implementing D3b-1.
