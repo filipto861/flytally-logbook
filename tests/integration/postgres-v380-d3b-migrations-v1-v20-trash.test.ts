@@ -483,3 +483,148 @@ test("D3b-1e SAFE writer: GPS-first parent lock makes Trash archive the whole tr
       "Archived track must not remain live/orphaned");
   }finally{await stopGpsSessions(a,b)}
 });
+
+
+// D3b-1f: run actual source SQL statements, not reimplemented query text.
+function childWriterSql(name:string,next:string,variables:Record<string,string>){
+  const source=readFileSync(new URL("app/(protected)/flights/actions.ts",root),"utf8");
+  const a=source.indexOf("export async function "+name+"(");
+  const b=source.indexOf("export async function "+next+"(",a);
+  assert.ok(a>=0&&b>a,name+" action boundary changed");
+  const writer=source.slice(a,b),tx=writer.indexOf("sql.transaction([");
+  const end=writer.indexOf("]) as Array",tx);
+  assert.ok(tx>=0&&end>tx,"Expected batch transaction missing for "+name);
+  const sqls=[...writer.slice(tx,end).matchAll(template)].map(x=>x[1]);
+  assert.equal(sqls.length,3,"Expected parent-first three-statement "+name+" batch");
+  assert.match(sqls[0],/SELECT f\.id FROM flights f[\s\S]*FOR UPDATE/);
+  return sqls.map(statement=>statement.replace(/\$\{([A-Za-z]+)\}/g,(_,key:string)=>{
+    assert.ok(Object.prototype.hasOwnProperty.call(variables,key),"Unexpected "+name+" interpolation: "+key);
+    return variables[key];
+  }));
+}
+function trackDeleteSql(flightId:number,trackId:number,userId=9001){
+  const steps=childWriterSql("deleteTrack","saveFlightExpenses",{
+    userId:String(userId),flightId:String(flightId),trackId:String(trackId)
+  });
+  assert.match(steps[1],new RegExp("track_id="+trackId+"\\\\b"));
+  return steps;
+}
+function expensesSaveSql(flightId:number,items:Array<Record<string,string|number>>,userId=9001){
+  return childWriterSql("saveFlightExpenses","applyGpsTimes",{
+    userId:String(userId),id:String(flightId),expenseJson:q(JSON.stringify(items))
+  });
+}
+const expense=(label:string,amount_minor:number)=>({
+  category:"OTHER",label,amount_minor,currency:"EUR"
+});
+function seedExpense(flightId:number,label:string,amount=100){
+  run("INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency) VALUES(9001,"+
+    flightId+",'OTHER',"+q(label)+","+amount+",'EUR');");
+}
+function seedTrack(flightId:number,name:string){
+  const id=num("INSERT INTO flight_tracks(user_id,flight_id,file_name) VALUES(9001,"+flightId+","+q(name)+") RETURNING id;");
+  run("INSERT INTO track_points(user_id,track_id) VALUES(9001,"+id+"),(9001,"+id+");");
+  return id;
+}
+
+test("D3b-1f: deleting one GPS track preserves other tracks and their legacy points",{skip:!enabled},()=>{
+  const flightId=insertFlight(9001),selected=seedTrack(flightId,"selected"),other=seedTrack(flightId,"other");
+  const foreignFlightId=insertFlight(9001),foreign=seedTrack(foreignFlightId,"different-flight");
+  const steps=trackDeleteSql(flightId,selected);
+  run("BEGIN;\n"+steps.join(";\n")+";\nCOMMIT;");
+  assert.equal(count("track_points","track_id="+selected),0,"Selected legacy points deleted");
+  assert.equal(count("flight_tracks","id="+selected),0,"Selected metadata deleted");
+  assert.equal(count("track_points","track_id="+other),2,"Other track points must survive");
+  assert.equal(count("flight_tracks","id="+other),1,"Other track metadata survives");
+  assert.equal(count("track_points","track_id="+foreign),2,"Other flight stays untouched");
+  assert.equal(count("flights","id="+flightId),1);
+});
+
+test("D3b-1f: Trash-first lock blocks selected-track deletion without orphaning children",{skip:!enabled,timeout:25000},async()=>{
+  const flightId=insertFlight(9001),trackId=seedTrack(flightId,"trash-first-track"),token=randomUUID();
+  const trashSteps=trashSql(flightId,token),remove=trackDeleteSql(flightId,trackId);
+  const a=gpsRaceSession(),b=gpsRaceSession();
+  try{
+    a.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      trashSteps[0]+";\n"+trashSteps[1]+";\nSELECT 'D3B1F_TRASH_ARCHIVED';\n");
+    await gpsWaitFor("D3B1F_TRASH_ARCHIVED",a.output);
+    b.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "SELECT 'D3B1F_DELETE_PID:'||pg_backend_pid();\n"+
+      remove.join(";\n")+";\nSELECT 'D3B1F_DELETE_DONE';\nCOMMIT;\n");
+    await gpsWaitFor("D3B1F_DELETE_PID:",b.output);
+    await gpsWaitForLock(Number(b.output().match(/D3B1F_DELETE_PID:([0-9]+)/)?.[1]));
+    a.child.stdin.end(trashSteps.slice(2).join(";\n")+";\nCOMMIT;\n");
+    assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+    assert.equal(await b.stopped,0,"Delete track B failed: "+b.error());
+    assert.equal(count("flights","id="+flightId),0);
+    assert.equal(count("flight_tracks","id="+trackId),0);
+    assert.equal(count("track_points","track_id="+trackId),0);
+    assert.equal(num("SELECT jsonb_array_length(tracks_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),1,
+      "Trash must archive the existing track when it wins the lock");
+  }finally{await stopGpsSessions(a,b)}
+});
+
+test("D3b-1f: deleteTrack-first lock lets Trash archive only the remaining track",{skip:!enabled,timeout:25000},async()=>{
+  const flightId=insertFlight(9001),selected=seedTrack(flightId,"selected"),other=seedTrack(flightId,"retained");
+  const token=randomUUID(),remove=trackDeleteSql(flightId,selected),trashSteps=trashSql(flightId,token);
+  const a=gpsRaceSession(),b=gpsRaceSession();
+  try{
+    b.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      remove.join(";\n")+";\nSELECT 'D3B1F_DELETE_READY';\n");
+    await gpsWaitFor("D3B1F_DELETE_READY",b.output);
+    a.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+      "SELECT 'D3B1F_TRASH_PID:'||pg_backend_pid();\n"+
+      trashSteps.join(";\n")+";\nCOMMIT;\n");
+    await gpsWaitFor("D3B1F_TRASH_PID:",a.output);
+    await gpsWaitForLock(Number(a.output().match(/D3B1F_TRASH_PID:([0-9]+)/)?.[1]));
+    b.child.stdin.end("COMMIT;\n");
+    assert.equal(await b.stopped,0,"Delete B failed: "+b.error());
+    assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+    assert.equal(count("flights","id="+flightId),0);
+    assert.equal(count("flight_tracks","flight_id="+flightId),0);
+    assert.equal(count("track_points","track_id IN ("+selected+","+other+")"),0);
+    assert.equal(num("SELECT jsonb_array_length(tracks_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),1,
+      "Trash must contain retained track after selected track deletion commits");
+  }finally{await stopGpsSessions(a,b)}
+});
+
+test("D3b-1f: expense replacement is serialized in both Trash-first and writer-first orders",{skip:!enabled,timeout:25000},async()=>{
+  for(const trashFirst of [true,false]){
+    const flightId=insertFlight(9001),token=randomUUID();
+    seedExpense(flightId,"previous",100);
+    const update=expensesSaveSql(flightId,[expense(trashFirst?"after-trash":"latest",250)]);
+    const trashSteps=trashSql(flightId,token);
+    const a=gpsRaceSession(),b=gpsRaceSession();
+    try{
+      if(trashFirst){
+        a.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+          trashSteps[0]+";\n"+trashSteps[1]+";\nSELECT 'D3B1F_EXP_TRASH_READY';\n");
+        await gpsWaitFor("D3B1F_EXP_TRASH_READY",a.output);
+        b.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+          "SELECT 'D3B1F_EXP_PID:'||pg_backend_pid();\n"+
+          update.join(";\n")+";\nSELECT 'D3B1F_EXP_DONE';\nCOMMIT;\n");
+        await gpsWaitFor("D3B1F_EXP_PID:",b.output);
+        await gpsWaitForLock(Number(b.output().match(/D3B1F_EXP_PID:([0-9]+)/)?.[1]));
+        a.child.stdin.end(trashSteps.slice(2).join(";\n")+";\nCOMMIT;\n");
+      }else{
+        b.child.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+          update.join(";\n")+";\nSELECT 'D3B1F_EXP_UPDATED';\n");
+        await gpsWaitFor("D3B1F_EXP_UPDATED",b.output);
+        a.child.stdin.end("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+
+          "SELECT 'D3B1F_EXP_TRASH_PID:'||pg_backend_pid();\n"+
+          trashSteps.join(";\n")+";\nCOMMIT;\n");
+        await gpsWaitFor("D3B1F_EXP_TRASH_PID:",a.output);
+        await gpsWaitForLock(Number(a.output().match(/D3B1F_EXP_TRASH_PID:([0-9]+)/)?.[1]));
+        b.child.stdin.end("COMMIT;\n");
+      }
+      assert.equal(await b.stopped,0,"Expenses B failed: "+b.error());
+      assert.equal(await a.stopped,0,"Trash A failed: "+a.error());
+      assert.equal(count("flights","id="+flightId),0);
+      assert.equal(count("flight_expenses","flight_id="+flightId),0);
+      assert.equal(num("SELECT jsonb_array_length(expenses_data) FROM deleted_flights WHERE delete_token="+q(token)+";"),1);
+      const archived=run("SELECT expenses_data->0->>'label' FROM deleted_flights WHERE delete_token="+q(token)+";");
+      assert.equal(archived,trashFirst?"previous":"latest",
+        "Archive expense must match the transaction winning the parent lock");
+    }finally{await stopGpsSessions(a,b)}
+  }
+});
