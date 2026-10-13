@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3a exact-commit Create/Restore PostgreSQL acceptance (OWNER-LOCAL PASS / NOT SHIPPED)
+
+- At code SHA **`59a9801816f57375b6468c74274eb0ee1baf6f81`** owner ran Windows/Node24 `tooling/run-v380-d3a-create-restore-local.ps1` using disposable native PostgreSQL16 `127.0.0.1:65383`. Database identity expected/observed matched **PASS**; full TypeScript `tsc --noEmit` **PASS**; v20 restore source tests **7/7 PASS**; lock/trigger/canonical Create–Restore fingerprint tests **6/6 PASS**; actual full-v20 PG16 tests **8/8 PASS**, including Create-like transaction competing with exact Restore SQL for same natural identity; **0 failed/0 skipped**. Cluster stopped cleanly. No production or Neon database modifications.
+- **Disposition:** D3a cooperative Create-like/Restore serialization locally verified for this source SHA. Not proven: actual authenticated Create action in Next.js, Edit Flight, split/import/Quick Add, void/shared/certified evidence, old archive variants, v21/signed backup, CI/build/browser/production smoke. The previous D3a `NOT RUN` entry below is historic and superseded for this SHA, not a release approval.
+
 ## 13 October 2026 — D3a Create/Restore fingerprint parity & D3b protected-evidence audit (NESTED DRAFT / NOT SHIPPED)
 
 - Read the actual `main` and parent Draft flight mutation paths. Confirmed `createFlight` already serializes against a JS six-field `flightFingerprint` string, but D2 Restore's lock used a JSONB-array text serialization. Consequently previous 19/19 native PG16 Restore tests **did not establish Create-vs-Restore concurrency safety**.
