@@ -192,6 +192,7 @@ CREATE TABLE deleted_flights (
   delete_token TEXT NOT NULL UNIQUE,
   flight_data JSONB NOT NULL,
   tracks_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  expenses_data JSONB NOT NULL DEFAULT '[]'::jsonb,
   deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   purge_after TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '90 days'),
   restored_at TIMESTAMPTZ,
@@ -296,6 +297,13 @@ CREATE TABLE rates(
   registration TEXT NOT NULL,
   valid_from TEXT,
   price_per_hour NUMERIC NOT NULL DEFAULT 0
+);
+-- Historic legacy points are still queried by ordinary Trash/track deletion;
+-- portable backup v13 merely omits their export, not the database table.
+CREATE TABLE track_points(
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  track_id BIGINT NOT NULL
 );
 CREATE TABLE flight_tracks(
   id BIGSERIAL PRIMARY KEY,
