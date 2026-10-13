@@ -506,7 +506,7 @@ function trackDeleteSql(flightId:number,trackId:number,userId=9001){
   const steps=childWriterSql("deleteTrack","saveFlightExpenses",{
     userId:String(userId),flightId:String(flightId),trackId:String(trackId)
   });
-  assert.match(steps[1],new RegExp("track_id="+trackId+"\\\\b"));
+  assert.ok(steps[1].includes("track_id="+trackId+" AND EXISTS"),"Selected track id must be the only point delete target");
   return steps;
 }
 function expensesSaveSql(flightId:number,items:Array<Record<string,string|number>>,userId=9001){
