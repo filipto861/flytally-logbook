@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import {spawn,spawnSync} from "node:child_process";
 import {after,before,test} from "node:test";
 
-const enabled=process.env.FLYTALLY_D3B_FULL_V20_DISPOSABLE==="1";
+const enabled=process.env.FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE==="1";
 const url=process.env.DATABASE_URL??"";
 const schema="ft_d3b_"+randomUUID().replaceAll("-","");
 const ns='"'+schema+'"';
