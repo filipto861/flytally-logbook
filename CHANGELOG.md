@@ -8,6 +8,14 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 A+ fail-closed ordinary Trash candidate authored (NESTED DRAFT / NOT TESTED / NOT SHIPPED)
+
+- New nested branch `fix/3.8.0-d3b1-atomic-fail-closed-trash` based on D3b-0 Draft #332, after explicit owner approval of A+. `moveFlightToTrash()` uses one `sql.transaction` with parent `SELECT ... FOR UPDATE` before snapshot, no participant auto-unlock, guards on existing independent participation, connected crew, verification, instructor approval, public shares (including revoked legacy rows), source or participant provenance (including source lacking FK), revisions and void identity. Keeps flight/tracks/expenses archive semantics.
+- Last SQL statement uses `DELETE ... RETURNING` inside a CTE and an evaluated SQL invariant: an archive marker with zero-row final DELETE raises an exception and rolls the entire transaction back. Success now requires the confirmed deleted row and the archive; denied candidates do not remove flight/child evidence.
+- Reuses the canonical lazy `flight_public_shares` table initializer, rather than a new independently maintained DDL. Adds safe blocked/error redirect and flight-detail message, no raw SQL errors. Original certified Void and unrelated repositories unchanged.
+- Updated existing D3b source, targeted PG16 and sequential genuine runtime optimizer migrations v1→v20 suites to assert A+ preservation/rollback; added legacy instructor approval, revoked shares, no-source-FK provenance and independent-session certification locking scenarios. New branch-pinned disposable Windows/Node24/PG16 runner `tooling/run-v380-d3b1-atomic-trash-local.ps1` added.
+- **NO D3b-1 typecheck/tests/native PG16/build/UI/browser/production smoke RUN; review and execution REQUIRED.** Previous D3b-0 15/15 PASS at `7f87eb76` is historical evidence on a different code snapshot and cannot certify A+. No schema migration, main merge, Vercel or production/Neon DB action.
+
 ## 13 October 2026 — D3b-1 A+ owner decision frozen and new branch prepared (DESIGN ONLY / NOT SHIPPED)
 
 - Owner explicitly **approved Option A+**, conservative fail-closed ordinary Trash, after exact D3b-0 owner-local v1→v20 PG16 15/15 PASS at `7f87eb76caa2b90b2a2fdb64ed97a29a8e2b2ac1`. Dedicated nested D3b-1 implementation branch from D3b-0 Draft #332.
