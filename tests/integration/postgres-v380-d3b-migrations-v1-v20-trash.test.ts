@@ -29,10 +29,12 @@ for(let v=1;v<=20;v++){
     "Dynamic or public-schema SQL not safe for isolated fixture at v"+v);
   migrations.set(v,statements);
 }
-const a=trashSource.indexOf("const results=await sql.transaction([");
-const b=trashSource.indexOf("]);\n  const deleted=",a);
-assert.ok(a>=0&&b>a,"Actual Trash SQL boundary mismatch");
-const trash=[...trashSource.slice(a,b).matchAll(template)].map(x=>x[1]);
+const moveStart=trashSource.indexOf("export async function moveFlightToTrash(");
+const restoreStart=trashSource.indexOf("export async function restoreDeletedFlightRecord(",moveStart);
+assert.ok(moveStart>=0 && restoreStart>moveStart,"Actual Trash method boundary mismatch");
+const transaction=trashSource.slice(moveStart,restoreStart).match(/const results=await sql\.transaction\(\[([\s\S]*?)\]\);\s*const deleted=/);
+assert.ok(transaction,"Actual A+ Trash transaction boundary mismatch");
+const trash=[...transaction[1].matchAll(template)].map(x=>x[1]);
 assert.equal(trash.length,5,"Expected five original Trash SQL statements");
 
 function safeEnv():NodeJS.ProcessEnv{
