@@ -25,7 +25,7 @@ test("same archived identity lock and actual restore run as one two-statement tr
   assert.match(source,/const tx=await sql\.transaction\(\[/);
   assert.match(source,/pg_advisory_xact_lock\(hashtextextended\(jsonb_build_array\(/);
   assert.match(source,/sql\x60WITH candidate AS MATERIALIZED/);
-  assert.match(source,/\x60\]\);const rows=tx\[1\] as Array/);
+  assert.match(source,/\x60\],\{isolationLevel:'ReadCommitted'\}\);const rows=tx\[1\] as Array/);
   const restore=source.slice(source.indexOf("export async function restoreDeletedFlightRecord"));
   const lock=restore.slice(restore.indexOf("pg_advisory_xact_lock"),restore.indexOf("sql\x60WITH candidate AS MATERIALIZED"));
   for(const key of ["user_id","flight_data->>'date'","flight_data->>'registration'","flight_data->>'off_block'","flight_data->>'departure'","flight_data->>'arrival'"]){
