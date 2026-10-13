@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1 first owner-local runner blocked by duplicate share export (DRAFT / RE-TEST REQUIRED)
+
+- Owner ran `tooling/run-v380-d3b1-atomic-trash-local.ps1` on exact commit `ca5f893b4b697a3157fa0a270a38fbb565a27b26`. **Typecheck FAIL (TS2323/TS2393)**: two exported `ensureFlightSharingSchema()` definitions in `lib/flight-sharing.ts` (lines 12 and 22). Preflight correctly stopped before source/PG16 cases; **D3b-1 PostgreSQL NOT RUN**.
+- Source audit confirmed `ensureFlightSharingSchema()` **already existed in D3b-0**. Removed only the extra D3b-1 declaration; `lib/flight-sharing.ts` now byte-for-byte matches the base PR #332 version. A+ `flight-trash.ts` continues to import the existing helper. **Corrected D3b-1 code NOT YET RETESTED**, no PASS claimed, no merge, DB migration or deploy.
+
 ## 13 October 2026 — D3b-1 A+ fail-closed ordinary Trash candidate authored (NESTED DRAFT / NOT TESTED / NOT SHIPPED)
 
 - New nested branch `fix/3.8.0-d3b1-atomic-fail-closed-trash` based on D3b-0 Draft #332, after explicit owner approval of A+. `moveFlightToTrash()` uses one `sql.transaction` with parent `SELECT ... FOR UPDATE` before snapshot, no participant auto-unlock, guards on existing independent participation, connected crew, verification, instructor approval, public shares (including revoked legacy rows), source or participant provenance (including source lacking FK), revisions and void identity. Keeps flight/tracks/expenses archive semantics.
