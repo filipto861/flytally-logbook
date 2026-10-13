@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency M2-A-1 source compatibility audit
+
+- Recorded owner-local PostgreSQL 16 and static M2 test results, each 6/6 PASS at `8a9e03e0`; TypeScript PASS. No full PG regression or signed v13 end-to-end verified.
+- Audited `lib/portable-backup.ts`, `lib/aircraft-sharing.ts`, `lib/billing.ts`, isolated v21 draft and PG tests. Identified legacy `numberOrZero`/floating-number rate sharing and billing paths as blockers for future exact currency writes, not a reason to change current legacy behavior.
+- Added M2-A-1 review document; no code, SQL registration, DB mutation or deployment.
+
 ## 13 October 2026 — Currency M2-A-0 clean-main schema review candidate
 
 - Carried 5 isolated draft/test/harness artifacts from old PR #322 to current main and updated both test-runner branch guards. Candidate SQL remains unregistered, and no new currency UI, migration, SQL execution, data rewrite or deployment was performed.
