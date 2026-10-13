@@ -12,7 +12,7 @@ $expectedBranch = "analysis/3.8.0-d3b-protected-trash-evidence"
 $oldPath = $env:Path
 $oldDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
 $oldPgIntegration = [Environment]::GetEnvironmentVariable("FLYTALLY_POSTGRES_INTEGRATION", "Process")
-$oldD3bFullV20 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_FULL_V20_DISPOSABLE", "Process")
+$oldD3bTargetedPg16 = [Environment]::GetEnvironmentVariable("FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE", "Process")
 $oldPgPassword = [Environment]::GetEnvironmentVariable("PGPASSWORD", "Process")
 $temporaryRoot = $null
 $dataDir = $null
@@ -99,7 +99,7 @@ try {
   $env:PGPASSWORD = ""
   $env:DATABASE_URL = "postgresql://flytally@127.0.0.1:$port/flytally_currency_test"
   $env:FLYTALLY_POSTGRES_INTEGRATION = "1"
-  $env:FLYTALLY_D3B_FULL_V20_DISPOSABLE = "1"
+  $env:FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE = "1"
   # Format each database field explicitly to avoid platform-dependent scalar
   # concatenation and preserve actionable, non-secret diagnostics on mismatch.
   $identityOutput = @(& $psql -X -w -v ON_ERROR_STOP=1 -At -F "|" -d $env:DATABASE_URL -c "SELECT current_database(), current_user, host(inet_server_addr()), inet_server_port()")
@@ -124,7 +124,7 @@ try {
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
-  Restore-Env "FLYTALLY_D3B_FULL_V20_DISPOSABLE" $oldD3bFullV20
+  Restore-Env "FLYTALLY_D3B_TARGETED_PG16_DISPOSABLE" $oldD3bTargetedPg16
   Restore-Env "PGPASSWORD" $oldPgPassword
   $env:Path = $oldPath
 
