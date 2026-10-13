@@ -31,9 +31,15 @@ test("PostgreSQL subprocess calls keep connection strings behind explicit -d for
       const args=match[1];
       // A standalone psql version probe does not select or open a database.
       if(/^\s*["']--version["']\s*$/.test(args))continue;
-      assert.match(args,/(?:^|,)\s*["']-d["']\s*,\s*[A-Za-z_$][\w$]*(?:\(\))?\s*(?:,|$)/,
-        path.relative(root,file)+" must select a database through explicit -d");
-      assert.doesNotMatch(args,/(?:^|,)\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\)|url)\s*,/,
+      const selections=[...args.matchAll(/(?:^|,)\s*["']-d["']\s*,\s*([A-Za-z_$][\w$]*(?:\(\))?)\s*(?=,|$)/g)];
+      assert.equal(selections.length,1,
+        path.relative(root,file)+" must select exactly one database through explicit -d");
+      // The value immediately after -d is an option argument, not a
+      // positional connection URL. Remove only that exact option-value pair
+      // before checking for a second, unsafe positional database argument.
+      const selection=selections[0];
+      const otherArgs=args.slice(0,selection.index)+args.slice(selection.index+selection[0].length);
+      assert.doesNotMatch(otherArgs,/(?:^|,)\s*(?:databaseUrl(?:\(\))?|localDatabaseUrl\(\)|url)\s*(?=,|$)/,
         path.relative(root,file)+" must not pass database URL as a positional argument");
       assert.doesNotMatch(args,/(?:^|,)\s*["']-c["']\s*,\s*(?:statement|sql)\s*(?:,|$)/,
         path.relative(root,file)+" must pass SQL through stdin, not -c command-line text");
