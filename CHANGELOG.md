@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 v1→v20 sequential PostgreSQL migration test authored (DRAFT / NOT RUN / NOT SHIPPED)
+
+- Added `tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts`. This test extracts all 20 sets of unmodified runtime migration SQL from `lib/db-optimization.ts`, executes them sequentially with migration registry entries and advisory transaction locks on a dedicated, random schema inside isolated PG16, then verifies effective FK actions, enabled v20 protective triggers and original five-statement Trash SQL.
+- Native SQL scenarios cover ordinary and certified flights, connected-crew/verification CASCADE, legacy pending invitation CASCADE, immutable accepted recipient provenance rollback and two-session archive→certify→conditional-DELETE mismatch. All scenarios are characterization of current behavior, not a proposed safe Trash implementation.
+- Added `tooling/run-v380-d3b-migration-chain-local.ps1` with exact branch and local DB identity gates, Node24/typecheck/source preflight, original targeted PG tests, sequential migration-chain PG tests, own cluster creation/cleanup and separate test flag `FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE`.
+- The foundational tables in this fixture are intentionally minimal: **real v1–v20 optimizer migration SQL** does not mean all historical base schema, external feature migrations or production data are cloned. New typecheck/native PG16 tests **NOT RUN**. Earlier targeted 8/8 PASS applies to exact older SHA `dd0823af65866bd21de87240f304cb5ef4cf0b9e`, not this updated candidate. No product/runtime changes, schema migration, merge or deploy.
+
 ## 13 October 2026 — D3b-0 native PG16 targeted Trash/participation tests (OWNER-LOCAL PASS / NOT SHIPPED)
 
 - Owner Windows / Node 24 ran `tooling/run-v380-d3b-targeted-local.ps1` at **exact commit `dd0823af65866bd21de87240f304cb5ef4cf0b9e`**. Disposable native PostgreSQL 16 at `127.0.0.1:54833`; expected and observed identity `flytally_currency_test|flytally|127.0.0.1|54833` **MATCHED**; temporary server stopped cleanly.
