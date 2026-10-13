@@ -42,7 +42,7 @@ function seed(flightId,withParticipation=false){
 test("D3b-1 browser: deleting one GPS track preserves the other, then Trash atomically archives expenses and retained GPS",async({page})=>{
   test.skip(!authenticated,"Requires freshly isolated localhost authentication fixture, not any existing database.");
   const flightId=9961,{selected,retained}=seed(flightId);
-  await loginBrowserPilot(page,`/flights/${flightId}?tab=gps`);
+  await loginBrowserPilot(page,`/flights/${flightId}`);
   const gpsTab=page.getByRole("tab",{name:/GPS track/});
   await expect(gpsTab).toBeVisible();
   await gpsTab.click();
