@@ -72,3 +72,11 @@ This document is a **ChatGPT follow-up against real GitHub repository contents**
 **Newly elevated:** authoritative success condition must depend on **final deletion**, not only archive insert. Audit \`moveFlightToTrash\` transaction's conditional statements and row-count coupling for race/rollback.
 
 **Status:** independent reviewer has NOT inspected repo; follow-up source check complete. Proposed architecture **NOT approved**, no D3b full-v20 runtime reproduction, coding, CI, migration, production changes or DeepSeek direct invocation.
+
+## D3b-0 continuation (13 Oct 2026)
+
+- Added `tests/integration/v380-d3b-trash-source-characterization.test.ts` on Draft PR #332 as a **current-behavior characterization**, not a protection acceptance test. It checks three source-backed facts: archive coverage, success selection from INSERT result, and absence of universal row lock before snapshot.
+- Reviewed `tooling/run-v380-d3a-create-restore-local.ps1` and `tests/integration/postgres-v380-full-v20-restore.test.ts` as the available disposable PG16 infrastructure. The latter bootstraps through `tooling/bootstrap-browser-smoke-db.mjs` and adds the expenses payload column in its own disposable database; D3b must verify actual v20 catalog constraints and triggers rather than assume the fixture matches production.
+- Current execution environment has Node 22 but **no native PostgreSQL server, `psql`, or Docker**; therefore new characterization tests and D3b native PG16 scenarios are **NOT RUN** here. Do not inherit the earlier D3a PASS result as D3b test evidence.
+- Next executable milestone: implement isolated full-v20 D3b tests with explicit `pg_catalog` inventory, deterministic zero-row-final-DELETE reproduction, and two-session locking/participant/provenance cases; then run on owner-local Windows PostgreSQL 16. Keep the fixture fail-closed on connection/identity mismatch and do not connect to Neon/production.
+- No D3b runtime change, migration, production DB action or deployment. Owner's linked-draft UX policy remains undecided.
