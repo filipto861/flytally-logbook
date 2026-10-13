@@ -6,7 +6,7 @@ param([switch]$Full)
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $repoPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$expectedBranch = "feat/3.8.0-currency-m2a0-sql-draft"
+$expectedBranch = "feat/3.8.0-m2a0-schema-review-main"
 $container = "ft-currency-pg-" + [guid]::NewGuid().ToString("N").Substring(0,12)
 $dbName = "flytally_currency_test"
 $dbUser = "ftcurrency"
