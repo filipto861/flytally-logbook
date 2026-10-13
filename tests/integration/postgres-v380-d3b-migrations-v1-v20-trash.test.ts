@@ -8,7 +8,7 @@ import {before,after,test} from "node:test";
 // pre-optimization base. This is NOT a clone of all historic product tables.
 const enabled=process.env.FLYTALLY_D3B_MIGRATIONS_PG16_DISPOSABLE==="1";
 const url=process.env.DATABASE_URL??"";
-const ns='"ft_d3b_chain_'+randomUUID().replaceAll("-")+'"';
+const ns='"ft_d3b_chain_'+randomUUID().replaceAll("-","")+'"';
 let targetVerified=false,created=false;
 const root=new URL("../../",import.meta.url);
 const migrationSource=readFileSync(new URL("lib/db-optimization.ts",root),"utf8");
