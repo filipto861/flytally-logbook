@@ -51,8 +51,10 @@ test("D3b-1 browser: deleting one GPS track preserves the other, then Trash atom
   await manager.locator("summary").click();
   const removeSelected=manager.locator("form.track-row").filter({hasText:"selected.csv"});
   await expect(removeSelected).toBeVisible();
+  const backupsBefore=Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'"));
   await removeSelected.getByRole("button",{name:"Delete"}).click();
   await expect(manager.locator("form.track-row").filter({hasText:"selected.csv"})).toHaveCount(0);
+  expect(Number(scalar("SELECT COUNT(*) FROM account_backups WHERE user_id=9001 AND kind='pre_restore'"))).toBe(backupsBefore+1);
   await expect(manager.locator("form.track-row").filter({hasText:"retained.csv"})).toHaveCount(1);
   expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE id=${selected}`)).toBe("0");
   expect(scalar(`SELECT COUNT(*) FROM track_points WHERE track_id=${selected}`)).toBe("0");
