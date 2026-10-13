@@ -11,10 +11,29 @@ export async function listDeletedFlights(userId:number):Promise<DeletedFlight[]>
 export async function moveFlightToTrash(userId:number,flightId:number):Promise<boolean>{await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);const token=randomUUID(),results=await sql.transaction([sql`UPDATE flights f SET locked_at=NULL,locked_by_user_id=NULL WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id) RETURNING f.id`,sql`INSERT INTO deleted_flights(user_id,original_flight_id,delete_token,flight_data,tracks_data,expenses_data) SELECT f.user_id,f.id,${token},to_jsonb(f),COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM flight_tracks t WHERE t.user_id=f.user_id AND t.flight_id=f.id),'[]'::jsonb),COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM flight_expenses e WHERE e.user_id=f.user_id AND e.flight_id=f.id),'[]'::jsonb) FROM flights f WHERE f.id=${flightId} AND f.user_id=${userId} AND f.certified_at IS NULL AND COALESCE(f.record_revision,1)=1 AND (f.locked_at IS NULL OR EXISTS(SELECT 1 FROM flight_participations p WHERE p.participant_user_id=${userId} AND p.participant_flight_id=f.id)) AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=f.user_id AND r.flight_id=f.id) RETURNING id`,sql`DELETE FROM track_points WHERE user_id=${userId} AND track_id IN(SELECT id FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,sql`DELETE FROM flight_tracks WHERE user_id=${userId} AND flight_id=${flightId} AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`,sql`DELETE FROM flights WHERE id=${flightId} AND user_id=${userId} AND certified_at IS NULL AND COALESCE(record_revision,1)=1 AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=${userId} AND r.flight_id=${flightId}) AND EXISTS(SELECT 1 FROM deleted_flights WHERE delete_token=${token} AND user_id=${userId})`]);return Boolean((results[1] as Array<{id:number|string}>)[0])}
 export async function restoreDeletedFlightRecord(userId:number,trashId:number):Promise<{flightId?:number;error?:string}>{await ensureDatabaseOptimizations();await Promise.all([ensureV159Schema(),ensureV162Schema(),ensureV164Schema(),ensureV166Schema()]);const rows=await sql`WITH candidate AS MATERIALIZED (SELECT * FROM deleted_flights WHERE id=${trashId} AND user_id=${userId} AND restored_at IS NULL AND purge_after>NOW()
  AND jsonb_typeof(flight_data)='object'
+ AND (flight_data ?& ARRAY['id','user_id','aircraft_make','aircraft_model','aircraft_variant'])
+ AND flight_data->>'id'=original_flight_id::text
+ AND flight_data->>'user_id'=user_id::text
+ AND flight_data->>'certified_at' IS NULL
+ AND flight_data->>'locked_at' IS NULL
+ AND COALESCE(flight_data->>'record_revision','1')='1'
+ AND COALESCE(flight_data->>'correction_reason','')=''
+ AND NOT EXISTS(SELECT 1 FROM flight_certified_revisions r
+   WHERE r.user_id=deleted_flights.user_id AND r.flight_id=deleted_flights.original_flight_id)
+ AND CASE WHEN jsonb_typeof(tracks_data)='array'
+   THEN NOT EXISTS(SELECT 1 FROM jsonb_array_elements(tracks_data) AS t(value)
+     WHERE jsonb_typeof(t.value)<>'object'
+       OR NOT (t.value ?& ARRAY['id','user_id','flight_id'])
+       OR t.value->>'user_id' IS DISTINCT FROM user_id::text
+       OR t.value->>'flight_id' IS DISTINCT FROM original_flight_id::text)
+   ELSE FALSE END
  AND jsonb_typeof(tracks_data)='array'
  AND CASE WHEN jsonb_typeof(expenses_data)='array'
    THEN NOT EXISTS(SELECT 1 FROM jsonb_array_elements(expenses_data) AS e(value)
      WHERE jsonb_typeof(e.value)<>'object'
+       OR NOT (e.value ?& ARRAY['id','user_id','flight_id','category','label','created_at'])
+       OR e.value->>'user_id' IS DISTINCT FROM user_id::text
+       OR e.value->>'flight_id' IS DISTINCT FROM original_flight_id::text
        OR e.value ?| ARRAY['amount_encoding','amount_minor_units']
        OR COALESCE(e.value->>'currency','') !~ '^[A-Z]{3}$'
        OR CASE WHEN COALESCE(e.value->>'amount_minor','') ~ '^[1-9][0-9]*$'
@@ -35,11 +54,29 @@ if(needsNewRestore[0])return{error:"This archived flight requires the newer mone
 const invalidArchive=await sql`SELECT 1 FROM deleted_flights
  WHERE id=${trashId} AND user_id=${userId} AND restored_at IS NULL AND purge_after>NOW()
  AND (jsonb_typeof(flight_data)<>'object'
+   OR NOT (flight_data ?& ARRAY['id','user_id','aircraft_make','aircraft_model','aircraft_variant'])
+   OR flight_data->>'id' IS DISTINCT FROM original_flight_id::text
+   OR flight_data->>'user_id' IS DISTINCT FROM user_id::text
+   OR flight_data->>'certified_at' IS NOT NULL
+   OR flight_data->>'locked_at' IS NOT NULL
+   OR COALESCE(flight_data->>'record_revision','1')<>'1'
+   OR COALESCE(flight_data->>'correction_reason','')<>''
+   OR EXISTS(SELECT 1 FROM flight_certified_revisions r WHERE r.user_id=deleted_flights.user_id AND r.flight_id=deleted_flights.original_flight_id)
+   OR CASE WHEN jsonb_typeof(tracks_data)='array'
+      THEN EXISTS(SELECT 1 FROM jsonb_array_elements(tracks_data) AS t(value)
+        WHERE jsonb_typeof(t.value)<>'object'
+          OR NOT (t.value ?& ARRAY['id','user_id','flight_id'])
+          OR t.value->>'user_id' IS DISTINCT FROM user_id::text
+          OR t.value->>'flight_id' IS DISTINCT FROM original_flight_id::text)
+      ELSE FALSE END
    OR jsonb_typeof(tracks_data)<>'array'
    OR jsonb_typeof(expenses_data)<>'array'
    OR CASE WHEN jsonb_typeof(expenses_data)='array'
       THEN EXISTS(SELECT 1 FROM jsonb_array_elements(expenses_data) AS e(value)
         WHERE jsonb_typeof(e.value)<>'object'
+         OR NOT (e.value ?& ARRAY['id','user_id','flight_id','category','label','created_at'])
+         OR e.value->>'user_id' IS DISTINCT FROM user_id::text
+         OR e.value->>'flight_id' IS DISTINCT FROM original_flight_id::text
          OR COALESCE(e.value->>'currency','') !~ '^[A-Z]{3}$'
          OR CASE WHEN COALESCE(e.value->>'amount_minor','') ~ '^[1-9][0-9]*$'
             THEN (e.value->>'amount_minor')::numeric > 1000000000
