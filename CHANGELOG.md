@@ -8,6 +8,12 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Distinct-trash concurrent restore owner-local PostgreSQL acceptance (DRAFT / NOT SHIPPED)
+
+- Owner Windows executed exact `test/3.8.0-d2-full-v20-pg16-runtime` commit **`0bb5b4965f7234991ac4530a358eb8de48951a9d`** using `tooling/run-v380-d2-full-v20-local.ps1`: newly isolated native PostgreSQL 16 server `127.0.0.1:50066`, expected/observed `flytally_currency_test|flytally|127.0.0.1|50066` identity **PASS**; project Node24 `npm run typecheck` **PASS**; seven v20 source regressions **7/7 PASS**; five lock/trigger/two-query contract checks **5/5 PASS**; seven actual full-v20 PG16 restore/rollback/concurrency SQL tests **7/7 PASS**, **zero failures, zero skips**. Native PG cluster stopped successfully.
+- Seventh integration case ran **two independent PostgreSQL sessions restoring two separate trash IDs with the SAME natural-key identity** and verified one restored flight and one marker. This supports **cooperating Restore/Restore serialization only** under the explicit READ COMMITTED batch; normal Add/Edit writes do not acquire this lock, and DB natural-key index is nonunique. No claim of global duplicate prevention.
+- **Disposition:** scoped distinct-trash Restore/Restore native PG16 gate **LOCALLY VERIFIED** at precise code SHA. Earlier authored `NOT RUN` status below preserved for provenance. Remaining `@neondatabase/serverless` application HTTP SDK transaction semantics, full protected/certified/void/shared/participant and legacy snapshots, signed v13, official currency registry and v21 migration, build/CI/browser/production smoke **NOT RUN**. Any later change to runtime SQL requires fresh evidence. No merge, deploy, production DB write, schema registration or Training edit.
+
 ## 13 October 2026 — Cross-trash competing restore lock and release-gate test (DRAFT / NOT SHIPPED)
 
 - Continued Draft PR #329 after exactly verified 13 October code `7676563ec6bf288b57b4a99ef792033cad434f4e` (Node24 typecheck and 7+3+6 local native PG16 PASS) and cleaned-up Neon PG18 connector scratch tests. Reconstructed that the existing flight restoration natural-key index is **not unique** and two distinct deleted-flight rows are not serialized by the prior same-trash row lock.
