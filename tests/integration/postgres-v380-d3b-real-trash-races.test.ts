@@ -167,7 +167,7 @@ test("D3b-1 A+: linked draft blocks deletion and preserves crew and verification
   // No independent evidence may disappear via CASCADE.
 });
 
-test("actual Trash SQL: immutable participant provenance rejects DELETE and rolls back archive", {skip:!enabled},()=>{
+test("D3b-1 A+: participant provenance blocks Trash without mutation or exception", {skip:!enabled},()=>{
   const sourceId=flight(9001,true);
   const participantId=flight(9001,false);
   sql("INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status,participant_flight_id) VALUES ("+
