@@ -55,3 +55,26 @@ test("D3b-1 A+: last statement confirms actual DELETE and aborts archive-without
   assert.match(trash,/return Number\(deleted\?\.deleted_count\)===1/);
   assert.doesNotMatch(trash,/return Boolean\(\(results\[1\]/);
 });
+
+
+test("D3b-1e: GPS attach/replace serializes with Trash before all child writes and refuses missing/locked parents",()=>{
+  const action=readFileSync(new URL("../../app/(protected)/flights/actions.ts",import.meta.url),"utf8");
+  const start=action.indexOf("export async function attachKmlTrack(");
+  const end=action.indexOf("export async function deleteTrack(",start);
+  assert.ok(start>=0&&end>start,"Track writer action boundaries changed");
+  const writer=action.slice(start,end);
+  const lock=writer.indexOf("queries=[sql`SELECT f.id FROM flights f");
+  const firstDelete=writer.indexOf("queries.push(sql`DELETE FROM track_points");
+  const insert=writer.indexOf("queries.push(sql`INSERT INTO flight_tracks(");
+  const update=writer.indexOf("queries.push(sql`UPDATE flights SET ");
+  assert.ok(lock>0 && firstDelete>lock && insert>firstDelete && update>insert,
+    "Parent lock must precede all Replace deletes, child INSERT and flight UPDATE");
+  assert.match(writer,/f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL FOR UPDATE/);
+  assert.match(writer,/DELETE FROM track_points[\s\S]*AND EXISTS\(SELECT 1 FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL\)/);
+  assert.match(writer,/DELETE FROM flight_tracks[\s\S]*AND EXISTS\(SELECT 1 FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL\)/);
+  assert.match(writer,/INSERT INTO flight_tracks[\s\S]*SELECT \$\{userId\},f\.id,[\s\S]*FROM flights f WHERE f\.id=\$\{flightId\} AND f\.user_id=\$\{userId\} AND f\.locked_at IS NULL RETURNING id/);
+  assert.match(writer,/WHERE id=\$\{flightId\} AND user_id=\$\{userId\} AND locked_at IS NULL RETURNING id/);
+  assert.match(writer,/saved\[replace\?3:1\]/);
+  assert.match(writer,/if\(!locked\|\|!uploaded\|\|!updated\)return\{error:/);
+  assert.doesNotMatch(writer,/INSERT INTO flight_tracks[\s\S]*VALUES\(\$\{userId\},\$\{flightId\}/);
+});
