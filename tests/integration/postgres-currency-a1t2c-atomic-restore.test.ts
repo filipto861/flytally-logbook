@@ -143,6 +143,24 @@ test("certified history and revision snapshot reject",{skip:!asked},()=>{
   run("INSERT INTO flight_certified_revisions(user_id,flight_id) SELECT user_id,original_flight_id FROM deleted_flights WHERE id="+b);
   expectError("SELECT * FROM a1t2c_try_restore(1,"+b+");",/a1t2c_protected_archive/);
 });
+test("tampered original ownership and malformed exact tuple both fail closed",{skip:!asked},()=>{
+  const a=seed("2026-10-13","OK-A13");
+  run("UPDATE deleted_flights SET flight_data=jsonb_set(flight_data,'{user_id}','999'::jsonb) WHERE id="+a);
+  expectError("SELECT * FROM a1t2c_try_restore(1,"+a+");",/a1t2c_invalid_archive/);
+  assert.equal(run("SELECT restored_at IS NULL FROM deleted_flights WHERE id="+a),"t");
+  const b=seed("2026-10-14","OK-A14");
+  run("UPDATE deleted_flights SET flight_data=jsonb_set(flight_data,'{price_currency_code}','\"EUR\"'::jsonb) WHERE id="+b);
+  expectError("SELECT * FROM a1t2c_try_restore(1,"+b+");",/a1t2c_invalid_flight_money/);
+  assert.equal(run("SELECT count(*) FROM flights WHERE registration='OK-A14'"),"0");
+});
+test("empty child arrays restore without invented children",{skip:!asked},()=>{
+  const t=seed("2026-10-15","OK-A15");
+  run("UPDATE deleted_flights SET tracks_data='[]'::jsonb,expenses_data='[]'::jsonb WHERE id="+t);
+  const r=restore(t);
+  assert.equal(r.status,"restored");
+  assert.equal(run("SELECT count(*) FROM flight_tracks WHERE flight_id="+r.flightId),"0");
+  assert.equal(run("SELECT count(*) FROM flight_expenses WHERE flight_id="+r.flightId),"0");
+});
 test("two independent sessions on SAME trash restore only once",{skip:!asked},async()=>{
   const t=seed("2026-10-11","OK-A11");
   const responses=await Promise.all([concurrentRestore(t,450),concurrentRestore(t,0)]);
