@@ -8,6 +8,13 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency M1-B2 ISO registry staged (unverified)
+
+- Staged the nine existing read-only registry, generation and origin-check files from old draft #321 onto current `main` without enabling a production caller.
+- Reconciled two new `lib/` files in explicit `shared-runtime` registry and updated audit count 392→394 with two corresponding source test assertions.
+- Source List One XML is an unverified third-party 2026-09-17 mirror; official SIX source parity NOT VERIFIED; no currency selection, FX, historical relabeling, migration v21, DB mutation or production change.
+- New branch Node24 tests/typecheck/build/browser/PG: NOT RUN. Next: direct source acquisition, verification and isolated tests before merge.
+
 ## 13 October 2026 — Currency M1 exact-money core rebased onto current main (PR #336 Draft)
 
 - Reused exact source blobs from isolated draft #320: `lib/monetary-amount.ts` (`300587c9`) and `tests/monetary-amount.test.ts` (`36171bf1`). Pure, unconnected exact decimal parsing/bigint minor-unit operations and denomination/precision-preserving sums; half-up billing is only an isolated candidate, not a new live business rule.
