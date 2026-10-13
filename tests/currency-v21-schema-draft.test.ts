@@ -74,7 +74,7 @@ test("Windows PowerShell 5.1 runner is ASCII-safe and targets only disposable Do
 test("native Windows PostgreSQL runner isolates its cluster and protects against auth failure",()=>{
   assert.equal([...nativeWindowsRunner].every(byte=>byte<128),true,"PowerShell 5.1 scripts must use ASCII");
   const script=nativeWindowsRunner.toString("ascii");
-  assert.match(script,/\$expectedBranch = "feat\/3\.8\.0-currency-m2a0-sql-draft"/);
+  assert.match(script,/\$expectedBranch = "feat\/3\.8\.0-m2a0-schema-review-main"/);
   assert.match(script,/\$dirtyTracked = & git status --porcelain --untracked-files=no/);
   assert.match(script,/& git ls-files --others --exclude-standard/);
   assert.match(script,/\$untrackedTypescript = @\(\$untrackedFiles \| Where-Object/);
