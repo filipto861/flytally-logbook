@@ -39,6 +39,21 @@ Separate from owner-local native PG16 D2, a scratch **Neon PG18.6** child branch
 
 The real HTTP JavaScript driver transaction and application restore mapping remain separate unverified gates; no temporary Neon branch currently exists for further execution.
 
+## Owner-local distinct-trash restore concurrence — VERIFIED (13 October 2026)
+
+**Exactly tested source SHA:** `0bb5b4965f7234991ac4530a358eb8de48951a9d` from Draft PR #329, on Windows/Node24 and freshly initialized **native PG16** disposable `127.0.0.1:50066`.
+
+- Expected/observed PostgreSQL identity `flytally_currency_test|flytally|127.0.0.1|50066`: **PASS**. Temp instance started and stopped cleanly.
+- Full project `npm run typecheck`: **PASS**.
+- v20 data-integrity source checks: **7/7 PASS**, 0 fail/skip.
+- Row-lock, trigger guard and two-query `ReadCommitted` transaction source tests: **5/5 PASS**, 0 fail/skip.
+- Real runtime-source SQL against disposable v20 fixture: **7/7 PASS**, 0 fail/skip. Includes original six flight/track/expense/late rollback/same-trash tests plus **two distinct trash IDs of the same natural flight identity racing on two independent PG sessions**: exactly one new flight and one marked archive among cooperating restore paths.
+- Printed: `LOCAL full-v20 integration gates PASS on candidate 0bb5b4965f7234991ac4530a358eb8de48951a9d. Not a production migration.`
+
+**Scope disposition:** native PG16 Restore-vs-Restore natural identity serialization is **LOCALLY VERIFIED**. The earlier untested candidate state below is historically preserved. Never extend this to independent normal Create/Edit writers, source-history certification/void/shared/participant evidence, actual `@neondatabase/serverless` HTTP transaction semantics, production migration v21 or release approval. The previously created scratch Neon PG18 branch was **deleted and verified absent**; it is not reusable.
+
+**Next:** test actual JavaScript Neon HTTP SDK on a freshly authorized disposable nonproduction branch with verified branch identity and cleanup. Finish remaining release gates (existing Add/Edit races; archival applicability/provenance, certified/void/shared participants; backup v13 and full v20; ISO/SIX/v21/CI/build/browser). New code SHA requires new targeted evidence.
+
 ## Next P0 candidate — distinct-trash natural-key serialization (UNTESTED; 13 October 2026)
 
 - **Previous accepted evidence remains exact `7676563ec6bf288b57b4a99ef792033cad434f4e`, 7/7 source + 3/3 guards + 6/6 real PG16; subsequent documentation-only notes do not validate this new code.**
