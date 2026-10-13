@@ -82,10 +82,10 @@ test("B1A aircraft sharing carries explicit no-billing state without repair",()=
 
 test("B1A flight persistence snapshots a rate only when aircraft cost is tracked",()=>{
   const actions=read("app/(protected)/flights/actions.ts");
-  assert.match(actions,/price=f[.]billingBasis\?await resolvedPrice\(userId,f[.]registration,f[.]date\):null/);
+  assert.match(actions,/rate=f[.]billingBasis\?await resolvedPrice\(userId,f[.]registration,f[.]date\):noRateSnapshot/);
   assert.match(actions,/const price=!f[.]billingBasis\?null:shouldResolveStoredPrice/);
   assert.match(actions,/billingResult=serializeOptionalBilling\(form[.]get\("billingBasis"\),form[.]get\("billingShare"\)\)/);
-  assert.match(actions,/if\(input[.]billingBasis\)\{price=priceCache[.]get\(input[.]date\)\?\?null/);
+  assert.match(actions,/if\(input[.]billingBasis\)\{rate=priceCache[.]get\(input[.]date\)\?\?noRateSnapshot/);
 });
 
 
