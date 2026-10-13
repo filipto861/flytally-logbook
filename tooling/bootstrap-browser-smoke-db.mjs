@@ -186,6 +186,21 @@ CREATE TABLE flight_audit_log (
   new_data JSONB,
   changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Pre-applied v2 backup table required by canonical signed safety backup
+-- before a destructive GPS track change. This remains test-only DDL.
+CREATE TABLE account_backups (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  kind TEXT NOT NULL CHECK(kind IN ('automatic','manual','pre_restore')),
+  version INTEGER NOT NULL,
+  exported_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  payload_base64 TEXT NOT NULL,
+  payload_sha256 TEXT NOT NULL,
+  raw_bytes BIGINT NOT NULL,
+  compressed_bytes BIGINT NOT NULL,
+  counts JSONB NOT NULL DEFAULT '{}'::jsonb
+);
 CREATE TABLE deleted_flights (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
