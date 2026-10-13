@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-0 first sequential v1→v20 owner-local attempt stopped at TypeScript (DRAFT / RE-TEST REQUIRED)
+
+- Owner on Windows / Node 24 ran `tooling/run-v380-d3b-migration-chain-local.ps1` at exact commit `f56536a5bee2420a34c4200f77caff63684df2ab`. **TypeScript FAILED (TS2554)** at `tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts:11`: `randomUUID().replaceAll("-")` lacked the required replacement argument. **No source tests or PostgreSQL runtime cases ran in this attempt; the isolated database was not started.**
+- Corrected the expression to `replaceAll("-","")` on the same D3b Draft branch and checked the test file's remaining `replaceAll` calls for missing second arguments. **New code still NOT RUN**. The earlier scoped owner-local native PG16 **8/8 PASS** at `dd0823af65866bd21de87240f304cb5ef4cf0b9e` remains separate evidence; no runtime/DB/production/merge/deploy change.
+
 ## 13 October 2026 — D3b-0 v1→v20 sequential PostgreSQL migration test authored (DRAFT / NOT RUN / NOT SHIPPED)
 
 - Added `tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts`. This test extracts all 20 sets of unmodified runtime migration SQL from `lib/db-optimization.ts`, executes them sequentially with migration registry entries and advisory transaction locks on a dedicated, random schema inside isolated PG16, then verifies effective FK actions, enabled v20 protective triggers and original five-statement Trash SQL.
