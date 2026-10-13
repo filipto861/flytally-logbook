@@ -129,8 +129,9 @@ try {
   npm run test:target -- tests/integration/postgres-v380-d3b-migrations-v1-v20-trash.test.ts
   Assert-Exit "D3b native PostgreSQL16 sequential migrations v1-v20 + Trash safety tests"
   Write-Host "D3b-1e NEGATIVE CONTROL: the PRE-FIX no-FK child-first race must reproduce its orphan. Its PASS is historical vulnerability characterization, NOT release safety." -ForegroundColor Yellow
-  Write-Host "D3b-1e GPS SAFETY REGRESSION: the two new parent-first writer tests MUST PASS for Trash-first and GPS-first ordering. These are bounded native SQL models, not authenticated Next/Neon SDK proof." -ForegroundColor Cyan
-  Write-Host "LOCAL D3b-1 A+ source, original safety, new writer-race regressions and v1-v20 optimizer migration SQL evaluated on $commit; full historic prod/app SDK and other child-writer races remain OPEN. Not production." -ForegroundColor Green
+  Write-Host "D3b-1e GPS SAFETY REGRESSION: parent-first writer tests MUST PASS for Trash-first and GPS-first ordering." -ForegroundColor Cyan
+  Write-Host "D3b-1f TRACK/EXPENSE REGRESSION: selected-track point integrity, both Trash lock orders, expenses snapshot locking and unauthorized/locked input cases MUST PASS. These are bounded native SQL models, not authenticated Next/Neon SDK proof." -ForegroundColor Cyan
+  Write-Host "LOCAL D3b-1 A+ source, negative control, writer-race safety regressions and v1-v20 optimizer migration SQL evaluated on $commit; full historic prod/app SDK and untested child-writer paths remain OPEN. Not production." -ForegroundColor Green
 } finally {
   Restore-Env "DATABASE_URL" $oldDatabaseUrl
   Restore-Env "FLYTALLY_POSTGRES_INTEGRATION" $oldPgIntegration
