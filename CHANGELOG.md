@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency ISO List One owner-attested XML evidence
+
+- Owner-uploaded `list-one.xml` (published 2026-09-17) was compared byte-for-byte by Git blob SHA-1 (`1b8df1be...`) and SHA-256 (`33139b43...`) against pinned PR #337 XML; equal. Owner authorized use and attested download from SIX. This is **not** independent TLS-origin authentication; `verifiedDirectlyWithSIX:false` remains.
+- Recorded reproducible evidence in `docs/product/3_8_0_CURRENCY_ISO4217_SOURCE_ATTESTATION_2026-10-13.md`; no runtime or currency data modifications. Owner-local generator check and 1497/1497 tests passed at `ff6fd97e`. Docs-only follow-up SHA not separately tested. No merge/deployment/migration.
+
 ## 13 October 2026 — Currency M1-B2 ISO registry staged (unverified)
 
 - Staged the nine existing read-only registry, generation and origin-check files from old draft #321 onto current `main` without enabling a production caller.
