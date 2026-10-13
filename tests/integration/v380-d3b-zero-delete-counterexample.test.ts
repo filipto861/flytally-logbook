@@ -20,7 +20,7 @@ test("D3b PostgreSQL conditional archive / zero-row DELETE consistency counterex
   assert.equal(u.search, "");
   assert.equal(u.hash, "");
   assert.ok(Number(u.port)>1024 && Number(u.port)!==5432 && Number(u.port)!==55432);
-  const env = {...process.env, PGCONNECT_TIMEOUT:"5"};
+  const env:NodeJS.ProcessEnv = {...process.env, PGCONNECT_TIMEOUT:"5"};
   for (const k of Object.keys(env)) if (k.startsWith("PG") && k!=="PGCONNECT_TIMEOUT") delete env[k];
 
   // Deliberately forces the final conditional DELETE to affect zero rows.
