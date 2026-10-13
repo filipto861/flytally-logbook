@@ -153,7 +153,7 @@ test("ordinary draft is archived and deleted by original five Trash statements",
 test("linked draft deletion cascades crew and verification in migrated v20",{skip:!enabled},()=>{
   const id=insertFlight(9001),token=randomUUID();
   run("INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role) VALUES("+id+",9001,9002,'PIC');");
-  run("INSERT INTO flight_verifications(flight_id,flight_user_id) VALUES("+id+",9001);");
+  run("INSERT INTO flight_verifications(flight_id,flight_user_id,verification_role,record_revision,flight_hash) VALUES("+id+",9001,'INSTRUCTOR',1,"+q("a".repeat(64))+");");
   run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
   assert.equal(count("flights","id="+id),0);
   assert.equal(count("deleted_flights","delete_token="+q(token)),1);
