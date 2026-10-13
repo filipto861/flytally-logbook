@@ -43,6 +43,7 @@ test("D3b-1 browser: deleting one GPS track preserves the other, then Trash atom
   test.skip(!authenticated,"Requires freshly isolated localhost authentication fixture, not any existing database.");
   const flightId=9961,{selected,retained}=seed(flightId);
   await loginBrowserPilot(page,`/flights/${flightId}`);
+  await page.goto(`/flights/${flightId}?tab=gps`);
   const gpsTab=page.getByRole("tab",{name:/GPS track/});
   await expect(gpsTab).toBeVisible();
   await gpsTab.click();
