@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Currency M2-A-0 clean-main schema review candidate
+
+- Carried 5 isolated draft/test/harness artifacts from old PR #322 to current main and updated both test-runner branch guards. Candidate SQL remains unregistered, and no new currency UI, migration, SQL execution, data rewrite or deployment was performed.
+- Exact-new-branch Node24, disposable PostgreSQL and full suite **NOT RUN**; old source static tests do not constitute real DB acceptance.
+
 ## 13 October 2026 — Currency ISO List One owner-attested XML evidence
 
 - Owner-uploaded `list-one.xml` (published 2026-09-17) was compared byte-for-byte by Git blob SHA-1 (`1b8df1be...`) and SHA-256 (`33139b43...`) against pinned PR #337 XML; equal. Owner authorized use and attested download from SIX. This is **not** independent TLS-origin authentication; `verifiedDirectlyWithSIX:false` remains.
