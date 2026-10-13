@@ -196,6 +196,35 @@ test("D3b-1 A+: immutable recipient provenance blocks ordinary Trash without cha
   assert.equal(count("deleted_flights","delete_token="+q(token)),0);
   assert.equal(count("flight_source_provenance","participant_flight_id="+recipient),1);
 });
+test("D3b-1 A+: legacy instructor approval remains when draft Trash is refused",{skip:!enabled},()=>{
+  const id=insertFlight(9001),token=randomUUID();
+  run("INSERT INTO instructor_flight_approvals(flight_id,student_user_id,instructor_user_id,record_revision,flight_hash)"+
+    " VALUES("+id+",9001,9002,1,"+q("a".repeat(64))+");");
+  run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flights","id="+id),1);
+  assert.equal(count("instructor_flight_approvals","flight_id="+id),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+});
+
+test("D3b-1 A+: legacy revoked public share remains when draft Trash is refused",{skip:!enabled},()=>{
+  const id=insertFlight(9001),token=randomUUID();
+  run("INSERT INTO flight_public_shares(user_id,flight_id,token_hash,revoked_at)"+
+    " VALUES(9001,"+id+","+q(randomUUID())+",NOW());");
+  run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flights","id="+id),1);
+  assert.equal(count("flight_public_shares","flight_id="+id),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+});
+
+test("D3b-1 A+: orphan source-provenance reference without source FK blocks draft Trash",{skip:!enabled},()=>{
+  const source=insertFlight(9001),recipient=insertFlight(9002),token=randomUUID();
+  run("INSERT INTO flight_source_provenance(participant_flight_id,participant_user_id,source_flight_id,source_user_id,source_revision,source_hash,participant_role)"+
+    " VALUES("+recipient+",9002,"+source+",9001,1,"+q("x".repeat(64))+",'INSTRUCTOR');");
+  run("BEGIN;\n"+trashSql(source,token).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flights","id="+source),1);
+  assert.equal(count("flight_source_provenance","source_flight_id="+source),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+});
 test("D3b-1 A+: forced zero-row conditional DELETE rolls back the earlier archive",{skip:!enabled},()=>{
   const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token);
   const failed=raw("SET search_path TO "+ns+",pg_catalog;BEGIN;"+
