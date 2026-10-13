@@ -16,7 +16,7 @@ const trashSource=readFileSync(new URL("lib/flight-trash.ts",root),"utf8");
 const tick=String.fromCharCode(96);
 const template=new RegExp("sql"+tick+"([\\s\\S]*?)"+tick,"g");
 const head=migrationSource.slice(migrationSource.indexOf("const migrationNames:"),migrationSource.indexOf("const migrationQueries="));
-const names=new Map([...head.matchAll(/([0-9]+):"([^"]+)"/g)].map(x=>[Number(x[1]),x[2]]));
+const names=new Map<number,string>([...head.matchAll(/([0-9]+):"([^"]+)"/g)].map((x):[number,string]=>[Number(x[1]),x[2]]));
 assert.equal(names.size,20,"Unexpected migration name registry");
 const migrations=new Map<number,string[]>();
 for(let v=1;v<=20;v++){
@@ -159,6 +159,23 @@ test("linked draft deletion cascades crew and verification in migrated v20",{ski
   assert.equal(count("deleted_flights","delete_token="+q(token)),1);
   assert.equal(count("flight_connected_crew","source_flight_id="+id),0);
   assert.equal(count("flight_verifications","flight_id="+id),0);
+});
+test("migration-chain certified flight cannot enter ordinary Trash",{skip:!enabled},()=>{
+  const id=insertFlight(9001,true),token=randomUUID();
+  run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flights","id="+id+" AND certified_at IS NOT NULL"),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+});
+test("legacy pending draft participation is cascaded by current Trash SQL",{skip:!enabled},()=>{
+  const id=insertFlight(9001),token=randomUUID();
+  run("INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status)"+
+    " VALUES("+id+",9001,9002,'INSTRUCTOR',1,"+q("p".repeat(64))+",'pending');");
+  run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
+  assert.equal(count("flights","id="+id),0);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),1);
+  assert.equal(count("flight_participations","source_flight_id="+id),0);
+  // Characterizes a legacy/synthetic draft invitation: current canonical
+  // invitation creation may require certification. Do not infer UI reachability.
 });
 test("immutable recipient provenance rejects deletion and rolls back archive",{skip:!enabled},()=>{
   const source=insertFlight(9001,true),recipient=insertFlight(9002),token=randomUUID(),hash="a".repeat(64);
