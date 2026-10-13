@@ -1,6 +1,6 @@
 # FlyTally Logbook — FEATURE LIST
 
-**Capability inventory reviewed:** 11 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
+**Capability inventory reviewed:** 13 October 2026. **Current release status and next milestone:** [ROADMAP](ROADMAP.md). **Dated release/deploy evidence:** [CHANGELOG](CHANGELOG.md). This inventory describes capabilities and restrictions; it does not independently establish deployment or provider permission.
 
 This is the **capability register**, not a dated test log. Implementation and production statements below are limited by their stated scope. Execution order and outstanding release gates are in [ROADMAP](ROADMAP.md); merged changes and source evidence in [CHANGELOG](CHANGELOG.md). The [verbatim previous feature inventory](docs/history/FEATURES_BEFORE_2026-10-10_CANONICAL_CLEANUP.md) retains every earlier milestone claim and test candidate for audit; old `Draft`/`FAIL`/`OFF` captions there are historical.
 
@@ -65,7 +65,7 @@ This is the **capability register**, not a dated test log. Implementation and pr
 | Workstream | State | Gate |
 | --- | --- | --- |
 | Esri/openAIP third-party rights/coverage/usage evidence after 3.7.0 | UNVERIFIED / DEFERRED | Commercial/use rights, relevant attribution and redistribution/export restrictions, currency/coverage, quota/cost and evidence before broader use; not approved by the 3.7.0 release |
-| `3.8.0` Currency / monetary semantics · #136 | NEXT | Audit persisted denominations, define account currency authority, backup/export effects; no invented historical currency or automatic FX |
+| `3.8.0` Currency / monetary semantics · #136 | ACTIVE / MULTIPLE UNMERGED DRAFTS (not shipped) | Owner-frozen D1–D4; isolated A1-T1 validators #323, A1-T2a catalog #324, A1-T2b PG16 #325, A1-T2c D1 reduced-schema #327, and independent **production-path v20 trash restore fidelity guard** candidate. The latter explicitly covers 52 safe v20 flight columns, blocks v21 money being downgraded, preserves recorded CZK and refuses invalid expense/child data; **not runtime-verified or merged**. Triggers, full child content, protected/void/shared records, independent-session concurrency, official SIX ISO evidence, signed-v13 backup and Neon HTTP still gate release. No silent FX, migration v21, deployment or production approval |
 | `3.9.0` heterogeneous multi-aircraft onboarding proof | PLANNED | Aeroplane/Helicopter/Sailplane-TMG/Balloon/ULL/Other Add/Edit/Quick Add, applicability and responsive tests |
 | `3.10.0` multi-aircraft sharing/recovery/scale closeout | PLANNED | Canonical independent participant data, safe recovery/scale proof |
 | GPS T&G time-normalized evidence-limited follow-up | RESEARCH | Real-track samples/source evidence |
