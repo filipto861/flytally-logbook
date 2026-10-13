@@ -157,15 +157,15 @@ test("ordinary draft is archived and deleted by original five Trash statements",
   assert.equal(count("flights","id="+id),0);
   assert.equal(count("deleted_flights","delete_token="+q(token)),1);
 });
-test("linked draft deletion cascades crew and verification in migrated v20",{skip:!enabled},()=>{
+test("D3b-1 A+: linked draft preserves crew and verification in migrated v20",{skip:!enabled},()=>{
   const id=insertFlight(9001),token=randomUUID();
   run("INSERT INTO flight_connected_crew(source_flight_id,source_user_id,connected_user_id,intended_role) VALUES("+id+",9001,9002,'PIC');");
   run("INSERT INTO flight_verifications(flight_id,flight_user_id,verification_role,record_revision,flight_hash) VALUES("+id+",9001,'INSTRUCTOR',1,"+q("a".repeat(64))+");");
   run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
-  assert.equal(count("flights","id="+id),0);
-  assert.equal(count("deleted_flights","delete_token="+q(token)),1);
-  assert.equal(count("flight_connected_crew","source_flight_id="+id),0);
-  assert.equal(count("flight_verifications","flight_id="+id),0);
+  assert.equal(count("flights","id="+id),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+  assert.equal(count("flight_connected_crew","source_flight_id="+id),1);
+  assert.equal(count("flight_verifications","flight_id="+id),1);
 });
 test("migration-chain certified flight cannot enter ordinary Trash",{skip:!enabled},()=>{
   const id=insertFlight(9001,true),token=randomUUID();
@@ -173,18 +173,18 @@ test("migration-chain certified flight cannot enter ordinary Trash",{skip:!enabl
   assert.equal(count("flights","id="+id+" AND certified_at IS NOT NULL"),1);
   assert.equal(count("deleted_flights","delete_token="+q(token)),0);
 });
-test("legacy pending draft participation is cascaded by current Trash SQL",{skip:!enabled},()=>{
+test("D3b-1 A+: legacy pending participation remains untouched by Trash",{skip:!enabled},()=>{
   const id=insertFlight(9001),token=randomUUID();
   run("INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status)"+
     " VALUES("+id+",9001,9002,'INSTRUCTOR',1,"+q("p".repeat(64))+",'pending');");
   run("BEGIN;\n"+trashSql(id,token).join(";\n")+";\nCOMMIT;");
-  assert.equal(count("flights","id="+id),0);
-  assert.equal(count("deleted_flights","delete_token="+q(token)),1);
-  assert.equal(count("flight_participations","source_flight_id="+id),0);
+  assert.equal(count("flights","id="+id),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
+  assert.equal(count("flight_participations","source_flight_id="+id),1);
   // Characterizes a legacy/synthetic draft invitation: current canonical
   // invitation creation may require certification. Do not infer UI reachability.
 });
-test("immutable recipient provenance rejects deletion and rolls back archive",{skip:!enabled},()=>{
+test("D3b-1 A+: immutable recipient provenance blocks ordinary Trash without changes",{skip:!enabled},()=>{
   const source=insertFlight(9001,true),recipient=insertFlight(9002),token=randomUUID(),hash="a".repeat(64);
   run("INSERT INTO flight_participations(source_flight_id,source_user_id,participant_user_id,participant_role,source_revision,source_hash,status,participant_flight_id)"+
     " VALUES("+source+",9001,9002,'INSTRUCTOR',1,"+q(hash)+",'accepted',"+recipient+");");
@@ -196,26 +196,14 @@ test("immutable recipient provenance rejects deletion and rolls back archive",{s
   assert.equal(count("deleted_flights","delete_token="+q(token)),0);
   assert.equal(count("flight_source_provenance","participant_flight_id="+recipient),1);
 });
-test("two PG sessions archive then certify before final conditional DELETE",{skip:!enabled,timeout:23000},async()=>{
+test("D3b-1 A+: forced zero-row conditional DELETE rolls back the earlier archive",{skip:!enabled},()=>{
   const id=insertFlight(9001),token=randomUUID(),steps=trashSql(id,token);
-  const p=spawn("psql",["-X","-w","-qAt","-v","ON_ERROR_STOP=1","-d",url],{env:safeEnv(),stdio:["pipe","pipe","pipe"]});
-  let out="",err="";
-  p.stdout.setEncoding("utf8").on("data",(x:string)=>{out+=x;});
-  p.stderr.setEncoding("utf8").on("data",(x:string)=>{err+=x;});
-  const stopped=new Promise<number|null>((resolve,reject)=>{p.on("error",reject);p.on("close",resolve);});
-  try{
-    p.stdin.write("SET search_path TO "+ns+",pg_catalog;BEGIN;\n"+steps[0]+";\n"+steps[1]+";\nSELECT 'D3B_MIGRATION_ARCHIVED';\n");
-    await new Promise<void>((resolve,reject)=>{
-      const timeout=setTimeout(()=>reject(new Error("Archive readiness timed out: "+err)),8000);
-      const check=()=>{if(out.includes("D3B_MIGRATION_ARCHIVED")){clearTimeout(timeout);p.stdout.off("data",check);resolve();}};
-      p.stdout.on("data",check);check();
-    });
-    assert.equal(run("UPDATE flights SET certified_at=NOW(),certification_hash="+q("b".repeat(64))+" WHERE id="+id+" RETURNING id;"),String(id));
-    p.stdin.end(steps.slice(2).join(";\n")+";\nCOMMIT;\n");
-    assert.equal(await stopped,0,"Archived transaction failed: "+err);
-    assert.equal(count("flights","id="+id+" AND certified_at IS NOT NULL"),1);
-    assert.equal(count("deleted_flights","delete_token="+q(token)),1);
-  }finally{
-    if(p.exitCode===null){p.kill();await stopped;}
-  }
+  const failed=raw("SET search_path TO "+ns+",pg_catalog;BEGIN;"+
+    steps[0]+";"+steps[1]+";"+
+    "UPDATE flights SET locked_at=NOW() WHERE id="+id+";"+
+    steps.slice(2).join(";")+";COMMIT;");
+  assert.notEqual(failed.status,0,"Archive-delete mismatch must fail the transaction");
+  assert.match(String(failed.stderr),/division by zero/i);
+  assert.equal(count("flights","id="+id+" AND locked_at IS NULL"),1);
+  assert.equal(count("deleted_flights","delete_token="+q(token)),0);
 });
