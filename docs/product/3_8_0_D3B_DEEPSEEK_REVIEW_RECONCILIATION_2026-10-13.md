@@ -80,3 +80,10 @@ This document is a **ChatGPT follow-up against real GitHub repository contents**
 - Current execution environment has Node 22 but **no native PostgreSQL server, `psql`, or Docker**; therefore new characterization tests and D3b native PG16 scenarios are **NOT RUN** here. Do not inherit the earlier D3a PASS result as D3b test evidence.
 - Next executable milestone: implement isolated full-v20 D3b tests with explicit `pg_catalog` inventory, deterministic zero-row-final-DELETE reproduction, and two-session locking/participant/provenance cases; then run on owner-local Windows PostgreSQL 16. Keep the fixture fail-closed on connection/identity mismatch and do not connect to Neon/production.
 - No D3b runtime change, migration, production DB action or deployment. Owner's linked-draft UX policy remains undecided.
+
+### D3b-0 catalog gate follow-up (13 Oct 2026)
+
+- Committed `tests/integration/v380-d3b-full-v20-catalog.test.ts` as a **fail-closed native PostgreSQL 16 catalog gate**. It requires explicit `FLYTALLY_D3B_FULL_V20_DISPOSABLE=1`, localhost-only dedicated DB identity, real FK delete actions and protected provenance/void lifecycle triggers. It does not generate substitutes for missing schema objects.
+- **NOT RUN:** this environment cannot execute the isolated native PostgreSQL instance. The catalog gate does **not** prove behavior or races; dedicated concurrent writer/Trash reproduction and fixture application fidelity remain open. Running this test without its flag SKIPS it; skip must never count as acceptance.
+- Explicit blocker: existing browser-bootstrap-based D3a test fixture cannot be presumed equivalent to full applied v20 schema. Before D3b acceptance, source-backed, reproducible v20 fixture construction and exact catalog trigger identity must be demonstrated; then implement and run evidence-preserving race tests.
+- No runtime/DB/migration/deploy change. Owner linked-draft policy remains pending evidence.
