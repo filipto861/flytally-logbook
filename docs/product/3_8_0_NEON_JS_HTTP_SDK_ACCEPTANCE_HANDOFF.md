@@ -18,6 +18,39 @@
 4. Same-trash independent concurrent SDK requests: exactly one restore. `price_decimal::text` remains byte-precise across NUMERIC write/read.
 5. No real `lib/flight-trash.ts` tagged SQL/full-v20 schema here; **the PG16 full-source tests are separate evidence**. Ordinary Create/Edit writers are outside this test's cooperative lock coverage.
 
+## Retry after malformed clipboard — old branch cleaned, new isolated target ready (13 October 2026)
+
+**First owner attempt** on previous temporary branch `br-patient-waterfall-b10m3abc`: local Node24 failed at `new URL(url)` with `Invalid Neon test URI` **BEFORE creating the SDK client or issuing ANY remote SQL**. No SDK HTTP transaction, rollback or concurrency test ran. Shell `Set-Clipboard -Value ''` raised `ArgumentNullException` on Windows PowerShell 5.1; the environment variables were cleaned by `finally`. Root cause of invalid clipboard contents is **unconfirmed**; do not assume credentials were wrong.
+
+**Cleanup COMPLETE for first attempt:** verified name/parent/nondefault/nonprimary, deleted exact `br-patient-waterfall-b10m3abc`; fresh Neon branch list confirmed it **ABSENT**, with original four branches (including `production`) preserved.
+
+**Correction authored:** `tooling/run-v380-neon-sdk-local.ps1` accepts pinned expected branch/host/nonce, reads clipboard, requires a **single plain `postgresql://` URI**, validates its host and `neondb` before populating any environment variables or calling Node. It prints **no URI, password or username** and clears environment variables in `finally`; replaces clipboard contents with a single space for PowerShell 5.1 compatibility. Node probe also returns an actionable secret-free invalid-URI error. The wrapper itself **has not yet been executed on owner Windows**.
+
+### Current SECOND temporary branch (LIVE; delete after retry regardless of PASS/FAIL)
+
+- Project: **Logbook Shadow** `muddy-dust-14049657`.
+- Branch **`ft-380-sdk-http-retry-20261013-tmp`**, ID **`br-solitary-flower-b1t8okd4`**; parent `br-dark-math-b1snjzub`; explicitly verified **primary=false / default=false / ready**.
+- **Pinned pooled hostname (public endpoint metadata, no password):** `ep-square-river-b1jjvpkl-pooler.c-5.eu-central-1.aws.neon.tech`.
+- **New scratch-only nonce:** `f882344d-6a05-4e40-8f58-5313692e97c3`.
+- Seeded exact fresh `ft380_sdk_acceptance` scratch schema with `guard_rows=1`, `trash_rows=5`, `flow_rows=0`, `restored_rows=0`. No writes to `public`, real flights or production branch.
+- **Connection URI belongs in owner's local clipboard ONLY**, via Neon Console > Logbook Shadow > `ft-380-sdk-http-retry-20261013-tmp` > Connect > database `neondb`, pooled connection. **Copy just the raw connection string**, starting `postgresql://`, **not** a `psql` command, label, shell quotes or dashboard text. Never paste it into this chat, logs or GitHub.
+
+**Corrected local run (after copying only the connection URI into the clipboard):**
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File .\tooling\run-v380-neon-sdk-local.ps1 `
+  -ExpectedHost 'ep-square-river-b1jjvpkl-pooler.c-5.eu-central-1.aws.neon.tech' `
+  -ExpectedBranchId 'br-solitary-flower-b1t8okd4' `
+  -ExpectedNonce 'f882344d-6a05-4e40-8f58-5313692e97c3'
+```
+
+The wrapper refuses malformed/wrong-host clipboard input **locally before any Node/Neon connection**. It cleans ephemeral environment values and overwrites clipboard with a space even on failure. The Node script still verifies the **database-resident** ID/host/nonce manifest and pristine scratch before any write.
+
+**Mandatory next action after receiving PASS/FAIL output:** inspect exact second branch name/ID/parent, delete only `br-solitary-flower-b1t8okd4` and independently re-list branches to verify **absence and all four originals present**. If the owner delays/refrains from testing, delete the branch instead of keeping it indefinitely.
+
+**Status:** SDK HTTP test **NOT RUN** on either branch; first attempt failed client-side URI preflight. New wrapper and second scratch target pending owner run. No production writes, migration, merge or deploy.
+
 ## Temporary Neon branch established (13 October 2026; SDK NOT RUN)
 
 Owner had previously authorized creation and mandatory deletion of temporary branches for isolated FlyTally tests. Temporary child branch **`ft-380-sdk-http-acceptance-20261013-tmp`**, ID **`br-patient-waterfall-b10m3abc`**, parent **`br-dark-math-b1snjzub`** in **Logbook Shadow** project `muddy-dust-14049657`, database `neondb`, was created and independently verified `primary=false`, `default=false`, `current_state=ready`. Existing original branches untouched.
