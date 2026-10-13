@@ -27,7 +27,7 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
     "('flight_participations'::regclass,'flight_connected_crew'::regclass,",
     "'flight_verifications'::regclass,'flight_source_provenance'::regclass)),",
     "'triggers',(SELECT coalesce(json_agg(json_build_object('tab',t.tgrelid::regclass::text,",
-    "'name',t.tgname,'def',pg_get_triggerdef(t.oid))),'[]'::json) FROM pg_trigger t",
+    "'name',t.tgname,'enabled',t.tgenabled,'def',pg_get_triggerdef(t.oid))),'[]'::json) FROM pg_trigger t",
     "WHERE NOT t.tgisinternal AND t.tgrelid IN",
     "('flights'::regclass,'flight_source_provenance'::regclass,",
     "'voided_certified_flights'::regclass))",
@@ -57,7 +57,7 @@ test("D3b real full-v20 FK and trigger catalog gate", { skip: process.env.FLYTAL
   fk("flight_verifications","flight_id","ON DELETE CASCADE");
   fk("flight_source_provenance","participant_flight_id, participant_user_id","ON DELETE CASCADE");
   const trigger=(tab:string,pattern:RegExp)=>{
-    assert.ok(c.triggers.some((x:{tab:string;name:string})=>x.tab===tab && pattern.test(x.name)),
+    assert.ok(c.triggers.some((x:{tab:string;name:string;enabled:string})=>x.tab===tab && pattern.test(x.name) && (x.enabled==="O" || x.enabled==="A")),
       "Missing lifecycle trigger on "+tab);
   };
   trigger("flight_source_provenance",/^trg_logbook_protect_source_provenance$/);
