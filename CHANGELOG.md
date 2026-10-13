@@ -8,6 +8,10 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — D3b-1g browser test credentials isolated (NOT RUN)
+
+- Hardened the new disposable PG16 browser runner to generate fresh, independent process-scoped `SESSION_SECRET` and `SIGNING_SECRET` for each local verification run, then restore the owner's prior process environment. This supports real cookie authentication and the canonical signed pre-track-delete backup without using any real production signing secret. Updated the source contract accordingly. **No credentials, database, server or browser were created/run in this work cycle.**
+
 ## 13 October 2026 — D3b-1g isolated authenticated Trash browser acceptance added (NOT RUN)
 
 - Added `e2e/trash-integrity.spec.mjs`, 2 concrete end-to-end flows projected to desktop and mobile: actual signed-in UI removal of one of two legacy-point GPS tracks, preservation of the nonselected track, ordinary Trash UI confirmation and exact persisted archive track/expense counts; and pending participant evidence blocking ordinary Trash with user-visible error and no mutation. Tests use `browserSqlScalar` solely to assert persisted results on local isolated fixture and invoke actual Next.js server actions through Playwright.
