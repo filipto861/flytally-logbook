@@ -8,6 +8,11 @@ This is the canonical record of **what actually changed** in `flytally-logbook`.
 - Historical PR/version labels are preserved even where old release numbering was inconsistent with package metadata.
 - From 4 October 2026 forward, canonical product releases use numeric `MAJOR.MINOR.PATCH`; see `docs/product/VERSIONING.md`.
 
+## 13 October 2026 — Guarded real Neon HTTP SDK acceptance harness (DRAFT / NOT RUN)
+
+- Authored isolated `tooling/verify-v380-neon-http-sdk.mjs`, importing installed app `@neondatabase/serverless`, using array-of-two `sql.query` requests and `sql.transaction([...],{isolationLevel:'ReadCommitted'})`. Enforces explicit URI, branch-id, exact endpoint hostname, independently seeded random guard nonce, pristine scratch tables, flags and no fallback to app `DATABASE_URL`; no remote write until read-only preflight passes.
+- Synthetic test plan: monetary flow + marker commit; late amount CHECK complete rollback; concurrent two DIFFERENT archives with the same flight identity; same-trash double request; precise PostgreSQL NUMERIC text. [Handoff](docs/product/3_8_0_NEON_JS_HTTP_SDK_ACCEPTANCE_HANDOFF.md) defines safe temp branch and mandatory deletion. **Code authored only: JS SDK HTTP, CI/build/prod NOT RUN; no temporary Neon branch yet, no production/app DB changes, merge or deploy.**
+
 ## 13 October 2026 — Distinct-trash concurrent restore owner-local PostgreSQL acceptance (DRAFT / NOT SHIPPED)
 
 - Owner Windows executed exact `test/3.8.0-d2-full-v20-pg16-runtime` commit **`0bb5b4965f7234991ac4530a358eb8de48951a9d`** using `tooling/run-v380-d2-full-v20-local.ps1`: newly isolated native PostgreSQL 16 server `127.0.0.1:50066`, expected/observed `flytally_currency_test|flytally|127.0.0.1|50066` identity **PASS**; project Node24 `npm run typecheck` **PASS**; seven v20 source regressions **7/7 PASS**; five lock/trigger/two-query contract checks **5/5 PASS**; seven actual full-v20 PG16 restore/rollback/concurrency SQL tests **7/7 PASS**, **zero failures, zero skips**. Native PG cluster stopped successfully.
