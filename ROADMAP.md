@@ -1,5 +1,8 @@
 # FlyTally Logbook — ROADMAP
 
+**Currency 3.8.0 isolated restore verification (14 Oct 2026):** Added two actual PostgreSQL16 integration cases for exact v21 monetary flight/expense JSON restoration in one transaction and fail-closed rollback on corrupt expense encoding. New test cases NOT RUN on branch HEAD yet. Legacy `restoreDeletedFlightRecord` still blocks non-null currency snapshots; runtime wiring must follow verified atomic design without losing v20 protections. No schema registration, production migration or deployment.
+
+
 **Currency 3.8.0 combined local acceptance:** owner-local evidence at `59a8f861` PASS (Node typecheck, static SQL 6/6, disposable PG16 6/6, complete Node tests 1518/1518, local Next build). **Current continuation:** exact account restore expense matching preserves raw amount text and explicit encoding/scale in Draft PR #338; tests on new HEAD NOT RUN. Signed v13 round-trip, non-legacy Trash restore, browser, v21 migration production preflight remain outstanding; v21 unregistered.
 
 
