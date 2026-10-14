@@ -11,9 +11,12 @@ const read=(relative:string)=>fs.readFileSync(path.join(root,relative),"utf8");
 test("v1.52 active tree is the Next.js runtime rather than the retired Streamlit application",()=>{
   const pkg=JSON.parse(read("package.json"));
   assert.ok(releaseAtLeast(pkg.version,1,52,0));
-  for(const retired of ["app.py","logbook_core","logbook_ui",".streamlit","requirements.txt","scripts","sql"]){
+  for(const retired of ["app.py","logbook_core","logbook_ui",".streamlit","requirements.txt","scripts"]){
     assert.equal(exists(retired),false,`${retired} must remain outside the active production tree`);
   }
+  // Currency SQL is an isolated, unregistered draft — not an active runtime directory.
+  assert.deepEqual(fs.readdirSync(path.join(root,"sql")),["drafts"],"Only unregistered SQL draft artifacts may live here");
+  assert.ok(exists("sql/drafts/3_8_0_currency_v21_additive_candidate.sql"),"Currency schema review draft must remain isolated");
   for(const active of ["app","components","lib","tests","next.config.ts","vercel.json"]){
     assert.equal(exists(active),true,`${active} is part of the active production tree`);
   }
