@@ -188,3 +188,24 @@ test("v20 void trigger requires same-transaction exact to_jsonb(OLD) snapshot",{
   assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=110"),"0");
   assert.equal(run("SELECT flight_snapshot->>'price_per_hour' FROM voided_certified_flights WHERE id=1"),"2000.5");
 });
+
+test("v21 monetary draft and expense snapshot restore exactly in one disposable PostgreSQL transaction",{skip:!enabled},()=>{
+  const flight=JSON.stringify({id:130,user_id:1,date:"2026-10-12",billing_basis:"BLOCK",price_per_hour:1234.125,price_currency_code:"KWD",price_currency_minor_units:3,price_per_hour_decimal:"1234.125",certification_hash:"",certification_version:8,record_revision:1,correction_reason:""});
+  const expense=JSON.stringify({id:31,user_id:1,flight_id:130,category:"LANDING",label:"Fee",amount_minor:12345,currency:"KWD",amount_encoding:"iso_minor_units",amount_minor_units:3});
+  // Typed JSON restore is already the canonical exact-account restore mechanism.
+  // Both INSERTs share one database transaction; no missing currency defaults.
+  run("BEGIN; INSERT INTO flights SELECT (json_populate_record(NULL::flights,'"+flight.replaceAll("'","''")+"'::json)).*; INSERT INTO flight_expenses SELECT (json_populate_record(NULL::flight_expenses,'"+expense.replaceAll("'","''")+"'::json)).*; COMMIT;");
+  assert.deepEqual(rows("SELECT price_currency_code,price_currency_minor_units,price_per_hour_decimal::text rate FROM flights WHERE id=130"),
+    [{price_currency_code:"KWD",price_currency_minor_units:3,rate:"1234.125"}]);
+  assert.deepEqual(rows("SELECT amount_minor,currency,amount_encoding,amount_minor_units FROM flight_expenses WHERE id=31"),
+    [{amount_minor:12345,currency:"KWD",amount_encoding:"iso_minor_units",amount_minor_units:3}]);
+  assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=130 AND certified_at IS NOT NULL"),"0");
+});
+
+test("invalid currency-bearing expense rolls back the parent flight in the same transaction",{skip:!enabled},()=>{
+  const flight=JSON.stringify({id:131,user_id:1,date:"2026-10-12",price_per_hour:1200,price_currency_code:"JPY",price_currency_minor_units:0,price_per_hour_decimal:"1200",certification_hash:"",certification_version:8,record_revision:1,correction_reason:""});
+  const badExpense=JSON.stringify({id:32,user_id:1,flight_id:131,category:"LANDING",amount_minor:1000,currency:"JPY",amount_encoding:"iso_minor_units",amount_minor_units:null});
+  reject("BEGIN; INSERT INTO flights SELECT (json_populate_record(NULL::flights,'"+flight.replaceAll("'","''")+"'::json)).*; INSERT INTO flight_expenses SELECT (json_populate_record(NULL::flight_expenses,'"+badExpense.replaceAll("'","''")+"'::json)).*; COMMIT;",/expenses_amount_encoding_v21_check/);
+  assert.equal(run("SELECT COUNT(*) FROM flights WHERE id=131"),"0");
+  assert.equal(run("SELECT COUNT(*) FROM flight_expenses WHERE id=32"),"0");
+});
