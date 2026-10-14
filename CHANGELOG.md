@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Update historical schema tests for v21 while preserving v20 invariants (unreleased)
+
+- Exact owner-local acceptance candidate `14773c538327c278c9f8ec06047945e636114218`: targeted v21 static source contracts **5/5 PASS**; isolated local PostgreSQL16 typecheck **PASS**, v21 draft static **6/6 PASS**, schema integration **9/9 PASS**, executable release SQL integration **3/3 PASS**. Test cluster confirmed expected ID and stopped. Full Node tests **1546/1549 PASS**: two assertions still expected migration list to end at v20 and one historical v20 certified flight contract incorrectly required `DATABASE_SCHEMA_VERSION=20`. Next build and Playwright **NOT RUN**.
+- Minimal **test-only** correction `97a0aebe0099467a0af107adce844f94eb04900c`: migration plan tests now assert preserved v1..20 + explicit v21, partial, pending v21 and fully applied cases; v20 certified voiding contract checks v20 registration and archive guards independent of current highest schema version. No production SQL/runtime changes.
+- New SHA source/unit targeted and complete acceptance **NOT RETESTED**. PR Draft; Neon canonical production stays schema v20, no migration/merge/deploy.
+
 ## 14 October 2026 — Fix Windows CRLF parsing in v21 static SQL source contract (unreleased)
 
 - Owner-local `npm run typecheck` on `3cb1eeb74d6f99f40e18d3e871c5b11b377bd7c4`: **PASS**. Targeted v21 release contract: **4/5 PASS**, first check failed `0 !== 4` because regex expected exactly LF (`\n`) in an ALTER TABLE block but SQL has Windows CRLF (`\r\n`) on checkout.
