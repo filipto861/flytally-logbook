@@ -95,3 +95,15 @@ test("signed v13 browser download retains the protected endpoint and clicks actu
   assert.ok(api.includes("const session=await getSession()"),"Stored backup download must remain authenticated");
   assert.ok(api.includes('new Response("Unauthorized",{status:401})'),"Unauthenticated backup access remains forbidden");
 });
+
+test("isolated browser FSTD correction columns match the canonical DB optimizer before signed v13 restore",()=>{
+  const fixture=readFileSync(new URL("../tooling/bootstrap-browser-smoke-db.mjs",import.meta.url),"utf8");
+  const optimizer=readFileSync(new URL("../lib/db-optimization.ts",import.meta.url),"utf8");
+  const fstd=fixture.slice(fixture.indexOf("CREATE TABLE fstd_sessions ("),fixture.indexOf("CREATE TABLE fstd_certified_revisions ("));
+  assert.ok(fstd.startsWith("CREATE TABLE fstd_sessions ("));
+  for(const column of ["record_revision","correction_reason","correction_opened_at","correction_opened_by_user_id"]){
+    assert.match(fstd,new RegExp("^  "+column+"\\\\s", "m"),"Missing "+column+" in browser FSTD fixture");
+    assert.ok(optimizer.includes("ALTER TABLE fstd_sessions ADD COLUMN IF NOT EXISTS "+column),
+      "Missing canonical FSTD optimizer provenance for "+column);
+  }
+});
