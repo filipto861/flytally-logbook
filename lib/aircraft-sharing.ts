@@ -90,7 +90,7 @@ export function formatAircraftShareRate(rate:AircraftShareRate):string{
 
 export function parseAircraftShareSnapshot(value:unknown):AircraftShareSnapshot{
   const root=object(value),profile=object(root.profile),defaults=object(root.defaults),current=object(root.currentRate),history=Array.isArray(root.rateHistory)?root.rateHistory:[];
-  const version=root.version===undefined?1:root.version===2?2:0;
+  const version=root.version===undefined||root.version===1?1:root.version===2?2:0;
   const parsed:AircraftShareSnapshot={profile:{
     registration:text(profile.registration).toUpperCase(),
     aircraftType:text(profile.aircraftType),aircraftMake:text(profile.aircraftMake),
