@@ -32,7 +32,8 @@ const flightRevisionKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${Number(
 const fstdRevisionKey=(row:BackupRow)=>`${String(row.fstd_session_id??"")}|${Number(row.revision_number||0)}`;
 const auditKey=(row:BackupRow)=>id(row);
 const deletedKey=(row:BackupRow)=>text(row.delete_token);
-const expenseKey=(row:BackupRow)=>`${String(row.flight_id??"")}|${upper(row.category)}|${upper(row.label)}|${Number(row.amount_minor||0)}|${upper(row.currency)}`;
+// Compare exact integer text and preserve explicit monetary storage semantics.
+const expenseKey=(row:BackupRow)=>JSON.stringify([text(row.flight_id),upper(row.category),upper(row.label),text(row.amount_minor),upper(row.currency),text(row.amount_encoding),text(row.amount_minor_units)]);
 const splEvidenceKey=(row:BackupRow)=>`${upper(row.aircraft_context)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer??row.signer_name)}|${upper(row.reference)}`;
 const helicopterEvidenceKey=(row:BackupRow)=>`${upper(row.helicopter_type)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
 const bplEvidenceKey=(row:BackupRow)=>`${upper(row.balloon_class)}|${upper(row.balloon_group)}|${text(row.evidence_date).slice(0,10)}|${upper(row.signer)}|${upper(row.reference)}`;
@@ -101,7 +102,7 @@ export async function prepareExactAccountRestore(userId:number,backup:PortableBa
     sql`SELECT id,fstd_session_id,revision_number,certification_hash FROM fstd_certified_revisions WHERE user_id=${userId}`,
     sql`SELECT id FROM flight_audit_log WHERE user_id=${userId}`,
     sql`SELECT id,delete_token FROM deleted_flights WHERE user_id=${userId}`,
-    sql`SELECT id,flight_id,category,label,amount_minor,currency FROM flight_expenses WHERE user_id=${userId}`,
+    sql`SELECT e.id,e.flight_id,e.category,e.label,e.amount_minor,e.currency,to_jsonb(e)->>'amount_encoding' amount_encoding,to_jsonb(e)->>'amount_minor_units' amount_minor_units FROM flight_expenses e WHERE e.user_id=${userId}`,
     sql`SELECT id,aircraft_context,evidence_date::text evidence_date,signer,reference FROM spl_recency_evidence WHERE user_id=${userId}`,
     sql`SELECT id,helicopter_type,evidence_date::text evidence_date,signer,reference FROM helicopter_recency_evidence WHERE user_id=${userId}`,
     sql`SELECT id,balloon_class,balloon_group,evidence_date::text evidence_date,signer,reference FROM bpl_recency_evidence WHERE user_id=${userId}`,
