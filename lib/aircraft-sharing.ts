@@ -64,6 +64,7 @@ function parseShareRate(value:unknown,version:1|2):AircraftShareRate|null{
     ||!validateCurrencyRateSnapshot({price_per_hour:price,currency_code:currency.code,
       currency_minor_units:currency.minorUnits,rate_decimal:r.priceDecimal}))return null;
   const dryDecimal=r.dryPriceDecimal??null;
+  if(dryDecimal!==null&&typeof dryDecimal!=="string")return null;
   if(dry===null?dryDecimal!==null:
     typeof dryDecimal!=="string"||!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(dryDecimal)
     ||Number(dryDecimal)!==dry)return null;
