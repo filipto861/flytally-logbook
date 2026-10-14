@@ -10,7 +10,8 @@ const post=source("tooling/v380-v21-postflight.sql");
 const plan=source("lib/migration-plan.ts");
 const runtime=source("lib/db-optimization.ts");
 const normalize=(v:string)=>v.replace(/\s+/g," ").trim();
-const alters=[...draft.matchAll(/^ALTER TABLE (?:rates|aircraft|flights|flight_expenses)\n[\s\S]*?;/gm)].map(x=>x[0]);
+// Git for Windows may check out the SQL draft with CRLF rather than LF.
+const alters=[...draft.matchAll(/^ALTER TABLE (?:rates|aircraft|flights|flight_expenses)\r?\n[\s\S]*?;/gm)].map(x=>x[0]);
 const checks=[...draft.matchAll(/DO \$currency\$[\s\S]*?\$currency\$;/g)].map(x=>x[0]);
 
 test("v21 executable DDL and runtime use all eight exact source-backed draft blocks",()=>{
