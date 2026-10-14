@@ -1,4 +1,5 @@
 import {test,expect} from "@playwright/test";
+import {readFileSync} from "node:fs";
 import {loginBrowserPilot} from "./browser-actions.mjs";
 import {runBrowserSql,browserSqlScalar} from "./browser-db.mjs";
 
@@ -92,4 +93,51 @@ test("D3b-1 browser: pending collaboration refuses ordinary Trash with no archiv
   expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE id IN (${selected},${retained}) AND user_id=9001`)).toBe("2");
   expect(scalar(`SELECT COUNT(*) FROM track_points WHERE track_id IN (${selected},${retained}) AND user_id=9001`)).toBe("4");
   expect(scalar(`SELECT COUNT(*) FROM flight_expenses WHERE flight_id=${flightId} AND user_id=9001`)).toBe("1");
+});
+
+
+test("Currency 3.8 browser: archived KWD/JPY flight restores exact metadata through UI",async({page})=>{
+  test.skip(!authenticated,"Requires dedicated disposable localhost PostgreSQL16 and authenticated browser fixture.");
+  // Apply this REVIEW candidate exclusively inside the localhost browser fixture.
+  // runBrowserSql is auth-gated and refuses non-loopback PostgreSQL.
+  const draft=readFileSync(new URL("../sql/drafts/3_8_0_currency_v21_additive_candidate.sql",import.meta.url),"utf8");
+  runBrowserSql(draft);
+  const flightId=9963;
+  seed(flightId);
+  runBrowserSql(`
+    BEGIN;
+    UPDATE flights SET registration='OK-C380',price_per_hour=1234.125,
+      price_currency_code='KWD',price_currency_minor_units=3,price_per_hour_decimal=1234.125
+      WHERE id=${flightId} AND user_id=9001;
+    UPDATE flight_expenses SET amount_minor=12345,currency='KWD',
+      amount_encoding='iso_minor_units',amount_minor_units=3
+      WHERE flight_id=${flightId} AND user_id=9001;
+    INSERT INTO flight_expenses(user_id,flight_id,category,label,amount_minor,currency,amount_encoding,amount_minor_units)
+    VALUES(9001,${flightId},'PARKING','JPY fee',250,'JPY','iso_minor_units',0);
+    COMMIT;
+  `);
+  await loginBrowserPilot(page,`/flights/${flightId}`);
+  await page.locator("details.flight-detail-more").locator("summary").click();
+  await page.getByRole("button",{name:"Move to trash"}).click();
+  await page.getByRole("button",{name:"Confirm deletion"}).click();
+  await expect(page).toHaveURL(/\/flights(?:\?|$)/,{timeout:20000});
+  expect(scalar(`SELECT COUNT(*) FROM flights WHERE id=${flightId} AND user_id=9001`)).toBe("0");
+  expect(scalar(`SELECT COUNT(*) FROM deleted_flights WHERE original_flight_id=${flightId}
+    AND user_id=9001 AND flight_data->>'price_currency_code'='KWD'
+    AND expenses_data @> '[{"amount_encoding":"iso_minor_units","amount_minor_units":0,"currency":"JPY"}]'::jsonb`)).toBe("1");
+  await page.goto("/data?view=deleted");
+  const row=page.locator(".flight-trash article").filter({hasText:"OK-C380"});
+  await expect(row).toHaveCount(1);
+  await row.getByRole("button",{name:"Restore flight"}).click();
+  await expect(page.locator(".flight-trash [role=status]")).toContainText("Flight restored",{timeout:15000});
+  const restoredId=scalar(`SELECT restored_flight_id FROM deleted_flights
+    WHERE original_flight_id=${flightId} AND user_id=9001 AND restored_at IS NOT NULL ORDER BY id DESC LIMIT 1`);
+  expect(restoredId).toMatch(/^[0-9]+$/);
+  expect(scalar(`SELECT price_currency_code||':'||price_currency_minor_units||':'||price_per_hour_decimal::text
+    FROM flights WHERE id=${restoredId} AND user_id=9001`)).toBe("KWD:3:1234.125");
+  expect(scalar(`SELECT amount_minor||':'||currency||':'||amount_encoding||':'||amount_minor_units
+    FROM flight_expenses WHERE flight_id=${restoredId} AND user_id=9001 AND currency='KWD'`)).toBe("12345:KWD:iso_minor_units:3");
+  expect(scalar(`SELECT amount_minor||':'||currency||':'||amount_encoding||':'||amount_minor_units
+    FROM flight_expenses WHERE flight_id=${restoredId} AND user_id=9001 AND currency='JPY'`)).toBe("250:JPY:iso_minor_units:0");
+  expect(scalar(`SELECT COUNT(*) FROM flight_tracks WHERE flight_id=${restoredId} AND user_id=9001`)).toBe("2");
 });
