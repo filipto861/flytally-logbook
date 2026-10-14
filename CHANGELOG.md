@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — Signed v13 authenticated download test fix (Draft #338)
+
+- Owner-local Playwright on `a3f0d809`: **6/8 PASS**; both desktop/mobile failures were the signed v13 `page.request` download GET returning HTTP 401. Existing D3b and monetary Trash UI flows passed, no runtime or PostgreSQL failure reported.
+- Changed signed backup scenario to use the application **Download** link in the real authenticated browser and parse the browser-downloaded JSON byte stream, with a same-origin GET diagnostic. Preserved real session checks and guest HTTP 401 in `app/api/backups/[id]/route.ts`; no auth relaxation.
+- Added source guard for the protected download endpoint and UI coverage. Latest exact HEAD unit/browser/full acceptance **NOT RUN**; no schema registration/migration/merge/deploy.
+
+
 ## 14 October 2026 — Currency acceptance browser failure triage (Draft PR #338)
 
 - Owner-local acceptance of `5957261f`: PostgreSQL16 schema 8/8, complete Node tests 1528/1528, TypeScript/Next builds PASS; authenticated Playwright 3/8 PASS, 5/8 FAIL. Combined gate correctly failed.
