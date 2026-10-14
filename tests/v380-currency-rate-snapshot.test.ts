@@ -22,7 +22,7 @@ test("both manual and GPS creates snapshot original rate currency together with 
   assert.match(flights,/validateCurrencyRateSnapshot\(row\)/);
   assert.match(flights,/if\(rate===null\)return\{error:/);
   assert.match(flights,/if\(storedRate===null\)return\{error:/);
-  assert.match(flights,/return noRateSnapshot/);
+  assert.match(flights,/const noRateSnapshot:RateSnapshot=/);
   const columnTuples=flights.match(/price_currency_code,price_currency_minor_units,price_per_hour_decimal/g)??[];
   assert.equal(columnTuples.length,2,"Manual and GPS INSERTs must project all three attributes atomically");
   assert.match(flights,/\$\{rate.price_per_hour\},\$\{rate.currency_code\},\$\{rate.currency_minor_units\},\$\{rate.rate_decimal\}/);
