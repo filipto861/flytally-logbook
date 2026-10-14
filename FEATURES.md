@@ -1,5 +1,8 @@
 # FlyTally Logbook — FEATURE LIST
 
+**Currency-aware Deleted Flights restore (14 Oct 2026, Draft #338):** New runtime code conditionally restores v21 exact monetary metadata for eligible user-owned draft archives using an atomic SQL transaction; pre-v21 snapshots keep the original restore path. Rejects missing v21 columns or invalid ISO/scale/encoding. Implemented but latest commit verification NOT RUN; not released or production-migrated.
+
+
 **Currency v21 restore acceptance evidence (14 Oct 2026):** PostgreSQL integration cases added for round-tripping KWD flight and expense amount tuples and aborting the complete transaction if a child amount encoding is invalid. New tests NOT RUN; Trash currency-bearing restore remains unavailable pending controlled runtime implementation.
 
 
