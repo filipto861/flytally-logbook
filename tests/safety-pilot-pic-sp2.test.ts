@@ -82,7 +82,13 @@ test("SP2 browser coverage exercises manual and connected Actual PIC modes on th
   assert.match(browser,/selectOption\("9002"\)/);
   assert.match(browser,/fill\("Manual Captain"\)/);
   assert.match(db,/resetSafetyPilotPicFixture/);
-  assert.match(bootstrap,/generate_series\(1,19\)/);
+  // The disposable v1..v19 fixture must use canonical migration names, not
+  // an anonymous generated-series registry that v21 correctly rejects.
+  assert.match(bootstrap,/readFileSync\\(new URL\\("\\.\\.\\/lib\\/migration-plan\\.ts"/);
+  assert.match(bootstrap,/preappliedMigrations\\.length!==19/);
+  assert.match(bootstrap,/preappliedMigrations\\.some\\(\\(migration,index\\)=>migration\\.version!==index\\+1\\)/);
+  assert.match(bootstrap,/preappliedMigrations\\.map\\(migration/);
+  assert.doesNotMatch(bootstrap,/browser-smoke-preapplied/);
   assert.match(bootstrap,/pic_commander_basis TEXT CHECK/);
   assert.match(bootstrap,/CREATE TABLE flight_connected_crew/);
   assert.match(bootstrap,/CREATE TABLE flight_expenses/);
