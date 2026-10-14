@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Preserve strict type narrowing for exact shared dry rates (unreleased)
+
+- Owner-local standalone `npm run typecheck` at `340ab061dc1375ef1d436086025b20c45fb810f9` failed TS2322 on `lib/aircraft-sharing.ts:71`; TypeScript could not prove that `dryDecimal` obtained from a generic object was `string|null`.
+- Minimal source guard in `31960d5794ba368524ac6a2990aa1bb107bc734d` rejects any non-null nonstring before returning typed payload; malformed values do **not** silently become null. Matching isolated `tsc --strict --noEmit --lib es2022` typecheck PASS; repository-wide `npm run typecheck`, other tests/build/browser **NOT RUN** on corrected source.
+- No production DB mutation, migration registration, merge or deploy. PR #338 Draft; next standalone local typecheck followed by consolidated acceptance.
+
 ## 14 October 2026 — Correct failed acceptance at TypeScript `TS2552` (unreleased)
 
 - User ran owner-local `run-currency-380-acceptance.ps1 -WithBrowser` at exact `3f9efa0accc68492d9ba45fb2022f67b104dfbee`: disposable PostgreSQL16 identity on port `49235` verified; `npm run typecheck` **FAIL** `TS2552` line 71 of `lib/aircraft-sharing.ts`. Isolated cluster shut down correctly, no later acceptance stages ran.
