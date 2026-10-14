@@ -84,3 +84,14 @@ test("Currency browser v21 setup only runs inside a dedicated disposable localho
   assert.match(runner,/\$env:FLYTALLY_CURRENCY_V21_BROWSER = "1"/);
   assert.match(runner,/Restore-Env "FLYTALLY_CURRENCY_V21_BROWSER"/);
 });
+
+test("signed v13 browser download retains the protected endpoint and clicks actual Download UI",()=>{
+  const browser=readFileSync(new URL("../e2e/trash-integrity.spec.mjs",import.meta.url),"utf8");
+  const api=readFileSync(new URL("../app/api/backups/[id]/route.ts",import.meta.url),"utf8");
+  assert.ok(browser.includes('page.waitForEvent("download"'),"Test must exercise a real browser download");
+  assert.ok(browser.includes('.stored-backup-list a[href="/api/backups/'));
+  assert.ok(browser.includes("downloaded.createReadStream()"));
+  assert.ok(!browser.includes('page.request.get("/api/backups/'),"Do not bypass the browser session in signed backup E2E");
+  assert.ok(api.includes("const session=await getSession()"),"Stored backup download must remain authenticated");
+  assert.ok(api.includes('new Response("Unauthorized",{status:401})'),"Unauthenticated backup access remains forbidden");
+});
