@@ -1,5 +1,12 @@
 # FlyTally changelog
 
+## 14 October 2026 — Currency-aware atomic Trash restore (Draft #338)
+
+- Added a v21 archive restore path within the existing one-transaction flight, GPS track, expense and archive-mark CTE. Restore preserves precise source rate decimal/currency/exponent and per-expense encoding/minor units; existing v20 legacy statement remains intact.
+- Read-only preflight validates available v21 columns and ISO currency precision, and the SQL candidate matches preflight archive digest to reject concurrent archive changes.
+- Added source contract guards and two new disposable-PG test cases for exact restoration and full rollback on malformed expense metadata. New code/test HEAD NOT RUN; signed portable v13 end-to-end, authenticated browser and production preflight NOT RUN. v21 unregistered, no merge/deployment.
+
+
 ## 14 October 2026 — Disposable PostgreSQL monetary restore contract tests
 
 - Added v21 exact JSON flight/expense restore round-trip and atomic rollback-on-invalid-expense integration tests in the existing isolated PostgreSQL harness.
