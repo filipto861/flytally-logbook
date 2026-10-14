@@ -232,6 +232,10 @@ CREATE TABLE fstd_sessions (
   certified_by_user_id BIGINT,
   certification_hash TEXT NOT NULL DEFAULT '',
   certification_version INTEGER NOT NULL DEFAULT 1,
+  record_revision INTEGER NOT NULL DEFAULT 1,
+  correction_reason TEXT NOT NULL DEFAULT '',
+  correction_opened_at TIMESTAMPTZ,
+  correction_opened_by_user_id BIGINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
