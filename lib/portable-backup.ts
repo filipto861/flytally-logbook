@@ -51,21 +51,27 @@ export function validateBackupMonetaryEvidence(backup:PortableBackup):string|nul
   const present=(value:unknown)=>value!==null&&value!==undefined;
   const obj=(value:unknown):BackupRow|null=>
     value!==null&&typeof value==="object"&&!Array.isArray(value)?value as BackupRow:null;
+  // Live NUMERIC columns are strings, but snapshots embedded in JSONB can be
+  // JSON numeric tokens. Accept only finite plain-decimal tokens without
+  // reconstructing or guessing lost precision.
+  const plainDecimal=(value:unknown):string|null=>{
+    const valueText=typeof value==="string"?value:typeof value==="number"&&Number.isFinite(value)?String(value):null;
+    return valueText!==null&&/^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,12})?$/.test(valueText)?valueText:null;
+  };
   const invalidTuple=(row:BackupRow,codeKey:string,minorKey:string,decimalKey:string,legacyKey:string,
     positive:boolean,dryKey?:string,dryLegacyKey?:string):boolean=>{
     const keys=[codeKey,minorKey,decimalKey,...(dryKey?[dryKey]:[])];
     if(!keys.some(key=>present(row[key])))return false; // legacy: denomination unknown
-    const currency=supportedIsoCurrency(row[codeKey]),decimal=row[decimalKey];
+    const currency=supportedIsoCurrency(row[codeKey]),decimal=plainDecimal(row[decimalKey]);
     if(!currency||row[codeKey]!==currency.code||row[minorKey]!==currency.minorUnits
-      ||typeof decimal!=="string"||!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(decimal)
+      ||decimal===null
       ||(positive?Number(decimal)<=0:Number(decimal)<0)
       ||typeof row[legacyKey]!=="number"||!Number.isFinite(row[legacyKey])
       ||Number(decimal)!==row[legacyKey])return true;
     if(dryKey){
       const dry=row[dryKey],oldDry=row[dryLegacyKey??""];
       if(present(dry)!==present(oldDry))return true;
-      if(present(dry)&&(typeof dry!=="string"
-        ||!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(dry)
+      if(present(dry)&&(plainDecimal(dry)===null
         ||typeof oldDry!=="number"||!Number.isFinite(oldDry)
         ||Number(dry)!==oldDry))return true;
     }
