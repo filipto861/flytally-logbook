@@ -115,7 +115,7 @@ export function parseAircraftShareSnapshot(value:unknown):AircraftShareSnapshot{
       billingBasis:billing.error?rawBilling:billing.value,
       ...(billing.error?{billingError:billing.error}:{}),
       ...(operationPresent&&operation.error?{operationError:operation.error}:{}),
-      ...(enginePresent&&engine.error?{engineError:engine.error}:{})}};
+      ...(enginePresent&&engine.error?{engineError:engine.error}:{})};
   }
   if(!version||history.length>250)parsed.rateError="The shared rate format needs review.";
   else{
