@@ -56,7 +56,7 @@ export function validateBackupMonetaryEvidence(backup:PortableBackup):string|nul
   // reconstructing or guessing lost precision.
   const plainDecimal=(value:unknown):string|null=>{
     const valueText=typeof value==="string"?value:typeof value==="number"&&Number.isFinite(value)?String(value):null;
-    return valueText!==null&&/^(?:0|[1-9]\\d{0,14})(?:\\.\\d{1,12})?$/.test(valueText)?valueText:null;
+    return valueText!==null&&/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(valueText)?valueText:null;
   };
   const invalidTuple=(row:BackupRow,codeKey:string,minorKey:string,decimalKey:string,legacyKey:string,
     positive:boolean,dryKey?:string,dryLegacyKey?:string):boolean=>{
