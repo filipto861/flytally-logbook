@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { validateBackupCertificationHistory,type BackupCertificationSummary } from "@/lib/backup-certification";
-import { backupContainsExactMonetaryData,flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
+import { backupContainsExactMonetaryData,validateBackupMonetaryEvidence,flightRestoreKey,validateVoidHistoryRelationships,type BackupRow,type PortableBackup } from "@/lib/portable-backup";
 import { ensureV162Schema } from "@/lib/v162-schema";
 import { ensureV163Schema } from "@/lib/v163-schema";
 import { ensureV164Schema } from "@/lib/v164-schema";
@@ -91,6 +91,12 @@ function classifyProtected(source:BackupRow[],current:BackupRow[],key:(row:Backu
 // absent from a target table; never allow that to discard money provenance.
 async function requireMonetaryRestoreSchema(backup:PortableBackup):Promise<void>{
   if(!backupContainsExactMonetaryData(backup))return;
+  const invalid=validateBackupMonetaryEvidence(backup);
+  if(invalid)throw new AccountRestoreConflictError(protectedHistoryConflict(
+    "Invalid exact currency evidence",
+    "Portable backup monetary evidence",
+    invalid+" Restore was blocked before any data changes."
+  ));
   const required:Record<string,readonly string[]>={
     rates:["currency_code","currency_minor_units","price_per_hour_decimal","dry_price_per_hour_decimal"],
     aircraft:["default_price_currency_code","default_price_currency_minor_units","default_price_per_hour_decimal"],
