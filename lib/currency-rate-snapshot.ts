@@ -24,6 +24,7 @@ export function validateCurrencyRateSnapshot(row:CurrencyRateSnapshot|undefined)
     ||typeof row.rate_decimal!=="string"
     ||!/^(?:0|[1-9]\d{0,14})(?:\.\d{1,12})?$/.test(row.rate_decimal)
     ||!/[1-9]/.test(row.rate_decimal)
+    ||Number(row.rate_decimal)!==row.price_per_hour
     ||typeof row.price_per_hour!=="number"
     ||!Number.isFinite(row.price_per_hour)
     ||row.price_per_hour<=0)return null;
