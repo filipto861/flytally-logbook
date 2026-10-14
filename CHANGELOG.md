@@ -1,5 +1,11 @@
 # FlyTally changelog
 
+## 14 October 2026 — Disposable PostgreSQL monetary restore contract tests
+
+- Added v21 exact JSON flight/expense restore round-trip and atomic rollback-on-invalid-expense integration tests in the existing isolated PostgreSQL harness.
+- Current exact commit tests NOT RUN; runtime Trash does not yet restore currency-bearing records and remains fail-closed. No registered v21 migration or production change.
+
+
 ## 14 October 2026 — Currency exact account restore expense identity (Draft PR #338)
 
 - Recorded local PASS at previous `59a8f861` (typecheck, PostgreSQL16 6/6, static SQL 6/6, full 1518/1518 tests, Next build).
